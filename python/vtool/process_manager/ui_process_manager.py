@@ -1,10 +1,10 @@
 import sys
 
-from ..lib import qt_ui
+from vtool import qt_ui
 
 #import qt_ui
-import util_file
-import util
+from vtool import util_file
+from vtool import util
 
 import process
 import ui_view
@@ -45,7 +45,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _setup_settings_file(self):
         
-        settings_file = vtool.util_file.SettingsFile()
+        settings_file = util_file.SettingsFile()
         settings_file.set_directory(self.directory)
         
         self.settings = settings_file
@@ -99,7 +99,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _set_default_project_directory(self, directory):
         
         if not directory:
-            directory = vtool.util_file.join_path(self.directory, 'project')
+            directory = util_file.join_path(self.directory, 'project')
             
         self.settings_widget.set_project_directory(directory)
         
@@ -167,7 +167,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         code_directory = self.settings.get('code_directory')
         self.process.set_external_code_library(code_directory)
         
-        if vtool.util.is_in_maya():
+        if util.is_in_maya():
             import maya.cmds as cmds
             cmds.file(new = True, f = True)
             
@@ -197,15 +197,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             directory = self.project_directory
 
         if directory and self.tab_widget.currentIndex() == 0:
-            vtool.util_file.open_browser(self.directory)
+            util_file.open_browser(self.directory)
         if directory and self.tab_widget.currentIndex() == 1:
-            vtool.util_file.open_browser(directory)
+            util_file.open_browser(directory)
         if directory and self.tab_widget.currentIndex() == 2:
             path = self.process.get_data_path()
-            vtool.util_file.open_browser(path)
+            util_file.open_browser(path)
         if directory and self.tab_widget.currentIndex() == 3:
             path = self.process.get_code_path()
-            vtool.util_file.open_browser(path)    
+            util_file.open_browser(path)    
               
     def _set_project_history(self, current_directory, previous_directory):
                 
@@ -222,7 +222,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             for inc in range(0, len(history)):
                 
-                if not vtool.util_file.is_dir(history[inc]):
+                if not util_file.is_dir(history[inc]):
                     continue
                 
                 if history[inc] == previous_directory:
@@ -246,8 +246,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.directory = directory
         
-        if not vtool.util_file.is_dir(directory):
-            vtool.util_file.create_dir(name = None, directory = directory)
+        if not util_file.is_dir(directory):
+            util_file.create_dir(name = None, directory = directory)
         
     def set_project_directory(self, directory, sub_part = None):
         
@@ -260,8 +260,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
             previous_project = self.project_directory
             
-            if not vtool.util_file.is_dir(directory):
-                vtool.util_file.create_dir(None, directory)
+            if not util_file.is_dir(directory):
+                util_file.create_dir(None, directory)
         
             self.project_directory = directory
             self.settings.set('project_directory', str(self.project_directory))
