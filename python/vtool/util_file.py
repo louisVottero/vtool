@@ -19,7 +19,7 @@ class WatchDirectoryThread(threading.Thread):
         super(WatchDirectoryThread, self).__init__()
 
     def run(self, directory): 
-        import os, time
+        import time
         path_to_watch = "."
         before = dict ([(f, None) for f in os.listdir (path_to_watch)])
         
