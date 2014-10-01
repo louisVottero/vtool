@@ -325,6 +325,8 @@ class Process(object):
         return filename 
         
     def rename_code(self, old_name, new_name):
+        
+        print 'renaming code', old_name, new_name
         code_folder = data.DataFolder(old_name, self.get_code_path())
         instance = code_folder.get_folder_data_instance()
         

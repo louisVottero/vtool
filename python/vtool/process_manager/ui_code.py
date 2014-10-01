@@ -3,6 +3,7 @@ import vtool.util_file
 
 import ui_data
 import process
+from PyQt4.Qt import QMimeData, QDataStream, QIODevice
 
 if vtool.qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
@@ -28,10 +29,10 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.splitter.addWidget(self.code_widget)
         
         
-        self.restrain_move = True
+        self.restrain_move = False
         self.skip_move = False
         
-        self.splitter.splitterMoved.connect(self._splitter_moved)
+        #self.splitter.splitterMoved.connect(self._splitter_moved)
                 
     def _splitter_moved(self, pos, index):
         
@@ -52,6 +53,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
     def _code_change(self, code):
         
+        """
         if not code:
             self.code_widget.set_code_path(None)
             self.restrain_move = True
@@ -66,13 +68,19 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
             section = width/2.0
             
             self.splitter.setSizes([section, section])
+        """
         
+        if not code:
+            return
+            
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         
         split_code = code.split('.')
         
         path = process_tool.get_code_folder(split_code[0])
+        
+        print 'process', path
 
         code_file = vtool.util_file.join_path(path, code)
         
@@ -181,24 +189,27 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
     def _build_widgets(self):
         
-        code_tree_separator = QtGui.QSplitter()
-        code_tree_separator.setOrientation(QtCore.Qt.Vertical)
+        #code_tree_separator = QtGui.QSplitter()
+        #code_tree_separator.setOrientation(QtCore.Qt.Vertical)
         
         self.code_manifest_tree = CodeManifestTree()
         self.code_tree = CodeTree()
         
-        code_tree_separator.addWidget(self.code_manifest_tree)
-        code_tree_separator.addWidget(self.code_tree)
+        #code_tree_separator.addWidget(self.code_manifest_tree)
+        #code_tree_separator.addWidget(self.code_tree)
         
         add_code = QtGui.QPushButton('Create Code')
         
         self.code_manifest_tree.itemSelectionChanged.connect(self._selection_changed)
-        self.code_tree.refreshed.connect(self._selection_changed)
-        self.code_tree.itemRenamed.connect(self._selection_changed)
+        self.code_manifest_tree.itemRenamed.connect(self._selection_changed)
+        
+        #self.code_tree.refreshed.connect(self._selection_changed)
+        
         
         add_code.clicked.connect(self._create_code)
         
-        self.main_layout.addWidget(code_tree_separator)
+        #self.main_layout.addWidget(code_tree_separator)
+        self.main_layout.addWidget(self.code_manifest_tree)
         self.main_layout.addWidget(add_code)        
         
         
@@ -216,8 +227,9 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         if not item:
             return
         
-        return item.text(1)
+        return item.text(0)
         
+            
     def _create_code(self):
         
         process_tool = process.Process()
@@ -248,27 +260,106 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         return self.code_manifest_tree.get_process_script_check_state(directory)
     
 class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
+    
+    itemRenamed = vtool.qt_ui.create_signal(object)
+    
     def __init__(self):
         
         
         super(CodeManifestTree, self).__init__()
         
-        self.title_text_index = 1
+        self.title_text_index = 0
         
         self.setSortingEnabled(False)
         
         self.setIndentation(False)
         
+        #self.setDragEnabled(True)
+        self.setDragDropMode(self.InternalMove)
+        self.setDefaultDropAction(QtCore.Qt.MoveAction)
+        self.invisibleRootItem().setFlags(QtCore.Qt.ItemIsDropEnabled) 
+        #self.setDropIndicatorShown(True)
+        #self.setDragDropOverwriteMode(False)
+        
+        
+        
+        self.dragged_item = None
+        #self.floating_widget = None
+        
+    def dragMoveEvent(self, event):
+        super(CodeManifestTree, self).dragMoveEvent(event)
+        
+        self.dragged_item = self.currentItem()
+        #self.floating_widget = self.dragged_item.widget
+        
+    def dropEvent(self, event):
+        super(CodeManifestTree, self).dropEvent(event)
+        
+        self.clearSelection()
+        
+        print self.dragged_item.text(self.title_text_index)
+        
+        #self.setItemWidget(self.dragged_item, 0, self.dragged_item.widget)
+        #self.dragged_item.widget = self.floating_widget
+        
+        #print self.floating_widget
+        #self.floating_widget.show()
+        
+        self.setItemSelected(self.dragged_item, True)
+        
+        self.dragged_item = None
+
+        
     
     def _define_header(self):
-        return ['state', 'name']
+        return ['scripts']
+    
+    def _edit_finish(self, item):
+        super(CodeManifestTree, self)._edit_finish(item)
+        
+        if type(item) == int:
+            return
+        
+        name = str(item.text(self.title_text_index))
+        
+        if name.find('.'):
+            split_name = name.split('.')
+            name = split_name[0]
+        
+        if self.old_name.find('.'):
+            split_old_name = self.old_name.split('.')
+            old_name = split_old_name[0]
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+
+        print self.directory
+
+        file_name = process_tool.rename_code(old_name, name)
+        
+        print file_name
+        
+        item.setText(self.title_text_index, file_name)
+        
+        self.itemRenamed.emit(file_name)
     
     def _define_item(self):
         return ManifestItem()
             
         
-    def _add_item(self, filename):
+    def _add_item(self, filename, state):
+        item = super(CodeManifestTree,self)._add_item(filename)
         
+        if not state:
+            item.setCheckState(0, QtCore.Qt.Unchecked)
+        if state:
+            item.setCheckState(0, QtCore.Qt.Checked)
+        #item.widget.set_check_state(state)
+        
+        item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsDragEnabled)
+        
+        
+        """
         item = self._define_item()
         
         path = vtool.util_file.join_path(self.directory, filename)
@@ -283,14 +374,40 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             item.setText(2, date)
         
         self.addTopLevelItem(item)
+        """
+    
+    def _add_items(self, files):
+        
+        manifest_files, other_files = files
+        
+        for util_file in manifest_files:
+            self._add_item(util_file, True)
+            
+        for util_file in other_files:
+            self._add_item(util_file, False)
     
     def _get_files(self):
+        
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         
-        scripts = process_tool.get_manifest_scripts()
-
-        return scripts
+        #scripts = process_tool.get_manifest_scripts()
+        manifest_scripts = process_tool.get_manifest_scripts(True)
+        all_scripts = process_tool.get_code_files(True)
+        
+        found = []
+        
+        for script in all_scripts:
+            
+            if script == 'manifest.data':
+                continue
+                
+            
+            if not script in manifest_scripts:
+                found.append(script)
+                continue
+        
+        return [manifest_scripts, found]
 
     def _get_item_by_name(self, name):
         item_count = self.topLevelItemCount()
@@ -321,12 +438,29 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         script_name = vtool.util_file.get_basename(directory)
         
         item = self._get_item_by_name(script_name)
-        return item.widget.get_check_state()
+        
+        check_state = QtGui.QTreeWidgetItem.checkState(0)
+        
+        if check_state == QtCore.Qt.Unchecked:
+            return False
+        
+        if check_state == QtCore.Qt.Checked:
+            return True
+        
+        
 
 class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     
-    def _define_widget(self):
-        return ManifestItemWidget()
+    def __init__(self):
+        
+        super(ManifestItem, self).__init__()
+        
+        self.setSizeHint(0, QtCore.QSize(10, 30))
+        
+        self.setCheckState(0, QtCore.Qt.Unchecked)
+    
+    #def _define_widget(self):
+    #    return ManifestItemWidget()
     
     def set_text(self, text):
         self.setText(1, text)
@@ -338,6 +472,12 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     
     
 class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
+    
+    def __init__(self):
+        super(ManifestItemWidget, self).__init__()
+        
+        self.setSizePolicy(QtGui.QSizePolicy(10, 40))
+        
     
     def _radial_fill_icon(self, r,g,b):
         pixmap = QtGui.QPixmap(20, 20)
@@ -410,6 +550,13 @@ class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
             
     def get_check_state(self):
         return self.check_box.isChecked()
+    
+    def set_check_state(self, bool_value):
+        
+        if bool_value:
+            self.check_box.setCheckState(QtCore.Qt.Checked)
+        if not bool_value:
+            self.check_box.setCheckState(QtCore.Qt.Unchecked)
         
                 
 class CodeTree(vtool.qt_ui.FileTreeWidget):

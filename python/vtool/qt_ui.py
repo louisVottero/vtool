@@ -269,12 +269,22 @@ class TreeWidget(QtGui.QTreeWidget):
         if current_item:
             self._emit_item_click(current_item)        
             
-    def _item_changed(self, current_item, previous_item):  
+    def _item_changed(self, current_item, previous_item):
+          
         self._edit_finish(previous_item)                      
         
     def _item_activated(self, item):
-        if self.text_edit:
-            self._edit_start(item)
+        
+        if not self.edit_state:
+            
+            if self.text_edit:
+                self._edit_start(item)
+            return
+                
+        if self.edit_state:
+            self._edit_finish(self.edit_state)
+            
+            return
             
     def _item_expanded(self, item):
         self._add_sub_items(item) 
@@ -284,28 +294,46 @@ class TreeWidget(QtGui.QTreeWidget):
         
         self.old_name = str(item.text(self.title_text_index))
         
-        if self.edit_state:
-            self._edit_finish(self.edit_state)
-            return
-            
-        if self.edit_state == None:
-            self.openPersistentEditor(item, self.title_text_index)
-            self.edit_state = item
-            return
+        self.openPersistentEditor(item, self.title_text_index)
+        self.edit_state = item
+        return
         
     def _edit_finish(self, item):
+        
+        if self.edit_state == None:
+            return
+        
         self.edit_state = None
+        
+        self.closePersistentEditor(item, self.title_text_index)
         
         if type(item) == int:
             return self.current_item
         
-        self.closePersistentEditor(item, self.title_text_index)
-                
-        if self.old_name:
+        if not self._item_rename_valid(self.old_name, item):
+            
             item.setText(self.title_text_index, self.old_name )
-            return item    
+            
+            return item
+        
+        if self._item_rename_valid(self.old_name, item):
+            
+            self._item_renamed(item)
+            return item
         
         return item
+    
+    def _item_rename_valid(self, old_name, item):
+        
+        new_name = item.text(self.title_text_index)
+        
+        if old_name == new_name:
+            return False
+        if old_name != new_name:
+            return True
+    
+    def _item_renamed(self, item):
+        return
 
     def _delete_children(self, item):
         self.delete_tree_item_children(item)
@@ -432,7 +460,8 @@ class TreeWidgetItem(QtGui.QTreeWidgetItem):
     
     def __init__(self, parent = None):
         self.widget = self._define_widget()
-        self.widget.item = self
+        if self.widget:
+            self.widget.item = self
                 
         self.column = self._define_column()
         
@@ -504,6 +533,10 @@ class FileTreeWidget(TreeWidget):
     def _load_files(self, files):
         self.clear()
         
+        self._add_items(files)
+        
+    def _add_items(self, files):
+        
         for util_file in files:
             self._add_item(util_file)
 
@@ -565,6 +598,8 @@ class FileTreeWidget(TreeWidget):
             self.addTopLevelItem(item)
         if parent:
             parent.addChild(item)
+            
+        return item
         
     def _add_sub_items(self, item):
         self._delete_children(item)
@@ -575,8 +610,8 @@ class FileTreeWidget(TreeWidget):
         
         files = self._get_files(path)
         
-        for filename in files:                        
-            self._add_item(filename, item)
+        self._add_items(files)
+        
             
     def create_branch(self, name = None):
         

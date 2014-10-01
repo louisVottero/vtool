@@ -120,11 +120,13 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         super(ProcessTreeWidget, self)._item_selection_changed()
                
     def _edit_finish(self, item):
-
         item = super(ProcessTreeWidget, self)._edit_finish(item)
-        item.setExpanded(False)
+        if item:
+            self._item_renamed(item)
+            item.setExpanded(False)
         
     def _item_renamed(self, item):
+        
         path = self.get_item_path_string(item)
         state = item.rename(path)
         return state
