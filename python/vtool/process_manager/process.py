@@ -1,9 +1,9 @@
 import sys
 import traceback
 
-import util
-import util_file
-import data
+from vtool import util
+from vtool import util_file
+from vtool import data
 
 if util.is_in_maya():
     import maya.cmds as cmds
@@ -11,17 +11,17 @@ if util.is_in_maya():
 def find_processes(directory = None):
     
     if not directory:
-        directory = vtool.util_file.get_cwd()
+        directory = util_file.get_cwd()
     
-    files = vtool.util_file.get_folders(directory)
+    files = util_file.get_folders(directory)
     
     found = []
     
     for file_name in files:
         
-        full_path = vtool.util_file.join_path(directory, file_name)
+        full_path = util_file.join_path(directory, file_name)
         
-        if not vtool.util_file.is_dir(full_path):
+        if not util_file.is_dir(full_path):
             continue
         
         process = Process()
@@ -37,7 +37,7 @@ def find_processes(directory = None):
 def get_unused_process_name(directory = None):
     
     if not directory:
-        directory = vtool.util_file.get_cwd()
+        directory = util_file.get_cwd()
     
     processes = find_processes(directory)
     
@@ -73,7 +73,7 @@ class Process(object):
     
     def __init__(self, name = None):
         
-        self.directory = vtool.util_file.get_cwd()
+        self.directory = util_file.get_cwd()
         
         self.process_name = name
         self.parts = []
@@ -84,23 +84,23 @@ class Process(object):
             
     def _create_folder(self):
                 
-        if not vtool.util_file.is_dir(self.directory):
+        if not util_file.is_dir(self.directory):
             print '%s was not created.' %  self.process_name
             return
         
-        path = vtool.util_file.create_dir(self.process_name, self.directory)
+        path = util_file.create_dir(self.process_name, self.directory)
     
-        if path and vtool.util_file.is_dir(path):
+        if path and util_file.is_dir(path):
         
-            vtool.util_file.create_dir(self.data_folder_name, path)
-            vtool.util_file.create_dir(self.code_folder_name, path)
+            util_file.create_dir(self.data_folder_name, path)
+            util_file.create_dir(self.code_folder_name, path)
             
             code_files = self.get_code_files()
             
             found = False
             
             for code_file in code_files:
-                basename = vtool.util_file.get_basename(code_file)
+                basename = util_file.get_basename(code_file)
                 if basename == 'manifest.data':
                     found = True
                     break
@@ -112,12 +112,12 @@ class Process(object):
             
     def _get_path(self, name):
         
-        directory = vtool.util_file.join_path(self.get_path(), name)
+        directory = util_file.join_path(self.get_path(), name)
                 
         return directory
     
     def _center_view(self):
-        if vtool.util.is_in_maya():
+        if util.is_in_maya():
             try:
                 cmds.select(cl = True)
                 cmds.viewFit(an = True)
@@ -131,10 +131,10 @@ class Process(object):
         self.external_code_path = directory
         
     def is_process(self):
-        if not vtool.util_file.is_dir(self.get_code_path()):
+        if not util_file.is_dir(self.get_code_path()):
             return False
         
-        if not vtool.util_file.is_dir(self.get_data_path()):
+        if not util_file.is_dir(self.get_data_path()):
             return False
         
         return True
@@ -142,7 +142,7 @@ class Process(object):
     def get_path(self):
         
         if self.process_name:
-            return vtool.util_file.join_path(self.directory, self.process_name)
+            return util_file.join_path(self.directory, self.process_name)
         
         if not self.process_name:
             return self.directory
@@ -181,7 +181,7 @@ class Process(object):
         
         if not path:
             return False
-        if vtool.util_file.is_dir(path):
+        if util_file.is_dir(path):
             return True
         
         return False
@@ -193,10 +193,10 @@ class Process(object):
         folders = self.get_data_folders()
         for folder in folders:
             if folder == name:
-                return vtool.util_file.join_path(self.get_data_path(), name)
+                return util_file.join_path(self.get_data_path(), name)
             
     def get_data_type(self, name):
-        data_folder = vtool.data.DataFolder(name, self.get_data_path())
+        data_folder = data.DataFolder(name, self.get_data_path())
         data_type = data_folder.get_data_type()
         
         return data_type
@@ -205,16 +205,16 @@ class Process(object):
         
         directory = self.get_data_path()
         
-        return vtool.util_file.get_folders(directory)      
+        return util_file.get_folders(directory)      
      
     def create_data(self, name, data_type):
         path = self.get_data_path()
         
-        test_path = vtool.util_file.join_path(path, name)
-        test_path = vtool.util_file.inc_path_name(test_path)
-        name = vtool.util_file.get_basename(test_path)
+        test_path = util_file.join_path(path, name)
+        test_path = util_file.inc_path_name(test_path)
+        name = util_file.get_basename(test_path)
         
-        data_folder = vtool.data.DataFolder(name, path)
+        data_folder = data.DataFolder(name, path)
         data_folder.set_data_type(data_type)
         
         return data_folder.folder_path
@@ -223,7 +223,7 @@ class Process(object):
         
         path = self.get_data_path()
         
-        data_folder = vtool.data.DataFolder(name, path)
+        data_folder = data.DataFolder(name, path)
         
         instance = data_folder.get_folder_data_instance()
         
@@ -233,7 +233,7 @@ class Process(object):
     def save_data(self, name):
         path = self.get_data_path()
         
-        data_folder = vtool.data.DataFolder(name, path)
+        data_folder = data.DataFolder(name, path)
         
         instance = data_folder.get_folder_data_instance()
         
@@ -241,11 +241,11 @@ class Process(object):
             instance.save()
     
     def rename_data(self, old_name, new_name):
-        data_folder = vtool.data.DataFolder(old_name, self.get_data_path())
+        data_folder = data.DataFolder(old_name, self.get_data_path())
         return data_folder.rename(new_name)
     
     def delete_data(self, name):
-        data_folder = vtool.data.DataFolder(name, self.get_data_path())
+        data_folder = data.DataFolder(name, self.get_data_path())
         
         
     
@@ -259,33 +259,33 @@ class Process(object):
         folders = self.get_code_folders()
         for folder in folders:
             if folder == name:
-                return vtool.util_file.join_path(self.get_code_path(), name)
+                return util_file.join_path(self.get_code_path(), name)
 
     def get_code_folders(self):
         directory = self.get_code_path()
         
-        return vtool.util_file.get_folders(directory)  
+        return util_file.get_folders(directory)  
 
     def get_code_type(self, name):
     
         folder = self.get_code_path(name)
         
-        file = vtool.util_file.join_path(folder, '.type')
+        file = util_file.join_path(folder, '.type')
         
-        lines = vtool.util_file.get_file_lines(file)
+        lines = util_file.get_file_lines(file)
         
         return lines[0]
     
     def get_code_files(self, basename = False):
         directory = self.get_code_path()
         
-        folders = vtool.util_file.get_folders(directory)
+        folders = util_file.get_folders(directory)
         
         files = []
         
         for folder in folders:
             
-            data_folder = vtool.data.DataFolder(folder, directory)
+            data_folder = data.DataFolder(folder, directory)
             
             data_instance = data_folder.get_folder_data_instance()
             
@@ -296,7 +296,7 @@ class Process(object):
                 if not basename:
                     files.append(file_path)
                 if basename:
-                    files.append(vtool.util_file.get_basename(file_path))
+                    files.append(util_file.get_basename(file_path))
 
         return files
         
@@ -304,13 +304,13 @@ class Process(object):
         path = self.get_code_path()
         
         if inc_name:
-            test_path = vtool.util_file.join_path(path, name)
+            test_path = util_file.join_path(path, name)
             
-            if vtool.util_file.is_dir(test_path):
-                test_path = vtool.util_file.inc_path_name(test_path)
-                name = vtool.util_file.get_basename(test_path)
+            if util_file.is_dir(test_path):
+                test_path = util_file.inc_path_name(test_path)
+                name = util_file.get_basename(test_path)
         
-        data_folder = vtool.data.DataFolder(name, path)
+        data_folder = data.DataFolder(name, path)
         data_folder.set_data_type(data_type)
         
         
@@ -325,7 +325,7 @@ class Process(object):
         return filename 
         
     def rename_code(self, old_name, new_name):
-        code_folder = vtool.data.DataFolder(old_name, self.get_code_path())
+        code_folder = data.DataFolder(old_name, self.get_code_path())
         instance = code_folder.get_folder_data_instance()
         
         file_name = instance.rename(new_name)
@@ -338,13 +338,13 @@ class Process(object):
     def get_manifest_folder(self):
         
         code_path = self.get_code_path()
-        return vtool.util_file.join_path(code_path, 'manifest')
+        return util_file.join_path(code_path, 'manifest')
         
     def get_manifest_file(self):
         
         manifest_path = self.get_manifest_folder()
         
-        return vtool.util_file.join_path(manifest_path, self.process_data_filename)
+        return util_file.join_path(manifest_path, self.process_data_filename)
         
 
     def get_manifest_scripts(self, basename = True):
@@ -354,10 +354,10 @@ class Process(object):
         if not manifest_file:
             return
         
-        if not vtool.util_file.is_file(manifest_file):
+        if not util_file.is_file(manifest_file):
             return
         
-        read = vtool.util_file.ReadFile(manifest_file)
+        read = util_file.ReadFile(manifest_file)
         lines = read.read()
         
         code_files = self.get_code_files()
@@ -367,7 +367,7 @@ class Process(object):
         for line in lines:
                             
             for code_file in code_files:
-                name = vtool.util_file.get_basename(code_file)
+                name = util_file.get_basename(code_file)
                 
                 if line == name:
                     
@@ -389,7 +389,7 @@ class Process(object):
     def add_part(self, name):
         part_process = Process(name)
         
-        path = vtool.util_file.join_path(self.directory, self.process_name)
+        path = util_file.join_path(self.directory, self.process_name)
         
         part_process.set_directory(path)
         part_process.create()
@@ -398,7 +398,7 @@ class Process(object):
         return self._create_folder()
         
     def delete(self):
-        vtool.util_file.delete_dir(self.process_name, self.directory)
+        util_file.delete_dir(self.process_name, self.directory)
         
     
         
@@ -406,7 +406,7 @@ class Process(object):
         
         split_name = new_name.split('/')
         
-        if vtool.util_file.rename( self.get_path(), split_name[-1]):
+        if util_file.rename( self.get_path(), split_name[-1]):
             self._set_name(new_name)
             return True
             
@@ -414,13 +414,13 @@ class Process(object):
     
     def run_script(self, script):
         self._center_view()
-        name = vtool.util_file.get_basename(script)
-        path = vtool.util_file.get_parent_path(script)
+        name = util_file.get_basename(script)
+        path = util_file.get_parent_path(script)
         
         if not self.external_code_path in sys.path:
             sys.path.append(self.external_code_path)
             
-        module = vtool.util_file.load_python_module(name, path)
+        module = util_file.load_python_module(name, path)
         
         print 'Running script: %s' % script
         
@@ -448,7 +448,7 @@ class Process(object):
                
     def run(self):
            
-        if vtool.util.is_in_maya():
+        if util.is_in_maya():
             cmds.file(new = True, f = True)
  
         scripts = self.get_manifest_scripts(False)
@@ -459,10 +459,10 @@ class Process(object):
                 
             
 def get_default_directory():
-    if vtool.util.is_in_maya():
-        return vtool.util_file.join_path(vtool.util_file.get_user_dir(), 'process_manager')
-    if not vtool.util.is_in_maya():
-        return vtool.util_file.join_path(vtool.util_file.get_user_dir(), 'documents/process_manager')
+    if util.is_in_maya():
+        return util_file.join_path(util_file.get_user_dir(), 'process_manager')
+    if not util.is_in_maya():
+        return util_file.join_path(util_file.get_user_dir(), 'documents/process_manager')
     
 def copy_process_data(source_process, target_process, data_name, replace = False):
     
@@ -482,24 +482,24 @@ def copy_process_data(source_process, target_process, data_name, replace = False
         data_folder_path = target_process.create_data(data_name, data_type)
         
         path = source_process.get_data_path()
-        data_folder = vtool.data.DataFolder(data_name, path)
+        data_folder = data.DataFolder(data_name, path)
     
         instance = data_folder.get_folder_data_instance()
     
         filepath = instance.get_file()
         
-        basename = vtool.util_file.get_basename(filepath)
+        basename = util_file.get_basename(filepath)
         
-        destination_directory = vtool.util_file.join_path(data_folder_path, basename)
+        destination_directory = util_file.join_path(data_folder_path, basename)
         
-        if vtool.util_file.is_file(filepath):
-            copied_path = vtool.util_file.copy_file(filepath, destination_directory)
-        if vtool.util_file.is_dir(filepath):
-            copied_path = vtool.util_file.copy_dir(filepath, destination_directory)
+        if util_file.is_file(filepath):
+            copied_path = util_file.copy_file(filepath, destination_directory)
+        if util_file.is_dir(filepath):
+            copied_path = util_file.copy_dir(filepath, destination_directory)
             
         print copied_path
             
-        version = vtool.util_file.VersionFile(copied_path)
+        version = util_file.VersionFile(copied_path)
         version.save('Copied from %s' % filepath)
               
             
