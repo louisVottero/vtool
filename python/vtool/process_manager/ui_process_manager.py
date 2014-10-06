@@ -62,6 +62,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.item_clicked.connect(self._update_process)
         
         self.data_widget = ui_data.DataProcessWidget()
+        
+        
         self.code_widget = ui_code.CodeProcessWidget()
         self.settings_widget = ui_settings.SettingsWidget()
         self.settings_widget.project_directory_changed.connect(self.set_project_directory)
@@ -122,6 +124,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             if item and self.tab_widget.currentIndex() == 3:
                 self.code_widget.set_directory(self.process.get_path())
+                self.code_widget.refresh()
         
     def _update_process(self, name, item):
         
@@ -142,7 +145,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
             self.tab_widget.setTabEnabled(2, False)
             self.tab_widget.setTabEnabled(3, False)
-                    
+                                
     def _get_current_path(self):
         item = self.view_widget.tree_widget.currentItem()
         
@@ -158,33 +161,37 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.tab_widget.setCurrentIndex(3)
         
-        scripts = self.process.get_manifest_scripts(False)
-        
-        if not scripts:
-            self.process_button.setEnabled(True)
-            return
-        
         code_directory = self.settings.get('code_directory')
         self.process.set_external_code_library(code_directory)
         
         if util.is_in_maya():
             import maya.cmds as cmds
             cmds.file(new = True, f = True)
+        
+        scripts, states = self.process.get_manifest()
+        scripts = self.process.get_manifest_scripts(False)
+        
+        if not scripts:
+            self.process_button.setEnabled(True)
+            return
+        
+        script_count = len(scripts)
+        
+        for inc in range(0, script_count):
             
-        for script in scripts:
+            state = states[inc]
             
-            check_state = self.code_widget.get_process_script_check_state(script)
-            if not check_state:
-                self.code_widget.set_process_script_state(script, -1)
+            if not state:
+                self.code_widget.set_process_script_state(scripts[inc], -1)
                 continue
             
-            status = self.process.run_script(script)
+            status = self.process.run_script(scripts[inc])
             
             if not status == 'Success':
-                self.code_widget.set_process_script_state(script, 0)
+                self.code_widget.set_process_script_state(scripts[inc], 0)
             
             if status == 'Success':
-                self.code_widget.set_process_script_state(script, 1)
+                self.code_widget.set_process_script_state(scripts[inc], 1)
             
         self.process_button.setEnabled(True)
                     

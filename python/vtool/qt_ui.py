@@ -1573,8 +1573,8 @@ class TimelineWidget(QtGui.QWidget):
         self.values = value_list
         
 def get_comment(parent = None,text_message = 'add comment'):
-    commentDialog = QtGui.QInputDialog(parent)
-    commentDialog.setTextValue('comment')            
+    #commentDialog = QtGui.QInputDialog(parent)
+    #commentDialog.setTextValue('comment')  
     comment, ok = QtGui.QInputDialog.getText(parent, 'util_file save',text_message)
     
     comment = comment.replace('\\', '_')
@@ -1610,4 +1610,11 @@ def critical(message, parent = None):
     
     message_box.critical(parent, 'Critical Error', message)
 
+def get_pick(list, text_message, parent = None):
     
+    input_dialog = QtGui.QInputDialog(parent)
+    input_dialog.setComboBoxItems(list)
+    picked, ok = QtGui.QInputDialog.getItem(parent, 'Pick One', text_message, list)
+    
+    if ok:
+        return picked

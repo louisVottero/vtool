@@ -4,6 +4,7 @@ import traceback
 from vtool import util
 from vtool import util_file
 from vtool import data
+#from setup import SCRIPTS
 
 if util.is_in_maya():
     import maya.cmds as cmds
@@ -217,6 +218,14 @@ class Process(object):
         data_folder = data.DataFolder(name, path)
         data_folder.set_data_type(data_type)
         
+        """
+        code_name = 'import_%s' % name
+        
+        filepath = self.create_code(code_name, import_data = name)
+        self.set_manifest(['%s.py' % code_name], append = True)
+        """
+        
+        
         return data_folder.folder_path
     
     def import_data(self, name):
@@ -270,9 +279,9 @@ class Process(object):
     
         folder = self.get_code_path(name)
         
-        file = util_file.join_path(folder, '.type')
+        filename = util_file.join_path(folder, '.type')
         
-        lines = util_file.get_file_lines(file)
+        lines = util_file.get_file_lines(filename)
         
         return lines[0]
     
@@ -300,7 +309,9 @@ class Process(object):
 
         return files
         
-    def create_code(self, name, data_type, inc_name = False):
+    def create_code(self, name, data_type = 'script.python', inc_name = False, import_data = None):
+        
+        
         path = self.get_code_path()
         
         if inc_name:
@@ -316,17 +327,21 @@ class Process(object):
         
         data_instance = data_folder.get_folder_data_instance()
         if not name == 'manifest':
-            data_instance.set_lines(['process = None','','def main():','    return'])
+            if import_data:
+                data_instance.set_lines(['process = None','','def main():',"    process.import_data('%s')" % import_data])
+            if not import_data:
+                data_instance.set_lines(['process = None','','def main():','    return'])
         data_instance.create()
         
         filename = data_instance.get_file()
+        
+        self.set_manifest(['%s.py' % name], append = True)
         
         
         return filename 
         
     def rename_code(self, old_name, new_name):
         
-        print 'renaming code', old_name, new_name
         code_folder = data.DataFolder(old_name, self.get_code_path())
         instance = code_folder.get_folder_data_instance()
         
@@ -334,6 +349,11 @@ class Process(object):
         code_folder.rename(new_name)
         
         return file_name
+        
+    def delete_code(self, name):
+        
+        util_file.delete_dir(name, self.get_code_path())
+        
         
     #--- manifest
         
@@ -359,29 +379,76 @@ class Process(object):
         if not util_file.is_file(manifest_file):
             return
         
-        read = util_file.ReadFile(manifest_file)
-        lines = read.read()
+        files = self.get_code_files(False)
         
-        code_files = self.get_code_files()
+        scripts, states = self.get_manifest()
         
-        found = []
+        if basename:
+            return scripts
+        
+        if not basename:
+            
+            found = []
+            
+            for script in scripts:
+                
+                
+                
+                for filename in files:
+                    
+                    if filename.endswith(script):
+                        
+                        found.append(filename)
+                        break
+            
+            return found
+    
+    def set_manifest(self, scripts, states = [], append = False):
+        
+        manifest_file = self.get_manifest_file()
+        
+        lines = []
+        
+        script_count = len(scripts)
+        state_count = len(states)
+        
+        for inc in range(0, script_count):
+            
+            if inc > state_count-1:
+                state = False
+                
+            if inc < state_count-1:
+                state = states[inc]
+            
+            line = '%s %s' % (scripts[inc], state)
+            lines.append(line)
+                        
+        util_file.write_lines(manifest_file, lines, append = append)
+        
+    
+        
+    def get_manifest(self):
+        
+        manifest_file = self.get_manifest_file()
+        
+        lines = util_file.get_file_lines(manifest_file)
+        
+        scripts = []
+        states = []
         
         for line in lines:
-                            
-            for code_file in code_files:
-                name = util_file.get_basename(code_file)
+            split_line = line.split()
+            if len(split_line):
+                scripts.append(split_line[0])
                 
-                if line == name:
-                    
-                    if basename == True:
-                        found.append(name)
-                    
-                    if basename == False:
-                        found.append(code_file)
-                        
-                    break
+            if len(split_line) == 2:
+                states.append(eval(split_line[1]))
+                
+            if len(split_line) == 1:
+                states.append(False)
+                
+        return scripts, states
         
-        return found
     
     #--- run
     
@@ -498,9 +565,7 @@ def copy_process_data(source_process, target_process, data_name, replace = False
             copied_path = util_file.copy_file(filepath, destination_directory)
         if util_file.is_dir(filepath):
             copied_path = util_file.copy_dir(filepath, destination_directory)
-            
-        print copied_path
-            
+          
         version = util_file.VersionFile(copied_path)
         version.save('Copied from %s' % filepath)
               

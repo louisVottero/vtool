@@ -610,6 +610,7 @@ def get_file_lines(filepath):
     
     return read.read()
 
+
 def get_text_lines(text):
     
     text = text.replace('\r', '')

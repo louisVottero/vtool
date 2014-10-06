@@ -9,6 +9,9 @@ if vtool.qt_ui.is_pyside():
     from PySide import QtCore, QtGui
 
 class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
+    
+    data_created = vtool.qt_ui.create_signal(object)
+    
     def __init__(self):
         
         self.data_widget = None
@@ -45,21 +48,19 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.main_layout.addWidget(self.label, alignment = QtCore.Qt.AlignCenter)
         self.main_layout.addWidget(self.file_widget)
         
-    def _refresh_data(self):
+    def _refresh_data(self, data_name):
         self.data_widget._load_data()
+        
+        self.data_created.emit(data_name)
         
     def _data_item_selection_changed(self):
         
         item = self.data_widget.currentItem()
         items = self.data_widget.selectedItems()
         
-        print 'items', items
-        
         if items:
             item = items[0]
-
-        print item
-
+            
         if item:
             
             process_tool = process.Process()
@@ -181,7 +182,7 @@ class DataItemWidget(vtool.qt_ui.TreeItemWidget):
         
 class DataTypeWidget(QtGui.QWidget):
     
-    data_added = vtool.qt_ui.create_signal()
+    data_added = vtool.qt_ui.create_signal(object)
         
     def __init__(self):
         super(DataTypeWidget, self).__init__()
@@ -232,7 +233,7 @@ class DataTypeWidget(QtGui.QWidget):
         process_tool.set_directory(self.directory)
         process_tool.create_data(data_name, data_type)
         
-        self.data_added.emit()
+        self.data_added.emit(data_name)
         
     def set_directory(self, filepath):
         self.directory = filepath
