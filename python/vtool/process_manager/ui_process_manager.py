@@ -33,6 +33,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         super(ProcessManagerWindow, self).__init__(parent) 
         
+        
+        
         self._set_default_directory()
         self._setup_settings_file()
         
@@ -42,6 +44,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._set_default_project_directory(project_directory)
         if code_directory:
             self.set_code_directory(code_directory)
+        
+    def sizeHint(self):
+        
+        return QtCore.QSize(400,800)
         
     def _setup_settings_file(self):
         

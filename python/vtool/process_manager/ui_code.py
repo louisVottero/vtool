@@ -342,6 +342,18 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.dragged_item = None
         self.handle_selection_change = True
         
+    
+    
+    
+    def mouseDoubleClickEvent(self, event):
+        
+        item = self.itemAt(event.pos())
+        
+        self.itemActivated.emit(item, 0)
+        
+        super(CodeManifestTree, self).mouseDoubleClickEvent(event)
+    
+    
     def dragMoveEvent(self, event):
         super(CodeManifestTree, self).dragMoveEvent(event)
         
@@ -373,10 +385,19 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     def _edit_finish(self, item):
         super(CodeManifestTree, self)._edit_finish(item)
         
+        print 'finishing edit', item
+        
         if type(item) == int:
+            
             return
         
         name = str(item.text(self.title_text_index))
+        
+        print 'name', name
+        
+        if name == 'manifest':
+            item.setText(self.title_text_index, self.old_name)
+            return
         
         if name.find('.'):
             split_name = name.split('.')
@@ -407,6 +428,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             item.setCheckState(0, QtCore.Qt.Checked)
         
         item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsUserCheckable)
+        
         item.tree = self
         
         return item

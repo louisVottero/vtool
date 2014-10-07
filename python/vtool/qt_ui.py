@@ -275,6 +275,8 @@ class TreeWidget(QtGui.QTreeWidget):
         
     def _item_activated(self, item):
         
+        print 'item activated'
+        
         if not self.edit_state:
             
             if self.text_edit:
@@ -292,15 +294,20 @@ class TreeWidget(QtGui.QTreeWidget):
         
     def _edit_start(self, item):
         
+        print 'edit start'
+        
         self.old_name = str(item.text(self.title_text_index))
         
         self.openPersistentEditor(item, self.title_text_index)
         self.edit_state = item
+        print 'setting edit state', item
         return
         
     def _edit_finish(self, item):
+        print 'edit finish'
         
         if self.edit_state == None:
+            print 'no edit state'
             return
         
         self.edit_state = None
