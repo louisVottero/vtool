@@ -9,10 +9,17 @@ if qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
 if qt_ui.is_pyside():
     from PySide import QtCore, QtGui
+        
+        
  
 class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
     description = 'Process'
+               
+    def __init__(self):
+        super(ViewProcessWidget, self).__init__()
+        
+        #self.setMaximumHeight(300)
                
     def _define_tree_widget(self):
         return ProcessTreeWidget()
@@ -41,36 +48,43 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.directory = None
     
     def _define_main_layout(self):
-        return QtGui.QHBoxLayout()
+        return QtGui.QVBoxLayout()
     
     def _build_widgets(self):
+        
+        button_layout = QtGui.QHBoxLayout()
                         
         add_branch = QtGui.QPushButton('Add')
         add_branch.clicked.connect(self._add_branch)
         
         self.copy_button = QtGui.QPushButton('Copy')
         self.copy_button.clicked.connect(self._copy)
-                
+
+        button_layout.addWidget(add_branch)
+        button_layout.addWidget(self.copy_button)
+          
         self.copy_widget = CopyWidget()
         self.copy_widget.hide()
         
         self.copy_widget.pasted.connect(self._copy_done)
         self.copy_widget.canceled.connect(self._copy_done)
-            
-        self.main_layout.addWidget(add_branch)
-        self.main_layout.addWidget(self.copy_button)
+                    
+        self.main_layout.addLayout(button_layout)
         self.main_layout.addWidget(self.copy_widget)
     
     def _add_branch(self):
         self.tree_widget.add_process('')
       
     def _copy(self):
-            
-        if self.copy_widget.isHidden():
-            self.copy_widget.show()
         
         current_process = self.get_current_process()
         
+        if not current_process:
+            return
+            
+        if self.copy_widget.isHidden():
+            self.copy_widget.show()
+            
         if not current_process:
             return
         
@@ -78,7 +92,11 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.copy_widget.set_process(current_process, self.directory)
         
         self.copy_button.setDisabled(True)
-        self.setFocus()      
+        self.setFocus()  
+        
+        items = self.tree_widget.selectedItems()
+        
+        self.tree_widget.scrollToItem(items[0])
         
     def _copy_done(self):
         self.copy_widget.hide()
@@ -98,9 +116,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         super(ProcessTreeWidget, self).__init__()
                 
         self.setColumnWidth(0, 250)
-                
-        #self.setDragEnabled(True)
-        #self.setAcceptDrops(True)
+        
         self.setTabKeyNavigation(True)
         
         
@@ -420,6 +436,10 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.data_list = QtGui.QListWidget()
         self.code_list = QtGui.QListWidget()
+        
+        self.data_list.setMaximumHeight(300)
+        self.code_list.setMaximumHeight(300)
+        
         self.data_list.setSortingEnabled(True)
         self.data_list.setSelectionMode(self.data_list.ExtendedSelection)
         self.code_list.setSortingEnabled(True)
@@ -467,14 +487,45 @@ class CopyWidget(qt_ui.BasicWidget):
             
     def _paste(self):
         
-        items = self.data_list.selectedItems()
+        self._paste_data()
         
+        self._paste_code()
         
+    def _paste_data(self):
         
-        for item in items:
+        data_items = self.data_list.selectedItems()
+        
+        if not data_items:
+            return
+        
+        for item in data_items:
+            name = item.text()
+            process.copy_process_data( self.process, self.other_process, name)
             
-            print 'pasting items', item.text()
-            process.copy_process_data( self.process, self.other_process, item.text())
+    def _paste_code(self):
+        
+        code_items = self.code_list.selectedItems()
+    
+        if not code_items:
+            return
+    
+        found = []
+        
+        manifest = ''
+    
+        for item in code_items:
+            name = item.text()
+            
+            if name == 'manifest':
+                manifest = name
+                
+            if not name == 'manifest':
+                found.append(name)
+                
+        found.append(manifest)
+        
+        for name in found:
+            process.copy_process_code( self.process, self.other_process, name)
     
     def set_process(self, process_name, process_directory):
         process_inst = process.Process(process_name)

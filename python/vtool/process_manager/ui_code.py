@@ -127,6 +127,10 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.code_edit.setWordWrapMode(QtGui.QTextOption.NoWrap)
         
         self.save_file = ui_data.ScriptFileWidget()
+        
+        
+        
+        
         self.save_file.set_text_widget(self.code_edit)
         
         self.code_edit.save.connect( self._code_saved )
@@ -199,7 +203,6 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     def _build_widgets(self):
         
         self.code_manifest_tree = CodeManifestTree()
-        self.code_tree = CodeTree()
         
         buttons_layout = QtGui.QHBoxLayout()
         
@@ -306,7 +309,6 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         if self.directory == self.last_directory:
             return
         
-        self.code_tree.set_directory(directory)
         self.code_manifest_tree.set_directory(directory)
         
     def reset_process_script_state(self):
@@ -332,12 +334,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         
         self.setIndentation(False)
-        
-        #palette = self.palette()
-        
-        #palette.setColor(palette.Background, QtGui.QColor(75,75,75))
-        
-        #self.setPalette(palette)
         
         self.setDragDropMode(self.InternalMove)
         self.setDefaultDropAction(QtCore.Qt.MoveAction)
@@ -610,6 +606,8 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     
 class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
     
+    # no longer in use.
+    
     def __init__(self):
         super(ManifestItemWidget, self).__init__()
         
@@ -696,45 +694,4 @@ class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
         if not bool_value:
             self.check_box.setCheckState(QtCore.Qt.Unchecked)
         
-                
-class CodeTree(vtool.qt_ui.FileTreeWidget):
-    
-    itemRenamed = vtool.qt_ui.create_signal(object)
-    
-    def _define_header(self):
-        return ['scripts']
-        
-    def _edit_finish(self, item):
-        super(CodeTree, self)._edit_finish(item)
-        
-        if type(item) == int:
-            return
-        
-        name = str(item.text(0))
-        
-        if name.find('.'):
-            split_name = name.split('.')
-            name = split_name[0]
-        
-        if self.old_name.find('.'):
-            split_old_name = self.old_name.split('.')
-            old_name = split_old_name[0]
-        
-        process_tool = process.Process()
-        process_tool.set_directory(self.directory)
-
-        file_name = process_tool.rename_code(old_name, name)
-        
-        item.setText(0, file_name)
-        
-        self.itemRenamed.emit(file_name)
-        
-    def _get_files(self):
-        
-        process_tool = process.Process()
-        process_tool.set_directory(self.directory)
-        
-        scripts = process_tool.get_code_files(basename = True)
-        
-        return scripts
     

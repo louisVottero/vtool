@@ -78,6 +78,7 @@ class Process(object):
         
         self.process_name = name
         self.parts = []
+        self.external_code_path = None
         
     def _set_name(self, new_name):
         
@@ -102,11 +103,13 @@ class Process(object):
             
             for code_file in code_files:
                 basename = util_file.get_basename(code_file)
-                if basename == 'manifest.data':
+                if basename == self.process_data_filename:
                     found = True
                     break
             
+            
             if not found:
+                print 'creating manifest'
                 self.create_code('manifest', 'script.manifest')        
         
         return path
@@ -260,6 +263,17 @@ class Process(object):
     
     #code ---
     
+    def is_code_folder(self, name):
+        
+        path = self.get_code_folder(name)
+        
+        if not path:
+            return False
+        if util_file.is_dir(path):
+            return True
+        
+        return False
+    
     def get_code_path(self):
         return self._get_path(self.code_folder_name)
     
@@ -277,13 +291,9 @@ class Process(object):
 
     def get_code_type(self, name):
     
-        folder = self.get_code_path(name)
-        
-        filename = util_file.join_path(folder, '.type')
-        
-        lines = util_file.get_file_lines(filename)
-        
-        return lines[0]
+        data_folder = data.DataFolder(name, self.get_code_path())
+        data_type = data_folder.get_data_type()
+        return data_type
     
     def get_code_files(self, basename = False):
         directory = self.get_code_path()
@@ -331,22 +341,31 @@ class Process(object):
                 test_path = util_file.inc_path_name(test_path)
                 name = util_file.get_basename(test_path)
         
+        
+        
         data_folder = data.DataFolder(name, path)
         data_folder.set_data_type(data_type)
         
         
         data_instance = data_folder.get_folder_data_instance()
-        if not name == 'manifest':
-            if import_data:
-                data_instance.set_lines(['process = None','','def main():',"    process.import_data('%s')" % import_data])
-            if not import_data:
-                data_instance.set_lines(['process = None','','def main():','    return'])
+        
+        if name == 'manifest':
+            data_instance.create()
+            return
+    
+        if import_data:
+            data_instance.set_lines(['process = None','','def main():',"    process.import_data('%s')" % import_data])
+        if not import_data:
+            data_instance.set_lines(['process = None','','def main():','    return'])
+    
         data_instance.create()
-        
+    
         filename = data_instance.get_file()
-        
+    
+    
+    
         self.set_manifest(['%s.py' % name], append = True)
-        
+    
         
         return filename 
         
@@ -427,6 +446,9 @@ class Process(object):
         
         for inc in range(0, script_count):
             
+            if scripts[inc] == 'manifest.py':
+                continue
+            
             if inc > state_count-1:
                 state = False
                 
@@ -445,6 +467,9 @@ class Process(object):
         manifest_file = self.get_manifest_file()
         
         lines = util_file.get_file_lines(manifest_file)
+        
+        if not lines:
+            return
         
         scripts = []
         states = []
@@ -499,9 +524,9 @@ class Process(object):
         name = util_file.get_basename(script)
         path = util_file.get_parent_path(script)
         
-        
-        if not self.external_code_path in sys.path:
-            sys.path.append(self.external_code_path)
+        if self.external_code_path:
+            if not self.external_code_path in sys.path:
+                sys.path.append(self.external_code_path)
             
         module = util_file.load_python_module(name, path)
         
@@ -545,8 +570,13 @@ def get_default_directory():
 def copy_process_data(source_process, target_process, data_name, replace = False):
     
     data_type = source_process.get_data_type(data_name)
-        
+    
+    data_folder_path = None
+      
     if target_process.is_data_folder(data_name):
+        
+        data_folder_path = target_process.get_data_folder(data_name)
+        
         other_data_type = target_process.get_data_type(data_name)
         
         if data_type != other_data_type:
@@ -559,25 +589,70 @@ def copy_process_data(source_process, target_process, data_name, replace = False
     if not target_process.is_data_folder(data_name):
         data_folder_path = target_process.create_data(data_name, data_type)
         
-        path = source_process.get_data_path()
-        data_folder = data.DataFolder(data_name, path)
+    path = source_process.get_data_path()
+    data_folder = data.DataFolder(data_name, path)
+
+    instance = data_folder.get_folder_data_instance()
+    if not instance:
+        return
+
+    filepath = instance.get_file()
     
-        instance = data_folder.get_folder_data_instance()
+    basename = util_file.get_basename(filepath)
     
-        filepath = instance.get_file()
-        
-        basename = util_file.get_basename(filepath)
-        
-        destination_directory = util_file.join_path(data_folder_path, basename)
-        
-        if util_file.is_file(filepath):
-            copied_path = util_file.copy_file(filepath, destination_directory)
-        if util_file.is_dir(filepath):
-            copied_path = util_file.copy_dir(filepath, destination_directory)
-          
-        version = util_file.VersionFile(copied_path)
-        version.save('Copied from %s' % filepath)
+    destination_directory = util_file.join_path(data_folder_path, basename)
+    
+    if util_file.is_file(filepath):
+        copied_path = util_file.copy_file(filepath, destination_directory)
+    if util_file.is_dir(filepath):
+        copied_path = util_file.copy_dir(filepath, destination_directory)
+      
+    version = util_file.VersionFile(copied_path)
+    version.save('Copied from %s' % filepath)
               
             
-def copy_process_code(source_process, target_process, code_name):
-    pass
+def copy_process_code(source_process, target_process, code_name, replace = False):
+    
+    data_type = source_process.get_code_type(code_name)
+    
+    code_folder_path = None
+    
+    if target_process.is_code_folder(code_name):
+        
+        code_folder_path = target_process.get_code_folder(code_name)
+        code_file = util_file.get_basename( target_process.get_code_file(code_name) )
+        
+        code_folder_path = util_file.join_path(code_folder_path, code_file)
+        
+        other_data_type = target_process.get_code_type(code_name)
+        
+        if data_type != other_data_type:
+            if replace:
+                target_process.delete_code(code_name)
+                
+                copy_process_code(source_process, target_process, code_name)
+                            
+                return
+    
+    if not target_process.is_code_folder(code_name):
+        code_folder_path = target_process.create_code(code_name, data_type)
+    
+    
+    path = source_process.get_code_path()
+    data_folder = data.DataFolder(code_name, path)
+    
+    instance = data_folder.get_folder_data_instance()
+    if not instance:
+        return
+    
+    filepath = instance.get_file()
+    
+    destination_directory = code_folder_path
+    
+    if util_file.is_file(filepath):
+        copied_path = util_file.copy_file(filepath, destination_directory)
+    if util_file.is_dir(filepath):
+        copied_path = util_file.copy_dir(filepath, destination_directory)
+      
+    version = util_file.VersionFile(copied_path)
+    version.save('Copied from %s' % filepath)

@@ -409,9 +409,21 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
 class ScriptHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
     
     def _open_version(self):
-        version_file = super(ScriptHistoryFileWidget,self)._open_version()
+        
+        item = self.version_list.currentItem()
+        
+        version = int(item.text(0))
+        
+        version_tool = vtool.util_file.VersionFile(self.directory)
+        version_file = version_tool.get_version_path(version)
+        
+        
+        
+        print 'opening script', version_file
         
         in_file = QtCore.QFile(version_file)
+        
+        
         
         if in_file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text):
             text = in_file.readAll()

@@ -695,7 +695,11 @@ class EditFileTreeWidget(DirectoryWidget):
         
         self.tree_widget = None
         
-        super(EditFileTreeWidget, self).__init__(parent) 
+        
+        
+        super(EditFileTreeWidget, self).__init__(parent)
+        
+        self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum) 
         
     def _define_tree_widget(self):
         return FileTreeWidget()
@@ -723,6 +727,8 @@ class EditFileTreeWidget(DirectoryWidget):
         
         self.main_layout.addWidget(self.tree_widget)
         self.main_layout.addWidget(self.filter_widget)
+               
+        
         self.main_layout.addWidget(self.manager_widget)
         
     def _item_clicked(self, name, item):

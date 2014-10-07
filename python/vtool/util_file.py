@@ -182,6 +182,7 @@ class WriteFile(FileManager):
 class VersionFile(object):
     def __init__(self, filepath):
         self.filepath = filepath
+                
         self.file = get_basename(self.filepath)
         self.path = get_dirname(filepath)
         

@@ -89,9 +89,7 @@ class DataFolder(util_file.FileManager):
                 
     def get_data_type(self):
         return self.settings.get('data_type')
-        
     
-        
     def set_data_type(self, data_type):
 
         self.data_type = data_type
@@ -978,8 +976,6 @@ class MayaAttributeData(MayaCustomData):
 
     def export_data(self, comment):
         
-        print 'exporting data!!!!!!!!!!!!!!!!!!!!!!!!!!'
-
         path = util_file.join_path(self.directory, self.name)
         
         if not util_file.is_dir(path):
@@ -989,15 +985,11 @@ class MayaAttributeData(MayaCustomData):
         
         for thing in selection:
             
-            print thing
-            
             filename = util_file.create_file('%s.data' % thing, path)
 
             lines = []
             
             attributes = cmds.listAttr(thing, scalar = True, m = True)
-            
-            print 'found attributes', attributes
             
             for attribute in attributes:
                 attribute_name = '%s.%s' % (thing, attribute)
@@ -1016,7 +1008,7 @@ class MayaAttributeData(MayaCustomData):
                     continue
                 """
                 value = cmds.getAttr(attribute_name)
-                print value
+                
                 lines.append("[ '%s', %s ]" % (attribute, value))
             
         write_file = util_file.WriteFile(filename)
