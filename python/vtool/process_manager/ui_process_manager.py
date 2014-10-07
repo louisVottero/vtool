@@ -124,6 +124,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             if item and self.tab_widget.currentIndex() == 3:
                 self.code_widget.set_directory(self.process.get_path())
+                code_directory = self.settings.get('code_directory')
+                self.code_widget.set_external_code_library(code_directory)
                 self.code_widget.refresh()
         
     def _update_process(self, name, item):
@@ -185,6 +187,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.code_widget.set_process_script_state(scripts[inc], -1)
                 continue
             
+            self.code_widget.set_process_script_state(scripts[inc], 2)
+            
             status = self.process.run_script(scripts[inc])
             
             if not status == 'Success':
@@ -217,8 +221,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _set_project_history(self, current_directory, previous_directory):
                 
         history = self.settings.get('project_history')
-        
-        print 'history settings', history
         
         if previous_directory != current_directory and previous_directory:
 
@@ -257,8 +259,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             util_file.create_dir(name = None, directory = directory)
         
     def set_project_directory(self, directory, sub_part = None):
-        
-        print 'setting project directory', directory
         
         if not directory:
             return

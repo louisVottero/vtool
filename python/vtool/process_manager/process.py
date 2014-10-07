@@ -308,6 +308,16 @@ class Process(object):
                     files.append(util_file.get_basename(file_path))
 
         return files
+    
+    def get_code_file(self, name):
+        
+        data_folder = data.DataFolder(name, self.get_code_path())
+        
+        data_instance = data_folder.get_folder_data_instance()
+        
+        if data_instance:
+            filepath = data_instance.get_file()
+            return filepath
         
     def create_code(self, name, data_type = 'script.python', inc_name = False, import_data = None):
         
@@ -410,19 +420,22 @@ class Process(object):
         lines = []
         
         script_count = len(scripts)
-        state_count = len(states)
+        if states:
+            state_count = len(states)
+        if not states:
+            state_count = 0
         
         for inc in range(0, script_count):
             
             if inc > state_count-1:
                 state = False
                 
-            if inc < state_count-1:
+            if inc < state_count:
                 state = states[inc]
             
             line = '%s %s' % (scripts[inc], state)
             lines.append(line)
-                        
+                 
         util_file.write_lines(manifest_file, lines, append = append)
         
     
@@ -486,16 +499,13 @@ class Process(object):
         name = util_file.get_basename(script)
         path = util_file.get_parent_path(script)
         
+        
         if not self.external_code_path in sys.path:
             sys.path.append(self.external_code_path)
             
         module = util_file.load_python_module(name, path)
         
-        print 'Running script: %s' % script
-        
         if type(module) == str:
-            print '%s script error' % name
-            print module
             return
           
         if not module:
@@ -511,7 +521,6 @@ class Process(object):
                 status = 'Success'
         except Exception:
             status = traceback.format_exc()
-            print status
             
         return status
                
