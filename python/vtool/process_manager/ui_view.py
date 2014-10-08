@@ -118,12 +118,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.setColumnWidth(0, 250)
         
         self.setTabKeyNavigation(True)
-        
+        self.setHeaderHidden(True)
+        self.activation_fix = True     
         
     def _define_header(self):
-        return ['name', 'size', 'date', 'options']  
+        return ['name']  
     
     def _emit_item_click(self, item):
+        
         self.current_name = item.get_name()
         self.item_clicked.emit(self.current_name, item)
                 
@@ -133,10 +135,12 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             if self.current_item.get_name() == self.last_item.get_name():
                 return
         
-        super(ProcessTreeWidget, self)._item_selection_changed()
-               
+        super(ProcessTreeWidget, self)._item_selection_changed()        
+    
     def _edit_finish(self, item):
+        
         item = super(ProcessTreeWidget, self)._edit_finish(item)
+        
         if item:
             self._item_renamed(item)
             item.setExpanded(False)

@@ -253,7 +253,13 @@ class Process(object):
             instance.save()
     
     def rename_data(self, old_name, new_name):
+                
         data_folder = data.DataFolder(old_name, self.get_data_path())
+        #instance = data_folder.get_folder_data_instance()
+        
+        #instance.rename(new_name)
+        print old_name, new_name
+        
         return data_folder.rename(new_name)
     
     def delete_data(self, name):
@@ -361,9 +367,7 @@ class Process(object):
         data_instance.create()
     
         filename = data_instance.get_file()
-    
-    
-    
+        
         self.set_manifest(['%s.py' % name], append = True)
     
         
@@ -372,11 +376,13 @@ class Process(object):
     def rename_code(self, old_name, new_name):
         
         code_folder = data.DataFolder(old_name, self.get_code_path())
-        instance = code_folder.get_folder_data_instance()
-        
-        file_name = instance.rename(new_name)
         code_folder.rename(new_name)
         
+        instance = code_folder.get_folder_data_instance()
+        
+        file_name = instance.get_file()
+        file_name = util_file.get_basename(file_name)
+                
         return file_name
         
     def delete_code(self, name):

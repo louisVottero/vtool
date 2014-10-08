@@ -229,6 +229,7 @@ class TreeWidget(QtGui.QTreeWidget):
             self._edit_finish(self.last_item)
             
     def _item_clicked(self, item, column):
+        
         self.last_item = self.current_item
         
         self.current_item = self.currentItem()
@@ -275,7 +276,6 @@ class TreeWidget(QtGui.QTreeWidget):
         
     def _item_activated(self, item):
         
-        print 'item activated'
         
         if not self.edit_state:
             
@@ -294,23 +294,25 @@ class TreeWidget(QtGui.QTreeWidget):
         
     def _edit_start(self, item):
         
-        print 'edit start'
-        
         self.old_name = str(item.text(self.title_text_index))
         
+        #close is needed
+        self.closePersistentEditor(item, self.title_text_index)
+        
         self.openPersistentEditor(item, self.title_text_index)
+        
         self.edit_state = item
-        print 'setting edit state', item
+        
         return
         
     def _edit_finish(self, item):
-        print 'edit finish'
         
         if self.edit_state == None:
-            print 'no edit state'
+            
             return
         
         self.edit_state = None
+        
         
         self.closePersistentEditor(item, self.title_text_index)
         
@@ -1079,12 +1081,13 @@ class HistoryFileWidget(DirectoryWidget):
         
         open_button = QtGui.QPushButton('Open')
         open_button.clicked.connect(self._open_version)
+        
+        open_button.setMaximumWidth(100)
                 
         self.button_layout.addWidget(open_button)
         
         self.version_list = self._define_list()
         
-                
         self.main_layout.addWidget(self.version_list)
         self.main_layout.addLayout(self.button_layout)
 
@@ -1339,6 +1342,109 @@ class LoginWidget( BasicWidget ):
         if not bool_value:
             self.login_state.hide()
         
+class CodeEditTabs(BasicWidget):
+    
+    save = create_signal(object)
+    tabChanged = create_signal(object)
+    no_tabs = create_signal()
+    multi_save = create_signal(object)
+    
+    def __init__(self):
+        super(CodeEditTabs, self).__init__()
+        
+        self.code_tab_map = {}
+        
+        self.tabs.setMovable(True)
+        self.tabs.setTabsClosable(True)
+        
+        self.tabs.tabCloseRequested.connect(self._close_tab)
+        self.tabs.currentChanged.connect(self._tab_changed)
+        
+    
+    def _tab_changed(self):
+        
+        current_widget = self.tabs.currentWidget()
+        self.tabChanged.emit(current_widget)
+    
+    def _close_tab(self, index):
+        
+        title = self.tabs.tabText(index)
+        
+        self.tabs.removeTab(index)
+                
+        self.code_tab_map.pop(str(title))
+        
+        if self.tabs.count() == 0:
+            self.no_tabs.emit()
+    
+    def _save(self):
+        
+        current_widget = self.tabs.currentWidget()
+        current_widget.document().setModified(False)
+        
+        self.save.emit(current_widget)
+    
+    def _build_widgets(self):
+        
+        self.tabs = QtGui.QTabWidget()
+        
+        self.main_layout.addWidget(self.tabs)
+        
+    def set_group(self, group):
+        self.group = group
+        
+    def goto_tab(self, name):
+        
+        widget = self.code_tab_map[name]
+        
+        self.tabs.setCurrentWidget(widget)
+        
+    def add_tab(self, filepath):
+        
+        basename = util_file.get_basename(filepath)
+        
+        
+        if self.code_tab_map.has_key(basename):
+            self.goto_tab(basename)
+            return
+        
+        code_widget = CodeTextEdit()
+        code_widget.set_file(filepath)
+        code_widget.titlename = basename
+        code_widget.filepath = filepath
+        
+        code_widget.save.connect(self._save)
+        
+        self.code_tab_map[basename] = code_widget
+        
+        self.tabs.addTab(code_widget, basename)
+        
+        self.goto_tab(basename)
+      
+    def save_tabs(self):
+        
+        found = []
+        
+        for inc in range(0, self.tabs.count()):
+            widget = self.tabs.widget(inc)
+            
+            if widget.document().isModified():
+                found.append(widget)
+                
+        self.multi_save.emit(found)
+        
+    def clear(self):
+        self.tabs.clear()
+        
+        self.code_tab_map = {}
+      
+    def has_tabs(self):
+        
+        if self.tabs.count():
+            return True
+        
+        return False
+    
 class CodeTextEdit(QtGui.QPlainTextEdit):
     
     save = create_signal()
@@ -1353,8 +1459,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         shortcut.activated.connect(self._save)
         
         self._setup_highlighter()
-        
-        
         
         self.setWordWrapMode(QtGui.QTextOption.NoWrap)
                 
@@ -1374,6 +1478,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         if pass_on:
             super(CodeTextEdit, self).keyPressEvent(event)
+    
+    
     
     def set_file(self, filepath):
         
@@ -1407,17 +1513,13 @@ class Highlighter(QtGui.QSyntaxHighlighter):
 
         classFormat = QtGui.QTextCharFormat()
         classFormat.setFontWeight(QtGui.QFont.Bold)
-        #classFormat.setForeground(QtCore.Qt.blue)
+        
         self.highlightingRules.append((QtCore.QRegExp("\\b\.[a-zA-Z_]+\\b(?=\()"),
                 classFormat))
-
-        
 
         numberFormat = QtGui.QTextCharFormat()
         numberFormat.setForeground(QtCore.Qt.cyan)
         self.highlightingRules.append((QtCore.QRegExp("[0-9]+"), numberFormat))
-        
-
         
         quotationFormat = QtGui.QTextCharFormat()
         quotationFormat.setForeground(QtCore.Qt.darkGreen)
@@ -1432,14 +1534,6 @@ class Highlighter(QtGui.QSyntaxHighlighter):
         singleLineCommentFormat.setForeground(QtCore.Qt.red)
         self.highlightingRules.append((QtCore.QRegExp("#.*"),
                 singleLineCommentFormat))
-
-        """
-        functionFormat = QtGui.QTextCharFormat()
-        functionFormat.setFontItalic(True)
-        functionFormat.setForeground(QtCore.Qt.blue)
-        self.highlightingRules.append((QtCore.QRegExp("\\b[A-Za-z0-9_]+(?=\\()"),
-                functionFormat))
-        """
 
         self.multiLineCommentFormat = QtGui.QTextCharFormat()
         self.multiLineCommentFormat.setForeground(QtCore.Qt.darkGray)

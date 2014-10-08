@@ -30,6 +30,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.code_widget = None
         self.directories = None
         self.project_directory = None
+        self.last_tab = 0
         
         super(ProcessManagerWindow, self).__init__(parent) 
         
@@ -44,6 +45,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._set_default_project_directory(project_directory)
         if code_directory:
             self.set_code_directory(code_directory)
+            
+        
         
     def sizeHint(self):
         
@@ -116,6 +119,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _tab_changed(self):
         
+        if self.last_tab == 3:
+            
+            self.code_widget.code_widget.code_edit.save_tabs()
+            self.code_widget.code_widget.code_edit.clear()
+        
         if self.tab_widget.currentIndex() > 1:
             item = self.view_widget.tree_widget.currentItem()
             
@@ -127,12 +135,19 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             if item and self.tab_widget.currentIndex() == 2:
                 self.data_widget.set_directory(self.process.get_path())
+                
+                self.last_tab = 2
+                return
             
             if item and self.tab_widget.currentIndex() == 3:
                 self.code_widget.set_directory(self.process.get_path())
                 code_directory = self.settings.get('code_directory')
                 self.code_widget.set_external_code_library(code_directory)
-                self.code_widget.refresh()
+                
+                self.last_tab = 3
+                return
+        
+        self.last_tab = 1
         
     def _update_process(self, name, item):
         
@@ -153,6 +168,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
             self.tab_widget.setTabEnabled(2, False)
             self.tab_widget.setTabEnabled(3, False)
+        
                                 
     def _get_current_path(self):
         item = self.view_widget.tree_widget.currentItem()

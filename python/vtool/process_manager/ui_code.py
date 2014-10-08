@@ -21,12 +21,11 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.code_widget = CodeWidget()
         self.script_widget = ScriptWidget()
         
-        self.code_widget.manifest_changed.connect(self._update_manifest)
+        self.code_widget.collapse.connect(self._close_splitter)
         self.script_widget.selection_changed.connect(self._code_change)
         
         self.splitter.addWidget(self.script_widget)
         self.splitter.addWidget(self.code_widget)
-        
         
         self.restrain_move = True
         self.skip_move = False
@@ -53,13 +52,22 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     def _define_main_layout(self):
         return QtGui.QVBoxLayout()
         
-    def _code_change(self, code):
+    def _close_splitter(self):
         
-        if not code:
+        if not self.code_widget.code_edit.has_tabs():
+        
             self.code_widget.set_code_path(None)
             self.restrain_move = True
             width = self.splitter.width()
             self.splitter.moveSplitter(width,1)
+        
+        
+    def _code_change(self, code):
+        
+        if not code:
+            
+            self._close_splitter()
+            
             return
         
         if self.restrain_move == True:
@@ -84,18 +92,18 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         code_file = vtool.util_file.join_path(path, code)
         
         self.code_widget.set_code_path(code_file)
-        
-    def _update_manifest(self):
-        
-        self.script_widget.code_manifest_tree.refresh()
-        
+                
     def set_directory(self, directory):
         super(CodeProcessWidget, self).set_directory(directory)
         
         self.script_widget.set_directory(directory)
         
+        self._close_splitter()
+        
     def set_code_directory(self, directory):
         self.code_directory = directory
+        
+        
         
     def reset_process_script_state(self):
         self.script_widget.reset_process_script_state()
@@ -105,36 +113,38 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
     def set_external_code_library(self, code_directory):
         self.script_widget.set_external_code_library(code_directory)
-        
-    def refresh(self):
-        self._update_manifest()
-    
+            
         
 class CodeWidget(vtool.qt_ui.BasicWidget):
     
-    manifest_changed = vtool.qt_ui.create_signal()
+    collapse = vtool.qt_ui.create_signal()
     
     def __init__(self, parent= None):
         super(CodeWidget, self).__init__(parent)
+        
+        policy = self.sizePolicy()
+        
+        policy.setHorizontalPolicy(policy.Minimum)
+        policy.setHorizontalStretch(2)
+        
+        self.setSizePolicy(policy)
                
         self.directory = None
         
+        
     def _build_widgets(self):
         
-        self.code_edit = vtool.qt_ui.CodeTextEdit()
+        self.code_edit = vtool.qt_ui.CodeEditTabs()
         self.code_edit.hide()
         
-        self.code_edit.setWordWrapMode(QtGui.QTextOption.NoWrap)
+        self.code_edit.tabChanged.connect(self._tab_changed)
+        self.code_edit.no_tabs.connect(self._collapse)
+        
         
         self.save_file = ui_data.ScriptFileWidget()
         
-        
-        
-        
-        self.save_file.set_text_widget(self.code_edit)
-        
         self.code_edit.save.connect( self._code_saved )
-        self.save_file.save_widget.file_changed.connect( self._code_widget_saved)
+        self.code_edit.multi_save.connect(self._multi_save)
         
         self.main_layout.addWidget(self.code_edit, stretch = 1)
         self.main_layout.addWidget(self.save_file, stretch = 0)
@@ -144,30 +154,50 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         self.save_file.hide()
         
+    def _tab_changed(self, widget):
+        
+        self.save_file.set_text_widget(widget)
+        
+    def _collapse(self):
+        self.collapse.emit()
+        
     def _load_file_text(self, path):
         
-        self.code_edit.set_file(path)
-                
-    def _is_manifest(self):
-        
-        basename = vtool.util_file.get_basename(self.directory)
-        
-        if basename == 'manifest.data':
-            return True
+        self.code_edit.add_tab(path)
                   
-    def _code_saved(self):
+    def _code_saved(self, code_edit_widget):
+        
+        if not code_edit_widget:
+            return
+        
+        self.save_file.set_text_widget(code_edit_widget)
         
         self.save_file.save_widget._save()
         
-        if self._is_manifest():    
-            self.manifest_changed.emit()
         
+    def _multi_save(self, widgets):
         
-    def _code_widget_saved(self):
+        print 'doing multi save'
         
-        if self._is_manifest():
-            self.manifest_changed.emit()
-                    
+        if not widgets:
+            return
+            
+        comment = vtool.qt_ui.get_comment(self, 'Save scripts?')
+        
+        if comment == None:
+            return
+            
+        for widget in widgets:
+            
+            print widget
+            
+            self.save_file.set_text_widget(widget)
+            
+            folder_path = vtool.util_file.get_parent_path(widget.filepath)
+            
+            self.save_file.set_directory(folder_path)
+            self.save_file.save_widget._save(comment)
+                        
     def set_code_path(self, path):
         
         if not path:
@@ -194,6 +224,14 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
     def __init__(self):
         super(ScriptWidget, self).__init__()
+        
+        policy = self.sizePolicy()
+        
+        policy.setHorizontalPolicy(policy.Maximum)
+        policy.setHorizontalStretch(0)
+        
+        self.setSizePolicy(policy)
+        
         
         self.exteranl_code_libarary = None
         
@@ -266,11 +304,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
     def _run_code(self):
         
-        
-        
-        
         self.code_manifest_tree.run_current_item(self.exteranl_code_libarary)
-        
             
     def _create_code(self):
         
@@ -297,9 +331,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         process_tool.create_code('import_%s' % picked, import_data = picked)
         self.code_manifest_tree._add_item('import_%s.py' % picked, False)
         
-        
     def _remove_code(self):
-        
         
         self.code_manifest_tree.remove_current_item()
         
@@ -332,7 +364,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.setSortingEnabled(False)
         
-        
         self.setIndentation(False)
         
         self.setDragDropMode(self.InternalMove)
@@ -341,9 +372,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.dragged_item = None
         self.handle_selection_change = True
-        
-    
-    
     
     def mouseDoubleClickEvent(self, event):
         
@@ -385,15 +413,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     def _edit_finish(self, item):
         super(CodeManifestTree, self)._edit_finish(item)
         
-        print 'finishing edit', item
-        
         if type(item) == int:
             
             return
         
         name = str(item.text(self.title_text_index))
-        
-        print 'name', name
         
         if name == 'manifest':
             item.setText(self.title_text_index, self.old_name)
@@ -415,6 +439,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         item.setText(self.title_text_index, file_name)
         
         self.itemRenamed.emit(file_name)
+        
+        self._update_manifest()
     
     def _define_item(self):
         return ManifestItem()
@@ -569,22 +595,6 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         self.status_icon = self._radial_fill_icon(0.6, 0.6, 0.6)
         
         self.setCheckState(0, QtCore.Qt.Unchecked)
-        
-        #self.palette = QtGui.QPalette()
-        #self.palette.setColor(self.palette.Background, QtGui.QColor(.5,.5,.5))
-        
-        
-        
-        #if vtool.util.is_in_maya():
-            #brush = self.foreground(0)
-        
-        
-            #brush.setColor(QtGui.QColor(100,100,100))
-        
-            #self.setForeground(0, brush)
-            #self.setBackgroundColor(0, QtGui.QColor(75,75,75))
-        
-        
     
     def _radial_fill_icon(self, r,g,b):
         pixmap = QtGui.QPixmap(20, 20)

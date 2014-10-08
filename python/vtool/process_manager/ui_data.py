@@ -374,8 +374,8 @@ class ScriptFileWidget(DataFileWidget):
     def set_text_widget(self, widget):
         self.text_widget = widget
         
-        self.save_widget.set_text_widget(self.text_widget)
-        self.history_widget.set_text_widget(self.text_widget)   
+        self.save_widget.set_text_widget(widget)
+        self.history_widget.set_text_widget(widget)   
 
 class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     def __init__(self, parent = None):
@@ -387,11 +387,14 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
             
         save_button = QtGui.QPushButton('Save')
         save_button.clicked.connect(self._save)
+        save_button.setMaximumWidth(100)
         
         self.main_layout.addWidget(save_button)    
 
-    def _save(self):
-        comment = vtool.qt_ui.get_comment(self)
+    def _save(self, comment = None):
+        
+        if comment == None:
+            comment = vtool.qt_ui.get_comment(self)
         
         if comment == None:
             return
@@ -417,13 +420,7 @@ class ScriptHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         version_tool = vtool.util_file.VersionFile(self.directory)
         version_file = version_tool.get_version_path(version)
         
-        
-        
-        print 'opening script', version_file
-        
         in_file = QtCore.QFile(version_file)
-        
-        
         
         if in_file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text):
             text = in_file.readAll()
