@@ -276,6 +276,9 @@ class TreeWidget(QtGui.QTreeWidget):
         
     def _item_activated(self, item):
         
+        print 'item activated!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        
+        print self.edit_state
         
         if not self.edit_state:
             
@@ -294,6 +297,8 @@ class TreeWidget(QtGui.QTreeWidget):
         
     def _edit_start(self, item):
         
+        print 'edit start'
+        
         self.old_name = str(item.text(self.title_text_index))
         
         #close is needed
@@ -307,12 +312,10 @@ class TreeWidget(QtGui.QTreeWidget):
         
     def _edit_finish(self, item):
         
-        if self.edit_state == None:
-            
+        if not hasattr(self.edit_state, 'text'):
             return
         
         self.edit_state = None
-        
         
         self.closePersistentEditor(item, self.title_text_index)
         

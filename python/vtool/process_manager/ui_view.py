@@ -19,7 +19,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     def __init__(self):
         super(ViewProcessWidget, self).__init__()
         
-        #self.setMaximumHeight(300)
                
     def _define_tree_widget(self):
         return ProcessTreeWidget()
@@ -122,7 +121,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.activation_fix = True     
         
     def _define_header(self):
-        return ['name']  
+        return ['name', 'options']  
     
     def _emit_item_click(self, item):
         
@@ -139,11 +138,20 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
     def _edit_finish(self, item):
         
+        print 'edit finish---------------------------------------------------------------'
+        print item
+        
         item = super(ProcessTreeWidget, self)._edit_finish(item)
         
+        
+        
         if item:
-            self._item_renamed(item)
-            item.setExpanded(False)
+            state = self._item_renamed(item)
+            
+            print 'rename state', state
+            
+            if state == True:
+                item.setExpanded(False)
         
     def _item_renamed(self, item):
         
@@ -207,10 +215,17 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 
         pass_item = None
                 
+        import vtool.util
+        watch = vtool.util.StopWatch()
+        
+        watch.start()
+                
         for part in parts:
             last_item = self._add_process_item(part, item)
             if last_item:
                 pass_item = last_item
+            
+        watch.end()
             
         if pass_item:
             self.scrollToItem(pass_item,hint = QtGui.QAbstractItemView.PositionAtCenter)
