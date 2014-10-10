@@ -45,6 +45,9 @@ class ScriptManagerWidget(qt_ui.BasicWindow):
         if not filepath:
             filepath = self.tree.get_current_item_directory()
         
+        if not util_file.is_file(filepath):
+            return
+        
         self.code_view.set_file(filepath)
         
         

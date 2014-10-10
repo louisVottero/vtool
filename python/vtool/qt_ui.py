@@ -276,10 +276,6 @@ class TreeWidget(QtGui.QTreeWidget):
         
     def _item_activated(self, item):
         
-        print 'item activated!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-        
-        print self.edit_state
-        
         if not self.edit_state:
             
             if self.text_edit:
@@ -296,8 +292,6 @@ class TreeWidget(QtGui.QTreeWidget):
         self.resizeColumnToContents(self.title_text_index)
         
     def _edit_start(self, item):
-        
-        print 'edit start'
         
         self.old_name = str(item.text(self.title_text_index))
         
@@ -398,6 +392,9 @@ class TreeWidget(QtGui.QTreeWidget):
         parent_items = []
         parent_items.append(tree_item)
         
+        if not tree_item:
+            return
+        
         parent_item = tree_item.parent()
         
         while parent_item:
@@ -410,6 +407,9 @@ class TreeWidget(QtGui.QTreeWidget):
     def get_tree_item_names(self, tree_items):
         
         item_names = []
+        
+        if not tree_items:
+            return
         
         for tree_item in tree_items:
             name = self.get_tree_item_name(tree_item)
@@ -434,6 +434,9 @@ class TreeWidget(QtGui.QTreeWidget):
         parent_names = self.get_tree_item_names(parents)
         
         names = []
+        
+        if not parent_names:
+            return
         
         for name in parent_names:
             names.append(name[0])
@@ -533,7 +536,6 @@ class FileTreeWidget(TreeWidget):
     
     def _define_exclude_extensions(self):
         return
-    
 
     def _get_files(self, directory = None):
         
@@ -547,10 +549,13 @@ class FileTreeWidget(TreeWidget):
         
         self._add_items(files)
         
-    def _add_items(self, files):
+    def _add_items(self, files, parent = None):
         
-        for util_file in files:
-            self._add_item(util_file)
+        for filename in files:
+            if parent:
+                self._add_item(filename, parent)
+            if not parent:
+                self._add_item(filename)
 
     def _add_item(self, filename, parent = None):
         
@@ -614,6 +619,7 @@ class FileTreeWidget(TreeWidget):
         return item
         
     def _add_sub_items(self, item):
+        
         self._delete_children(item)
                 
         path_string = self.get_item_path_string(item)
@@ -622,7 +628,7 @@ class FileTreeWidget(TreeWidget):
         
         files = self._get_files(path)
         
-        self._add_items(files)
+        self._add_items(files, item)
         
             
     def create_branch(self, name = None):
