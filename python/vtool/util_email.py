@@ -62,12 +62,4 @@ class BeanfieldEmail(Email):
     def _setup_server(self):
         self.server = smtplib.SMTP('smtp.beanfield.com')
         self.server.set_debuglevel(1)
-        
-        #super(BeanfieldEmail, self)._setup_server()
-        #smtp_host = 'smtp.beanfield.com'
-        #smtp_port = 25
-        #self.server.connect(smtp_host,smtp_port)
-        #print self.server.ehlo()
-        #self.server.starttls()
-        #print self.server.ehlo()    
-        #self.server.login(self.user, self.password)
+
