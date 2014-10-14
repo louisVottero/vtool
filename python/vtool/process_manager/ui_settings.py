@@ -63,18 +63,25 @@ class SettingsWidget(vtool.qt_ui.BasicWidget):
         self.project_directory_widget.set_directory(directory)
 
     def set_code_directory(self, directory):
-        print 'setting code dir', directory
         if directory:
             self.code_directory_widget.set_directory(directory)
             
-        
     def set_history(self, project_list):
-        print 'setting history'
-        print project_list
         
         self.project_history = project_list
         
         self.history_list.clear()
-        self.history_list.addItems(self.project_history)
+        
+        items = []
+        
+        for history in self.project_history:
+            item = QtGui.QListWidgetItem()
+            item.setText(history)
+            item.setSizeHint(QtCore.QSize(30, 40))
+            
+            items.append(item)
+            self.history_list.addItem(item)
+        
+        #self.history_list.addItems(items)
         
         self.history_list.clearSelection()
