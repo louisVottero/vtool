@@ -120,7 +120,6 @@ class DataFolder(util_file.FileManager):
     def rename(self, new_name):
         
         instance = self.get_folder_data_instance()
-        print 'renamed file', instance.rename(new_name)
         
         folder = util_file.rename(self.folder_path, new_name)
         
@@ -215,8 +214,6 @@ class FileData(Data):
         
     def rename(self, new_name):
         
-        print 'renaming file'
-        
         old_name = self.name
         
         old_filepath = util_file.join_path(self.directory, '%s.%s' % (old_name, self.data_extension))
@@ -244,7 +241,6 @@ class ScriptData(FileData):
         
         filepath = util_file.join_path(self.directory, self._get_file_name())
         
-        print filepath, lines[-1], comment
         
         write_file = util_file.WriteFile(filepath)
         write_file.write(lines)

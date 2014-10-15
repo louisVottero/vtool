@@ -517,18 +517,14 @@ class Process(object):
         
     def rename(self, new_name):
         
-        print 'rename!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-        
         split_name = new_name.split('/')
         
         if util_file.rename( self.get_path(), split_name[-1]):
-            print 'renamed in process1!!'
+            
             self._set_name(new_name)
             
-            print 'returning?'
-            return True
             
-        print 'here?'
+            return True
             
         return False
     
