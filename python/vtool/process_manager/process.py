@@ -513,23 +513,17 @@ class Process(object):
     def delete(self):
         util_file.delete_dir(self.process_name, self.directory)
         
-    
-        
     def rename(self, new_name):
-        
-        print 'rename!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
         
         split_name = new_name.split('/')
         
         if util_file.rename( self.get_path(), split_name[-1]):
-            print 'renamed in process1!!'
+            
             self._set_name(new_name)
             
-            print 'returning?'
+            
             return True
-            
-        print 'here?'
-            
+
         return False
     
     def run_script(self, script):
@@ -559,6 +553,7 @@ class Process(object):
                 status = 'Success'
         except Exception:
             status = traceback.format_exc()
+            print status
             
         return status
                
@@ -572,8 +567,6 @@ class Process(object):
         for script in scripts:
             self.run_script(script)
 
-                
-            
 def get_default_directory():
     if util.is_in_maya():
         return util_file.join_path(util_file.get_user_dir(), 'process_manager')

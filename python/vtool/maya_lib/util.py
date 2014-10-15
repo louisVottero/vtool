@@ -3115,6 +3115,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         self.skip_first_control = False
         self.ribbon = False
         self.ribbon_offset = 1
+        self.create_follows = True
 
 
     def _create_curve(self):
@@ -3213,15 +3214,16 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
 
     def _last_increment(self, control, current_transform):
         
-        create_follow_fade(self.controls[-1].get(), self.sub_drivers[:-1])
-        create_follow_fade(self.sub_controls[-1], self.sub_drivers[:-1])
-        create_follow_fade(self.sub_controls[0], self.sub_drivers[1:])
-        create_follow_fade(self.sub_drivers[0], self.sub_drivers[1:])
+        if self.create_follows:
+            create_follow_fade(self.controls[-1].get(), self.sub_drivers[:-1])
+            create_follow_fade(self.sub_controls[-1], self.sub_drivers[:-1])
+            create_follow_fade(self.sub_controls[0], self.sub_drivers[1:])
+            create_follow_fade(self.sub_drivers[0], self.sub_drivers[1:])
         
-        top_driver = self.drivers[-1]
+            top_driver = self.drivers[-1]
         
-        if not type(top_driver) == list:
-            create_follow_fade(self.drivers[-1], self.sub_drivers[:-1])
+            if not type(top_driver) == list:
+                create_follow_fade(self.drivers[-1], self.sub_drivers[:-1])
 
     def _all_increments(self, control, current_transform):
         
@@ -3493,6 +3495,9 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
     def set_ribbon_offset(self, float_value):
         
         self.ribbon_offset = float_value
+        
+    def set_create_follows(self, bool_value):
+        self.create_follows = bool_value
         
     def set_last_pivot_top(self, bool_value):
         self.last_pivot_top_value = bool_value
@@ -4741,7 +4746,7 @@ class TweakCurveRig(BufferRig):
         
         self.ribbon_offset = 1
         
-        
+        self.ribbon_offset_axis = 'Z'
         
     
     def _create_control(self, sub = False):
@@ -4780,7 +4785,7 @@ class TweakCurveRig(BufferRig):
         
         if self.use_ribbon:
             if not self.surface:
-                surface = transforms_to_nurb_surface(self.buffer_joints, self._get_name(self.description), spans = -1, offset_axis = 'Z', offset_amount = self.ribbon_offset)
+                surface = transforms_to_nurb_surface(self.buffer_joints, self._get_name(self.description), spans = -1, offset_axis = self.ribbon_offset_axis, offset_amount = self.ribbon_offset)
                 cmds.rebuildSurface(surface, ch = True, rpo = True, rt =  False,  end = True, kr = 0, kcp = 0, kc = 0, su = 1, du = 1, sv = self.control_count-1, dv = 3, fr = 0, dir = True)
         
                 self.surface = surface
@@ -4808,6 +4813,9 @@ class TweakCurveRig(BufferRig):
         
     def set_ribbon_offset(self, float_value):
         self.ribbon_offset = float_value
+        
+    def set_ribbon_offset_axis(self, axis_letter):
+        self.ribbon_offset_axis = axis_letter
         
     def set_orient_controls_to_joints(self, bool_value):
         self.orient_controls_to_joints = bool_value
@@ -4840,7 +4848,7 @@ class TweakCurveRig(BufferRig):
                 if self.orient_joint:
                     joint = self.orient_joint
                 
-                MatchSpace(joint, xform).translation_rotation()
+                MatchSpace(joint, xform).rotation()
             
             cmds.parentConstraint(control, cluster, mo = True)
             
@@ -12437,7 +12445,7 @@ def get_available_slot(attribute):
     
     return int( slots[-1] )+1
 
-def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None, point_constrain = False, auto_parent = False, hide_shape= False, inherit_transform = False, local = False, rotate_pivot = False):
+def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None, point_constrain = False, auto_parent = False, hide_shape= False, inherit_transform = False, local = False, rotate_pivot = False, constrain = True):
     parent = None
     if auto_parent:
         parent = cmds.listRelatives(transform, p = True)
@@ -12479,22 +12487,26 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
             cmds.hide(handle)
             cmds.parent(handle, rivet )
     
-    if not deform and not local:
-        for thing in transform:
-            if not point_constrain:
-                cmds.parentConstraint(rivet, thing, mo = True)
-            if point_constrain:
-                cmds.pointConstraint(rivet, thing, mo = True)
+    if constrain:
+        if not deform and not local:
+            for thing in transform:
+                if not point_constrain:
+                    cmds.parentConstraint(rivet, thing, mo = True)
+                if point_constrain:
+                    cmds.pointConstraint(rivet, thing, mo = True)
                 
-    if local and not deform:
-        for thing in transform:
-            if point_constrain:
-                local, xform = constrain_local(rivet, thing, constraint = 'pointConstraint')
-            if not point_constrain:
-                local, xform = constrain_local(rivet, thing, constraint = 'parentConstraint')
-                
-            if auto_parent:
-                cmds.parent(xform, parent)
+        if local and not deform:
+            for thing in transform:
+                if point_constrain:
+                    local, xform = constrain_local(rivet, thing, constraint = 'pointConstraint')
+                if not point_constrain:
+                    local, xform = constrain_local(rivet, thing, constraint = 'parentConstraint')
+                    
+                if auto_parent:
+                    cmds.parent(xform, parent)
+    
+    if not constrain:
+        cmds.parent(transform, rivet)
                 
     if not inherit_transform:
         cmds.setAttr('%s.inheritsTransform' % rivet, 0)
