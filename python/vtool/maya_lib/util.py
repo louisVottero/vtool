@@ -2511,7 +2511,7 @@ class GroundRig(JointRig):
         
 
 
-
+    
 
 class FkRig(BufferRig):
     #CBB
@@ -2530,8 +2530,6 @@ class FkRig(BufferRig):
         self.transform_list = []
         self.current_increment = None
         
-        self.use_joints = False
-        
         self.parent = None
         
         self.connect_to_driver = None
@@ -2546,9 +2544,6 @@ class FkRig(BufferRig):
         self.control.scale_shape(self.control_size,self.control_size,self.control_size)
 
         self.control.hide_scale_and_visibility_attributes()
-        
-        if self.use_joints:
-            self.control.set_to_joint()
         
         self.current_xform_group = create_xform_group(self.control.get())
         driver = create_xform_group(self.control.get(), 'driver')
@@ -2649,10 +2644,6 @@ class FkRig(BufferRig):
     def get_drivers(self):
         return self.drivers
     
-    def set_use_joints(self, bool_value):
-        
-        self.use_joints = bool_value
-    
     def create(self):
         super(FkRig, self).create()
         
@@ -2660,7 +2651,6 @@ class FkRig(BufferRig):
         
         if self.parent:
             cmds.parent(self.control_group, self.parent)
-
 
 class FkLocalRig(FkRig):
     
@@ -11758,10 +11748,7 @@ def get_hierarchy(node_name):
         return split_path
         
 def transfer_relatives(source_node, target_node):
-    parent = cmds.listRelatives(source_node, p = True)
-    if parent:
-        parent = parent[0]
-        
+    parent = cmds.listRelatives(source_node, p = True)[0]
     children = cmds.listRelatives(source_node, c = True)
     
     if children:
