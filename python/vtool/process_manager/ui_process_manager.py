@@ -31,7 +31,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.directories = None
         self.project_directory = None
         self.last_tab = 0
-        
+        self.last_process = None
         super(ProcessManagerWindow, self).__init__(parent) 
         
         
@@ -145,8 +145,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_tab = 1
         
     def _update_process(self, name, item):
-                
-        self.code_widget.code_widget.code_edit.save_tabs()
+               
+         
+        self.code_widget.code_widget.code_edit.save_tabs(self.last_process)
         self.code_widget.code_widget.code_edit.clear()
         self.code_widget.script_widget.code_manifest_tree.clearSelection()
                 
@@ -165,6 +166,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.tab_widget.setTabEnabled(2, False)
             self.tab_widget.setTabEnabled(3, False)
             
+        self.last_process = name
         
         
                                 

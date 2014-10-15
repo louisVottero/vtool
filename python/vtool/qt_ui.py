@@ -1356,7 +1356,7 @@ class CodeEditTabs(BasicWidget):
     save = create_signal(object)
     tabChanged = create_signal(object)
     no_tabs = create_signal()
-    multi_save = create_signal(object)
+    multi_save = create_signal(object, object)
     
     def __init__(self):
         super(CodeEditTabs, self).__init__()
@@ -1430,7 +1430,7 @@ class CodeEditTabs(BasicWidget):
         
         self.goto_tab(basename)
       
-    def save_tabs(self):
+    def save_tabs(self, note):
         
         found = []
         
@@ -1440,7 +1440,7 @@ class CodeEditTabs(BasicWidget):
             if widget.document().isModified():
                 found.append(widget)
                 
-        self.multi_save.emit(found)
+        self.multi_save.emit(found, note)
         
     def clear(self):
         self.tabs.clear()

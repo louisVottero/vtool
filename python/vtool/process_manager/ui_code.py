@@ -175,12 +175,12 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.save_file.save_widget._save()
         
         
-    def _multi_save(self, widgets):
+    def _multi_save(self, widgets, note):
         
         if not widgets:
             return
             
-        comment = vtool.qt_ui.get_comment(self, 'Save scripts?')
+        comment = vtool.qt_ui.get_comment(self, '- %s -\nScripts not saved.\nSave scripts?' % note)
         
         if comment == None:
             return
