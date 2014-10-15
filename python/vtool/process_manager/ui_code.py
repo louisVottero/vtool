@@ -177,8 +177,6 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
     def _multi_save(self, widgets):
         
-        print 'doing multi save'
-        
         if not widgets:
             return
             
