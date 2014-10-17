@@ -12450,7 +12450,7 @@ def get_available_slot(attribute):
     
     return int( slots[-1] )+1
 
-def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None, point_constrain = False, auto_parent = False, hide_shape= False, inherit_transform = False, local = False, rotate_pivot = False):
+def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None, point_constrain = False, auto_parent = False, hide_shape= False, inherit_transform = False, local = False, rotate_pivot = False, constrain = True):
     parent = None
     if auto_parent:
         parent = cmds.listRelatives(transform, p = True)
@@ -12491,24 +12491,29 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
             cluster, handle = cmds.cluster(thing, n = inc_name('rivetCluster_%s' % thing))
             cmds.hide(handle)
             cmds.parent(handle, rivet )
+
+    if constrain:
     
-    if not deform and not local:
-        for thing in transform:
-            if not point_constrain:
-                cmds.parentConstraint(rivet, thing, mo = True)
-            if point_constrain:
-                cmds.pointConstraint(rivet, thing, mo = True)
-                
-    if local and not deform:
-        for thing in transform:
-            if point_constrain:
-                local, xform = constrain_local(rivet, thing, constraint = 'pointConstraint')
-            if not point_constrain:
-                local, xform = constrain_local(rivet, thing, constraint = 'parentConstraint')
-                
-            if auto_parent:
-                cmds.parent(xform, parent)
-                
+        if not deform and not local:
+            for thing in transform:
+                if not point_constrain:
+                    cmds.parentConstraint(rivet, thing, mo = True)
+                if point_constrain:
+                    cmds.pointConstraint(rivet, thing, mo = True)
+                    
+        if local and not deform:
+            for thing in transform:
+                if point_constrain:
+                    local, xform = constrain_local(rivet, thing, constraint = 'pointConstraint')
+                if not point_constrain:
+                    local, xform = constrain_local(rivet, thing, constraint = 'parentConstraint')
+                    
+                if auto_parent:
+                    cmds.parent(xform, parent)
+
+    if not constrain:
+        cmds.parent(transform, rivet)
+                    
     if not inherit_transform:
         cmds.setAttr('%s.inheritsTransform' % rivet, 0)
     
