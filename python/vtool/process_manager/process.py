@@ -529,6 +529,7 @@ class Process(object):
         return False
     
     def run_script(self, script):
+                
         self._center_view()
         name = util_file.get_basename(script)
         path = util_file.get_parent_path(script)

@@ -5804,6 +5804,11 @@ class QuadFootRollRig(FootRollRig):
 
 class QuadBackFootRollRig(QuadFootRollRig):
     
+    def __init__(self, name, side):
+        super(QuadBackFootRollRig, self).__init__(name, side)
+        
+        self.add_bank = True
+    
     def _create_toe_roll(self, parent, name = 'toeRoll'):
         
         control, xform, driver = self._create_pivot_control(self.toe, name)
