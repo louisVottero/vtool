@@ -3519,8 +3519,10 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         if not self.ribbon:
             self._create_spline_ik()
             self._setup_stretchy()
+            
         if self.ribbon:
             surface = transforms_to_nurb_surface(self.buffer_joints, self._get_name(), spans = self.control_count-1, offset_amount = self.ribbon_offset)
+            
             
             cmds.setAttr('%s.inheritsTransform' % surface, 0)
             
@@ -5909,11 +5911,12 @@ class QuadBackFootRollRig(QuadFootRollRig):
         cmds.addAttr(attribute_control, ln = 'yawIn', at = 'double', k = True)
         cmds.addAttr(attribute_control, ln = 'yawOut', at = 'double', k = True)
         
-        cmds.addAttr(attribute_control, ln = 'bankIn', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'bankOut', at = 'double', k = True)
+        if self.add_bank:
+            cmds.addAttr(attribute_control, ln = 'bankIn', at = 'double', k = True)
+            cmds.addAttr(attribute_control, ln = 'bankOut', at = 'double', k = True)
         
-        cmds.addAttr(attribute_control, ln = 'bankForward', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'bankBack', at = 'double', k = True)
+            cmds.addAttr(attribute_control, ln = 'bankForward', at = 'double', k = True)
+            cmds.addAttr(attribute_control, ln = 'bankBack', at = 'double', k = True)
     
     def _create_ik(self):
         self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.toe)
@@ -5933,13 +5936,24 @@ class QuadBackFootRollRig(QuadFootRollRig):
         yawin_roll = self._create_yawin_roll(heel_roll, 'yawIn')
         yawout_roll = self._create_yawout_roll(yawin_roll, 'yawOut')
         ball_roll = self._create_ball_roll(yawout_roll)
-        bankin_roll = self._create_yawin_roll(ball_roll, 'bankIn')
-        bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut')
-        bankforward_roll = self._create_toe_roll(bankout_roll, 'bankForward')
-        bankback_roll = self._create_heel_roll(bankforward_roll, 'bankBack')
         
-        cmds.parentConstraint(bankback_roll, self.roll_control_xform, mo = True)
-        cmds.parentConstraint(bankback_roll, self.ankle_handle, mo = True)
+        if self.add_bank:
+            
+            bankin_roll = self._create_yawin_roll(ball_roll, 'bankIn')
+            bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut')
+            bankforward_roll = self._create_toe_roll(bankout_roll, 'bankForward')
+            bankback_roll = self._create_heel_roll(bankforward_roll, 'bankBack')
+        
+            cmds.parentConstraint(bankback_roll, self.roll_control_xform, mo = True)
+            cmds.parentConstraint(bankback_roll, self.ankle_handle, mo = True)
+        
+        if not self.add_bank:
+        
+            cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
+            cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
+                    
+    def set_add_bank(self, bool_value):
+        self.add_bank = bool_value
                     
     def create(self):
         super(FootRollRig,self).create()

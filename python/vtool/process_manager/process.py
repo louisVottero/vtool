@@ -555,6 +555,7 @@ class Process(object):
                 status = 'Success'
         except Exception:
             status = traceback.format_exc()
+            print status
             
         return status
                
