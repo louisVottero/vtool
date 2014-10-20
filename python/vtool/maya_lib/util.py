@@ -3124,7 +3124,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         self.skip_first_control = False
         self.ribbon = False
         self.ribbon_offset = 1
-
+        self.create_follows = True
 
     def _create_curve(self):
         
@@ -3221,15 +3221,17 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
 
     def _last_increment(self, control, current_transform):
         
-        create_follow_fade(self.controls[-1].get(), self.sub_drivers[:-1])
-        create_follow_fade(self.sub_controls[-1], self.sub_drivers[:-1])
-        create_follow_fade(self.sub_controls[0], self.sub_drivers[1:])
-        create_follow_fade(self.sub_drivers[0], self.sub_drivers[1:])
+        if self.create_follows:
+            create_follow_fade(self.controls[-1].get(), self.sub_drivers[:-1])
+            create_follow_fade(self.sub_controls[-1], self.sub_drivers[:-1])
+            create_follow_fade(self.sub_controls[0], self.sub_drivers[1:])
+            create_follow_fade(self.sub_drivers[0], self.sub_drivers[1:])
         
         top_driver = self.drivers[-1]
         
-        if not type(top_driver) == list:
-            create_follow_fade(self.drivers[-1], self.sub_drivers[:-1])
+        if self.create_follows:
+            if not type(top_driver) == list:
+                create_follow_fade(self.drivers[-1], self.sub_drivers[:-1])
 
     def _all_increments(self, control, current_transform):
         
@@ -3510,6 +3512,9 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
 
     def set_skip_first_control(self, bool_value):
         self.skip_first_control = bool_value
+        
+    def set_create_follows(self, bool_value):
+        self.create_follows = bool_value
         
     def create(self):
         super(SimpleFkCurveRig, self).create()
