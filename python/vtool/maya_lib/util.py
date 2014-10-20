@@ -1321,7 +1321,6 @@ class Control(object):
     def scale_shape(self, x,y,z):
         
         components = self._get_components()
-        
         if components:
             cmds.scale(x,y,z, components)
 
@@ -3158,16 +3157,15 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         
         name = self._get_name()
         
+        if self.last_pivot_top_value:
+            last_pivot_end = True
+            
+        if not self.last_pivot_top_value:
+            last_pivot_end = False
+        
         cluster_group = cmds.group(em = True, n = inc_name('clusters_%s' % name))
         
-        self.clusters = cluster_curve(self.curve, name, True)
-        
-        if self.last_pivot_top_value:
-            
-            cluster_count = len(self.clusters)
-            
-            position = cmds.xform('%s.cv[%s]' % (self.curve, (cluster_count+3)), q = True, ws = True, t = True)
-            cmds.xform(self.clusters[-1], ws = True, rp = position, sp = position)
+        self.clusters = cluster_curve(self.curve, name, True, last_pivot_end = last_pivot_end)
         
         cmds.parent(self.clusters, cluster_group)
         cmds.parent(cluster_group, self.setup_group)
@@ -3523,13 +3521,14 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         if self.ribbon:
             surface = transforms_to_nurb_surface(self.buffer_joints, self._get_name(), spans = self.control_count-1, offset_amount = self.ribbon_offset)
             
-            
             cmds.setAttr('%s.inheritsTransform' % surface, 0)
             
             cluster_surface = ClusterSurface(surface, self._get_name())
             cluster_surface.set_join_ends(True)
             cluster_surface.create()
             handles = cluster_surface.handles
+            
+            self.ribbon_clusters = handles
             
             for inc in range(0, len(handles)):
                 cmds.parentConstraint(self.sub_controls[inc], handles[inc], mo = True)
@@ -3584,16 +3583,18 @@ class FkCurveRig(SimpleFkCurveRig):
         cmds.parent(cluster2, aim2)
         
         cmds.parent(xform_aim1, xform_aim2, self.setup_group)
-        
-    def _last_increment(self, control, current_transform):
-        super(FkCurveRig, self)._last_increment(control, current_transform)
-        
-        if self.aim_end_vectors:
-            self._create_aims(self.clusters)
     
     def set_aim_end_vectors(self, bool_value):
-        self.aim_end_vectors = bool_value    
-
+        self.aim_end_vectors = bool_value
+        
+    def create(self):
+        super(FkCurveRig, self).create()
+        
+        if self.aim_end_vectors:    
+            if not self.ribbon:
+                self._create_aims(self.clusters)
+            if self.ribbon:
+                self._create_aims(self.ribbon_clusters)
 
 class FkCurveLocalRig(FkCurveRig):
     
@@ -4752,9 +4753,7 @@ class TweakCurveRig(BufferRig):
         self.join_both_ends = False
         
         self.ribbon_offset = 1
-        
-        
-        
+        self.ribbon_offset_axis = 'Z'
     
     def _create_control(self, sub = False):
         
@@ -4792,7 +4791,7 @@ class TweakCurveRig(BufferRig):
         
         if self.use_ribbon:
             if not self.surface:
-                surface = transforms_to_nurb_surface(self.buffer_joints, self._get_name(self.description), spans = -1, offset_axis = 'Z', offset_amount = self.ribbon_offset)
+                surface = transforms_to_nurb_surface(self.buffer_joints, self._get_name(self.description), spans = -1, offset_axis = self.ribbon_offset_axis, offset_amount = self.ribbon_offset)
                 cmds.rebuildSurface(surface, ch = True, rpo = True, rt =  False,  end = True, kr = 0, kcp = 0, kc = 0, su = 1, du = 1, sv = self.control_count-1, dv = 3, fr = 0, dir = True)
         
                 self.surface = surface
@@ -4820,6 +4819,9 @@ class TweakCurveRig(BufferRig):
         
     def set_ribbon_offset(self, float_value):
         self.ribbon_offset = float_value
+       
+    def set_ribbon_offset_axis(self, axis_letter):
+        self.ribbon_offset_axis = axis_letter
         
     def set_orient_controls_to_joints(self, bool_value):
         self.orient_controls_to_joints = bool_value
@@ -5258,6 +5260,10 @@ class RollRig(JointRig):
         self.ik_attribute = 'ikFk'
         self.control_shape = 'circle'
         
+        self.forward_roll_axis = 'X'
+        self.side_roll_axis = 'Z'
+        self.top_roll_axis = 'Y'
+        
     def duplicate_joints(self):
         
         duplicate = DuplicateHierarchy(self.joints[0])
@@ -5293,7 +5299,7 @@ class RollRig(JointRig):
         
         return group, xform_group
     
-    def _create_pivot_control(self, source_transform, description, sub = False):
+    def _create_pivot_control(self, source_transform, description, sub = False, no_control = False, scale = 1):
         
         
         if self.create_roll_controls:
@@ -5301,9 +5307,10 @@ class RollRig(JointRig):
             
             control_object = control
             control.set_curve_type(self.control_shape)
+            control.scale_shape(scale, scale, scale)
             control = control.get()
         
-        if not self.create_roll_controls:
+        if not self.create_roll_controls or no_control:
             name = self._get_name('ctrl', description)
             control = cmds.group(em = True, n = inc_name(name))
         
@@ -5394,6 +5401,15 @@ class RollRig(JointRig):
         self.add_hik = bool_value
         if bool_value:
             self.ik_attribute = 'ikFkHik'
+    
+    def set_forward_roll_axis(self, axis_letter):
+        self.forward_roll_axis = axis_letter
+        
+    def set_side_roll_axis(self, axis_letter):
+        self.side_roll_axis = axis_letter
+        
+    def set_top_roll_axis(self, axis_letter):
+        self.top_roll_axis = axis_letter
     
     def create(self):
         super(RollRig, self).create()
@@ -5486,7 +5502,7 @@ class FootRollRig(RollRig):
             attribute_control = self._get_attribute_control()
             
             cmds.addAttr(attribute_control, ln = 'toeRotate', at = 'double', k = True)  
-            cmds.connectAttr('%s.toeRotate' % attribute_control, '%s.rotateX' % control)  
+            cmds.connectAttr('%s.toeRotate' % attribute_control, '%s.rotate%s' % (control, self.forward_roll_axis))  
             
         
         match = MatchSpace(self.ball, xform_group)
@@ -5539,16 +5555,16 @@ class FootRollRig(RollRig):
             final_other_value = 45
         
         
-        cmds.setDrivenKeyframe('%s.rotateZ' % driver,cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotateZ' % driver,cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
         
         
         
         
         if self.mirror_yaw and self.side == 'R':
-            cmds.setInfinity('%s.rotateZ' % driver, preInfinite = 'linear')
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
         else:
-            cmds.setInfinity('%s.rotateZ' % driver, postInfinite = 'linear')
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
                 
         return control
         
@@ -5568,15 +5584,15 @@ class FootRollRig(RollRig):
         if self.mirror_yaw and self.side == 'R':
             final_other_value = -45
         
-        cmds.setDrivenKeyframe('%s.rotateZ' % driver,cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotateZ' % driver,cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
         
             
         
         if self.mirror_yaw and self.side == 'R':
-            cmds.setInfinity('%s.rotateZ' % driver, postInfinite = 'linear')
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
         else:
-            cmds.setInfinity('%s.rotateZ' % driver, preInfinite = 'linear')    
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')    
         
                 
         return control
@@ -5592,12 +5608,12 @@ class FootRollRig(RollRig):
         
         attribute_control = self._get_attribute_control()
         
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')        
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')        
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
         #cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 20, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotateX' % driver, postInfinite = 'linear')
-        cmds.setInfinity('%s.rotateX' % driver, preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
         
         return control
     
@@ -5609,12 +5625,12 @@ class FootRollRig(RollRig):
         
         attribute_control = self._get_attribute_control()
         
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.toeRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.toeRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.toeRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.toeRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.toeRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.toeRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
         
-        cmds.setInfinity('%s.rotateX' % driver, postInfinite = 'linear')
-        cmds.setInfinity('%s.rotateX' % driver, preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
         
         return control
     
@@ -5625,11 +5641,11 @@ class FootRollRig(RollRig):
         
         attribute_control = self._get_attribute_control()
         
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.heelRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.heelRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.heelRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotateX' % driver, preInfinite = 'linear')
-        cmds.setInfinity('%s.rotateX' % driver, postInfinite = 'linear')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
         
         return control
     
@@ -5730,35 +5746,35 @@ class QuadFootRollRig(FootRollRig):
         cmds.addAttr(attribute_control, ln = 'bankIn', at = 'double', k = True)
         cmds.addAttr(attribute_control, ln = 'bankOut', at = 'double', k = True)
         
-    def _create_yawout_roll(self, parent, name):
+    def _create_yawout_roll(self, parent, name, scale = 1):
         
-        control, xform, driver = self._create_pivot_control(self.yawOut, name)
+        control, xform, driver = self._create_pivot_control(self.yawOut, name, scale = scale)
 
         cmds.parent(xform, parent)
         
         attribute_control = self._get_attribute_control()
         
-        cmds.setDrivenKeyframe('%s.rotateZ' % driver,cd = '%s.%s' % (attribute_control, name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotateZ' % driver,cd = '%s.%s' % (attribute_control, name), driverValue = 10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.%s' % (attribute_control, name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.%s' % (attribute_control, name), driverValue = 10, value = -45, itt = 'spline', ott = 'spline')
         
-        cmds.setInfinity('%s.rotateZ' % driver, preInfinite = 'linear')
-        cmds.setInfinity('%s.rotateZ' % driver, postInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
                 
         return control
         
-    def _create_yawin_roll(self, parent, name):
+    def _create_yawin_roll(self, parent, name, scale = 1):
         
-        control, xform, driver = self._create_pivot_control(self.yawIn, name)
+        control, xform, driver = self._create_pivot_control(self.yawIn, name, scale = scale)
 
         cmds.parent(xform, parent)
         
         attribute_control = self._get_attribute_control()
         
-        cmds.setDrivenKeyframe('%s.rotateZ' % driver,cd = '%s.%s' % (attribute_control, name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotateZ' % driver,cd = '%s.%s' % (attribute_control, name), driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.%s' % (attribute_control, name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.%s' % (attribute_control, name), driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
         
-        cmds.setInfinity('%s.rotateZ' % driver, preInfinite = 'linear')
-        cmds.setInfinity('%s.rotateZ' % driver, postInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
                 
         return control
         
@@ -5809,35 +5825,35 @@ class QuadBackFootRollRig(QuadFootRollRig):
         
         self.add_bank = True
     
-    def _create_toe_roll(self, parent, name = 'toeRoll'):
+    def _create_toe_roll(self, parent, name = 'toeRoll', scale = 1):
         
-        control, xform, driver = self._create_pivot_control(self.toe, name)
+        control, xform, driver = self._create_pivot_control(self.toe, name, scale = scale)
         
         cmds.parent(xform, parent)
         
         attribute_control = self._get_attribute_control()
         
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.%s' % (attribute_control,name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.%s' % (attribute_control,name), driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.%s' % (attribute_control,name), driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
         
-        cmds.setInfinity('%s.rotateX' % driver, postInfinite = 'linear')
-        cmds.setInfinity('%s.rotateX' % driver, preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
         
         return control
     
-    def _create_heel_roll(self, parent, name = 'heelRoll'):
-        control, xform, driver = self._create_pivot_control(self.heel, name)
+    def _create_heel_roll(self, parent, name = 'heelRoll', scale = 1):
+        control, xform, driver = self._create_pivot_control(self.heel, name, scale = scale)
         
         cmds.parent(xform, parent)
         
         attribute_control = self._get_attribute_control()
         
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.%s' % (attribute_control,name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.%s' % (attribute_control,name), driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.%s' % (attribute_control,name), driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotateX' % driver, preInfinite = 'linear')
-        cmds.setInfinity('%s.rotateX' % driver, postInfinite = 'linear')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
         
         return control
     
@@ -5849,12 +5865,12 @@ class QuadBackFootRollRig(QuadFootRollRig):
         
         attribute_control = self._get_attribute_control()
         
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')        
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')        
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
         #cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 20, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotateX' % driver, postInfinite = 'linear')
-        cmds.setInfinity('%s.rotateX' % driver, preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
         
         return control
     
@@ -5909,6 +5925,8 @@ class QuadBackFootRollRig(QuadFootRollRig):
         
         attribute_control = self._get_attribute_control()
         
+        create_title(attribute_control, 'roll')
+        
         cmds.addAttr(attribute_control, ln = 'ballRoll', at = 'double', k = True)
         cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
         cmds.addAttr(attribute_control, ln = 'heelRoll', at = 'double', k = True)
@@ -5917,6 +5935,9 @@ class QuadBackFootRollRig(QuadFootRollRig):
         cmds.addAttr(attribute_control, ln = 'yawOut', at = 'double', k = True)
         
         if self.add_bank:
+            
+            create_title(attribute_control, 'bank')
+            
             cmds.addAttr(attribute_control, ln = 'bankIn', at = 'double', k = True)
             cmds.addAttr(attribute_control, ln = 'bankOut', at = 'double', k = True)
         
@@ -5929,11 +5950,16 @@ class QuadBackFootRollRig(QuadFootRollRig):
     
     def _create_pivot_groups(self):
 
+        attribute_control = self._get_attribute_control()
+
         self._create_ik() 
+        
+        create_title(attribute_control, 'pivot')
         
         ankle_pivot = self._create_pivot('ankle', self.ankle, self.control_group)
         heel_pivot = self._create_pivot('heel', self.heel, ankle_pivot)
-        toe_pivot = self._create_pivot('toe', self.toe, heel_pivot)
+        ball_pivot = self._create_pivot('ball', self.ball, heel_pivot)
+        toe_pivot = self._create_pivot('toe', self.toe, ball_pivot)
         
         
         toe_roll = self._create_toe_roll(toe_pivot)
@@ -5944,10 +5970,10 @@ class QuadBackFootRollRig(QuadFootRollRig):
         
         if self.add_bank:
             
-            bankin_roll = self._create_yawin_roll(ball_roll, 'bankIn')
-            bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut')
-            bankforward_roll = self._create_toe_roll(bankout_roll, 'bankForward')
-            bankback_roll = self._create_heel_roll(bankforward_roll, 'bankBack')
+            bankin_roll = self._create_yawin_roll(ball_roll, 'bankIn', scale = .5)
+            bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut', scale = .5)
+            bankforward_roll = self._create_toe_roll(bankout_roll, 'bankForward', scale = .5)
+            bankback_roll = self._create_heel_roll(bankforward_roll, 'bankBack', scale = .5)
         
             cmds.parentConstraint(bankback_roll, self.roll_control_xform, mo = True)
             cmds.parentConstraint(bankback_roll, self.ankle_handle, mo = True)
@@ -13058,7 +13084,7 @@ def add_poly_smooth(mesh):
 
     
     
-def cluster_curve(curve, description, join_ends = False, join_start_end = False):
+def cluster_curve(curve, description, join_ends = False, join_start_end = False, last_pivot_end = False):
     
     clusters = []
     
@@ -13075,8 +13101,14 @@ def cluster_curve(curve, description, join_ends = False, join_start_end = False)
         clusters.append(cluster)
         
         last_cluster = cmds.cluster('%s.cv[%s:%s]' % (curve,cv_count-2, cv_count-1), n = inc_name(description))[1]
-        position = cmds.xform('%s.cv[%s]' % (curve,cv_count-2), q = True, ws = True, t = True)
+        
+        if not last_pivot_end:
+            position = cmds.xform('%s.cv[%s]' % (curve,cv_count-2), q = True, ws = True, t = True)
+        if last_pivot_end:
+            position = cmds.xform('%s.cv[%s]' % (curve,cv_count-1), q = True, ws = True, t = True)
+            
         cmds.xform(last_cluster, ws = True, rp = position, sp = position)
+            
         
         start_inc = 2
         
