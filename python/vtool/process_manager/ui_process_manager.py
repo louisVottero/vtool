@@ -215,7 +215,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             if not status == 'Success':
                 self.code_widget.set_process_script_state(scripts[inc], 0)
-            
+                #do not remove print
+                print status
+                
             if status == 'Success':
                 self.code_widget.set_process_script_state(scripts[inc], 1)
             

@@ -541,22 +541,25 @@ class Process(object):
         module = util_file.load_python_module(name, path)
         
         if type(module) == str:
-            return
-          
+            return module
+        
         if not module:
             return
         
         if hasattr(module, 'process'):
             module.process = self
-          
+        
         status = None  
         try:
             if hasattr(module, 'main'):
                 module.main()
-                status = 'Success'
+                
+            if not hasattr(module, 'main'):
+                if type(module) == str or type(module) == unicode:
+                    status = module
+                
         except Exception:
             status = traceback.format_exc()
-            print status
             
         return status
                

@@ -551,6 +551,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             item.set_state(1)
         if not status == 'Success':
             item.set_state(0)
+            #do not remove print
+            print status
         
     def remove_current_item(self):
         
