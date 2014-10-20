@@ -393,8 +393,11 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
 
     def _save(self, comment = None):
         
-        if comment == None:
-            comment = vtool.qt_ui.get_comment(self)
+        print 'save!', comment, self.text_widget.titlename
+        
+        
+        if comment == None or comment == False:
+            comment = vtool.qt_ui.get_comment(self, title = 'Save %s' % self.data_class.name)
         
         if comment == None:
             return
@@ -415,7 +418,11 @@ class ScriptHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         
         item = self.version_list.currentItem()
         
+        if not item:
+            return
+        
         version = int(item.text(0))
+        
         
         version_tool = vtool.util_file.VersionFile(self.directory)
         version_file = version_tool.get_version_path(version)

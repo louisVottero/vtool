@@ -379,6 +379,8 @@ class Process(object):
         code_folder.rename(new_name)
         
         instance = code_folder.get_folder_data_instance()
+        #print instance
+        #instance.rename(new_name)
         
         file_name = instance.get_file()
         file_name = util_file.get_basename(file_name)
@@ -553,11 +555,8 @@ class Process(object):
         try:
             if hasattr(module, 'main'):
                 module.main()
-                
-            if not hasattr(module, 'main'):
-                if type(module) == str or type(module) == unicode:
-                    status = module
-                
+                status = 'Success'
+                                
         except Exception:
             status = traceback.format_exc()
             

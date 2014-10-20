@@ -16,6 +16,7 @@ try:
         except:
             pass
     type_QT = 'pyside'
+    #do not remove print
     print 'using pyside'
 except:
     type_QT = None
@@ -26,6 +27,7 @@ if not type_QT == 'pyside':
         from PyQt4 import QtGui, QtCore, Qt, uic
         import sip
         type_QT = 'pyqt'
+        #do not remove print
         print 'using pyqt'
         
     except:
@@ -1373,6 +1375,7 @@ class CodeEditTabs(BasicWidget):
     def _tab_changed(self):
         
         current_widget = self.tabs.currentWidget()
+        
         self.tabChanged.emit(current_widget)
     
     def _close_tab(self, index):
@@ -1389,6 +1392,7 @@ class CodeEditTabs(BasicWidget):
     def _save(self):
         
         current_widget = self.tabs.currentWidget()
+        
         current_widget.document().setModified(False)
         
         self.save.emit(current_widget)
@@ -1396,7 +1400,6 @@ class CodeEditTabs(BasicWidget):
     def _build_widgets(self):
         
         self.tabs = QtGui.QTabWidget()
-        
         self.main_layout.addWidget(self.tabs)
         
     def set_group(self, group):
@@ -1404,9 +1407,10 @@ class CodeEditTabs(BasicWidget):
         
     def goto_tab(self, name):
         
-        widget = self.code_tab_map[name]
+        if self.code_tab_map.has_key(name):
+            widget = self.code_tab_map[name]
         
-        self.tabs.setCurrentWidget(widget)
+            self.tabs.setCurrentWidget(widget)
         
     def add_tab(self, filepath):
         
@@ -1416,7 +1420,7 @@ class CodeEditTabs(BasicWidget):
         if self.code_tab_map.has_key(basename):
             self.goto_tab(basename)
             return
-        
+                
         code_widget = CodeTextEdit()
         code_widget.set_file(filepath)
         code_widget.titlename = basename
@@ -1453,6 +1457,48 @@ class CodeEditTabs(BasicWidget):
             return True
         
         return False
+    
+    def has_tab(self, name):
+        
+        if self.code_tab_map.has_key(name):
+            return True
+    
+    def get_tab_from_filepath(self, filepath):
+        
+        for key in self.code_tab_map:
+            
+            widget = self.code_tab_map[key]
+            if widget.filepath == filepath:
+                return widget
+                
+            
+    def set_tab_title(self, index, name):
+        
+        self.tabs.setTabText(index, name)
+        
+    def rename_tab(self, old_path, new_path):
+        
+        widget = self.get_tab_from_filepath(old_path)
+        
+        if widget == None:
+            return
+        
+        index = self.tabs.indexOf(widget)
+        
+        if index == None:
+            return
+        
+        old_name = util_file.get_basename(old_path)
+                
+        name = util_file.get_basename(new_path)
+        
+        self.set_tab_title(index, name)
+        
+        self.code_tab_map[name] = widget
+        
+        widget.filepath = new_path
+        
+        
     
 class CodeTextEdit(QtGui.QPlainTextEdit):
     
@@ -1688,10 +1734,9 @@ class TimelineWidget(QtGui.QWidget):
         self.skip_random = True
         self.values = value_list
         
-def get_comment(parent = None,text_message = 'add comment'):
-    #commentDialog = QtGui.QInputDialog(parent)
-    #commentDialog.setTextValue('comment')  
-    comment, ok = QtGui.QInputDialog.getText(parent, 'util_file save',text_message)
+def get_comment(parent = None,text_message = 'add comment', title = 'save'):
+    
+    comment, ok = QtGui.QInputDialog.getText(parent, title,text_message)
     
     comment = comment.replace('\\', '_')
     

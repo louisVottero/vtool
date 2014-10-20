@@ -13591,7 +13591,7 @@ def convert_joint_to_nub(start_joint, end_joint, count, prefix, name, side, mid_
 
 
 def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, delete_wire = True, skin = True, falloff = 1, create_controls = True):
-    
+    #do not remove print
     print 'converting %s' % wire_deformer
     
     convert_group = cmds.group(em = True, n = inc_name('convertWire_%s' % description))
@@ -13788,7 +13788,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
 
 
 def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10, falloff = 1):
-    
+    #do not remove print
     print 'converting %s' % wire_deformer
     
     convert_group = cmds.group(em = True, n = inc_name('convertWire_%s' % description))
@@ -14234,7 +14234,7 @@ def transfer_joint_weight_to_blendshape(blendshape, joint, mesh, index = 0, targ
     
    
 def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_joints = []):
-    
+    #do not remove print
     print 'skinning %s' % target_mesh
     cmds.undoInfo(state = False)
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
@@ -14402,6 +14402,7 @@ def weight_hammer_verts(verts = None, print_info = True):
         cmds.select(vert)
         
         if print_info:
+            #do not remove print
             print inc, 'of', count
         
         mel.eval('weightHammerVerts;')

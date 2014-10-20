@@ -4,6 +4,9 @@ import vtool.util
 
 import ui_data
 import process
+from PyQt4.Qt import QEvent, QApplication
+from vtool import qt_ui
+from python.vtool import util_file
 
 if vtool.qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
@@ -22,7 +25,8 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.script_widget = ScriptWidget()
         
         self.code_widget.collapse.connect(self._close_splitter)
-        self.script_widget.selection_changed.connect(self._code_change)
+        self.script_widget.script_open.connect(self._code_change)
+        self.script_widget.script_rename.connect(self._script_rename)
         
         self.splitter.addWidget(self.script_widget)
         self.splitter.addWidget(self.code_widget)
@@ -48,7 +52,6 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
                 self.skip_move = False
                 return
         
-        
     def _define_main_layout(self):
         return QtGui.QVBoxLayout()
         
@@ -60,7 +63,6 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
             self.restrain_move = True
             width = self.splitter.width()
             self.splitter.moveSplitter(width,1)
-        
         
     def _code_change(self, code):
         
@@ -87,11 +89,21 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         split_code = code.split('.')
         
+        #self.code_widget.code_edit.goto_tab( split_code[0] )
+        
         path = process_tool.get_code_folder(split_code[0])
 
         code_file = vtool.util_file.join_path(path, code)
         
         self.code_widget.set_code_path(code_file)
+                
+    def _script_rename(self, old_filepath, filepath):
+        
+        tab_index = self.code_widget.code_edit.get_tab_from_filepath( old_filepath )
+        
+        self.code_widget.code_edit.rename_tab(old_filepath, filepath)
+            
+        
                 
     def set_directory(self, directory):
         super(CodeProcessWidget, self).set_directory(directory)
@@ -141,7 +153,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.code_edit.no_tabs.connect(self._collapse)
         
         
-        self.save_file = ui_data.ScriptFileWidget()
+        self.save_file = ui_data.ScriptFileWidget()        
         
         self.code_edit.save.connect( self._code_saved )
         self.code_edit.multi_save.connect(self._multi_save)
@@ -156,6 +168,10 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
     def _tab_changed(self, widget):
         
+        if not widget:
+            return
+        directory = vtool.util_file.get_dirname(widget.filepath)
+        self.save_file.set_directory(directory)
         self.save_file.set_text_widget(widget)
         
     def _collapse(self):
@@ -166,7 +182,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.code_edit.add_tab(path)
                   
     def _code_saved(self, code_edit_widget):
-        
+                
         if not code_edit_widget:
             return
         
@@ -186,9 +202,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
             return
             
         for widget in widgets:
-            
-            print widget
-            
+                        
             self.save_file.set_text_widget(widget)
             
             folder_path = vtool.util_file.get_parent_path(widget.filepath)
@@ -218,7 +232,8 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
 class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     
-    selection_changed = vtool.qt_ui.create_signal(object)
+    script_open = vtool.qt_ui.create_signal(object)
+    script_rename = vtool.qt_ui.create_signal(object, object)
         
     def __init__(self):
         super(ScriptWidget, self).__init__()
@@ -228,7 +243,10 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         policy.setHorizontalPolicy(policy.Maximum)
         policy.setHorizontalStretch(0)
         
+        
         self.setSizePolicy(policy)
+        
+        
         
         
         self.exteranl_code_libarary = None
@@ -242,43 +260,45 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         buttons_layout = QtGui.QHBoxLayout()
         
-        run_code = QtGui.QPushButton('RUN')
-        add_code = QtGui.QPushButton('Create')
-        import_data_code = QtGui.QPushButton('Create Data Import')
-        remove_code = QtGui.QPushButton('Delete')
+        #run_code = QtGui.QPushButton('RUN')
+        #add_code = QtGui.QPushButton('Create')
+        #import_data_code = QtGui.QPushButton('Create Data Import')
+        #remove_code = QtGui.QPushButton('Delete')
         
-        self.run_button = run_code
-        self.run_button.hide()
+        #self.run_button = run_code
+        #self.run_button.hide()
         
-        add_code.setMaximumWidth(50)
-        import_data_code.setMaximumWidth(120)
-        remove_code.setMaximumWidth(50)
+        #add_code.setMaximumWidth(50)
+        #import_data_code.setMaximumWidth(120)
+        #remove_code.setMaximumWidth(50)
         
-        self.code_manifest_tree.itemSelectionChanged.connect(self._selection_changed)
-        self.code_manifest_tree.itemRenamed.connect(self._selection_changed)
+        #self.code_manifest_tree.itemSelectionChanged.connect(self._selection_changed)
+        self.code_manifest_tree.item_renamed.connect(self._rename)
+        self.code_manifest_tree.script_open.connect(self._script_open)
         
-        run_code.clicked.connect(self._run_code)
-        add_code.clicked.connect(self._create_code)
-        import_data_code.clicked.connect(self._create_import_code)
-        remove_code.clicked.connect(self._remove_code)
+        #run_code.clicked.connect(self._run_code)
+        #add_code.clicked.connect(self._create_code)
+        #import_data_code.clicked.connect(self._create_import_code)
+        #remove_code.clicked.connect(self._remove_code)
         
         self.main_layout.addWidget(self.code_manifest_tree)
-        self.main_layout.addWidget(run_code)
+        #self.main_layout.addWidget(run_code)
         self.main_layout.addLayout(buttons_layout)
         
-        buttons_layout.addWidget(add_code)
-        buttons_layout.addWidget(import_data_code)
-        buttons_layout.addWidget(remove_code)
+        #buttons_layout.addWidget(add_code)
+        #buttons_layout.addWidget(import_data_code)
+        #buttons_layout.addWidget(remove_code)
         
              
         
-    def _selection_changed(self):
+    def _script_open(self, item):
         
         if self.code_manifest_tree.handle_selection_change:
         
             code_folder = self._get_current_code()
-            self.selection_changed.emit(code_folder)
+            self.script_open.emit(code_folder)
             
+            """
             items = self.code_manifest_tree.selectedItems()
             
             if items:
@@ -287,13 +307,15 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
                     
             if not items:
                 self.run_button.hide()
+            """
                     
             
-    def _get_current_code(self):
+    def _get_current_code(self, item = None):
         
-        item = self.code_manifest_tree.selectedItems()
-        if item:
-            item = item[0]
+        if not item:
+            item = self.code_manifest_tree.selectedItems()
+            if item:
+                item = item[0]
         
         if not item:
             return
@@ -333,6 +355,11 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         self.code_manifest_tree.remove_current_item()
         
+    def _rename(self, old_filepath, filepath):
+        
+        self.script_rename.emit(old_filepath, filepath)
+        
+        
     def set_directory(self, directory):
         super(ScriptWidget, self).set_directory(directory)
         
@@ -352,7 +379,8 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     
 class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     
-    itemRenamed = vtool.qt_ui.create_signal(object)
+    item_renamed = vtool.qt_ui.create_signal(object, object)
+    script_open = vtool.qt_ui.create_signal(object)
     
     def __init__(self):
         
@@ -370,14 +398,101 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.dragged_item = None
         self.handle_selection_change = True
+        
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._item_menu)
+        
+        
+        self.future_rename = False
+        
+        
+        self.edit_actions = []
+        
+        self._create_context_menu()
+        
+        
+    def _create_context_menu(self):
+        self.context_menu = QtGui.QMenu()
+              
+        self.new_menu = QtGui.QMenu('New')
+              
+        self.context_menu.addMenu(self.new_menu)
+        
+        new_python = self.new_menu.addAction('Python Code')
+        new_data_import = self.new_menu.addAction('Data Import')
+        
+        run_action = self.context_menu.addAction('Run')
+        rename_action = self.context_menu.addAction(self.tr('Rename'))
+        delete_action = self.context_menu.addAction('Delete')
+        
+        self.edit_actions = [run_action, rename_action, delete_action]
+        
+        new_python.triggered.connect(self.create_code)
+        new_data_import.triggered.connect(self.create_import_code)
+        
+        run_action.triggered.connect(self.run_current_item)
+        rename_action.triggered.connect(self._activate_rename)
+        delete_action.triggered.connect(self.remove_current_item)
+    
+    def _item_menu(self, position):
+        
+        items = self.selectedItems()
+        
+        item = None
+                
+        if items:
+            item = items[0]
+        
+        if item:
+            
+            self._edit_actions_visible(True)
+            
+            #if self.future_rename:
+                #self._edit_start(item)
+                #self.future_rename = False
+                
+        if not item:
+            
+            self._edit_actions_visible(False)
+            
+        self.context_menu.exec_(self.viewport().mapToGlobal(position))
+            
+    def _edit_actions_visible(self, bool_value):
+        
+        for action in self.edit_actions:
+            
+            action.setVisible(bool_value)
+        
+    def _activate_rename(self):
+        
+        items = self.selectedItems()
+        if not items:
+            return
+        
+        item = items[0]
+        
+        self.old_name = str(item.get_text())
+        
+        new_name = qt_ui.get_comment(self, 'New name:', 'Rename %s' % self.old_name)
+        
+        self._rename_item(item, new_name)
+        
+        
+        
+        
     
     def mouseDoubleClickEvent(self, event):
         
-        item = self.itemAt(event.pos())
         
-        self.itemActivated.emit(item, 0)
+        items = self.selectedItems()
+        item = items[0]
         
-        super(CodeManifestTree, self).mouseDoubleClickEvent(event)
+        self.script_open.emit(item)
+        #item = self.itemAt(event.pos())
+        
+        #self.itemActivated.emit(item, 0)
+        
+        #super(CodeManifestTree, self).mouseDoubleClickEvent(event)
     
     
     def dragMoveEvent(self, event):
@@ -425,18 +540,52 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             split_name = name.split('.')
             name = split_name[0]
         
+        self._rename_item(item, name)
+        
+        
+        
+    def _rename_item(self, item, new_name):
+        
+        new_name = str(new_name)
+        
+        if new_name.find('.'):
+            new_name = new_name.split('.')
+            new_name = new_name[0]
+        
+        
         if self.old_name.find('.'):
             split_old_name = self.old_name.split('.')
             old_name = split_old_name[0]
         
+        for inc in range(0, self.topLevelItemCount()):
+            
+            other_name = self.topLevelItem(inc).get_text()
+            other_name = str(other_name)
+            
+            if other_name.find('.'):
+                other_name = other_name.split('.')
+                other_name = other_name[0]
+            
+            if new_name == other_name:
+                return
+        
+        if old_name == new_name:
+            return
+            
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
+        
+        old_filepath = process_tool.get_code_file(old_name)
 
-        file_name = process_tool.rename_code(old_name, name)
+        file_name = process_tool.rename_code(old_name, new_name)
+                
+        new_file_name = file_name.split('.')[0]
+        
+        filepath = process_tool.get_code_file(new_file_name)
         
         item.setText(self.title_text_index, file_name)
         
-        self.itemRenamed.emit(file_name)
+        self.item_renamed.emit(old_filepath, filepath)
         
         self._update_manifest()
     
@@ -454,6 +603,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsUserCheckable)
         
         item.tree = self
+        
         
         return item
     
@@ -528,6 +678,30 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         item = self._get_item_by_name(script_name)
         item.set_state(state)
         
+        
+    def create_code(self):
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        code_path = process_tool.create_code('code', 'script.python', inc_name = True)
+        
+        name = vtool.util_file.get_basename(code_path)
+        
+        item = self._add_item(name, False)
+        
+        self.scrollToItem(item)
+        
+    def create_import_code(self):
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        folders = process_tool.get_data_folders()
+        
+        picked = vtool.qt_ui.get_pick(folders, 'Pick the data to import.', self)
+        
+        process_tool.create_code('import_%s' % picked, import_data = picked)
+        self._add_item('import_%s.py' % picked, False)
+        
     def run_current_item(self, external_code_libary = None):
         
         items = self.selectedItems()
@@ -555,8 +729,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             print status
         
     def remove_current_item(self):
-        
-        
         
         items = self.selectedItems()
         item = items[0]
