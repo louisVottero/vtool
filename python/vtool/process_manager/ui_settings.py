@@ -1,3 +1,11 @@
+"""
+Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    
+ 
+This file is part of vtool project.
+ 
+vtool project can not be copied and/or distributed without the express permission of Louis Vottero
+"""
+
 import vtool.qt_ui
 
 if vtool.qt_ui.is_pyqt():
@@ -24,23 +32,31 @@ class SettingsWidget(vtool.qt_ui.BasicWidget):
     def _build_widgets(self):
         
         self.project_directory_widget = vtool.qt_ui.GetDirectoryWidget()
-        self.project_directory_widget.set_label('project directory')
+        self.project_directory_widget.set_label('Project Directory')
         self.project_directory_widget.directory_changed.connect(self._project_directory_changed)
         
-        history_label = QtGui.QLabel('previous projects')
+        history_label = QtGui.QLabel('Previous Projects')
         self.history_list = QtGui.QListWidget()
         self.history_list.setAlternatingRowColors(True)
         self.history_list.itemClicked.connect(self._history_item_selected)
         self.history_list.setSelectionMode(self.history_list.NoSelection)
-        
+                
         self.code_directory_widget = vtool.qt_ui.GetDirectoryWidget()
-        self.code_directory_widget.set_label('code directory')
+        self.code_directory_widget.set_label('Code Directory')
         self.code_directory_widget.directory_changed.connect(self._code_directory_changed)
         
+        code_label = QtGui.QLabel('Code Libraries')
+        self.code_list = QtGui.QListWidget()
+        self.code_list.setAlternatingRowColors(True)
+        
+        
         self.main_layout.addWidget(self.project_directory_widget)
+        self.main_layout.addSpacerItem(QtGui.QSpacerItem())
         self.main_layout.addWidget(history_label)
         self.main_layout.addWidget(self.history_list)
         self.main_layout.addWidget(self.code_directory_widget)
+        self.main_layout.addWidget(code_label)
+        self.main_layout.addWidget(self.code_list)
         
     def _project_directory_changed(self, project):
         self.project_directory_changed.emit(project)

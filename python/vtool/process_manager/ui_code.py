@@ -1,12 +1,20 @@
+"""
+Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    
+ 
+This file is part of vtool project.
+ 
+vtool project can not be copied and/or distributed without the express permission of Louis Vottero
+"""
+
 import vtool.qt_ui
 import vtool.util_file
 import vtool.util
 
 import ui_data
 import process
-from PyQt4.Qt import QEvent, QApplication
+
 from vtool import qt_ui
-from python.vtool import util_file
+from vtool import util_file
 
 if vtool.qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
@@ -405,7 +413,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.future_rename = False
         
-        
+        self.new_actions = []
         self.edit_actions = []
         
         self._create_context_menu()
@@ -414,12 +422,19 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     def _create_context_menu(self):
         self.context_menu = QtGui.QMenu()
               
-        self.new_menu = QtGui.QMenu('New')
+        #self.new_menu = QtGui.QMenu('New')
               
-        self.context_menu.addMenu(self.new_menu)
+        #self.context_menu.addMenu(self.new_menu)
         
-        new_python = self.new_menu.addAction('Python Code')
-        new_data_import = self.new_menu.addAction('Data Import')
+        #new_python = self.new_menu.addAction('Python Code')
+        #new_data_import = self.new_menu.addAction('Data Import')
+        
+        new_python = self.context_menu.addAction('New Python Code')
+        new_data_import = self.context_menu.addAction('New Data Import')
+        
+        self.new_actions = [new_python, new_data_import]
+        
+        self.context_menu.addSeparator()
         
         run_action = self.context_menu.addAction('Run')
         rename_action = self.context_menu.addAction(self.tr('Rename'))
@@ -447,10 +462,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             self._edit_actions_visible(True)
             
-            #if self.future_rename:
-                #self._edit_start(item)
-                #self.future_rename = False
-                
         if not item:
             
             self._edit_actions_visible(False)

@@ -1,3 +1,11 @@
+"""
+Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    
+ 
+This file is part of vtool project.
+ 
+vtool project can not be copied and/or distributed without the express permission of Louis Vottero
+"""
+
 import sys
 
 from vtool import qt_ui
@@ -34,8 +42,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_process = None
         super(ProcessManagerWindow, self).__init__(parent) 
         
-        
-        
         self._set_default_directory()
         self._setup_settings_file()
         
@@ -45,11 +51,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._set_default_project_directory(project_directory)
         if code_directory:
             self.set_code_directory(code_directory)
-            
-        
         
     def sizeHint(self):
-        
         return QtCore.QSize(400,800)
         
     def _setup_settings_file(self):
@@ -71,7 +74,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.item_clicked.connect(self._update_process)
         
         self.data_widget = ui_data.DataProcessWidget()
-        
         
         self.code_widget = ui_code.CodeProcessWidget()
         self.settings_widget = ui_settings.SettingsWidget()

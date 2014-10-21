@@ -1,3 +1,11 @@
+"""
+Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    
+ 
+This file is part of vtool project.
+ 
+vtool project can not be copied and/or distributed without the express permission of Louis Vottero
+"""
+
 import string
 
 from vtool import util_file

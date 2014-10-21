@@ -1,3 +1,11 @@
+"""
+Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    
+ 
+This file is part of vtool project.
+ 
+vtool project can not be copied and/or distributed without the express permission of Louis Vottero
+"""
+
 import sys
 import traceback
 
@@ -132,7 +140,9 @@ class Process(object):
         self.directory = directory
         
     def set_external_code_library(self, directory):
-        self.external_code_path = directory
+        directory = util.convert_to_sequence(directory)
+        
+        self.external_code_paths = directory
         
     def is_process(self):
         if not util_file.is_dir(self.get_code_path()):
@@ -221,14 +231,6 @@ class Process(object):
         data_folder = data.DataFolder(name, path)
         data_folder.set_data_type(data_type)
         
-        """
-        code_name = 'import_%s' % name
-        
-        filepath = self.create_code(code_name, import_data = name)
-        self.set_manifest(['%s.py' % code_name], append = True)
-        """
-        
-        
         return data_folder.folder_path
     
     def import_data(self, name):
@@ -255,17 +257,11 @@ class Process(object):
     def rename_data(self, old_name, new_name):
                 
         data_folder = data.DataFolder(old_name, self.get_data_path())
-        #instance = data_folder.get_folder_data_instance()
-        
-        #instance.rename(new_name)
-        print old_name, new_name
-        
+                
         return data_folder.rename(new_name)
     
     def delete_data(self, name):
         data_folder = data.DataFolder(name, self.get_data_path())
-        
-        
     
     #code ---
     
@@ -337,7 +333,6 @@ class Process(object):
         
     def create_code(self, name, data_type = 'script.python', inc_name = False, import_data = None):
         
-        
         path = self.get_code_path()
         
         if inc_name:
@@ -379,9 +374,7 @@ class Process(object):
         code_folder.rename(new_name)
         
         instance = code_folder.get_folder_data_instance()
-        #print instance
-        #instance.rename(new_name)
-        
+                
         file_name = instance.get_file()
         file_name = util_file.get_basename(file_name)
                 
@@ -404,8 +397,7 @@ class Process(object):
         manifest_path = self.get_manifest_folder()
         
         return util_file.join_path(manifest_path, self.process_data_filename)
-        
-
+    
     def get_manifest_scripts(self, basename = True):
         
         manifest_file = self.get_manifest_file()
@@ -468,8 +460,6 @@ class Process(object):
                  
         util_file.write_lines(manifest_file, lines, append = append)
         
-    
-        
     def get_manifest(self):
         
         manifest_file = self.get_manifest_file()
@@ -514,9 +504,7 @@ class Process(object):
         
     def delete(self):
         util_file.delete_dir(self.process_name, self.directory)
-        
     
-        
     def rename(self, new_name):
         
         split_name = new_name.split('/')
@@ -536,9 +524,10 @@ class Process(object):
         name = util_file.get_basename(script)
         path = util_file.get_parent_path(script)
         
-        if self.external_code_path:
-            if not self.external_code_path in sys.path:
-                sys.path.append(self.external_code_path)
+        for external_code_path in self.external_code_paths:
+            if util_file.is_dir(external_code_path):
+                if not external_code_path in sys.path:
+                    sys.path.append(external_code_path)
             
         module = util_file.load_python_module(name, path)
         
@@ -571,9 +560,7 @@ class Process(object):
         
         for script in scripts:
             self.run_script(script)
-
-                
-            
+ 
 def get_default_directory():
     if util.is_in_maya():
         return util_file.join_path(util_file.get_user_dir(), 'process_manager')
