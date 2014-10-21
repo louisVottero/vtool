@@ -1,0 +1,4 @@
+# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+#
+#Permision is granted to use the software, but not duplicate or modify with the intention to sell or distribute.
+#All other exceptions and uses of the software without written consent by Louis Vottero are prohibited.
