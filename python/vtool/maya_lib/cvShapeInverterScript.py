@@ -1,3 +1,7 @@
+# 
+# Copyright (c) 2011 Chad Vernon
+# 
+
 import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
 import math
