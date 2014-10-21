@@ -1,4 +1,4 @@
-# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com
+# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import sys, random
 import qt_ui
