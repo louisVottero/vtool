@@ -147,7 +147,24 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         self.remove_action.triggered.connect(self._remove_current_item)    
     
     def _remove_current_item(self):
-        pass
+        
+        items = self.selectedItems()
+        
+        if not items:
+            return
+        
+        name = items[0].text(0)
+        
+        vtool.qt_ui.get_permission('Delete %s' % name, self)
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        process_tool.delete_data(name)
+        
+        index = self.indexOfTopLevelItem(items[0])
+        
+        self.takeTopLevelItem(index)
+        
     
     def _define_header(self):
         return ['name','type','size','date']
@@ -190,7 +207,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             item.setText(1, data_type)
             
             item.folder = foldername
-            
+            item.setSizeHint(0, QtCore.QSize(100,30))
             self.addTopLevelItem(item)
             
         self.itemSelectionChanged.emit()

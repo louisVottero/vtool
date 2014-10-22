@@ -256,6 +256,9 @@ class Process(object):
     
     def delete_data(self, name):
         data_folder = data.DataFolder(name, self.get_data_path())
+        
+        data_folder.delete()
+        
     
     #code ---
     

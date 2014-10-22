@@ -43,8 +43,28 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         code_directory = self.settings.get('code_directory')
         if code_directory:
             self.set_code_directory(code_directory)
+            
+        self.view_widget.tree_widget.itemChanged.connect(self._item_changed)
+        self.view_widget.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
+                
+    def _item_changed(self, item):
         
-
+        name = item.text(0)
+        
+        self._set_title(name)
+        
+    def _item_selection_changed(self):
+        
+        items = self.view_widget.tree_widget.selectedItems()
+        
+        if not items:
+            self._update_process(None, None)
+            return
+        
+        item = items[0]
+        
+        name = item.text(0)
+        self._set_title(name)
         
     def sizeHint(self):
         return QtCore.QSize(400,800)
@@ -57,6 +77,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings = settings_file
         
     def _build_widgets(self):
+        
+        
         
         self.active_title = QtGui.QLabel('-')
         self.active_title.setAlignment(QtCore.Qt.AlignCenter)
@@ -83,7 +105,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.tab_widget.setTabEnabled(3, False)
         self.tab_widget.setCurrentIndex(1)
         
+        self.main_layout.addSpacing(4)
         self.main_layout.addWidget( self.active_title )
+        self.main_layout.addSpacing(4)
         self.main_layout.addWidget( self.tab_widget )
         
         self.process_button = QtGui.QPushButton('PROCESS')

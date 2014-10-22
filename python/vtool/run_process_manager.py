@@ -28,10 +28,8 @@ def main(directory = None):
 
 if __name__ == '__main__':
     
-    
-    
     APP = qt_ui.build_qt_application(sys.argv)
     
-    WINDOW = main()
+    window = main()
     
     sys.exit(APP.exec_())

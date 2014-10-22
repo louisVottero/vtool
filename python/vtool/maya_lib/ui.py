@@ -33,11 +33,13 @@ def get_maya_window():
 def create_window(ui, dock_area = 'right'): 
     
     ui_name = str(ui.objectName())
-    
     dockName = '%sDock' % ui_name
+    dockName = dockName.replace(' ', '_')
     
-    if (cmds.dockControl(dockName, q=1, ex=1)):
-        cmds.deleteUI(dockName)
+    path = 'MayaWindow|%s' % dockName
+    
+    if cmds.dockControl(path,ex = True):    
+        cmds.deleteUI(dockName, control = True)
         
     allowedAreas = ['right', 'left']
     
@@ -60,7 +62,6 @@ def tool_manager(name = None, directory = None):
     
 def process_manager(directory = None):
     window = ProcessMayaWindow()
-    
     
     create_window(window)
     

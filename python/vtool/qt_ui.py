@@ -257,7 +257,6 @@ class TreeWidget(QtGui.QTreeWidget):
                           
     def _item_selection_changed(self):
         
-        #current_item = self.currentItem()
         item_list = self.selectedItems()
         
         current_item = None
@@ -353,6 +352,8 @@ class TreeWidget(QtGui.QTreeWidget):
             return False
         if old_name != new_name:
             return True
+    
+    
     
     def _item_renamed(self, item):
         return
