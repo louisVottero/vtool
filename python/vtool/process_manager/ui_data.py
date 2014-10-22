@@ -141,10 +141,28 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     def _create_context_menu(self):
         
         self.context_menu = QtGui.QMenu()
-
+        
+        self.browse_action = self.context_menu.addAction('Browse')
+        self.refresh_action = self.context_menu.addAction('Refresh')
+        self.context_menu.addSeparator()
         self.remove_action = self.context_menu.addAction('Delete')
 
-        self.remove_action.triggered.connect(self._remove_current_item)    
+        self.browse_action.triggered.connect(self._browse_current_item)
+        self.remove_action.triggered.connect(self._remove_current_item)
+        self.refresh_action.triggered.connect(self.refresh)    
+    
+    def _browse_current_item(self):
+        
+        items = self.selectedItems()
+        
+        if not items:
+            return
+        
+        item = items[0]
+        
+        directory = self.get_item_directory(item)
+        
+        vtool.util_file.open_browser(directory)
     
     def _remove_current_item(self):
         
@@ -155,7 +173,10 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         name = items[0].text(0)
         
-        vtool.qt_ui.get_permission('Delete %s' % name, self)
+        delete_permission = vtool.qt_ui.get_permission('Delete %s' % name, self)
+        
+        if not delete_permission:
+            return
         
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
@@ -211,7 +232,28 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             self.addTopLevelItem(item)
             
         self.itemSelectionChanged.emit()
-                    
+    
+    def get_item_path_string(self, item):
+        
+        parents = self.get_tree_item_path(item)
+        parent_names = self.get_tree_item_names(parents)
+        
+        names = []
+        
+        if not parent_names:
+            return
+        
+        for name in parent_names:
+            names.append(name[0])
+        
+        names.insert(1, '_data')
+        
+        names.reverse()
+        import string
+        path = string.join(names, '/')
+        
+        return path
+                
     def refresh(self):
         self._load_data()
         
