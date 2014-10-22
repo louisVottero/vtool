@@ -3,8 +3,6 @@
 import sys
 
 from vtool import qt_ui
-
-#import qt_ui
 from vtool import util_file
 from vtool import util
 
@@ -40,11 +38,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._setup_settings_file()
         
         project_directory = self.settings.get('project_directory')
-        code_directory = self.settings.get('code_directory')
-        
         self._set_default_project_directory(project_directory)
+        
+        code_directory = self.settings.get('code_directory')
         if code_directory:
             self.set_code_directory(code_directory)
+        
+
         
     def sizeHint(self):
         return QtCore.QSize(400,800)
@@ -87,6 +87,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.main_layout.addWidget( self.tab_widget )
         
         self.process_button = QtGui.QPushButton('PROCESS')
+        self.process_button.setDisabled(True)
         self.browser_button = QtGui.QPushButton('Browse')
         
         button_layout = QtGui.QHBoxLayout()
@@ -141,7 +142,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_tab = 1
         
     def _update_process(self, name, item):
-               
          
         self.code_widget.code_widget.code_edit.save_tabs(self.last_process)
         self.code_widget.code_widget.code_edit.clear()
@@ -156,15 +156,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.tab_widget.setTabEnabled(2, True)
             self.tab_widget.setTabEnabled(3, True)
             
+            self.process_button.setEnabled(True)
+            
         if not name:
+            
             self._set_title('-')
 
             self.tab_widget.setTabEnabled(2, False)
             self.tab_widget.setTabEnabled(3, False)
             
+            self.process_button.setDisabled(True)
+            
         self.last_process = name
-        
-        
                                 
     def _get_current_path(self):
         item = self.view_widget.tree_widget.currentItem()
@@ -280,6 +283,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def set_project_directory(self, directory, sub_part = None):
         
+        self._update_process(None, None)
+        
         if not directory:
             return
 
@@ -308,7 +313,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if directory == None:
             directory = ''
                     
-        self.settings.set('code_directory', str(directory))
+        self.settings.set('code_directory', directory)
         self.code_widget.set_code_directory(directory)
         self.settings_widget.set_code_directory(directory)
         

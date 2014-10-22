@@ -182,8 +182,6 @@ class DirectoryWidget(BasicWidget):
        
 class TreeWidget(QtGui.QTreeWidget):
     
-    item_clicked = create_signal(object, object)    
-    
     def __init__(self):
         super(TreeWidget, self).__init__()
 
@@ -241,13 +239,13 @@ class TreeWidget(QtGui.QTreeWidget):
         if not item or column != self.title_text_index:
             if self.last_item:
                 self._clear_selection()
-                
-        self._emit_item_click(item)
-                
+        
+    """                        
     def _emit_item_click(self, item):
         
         name = item.text(self.title_text_index)
         self.item_clicked.emit(name, item)
+    """
     
     def mousePressEvent(self, event):
         super(TreeWidget, self).mousePressEvent(event)
@@ -259,8 +257,10 @@ class TreeWidget(QtGui.QTreeWidget):
                           
     def _item_selection_changed(self):
         
-        current_item = self.currentItem()
+        #current_item = self.currentItem()
         item_list = self.selectedItems()
+        
+        current_item = None
         
         if item_list:
             current_item = item_list[0]
@@ -268,11 +268,23 @@ class TreeWidget(QtGui.QTreeWidget):
         if current_item:
             self.current_name = current_item.text(self.title_text_index)
         
+        
+        
         if self.edit_state:
             self._edit_finish(self.edit_state)
-            
-        if current_item:
-            self._emit_item_click(current_item)        
+    
+        if not current_item:        
+            self._emit_item_click(current_item)
+          
+        
+    def _emit_item_click(self, item):
+        
+        if item:
+            name = item.text(self.title_text_index)
+        if not item:
+            name = ''
+                        
+        self.itemClicked.emit(item, 0)      
             
     def _item_changed(self, current_item, previous_item):
           
@@ -737,15 +749,17 @@ class EditFileTreeWidget(DirectoryWidget):
         
         self.tree_widget = self._define_tree_widget()   
         
-        self.tree_widget.item_clicked.connect(self._item_clicked)
+        self.tree_widget.itemClicked.connect(self._item_clicked)
         
           
         self.manager_widget = self._define_manager_widget()
+        self.manager_widget.set_tree_widget(self.tree_widget)
+        
         self.filter_widget = self._define_filter_widget()
         
         self.filter_widget.set_tree_widget(self.tree_widget)
         self.filter_widget.set_directory(self.directory)
-        self.manager_widget.set_tree_widget(self.tree_widget)
+        
         
         self.main_layout.addWidget(self.tree_widget)
         self.main_layout.addWidget(self.filter_widget)
@@ -753,7 +767,14 @@ class EditFileTreeWidget(DirectoryWidget):
         
         self.main_layout.addWidget(self.manager_widget)
         
-    def _item_clicked(self, name, item):
+    def _item_clicked(self, item, column):
+        
+        if not item:
+            name = ''
+        
+        if item:
+            name = item.text(column)
+        
         self.item_clicked.emit(name, item)
 
     def get_current_item(self):

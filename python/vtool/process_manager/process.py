@@ -80,7 +80,7 @@ class Process(object):
         
         self.process_name = name
         self.parts = []
-        self.external_code_path = None
+        self.external_code_paths = []
         
     def _set_name(self, new_name):
         
