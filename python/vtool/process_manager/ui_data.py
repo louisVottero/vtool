@@ -125,6 +125,29 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.setColumnWidth(0, 150)
         self.setColumnWidth(1, 150)
+        
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._item_menu)
+        
+        self._create_context_menu()
+        
+    def _item_menu(self, position):
+        
+        item = self.itemAt(position)
+            
+        self.context_menu.exec_(self.viewport().mapToGlobal(position))
+            
+        
+    def _create_context_menu(self):
+        
+        self.context_menu = QtGui.QMenu()
+
+        self.remove_action = self.context_menu.addAction('Delete')
+
+        self.remove_action.triggered.connect(self._remove_current_item)    
+    
+    def _remove_current_item(self):
+        pass
     
     def _define_header(self):
         return ['name','type','size','date']

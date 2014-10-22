@@ -29,7 +29,13 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         return ManageProcessTreeWidget()
     
     def _item_clicked(self, name, item):
+        
+        
+        
         super(ViewProcessWidget, self)._item_clicked(name, item)
+        
+        name = self.tree_widget._get_parent_path(name)
+        
         self.manager_widget.copy_widget.set_other_process(name, self.directory)
                         
     def get_process_item(self, name):
@@ -52,35 +58,23 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         return QtGui.QVBoxLayout()
     
     def _build_widgets(self):
-        
-        #button_layout = QtGui.QHBoxLayout()
-                        
-        #add_branch = QtGui.QPushButton('Add')
-        #add_branch.clicked.connect(self._add_branch)
-        
-        #self.copy_button = QtGui.QPushButton('Copy')
-        #self.copy_button.clicked.connect(self._copy)
 
-        #button_layout.addWidget(add_branch)
-        #button_layout.addWidget(self.copy_button)
-          
         self.copy_widget = CopyWidget()
         self.copy_widget.hide()
         
         self.copy_widget.pasted.connect(self._copy_done)
         self.copy_widget.canceled.connect(self._copy_done)
-                    
-        #self.main_layout.addLayout(button_layout)
-        self.main_layout.addWidget(self.copy_widget)
         
+        self.main_layout.addWidget(self.copy_widget)
 
-    
     def _add_branch(self):
         self.tree_widget.add_process('')
       
     def _copy(self):
         
         current_process = self.get_current_process()
+        
+        
         
         if not current_process:
             return
@@ -94,7 +88,6 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.copy_widget.show()
         self.copy_widget.set_process(current_process, self.directory)
         
-        self.copy_button.setDisabled(True)
         self.setFocus()  
         
         items = self.tree_widget.selectedItems()
@@ -103,10 +96,19 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         
     def _copy_done(self):
         self.copy_widget.hide()
-        self.copy_button.setEnabled(True)
+        
         
     def get_current_process(self):
-        return self.tree_widget.current_name
+        
+        items = self.tree_widget.selectedItems()
+        if not items:
+            return
+        
+        
+        
+        parent_path = self.tree_widget._get_parent_path(items[0])
+        
+        return parent_path
     
     def set_directory(self, directory):
         self.directory = directory
@@ -603,6 +605,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         for item in data_items:
             name = item.text()
+            
             process.copy_process_data( self.process, self.other_process, name)
             
     def _paste_code(self):

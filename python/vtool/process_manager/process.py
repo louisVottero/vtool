@@ -563,6 +563,10 @@ def get_default_directory():
     
 def copy_process_data(source_process, target_process, data_name, replace = False):
     
+    print source_process.get_path(), source_process.get_name()
+    
+    print target_process.get_path(), target_process.get_name()
+    
     data_type = source_process.get_data_type(data_name)
     
     data_folder_path = None
@@ -592,17 +596,18 @@ def copy_process_data(source_process, target_process, data_name, replace = False
 
     filepath = instance.get_file()
     
-    basename = util_file.get_basename(filepath)
+    if filepath:
+        basename = util_file.get_basename(filepath)
     
-    destination_directory = util_file.join_path(data_folder_path, basename)
+        destination_directory = util_file.join_path(data_folder_path, basename)
     
-    if util_file.is_file(filepath):
-        copied_path = util_file.copy_file(filepath, destination_directory)
-    if util_file.is_dir(filepath):
-        copied_path = util_file.copy_dir(filepath, destination_directory)
-      
-    version = util_file.VersionFile(copied_path)
-    version.save('Copied from %s' % filepath)
+        if util_file.is_file(filepath):
+            copied_path = util_file.copy_file(filepath, destination_directory)
+        if util_file.is_dir(filepath):
+            copied_path = util_file.copy_dir(filepath, destination_directory)
+          
+        version = util_file.VersionFile(copied_path)
+        version.save('Copied from %s' % filepath)
               
             
 def copy_process_code(source_process, target_process, code_name, replace = False):
@@ -641,12 +646,13 @@ def copy_process_code(source_process, target_process, code_name, replace = False
     
     filepath = instance.get_file()
     
-    destination_directory = code_folder_path
-    
-    if util_file.is_file(filepath):
-        copied_path = util_file.copy_file(filepath, destination_directory)
-    if util_file.is_dir(filepath):
-        copied_path = util_file.copy_dir(filepath, destination_directory)
-      
-    version = util_file.VersionFile(copied_path)
-    version.save('Copied from %s' % filepath)
+    if filepath:
+        destination_directory = code_folder_path
+        
+        if util_file.is_file(filepath):
+            copied_path = util_file.copy_file(filepath, destination_directory)
+        if util_file.is_dir(filepath):
+            copied_path = util_file.copy_dir(filepath, destination_directory)
+          
+        version = util_file.VersionFile(copied_path)
+        version.save('Copied from %s' % filepath)
