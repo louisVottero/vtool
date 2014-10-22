@@ -135,8 +135,11 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         item = self.itemAt(position)
             
+        if item:
+            self.remove_action.setVisible(True)
+        if not item:
+            self.remove_action.setVisible(False)
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
-            
         
     def _create_context_menu(self):
         
@@ -156,7 +159,10 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         items = self.selectedItems()
         
         if not items:
+            vtool.util_file.open_browser(self.directory)
             return
+        
+        
         
         item = items[0]
         
