@@ -3124,6 +3124,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         self.skip_first_control = False
         self.ribbon = False
         self.ribbon_offset = 1
+        self.ribbon_offset_axis = 'Y'
         self.create_follows = True
 
     def _create_curve(self):
@@ -3504,6 +3505,9 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         
         self.ribbon_offset = float_value
         
+    def set_ribbon_offset_axis(self, axis_letter):
+        self.ribbon_offset_axis = axis_letter
+        
     def set_last_pivot_top(self, bool_value):
         self.last_pivot_top_value = bool_value
     
@@ -3524,7 +3528,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             self._setup_stretchy()
             
         if self.ribbon:
-            surface = transforms_to_nurb_surface(self.buffer_joints, self._get_name(), spans = self.control_count-1, offset_amount = self.ribbon_offset)
+            surface = transforms_to_nurb_surface(self.buffer_joints, self._get_name(), spans = self.control_count-1, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis)
             
             cmds.setAttr('%s.inheritsTransform' % surface, 0)
             
@@ -9731,6 +9735,9 @@ class TransferWeight(object):
         
         for influence_index in joint_map:
             
+            if not influence_index:
+                continue
+            
             for vert_index in range(0, len(verts)):
                 
                 value = source_value_map[influence_index][vert_index]
@@ -9759,7 +9766,10 @@ class TransferWeight(object):
             segments = []
             
             for influence_index in joint_map:
-            
+                
+                if not influence_index:
+                    continue
+                
                 joint = joint_map[influence_index]
                 value = source_value_map[influence_index][vert_index]
                 value *= destination_value
@@ -9941,6 +9951,34 @@ class TransferWeight(object):
         bar.end()
         
         cmds.undoInfo(state = True)
+        
+    """
+    def transfer_joints_into_joint(self, joints, joint, source_mesh):
+        
+        value_map = get_skin_weights(self.skin_cluster)
+        influence_values = {}
+
+        source_joint_weights = []
+
+        for joint in joints:
+            
+            index = get_index_at_skin_influence(joint,self.skin_cluster)
+            
+            if index == None:
+                continue
+            
+            if not value_map.has_key(index):
+                continue
+            
+            influence_values[index] = value_map[index]
+            source_joint_weights.append( value_map[index] )
+            
+        if not source_joint_weights:
+            cmds.undoInfo(state = True)
+            return
+    """ 
+        
+                
         
 class MayaWrap(object):
     
@@ -12520,6 +12558,8 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
         face_id = face
     
     
+    print position, face_id
+    
     edges = face_iter.get_edges(face_id)
     
     edge1 = '%s.e[%s]' % (mesh, edges[0])
@@ -14233,7 +14273,7 @@ def transfer_joint_weight_to_blendshape(blendshape, joint, mesh, index = 0, targ
             inc += 1
     
    
-def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_joints = []):
+def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_joints = [], uv_space = False):
     #do not remove print
     print 'skinning %s' % target_mesh
     cmds.undoInfo(state = False)
@@ -14262,8 +14302,23 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
         other_skin = cmds.skinCluster(influences, target_mesh, tsb=True, n = 'skin_%s' % target_mesh)[0]
         
     if other_skin:
-        cmds.copySkinWeights(ss = skin, ds = other_skin, noMirror = True, surfaceAssociation = 'closestPoint', influenceAssociation = ['closestJoint'], normalize = True)
+        if not uv_space:
+            cmds.copySkinWeights(ss = skin, 
+                                 ds = other_skin, 
+                                 noMirror = True, 
+                                 surfaceAssociation = 'closestPoint', 
+                                 influenceAssociation = ['closestJoint'], 
+                                 normalize = True)
         
+        if uv_space:
+            cmds.copySkinWeights(ss = skin, 
+                                 ds = other_skin, 
+                                 noMirror = True, 
+                                 surfaceAssociation = 'closestPoint', 
+                                 influenceAssociation = ['closestJoint'],
+                                 uvSpace = ['map1','map1'], 
+                                 normalize = True)
+            
     other_influences = cmds.skinCluster(other_skin, query = True, wi = True)
         
     for influence in influences:

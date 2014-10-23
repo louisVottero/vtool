@@ -6,7 +6,7 @@ import ui_data
 import process
 from PyQt4.Qt import QEvent, QApplication
 from vtool import qt_ui
-from python.vtool import util_file
+from vtool import util_file
 
 if vtool.qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
