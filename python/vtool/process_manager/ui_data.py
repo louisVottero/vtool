@@ -1,3 +1,5 @@
+# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 import vtool.qt_ui
 import vtool.util_file
 import vtool.data
@@ -123,6 +125,73 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.setColumnWidth(0, 150)
         self.setColumnWidth(1, 150)
+        
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._item_menu)
+        
+        self._create_context_menu()
+        
+    def _item_menu(self, position):
+        
+        item = self.itemAt(position)
+            
+        if item:
+            self.remove_action.setVisible(True)
+        if not item:
+            self.remove_action.setVisible(False)
+        self.context_menu.exec_(self.viewport().mapToGlobal(position))
+        
+    def _create_context_menu(self):
+        
+        self.context_menu = QtGui.QMenu()
+        
+        self.browse_action = self.context_menu.addAction('Browse')
+        self.refresh_action = self.context_menu.addAction('Refresh')
+        self.context_menu.addSeparator()
+        self.remove_action = self.context_menu.addAction('Delete')
+
+        self.browse_action.triggered.connect(self._browse_current_item)
+        self.remove_action.triggered.connect(self._remove_current_item)
+        self.refresh_action.triggered.connect(self.refresh)    
+    
+    def _browse_current_item(self):
+        
+        items = self.selectedItems()
+        
+        if not items:
+            vtool.util_file.open_browser(self.directory)
+            return
+        
+        
+        
+        item = items[0]
+        
+        directory = self.get_item_directory(item)
+        
+        vtool.util_file.open_browser(directory)
+    
+    def _remove_current_item(self):
+        
+        items = self.selectedItems()
+        
+        if not items:
+            return
+        
+        name = items[0].text(0)
+        
+        delete_permission = vtool.qt_ui.get_permission('Delete %s' % name, self)
+        
+        if not delete_permission:
+            return
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        process_tool.delete_data(name)
+        
+        index = self.indexOfTopLevelItem(items[0])
+        
+        self.takeTopLevelItem(index)
+        
     
     def _define_header(self):
         return ['name','type','size','date']
@@ -165,11 +234,32 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             item.setText(1, data_type)
             
             item.folder = foldername
-            
+            item.setSizeHint(0, QtCore.QSize(100,30))
             self.addTopLevelItem(item)
             
         self.itemSelectionChanged.emit()
-                    
+    
+    def get_item_path_string(self, item):
+        
+        parents = self.get_tree_item_path(item)
+        parent_names = self.get_tree_item_names(parents)
+        
+        names = []
+        
+        if not parent_names:
+            return
+        
+        for name in parent_names:
+            names.append(name[0])
+        
+        names.insert(1, '_data')
+        
+        names.reverse()
+        import string
+        path = string.join(names, '/')
+        
+        return path
+                
     def refresh(self):
         self._load_data()
         

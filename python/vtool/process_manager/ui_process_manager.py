@@ -1,8 +1,8 @@
+# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 import sys
 
 from vtool import qt_ui
-
-#import qt_ui
 from vtool import util_file
 from vtool import util
 
@@ -34,22 +34,39 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_process = None
         super(ProcessManagerWindow, self).__init__(parent) 
         
-        
-        
         self._set_default_directory()
         self._setup_settings_file()
         
         project_directory = self.settings.get('project_directory')
-        code_directory = self.settings.get('code_directory')
-        
         self._set_default_project_directory(project_directory)
+        
+        code_directory = self.settings.get('code_directory')
         if code_directory:
             self.set_code_directory(code_directory)
             
+        self.view_widget.tree_widget.itemChanged.connect(self._item_changed)
+        self.view_widget.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
+                
+    def _item_changed(self, item):
         
+        name = item.text(0)
+        
+        self._set_title(name)
+        
+    def _item_selection_changed(self):
+        
+        items = self.view_widget.tree_widget.selectedItems()
+        
+        if not items:
+            self._update_process(None, None)
+            return
+        
+        item = items[0]
+        
+        name = item.text(0)
+        self._set_title(name)
         
     def sizeHint(self):
-        
         return QtCore.QSize(400,800)
         
     def _setup_settings_file(self):
@@ -61,6 +78,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _build_widgets(self):
         
+        
+        
         self.active_title = QtGui.QLabel('-')
         self.active_title.setAlignment(QtCore.Qt.AlignCenter)
         
@@ -71,7 +90,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.item_clicked.connect(self._update_process)
         
         self.data_widget = ui_data.DataProcessWidget()
-        
         
         self.code_widget = ui_code.CodeProcessWidget()
         self.settings_widget = ui_settings.SettingsWidget()
@@ -87,10 +105,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.tab_widget.setTabEnabled(3, False)
         self.tab_widget.setCurrentIndex(1)
         
+        self.main_layout.addSpacing(4)
         self.main_layout.addWidget( self.active_title )
+        self.main_layout.addSpacing(4)
         self.main_layout.addWidget( self.tab_widget )
         
         self.process_button = QtGui.QPushButton('PROCESS')
+        self.process_button.setDisabled(True)
         self.browser_button = QtGui.QPushButton('Browse')
         
         button_layout = QtGui.QHBoxLayout()
@@ -145,7 +166,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_tab = 1
         
     def _update_process(self, name, item):
-               
          
         self.code_widget.code_widget.code_edit.save_tabs(self.last_process)
         self.code_widget.code_widget.code_edit.clear()
@@ -160,15 +180,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.tab_widget.setTabEnabled(2, True)
             self.tab_widget.setTabEnabled(3, True)
             
+            self.process_button.setEnabled(True)
+            
         if not name:
+            
             self._set_title('-')
 
             self.tab_widget.setTabEnabled(2, False)
             self.tab_widget.setTabEnabled(3, False)
             
+            self.process_button.setDisabled(True)
+            
         self.last_process = name
-        
-        
                                 
     def _get_current_path(self):
         item = self.view_widget.tree_widget.currentItem()
@@ -284,6 +307,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def set_project_directory(self, directory, sub_part = None):
         
+        self._update_process(None, None)
+        
         if not directory:
             return
 
@@ -312,7 +337,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if directory == None:
             directory = ''
                     
-        self.settings.set('code_directory', str(directory))
+        self.settings.set('code_directory', directory)
         self.code_widget.set_code_directory(directory)
         self.settings_widget.set_code_directory(directory)
         

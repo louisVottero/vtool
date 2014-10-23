@@ -1,3 +1,5 @@
+# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 import traceback
 import threading
 
@@ -138,7 +140,11 @@ class DataFolder(util_file.FileManager):
         return self.folder_path
     
     def delete(self):
-        util_file.delete_dir(self.folder_path)
+        
+        name = util_file.get_basename(self.folder_path)
+        directory = util_file.get_dirname(self.folder_path)
+        
+        util_file.delete_dir(name, directory)
         
         
     

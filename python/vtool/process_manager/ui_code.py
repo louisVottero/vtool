@@ -1,10 +1,12 @@
+# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 import vtool.qt_ui
 import vtool.util_file
 import vtool.util
 
 import ui_data
 import process
-from PyQt4.Qt import QEvent, QApplication
+
 from vtool import qt_ui
 from vtool import util_file
 
@@ -259,37 +261,14 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         self.code_manifest_tree = CodeManifestTree()
         
         buttons_layout = QtGui.QHBoxLayout()
-        
-        #run_code = QtGui.QPushButton('RUN')
-        #add_code = QtGui.QPushButton('Create')
-        #import_data_code = QtGui.QPushButton('Create Data Import')
-        #remove_code = QtGui.QPushButton('Delete')
-        
-        #self.run_button = run_code
-        #self.run_button.hide()
-        
-        #add_code.setMaximumWidth(50)
-        #import_data_code.setMaximumWidth(120)
-        #remove_code.setMaximumWidth(50)
-        
-        #self.code_manifest_tree.itemSelectionChanged.connect(self._selection_changed)
+                
         self.code_manifest_tree.item_renamed.connect(self._rename)
         self.code_manifest_tree.script_open.connect(self._script_open)
-        
-        #run_code.clicked.connect(self._run_code)
-        #add_code.clicked.connect(self._create_code)
-        #import_data_code.clicked.connect(self._create_import_code)
-        #remove_code.clicked.connect(self._remove_code)
-        
+                
         self.main_layout.addWidget(self.code_manifest_tree)
-        #self.main_layout.addWidget(run_code)
+        
         self.main_layout.addLayout(buttons_layout)
-        
-        #buttons_layout.addWidget(add_code)
-        #buttons_layout.addWidget(import_data_code)
-        #buttons_layout.addWidget(remove_code)
-        
-             
+    
         
     def _script_open(self, item):
         
@@ -297,18 +276,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
             code_folder = self._get_current_code()
             self.script_open.emit(code_folder)
-            
-            """
-            items = self.code_manifest_tree.selectedItems()
-            
-            if items:
-                if items[0]:
-                    self.run_button.show()
-                    
-            if not items:
-                self.run_button.hide()
-            """
-                    
+                                
             
     def _get_current_code(self, item = None):
         
@@ -405,7 +373,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.future_rename = False
         
-        
+        self.new_actions = []
         self.edit_actions = []
         
         self._create_context_menu()
@@ -414,12 +382,19 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     def _create_context_menu(self):
         self.context_menu = QtGui.QMenu()
               
-        self.new_menu = QtGui.QMenu('New')
+        #self.new_menu = QtGui.QMenu('New')
               
-        self.context_menu.addMenu(self.new_menu)
+        #self.context_menu.addMenu(self.new_menu)
         
-        new_python = self.new_menu.addAction('Python Code')
-        new_data_import = self.new_menu.addAction('Data Import')
+        #new_python = self.new_menu.addAction('Python Code')
+        #new_data_import = self.new_menu.addAction('Data Import')
+        
+        new_python = self.context_menu.addAction('New Python Code')
+        new_data_import = self.context_menu.addAction('New Data Import')
+        
+        self.new_actions = [new_python, new_data_import]
+        
+        self.context_menu.addSeparator()
         
         run_action = self.context_menu.addAction('Run')
         rename_action = self.context_menu.addAction(self.tr('Rename'))
@@ -447,10 +422,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             self._edit_actions_visible(True)
             
-            #if self.future_rename:
-                #self._edit_start(item)
-                #self.future_rename = False
-                
         if not item:
             
             self._edit_actions_visible(False)
@@ -475,6 +446,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         new_name = qt_ui.get_comment(self, 'New name:', 'Rename %s' % self.old_name)
         
+        if not new_name:
+            return
+        
         self._rename_item(item, new_name)
         
         
@@ -483,6 +457,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     
     def mouseDoubleClickEvent(self, event):
         
+        print 'double click'
         
         items = self.selectedItems()
         item = items[0]
