@@ -215,6 +215,12 @@ class Process(object):
         
         return util_file.get_folders(directory)      
      
+    def get_data_instance(self, name):
+        path = self.get_data_path()
+        data_folder = data.DataFolder(name, path)
+        
+        return data_folder.get_folder_data_instance()
+     
     def create_data(self, name, data_type):
         path = self.get_data_path()
         

@@ -447,7 +447,7 @@ class SkinWeightData(MayaCustomData):
                     skip = True
                 
                 if available_influences:
-                    skin_cluster = cmds.skinCluster(available_influences, mesh, tsb = True)[0]
+                    skin_cluster = cmds.skinCluster(available_influences, mesh,  tsb = True)[0]
             
             if skip == True:
                 continue
@@ -1077,6 +1077,9 @@ class MayaFileData(MayaCustomData):
         cmds.select(to_select, r = True )
     
     def import_data(self, filepath = None):
+        
+        if open == True:
+            self.open(filepath)
         
         import_file = None
         

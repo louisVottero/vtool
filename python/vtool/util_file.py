@@ -515,7 +515,7 @@ def get_folders_date_sorted(directory):
     return list(sorted(os.listdir(directory), key = mtime))
 
 def get_files_date_sorted(directory, extension = None):
-    
+        
     if not extension:
         files = get_files(directory)
         
@@ -523,12 +523,14 @@ def get_files_date_sorted(directory, extension = None):
         files = get_files_with_extension(extension, directory)
     
     mtime = lambda f: os.stat(os.path.join(directory, f)).st_mtime
-
-    return list(sorted(get_files(files), key = mtime))
+    
+    return list(sorted(files, key = mtime))
         
 
 def get_files_with_extension(extension, directory, fullpath = False):
     found = []
+    
+    
     
     objects = os.listdir(directory)
     for directory in objects:

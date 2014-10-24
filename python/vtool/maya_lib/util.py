@@ -3225,6 +3225,9 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
     def _last_increment(self, control, current_transform):
         
         if self.create_follows:
+            
+            print self.controls[-1], self.sub_drivers
+            
             create_follow_fade(self.controls[-1].get(), self.sub_drivers[:-1])
             create_follow_fade(self.sub_controls[-1], self.sub_drivers[:-1])
             create_follow_fade(self.sub_controls[0], self.sub_drivers[1:])
@@ -3298,7 +3301,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1].get(), self.stretch_on_off)
     
     def _loop(self, transforms):
-        
+                
         self._create_curve()
         self._create_clusters()
         
@@ -3619,6 +3622,8 @@ class FkCurveLocalRig(FkCurveRig):
         
     def _all_increments(self, control, current_transform):
         
+        print control
+        
         match = MatchSpace(self.clusters[self.current_increment], self.current_xform_group)
         match.translation_to_rotate_pivot()
         
@@ -3644,7 +3649,6 @@ class FkCurveLocalRig(FkCurveRig):
             xform_sub_control = create_xform_group(sub_control)
             self.sub_drivers.append( create_xform_group(sub_control, 'driver') )
             
-            
             local_group, local_xform = constrain_local(sub_control, self.clusters[self.current_increment])
             
             self.sub_local_controls.append( local_group )
@@ -3669,19 +3673,16 @@ class FkCurveLocalRig(FkCurveRig):
             sub_vis.create(control)
             sub_vis.connect_out('%sShape.visibility' % sub_control)
             
-            
             sub_control_object.hide_scale_and_visibility_attributes()
             
         if not self.sub_control_on:
             
             constrain_local(control, self.clusters[self.current_increment])
         
-        
-        
         cmds.parent(self.current_xform_group, self.control_group)
         
     def _first_increment(self, control, current_transform):
-        super(FkCurveLocalRig, self)._last_increment(control, current_transform)
+        super(FkCurveLocalRig, self)._first_increment(control, current_transform)
         
         if self.local_parent:
             cmds.parent(self.last_local_xform, self.local_parent)
@@ -3708,6 +3709,7 @@ class FkCurveLocalRig(FkCurveRig):
         cmds.parent(handle, self.setup_group)
         
         if self.advanced_twist:
+            
             start_locator = cmds.spaceLocator(n = self._get_name('locatorTwistStart'))[0]
             end_locator = cmds.spaceLocator(n = self._get_name('locatorTwistEnd'))[0]
             
