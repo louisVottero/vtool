@@ -505,9 +505,12 @@ class SkinWeightData(MayaCustomData):
                     
     def export_data(self, comment):
         
+        print 'exporting data'
+        
         path = util_file.join_path(self.directory, self.name)
         
         selection = cmds.ls(sl = True)
+        
         for thing in selection:
             skin = maya_lib.util.find_deformer_by_type(thing, 'skinCluster')
             
@@ -528,7 +531,14 @@ class SkinWeightData(MayaCustomData):
                 info_lines = []
                 
                 for influence in weights:
+                    
+                    print 'influence!', influence
+                    
                     weight_list = weights[influence]
+                    
+                    if influence == 85:
+                        print 'WEIGHTS!'
+                        print weight_list
                     
                     if not weight_list:
                         continue
@@ -548,6 +558,9 @@ class LoadWeightFileThread(threading.Thread):
     def run(self, influence_index, skin, weights, path):
         
         influence_name = maya_lib.util.get_skin_influence_at_index(influence_index, skin)
+        
+        print influence_name
+        
         filepath = util_file.create_file('%s.weights' % influence_name, path)
         
         write = util_file.WriteFile(filepath)
