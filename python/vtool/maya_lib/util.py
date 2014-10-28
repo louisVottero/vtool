@@ -3248,8 +3248,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         
         if self.create_follows:
             
-            print self.controls[-1], self.sub_drivers
-            
             create_follow_fade(self.controls[-1].get(), self.sub_drivers[:-1])
             create_follow_fade(self.sub_controls[-1], self.sub_drivers[:-1])
             create_follow_fade(self.sub_controls[0], self.sub_drivers[1:])
@@ -3643,8 +3641,6 @@ class FkCurveLocalRig(FkCurveRig):
         self.sub_local_controls = []
         
     def _all_increments(self, control, current_transform):
-        
-        print control
         
         match = MatchSpace(self.clusters[self.current_increment], self.current_xform_group)
         match.translation_to_rotate_pivot()
@@ -12587,9 +12583,6 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     if face:
         face_id = face
     
-    
-    print position, face_id
-    
     edges = face_iter.get_edges(face_id)
     
     edge1 = '%s.e[%s]' % (mesh, edges[0])
@@ -13330,10 +13323,14 @@ def get_skin_weights(skin_deformer):
         
         if influence_indices:        
             for influence_index in influence_indices:
+                                
+                value = cmds.getAttr('%s.weightList[%s].weights[%s]' % (skin_deformer, inc, influence_index))
                 
-                value = cmds.getAttr('%s.weightList[ %s].weights[ %s ]' % (skin_deformer, inc, influence_index))
-
+                if value < 0.0001:
+                    continue
+                
                 if not influence_index in value_map:
+                    
                     value_map[influence_index] = []
                     
                     for inc2 in range(0, len(indices)):

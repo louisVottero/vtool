@@ -162,8 +162,6 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             vtool.util_file.open_browser(self.directory)
             return
         
-        
-        
         item = items[0]
         
         directory = self.get_item_directory(item)

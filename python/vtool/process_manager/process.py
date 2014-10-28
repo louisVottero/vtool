@@ -531,8 +531,13 @@ class Process(object):
             if util_file.is_dir(external_code_path):
                 if not external_code_path in sys.path:
                     sys.path.append(external_code_path)
-            
-        module = util_file.load_python_module(name, path)
+        
+        #do not remove print
+        print '\t\a\t%s.' % name
+        
+        module = util_file.source_python_module(script)     
+        
+        #module = util_file.load_python_module(name, path)
         
         if type(module) == str:
             return module

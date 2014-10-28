@@ -854,6 +854,52 @@ def copy_file(filepath, filepath_destination):
     
 #---- python
 
+def import_python_module(module_name, directory):
+    if not is_dir(directory):
+        return
+        
+    full_path = join_path(directory, module_name)
+    
+    module = None
+    
+    if is_file(full_path):
+        if not directory in sys.path:
+            sys.path.append(directory)
+            
+        split_name = module_name.split('.')
+        script_name = split_name[0]
+                        
+        exec('import %s' % script_name)
+        exec('reload(%s)' % script_name)
+         
+        
+        module = eval(script_name)
+        
+        sys.path.remove(directory)
+        
+    return module
+
+def source_python_module(code_directory):
+    try:
+        try:
+            
+            fin = open(code_directory, 'rb')
+            import md5
+            return  imp.load_source(md5.new(code_directory).hexdigest(), code_directory, fin)
+        
+        finally:            
+            try: fin.close()
+            except: pass
+            
+    except ImportError, x:
+        traceback.print_exc(file = sys.stderr)
+        raise
+    
+    except:
+        traceback.print_exc(file = sys.stderr)
+        raise
+      
+
 def load_python_module(module_name, directory):
         
     if is_dir(directory):
@@ -862,17 +908,12 @@ def load_python_module(module_name, directory):
                 
         if is_file(full_path):
             
-            sys.path.append(directory)
-            
-            
-            
             split_name = module_name.split('.')
             
             filepath, pathname, description = imp.find_module(split_name[0], 
                                                         [directory])
             
             try:
-                
                 module = imp.load_module(module_name, 
                                          filepath, 
                                          pathname, 
@@ -880,8 +921,10 @@ def load_python_module(module_name, directory):
                 
             except Exception:
                 return traceback.format_exc()
-                            
-            sys.path.remove(directory)
+            
+            finally:
+                if filepath:
+                    filepath.close()
             
             return module
         
