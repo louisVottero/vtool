@@ -2370,6 +2370,8 @@ class SparseLocalRig(SparseRig):
         
         self.local_constraint = True
         self.control_to_pivot = False
+        self.local_parent = None
+        self.local_xform = None
 
     def set_local_constraint(self, bool_value):
         self.local_constraint = bool_value
@@ -2378,9 +2380,17 @@ class SparseLocalRig(SparseRig):
         
         self.control_to_pivot = bool_value
 
+    def set_local_parent(self, local_parent):
+        self.local_parent = local_parent
+
     def create(self):
         
         super(SparseRig, self).create()
+        
+        if self.local_parent:
+            print 'creating sparse local parent'
+            self.local_xform = cmds.group(em = True, n = 'localParent_%s' % self._get_name())
+            cmds.parent(self.local_xform, self.setup_group)
         
         for joint in self.joints:
             control = self._create_control()
@@ -2398,7 +2408,11 @@ class SparseLocalRig(SparseRig):
                 MatchSpace(joint, xform).translation_to_rotate_pivot()
             
             if not self.local_constraint:
-                create_xform_group(joint)
+                xform_joint = create_xform_group(joint)
+                
+                if self.local_parent:
+                    cmds.parent(xform_joint, self.local_xform)
+                
                 connect_translate(control.get(), joint)
                 connect_rotate(control.get(), joint)
                 
@@ -2408,17 +2422,25 @@ class SparseLocalRig(SparseRig):
             if self.local_constraint:
                 local_group, local_xform = constrain_local(control.get(), joint)
                 
+                if self.local_xform:
+                    cmds.parent(local_xform, self.local_xform)
+                
                 local_driver = create_xform_group(local_group, 'driver')
                 
                 connect_translate(driver, local_driver)
                 connect_rotate(driver, local_driver)
                 connect_scale(driver, local_driver)
                 
-                cmds.parent(local_xform, self.setup_group)
+                if not self.local_xform:
+                    cmds.parent(local_xform, self.setup_group)
                 
             connect_scale(control.get(), joint)
             
+            
             cmds.parent(xform, self.control_group)
+            
+        if self.local_parent:
+            follow = create_follow_group(self.local_parent, self.local_xform)
             
 class ControlRig(Rig):
     
@@ -9690,6 +9712,8 @@ class TransferWeight(object):
     def __init__(self, mesh):
         self.mesh = mesh
     
+        print 'in inti', mesh
+    
         skin_deformer = self._get_skin_cluster(mesh)
         
         self.skin_clsuter= None
@@ -9699,6 +9723,8 @@ class TransferWeight(object):
         
         
     def _get_skin_cluster(self, mesh):
+        
+        print 'get skin', mesh
         
         skin_deformer = find_deformer_by_type(mesh, 'skinCluster')
         
@@ -13210,6 +13236,8 @@ def create_cluster_bindpre(cluster, handle):
 
 def find_deformer_by_type(mesh, deformer_type ):
     
+    print mesh
+    
     scope = cmds.listHistory(mesh, interestLevel = 1)
     
     for thing in scope[1:]:
@@ -14586,11 +14614,11 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
     
     if cmds.objExists(blendshape):
         count = cmds.blendShape(blendshape, q= True, weightCount = True)
-        cmds.blendShape(blendshape, edit=True, t=(target_mesh, count+1, source_mesh, 1.0) )
+        cmds.blendShape(blendshape, edit=True, tc = False, t=(target_mesh, count+1, source_mesh, 1.0) )
         cmds.setAttr('%s.%s' % (blendshape, source_mesh), weight)
         
     if not cmds.objExists(blendshape):
-        cmds.blendShape(source_mesh, target_mesh, weight =[0,weight], n = 'blendshape_%s' % target_mesh, foc = True)
+        cmds.blendShape(source_mesh, target_mesh, tc = False, weight =[0,weight], n = blendshape, foc = True)
         
     return blendshape 
     
