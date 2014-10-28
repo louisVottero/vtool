@@ -49,7 +49,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
     def _item_changed(self, item):
         
-        name = item.text(0)
+        name = item.get_name()
         
         self._set_title(name)
         
@@ -63,8 +63,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         item = items[0]
         
-        name = item.text(0)
-        self._set_title(name)
+        #name = item.get_path()
+        #self._set_title(name)
         
     def sizeHint(self):
         return QtCore.QSize(400,800)
@@ -150,13 +150,21 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process.load(process_name)
             
             if item and self.tab_widget.currentIndex() == 2:
-                self.data_widget.set_directory(self.process.get_path())
+                
+                path = self.view_widget.tree_widget.directory
+                path = util_file.join_path(path, self.process.get_name())
+                
+                self.data_widget.set_directory(path)
                 
                 self.last_tab = 2
                 return
             
             if item and self.tab_widget.currentIndex() == 3:
-                self.code_widget.set_directory(self.process.get_path())
+                
+                path = self.view_widget.tree_widget.directory
+                path = util_file.join_path(path, self.process.get_name())
+                                
+                self.code_widget.set_directory(path)
                 code_directory = self.settings.get('code_directory')
                 self.code_widget.set_external_code_library(code_directory)
                 
@@ -171,11 +179,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.code_widget.code_widget.code_edit.clear()
         self.code_widget.script_widget.code_manifest_tree.clearSelection()
                 
+        items = self.view_widget.tree_widget.selectedItems()
+        if items:
+            title = items[0].get_name()
+        if not items:
+            title = '-'
+            
+                
         if name:
             
             self.process.load(name)        
             
-            self._set_title(name)
+            self._set_title(title)
 
             self.tab_widget.setTabEnabled(2, True)
             self.tab_widget.setTabEnabled(3, True)
@@ -194,11 +209,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_process = name
                                 
     def _get_current_path(self):
-        item = self.view_widget.tree_widget.currentItem()
+        items = self.view_widget.tree_widget.selectedItems()
+        
+        item = None
+        
+        if items:
+            item = items[0]
         
         if item:
             process_name = item.get_name()
             self.process.load(process_name)
+            
             return self.process.get_path()
            
     def _process(self):

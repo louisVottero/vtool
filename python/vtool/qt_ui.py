@@ -399,7 +399,9 @@ class TreeWidget(QtGui.QTreeWidget):
                 
             item = self.topLevelItem(inc)
             text = str( item.text(self.title_text_index) )
-                                                
+            
+            string = str(string)
+            
             if not text.startswith(string) and not text.startswith(string.upper()):
                 
                 self.setItemHidden(item, True)  
@@ -843,7 +845,7 @@ class FilterTreeWidget( DirectoryWidget ):
         self.skip_name_filter = False
         
     def _sub_path_filter_changed(self):
-        current_text = self.sub_path_filter.text()
+        current_text = str( self.sub_path_filter.text() )
         current_text = current_text.strip()
         
         if not current_text:
@@ -857,6 +859,12 @@ class FilterTreeWidget( DirectoryWidget ):
         
         if util_file.is_dir(sub_dir):
             self.tree_widget.set_directory(sub_dir)
+            
+            text = self.filter_names.text()
+            self._filter_names(text)    
+            
+        print self.tree_widget.directory
+        
             
     def clear_sub_path_filter(self):
         self.sub_path_filter.setText('')

@@ -20,6 +20,9 @@ def find_processes(directory = None):
     
     found = []
     
+    if not files:
+        return found
+    
     for file_name in files:
         
         full_path = util_file.join_path(directory, file_name)
@@ -111,7 +114,6 @@ class Process(object):
             
             
             if not found:
-                print 'creating manifest'
                 self.create_code('manifest', 'script.manifest')        
         
         return path
@@ -159,6 +161,8 @@ class Process(object):
         return self.process_name
     
     def get_relative_process(self, relative_path):
+        
+        relative_path = relative_path.replace('..', self.get_path())
         
         process = Process(relative_path)
         process.set_directory(self.directory)
@@ -576,11 +580,7 @@ def get_default_directory():
         return util_file.join_path(util_file.get_user_dir(), 'documents/process_manager')
     
 def copy_process_data(source_process, target_process, data_name, replace = False):
-    
-    print source_process.get_path(), source_process.get_name()
-    
-    print target_process.get_path(), target_process.get_name()
-    
+        
     data_type = source_process.get_data_type(data_name)
     
     data_folder_path = None

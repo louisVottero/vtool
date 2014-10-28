@@ -30,8 +30,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
     def _item_clicked(self, name, item):
         
-        
-        
         super(ViewProcessWidget, self)._item_clicked(name, item)
         
         if not name:
@@ -242,23 +240,30 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
     def _load_processes(self, process_paths):
         
+        """
         current_item_name = ''
+        item = None
         
-        if self.current_item:
-            current_item_name = self.current_item.text(0)
+        
+        items = self.selectedItems()
+        if items:
+            item = items[0]
+        
+        if item:
+            current_item_name = item.text(0)
             self.current_item = None
-        
+        """
         self.clear()
         
         current_item = None
         
         for process_path in process_paths:
-            item = self._add_process_item(process_path)
+            self._add_process_item(process_path)
             
-            if item.text(0) == current_item_name:
-                current_item = item
+            #if item.text(0) == current_item_name:
+            #    current_item = item
                 
-        self.current_item = current_item
+        #self.current_item = current_item
                 
     def _get_parent_path(self, item):
         
@@ -286,50 +291,26 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                     return True
         
         return False
-        
-    def get_tree_item_path(self, tree_item):
                 
-        parent_items = []
-        parent_items.append(tree_item)
-        
-        if not tree_item:
-            return
-        
-        parent_item = tree_item.parent()
-        
-        while parent_item:
-            parent_items.append(parent_item)
-            
-            parent_item = parent_item.parent()
-            
-        return parent_items
-        
     def _add_process_items(self, item, path):
         
+        
         parts = process.find_processes(path)
-                
+
         pass_item = None
-        
-                
-        #import vtool.util
-        #watch = vtool.util.StopWatch()
-        
-        #watch.start()
                 
         for part in parts:
             last_item = self._add_process_item(part, item)
             if last_item:
                 pass_item = last_item
             
-        #watch.end()
-            
         if pass_item:
             self.scrollToItem(pass_item,hint = QtGui.QAbstractItemView.PositionAtCenter)
             
         self.resizeColumnToContents(0)
         
-    def _add_process_item(self, name, parent_item = None):
-        
+    def _add_process_item(self, name, parent_item = None, create = False):
+                
         expand_to = False
         
         current_item = self.current_item
@@ -341,13 +322,15 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if parent_item:
             
             item_path = self.get_item_path_string(parent_item)
-            
+                        
             name = string.join([item_path, name], '/')
             
             if self._child_exists(name, parent_item):
                 return
         
         item = ProcessItem(self.directory, name)
+        if create:
+            item.create()
         
         if not parent_item:
             self.addTopLevelItem(item)
@@ -359,8 +342,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if item.has_parts():
             QtGui.QTreeWidgetItem(item)
-        
-        
         
         return item
      
@@ -385,23 +366,27 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
      
     def _add_sub_items(self, item):
         
+        from vtool import util
+        
+        
         self._delete_children(item)
+        
         
         process_name = item.get_name()
         
         path = util_file.join_path(self.directory, process_name)
         
         self._add_process_items(item, path)
+        
 
     def refresh(self):
         
+        self.clearSelection()
+                
         process_paths = self._get_process_paths()
         
         self._load_processes(process_paths)
-        
-        if self.current_item:
-            self.current_item.setSelected(False)
-        
+                
         self.current_item = None
         self.last_item = None
         
@@ -422,11 +407,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 
             name = process.get_unused_process_name(path)
         
-        self._add_process_item(name)
+        self._add_process_item(name, create = True)
         
     def delete_process(self):
-        
-        
         
         current_item = self.selectedItems()
         
@@ -459,8 +442,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.takeTopLevelItem(index)
             self.clearSelection()
         
-        
-        
     def get_process_item(self, name):
         
         iterator = QtGui.QTreeWidgetItemIterator(self)
@@ -470,7 +451,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 return iterator.value()
             
             ++iterator
-            
         
 class SimpleItem(qt_ui.TreeWidgetItem):
     
@@ -539,7 +519,14 @@ class ProcessItem(qt_ui.TreeWidgetItem):
         
         self.process = None
         
-        self._add_process(directory, name)
+        self.directory = directory
+        self.name = name
+        
+        split_name = name.split('/')
+        
+        self.setText(0, split_name[-1])
+        
+        #self._add_process(directory, name)
         
         self.detail = False
         
@@ -556,26 +543,52 @@ class ProcessItem(qt_ui.TreeWidgetItem):
         self.process = process.Process(name)
         self.process.set_directory(directory)
         
-        split_name = name.split('/')
-        
-        self.setText(0, split_name[-1])
         self.process.create()
+        
+    def _get_process(self):
+        process_instance = process.Process(self.name)
+        process_instance.set_directory(self.directory)
+        
+        return process_instance
+        
+    def create(self):
+        
+        process_instance = self._get_process()
+        process_instance.create()    
+    
         
     def rename(self, name):
         
-        return self.process.rename(name)
+        process_instance = self._get_process()
+        
+        self.name = name
+                
+        return process_instance.rename(name)
                 
     def set_directory(self, directory):
-        self.process.set_directory(directory)
+        
+        self.directory = directory
+        
+        #self.process.set_directory(directory)
                 
     def get_path(self):
-        return self.process.get_path()
+        
+        process_instance = self._get_process()
+        
+        return process_instance.get_path()
+        
     
     def get_name(self):
-        return self.process.process_name
+        
+        process_instance = self._get_process()
+        
+        return process_instance.process_name
     
     def has_parts(self):
-        if self.process.get_sub_processes():
+        
+        process_instance = self._get_process()
+        
+        if process_instance.get_sub_processes():
             return True
         
         return False
@@ -637,7 +650,6 @@ class CopyWidget(qt_ui.BasicWidget):
         self.main_layout.addWidget(self.tabs)
         self.main_layout.addWidget(self.paste_to)
         self.main_layout.addLayout(h_layout)
-        
         
     def _populate_lists(self):
         
