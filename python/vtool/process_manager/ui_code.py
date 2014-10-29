@@ -91,8 +91,6 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         split_code = code.split('.')
         
-        #self.code_widget.code_edit.goto_tab( split_code[0] )
-        
         path = process_tool.get_code_folder(split_code[0])
 
         code_file = vtool.util_file.join_path(path, code)
@@ -333,7 +331,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         if self.directory == self.last_directory:
             return
-        
+
         self.code_manifest_tree.set_directory(directory)
         
     def reset_process_script_state(self):
@@ -371,7 +369,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
-        
         self.future_rename = False
         
         self.new_actions = []
@@ -384,6 +381,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.checkbox = QtGui.QCheckBox(header)
         self.checkbox.stateChanged.connect(self._set_all_checked)
         
+        self.update_checkbox = True
+        
     def resizeEvent(self, event = None):
         super(CodeManifestTree, self).resizeEvent(event)
         
@@ -391,14 +390,20 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def _set_all_checked(self, int):
         
+        if not self.update_checkbox:
+            return
         
+        if int == 2:
+            state = QtCore.Qt.Checked
+        if int == 0:
+            state = QtCore.Qt.Unchecked
         
         count = self.topLevelItemCount()
         
         for inc in range(0, count):
             item = self.topLevelItem(inc)
             
-            item.setCheckState(0, int)    
+            item.setCheckState(0, state)    
             
         
     def _create_context_menu(self):
@@ -480,19 +485,26 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def _browse_to_code(self):
         items = self.selectedItems()
-        item = items[0]
         
-    
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         
+        if items:
         
-        code_name = item.text(0)
-        code_name = code_name.split('.')[0]
-        
-        code_path = process_tool.get_code_folder(code_name)
-        
-        util_file.open_browser(code_path)
+            item = items[0]
+    
+            code_name = item.text(0)
+            code_name = code_name.split('.')[0]
+            
+            code_path = process_tool.get_code_folder(code_name)
+            
+            util_file.open_browser(code_path)
+            
+        if not items:
+            
+            code_path = process_tool.get_code_path()
+            
+            util_file.open_browser(code_path)
         
     
     def mouseDoubleClickEvent(self, event):
@@ -611,10 +623,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         item.tree = self
         
-        
         return item
-    
-
     
     def _add_items(self, files):
         
@@ -622,8 +631,23 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         script_count = len(scripts)
         
+        found_false = False
+        
         for inc in range(0, script_count):
+            
             self._add_item(scripts[inc], states[inc])
+            
+            if not states[inc]:
+                found_false = True
+            
+        self.update_checkbox = False
+            
+        if not found_false:
+            self.checkbox.setChecked(True)
+        if found_false:
+            self.checkbox.setChecked(False)
+            
+        self.update_checkbox = True
     
     def _get_files(self):
         
@@ -697,8 +721,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
 
     def set_process_script_state(self, directory, state):
         
-        print 'setting state', state
-        
         script_name = vtool.util_file.get_basename(directory)
         
         item = self._get_item_by_name(script_name)
@@ -759,6 +781,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             item.set_state(1)
         if not status == 'Success':
             item.set_state(0)
+            
             #do not remove print
             print status
         

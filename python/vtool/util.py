@@ -696,3 +696,12 @@ def get_current_date():
     day = date_value.day
     
     return '%s-%s-%s' % (year,month,day)
+
+def clean_string(string):
+    
+    if string == '/':
+        return '_'
+    
+    string = string.replace('\\', '_')
+    
+    return string

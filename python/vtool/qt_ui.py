@@ -239,14 +239,7 @@ class TreeWidget(QtGui.QTreeWidget):
         if not item or column != self.title_text_index:
             if self.last_item:
                 self._clear_selection()
-        
-    """                        
-    def _emit_item_click(self, item):
-        
-        name = item.text(self.title_text_index)
-        self.item_clicked.emit(name, item)
-    """
-    
+
     def mousePressEvent(self, event):
         super(TreeWidget, self).mousePressEvent(event)
         
@@ -267,8 +260,6 @@ class TreeWidget(QtGui.QTreeWidget):
         if current_item:
             self.current_name = current_item.text(self.title_text_index)
         
-        
-        
         if self.edit_state:
             self._edit_finish(self.edit_state)
     
@@ -286,8 +277,9 @@ class TreeWidget(QtGui.QTreeWidget):
         self.itemClicked.emit(item, 0)      
             
     def _item_changed(self, current_item, previous_item):
-          
-        self._edit_finish(previous_item)                      
+        
+        if self.edit_state:
+            self._edit_finish(previous_item)                      
         
     def _item_activated(self, item):
         
@@ -319,29 +311,35 @@ class TreeWidget(QtGui.QTreeWidget):
         
         return
         
+    
     def _edit_finish(self, item):
         
         if not hasattr(self.edit_state, 'text'):
             return
         
         self.edit_state = None
-        
-        self.closePersistentEditor(item, self.title_text_index)
+               
         
         if type(item) == int:
             return self.current_item
         
-        if not self._item_rename_valid(self.old_name, item):
-            
-            item.setText(self.title_text_index, self.old_name )
-            
-            return item
+        self.closePersistentEditor(item, self.title_text_index)
         
-        if self._item_rename_valid(self.old_name, item):
-            
-            self._item_renamed(item)
-            return item
+        state = self._item_rename_valid(self.old_name, item)
         
+        if not state:
+            item.setText(self.title_text_index, self.old_name ) 
+            return item
+            
+        if state:
+        
+            state = self._item_renamed(item)
+            
+            if not state:
+                item.setText( self.title_text_index, self.old_name  )
+         
+            return item
+                
         return item
     
     def _item_rename_valid(self, old_name, item):
@@ -352,11 +350,13 @@ class TreeWidget(QtGui.QTreeWidget):
             return False
         if old_name != new_name:
             return True
+        
+        return False
     
     
     
     def _item_renamed(self, item):
-        return
+        return False
 
     def _delete_children(self, item):
         self.delete_tree_item_children(item)
@@ -414,7 +414,13 @@ class TreeWidget(QtGui.QTreeWidget):
         if not tree_item:
             return
         
-        parent_item = tree_item.parent()
+        
+        try:
+            #when selecting an item in the tree and refreshing it will throw this error:
+            #wrapped C/C++ object of type ProcessItem has been deleted
+            parent_item = tree_item.parent()
+        except:
+            parent_item = None
         
         while parent_item:
             parent_items.append(parent_item)
@@ -428,16 +434,22 @@ class TreeWidget(QtGui.QTreeWidget):
         item_names = []
         
         if not tree_items:
-            return
+            return item_names
         
         for tree_item in tree_items:
             name = self.get_tree_item_name(tree_item)
-            item_names.append(name)    
+            if name:
+                item_names.append(name)    
             
         return item_names
     
     def get_tree_item_name(self, tree_item):
-        count = QtGui.QTreeWidgetItem.columnCount( tree_item )
+        try:
+            #when selecting an item in the tree and refreshing it will throw this error:
+            #wrapped C/C++ object of type ProcessItem has been deleted
+            count = QtGui.QTreeWidgetItem.columnCount( tree_item )
+        except:
+            count = 0
             
         name = []
             
@@ -452,9 +464,14 @@ class TreeWidget(QtGui.QTreeWidget):
         parents = self.get_tree_item_path(item)
         parent_names = self.get_tree_item_names(parents)
         
+        
+        
         names = []
         
         if not parent_names:
+            return
+        
+        if len(parent_names) == 1 and not parent_names[0]:
             return
         
         for name in parent_names:
@@ -728,6 +745,7 @@ class EditFileTreeWidget(DirectoryWidget):
     
     item_clicked = create_signal(object, object)
     
+    
     def __init__(self, parent = None):        
         
         self.tree_widget = None
@@ -752,7 +770,7 @@ class EditFileTreeWidget(DirectoryWidget):
         
         self.tree_widget = self._define_tree_widget()   
         
-        self.tree_widget.itemClicked.connect(self._item_clicked)
+        self.tree_widget.itemClicked.connect(self._item_selection_changed)
         
           
         self.manager_widget = self._define_manager_widget()
@@ -770,6 +788,8 @@ class EditFileTreeWidget(DirectoryWidget):
         
         self.main_layout.addWidget(self.manager_widget)
         
+        
+    """
     def _item_clicked(self, item, column):
         
         if not item:
@@ -779,6 +799,22 @@ class EditFileTreeWidget(DirectoryWidget):
             name = item.text(column)
         
         self.item_clicked.emit(name, item)
+    """
+        
+    def _item_selection_changed(self):
+               
+        items = self.tree_widget.selectedItems()
+        
+        name = None
+        item = None
+        
+        if items:
+            item = items[0]
+            name = item.text(0)
+        
+            self.item_clicked.emit(name, item)
+            
+        return name, item
 
     def get_current_item(self):
         return self.tree_widget.current_item
@@ -851,10 +887,15 @@ class FilterTreeWidget( DirectoryWidget ):
         if not current_text:
             self.set_directory(self.directory)
             self.tree_widget.set_directory(self.directory)
+            
+            text = self.filter_names.text()
+            self._filter_names(text)    
+            
             return
             
         sub_dir = util_file.join_path(self.directory, current_text)
         if not sub_dir:
+            
             return
         
         if util_file.is_dir(sub_dir):
@@ -862,10 +903,7 @@ class FilterTreeWidget( DirectoryWidget ):
             
             text = self.filter_names.text()
             self._filter_names(text)    
-            
-        print self.tree_widget.directory
-        
-            
+                    
     def clear_sub_path_filter(self):
         self.sub_path_filter.setText('')
             
@@ -948,12 +986,14 @@ class FileManagerWidget(DirectoryWidget):
             self.update_history()
                         
     def _file_changed(self):
+        
         if not util_file.is_dir(self.directory):     
             return
         
         self._activate_history_tab()
         
     def _activate_history_tab(self):
+        
         version_tool = util_file.VersionFile(self.directory)    
         files = version_tool.get_versions()
         
@@ -971,10 +1011,6 @@ class FileManagerWidget(DirectoryWidget):
         self.history_attached = True
         
         self._activate_history_tab()
-        
-        
-        
-        
         
     def set_directory(self, directory):
         super(FileManagerWidget, self).set_directory(directory)
@@ -1770,7 +1806,7 @@ def get_comment(parent = None,text_message = 'add comment', title = 'save'):
     
     comment, ok = QtGui.QInputDialog.getText(parent, title,text_message)
     
-    comment = comment.replace('\\', '_')
+    comment = comment.replace('\\', '_')  
     
     if ok:
         return comment

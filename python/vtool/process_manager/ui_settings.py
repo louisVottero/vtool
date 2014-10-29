@@ -152,7 +152,7 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.main_layout.addSpacing(15)
                 
     def _text_changed(self, directory):
-                
+            
         directory = str(directory)
                 
         if not util_file.is_dir(directory):

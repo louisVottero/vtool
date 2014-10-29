@@ -213,7 +213,6 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         main_layout.addWidget(self.joint_axis_check)
         
     def _match_joints(self):
-        print 'matching'
         util.match_joint_xform('joint_', 'guideJoint_')
         util.match_orient('joint_', 'guideJoint_')
         

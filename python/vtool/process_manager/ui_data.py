@@ -40,7 +40,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         splitter.addWidget(self.data_widget)
         splitter.addWidget(self.datatype_widget)
         
-        splitter.setSizes([400, 200])
+        splitter.setSizes([100, 135])
         
         self.label = QtGui.QLabel('-')
         
@@ -104,13 +104,15 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
             return
         
         self.file_widget.set_directory(directory)
+        
+        basename = vtool.util_file.get_basename(directory)
+        
+        self.label.setText(basename)
                 
     def set_directory(self, directory):
         super(DataProcessWidget, self).set_directory(directory)
 
         self.data_widget.set_directory(directory)
-        
-        self.data_widget.refresh()
         
         self.datatype_widget.set_directory( directory )
         
@@ -122,6 +124,14 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         super(DataTreeWidget, self).__init__()
         
         self.directory = None
+        
+        policy = self.sizePolicy()
+        
+        policy.setHorizontalPolicy(policy.Maximum)
+        policy.setHorizontalStretch(1)
+        
+        
+        self.setSizePolicy(policy)
         
         self.setColumnWidth(0, 150)
         self.setColumnWidth(1, 150)
@@ -192,10 +202,10 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
     
     def _define_header(self):
-        return ['name','type','size','date']
-    
-    def _edit_finish(self, item):
-        super(DataTreeWidget, self)._edit_finish(item)
+        #return ['Name','Type','Size','Date']
+        return ['Name','Type']
+        
+    def _item_renamed(self, item):
         
         if type(item) == int:
             return
@@ -208,7 +218,12 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         process_tool.set_directory(self.directory)
         new_path = process_tool.rename_data(old_name, name)
         
+        if not new_path:
+            return False
+        
         self.active_folder_changed.emit(new_path)
+        
+        return True
         
     def _load_data(self, preserve_selected = True):
 
@@ -268,33 +283,66 @@ class DataItemWidget(vtool.qt_ui.TreeItemWidget):
     def __init__(self):
         super(DataItemWidget, self).__init__()
         
-class DataTypeWidget(QtGui.QWidget):
+class DataTypeWidget(vtool.qt_ui.BasicWidget):
     
     data_added = vtool.qt_ui.create_signal(object)
         
     def __init__(self):
-        super(DataTypeWidget, self).__init__()
-        
-        self.main_layout = QtGui.QVBoxLayout()
-        self.setLayout(self.main_layout)
         
         self.data_manager = vtool.data.DataManager()
-        self.main_layout.setContentsMargins(2,2,2,2)
-        self.main_layout.setSpacing(3)
-        self._add_widgets()
-        
         self.directory = None
+        
+        super(DataTypeWidget, self).__init__()
+        
+        self.main_layout.setSpacing(3)
+        
+        policy = self.sizePolicy()
+        
+        policy.setHorizontalPolicy(policy.MinimumExpanding)
+        policy.setHorizontalStretch(0)
+        
+        
+        self.setSizePolicy(policy)
+        
+    def sizeHint(self):
+        
+        return QtCore.QSize(0,20)
                 
-    def _add_widgets(self):
+    def _build_widgets(self):
         self.data_type_tree_widget = DataTypeTreeWidget()
         
         add_button = QtGui.QPushButton('Add')
+        add_button.setMaximumWidth(100)
         add_button.clicked.connect(self._add )
+        
+        add_button.setDisabled(True)
+        self.add_button = add_button
         
         self.main_layout.addWidget(self.data_type_tree_widget)
         self.main_layout.addWidget(add_button)
         
         self._load_data_types()
+        
+        self.data_type_tree_widget.itemSelectionChanged.connect(self._enable_add)
+        
+    def _enable_add(self):
+        
+        items = self.data_type_tree_widget.selectedItems()
+        
+        
+        
+        
+        if items:
+            
+            if items[0].text(0) == 'maya':
+                self.add_button.setDisabled(True)
+                return
+            
+            self.add_button.setEnabled(True)
+        
+        if not items:
+            self.add_button.setDisabled(True)
+        
         
     def _load_data_types(self):
         
@@ -331,7 +379,8 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
     def __init__(self):
         
         super(DataTypeTreeWidget, self).__init__()
-        self.setHeaderLabels(['data type'])
+        self.setHeaderHidden(True)
+        self.setHeaderLabels(['Data Type'])
         
     def _find_group(self, groupname):
         for inc in range(0, self.topLevelItemCount() ):
@@ -426,6 +475,7 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         if comment == None:
             return
         self.data_class.export_data(comment)
+        self.file_changed.emit()
         
     def _import_data(self):
         self.data_class.import_data()
@@ -480,9 +530,6 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.main_layout.addWidget(save_button)    
 
     def _save(self, comment = None):
-        
-        print 'save!', comment, self.text_widget.titlename
-        
         
         if comment == None or comment == False:
             comment = vtool.qt_ui.get_comment(self, title = 'Save %s' % self.data_class.name)
@@ -637,6 +684,8 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
         self.data_class.save(comment)
         
+        self.file_changed.emit()
+        
     def _export_file(self):
         comment = vtool.qt_ui.get_comment(self)
         
@@ -644,6 +693,8 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
             return
         
         self.data_class.export_data(comment)
+        
+        self.file_changed.emit()
         
     def _open_file(self):
         self.data_class.open()
@@ -656,6 +707,7 @@ class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
     def _build_widgets(self):
         super(MayaHistoryFileWidget, self)._build_widgets()
         import_button = QtGui.QPushButton('Import')
+        import_button.setMaximumWidth(100)
         self.button_layout.addWidget(import_button)
         
         import_button.clicked.connect(self._import_version)

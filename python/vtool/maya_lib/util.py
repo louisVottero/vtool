@@ -2388,7 +2388,6 @@ class SparseLocalRig(SparseRig):
         super(SparseRig, self).create()
         
         if self.local_parent:
-            print 'creating sparse local parent'
             self.local_xform = cmds.group(em = True, n = 'localParent_%s' % self._get_name())
             cmds.parent(self.local_xform, self.setup_group)
         
@@ -9707,9 +9706,7 @@ class SplitMeshTarget(object):
 class TransferWeight(object):
     def __init__(self, mesh):
         self.mesh = mesh
-    
-        print 'in inti', mesh
-    
+
         skin_deformer = self._get_skin_cluster(mesh)
         
         self.skin_clsuter= None
@@ -9719,8 +9716,6 @@ class TransferWeight(object):
         
         
     def _get_skin_cluster(self, mesh):
-        
-        print 'get skin', mesh
         
         skin_deformer = find_deformer_by_type(mesh, 'skinCluster')
         
@@ -13228,8 +13223,6 @@ def create_cluster_bindpre(cluster, handle):
     return bindpre
 
 def find_deformer_by_type(mesh, deformer_type ):
-    
-    print mesh
     
     scope = cmds.listHistory(mesh, interestLevel = 1)
     

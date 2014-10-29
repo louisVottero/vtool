@@ -112,7 +112,6 @@ class Process(object):
                     found = True
                     break
             
-            
             if not found:
                 self.create_code('manifest', 'script.manifest')        
         
@@ -377,6 +376,8 @@ class Process(object):
         
     def rename_code(self, old_name, new_name):
         
+        new_name = util.clean_string(new_name)
+        
         code_folder = data.DataFolder(old_name, self.get_code_path())
         code_folder.rename(new_name)
         
@@ -397,13 +398,24 @@ class Process(object):
     def get_manifest_folder(self):
         
         code_path = self.get_code_path()
-        return util_file.join_path(code_path, 'manifest')
+        
+        path = util_file.join_path(code_path, 'manifest')
+        
+        if not util_file.is_dir(path):
+            self.create_code('manifest', 'script.manifest')      
+        
+        return path
         
     def get_manifest_file(self):
         
         manifest_path = self.get_manifest_folder()
         
-        return util_file.join_path(manifest_path, self.process_data_filename)
+        filename =  util_file.join_path(manifest_path, self.process_data_filename)
+        
+        if not util_file.is_file(filename):
+            self.create_code('manifest', 'script.manifest')
+        
+        return filename
     
     def get_manifest_scripts(self, basename = True):
         
@@ -489,7 +501,7 @@ class Process(object):
                 
             if len(split_line) == 1:
                 states.append(False)
-                
+               
         return scripts, states
         
     
@@ -520,7 +532,6 @@ class Process(object):
             
             self._set_name(new_name)
             
-            
             return True
             
         return False
@@ -540,8 +551,6 @@ class Process(object):
         print '\t\a\t%s.' % name
         
         module = util_file.source_python_module(script)     
-        
-        #module = util_file.load_python_module(name, path)
         
         if type(module) == str:
             return module
@@ -567,6 +576,8 @@ class Process(object):
            
         if util.is_in_maya():
             cmds.file(new = True, f = True)
+ 
+        print '\a  Running %s Scripts  \a' % self.get_name()
  
         scripts = self.get_manifest_scripts(False)
         

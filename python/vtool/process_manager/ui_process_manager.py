@@ -45,6 +45,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.set_code_directory(code_directory)
             
         self.view_widget.tree_widget.itemChanged.connect(self._item_changed)
+        self.view_widget.tree_widget.item_renamed.connect(self._item_changed)
         self.view_widget.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
                 
     def _item_changed(self, item):
@@ -58,13 +59,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         items = self.view_widget.tree_widget.selectedItems()
         
         if not items:
-            self._update_process(None, None)
+            self._update_process(None)
             return
         
         item = items[0]
         
-        #name = item.get_path()
-        #self._set_title(name)
+        name = item.get_name()
+        
+        self._set_title(name)
+        self._update_process(name)
         
     def sizeHint(self):
         return QtCore.QSize(400,800)
@@ -87,7 +90,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.tab_widget.currentChanged.connect(self._tab_changed)
                 
         self.view_widget = ui_view.ViewProcessWidget()
-        self.view_widget.item_clicked.connect(self._update_process)
+        
         
         self.data_widget = ui_data.DataProcessWidget()
         
@@ -136,6 +139,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.set_project_directory(directory)
         
     def _set_title(self, name):
+        
+        name = name.replace('/', '  /  ')
+        
         self.active_title.setText(name)
         
     def _tab_changed(self):
@@ -163,7 +169,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
                 path = self.view_widget.tree_widget.directory
                 path = util_file.join_path(path, self.process.get_name())
-                                
+                             
                 self.code_widget.set_directory(path)
                 code_directory = self.settings.get('code_directory')
                 self.code_widget.set_external_code_library(code_directory)
@@ -173,7 +179,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.last_tab = 1
         
-    def _update_process(self, name, item):
+    def _update_process(self, name):
          
         self.code_widget.code_widget.code_edit.save_tabs(self.last_process)
         self.code_widget.code_widget.code_edit.clear()
@@ -245,7 +251,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         script_count = len(scripts)
         
+        print '\a  Running %s Scripts  \a' % self.process.get_name()
+        
         for inc in range(0, script_count):
+            
+            
             
             state = states[inc]
             
@@ -259,6 +269,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             if not status == 'Success':
                 self.code_widget.set_process_script_state(scripts[inc], 0)
+                
                 #do not remove print
                 print status
                 
@@ -328,7 +339,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def set_project_directory(self, directory, sub_part = None):
         
-        self._update_process(None, None)
+        self._update_process(None)
         
         if not directory:
             return
