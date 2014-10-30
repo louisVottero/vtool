@@ -152,7 +152,7 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.main_layout.addSpacing(15)
                 
     def _text_changed(self, directory):
-                
+            
         directory = str(directory)
                 
         if not util_file.is_dir(directory):
@@ -227,7 +227,7 @@ class CodeList(QtGui.QListWidget):
         
         remove_action.triggered.connect(self.remove_current_item)
         
-    def remove_current_item(self, position):
+    def remove_current_item(self):
         
         index = self.currentIndex()
         self.takeItem(index.row())

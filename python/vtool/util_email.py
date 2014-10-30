@@ -39,7 +39,7 @@ class Email(object):
         self._setup_server()
         
         
-        print self.server.sendmail(self.user, list_of_emails, self.message.as_string())
+        self.server.sendmail(self.user, list_of_emails, self.message.as_string())
         
         self.server.quit()
 

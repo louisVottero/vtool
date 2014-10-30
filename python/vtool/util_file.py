@@ -122,7 +122,7 @@ class FileManager(object):
         
     def warning_if_invlid_path(self, warning_text):
         dirname = get_dirname(self.filepath)
-        
+                
         if not is_dir(dirname):
             raise UserWarning(warning_text)
 
@@ -361,6 +361,9 @@ class SettingsFile(object):
     
     def _read(self):
         
+        #if not self.filepath:
+        #    return
+        
         lines = get_file_lines(self.filepath)
         
         if not lines:
@@ -422,7 +425,9 @@ class SettingsFile(object):
     
     def set_directory(self, directory, filename = 'settings.txt'):
         self.directory = directory
+        
         self.filepath = create_file(filename, self.directory)
+        
         self._read()
         
         return self.filepath
@@ -456,7 +461,10 @@ def get_basename(directory):
     return os.path.basename(directory)
 
 def get_dirname(directory):
-    return os.path.dirname(directory)
+    try:
+        return os.path.dirname(directory)
+    except:
+        return False
 
 def get_user_dir():
     return fix_slashes( os.path.expanduser('~') )
@@ -614,7 +622,7 @@ def inc_path_name(directory, padding = 0):
     
     return unique_path.get()
 
-def get_file_lines(filepath):
+def get_file_lines(filepath): 
     read = ReadFile(filepath)
     
     return read.read()
@@ -633,9 +641,7 @@ def open_browser(filepath):
         
     else:
         opener ="open" if sys.platform == "darwin" else "xdg-open"
-        subprocess.call([opener, filepath])
-    
-    
+        subprocess.call([opener, filepath])  
 
 #---- edit
 
@@ -765,17 +771,19 @@ def create_dir(name, directory, make_unique = False):
         if make_unique:
             full_path = inc_path_name(full_path)   
     
-    #if is_dir(full_path):
-    #    return full_path
+    if is_dir(full_path):
+        return full_path
        
     try:
         os.makedirs(full_path)
     except:
-        return full_path
+        return False
     
     return full_path           
     
 def delete_dir(name, directory):
+    
+    util.clean_string(name)
     
     full_path = join_path(directory, name)
     
@@ -804,17 +812,23 @@ def refresh_dir(directory):
 
 def create_file(name, directory, make_unique = False):
     
+    name = util.clean_string(name)
+    
     full_path = join_path(directory, name)
-    
-    
+        
     if is_file(full_path) and not make_unique:
         return full_path
     
     if make_unique:
         full_path = inc_path_name(full_path)
+       
+    
         
-    open_file = open(full_path, 'w')
-    open_file.close()
+    try:
+        open_file = open(full_path, 'w')
+        open_file.close()
+    except:
+        return False
     
     return full_path
     
@@ -893,11 +907,11 @@ def source_python_module(code_directory):
             
     except ImportError, x:
         traceback.print_exc(file = sys.stderr)
-        raise
+        return None
     
     except:
         traceback.print_exc(file = sys.stderr)
-        raise
+        return None
       
 
 def load_python_module(module_name, directory):
@@ -960,3 +974,5 @@ def run_ffmpeg():
     path = 'X:\\Tools\\ffmpeg\\bin\\ffmpeg.exe'
     
     os.system('start \"ffmpeg\" \"%s\"' % path)
+    
+    

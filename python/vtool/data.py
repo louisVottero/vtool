@@ -23,7 +23,7 @@ class DataManager(object):
                                ControlCvData(),
                                SkinWeightData(),
                                AnimationData(),
-                               AtomData(),
+                               #AtomData(),
                                MayaShadersData(),
                                MayaAttributeData(),
                                PoseData()]
@@ -505,8 +505,6 @@ class SkinWeightData(MayaCustomData):
                     
     def export_data(self, comment):
         
-        print 'exporting data'
-        
         path = util_file.join_path(self.directory, self.name)
         
         selection = cmds.ls(sl = True)
@@ -532,13 +530,7 @@ class SkinWeightData(MayaCustomData):
                 
                 for influence in weights:
                     
-                    print 'influence!', influence
-                    
                     weight_list = weights[influence]
-                    
-                    if influence == 85:
-                        print 'WEIGHTS!'
-                        print weight_list
                     
                     if not weight_list:
                         continue
@@ -558,8 +550,6 @@ class LoadWeightFileThread(threading.Thread):
     def run(self, influence_index, skin, weights, path):
         
         influence_name = maya_lib.util.get_skin_influence_at_index(influence_index, skin)
-        
-        print influence_name
         
         filepath = util_file.create_file('%s.weights' % influence_name, path)
         
@@ -702,6 +692,9 @@ class AnimationData(MayaCustomData):
         
         keyframes = cmds.ls(type = 'animCurve')
         
+        if not keyframes:
+            return
+        
         path = util_file.join_path(self.directory, 'keyframes')
         
         util_file.refresh_dir(path)
@@ -753,10 +746,23 @@ class AnimationData(MayaCustomData):
         
         path = util_file.join_path(self.directory, 'keyframes')
         
+        if not util_file.is_dir(path):
+            return
+        
         filepath = util_file.join_path(path, 'keyframes.ma')
+        
+        if not util_file.is_file(filepath):
+            return
             
         info_file = util_file.join_path(path, 'animation.info')
+        
+        if not util_file.is_file(info_file):
+            return
+        
         info_lines = util_file.get_file_lines(info_file)
+        
+        if not info_lines:
+            return
         
         info_dict = {}
         
@@ -880,6 +886,10 @@ class PoseData(MayaCustomData):
         
         dir_path = util_file.join_path(self.directory, self.name)
         
+        if not util_file.is_dir(dir_path):
+            return
+        
+        
         pose_manager = maya_lib.util.PoseManager()
         pose_manager.detach_poses()
         
@@ -930,7 +940,10 @@ class PoseData(MayaCustomData):
         path = util_file.join_path(self.directory, self.name)
         
         if not path:
-            return        
+            return      
+        
+        if not util_file.is_dir(path):
+            return  
         
         pose_files = util_file.get_files(path)
         
@@ -975,6 +988,9 @@ class MayaAttributeData(MayaCustomData):
     def import_data(self):
         
         path = util_file.join_path(self.directory, self.name)
+        
+        
+        
         
         selection = cmds.ls(sl = True)
         
@@ -1040,19 +1056,6 @@ class MayaAttributeData(MayaCustomData):
             for attribute in attributes:
                 attribute_name = '%s.%s' % (thing, attribute)
                 
-                """
-                pass_types = ['float3', 'TdataCompound']
-                attribute_type = cmds.getAttr(attribute_name, type = True)
-                
-                skip = False
-                
-                for pass_type in pass_types:
-                    if pass_type == attribute_type:
-                        skip = True
-                    
-                if skip:
-                    continue
-                """
                 value = cmds.getAttr(attribute_name)
                 
                 lines.append("[ '%s', %s ]" % (attribute, value))

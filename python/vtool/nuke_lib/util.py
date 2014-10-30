@@ -180,8 +180,6 @@ def align_y(source_node, target_node):
     
     other_height = target_node.screenHeight()
     
-    print ty, other_height
-    
     y_value = center_y - (other_height/2)
     
     target_node.setYpos( y_value )
