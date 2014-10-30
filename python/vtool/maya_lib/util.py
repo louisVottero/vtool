@@ -2872,6 +2872,8 @@ class FkScaleRig(FkRig):
         cmds.makeIdentity(buffer_joint, apply = True, r = True) 
           
         #cmds.parentConstraint(control, current_transform)
+        
+        print control, current_transform
         cmds.pointConstraint(control, current_transform) 
         connect_rotate(control, current_transform) 
            
@@ -3764,6 +3766,42 @@ class FkCurveLocalRig(FkCurveRig):
             
     def set_local_parent(self, parent):
         self.local_parent = parent
+
+    def create(self):
+        super(SimpleFkCurveRig, self).create()
+        
+        if not self.ribbon:
+            self._create_spline_ik()
+            self._setup_stretchy()
+            
+        if self.ribbon:
+            surface = transforms_to_nurb_surface(self.buffer_joints, self._get_name(), spans = self.control_count-1, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis)
+            
+            cmds.setAttr('%s.inheritsTransform' % surface, 0)
+            
+            cluster_surface = ClusterSurface(surface, self._get_name())
+            cluster_surface.set_join_ends(True)
+            cluster_surface.create()
+            handles = cluster_surface.handles
+            
+            self.ribbon_clusters = handles
+
+            print handles
+
+            for inc in range(0, len(handles)):
+                
+                cmds.parentConstraint(self.sub_local_controls[inc], handles[inc])
+                #cmds.parent(handles[inc], self.sub_local_controls[inc])
+            
+            cmds.parent(surface, self.setup_group)
+            cmds.parent(handles, self.setup_group)
+            
+            for joint in self.buffer_joints:
+                rivet = attach_to_surface(joint, surface)
+                cmds.setAttr('%s.inheritsTransform' % rivet, 0)
+                cmds.parent(rivet, self.setup_group)
+        
+        cmds.delete(self.orig_curve) 
 
 class PointingFkCurveRig(SimpleFkCurveRig): 
     def _create_curve(self):
