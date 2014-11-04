@@ -9477,6 +9477,8 @@ class BlendShape(object):
             self._store_target(name, current_index)
             
             mesh_input = self._get_mesh_input_for_target(name)
+              
+            
                         
             cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
             
@@ -10207,6 +10209,16 @@ class PoseManager(object):
         
         return control
     
+    def get_mesh_index(self, name, mesh):
+        pose = PoseControl()
+        pose.set_pose(name)
+        
+        mesh_index = pose.get_target_mesh_index(mesh)
+        
+        if mesh_index != None:
+            
+            return mesh_index
+    
     def set_default_pose(self):
         store = StoreControlData(self.pose_group)
         store.set_data()
@@ -10263,9 +10275,16 @@ class PoseManager(object):
         combo = ComboControl(pose_list, name)
         combo.create()
     
-    def add_mesh_to_pose(self, pose_name):
+    def add_mesh_to_pose(self, pose_name, meshes = None):
 
-        selection = cmds.ls(sl = True, l = True)
+        selection = None
+
+        if not meshes == None:
+            selection = cmds.ls(sl = True, l = True)
+        if meshes:
+            selection = meshes
+        
+        
         
         #added = False
         
@@ -10274,19 +10293,30 @@ class PoseManager(object):
 
         if selection:
             for sel in selection:
+                
+                skin = find_deformer_by_type(sel, 'skinCluster')
+                
                 shape = get_mesh_shape(sel)
-                if shape:
+                
+                if shape and skin:
                     pose.add_mesh(sel)
-                    break
+                    return True
+                    
+                if not shape and not skin:
+                    return False
+        
+        if not selection:
+            return False
     
     def visibility_off(self, pose_name):
         pose = PoseControl()
         pose.set_pose(pose_name)
         pose.visibility_off(view_only = True)
         
-    def toggle_visibility(self, pose_name, view_only = False):
+    def toggle_visibility(self, pose_name, view_only = False, mesh_index = 0):
         pose = PoseControl()
         pose.set_pose(pose_name)
+        pose.set_mesh_index(mesh_index)
         pose.toggle_vis(view_only)
     
     def delete_pose(self, name):
@@ -10737,6 +10767,18 @@ class BasePoseControl(object):
     def get_target_mesh(self, mesh):
         if cmds.objExists('%s.mesh_pose_source' % mesh):
             return cmds.getAttr('%s.mesh_pose_source' % mesh)
+        
+    def get_target_mesh_index(self, mesh):
+        
+        meshes = self.get_target_meshes()
+        
+        inc = 0
+        
+        for target_mesh in meshes:
+            if mesh == target_mesh:
+                return inc
+            
+            inc += 1
         
     def create(self):
         top_group = self._create_top_group()
