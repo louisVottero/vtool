@@ -10,6 +10,7 @@ import vtool.qt_ui
 from vtool.process_manager import ui_process_manager
 
 import util
+from _ctypes import alignment
 
 if vtool.qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
@@ -238,9 +239,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         parent.main_layout.addWidget(corrective_button)
         parent.main_layout.addWidget(skin_mesh_from_mesh)
-        
-    
-        
+            
     def _pose_manager(self):
         pose_manager()
         
@@ -367,7 +366,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
 
 class PoseManager(MayaWindow):
     
-    title = 'PoseManager'
+    title = 'Corrective Manager'
     
     def _define_main_layout(self):
         layout = QtGui.QVBoxLayout()
@@ -379,40 +378,37 @@ class PoseManager(MayaWindow):
         self.pose_set = PoseSetWidget()
         self.pose_list = PoseListWidget()
         
-        self.pose_control = PoseControlWidget()
+        self.pose = PoseWidget()
         
-        self.pose_list.set_pose_widget(self.pose_control)
+        self.pose_list.set_pose_widget(self.pose)
         
         self.pose_set.pose_reset.connect(self.pose_list.pose_reset)
         
-        self.pose_control.pose_create.connect(self.pose_list.create_pose)
-        self.pose_control.pose_delete.connect(self.pose_list.delete_pose)
-        self.pose_control.pose_mirror.connect(self.pose_list.mirror_pose)
-        self.pose_control.pose_mesh.connect(self.pose_list.add_mesh)
-        self.pose_control.pose_mesh_view.connect(self.pose_list.view_mesh)
-        self.pose_control.mesh_change.connect(self.pose_list.change_mesh)
-        self.pose_control.axis_change.connect(self.pose_list.change_axis)
-        self.pose_control.value_changed.connect(self.pose_list.value_changed)
+        self.pose.pose_mirror.connect(self.pose_list.mirror_pose)
+        self.pose.pose_mesh.connect(self.pose_list.add_mesh)
+        self.pose.pose_mesh_view.connect(self.pose_list.view_mesh)
+        self.pose.mesh_change.connect(self.pose_list.change_mesh)
+        self.pose.axis_change.connect(self.pose_list.change_axis)
+        self.pose.value_changed.connect(self.pose_list.value_changed)
 
         self.main_layout.addWidget(self.pose_set)
         self.main_layout.addWidget(self.pose_list)
-        self.main_layout.addWidget(self.pose_control)
+        self.main_layout.addWidget(self.pose)
         
     def _update_lists(self):
         self.pose_list.refresh()
         
-class PoseListWidget(QtGui.QWidget):
+class PoseListWidget(vtool.qt_ui.BasicWidget):
     
     pose_added = vtool.qt_ui.create_signal(object)
-    
-    #pose_added = QtCore.pyqtSignal(object)
  
-    
     def __init__(self):
         super(PoseListWidget, self).__init__()
+             
+    def _define_main_layout(self):
+        return QtGui.QHBoxLayout()
         
-        self.main_layout = QtGui.QHBoxLayout()
-        self.setLayout(self.main_layout)
+    def _build_widgets(self):
         
         self.pose_list = PoseTreeWidget()
         combo_list = ComboTreeWidget()
@@ -421,6 +417,10 @@ class PoseListWidget(QtGui.QWidget):
         
         self.main_layout.addWidget(self.pose_list)
         self.main_layout.addWidget(combo_list)
+
+
+        
+        
         
     def set_pose_widget(self, widget):
         self.pose_list.pose_widget = widget
@@ -492,6 +492,7 @@ class BaseTreeWidget(vtool.qt_ui.TreeWidget):
         if not new_name and self.old_name:
             item.setText(0, self.old_name ) 
 
+    
 
     def _populate_list(self):
         pass
@@ -529,12 +530,30 @@ class BaseTreeWidget(vtool.qt_ui.TreeWidget):
             return items
         if get_names:
             return names
+
+    def _rename_pose(self):
+        
+        items = self.selectedItems()
+        
+        item = None
+        
+        if items:
+            item = items[0]
+            
+        if not items:
+            return
+        
+        new_name = vtool.qt_ui.get_new_name('Please specify a name.', self)
+        
+        self.rename_pose(item.text(0), new_name)
+        item.setText(0, new_name)
     
     def refresh(self):
         self._populate_list()
         
     def create_pose(self):
         pass
+
 
     def rename_pose(self, pose_name, new_name):
         return util.PoseManager().rename_pose(str(pose_name), str(new_name))
@@ -580,6 +599,12 @@ class BaseTreeWidget(vtool.qt_ui.TreeWidget):
         pose.set_mesh_index(index)
         
     def delete_pose(self):
+        
+        permission = vtool.qt_ui.get_permission('Delete Pose?', self)
+        
+        if not permission:
+            return
+        
         pose = self._current_pose()
         item = self.currentItem()
         
@@ -598,10 +623,70 @@ class BaseTreeWidget(vtool.qt_ui.TreeWidget):
 class PoseTreeWidget(BaseTreeWidget):
 
     def __init__(self):
+        
+        self.item_context = []
+        
         super(PoseTreeWidget, self).__init__()
         self.setHeaderLabels(['pose'])
         
         self.last_selection = []
+    
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._item_menu)
+        
+        self._create_context_menu()
+        
+        
+    def _item_menu(self, position):
+                
+        item = self.itemAt(position)
+            
+        if item:
+            for item in self.item_context:
+                item.setVisible(True)
+            
+        if not item:
+            for item in self.item_context:
+                item.setVisible(False)
+        
+        
+        self.context_menu.exec_(self.viewport().mapToGlobal(position))
+        
+    def _create_context_menu(self):
+        
+        self.context_menu = QtGui.QMenu()
+        
+        self.create_action = self.context_menu.addAction('Create')
+        self.rename_action = self.context_menu.addAction('Rename')
+        self.delete_action = self.context_menu.addAction('Delete')
+        self.context_menu.addSeparator()
+        self.select_pose_action = self.context_menu.addAction('Select Pose')
+        self.select_joint_action = self.context_menu.addAction('Select Joint')
+        self.context_menu.addSeparator()
+        self.refresh_action = self.context_menu.addAction('Refresh')
+        #self.view_action = self.context_menu.addAction('View')
+        
+        #self.x_action.setCheckable(True)
+        #self.y_action.setCheckable(True)
+        #self.z_action.setCheckable(True)
+        #self.x_action.setChecked(True)
+        
+        self.item_context = [self.rename_action, 
+                        self.delete_action,
+                        self.select_joint_action,
+                        self.select_pose_action]
+                        #self.sculpt_action,
+                        #self.view_action,
+                        #self.mirror_action]
+        
+        self.create_action.triggered.connect(self.create_pose)
+        self.rename_action.triggered.connect(self._rename_pose)
+        self.delete_action.triggered.connect(self.delete_pose)
+        
+        self.select_joint_action.triggered.connect(self._select_joint)
+        self.select_pose_action.triggered.connect(self._select_pose)
+        
+        self.refresh_action.triggered.connect(self._populate_list)
     
     def _populate_list(self):
         
@@ -614,6 +699,21 @@ class PoseTreeWidget(BaseTreeWidget):
         
         for pose in poses:
             self.create_pose(pose)
+            
+    def _select_joint(self):
+        name = self._current_pose()
+        transform = util.PoseManager().get_transform(name)
+        
+        cmds.select(transform)
+        
+    def _select_pose(self):
+        
+        name = self._current_pose()
+        
+        control = util.PoseManager().get_pose_control(name)
+        
+        cmds.select(control)
+        
         
     def _get_pose_values(self, pose):
         max_angle = cmds.getAttr('%s.maxAngle' % pose)
@@ -647,6 +747,8 @@ class PoseTreeWidget(BaseTreeWidget):
         item.setText(0, pose)
         self.addTopLevelItem(item)
         
+        
+        
 
     def mirror_pose(self):
         
@@ -677,13 +779,17 @@ class PoseTreeWidget(BaseTreeWidget):
         
     def select_pose(self, pose_name = None):
         
+        items = self.selectedItems()
+        if not items:
+            return
+        
         if self.last_selection:
+            
+            
             util.PoseManager().visibility_off(self.last_selection[0])
         
         
         pose_names = self._get_selected_items(get_names = True)
-        
-        
         
         if len( pose_names ) > 1:
             
@@ -742,12 +848,55 @@ class PoseTreeItem(QtGui.QTreeWidgetItem):
         #self.pose = util.PoseControl()
         #self.pose.set_pose(pose)
         #self.pose.select()
+       
+class PoseWidget(vtool.qt_ui.BasicWidget):
+
+    pose_mirror = vtool.qt_ui.create_signal() 
+    pose_mesh = vtool.qt_ui.create_signal()
+    axis_change = vtool.qt_ui.create_signal(object)
+    mesh_change = vtool.qt_ui.create_signal(object)
+    value_changed = vtool.qt_ui.create_signal(object, object, object, object)
+    
+    def _build_widgets(self):
         
+        self.pose_control_widget = PoseControlWidget()
+        self.mesh_widget = MeshWidget()
+        
+        self.pose_control_widget.pose_mirror.connect(self._pose_mirror)
+        self.pose_control_widget.pose_mesh.connect(self._pose_mesh)
+        self.pose_control_widget.pose_
+        self.pose_control_widget.value_changed.connect(self._value_changed)
+        
+        self.main_layout.addWidget(self.pose_control_widget)
+        self.main_layout.addWidget(self.mesh_widget) 
+     
+
+    def _button_mesh(self):
+        self.pose_mesh.emit()
+
+    def _pose_mirror(self):
+        self.pose_mirror.emit()
+        
+    def _pose_mesh(self):
+        self.pose_mesh.emit()
+        
+    def _axis_change(self, value):
+        self.axis_change.emit(value)
+        
+    def _mesh_change(self, value):
+        self.mesh_change.emit(value)
+        
+    def _value_changed(self, value1, value2, value3, value4):
+        self.value_changed.emit(value1, value2, value3, value4)
+
+    def update_meshes(self, meshes, index):
+        self.mesh_widget.update_meshes(meshes, index)
+        
+    def set_values(self, angle, distance, twist_on, twist):
+        self.pose_control_widget.set_values(angle, distance, twist_on, twist)
 
 class PoseControlWidget(vtool.qt_ui.BasicWidget):
     
-    pose_create = vtool.qt_ui.create_signal()  
-    pose_delete = vtool.qt_ui.create_signal()
     pose_mirror = vtool.qt_ui.create_signal() 
     pose_mesh = vtool.qt_ui.create_signal()
     pose_mesh_view = vtool.qt_ui.create_signal()
@@ -763,30 +912,23 @@ class PoseControlWidget(vtool.qt_ui.BasicWidget):
         self.pose = None
         
     def _define_main_layout(self):
-        layout = QtGui.QVBoxLayout()
+        layout = QtGui.QHBoxLayout()
         layout.setAlignment(QtCore.Qt.AlignTop)
-        return QtGui.QVBoxLayout()
+        return QtGui.QHBoxLayout()
         
     def _build_widgets(self):
         
-        self.layout_pose = QtGui.QHBoxLayout()
+        self.layout_pose = QtGui.QVBoxLayout()
         
-        button_create = QtGui.QPushButton('create')
-        button_delete = QtGui.QPushButton('delete')
-        button_mirror = QtGui.QPushButton('mirror')
+        self.combo_label = QtGui.QLabel('Alignment')
         
         self.combo_axis = QtGui.QComboBox()
         self.combo_axis.addItems(['X','Y','Z'])
         
-        button_create.clicked.connect(self._button_create)
-        button_delete.clicked.connect(self._button_delete)
-        button_mirror.clicked.connect(self._button_mirror)
+        layout_combo = QtGui.QHBoxLayout()
         
-        
-        self.layout_pose.addWidget(button_create)
-        self.layout_pose.addWidget(button_delete)
-        self.layout_pose.addWidget(button_mirror)
-        self.layout_pose.addWidget(self.combo_axis)
+        layout_combo.addWidget(self.combo_label, alignment = QtCore.Qt.AlignRight)
+        layout_combo.addWidget(self.combo_axis)
         
         layout_slide = QtGui.QVBoxLayout()
         
@@ -794,7 +936,7 @@ class PoseControlWidget(vtool.qt_ui.BasicWidget):
         layout_distance, self.max_distance = self._add_spin_widget('max distance')
         layout_twist, self.twist = self._add_spin_widget('max twist')
         layout_twist_on, self.twist_on = self._add_spin_widget('twist')
-        
+                        
         self.max_angle.setRange(0, 180)
         
         self.twist.setRange(0, 180)
@@ -808,30 +950,31 @@ class PoseControlWidget(vtool.qt_ui.BasicWidget):
         self.twist_on.valueChanged.connect(self._value_changed)
         self.twist.valueChanged.connect(self._value_changed)
         
+        layout_slide.addLayout(layout_combo)
         layout_slide.addLayout(layout_angle)
         layout_slide.addLayout(layout_twist)
         layout_slide.addLayout(layout_distance)
         layout_slide.addLayout(layout_twist_on)
         
-        
-        self.layout_mesh = QtGui.QHBoxLayout()
-        button_mesh = QtGui.QPushButton('mesh')
-        button_view = QtGui.QPushButton('view')
-        self.combo_mesh = QtGui.QComboBox()
-        self.update_meshes()
-        self.combo_mesh.currentIndexChanged.connect(self._mesh_change)
-        self.combo_axis.currentIndexChanged.connect(self._axis_change)
-        
+        button_mesh = QtGui.QPushButton('Sculpt')
+        button_mesh.setMaximumWidth(100)
+        button_view = QtGui.QPushButton('View')
+
         button_mesh.clicked.connect(self._button_mesh)
+        
         button_view.clicked.connect(self._button_view)
         
-        self.layout_mesh.addWidget(button_mesh)
-        self.layout_mesh.addWidget(button_view)
-        self.layout_mesh.addWidget(self.combo_mesh)
-        
-        self.main_layout.addLayout(self.layout_pose)
+        button_mirror = QtGui.QPushButton('Mirror')
+        button_mirror.setMaximumWidth(100)
+        button_mirror.clicked.connect(self._button_mirror)
+
+        self.main_layout.addWidget(button_mesh)
         self.main_layout.addLayout(layout_slide)
-        self.main_layout.addLayout(self.layout_mesh)
+        self.main_layout.addWidget(button_mirror)
+        
+        
+        
+        
         
     def _add_spin_widget(self, name):
         layout = QtGui.QHBoxLayout()
@@ -849,23 +992,14 @@ class PoseControlWidget(vtool.qt_ui.BasicWidget):
         layout.addWidget(widget)
         
         return layout, widget      
-        
-    def _button_create(self):
-        
-        self.pose_create.emit()
-        
-    def _button_delete(self):
 
-        self.pose_delete.emit()
 
     def _button_mirror(self):
         self.pose_mirror.emit()
 
     def _button_mesh(self):
         self.pose_mesh.emit()
-        
-    def _button_view(self):
-        self.pose_mesh_view.emit()
+
         
     def _axis_change(self):
         
@@ -873,9 +1007,7 @@ class PoseControlWidget(vtool.qt_ui.BasicWidget):
         self.axis_change.emit(text)
         
        
-    def _mesh_change(self, int):
-        
-        self.mesh_change.emit(int)
+    
        
     def _value_changed(self):
         max_angle = self.max_angle.value()
@@ -884,26 +1016,50 @@ class PoseControlWidget(vtool.qt_ui.BasicWidget):
         twist = self.twist.value()
         
         self.value_changed.emit(max_angle, max_distance, twist_on, twist)
-        
-        
-    def get_current_mesh(self):
-        return str( self.combo_mesh.currentText() )
-        
-    def update_meshes(self, meshes = [], index = 0):    
-        self.combo_mesh.clear()
-        
-        if meshes:
-            self.combo_mesh.addItems(meshes)
-            
-        self.combo_mesh.addItem('- new mesh -')
-        self.combo_mesh.setCurrentIndex(index)
-        
+
     def set_values(self, angle, distance, twist_on, twist):
         
         self.max_angle.setValue(angle)
         self.max_distance.setValue(distance)
         self.twist_on.setValue(twist_on)
         self.twist.setValue(twist)
+
+class MeshWidget(vtool.qt_ui.BasicWidget):
+    
+    mesh_change = vtool.qt_ui.create_signal(object)
+    
+    def _build_widgets(self):
+        self.mesh_label = QtGui.QLabel('Current Mesh')
+        self.mesh_list = QtGui.QListWidget()
+        
+        self.main_layout.addWidget(self.mesh_label)
+        self.main_layout.addWidget(self.mesh_list)
+
+    def _mesh_change(self, int_value):    
+        self.mesh_change.emit(int_value)
+
+    def get_current_mesh(self):
+        return str( self.combo_mesh.currentText() )
+        
+    def update_meshes(self, meshes = [], index = 0):
+        self.mesh_list.clear()    
+        #self.combo_mesh.clear()
+        
+        for mesh in meshes:
+        
+            item = QtGui.QListWidgetItem()
+            item.setSizeHint(QtCore.QSize(0,40))
+            item.setText(mesh)
+            self.mesh_list.addItem(item)
+            #self.combo_mesh.addItems(meshes)
+            
+        #self.combo_mesh.addItem('- new mesh -')
+        
+        
+        
+        item = self.mesh_list.item(index)
+        if item:
+            item.setSelected(True)
 
 class PoseSetWidget(QtGui.QWidget): 
     
@@ -941,4 +1097,5 @@ class PoseSetWidget(QtGui.QWidget):
         self.pose_reset.emit()
         util.PoseManager().set_pose_to_default()
         
+
 

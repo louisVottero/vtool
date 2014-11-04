@@ -9439,7 +9439,7 @@ class BlendShape(object):
             self._store_target(name, current_index)
             
             mesh_input = self._get_mesh_input_for_target(name)
-            
+                        
             cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
             
             cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 1)
@@ -10153,6 +10153,22 @@ class PoseManager(object):
         
         return False
     
+    def get_transform(self, name):
+        pose = PoseControl()
+        pose.set_pose(name)
+        transform = pose.get_transform()
+        
+        return transform
+        
+    def get_pose_control(self, name):
+        
+        pose = PoseControl()
+        pose.set_pose(name)
+        
+        control = pose.pose_control
+        
+        return control
+    
     def set_default_pose(self):
         store = StoreControlData(self.pose_group)
         store.set_data()
@@ -10194,6 +10210,8 @@ class PoseManager(object):
         
         pose = PoseControl(selection[0], name)
         pose_control = pose.create()
+        
+        self.pose_control = pose_control
         
         return pose_control
     
@@ -10297,10 +10315,14 @@ class PoseManager(object):
 class BasePoseControl(object):
     def __init__(self, description = 'pose'):
         
+        self.pose_control = None
+        
         self.description = description
         
         self.scale = 1
         self.mesh_index = 0
+        
+        
         
     def _create_top_group(self):
         top_group = 'pose_gr'
@@ -10603,6 +10625,8 @@ class BasePoseControl(object):
         
         offset = chad_extract_shape(target_mesh, mesh)
         
+        print target_mesh, mesh, offset
+        
         blend.set_envelope(1)
         
         if blend.is_target(self.pose_control):
@@ -10680,11 +10704,14 @@ class BasePoseControl(object):
         top_group = self._create_top_group()
         
         pose_control = self._create_pose_control()
+        self.pose_control = pose_control
         
         cmds.parent(pose_control, top_group)
         
         store = StoreControlData(pose_control)
         store.set_data()
+        
+        
         
         return pose_control
     
@@ -10707,6 +10734,9 @@ class BasePoseControl(object):
         return self.pose_control
     
     def delete_blend_input(self):
+        
+        print 'delete blend input'
+        
         #mesh = self.get_mesh(self.mesh_index)
         #target_mesh = self.get_target_mesh(mesh)
         
@@ -10723,9 +10753,15 @@ class BasePoseControl(object):
        
     def delete(self):
         
+        print 'about to delete'
+        
+        self.delete_blend_input()
+        
         self._delete_connected_nodes()
             
         cmds.delete(self.pose_control)
+        
+        
     
     
         
@@ -11160,6 +11196,8 @@ class PoseControl(BasePoseControl):
         
         self._create_pose_math(self.transform, pose_control)
         self._multiply_weight()
+        
+        self.pose_control = pose_control
         
         return pose_control
     
@@ -13229,7 +13267,7 @@ def find_deformer_by_type(mesh, deformer_type ):
     for thing in scope[1:]:
         if cmds.nodeType(thing) == deformer_type:
             return thing
-        if cmds.objectType(thing, isa = "shape"):
+        if cmds.objectType(thing, isa = "shape") and not cmds.nodeType(thing) == 'lattice':
             return
 
 def get_influences_on_skin(skin_deformer):
@@ -14549,6 +14587,9 @@ def chad_extract_shape(skin_mesh, corrective):
     
     
     skin = find_deformer_by_type(skin_mesh, 'skinCluster')
+    
+    print 'skin', skin
+    
     if not skin:
         warning('No skin found on %s.' % skin_mesh)
         return
@@ -14560,6 +14601,8 @@ def chad_extract_shape(skin_mesh, corrective):
     cmds.loadPlugin( file_name )
     
     import cvShapeInverterScript as correct
+    
+    print 'correct',  skin_mesh, corrective
     
     offset = correct.invert(skin_mesh, corrective)
     cmds.delete(offset, ch = True)

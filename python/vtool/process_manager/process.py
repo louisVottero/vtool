@@ -240,6 +240,13 @@ class Process(object):
         
         path = self.get_data_path()
         
+        data_folder_name = self.get_data_folder(name)
+        
+        if not util_file.is_dir(data_folder_name):
+            #do not remove print
+            print '%s data does not exist in %s' % (name, self.get_name())
+            return
+            
         data_folder = data.DataFolder(name, path)
         
         instance = data_folder.get_folder_data_instance()
