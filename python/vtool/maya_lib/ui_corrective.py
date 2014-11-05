@@ -314,6 +314,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self.context_menu.addSeparator()
         self.select_pose_action = self.context_menu.addAction('Select Pose')
         self.select_joint_action = self.context_menu.addAction('Select Joint')
+        self.reset_sculpts_action = self.context_menu.addAction('Reset Sculpt')
         self.context_menu.addSeparator()
         self.refresh_action = self.context_menu.addAction('Refresh')
         #self.view_action = self.context_menu.addAction('View')
@@ -325,6 +326,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.item_context = [self.rename_action, 
                         self.delete_action,
+                        self.reset_sculpts_action,
                         self.select_joint_action,
                         self.select_pose_action]
                         #self.sculpt_action,
@@ -337,6 +339,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.select_joint_action.triggered.connect(self._select_joint)
         self.select_pose_action.triggered.connect(self._select_pose)
+        self.reset_sculpts_action.triggered.connect(self._reset_sculpts)
         
         self.refresh_action.triggered.connect(self._populate_list)
     
@@ -366,6 +369,10 @@ class PoseTreeWidget(BaseTreeWidget):
         
         cmds.select(control)
         
+    def _reset_sculpts(self):
+        
+        name = self._current_pose()
+        util.PoseManager().reset_pose(name)
         
     def _get_pose_values(self, pose):
         max_angle = cmds.getAttr('%s.maxAngle' % pose)
@@ -739,9 +746,7 @@ class MeshWidget(qt_ui.BasicWidget):
         self.update_meshes(meshes,pose.mesh_index)
         
     def add_mesh(self):
-             
-        print 'adding mesh!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-                  
+                          
         current_meshes = self.get_current_meshes()
               
         pose_name = self.pose_name

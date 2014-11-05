@@ -10265,6 +10265,12 @@ class PoseManager(object):
         
         return pose_control
     
+    def reset_pose(self, pose_name):
+        
+        pose = PoseControl()
+        pose.set_pose(pose_name)
+        pose.reset_target_meshes()
+    
     def rename_pose(self, pose_name, new_name):
         pose = BasePoseControl()
         pose.set_pose(pose_name)
@@ -10577,10 +10583,13 @@ class BasePoseControl(object):
         cmds.setAttr('%s.specularColor' % shader_name, 0.3, 0.3, 0.3, type = 'double3' )
         cmds.setAttr('%s.eccentricity' % shader_name, .3 )
 
-    def _get_blendshape(self):
+    def _get_blendshape(self, mesh):
         #mesh = self.get_mesh(self.mesh_index)
         #target_mesh = self.get_target_mesh(mesh)
         
+        
+        
+        """
         outputs = get_attribute_outputs('%s.weight' % self.pose_control)
         
         if outputs:
@@ -10589,6 +10598,10 @@ class BasePoseControl(object):
                     split_output = output.split('.')
                     
                     return split_output[0]
+        
+        if not outputs:
+        """
+        return find_deformer_by_type(mesh, 'blendShape')
 
     def set_pose(self, pose_name):
         
@@ -10681,7 +10694,11 @@ class BasePoseControl(object):
         
         blend = BlendShape()
         
-        blendshape = find_deformer_by_type(target_mesh, 'blendShape')
+        print 'blendshape mesh', mesh
+        
+        blendshape = self._get_blendshape(target_mesh)
+        
+        print 'blendshape', blendshape
         
         if blendshape:
             blend.set(blendshape)
@@ -10689,13 +10706,16 @@ class BasePoseControl(object):
         if not blendshape:
             blend.create(target_mesh)
         
-        blend.set_envelope(0)
+        #blend.set_envelope(0)
+        self.disconnect_blend()
+        blend.set_weight(self.pose_control, 0)
         
         offset = chad_extract_shape(target_mesh, mesh)
         
-        print target_mesh, mesh, offset
         
-        blend.set_envelope(1)
+        blend.set_weight(self.pose_control, 1)
+        self.connect_blend()
+        #blend.set_envelope(1)
         
         if blend.is_target(self.pose_control):
             blend.replace_target(self.pose_control, offset)
@@ -10707,6 +10727,54 @@ class BasePoseControl(object):
             cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
         
         cmds.delete(offset)
+        
+    def connect_blend(self, mesh_index = None):
+        mesh = None
+        
+        if mesh_index == None:
+            mesh = self.get_mesh(self.mesh_index)
+        if mesh_index != None:
+            mesh = self.get_mesh(mesh_index)
+            
+        if not mesh:
+            return
+        
+        blend = BlendShape()
+        
+        target_mesh = self.get_target_mesh(mesh)
+        
+        blendshape = self._get_blendshape(target_mesh)
+        
+        if blendshape:
+            blend.set(blendshape)
+                
+        if blend.is_target(self.pose_control):
+            if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
+                cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
+                
+    def disconnect_blend(self, mesh_index = None):
+        mesh = None
+        
+        if mesh_index == None:
+            mesh = self.get_mesh(self.mesh_index)
+        if mesh_index != None:
+            mesh = self.get_mesh(mesh_index)
+            
+        if not mesh:
+            return
+        
+        blend = BlendShape()
+        
+        target_mesh = self.get_target_mesh(mesh)
+        
+        blendshape = self._get_blendshape(target_mesh)
+        
+        if blendshape:
+            blend.set(blendshape)
+                
+        if blend.is_target(self.pose_control):
+            if cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
+                cmds.disconnectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
         
     def visibility_off(self, mesh = None, view_only = False):
         
@@ -10780,6 +10848,31 @@ class BasePoseControl(object):
             
             inc += 1
         
+    def reset_target_meshes(self):
+        
+        count = self._get_mesh_count()
+        
+        for inc in range(0, count):
+            
+            deformed_mesh = self.get_mesh(inc)
+            original_mesh = self.get_target_mesh(deformed_mesh)
+            
+            blendshape = self._get_blendshape(original_mesh)
+            
+            blend = BlendShape()
+                    
+            if blendshape:
+                blend.set(blendshape)
+                
+            blend.set_envelope(0)    
+            
+            cmds.connectAttr('%s.outMesh' % original_mesh, '%s.inMesh' % deformed_mesh)
+            cmds.refresh()
+            cmds.disconnectAttr('%s.outMesh' % original_mesh, '%s.inMesh' % deformed_mesh)
+        
+            blend.set_envelope(1)    
+        
+        
     def create(self):
         top_group = self._create_top_group()
         
@@ -10794,7 +10887,7 @@ class BasePoseControl(object):
         
         
         return pose_control
-    
+        
     def rename(self, description):
         
         old_description = self.description
@@ -10805,20 +10898,18 @@ class BasePoseControl(object):
         
         self.pose_control = cmds.rename(self.pose_control, self._get_name())
         
-        blendshape = self._get_blendshape()
+        meshes = self.get_target_meshes()
         
-        if blendshape:
-            blend = BlendShape(blendshape)
-            blend.rename_target(old_description, description)
-        
+        for mesh in meshes:
+            blendshape = self._get_blendshape(mesh)
+            
+            if blendshape:
+                blend = BlendShape(blendshape)
+                blend.rename_target(old_description, description)
+            
         return self.pose_control
     
     def delete_blend_input(self):
-        
-        print 'delete blend input'
-        
-        #mesh = self.get_mesh(self.mesh_index)
-        #target_mesh = self.get_target_mesh(mesh)
         
         outputs = get_attribute_outputs('%s.weight' % self.pose_control)
         
@@ -10830,21 +10921,16 @@ class BasePoseControl(object):
                     blend = BlendShape(split_output[0])
                     
                     blend.remove_target(split_output[1])
+                    
        
     def delete(self):
-        
-        print 'about to delete'
         
         self.delete_blend_input()
         
         self._delete_connected_nodes()
             
         cmds.delete(self.pose_control)
-        
-        
     
-    
-        
     def select(self):
         cmds.select(self.pose_control)
         
@@ -11440,6 +11526,75 @@ class ComboControl(BasePoseControl):
         super(ComboControl, self).create()
         
         self._connect_poses()
+ 
+class EnvelopeHistory(object):
+    
+    def __init__(self, transform):
+        
+        self.transform = transform
+        
+        self.envelope_values = {}
+        self.envelope_connection = {}
+        
+        self.history = self._get_envelope_history()
+        
+        
+        
+    def _get_history(self):
+        
+        history = cmds.listHistory(self.transform)
+        return history
+        
+    def _get_envelope_history(self):
+        
+        self.envelope_values = {}
+        
+        history = self._get_history()
+        
+        found = []
+        
+        for thing in history:
+            if cmds.objExists('%s.envelope' % thing):
+                found.append(thing)
+                
+                value = cmds.getAttr('%s.envelope' % thing)
+                
+                self.envelope_values[thing] = value
+                
+                connected = get_attribute_input('%s.envelope' % thing)
+                
+                self.envelope_connection[thing] = connected
+                
+        return found
+    
+    def turn_off(self):
+        
+        
+        
+        for history in self.history:
+            
+            connection = self.envelope_connection[history]
+            
+            if connection:
+                cmds.disconnectAttr(connection, '%s.envelope' % history)
+                
+            cmds.setAttr('%s.envelope' % history, 0)
+ 
+    def turn_on(self, respect_initial_state = False):
+        for history in self.history:
+            
+            if respect_initial_state:
+                value = self.envelope_values[history]
+            if not respect_initial_state:
+                value = 1
+            
+            cmds.setAttr('%s.envelope' % history, value)
+            
+            connection = self.envelope_connection[history]
+            if connection:
+                cmds.connectAttr(connection, '%s.envelope' % history)
+                
+            
  
 #--- definitions
 
@@ -12528,6 +12683,11 @@ def is_a_shape(node):
     return False
 
 def has_shape_of_type(node, maya_type):
+    
+    print 'has a shape?', node, maya_type
+    
+    test = None
+    
     if cmds.objectType(node, isAType = 'shape'):
         test = node
         
@@ -12537,8 +12697,9 @@ def has_shape_of_type(node, maya_type):
         if shapes:
             test = shapes[0]
         
-    if maya_type == cmds.nodeType(test):
-        return True
+    if test:
+        if maya_type == cmds.nodeType(test):
+            return True
         
 
 def get_mesh_shape(mesh, shape_index = 0):
@@ -13501,6 +13662,37 @@ def get_cluster_weights(cluster_deformer, mesh, index = 0):
 
 def get_blendshape_weights(blendshape_deformer, mesh, index = -1):
     pass
+
+def get_intermediate_object(transform):
+    
+    shapes = cmds.listRelatives(transform, s = True)
+    
+    return shapes[-1]
+
+def create_mesh_from_shape(shape, name = 'new_mesh'):
+    
+    parent = cmds.listRelatives(shape, p = True)[0]
+    
+    new_shape = cmds.createNode('mesh')
+    
+    mesh = cmds.listRelatives(new_shape, p = True)[0]
+    
+    cmds.connectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
+    
+    #cmds.dgdirty(a = True)
+    #cmds.hide(new_shape)
+    cmds.refresh()
+    
+    cmds.disconnectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
+    
+    mesh = cmds.rename(mesh, name)
+    
+    MatchSpace(parent, mesh).translation_rotation()
+    
+    
+    
+    return mesh
+    
 
 def invert_blendshape_weight(blendshape_deformer, index = -1):
     pass
@@ -14665,10 +14857,9 @@ def get_index_at_alias(alias, blendshape):
     
 def chad_extract_shape(skin_mesh, corrective):
     
+    envelopes = EnvelopeHistory(skin_mesh)
     
     skin = find_deformer_by_type(skin_mesh, 'skinCluster')
-    
-    print 'skin', skin
     
     if not skin:
         warning('No skin found on %s.' % skin_mesh)
@@ -14682,12 +14873,39 @@ def chad_extract_shape(skin_mesh, corrective):
     
     import cvShapeInverterScript as correct
     
-    print 'correct',  skin_mesh, corrective
+    envelopes.turn_off()
+    cmds.setAttr('%s.envelope' % skin, 1)
     
     offset = correct.invert(skin_mesh, corrective)
     cmds.delete(offset, ch = True)
     
+    orig = get_intermediate_object(skin_mesh)
+    orig = create_mesh_from_shape(orig, 'home')
+    
+    envelopes.turn_on(respect_initial_state=True)
+    
+    cmds.setAttr('%s.envelope' % skin, 0)
+    other_delta = cmds.duplicate(skin_mesh)[0]
+    
+    cmds.setAttr('%s.envelope' % skin, 1)
+    
+    quick_blendshape(other_delta, orig, -1)
+    quick_blendshape(offset, orig, 1)
+    
+    cmds.select(cl = True)
+    
+    cmds.delete(orig, ch = True)
+    
+    cmds.delete(other_delta, offset)
+    
+    
+    cmds.rename(orig, offset)
+    
+    
+    
     return offset
+
+
 
 def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
     
@@ -14735,6 +14953,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
         
     return blendshape 
     
+
 
 #---attributes
 
