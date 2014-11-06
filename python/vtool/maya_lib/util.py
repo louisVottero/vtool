@@ -2332,6 +2332,8 @@ class SparseRig(JointRig):
         super(SparseRig, self).__init__(description, side)
         self.control_shape = 'cube'
         self.is_scalable = False
+        self.respect_side = False
+        self.respect_side_tolerance = 0.001
         
     def set_control_shape(self, name):
         self.control_shape = name
@@ -2339,22 +2341,41 @@ class SparseRig(JointRig):
     def set_scalable(self, bool_value):
         self.is_scalable = bool_value
         
+    def set_respect_side(self, bool_value, tolerance = 0.001):
+        self.respect_side = bool_value
+        self.respect_side_tolerance = tolerance
+        
     def create(self):
         
         super(SparseRig, self).create()
         
         for joint in self.joints:
+            
+            
+            
             control = self._create_control()
             control.hide_visibility_attribute()
             control.set_curve_type(self.control_shape)
+        
             
+        
+            
+            control_name = control.get()
+        
+            match = MatchSpace(joint, control_name)
+            match.translation_rotation()
+            
+            if self.respect_side:
+                side = control.color_respect_side(True, self.respect_side_tolerance)
+            
+                if side != 'C':
+                    control_name = cmds.rename(control_name, inc_name(control_name[0:-1] + side))
+                    control = Control(control_name)
+                        
             xform = create_xform_group(control.get())
             driver = create_xform_group(control.get(), 'driver')
             
-            match = MatchSpace(joint, xform)
-            match.translation_rotation()
-            
-            cmds.parentConstraint(control.get(), joint)
+            cmds.parentConstraint(control_name, joint)
 
             if self.is_scalable:
                 cmds.scaleConstraint(control.get(), joint)
@@ -2372,6 +2393,8 @@ class SparseLocalRig(SparseRig):
         self.control_to_pivot = False
         self.local_parent = None
         self.local_xform = None
+        
+        
 
     def set_local_constraint(self, bool_value):
         self.local_constraint = bool_value
@@ -2397,14 +2420,26 @@ class SparseLocalRig(SparseRig):
             
             control.set_curve_type(self.control_shape)
             
+            control_name = control.get()
+            
+            if not self.control_to_pivot:
+                match = MatchSpace(joint, control_name)
+                match.translation_rotation()
+            if self.control_to_pivot:
+                MatchSpace(joint, control_name).translation_to_rotate_pivot()
+            
+            if self.respect_side:
+                side = control.color_respect_side(True, self.respect_side_tolerance)
+            
+                if side != 'C':
+                    control_name = cmds.rename(control_name, inc_name(control_name[0:-1] + side))
+                    control = Control(control_name)
+            
+            
             xform = create_xform_group(control.get())
             driver = create_xform_group(control.get(), 'driver')
             
-            if not self.control_to_pivot:
-                match = MatchSpace(joint, xform)
-                match.translation_rotation()
-            if self.control_to_pivot:
-                MatchSpace(joint, xform).translation_to_rotate_pivot()
+            
             
             if not self.local_constraint:
                 xform_joint = create_xform_group(joint)
@@ -3204,8 +3239,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         control = Control(control)
         control.hide_scale_and_visibility_attributes()
 
-        
-
         return control.get()
     
     def _create_sub_control(self):
@@ -3789,7 +3822,7 @@ class FkCurveLocalRig(FkCurveRig):
 
             for inc in range(0, len(handles)):
                 
-                cmds.parentConstraint(self.sub_local_controls[inc], handles[inc])
+                cmds.parentConstraint(self.sub_local_controls[inc], handles[inc], mo = True)
                 #cmds.parent(handles[inc], self.sub_local_controls[inc])
             
             cmds.parent(surface, self.setup_group)
