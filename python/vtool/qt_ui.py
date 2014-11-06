@@ -1825,13 +1825,21 @@ def get_permission(message, parent = None):
     
     message_box = QtGui.QMessageBox(parent)
     
-    message = message_box.question(parent, 'Question', message, message_box.Yes | message_box.No )
+    message = message_box.question(parent, 'Permission', message, message_box.Yes | message_box.No )
     
     if message == message_box.Yes:
         return True
     
     if message == message_box.No:
         return False
+    
+def get_new_name(message, parent = None):
+    comment, ok = QtGui.QInputDialog.getText(parent, 'Rename', message)
+    
+    comment = comment.replace('\\', '_')  
+    
+    if ok:
+        return comment
     
 def critical(message, parent = None):
     

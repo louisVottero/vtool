@@ -884,18 +884,26 @@ class PoseData(MayaCustomData):
 
     def export_data(self, comment):
         
-        dir_path = util_file.join_path(self.directory, self.name)
+        #dir_path = util_file.join_path(self.directory, self.name)
+        dir_path = util_file.create_dir(self.name, self.directory)
         
         if not util_file.is_dir(dir_path):
+            self.create
             return
         
-        
         pose_manager = maya_lib.util.PoseManager()
+        pose_manager.set_pose_to_default()
         pose_manager.detach_poses()
         
         poses = pose_manager.get_poses()
         
         poses.append('pose_gr')
+        
+        print 'poses', poses
+        
+        if not poses:
+            print 'has no poses'
+            return
         
         for pose in poses:
             parent = None

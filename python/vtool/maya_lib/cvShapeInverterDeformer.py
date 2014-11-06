@@ -1,21 +1,15 @@
-# 
-# Copyright (c) 2011 Chad Vernon
-# 
-
 import maya.OpenMayaMPx as OpenMayaMPx
 import maya.OpenMaya as OpenMaya
 import math
 
 class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
-    
     kPluginNodeName = "cvShapeInverter"
     kPluginNodeId = OpenMaya.MTypeId(0x00115805)
-    
     aMatrix = OpenMaya.MObject()
     aCorrectiveGeo = OpenMaya.MObject()
     aDeformedPoints = OpenMaya.MObject()
     aActivate = OpenMaya.MObject()
-    
+
     def __init__(self):
         OpenMayaMPx.MPxDeformerNode.__init__(self)
         self.__initialized = False
@@ -23,9 +17,13 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
         self.__deformedPoints = OpenMaya.MPointArray()
 
     def deform( self, data, itGeo, localToWorldMatrix, geomIndex):
+        
+
         run = data.inputValue(cvShapeInverter.aActivate).asBool()
         if not run:
-            return OpenMaya.MStatus.kSuccess
+            return 0
+            #return OpenMaya.MStatus.kSuccess
+        
 
         # Read the matrices
         if not self.__initialized:
@@ -41,13 +39,11 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
             for i in range(numVertices):
                 self.jumpToElement(hMatrix, i)
                 self.__matrices.append(hMatrix.inputValue().asMatrix())
-            # end for
 
             oDeformedPoints = data.inputValue(cvShapeInverter.aDeformedPoints).data()
             fnData = OpenMaya.MFnPointArrayData(oDeformedPoints)
             fnData.copyTo(self.__deformedPoints)
             self.__initialized = True
-        # end if
 
         # Get the corrective mesh
         oMesh = data.inputValue(cvShapeInverter.aCorrectiveGeo).asMesh()
@@ -65,24 +61,21 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
                     and math.fabs(delta.z) < 0.001):
                 itGeo.next()
                 continue
-            # end if
 
             offset = delta * self.__matrices[index]
             pt = itGeo.position() + offset
             itGeo.setPosition(pt)
             itGeo.next()
-        # end while
+        
+        return 0
+        #return OpenMaya.MStatus.kSuccess
 
-        return OpenMaya.MStatus.kSuccess
-    # end deform
-
-
-    ## @brief Jumps an array handle to a logical index and uses the builder if necessary.
-    #
-    # @param[in/out] hArray MArrayDataHandle to jump.
-    # @param[in] index Logical index.
-    #
     def jumpToElement(self, hArray, index):
+        """@brief Jumps an array handle to a logical index and uses the builder if necessary.
+
+        @param[in/out] hArray MArrayDataHandle to jump.
+        @param[in] index Logical index.
+        """
         try:
             hArray.jumpToElement(index)
         except:
@@ -90,20 +83,17 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
             builder.addElement(index)
             hArray.set(builder)
             hArray.jumpToElement(index)
-        # end try
-    # end jumpToElement
 
 
 def creator():
     return OpenMayaMPx.asMPxPtr(cvShapeInverter())
-# end creator
 
 
 def initialize():
     mAttr = OpenMaya.MFnMatrixAttribute()
     tAttr = OpenMaya.MFnTypedAttribute()
     nAttr = OpenMaya.MFnNumericAttribute()
-    
+
     outputGeom = OpenMayaMPx.cvar.MPxDeformerNode_outputGeom
 
     cvShapeInverter.aActivate = nAttr.create('activate', 'activate',
@@ -123,18 +113,15 @@ def initialize():
     mAttr.setArray(True)
     mAttr.setUsesArrayDataBuilder(True)
     cvShapeInverter.addAttribute(cvShapeInverter.aMatrix)
-# end initialize
-    
+
 
 def initializePlugin(mobject):
     plugin = OpenMayaMPx.MFnPlugin(mobject)
     plugin.registerNode(cvShapeInverter.kPluginNodeName, cvShapeInverter.kPluginNodeId, creator,
             initialize, OpenMayaMPx.MPxNode.kDeformerNode)
-# end initializePlugin
 
 
 def uninitializePlugin(mobject):
     plugin = OpenMayaMPx.MFnPlugin(mobject)
     plugin.deregisterNode(cvShapeInverter.kPluginNodeId)
-# end uninitializePlugin
 
