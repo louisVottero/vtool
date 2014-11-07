@@ -15522,13 +15522,17 @@ def lock_attributes(node, bool_value = True, attributes = None, hide = False):
             cmds.setAttr(attribute_name, cb = False)
         
         
-def unlock_attributes(node, only_keyable = False):
+def unlock_attributes(node, attributes = [], only_keyable = False):
     
-    if only_keyable == False:
-        attrs = cmds.listAttr(node, locked = True)
-        
-    if only_keyable == True:
-        attrs = cmds.listAttr(node, locked = True, k = True)
+    if not attributes:
+        if only_keyable == False:
+            attrs = cmds.listAttr(node, locked = True)
+            
+        if only_keyable == True:
+            attrs = cmds.listAttr(node, locked = True, k = True)
+    
+    if attributes:
+        attrs = attributes
     
     if attrs:
         for attr in attrs:
