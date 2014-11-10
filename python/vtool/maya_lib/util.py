@@ -8716,11 +8716,13 @@ class StoreControlData(StoreData):
             attribute_data = {}
             
             for attribute in attributes:
-                value = cmds.getAttr('%s.%s' % (control, attribute))
+                if cmds.objExists('%s.%s' % (control,attribute)):
+                    value = cmds.getAttr('%s.%s' % (control, attribute))
                 
-                attribute_data[attribute] = value 
+                    attribute_data[attribute] = value 
             
-            control_data[control] = attribute_data
+            if attribute_data:
+                control_data[control] = attribute_data
             
         return control_data
         
@@ -8783,7 +8785,17 @@ class StoreControlData(StoreData):
             if cmds.getAttr(attribute_name, lock = True):
                 continue
             
-            cmds.setAttr(attribute_name, data[attribute] )       
+            connection = get_attribute_input(attribute_name)
+            
+            if connection:
+                if cmds.nodeType(connection).find('animCurve') == -1:
+                    continue
+            
+            try:
+                cmds.setAttr(attribute_name, data[attribute] )  
+                
+            except:
+                cmds.warning('Could not set %s.' % attribute_name)     
         
     def set_data(self):
         
@@ -10539,7 +10551,7 @@ class BasePoseControl(object):
         return False
     
     def _hide_meshes(self):
-        children = cmds.listRelatives(self.pose_control, f = True)
+        children = cmds.listRelatives(self.pose_control, f = True, type = 'transform')
         cmds.hide(children)
         
     def _get_mesh_target(self, mesh):
@@ -10594,6 +10606,8 @@ class BasePoseControl(object):
         control.set_curve_type('pin_point')
         
         control.hide_scale_and_visibility_attributes() 
+        
+        
         
         pose_control = control.get()
         self.pose_control = control.get()
