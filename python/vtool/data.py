@@ -428,6 +428,9 @@ class SkinWeightData(MayaCustomData):
             
             folder_path = util_file.join_path(path, folder)
             
+            if not util_file.is_dir(folder_path):
+                continue
+            
             influence_dict = self._get_influences(folder_path)
 
             influences = influence_dict.keys()

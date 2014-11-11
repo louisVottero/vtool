@@ -344,13 +344,65 @@ class TreeWidget(QtGui.QTreeWidget):
     
     def _item_rename_valid(self, old_name, item):
         
+        
         new_name = item.text(self.title_text_index)
         
+        print 'checking ', new_name, ' against ', old_name
+        
+        if self._already_exists(item):
+            print 'already exists'
+            return False
+        
         if old_name == new_name:
+            print 'old name is same as new name'
             return False
         if old_name != new_name:
+            print 'old name is not the same as new name'
             return True
+    
+    def _already_exists(self, item, parent = None):    
         
+        name = item.text(0)
+        parent = item.parent()
+        
+        if not parent:
+        
+            print 'no parent'
+        
+            skip_index = self.indexFromItem(item)
+            skip_index = skip_index.row()
+            print skip_index
+        
+            for inc in range(0, self.topLevelItemCount() ):
+                
+                if skip_index == inc:
+                    continue
+                
+                other_name = self.topLevelItem(inc).text(0)
+                other_name = str(other_name)
+                                
+                if name == other_name:
+                    return True
+        
+        if parent:
+            
+            print 'parent'
+            
+            skip_index = QtGui.QTreeWidgetItem.indexOfChild(item)
+            print skip_index
+            
+            for inc in range( 0, parent.childCount() ):
+                
+                if inc == skip_index:
+                    continue
+                
+                other_name = self.child(inc).text(0)
+                other_name = str(other_name)
+                
+                if name == other_name:
+                    return True
+                
+            
         return False
     
     
@@ -1802,6 +1854,7 @@ class TimelineWidget(QtGui.QWidget):
         self.skip_random = True
         self.values = value_list
         
+  
 def get_comment(parent = None,text_message = 'add comment', title = 'save'):
     
     comment, ok = QtGui.QInputDialog.getText(parent, title,text_message)
@@ -1855,3 +1908,4 @@ def get_pick(list, text_message, parent = None):
     
     if ok:
         return picked
+    
