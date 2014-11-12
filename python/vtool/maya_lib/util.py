@@ -10452,7 +10452,18 @@ class BasePoseControl(object):
         self.scale = 1
         self.mesh_index = 0
         
+    def _refresh_meshes(self):
         
+        meshes = self._get_corrective_meshes()
+        
+        for mesh in meshes:
+            cmds.setAttr('%s.inheritsTransform' % mesh, 0)
+            
+            zero_xform_channels(mesh)
+        
+    def _refresh_pose_control(self):
+        shapes = cmds.listRelatives(self.pose_control, s = True)
+        cmds.showHidden( shapes )
         
     def _create_top_group(self):
         top_group = 'pose_gr'
@@ -10539,6 +10550,17 @@ class BasePoseControl(object):
         attrs = self._get_mesh_message_attributes()
         
         return len(attrs)
+        
+    def _get_corrective_meshes(self):
+        
+        found = []
+        
+        for inc in range(0, self._get_mesh_count()):
+            mesh = self.get_mesh(inc)
+            found.append(mesh)
+            
+        return found
+        
         
     def _check_if_mesh_connected(self, name):
         
@@ -10670,6 +10692,9 @@ class BasePoseControl(object):
         self.mesh_index = cmds.getAttr('%s.meshIndex' % pose_name)
         
         self.pose_control = pose_name
+        
+        self._refresh_pose_control()
+        self._refresh_meshes()
 
     def goto_pose(self):
         store = StoreControlData(self.pose_control)
@@ -10833,6 +10858,26 @@ class BasePoseControl(object):
         if blend.is_target(self.pose_control):
             if cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
                 cmds.disconnectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
+        
+    def get_blendshape(self, mesh_index = None):
+        
+        mesh = None
+        
+        if mesh_index == None:
+            mesh = self.get_mesh(self.mesh_index)
+        if mesh_index != None:
+            mesh = self.get_mesh(mesh_index)
+            
+        if not mesh:
+            return
+        
+        target_mesh = self.get_target_mesh(mesh)
+        
+        blendshape = self._get_blendshape(target_mesh)
+        
+        return blendshape
+        
+        
         
     def visibility_off(self, mesh = None, view_only = False):
         
@@ -11385,14 +11430,18 @@ class PoseControl(BasePoseControl):
     def set_parent(self, parent, set_string_only = False):
         if not cmds.objExists('%s.parent' % self.pose_control):
             cmds.addAttr(self.pose_control, ln = 'parent', dt = 'string')
-    
+            
+        if not parent:
+            parent = ''
+        
         cmds.setAttr('%s.parent' % self.pose_control, parent, type = 'string')
     
         if not set_string_only:
             constraint = self._get_parent_constraint()
             cmds.delete(constraint)    
             
-            cmds.parentConstraint(parent, self.pose_control, mo = True)
+            if parent:
+                cmds.parentConstraint(parent, self.pose_control, mo = True)
     
     def detach(self):
         
@@ -11767,6 +11816,27 @@ def set_hud_lines(lines, name):
     
     return huds
     
+def show_channel_box():
+    
+    docks = mel.eval('global string $gUIComponentDockControlArray[]; string $goo[] = $gUIComponentDockControlArray;')
+    
+    print docks
+    
+    if 'Channel Box / Layer Editor' in docks:
+        index = docks.index('Channel Box / Layer Editor')
+        dock = docks[index + 1]
+        
+        if cmds.dockControl(dock, q = True, visible = True):
+            cmds.dockControl(dock, edit = True, visible = False)
+            cmds.dockControl(dock, edit = True, visible = True)
+        
+        index = docks.index('Channel Box')
+        dock = docks[index + 1]
+            
+        if cmds.dockControl(dock, q = True, visible = True):
+            cmds.dockControl(dock, edit = True, visible = False)
+            cmds.dockControl(dock, edit = True, visible = True)
+    
 def playblast(filename):
     
     min = cmds.playbackOptions(query = True, minTime = True)
@@ -11854,6 +11924,12 @@ def create_display_layer(name, nodes):
 
 #--- space
 
+def is_a_transform(node):
+    if cmds.objectType(node, isAType = 'transform'):
+        return True
+    
+    return False
+    
 def get_closest_transform(source_transform, targets):
         
         least_distant = 1000000.0
