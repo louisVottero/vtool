@@ -1,5 +1,4 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
-from cmath import rect
 
 global type_QT
 
