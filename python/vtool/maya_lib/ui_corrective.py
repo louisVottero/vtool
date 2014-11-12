@@ -41,6 +41,7 @@ class PoseManager(ui.MayaWindow):
         self.pose.axis_change.connect(self.pose_list.pose_list.axis_change)
         self.pose.value_changed.connect(self.pose_list.value_changed)
         self.pose.parent_changed.connect(self.pose_list.parent_changed)
+        self.pose.pose_enable_changed.connect(self.pose_list.pose_enable_changed)
 
         self.main_layout.addWidget(self.pose_set)
         self.main_layout.addWidget(self.pose_list)
@@ -60,9 +61,7 @@ class PoseManager(ui.MayaWindow):
         
         if not items:
             return    
-            
-        print pose_name
-            
+         
         self.pose.mesh_widget.set_pose(pose_name)
             
     #def update_meshes(self, meshes, index):
@@ -131,6 +130,9 @@ class PoseListWidget(qt_ui.BasicWidget):
         
     def parent_changed(self, parent):
         self.pose_list.parent_changed(parent)
+        
+    def pose_enable_changed(self, value):
+        self.pose_list.pose_enable_changed(value)
        
      
 class BaseTreeWidget(qt_ui.TreeWidget):
@@ -306,6 +308,15 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         pose = util.PoseControl()
         pose.set_pose(pose_name)
         pose.set_parent(parent)
+        
+    def pose_enable_changed(self, value):
+        
+        pose_name = self._current_pose()
+        
+        if not pose_name:
+            return
+        
+        cmds.setAttr('%s.enable' % pose_name, value)
         
 class PoseTreeWidget(BaseTreeWidget):
 
@@ -493,8 +504,6 @@ class PoseTreeWidget(BaseTreeWidget):
         
     def axis_change(self, string):
         
-        print 'axis change!', string
-        
         pose_name = self._current_pose()
         
         if not pose_name:
@@ -511,9 +520,8 @@ class PoseTreeWidget(BaseTreeWidget):
             return
         
         if self.last_selection: 
-            print self.last_selection
+            
             util.PoseManager().visibility_off(self.last_selection[0])
-        
         
         pose_names = self._get_selected_items(get_names = True)
         
@@ -524,6 +532,10 @@ class PoseTreeWidget(BaseTreeWidget):
             values = self._get_pose_values(pose_names[0])
             
             self.pose_widget.set_values(values[0], values[1], values[2], values[3])
+            
+            value = cmds.getAttr('%s.enable' % pose_names[0])
+            self.pose_widget.set_pose_enable(value)    
+            
             return
         
         if len( pose_names ) == 1:
@@ -542,6 +554,9 @@ class PoseTreeWidget(BaseTreeWidget):
             parent = pose_inst.get_parent()
             
             self.pose_widget.set_pose_parent_name(parent)
+            
+        value = cmds.getAttr('%s.enable' % pose_names[0])
+        self.pose_widget.set_pose_enable(value)
             
         self.last_selection = pose_names
             
@@ -589,6 +604,7 @@ class PoseWidget(qt_ui.BasicWidget):
     mesh_change = qt_ui.create_signal(object)
     value_changed = qt_ui.create_signal(object, object, object, object)
     parent_changed = qt_ui.create_signal(object)
+    pose_enable_changed = qt_ui.create_signal(object)
     
     def _define_main_layout(self):
         return QtGui.QHBoxLayout()
@@ -605,6 +621,7 @@ class PoseWidget(qt_ui.BasicWidget):
         self.pose_control_widget.axis_change.connect(self._axis_change)
         self.pose_control_widget.value_changed.connect(self._value_changed)
         self.pose_control_widget.parent_change.connect(self._parent_changed)
+        self.pose_control_widget.pose_enable_change.connect(self._pose_enable_changed)
         
         self.main_layout.addWidget(self.pose_control_widget)
         self.main_layout.addWidget(self.mesh_widget) 
@@ -630,6 +647,9 @@ class PoseWidget(qt_ui.BasicWidget):
         
     def _parent_changed(self, parent):
         self.parent_changed.emit(parent)
+        
+    def _pose_enable_changed(self, value):
+        self.pose_enable_changed.emit(value)
 
     def update_meshes(self, meshes, index):
         self.mesh_widget.update_meshes(meshes, index)
@@ -639,6 +659,9 @@ class PoseWidget(qt_ui.BasicWidget):
         
     def set_pose_parent_name(self, parent_name):
         self.pose_control_widget.set_parent_name(parent_name)
+        
+    def set_pose_enable(self, value):
+        self.pose_control_widget.set_pose_enable(value)
         
     def get_current_mesh(self):
         return self.mesh_widget.get_current_mesh()
@@ -651,6 +674,7 @@ class PoseControlWidget(qt_ui.BasicWidget):
     axis_change = qt_ui.create_signal(object)
     mesh_change = qt_ui.create_signal(object)
     parent_change = qt_ui.create_signal(object)
+    pose_enable_change = qt_ui.create_signal(object)
     
     value_changed = qt_ui.create_signal(object, object, object, object)
     
@@ -708,12 +732,24 @@ class PoseControlWidget(qt_ui.BasicWidget):
         parent_combo.addWidget(parent_label, alignment = QtCore.Qt.AlignRight)
         parent_combo.addWidget(self.parent_text)
         
+        
+        self.slider = QtGui.QSlider()
+        #self.slider.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.slider.setOrientation(QtCore.Qt.Horizontal)
+        self.slider.setMinimum(0)
+        self.slider.setMaximum(100)
+        self.slider.setTickPosition(self.slider.TicksBothSides)
+        
+        
         self.max_angle.valueChanged.connect(self._value_changed)
         self.max_distance.valueChanged.connect(self._value_changed)
         self.twist_on.valueChanged.connect(self._value_changed)
         self.twist.valueChanged.connect(self._value_changed)
         self.combo_axis.currentIndexChanged.connect(self._axis_change)
+        self.slider.valueChanged.connect(self._pose_enable)
         
+        
+        layout_slide.addWidget(self.slider)
         layout_slide.addLayout(parent_combo)
         layout_slide.addLayout(layout_combo)
         layout_slide.addLayout(layout_angle)
@@ -770,16 +806,11 @@ class PoseControlWidget(qt_ui.BasicWidget):
         text = str( self.combo_axis.currentText() )
         self.axis_change.emit(text)
         
-        print 'axis change', text
-        
     def _parent_name_change(self):
         
         self.parent_text.setStyleSheet('QLineEdit{background:red}')
         
         text = str( self.parent_text.text() )
-        
-        
-        print 'parent_name change', text
         
         if not text:
             #self.parent_text.setStyleSheet('QLineEdit{background:default}')
@@ -790,7 +821,6 @@ class PoseControlWidget(qt_ui.BasicWidget):
             return
         
         if cmds.objExists(text) and util.is_a_transform(text):
-            print 'parent passed...'
             #self.parent_text.setStyleSheet('QLineEdit{background:default}')
             
             style = self.styleSheet()
@@ -806,6 +836,12 @@ class PoseControlWidget(qt_ui.BasicWidget):
         
         self.value_changed.emit(max_angle, max_distance, twist_on, twist)
 
+    def _pose_enable(self, value):
+        
+        value = value/100.00
+        
+        self.pose_enable_change.emit(value)
+
     def set_values(self, angle, distance, twist_on, twist):
         
         self.max_angle.setValue(angle)
@@ -815,6 +851,10 @@ class PoseControlWidget(qt_ui.BasicWidget):
         
     def set_parent_name(self, parent_name):
         self.parent_text.setText(parent_name)
+        
+    def set_pose_enable(self, value):
+        value = value*100
+        self.slider.setValue(value)
 
 class MeshWidget(qt_ui.BasicWidget):
     
@@ -879,7 +919,7 @@ class MeshWidget(qt_ui.BasicWidget):
         mesh_count = self.mesh_list.count()
         
         for thing in selection:
-            print 'testing', thing
+            
             if util.has_shape_of_type(thing, 'mesh'):
                 
                 pass_mesh = thing
@@ -898,8 +938,7 @@ class MeshWidget(qt_ui.BasicWidget):
                     new_meshes.append(pass_mesh)
         
         if new_meshes or not current_meshes:
-            print 'adding'
-        
+                    
             if new_meshes:
                 
                 util.PoseManager().add_mesh_to_pose(pose_name, new_meshes)
@@ -912,9 +951,7 @@ class MeshWidget(qt_ui.BasicWidget):
                             
         
             self._update_meshes(pose_name)
-         
-        print 'meshes', meshes
-         
+                 
         if meshes:
             
             self.mesh_list.clearSelection()
@@ -924,21 +961,19 @@ class MeshWidget(qt_ui.BasicWidget):
                 
                 index = util.PoseManager().get_mesh_index(pose_name, mesh)
                 
-                print 'index!!!', index
-                
                 item = self.mesh_list.item(index)
                 if item:
-                    print 'item', item.text()
+                    
                     item.setSelected(True)
                     
-                print 'toggle visibility', mesh, index
+                
                 util.PoseManager().toggle_visibility(pose_name, mesh_index = index)
             
             return
          
             
         if current_meshes:
-            print 'has current'
+            
             indices = self.mesh_list.selectedIndexes()
             if indices:
                 for index in indices:

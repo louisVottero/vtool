@@ -2907,7 +2907,6 @@ class FkScaleRig(FkRig):
           
         #cmds.parentConstraint(control, current_transform)
         
-        print control, current_transform
         cmds.pointConstraint(control, current_transform) 
         connect_rotate(control, current_transform) 
            
@@ -3817,9 +3816,7 @@ class FkCurveLocalRig(FkCurveRig):
             handles = cluster_surface.handles
             
             self.ribbon_clusters = handles
-
-            print handles
-
+            
             for inc in range(0, len(handles)):
                 
                 cmds.parentConstraint(self.sub_local_controls[inc], handles[inc], mo = True)
@@ -10443,16 +10440,35 @@ class BasePoseControl(object):
         
     def _refresh_meshes(self):
         
+
         meshes = self._get_corrective_meshes()
         
         for mesh in meshes:
+            target_mesh = self._get_mesh_target(mesh)
             cmds.setAttr('%s.inheritsTransform' % mesh, 0)
             
-            zero_xform_channels(mesh)
+            const = cmds.parentConstraint(target_mesh, mesh)
+            
+            cmds.delete(const)
+               
+            
+            
         
     def _refresh_pose_control(self):
         shapes = cmds.listRelatives(self.pose_control, s = True)
         cmds.showHidden( shapes )
+        
+        if not cmds.objExists('%s.enable' % self.pose_control):
+            cmds.addAttr(self.pose_control, ln = 'enable', at = 'double', k = True, dv = 1, min = 0, max = 1)
+            multiply = self._get_named_message_attribute('multiplyDivide2')
+            
+            multiply_offset = self._create_node('multiplyDivide')
+        
+            cmds.connectAttr('%s.outputX' % multiply, '%s.input1X' % multiply_offset)
+            cmds.connectAttr('%s.enable' % self.pose_control, '%s.input2X' % multiply_offset)
+        
+            cmds.disconnectAttr('%s.outputX' % multiply, '%s.weight' % self.pose_control)
+            cmds.connectAttr('%s.outputX' % multiply_offset, '%s.weight' % self.pose_control)
         
     def _create_top_group(self):
         top_group = 'pose_gr'
@@ -10515,7 +10531,6 @@ class BasePoseControl(object):
         
         self._connect_node(mesh, 'mesh', inc)
 
-    
     def _get_named_message_attribute(self, name):
         node = get_attribute_input('%s.%s' % (self.pose_control, name), True)
         
@@ -10617,10 +10632,12 @@ class BasePoseControl(object):
         title = MayaEnumVariable('POSE')
         title.create(control)  
         
+        cmds.addAttr(control, ln = 'enable', at = 'double', k = True, dv = 1, min = 0, max = 1)
         cmds.addAttr(control, ln = 'weight', at = 'double', k = True, dv = 0)
         
         cmds.addAttr(control, ln = 'meshIndex', at = 'short', dv = self.mesh_index)
         cmds.setAttr('%s.meshIndex' % self.pose_control, l = True)
+
 
     def _create_pose_control(self):
         
@@ -10671,6 +10688,19 @@ class BasePoseControl(object):
         if not outputs:
         """
         return find_deformer_by_type(mesh, 'blendShape')
+
+    def _get_current_mesh(self, mesh_index):
+        mesh = None
+        
+        if mesh_index == None:
+            mesh = self.get_mesh(self.mesh_index)
+        if mesh_index != None:
+            mesh = self.get_mesh(mesh_index)
+            
+        if not mesh:
+            return
+        
+        return mesh
 
     def set_pose(self, pose_name):
         
@@ -10749,13 +10779,9 @@ class BasePoseControl(object):
             self.create_blend(goto_pose = pose, mesh_index = inc)
         
     def create_blend(self, goto_pose = True, mesh_index = None):
-        mesh = None
         
-        if mesh_index == None:
-            mesh = self.get_mesh(self.mesh_index)
-        if mesh_index != None:
-            mesh = self.get_mesh(mesh_index)
-            
+        mesh = self._get_current_mesh(mesh_index)
+        
         if not mesh:
             return
             
@@ -10766,11 +10792,7 @@ class BasePoseControl(object):
         
         blend = BlendShape()
         
-        print 'blendshape mesh', mesh
-        
         blendshape = self._get_blendshape(target_mesh)
-        
-        print 'blendshape', blendshape
         
         if blendshape:
             blend.set(blendshape)
@@ -11349,12 +11371,22 @@ class PoseControl(BasePoseControl):
                                ott = 'linear')  
     
     def _multiply_weight(self):
+        
+        
+        
+        
+        
         multiply = self._create_node('multiplyDivide')
         
         cmds.connectAttr('%s.translation' % self.pose_control, '%s.input1X' % multiply)
         cmds.connectAttr('%s.rotation' % self.pose_control, '%s.input2X' % multiply)
-        cmds.connectAttr('%s.outputX' % multiply, '%s.weight' % self.pose_control)
-    
+        
+        multiply_offset = self._create_node('multiplyDivide')
+        
+        cmds.connectAttr('%s.outputX' % multiply, '%s.input1X' % multiply_offset)
+        cmds.connectAttr('%s.enable' % self.pose_control, '%s.input2X' % multiply_offset)
+        
+        cmds.connectAttr('%s.outputX' % multiply_offset, '%s.weight' % self.pose_control)
 
 
     def _get_parent_constraint(self):
@@ -11808,8 +11840,6 @@ def set_hud_lines(lines, name):
 def show_channel_box():
     
     docks = mel.eval('global string $gUIComponentDockControlArray[]; string $goo[] = $gUIComponentDockControlArray;')
-    
-    print docks
     
     if 'Channel Box / Layer Editor' in docks:
         index = docks.index('Channel Box / Layer Editor')
@@ -12806,8 +12836,6 @@ def is_a_shape(node):
     return False
 
 def has_shape_of_type(node, maya_type):
-    
-    print 'has a shape?', node, maya_type
     
     test = None
     
