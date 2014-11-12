@@ -2086,6 +2086,8 @@ class Rig(object):
         
         self.control_shape = self._define_control_shape()
         
+        
+        
     def _refresh(self):
         cmds.refresh()
         
@@ -2154,6 +2156,8 @@ class JointRig(Rig):
         super(JointRig, self).__init__(description, side)
         
         self.joints = []
+        
+        self.attach_joints = True
 
     def _hook_scale_constraint(self, node):
         
@@ -2183,7 +2187,8 @@ class JointRig(Rig):
             disconnect_attribute('%s.target[%s].targetParentMatrix' % (scale_constraint, inc))
 
     def _attach_joint(self, source_joint, target_joint):
-        
+        if not self.attach_joints:
+            return
         self._hook_scale_constraint(target_joint)
         
         parent_constraint = cmds.parentConstraint(source_joint, target_joint, mo = True)[0]
@@ -2198,6 +2203,9 @@ class JointRig(Rig):
         
     def _attach_joints(self, source_chain, target_chain):
         
+        if not self.attach_joints:
+            return
+        
         AttachJoints(source_chain, target_chain).create()
         
         #for inc in range( 0, len(source_chain) ):
@@ -2211,6 +2219,9 @@ class JointRig(Rig):
         
         self.joints = joints
 
+    def set_attach_joints(self, bool_value):
+        
+        self.attach_joints = bool_value
 
 
 class CurveRig(Rig):
