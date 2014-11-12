@@ -1,3 +1,5 @@
+# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 from vtool import qt_ui
 
 

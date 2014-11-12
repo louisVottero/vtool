@@ -1,4 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+from cmath import rect
 
 global type_QT
 
@@ -347,17 +348,12 @@ class TreeWidget(QtGui.QTreeWidget):
         
         new_name = item.text(self.title_text_index)
         
-        print 'checking ', new_name, ' against ', old_name
-        
         if self._already_exists(item):
-            print 'already exists'
             return False
         
         if old_name == new_name:
-            print 'old name is same as new name'
             return False
         if old_name != new_name:
-            print 'old name is not the same as new name'
             return True
     
     def _already_exists(self, item, parent = None):    
@@ -367,11 +363,9 @@ class TreeWidget(QtGui.QTreeWidget):
         
         if not parent:
         
-            print 'no parent'
-        
             skip_index = self.indexFromItem(item)
             skip_index = skip_index.row()
-            print skip_index
+        
         
             for inc in range(0, self.topLevelItemCount() ):
                 
@@ -386,10 +380,7 @@ class TreeWidget(QtGui.QTreeWidget):
         
         if parent:
             
-            print 'parent'
-            
             skip_index = QtGui.QTreeWidgetItem.indexOfChild(item)
-            print skip_index
             
             for inc in range( 0, parent.childCount() ):
                 
@@ -1520,7 +1511,21 @@ class CodeEditTabs(BasicWidget):
     def _build_widgets(self):
         
         self.tabs = QtGui.QTabWidget()
+        self.status = QtGui.QLabel('line number:')
         self.main_layout.addWidget(self.tabs)
+        self.main_layout.addWidget(self.status)
+        
+    def _cursor_changed(self):
+        
+        index = self.tabs.currentIndex()
+        tab_name = str( self.tabs.tabText(index) )
+        
+        code_widget = self.code_tab_map[tab_name]
+        text_cursor = code_widget.textCursor()
+        #column_number = text_cursor.columnNumber()
+        block_number = text_cursor.blockNumber()
+        
+        self.status.setText('Line: %s' % (block_number))
         
     def set_group(self, group):
         self.group = group
@@ -1545,6 +1550,7 @@ class CodeEditTabs(BasicWidget):
         code_widget.set_file(filepath)
         code_widget.titlename = basename
         code_widget.filepath = filepath
+        code_widget.cursorPositionChanged.connect(self._cursor_changed)
         
         code_widget.save.connect(self._save)
         
@@ -1633,9 +1639,70 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         shortcut = QtGui.QShortcut(QtGui.QKeySequence(self.tr("Ctrl+s")), self)
         shortcut.activated.connect(self._save)
         
+        shortcut_l = QtGui.QShortcut(QtGui.QKeySequence(self.tr('Ctrl+l')), self)
+        shortcut_l.activated.connect(self._goto_line)
+        
         self._setup_highlighter()
         
         self.setWordWrapMode(QtGui.QTextOption.NoWrap)
+        
+        self.last_modified = None
+        
+        self.skip_focus = False
+        
+    def _goto_line(self):
+        
+        line = get_comment(self, 'Goto Line', '?')
+        
+        if not line:
+            return
+        
+        line_number = int(line)
+        
+        text_cursor = QtGui.QTextCursor()
+        text_cursor = self.textCursor()
+        
+        block_number = text_cursor.blockNumber()
+        
+        number = line_number - block_number
+        if number > 0:
+            move_type = text_cursor.NextBlock
+        if number < 0:
+            move_type = text_cursor.PreviousBlock
+            number = abs(number)
+        
+        text_cursor.movePosition(move_type, text_cursor.MoveAnchor, number)
+        self.setTextCursor(text_cursor)
+        
+    def focusInEvent(self, event):
+        
+        super(CodeTextEdit, self).focusInEvent(event)
+        
+        if not self.skip_focus:
+            self._update_request()
+         
+                        
+    def _update_request(self):
+                
+        
+        if self.filepath:
+            if util_file.is_file(self.filepath):
+                last_modified = util_file.get_last_modified_date(self.filepath)
+                
+                if last_modified != self.last_modified:
+                    
+                    self.skip_focus = True
+                    permission = get_permission('File:\n%s\nhas changed, reload?' % util_file.get_basename(self.filepath), self)
+                    
+                    if permission:
+                        self.set_file(self.filepath)
+                        
+                    if not permission:
+                        self.last_modified = last_modified
+                        
+                    self.skip_focus = False
+                
+                    
                 
     def _setup_highlighter(self):
         self.highlighter = Highlighter(self.document())
@@ -1668,6 +1735,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
             self.setPlainText(text)
             
         self.filepath = filepath
+        
+        self.last_modified = util_file.get_last_modified_date(self.filepath)
     
             
 class Highlighter(QtGui.QSyntaxHighlighter):
