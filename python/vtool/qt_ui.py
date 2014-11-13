@@ -386,7 +386,7 @@ class TreeWidget(QtGui.QTreeWidget):
         
         if parent:
             
-            print 'parent'
+            print 'parent', parent, item
             
             skip_index = QtGui.QTreeWidgetItem.indexOfChild(item)
             print skip_index

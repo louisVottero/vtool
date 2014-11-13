@@ -3362,7 +3362,10 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         return get_closest_transform(current_cluster, self.buffer_joints)            
     
     def _setup_stretchy(self):
-        if self.stretchy:
+        if not self.attach_joints:
+            return
+        
+        if self.stretchy:    
             create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1].get(), self.stretch_on_off)
     
     def _loop(self, transforms):
@@ -3615,10 +3618,11 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             cmds.parent(surface, self.setup_group)
             cmds.parent(handles, self.setup_group)
             
-            for joint in self.buffer_joints:
-                rivet = attach_to_surface(joint, surface)
-                cmds.setAttr('%s.inheritsTransform' % rivet, 0)
-                cmds.parent(rivet, self.setup_group)
+            if self.attach_joints:
+                for joint in self.buffer_joints:
+                    rivet = attach_to_surface(joint, surface)
+                    cmds.setAttr('%s.inheritsTransform' % rivet, 0)
+                    cmds.parent(rivet, self.setup_group)
         
         cmds.delete(self.orig_curve) 
     
@@ -4977,12 +4981,13 @@ class TweakCurveRig(BufferRig):
         if has_shape_of_type(self.surface, 'nurbsSurface'):
             self.maya_type = 'nurbsSurface'
             
-        for joint in self.buffer_joints:
-            if self.maya_type == 'nurbsSurface':
-                rivet = attach_to_surface(joint, self.surface)
-                cmds.parent(rivet, self.setup_group)
-            if self.maya_type == 'nurbsCurve':
-                attach_to_curve(joint, self.surface)
+        if self.attach_joints:
+            for joint in self.buffer_joints:
+                if self.maya_type == 'nurbsSurface':
+                    rivet = attach_to_surface(joint, self.surface)
+                    cmds.parent(rivet, self.setup_group)
+                if self.maya_type == 'nurbsCurve':
+                    attach_to_curve(joint, self.surface)
             
              
             
@@ -13207,6 +13212,9 @@ def transforms_to_curve(transforms, spans, description):
     cmds.setAttr('%s.inheritsTransform' % curve, 0)
     
     return curve
+    
+def curve_to_nurb_surface(curve):
+    pass
     
 def edges_to_curve(edges, description):
     
