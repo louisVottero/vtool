@@ -902,10 +902,7 @@ class PoseData(MayaCustomData):
         
         poses.append('pose_gr')
         
-        print 'poses', poses
-        
         if not poses:
-            print 'has no poses'
             return
         
         for pose in poses:
