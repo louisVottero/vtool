@@ -3,7 +3,7 @@
 import traceback
 import threading
 
-import util        
+import util       
 import util_file
 
 if util.is_in_maya():
@@ -22,6 +22,7 @@ class DataManager(object):
                                ScriptPythonData(),
                                ControlCvData(),
                                SkinWeightData(),
+                               DeformerWeightData(),
                                AnimationData(),
                                #AtomData(),
                                MayaShadersData(),
@@ -579,6 +580,60 @@ class ReadWeightFileThread(threading.Thread):
         
         return influence_dict
     
+class BlendshapeWeightData():
+    def _data_name(self):
+        return 'blendshape_weights'
+
+    def _data_extension(self):
+        return ''
+    
+    def _data_type(self):
+        return 'maya.blendshape_weights'
+    
+class DeformerWeightData(MayaCustomData):
+    def _data_name(self):
+        return 'deformer_weights'
+
+    def _data_extension(self):
+        return ''
+    
+    def _data_type(self):
+        return 'maya.deformer_weights'
+    
+    def export_data(self, comment = None):
+        
+        path = util_file.join_path(self.directory, self.name)
+        
+        selection = cmds.ls(sl = True)
+        
+        meshes = maya_lib.util.get_selected_meshes()
+        
+        for mesh in meshes:
+            
+            clusters = maya_lib.util.find_deformer_by_type(mesh, 'cluster', return_all = True)
+            wires = maya_lib.util.find_deformer_by_type(mesh, 'wire', return_all = True)
+            
+            deformers = clusters + wires
+            
+            for deformer in deformers:
+                weights = maya_lib.util.get_deformer_weights(deformer, mesh)
+            
+                print 'path', path, deformer
+            
+                path = util_file.join_path(path, deformer)
+                
+                
+                
+                filepath = util_file.create_file('%s.weights' % deformer, path)
+                
+                print 'filepath', filepath
+                
+                write_info = util_file.WriteFile(filepath)
+                
+                info_lines = [weights]
+                
+                write_info.write(info_lines)
+                             
 
 class MayaShadersData(CustomData):
     
