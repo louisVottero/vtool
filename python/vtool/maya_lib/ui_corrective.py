@@ -33,6 +33,7 @@ class PoseManager(ui.MayaWindow):
         self.pose_list.pose_list.itemSelectionChanged.connect(self.select_pose)
         
         self.pose_list.set_pose_widget(self.pose)
+        self.pose_list.pose_renamed.connect(self._pose_renamed)
         
         self.pose_set.pose_reset.connect(self.pose_list.pose_reset)
         
@@ -44,6 +45,7 @@ class PoseManager(ui.MayaWindow):
         self.pose.value_changed.connect(self.pose_list.value_changed)
         self.pose.parent_changed.connect(self.pose_list.parent_changed)
         self.pose.pose_enable_changed.connect(self.pose_list.pose_enable_changed)
+        
 
         self.main_layout.addWidget(self.pose_set)
         self.main_layout.addWidget(self.pose_list)
@@ -51,6 +53,10 @@ class PoseManager(ui.MayaWindow):
         
     def _update_lists(self):
         self.pose_list.refresh()
+        
+    def _pose_renamed(self, new_name):
+        
+        self.pose.mesh_widget.set_pose(new_name)
         
     def select_pose(self):
         
@@ -72,6 +78,7 @@ class PoseManager(ui.MayaWindow):
 class PoseListWidget(qt_ui.BasicWidget):
     
     pose_added = qt_ui.create_signal(object)
+    pose_renamed = qt_ui.create_signal(object)
  
     def __init__(self):
         super(PoseListWidget, self).__init__()
@@ -86,12 +93,15 @@ class PoseListWidget(qt_ui.BasicWidget):
         
         #self.pose_list.itemSelectionChanged.connect(self.select_pose)
         
+        self.pose_list.pose_renamed.connect(self._pose_renamed)
+        
         
         self.main_layout.addWidget(self.pose_list)
         self.main_layout.addWidget(combo_list)
 
 
-        
+    def _pose_renamed(self, new_name):
+        self.pose_renamed.emit(new_name)
 
         
     def set_pose_widget(self, widget):
@@ -135,9 +145,14 @@ class PoseListWidget(qt_ui.BasicWidget):
         
     def pose_enable_changed(self, value):
         self.pose_list.pose_enable_changed(value)
+        
+    
        
      
 class BaseTreeWidget(qt_ui.TreeWidget):
+    
+    pose_renamed = qt_ui.create_signal(object)
+    
     def __init__(self):
         super(BaseTreeWidget, self).__init__()
         self.setSortingEnabled(True)
@@ -220,8 +235,8 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         
         self.old_name = item.text(0)
         
-        new_name = qt_ui.get_new_name('Please specify a name.', self)
-        
+        new_name = qt_ui.get_new_name('Please specify a name.', self, old_name = self.old_name)
+                
         item.setText(0, new_name)
         
         state = self._item_rename_valid(self.old_name, item)
@@ -231,6 +246,8 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         if not state:
             
             item.setText(0, self.old_name)
+            
+        self.pose_renamed.emit(item.text(0))
         
     def _item_renamed(self, item):    
         
@@ -449,6 +466,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         
     def _get_pose_values(self, pose):
+                
         max_angle = cmds.getAttr('%s.maxAngle' % pose)
         max_distance = cmds.getAttr('%s.maxDistance' % pose)
         twist_on = cmds.getAttr('%s.twistOffOn' % pose)
@@ -587,6 +605,7 @@ class PoseTreeItem(QtGui.QTreeWidgetItem):
         self.setText(0, name)
         
     def _rename(self, new_name):
+        
         if self.pose.rename(new_name):
             return self.pose.pose_control
         
@@ -913,31 +932,33 @@ class MeshWidget(qt_ui.BasicWidget):
         if not pose_name:
             return
         
-        selection = cmds.ls(sl = True, l = True)
-        
         new_meshes = []
         meshes = []
         
-        mesh_count = self.mesh_list.count()
+        selection = cmds.ls(sl = True, l = True)
         
-        for thing in selection:
+        if selection:
+        
+            mesh_count = self.mesh_list.count()
             
-            if util.has_shape_of_type(thing, 'mesh'):
+            for thing in selection:
                 
-                pass_mesh = thing
-                
-                for inc in range(0, mesh_count):
+                if util.has_shape_of_type(thing, 'mesh'):
                     
-                    test_item = self.mesh_list.item(inc)
+                    pass_mesh = thing
                     
-                    if str( test_item.text() ) == thing:
-                        pass_mesh = None
+                    for inc in range(0, mesh_count):
                         
-                        meshes.append(thing)
+                        test_item = self.mesh_list.item(inc)
                         
-                    
-                if pass_mesh:    
-                    new_meshes.append(pass_mesh)
+                        if str( test_item.text() ) == thing:
+                            pass_mesh = None
+                            
+                            meshes.append(thing)
+                            
+                        
+                    if pass_mesh:    
+                        new_meshes.append(pass_mesh)
         
         if new_meshes or not current_meshes:
                     
@@ -960,8 +981,11 @@ class MeshWidget(qt_ui.BasicWidget):
             
             for mesh in meshes:
                 
+                if not mesh:
+                    continue
                 
                 index = util.PoseManager().get_mesh_index(pose_name, mesh)
+                
                 
                 item = self.mesh_list.item(index)
                 if item:

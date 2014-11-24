@@ -186,6 +186,8 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         if not code_edit_widget:
             return
         
+        
+        
         self.save_file.set_text_widget(code_edit_widget)
         
         self.save_file.save_widget._save()
@@ -245,9 +247,6 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         
         self.setSizePolicy(policy)
-        
-        
-        
         
         self.exteranl_code_libarary = None
         

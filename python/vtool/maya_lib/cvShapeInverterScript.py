@@ -17,6 +17,7 @@ def invert(base=None, corrective=None, name=None):
     """
     if not cmds.pluginInfo('cvShapeInverterDeformer.py', query=True, loaded=True):
         cmds.loadPlugin('cvShapeInverterDeformer.py')
+        
     cmds.undoInfo(openChunk=True)
     if not base or not corrective:
         sel = cmds.ls(sl=True)
@@ -34,6 +35,10 @@ def invert(base=None, corrective=None, name=None):
 
     # Get the intermediate mesh
     shapes = cmds.listRelatives(base, children=True, shapes=True)
+    
+    if not shapes:
+        raise RuntimeError('No intermediate shape found for %s.' % base)
+    
     for s in shapes:
         if cmds.getAttr('%s.intermediateObject' % s) and cmds.listConnections('%s.worldMesh' % s,
                 source=False):

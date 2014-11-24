@@ -2,6 +2,7 @@
 
 import string
 import re
+import traceback
 
 import maya.OpenMaya as OpenMaya
 import maya.cmds as cmds
@@ -5534,7 +5535,9 @@ class RollRig(JointRig):
         self._create_roll_control(self.joints[0])
         
         self._mix_joints(joint_chain1, joint_chain2)
-                
+        
+        
+        create_title(self.roll_control.get(), 'IK_FK')
         ik_fk = MayaNumberVariable(self.ik_attribute)
         ik_fk.set_variable_type(ik_fk.TYPE_DOUBLE)
         ik_fk.set_min_value(0)
@@ -8864,21 +8867,25 @@ class StoreControlData(StoreData):
             
             cmds.setAttr('%s.scaleX' % parent_group, -1)
             
-            cmds.setAttr('%s.translateX' % control, 0)
-            cmds.setAttr('%s.translateY' % control, 0)
-            cmds.setAttr('%s.translateZ' % control, 0)
-            cmds.setAttr('%s.rotateX' % control, 0)
-            cmds.setAttr('%s.rotateY' % control, 0)
-            cmds.setAttr('%s.rotateZ' % control, 0)
+            temp_xform = create_xform_group(temp_group, use_duplicate = True)
             
+            zero_xform_channels(control)
+                        
+            matrix = cmds.xform(control, q = True, os = True, m = True)
+            other_matrix = cmds.xform(other_control, q = True, os = True, m = True )
             
+            angle = cmds.angleBetween( er = True, v1 = (matrix[0],matrix[1], matrix[2]), v2 = (other_matrix[0], other_matrix[1], other_matrix[2]) )
+            #if angle > 30:
+            #    cmds.makeIdentity(parent_group, apply = True, s = True)
+             
+            const1 = cmds.pointConstraint(temp_group, other_control)[0]
+            const2 = cmds.orientConstraint(temp_group, other_control)[0]
+            #const = cmds.parentConstraint(temp_group, other_control)
             
-            #cmds.makeIdentity(parent_group, apply = True, s = True)
+            cmds.delete([const1, const2])
+            #cmds.delete(const)
+            #cmds.delete(parent_group)
             
-            const = cmds.parentConstraint(temp_group, other_control)
-            
-            cmds.delete(const)
-            cmds.delete(parent_group)
             
             
     def eval_multi_transform_data(self, data_list):
@@ -9401,6 +9408,9 @@ class BlendShape(object):
         return '%s.%s' % (self.blendshape, name)
 
     def _get_weight(self, name):
+        
+        name = name.replace(' ', '_')
+        
         target_index = self.targets[name].index
         return '%s.weight[%s]' % (self.blendshape, target_index)
 
@@ -9528,6 +9538,9 @@ class BlendShape(object):
             return True
         
     def create_target(self, name, mesh):
+        
+        name = name.replace(' ', '_')
+        
         if not self.is_target(name):
             
             current_index = self._get_next_index()
@@ -9551,6 +9564,8 @@ class BlendShape(object):
             warning('Could not add target %s, it already exist.' % name)
        
     def replace_target(self, name, mesh):
+        
+        name = name.replace(' ', '_')
         
         if self.is_target(name):
             
@@ -9576,6 +9591,9 @@ class BlendShape(object):
         cmds.aliasAttr('%s.%s' % (self.blendshape, name), rm = True)
        
     def rename_target(self, old_name, new_name):
+        
+        old_name = old_name.replace(' ', '_')
+        new_name = new_name.replace(' ', '_')
         
         weight_attr = self._get_weight(old_name)
         index = self.targets[old_name].index
@@ -10379,6 +10397,7 @@ class PoseManager(object):
         
     def toggle_visibility(self, pose_name, view_only = False, mesh_index = 0):
         pose = PoseControl()
+        
         pose.set_pose(pose_name)
         pose.set_mesh_index(mesh_index)
         pose.toggle_vis(view_only)
@@ -10416,22 +10435,27 @@ class PoseManager(object):
         progress = ProgressBar('adding poses ... ', count)
     
         for inc in range(count) :
-            cmds.undoInfo(state = False)
-
-            if progress.break_signaled():
-                break
+            cmds.undoInfo(openChunk = True)
+            #cmds.undoInfo(state = False)
+            try:
+                if progress.break_signaled():
+                    break
+                
+                pose_name = poses[inc]
+                pose = PoseControl()
+                pose.set_pose(pose_name)
+                pose.create_all_blends()
+                
+                cmds.refresh()
+                
+                progress.inc()
+                progress.status('adding pose %s' % pose_name)
+            except Exception:
+                RuntimeError( traceback.format_exc() )
+                
             
-            pose_name = poses[inc]
-            pose = PoseControl()
-            pose.set_pose(pose_name)
-            pose.create_all_blends()
-            
-            cmds.refresh()
-            
-            progress.inc()
-            progress.status('adding pose %s' % pose_name)
-            
-            cmds.undoInfo(state = True)
+            #cmds.undoInfo(state = True)
+            cmds.undoInfo(closeChunk = True)
             
         progress.end()
     
@@ -10448,8 +10472,15 @@ class BasePoseControl(object):
     def __init__(self, description = 'pose'):
         
         self.pose_control = None
+
+        if description:
+            description = description.replace(' ', '_')
+        
         
         self.description = description
+        
+
+        
         
         self.scale = 1
         self.mesh_index = 0
@@ -10548,11 +10579,13 @@ class BasePoseControl(object):
         self._connect_node(mesh, 'mesh', inc)
 
     def _get_named_message_attribute(self, name):
+        
         node = get_attribute_input('%s.%s' % (self.pose_control, name), True)
         
         return node
         
     def _get_mesh_message_attributes(self):
+        
         attributes = cmds.listAttr(self.pose_control, ud = True)
         
         messages = []
@@ -10748,6 +10781,9 @@ class BasePoseControl(object):
         
     def add_mesh(self, mesh, toggle_vis = True):
         
+        if mesh.find('.vtx'):
+            mesh = mesh.split('.')[0]
+            
         if not get_mesh_shape(mesh):
             return False
         
@@ -10802,6 +10838,10 @@ class BasePoseControl(object):
             return
             
         target_mesh = self.get_target_mesh(mesh)
+        
+        if not target_mesh:
+            RuntimeError('Mesh index %s, has no target mesh' % mesh_index)
+            return
         
         if goto_pose:
             self.goto_pose()
@@ -11020,15 +11060,9 @@ class BasePoseControl(object):
         
     def rename(self, description):
         
-        old_description = self.description
-        
-        self._set_description(description)
-        
-        self._rename_nodes()
-        
-        self.pose_control = cmds.rename(self.pose_control, self._get_name())
-        
         meshes = self.get_target_meshes()
+        
+        old_description = self.description
         
         for mesh in meshes:
             blendshape = self._get_blendshape(mesh)
@@ -11036,7 +11070,15 @@ class BasePoseControl(object):
             if blendshape:
                 blend = BlendShape(blendshape)
                 blend.rename_target(old_description, description)
-            
+        
+        
+        
+        self._set_description(description)
+        
+        self._rename_nodes()
+        
+        self.pose_control = cmds.rename(self.pose_control, self._get_name())
+           
         return self.pose_control
     
     def delete_blend_input(self):
@@ -11084,7 +11126,15 @@ class BasePoseControl(object):
       
 class PoseControl(BasePoseControl):
     def __init__(self, transform = None, description = 'pose'):
+        
+        
+        
         super(PoseControl, self).__init__(description)
+        
+        if transform:
+            transform = transform.replace(' ', '_')
+            
+        
         
         self.transform = transform
         
@@ -11518,17 +11568,34 @@ class PoseControl(BasePoseControl):
         #    self.mirror()
     
     def mirror(self):
+        
         transform = self.get_transform()
         
         description = self.description
-
-        other_transform = transform.replace('_L', '_R')
+        
+        if not description:
+            self._set_description(self.pose_control)
+        
+        if description:
+            description = description.replace(' ', '_')
+        
+        other_transform = ''
+        
+        if transform.endswith('L'):
+            other_transform = transform[:-1] + 'R'
         
         if not cmds.objExists(other_transform):
             return
         
-        other_pose = self.pose_control.replace('_L','_R')
-        other_description = description.replace('_L','_R')
+        
+        other_pose = ''
+        other_description = ''
+        
+        if self.pose_control.endswith('L'):
+            other_pose = self.pose_control[:-1] + 'R'
+        
+        if description.endswith('L'):
+            other_description =description[:-1] + 'R'
         
         other_meshes = []
         
@@ -11586,7 +11653,8 @@ class PoseControl(BasePoseControl):
             pose = PoseControl()
             pose.set_pose(other_pose)
         
-        if not cmds.objExists(other_pose):   
+        if not cmds.objExists(other_pose):
+            
             pose = PoseControl(other_transform, other_description)
             pose.create()
         
@@ -11738,8 +11806,7 @@ class EnvelopeHistory(object):
             if connection:
                 cmds.connectAttr(connection, '%s.envelope' % history)
                 
-            
- 
+                
 #--- definitions
 
 def inc_name(name):
@@ -12870,6 +12937,10 @@ def has_shape_of_type(node, maya_type):
         
 
 def get_mesh_shape(mesh, shape_index = 0):
+    
+    if mesh.find('.vtx'):
+        mesh = mesh.split('.')[0]
+    
     if cmds.nodeType(mesh) == 'mesh':
         mesh = cmds.listRelatives(p = True)[0]
         
@@ -15027,54 +15098,59 @@ def get_index_at_alias(alias, blendshape):
     
 def chad_extract_shape(skin_mesh, corrective):
     
-    envelopes = EnvelopeHistory(skin_mesh)
+    try:
     
-    skin = find_deformer_by_type(skin_mesh, 'skinCluster')
-    
-    if not skin:
-        warning('No skin found on %s.' % skin_mesh)
-        return
-    
-    file_name = __file__
-    file_name = file_name.replace('util.py', 'cvShapeInverterDeformer.py')
-    file_name = file_name.replace('.pyc', '.py')
-    
-    cmds.loadPlugin( file_name )
-    
-    import cvShapeInverterScript as correct
-    
-    envelopes.turn_off()
-    cmds.setAttr('%s.envelope' % skin, 1)
-    
-    offset = correct.invert(skin_mesh, corrective)
-    cmds.delete(offset, ch = True)
-    
-    orig = get_intermediate_object(skin_mesh)
-    orig = create_mesh_from_shape(orig, 'home')
-    
-    envelopes.turn_on(respect_initial_state=True)
-    
-    cmds.setAttr('%s.envelope' % skin, 0)
-    other_delta = cmds.duplicate(skin_mesh)[0]
-    
-    cmds.setAttr('%s.envelope' % skin, 1)
-    
-    quick_blendshape(other_delta, orig, -1)
-    quick_blendshape(offset, orig, 1)
-    
-    cmds.select(cl = True)
-    
-    cmds.delete(orig, ch = True)
-    
-    cmds.delete(other_delta, offset)
-    
-    
-    cmds.rename(orig, offset)
-    
-    
-    
-    return offset
+        envelopes = EnvelopeHistory(skin_mesh)
+        
+        skin = find_deformer_by_type(skin_mesh, 'skinCluster')
+        
+        if not skin:
+            warning('No skin found on %s.' % skin_mesh)
+            return
+        
+        file_name = __file__
+        file_name = file_name.replace('util.py', 'cvShapeInverterDeformer.py')
+        file_name = file_name.replace('.pyc', '.py')
+        
+        cmds.loadPlugin( file_name )
+        
+        import cvShapeInverterScript as correct
+        
+        envelopes.turn_off()
+        cmds.setAttr('%s.envelope' % skin, 1)
+        
+        offset = correct.invert(skin_mesh, corrective)
+        cmds.delete(offset, ch = True)
+        
+        orig = get_intermediate_object(skin_mesh)
+        orig = create_mesh_from_shape(orig, 'home')
+        
+        envelopes.turn_on(respect_initial_state=True)
+        
+        cmds.setAttr('%s.envelope' % skin, 0)
+        other_delta = cmds.duplicate(skin_mesh)[0]
+        
+        cmds.setAttr('%s.envelope' % skin, 1)
+        
+        quick_blendshape(other_delta, orig, -1)
+        quick_blendshape(offset, orig, 1)
+        
+        cmds.select(cl = True)
+        
+        cmds.delete(orig, ch = True)
+        
+        cmds.delete(other_delta, offset)
+        
+        
+        cmds.rename(orig, offset)
+        
+        
+        
+        return offset
 
+    except Exception:
+        RuntimeError( traceback.format_exc() )
+        
 
 
 def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
@@ -16365,3 +16441,4 @@ class ProgressBar(object):
         
         return False
     
+

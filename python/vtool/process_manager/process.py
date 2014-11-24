@@ -92,6 +92,7 @@ class Process(object):
     def _create_folder(self):
                 
         if not util_file.is_dir(self.directory):
+            #do not remove print
             print '%s was not created.' %  self.process_name
             return
         
@@ -129,6 +130,7 @@ class Process(object):
                 cmds.select(cl = True)
                 cmds.viewFit(an = True)
             except:
+                #do not remove print
                 print 'Could not center view.'
             
     def set_directory(self, directory):
@@ -583,7 +585,8 @@ class Process(object):
            
         if util.is_in_maya():
             cmds.file(new = True, f = True)
- 
+            
+        #do not remove print
         print '\a  Running %s Scripts  \a' % self.get_name()
  
         scripts = self.get_manifest_scripts(False)

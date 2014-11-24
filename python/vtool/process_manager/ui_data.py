@@ -543,6 +543,8 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.data_class.save(lines,comment)
         
         self.file_changed.emit()
+        
+        self.text_widget.load_modification_date()
 
     def set_text_widget(self, text_widget):
         self.text_widget = text_widget
