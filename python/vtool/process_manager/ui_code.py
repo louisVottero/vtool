@@ -330,7 +330,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         if self.directory == self.last_directory:
             return
-
+        
         self.code_manifest_tree.set_directory(directory)
         
     def reset_process_script_state(self):
