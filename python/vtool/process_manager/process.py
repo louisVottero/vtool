@@ -162,9 +162,7 @@ class Process(object):
         return self.process_name
     
     def get_relative_process(self, relative_path):
-        
-        relative_path = relative_path.replace('..', self.get_path())
-        
+                
         process = Process(relative_path)
         process.set_directory(self.directory)
         
