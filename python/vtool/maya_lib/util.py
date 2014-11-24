@@ -1764,6 +1764,7 @@ class DuplicateHierarchy(object):
         self._duplicate_hierarchy(self.top_transform)
         
         return self.duplicates
+ 
     
 class StretchyChain:
     
@@ -1777,6 +1778,7 @@ class StretchyChain:
         self.distance_offset = None
         self.scale_axis = 'X'
         self.name = 'stretch'
+        self.simple = False
     
     def _get_joint_count(self):
         return len(self.joints)
@@ -1798,7 +1800,6 @@ class StretchyChain:
             length += distance
             
         return length
-    
     
     def _build_stretch_locators(self):
         
@@ -1826,13 +1827,15 @@ class StretchyChain:
         
         return condition
 
-    def _create_distance_offset(self, stretch_condition):
+    def _create_distance_offset(self, stretch_condition = None):
         
         multiply = MultiplyDivideNode('offset_%s' % self.name)
         multiply.set_operation(2)
         multiply.set_input2(1,1,1)
-        multiply.outputX_out('%s.secondTerm' % stretch_condition)
-        multiply.outputX_out('%s.colorIfFalseR' % stretch_condition)
+        
+        if stretch_condition:
+            multiply.outputX_out('%s.secondTerm' % stretch_condition)
+            multiply.outputX_out('%s.colorIfFalseR' % stretch_condition)
         
         return multiply.node
 
@@ -1847,15 +1850,7 @@ class StretchyChain:
         cmds.connectAttr('%s.worldMatrix' % btm_locator, 
                          '%s.inMatrix2' % distance_between)
         
-        #plus = cmds.createNode('plusMinusAverage',
-        #                n = inc_name('plusMinusAverage_distance_%s' % self.name))
-        
         cmds.connectAttr('%s.distance' % distance_between, '%s.input1X' % distance_offset)
-        
-        #cmds.connectAttr('%s.distance' % distance_between, '%s.input1D[0]' % plus)
-        
-        #cmds.connectAttr('%s.output1D' % plus, 
-        #                 '%s.input1X' % distance_offset)
         
         return distance_between
         
@@ -1869,17 +1864,20 @@ class StretchyChain:
         
         return blend
 
-    def _create_divide_distance(self, stretch_condition, stretch_on_off):
+    def _create_divide_distance(self, stretch_condition = None, stretch_on_off = None):
         
         multiply = MultiplyDivideNode('distance_%s' % self.name)
         
         multiply.set_operation(2)
         multiply.set_input2(self._get_length(),1,1)
         
-        if stretch_on_off:
-            multiply.input1X_in('%s.outputR' % stretch_on_off)
-        if not stretch_on_off:
-            multiply.input1X_in('%s.outColorR' % stretch_condition)
+        if stretch_condition:
+            if stretch_on_off:
+                multiply.input1X_in('%s.outputR' % stretch_on_off)
+            if not stretch_on_off:
+                multiply.input1X_in('%s.outColorR' % stretch_condition)
+        if not stretch_condition:
+            pass
         
         return multiply.node
 
@@ -1891,10 +1889,7 @@ class StretchyChain:
         
         for inc in range(0, self._get_joint_count()-1 ):
             
-            #plus = cmds.createNode('plusMinusAverage', n = inc_name('plusMinusAverage_offset_%s' % self.name))
-            
             var_name = 'offset%s' % (inc + 1)
-            
             
             multiply = connect_multiply('%s.outputX' % divide_distance, '%s.scale%s' % (self.joints[inc], self.scale_axis), 1)
             
@@ -2025,49 +2020,65 @@ class StretchyChain:
     def set_add_dampen(self, bool_value):
         self.add_dampen = bool_value
     
+    def set_simple(self, bool_value):
+        self.simple = bool_value
+    
     def set_description(self, string_value):
         self.name = '%s_%s' % (self.name, string_value)
     
     def create(self):
         
-        
         top_locator, btm_locator = self._build_stretch_locators()
         
-        stretch_condition = self._create_stretch_condition()
-        
-        distance_offset = self._create_distance_offset( stretch_condition )
-        
-        stretch_distance = self._create_stretch_distance(top_locator, 
-                                      btm_locator, 
-                                      distance_offset)
-        
-        stretch_on_off = self._create_stretch_on_off( stretch_condition )
-        
-        divide_distance = self._create_divide_distance( stretch_condition, 
-                                                        stretch_on_off )
-        
-        
-        stretch_offsets = self._create_offsets( divide_distance, stretch_distance)
-        
-        
-        if self.attribute_node:
-            self._create_attributes(stretch_on_off)
-            self._create_offset_attributes(stretch_offsets)
+        if self.simple:
+            
+            for joint in self.joints[:-1]:
+                distance_offset = self._create_distance_offset()
+                
+                stretch_distance = self._create_stretch_distance(top_locator, 
+                                              btm_locator, 
+                                              distance_offset)
+                                
+                divide_distance = self._create_divide_distance()
+                
+                cmds.connectAttr('%s.outputX' % distance_offset, '%s.input1X' % divide_distance)
+                
+                print joint
+                cmds.connectAttr('%s.outputX' % divide_distance, '%s.scale%s' % (joint, self.scale_axis))
             
             
-            if self.add_dampen:
-                self._create_dampen(stretch_distance, ['%s.firstTerm' % stretch_condition,
-                                                       '%s.colorIfTrueR' % stretch_condition,
-                                                       '%s.color2R' % stretch_on_off,
-                                                       '%s.input2X' % divide_distance])
-            
-        if self.distance_offset_attribute:
-            self._create_other_distance_offset(distance_offset)
-            
         
+        if not self.simple:
+        
+            stretch_condition = self._create_stretch_condition()
             
+            distance_offset = self._create_distance_offset( stretch_condition )
+            
+            stretch_distance = self._create_stretch_distance(top_locator, 
+                                          btm_locator, 
+                                          distance_offset)
+            
+            stretch_on_off = self._create_stretch_on_off( stretch_condition )
+            
+            divide_distance = self._create_divide_distance( stretch_condition, 
+                                                            stretch_on_off )
+            
+            stretch_offsets = self._create_offsets( divide_distance, stretch_distance)
+            
+            if self.attribute_node:
+                self._create_attributes(stretch_on_off)
+                self._create_offset_attributes(stretch_offsets)
+                
+                if self.add_dampen:
+                    self._create_dampen(stretch_distance, ['%s.firstTerm' % stretch_condition,
+                                                           '%s.colorIfTrueR' % stretch_condition,
+                                                           '%s.color2R' % stretch_on_off,
+                                                           '%s.input2X' % divide_distance])
+                
+            if self.distance_offset_attribute:
+                self._create_other_distance_offset(distance_offset)
+                
         return top_locator, btm_locator
-            
 
 class Rig(object):
     
@@ -9355,6 +9366,61 @@ class StickyTransform(object):
         self._create_locators()
         self._create_constraints()
         
+class SuspensionRig(BufferRig):
+    
+    def __init__(self, description, side):
+        
+        self.sections = []
+        self.scale_constrain = None
+        
+        super(SuspensionRig, self).__init__(description, side)
+                    
+    def _create_joint_section(self, top_joint, btm_joint):
+
+        ik = IkHandle( self._get_name() )
+        
+        ik.set_start_joint(top_joint)
+        ik.set_end_joint(btm_joint)
+        ik.set_solver(ik.solver_sc)
+        ik.create()
+        
+        handle = ik.ik_handle
+        
+        stretch = StretchyChain()
+        stretch.set_simple(True)
+        
+        stretch.set_joints([top_joint, btm_joint])
+        stretch.set_description(self._get_name())        
+                
+        top_locator, btm_locator = stretch.create()
+        
+        top_control = self._create_control('top')
+        top_control.rotate_shape(0, 0, 90)
+        xform_top_control = create_xform_group(top_control.get())
+        MatchSpace(top_joint, xform_top_control).translation_rotation()
+        
+        btm_control = self._create_control('btm')
+        btm_control.rotate_shape(0, 0, 90)
+        xform_btm_control = create_xform_group(btm_control.get())
+        MatchSpace(btm_joint, xform_btm_control).translation_rotation()
+        
+        
+        cmds.parent(xform_top_control, xform_btm_control, self.control_group)
+        cmds.parent(top_locator, top_control.get())
+        cmds.parent(btm_locator, btm_control.get())
+        
+        cmds.pointConstraint(top_control.get(), top_joint)
+        cmds.parent(handle, btm_control.get())
+        
+        cmds.hide(handle)
+                    
+    def create(self):
+        
+        super(SuspensionRig, self).create()
+        
+        self._create_joint_section(self.buffer_joints[0], self.buffer_joints[1])
+       
+        
                 
 #--- deformation
 
@@ -12184,6 +12250,17 @@ def get_ordered_distance_and_transform(source_transform, transform_list):
     
     return distance_list, distance_dict, original_distance_order
 
+def get_transform_list_from_distance(source_transform, transform_list):
+    
+    distance_list, distance_dict, original = get_ordered_distance_and_transform(source_transform, transform_list)
+    
+    found = []
+    
+    for distance in distance_list:
+        found.append(distance_dict[distance][0])
+        
+    return found
+
 def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
     
     distance_list, distance_dict, original_distance_order = get_ordered_distance_and_transform(source_guide, drivers)
@@ -12936,6 +13013,26 @@ def has_shape_of_type(node, maya_type):
             return True
         
 
+def get_selected_meshes():
+
+    selection = cmds.ls(sl = True)
+    
+    found = []
+    
+    for thing in selection:
+        if cmds.nodeType(thing) == 'mesh':
+            found_mesh = cmds.listRelatives(thing, p = True)
+            found.append(found_mesh)
+            
+        if cmds.nodeType(thing) == 'transform':
+            
+            shapes = get_mesh_shape(thing)
+            if shapes:
+                found.append(thing)
+                
+    return found
+        
+
 def get_mesh_shape(mesh, shape_index = 0):
     
     if mesh.find('.vtx'):
@@ -13044,6 +13141,33 @@ def get_edge_path(edges = []):
     cmds.polySelectSp(edges, loop = True )
     
     return cmds.ls(sl = True, l = True)
+
+def edge_to_vertex(edges):
+    
+    edges = cmds.ls(edges, flatten = True)
+    
+    verts = []
+    
+    mesh = edges[0].split('.')
+    mesh = mesh[0]
+    
+    for edge in edges:
+        print edge
+        info = cmds.polyInfo(edge, edgeToVertex = True)
+        info = info[0]
+        info = info.split()
+        
+        vert1 = info[2]
+        vert2 = info[3]
+        
+        if not vert1 in verts:
+            verts.append('%s.vtx[%s]' % (mesh, vert1))
+            
+        if not vert2 in verts:
+            verts.append('%s.vtx[%s]' % (mesh, vert2))
+            
+    return verts
+        
 
 def get_slots(attribute):
     
@@ -13206,6 +13330,13 @@ def attach_to_surface(transform, surface, u = None, v = None):
     if u == None or v == None:
         uv = get_closest_parameter_on_surface(surface, position)   
     
+    uv = list(uv)
+    
+    if uv[0] == 0:
+        uv[0] = 0.001
+    
+    if uv[1] == 0:
+        uv[1] = 0.001
     
     rivet = Rivet(transform)
     rivet.set_surface(surface, uv[0], uv[1])
@@ -13311,6 +13442,25 @@ def transforms_to_curve(transforms, spans, description):
     cmds.setAttr('%s.inheritsTransform' % curve, 0)
     
     return curve
+    
+def transforms_to_joint_chain(transforms, name = ''):
+    
+    cmds.select(cl = True)
+    
+    joints = []
+    
+    for transform in transforms:
+    
+        if not name:
+            name = transform     
+            
+        joint = cmds.joint(n = inc_name('joint_%s' % name))
+        
+        MatchSpace(transform, joint).translation_rotation()
+        
+        joints.append(joint)
+        
+    return joints
     
 def curve_to_nurb_surface(curve):
     pass
@@ -13742,15 +13892,23 @@ def create_cluster_bindpre(cluster, handle):
     
     return bindpre
 
-def find_deformer_by_type(mesh, deformer_type ):
+def find_deformer_by_type(mesh, deformer_type, return_all = False):
     
     scope = cmds.listHistory(mesh, interestLevel = 1)
     
+    found = []
+    
     for thing in scope[1:]:
         if cmds.nodeType(thing) == deformer_type:
-            return thing
+            if not return_all:
+                return thing
+            
+            found.append(thing)
+            
         if cmds.objectType(thing, isa = "shape") and not cmds.nodeType(thing) == 'lattice':
-            return
+            return found
+        
+    return found
 
 def get_influences_on_skin(skin_deformer):
     indices = get_indices('%s.matrix' % skin_deformer)
@@ -13887,19 +14045,23 @@ def set_wire_weights(weights, wire_deformer, index = 0):
         
         cmds.setAttr('%s.weightList[%s].weights[%s]' % (wire_deformer, index, inc), weights[inc])
 
-def get_wire_weights(wire_deformer, mesh, index = 0):
-    
+def get_deformer_weights(deformer, mesh, index = 0):
+
     indices = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
-    
+        
     weights = []
     
     for inc in range(0, len(indices)):
-        weights.append( cmds.getAttr('%s.weightList[%s].weights[%s]' % (wire_deformer, index, inc)) )
+        weights.append( cmds.getAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc)) )
     
     return weights
 
+def get_wire_weights(wire_deformer, mesh, index = 0):
+    
+    get_deformer_weights(wire_deformer, mesh, index)
+
 def get_cluster_weights(cluster_deformer, mesh, index = 0):
-    return get_wire_weights(cluster_deformer, mesh, index)
+    return get_deformer_weights(cluster_deformer, mesh, index)
 
 def get_blendshape_weights(blendshape_deformer, mesh, index = -1):
     pass

@@ -590,6 +590,13 @@ class SkinWeightFileWidget(MayaDataFileWidget):
     def _define_main_tab_name(self):
         return 'Skin Weights' 
       
+class DeformerWeightFileWidget(MayaDataFileWidget):
+    def _define_data_class(self):
+        return vtool.data.DeformerWeightData()
+    
+    def _define_main_tab_name(self):
+        return 'Deformer Weights'
+      
 class AnimationFileWidget(MayaDataFileWidget):
     
     def _define_data_class(self):
@@ -743,6 +750,7 @@ file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.ascii' : MayaAsciiFileWidget,
                  'maya.control_cvs' : ControlCvFileWidget,
                  'maya.skin_weights' : SkinWeightFileWidget,
+                 'maya.deform_weights' : DeformerWeightFileWidget,
                  'maya.atom' :  AtomFileWidget,
                  'maya.shaders' : MayaShadersFileWidget,
                  'maya.attributes' : MayaAttributesFileWidget,
