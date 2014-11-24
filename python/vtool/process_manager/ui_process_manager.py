@@ -255,8 +255,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         for inc in range(0, script_count):
             
-            
-            
             state = states[inc]
             
             if not state:
@@ -298,7 +296,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             util_file.open_browser(path)    
               
     def _set_project_history(self, current_directory, previous_directory):
-                
+          
         history = self.settings.get('project_history')
         
         if previous_directory != current_directory and previous_directory:
@@ -310,25 +308,26 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             for inc in range(0, len(history)):
                 
-                if not util_file.is_dir(history[inc]):
+                history_inc = str(history[inc])
+                
+                if not util_file.is_dir(history_inc):
                     continue
                 
-                if history[inc] == previous_directory:
+                if history_inc in found_history:
                     continue
 
-                if history[inc] == current_directory:
-                    continue
-                
-                found_history.append(str(history[inc]))
+                found_history.append(history_inc)
                    
             history = found_history 
 
-            history.insert(0, str(previous_directory))
-            
             self.settings.set('project_history', history)
+            return
             
         if history:
-            self.settings_widget.set_history(history)
+            if not str(current_directory) in history:
+                history.insert(0, str(current_directory))
+            self.settings_widget.set_history(current_directory, history)
+            
         
     def set_directory(self, directory):
         

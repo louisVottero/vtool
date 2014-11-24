@@ -75,7 +75,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         if directory:
             self.code_directory_widget.set_directory(directory)
             
-    def set_history(self, project_list):
+    def set_history(self, current, project_list):
         
         self.project_history = project_list
         
@@ -83,17 +83,25 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         items = []
         
+        select_item = None
+        
         for history in self.project_history:
             item = QtGui.QListWidgetItem()
             item.setText(history)
             item.setSizeHint(QtCore.QSize(30, 40))
             
+            if current == history:
+                select_item = item
+                
+            
+            
+            
             items.append(item)
             self.history_list.addItem(item)
         
-        #self.history_list.addItems(items)
         
-        self.history_list.clearSelection()
+        select_item.setSelected(True)
+        #self.history_list.clearSelection()
         
     def set_code_list(self, code_directories):
         

@@ -2098,8 +2098,6 @@ class Rig(object):
         
         self.control_shape = self._define_control_shape()
         
-        
-        
     def _refresh(self):
         cmds.refresh()
         
@@ -2159,7 +2157,7 @@ class Rig(object):
         
     def set_control_shape(self, shape_name):
         self.control_shape = shape_name
-        
+                
     def create(self):
         pass
 
@@ -2292,9 +2290,7 @@ class SurfaceFollowCurveRig(CurveRig):
         
         cmds.parent(xform_control, self.control_group)
         cmds.parent(xform, self.setup_group)
-        
-        
-        
+                
     def _create_controls(self, clusters):
         
         for cluster in clusters:
@@ -2514,9 +2510,6 @@ class ControlRig(Rig):
         
     def set_control_count_per_transform(self, int_value):
         self.control_count = int_value
-        
-    def set_control_shape(self, index, shape_name):
-        self.control_shape_types[index] = shape_name
     
     def set_control_description(self, index, description):
         self.control_descriptions[index] = description
@@ -2716,9 +2709,6 @@ class FkRig(BufferRig):
 
     def set_parent(self, parent):
         self.parent = parent
-        
-    def set_control_shape(self, shape_name):
-        self.control_shape = shape_name
     
     def set_control_size(self, value):
         self.control_size = value
@@ -3942,6 +3932,9 @@ class NeckRig(FkCurveRig):
 class IkSplineNubRig(BufferRig):
     
     def __init__(self, description, side):
+        
+        
+        
         super(IkSplineNubRig, self).__init__(description, side)
         
         self.end_with_locator = False
@@ -3950,7 +3943,7 @@ class IkSplineNubRig(BufferRig):
         
         self.bool_create_middle_control = True
         
-        self.shape_type = 'pin'
+        self.control_shape = 'pin'
         
     def _duplicate_joints(self):
         
@@ -4075,7 +4068,7 @@ class IkSplineNubRig(BufferRig):
         if self.end_with_locator:
             control = self._create_control()
             
-        control.set_curve_type(self.shape_type)
+        control.set_curve_type(self.control_shape)
             
         control.hide_scale_and_visibility_attributes()
         
@@ -4090,7 +4083,7 @@ class IkSplineNubRig(BufferRig):
         control = self._create_control('btm')
         control.hide_scale_and_visibility_attributes()
         
-        control.set_curve_type(self.shape_type)
+        control.set_curve_type(self.control_shape)
         
         xform = create_xform_group(control.get())
         
@@ -4104,7 +4097,7 @@ class IkSplineNubRig(BufferRig):
         control.scale_shape(.5, .5, .5)
         control.hide_scale_and_visibility_attributes()
         
-        control.set_curve_type(self.shape_type)
+        control.set_curve_type(self.control_shape)
         
         xform = create_xform_group(control.get())
         
@@ -4120,7 +4113,7 @@ class IkSplineNubRig(BufferRig):
             control.scale_shape(.5, .5, .5)
             control.hide_scale_and_visibility_attributes()
             
-            control.set_curve_type(self.shape_type)
+            control.set_curve_type(self.control_shape)
             control = control.get()
         
         if not self.bool_create_middle_control:
@@ -4143,7 +4136,7 @@ class IkSplineNubRig(BufferRig):
         self.btm_guide = btm_guide
     
     def set_control_shape(self, name):
-        self.shape_type = name
+        self.control_shape = name
     
     def set_create_middle_control(self, bool_value):
         
