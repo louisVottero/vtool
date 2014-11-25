@@ -347,6 +347,9 @@ class TreeWidget(QtGui.QTreeWidget):
         
         new_name = item.text(self.title_text_index)
         
+        if not new_name:
+            return False
+        
         if self._already_exists(item):
             return False
         
@@ -379,14 +382,14 @@ class TreeWidget(QtGui.QTreeWidget):
         
         if parent:
             
-            skip_index = QtGui.QTreeWidgetItem.indexOfChild(item)
+            skip_index = parent.indexOfChild(item)
             
             for inc in range( 0, parent.childCount() ):
                 
                 if inc == skip_index:
                     continue
                 
-                other_name = self.child(inc).text(0)
+                other_name = parent.child(inc).text(0)
                 other_name = str(other_name)
                 
                 if name == other_name:
@@ -1501,6 +1504,7 @@ class CodeEditTabs(BasicWidget):
     
     def _save(self):
         
+        
         current_widget = self.tabs.currentWidget()
         
         current_widget.document().setModified(False)
@@ -1708,6 +1712,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     
     def _save(self):
         self.save.emit()
+        
+        self.last_modified = util_file.get_last_modified_date(self.filepath)
     
     def keyPressEvent(self, event):
         
@@ -1737,6 +1743,10 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         self.last_modified = util_file.get_last_modified_date(self.filepath)
     
+    def load_modification_date(self):
+        
+        self.last_modified = util_file.get_last_modified_date(self.filepath)
+        
             
 class Highlighter(QtGui.QSyntaxHighlighter):
     
@@ -1954,8 +1964,14 @@ def get_permission(message, parent = None):
     if message == message_box.No:
         return False
     
-def get_new_name(message, parent = None):
-    comment, ok = QtGui.QInputDialog.getText(parent, 'Rename', message)
+def get_new_name(message, parent = None, old_name = None):
+    
+    
+    if not old_name:
+        comment, ok = QtGui.QInputDialog.getText(parent, 'Rename', message)
+    if old_name:
+        comment, ok = QtGui.QInputDialog.getText(parent, 'Rename', message, text = old_name)
+    
     
     comment = comment.replace('\\', '_')  
     

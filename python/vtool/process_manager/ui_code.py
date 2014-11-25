@@ -102,7 +102,8 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         tab_index = self.code_widget.code_edit.get_tab_from_filepath( old_filepath )
         
         self.code_widget.code_edit.rename_tab(old_filepath, filepath)
-            
+        
+        self.code_widget.set_code_path(filepath)
         
                 
     def set_directory(self, directory):
@@ -190,7 +191,6 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         self.save_file.save_widget._save()
         
-        
     def _multi_save(self, widgets, note):
         
         if not widgets:
@@ -245,9 +245,6 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         
         self.setSizePolicy(policy)
-        
-        
-        
         
         self.exteranl_code_libarary = None
         
@@ -331,7 +328,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         if self.directory == self.last_directory:
             return
-
+        
         self.code_manifest_tree.set_directory(directory)
         
     def reset_process_script_state(self):

@@ -30,8 +30,8 @@ def find_processes(directory = None):
         if not util_file.is_dir(full_path):
             continue
         
-        process = Process()
-        process.set_directory(full_path)
+        process = Process(file_name)
+        process.set_directory(directory)
         
         if process.is_process():
             found.append(file_name)
@@ -92,6 +92,7 @@ class Process(object):
     def _create_folder(self):
                 
         if not util_file.is_dir(self.directory):
+            #do not remove print
             print '%s was not created.' %  self.process_name
             return
         
@@ -129,9 +130,11 @@ class Process(object):
                 cmds.select(cl = True)
                 cmds.viewFit(an = True)
             except:
+                #do not remove print
                 print 'Could not center view.'
             
     def set_directory(self, directory):
+        
         self.directory = directory
         
     def set_external_code_library(self, directory):
@@ -160,11 +163,43 @@ class Process(object):
         return self.process_name
     
     def get_relative_process(self, relative_path):
+                     
+        path = self.get_path()
         
-        relative_path = relative_path.replace('..', self.get_path())
+        if not path:
+            return
         
-        process = Process(relative_path)
-        process.set_directory(self.directory)
+        split_path = self.get_path().split('/')
+        split_relative_path = relative_path.split('/')
+        
+        if not len(split_relative_path):
+            return
+        
+        position = len(split_relative_path)
+        
+        import string
+        start_path = string.join(split_path[:-position], '/')
+        
+        split_path_count = len(split_path[:-position])
+        
+        end_path = [] 
+        
+        for inc in range(0, position):
+            if split_relative_path[inc] == '..':
+                
+                folder = split_path[split_path_count + inc]
+                
+                end_path.append(folder)
+                continue
+            
+            end_path.append(split_relative_path[inc])
+
+        end_path = string.join(end_path, '/')
+        
+        new_path = util_file.join_path(start_path, end_path)
+                      
+        process = Process(end_path)
+        process.set_directory(start_path)
         
         return process
     
@@ -583,7 +618,8 @@ class Process(object):
            
         if util.is_in_maya():
             cmds.file(new = True, f = True)
- 
+            
+        #do not remove print
         print '\a  Running %s Scripts  \a' % self.get_name()
  
         scripts = self.get_manifest_scripts(False)

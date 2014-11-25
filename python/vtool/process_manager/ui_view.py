@@ -297,6 +297,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             if not item_path:
                 parent_item = None
         
+        
         item = ProcessItem(self.directory, name)
         if create:
             item.create()
@@ -480,12 +481,15 @@ class ProcessItem(qt_ui.TreeWidgetItem):
         return 0
         
     def _add_process(self, directory, name):
+        
+        
         self.process = process.Process(name)
         self.process.set_directory(directory)
         
         self.process.create()
         
     def _get_process(self):
+        
         process_instance = process.Process(self.name)
         process_instance.set_directory(self.directory)
         
@@ -652,6 +656,7 @@ class CopyWidget(qt_ui.BasicWidget):
             process.copy_process_code( self.process, self.other_process, name)
     
     def set_process(self, process_name, process_directory):
+        
         process_inst = process.Process(process_name)
         process_inst.set_directory(process_directory)
         

@@ -540,9 +540,15 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         text = self.text_widget.toPlainText()
         lines= vtool.util_file.get_text_lines(text)
         
+        print self.directory
+        print lines
+        print comment
+        
         self.data_class.save(lines,comment)
         
         self.file_changed.emit()
+        
+        self.text_widget.load_modification_date()
 
     def set_text_widget(self, text_widget):
         self.text_widget = text_widget
