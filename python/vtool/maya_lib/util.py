@@ -2511,6 +2511,9 @@ class ControlRig(Rig):
     def set_control_count_per_transform(self, int_value):
         self.control_count = int_value
     
+    def set_control_shape(self, index, shape_name):
+        self.control_shape_types[index] = shape_name
+    
     def set_control_description(self, index, description):
         self.control_descriptions[index] = description
     

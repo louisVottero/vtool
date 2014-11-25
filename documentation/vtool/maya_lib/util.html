@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title></title>
+		<title>Rig Class documentation.</title>
 	</head>
 	<body>
 	
@@ -9,7 +9,7 @@
 		
 		<h2> Rig( object ) </h2>
 		<p> Base class for rigs.
-		<h3> functions </h3>
+		<h3> Functions </h3>
 		<h4> set_control_shape( shape_name ) </h4>
 		<p> Sets the control to have a shape from the curve library. </p>
 		<h4> create( ) </h4>
@@ -17,20 +17,20 @@
 		
 		<h2> JointRig( Rig ) </h2>
 		<p> joints can be a list of joints or the name of a single joint. </p>
-		<h3> functions </h3>
+		<h3> Functions </h3>
 		<h4> set_joints( joints ) </h4>
 		<p> Set which joints the rig should work with. Some rigs also accapt transform nodes.</p>
 		<p> Accepts a list or a string. </p>
 		
 		<h2> BufferRig( JointRig ) </h2>
 		<p> Create a buffer chain based on the specified joints. This chain can be used to swith between different rigs. For example an ik rig and an fk rig. </p>
-		<h3> functions </h3>
+		<h3> Functions </h3>
 		<h4> set_buffer( bool_value ) </h4>
 		<p> bool_value = Set True or False </p>
 		
 		<h2> SparseRig( JointRig ) </h2>
 		<p> The sparse rig will create controls on joints.  The controls are not interconnected. When the rig respects side it will name and color the controls according to their side. </p>
-		<h3> functions </h3>
+		<h3> Functions </h3>
 		<h4> set_scalable( bool_value ) </h4>
 		<p> Specify if the scale from control to joint should also be connected. </p>
 		<h4> set_respect_side( bool_value, tolerance = 0.001) </h4>
@@ -39,7 +39,7 @@
 				
 		<h2> SparseLocalRig( SparseRig ) </h2>
 		<p> The sparse local rig will create controls on joints.  The controls are not interconnected. Because it is local the controls can move has a group without affecting the joints.  Allowing the joints to say local to the origin. The sparse local rig uses a transform node to buffer it's affect on the joint.</p> 
-		<h3> functions </h3>
+		<h3> Functions </h3>
 		<h4> set_local_constraint( bool_value ) </h4>
 		<p> If set true, controls will use a constraint between the control and a buffer group that gets connected into the joint. Otherwise the control will be connected directly into the buffer group. By default this is True.
 		<h4> set_control_to_pivot( bool_value ) </h4>
@@ -47,12 +47,22 @@
 		<h4> set_local_parent( local_parent ): </h4>
 		<p> This will cause the local buffer to move with the specified transform. </p>
 		
+		<h2> ControlRig( Rig ) </h2>
+		<p> This class is meant to build blendshape slider curves that make up a face icon. </p>
+		<h3> Functions </h3>
+		<h4> set_transforms( transforms ) </h4>
+		<p> Specify a list of transforms to build controls at their position. </h4>
+		<h4> set_control_count_per_transform( int_value ) </h4>
+		<p> This allows the user to set multiple control per transform. Beneficial for facial icons that need the controls to pivot from same place. </p> 
+		<h4> set_control_shape( index, shape_name ) </h4>
+		<p> Set the shape of the control at the specified index.  Index corresponds to the number of controls per transform.</p>
+		
 		<h2> GroundRig( JointRig ) </h2>
 		<p> The ground rig creates 3 controls around the specified joint or transform. Meant to be used at the base controls for a rig. </p>
 		
 		<h2> FkRig( BufferRig ) </h2>
 		<p> The fk rig will create controls on the joints that affect each other in hierarchy. </p>
-		<h3> functions </h3>
+		<h3> Functions </h3>
 		<h4> set_parent( parent ) </h4>
 		<p> Specify the parent for the controls group </p>
 		<h4> set_control_size( value ) </h4>
@@ -63,7 +73,7 @@
 		
 		<h2> FkLocalRig( FkRig ) </h2>
 		<p> The fk local rig will create controls on the joints that affect each other in hierarchy. Because it is local the controls can move has a group without affecting the joints.  Allowing the joints to say local to the origin. The fk local rig uses a transform node to buffer it's affect on the joint.</p>
-		<h3> functions </h3>		
+		<h3> Functions </h3>		
 		<h4> set_local_parent( local_parent ): </h4>
 		<p> This will cause the local buffer to move with the specified transform. </p>
 		 		
@@ -72,7 +82,7 @@
 		
 		<h2> FkCurlNoScaleRig( FkRig ) </h2>
 		<p> This will create an fk rig with curl attributes. </p>
-		<h3> functions </h3>
+		<h3> Functions </h3>
 		<h4> set_curl_axis( axis_letter ) </h4>
 		<p>Sets the axis to curl on. Axis letter can equal: 'x', 'y', 'z', 'All'</p>
 		<h4> set_attribute_control( control_name ) </h4>
@@ -84,7 +94,7 @@
 		
 		<h2> FkCurlRig( FkScaleRig ) </h2>
 		<p> This will create an fk rig with curl attributes. Also this rig will have controls that scale.</p>
-		<h3> functions </h3>
+		<h3> Functions </h3>
 		<h4> set_curl_axis( axis_letter ) </h4>
 		<p>Sets the axis to curl on. Axis letter can equal: 'x', 'y', 'z', 'All'</p>
 		<h4> set_attribute_control( control_name ) </h4>
@@ -96,7 +106,7 @@
 		
 		<h2> SimpleFkCurveRig </h2>
 		<p> This class will create a fk rig the move joints with a curve. Controls by default are not oriented to anything.</p>
-		<h3> functions </h3>
+		<h3> Functions </h3>
 		<h4> set_control_xform( vector, inc ) </h4>
 		<p> vector is a the number list, eg: [1,0,0], that specifies the movement of the control at the increment inc. </p>
 		<h4> set_orient_joint( joint ) </h4>
