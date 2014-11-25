@@ -2357,9 +2357,6 @@ class SparseRig(JointRig):
         self.respect_side = False
         self.respect_side_tolerance = 0.001
         
-    def set_control_shape(self, name):
-        self.control_shape = name
-        
     def set_scalable(self, bool_value):
         self.is_scalable = bool_value
         
@@ -2716,9 +2713,6 @@ class FkRig(BufferRig):
     def set_parent(self, parent):
         self.parent = parent
         
-    def set_control_shape(self, shape_name):
-        self.control_shape = shape_name
-    
     def set_control_size(self, value):
         self.control_size = value
         
@@ -2795,9 +2789,6 @@ class FkLocalRig(FkRig):
 
     def set_local_parent(self, local_parent):
         self.main_local_parent = local_parent 
-    
-    def set_control_scale(self, bool_value):
-        self.rig_scale = bool_value
     
     def create(self):
         super(FkLocalRig, self).create()
@@ -3098,6 +3089,8 @@ class FkCurlRig(FkScaleRig):
         self.attribute_control = control_name
     
 class SimpleSplineIkRig(BufferRig):
+    
+    #to be removed, use TweakCurveRig instead.
     
     def __init__(self, name, side):
         super(SimpleSplineIkRig, self).__init__(name, side)
