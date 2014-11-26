@@ -35,7 +35,7 @@
 		<p> To be implemented by a sub class to create the rig. </p>
 		
 		<a name = "JointRig"> </a>
-		<h2> JointRig( Rig ) </h2>
+		<h2> JointRig( <a href = "#Rig" >Rig</a> ) </h2>
 		<p> joints can be a list of joints or the name of a single joint. </p>
 		<h3> Functions </h3>
 		<h4> set_joints( joints ) </h4>
@@ -43,14 +43,14 @@
 		<p> Accepts a list or a string. </p>
 		
 		<a name = "BufferRig"> </a>
-		<h2> BufferRig( JointRig ) </h2>
+		<h2> BufferRig( <a href = "#JointRig" >JointRig</a> ) </h2>
 		<p> Create a buffer chain based on the specified joints. This chain can be used to swith between different rigs. For example an ik rig and an fk rig. </p>
 		<h3> Functions </h3>
 		<h4> set_buffer( bool_value ) </h4>
 		<p> bool_value = Set True or False </p>
 		
 		<a name = "SparseRig"> </a>
-		<h2> SparseRig( JointRig ) </h2>
+		<h2> SparseRig( <a href = "#JointRig" >JointRig</a> ) </h2>
 		<p> The sparse rig will create controls on joints.  The controls are not interconnected. When the rig respects side it will name and color the controls according to their side. </p>
 		<h3> Functions </h3>
 		<h4> set_scalable( bool_value ) </h4>
@@ -60,7 +60,7 @@
 		<p> tolerance = The tolerance of what is considered centered. </p>
 				
 		<a name = "SparseLocalRig"> </a>
-		<h2> SparseLocalRig( SparseRig ) </h2>
+		<h2> SparseLocalRig( <a href = "#SparseRig" >SparseRig</a> ) </h2>
 		<p> The sparse local rig will create controls on joints.  The controls are not interconnected. Because it is local the controls can move has a group without affecting the joints.  Allowing the joints to say local to the origin. The sparse local rig uses a transform node to buffer it's affect on the joint.</p> 
 		<h3> Functions </h3>
 		<h4> set_local_constraint( bool_value ) </h4>
@@ -71,7 +71,7 @@
 		<p> This will cause the local buffer to move with the specified transform. </p>
 		
 		<a name = "ControlRig"> </a>
-		<h2> ControlRig( Rig ) </h2>
+		<h2> ControlRig( <a href = "#Rig" >Rig</a> ) </h2>
 		<p> This class is meant to build blendshape slider curves that make up a face icon. </p>
 		<h3> Functions </h3>
 		<h4> set_transforms( transforms ) </h4>
@@ -82,11 +82,11 @@
 		<p> Set the shape of the control at the specified index.  Index corresponds to the number of controls per transform.</p>
 		
 		<a name = "GroundRig"> </a>
-		<h2> GroundRig( JointRig ) </h2>
+		<h2> GroundRig( <a href = "#JointRig" >JointRig</a> ) </h2>
 		<p> The ground rig creates 3 controls around the specified joint or transform. Meant to be used at the base controls for a rig. </p>
 		
 		<a name = "FkRig"> </a>
-		<h2> FkRig( BufferRig ) </h2>
+		<h2> FkRig( <a href = "#BufferRig" >BufferRig</a> ) </h2>
 		<p> The fk rig will create controls on the joints that affect each other in hierarchy. </p>
 		<h3> Functions </h3>
 		<h4> set_parent( parent ) </h4>
@@ -98,18 +98,18 @@
 		<p> Returns a list of transforms that are the drivers above controls. </p>
 		
 		<a name = "FkLocalRig"> </a>
-		<h2> FkLocalRig( FkRig ) </h2>
+		<h2> FkLocalRig( <a href = "#FkRig" >FkRig</a> ) </h2>
 		<p> The fk local rig will create controls on the joints that affect each other in hierarchy. Because it is local the controls can move has a group without affecting the joints.  Allowing the joints to say local to the origin. The fk local rig uses a transform node to buffer it's affect on the joint.</p>
 		<h3> Functions </h3>		
 		<h4> set_local_parent( local_parent ): </h4>
 		<p> This will cause the local buffer to move with the specified transform. </p>
 		 		
 		<a name = "FkScaleRig"> </a>
-		<h2> FkScaleRig(FkRig) </h2>
+		<h2> FkScaleRig( <a href = "#FkRig" >FkRig</a> ) </h2>
 		<p> This rig will create fk controls with scalability. </p>
 		
 		<a name = "FkCurlNoScaleRig"> </a>
-		<h2> FkCurlNoScaleRig( FkRig ) </h2>
+		<h2> FkCurlNoScaleRig( <a href = "#FkRig" >FkRig</a> ) </h2>
 		<p> This will create an fk rig with curl attributes. </p>
 		<h3> Functions </h3>
 		<h4> set_curl_axis( axis_letter ) </h4>
@@ -122,7 +122,7 @@
 		<p> Specify a list of inices that should be skipped. Indices correspond to control increment. For example, if you want to skip the first control in the hieararchy you would provide: [0]. </p>
 		
 		<a name = "FkCurlRig"> </a>
-		<h2> FkCurlRig( FkScaleRig ) </h2>
+		<h2> FkCurlRig( <a href = "#FkRig" >FkScaleRig</a> ) </h2>
 		<p> This will create an fk rig with curl attributes. Also this rig will have controls that scale.</p>
 		<h3> Functions </h3>
 		<h4> set_curl_axis( axis_letter ) </h4>
@@ -135,7 +135,7 @@
 		<p> Specify a list of inices that should be skipped. Indices correspond to control increment. For example, if you want to skip the first control in the hieararchy you would provide: [0]. </p>
 		
 		<a name = "SimpleFkCurveRig"> </a>
-		<h2> SimpleFkCurveRig </h2>
+		<h2> SimpleFkCurveRig( <a href = #FkCurlNoScaleRig >FkCurlNoScaleRig</a> )</h2>
 		<p> This class will create a fk rig the move joints with a curve. Controls by default are not oriented to anything.</p>
 		<h3> Functions </h3>
 		<h4> set_control_xform( vector, inc ) </h4>

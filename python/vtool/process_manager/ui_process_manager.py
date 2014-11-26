@@ -90,6 +90,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         help_button = QtGui.QPushButton('?')
         help_button.setMaximumWidth(20)
+        help_button.setMaximumHeight(20)
         help_button.clicked.connect(self._open_help)
         
         self.header_layout.addWidget(self.active_title, alignment = QtCore.Qt.AlignCenter)
