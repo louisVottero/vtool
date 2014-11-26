@@ -1,8 +1,10 @@
-<link rel = "stylesheet" type = "text/css" href = "documentation.css">.
+<a href= "../documentation.html" class = "button">VTOOL</a>
+<link rel = "stylesheet" type = "text/css" href = "../stylesheet.css">
 
 <h1> Data Import Export </h1>
 
-<h2> maya.ascii </h2>
+<h2> Maya Types </h2>
+<h3> maya.ascii </h3>
 <p> Options include: Open, Import, Save, Export </p>
 <h4> Open </h4>
 <p> Saved maya ascii file will be loaded into a new maya scene. </p>
@@ -13,24 +15,24 @@
 <h4> Export </h4>
 <p> The top transforms in the scene will be export to an ascii fiel. </p>
 
-<h2> maya.binary </h2>
+<h3> maya.binary </h3>
 <p> Same options as maya.ascii, except maya binary is used instead of ascii. </p>
 
-<h2> maya.control_cvs </h2>
+<h3> maya.control_cvs </h3>
 <p> Options include: Export, Import </p>
 <h4> Export </h4>
 <p> Exports all nurbs curve controls with prefix 'CNT' to a data file. </p>
 <h4> Import </h4>
 <p> Imports curves from data file by replacing the shape node with the new cvs.</p>
 
-<h2> maya.skin_weights </h2>
+<h3> maya.skin_weights </h3>
 <p> Options include: Export, Import </p>
 <h4> Export </h4>
 <p> Selected geometry, with a skin cluster in it's history, is exported to a data file.  Each bone's weights are exported to a data file, under a folder with the name of the mesh exported. </p>
 <h4> Import </h4>
 <p> If nothing is selected, all available exported skin weights are imported.  If something is selected, only weights for selected geo is imported. </p>
 
-<h2> maya.animation </h2>
+<h3> maya.animation </h3>
 <p> Options include: Export, Import </p>
 <h4> Export </h4>
 <p> All keyframes in the scene are exported with input and output connection infomariton. </p>

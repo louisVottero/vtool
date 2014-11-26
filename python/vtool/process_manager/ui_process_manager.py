@@ -83,8 +83,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         
         
+        self.header_layout = QtGui.QHBoxLayout()
+        
         self.active_title = QtGui.QLabel('-')
         self.active_title.setAlignment(QtCore.Qt.AlignCenter)
+        
+        help_button = QtGui.QPushButton('?')
+        help_button.setMaximumWidth(20)
+        help_button.clicked.connect(self._open_help)
+        
+        self.header_layout.addWidget(self.active_title, alignment = QtCore.Qt.AlignCenter)
+        self.header_layout.addWidget(help_button, alignment = QtCore.Qt.AlignRight)
+        
         
         self.tab_widget = QtGui.QTabWidget()
         self.tab_widget.currentChanged.connect(self._tab_changed)
@@ -109,7 +119,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.tab_widget.setCurrentIndex(1)
         
         self.main_layout.addSpacing(4)
-        self.main_layout.addWidget( self.active_title )
+        self.main_layout.addLayout(self.header_layout)
+        #self.main_layout.addWidget( self.active_title )
         self.main_layout.addSpacing(4)
         self.main_layout.addWidget( self.tab_widget )
         
@@ -143,6 +154,28 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         name = name.replace('/', '  /  ')
         
         self.active_title.setText(name)
+        
+    def _open_help(self):
+        import webbrowser
+        
+        filename = __file__
+        folder = util_file.get_dirname(filename)
+        
+        split_folder = folder.split('\\')
+        folder = split_folder[:-3]
+        
+        import string
+        folder = string.join(folder, '\\')
+        
+        path = util_file.join_path(folder, 'documentation\documentation.html')
+        path = util_file.set_windows_slashes(path)
+        
+        path = 'file:\\\\\\' + path
+        
+        print path
+        
+        webbrowser.open(path)
+        
         
     def _tab_changed(self):
                 
