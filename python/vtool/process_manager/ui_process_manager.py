@@ -163,7 +163,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         folder = util_file.get_dirname(filename)
         
         split_folder = folder.split('\\')
-        folder = split_folder[:-3]
+        folder = split_folder[:-1]
         
         import string
         folder = string.join(folder, '\\')
