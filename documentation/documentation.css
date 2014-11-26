@@ -1,584 +1,108 @@
-/*
- * peregrine.css_t
- * ~~~~~~~~~~~
- *
- * Sphinx stylesheet -- peregrine theme.
- *
- * :copyright: Copyright 2007-2011 by the Sphinx team, see AUTHORS.
- * :license: BSD, see LICENSE for details.
- *
- */
-
- @font-face {
-     font-family: 'ColaborateThinRegular';
-     src: url('ColabThi-webfont.eot');
-     src: url('ColabThi-webfont.eot?#iefix') format('embedded-opentype'),
-          url('ColabThi-webfont.woff') format('woff'),
-          url('ColabThi-webfont.ttf') format('truetype'),
-          url('ColabThi-webfont.svg#ColaborateThinRegular') format('svg');
-     font-weight: normal;
-     font-style: normal;
-
- }
-
- @font-face {
-     font-family: 'ColaborateLightRegular';
-     src: url('ColabLig-webfont.eot');
-     src: url('ColabLig-webfont.eot?#iefix') format('embedded-opentype'),
-          url('ColabLig-webfont.woff') format('woff'),
-          url('ColabLig-webfont.ttf') format('truetype'),
-          url('ColabLig-webfont.svg#ColaborateLightRegular') format('svg');
-     font-weight: normal;
-     font-style: normal;
-
- }
-
- @font-face {
-     font-family: 'ColaborateRegular';
-     src: url('ColabReg-webfont.eot');
-     src: url('ColabReg-webfont.eot?#iefix') format('embedded-opentype'),
-          url('ColabReg-webfont.woff') format('woff'),
-          url('ColabReg-webfont.ttf') format('truetype'),
-          url('ColabReg-webfont.svg#ColaborateRegular') format('svg');
-     font-weight: normal;
-     font-style: normal;
-
- }
-
- @font-face {
-     font-family: 'ColaborateMediumRegular';
-     src: url('ColabMed-webfont.eot');
-     src: url('ColabMed-webfont.eot?#iefix') format('embedded-opentype'),
-          url('ColabMed-webfont.woff') format('woff'),
-          url('ColabMed-webfont.ttf') format('truetype'),
-          url('ColabMed-webfont.svg#ColaborateMediumRegular') format('svg');
-     font-weight: normal;
-     font-style: normal;
-
- }
-
- @font-face {
-     font-family: 'ColaborateBoldRegular';
-     src: url('ColabBol-webfont.eot');
-     src: url('ColabBol-webfont.eot?#iefix') format('embedded-opentype'),
-          url('ColabBol-webfont.woff') format('woff'),
-          url('ColabBol-webfont.ttf') format('truetype'),
-          url('ColabBol-webfont.svg#ColaborateBoldRegular') format('svg');
-     font-weight: normal;
-     font-style: normal;
-
- }
- 
-* {
-  margin: 0px;
-  padding: 0px;
-}
-
-body {
-  color: black;
-  background-color: #3c3c3c;
-  font-family: 'ColaborateLightRegular', sans-serif;
-}
-
-
-/* Page layout */
-
-div.header, div.content, div.footer {
-  width: 70em;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-div.header-wrapper {
-  border-bottom: 5px solid #000;
-}
-
-/* Default body styles */
-a {
-  color: #ce5c00;
-}
-
-div.bodywrapper a, div.footer a {
-  text-decoration: none;
-}
-
-.clearer {
-  clear: both;
-}
-
-.left {
-  float: left;
-}
-
-.right {
-  float: right;
-}
-
-.line-block {
-    display: block;
-    margin-top: 1em;
-    margin-bottom: 1em;
-}
-
-.line-block .line-block {
-    margin-top: 0;
-    margin-bottom: 0;
-    margin-left: 1.5em;
-}
-
-h1, h2, h3, h4 {
-  font-weight: normal;
-  color: #3465a4;
-  margin-bottom: .8em;
-}
-
-h1 {
-  color: #204a87;
-}
-
-h2 {
-  padding-bottom: .2em;
-  border-bottom: thin solid #3465a4;
-}
-
-a.headerlink {
-  visibility: hidden;
-  color: #dddddd;
-  padding-left: .3em;
-}
-
-h1:hover > a.headerlink,
-h2:hover > a.headerlink,
-h3:hover > a.headerlink,
-h4:hover > a.headerlink,
-h5:hover > a.headerlink,
-h6:hover > a.headerlink,
-dt:hover > a.headerlink {
-  visibility: visible;
-}
-
-img {
-  	border: 0;
-	padding-top: 10px;
-	padding-bottom: 5px;
-}
-
-div.admonition {
-	width: 95%;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 2px 7px 1px 7px;
-  border: thin solid #204a87;
-  background: #dcebff;
-}
-
-div.admonition.warning {
-    border: thin solid #871f21;
-    background: #ffc4c3;	
-}
-
-p.admonition-title {
-  margin: 0px 10px 5px 0px;
-  font-weight: bold;
-}
-
-dt:target, .highlighted {
-  background-color: #fbe54e;
-}
-
-/* Header */
-
-div.header {
-  padding-top: 20px;
-  padding-bottom: 10px;
-}
-
-div.header h1 {
-  font-size: 1.3em;
-	text-transform: uppercase;
-	margin-bottom: 0;
-}
-
-div.header div.rel {
-	margin-top: 0.8em;
-  color: #888a85;
-}
-
-div.header div.rel a {
-  color: #888a85;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-	font-size: 0.8em;
-}
-
-p.logo {
-    float: right;
-  width: 18em;
-}
-
-img.logo {
-    border: 0;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-
-/* Content */
-div.content-wrapper {
-  background-color: white;
-  padding-top: 20px;
-  padding-bottom: 20px;
-}
-
-div.document {
-  width: 50em;
-  float: left;
-}
-
-div.body {
-  padding-right: 2em;
-}
-
-div.document ul {
-  list-style-type: disc;
-	margin-right: 1.5em;
-	margin-left: 1.5em;
-}
-
-div.document ul li {
-	padding-bottom: 5px;
-	margin-left: 1em;
-}
-
-div.document dd {
-  margin-left: 1.2em;
-  margin-top: .4em;
-  margin-bottom: 1em;
-}
-
-div.document .section {
-  margin-top: 1.7em;
-}
-
-div.document .section:first-child {
-  margin-top: 0px;
-}
-
-#preamble .section p {
-	font-size: 12px;
-	font-style: italic;
-}
-
-#tools .section img {
-	margin: 0;
-	padding: 0 10px;
-}
-
-#tools .section p {
-	padding-bottom: 20px;
-}
-
-div.document div.highlight {
-  padding: 3px;
-  background-color: #eeeeec;
-  border-top: 2px solid #dddddd;
-  border-bottom: 2px solid #dddddd;
-  margin-top: .8em;
-  margin-bottom: .8em;
-}
-
-div.document h2 {
-  margin-top: .7em;
-}
-
-div.document p {
-	padding-top: 5px;
-	padding-bottom: 10px;
-}
-
-div.document li.toctree-l1 {
-	margin-bottom: 1em;
-	list-style: none;
-}
-
-div.document li.toctree-l2 {
-	list-style: none;
-	margin-left: 0.5em;
-}
-
-div.document .descname {
-  font-weight: bold;
-}
-
-div.document .docutils.literal {
-  background-color: #eeeeec;
-  padding: 1px;
-}
-
-div.document .docutils.xref.literal {
-  background-color: transparent;
-  padding: 0px;
-}
-
-div.document blockquote {
-  margin: 1em;
-}
-
-div.document ol {
-  margin: 1.5em;
-}
-
-
-/* Sidebar */
-
-div.sidebar {
-  width: 20em;
-  float: right;
-  font-size: .9em;
-}
-
-div.sidebar a, div.header a {
-  text-decoration: none;
-}
-
-div.sidebar a:hover, div.header a:hover {
-  text-decoration: underline;
-}
-
-div.sidebar h3 {
-  color: #2e3436;
-  text-transform: uppercase;
-  font-size: 130%;
-  letter-spacing: .1em;
-}
-
-div.sidebar ul {
-  list-style-type: none;
-}
-
-div.sidebar li.toctree-l1 a {
-  display: block;
-  padding: 1px;
-  border: 1px solid #dddddd;
-  background-color: #eeeeec;
-  margin-bottom: .4em;
-  padding-left: 3px;
-  color: #2e3436;
-}
-
-div.sidebar li.toctree-l2 a {
-  background-color: transparent;
-  border: none;
-  margin-left: 1em;
-  border-bottom: 1px solid #dddddd;
-}
-
-div.sidebar li.toctree-l3 a {
-  background-color: transparent;
-  border: none;
-  margin-left: 2em;
-  border-bottom: 1px solid #dddddd;
-}
-
-div.sidebar li.toctree-l2:last-child a {
-  border-bottom: none;
-}
-
-div.sidebar li.toctree-l1.current a {
-  border-right: 5px solid #fcaf3e;
-}
-
-div.sidebar li.toctree-l1.current li.toctree-l2 a {
-  border-right: none;
-}
-
-.search 
-{
-	margin-bottom: 10px;
-}
-
-/* Footer */
-
-div.footer-wrapper {
-  border-top: 5px solid #000;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  min-height: 80px;
-}
-
-div.footer, div.footer a {
-  color: #888a85;
-}
-
-div.footer .right {
-  font-size: 0.85em;
-  text-align: center;
-}
-
-div.footer .left {
-    letter-spacing: .1em;
-	font-size: 0.8em;
-  text-align: left;
-  text-transform: uppercase;
-}
-
-
-/* Styles copied from basic theme */
-
-img.align-left, .figure.align-left, object.align-left {
-    clear: left;
-    float: left;
-    margin-right: 1em;
-}
-
-#node-reference .section img.align-left {
-    clear: left;
-    float: left;
-    margin-right: 1em;
-	padding-top: 18px;
-	padding-bottom: 0;
-	margin-left: 1em;
-}
-
-img.align-right, .figure.align-right, object.align-right {
-    clear: right;
-    float: right;
-    margin-left: 1em;
-}
-
-img.align-center, .figure.align-center, object.align-center {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.align-left {
-    text-align: left;
-}
-
-.align-center {
-    clear: both;
-    text-align: center;
-}
-
-.align-right {
-    text-align: right;
-}
-
-/* -- search page ----------------------------------------------------------- */
-
-ul.search {
-    margin: 10px 0 0 20px;
-    padding: 0;
-}
-
-ul.search li {
-    padding: 5px 0 5px 20px;
-    background-image: url(file.png);
-    background-repeat: no-repeat;
-    background-position: 0 7px;
-}
-
-ul.search li a {
-    font-weight: bold;
-}
-
-ul.search li div.context {
-    color: #888;
-    margin: 2px 0 0 30px;
-    text-align: left;
-}
-
-ul.keywordmatches li.goodmatch a {
-    font-weight: bold;
-}
-
-/* -- index page ------------------------------------------------------------ */
-
-table.contentstable {
-    width: 90%;
-}
-
-table.contentstable p.biglink {
-    line-height: 150%;
-}
-
-a.biglink {
-    font-size: 1.3em;
-}
-
-span.linkdescr {
-    font-style: italic;
-    padding-top: 5px;
-    font-size: 90%;
-}
-
-/* -- general index --------------------------------------------------------- */
-
-table.indextable td {
-    text-align: left;
-    vertical-align: top;
-}
-
-table.indextable dl, table.indextable dd {
-    margin-top: 0;
-    margin-bottom: 0;
-}
-
-table.indextable tr.pcap {
-    height: 10px;
-}
-
-table.indextable tr.cap {
-    margin-top: 10px;
-    background-color: #f2f2f2;
-}
-
-img.toggler {
-    margin-right: 3px;
-    margin-top: 3px;
-    cursor: pointer;
-}
-
-table.docutils {
-	width: 95%;
-    margin-right: auto;
-    margin-left: auto;
-	border-style: none;
+P.Code {
+	display: block;
 	text-align: left;
+	text-indent: 0.00pt;
+	margin-top: 0.000000pt;
+	margin-bottom: 0.000000pt;
+	margin-right: 0.000000pt;
+	margin-left: 15pt;
+	font-weight: normal;
+	font-style: normal;
+	color: #4444CC;
+	text-decoration: none;
+	vertical-align: baseline;
+	text-transform: none;
+	font-family: "Courier New", Courier, monospace;
+}
+H6.CaptionFigColumn {
+	display: block;
+	text-align: left;
+	text-indent: 0.000000pt;
+	margin-top: 3.000000pt;
+	margin-bottom: 11.000000pt;
+	margin-right: 0.000000pt;
+	margin-left: 0.000000pt;
+	font-size: 75%;
+	font-weight: bold;
+	font-style: Italic;
+	color: #000000;
+	text-decoration: none;
+	vertical-align: baseline;
+	text-transform: none;
+}
+P.Note {
+	display: block;
+	text-align: left;
+	text-indent: 0pt;
+	margin-top: 19.500000pt;
+	margin-bottom: 19.500000pt;
+	margin-right: 0.000000pt;
+	margin-left: 30pt;
+	font-size: 110%;
+	font-weight: normal;
+	font-style: Italic;
+	color: #000000;
+	text-decoration: none;
+	vertical-align: baseline;
+	text-transform: none;
+}
+EM.UILabel {
+	font-weight: Bold;
+	font-style: normal;
+	text-decoration: none;
+	vertical-align: baseline;
+	text-transform: none;
+}
+EM.CodeName {
+	font-weight: Bold;
+	font-style: normal;
+	text-decoration: none;
+	vertical-align: baseline;
+	text-transform: none;
+	font-family: "Courier New", Courier, monospace;
+}
+UL.NavList {
+	margin-left: 1.5em;
+	padding-left: 0px;
+	list-style-type: none;
 }
 
-table.docutils td {
-	border-style: none;
-	padding-bottom: 5px;
-	padding-left: 5px;
-	font-size: 0.9em;
+body, html { border: 0px }
+
+
+/* following font face declarations need to be removed for DBCS */
+
+body, h1, h2, h3, h4, h5, h6, p, table, td, caption, th, ul, ol, dl, li, dd, dt {font-family: Arial, Helvetica, sans-serif; color: #000000}
+pre, code		{ font-family: "Courier New", Courier, monospace;}
+
+/* end font face declarations */
+
+@media print {
+	html { font-size: 12pt }
 }
 
-table.docutils th {
-	border-style: none;
-	padding-bottom: 5px;
-	padding-left: 5px;
-}
-
-/* -- viewcode extension ---------------------------------------------------- */
-
-.viewcode-link {
-    float: right;
-}
-
-.viewcode-back {
-    float: right;
-    font-family:: "Verdana", Arial, sans-serif;
-}
-
-div.viewcode-block:target {
-    margin: -1px -3px;
-    padding: 0 3px;
-    background-color: #f4debf;
-    border-top: 1px solid #ac9;
-    border-bottom: 1px solid #ac9;
-}
+body	     { font-size: 83%; background: #FFFFFF; margin-bottom: 1em }
+h1           { font-size: 180%; margin-top: 5px; margin-bottom: 1px }	
+h2           { font-size: 140%; margin-top: 25px; margin-bottom: 3px }
+h3           { font-size: 110%; margin-top: 20px; margin-bottom: 3px }
+h4           { font-size: 100%; margin-top: 20px; margin-bottom: 3px; font-style: italic }
+p            { margin-top: 10px; margin-bottom: 10px }
+pre          { font-size: 93%; margin-left: 6; color: #4444CC }
+code         { font-size: 93%; } 
+table        { font-size: 100% } /* needed for quirks mode */
+a:link	     { color: #0000FF }
+a:hover	     { color: #000080 }
+a:visited    { text-decoration: underline }
+ul	     { margin-top: 10px; margin-bottom: 10px; }
+li	     { margin-top: 5px; margin-bottom: 5px; } 
+li p	     { margin-top: 5px; margin-bottom: 5px; }
+ol	     { margin-top: 10px; margin-bottom: 10px; }
+dl	     { margin-top: 10px; margin-bottom: 10px; }
+dt	     { margin-top: 5px; margin-bottom: 5px; font-weight: bold; }
+dd	     { margin-top: 5px; margin-bottom: 5px; }
+strong	     { font-weight: bold}
+em	     { font-style: italic}
+var	     { font-style: italic}
+div.revision { border-left-style: solid; border-left-width: thin; 
+				   border-left-color: #7B68EE; padding-left:5 }
+th	     { font-weight: bold }
