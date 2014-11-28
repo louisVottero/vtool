@@ -14034,13 +14034,16 @@ def set_vert_weights_to_zero(vert_index, skin_deformer, joint = None):
     if index:
         cmds.setAttr('%s.%s' % (skin_deformer, index), 0.0)   
 
+def set_deformer_weights(weights, deformer, index = 0):
+    
+    for inc in range(0, len(weights) ):    
+        cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights[inc])
+    
 def set_wire_weights(weights, wire_deformer, index = 0):
     #might need refresh 
     
-    for inc in range(0, len(weights) ):
-        
-        cmds.setAttr('%s.weightList[%s].weights[%s]' % (wire_deformer, index, inc), weights[inc])
-
+    set_deformer_weights(weights, wire_deformer, index)
+    
 def get_deformer_weights(deformer, mesh, index = 0):
 
     indices = cmds.ls('%s.vtx[*]' % mesh, flatten = True)

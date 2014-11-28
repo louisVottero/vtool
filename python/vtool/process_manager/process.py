@@ -6,7 +6,6 @@ import traceback
 from vtool import util
 from vtool import util_file
 from vtool import data
-#from setup import SCRIPTS
 
 if util.is_in_maya():
     import maya.cmds as cmds
@@ -166,6 +165,8 @@ class Process(object):
                      
         path = self.get_path()
         
+        print 'current path', path
+        
         if not path:
             return
         
@@ -177,8 +178,12 @@ class Process(object):
         
         position = len(split_relative_path)
         
+        print position
         import string
-        start_path = string.join(split_path[:-position], '/')
+        if position > 1:
+            start_path = string.join(split_path[:-position], '/')
+        if position == 1:
+            start_path = string.join(split_path,'/')
         
         split_path_count = len(split_path[:-position])
         
@@ -194,10 +199,13 @@ class Process(object):
             
             end_path.append(split_relative_path[inc])
 
-        end_path = string.join(end_path, '/')
-        
-        new_path = util_file.join_path(start_path, end_path)
-                      
+        if end_path:
+            end_path = string.join(end_path, '/')
+        if not end_path:
+            end_path = relative_path
+          
+        print start_path, end_path
+          
         process = Process(end_path)
         process.set_directory(start_path)
         

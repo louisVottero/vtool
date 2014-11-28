@@ -591,19 +591,17 @@ class BlendshapeWeightData():
     
 class DeformerWeightData(MayaCustomData):
     def _data_name(self):
-        return 'deformer_weights'
+        return 'deform_weights'
 
     def _data_extension(self):
         return ''
     
     def _data_type(self):
-        return 'maya.deformer_weights'
+        return 'maya.deform_weights'
     
     def export_data(self, comment = None):
         
         path = util_file.join_path(self.directory, self.name)
-        
-        selection = cmds.ls(sl = True)
         
         meshes = maya_lib.util.get_selected_meshes()
         
@@ -616,23 +614,41 @@ class DeformerWeightData(MayaCustomData):
             
             for deformer in deformers:
                 weights = maya_lib.util.get_deformer_weights(deformer, mesh)
-            
-                print 'path', path, deformer
-            
-                path = util_file.join_path(path, deformer)
-                
-                
                 
                 filepath = util_file.create_file('%s.weights' % deformer, path)
                 
-                print 'filepath', filepath
+                if not filepath:
+                    return
                 
                 write_info = util_file.WriteFile(filepath)
                 
                 info_lines = [weights]
                 
                 write_info.write(info_lines)
-                             
+    
+    def import_data(self):
+        
+        path = util_file.join_path(self.directory, self.name)
+        
+        files = util_file.get_files(path)
+        
+        for filename in files:
+            
+            file_path = util_file.join_path(path, filename)
+            
+            lines = util_file.get_file_lines(file_path)
+            
+            if lines:
+                weights = eval(lines[0])
+                
+            if not lines:
+                return
+            
+            print filename, weights
+            deformer = filename.split('.')[0]
+            
+            maya_lib.util.set_deformer_weights(weights, deformer)    
+                 
 
 class MayaShadersData(CustomData):
     
