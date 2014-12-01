@@ -165,8 +165,6 @@ class Process(object):
                      
         path = self.get_path()
         
-        print 'current path', path
-        
         if not path:
             return
         
@@ -178,7 +176,6 @@ class Process(object):
         
         position = len(split_relative_path)
         
-        print position
         import string
         if position > 1:
             start_path = string.join(split_path[:-position], '/')
@@ -203,8 +200,6 @@ class Process(object):
             end_path = string.join(end_path, '/')
         if not end_path:
             end_path = relative_path
-          
-        print start_path, end_path
           
         process = Process(end_path)
         process.set_directory(start_path)
@@ -489,8 +484,6 @@ class Process(object):
             found = []
             
             for script in scripts:
-                
-                
                 
                 for filename in files:
                     

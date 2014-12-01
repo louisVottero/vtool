@@ -16100,7 +16100,10 @@ def create_blend_attribute(source, target, min_value = 0, max_value = 10):
         split_source = source.split('.')
         cmds.addAttr(split_source[0], ln = split_source[1], min = min_value, max = max_value, k = True, dv = 0)
         
-    connect_multiply(source, target, .1)
+    multi = connect_multiply(source, target, .1)
+    
+    return multi
+    
 
 def quick_driven_key(source, target, source_values, target_values):
     
