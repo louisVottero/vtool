@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+
+    	<title> Process Class Documentation </title>
+    	<link rel = "stylesheet" type = "text/css" href = "../../stylesheet.css">
+	</head>
+
+	<body>
+	
+		<a href= "../../documentation.html" class = "button">VTOOL</a>
+		<h1> Process Module </h1>
+		<h3> Functions </h3>
+		<h4> import the module by running</h4>
+		<p> from vtool.process_manager import process </p>
+		<h4> find_processes( directory = None )</h4>
+		<p> This will try to find the processes in the supplied directory. If no directory supplied, it will search the current working directory.</p>
+		<h4> get_unused_process_name( directory = None )</h4>
+		<p> This will try to find a a process named <b>process</b> in the directory. It will increment the name to <b>process1</b> and beyond until it finds a unique name. If no directory supplied, it will search the current working directory.</p>
+		<h4> copy_process_data( source_process, target_process, data_name, replace = False ) </h4>
+		<p> source_process and target_process need to be instances of the Process class. The instances should be set to the directory and process name desired to work with. <b>data_name</b> specifies the name of the data folder to copy. If <b>replace</b> the existing data with the same name will be deleted and replaced by the copy. </p> 	
+		<h4> copy_process_code( source_process, target_process, code_name, replace = False )</h4>
+		<p> source_process and target_process need to be instances of the Process class. The instances should be set to the directory and process name desired to work with. <b>code_name</b> specifies the name of the code folder to copy. If <b>replace</b> the existing code with the same name will be deleted and replaced by the copy. </p>
+		
+		<h1> Process Class </h1>
+		
+		<h2> Process( object ) </h2>
+		<p> This class has functions to work on individual processes in the Process Manager. </p>
+		
+		<h3> Functions </h3>
+		<h4> set_directory( directory ) </h4>
+		<p> Provide a string directory path to the process that should be created or where an existing process lives. </p>
+		<h4> set_external_code_library( directory )</h4>
+		<p> Directory or list of directories where code can be sourced from.  This makes it more convenient when writing scripts in a process. </p>
+		<h4> is_process( ) </h4>
+		<p> Return True or False depending on if this process is initialized properly. </p>
+		<h4> get_path( ) </h4>
+		<p> Return the full path to the process folder. If the process hasn't been created yet, this will return the directory set in set_directory( directory )</p>
+		<h4> get_name( ) </h4>
+		<p> Return the name of the process. If no name returns None. </p>
+		<h4> get_relative_process( relative_path ) </h4>
+		<p> Return an initialized instance of a process at the relative path.  If a name with no backslash is supplied, this will return any matching process parented directly under the current process.  A relative path like, '../face' or '../../other_character' can be used.  Every '..' signifies a folder above the current process. </p>
+		<h4> get_sub_processes( ) </h4>
+		<p> Returns process names found directly under the current process.</p>
+		<h4> get_sub_process( part_name ) </h4>
+		<p> Return a sub process if there is one that matcheds <b>part_name</b>. </p>
+		<h3> data </h3>
+		<h4> is_data_folder( name ) </h4>
+		<p> Return wether the supplied name string matches the name of a data folder in the current process. </p>
+		<h4> get_data_path( ) </h4>
+		<p> Return the path to the data folder. </p>
+		<h4> get_data_folder( name ) </h4>
+		<p> Return a path to the data folder with the supplied name string if it exists. Otherwise return None. </p>
+		<h4> get_data_type( name ) </h4>
+		<p> Return the data type of the data folder with the supplied name if the data folder exists.  Otherwise return None.</p>
+		<h4> get_data_folders( ) </h4>
+		<p> Return a list of data folder names found in the current process. </h4>
+		<h4> get_data_instance( name) </h4>
+		<p> Return an instance of the data type class for data with the specified name in the current process. This gives access to the data functions like <b>import_data</b> found in the data type class.</p>
+		<h4> create_data( name, data_type ) </h4>
+		<p> Create a data folder with the supplied name and data_type. </p>
+		<h4> import_data( name ) </h4>
+		<p> Convenience function which will run the <b>import_data</b> function found on the data_type instance for the specified data folder. </p>
+		<h4> save_data( name ) </h4>
+		<p> Convenience function that tries to run the <b>save</b> function function found on the data_type instance for the specified data folder. Not all data type instances have a save function. </p>
+		<h4> rename_data( old_name, new_name )</h4>
+		<p> Renames the data folder specified with <b>old_name</b> to the <b>new_name</b></p>
+		<h4> delete_data( name )</h4>
+		<p> Deletes the specified data folder from the file system. </p>
+		<h3> code </h3>
+		<h4> is_code_folder( name ) </h4>
+		<p> Return wether the supplied name string matches the name of a code folder in the current process. </p> 
+		<h4> get_code_path( ) </h4>
+		<p> Return the path to the code folder. </p>
+		<h4> get_code_folder( name ) </h4> 
+		<p> Return a path to the code folder with the supplied name string if it exists. Otherwise return None.</p>
+		<h4> get_code_folders( ) </h4>
+		<p> Return a list of code folder names found in the current process. </h4>
+		<h4> get_code_type( name ) </h4>
+		<p> Return the code type of the code folder with the supplied name if the code folder exists.  Otherwise return None. Right now only python code type is used by the Process Manager.</p>
+		<h4> get_code_files( basename = False ) </h4>
+		<p> Return the path to the code files found in the code folder for the current process.  If <b>basename</b> is True, only return the file names without the path. </p>
+		<h4> get_code_file( name ) </h4>
+		<p> Return the path to the code file with the specified name in the current process. </p>
+		<h4> create_code( name, data_type = 'script.python', inc_name = False, import_data = None )</h4>
+		<p> Create a new code folder with the specified name and data_type. Default value of data_type is <b>"script.python",</b>. Which will create a named file with .py at the end. If <b>inc_name</b> is True than the the name of the code will have a number added if code with the same name already exists.  If <b>import_data</b> has a name string, than the code file will add lines to the code file to import data with that name.</p>
+		<h4> rename_code( old_name, new_name ) </h4>
+		<p> Renames the code folder specified with <b>old_name</b> to the <b>new_name</b></p>
+		<h4> delete_code( name ) </h4>
+		<p> Deletes the specified data folder from the file system. </p>
+		<h3> manifest </h3>
+		<h4> get_manifest_folder( ) </h4>
+		<p> Returns the full path to the manifest folder. </p>
+		<h4> get_manifest_file( ) </h4>
+		<p> Return the full path to the manifest file. </p>
+		<h4> get_manfiest_scripts( basename = True ) </h4>
+		<p> Returns the code files named in the manifest. Default <b>basename = True</b> causes just the name.py to be returned, not the full path. </p>
+		<h4> set_manifest( scripts, states = [], append = False )</h4>
+		<p> This will tell the manifest what scripts to list. Scripts is a list of <b>name.py</b> files that correspond with code data. The state list tells the manifest if the script should be skipped or not. Append tells the file writer wether it should append the script names to the end of the manifest, or completely rewrite it. </p>
+		<h4> get_manfiest( )</h4>
+		<p> Returns two lists, scripts and states.  The scripts list contains the name of scripts in the manifest. States contains the enabled/disabled state of the script. </p>
+		<h3> run </h3>
+		<h4> load( name ) </h4>
+		<p> sets the process name. Named process should be found in the directory set with <b>set_directory</b></p>
+		<h4> add_part( name ) </h4>
+		<p> Creates a new sub process under the current process. The sub process will be found in the current process' folder. </p>
+		<h4> create( ) </h4>
+		<p> Creates the process. </p>
+		<h4> delete( ) </h4>
+		<p> Deletes the process and all of it's data and scripts. </p>
+		<h4> rename( new_name ) </h4>
+		<p> Renames the process folder to the specified name. </p>
+		<h4> run_script( script ) </h4>
+		<p> This will execute the code in the specified code data script if it exists. </p>
+		<h4> run( ) </h4>
+		<p> This will run the scripts found in the manifest, respecting their enable/disable state.</p>
+	</body>
+
+
+</html>
