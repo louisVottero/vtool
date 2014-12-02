@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Rig Class Documentation.</title>
+		<link rel = "stylesheet" type = "text/css" href = "../../stylesheet.css">
+		
+	</head>
+	<body>
+		<a href= "../../documentation.html" class = "button">VTOOL</a>
+		<a href= "util.html" class = "button">Rig Classes</a>
+		
+		<h2> ControlRig( <a href = "Rig.html" >Rig</a> ) </h2>
+		<p> This class is meant to build blendshape slider curves that make up a face icon. </p>	
+		
+		<h3> Initialize </h3>
+		<ul>
+		<li> ControlRig( description, side )
+		</ul>
+		<p> <b>description</b> is used when naming the controls to give a unique name.</p>
+		<p> <b>side</b> can be 'C', 'L', 'R' </p>
+		
+		<h3> Example </h3>
+		<p> from vtool.maya_lib import util </p>
+		<br>
+		<p> rig = ControlRig( 'blends', 'C' )</p>
+		<p> rig.set_transforms( ['locator_blends'] ) </p>
+		<p> rig.set_control_count_per_transform( 3 ) </p>
+		<br>
+		<p> rig.set_control_shape( 0, 'circle' ) </p>
+		<p> rig.set_control_shape( 1, 'coffee_mouth' ) </p>
+		<p> rig.set_control_shape( 2, 'coffee_eyes' ) </p>
+		<br>
+		<p> rig.set_control_description(1, 'mouth') </p>
+    	<p> rig.set_control_description(2, 'eyes') </p>
+		<p> rig.create() </p>
+		
+		<h3> Functions </h3>
+		
+		<h4> create( ) </h4>
+		<p> Creates the controls. </p>
+		
+		<h4> set_transforms( transforms ) </h4>
+		<p> Specify a list of transforms to build controls at their position. </h4>
+		<h4> set_control_count_per_transform( int_value ) </h4>
+		<p> This allows the user to set multiple control per transform. Beneficial for facial icons that need the controls to pivot from same place. </p> 
+		<h4> set_control_shape( index, shape_name ) </h4>
+		<p> Set the shape of the control at the specified index.  Index corresponds to the number of controls per transform.</p>
+	
+	</body>
+</html>

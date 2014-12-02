@@ -3,6 +3,17 @@ body {
 	margin-left: 80px;
 }
 
+ul {
+	font-family : Verdana;
+	text-align: left;
+	padding-left: 80px;
+	font-size: 12px;
+	margin-top: -1em;
+	margin-btm: -1em;
+
+
+}
+
 h1 { 
 	border: 3px solid rgba(40,40,40, .5);
 	font-family : Verdana;

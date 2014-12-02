@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Buffer Fk Scale Rig Documentation.</title>
+		<link rel = "stylesheet" type = "text/css" href = "../../stylesheet.css">
+		
+	</head>
+	<body>
+		<a href= "../../documentation.html" class = "button">VTOOL</a>
+		<a href= "util.html" class = "button">Rig Classes</a>
+		
+		<h2> FkScaleRig( <a href = "FkRig.html" >FkRig</a> ) </h2>
+		<p> This rig will create fk controls with scalability. </p>
+		
+		<h3> Initialize </h3>
+		<ul>
+		<li> FkRig( description, side )
+		</ul>
+		<p> <b>description</b> is used when naming the controls to give a unique name.</p>
+		<p> <b>side</b> can be 'C', 'L', 'R' </p>
+		
+		<h3> Example </h3>
+		<p> from vtool.maya_lib import util </p>
+		<br>
+		<p> joints = ['joint_arm_L', 'joint_elbow_L', 'joint_wrist_L']
+		<p> rig = FkScaleRig( 'arm', 'L' )</p>
+		<p> rig.set_joints(joints) </p>
+		<p> rig.set_buffer(True) #Setting buffer True allows us to layer on ik later on. </p>
+		<p> rig.create() </p>
+		
+		<h3> Functions </h3>
+		
+		<h4> set_control_shape( shape_name ) </h4>
+		<p> Sets the control to have a shape from the curve library. </p>
+		<h4> create( ) </h4>
+		<p> Creates the rig. </p>
+		<h4> set_joints( joints ) </h4>
+		<p> Set which joints the rig should work with. Some rigs also accapt transform nodes.</p>
+		<p> Accepts a list or a string. </p>
+	
+		<h4> set_buffer( bool_value ) </h4>
+		<p> bool_value = Set True or False. This specifies wether or not the supplied joints should be constrained with a buffer chain. The buffer chain helps when setting up ik/fk setups.  The first joint will have a switch attribute that can be used to switch between rigs. </p>
+	
+		<h4> set_parent( parent ) </h4>
+		<p> Specify the parent for the controls group </p>
+		<h4> set_control_size( value ) </h4>
+		<p> Sets the size of the controls when created. </p>
+		<h4> set_match_to_rotation( bool_value ) </h4>
+		<h4> get_drivers() </h4>
+		<p> Returns a list of transforms that are the drivers above controls. </p>
+		
+	
+	</body>
+</html>
+		

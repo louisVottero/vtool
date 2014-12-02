@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Rig Class Documentation.</title>
+		<link rel = "stylesheet" type = "text/css" href = "../../stylesheet.css">
+		
+	</head>
+	<body>
+		<a href= "../../documentation.html" class = "button">VTOOL</a>
+		<a href= "util.html" class = "button">Rig Classes</a>
+		
+		<a name = "GroundRig"> </a>
+		<h2> GroundRig( <a href = "JointRig.html" >JointRig</a> ) </h2>
+		<p> The ground rig creates 3 controls around the specified joint or transform. Meant to be used as the base controls for a rig. </p>
+
+		<h3> Initialize </h3>
+		<ul>
+		<li> GroundRig( description, side )
+		</ul>
+		<p> <b>description</b> is used when naming the controls to give a unique name.</p>
+		<p> <b>side</b> can be 'C', 'L', 'R' </p>
+		
+		<h3> Example </h3>
+		<p> from vtool.maya_lib import util </p>
+		<br>
+		<p> rig = GroundRig( 'ground', 'C' )</p>
+		<p> rig.set_joints('locator_ground')</p>
+		<p> rig.create()
+		
+		<h3> Functions </h3>
+		
+		<h4> set_control_shape( shape_name ) </h4>
+		<p> Sets the control to have a shape from the curve library. </p>
+		<h4> create( ) </h4>
+		<p> Creates the rig. </p>
+		<h4> set_joints( joints ) </h4>
+		<p> Set which joints the rig should work with.</p>
+		<p> Accepts a list or a string. </p>
+		<p>Some rigs also accept transform nodes.</p>
+	</body>
+</html>
