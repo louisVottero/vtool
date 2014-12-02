@@ -13554,21 +13554,24 @@ def get_point_from_curve_parameter(curve, parameter):
     
     return cmds.pointOnCurve(curve, pr = parameter, ch = False)
 
-def create_oriented_joints_on_curve(curve, count = 20, rig = False):
+def create_oriented_joints_on_curve(curve, count = 20, description = None, rig = False):
+    
+    if not description:
+        description = 'curve'
     
     if count < 2:
         return
     
     length = cmds.arclen(curve, ch = False)
     cmds.select(cl = True)
-    start_joint = cmds.joint(n = 'joint_strapStart')
+    start_joint = cmds.joint(n = 'joint_%sStart' % description)
     
-    end_joint = cmds.joint(p = [length,0,0], n = 'joint_strapEnd')
+    end_joint = cmds.joint(p = [length,0,0], n = 'joint_%sEnd' % description)
     
     if count > 3:
         count = count -2
     
-    joints = subdivide_joint(start_joint, end_joint, count, 'joint', 'strap')
+    joints = subdivide_joint(start_joint, end_joint, count, 'joint', description)
     
     joints.insert(0, start_joint)
     joints.append(end_joint)
