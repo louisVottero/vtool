@@ -20,8 +20,11 @@
 		<p> <b>side</b> can be 'C', 'L', 'R' </p>
 		
 		<h3> Example </h3>
+		<p> from vtool.maya_lib import util </p>
+		<br>
+		<p> import maya.cmds as cmds </p>
 		<p> joints = cmds.ls('joint_leaf_*', type = 'joint')</p>
-		<p> rig = SparseRig( 'tree_leaf', 'C' )</p>
+		<p> rig = util.SparseRig( 'tree_leaf', 'C' )</p>
 		<p> rig.set_joints( joints ) </p>
 		<p> rig.set_respect_side( True, 0.1 ) #tells the control names and color to respect the side of the center line they are on. </p>
 		<p> rig.create() </p>

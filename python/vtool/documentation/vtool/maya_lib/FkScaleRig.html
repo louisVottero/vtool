@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Fk Local Rig Class Documentation.</title>
+		<title>Buffer Fk Scale Rig Documentation.</title>
 		<link rel = "stylesheet" type = "text/css" href = "../../stylesheet.css">
 		
 	</head>
@@ -9,25 +9,24 @@
 		<a href= "../../documentation.html" class = "button">VTOOL</a>
 		<a href= "util.html" class = "button">Rig Classes</a>
 		
-		<h2> FkLocalRig( <a href = "FkRig.html" >FkRig</a> ) </h2>
-		<p> The fk local rig will create controls on the joints that affect each other in hierarchy. Because it is local the controls can move has a group without affecting the joints.  Allowing the joints to say local to the origin. The fk local rig uses a transform node to buffer it's affect on the joint.</p>
-		<p> Each control has the following hiearchy: xform group, driver group, control </p>
+		<h2> FkScaleRig( <a href = "FkRig.html" >FkRig</a> ) </h2>
+		<p> This rig will create fk controls with scalability. </p>
 		
 		<h3> Initialize </h3>
 		<ul>
-		<li> FkLocalRig( description, side )
+		<li> FkRig( description, side )
 		</ul>
 		<p> <b>description</b> is used when naming the controls to give a unique name.</p>
 		<p> <b>side</b> can be 'C', 'L', 'R' </p>
 		
 		<h3> Example </h3>
-		<p> import maya.cmds as cmds </p>
-		<p> joints = cmds.ls('joint_tongue_*', type = 'joint') </p>
-		<p> rig = FkLocalRig( 'tongue', 'R' )</p>
+		<p> from vtool.maya_lib import util </p>
+		<br>
+		<p> joints = ['joint_arm_L', 'joint_elbow_L', 'joint_wrist_L']
+		<p> rig = FkScaleRig( 'arm', 'L' )</p>
 		<p> rig.set_joints(joints) </p>
+		<p> rig.set_buffer(True) #Setting buffer True allows us to layer on ik later on. </p>
 		<p> rig.create() </p>
-		<p> rig.set_local_parent( 'CNT_JAW_1_C' ) </p>
-		<p> cmds.parent( rig.control_group, 'CNT_JAW_1_C' ) 
 		
 		<h3> Functions </h3>
 		
@@ -50,8 +49,7 @@
 		<h4> get_drivers() </h4>
 		<p> Returns a list of transforms that are the drivers above controls. </p>
 		
-		<h4> set_local_parent( local_parent ): </h4>
-		<p> This will cause the local buffer to move with the specified transform. </p>
 	
 	</body>
 </html>
+		

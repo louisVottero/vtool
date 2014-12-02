@@ -20,6 +20,9 @@
 		<p> <b>side</b> can be 'C', 'L', 'R' </p>
 		
 		<h3> Example </h3>
+		<p> import maya.cmds as cmds </p>
+		<p> from vtool.maya_lib import util </p>
+		<br>
 		<p> cluster_transforms = cmds.ls('cluster_leaf_*', type = 'transform')</p>
 		<p> #joints = cmds.ls('joint_leaf_*', type = 'joint')</p>
 		<p> rig = SparseLocalRig( 'tree_leaf', 'C' )</p>
@@ -29,6 +32,7 @@
 		<p> rig.set_control_to_pivot( True ) #Good when the list of joints are cluster transforms. </p>
 		<p> rig.set_local_parent( 'CNT_BARREL_1_C' ) #Has the controls and the local buffer move with a barrel control.
 		<p> rig.create() </p>
+		<p> cmds.parent( rig.control_group, 'CNT_BARREL_1_C' ) </p>
 		
 		<h3> Functions </h3>
 		

@@ -395,11 +395,13 @@ class Process(object):
         
         
         
+        
         data_folder = data.DataFolder(name, path)
         data_folder.set_data_type(data_type)
         
-        
         data_instance = data_folder.get_folder_data_instance()
+        
+        #data_instance.create()
         
         if name == 'manifest':
             data_instance.create()
@@ -681,7 +683,17 @@ def copy_process_data(source_process, target_process, data_name, replace = False
             
 def copy_process_code(source_process, target_process, code_name, replace = False):
     
+    print 'at start', code_name, type(code_name)
+    
+    if code_name == None:
+        return
+    
     data_type = source_process.get_code_type(code_name)
+    
+    print 'data_type', data_type
+    
+    if not data_type:
+        return
     
     code_folder_path = None
     
@@ -703,7 +715,7 @@ def copy_process_code(source_process, target_process, code_name, replace = False
                 return
     
     if not target_process.is_code_folder(code_name):
-        code_folder_path = target_process.create_code(code_name, data_type)
+        code_folder_path = target_process.create_code(code_name, 'script.python')
     
     
     path = source_process.get_code_path()

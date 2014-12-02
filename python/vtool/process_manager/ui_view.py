@@ -644,13 +644,17 @@ class CopyWidget(qt_ui.BasicWidget):
         for item in code_items:
             name = item.text()
             
+            if not name:
+                continue
+            
             if name == 'manifest':
                 manifest = name
                 
             if not name == 'manifest':
                 found.append(name)
-                
-        found.append(manifest)
+        
+        if manifest:        
+            found.append(manifest)
         
         for name in found:
             process.copy_process_code( self.process, self.other_process, name)
