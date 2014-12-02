@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Fk Local Rig Class Documentation.</title>
+		<link rel = "stylesheet" type = "text/css" href = "../../stylesheet.css">
+		
+	</head>
+	<body>
+		<a href= "../../documentation.html" class = "button">VTOOL</a>
+		<a href= "util.html" class = "button">Rig Classes</a>
+		
+		<h2> FkLocalRig( <a href = "FkRig.html" >FkRig</a> ) </h2>
+		<p> The fk local rig will create controls on the joints that affect each other in hierarchy. Because it is local the controls can move has a group without affecting the joints.  Allowing the joints to say local to the origin. The fk local rig uses a transform node to buffer it's affect on the joint.</p>
+		<p> Each control has the following hiearchy: xform group, driver group, control </p>
+		
+		<h3> Initialize </h3>
+		<ul>
+		<li> FkLocalRig( description, side )
+		</ul>
+		<p> <b>description</b> is used when naming the controls to give a unique name.</p>
+		<p> <b>side</b> can be 'C', 'L', 'R' </p>
+		
+		<h3> Example </h3>
+		<p> joints = cmds.ls('joint_tongue_*', type = 'joint') </p>
+		<p> rig = FkLocalRig( 'tongue', 'R' )</p>
+		<p> rig.set_joints(joints) </p>
+		<p> rig.create() </p>
+		<p> rig.set_local_parent( 'CNT_JAW_1_C' ) </p>
+		
+		<h3> Functions </h3>
+		
+		<h4> set_control_shape( shape_name ) </h4>
+		<p> Sets the control to have a shape from the curve library. </p>
+		<h4> create( ) </h4>
+		<p> Creates the rig. </p>
+		<h4> set_joints( joints ) </h4>
+		<p> Set which joints the rig should work with. Some rigs also accapt transform nodes.</p>
+		<p> Accepts a list or a string. </p>
+	
+		<h4> set_buffer( bool_value ) </h4>
+		<p> bool_value = Set True or False. This specifies wether or not the supplied joints should be constrained with a buffer chain. The buffer chain helps when setting up ik/fk setups.  The first joint will have a switch attribute that can be used to switch between rigs. </p>
+	
+		<h4> set_parent( parent ) </h4>
+		<p> Specify the parent for the controls group </p>
+		<h4> set_control_size( value ) </h4>
+		<p> Sets the size of the controls when created. </p>
+		<h4> set_match_to_rotation( bool_value ) </h4>
+		<h4> get_drivers() </h4>
+		<p> Returns a list of transforms that are the drivers above controls. </p>
+		
+		<h4> set_local_parent( local_parent ): </h4>
+		<p> This will cause the local buffer to move with the specified transform. </p>
+	
+	</body>
+</html>

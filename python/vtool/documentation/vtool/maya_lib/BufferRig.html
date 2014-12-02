@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Buffer Rig Class Documentation.</title>
+		<link rel = "stylesheet" type = "text/css" href = "../../stylesheet.css">
+		
+	</head>
+	<body>
+		<a href= "../../documentation.html" class = "button">VTOOL</a>
+		<a href= "util.html" class = "button">Rig Classes</a>
+	
+		<h2> BufferRig( <a href = "JointRig.html" >JointRig</a> ) </h2>
+		<p> Create a buffer chain based on the specified joints.  This is an option to aid in the setup of Fk/Ik setups.  When using rigs that implement the buffer chain you can layer them on a single joint chain. The top joint in the chain will have a switch attribute to switch between rigs.</p>
+		<h3> Initialize </h3>
+		<ul>
+		<li> Rig( description, side )
+		</ul>
+		<p> <b>description</b> is used when naming the controls to give a unique name.</p>
+		<p> <b>side</b> can be 'C', 'L', 'R' </p>
+		
+		<h3> Functions </h3>
+		
+		<h4> set_control_shape( shape_name ) </h4>
+		<p> Sets the control to have a shape from the curve library. </p>
+		<h4> create( ) </h4>
+		<p> Creates the rig. </p>
+		<h4> set_joints( joints ) </h4>
+		<p> Set which joints the rig should work with. Some rigs also accapt transform nodes.</p>
+		<p> Accepts a list or a string. </p>
+	
+		<h4> set_buffer( bool_value ) </h4>
+		<p> bool_value = Set True or False. </p>
+	
+	</body>
+</html>

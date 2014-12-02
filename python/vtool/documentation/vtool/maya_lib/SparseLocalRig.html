@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Buffer Rig Class Documentation.</title>
+		<link rel = "stylesheet" type = "text/css" href = "../../stylesheet.css">
+		
+	</head>
+	<body>
+		<a href= "../../documentation.html" class = "button">VTOOL</a>
+		<a href= "util.html" class = "button">Rig Classes</a>
+	
+		<h2> SparseLocalRig( <a href = "SparseRig.html" >SparseRig</a> ) </h2>
+		<p> The sparse local rig will create controls on joints.  The controls are not interconnected. Because it is local the controls can move has a group without affecting the joints.  Allowing the joints to say local to the origin. The sparse local rig uses a transform node to buffer it's affect on the joint.</p> 
+		
+		<h3> Initialize </h3>
+		<ul>
+		<li> SparseLocalRig( description, side )
+		</ul>
+		<p> <b>description</b> is used when naming the controls to give a unique name.</p>
+		<p> <b>side</b> can be 'C', 'L', 'R' </p>
+		
+		<h3> Example </h3>
+		<p> cluster_transforms = cmds.ls('cluster_leaf_*', type = 'transform')</p>
+		<p> #joints = cmds.ls('joint_leaf_*', type = 'joint')</p>
+		<p> rig = SparseLocalRig( 'tree_leaf', 'C' )</p>
+		<p> rig.set_joints( cluster_transforms ) </p>
+		<p> #rig.set_joints( joints ) </p>
+		<p> rig.set_respect_side( True, 0.1 ) #tells the control names and color to respect the side of the center line they are on.</p>
+		<p> rig.set_control_to_pivot( True ) #Good when the list of joints are cluster transforms. </p>
+		<p> rig.set_local_parent( 'CNT_BARREL_1_C' ) #Has the controls and the local buffer move with a barrel control.
+		<p> rig.create() </p>
+		
+		<h3> Functions </h3>
+		
+		<h4> set_control_shape( shape_name ) </h4>
+		<p> Sets the control to have a shape from the curve library. </p>
+		<h4> create( ) </h4>
+		<p> Creates the rig. </p>
+		<h4> set_joints( joints ) </h4>
+		<p> Set which joints the rig should work with. Some rigs also accapt transform nodes.</p>
+		<p> Accepts a list or a string. </p>
+	
+		<h4> set_buffer( bool_value ) </h4>
+		<p> Create a buffer chain based on the specified joints.  This is an option to aid in the setup of Fk/Ik setups.  When using rigs that implement the buffer chain you can layer them on a single joint chain. The top joint in the chain will have a switch attribute to switch between rigs.</p>
+	
+		<h4> set_scalable( bool_value ) </h4>
+		<p> Specify if the scale from control to joint should also be connected. </p>
+		<h4> set_respect_side( bool_value, tolerance = 0.001) </h4>
+		<p> bool_value = Set True or False</p>
+		<p> tolerance = The tolerance of what is considered centered. </p>
+		
+		<h4> set_local_constraint( bool_value ) </h4>
+		<p> If set true, controls will use a constraint between the control and a buffer group that gets connected into the joint. Otherwise the control will be connected directly into the buffer group. By default this is True.
+		<h4> set_control_to_pivot( bool_value ) </h4>
+		<p> When setting the rig to work on cluster transforms using set_joints, this will make sure that the controls will match the pivot of the transform, not just its translate. This function will most likely be removed in the future, and dealt with automatically.</p> 
+		<h4> set_local_parent( local_parent ): </h4>
+		<p> This will cause the local buffer to move with the specified transform. </p>
+	
+	</body>
+</html>
