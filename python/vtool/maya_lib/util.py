@@ -1457,9 +1457,7 @@ class IkHandle(object):
         
     def set_solver(self, type_name):
         self.solver_type = type_name
-        
     
-        
     def create(self):
         
         if not self.start_joint or not self.end_joint:
@@ -12836,6 +12834,34 @@ def create_distance_falloff(source_transform, source_local_vector = [1,0,0], tar
     
     return distance_between    
 
+def create_distance_scale(xform1, xform2, axis = 'X'):
+    
+    locator1 = cmds.spaceLocator(n = inc_name('locatorDistance_%s' % xform1))[0]
+    print xform1, locator1
+    MatchSpace(xform1, locator1).translation()
+    
+    locator2 = cmds.spaceLocator(n = inc_name('locatorDistance_%s' % xform2))[0]
+    MatchSpace(xform2, locator2).translation()
+    
+    distance = cmds.createNode('distanceBetween', n = inc_name('distanceBetween_%s' % xform1))
+    multiply = cmds.createNode('multiplyDivide', n = inc_name('multiplyDivide_%s' % xform1))
+    
+    cmds.connectAttr('%s.worldMatrix' % locator1, '%s.inMatrix1' % distance)
+    cmds.connectAttr('%s.worldMatrix' % locator2, '%s.inMatrix2' % distance)
+    
+    distance_value = cmds.getAttr('%s.distance' % distance)
+    
+    cmds.connectAttr('%s.distance' % distance, '%s.input1X' % multiply)
+    cmds.setAttr('%s.input2X' % multiply, distance_value)
+    cmds.setAttr('%s.operation' % multiply, 2)
+    
+    cmds.connectAttr('%s.outputX' % multiply, '%s.scale%s' % (xform1, axis))
+        
+    return locator1, locator2
+    
+    
+    
+
 def add_orient_attributes(transform):
     if type(transform) != list:
         transform = [transform]
@@ -12955,6 +12981,9 @@ def get_y_intersection(curve, vector):
     cmds.delete(duplicate_curve, curve_line)
     
     return parameter                
+    
+
+    
     
 #--- animation
 
@@ -13595,7 +13624,7 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
     
     total_length = cmds.arclen(curve)
     
-    part_length = total_length/joint_count
+    part_length = total_length/(joint_count-1)
     current_length = 0
     
     joints = []
@@ -13606,7 +13635,7 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
     
     segment = 1.00/joint_count
     
-    for inc in range(0, joint_count+1):
+    for inc in range(0, joint_count):
         
         param = get_parameter_from_curve_length(curve, current_length)
         
