@@ -51,6 +51,7 @@ class FolderEditor(object):
     def _create_folder(self, name):
         
         if not is_dir(self.directory_path):
+            #do not remove print
             print '%s was not created.' % name
             return
         
@@ -703,6 +704,7 @@ def rename(directory, name, make_unique = False):
     try:
         os.rename(directory, renamepath)
     except Exception, e:
+        print 'do not remove print'
         print e
         return False
     
@@ -788,6 +790,7 @@ def delete_dir(name, directory):
     full_path = join_path(directory, name)
     
     if not is_dir(full_path):
+        #do not remove print
         print '%s was not deleted.' % full_path
         return full_path
     
@@ -836,6 +839,7 @@ def delete_file(name, directory):
     full_path = join_path(directory, name)
     
     if not is_file(full_path):
+        #do not remove print
         print '%s was not deleted.' % full_path
         return full_path
         

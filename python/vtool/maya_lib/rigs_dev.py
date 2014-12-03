@@ -16,6 +16,8 @@ class EyeLidSphereRig(util.BufferRig):
         self.sections = 15
         self.curve = None
         self.ik_handles = []
+        
+        self.slice_group = None
     
     def _create_ik(self, joints):
         
@@ -53,26 +55,33 @@ class EyeLidSphereRig(util.BufferRig):
         
         joints, group = create_joint_slice( center_joint, '%s1_%s' % (self.description, self.side), radius = self.radius, sections = self.sections, axis = self.axis)
         
+        self.slice_group = group
+        
         self._create_ik(joints)
         
         cmds.parent(group, self.setup_group)
-        
-        util.MatchSpace(center_joint, self.setup_group).rotation()
-        
+            
+        ik_groups = []
+                
         if self.curve:
             inc = 1
             
+            
+            
             for ik_handle in self.ik_handles:
-                print ik_handle
+                
                 group_ik = cmds.group(em = True, n = util.inc_name('group_ik%s_%s' % (inc,self._get_name())))
                 util.MatchSpace(ik_handle, group_ik).translation()
                 cmds.parent(ik_handle, group_ik)
                 
+                cmds.parent(group_ik, self.slice_group)
+                
                 util.attach_to_curve(group_ik, self.curve)
-                cmds.parent(group_ik, self.setup_group)
+                
+                ik_groups.append(group_ik)
                 
                 inc+=1
-                
+        
 def create_joint_slice( center_joint, description, radius = 2, sections = 1, axis = 'X'):
     
     slice_group = cmds.group(em = True, n = util.inc_name('group_slice_%s' % description))
@@ -139,18 +148,18 @@ def create_joint_slice( center_joint, description, radius = 2, sections = 1, axi
                 cmds.transformLimits( dup, ry = [0, 0], ery = [1, 1])
                 cmds.transformLimits( dup, rx = [0, 0], erx = [1, 1])
         
-        cmds.move( vector[0],vector[1],vector[2], dup_pos, r = True )
+        cmds.move( vector[0],vector[1],vector[2], dup_pos, os = True, r = True )
         
         neg_vector = -1 * vtool.util.Vector(vector)
         
-        cmds.move( neg_vector.x, neg_vector.y, neg_vector.z, dup_neg, r = True )
+        cmds.move( neg_vector.x, neg_vector.y, neg_vector.z, dup_neg, os = True, r = True )
         
         offset += section
         
         for dup in [dup_pos, dup_neg]:
             dup2 = cmds.duplicate(dup, n = util.inc_name('joint_guideEnd%s_%s' % (inc+1, description)))[0]
             
-            cmds.move(edge_vector[0],edge_vector[1],edge_vector[2], dup2, r = True)
+            cmds.move(edge_vector[0],edge_vector[1],edge_vector[2], dup2, os = True, r = True)
             
             cmds.parent(dup2, dup)
             
