@@ -704,7 +704,7 @@ def rename(directory, name, make_unique = False):
     try:
         os.rename(directory, renamepath)
     except Exception, e:
-        print 'do not remove print'
+        #do not remove print
         print e
         return False
     
