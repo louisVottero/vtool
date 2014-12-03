@@ -13349,20 +13349,10 @@ def attach_to_curve(transform, curve, maintain_offset = False, parameter = None)
 def attach_to_surface(transform, surface, u = None, v = None):
     
     position = cmds.xform(transform, q = True, ws = True, t = True)
-    
-    uv = [u,v]
 
     if u == None or v == None:
         uv = get_closest_parameter_on_surface(surface, position)   
-    
-    uv = list(uv)
-    
-    if uv[0] == 0:
-        uv[0] = 0.001
-    
-    if uv[1] == 0:
-        uv[1] = 0.001
-    
+        
     rivet = Rivet(transform)
     rivet.set_surface(surface, uv[0], uv[1])
     rivet.set_create_joint(False)
@@ -13380,6 +13370,37 @@ def attach_to_closest_transform(source_transform, target_transforms):
     
     create_follow_group(closest_transform, source_transform)
 
+def follicle_to_surface(transform, surface, u = None, v = None):
+    
+    position = cmds.xform(transform, q = True, ws = True, t = True)
+
+    if u == None or v == None:
+        uv = get_closest_parameter_on_surface(surface, position)   
+
+    create_surface_follicle(surface, transform, uv)
+    
+    
+def create_surface_follicle(surface, description = None, uv = [0,0]):
+    
+    follicleShape = cmds.createNode('follicle')
+    
+    follicle = cmds.listRelatives(follicleShape, p = True)[0]
+    
+    if not description:
+        follicle = cmds.rename(follicle, 'follicle_1')[0]
+    if description:
+        follicle = cmds.rename(follicle, 'follicle_%s' % description)
+        
+    shape = cmds.listRelatives(follicle, shapes = True)[0]
+        
+    cmds.connectAttr('%s.local' % surface, '%s.inputSurface' % follicle)
+    cmds.connectAttr('%s.worldMatrix' % surface, '%s.inputWorldMatrix' % follicle)
+    
+    cmds.connectAttr('%s.outTranslate' % shape, '%s.translate' % follicle)
+    cmds.connectAttr('%s.outRotate' % shape, '%s.rotate' % follicle)
+    
+    cmds.setAttr('%s.parameterU' % follicle, uv[0])
+    cmds.setAttr('%s.parameterV' % follicle, uv[1])
 
 def transforms_to_nurb_surface(transforms, description, spans = -1, offset_axis = 'Y', offset_amount = 1):
     
@@ -13524,6 +13545,14 @@ def get_closest_parameter_on_surface(surface, vector):
     surface = NurbsSurfaceFunction(surfaceObject)
         
     uv = surface.get_closest_parameter(vector)
+    
+    uv = list(uv)
+    
+    if uv[0] == 0:
+        uv[0] = 0.001
+    
+    if uv[1] == 0:
+        uv[1] = 0.001
     
     return uv
 
