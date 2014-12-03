@@ -14,6 +14,8 @@ class EyeLidSphereRig(util.BufferRig):
         self.radius = 2
         self.axis = 'X'
         self.sections = 15
+        self.curve = None
+        self.ik_handles = []
     
     def _create_ik(self, joints):
         
@@ -29,8 +31,20 @@ class EyeLidSphereRig(util.BufferRig):
             ik.set_solver(ik.solver_sc)
             ik.create()
             
-            print parent, ik.ik_handle
             cmds.parent(ik.ik_handle, parent)
+            self.ik_handles.append(ik.ik_handle)
+        
+    def set_sections(self, int_value):
+        self.sections = int(int_value)
+        
+    def set_radius(self, float_value):
+        self.radius = float(float_value)
+        
+    def set_axis(self, axis_letter):
+        self.axis = str(axis_letter).upper()
+        
+    def set_curve(self, curve_name):
+        self.curve = curve_name
         
     def create(self):
         super(EyeLidSphereRig, self).create()
@@ -43,7 +57,22 @@ class EyeLidSphereRig(util.BufferRig):
         
         cmds.parent(group, self.setup_group)
         
+        util.MatchSpace(center_joint, self.setup_group).rotation()
         
+        if self.curve:
+            inc = 1
+            
+            for ik_handle in self.ik_handles:
+                print ik_handle
+                group_ik = cmds.group(em = True, n = util.inc_name('group_ik%s_%s' % (inc,self._get_name())))
+                util.MatchSpace(ik_handle, group_ik).translation()
+                cmds.parent(ik_handle, group_ik)
+                
+                util.attach_to_curve(group_ik, self.curve)
+                cmds.parent(group_ik, self.setup_group)
+                
+                inc+=1
+                
 def create_joint_slice( center_joint, description, radius = 2, sections = 1, axis = 'X'):
     
     slice_group = cmds.group(em = True, n = util.inc_name('group_slice_%s' % description))
@@ -67,6 +96,8 @@ def create_joint_slice( center_joint, description, radius = 2, sections = 1, axi
         
         dup_neg = cmds.duplicate(center_joint, n = util.inc_name('joint_guide%s_%s' % (inc+1, description)))[0]
         
+        
+        
         joints.append(dup_pos)
         joints.append(dup_neg)
         
@@ -85,16 +116,28 @@ def create_joint_slice( center_joint, description, radius = 2, sections = 1, axi
             vector = [1,0,0]
             vector = [offset, 0 , 0]
             edge_vector = [0,edge, 0]
+            
+            for dup in [dup_pos, dup_neg]:
+                cmds.transformLimits( dup, ry = [0, 0], ery = [1, 1])
+                cmds.transformLimits( dup, rz = [0, 0], erz = [1, 1])
         
         if axis == 'Y':
             vector = [0,1,0]
             vector = [0, offset, 0]
             edge_vector = [edge, 0, 0]
+            
+            for dup in [dup_pos, dup_neg]:
+                cmds.transformLimits( dup, rx = [0, 0], erx = [1, 1])
+                cmds.transformLimits( dup, rz = [0, 0], erz = [1, 1])
         
         if axis == 'Z':
             vector = [0,0,1]
             vector = [0, 0, offset]
             edge_vector = [0,edge, 0]
+            
+            for dup in [dup_pos, dup_neg]:
+                cmds.transformLimits( dup, ry = [0, 0], ery = [1, 1])
+                cmds.transformLimits( dup, rx = [0, 0], erx = [1, 1])
         
         cmds.move( vector[0],vector[1],vector[2], dup_pos, r = True )
         
@@ -115,8 +158,6 @@ def create_joint_slice( center_joint, description, radius = 2, sections = 1, axi
             
             value = 1.0/((sections/2)+1)
             value_offset = 1.0-value
-            
-            print ((sections/2)+1), value_offset, value
             
             for inc in range(0, (sections/2)+1):
                 dup3 = cmds.duplicate(dup, n = util.inc_name('joint_angle%s_%s' % (inc+1, description)))[0]
