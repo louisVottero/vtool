@@ -1199,6 +1199,12 @@ class MatchSpace(object):
     def _get_scale_pivot(self):
         return cmds.xform(self.source_transform, q = True, sp = True, os = True)
     
+    def _get_world_rotate_pivot(self):
+        return cmds.xform(self.source_transform, q = True, rp = True, ws = True)
+    
+    def _get_world_scale_pivot(self):
+        return cmds.xform(self.source_transform, q = True, sp = True, ws = True)
+    
     def _set_translation(self, translate_vector = []):
         if not translate_vector:
             translate_vector = self._get_translation()
@@ -1216,10 +1222,20 @@ class MatchSpace(object):
             rotate_pivot_vector = self._get_rotate_pivot()
         cmds.xform(self.target_transform, rp = rotate_pivot_vector, os = True)
         
+    def _set_world_rotate_pivot(self, rotate_pivot_vector = []):
+        if not rotate_pivot_vector:
+            rotate_pivot_vector = self._get_world_rotate_pivot()
+        cmds.xform(self.target_transform, rp = rotate_pivot_vector, ws = True)
+        
     def _set_scale_pivot(self, scale_pivot_vector = []):
         if not scale_pivot_vector:
             scale_pivot_vector = self._get_scale_pivot()
         cmds.xform(self.target_transform, sp = scale_pivot_vector, os = True)
+    
+    def _set_world_scale_pivot(self, scale_pivot_vector = []):
+        if not scale_pivot_vector:
+            scale_pivot_vector = self._get_world_scale_pivot()
+        cmds.xform(self.target_transform, rp = scale_pivot_vector, ws = True)
         
     def translation(self):
         self._set_translation()
@@ -1253,6 +1269,10 @@ class MatchSpace(object):
     def pivots(self):
         self._set_rotate_pivot()
         self._set_scale_pivot()
+        
+    def world_pivots(self):
+        self._set_world_rotate_pivot()
+        self._set_world_scale_pivot()
 
 class Control(object):
     
