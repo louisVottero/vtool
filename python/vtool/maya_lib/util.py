@@ -13387,9 +13387,9 @@ def create_surface_follicle(surface, description = None, uv = [0,0]):
     follicle = cmds.listRelatives(follicleShape, p = True)[0]
     
     if not description:
-        follicle = cmds.rename(follicle, 'follicle_1')[0]
+        follicle = cmds.rename(follicle, inc_name('follicle_1'))[0]
     if description:
-        follicle = cmds.rename(follicle, 'follicle_%s' % description)
+        follicle = cmds.rename(follicle, inc_name('follicle_%s' % description))
         
     shape = cmds.listRelatives(follicle, shapes = True)[0]
         
@@ -13401,6 +13401,8 @@ def create_surface_follicle(surface, description = None, uv = [0,0]):
     
     cmds.setAttr('%s.parameterU' % follicle, uv[0])
     cmds.setAttr('%s.parameterV' % follicle, uv[1])
+    
+    return follicle
 
 def transforms_to_nurb_surface(transforms, description, spans = -1, offset_axis = 'Y', offset_amount = 1):
     
