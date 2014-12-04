@@ -675,6 +675,11 @@ def copy_process_data(source_process, target_process, data_name, replace = False
         if util_file.is_file(filepath):
             copied_path = util_file.copy_file(filepath, destination_directory)
         if util_file.is_dir(filepath):
+            
+            basename = util_file.get_basename(destination_directory)
+            dirname = util_file.get_dirname(destination_directory)
+            
+            util_file.delete_dir(basename, dirname)
             copied_path = util_file.copy_dir(filepath, destination_directory)
           
         version = util_file.VersionFile(copied_path)
@@ -683,14 +688,10 @@ def copy_process_data(source_process, target_process, data_name, replace = False
             
 def copy_process_code(source_process, target_process, code_name, replace = False):
     
-    print 'at start', code_name, type(code_name)
-    
     if code_name == None:
         return
     
     data_type = source_process.get_code_type(code_name)
-    
-    print 'data_type', data_type
     
     if not data_type:
         return
@@ -700,7 +701,14 @@ def copy_process_code(source_process, target_process, code_name, replace = False
     if target_process.is_code_folder(code_name):
         
         code_folder_path = target_process.get_code_folder(code_name)
-        code_file = util_file.get_basename( target_process.get_code_file(code_name) )
+        
+        code_filepath =  target_process.get_code_file(code_name)
+        
+        if not code_filepath:
+            raise RuntimeError('Could not find codepath: %s' % code_filepath)
+            return
+        
+        code_file = util_file.get_basename( code_filepath )
         
         code_folder_path = util_file.join_path(code_folder_path, code_file)
         
