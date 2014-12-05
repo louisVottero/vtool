@@ -471,9 +471,13 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.main_layout.addWidget(import_button) 
         
     def _export_data(self):
+        
+        
+        
         comment = vtool.qt_ui.get_comment(self)
         if comment == None:
             return
+        
         self.data_class.export_data(comment)
         self.file_changed.emit()
         

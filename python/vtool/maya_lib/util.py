@@ -10491,6 +10491,8 @@ class PoseManager(object):
             
     def create_pose_blends(self):
         
+        
+        
         poses = self.get_poses()
         count = len(poses)
 
@@ -13887,6 +13889,17 @@ def create_cluster_bindpre(cluster, handle):
         #cmds.parent(bindpre, cluster_parent[0])
     
     return bindpre
+
+def create_lattice(points, description, divisions = (3,3,3), falloff = (2,2,2)):
+    
+    
+    
+    ffd, lattice, base = cmds.lattice(points, 
+                                      divisions = divisions, 
+                                      objectCentered = True, 
+                                      ldv = falloff, n = 'ffd_%s' % description)
+    
+    
 
 def find_deformer_by_type(mesh, deformer_type, return_all = False):
     

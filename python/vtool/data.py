@@ -525,7 +525,7 @@ class SkinWeightData(MayaCustomData):
                 geo_path = util_file.create_dir(thing, path)
                 
                 weights = maya_lib.util.get_skin_weights(skin)
-                
+                                
                 info_file = util_file.create_file( 'influence.info', geo_path )
                 
                 write_info = util_file.WriteFile(info_file)
@@ -539,6 +539,7 @@ class SkinWeightData(MayaCustomData):
                         continue
                     
                     thread = LoadWeightFileThread()
+                    
                     influence_line = thread.run(influence, skin, weights[influence], geo_path)
                     
                     info_lines.append(influence_line)
@@ -554,7 +555,11 @@ class LoadWeightFileThread(threading.Thread):
         
         influence_name = maya_lib.util.get_skin_influence_at_index(influence_index, skin)
         
+        print influence_name, path
+        
         filepath = util_file.create_file('%s.weights' % influence_name, path)
+        
+        print 'weight file', filepath
         
         write = util_file.WriteFile(filepath)
         write.write_line(weights)     
