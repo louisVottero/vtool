@@ -1199,6 +1199,12 @@ class MatchSpace(object):
     def _get_scale_pivot(self):
         return cmds.xform(self.source_transform, q = True, sp = True, os = True)
     
+    def _get_world_rotate_pivot(self):
+        return cmds.xform(self.source_transform, q = True, rp = True, ws = True)
+    
+    def _get_world_scale_pivot(self):
+        return cmds.xform(self.source_transform, q = True, sp = True, ws = True)
+    
     def _set_translation(self, translate_vector = []):
         if not translate_vector:
             translate_vector = self._get_translation()
@@ -1216,10 +1222,20 @@ class MatchSpace(object):
             rotate_pivot_vector = self._get_rotate_pivot()
         cmds.xform(self.target_transform, rp = rotate_pivot_vector, os = True)
         
+    def _set_world_rotate_pivot(self, rotate_pivot_vector = []):
+        if not rotate_pivot_vector:
+            rotate_pivot_vector = self._get_world_rotate_pivot()
+        cmds.xform(self.target_transform, rp = rotate_pivot_vector, ws = True)
+        
     def _set_scale_pivot(self, scale_pivot_vector = []):
         if not scale_pivot_vector:
             scale_pivot_vector = self._get_scale_pivot()
         cmds.xform(self.target_transform, sp = scale_pivot_vector, os = True)
+    
+    def _set_world_scale_pivot(self, scale_pivot_vector = []):
+        if not scale_pivot_vector:
+            scale_pivot_vector = self._get_world_scale_pivot()
+        cmds.xform(self.target_transform, rp = scale_pivot_vector, ws = True)
         
     def translation(self):
         self._set_translation()
@@ -1253,6 +1269,10 @@ class MatchSpace(object):
     def pivots(self):
         self._set_rotate_pivot()
         self._set_scale_pivot()
+        
+    def world_pivots(self):
+        self._set_world_rotate_pivot()
+        self._set_world_scale_pivot()
 
 class Control(object):
     
@@ -1457,9 +1477,7 @@ class IkHandle(object):
         
     def set_solver(self, type_name):
         self.solver_type = type_name
-        
     
-        
     def create(self):
         
         if not self.start_joint or not self.end_joint:
@@ -12838,6 +12856,34 @@ def create_distance_falloff(source_transform, source_local_vector = [1,0,0], tar
     
     return distance_between    
 
+def create_distance_scale(xform1, xform2, axis = 'X'):
+    
+    locator1 = cmds.spaceLocator(n = inc_name('locatorDistance_%s' % xform1))[0]
+    print xform1, locator1
+    MatchSpace(xform1, locator1).translation()
+    
+    locator2 = cmds.spaceLocator(n = inc_name('locatorDistance_%s' % xform2))[0]
+    MatchSpace(xform2, locator2).translation()
+    
+    distance = cmds.createNode('distanceBetween', n = inc_name('distanceBetween_%s' % xform1))
+    multiply = cmds.createNode('multiplyDivide', n = inc_name('multiplyDivide_%s' % xform1))
+    
+    cmds.connectAttr('%s.worldMatrix' % locator1, '%s.inMatrix1' % distance)
+    cmds.connectAttr('%s.worldMatrix' % locator2, '%s.inMatrix2' % distance)
+    
+    distance_value = cmds.getAttr('%s.distance' % distance)
+    
+    cmds.connectAttr('%s.distance' % distance, '%s.input1X' % multiply)
+    cmds.setAttr('%s.input2X' % multiply, distance_value)
+    cmds.setAttr('%s.operation' % multiply, 2)
+    
+    cmds.connectAttr('%s.outputX' % multiply, '%s.scale%s' % (xform1, axis))
+        
+    return locator1, locator2
+    
+    
+    
+
 def add_orient_attributes(transform):
     if type(transform) != list:
         transform = [transform]
@@ -12957,6 +13003,9 @@ def get_y_intersection(curve, vector):
     cmds.delete(duplicate_curve, curve_line)
     
     return parameter                
+    
+
+    
     
 #--- animation
 
@@ -13322,20 +13371,10 @@ def attach_to_curve(transform, curve, maintain_offset = False, parameter = None)
 def attach_to_surface(transform, surface, u = None, v = None):
     
     position = cmds.xform(transform, q = True, ws = True, t = True)
-    
-    uv = [u,v]
 
     if u == None or v == None:
         uv = get_closest_parameter_on_surface(surface, position)   
-    
-    uv = list(uv)
-    
-    if uv[0] == 0:
-        uv[0] = 0.001
-    
-    if uv[1] == 0:
-        uv[1] = 0.001
-    
+        
     rivet = Rivet(transform)
     rivet.set_surface(surface, uv[0], uv[1])
     rivet.set_create_joint(False)
@@ -13353,6 +13392,39 @@ def attach_to_closest_transform(source_transform, target_transforms):
     
     create_follow_group(closest_transform, source_transform)
 
+def follicle_to_surface(transform, surface, u = None, v = None):
+    
+    position = cmds.xform(transform, q = True, ws = True, t = True)
+
+    if u == None or v == None:
+        uv = get_closest_parameter_on_surface(surface, position)   
+
+    create_surface_follicle(surface, transform, uv)
+    
+    
+def create_surface_follicle(surface, description = None, uv = [0,0]):
+    
+    follicleShape = cmds.createNode('follicle')
+    
+    follicle = cmds.listRelatives(follicleShape, p = True)[0]
+    
+    if not description:
+        follicle = cmds.rename(follicle, inc_name('follicle_1'))[0]
+    if description:
+        follicle = cmds.rename(follicle, inc_name('follicle_%s' % description))
+        
+    shape = cmds.listRelatives(follicle, shapes = True)[0]
+        
+    cmds.connectAttr('%s.local' % surface, '%s.inputSurface' % follicle)
+    cmds.connectAttr('%s.worldMatrix' % surface, '%s.inputWorldMatrix' % follicle)
+    
+    cmds.connectAttr('%s.outTranslate' % shape, '%s.translate' % follicle)
+    cmds.connectAttr('%s.outRotate' % shape, '%s.rotate' % follicle)
+    
+    cmds.setAttr('%s.parameterU' % follicle, uv[0])
+    cmds.setAttr('%s.parameterV' % follicle, uv[1])
+    
+    return follicle
 
 def transforms_to_nurb_surface(transforms, description, spans = -1, offset_axis = 'Y', offset_amount = 1):
     
@@ -13498,6 +13570,14 @@ def get_closest_parameter_on_surface(surface, vector):
         
     uv = surface.get_closest_parameter(vector)
     
+    uv = list(uv)
+    
+    if uv[0] == 0:
+        uv[0] = 0.001
+    
+    if uv[1] == 0:
+        uv[1] = 0.001
+    
     return uv
 
 def get_closest_position_on_curve(curve, three_value_list):
@@ -13527,21 +13607,24 @@ def get_point_from_curve_parameter(curve, parameter):
     
     return cmds.pointOnCurve(curve, pr = parameter, ch = False)
 
-def create_oriented_joints_on_curve(curve, count = 20, rig = False):
+def create_oriented_joints_on_curve(curve, count = 20, description = None, rig = False):
+    
+    if not description:
+        description = 'curve'
     
     if count < 2:
         return
     
     length = cmds.arclen(curve, ch = False)
     cmds.select(cl = True)
-    start_joint = cmds.joint(n = 'joint_strapStart')
+    start_joint = cmds.joint(n = 'joint_%sStart' % description)
     
-    end_joint = cmds.joint(p = [length,0,0], n = 'joint_strapEnd')
+    end_joint = cmds.joint(p = [length,0,0], n = 'joint_%sEnd' % description)
     
     if count > 3:
         count = count -2
     
-    joints = subdivide_joint(start_joint, end_joint, count, 'joint', 'strap')
+    joints = subdivide_joint(start_joint, end_joint, count, 'joint', description)
     
     joints.insert(0, start_joint)
     joints.append(end_joint)
@@ -13597,7 +13680,7 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
     
     total_length = cmds.arclen(curve)
     
-    part_length = total_length/joint_count
+    part_length = total_length/(joint_count-1)
     current_length = 0
     
     joints = []
@@ -13608,7 +13691,7 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
     
     segment = 1.00/joint_count
     
-    for inc in range(0, joint_count+1):
+    for inc in range(0, joint_count):
         
         param = get_parameter_from_curve_length(curve, current_length)
         
