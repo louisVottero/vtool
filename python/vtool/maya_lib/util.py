@@ -2130,7 +2130,7 @@ class Rig(object):
         
         for name in name_list:
             if name:
-                filtered_name_list.append(name)
+                filtered_name_list.append(str(name))
         
         name = string.join(filtered_name_list, '_')
         

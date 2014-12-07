@@ -93,6 +93,8 @@ class EyeLidSphereRig2(util.BufferRig):
         
         self.follicle_group = None
         self.first_folicle = None
+        
+        self.control_curves = []
                 
     def _create_nurbs_sphere(self):
         
@@ -106,7 +108,7 @@ class EyeLidSphereRig2(util.BufferRig):
         cmds.rotate(90, 90, 0, self.surface, r = True, os = True)
         
         
-    def _add_follicle(self, u_value, v_value, locator = False):
+    def _add_follicle(self, u_value, v_value, reverse, locator = False):
         
         if not self.follicle_group:
             self.follicle_group = cmds.group(em = True, n = self._get_name('groupFollicle'))
@@ -120,41 +122,51 @@ class EyeLidSphereRig2(util.BufferRig):
         util.MatchSpace(follicle, joint).translation()
         
         cmds.parent(joint, follicle)
+        cmds.makeIdentity(joint, jo = True, apply = True)
         
+        locator_top = False
+        locator_btm = False
         
         if locator:
-            locator = cmds.spaceLocator(n = util.inc_name(self._get_name('locatorFollicle')))[0]
-            cmds.setAttr('%s.localScaleX' % locator, .1)
-            cmds.setAttr('%s.localScaleY' % locator, .1)
-            cmds.setAttr('%s.localScaleZ' % locator, .1)
+            locator_top = cmds.spaceLocator(n = util.inc_name(self._get_name('locatorFollicle')))[0]
+            cmds.setAttr('%s.localScaleX' % locator_top, .1)
+            cmds.setAttr('%s.localScaleY' % locator_top, .1)
+            cmds.setAttr('%s.localScaleZ' % locator_top, .1)
         
+            util.MatchSpace(self.sub_locator_group, locator_top).translation()
+            cmds.parent(locator_top, self.sub_locator_group)
+            cmds.makeIdentity(locator_top, t = True, apply = True)  
+            
+            locator_btm = cmds.spaceLocator(n = util.inc_name(self._get_name('locatorBtmFollicle')))[0]
+            cmds.setAttr('%s.localScaleX' % locator_btm, .1)
+            cmds.setAttr('%s.localScaleY' % locator_btm, .1)
+            cmds.setAttr('%s.localScaleZ' % locator_btm, .1)
+        
+            util.MatchSpace(self.sub_locator_group, locator_btm).translation()
+            
+            cmds.parent(locator_btm, self.sub_locator_group)
+            cmds.makeIdentity(locator_btm, t = True, apply = True) 
+            
+            if not reverse:
+                cmds.setAttr('%s.translateY' % locator_btm, 1)      
             
         
-            util.MatchSpace(self.sub_locator_group, locator).translation()
-            
-            cmds.parent(locator, self.sub_locator_group)
-            
-            
-            cmds.makeIdentity(locator, t = True, apply = True)
-            
-            
         
-        cmds.parent(follicle, self.follicle_group)
-        
-        return follicle, locator
+        return follicle, locator_top, locator_btm
         
     def _create_locator_group(self):
         
         top_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'scale')))
         locator_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'locator')))
         sub_locator_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'sub_locator')))
+        btm_sub_locator_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'btmsub_locator')))
         
-        cmds.hide(locator_group)
+        #cmds.hide(locator_group)
         
         cmds.parent(sub_locator_group, locator_group)
+        cmds.parent(btm_sub_locator_group, locator_group)
         cmds.parent(locator_group, top_group)
         util.MatchSpace(self.buffer_joints[0], locator_group).translation()
-        
         
         cmds.setAttr('%s.scaleX' % locator_group, (self.radius*2) )
         cmds.setAttr('%s.scaleY' % locator_group, (self.radius*4) )
@@ -179,10 +191,11 @@ class EyeLidSphereRig2(util.BufferRig):
         v_value = 0.5
         
         locators = []
+        locator_top = None
+        locator_btm = None
         
         for inc in range(0, self.horizontal_sections):
             
-            print 'section %s' % inc
             #this is placed here so it skips the first increment...
             u_value += section_value
             
@@ -193,31 +206,66 @@ class EyeLidSphereRig2(util.BufferRig):
             sub_v_value = v_value
             multiply_section_value = 1.0/self.vertical_sections
             
-            print '--------------', 1.0/self.vertical_sections
-            
             if reverse:
                 multiply_value = 0.0
             if not reverse:
                 multiply_value = 1.0
-                
-            self.first_folicle = None
             
-            for inc2 in range(0, self.vertical_sections):
+            folicles = []
+            
+            group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'follicleSection%s' % (inc+1))))
+            
+            first_folicle = False
+            
+            for inc2 in range(0, self.vertical_sections+1):
                 
                 locator_state = False
                 
-                if not self.first_folicle:
+                if not first_folicle:
                     locator_state = True
-            
-                folicle, locator = self._add_follicle(u_value, sub_v_value, locator_state)
                 
-                if locator:
-                    locators.append(locator)
+                folicle, locator_top, locator_btm = self._add_follicle(u_value, sub_v_value, reverse,locator_state,)
+                
+                if locator_top:
+                    locators.append([locator_top, locator_btm])
+                
+                folicles.append(folicle)
+                
+                if not first_folicle:
+                    first_folicle = folicle
+                    
+                cmds.parent(folicle, group)
+            
+            self.first_folicle = None
+            self.last_folicle = None
+            
+            reverse_folicles = list(folicles)
+            reverse_folicles.reverse()
+            
+            print 'folicle lists'
+            print folicles
+            print reverse_folicles
+            
+            for inc2 in range(0, len(folicles)):
+                
+                folicle = folicles[inc2]
+                reverse_folicle = reverse_folicles[inc2]
+                locator_top = locators[-1][0]
+                locator_btm = locators[-1][1]
                 
                 if self.first_folicle:
-                    print 'multiply_value!!!!!!!', multiply_value
-                    if reverse:
-                        util.connect_multiply('%s.parameterV' % self.first_folicle, '%s.parameterV' % folicle, multiply_value)
+                    
+                    
+                    if reverse and inc2 != len(folicles)-1:
+                        
+                        plus = cmds.createNode('plusMinusAverage', n = util.inc_name(self._get_name('plusMinusAverage', 'combo')))
+                        
+                        util.connect_multiply('%s.parameterV' % self.first_folicle, '%s.input1D[0]' % plus, multiply_value)
+                        util.connect_multiply('%s.parameterV' % self.last_folicle, '%s.input1D[1]' % plus, (1-multiply_value) )
+                        
+                        cmds.connectAttr('%s.output1D' % plus, '%s.parameterV' % folicle)
+                        
+                        #util.connect_multiply('%s.parameterV' % self.first_folicle, '%s.parameterV' % folicle, multiply_value)
                         
                         
                     if not reverse:
@@ -239,14 +287,33 @@ class EyeLidSphereRig2(util.BufferRig):
                         
                     cmds.connectAttr('%s.parameterU' % self.first_folicle, '%s.parameterU' % folicle)
                     #util.connect_multiply('%s.parameterU' % self.first_folicle, '%s.parameterU' % folicle, multiply_value)
-                
+                    
+                    
                 if not self.first_folicle:
                     self.first_folicle = folicle
-                    cmds.setAttr('%s.translateX' % locator, u_value)
-                    cmds.setAttr('%s.translateY' % locator, sub_v_value)
-                          
-                    cmds.connectAttr('%s.translateX' % locator, '%s.parameterU' % folicle)
-                    cmds.connectAttr('%s.translateY' % locator, '%s.parameterV' % folicle)
+                    self.last_folicle = reverse_folicle
+                    
+                    print locator_top, 'u', u_value, 'v', sub_v_value
+                    cmds.setAttr('%s.translateX' % locator_top, u_value)
+                    cmds.setAttr('%s.translateY' % locator_top, sub_v_value)
+                    
+                    cmds.setAttr('%s.translateX' % locator_btm, u_value)
+                    
+                    print locator_top, folicle
+                     
+                    cmds.connectAttr('%s.translateX' % locator_top, '%s.parameterU' % folicle)
+                    cmds.connectAttr('%s.translateY' % locator_top, '%s.parameterV' % folicle)
+                    
+                    print locator_btm, reverse_folicle
+                    cmds.connectAttr('%s.translateY' % locator_btm, '%s.parameterV' % reverse_folicle)
+                    
+                    
+                    
+                    
+                    #plus = cmds.createNode('plusMinusAverage', n = self._get_name('plusMinusAverage', 'combo'))
+                    #cmds.connectAttr('%s.translateY' % locator_top, '%s.input1D[0]' % plus)
+                    #util.connect_multiply('%s.translateY' % locator_btm, '%s.input1D[1]' % plus, sub_v_value )
+                    #cmds.connectAttr('%s.output1D' % plus, '%s.parameterV' % reverse_folicle)
                 
                 if reverse:
                     sub_v_value -= sub_section_value
@@ -255,7 +322,8 @@ class EyeLidSphereRig2(util.BufferRig):
                 if not reverse:
                     sub_v_value += sub_section_value
                     multiply_value -= multiply_section_value
-                
+            
+            cmds.parent(group, self.follicle_group)
             
             
         util.MatchSpace(center_joint, self.top_group).world_pivots()
@@ -263,8 +331,15 @@ class EyeLidSphereRig2(util.BufferRig):
         
         locator_group = cmds.group(em = True, n = util.inc_name(self._get_name('locators')))
         
-        for locator in locators:
+        self.curve_locators = []
+        """
+        for locator_group in locators:
+            
+            locator = locator_group[0]
+            
             locator_world = cmds.spaceLocator(n = util.inc_name(self._get_name('locator')))[0]
+            
+            self.curve_locators.append(locator_world)
             
             cmds.setAttr('%s.localScaleX' % locator_world, .1)
             cmds.setAttr('%s.localScaleY' % locator_world, .1)
@@ -274,10 +349,65 @@ class EyeLidSphereRig2(util.BufferRig):
             
             cmds.parent(locator_world, locator_group)
             cmds.pointConstraint(locator_world, locator)
-            
+        """ 
         
         cmds.parent(locator_group, self.setup_group)
+        
+    def _attach_locators_to_curve(self):
+        curve = util.transforms_to_curve(self.curve_locators, 3, self._get_name())
+        
+        cmds.parent(curve, self.setup_group)
+        
+        self.control_curves.append(curve)
+        
+        for locator in self.curve_locators:
+            util.attach_to_curve(locator, curve)
+        
+        
+        
+    def _create_controls(self):
+        
+        inc = 1
+        
+        for curve in self.control_curves:
+            clusters = util.cluster_curve(curve, self._get_name(), join_ends = False)
+            
+            cluster_group = cmds.group(em = True, name = self._get_name('group', 'cluster%s' % curve.capitalize()))
+            cmds.parent(clusters, cluster_group)
+            
+            cmds.parent(cluster_group, self.setup_group)
+            
+            if inc == 1:
+                sub = False
+            if inc == 2:
+                sub = True
+            
+            group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'local')))
+            cmds.parent(group, self.setup_group)
+            
+            for cluster in clusters:
+                control = self._create_control(sub = sub)
                 
+                control.hide_scale_and_visibility_attributes()
+                if inc == 1:
+                    control.scale_shape(.1, .1, .1)
+                if inc == 2:
+                    control.scale_shape(.08, .08, .08)
+                    
+                xform = util.create_xform_group(control.get())
+                
+                util.MatchSpace(cluster, xform).translation_to_rotate_pivot()
+                
+                local, xform_local = util.constrain_local(control.get(), cluster, constraint = 'pointConstraint')
+                cmds.parent(xform_local, group)
+                #cmds.pointConstraint(control.get(), cluster)
+                
+                cmds.parent(xform, self.control_group)
+                
+            inc += 1
+        
+        
+        
     def set_horizontal_sections(self, int_value):
         self.horizontal_sections = int_value
         
@@ -293,10 +423,17 @@ class EyeLidSphereRig2(util.BufferRig):
         self._create_locator_group()
         self._create_nurbs_sphere()
         
-        self._create_follicles(reverse = False)
-        self._create_follicles(reverse = True)
+        #self._create_follicles(reverse = False)
+        #self._attach_locators_to_curve()
         
-        cmds.parent(self.top_group, self.setup_group)        
+        self._create_follicles(reverse = True)
+        #self._attach_locators_to_curve()
+        
+        #self._create_controls()
+        
+        cmds.parent(self.top_group, self.setup_group)
+        
+                
                 
 def create_joint_slice( center_joint, description, radius = 2, sections = 1, axis = 'X'):
     
