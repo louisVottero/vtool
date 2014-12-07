@@ -246,6 +246,18 @@ class EyeLidSphereRig2(util.BufferRig):
             print folicles
             print reverse_folicles
             
+            if not reverse:
+                remap_front = cmds.createNode('remapValue', n = self._get_name('remapValueFront'))
+                cmds.setAttr('%s.value[0].value_FloatValue' % remap_front, 1)
+                cmds.setAttr('%s.value[1].value_FloatValue' % remap_front, 0)
+                cmds.connectAttr('%s.parameterV' % folicles[0], '%s.inputValue' % remap_front)
+            
+                remap_back = cmds.createNode('remapValue', n = self._get_name('remapValueBack'))
+                cmds.setAttr('%s.value[0].value_FloatValue' % remap_back, 1)
+                cmds.setAttr('%s.value[1].value_FloatValue' % remap_back, 0)
+                cmds.connectAttr('%s.parameterV' % reverse_folicles[0], '%s.inputValue' % remap_back)
+            
+                            
             for inc2 in range(0, len(folicles)):
                 
                 folicle = folicles[inc2]
@@ -253,12 +265,17 @@ class EyeLidSphereRig2(util.BufferRig):
                 locator_top = locators[-1][0]
                 locator_btm = locators[-1][1]
                 
-                if self.first_folicle:
+                print 'iteration', inc2
+                
+                
+                
+                if self.first_folicle and inc2 != len(folicles)-1:
                     
+                    print 'past first ', folicle
                     
                     if reverse and inc2 != len(folicles)-1:
                         
-                        plus = cmds.createNode('plusMinusAverage', n = util.inc_name(self._get_name('plusMinusAverage', 'combo')))
+                        plus = cmds.createNode('plusMinusAverage', n = util.inc_name(self._get_name('plusMinusAverage', 'comboBtm')))
                         
                         util.connect_multiply('%s.parameterV' % self.first_folicle, '%s.input1D[0]' % plus, multiply_value)
                         util.connect_multiply('%s.parameterV' % self.last_folicle, '%s.input1D[1]' % plus, (1-multiply_value) )
@@ -270,26 +287,40 @@ class EyeLidSphereRig2(util.BufferRig):
                         
                     if not reverse:
                 
-                        remap1 = cmds.createNode('remapValue', n = self._get_name('remapValue'))
-                        remap2 = cmds.createNode('remapValue', n = self._get_name('remapValue'))
                         
-                        cmds.connectAttr('%s.parameterV' % self.first_folicle, '%s.inputValue' % remap1)
+                        remap_front2 = cmds.createNode('remapValue', n = self._get_name('remapValueFront'))
+                        #remap_back2 = cmds.createNode('remapValue', n = self._get_name('remapValueBack'))
+        
+                        util.connect_multiply('%s.outValue' % remap_front, '%s.inputValue' % remap_front2, multiply_value)
+                        #util.connect_multiply('%s.outValue' % remap_back, '%s.inputValue' % remap_back2, (1-multiply_value))
                         
-                        cmds.setAttr('%s.value[0].value_FloatValue' % remap1, 1)
-                        cmds.setAttr('%s.value[1].value_FloatValue' % remap1, 0)
+                        cmds.setAttr('%s.value[0].value_FloatValue' % remap_front2, 1)
+                        cmds.setAttr('%s.value[1].value_FloatValue' % remap_front2, 0)
+
+                        #cmds.setAttr('%s.value[0].value_FloatValue' % remap_back2, 1)
+                        #cmds.setAttr('%s.value[1].value_FloatValue' % remap_back2, 0)
                         
-                        util.connect_multiply('%s.outValue' % remap1, '%s.inputValue' % remap2, multiply_value)
+                        plus = cmds.createNode('plusMinusAverage', n = util.inc_name(self._get_name('plusMinusAverage', 'combo')))
+                        cmds.setAttr('%s.operation' % plus, 2)
+                        cmds.connectAttr('%s.outValue' % remap_front2, '%s.input1D[0]' % plus)
+                        #util.connect_multiply('%s.parameterV' % reverse_folicles[0], '%s.input1D[1]' % plus, (1-multiply_value))
+                        util.connect_multiply('%s.outValue' % remap_back, '%s.input1D[1]' % plus, (1-multiply_value))
                         
-                        cmds.setAttr('%s.value[0].value_FloatValue' % remap2, 1)
-                        cmds.setAttr('%s.value[1].value_FloatValue' % remap2, 0)
+                        #cmds.connectAttr('%s.outValue' % remap_back2, '%s.input1D[1]' % plus)
                         
-                        cmds.connectAttr('%s.outValue' % remap2, '%s.parameterV' % folicle)
+                        cmds.connectAttr('%s.output1D' % plus, '%s.parameterV' % folicle)
+                        
+                        
+                        #cmds.connectAttr('%s.outValue' % remap2, '%s.parameterV' % folicle)
                         
                     cmds.connectAttr('%s.parameterU' % self.first_folicle, '%s.parameterU' % folicle)
                     #util.connect_multiply('%s.parameterU' % self.first_folicle, '%s.parameterU' % folicle, multiply_value)
                     
                     
                 if not self.first_folicle:
+                    
+                    print 'at first', folicle
+                    
                     self.first_folicle = folicle
                     self.last_folicle = reverse_folicle
                     
@@ -332,10 +363,10 @@ class EyeLidSphereRig2(util.BufferRig):
         locator_group = cmds.group(em = True, n = util.inc_name(self._get_name('locators')))
         
         self.curve_locators = []
-        """
-        for locator_group in locators:
+        
+        for sub_locator in locators:
             
-            locator = locator_group[0]
+            locator = sub_locator[0]
             
             locator_world = cmds.spaceLocator(n = util.inc_name(self._get_name('locator')))[0]
             
@@ -349,7 +380,8 @@ class EyeLidSphereRig2(util.BufferRig):
             
             cmds.parent(locator_world, locator_group)
             cmds.pointConstraint(locator_world, locator)
-        """ 
+        
+        
         
         cmds.parent(locator_group, self.setup_group)
         
@@ -423,13 +455,13 @@ class EyeLidSphereRig2(util.BufferRig):
         self._create_locator_group()
         self._create_nurbs_sphere()
         
-        #self._create_follicles(reverse = False)
-        #self._attach_locators_to_curve()
+        self._create_follicles(reverse = False)
+        self._attach_locators_to_curve()
         
         self._create_follicles(reverse = True)
-        #self._attach_locators_to_curve()
+        self._attach_locators_to_curve()
         
-        #self._create_controls()
+        self._create_controls()
         
         cmds.parent(self.top_group, self.setup_group)
         
