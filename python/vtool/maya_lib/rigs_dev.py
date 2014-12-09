@@ -476,27 +476,27 @@ class MouthTweakers(util.Rig):
         for inc in range(0, len(locators1)):
             if inc != len(locators1)-1:
                 
-                pos = cmds.xform(locators1[inc+1], q = True, ws = True, t = True)
+                #pos = cmds.xform(locators1[inc+1], q = True, ws = True, t = True)
                 
-                if pos[0] < -0.1 or pos[0] > 0.1:
-                    print locators1[inc], locators1[inc+1]
-                    aim = cmds.aimConstraint(locators1[inc+1], locators1[inc])[0]
-                    cmds.setAttr('%s.worldUpType' % aim, 4)
-                    
-                    if inc != 0:
-                        cmds.setAttr('%s.worldUpType' % aim, 2)
-                        cmds.connectAttr('%s.worldMatrix' % locators1[inc-1], '%s.worldUpMatrix' % aim)
+                #if pos[0] < -0.1 or pos[0] > 0.1:
+                print locators1[inc], locators1[inc+1]
+                aim = cmds.aimConstraint(locators1[inc+1], locators1[inc])[0]
+                #cmds.setAttr('%s.worldUpType' % aim, 4)
                 
-                pos = cmds.xform(locators2[inc+1], q = True, ws = True, t = True)
+                #if inc != 0:
+                #    cmds.setAttr('%s.worldUpType' % aim, 2)
+                #    cmds.connectAttr('%s.worldMatrix' % locators1[inc-1], '%s.worldUpMatrix' % aim)
+            
+                #pos = cmds.xform(locators2[inc+1], q = True, ws = True, t = True)
                 
-                if pos[0] < -0.1 or pos[0] > 0.1:
-                    print locators2[inc], locators2[inc+1]
-                    aim = cmds.aimConstraint(locators2[inc+1], locators2[inc])[0]
-                    cmds.setAttr('%s.worldUpType' % aim, 4)
-                    
-                    if inc != 0:
-                        cmds.setAttr('%s.worldUpType' % aim, 2)
-                        cmds.connectAttr('%s.worldMatrix' % locators2[inc-1], '%s.worldUpMatrix' % aim)
+                #if pos[0] < -0.1 or pos[0] > 0.1:
+                print locators2[inc], locators2[inc+1]
+                aim = cmds.aimConstraint(locators2[inc+1], locators2[inc])[0]
+                #cmds.setAttr('%s.worldUpType' % aim, 4)
+                
+                #if inc != 0:
+                #    cmds.setAttr('%s.worldUpType' % aim, 2)
+                #    cmds.connectAttr('%s.worldMatrix' % locators2[inc-1], '%s.worldUpMatrix' % aim)
                     
     def _add_joints(self, joints1, joints2):
     
@@ -648,11 +648,13 @@ class MouthTweakers(util.Rig):
             
             joints.append(muzzle_joint)
     
+            """
             pos = cmds.xform(muzzle_joints[inc], q = True, t = True, ws = True)
-            if pos[0] > -0.01 and pos[0] < 0.1:
-                cmds.setAttr('%s.jointOrientX' % muzzle_joint, -90)
-                cmds.setAttr('%s.jointOrientZ' % muzzle_joint, -90)
-    
+            if pos[0] > -0.1 and pos[0] < 0.1:
+                print 'setting orient!!!!!!!!!!', muzzle_joint
+                cmds.setAttr('%s.jointOrientX' % muzzle_joint, 0)
+            """
+            
             
             aim = cmds.aimConstraint(lip_joints[inc], muzzle_joints[inc])[0]
             # there is a cycle, create a temporary group at  lip_joints[inc] instead of using lip_joints[inc]
@@ -662,8 +664,8 @@ class MouthTweakers(util.Rig):
                 cmds.setAttr('%s.worldUpType' % aim, 2)
                 cmds.connectAttr('%s.worldMatrix' % new_muzzle_joints[-1], '%s.worldUpMatrix' % aim)
                 
-            #cmds.delete(aim)
-            #cmds.makeIdentity(muzzle_joints[inc], r = True, apply = True)
+            cmds.delete(aim)
+            cmds.makeIdentity(muzzle_joints[inc], r = True, apply = True)
             
             end_joint = cmds.duplicate(lip_joints[inc], n = util.inc_name( 'joint_%s' % self._get_name('sub') ))[0]
             cmds.parent(end_joint, muzzle_joint)
@@ -672,12 +674,15 @@ class MouthTweakers(util.Rig):
     
             sub_joints = util.subdivide_joint(muzzle_joint, end_joint, name = self._get_name('sub'), count = 2)
             
+            """
             pos = cmds.xform(lip_joints[inc], q = True, t = True, ws = True)
-            if pos[0] > -0.01 and pos[0] < 0.1:
+            if pos[0] > -0.1 and pos[0] < 0.1:
             #    cmds.setAttr('%s.jointOrientX' % lip_joints[inc], 90)
-                cmds.setAttr('%s.jointOrientY' % lip_joints[inc], 90)
-            #    cmds.setAttr('%s.jointOrientZ' % lip_joints[inc], 180)
-                    
+                cmds.setAttr('%s.jointOrientX' % lip_joints[inc], -180)
+            #    cmds.setAttr('%s.jointOrientZ' % lip_joints[incmds.setAttr('%s.jointOrientX' % muzzle_joint, -180)
+                cmds.setAttr('%s.jointOrientZ' % lip_joints[inc], -90)
+            """
+              
             joints += sub_joints
             
             joints.append(end_joint)
@@ -830,13 +835,13 @@ class MouthTweakers(util.Rig):
         ik_handles = self._create_ik( muzzle_joints, lip_joints)
         
         locators1, locators2 = self._create_locators( muzzle_joints, lip_joints)
-        """
+        
         self._attach_ik(locators1, locators2, ik_handles, self.lip_curve)
         
         distance_locators = self._attach_scale( muzzle_joints, lip_joints, locators1, locators2)
         
         if len(lip_joints) > 1:
-            print 'adding aims$$$$$$$$$$$$$$$$$$$$$$$$'
+            
             self._aim_locators(locators1, locators2)
         
         if self.lip_curve:
@@ -850,7 +855,7 @@ class MouthTweakers(util.Rig):
         self._attach_joints_to_locators(self.sub_locators2, lip_joints)
         
         self._create_locator_controls(self.sub_locators2)
-        """
+        
         
                 
                 
