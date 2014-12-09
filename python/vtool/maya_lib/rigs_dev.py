@@ -461,8 +461,8 @@ class MouthTweakers(util.Rig):
         
         self.respect_side = True
         
-        self.top_lip_curve = None
-        self.top_muzzle_curve = None
+        self.lip_curve = None
+        self.muzzel_curve = None
         
         self.btm_lip_curve = None
         self.btm_muzzle_curve = None
@@ -478,14 +478,26 @@ class MouthTweakers(util.Rig):
                 
                 pos = cmds.xform(locators1[inc+1], q = True, ws = True, t = True)
                 
-                if pos[0] < -0.01 and pos[0] > 0.1:
-                    aim = cmds.aimConstraint(locators1[inc], locators1[inc+1])
+                if pos[0] < -0.1 or pos[0] > 0.1:
+                    print locators1[inc], locators1[inc+1]
+                    aim = cmds.aimConstraint(locators1[inc+1], locators1[inc])[0]
+                    cmds.setAttr('%s.worldUpType' % aim, 4)
+                    
+                    if inc != 0:
+                        cmds.setAttr('%s.worldUpType' % aim, 2)
+                        cmds.connectAttr('%s.worldMatrix' % locators1[inc-1], '%s.worldUpMatrix' % aim)
                 
                 pos = cmds.xform(locators2[inc+1], q = True, ws = True, t = True)
                 
-                if pos[0] < -0.01 and pos[0] > 0.1:
-                    aim = cmds.aimConstraint(locators2[inc], locators2[inc+1])
-    
+                if pos[0] < -0.1 or pos[0] > 0.1:
+                    print locators2[inc], locators2[inc+1]
+                    aim = cmds.aimConstraint(locators2[inc+1], locators2[inc])[0]
+                    cmds.setAttr('%s.worldUpType' % aim, 4)
+                    
+                    if inc != 0:
+                        cmds.setAttr('%s.worldUpType' % aim, 2)
+                        cmds.connectAttr('%s.worldMatrix' % locators2[inc-1], '%s.worldUpMatrix' % aim)
+                    
     def _add_joints(self, joints1, joints2):
     
         for inc in range(0, len(joints1)):
@@ -526,7 +538,7 @@ class MouthTweakers(util.Rig):
             
             cmds.pointConstraint(locators2[inc], ik_handles[inc])
             
-            if self.top_lip_curve:
+            if self.lip_curve:
                 util.attach_to_curve(locators2[inc], curve)
     
     
@@ -535,27 +547,55 @@ class MouthTweakers(util.Rig):
         
         locator1_gr = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'locators1')))
         locator2_gr = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'locators2')))
+        
+        
+        
         cmds.parent(locator1_gr, self.setup_group)
         cmds.parent(locator2_gr, self.setup_group)
         
         locators1 = []
         locators2 = []
+        
+        self.sub_locators1 = []
+        self.sub_locators2 = []
     
         for inc in range(0, len(joints1)):
             
             loc1 = cmds.spaceLocator(n = 'locator_%s' % joints1[inc])[0]
-    
+            sub_loc1 = cmds.spaceLocator(n = 'locatorSub_%s' % joints1[inc])[0]
+            cmds.setAttr('%s.localScaleX' % loc1, .1)
+            cmds.setAttr('%s.localScaleY' % loc1, .1)
+            cmds.setAttr('%s.localScaleZ' % loc1, .1)
+            cmds.setAttr('%s.localScaleX' % sub_loc1, .1)
+            cmds.setAttr('%s.localScaleY' % sub_loc1, .1)
+            cmds.setAttr('%s.localScaleZ' % sub_loc1, .1)
+            
             util.MatchSpace( joints1[inc] , loc1 ).translation_rotation()
+            util.MatchSpace( joints1[inc] , sub_loc1 ).translation_rotation()
     
             loc2 = cmds.spaceLocator(n = 'locator_%s' % joints2[inc])[0]
+            sub_loc2 = cmds.spaceLocator(n = 'locatorSub_%s' % joints2[inc])[0]
+            cmds.setAttr('%s.localScaleX' % loc2, .1)
+            cmds.setAttr('%s.localScaleY' % loc2, .1)
+            cmds.setAttr('%s.localScaleZ' % loc2, .1)
+            cmds.setAttr('%s.localScaleX' % sub_loc2, .1)
+            cmds.setAttr('%s.localScaleY' % sub_loc2, .1)
+            cmds.setAttr('%s.localScaleZ' % sub_loc2, .1)
     
             util.MatchSpace( joints2[inc] , loc2 ).translation_rotation()    
-    
-            cmds.parentConstraint(loc1, joints1[inc], mo = True)
-            cmds.orientConstraint(loc2, joints2[inc], mo = True)
+            util.MatchSpace( joints2[inc] , sub_loc2 ).translation_rotation()
+            
+            #cmds.parentConstraint(loc1, joints1[inc], mo = True)
+            #cmds.orientConstraint(loc2, joints2[inc], mo = True)
     
             locators1.append(loc1)
             locators2.append(loc2)
+            
+            self.sub_locators1.append(sub_loc1)
+            self.sub_locators2.append(sub_loc2)
+            
+            cmds.parent(sub_loc1, loc1)
+            cmds.parent(sub_loc2, loc2)
     
         cmds.parent(locators1, locator1_gr)
         cmds.parent(locators2, locator2_gr)
@@ -584,13 +624,7 @@ class MouthTweakers(util.Rig):
         joints_gr = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'joints')))
         cmds.parent(joints_gr, self.setup_group)
     
-        #muzzle_joints, muzzle_joint_group, muzzle_control_group = util.create_joints_on_curve( curve1, count, 'muzzle1', attach = False)
-        #lip_joints, lip_joint_group, lip_control_group = util.create_joints_on_curve( curve2, count, 'lip1', attach = False)
-    
-        #cmds.parent(muzzle_joints, muzzle_joint_group)
-        #cmds.parent(lip_joints, lip_joint_group)
-    
-        if self.top_lip_curve and self.top_muzzle_curve:
+        if self.lip_curve and self.muzzel_curve:
     
             muzzle_joints = util.create_oriented_joints_on_curve( curve1, count, self._get_name('muzzle'))
             lip_joints = util.create_oriented_joints_on_curve( curve2, count, self._get_name('lip'))
@@ -602,14 +636,7 @@ class MouthTweakers(util.Rig):
             
             muzzle_joints = self._create_joints_from_locators(self.muzzle_locators)
             lip_joints = self._create_joints_from_locators(self.lip_locators)
-
-        
-        
-        #cmds.makeIdentity(muzzle_joints, jo = True, apply = True)
-        #cmds.makeIdentity(lip_joints, jo = True, apply = True)
-    
-
-        
+ 
         new_muzzle_joints = []
         new_lip_joints = []
     
@@ -626,16 +653,24 @@ class MouthTweakers(util.Rig):
                 cmds.setAttr('%s.jointOrientX' % muzzle_joint, -90)
                 cmds.setAttr('%s.jointOrientZ' % muzzle_joint, -90)
     
-            aim = cmds.aimConstraint(lip_joints[inc], muzzle_joint)
-            cmds.delete(aim)
-            cmds.makeIdentity(muzzle_joints[inc], r = True, apply = True)
             
-            dup = cmds.duplicate(lip_joints[inc], n = util.inc_name( 'joint_%s' % self._get_name('sub') ))[0]
-            cmds.parent(dup, muzzle_joint)
-            cmds.makeIdentity(dup, jo = True, apply = True)
-            cmds.parent(lip_joints[inc], dup)
+            aim = cmds.aimConstraint(lip_joints[inc], muzzle_joints[inc])[0]
+            # there is a cycle, create a temporary group at  lip_joints[inc] instead of using lip_joints[inc]
+            cmds.setAttr('%s.worldUpType' % aim, 4)
+            
+            if inc > 0:
+                cmds.setAttr('%s.worldUpType' % aim, 2)
+                cmds.connectAttr('%s.worldMatrix' % new_muzzle_joints[-1], '%s.worldUpMatrix' % aim)
+                
+            #cmds.delete(aim)
+            #cmds.makeIdentity(muzzle_joints[inc], r = True, apply = True)
+            
+            end_joint = cmds.duplicate(lip_joints[inc], n = util.inc_name( 'joint_%s' % self._get_name('sub') ))[0]
+            cmds.parent(end_joint, muzzle_joint)
+            cmds.makeIdentity(end_joint, jo = True, apply = True)
+            cmds.parent(lip_joints[inc], end_joint)
     
-            sub_joints = util.subdivide_joint(muzzle_joint, dup, name = self._get_name('sub'), count = 2)
+            sub_joints = util.subdivide_joint(muzzle_joint, end_joint, name = self._get_name('sub'), count = 2)
             
             pos = cmds.xform(lip_joints[inc], q = True, t = True, ws = True)
             if pos[0] > -0.01 and pos[0] < 0.1:
@@ -645,9 +680,7 @@ class MouthTweakers(util.Rig):
                     
             joints += sub_joints
             
-            joints.append(dup)
-        
-            
+            joints.append(end_joint)
             
             new_joints = []
         
@@ -657,10 +690,11 @@ class MouthTweakers(util.Rig):
                 new_joints.append(new_joint)
             
             lip_joint = cmds.rename(lip_joints[inc], util.inc_name(self._get_name('joint', 'lip_offset%s' % (inc+1))))
-            joints.append(lip_joint)
+            new_joints.append(lip_joint)
             
             new_muzzle_joints.append( new_joints[0] )
             new_lip_joints.append( new_joints[-1] )
+            
                 
             
         
@@ -683,18 +717,21 @@ class MouthTweakers(util.Rig):
             
             ik = util.IkHandle('top_lip')
             ik.set_start_joint( joints1[inc] )
-            ik.set_end_joint( joints2[inc] )
+            
+            parent_joint = cmds.listRelatives(joints2[inc], p = True)[0]
+            
+            ik.set_end_joint( parent_joint )
             ik.create()
         
             ik_handles.append( ik.ik_handle )
     
         cmds.parent(ik_handles, ik_gr)
-    
+        cmds.hide(ik_gr)
         return ik_handles 
 
     def set_lip_curves(self, curve_lip, curve_muzzle):
-        self.top_lip_curve = curve_lip
-        self.top_muzzle_curve = curve_muzzle
+        self.lip_curve = curve_lip
+        self.muzzel_curve = curve_muzzle
     
     def set_lip_locators(self, lip_locators, muzzle_locators):
         self.lip_locators = lip_locators
@@ -704,12 +741,12 @@ class MouthTweakers(util.Rig):
         
         inc = 1
         
-        #control_curves = [self.top_lip_curve, self.top_muzzle_curve]
+        #control_curves = [self.lip_curve, self.muzzel_curve]
         
         #for curve in control_curves:
         
-        if self.top_lip_curve and not locators:
-            curve = self.top_lip_curve
+        if self.lip_curve and not locators:
+            curve = self.lip_curve
             
             clusters = util.cluster_curve(curve, self._get_name(), join_ends = False)
         
@@ -738,9 +775,9 @@ class MouthTweakers(util.Rig):
                 
             xform = util.create_xform_group(control.get())
             
-            if not self.top_lip_curve:
+            if not self.lip_curve:
                 util.MatchSpace(cluster, xform).translation()
-            if self.top_lip_curve:
+            if self.lip_curve:
                 util.MatchSpace(cluster, xform).translation_to_rotate_pivot()
 
             if self.respect_side:
@@ -758,29 +795,62 @@ class MouthTweakers(util.Rig):
             
         inc += 1
 
+    def _attach_joints_to_locators(self, locators, joints, constraint = 'parent'):
+        
+        for inc in range(0, len(locators)):
+            if constraint == 'parent':
+                cmds.parentConstraint(locators[inc], joints[inc], mo = True)
+            if constraint == 'orient':
+                cmds.orientConstraint(locators[inc], joints[inc], mo = True)
+    
+    def _create_locator_controls(self, locators):
+        
+        for locator in locators:
+            control = self._create_control(sub = True)
+            control.scale_shape(.09, .09, .09)
+            util.MatchSpace(locator, control.get()).translation_rotation()
+            
+            cmds.parent(control.get(), self.control_group)
+            
+            parent_locator = cmds.listRelatives(locator, p = True)[0]
+            
+            xform = util.create_xform_group(control.get())
+            driver = util.create_xform_group(control.get(), 'driver')
+            
+            util.create_follow_group(parent_locator, xform)
+            
+            cmds.parent(locator, control.get())
+    
     def create(self):
     
         super(MouthTweakers, self).create()
         
-        muzzle_joints, lip_joints = self._create_joints( self.top_muzzle_curve , self.top_lip_curve, 11) 
+        muzzle_joints, lip_joints = self._create_joints( self.muzzel_curve , self.lip_curve, 11) 
         
         ik_handles = self._create_ik( muzzle_joints, lip_joints)
-    
+        
         locators1, locators2 = self._create_locators( muzzle_joints, lip_joints)
-    
-        self._attach_ik(locators1, locators2, ik_handles, self.top_lip_curve)
-    
+        """
+        self._attach_ik(locators1, locators2, ik_handles, self.lip_curve)
+        
         distance_locators = self._attach_scale( muzzle_joints, lip_joints, locators1, locators2)
         
         if len(lip_joints) > 1:
+            print 'adding aims$$$$$$$$$$$$$$$$$$$$$$$$'
             self._aim_locators(locators1, locators2)
         
-        if self.top_lip_curve:
+        if self.lip_curve:
             self._create_controls()
-        if not self.top_lip_curve:
+        if not self.lip_curve:
             self._create_controls(locators2)
         
-        #add_joints(muzzle_joints, lip_joints)
+        self._attach_joints_to_locators(self.sub_locators1, muzzle_joints)
+        
+        
+        self._attach_joints_to_locators(self.sub_locators2, lip_joints)
+        
+        self._create_locator_controls(self.sub_locators2)
+        """
         
                 
                 
