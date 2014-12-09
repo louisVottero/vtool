@@ -162,8 +162,12 @@ class Process(object):
         return self.process_name
     
     def get_relative_process(self, relative_path):
+          
+        print 'getting relative process'
                      
         path = self.get_path()
+        
+        print 'path',path
         
         if not path:
             return
@@ -200,6 +204,8 @@ class Process(object):
             end_path = string.join(end_path, '/')
         if not end_path:
             end_path = relative_path
+          
+        print end_path, start_path
           
         process = Process(end_path)
         process.set_directory(start_path)

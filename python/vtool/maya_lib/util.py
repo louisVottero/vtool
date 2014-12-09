@@ -13004,9 +13004,25 @@ def get_y_intersection(curve, vector):
     
     return parameter                
     
+def get_side(transform, center_tolerance):
+    
+    if type(transform) == list or type(transform) == tuple:
+        position = transform
+    
+    if not type(transform) == list and not type(transform) == tuple:
+        position = cmds.xform(transform, q = True, ws = True, t = True)
+        
+    if position[0] > 0:
+        side = 'L'
 
-    
-    
+    if position[0] < 0:
+        side = 'R'
+        
+    if position[0] < center_tolerance and position[0] > center_tolerance*-1:
+        side = 'C'
+            
+    return side
+
 #--- animation
 
 def get_input_keyframes(node, node_only = True):
@@ -15547,6 +15563,8 @@ def set_color(nodes, color):
         if cmds.objExists(overrideEnabled):
             cmds.setAttr(overrideEnabled, 1)
             cmds.setAttr(overrideColor, color)
+
+
 
 def hide_attributes(node, attributes):
     
