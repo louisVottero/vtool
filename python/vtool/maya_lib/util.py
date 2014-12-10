@@ -7365,6 +7365,17 @@ class EyeRig(JointRig):
         
         self.ik_chain = duplicate_hierarchy.create()
         
+        cmds.parent(self.ik_chain[0], self.setup_group)
+        """
+        if self.extra_control:
+            duplicate_hierarchy = DuplicateHierarchy( self.joints[0] )
+        
+            duplicate_hierarchy.stop_at(self.joints[-1])
+            duplicate_hierarchy.replace('joint', 'extra_ik')
+            self.extra_ik_chain = duplicate_hierarchy.create()
+            cmds.parent(self.extra_ik_chain[0], self.setup_group)
+        """
+        
         if not self.skip_ik:
             ik = IkHandle(self.description)
             ik.set_start_joint(self.ik_chain[0])
@@ -7394,8 +7405,8 @@ class EyeRig(JointRig):
             
             connect_rotate(self.ik_chain[0], group1)
             
-            
-            cmds.orientConstraint(group2, self.joints[0])
+            if not self.extra_control:
+                cmds.orientConstraint(group2, self.joints[0])
             
             control =self._create_control()
             control.hide_scale_attributes()
@@ -7431,31 +7442,53 @@ class EyeRig(JointRig):
             cmds.orientConstraint(group2, self.joints[0])
         
         if self.extra_control:
+            
+            parent_group = cmds.group(em = True, n = inc_name(self._get_name('group', 'extra')))
+            aim_group = cmds.group(em = True, n = inc_name(self._get_name('group', 'aim_extra')))
+            
+            MatchSpace(self.joints[0], aim_group).translation_rotation()
+            MatchSpace(self.joints[0], parent_group).translation_rotation()
+            
+            cmds.parent(aim_group, parent_group)
+            
+            cmds.orientConstraint(group2, parent_group, mo = True)
+            cmds.parent(parent_group, self.control_group)
+            
+            
+            
+            cmds.orientConstraint(aim_group, self.joints[0])
+            
             control2 = self._create_control(sub = True)
             control2.hide_scale_and_visibility_attributes()
             control2 = control2.get()
         
             match = MatchSpace(self.joints[0], control2)
             match.translation_rotation()
+            
+            
+            
+            
+            
+            
         
             axis = self.eye_control_move[0]
             axis_value = self.eye_control_move[1]
                         
             if axis == 'X':
                 cmds.move(axis_value, 0,0 , control2, os = True, relative = True)
-                connect_multiply('%s.translateZ' % control2, '%s.rotateY' % group2, -self.rotate_value )
-                connect_multiply('%s.translateY' % control2, '%s.rotateZ' % group2, self.rotate_value )
+                connect_multiply('%s.translateZ' % control2, '%s.rotateY' % aim_group, -self.rotate_value )
+                connect_multiply('%s.translateY' % control2, '%s.rotateZ' % aim_group, self.rotate_value )
             if axis == 'Y':
                 cmds.move(0,axis_value, 0, control2, os = True, relative = True)
-                connect_multiply('%s.translateZ' % control2, '%s.rotateX' % group2, -self.rotate_value )
-                connect_multiply('%s.translateY' % control2, '%s.rotateZ' % group2, self.rotate_value )
+                connect_multiply('%s.translateZ' % control2, '%s.rotateX' % aim_group, -self.rotate_value )
+                connect_multiply('%s.translateY' % control2, '%s.rotateZ' % aim_group, self.rotate_value )
             if axis == 'Z':
                 cmds.move(0,0,axis_value, control2, os = True, relative = True)
-                connect_multiply('%s.translateX' % control2, '%s.rotateY' % group2, self.rotate_value )
-                connect_multiply('%s.translateY' % control2, '%s.rotateX' % group2, -self.rotate_value )
+                connect_multiply('%s.translateX' % control2, '%s.rotateY' % aim_group, self.rotate_value )
+                connect_multiply('%s.translateY' % control2, '%s.rotateX' % aim_group, -self.rotate_value )
             
-            xform2 = create_xform_group(control2)
-            cmds.parent(xform2, self.control_group)
+            xform2 = create_xform_group(control2)            
+            cmds.parent(xform2, parent_group)
             
             if axis == 'X':
                 cmds.transformLimits(control2,  tx =  (0, 0), etx = (1,1) )
@@ -9903,6 +9936,16 @@ class TransferWeight(object):
     def __init__(self, mesh):
         self.mesh = mesh
 
+        self.vertices = []
+        
+        if type(mesh) == str or type(mesh) == unicode:        
+            self.vertices = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
+        
+        if type(mesh) == list:
+            self.vertices = mesh
+            print mesh
+            self.mesh = mesh[0].split('.')[0]
+
         skin_deformer = self._get_skin_cluster(mesh)
         
         self.skin_clsuter= None
@@ -9925,7 +9968,6 @@ class TransferWeight(object):
             if not joint in influences:
                 cmds.skinCluster(self.skin_cluster, e = True, ai = joint, wt = 0.0, nw = 1)
         
-            
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh = None, percent =1):
         
         cmds.undoInfo(state = False)
@@ -9945,7 +9987,8 @@ class TransferWeight(object):
             index = get_index_at_skin_influence(joint,self.skin_cluster)
             destination_joint_map[index] = joint
             
-        verts = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
+        
+        verts = cmds.ls('%s.vtx[*]' % self.vertices, flatten = True)
                             
         weighted_verts = []
         
@@ -9973,7 +10016,7 @@ class TransferWeight(object):
         inc = 1
         
         for vert_index in weighted_verts:
-            vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
+            vert_name = '%s.vtx[%s]' % (self.vertices, vert_index)
         
             destination_value = 0
         
@@ -10043,7 +10086,7 @@ class TransferWeight(object):
             cmds.undoInfo(state = True)
             return
             
-        verts = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
+        verts = cmds.ls('%s.vtx[*]' % self.vertices, flatten = True)
         
         weighted_verts = []
         weights = {}
