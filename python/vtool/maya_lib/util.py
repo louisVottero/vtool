@@ -9946,13 +9946,20 @@ class TransferWeight(object):
             print mesh
             self.mesh = mesh[0].split('.')[0]
 
-        skin_deformer = self._get_skin_cluster(mesh)
+        print self.vertices
+        print self.mesh
+
+        skin_deformer = self._get_skin_cluster(self.mesh)
         
-        self.skin_clsuter= None
+        print skin_deformer
+        
+        self.skin_cluster= None
         
         if skin_deformer:
             self.skin_cluster = skin_deformer
         
+        
+        print self.skin_cluster
         
     def _get_skin_cluster(self, mesh):
         
@@ -9988,7 +9995,7 @@ class TransferWeight(object):
             destination_joint_map[index] = joint
             
         
-        verts = cmds.ls('%s.vtx[*]' % self.vertices, flatten = True)
+        verts = self.vertices
                             
         weighted_verts = []
         
@@ -10000,10 +10007,12 @@ class TransferWeight(object):
             
             for vert_index in range(0, len(verts)):
                 
-                value = source_value_map[influence_index][vert_index]
+                int_vert_index = int(vtool.util.get_last_number(verts[vert_index]))
+                
+                value = source_value_map[influence_index][int_vert_index]
                 
                 if value > 0.001:
-                    weighted_verts.append(vert_index)
+                    weighted_verts.append(int_vert_index)
         
         self._add_joints_to_skin(source_joints)
         
@@ -10016,7 +10025,7 @@ class TransferWeight(object):
         inc = 1
         
         for vert_index in weighted_verts:
-            vert_name = '%s.vtx[%s]' % (self.vertices, vert_index)
+            vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
         
             destination_value = 0
         
@@ -10057,6 +10066,7 @@ class TransferWeight(object):
         cmds.undoInfo(state = False)
         
         if not self.skin_cluster or not self.mesh:
+            print 'returning here at first catch'
             cmds.undoInfo(state = True)
             return
         
@@ -10082,11 +10092,13 @@ class TransferWeight(object):
             influence_values[index] = value_map[index]
             source_joint_weights.append(value_map[index])
                 
+        print 'source joint weights', source_joint_weights
+                
         if not source_joint_weights:
             cmds.undoInfo(state = True)
             return
             
-        verts = cmds.ls('%s.vtx[*]' % self.vertices, flatten = True)
+        verts = self.vertices#cmds.ls('%s.vtx[*]' % self.vertices, flatten = True)
         
         weighted_verts = []
         weights = {}
@@ -10095,17 +10107,24 @@ class TransferWeight(object):
             
             for vert_index in range(0, len(verts)):
                 
-                value = influence_values[influence_index][vert_index]
+                int_vert_index = vtool.util.get_last_number(verts[vert_index])
+                
+                
+                value = influence_values[influence_index][int_vert_index]
+                
+                
                 
                 if value > 0.001:
-                    if not vert_index in weighted_verts:
-                        weighted_verts.append(vert_index)
+                    if not int_vert_index in weighted_verts:
+                        weighted_verts.append(int_vert_index)
                     
-                    if vert_index in weights:
-                        weights[vert_index] += value
+                    if int_vert_index in weights:
+                        weights[int_vert_index] += value
                         
-                    if not vert_index in weights:
-                        weights[vert_index] = value
+                    if not int_vert_index in weights:
+                        weights[int_vert_index] = value
+        
+        print 'weighted verts', weighted_verts
         
         if not weighted_verts:
             cmds.undoInfo(state = True)
