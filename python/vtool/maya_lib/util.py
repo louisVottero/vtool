@@ -9946,8 +9946,6 @@ class TransferWeight(object):
             print mesh
             self.mesh = mesh[0].split('.')[0]
 
-        print self.vertices
-        print self.mesh
 
         skin_deformer = self._get_skin_cluster(self.mesh)
         

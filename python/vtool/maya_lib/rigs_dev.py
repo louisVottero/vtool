@@ -405,14 +405,24 @@ class EyeLidSphereRig2(util.BufferRig):
             
             cmds.parent(cluster_group, self.setup_group)
             
+            
             if inc == 1:
                 sub = False
+                name = 'top'
             if inc == 2:
                 sub = True
+                name = 'btm'
+                
+            group = cmds.group(em = True, n = self._get_name('group', name))
+            local_group = cmds.group(em = True, n = self._get_name('local_group', name))
             
-            group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'local')))
-            cmds.parent(group, self.setup_group)
             
+            
+            
+            #group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'local')))
+            cmds.parent(group, self.control_group)
+            cmds.parent(local_group, self.setup_group)
+                        
             for cluster in clusters:
                 control = self._create_control(sub = sub)
                 
@@ -427,10 +437,15 @@ class EyeLidSphereRig2(util.BufferRig):
                 util.MatchSpace(cluster, xform).translation_to_rotate_pivot()
                 
                 local, xform_local = util.constrain_local(control.get(), cluster, constraint = 'pointConstraint')
-                cmds.parent(xform_local, group)
+                #cmds.parent(xform_local, group)
                 #cmds.pointConstraint(control.get(), cluster)
                 
+                
+                
                 cmds.parent(xform, self.control_group)
+                
+                cmds.parent(xform, group)
+                cmds.parent(xform_local, local_group)
                 
             inc += 1
         
@@ -466,6 +481,8 @@ class MouthTweakers(util.Rig):
 
     def __init__(self, description, side):
         super(MouthTweakers, self).__init__(description, side)
+        
+        self.joint_control_group = None
         
         self.respect_side = True
         
@@ -599,12 +616,13 @@ class MouthTweakers(util.Rig):
     
         return locators1, locators2
     
-    def _create_joints_from_locators(self, locators):
+    def _create_joints_from_locators(self, locators, control = False):
         
         joints = []
         
         for locator in locators:
             cmds.select(cl = True)
+            
             joint = cmds.joint(n = util.inc_name(self._get_name('joint', 'temp')))
             
             const = cmds.parentConstraint(locator, joint)
@@ -630,40 +648,59 @@ class MouthTweakers(util.Rig):
         if not control:
             return joint
         
+        
+        if not self.joint_control_group:
+            group = cmds.group(em = True, n = self._get_name('controls', 'joint'))
+            cmds.parent(group, self.control_group)
+            self.joint_control_group = group
+        
         if control:
         
         
             xform = util.create_xform_group(joint)
-            aim = util.create_xform_group(joint, 'aim')
-            
+            #aim = util.create_xform_group(joint, 'aim')
+            aim = None
+            aim_control = None
             
             control = self._create_control(sub = True)
             control.rotate_shape(0,0,90)
             control.scale_shape(.09, .09, .09)
+            
             control_name = control.get()
+            
             control_name = cmds.rename(control_name, util.inc_name(control_name[:-1] + side))
             
             
-            
             xform_control = util.create_xform_group(control_name)
+            driver_control = util.create_xform_group(control_name, 'driver')
             
             cmds.connectAttr('%s.positionX' % point_on_curve, '%s.translateX' % xform_control)
             cmds.connectAttr('%s.positionY' % point_on_curve, '%s.translateY' % xform_control)
             cmds.connectAttr('%s.positionZ' % point_on_curve, '%s.translateZ' % xform_control)
+
+            cmds.connectAttr('%s.positionX' % point_on_curve, '%s.translateX' % xform)
+            cmds.connectAttr('%s.positionY' % point_on_curve, '%s.translateY' % xform)
+            cmds.connectAttr('%s.positionZ' % point_on_curve, '%s.translateZ' % xform)
             
-            aim_control = util.create_xform_group(control_name, 'aim')
+            #aim_control = util.create_xform_group(control_name, 'aim')
             
             util.MatchSpace(joint, xform_control).translation_rotation()
             
             
-            util.connect_translate(xform_control, xform)
-            util.connect_rotate(aim_control, aim)
+            #util.connect_translate(xform_control, xform)
+            #util.connect_rotate(aim_control, aim)
+            
+            driver = util.create_xform_group(joint, 'driver')
             
             util.connect_translate(control_name, joint)
             util.connect_rotate(control_name, joint)
             util.connect_scale(control_name, joint)
             
-            cmds.parent(xform_control, self.control_group)
+            util.connect_translate(driver_control, driver)
+            util.connect_rotate(driver_control, driver)
+            util.connect_scale(driver_control, driver)
+            
+            cmds.parent(xform_control, self.joint_control_group)
             cmds.parent(xform, self.setup_group)
             
             return [joint, aim, xform,control_name, aim_control, xform_control]
@@ -698,6 +735,7 @@ class MouthTweakers(util.Rig):
         
     def _create_joints_with_control_on_curve(self, curve, section_count = 5, control = False):
         
+        
         print curve
         length = cmds.arclen(curve, ch = False)
         
@@ -715,10 +753,6 @@ class MouthTweakers(util.Rig):
 
         
         middle_joint, middle_aim, middle_xform, middle_control, middle_aim_control, middle_xform_control = self._create_joint(curve, length/2.0, control = True)
-        #middle_param = util.get_parameter_from_curve_length(curve, length/2.0)
-        #middle_position = util.get_point_from_curve_parameter(curve, middle_param)
-        #cmds.select(cl = True)
-        #middle_joint = cmds.joint(p = middle_position, n = util.inc_name(self._get_name('joint')))
         
         for inc in range(0, sections/2):
         
@@ -734,57 +768,34 @@ class MouthTweakers(util.Rig):
             side2 = util.get_side(position2, 0.1)
             
             
-            joint1, aim1, xform1, control1, aim_control1, xform_control1 = self._create_joint(curve, start_offset, control = True)
-            #joint1 = cmds.joint(p = position1, n = util.inc_name(self._get_name('joint')))
-            
+            joint1, aim1, xform1, control1, aim_control1, xform_control1 = self._create_joint(curve, start_offset, control = True)    
             joint2, aim2, xform2, control2, aim_control2, xform_control2 = self._create_joint(curve, end_offset, control = True)
-            #joint2 = cmds.joint(p = position2, n = util.inc_name(self._get_name('joint')))
             
-            #joint1 = cmds.rename(joint1, joint1[:-1] + side1)
-            #joint2 = cmds.rename(joint2, joint2[:-1] + side2)
-            
+            """
             if len(joints1):
                 
                 aim = cmds.aimConstraint(aim_controls1[-1], aim_control1)
                 
-                #cmds.makeIdentity(joint1, r = True, apply = True)
-                
             if len(joints2):
                 
                 aim = cmds.aimConstraint(aim_control2, aim_controls2[-1])
-                
-                
-                #cmds.makeIdentity(joints2[-1], r = True, apply = True)
             
             if inc == (sections/2)-1:
-                #aim = cmds.aimConstraint(joints1[-1], joint1)
                 
-                aim = cmds.aimConstraint(aim_controls1[-1], aim_control1)
-                #cmds.delete(aim)
-                #cmds.makeIdentity(joint1, r = True, apply = True)
-                
-                #aim = cmds.aimConstraint(middle_joint, joint2)
-                
+                aim = cmds.aimConstraint(aim_controls1[-1], aim_control1)    
                 aim = cmds.aimConstraint(middle_aim_control, aim_control2)
-                #cmds.delete(aim)
-                #cmds.makeIdentity(joint2, r = True, apply = True)
-            
+            """
             start_offset += section_length
             end_offset -= section_length
         
-            aim_controls1.append(aim_control1)
-            aim_controls2.append(aim_control2)
-            
-            
+            #aim_controls1.append(aim_control1)
+            #aim_controls2.append(aim_control2)
             
             joints1.append(joint1)
             joints2.append(joint2)
             
-        aim = cmds.aimConstraint(aim_controls1[1], aim_controls1[0], aimVector = [-1,0,0])
-        #cmds.delete(aim)
-        #cmds.makeIdentity(joints1[0], r = True, apply = True)
-
-        
+        #aim = cmds.aimConstraint(aim_controls1[1], aim_controls1[0], aimVector = [-1,0,0])
+                
         return joints1 + [middle_joint] + joints2
         
         
@@ -799,16 +810,13 @@ class MouthTweakers(util.Rig):
             
             muzzle_joints = self._create_joints_on_curve(curve1, 5)
             lip_joints = self._create_joints_with_control_on_curve(curve2, 5)
-            #muzzle_joints = util.create_oriented_joints_on_curve( curve1, count, self._get_name('muzzle'))
-            #lip_joints = util.create_oriented_joints_on_curve( curve2, count, self._get_name('lip'))
-            
-            #cmds.parent(muzzle_joints, w = True)
-            #cmds.parent(lip_joints, w = True)
             
         if self.lip_locators and self.muzzle_locators:
             
             muzzle_joints = self._create_joints_from_locators(self.muzzle_locators)
             lip_joints = self._create_joints_from_locators(self.lip_locators)
+            
+            
  
         new_muzzle_joints = []
         new_lip_joints = []
@@ -854,7 +862,9 @@ class MouthTweakers(util.Rig):
             new_muzzle_joints.append( new_joints[0] )
             new_lip_joints.append( new_joints[-1] )
             
-                
+        
+        
+          
             
         
         muzzle_joints = new_muzzle_joints
@@ -862,6 +872,11 @@ class MouthTweakers(util.Rig):
         cmds.parent(muzzle_joints, joints_gr)
         
         
+        
+        if self.lip_locators:
+            
+            print lip_joints[0], muzzle_joints
+            cmds.parent(lip_joints[0], muzzle_joints[-1])
         
         return muzzle_joints, lip_joints
     
@@ -925,33 +940,59 @@ class MouthTweakers(util.Rig):
         group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'local')))
         cmds.parent(group, self.setup_group)
         
+        if not locators:
+            midpoint = len(clusters)/2.0
+        
+            sub_clusters = clusters[int(midpoint):]
+        
+            sub_clusters.reverse()
+        
+            clusters = clusters[:int(midpoint)] + sub_clusters
+        
         for cluster in clusters:
             
-            
             control = self._create_control()
+            
+            
             
             control.hide_scale_and_visibility_attributes()
             
             control.rotate_shape(90, 0, 0)
             control.scale_shape(.1, .1, .1)                
             
-
+            if self.lip_locators:
+                sub_control = self._create_control(sub = True)
+                sub_control.rotate_shape(90, 0, 0)
+                sub_control.scale_shape(.1, .1, .1)
                 
-            xform = util.create_xform_group(control.get())
+                cmds.parent(sub_control.get(), control.get())
+                
+                
+                
+                
             
             if not self.lip_curve:
-                util.MatchSpace(cluster, xform).translation()
+                util.MatchSpace(cluster, control.get()).translation()
             if self.lip_curve:
-                util.MatchSpace(cluster, xform).translation_to_rotate_pivot()
+                util.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
 
-            if self.respect_side:
-                side = control.color_respect_side(center_tolerance = 0.1)
+            if self.side == 'C':
+                if self.respect_side:
+                    side = control.color_respect_side(center_tolerance = 0.1)
+                
+                if side != 'C':
+                    control_name = cmds.rename(control.get(), util.inc_name(control.get()[0:-1] + side))
+                    control = util.Control(control_name)
             
-            if side != 'C':
-                control_name = cmds.rename(control.get(), util.inc_name(control.get()[0:-1] + side))
-                control = util.Control(control_name)            
+            xform = util.create_xform_group(control.get())
+            driver = util.create_xform_group(control.get(), 'driver')
             
+                
             local, xform_local = util.constrain_local(control.get(), cluster, constraint = 'pointConstraint')
+            local_driver = util.create_xform_group(local, 'driver')
+            
+            util.connect_translate(driver, local_driver)
+            
             cmds.parent(xform_local, group)
             #cmds.pointConstraint(control.get(), cluster)
             
@@ -970,6 +1011,7 @@ class MouthTweakers(util.Rig):
     def _create_locator_controls(self, locators):
         
         for locator in locators:
+            
             control = self._create_control(sub = True)
             control.scale_shape(.09, .09, .09)
             util.MatchSpace(locator, control.get()).translation_rotation()
