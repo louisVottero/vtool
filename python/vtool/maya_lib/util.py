@@ -15431,6 +15431,8 @@ def get_index_at_alias(alias, blendshape):
     
 def chad_extract_shape(skin_mesh, corrective):
     
+    print 'extracting', skin_mesh, corrective
+    
     try:
     
         envelopes = EnvelopeHistory(skin_mesh)
@@ -15478,7 +15480,7 @@ def chad_extract_shape(skin_mesh, corrective):
         cmds.rename(orig, offset)
         
         
-        
+        print 'extracting shape', offset
         return offset
 
     except Exception:
