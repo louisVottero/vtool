@@ -2061,7 +2061,6 @@ class StretchyChain:
                 
                 cmds.connectAttr('%s.outputX' % distance_offset, '%s.input1X' % divide_distance)
                 
-                print joint
                 cmds.connectAttr('%s.outputX' % divide_distance, '%s.scale%s' % (joint, self.scale_axis))
             
             
@@ -9943,21 +9942,16 @@ class TransferWeight(object):
         
         if type(mesh) == list:
             self.vertices = mesh
-            print mesh
+            
             self.mesh = mesh[0].split('.')[0]
 
 
         skin_deformer = self._get_skin_cluster(self.mesh)
         
-        print skin_deformer
-        
         self.skin_cluster= None
         
         if skin_deformer:
             self.skin_cluster = skin_deformer
-        
-        
-        print self.skin_cluster
         
     def _get_skin_cluster(self, mesh):
         
@@ -10064,7 +10058,6 @@ class TransferWeight(object):
         cmds.undoInfo(state = False)
         
         if not self.skin_cluster or not self.mesh:
-            print 'returning here at first catch'
             cmds.undoInfo(state = True)
             return
         
@@ -10089,9 +10082,7 @@ class TransferWeight(object):
             
             influence_values[index] = value_map[index]
             source_joint_weights.append(value_map[index])
-                
-        print 'source joint weights', source_joint_weights
-                
+            
         if not source_joint_weights:
             cmds.undoInfo(state = True)
             return
@@ -10121,8 +10112,6 @@ class TransferWeight(object):
                         
                     if not int_vert_index in weights:
                         weights[int_vert_index] = value
-        
-        print 'weighted verts', weighted_verts
         
         if not weighted_verts:
             cmds.undoInfo(state = True)
@@ -10644,8 +10633,6 @@ class BasePoseControl(object):
             
         
     def _refresh_pose_control(self):
-        
-        print self.pose_control, type(self.pose_control)
         
         if not cmds.objExists(self.pose_control):
             return
@@ -12930,7 +12917,7 @@ def create_distance_falloff(source_transform, source_local_vector = [1,0,0], tar
 def create_distance_scale(xform1, xform2, axis = 'X'):
     
     locator1 = cmds.spaceLocator(n = inc_name('locatorDistance_%s' % xform1))[0]
-    print xform1, locator1
+    
     MatchSpace(xform1, locator1).translation()
     
     locator2 = cmds.spaceLocator(n = inc_name('locatorDistance_%s' % xform2))[0]
@@ -13286,7 +13273,7 @@ def edge_to_vertex(edges):
     mesh = mesh[0]
     
     for edge in edges:
-        print edge
+        
         info = cmds.polyInfo(edge, edgeToVertex = True)
         info = info[0]
         info = info.split()
@@ -15442,8 +15429,6 @@ def get_index_at_alias(alias, blendshape):
     
 def chad_extract_shape(skin_mesh, corrective):
     
-    print 'extracting', skin_mesh, corrective
-    
     try:
     
         envelopes = EnvelopeHistory(skin_mesh)
@@ -15490,8 +15475,6 @@ def chad_extract_shape(skin_mesh, corrective):
         
         cmds.rename(orig, offset)
         
-        
-        print 'extracting shape', offset
         return offset
 
     except Exception:
