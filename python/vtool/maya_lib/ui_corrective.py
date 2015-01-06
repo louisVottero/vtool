@@ -56,6 +56,7 @@ class PoseManager(ui.MayaWindow):
         
     def _pose_renamed(self, new_name):
         
+        new_name = str(new_name)
         self.pose.mesh_widget.set_pose(new_name)
         
     def select_pose(self):
@@ -70,6 +71,7 @@ class PoseManager(ui.MayaWindow):
         if not items:
             return    
          
+        pose_name = str(pose_name)
         self.pose.mesh_widget.set_pose(pose_name)
             
     #def update_meshes(self, meshes, index):
@@ -529,6 +531,8 @@ class PoseTreeWidget(BaseTreeWidget):
         if not pose_name:
             return
         
+        pose_name = str(pose_name)
+        
         pose = util.PoseControl()
         pose.set_pose(pose_name)
         pose.set_axis(string)
@@ -562,6 +566,9 @@ class PoseTreeWidget(BaseTreeWidget):
             pose = pose_names[0]
             
             #cmds.select(pose)
+            
+            pose = str(pose)
+            
             util.PoseManager().set_pose(pose)
             #self.update_meshes(pose)
             
@@ -908,7 +915,7 @@ class MeshWidget(qt_ui.BasicWidget):
         found = []
         
         for item in items:
-            found.append( str( item.text() )  )
+            found.append( str( item.text() ) )
         
         return found
 

@@ -10644,6 +10644,12 @@ class BasePoseControl(object):
             
         
     def _refresh_pose_control(self):
+        
+        print self.pose_control, type(self.pose_control)
+        
+        if not cmds.objExists(self.pose_control):
+            return
+        
         shapes = cmds.listRelatives(self.pose_control, s = True)
         cmds.showHidden( shapes )
         
@@ -10894,6 +10900,8 @@ class BasePoseControl(object):
         return mesh
 
     def set_pose(self, pose_name):
+        
+        
         
         if not cmds.objExists('%s.description' % pose_name):
             return
