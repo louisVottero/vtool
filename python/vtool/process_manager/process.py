@@ -162,12 +162,8 @@ class Process(object):
         return self.process_name
     
     def get_relative_process(self, relative_path):
-          
-        print 'getting relative process'
-                     
+                    
         path = self.get_path()
-        
-        print 'path',path
         
         if not path:
             return
@@ -204,9 +200,7 @@ class Process(object):
             end_path = string.join(end_path, '/')
         if not end_path:
             end_path = relative_path
-          
-        print end_path, start_path
-          
+        
         process = Process(end_path)
         process.set_directory(start_path)
         
@@ -378,7 +372,7 @@ class Process(object):
 
         return files
     
-    def get_code_file(self, name):
+    def get_code_file(self, name, basename = False):
         
         data_folder = data.DataFolder(name, self.get_code_path())
         
@@ -386,7 +380,12 @@ class Process(object):
         
         if data_instance:
             filepath = data_instance.get_file()
-            return filepath
+            
+            if basename:
+                return util_file.get_basename(filepath)
+            
+            if not basename:
+                return filepath
         
     def create_code(self, name, data_type = 'script.python', inc_name = False, import_data = None):
         
@@ -543,6 +542,10 @@ class Process(object):
         states = []
         
         for line in lines:
+            
+            if not line:
+                continue
+            
             split_line = line.split()
             if len(split_line):
                 scripts.append(split_line[0])
@@ -552,10 +555,48 @@ class Process(object):
                 
             if len(split_line) == 1:
                 states.append(False)
-               
+                           
         return scripts, states
         
-    
+    def sync_manifest(self):
+        
+        scripts, states = self.get_manifest()
+        
+        synced_scripts = []
+        synced_states = []
+        
+        for inc in range(0, len(scripts)):
+            
+            current_script = scripts[inc]
+            current_state = states[inc]
+            
+            name = current_script.split('.')
+            
+            if len(name) == 2:
+                name = name[0]
+                
+            if not util_file.is_file( self.get_code_file(name) ):
+                continue
+            
+            synced_scripts.append(current_script)
+            synced_states.append(current_state)
+            
+            
+        code_folders = self.get_code_folders()
+        
+        for code_folder in code_folders:
+            
+            if code_folder == 'manifest':
+                continue
+            
+            code_file_basename = code_folder + '.py'
+            
+            if not code_file_basename in synced_scripts:
+                synced_scripts.append(code_file_basename)
+                synced_states.append(False)
+            
+        self.set_manifest(synced_scripts, synced_states)
+        
     #--- run
     
     def load(self, name):

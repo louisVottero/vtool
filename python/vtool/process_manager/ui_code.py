@@ -116,8 +116,6 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     def set_code_directory(self, directory):
         self.code_directory = directory
         
-        
-        
     def reset_process_script_state(self):
         self.script_widget.reset_process_script_state()
         
@@ -385,6 +383,38 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.checkbox.setGeometry(QtCore.QRect(3, 2, 16, 17))
         
+    def mouseDoubleClickEvent(self, event):
+        
+        items = self.selectedItems()
+        item = items[0]
+        
+        self.script_open.emit(item)
+
+    def mousePressEvent(self, event):
+        super(CodeManifestTree, self).mousePressEvent(event)
+        
+        self.handle_selection_change = True
+    
+    def dragMoveEvent(self, event):
+        super(CodeManifestTree, self).dragMoveEvent(event)
+        
+        self.handle_selection_change = False
+        
+        self.dragged_item = self.currentItem()
+        
+    def dropEvent(self, event):
+        
+        super(CodeManifestTree, self).dropEvent(event)
+        
+        self.clearSelection()
+        
+        self.setItemSelected(self.dragged_item, True)
+        
+        self.dragged_item = None
+        self.handle_selection_change = True
+        
+        self._update_manifest()
+        
     def _set_all_checked(self, int):
         
         if not self.update_checkbox:
@@ -400,18 +430,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         for inc in range(0, count):
             item = self.topLevelItem(inc)
             
-            item.setCheckState(0, state)    
-            
+            item.setCheckState(0, state)
         
     def _create_context_menu(self):
         self.context_menu = QtGui.QMenu()
-              
-        #self.new_menu = QtGui.QMenu('New')
-              
-        #self.context_menu.addMenu(self.new_menu)
-        
-        #new_python = self.new_menu.addAction('Python Code')
-        #new_data_import = self.new_menu.addAction('Data Import')
         
         new_python = self.context_menu.addAction('New Python Code')
         new_data_import = self.context_menu.addAction('New Data Import')
@@ -426,6 +448,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.context_menu.addSeparator()
         browse_action = self.context_menu.addAction('Browse')
+        refresh_action = self.context_menu.addAction('Refresh')
         
         self.edit_actions = [run_action, rename_action, delete_action]
         
@@ -437,6 +460,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         delete_action.triggered.connect(self.remove_current_item)
         
         browse_action.triggered.connect(self._browse_to_code)
+        refresh_action.triggered.connect(self.refresh)
+        
+        
     
     def _item_menu(self, position):
         
@@ -502,40 +528,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             code_path = process_tool.get_code_path()
             
             util_file.open_browser(code_path)
-        
-    
-    def mouseDoubleClickEvent(self, event):
-        
-        items = self.selectedItems()
-        item = items[0]
-        
-        self.script_open.emit(item)
-    
-    def dragMoveEvent(self, event):
-        super(CodeManifestTree, self).dragMoveEvent(event)
-        
-        self.handle_selection_change = False
-        
-        self.dragged_item = self.currentItem()
-        
-    def dropEvent(self, event):
-        
-        super(CodeManifestTree, self).dropEvent(event)
-        
-        self.clearSelection()
-        
-        self.setItemSelected(self.dragged_item, True)
-        
-        self.dragged_item = None
-        self.handle_selection_change = True
-        
-        self._update_manifest()
-    
-    def mousePressEvent(self, event):
-        super(CodeManifestTree, self).mousePressEvent(event)
-        
-        self.handle_selection_change = True
-
+            
     def _define_header(self):
         return ['       Scripts']
     
@@ -653,12 +646,17 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         scripts, states = process_tool.get_manifest()
         
+        code_folders = process_tool.get_code_folders()
+        
         found_scripts = []
         found_states = []
         
         for inc in range(0, len(scripts)):
             
             name = scripts[inc].split('.')[0]
+            
+            if not name in code_folders:
+                continue                
             
             code_path = process_tool.get_code_file(name)
             
@@ -667,8 +665,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             found_scripts.append(scripts[inc])
             found_states.append(states[inc])
-            
-        
+                    
         
         return [found_scripts, found_states]
 
@@ -683,6 +680,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 return item
 
     def _update_manifest(self):
+        
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         
@@ -706,8 +704,22 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 
             scripts.append(name)
             states.append(state)
-        
+            
         process_tool.set_manifest(scripts, states)
+        
+    def _sync_manifest(self):
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        process_tool.sync_manifest()
+        
+
+    def refresh(self):
+        
+        self._sync_manifest()
+        
+        super(CodeManifestTree, self).refresh()
 
     def reset_process_script_state(self):
         item_count = self.topLevelItemCount()
