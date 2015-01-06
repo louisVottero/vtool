@@ -10734,6 +10734,9 @@ class BasePoseControl(object):
         
     def _get_mesh_message_attributes(self):
         
+        if not self.pose_control:
+            return
+        
         attributes = cmds.listAttr(self.pose_control, ud = True)
         
         messages = []

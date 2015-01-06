@@ -143,6 +143,7 @@ class PoseListWidget(qt_ui.BasicWidget):
         self.pose_list.value_changed(max_angle, max_distance, twist_on, twist)
         
     def parent_changed(self, parent):
+        
         self.pose_list.parent_changed(parent)
         
     def pose_enable_changed(self, value):
@@ -321,6 +322,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         pass
     
     def parent_changed(self, parent):
+        
         pose_name = self._current_pose()
         
         if not pose_name:
@@ -328,6 +330,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         
         pose = util.PoseControl()
         pose.set_pose(pose_name)
+        
         pose.set_parent(parent)
         
     def pose_enable_changed(self, value):
@@ -582,6 +585,7 @@ class PoseTreeWidget(BaseTreeWidget):
             
             self.pose_widget.set_pose_parent_name(parent)
             
+            
         value = cmds.getAttr('%s.enable' % pose_names[0])
         self.pose_widget.set_pose_enable(value)
             
@@ -686,7 +690,11 @@ class PoseWidget(qt_ui.BasicWidget):
         self.pose_control_widget.set_values(angle, distance, twist_on, twist)
         
     def set_pose_parent_name(self, parent_name):
+        if not parent_name:
+            parent_name = ''
+        
         self.pose_control_widget.set_parent_name(parent_name)
+        
         
     def set_pose_enable(self, value):
         self.pose_control_widget.set_pose_enable(value)
@@ -706,11 +714,14 @@ class PoseControlWidget(qt_ui.BasicWidget):
     
     value_changed = qt_ui.create_signal(object, object, object, object)
     
+    
+    
     def __init__(self):
         
         super(PoseControlWidget, self).__init__()
         
         self.pose = None
+        self.emit_parent = True
         
     def _define_main_layout(self):
         layout = QtGui.QVBoxLayout()
@@ -845,7 +856,8 @@ class PoseControlWidget(qt_ui.BasicWidget):
             style = self.styleSheet()
             self.parent_text.setStyleSheet(style)
             
-            self.parent_change.emit(None)
+            if self.emit_parent:
+                self.parent_change.emit(None)
             return
         
         if cmds.objExists(text) and util.is_a_transform(text):
@@ -854,7 +866,10 @@ class PoseControlWidget(qt_ui.BasicWidget):
             style = self.styleSheet()
             self.parent_text.setStyleSheet(style)
             
-            self.parent_change.emit(text)
+            if self.emit_parent:
+                self.parent_change.emit(text)
+            
+        
     
     def _value_changed(self):
         max_angle = self.max_angle.value()
@@ -878,7 +893,9 @@ class PoseControlWidget(qt_ui.BasicWidget):
         self.twist.setValue(twist)
         
     def set_parent_name(self, parent_name):
+        self.emit_parent = False
         self.parent_text.setText(parent_name)
+        self.emit_parent = True
         
     def set_pose_enable(self, value):
         value = value*100
