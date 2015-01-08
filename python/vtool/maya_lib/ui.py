@@ -267,6 +267,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
     def _orient(self):
         util.orient_attributes()
         
+    @util.undo_chunk
     def _mirror(self):
         util.mirror_xform('joint_')
         util.mirror_xform('guideJoint_')
@@ -280,6 +281,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
     def _mirror_controls(self):
         
         util.mirror_controls()
+    
         
     def _joints_on_curve(self, count):
         selection = cmds.ls(sl = True)
@@ -357,6 +359,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         for mesh in meshes:
             util.process_joint_weight_to_parent(mesh)
             
+    @util.undo_chunk    
     def _set_joint_axis_visibility(self):
         
         bool_value = self.joint_axis_check.isChecked()

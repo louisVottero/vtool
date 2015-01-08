@@ -628,6 +628,7 @@ class Process(object):
             
         return False
     
+    
     def run_script(self, script):
                 
         self._center_view()

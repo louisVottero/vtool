@@ -12,9 +12,42 @@ import vtool.util
 
 import curve
 
+#--- decorators
+
+def undo_off(function):
+    def wrapper(self, *args, **kwargs):
+        
+        cmds.undoInfo(state = False)
+        
+        try:
+            function(self, *args, **kwargs)
+        except Exception, e:
+            cmds.undoInfo(state = True)
+            raise Exception(e)
+            
+        cmds.undoInfo(state = True)
+        
+    return wrapper
+
+def undo_chunk(function):
+    def wrapper(self, *args, **kwargs):
+        
+        cmds.undoInfo(openChunk = True)
+        
+        try:
+            function(self, *args, **kwargs)
+        except Exception, e:
+            cmds.undoInfo(closeChunk = True)
+            raise Exception(e)
+            
+        cmds.undoInfo(closeChunk = True)        
+             
+    return wrapper
 
 def is_batch():
     return cmds.about(batch = True)
+
+#--- variables
 
 MAYA_BINARY = 'mayaBinary'
 MAYA_ASCII = 'mayaAscii'
@@ -9967,9 +10000,10 @@ class TransferWeight(object):
             if not joint in influences:
                 cmds.skinCluster(self.skin_cluster, e = True, ai = joint, wt = 0.0, nw = 1)
         
+    @undo_chunk
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh = None, percent =1):
         
-        cmds.undoInfo(state = False)
+        #cmds.undoInfo(state = False)
         
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         source_value_map = get_skin_weights(source_skin_cluster)
@@ -10051,14 +10085,16 @@ class TransferWeight(object):
             
         bar.end()
         
-        cmds.undoInfo(state = True)
-            
+        #cmds.undoInfo(state = True)
+         
+    @undo_chunk  
     def transfer_joints_to_new_joints(self, joints, new_joints, falloff = 1, power = 4, weight_percent_change = 1):
         
-        cmds.undoInfo(state = False)
+        
+        #cmds.undoInfo(state = False)
         
         if not self.skin_cluster or not self.mesh:
-            cmds.undoInfo(state = True)
+            #cmds.undoInfo(state = True)
             return
         
         lock_joints(self.skin_cluster, joints)
@@ -10084,7 +10120,7 @@ class TransferWeight(object):
             source_joint_weights.append(value_map[index])
             
         if not source_joint_weights:
-            cmds.undoInfo(state = True)
+            #cmds.undoInfo(state = True)
             return
             
         verts = self.vertices#cmds.ls('%s.vtx[*]' % self.vertices, flatten = True)
@@ -10114,7 +10150,7 @@ class TransferWeight(object):
                         weights[int_vert_index] = value
         
         if not weighted_verts:
-            cmds.undoInfo(state = True)
+            #cmds.undoInfo(state = True)
             return
         
         bar = ProgressBar('transfer weight', len(weighted_verts))
@@ -10216,7 +10252,7 @@ class TransferWeight(object):
             
         bar.end()
         
-        cmds.undoInfo(state = True)
+        #cmds.undoInfo(state = True)
         
     """
     def transfer_joints_into_joint(self, joints, joint, source_mesh):
@@ -10555,7 +10591,7 @@ class PoseManager(object):
             pose.attach()
             
             
-            
+    @undo_chunk    
     def create_pose_blends(self):
         
         
@@ -10566,7 +10602,7 @@ class PoseManager(object):
         progress = ProgressBar('adding poses ... ', count)
     
         for inc in range(count) :
-            cmds.undoInfo(openChunk = True)
+            #cmds.undoInfo(openChunk = True)
             #cmds.undoInfo(state = False)
             try:
                 if progress.break_signaled():
@@ -10586,7 +10622,7 @@ class PoseManager(object):
                 
             
             #cmds.undoInfo(state = True)
-            cmds.undoInfo(closeChunk = True)
+            #cmds.undoInfo(closeChunk = True)
             
         progress.end()
     
@@ -12941,7 +12977,7 @@ def create_distance_scale(xform1, xform2, axis = 'X'):
     
     
     
-
+@undo_chunk
 def add_orient_attributes(transform):
     if type(transform) != list:
         transform = [transform]
@@ -12951,6 +12987,7 @@ def add_orient_attributes(transform):
         orient = OrientJointAttributes(thing)
         orient.set_default_values()
     
+@undo_chunk
 def orient_attributes(scope = None):
     if not scope:
         scope = get_top_dag_nodes()
@@ -13681,6 +13718,7 @@ def get_point_from_curve_parameter(curve, parameter):
     
     return cmds.pointOnCurve(curve, pr = parameter, ch = False)
 
+@undo_chunk
 def create_oriented_joints_on_curve(curve, count = 20, description = None, rig = False):
     
     if not description:
@@ -13739,7 +13777,7 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None, rig =
         return new_joint, ik_handle
     
     
-
+@undo_chunk
 def create_joints_on_curve(curve, joint_count, description, attach = True, create_controls = False):
     
     group = cmds.group(em = True, n = inc_name('joints_%s' % curve))
@@ -13894,7 +13932,7 @@ def create_ghost_chain(transforms):
 
     return ghosts
         
-
+@undo_chunk
 def snap_joints_to_curve(joints, curve = None, count = 10):
     
     if not joints:
@@ -14385,6 +14423,7 @@ def get_faces_at_skin_influence(mesh, skin_deformer):
         
     return index_face_map
 
+@undo_chunk
 def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constrain = False):
     
     if constrain:
@@ -14395,7 +14434,7 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
     
     index_face_map = get_faces_at_skin_influence(mesh, skin_deformer)
 
-    cmds.undoInfo(state = False)
+    #cmds.undoInfo(state = False)
     cmds.hide(mesh)
     
     main_duplicate = cmds.duplicate(mesh)[0]
@@ -14433,12 +14472,13 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
         if vis_attribute:
             cmds.connectAttr(vis_attribute, '%s.visibility' % duplicate_mesh)
     
-    cmds.undoInfo(state = True)
+    #cmds.undoInfo(state = True)
     cmds.showHidden(mesh)
     
     if constrain:
         return group
-
+    
+@undo_chunk
 def transfer_weight(source_joint, target_joints, mesh):
     if not mesh:
         return
@@ -14448,7 +14488,7 @@ def transfer_weight(source_joint, target_joints, mesh):
     if not skin_deformer:
         return
     
-    cmds.undoInfo(state = False)
+    #cmds.undoInfo(state = False)
     
     index = get_index_at_skin_influence(source_joint, skin_deformer)
     
@@ -14498,7 +14538,7 @@ def transfer_weight(source_joint, target_joints, mesh):
         
         last_index += 1
         
-    cmds.undoInfo(state = True)
+    #cmds.undoInfo(state = True)
     
 def add_joint_bindpre(skin, joint, description):
     bindPre_locator = cmds.spaceLocator(n = inc_name('locator_%s' % description))[0]
@@ -15176,11 +15216,11 @@ def transfer_joint_weight_to_blendshape(blendshape, joint, mesh, index = 0, targ
             cmds.setAttr('%s.inputTarget[%s].inputTargetGroup[%s].targetWeights[%s]' % (blendshape, index, target, inc), weight)
             inc += 1
     
-   
+@undo_chunk   
 def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_joints = [], uv_space = False):
     #do not remove print
     print 'skinning %s' % target_mesh
-    cmds.undoInfo(state = False)
+    #cmds.undoInfo(state = False)
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
     
     other_skin = find_deformer_by_type(target_mesh, 'skinCluster')
@@ -15233,7 +15273,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
             except:
                 warning('Could not remove influence %s on mesh %s' % (influence, target_mesh))
                 
-    cmds.undoInfo(state = True)
+    #cmds.undoInfo(state = True)
       
 
 def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints = []):
@@ -15256,6 +15296,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints
             
     if old_selection:
         cmds.select(old_selection)
+
     
 def skin_lattice_from_mesh(source_mesh, target, divisions = [10,10,10], falloff = [2,2,2], name = None, include_joints = [], exclude_joints = []):
     
@@ -15343,6 +15384,7 @@ def create_wrap(source_mesh, target_mesh):
     
     return wrap.base_meshes
     
+@undo_chunk
 def weight_hammer_verts(verts = None, print_info = True):
     
     if verts:
@@ -15354,7 +15396,7 @@ def weight_hammer_verts(verts = None, print_info = True):
     count = len(verts)
     inc = 0
     
-    cmds.undoInfo(state = False)
+    #cmds.undoInfo(state = False)
     
     for vert in verts:
         cmds.select(cl = True)
@@ -15369,7 +15411,7 @@ def weight_hammer_verts(verts = None, print_info = True):
         inc += 1
         
         
-    cmds.undoInfo(state = True)
+    #cmds.undoInfo(state = True)
 
 def exclusive_bind_wrap(source_mesh, target_mesh):
     wrap = MayaWrap(target_mesh)
@@ -15426,7 +15468,8 @@ def get_index_at_alias(alias, blendshape):
     
     if alias in map:
         return map[alias]
-    
+
+@undo_chunk
 def chad_extract_shape(skin_mesh, corrective):
     
     try:
@@ -16115,6 +16158,7 @@ def zero_xform_channels(transform):
 def get_controls():
     return cmds.ls('CNT_*', type = 'transform')
     
+@undo_chunk
 def mirror_control(control):
     
     if not control:
@@ -16166,7 +16210,8 @@ def mirror_control(control):
             x_value = position[0] * -1
                  
             cmds.move(x_value, position[1], position[2], other_cvs[inc], worldSpace = True)
-    
+
+@undo_chunk
 def mirror_controls():
     
     selection = cmds.ls(sl = True)
