@@ -11,6 +11,7 @@ class StopWatch(object):
         self.time = None
     
     def start(self):
+        #do not remove print
         print 'started timer'
         self.time = time.time()
     
@@ -18,6 +19,7 @@ class StopWatch(object):
         seconds = time.time()-self.time
         self.time = None
         
+        #do not remove print
         print 'end timer: %s seconds' % seconds
         
 

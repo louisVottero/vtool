@@ -8627,6 +8627,7 @@ class AttachJoints(object):
         self._hook_scale_constraint(target_joint)
         
         parent_constraint = cmds.parentConstraint(source_joint, target_joint, mo = True)[0]
+        #cmds.setAttr('%s.interpType' % parent_constraint, 2)
         
         scale_constraint = cmds.scaleConstraint(source_joint, target_joint)[0]
         

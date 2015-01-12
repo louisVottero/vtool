@@ -88,13 +88,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.active_title = QtGui.QLabel('-')
         self.active_title.setAlignment(QtCore.Qt.AlignCenter)
         
-        help_button = QtGui.QPushButton('?')
-        help_button.setMaximumWidth(20)
-        help_button.setMaximumHeight(20)
-        help_button.clicked.connect(self._open_help)
+        #help_button = QtGui.QPushButton('?')
+        #help_button.setMaximumWidth(20)
+        #help_button.setMaximumHeight(20)
+        #help_button.clicked.connect(self._open_help)
         
         self.header_layout.addWidget(self.active_title, alignment = QtCore.Qt.AlignCenter)
-        self.header_layout.addWidget(help_button, alignment = QtCore.Qt.AlignRight)
+        #self.header_layout.addWidget(help_button, alignment = QtCore.Qt.AlignRight)
         
         
         self.tab_widget = QtGui.QTabWidget()
@@ -128,14 +128,20 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_button = QtGui.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
         self.browser_button = QtGui.QPushButton('Browse')
+        self.browser_button.setMaximumWidth(100)
+        help_button = QtGui.QPushButton('?')
+        help_button.setMaximumWidth(60)       
         
         button_layout = QtGui.QHBoxLayout()
         
         button_layout.addWidget(self.process_button)
+                
         button_layout.addWidget(self.browser_button)
-        
+        button_layout.addWidget(help_button)
+                
         self.browser_button.clicked.connect(self._browser)
         self.process_button.clicked.connect(self._process)
+        help_button.clicked.connect(self._open_help)
         
         self.main_layout.addLayout( button_layout )
         
@@ -172,8 +178,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         path = util_file.set_windows_slashes(path)
         
         path = 'file:\\\\\\' + path
-        
-        print path
         
         webbrowser.open(path)
         
@@ -285,6 +289,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         script_count = len(scripts)
         
+        #do not remove print
         print '\a  Running %s Scripts  \a' % self.process.get_name()
         
         for inc in range(0, script_count):

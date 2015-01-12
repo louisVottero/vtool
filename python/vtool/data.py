@@ -555,11 +555,7 @@ class LoadWeightFileThread(threading.Thread):
         
         influence_name = maya_lib.util.get_skin_influence_at_index(influence_index, skin)
         
-        print influence_name, path
-        
         filepath = util_file.create_file('%s.weights' % influence_name, path)
-        
-        print 'weight file', filepath
         
         write = util_file.WriteFile(filepath)
         write.write_line(weights)     
@@ -649,7 +645,6 @@ class DeformerWeightData(MayaCustomData):
             if not lines:
                 return
             
-            print filename, weights
             deformer = filename.split('.')[0]
             
             maya_lib.util.set_deformer_weights(weights, deformer)    

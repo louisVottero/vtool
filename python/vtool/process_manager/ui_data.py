@@ -51,9 +51,11 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.main_layout.addWidget(self.file_widget)
         
     def _refresh_data(self, data_name):
-        self.data_widget._load_data()
+        self.data_widget._load_data(new_data = data_name)
         
         self.data_created.emit(data_name)
+        
+        
         
     def _data_item_selection_changed(self):
         
@@ -155,14 +157,47 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.context_menu = QtGui.QMenu()
         
+        self.rename_action = self.context_menu.addAction('Rename')
+        self.remove_action = self.context_menu.addAction('Delete')
+        self.context_menu.addSeparator()
         self.browse_action = self.context_menu.addAction('Browse')
         self.refresh_action = self.context_menu.addAction('Refresh')
-        self.context_menu.addSeparator()
-        self.remove_action = self.context_menu.addAction('Delete')
-
+        
+        self.rename_action.triggered.connect(self._rename_data)
         self.browse_action.triggered.connect(self._browse_current_item)
         self.remove_action.triggered.connect(self._remove_current_item)
         self.refresh_action.triggered.connect(self.refresh)    
+    
+    def mouseDoubleClickEvent(self, event):
+        self._browse_current_item()
+        
+    
+    def _rename_data(self):
+        items = self.selectedItems()
+        
+        if not items:
+            return
+        
+        item = items[0]
+        
+        old_name = item.text(0)
+        
+        old_name = old_name.split('/')[-1]
+        
+        new_name = vtool.qt_ui.get_new_name('New Name', self, old_name)
+        
+        #if not self._item_rename_valid(old_name, item):
+        #    return
+        
+        if not new_name:
+            return
+        
+        item.setText(0, new_name)
+        
+        #if not self._item_rename_valid(old_name, item):
+        #    item.setText(0, old_name)
+        
+        self._item_renamed(item)
     
     def _browse_current_item(self):
         
@@ -225,7 +260,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         return True
         
-    def _load_data(self, preserve_selected = True):
+    def _load_data(self, preserve_selected = True, new_data = None):
 
         self.clear()
 
@@ -236,6 +271,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         if not folders:
             return
+        
+        select_item = None
         
         for foldername in folders:
             
@@ -250,7 +287,16 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             item.setSizeHint(0, QtCore.QSize(100,30))
             self.addTopLevelItem(item)
             
-        self.itemSelectionChanged.emit()
+            if foldername == new_data:
+                select_item = item
+        
+        if select_item:
+            self.setItemSelected(select_item, True)
+            self.setCurrentItem(select_item)
+            
+        #self.itemSelectionChanged.emit()
+        
+        
     
     def get_item_path_string(self, item):
         
@@ -367,7 +413,9 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
-        process_tool.create_data(data_name, data_type)
+        data_path = process_tool.create_data(data_name, data_type)
+        
+        data_name = vtool.util_file.get_basename(data_path)
         
         self.data_added.emit(data_name)
         
@@ -543,10 +591,6 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
         text = self.text_widget.toPlainText()
         lines= vtool.util_file.get_text_lines(text)
-        
-        print self.directory
-        print lines
-        print comment
         
         self.data_class.save(lines,comment)
         

@@ -39,7 +39,7 @@ def find_processes(directory = None):
                
     return found
 
-def get_unused_process_name(directory = None):
+def get_unused_process_name(directory = None, name = None):
     
     if not directory:
         directory = util_file.get_cwd()
@@ -47,7 +47,9 @@ def get_unused_process_name(directory = None):
     processes = find_processes(directory)
     
     
-    name = Process.description
+    if name == None:
+        name = Process.description
+        
     new_name = name
     
     not_name = True
@@ -219,6 +221,8 @@ class Process(object):
         part_process = Process(part_name)
         
         part_process.set_directory(self.get_path())  
+        
+        
         
         return part_process    
         
@@ -607,8 +611,17 @@ class Process(object):
         
         path = util_file.join_path(self.directory, self.process_name)
         
+        if self.process_name:
+            path = util_file.join_path(self.directory, self.process_name)
+        
+        if not self.process_name:
+            path = self.directory
+        
+                
         part_process.set_directory(path)
         part_process.create()
+        
+        return part_process
         
     def create(self):
         return self._create_folder()
@@ -683,6 +696,49 @@ def get_default_directory():
         return util_file.join_path(util_file.get_user_dir(), 'process_manager')
     if not util.is_in_maya():
         return util_file.join_path(util_file.get_user_dir(), 'documents/process_manager')
+    
+def copy_process(source_process, target_process = None, ):
+    
+        
+    
+        
+    source_name = source_process.get_name()
+    source_name = source_name.split('/')[-1]
+    
+    if not target_process:
+        target_process = Process()
+        target_process.set_directory(source_process.directory)
+    
+    path = target_process.get_path()
+    
+    new_name = get_unused_process_name(path, source_name)
+    
+    print path, new_name
+    
+    new_process = target_process.add_part(new_name)
+    
+    data_folders = source_process.get_data_folders()
+    code_folders = source_process.get_code_folders()
+    
+    for data_folder in data_folders:
+        copy_process_data(source_process, new_process, data_folder)
+    
+    for code_folder in code_folders:
+        copy_process_code(source_process, new_process, code_folder)
+    
+    sub_folders = source_process.get_sub_processes()
+    
+    for sub_folder in sub_folders:
+        
+        sub_process = target_process.get_sub_process(sub_folder)
+        source_sub_process = source_process.get_sub_process(sub_folder)
+        
+        if not sub_process.is_process():
+            copy_process(source_sub_process, new_process)
+    
+    return new_process
+    
+        
     
 def copy_process_data(source_process, target_process, data_name, replace = False):
         
