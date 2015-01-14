@@ -699,9 +699,6 @@ def get_default_directory():
     
 def copy_process(source_process, target_process = None, ):
     
-        
-    
-        
     source_name = source_process.get_name()
     source_name = source_name.split('/')[-1]
     
@@ -713,8 +710,6 @@ def copy_process(source_process, target_process = None, ):
     
     new_name = get_unused_process_name(path, source_name)
     
-    print path, new_name
-    
     new_process = target_process.add_part(new_name)
     
     data_folders = source_process.get_data_folders()
@@ -722,6 +717,9 @@ def copy_process(source_process, target_process = None, ):
     
     for data_folder in data_folders:
         copy_process_data(source_process, new_process, data_folder)
+    
+    code_folders.remove('manifest')
+    code_folders.append('manifest')
     
     for code_folder in code_folders:
         copy_process_code(source_process, new_process, code_folder)
@@ -737,8 +735,6 @@ def copy_process(source_process, target_process = None, ):
             copy_process(source_sub_process, new_process)
     
     return new_process
-    
-        
     
 def copy_process_data(source_process, target_process, data_name, replace = False):
         

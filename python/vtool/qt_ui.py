@@ -296,7 +296,7 @@ class TreeWidget(QtGui.QTreeWidget):
             
     def _item_expanded(self, item):
         self._add_sub_items(item) 
-        self.resizeColumnToContents(self.title_text_index)
+        #self.resizeColumnToContents(self.title_text_index)
         
     def _edit_start(self, item):
         

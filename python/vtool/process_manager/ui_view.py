@@ -139,6 +139,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self._create_context_menu()
         self.paste_item = None
                 
+        self.setColumnWidth(1, 20)
+                
         self.setSelectionBehavior(self.SelectItems)
         
         
@@ -146,15 +148,54 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         return
     
     
-    
-    def mousePressEvent(self, event):
+    def mouseMoveEvent(self, event):
+        model_index =  self.indexAt(event.pos())
         
-        super(ProcessTreeWidget, self).mousePressEvent(event)
+        """
+        if model_index.column() > 0:
+            self.clearSelection()
+        
+        if model_index is None:
+            self.clearSelection()
+        """
+        
+        item = self.itemAt(event.pos())
+        
+        if not item or model_index.column() == 1:
+            self.clearSelection()
+            
+        
+        if event.button() == QtCore.Qt.RightButton:
+            return
+        
+        if model_index.column() == 0 and item:
+            super(ProcessTreeWidget, self).mouseMoveEvent(event)
+        
+    def mousePressEvent(self, event):
         
         model_index =  self.indexAt(event.pos())
         
+        """
         if model_index.column() > 0:
             self.clearSelection()
+        
+        if model_index is None:
+            self.clearSelection()
+        """
+        
+        item = self.itemAt(event.pos())
+        
+        if not item or model_index.column() == 1:
+            self.clearSelection()
+            
+        
+        if event.button() == QtCore.Qt.RightButton:
+            return
+        
+        if model_index.column() == 0 and item:
+            super(ProcessTreeWidget, self).mousePressEvent(event)
+        
+        
     
     
         
@@ -247,7 +288,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             item.setText(0, old_name)
         
         self._item_renamed(item)
-        self.resizeColumnToContents(0)
+        
         
         
     def _copy_process(self):
@@ -439,7 +480,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if item.has_parts():
             QtGui.QTreeWidgetItem(item)
         
-        self.resizeColumnToContents(0)
+        
         
         return item
 
@@ -453,7 +494,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self._add_process_items(item, path)
         
-        self.resizeColumnToContents(0)
+        
         
     def _browse(self):
         current_item = self.currentItem()
@@ -473,7 +514,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.current_item = None
         self.last_item = None
         
-        self.resizeColumnToContents(0)
+        
         
     def add_process(self, name):
         
@@ -494,7 +535,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.setCurrentItem(item)
         
-        self.resizeColumnToContents(0)
+        
         
         
     def delete_process(self):

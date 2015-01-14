@@ -267,7 +267,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
     def _orient(self):
         util.orient_attributes()
         
-    @util.undo_chunk
+    #@util.undo_chunk
     def _mirror(self):
         util.mirror_xform('joint_')
         util.mirror_xform('guideJoint_')
