@@ -93,8 +93,7 @@ class Process(object):
     def _create_folder(self):
                 
         if not util_file.is_dir(self.directory):
-            #do not remove print
-            print '%s was not created.' %  self.process_name
+            util.show('%s was not created.' %  self.process_name)
             return
         
         path = util_file.create_dir(self.process_name, self.directory)
@@ -131,8 +130,8 @@ class Process(object):
                 cmds.select(cl = True)
                 cmds.viewFit(an = True)
             except:
-                #do not remove print
-                print 'Could not center view.'
+                util.show('Could not center view')
+                
             
     def set_directory(self, directory):
         
@@ -285,8 +284,7 @@ class Process(object):
         data_folder_name = self.get_data_folder(name)
         
         if not util_file.is_dir(data_folder_name):
-            #do not remove print
-            print '%s data does not exist in %s' % (name, self.get_name())
+            util.show('%s data does not exist in %s' % (name, self.get_name()) )
             return
             
         data_folder = data.DataFolder(name, path)
@@ -653,8 +651,8 @@ class Process(object):
                 if not external_code_path in sys.path:
                     sys.path.append(external_code_path)
         
-        #do not remove print
-        print '\t\a\t%s.' % name
+        util.show('\a\t%s.' % name)
+        
         
         module = util_file.source_python_module(script)     
         
@@ -667,14 +665,43 @@ class Process(object):
         if hasattr(module, 'process'):
             module.process = self
         
-        status = None  
+        status = None
+        read = None  
         try:
             if hasattr(module, 'main'):
+                                
+                
+                
+                if util.is_in_maya():
+                    import vtool.maya_lib.util as maya_util
+                    read = maya_util.ScriptEditorRead()
+                    read.start()
+                    
+                             
                 module.main()
                 status = 'Success'
+                
+                if read:
+                    value = maya_util.script_editor_value
+                    read.end()
+                    
+                    for line in value:
+                        util.show('\t' + line)
+                        
+                
                                 
         except Exception:
+            
             status = traceback.format_exc()
+            
+            if read:
+                value = maya_util.script_editor_value
+                read.end()
+                
+                for line in value:
+                    util.show('\t' + line)
+                
+            
             
         return status
                
@@ -683,8 +710,7 @@ class Process(object):
         if util.is_in_maya():
             cmds.file(new = True, f = True)
             
-        #do not remove print
-        print '\a  Running %s Scripts  \a' % self.get_name()
+        util.show('\a  Running %s Scripts  \a' % self.get_name())
  
         scripts = self.get_manifest_scripts(False)
         

@@ -289,8 +289,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         script_count = len(scripts)
         
-        #do not remove print
-        print '\a  Running %s Scripts  \a' % self.process.get_name()
+        util.show('\a  Running %s Scripts  \a' % self.process.get_name())
         
         for inc in range(0, script_count):
             
@@ -307,8 +306,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if not status == 'Success':
                 self.code_widget.set_process_script_state(scripts[inc], 0)
                 
-                #do not remove print
-                print status
+                util.show(status)
                 
             if status == 'Success':
                 self.code_widget.set_process_script_state(scripts[inc], 1)

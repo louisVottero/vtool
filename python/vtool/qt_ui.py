@@ -18,8 +18,8 @@ try:
         except:
             pass
     type_QT = 'pyside'
-    #do not remove print
-    print 'using pyside'
+    util.show('using pyside')
+    
 except:
     type_QT = None
 
@@ -30,7 +30,7 @@ if not type_QT == 'pyside':
         import sip
         type_QT = 'pyqt'
         #do not remove print
-        print 'using pyqt'
+        util.show('using pyQT')
         
     except:
         type_QT = None
