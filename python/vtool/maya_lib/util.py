@@ -12988,7 +12988,7 @@ def add_orient_attributes(transform):
         orient = OrientJointAttributes(thing)
         orient.set_default_values()
     
-@undo_chunk
+#@undo_chunk
 def orient_attributes(scope = None):
     if not scope:
         scope = get_top_dag_nodes()
