@@ -707,3 +707,20 @@ def clean_string(string):
     string = string.replace('\\', '_')
     
     return string
+
+
+    
+def show(*args):
+        
+    string_value = string.join(args)
+    
+    string_value = string_value.replace('\n', '\t\n')
+    if string_value.endswith('\t\n'):
+        string_value = string_value[:-2]
+    
+    #do not remove
+    print '\t%s' % string_value
+    
+
+    
+    

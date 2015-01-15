@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import sys
+
 import string
 import re
 import traceback
@@ -12,15 +14,16 @@ import vtool.util
 
 import curve
 
+
 #--- decorators
 
 def undo_off(function):
-    def wrapper(self, *args, **kwargs):
+    def wrapper(*args, **kwargs):
         
         cmds.undoInfo(state = False)
         
         try:
-            function(self, *args, **kwargs)
+            function(*args, **kwargs)
         except Exception, e:
             cmds.undoInfo(state = True)
             raise Exception(e)
@@ -30,12 +33,12 @@ def undo_off(function):
     return wrapper
 
 def undo_chunk(function):
-    def wrapper(self, *args, **kwargs):
+    def wrapper(*args, **kwargs):
         
         cmds.undoInfo(openChunk = True)
         
         try:
-            function(self, *args, **kwargs)
+            function(*args, **kwargs)
         except Exception, e:
             cmds.undoInfo(closeChunk = True)
             raise Exception(e)
@@ -46,6 +49,53 @@ def undo_chunk(function):
 
 def is_batch():
     return cmds.about(batch = True)
+
+
+class ScriptEditorRead(object):
+    
+    def __init__(self):
+        
+        self.CALLBACK_ID = None
+        self.read_value = ()
+    
+    def start(self):
+        '''
+        Begin writing to terminal.
+        '''
+    
+        if self.CALLBACK_ID is None:
+            self.CALLBACK_ID = OpenMaya.MCommandMessage.addCommandOutputFilterCallback(read_script)
+        
+    def end(self):
+        '''
+        Stop writing to terminal
+        '''
+    
+        if not self.CALLBACK_ID is None:
+            OpenMaya.MMessage.removeCallback(self.CALLBACK_ID)
+            self.CALLBACK_ID = None
+            
+        global script_editor_value
+        script_editor_value = []
+    
+script_editor_value = [] 
+        
+def read_script(msg, msgType, filterOutput, clientData):
+    '''
+    This is the callback function that gets called when Maya wants to print something.
+    It will take the msg and output it to the terminal rather than the Maya Script Editor
+    '''
+    OpenMaya.MScriptUtil.setBool(filterOutput, True)
+    
+    global script_editor_value
+    
+    value = str(msg)
+    
+    if value == '\n':
+        return
+    
+    script_editor_value.append( value )
+
 
 #--- variables
 
@@ -14576,8 +14626,8 @@ def convert_joint_to_nub(start_joint, end_joint, count, prefix, name, side, mid_
 
 
 def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, delete_wire = True, skin = True, falloff = 1, create_controls = True):
-    #do not remove print
-    print 'converting %s' % wire_deformer
+    
+    vtool.util.show('converting %s' % wire_deformer)
     
     convert_group = cmds.group(em = True, n = inc_name('convertWire_%s' % description))
     bindPre_locator_group = cmds.group(em = True, n = inc_name('convertWire_bindPre_%s' % description))
@@ -14773,8 +14823,8 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
 
 
 def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10, falloff = 1):
-    #do not remove print
-    print 'converting %s' % wire_deformer
+    
+    vtool.util.show('converting %s' % wire_deformer)
     
     convert_group = cmds.group(em = True, n = inc_name('convertWire_%s' % description))
     
@@ -15219,9 +15269,10 @@ def transfer_joint_weight_to_blendshape(blendshape, joint, mesh, index = 0, targ
     
 @undo_chunk   
 def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_joints = [], uv_space = False):
-    #do not remove print
-    print 'skinning %s' % target_mesh
-    #cmds.undoInfo(state = False)
+    
+    vtool.util.show('skinning %s' % target_mesh)
+    
+    
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
     
     other_skin = find_deformer_by_type(target_mesh, 'skinCluster')
@@ -15397,22 +15448,18 @@ def weight_hammer_verts(verts = None, print_info = True):
     count = len(verts)
     inc = 0
     
-    #cmds.undoInfo(state = False)
-    
     for vert in verts:
         cmds.select(cl = True)
         cmds.select(vert)
         
         if print_info:
-            #do not remove print
-            print inc, 'of', count
+            vtool.util.show(inc, 'of', count)
+            
         
         mel.eval('weightHammerVerts;')
             
         inc += 1
         
-        
-    #cmds.undoInfo(state = True)
 
 def exclusive_bind_wrap(source_mesh, target_mesh):
     wrap = MayaWrap(target_mesh)
@@ -15753,6 +15800,12 @@ def connect_translate(source_transform, target_transform):
 def connect_rotate(source_transform, target_transform):
     
     connect_vector_attribute(source_transform, target_transform, 'rotate')
+    try:
+        cmds.connectAttr('%s.rotateOrder' % source_transform, '%s.rotateOrder' % target_transform)
+    except:
+        pass
+        #vtool.util.show('Could not connect %s.rotateOrder into %s.rotateOrder. This could cause issues if rotate order changed.' % (source_transform, target_transform))
+        
     
 def connect_scale(source_transform, target_transform):
     
@@ -16261,6 +16314,7 @@ def process_joint_weight_to_parent(mesh):
     
     cmds.delete(scope)
 
+@undo_chunk
 def joint_axis_visibility(bool_value):
     
     joints = cmds.ls(type = 'joint')

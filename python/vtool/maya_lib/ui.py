@@ -359,7 +359,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         for mesh in meshes:
             util.process_joint_weight_to_parent(mesh)
             
-    @util.undo_chunk    
+     
     def _set_joint_axis_visibility(self):
         
         bool_value = self.joint_axis_check.isChecked()
