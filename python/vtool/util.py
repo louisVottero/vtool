@@ -11,6 +11,7 @@ class StopWatch(object):
         self.time = None
     
     def start(self):
+        #do not remove print
         print 'started timer'
         self.time = time.time()
     
@@ -18,6 +19,7 @@ class StopWatch(object):
         seconds = time.time()-self.time
         self.time = None
         
+        #do not remove print
         print 'end timer: %s seconds' % seconds
         
 
@@ -705,3 +707,20 @@ def clean_string(string):
     string = string.replace('\\', '_')
     
     return string
+
+
+    
+def show(*args):
+        
+    string_value = string.join(args)
+    
+    string_value = string_value.replace('\n', '\t\n')
+    if string_value.endswith('\t\n'):
+        string_value = string_value[:-2]
+    
+    #do not remove
+    print '\t%s' % string_value
+    
+
+    
+    

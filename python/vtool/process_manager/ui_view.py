@@ -20,6 +20,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
                
     def __init__(self):
         super(ViewProcessWidget, self).__init__()
+        
                
     def _define_tree_widget(self):
         return ProcessTreeWidget()
@@ -112,16 +113,16 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.tree_widget = tree_widget
         
         self.tree_widget.new_process.connect(self._add_branch)
-        self.tree_widget.copy_process.connect(self._copy)
+        self.tree_widget.copy_special_process.connect(self._copy)
         
         
 class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
     new_process = qt_ui.create_signal()    
-    copy_process = qt_ui.create_signal()
+    copy_special_process = qt_ui.create_signal()
     delete_process = qt_ui.create_signal()
     item_renamed = qt_ui.create_signal(object)
-        
+    
     def __init__(self):
         
         super(ProcessTreeWidget, self).__init__()
@@ -135,47 +136,213 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
-        
-        
         self._create_context_menu()
+        self.paste_item = None
+                
+        self.setColumnWidth(1, 20)
+                
+        self.setSelectionBehavior(self.SelectItems)
         
+        
+    def mouseDoubleClickEvent(self, event):
+        return
+    
+    
+    def mouseMoveEvent(self, event):
+        model_index =  self.indexAt(event.pos())
+        
+        """
+        if model_index.column() > 0:
+            self.clearSelection()
+        
+        if model_index is None:
+            self.clearSelection()
+        """
+        
+        item = self.itemAt(event.pos())
+        
+        if not item or model_index.column() == 1:
+            self.clearSelection()
+            
+        
+        if event.button() == QtCore.Qt.RightButton:
+            return
+        
+        if model_index.column() == 0 and item:
+            super(ProcessTreeWidget, self).mouseMoveEvent(event)
+        
+    def mousePressEvent(self, event):
+        
+        model_index =  self.indexAt(event.pos())
+        
+        """
+        if model_index.column() > 0:
+            self.clearSelection()
+        
+        if model_index is None:
+            self.clearSelection()
+        """
+        
+        item = self.itemAt(event.pos())
+        
+        if not item or model_index.column() == 1:
+            self.clearSelection()
+            
+        
+        if event.button() == QtCore.Qt.RightButton:
+            return
+        
+        if model_index.column() == 0 and item:
+            super(ProcessTreeWidget, self).mousePressEvent(event)
+        
+        
+    
+    
+        
+        
+
     def _item_menu(self, position):
         
         item = self.itemAt(position)
         
-        if item:
+        index = self.indexAt(position)
+        
+        #if index.column() > 0:
+        #    return
+        
+        if item and index.column() == 0:
+            
+            #self.new_empty_process.setVisible(True)
+            self.rename_action.setVisible(True)
             self.copy_action.setVisible(True)
+            self.copy_special_action.setVisible(True)
             self.remove_action.setVisible(True)
         
-        if not item:
+        if not item or index.column() > 0:
+            #self.new_empty_process.setVisible(False)
+            self.rename_action.setVisible(False)
             self.copy_action.setVisible(False)
+            self.copy_special_action.setVisible(False)
             self.remove_action.setVisible(False)
         
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
+        
+    def visualItemRect(self, item):
+        pass
+        
         
     def _create_context_menu(self):
         
         self.context_menu = QtGui.QMenu()
         
         new_process_action = self.context_menu.addAction('New Process')
+        #self.new_empty_process = self.context_menu.addAction('New Top Level Process')
         
         self.context_menu.addSeparator()
         self.context_menu.addSeparator()
+        self.rename_action = self.context_menu.addAction('Rename')
         self.copy_action = self.context_menu.addAction('Copy')
+        self.paste_action = self.context_menu.addAction('Paste')
+        self.paste_action.setVisible(False)
+        self.copy_special_action = self.context_menu.addAction('Copy Special')
         self.remove_action = self.context_menu.addAction('Delete')
         self.context_menu.addSeparator()
+        browse_action = self.context_menu.addAction('Browse')
         refresh_action = self.context_menu.addAction('Refresh')
         
         new_process_action.triggered.connect(self._new_process)
+        browse_action.triggered.connect(self._browse)
         refresh_action.triggered.connect(self.refresh)
+        self.rename_action.triggered.connect(self._rename_process)
         self.copy_action.triggered.connect(self._copy_process)
+        self.paste_action.triggered.connect(self._paste_process)
+        self.copy_special_action.triggered.connect(self._copy_special_process)
         self.remove_action.triggered.connect(self._remove_current_item)
         
     def _new_process(self):
         self.new_process.emit()
     
+    def _rename_process(self):
+        items = self.selectedItems()
+        
+        if not items:
+            return
+        
+        item = items[0]
+        
+        old_name = item.get_name()
+        
+        old_name = old_name.split('/')[-1]
+        
+        new_name = qt_ui.get_new_name('New Name', self, old_name)
+        
+        #if not self._item_rename_valid(old_name, item):
+        #    return
+        
+        if not new_name:
+            return
+        
+        item.setText(0, new_name)
+        
+        if not self._item_rename_valid(old_name, item):
+            item.setText(0, old_name)
+        
+        self._item_renamed(item)
+        
+        
+        
     def _copy_process(self):
-        self.copy_process.emit()
+        
+        items = self.selectedItems()
+        if not items:
+            return
+        
+        item = items[0]
+        
+        self.paste_action.setVisible(True)
+        self.paste_item = item
+        
+        path = self._get_parent_path(item)
+        
+        self.paste_action.setText('Paste process: %s' % path)
+        
+    def _paste_process(self):
+        
+        self.paste_action.setVisible(False)
+        
+        if not self.paste_item:
+            return
+        
+        source_process = self.paste_item.get_process()
+        
+        target_process = None
+        
+        items = self.selectedItems()
+        if items:
+            target_item = items[0]
+            target_process = target_item.get_process()            
+        if not items:
+            target_item = self
+        
+        
+        new_process = process.copy_process(source_process, target_process)
+        
+        
+        
+        self.paste_item = None
+        
+        
+        new_item = self._add_process_item(new_process.get_name(), target_item)
+        
+        if target_process:
+            self.collapseItem(target_item)
+            self.expandItem(target_item)
+            
+        if not target_process:
+            self.scrollToItem(new_item)
+    
+    def _copy_special_process(self):
+        self.copy_special_process.emit()
         
     def _remove_current_item(self):
         self.delete_process()
@@ -270,7 +437,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if pass_item:
             self.scrollToItem(pass_item,hint = QtGui.QAbstractItemView.PositionAtCenter)
             
-        self.resizeColumnToContents(0)
+        
         
     def _add_process_item(self, name, parent_item = None, create = False):
                 
@@ -313,6 +480,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if item.has_parts():
             QtGui.QTreeWidgetItem(item)
         
+        
+        
         return item
 
     def _add_sub_items(self, item):
@@ -324,6 +493,15 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         path = util_file.join_path(self.directory, process_name)
         
         self._add_process_items(item, path)
+        
+        
+        
+    def _browse(self):
+        current_item = self.currentItem()
+        process = current_item.get_process()
+        
+        path = process.get_path()
+        util_file.open_browser(path)
 
     def refresh(self):
         
@@ -336,7 +514,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.current_item = None
         self.last_item = None
         
-        self.resizeColumnToContents(0)
+        
         
     def add_process(self, name):
         
@@ -353,7 +531,12 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 
             name = process.get_unused_process_name(path)
         
-        self._add_process_item(name, create = True)
+        item = self._add_process_item(name, create = True)
+        
+        self.setCurrentItem(item)
+        
+        
+        
         
     def delete_process(self):
         
@@ -516,6 +699,9 @@ class ProcessItem(qt_ui.TreeWidgetItem):
     def set_directory(self, directory):
         
         self.directory = directory
+           
+    def get_process(self):
+        return self._get_process()
            
     def get_path(self):
         

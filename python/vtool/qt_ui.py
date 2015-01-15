@@ -18,8 +18,8 @@ try:
         except:
             pass
     type_QT = 'pyside'
-    #do not remove print
-    print 'using pyside'
+    util.show('using pyside')
+    
 except:
     type_QT = None
 
@@ -30,7 +30,7 @@ if not type_QT == 'pyside':
         import sip
         type_QT = 'pyqt'
         #do not remove print
-        print 'using pyqt'
+        util.show('using pyQT')
         
     except:
         type_QT = None
@@ -296,7 +296,7 @@ class TreeWidget(QtGui.QTreeWidget):
             
     def _item_expanded(self, item):
         self._add_sub_items(item) 
-        self.resizeColumnToContents(self.title_text_index)
+        #self.resizeColumnToContents(self.title_text_index)
         
     def _edit_start(self, item):
         

@@ -305,8 +305,7 @@ class CurveDataInfo():
         
     def create_curves(self):
         if not self.active_library:
-            #do not remove print
-            print 'Must set active library before running this function.'
+            util.warning('Must set active library before running this function.')
             return
         
         curves_dict = self.library_curves[self.active_library]

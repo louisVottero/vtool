@@ -18,6 +18,14 @@
 		<p> This will try to find the processes in the supplied directory. If no directory supplied, it will search the current working directory.</p>
 		<h4> get_unused_process_name( directory = None )</h4>
 		<p> This will try to find a a process named <b>process</b> in the directory. It will increment the name to <b>process1</b> and beyond until it finds a unique name. If no directory supplied, it will search the current working directory.</p>
+		<h4> copy_process( source_process, target_process = None ) </h4>
+		<p> source process is an instance of a process that you want to copy </p>
+		<p> target_process is the instance of a process you want to copy to. </p>
+		<p> If no target_process is specified, the target process will be set to the directory where the source process is located automatically. </p>
+		<p> If there is already a process named the same in the target process, the name will be incremented. </p>
+		<p>	If you need to give the copy a specific name, you should rename it after copy. </p>
+		
+		
 		<h4> copy_process_data( source_process, target_process, data_name, replace = False ) </h4>
 		<p> source_process and target_process need to be instances of the Process class. The instances should be set to the directory and process name desired to work with. <b>data_name</b> specifies the name of the data folder to copy. If <b>replace</b> the existing data with the same name will be deleted and replaced by the copy. </p> 	
 		<h4> copy_process_code( source_process, target_process, code_name, replace = False )</h4>

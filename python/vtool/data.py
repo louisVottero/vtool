@@ -316,8 +316,8 @@ class MayaCustomData(CustomData):
             cmds.select(cl = True)
             cmds.viewFit(an = True)
         except:
-            #do not remove print
-            print 'Could not center view.'
+            util.show('Could not center view')
+            
       
 class ControlCvData(MayaCustomData):
     def _data_name(self):
@@ -555,11 +555,7 @@ class LoadWeightFileThread(threading.Thread):
         
         influence_name = maya_lib.util.get_skin_influence_at_index(influence_index, skin)
         
-        print influence_name, path
-        
         filepath = util_file.create_file('%s.weights' % influence_name, path)
-        
-        print 'weight file', filepath
         
         write = util_file.WriteFile(filepath)
         write.write_line(weights)     
@@ -649,7 +645,6 @@ class DeformerWeightData(MayaCustomData):
             if not lines:
                 return
             
-            print filename, weights
             deformer = filename.split('.')[0]
             
             maya_lib.util.set_deformer_weights(weights, deformer)    
@@ -869,8 +864,8 @@ class AnimationData(MayaCustomData):
                     try:
                         cmds.connectAttr('%s.output' % key, output)
                     except:
-                        #do not remove print
-                        print 'Could not connect %s.output to %s' % (key,output)            
+                        util.show('Could not connect %s.output to %s' % (key,output))
+                        
 
             input_attr = keyframes['input']
             
@@ -881,8 +876,8 @@ class AnimationData(MayaCustomData):
                 try:
                     cmds.connectAttr(input_attr, '%s.input' % key)
                 except:
-                    #do not remove print
-                    print 'Could not connect %s to %s.input' % (input_attr,key)
+                    util.show('Could not connect %s to %s.input' % (input_attr,key))
+                    
         
 
 
@@ -1096,8 +1091,8 @@ class MayaAttributeData(MayaCustomData):
             node_name = filename.split('.')[0]
 
             if not cmds.objExists(node_name):
-                #do not remove print
-                print 'Could not import attributes for %s' % node_name
+                
+                util.show('Could not import attributes for %s' % node_name )
                 continue
             
             lines = util_file.get_file_lines(filepath)
@@ -1114,8 +1109,9 @@ class MayaAttributeData(MayaCustomData):
                 try:
                     cmds.setAttr('%s.%s' % (node_name, line_list[0]), line_list[1])    
                 except:
-                    #do not remove print
-                    print 'Could not set %s to %s' % (line_list[0], line_list[1])
+                    
+                    util.show('Could not set %s to %s' % (line_list[0], line_list[1]))
+                    
             
         self._center_view()
 
@@ -1215,8 +1211,9 @@ class MayaFileData(MayaCustomData):
                       iv = True)
             
         except Exception:
-            #do not remove print
-            print traceback.format_exc()
+            
+            util.show(traceback.format_exc())
+            
         
         self._center_view()
        

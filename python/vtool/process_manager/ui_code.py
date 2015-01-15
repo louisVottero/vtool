@@ -499,7 +499,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.old_name = str(item.get_text())
         
-        new_name = qt_ui.get_comment(self, 'New name:', 'Rename %s' % self.old_name)
+        new_name = qt_ui.get_new_name('New Name', self, self.old_name)
+        
+        #new_name = qt_ui.get_comment(self, 'New name:', 'Rename %s' % self.old_name)
         
         if not new_name:
             return
@@ -755,6 +757,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         item = self._add_item(name, False)
         
         self.scrollToItem(item)
+        self.setItemSelected(item, True)
         
     def create_import_code(self):
         process_tool = process.Process()
@@ -791,8 +794,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if not status == 'Success':
             item.set_state(0)
             
-            #do not remove print
-            print status
+            vtool.util.show(status)
+            
         
     def remove_current_item(self):
         
