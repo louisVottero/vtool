@@ -12836,8 +12836,8 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
     if scale_connect:
         connect_scale(source_transform, local_group)
         
-    value = cmds.getAttr('%s.rotateOrder' % source_transform)
-    cmds.setAttr('%s.rotateOrder' % local_group, value)
+    #value = cmds.getAttr('%s.rotateOrder' % source_transform)
+    #cmds.setAttr('%s.rotateOrder' % local_group, value)
     
     if parent:
         cmds.parent(target_transform, local_group)
