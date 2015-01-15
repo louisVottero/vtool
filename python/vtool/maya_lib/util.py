@@ -7969,6 +7969,8 @@ class ConvertJointToNub(object):
                                      self.count, self.prefix, 
                                      '%s_1_%s' % (self.name,self.side), True)
             
+            
+            
             for joint in joints[:-1]:
                 orient = OrientJoint(joint)
                 
