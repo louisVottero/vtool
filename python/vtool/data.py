@@ -341,6 +341,8 @@ class ControlCvData(MayaCustomData):
                 library.set_shape_to_curve(shapes[0], control, True)
                 
         self._center_view()
+        
+        util.show('Imported control cvs')
     
     def export_data(self, comment):
         
@@ -363,6 +365,8 @@ class ControlCvData(MayaCustomData):
         
         version = util_file.VersionFile(filepath)
         version.save(comment)
+        
+        util.show('Exported control cvs')
           
 class SkinWeightData(MayaCustomData):
 
@@ -502,6 +506,8 @@ class SkinWeightData(MayaCustomData):
             cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
             cmds.skinCluster(skin_cluster, edit = True, forceNormalizeWeights = True)
             
+            util.show('Imported skin weights on %s' % mesh)
+            
         cmds.undoInfo(state = True)
         
         self._center_view()
@@ -544,8 +550,10 @@ class SkinWeightData(MayaCustomData):
                     
                     info_lines.append(influence_line)
                 
-                    
+                
                 write_info.write(info_lines)
+                
+                util.show('Imported skin weights on %s' % thing)
              
 class LoadWeightFileThread(threading.Thread):
     def __init__(self):
@@ -1013,6 +1021,8 @@ class PoseData(MayaCustomData):
                 
             if rels:
                 cmds.parent(rels, 'pose_gr')
+                
+        util.show('Exported poses')
     
     def import_data(self):
         path = util_file.join_path(self.directory, self.name)
@@ -1052,6 +1062,8 @@ class PoseData(MayaCustomData):
         pose_manager.attach_poses()
         pose_manager.create_pose_blends()
         pose_manager.set_pose_to_default()
+        
+        util.show('Imported poses')
         
 class MayaAttributeData(MayaCustomData):
     def _data_name(self):

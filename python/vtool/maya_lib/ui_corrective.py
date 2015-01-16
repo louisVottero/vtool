@@ -447,7 +447,7 @@ class PoseTreeWidget(BaseTreeWidget):
         util.show_channel_box()
         
         cmds.select(control)
-        
+
     def _reset_sculpts(self):
         
         name = self._current_pose()
@@ -1047,12 +1047,6 @@ class MeshWidget(qt_ui.BasicWidget):
         
     def update_meshes(self, meshes = [], index = 0):
         self.mesh_list.clear()    
-        #self.combo_mesh.clear()
-        
-        #new_item = QtGui.QListWidgetItem('Add New')
-        #new_item.setSizeHint(QtCore.QSize(0,40))
-        
-        #self.mesh_list.addItem(new_item)
         
         for mesh in meshes:
         
@@ -1060,12 +1054,8 @@ class MeshWidget(qt_ui.BasicWidget):
             item.setSizeHint(QtCore.QSize(0,30))
             item.setText(mesh)
             self.mesh_list.addItem(item)
-            #self.combo_mesh.addItems(meshes)
+           
             
-        #self.combo_mesh.addItem('- new mesh -')
-        
-
-        
         item = self.mesh_list.item(index)
         if item:
             item.setSelected(True)
