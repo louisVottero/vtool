@@ -947,6 +947,7 @@ class MeshWidget(qt_ui.BasicWidget):
         
         self.update_meshes(meshes,pose.mesh_index)
         
+    @util.undo_chunk
     def add_mesh(self):
                           
         current_meshes = self.get_current_meshes()

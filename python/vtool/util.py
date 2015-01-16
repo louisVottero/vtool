@@ -708,8 +708,6 @@ def clean_string(string):
     
     return string
 
-
-    
 def show(*args):
         
     string_value = string.join(args)

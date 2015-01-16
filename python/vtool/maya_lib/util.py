@@ -35,15 +35,19 @@ def undo_off(function):
 def undo_chunk(function):
     def wrapper(*args, **kwargs):
         
+        return_value = None
+        
         cmds.undoInfo(openChunk = True)
         
         try:
-            function(*args, **kwargs)
+            return_value = function(*args, **kwargs)
         except Exception, e:
             cmds.undoInfo(closeChunk = True)
             raise Exception(e)
             
-        cmds.undoInfo(closeChunk = True)        
+        cmds.undoInfo(closeChunk = True)
+        
+        return return_value
              
     return wrapper
 
@@ -9733,6 +9737,7 @@ class BlendShape(object):
         if name in self.targets:
             return True
         
+    @undo_chunk
     def create_target(self, name, mesh):
         
         name = name.replace(' ', '_')
@@ -12835,10 +12840,7 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
     
     if scale_connect:
         connect_scale(source_transform, local_group)
-        
-    #value = cmds.getAttr('%s.rotateOrder' % source_transform)
-    #cmds.setAttr('%s.rotateOrder' % local_group, value)
-    
+            
     if parent:
         cmds.parent(target_transform, local_group)
         
