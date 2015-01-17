@@ -268,7 +268,9 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         util.orient_attributes()
         
     @util.undo_chunk
-    def _mirror(self):
+    def _mirror(self, temp = None):
+        #temp is there for the decorator... :(
+        
         util.mirror_xform('joint_')
         util.mirror_xform('guideJoint_')
         util.mirror_xform('process_')

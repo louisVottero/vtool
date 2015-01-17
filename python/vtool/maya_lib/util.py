@@ -35,16 +35,20 @@ def undo_off(function):
 def undo_chunk(function):
     def wrapper(*args, **kwargs):
         
+        return_value = None
+        
         cmds.undoInfo(openChunk = True)
         
         try:
-            function(*args, **kwargs)
+            return_value = function(*args, **kwargs)
         except Exception, e:
             cmds.undoInfo(closeChunk = True)
             raise Exception(e)
             
-        cmds.undoInfo(closeChunk = True)        
-             
+        cmds.undoInfo(closeChunk = True)
+        
+        return return_value
+                     
     return wrapper
 
 def is_batch():
@@ -2470,14 +2474,9 @@ class SparseRig(JointRig):
         
         for joint in self.joints:
             
-            
-            
             control = self._create_control()
             control.hide_visibility_attribute()
             control.set_curve_type(self.control_shape)
-        
-            
-        
             
             control_name = control.get()
         
@@ -9735,6 +9734,7 @@ class BlendShape(object):
         if name in self.targets:
             return True
         
+    @undo_chunk
     def create_target(self, name, mesh):
         
         name = name.replace(' ', '_')
@@ -10537,6 +10537,7 @@ class PoseManager(object):
             
         store = StoreControlData().eval_multi_transform_data(data_list)
     
+    @undo_chunk
     def create_pose(self, name = None):
         selection = cmds.ls(sl = True, l = True)
         
@@ -10559,12 +10560,14 @@ class PoseManager(object):
         
         return pose_control
     
+    @undo_chunk
     def reset_pose(self, pose_name):
         
         pose = PoseControl()
         pose.set_pose(pose_name)
         pose.reset_target_meshes()
     
+    @undo_chunk
     def rename_pose(self, pose_name, new_name):
         pose = BasePoseControl()
         pose.set_pose(pose_name)
@@ -10575,6 +10578,7 @@ class PoseManager(object):
         combo = ComboControl(pose_list, name)
         combo.create()
     
+    @undo_chunk
     def add_mesh_to_pose(self, pose_name, meshes = None):
 
         selection = None
@@ -10620,6 +10624,7 @@ class PoseManager(object):
         pose.set_mesh_index(mesh_index)
         pose.toggle_vis(view_only)
     
+    @undo_chunk
     def delete_pose(self, name):
         pose = PoseControl()
         pose.set_pose(name)
@@ -11247,6 +11252,7 @@ class BasePoseControl(object):
             
             inc += 1
         
+    @undo_chunk
     def reset_target_meshes(self):
         
         count = self._get_mesh_count()
@@ -11255,6 +11261,8 @@ class BasePoseControl(object):
             
             deformed_mesh = self.get_mesh(inc)
             original_mesh = self.get_target_mesh(deformed_mesh)
+            
+            cmds.delete(deformed_mesh, ch = True)
             
             blendshape = self._get_blendshape(original_mesh)
             
@@ -11265,13 +11273,25 @@ class BasePoseControl(object):
                 
             blend.set_envelope(0)    
             
-            cmds.connectAttr('%s.outMesh' % original_mesh, '%s.inMesh' % deformed_mesh)
-            cmds.refresh()
-            cmds.disconnectAttr('%s.outMesh' % original_mesh, '%s.inMesh' % deformed_mesh)
+            temp_dup = cmds.duplicate(original_mesh)[0]
+            
+            #using blendshape because of something that looks like a bug in Maya 2015
+            temp_blend = quick_blendshape(temp_dup, deformed_mesh)
+            
+            cmds.delete(temp_blend, ch = True)
+            cmds.delete(temp_dup)
+            
+            #cmds.connectAttr('%s.outMesh' % dup, '%s.inMesh' % deformed_mesh)
+            
+            
+            
+            #cmds.disconnectAttr('%s.outMesh' % dup, '%s.inMesh' % deformed_mesh)
+            
+            blend.set_envelope(1)  
+            
+        self.create_blend()  
         
-            blend.set_envelope(1)    
-        
-        
+       
     def create(self):
         top_group = self._create_top_group()
         
@@ -12837,10 +12857,7 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
     
     if scale_connect:
         connect_scale(source_transform, local_group)
-        
-    value = cmds.getAttr('%s.rotateOrder' % source_transform)
-    cmds.setAttr('%s.rotateOrder' % local_group, value)
-    
+            
     if parent:
         cmds.parent(target_transform, local_group)
         
@@ -13040,7 +13057,7 @@ def add_orient_attributes(transform):
         orient = OrientJointAttributes(thing)
         orient.set_default_values()
     
-@undo_chunk
+#@undo_chunk
 def orient_attributes(scope = None):
     if not scope:
         scope = get_top_dag_nodes()
@@ -13170,6 +13187,47 @@ def get_side(transform, center_tolerance):
         side = 'C'
             
     return side
+
+def create_no_twist_aim(source_transform, target_transform, parent):
+
+    #axis aim
+    aim = cmds.group(em = True, n = inc_name('aim_%s' % target_transform))
+    target = cmds.group(em = True, n = inc_name('target_%s' % target_transform))
+        
+    MatchSpace(source_transform, aim).translation_rotation()
+    MatchSpace(source_transform, target).translation_rotation()
+    
+    xform_target = create_xform_group(target)
+    #cmds.setAttr('%s.translateX' % target, 1)
+    cmds.move(1,0,0, target, r = True, os = True)
+    
+    cmds.parentConstraint(source_transform, target, mo = True)
+    
+    cmds.aimConstraint(target, aim, wuo = parent, wut = 'objectrotation', wu = [0,0,0])
+    
+    cmds.parent(aim, xform_target, parent)
+    
+    #pin up to axis
+    pin_aim = cmds.group(em = True, n = inc_name('aim_pin_%s' % target_transform))
+    pin_target = cmds.group(em = True, n = inc_name('target_pin_%s' % target_transform))
+    
+    MatchSpace(source_transform, pin_aim).translation_rotation()
+    MatchSpace(source_transform, pin_target).translation_rotation()
+    
+    xform_pin_target = create_xform_group(pin_target)
+    cmds.move(0,0,1, pin_target, r = True)
+    
+    cmds.aimConstraint(pin_target, pin_aim, wuo = aim, wut = 'objectrotation')
+    
+    cmds.parent(xform_pin_target, pin_aim, parent)
+       
+    #twist_aim
+    #tool_maya.create_follow_group('CNT_SPINE_2_C', 'xform_CNT_TWEAK_ARM_1_%s' % side)
+    cmds.pointConstraint(source_transform, target_transform, mo = True)
+    
+    cmds.parent(pin_aim, aim)
+    
+    cmds.orientConstraint(pin_aim, target_transform, mo = True)
 
 #--- animation
 
@@ -15608,13 +15666,16 @@ def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
         
     
 def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
+    
+    source_mesh_name = source_mesh.split('|')[-1]
+    
     if not blendshape:
         blendshape = 'blendshape_%s' % target_mesh
     
     if cmds.objExists(blendshape):
         count = cmds.blendShape(blendshape, q= True, weightCount = True)
         cmds.blendShape(blendshape, edit=True, tc = False, t=(target_mesh, count+1, source_mesh, 1.0) )
-        cmds.setAttr('%s.%s' % (blendshape, source_mesh), weight)
+        cmds.setAttr('%s.%s' % (blendshape, source_mesh_name), weight)
         
     if not cmds.objExists(blendshape):
         cmds.blendShape(source_mesh, target_mesh, tc = False, weight =[0,weight], n = blendshape, foc = True)

@@ -11,16 +11,15 @@ class StopWatch(object):
         self.time = None
     
     def start(self):
-        #do not remove print
-        print 'started timer'
+        
+        show('started timer')
         self.time = time.time()
     
     def end(self):
         seconds = time.time()-self.time
         self.time = None
         
-        #do not remove print
-        print 'end timer: %s seconds' % seconds
+        show('end timer: %s seconds' % seconds)
         
 
 class VectorBase(object):
@@ -708,8 +707,6 @@ def clean_string(string):
     
     return string
 
-
-    
 def show(*args):
         
     string_value = string.join(args)
