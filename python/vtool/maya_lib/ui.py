@@ -235,7 +235,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         corrective_button.clicked.connect(self._create_corrective)
         
         skin_mesh_from_mesh = QtGui.QPushButton('Skin Mesh From Mesh')
-        corrective_button.clicked.connect(self._skin_mesh_from_mesh)
+        skin_mesh_from_mesh.clicked.connect(self._skin_mesh_from_mesh)
         
         parent.main_layout.addWidget(corrective_button)
         parent.main_layout.addWidget(skin_mesh_from_mesh)
