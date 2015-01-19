@@ -288,6 +288,14 @@ class SelectionList(ApiObject):
         except:
             warning('Could not get mobject at index %s' % index)
             return
+   
+class TransformFunction(MayaFunction):
+    
+    def _define_api_object(self, mobject):
+        return OpenMaya.MFnTransform
+    
+    
+    
     
 class MeshFunction(MayaFunction):
     def _define_api_object(self, mobject):
@@ -4537,6 +4545,9 @@ class IkAppendageRig(BufferRig):
         world_group = self._create_group('IkWorld')
         match = MatchSpace(control, world_group)
         match.translation()
+            
+        if not self.right_side_fix and self.side == 'R':
+            cmds.rotate(180,0,0, world_group)
         
         cmds.parent([local_group,world_group], xform_group)
         
@@ -5107,8 +5118,13 @@ class TweakCurveRig(BufferRig):
 
 class IkLegRig(IkAppendageRig):
     
-    def _fix_right_side_orient(self, control):
-        return
+    def __init__(self, description, side):
+        super(IkLegRig, self).__init__(description, side)
+        
+        self.right_side_fix = False
+    
+    #def _fix_right_side_orient(self, control):
+    #    return
     
     def _create_pole_vector(self):
         
@@ -8999,7 +9015,8 @@ class StoreControlData(StoreData):
             if not control.endswith('_L'):
                 continue               
     
-            temp_group = cmds.group(em = True, n = inc_name('temp_%s' % control))
+            #temp_group = cmds.group(em = True, n = inc_name('temp_%s' % control))
+            temp_group = cmds.duplicate(control, n = 'temp_%s' % control, po = True)[0]
             
             MatchSpace(control, temp_group).translation_rotation()
             parent_group = cmds.group(em = True)
@@ -9007,24 +9024,35 @@ class StoreControlData(StoreData):
             
             cmds.setAttr('%s.scaleX' % parent_group, -1)
             
-            temp_xform = create_xform_group(temp_group, use_duplicate = True)
+            #temp_xform = create_xform_group(temp_group, use_duplicate = True)
+            
+            orig_value_x = cmds.getAttr('%s.rotateX' % control)
+            orig_value_y = cmds.getAttr('%s.rotateY' % control)
+            orig_value_z = cmds.getAttr('%s.rotateZ' % control)
             
             zero_xform_channels(control)
-                        
-            matrix = cmds.xform(control, q = True, os = True, m = True)
-            other_matrix = cmds.xform(other_control, q = True, os = True, m = True )
             
-            angle = cmds.angleBetween( er = True, v1 = (matrix[0],matrix[1], matrix[2]), v2 = (other_matrix[0], other_matrix[1], other_matrix[2]) )
-            #if angle > 30:
-            #    cmds.makeIdentity(parent_group, apply = True, s = True)
-             
             const1 = cmds.pointConstraint(temp_group, other_control)[0]
             const2 = cmds.orientConstraint(temp_group, other_control)[0]
             #const = cmds.parentConstraint(temp_group, other_control)
             
+            value_x = cmds.getAttr('%s.rotateX' % other_control)
+            value_y = cmds.getAttr('%s.rotateY' % other_control)
+            value_z = cmds.getAttr('%s.rotateZ' % other_control)
+            
             cmds.delete([const1, const2])
-            #cmds.delete(const)
-            #cmds.delete(parent_group)
+            
+            if abs(value_x) - abs(orig_value_x) > 0.01 or abs(value_y) - abs(orig_value_y) > 0.01 or abs(value_z) - abs(orig_value_z) > 0.01:
+                
+                cmds.setAttr('%s.rotateX' % other_control, orig_value_x)
+                cmds.setAttr('%s.rotateY' % other_control, -1*orig_value_y)
+                cmds.setAttr('%s.rotateZ' % other_control, -1*orig_value_z)
+                
+                #cmds.setAttr('%s.offsetZ' % const2, -180)
+            
+            
+            
+            
             
             
             
@@ -10523,6 +10551,10 @@ class PoseManager(object):
         store = StoreControlData(pose)
         store.eval_data()
         
+    def set_pose_data(self, pose):
+        store = StoreControlData(pose)
+        store.set_data()
+        
     def set_poses(self, pose_list):
         
         data_list = []
@@ -10645,12 +10677,15 @@ class PoseManager(object):
             pose = PoseControl()
             pose.set_pose(pose_name)
             pose.attach()
-            
-            
+        
     @undo_chunk    
-    def create_pose_blends(self):
+    def create_pose_blends(self, pose_name = None):
         
-        
+        if pose_name:
+            pose = PoseControl()
+            pose.set_pose(pose_name)
+            pose.create_all_blends()
+            return
         
         poses = self.get_poses()
         count = len(poses)
@@ -10658,27 +10693,24 @@ class PoseManager(object):
         progress = ProgressBar('adding poses ... ', count)
     
         for inc in range(count) :
-            #cmds.undoInfo(openChunk = True)
-            #cmds.undoInfo(state = False)
+            
             try:
                 if progress.break_signaled():
                     break
                 
                 pose_name = poses[inc]
+                
                 pose = PoseControl()
                 pose.set_pose(pose_name)
                 pose.create_all_blends()
-                
+                             
                 cmds.refresh()
                 
                 progress.inc()
                 progress.status('adding pose %s' % pose_name)
+            
             except Exception:
                 RuntimeError( traceback.format_exc() )
-                
-            
-            #cmds.undoInfo(state = True)
-            #cmds.undoInfo(closeChunk = True)
             
         progress.end()
     

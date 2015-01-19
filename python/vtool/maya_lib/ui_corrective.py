@@ -358,6 +358,29 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self._create_context_menu()
         
+    def mousePressEvent(self, event):
+        
+        model_index =  self.indexAt(event.pos())
+        
+        """
+        if model_index.column() > 0:
+            self.clearSelection()
+        
+        if model_index is None:
+            self.clearSelection()
+        """
+        
+        item = self.itemAt(event.pos())
+        
+        if not item or model_index.column() == 1:
+            self.clearSelection()
+            
+        
+        if event.button() == QtCore.Qt.RightButton:
+            return
+        
+        if model_index.column() == 0 and item:
+            super(PoseTreeWidget, self).mousePressEvent(event)
         
     def _item_menu(self, position):
                 
@@ -387,25 +410,19 @@ class PoseTreeWidget(BaseTreeWidget):
         self.select_joint_action = self.context_menu.addAction('Select Joint')
         self.select_blend_action = self.context_menu.addAction('Select Blendshape')
         self.context_menu.addSeparator()
+        self.set_pose_action = self.context_menu.addAction('Update Pose')
         self.reset_sculpts_action = self.context_menu.addAction('Reset Sculpt')
         self.context_menu.addSeparator()
         self.refresh_action = self.context_menu.addAction('Refresh')
-        #self.view_action = self.context_menu.addAction('View')
         
-        #self.x_action.setCheckable(True)
-        #self.y_action.setCheckable(True)
-        #self.z_action.setCheckable(True)
-        #self.x_action.setChecked(True)
         
         self.item_context = [self.rename_action, 
                         self.delete_action,
                         self.reset_sculpts_action,
+                        self.set_pose_action,
                         self.select_joint_action,
                         self.select_pose_action,
                         self.select_blend_action]
-                        #self.sculpt_action,
-                        #self.view_action,
-                        #self.mirror_action]
         
         self.create_action.triggered.connect(self.create_pose)
         self.rename_action.triggered.connect(self._rename_pose)
@@ -413,8 +430,11 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.select_joint_action.triggered.connect(self._select_joint)
         self.select_pose_action.triggered.connect(self._select_pose)
+        self.set_pose_action.triggered.connect(self._set_pose_data)
         self.reset_sculpts_action.triggered.connect(self._reset_sculpts)
+        
         self.select_blend_action.triggered.connect(self._select_blend)
+        
         
         self.refresh_action.triggered.connect(self._populate_list)
     
@@ -447,6 +467,12 @@ class PoseTreeWidget(BaseTreeWidget):
         util.show_channel_box()
         
         cmds.select(control)
+
+    def _set_pose_data(self):
+        
+        name = self._current_pose()
+        control = util.PoseManager().get_pose_control(name)
+        util.PoseManager().set_pose_data(control)
 
     def _reset_sculpts(self):
         
@@ -488,6 +514,8 @@ class PoseTreeWidget(BaseTreeWidget):
         #    return
         
         
+        print name
+        
         pose = None
         
         if name:
@@ -498,6 +526,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         if not pose:
             return
+        
         
         item = QtGui.QTreeWidgetItem()
         item.setText(0, pose)
