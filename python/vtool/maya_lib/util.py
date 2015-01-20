@@ -9571,6 +9571,9 @@ class SuspensionRig(BufferRig):
         cmds.pointConstraint(top_control.get(), top_joint)
         cmds.parent(handle, btm_control.get())
         
+        self.controls = [top_control.control, btm_control.control]
+        self.xforms = [xform_top_control, xform_btm_control]
+        
         cmds.hide(handle)
                     
     def create(self):
