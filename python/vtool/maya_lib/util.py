@@ -15433,6 +15433,16 @@ def skin_curve_from_mesh(source_mesh, target, include_joints = [], exclude_joint
     
     skin_mesh_from_mesh(source_mesh, target, exclude_joints = exclude_joints, include_joints = include_joints)
 
+def skin_group(joint, group):
+    
+    rels = cmds.listRelatives(group, ad = True, f = True)
+    
+    
+    for rel in rels:
+        try:
+            cmds.skinCluster(joint, rel, tsb = True)
+        except:
+            pass
 
 def lock_joints(skin_cluster, skip_joints = None):
     influences = get_influences_on_skin(skin_cluster)
