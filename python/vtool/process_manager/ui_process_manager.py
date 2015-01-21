@@ -285,7 +285,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process.set_external_code_library(code_directory)
         
         if util.is_in_maya():
-            import maya.cmds as cmds
             cmds.file(new = True, f = True)
         
         scripts, states = self.process.get_manifest()
