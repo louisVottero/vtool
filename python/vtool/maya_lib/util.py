@@ -2197,6 +2197,7 @@ class StretchyChain:
 
 #These are only for backwards compatibility. 
 #They should not be used within this module!!!
+#new classes built after this change will not be added to this list
 
 Rig = rigs.Rig
 JointRig = rigs.JointRig
