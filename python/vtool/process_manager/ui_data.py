@@ -191,13 +191,14 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         if not new_name:
             return
-        
+                
         item.setText(0, new_name)
         
         #if not self._item_rename_valid(old_name, item):
         #    item.setText(0, old_name)
         
-        self._item_renamed(item)
+        
+        self._item_renamed(item, old_name)
     
     def _browse_current_item(self):
         
@@ -240,14 +241,14 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         #return ['Name','Type','Size','Date']
         return ['Name','Type']
         
-    def _item_renamed(self, item):
+    def _item_renamed(self, item, old_name):
+        
+        
         
         if type(item) == int:
             return
         
         name = item.text(0)
-        
-        old_name = item.folder
         
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
