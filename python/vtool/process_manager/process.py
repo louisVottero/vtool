@@ -410,6 +410,9 @@ class Process(object):
         
         #data_instance.create()
         
+        if not data_instance:
+            return
+        
         if name == 'manifest':
             data_instance.create()
             return

@@ -151,14 +151,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     def mouseMoveEvent(self, event):
         model_index =  self.indexAt(event.pos())
         
-        """
-        if model_index.column() > 0:
-            self.clearSelection()
-        
-        if model_index is None:
-            self.clearSelection()
-        """
-        
         item = self.itemAt(event.pos())
         
         if not item or model_index.column() == 1:
@@ -174,14 +166,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     def mousePressEvent(self, event):
         
         model_index =  self.indexAt(event.pos())
-        
-        """
-        if model_index.column() > 0:
-            self.clearSelection()
-        
-        if model_index is None:
-            self.clearSelection()
-        """
         
         item = self.itemAt(event.pos())
         
@@ -207,19 +191,13 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         index = self.indexAt(position)
         
-        #if index.column() > 0:
-        #    return
-        
         if item and index.column() == 0:
-            
-            #self.new_empty_process.setVisible(True)
             self.rename_action.setVisible(True)
             self.copy_action.setVisible(True)
             self.copy_special_action.setVisible(True)
             self.remove_action.setVisible(True)
         
         if not item or index.column() > 0:
-            #self.new_empty_process.setVisible(False)
             self.rename_action.setVisible(False)
             self.copy_action.setVisible(False)
             self.copy_special_action.setVisible(False)
@@ -236,7 +214,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.context_menu = QtGui.QMenu()
         
         new_process_action = self.context_menu.addAction('New Process')
-        #self.new_empty_process = self.context_menu.addAction('New Top Level Process')
         
         self.context_menu.addSeparator()
         self.context_menu.addSeparator()
@@ -276,9 +253,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         new_name = qt_ui.get_new_name('New Name', self, old_name)
         
-        #if not self._item_rename_valid(old_name, item):
-        #    return
-        
         if not new_name:
             return
         
@@ -286,9 +260,12 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if not self._item_rename_valid(old_name, item):
             item.setText(0, old_name)
+            return
         
-        self._item_renamed(item)
+        rename_worked = self._item_renamed(item)
         
+        if not rename_worked:
+            item.setText(0, old_name)
         
         
     def _copy_process(self):

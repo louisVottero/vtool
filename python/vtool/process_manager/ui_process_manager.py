@@ -267,6 +267,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return self.process.get_path()
            
     def _process(self):
+        
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            if cmds.file(q = True, mf = True):
+                result = qt_ui.get_permission('Changes not saved. Continue Opening?', self)
+                if not result:
+                    return
+        
         self.process_button.setDisabled(True)
         
         self.code_widget.reset_process_script_state()
