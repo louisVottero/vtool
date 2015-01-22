@@ -1648,13 +1648,18 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         shortcut_l = QtGui.QShortcut(QtGui.QKeySequence(self.tr('Ctrl+l')), self)
         shortcut_l.activated.connect(self._goto_line)
+
+        print type( QtCore.Qt.CTRL + QtCore.Qt.Key_Plus ), type(self)
         
-        shortcut_zoom_in = QtGui.QShortcut(QtCore.Qt.CTRL + QtCore.Qt.Key_Plus, self)
+        plus_seq = QtGui.QKeySequence( QtCore.Qt.CTRL + QtCore.Qt.Key_Plus)
+        equal_seq = QtGui.QKeySequence( QtCore.Qt.CTRL + QtCore.Qt.Key_Equal)
+        minus_seq = QtGui.QKeySequence( QtCore.Qt.CTRL + QtCore.Qt.Key_Minus)
+        
+        shortcut_zoom_in = QtGui.QShortcut(plus_seq, self)
         shortcut_zoom_in.activated.connect(self._zoom_in_text)
-        shortcut_zoom_in_other = QtGui.QShortcut(QtCore.Qt.CTRL + QtCore.Qt.Key_Equal, self)
+        shortcut_zoom_in_other = QtGui.QShortcut(equal_seq, self)
         shortcut_zoom_in_other.activated.connect(self._zoom_in_text)
-        shortcut_zoom_out = QtGui.QShortcut(QtCore.Qt.CTRL + QtCore.Qt.Key_Minus, self)
-        
+        shortcut_zoom_out = QtGui.QShortcut(minus_seq, self)
         shortcut_zoom_out.activated.connect(self._zoom_out_text)
         
         self._setup_highlighter()
