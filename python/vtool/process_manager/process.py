@@ -830,6 +830,9 @@ def copy_process_code(source_process, target_process, code_name, replace = False
         
         code_filepath =  target_process.get_code_file(code_name)
         
+        print code_filepath, target_process.directory
+        print code_name
+        
         if not code_filepath:
             raise RuntimeError('Could not find codepath: %s' % code_filepath)
             return

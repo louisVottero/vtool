@@ -709,6 +709,9 @@ def clean_string(string):
 
 def show(*args):
         
+    if not args:
+        return
+        
     string_value = string.join(args)
     
     string_value = string_value.replace('\n', '\t\n')
