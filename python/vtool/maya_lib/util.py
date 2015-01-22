@@ -10545,7 +10545,9 @@ def lock_attributes(node, bool_value = True, attributes = None, hide = False):
         cmds.setAttr(attribute_name, lock = bool_value)
         
         if hide:
+            cmds.setAttr(attribute_name, k = False)
             cmds.setAttr(attribute_name, cb = False)
+            
         
         
 def unlock_attributes(node, attributes = [], only_keyable = False):
