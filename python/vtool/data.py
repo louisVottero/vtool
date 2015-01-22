@@ -1203,7 +1203,11 @@ class MayaFileData(MayaCustomData):
         
         self._center_view()
         
+        
+        
     def open(self, filepath = None):
+        
+        
         
         open_file = None
         

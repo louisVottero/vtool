@@ -267,6 +267,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return self.process.get_path()
            
     def _process(self):
+        
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            if cmds.file(q = True, mf = True):
+                result = qt_ui.get_permission('Changes not saved. Continue Opening?', self)
+                if not result:
+                    return
+        
         self.process_button.setDisabled(True)
         
         self.code_widget.reset_process_script_state()
@@ -277,7 +285,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process.set_external_code_library(code_directory)
         
         if util.is_in_maya():
-            import maya.cmds as cmds
             cmds.file(new = True, f = True)
         
         scripts, states = self.process.get_manifest()

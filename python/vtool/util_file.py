@@ -382,9 +382,8 @@ class SettingsFile(object):
             value = split_line[-1].strip()
             
             value = fix_slashes(value)
-            
-            value = eval(value)
-            
+                      
+            value = eval(str(value))
             
             self.settings_dict[name] = value
             
@@ -401,7 +400,9 @@ class SettingsFile(object):
             
             if type(value) == str or type(value) == unicode:
                 value = "'%s'" % value
-                            
+            
+            
+                        
             line = '%s = %s' % (key, str(value))
             
             lines.append(line)

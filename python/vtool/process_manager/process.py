@@ -307,7 +307,7 @@ class Process(object):
     def rename_data(self, old_name, new_name):
                 
         data_folder = data.DataFolder(old_name, self.get_data_path())
-                
+        
         return data_folder.rename(new_name)
     
     def delete_data(self, name):
@@ -409,6 +409,9 @@ class Process(object):
         data_instance = data_folder.get_folder_data_instance()
         
         #data_instance.create()
+        
+        if not data_instance:
+            return
         
         if name == 'manifest':
             data_instance.create()

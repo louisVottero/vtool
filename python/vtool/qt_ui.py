@@ -1639,11 +1639,23 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         super(CodeTextEdit, self).__init__()
         
+        self.setFont( QtGui.QFont('Courier', 9)  )
+        
+        #self.setStyleSheet( 'font-style:Courier;')
+        
         shortcut = QtGui.QShortcut(QtGui.QKeySequence(self.tr("Ctrl+s")), self)
         shortcut.activated.connect(self._save)
         
         shortcut_l = QtGui.QShortcut(QtGui.QKeySequence(self.tr('Ctrl+l')), self)
         shortcut_l.activated.connect(self._goto_line)
+        
+        shortcut_zoom_in = QtGui.QShortcut(QtCore.Qt.CTRL + QtCore.Qt.Key_Plus, self)
+        shortcut_zoom_in.activated.connect(self._zoom_in_text)
+        shortcut_zoom_in_other = QtGui.QShortcut(QtCore.Qt.CTRL + QtCore.Qt.Key_Equal, self)
+        shortcut_zoom_in_other.activated.connect(self._zoom_in_text)
+        shortcut_zoom_out = QtGui.QShortcut(QtCore.Qt.CTRL + QtCore.Qt.Key_Minus, self)
+        
+        shortcut_zoom_out.activated.connect(self._zoom_out_text)
         
         self._setup_highlighter()
         
@@ -1653,6 +1665,23 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         self.skip_focus = False
         
+    
+    def wheelEvent(self, event):
+        
+        delta = event.delta()
+        keys =  event.modifiers()
+        
+        if not keys == QtCore.Qt.CTRL:
+            
+            return
+        
+        if delta > 0:
+            self._zoom_in_text()
+        if delta < 0:
+            self._zoom_out_text()
+        
+        return super(CodeTextEdit, self).wheelEvent(event)
+     
     def _goto_line(self):
         
         line = get_comment(self, 'Goto Line', '?')
@@ -1676,6 +1705,27 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         text_cursor.movePosition(move_type, text_cursor.MoveAnchor, number)
         self.setTextCursor(text_cursor)
+        
+    def _zoom_in_text(self):
+        font = self.font()
+        
+        size = font.pointSize()
+        size += 1
+        
+        font.setPointSize( size )
+        self.setFont( QtGui.QFont('Courier', size) )
+
+    def _zoom_out_text(self):
+        font = self.font()
+                
+        size = font.pointSize()
+        size -= 1
+        
+        if size < 0:
+            return
+        
+        font.setPointSize( size )
+        self.setFont( QtGui.QFont('Courier', size) )
         
     def focusInEvent(self, event):
         
