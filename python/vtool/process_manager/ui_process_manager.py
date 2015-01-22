@@ -271,7 +271,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if util.is_in_maya():
             import maya.cmds as cmds
             if cmds.file(q = True, mf = True):
-                result = qt_ui.get_permission('Changes not saved. Continue Opening?', self)
+                result = qt_ui.get_permission('Changes not saved. Run process anyways?', self)
                 if not result:
                     return
         
