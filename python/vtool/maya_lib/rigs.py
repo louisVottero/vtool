@@ -26,6 +26,8 @@ class Rig(object):
         
         self.control_shape = self._define_control_shape()
         
+        self.controls = []
+        
     def _refresh(self):
         cmds.refresh()
         
@@ -72,6 +74,8 @@ class Rig(object):
         control.color( util.get_color_of_side( self.side , sub_value)  )
         control.hide_visibility_attribute()
         control.set_curve_type(self.control_shape)
+        
+        self.controls.append(control.get())
         
         return control
     
@@ -149,13 +153,30 @@ class JointRig(Rig):
         #for inc in range( 0, len(source_chain) ):
         #    self._attach_joint(source_chain[inc], target_chain[inc] )
     
+    def _check_joints(self, joints):
+        
+        for joint in joints:
+            if cmds.nodeType(joint) == 'joint':
+                continue
+            
+            if cmds.nodeType(joint) == 'transform':
+                continue
+            
+            vtool.util.show('%s is not a joint or transform. %s may not build properly.' % (joint, self.__class__.__name__))
+        
+    
     def set_joints(self, joints):
         
         if type(joints) != list:
             self.joints = [joints]
+            
+            self._check_joints(self.joints)
+            
             return
         
         self.joints = joints
+        
+        self._check_joints(self.joints)
 
     def set_attach_joints(self, bool_value):
         
@@ -340,8 +361,6 @@ class SparseLocalRig(SparseRig):
         self.control_to_pivot = False
         self.local_parent = None
         self.local_xform = None
-        
-        
 
     def set_local_constraint(self, bool_value):
         self.local_constraint = bool_value
@@ -373,6 +392,7 @@ class SparseLocalRig(SparseRig):
                 match = util.MatchSpace(joint, control_name)
                 match.translation_rotation()
             if self.control_to_pivot:
+                
                 util.MatchSpace(joint, control_name).translation_to_rotate_pivot()
             
             if self.respect_side:
@@ -557,7 +577,7 @@ class FkRig(BufferRig):
         self.current_xform_group = util.create_xform_group(self.control.get())
         driver = util.create_xform_group(self.control.get(), 'driver')
         
-        self.controls.append( self.control )
+        #self.controls.append( self.control )
         self.drivers.append(driver)
         self.control = self.control.get()
 
@@ -710,7 +730,6 @@ class FkLocalRig(FkRig):
         self.current_xform_group = util.create_xform_group(self.control.get())
         driver = util.create_xform_group(self.control.get(), 'driver')
         
-        self.controls.append( self.control )
         self.drivers.append(driver)
         self.control = self.control.get()
         
@@ -741,7 +760,6 @@ class FkWithSubControlRig(FkRig):
         self.current_xform_group = util.create_xform_group(self.control.get())
         driver = util.create_xform_group(self.control.get(), 'driver')
         
-        self.controls.append( self.control )
         self.drivers.append(driver)
         self.control = self.control.get()
         
@@ -1079,13 +1097,13 @@ class SimpleSplineIkRig(BufferRig):
             
         if self.buffer_joints != self.joints:
             
-            follow = util.create_follow_group(self.controls[0].get(), self.buffer_joints[0])
+            follow = util.create_follow_group(self.controls[0], self.buffer_joints[0])
             cmds.parent(follow, self.setup_group)
         
         """
         var = util.MayaNumberVariable('twist')
         var.set_variable_type(var.TYPE_DOUBLE)
-        var.create(self.controls[0].get())
+        var.create(self.controls[0])
         var.connect_out('%s.twist' % handle)
         """
     def set_curve(self, curve):
@@ -1205,7 +1223,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             control = util.Control(control)
             control.delete_shapes()
             self.controls[-1].rename(self.first_control.replace('CNT_', 'ctrl_'))
-            self.first_control = self.controls[-1].get()
+            self.first_control = self.controls[-1]
 
         if self.sub_controls:
             self.top_sub_control = self.sub_controls[0]
@@ -1217,13 +1235,14 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
                 self.sub_controls[0] = self.top_sub_control
     
     def _increment_greater_than_zero(self, control, current_transform):
-        cmds.parent(self.current_xform_group, self.controls[-2].get())    
+        
+        cmds.parent(self.current_xform_group, self.controls[-2])    
 
     def _last_increment(self, control, current_transform):
         
         if self.create_follows:
             
-            util.create_follow_fade(self.controls[-1].get(), self.sub_drivers[:-1])
+            util.create_follow_fade(self.controls[-1], self.sub_drivers[:-1])
             util.create_follow_fade(self.sub_controls[-1], self.sub_drivers[:-1])
             util.create_follow_fade(self.sub_controls[0], self.sub_drivers[1:])
             util.create_follow_fade(self.sub_drivers[0], self.sub_drivers[1:])
@@ -1296,7 +1315,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             return
         
         if self.stretchy:    
-            util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1].get(), self.stretch_on_off)
+            util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1], self.stretch_on_off)
     
     def _loop(self, transforms):
                 
@@ -1453,13 +1472,13 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             
         if not self.advanced_twist and self.buffer_joints != self.joints:
             
-            follow = util.create_follow_group(self.controls[0].get(), self.buffer_joints[0])
+            follow = util.create_follow_group(self.controls[0], self.buffer_joints[0])
             cmds.parent(follow, self.setup_group)
             
         if not self.advanced_twist:
             var = util.MayaNumberVariable('twist')
             var.set_variable_type(var.TYPE_DOUBLE)
-            var.create(self.controls[0].get())
+            var.create(self.controls[0])
             var.connect_out('%s.twist' % handle)
     
     def set_control_xform(self, vector, inc):
@@ -1589,8 +1608,8 @@ class FkCurveRig(SimpleFkCurveRig):
         
         mid_control_id = len(self.sub_controls)/2
         
-        cmds.aimConstraint(self.sub_controls[mid_control_id], aim1, wuo = self.controls[0].get(), wut = 'objectrotation')
-        cmds.aimConstraint(self.sub_controls[mid_control_id], aim2, wuo = self.controls[-1].get(), wut = 'objectrotation')
+        cmds.aimConstraint(self.sub_controls[mid_control_id], aim1, wuo = self.controls[0], wut = 'objectrotation')
+        cmds.aimConstraint(self.sub_controls[mid_control_id], aim2, wuo = self.controls[-1], wut = 'objectrotation')
 
         cmds.parent(cluster1, aim1)
         cmds.parent(cluster2, aim2)
@@ -1738,8 +1757,8 @@ class FkCurveLocalRig(FkCurveRig):
             
         if not self.advanced_twist:
             
-            util.create_local_follow_group(self.controls[0].get(), self.buffer_joints[0])
-            #util.constrain_local(self.controls[0].get(), self.buffer_joints[0])
+            util.create_local_follow_group(self.controls[0], self.buffer_joints[0])
+            #util.constrain_local(self.controls[0], self.buffer_joints[0])
             
     def set_local_parent(self, parent):
         self.local_parent = parent
@@ -1835,13 +1854,13 @@ class PointingFkCurveRig(SimpleFkCurveRig):
         constraint = constraint_editor.get_constraint(self.clusters[-1], 'parentConstraint')
         
         cmds.delete(constraint)
-        cmds.parentConstraint(self.controls[-1].get(), self.clusters[-1])
+        cmds.parentConstraint(self.controls[-1], self.clusters[-1])
         
         util.create_local_follow_group(self.sub_controls[-1], self.buffer_joints[-1], orient_only = False)
-        cmds.setAttr('%s.subVisibility' % self.controls[-1].get(), 1)
+        cmds.setAttr('%s.subVisibility' % self.controls[-1], 1)
         util.create_follow_group(self.buffer_joints[-2], 'xform_%s' % self.sub_controls[-1])
         
-        cmds.parent(self.end_locator, self.controls[-1].get())
+        cmds.parent(self.end_locator, self.controls[-1])
 
 class NeckRig(FkCurveRig):
     def _first_increment(self, control, current_transform):
@@ -3190,7 +3209,7 @@ class FkQuadrupedSpineRig(FkCurveRig):
             
             other_sub_control.scale_shape(2, 2, 2)
             
-            control = self.controls[-1].get()
+            control = self.controls[-1]
             other_sub = other_sub_control.get()
             
             if self.mid_control_joint:
@@ -3204,7 +3223,7 @@ class FkQuadrupedSpineRig(FkCurveRig):
             
             xform = util.create_xform_group(other_sub_control.get())
                 
-            cmds.parent(xform, self.controls[-2].get())
+            cmds.parent(xform, self.controls[-2])
             parent = cmds.listRelatives(self.sub_controls[-1], p = True)[0]
             xform = cmds.listRelatives(parent, p = True)[0]
             
@@ -5470,7 +5489,7 @@ class JawRig(FkLocalRig):
         
         local_group, local_xform = super(JawRig, self)._attach(source_transform, target_transform)
         
-        control = self.controls[-1].get()
+        control = self.controls[-1]
         live_control = util.Control(control)
         live_control.rotate_shape(0, 0, 90)
         
@@ -5929,8 +5948,6 @@ class BackLeg(BufferRig):
             source = source_chain[inc]
             target = target_chain[inc]
             
-            print 'attaching', source, target
-
             cmds.parentConstraint(source, target, mo = True)
             util.connect_scale(source, target)
 

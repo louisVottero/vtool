@@ -32,6 +32,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.project_directory = None
         self.last_tab = 0
         self.last_process = None
+        self.sync_code = False
         super(ProcessManagerWindow, self).__init__(parent) 
         
         self._set_default_directory()
@@ -47,6 +48,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.itemChanged.connect(self._item_changed)
         self.view_widget.tree_widget.item_renamed.connect(self._item_changed)
         self.view_widget.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
+        self.view_widget.sync_code.connect(self._sync_code)
+           
+    def _sync_code(self):
+        self.sync_code = True
                 
     def _item_changed(self, item):
         
@@ -81,21 +86,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _build_widgets(self):
         
-        
-        
         self.header_layout = QtGui.QHBoxLayout()
         
         self.active_title = QtGui.QLabel('-')
         self.active_title.setAlignment(QtCore.Qt.AlignCenter)
         
-        #help_button = QtGui.QPushButton('?')
-        #help_button.setMaximumWidth(20)
-        #help_button.setMaximumHeight(20)
-        #help_button.clicked.connect(self._open_help)
-        
         self.header_layout.addWidget(self.active_title, alignment = QtCore.Qt.AlignCenter)
-        #self.header_layout.addWidget(help_button, alignment = QtCore.Qt.AlignRight)
-        
         
         self.tab_widget = QtGui.QTabWidget()
         self.tab_widget.currentChanged.connect(self._tab_changed)
@@ -127,6 +123,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process_button = QtGui.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
+        self.process_button.setMaximumWidth(200)
         self.browser_button = QtGui.QPushButton('Browse')
         self.browser_button.setMaximumWidth(100)
         help_button = QtGui.QPushButton('?')
@@ -207,12 +204,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
                 path = self.view_widget.tree_widget.directory
                 path = util_file.join_path(path, self.process.get_name())
-                             
-                self.code_widget.set_directory(path)
+                
+                self.code_widget.set_directory(path, sync_code = self.sync_code)
+                if self.sync_code:
+                    self.sync_code = False
+         
                 code_directory = self.settings.get('code_directory')
                 self.code_widget.set_external_code_library(code_directory)
                 
                 self.last_tab = 3
+                
                 return
         
         self.last_tab = 1

@@ -13,6 +13,8 @@ if util.is_in_maya():
     import maya_lib.util
     import maya_lib.curve
 
+
+
 class DataManager(object):
     
     def __init__(self):
@@ -57,23 +59,29 @@ class DataFolder(util_file.FileManager):
         
         test_path = util_file.join_path(filepath, name)
         
-        if util_file.is_dir(test_path):
-            self.folder_path = test_path
-            self._load_folder()
+        is_folder = util_file.is_dir(test_path)
         
-        if not util_file.is_dir(test_path):
+        if is_folder:
+            self.folder_path = test_path
+        
+        if not is_folder:
             self._create_folder()
+        
+        self.settings = None
         
     def _load_folder(self):
         self._set_default_settings()
         
     def _set_settings_path(self, folder):
+        if not self.settings:
+            self._load_folder()
+        
         self.settings.set_directory(folder, 'data.type')
         
     def _set_default_settings(self):
+        
         self.settings = util_file.SettingsFile()
-
-        self._set_settings_path(self.folder_path)        
+        self._set_settings_path(self.folder_path)
         
         self.settings.set('name', str(self.name))
         data_type = self.settings.get('data_type')
@@ -87,19 +95,30 @@ class DataFolder(util_file.FileManager):
         self._set_default_settings()
     
     def _set_name(self, name):
+        if not self.settings:
+            self._load_folder()
+        
         self.name = name
         self.settings.set('name', str(self.name))
         
                 
     def get_data_type(self):
+        if not self.settings:
+            self._load_folder()
+        
         return self.settings.get('data_type')
     
     def set_data_type(self, data_type):
+        if not self.settings:
+            self._load_folder()
 
         self.data_type = data_type
         self.settings.set('data_type', str(data_type))
         
     def get_folder_data_instance(self):
+        
+        if not self.settings:
+            self._load_folder()
         
         if not self.name:
             return
@@ -118,8 +137,6 @@ class DataFolder(util_file.FileManager):
         
         return instance
     
-    
-    
     def rename(self, new_name):
         
         instance = self.get_folder_data_instance()
@@ -127,16 +144,12 @@ class DataFolder(util_file.FileManager):
         
         folder = util_file.rename(self.folder_path, new_name)
         
-        
-        
         if not folder:
             return
         
         self.folder_path = folder
         self._set_settings_path(folder)
         self._set_name(new_name)
-        
-        
         
         return self.folder_path
     
@@ -342,7 +355,7 @@ class ControlCvData(MayaCustomData):
                 
         self._center_view()
         
-        util.show('Imported control cvs')
+        util.show('Imported %s data' % self.name)
     
     def export_data(self, comment):
         
@@ -404,7 +417,8 @@ class SkinWeightData(MayaCustomData):
                     
         return influence_dict
         
-    def import_data(self):
+    
+    def _import_maya_data(self):
         
         path = util_file.join_path(self.directory, self.name)
         
@@ -418,8 +432,6 @@ class SkinWeightData(MayaCustomData):
         
         if not folders:
             return
-        
-        cmds.undoInfo(state = False)
         
         for folder in folders:
             
@@ -445,42 +457,33 @@ class SkinWeightData(MayaCustomData):
                 if cmds.objExists(influence):
                     available_influences.append(influence)
             
-            skip = False
-            
             if not skin_cluster:
-                
-                if not available_influences:
-                    cmds.undoInfo(state = True)
-                    skip = True
                 
                 if available_influences:
                     skin_cluster = cmds.skinCluster(available_influences, mesh,  tsb = True)[0]
-            
-            if skip == True:
-                continue
                 
             cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
             
             maya_lib.util.set_skin_weights_to_zero(skin_cluster)
             cmds.refresh()
-             
-            influence_index_dict = maya_lib.util.get_skin_influences(skin_cluster, return_dict = True)
             
             influence_inc = 0
             
-            progress_ui = maya_lib.util.ProgressBar('import skin', len(influence_dict.keys()))
-            
             for influence in influences:
-                
-                progress_ui.status('importing skin mesh: %s,  influence: %s' % (mesh, influence))
                 
                 if not cmds.objExists(influence):
                     cmds.select(cl = True)
                     cmds.joint( n = influence, p = influence_dict[influence]['position'] )
                     cmds.skinCluster(skin_cluster, e = True, ai = influence)  
                     
-                    influence_index_dict = maya_lib.util.get_skin_influences(skin_cluster, return_dict = True)
+            influence_index_dict = maya_lib.util.get_skin_influences(skin_cluster, return_dict = True)
+            
+            progress_ui = maya_lib.util.ProgressBar('import skin', len(influence_dict.keys()))
+            
+            for influence in influences:
                 
+                progress_ui.status('importing skin mesh: %s,  influence: %s' % (mesh, influence))
+                    
                 weights = influence_dict[influence]['weights']
                 
                 index = influence_index_dict[influence]
@@ -506,11 +509,24 @@ class SkinWeightData(MayaCustomData):
             cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
             cmds.skinCluster(skin_cluster, edit = True, forceNormalizeWeights = True)
             
-            util.show('Imported skin weights on %s' % mesh)
-            
-        cmds.undoInfo(state = True)
-        
+        util.show('Imported %s data' % self.name)
+                
         self._center_view()
+        
+    def import_data(self, filepath = None):
+       
+        if util.is_in_maya():
+            cmds.undoInfo(openChunk = True)
+            
+            try:
+                self._import_maya_data()
+            except Exception, e:
+                raise Exception(e)
+            
+            cmds.undoInfo(closeChunk = True)
+            
+        
+
                     
     def export_data(self, comment):
         
@@ -553,7 +569,11 @@ class SkinWeightData(MayaCustomData):
                 
                 write_info.write(info_lines)
                 
-                util.show('Imported skin weights on %s' % thing)
+                util.show('Imported %s data' % self.name)
+        
+        version = util_file.VersionFile(path)
+        version.save(comment)
+        
              
 class LoadWeightFileThread(threading.Thread):
     def __init__(self):
@@ -1063,7 +1083,7 @@ class PoseData(MayaCustomData):
         pose_manager.create_pose_blends()
         pose_manager.set_pose_to_default()
         
-        util.show('Imported poses')
+        util.show('Imported %s data' % self.name)
         
 class MayaAttributeData(MayaCustomData):
     def _data_name(self):
@@ -1272,6 +1292,20 @@ class MayaFileData(MayaCustomData):
         
         version = util_file.VersionFile(self.filepath)
         version.save(comment)
+
+    def maya_reference_data(self):
+        
+        #cmds.file(rename = self.filepath)
+        self._prep_scene_for_export()
+        
+        basename = util_file.get_basename(self.filepath)
+        
+        cmds.file( self.filepath,
+                   reference = True, 
+                   gl = True, 
+                   mergeNamespacesOnClash = False, 
+                   namespace = basename, 
+                   options = "v=0;")
 
     def set_directory(self, directory):
         super(MayaFileData, self).set_directory(directory)

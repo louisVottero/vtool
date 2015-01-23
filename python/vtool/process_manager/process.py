@@ -360,7 +360,6 @@ class Process(object):
         for folder in folders:
             
             data_folder = data.DataFolder(folder, directory)
-            
             data_instance = data_folder.get_folder_data_instance()
             
             if data_instance:
@@ -376,18 +375,28 @@ class Process(object):
     
     def get_code_file(self, name, basename = False):
         
+        
+        
+        
         data_folder = data.DataFolder(name, self.get_code_path())
         
+        
         data_instance = data_folder.get_folder_data_instance()
+        
         
         if data_instance:
             filepath = data_instance.get_file()
             
             if basename:
-                return util_file.get_basename(filepath)
+                return_value = util_file.get_basename(filepath)
             
             if not basename:
-                return filepath
+                return_value = filepath
+        
+            
+        return return_value
+        
+        
         
     def create_code(self, name, data_type = 'script.python', inc_name = False, import_data = None):
         
@@ -408,8 +417,6 @@ class Process(object):
         
         data_instance = data_folder.get_folder_data_instance()
         
-        #data_instance.create()
-        
         if not data_instance:
             return
         
@@ -418,9 +425,9 @@ class Process(object):
             return
     
         if import_data:
-            data_instance.set_lines(['process = None','','def main():',"    process.import_data('%s')" % import_data])
+            data_instance.set_lines(['','def main():',"    process.import_data('%s')" % import_data])
         if not import_data:
-            data_instance.set_lines(['process = None','','def main():','    return'])
+            data_instance.set_lines(['','def main():','    return'])
     
         data_instance.create()
     
@@ -564,12 +571,12 @@ class Process(object):
         return scripts, states
         
     def sync_manifest(self):
-        
+                
         scripts, states = self.get_manifest()
         
         synced_scripts = []
         synced_states = []
-        
+                
         for inc in range(0, len(scripts)):
             
             current_script = scripts[inc]
@@ -579,13 +586,15 @@ class Process(object):
             
             if len(name) == 2:
                 name = name[0]
-                
-            if not util_file.is_file( self.get_code_file(name) ):
-                continue
             
+            
+            code_file = self.get_code_file(name)
+            
+            if not util_file.is_file( code_file ):
+                continue
+                        
             synced_scripts.append(current_script)
             synced_states.append(current_state)
-            
             
         code_folders = self.get_code_folders()
         
@@ -601,7 +610,7 @@ class Process(object):
                 synced_states.append(False)
             
         self.set_manifest(synced_scripts, synced_states)
-        
+                
     #--- run
     
     def load(self, name):
@@ -654,8 +663,7 @@ class Process(object):
                 if not external_code_path in sys.path:
                     sys.path.append(external_code_path)
         
-        util.show('\a\t%s.' % name)
-        
+        util.show('\n\a\t%s.' % name)
         
         module = util_file.source_python_module(script)     
         
@@ -665,8 +673,7 @@ class Process(object):
         if not module:
             return
         
-        if hasattr(module, 'process'):
-            module.process = self
+        module.process = self
         
         status = None
         read = None  
@@ -678,9 +685,13 @@ class Process(object):
                 if util.is_in_maya():
                     import vtool.maya_lib.util as maya_util
                     read = maya_util.ScriptEditorRead()
-                    read.start()
+                    read.start()     
                     
-                             
+                    import maya.cmds as cmds
+                    module.cmds = cmds
+                    module.show = util.show
+                        
+                
                 module.main()
                 status = 'Success'
                 

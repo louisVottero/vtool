@@ -18,6 +18,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
     def __init__(self):
         
         self.data_widget = None
+        self.last_directory = None
         
         super(DataProcessWidget, self).__init__()
           
@@ -55,8 +56,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.data_widget._load_data(new_data = data_name)
         
         self.data_created.emit(data_name)
-        
-        
         
     def _data_item_selection_changed(self):
         
@@ -111,13 +110,20 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         basename = vtool.util_file.get_basename(directory)
         
         self.label.setText(basename)
+        
+        
                 
     def set_directory(self, directory):
         super(DataProcessWidget, self).set_directory(directory)
 
+        if directory == self.last_directory:
+            return
+
         self.data_widget.set_directory(directory)
         
         self.datatype_widget.set_directory( directory )
+        
+        self.last_directory = directory
         
 class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     
@@ -132,7 +138,6 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         policy.setHorizontalPolicy(policy.Maximum)
         policy.setHorizontalStretch(1)
-        
         
         self.setSizePolicy(policy)
         
@@ -172,7 +177,6 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     def mouseDoubleClickEvent(self, event):
         self._browse_current_item()
         
-    
     def _rename_data(self):
         items = self.selectedItems()
         
@@ -187,17 +191,10 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         new_name = vtool.qt_ui.get_new_name('New Name', self, old_name)
         
-        #if not self._item_rename_valid(old_name, item):
-        #    return
-        
         if not new_name:
             return
                 
         item.setText(0, new_name)
-        
-        #if not self._item_rename_valid(old_name, item):
-        #    item.setText(0, old_name)
-        
         
         was_renamed = self._item_renamed(item, old_name)
         
@@ -242,12 +239,9 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
     
     def _define_header(self):
-        #return ['Name','Type','Size','Date']
         return ['Name','Type']
         
     def _item_renamed(self, item, old_name):
-        
-        
         
         if type(item) == int:
             return
@@ -298,11 +292,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         if select_item:
             self.setItemSelected(select_item, True)
             self.setCurrentItem(select_item)
-            
-        #self.itemSelectionChanged.emit()
         
-        
-    
     def get_item_path_string(self, item):
         
         parents = self.get_tree_item_path(item)
@@ -352,7 +342,6 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         policy.setHorizontalPolicy(policy.MinimumExpanding)
         policy.setHorizontalStretch(0)
         
-        
         self.setSizePolicy(policy)
         
     def sizeHint(self):
@@ -380,9 +369,6 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         
         items = self.data_type_tree_widget.selectedItems()
         
-        
-        
-        
         if items:
             
             if items[0].text(0) == 'maya':
@@ -393,7 +379,6 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         
         if not items:
             self.add_button.setDisabled(True)
-        
         
     def _load_data_types(self):
         
@@ -525,8 +510,6 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
     def _export_data(self):
         
-        
-        
         comment = vtool.qt_ui.get_comment(self)
         if comment == None:
             return
@@ -550,6 +533,7 @@ class MayaDataHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         self.data_class.import_data(version_file)
 
 class ScriptFileWidget(DataFileWidget):
+    
     def __init__(self, parent = None):
         super(ScriptFileWidget, self).__init__(parent)
         self.text_widget = None
@@ -579,7 +563,7 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.text_widget = None
     
     def _build_widgets(self):
-            
+        
         save_button = QtGui.QPushButton('Save')
         save_button.clicked.connect(self._save)
         save_button.setMaximumWidth(100)
@@ -616,7 +600,6 @@ class ScriptHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
             return
         
         version = int(item.text(0))
-        
         
         version_tool = vtool.util_file.VersionFile(self.directory)
         version_file = version_tool.get_version_path(version)
@@ -723,24 +706,54 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
     
     def _build_widgets(self):
+        
+        
+        
         save_button = QtGui.QPushButton('Save')
+        
+        save_button.setMinimumHeight(50)
+        
         export_button = QtGui.QPushButton('Export')
         open_button = QtGui.QPushButton('Open')
         import_button = QtGui.QPushButton('Import')
+        reference_button = QtGui.QPushButton('Reference')
+        
+        out_box = QtGui.QGroupBox('File Out')
+        in_box = QtGui.QGroupBox('File In')
+        
+        
+        
+        
+        out_box_layout = QtGui.QVBoxLayout()
+        in_box_layout = QtGui.QVBoxLayout()
+        
+        out_box_layout.setContentsMargins(2,2,2,2)
+        out_box_layout.setSpacing(2)
+        
+        in_box_layout.setContentsMargins(2,2,2,2)
+        in_box_layout.setSpacing(2)
+                
+        
+        out_box_layout.addWidget(save_button)
+        out_box_layout.addWidget(export_button)
+        
+        in_box_layout.addWidget(open_button)
+        in_box_layout.addWidget(import_button)
+        in_box_layout.addWidget(reference_button)
+        
+        out_box.setLayout(out_box_layout)
+        in_box.setLayout(in_box_layout)
         
         save_button.clicked.connect( self._save_file )
         export_button.clicked.connect( self._export_file )
         open_button.clicked.connect( self._open_file )
         import_button.clicked.connect( self._import_file )
+        reference_button.clicked.connect( self._reference_file )
         
-        self.main_layout.addWidget(save_button)
-        self.main_layout.addWidget(export_button)
-        self.main_layout.addWidget(open_button)
-        self.main_layout.addWidget(import_button)
-        
+        self.main_layout.addWidget(out_box)
+        self.main_layout.addWidget(in_box)
         
         self.main_layout.setAlignment(QtCore.Qt.AlignTop)
-        
     
     def _save_file(self):
         comment = vtool.qt_ui.get_comment(self)
@@ -776,6 +789,9 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
     def _import_file(self):
         self.data_class.import_data()
+        
+    def _reference_file(self):
+        self.data_class.maya_reference_data()
         
         
 class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):

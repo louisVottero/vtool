@@ -11,7 +11,7 @@ import maya.cmds as cmds
 import maya.mel as mel
 
 import vtool.util
-import rigs
+
 
 import curve
 
@@ -35,7 +35,8 @@ def undo_off(function):
 
 def undo_chunk(function):
     def wrapper(*args, **kwargs):
-        
+        if not vtool.util.is_in_maya():
+            return
         return_value = None
         
         cmds.undoInfo(openChunk = True)
@@ -2198,6 +2199,8 @@ class StretchyChain:
 #These are only for backwards compatibility. 
 #They should not be used within this module!!!
 #new classes built after this change will not be added to this list
+import rigs
+reload(rigs)
 
 Rig = rigs.Rig
 JointRig = rigs.JointRig

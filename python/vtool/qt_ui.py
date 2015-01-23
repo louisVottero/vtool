@@ -622,8 +622,10 @@ class FileTreeWidget(TreeWidget):
         
         if not directory:
             directory = self.directory
-            
-        return util_file.get_files_and_folders(directory)
+        
+        contents = util_file.get_files_and_folders(directory)
+        
+        return contents
     
     def _load_files(self, files):
         self.clear()
@@ -764,6 +766,7 @@ class FileTreeWidget(TreeWidget):
             self.takeTopLevelItem(index)
 
     def refresh(self):
+        
         files = self._get_files()
         
         if not files:
@@ -782,6 +785,9 @@ class FileTreeWidget(TreeWidget):
     def set_directory(self, directory):
         
         self.directory = directory
+        
+        
+        
         self.refresh()
         
 class EditFileTreeWidget(DirectoryWidget):
