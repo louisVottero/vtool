@@ -6,6 +6,22 @@ import time
 import string
 import datetime
 
+#decorators
+
+def try_pass(function):
+    def wrapper(*args, **kwargs):
+        
+        return_value = None
+                
+        try:
+            return_value = function(*args, **kwargs)
+        except Exception, e:
+            show(e)
+                    
+        return return_value
+                     
+    return wrapper
+
 class StopWatch(object):
     def __init__(self):
         self.time = None

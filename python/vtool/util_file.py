@@ -12,6 +12,8 @@ import datetime
 import subprocess
 import tempfile
 import threading
+import stat
+
 
 import util
 
@@ -359,11 +361,12 @@ class SettingsFile(object):
         self.filepath = None
         
         self.settings_dict = {}
+        self.write = None 
     
     def _read(self):
         
-        #if not self.filepath:
-        #    return
+        if not self.filepath:
+            return
         
         lines = get_file_lines(self.filepath)
         
@@ -387,8 +390,8 @@ class SettingsFile(object):
             
             self.settings_dict[name] = value
             
-    
     def _write(self):
+                
         keys = self.settings_dict.keys()
         
         keys.sort()
@@ -401,8 +404,6 @@ class SettingsFile(object):
             if type(value) == str or type(value) == unicode:
                 value = "'%s'" % value
             
-            
-                        
             line = '%s = %s' % (key, str(value))
             
             lines.append(line)
@@ -415,11 +416,13 @@ class SettingsFile(object):
         self.settings_dict[name] = value
         self._write()
     
-    def get(self, name):    
+    def get(self, name): 
+           
         if name in self.settings_dict:
             return self.settings_dict[name]
     
     def has_setting(self, name):
+        
         if not self.settings_dict.has_key(name):
             return False
         
@@ -433,7 +436,7 @@ class SettingsFile(object):
         self._read()
         
         return self.filepath
-        
+
 class FindUniquePath(util.FindUniqueString):
     
     def __init__(self, directory):
@@ -513,7 +516,7 @@ def get_files_and_folders(directory):
     
     if not is_dir(directory):
         return
-    
+        
     files = os.listdir(directory)
     
     return files
@@ -588,16 +591,42 @@ def get_user():
 def is_dir(directory):
     if not directory:
         return False
+    """
+    if os.path.isdir(directory):
+        return True
     
-    if not os.path.exists(directory):
+    return False
+    """
+    
+    try:
+        mode = os.stat(directory)[stat.ST_MODE]
+        if stat.S_ISDIR(mode):
+            return True
+    except:
         return False
     
-    return os.path.isdir(directory)
     
 def is_file(filepath):
+    
     if not filepath:
         return False
-    return os.path.isfile(filepath)
+    """
+    if os.path.isfile(filepath):
+            return True
+    
+    return False
+    """
+    
+    try:
+        
+        mode = os.stat(filepath)[stat.ST_MODE]
+        if stat.S_ISREG(mode):
+            return True
+    except:
+        return False
+    
+    
+    
 
 def is_file_in_dir(filename, directory):
     

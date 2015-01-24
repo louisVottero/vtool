@@ -106,10 +106,10 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.code_widget.set_code_path(filepath)
         
                 
-    def set_directory(self, directory):
+    def set_directory(self, directory, sync_code = False):
         super(CodeProcessWidget, self).set_directory(directory)
         
-        self.script_widget.set_directory(directory)
+        self.script_widget.set_directory(directory, sync_code)
         
         self._close_splitter()
         
@@ -151,7 +151,6 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.code_edit.tabChanged.connect(self._tab_changed)
         self.code_edit.no_tabs.connect(self._collapse)
         
-        
         self.save_file = ui_data.ScriptFileWidget()        
         
         self.code_edit.save.connect( self._code_saved )
@@ -159,7 +158,6 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         self.main_layout.addWidget(self.code_edit, stretch = 1)
         self.main_layout.addWidget(self.save_file, stretch = 0)
-        
         
         self.alt_layout = QtGui.QVBoxLayout()
         
@@ -321,11 +319,12 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         self.script_rename.emit(old_filepath, filepath)
         
         
-    def set_directory(self, directory):
+    def set_directory(self, directory, sync_code = False):
         super(ScriptWidget, self).set_directory(directory)
         
-        if self.directory == self.last_directory:
-            return
+        if not sync_code:
+            if self.directory == self.last_directory:
+                return
         
         self.code_manifest_tree.set_directory(directory)
         
@@ -460,9 +459,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         delete_action.triggered.connect(self.remove_current_item)
         
         browse_action.triggered.connect(self._browse_to_code)
-        refresh_action.triggered.connect(self.refresh)
-        
-        
+        refresh_action.triggered.connect(self._refresh_action)
     
     def _item_menu(self, position):
         
@@ -488,6 +485,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         for action in self.edit_actions:
             
             action.setVisible(bool_value)
+        
+    def _refresh_action(self):
+        self.refresh(sync = True)
         
     def _activate_rename(self):
         
@@ -552,8 +552,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             name = split_name[0]
         
         self._rename_item(item, name)
-        
-        
         
     def _rename_item(self, item, new_name):
         
@@ -658,7 +656,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             name = scripts[inc].split('.')[0]
             
             if not name in code_folders:
-                continue                
+                continue
             
             code_path = process_tool.get_code_file(name)
             
@@ -667,8 +665,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             found_scripts.append(scripts[inc])
             found_states.append(states[inc])
-                    
-        
+                   
         return [found_scripts, found_states]
 
     def _get_item_by_name(self, name):
@@ -717,9 +714,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         process_tool.sync_manifest()
         
 
-    def refresh(self):
+    def refresh(self, sync = False):
         
-        self._sync_manifest()
+        if sync:
+            self._sync_manifest()
         
         super(CodeManifestTree, self).refresh()
 

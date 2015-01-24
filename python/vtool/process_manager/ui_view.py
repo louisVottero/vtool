@@ -17,6 +17,9 @@ if qt_ui.is_pyside():
 class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
     description = 'Process'
+    
+    sync_code = qt_ui.create_signal()
+    
                
     def __init__(self):
         super(ViewProcessWidget, self).__init__()
@@ -26,7 +29,15 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         return ProcessTreeWidget()
     
     def _define_manager_widget(self):
-        return ManageProcessTreeWidget()
+        
+        tree_manager = ManageProcessTreeWidget()
+        
+        tree_manager.sync_code.connect(self._sync_code)
+        
+        return tree_manager
+    
+    def _sync_code(self):
+        self.sync_code.emit()
     
     def _item_selection_changed(self):
         
@@ -49,6 +60,8 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         self.filter_widget.clear_sub_path_filter()
          
 class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
+    
+    sync_code = qt_ui.create_signal()
     
     def __init__(self):
         super(ManageProcessTreeWidget, self).__init__()
@@ -93,8 +106,11 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         
         self.tree_widget.scrollToItem(items[0])
         
+        self.sync_code.emit()
+        
     def _copy_done(self):
         self.copy_widget.hide()
+        
         
     def get_current_process(self):
         
@@ -122,7 +138,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     copy_special_process = qt_ui.create_signal()
     delete_process = qt_ui.create_signal()
     item_renamed = qt_ui.create_signal(object)
-    
+        
     def __init__(self):
         
         super(ProcessTreeWidget, self).__init__()
@@ -178,12 +194,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if model_index.column() == 0 and item:
             super(ProcessTreeWidget, self).mousePressEvent(event)
-        
-        
-    
-    
-        
-        
 
     def _item_menu(self, position):
         
@@ -304,10 +314,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         new_process = process.copy_process(source_process, target_process)
         
-        
-        
         self.paste_item = None
-        
         
         new_item = self._add_process_item(new_process.get_name(), target_item)
         
@@ -317,6 +324,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
         if not target_process:
             self.scrollToItem(new_item)
+            
     
     def _copy_special_process(self):
         self.copy_special_process.emit()
