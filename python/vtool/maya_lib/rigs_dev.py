@@ -6,6 +6,159 @@ import util
 import maya.cmds as cmds
 
 import vtool.util
+import rigs
+
+
+class StickyRig(rigs.JointRig):
+    
+    def __init__(self, description, side):
+        super(StickyRig, self).__init__(description, side)
+        
+        self.top_joints = []
+        self.btm_joints = []
+    
+    def _loop_joints(self):
+        
+        top_joint_group = cmds.group(em = True, n = util.inc_name( self._get_name('group', 'joints_top')))
+        btm_joint_group = cmds.group(em = True, n = util.inc_name( self._get_name('group', 'joints_btm')))
+        
+        cmds.parent(top_joint_group, btm_joint_group, self.setup_group)
+        
+        for inc in range(0, len(self.top_joints)):
+            
+            top_joint = self.top_joints[inc]
+            btm_joint = self.btm_joints[inc]
+            
+            old_top_joint = top_joint
+            old_btm_joint = btm_joint
+            
+            top_joint = cmds.duplicate(top_joint, n = util.inc_name(self._get_name('inputJoint', 'top')))[0]
+            btm_joint = cmds.duplicate(btm_joint, n = util.inc_name(self._get_name('inputJoint', 'btm')))[0]
+            
+            cmds.parentConstraint(top_joint, old_top_joint)
+            cmds.scaleConstraint(top_joint, old_top_joint)
+            
+            cmds.parentConstraint(btm_joint, old_btm_joint)
+            cmds.scaleConstraint(btm_joint, old_btm_joint)
+            
+            cmds.parent(top_joint, top_joint_group)
+            cmds.parent(btm_joint, btm_joint_group)
+            
+            control_top = self._create_sticky_control(top_joint, 'top')
+            control_btm = self._create_sticky_control(btm_joint, 'btm')
+            
+            self.top_locator = self._create_locator('top')
+            self.mid_locator = self._create_locator('mid')
+            self.btm_locator = self._create_locator('btm')
+            
+            util.MatchSpace(top_joint, self.top_locator[1]).translation_rotation()
+            util.MatchSpace(btm_joint, self.btm_locator[1]).translation_rotation()
+            
+            midpoint = util.get_midpoint(top_joint, btm_joint)
+            
+            cmds.xform(self.mid_locator[1], t = midpoint, ws = True)
+            
+            cmds.parent(self.top_locator[1], self.setup_group)
+            cmds.parent(self.mid_locator[1], self.setup_group)
+            cmds.parent(self.btm_locator[1], self.setup_group)   
+    
+            top_xform, top_driver = self._group_joint(top_joint)
+            btm_xform, btm_driver = self._group_joint(btm_joint)
+            
+            self._create_follow([self.top_locator[0], self.mid_locator[0]], top_xform, control_top[0])
+            self._create_follow([self.btm_locator[0], self.mid_locator[0]], btm_xform, control_btm[0])
+            
+            self._create_follow([self.top_locator[0], self.btm_locator[0]], self.mid_locator[1], self.mid_locator[0])
+            cmds.setAttr('%s.stick' % self.mid_locator[0], 0.5)
+            
+            #top
+            util.connect_translate(top_xform, control_top[1])
+            util.connect_translate(control_top[2], top_driver)
+            util.connect_translate(control_top[0], top_joint)
+            
+            util.connect_rotate(top_xform, control_top[1])
+            util.connect_rotate(control_top[2], top_driver)
+            util.connect_rotate(control_top[0], top_joint)
+            
+            #btm
+            util.connect_translate(btm_xform, control_btm[1])
+            util.connect_translate(control_btm[2], btm_driver)
+            util.connect_translate(control_btm[0], btm_joint)
+            
+            util.connect_rotate(btm_xform, control_btm[1])
+            util.connect_rotate(control_btm[2], btm_driver)
+            util.connect_rotate(control_btm[0], btm_joint)
+           
+    def _create_follow(self, source_list, target, target_control ):
+        
+        constraint = cmds.parentConstraint(source_list, target)[0]
+        cmds.setAttr('%s.interpType' % constraint, 2)
+        constraint_editor = util.ConstraintEditor()    
+        constraint_editor.create_switch(target_control, 'stick', constraint)
+         
+    def _create_sticky_control(self, transform, description):
+        control = self._create_control(description)
+        
+        control_name = control.get()
+        
+        util.MatchSpace(transform, control_name).translation_rotation()
+                
+        if self.respect_side:
+                                    
+            side = control.color_respect_side(True, self.respect_side_tolerance)
+            
+            if side != 'C':
+                control_name = cmds.rename(control.get(), util.inc_name(control.get()[0:-1] + side))
+                        
+        control = control_name
+        
+        xform = util.create_xform_group(control)
+        driver = util.create_xform_group(control, 'driver')
+        
+        
+        
+        cmds.parent(xform, self.control_group)
+        
+        
+        
+        return control, xform, driver
+               
+    def _group_joint(self, joint):
+        
+        print joint
+        
+        xform = util.create_xform_group(joint)
+        driver = util.create_xform_group(joint, 'driver')
+        
+        return xform, driver
+                
+    def _create_locator(self, description):
+        
+        locator = cmds.spaceLocator(n = util.inc_name(self._get_name('locator', description)))[0]
+        
+        xform = util.create_xform_group(locator)
+        driver = util.create_xform_group(locator, 'driver')
+        
+        return locator, xform, driver
+    
+    def set_respect_side(self, bool_value, tolerance = 0.001):
+        self.respect_side = bool_value
+        self.respect_side_tolerance = tolerance
+    
+    def set_top_joints(self, joint_list):
+        self.top_joints = joint_list
+        
+    def set_btm_joints(self, joint_list):
+        self.btm_joints = joint_list
+    
+    
+    
+    def create(self):
+        super(StickyRig, self).create()
+        
+        self._loop_joints()
+        
+        
 
 class EyeLidSphereRig(util.BufferRig):
     
@@ -1034,7 +1187,7 @@ class MouthTweakers(util.Rig):
         #if self.muzzel_curve:
         #    self._create_joints_on_curve(self.muzzel_curve, 5)
         
-        muzzle_joints, lip_joints = self._create_joints( self.muzzel_curve , self.lip_curve, 11) 
+        muzzle_joints, lip_joints = self._create_joints( self.muzzel_curve , self.lip_curve, 15) 
         
         
         ik_handles = self._create_ik( muzzle_joints, lip_joints)
@@ -1060,7 +1213,10 @@ class MouthTweakers(util.Rig):
         self._create_locator_controls(self.sub_locators2)
         """
         
-                
+
+    
+    
+                 
                 
 def create_joint_slice( center_joint, description, radius = 2, sections = 1, axis = 'X'):
     
