@@ -96,7 +96,7 @@ class CurveToData(object):
         mel_curve_data = ''
         
         for nurbs_data in data:
-            mel_curve_data.join(' %s' % str(nurbs_data))
+            mel_curve_data += ' %s' % str(nurbs_data)
             
         return mel_curve_data
 
