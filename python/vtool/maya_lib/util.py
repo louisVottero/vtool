@@ -6627,6 +6627,20 @@ def get_distance(source, target):
     
     return vtool.util.get_distance(vector1, vector2)
 
+def get_midpoint( source, target):
+    vector1 = cmds.xform(source, 
+                         query = True, 
+                         worldSpace = True, 
+                         rp = True)
+    
+    
+    vector2 = cmds.xform(target, 
+                            query = True, 
+                            worldSpace = True, 
+                            rp = True)
+    
+    return vtool.util.get_midpoint(vector1, vector2)
+
 def get_distances(sources, target):
     
     distances = []
