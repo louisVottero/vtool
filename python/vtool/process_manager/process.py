@@ -383,6 +383,7 @@ class Process(object):
         
         data_instance = data_folder.get_folder_data_instance()
         
+        return_value = None
         
         if data_instance:
             filepath = data_instance.get_file()
