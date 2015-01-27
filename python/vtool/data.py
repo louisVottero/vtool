@@ -13,6 +13,8 @@ if util.is_in_maya():
     import maya_lib.util
     import maya_lib.curve
 
+
+
 class DataManager(object):
     
     def __init__(self):
@@ -567,7 +569,7 @@ class SkinWeightData(MayaCustomData):
                 
                 write_info.write(info_lines)
                 
-                util.show('Imported %s data' % self.name)
+                util.show('Exported %s data' % self.name)
         
         version = util_file.VersionFile(path)
         version.save(comment)

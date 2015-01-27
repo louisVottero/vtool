@@ -3521,6 +3521,7 @@ class FootRollRig(RollRig):
         self.defined_joints = []
         self.toe_rotate_as_locator = False
         self.mirror_yaw = False
+        self.main_control_follow = None
     
     def _define_joints(self):
         self.ankle_index = 0
@@ -3749,7 +3750,11 @@ class FootRollRig(RollRig):
         cmds.parent(toe_control_xform, yawin_roll)
         #cmds.parent(toe_fk_control_xform, self.control_group)
         
-        cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
+        #cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
+        if not self.main_control_follow:
+            util.create_follow_group(ball_roll, self.roll_control_xform)
+        if self.main_control_follow:
+            util.create_follow_group(main_control_follow, self.roll_control_xform)
         
         cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
         cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
@@ -3761,6 +3766,9 @@ class FootRollRig(RollRig):
           
     def set_mirror_yaw(self, bool_value):
         self.mirror_yaw = bool_value
+        
+    def set_main_control_follow(self, transform):
+        self.main_control_follow = transform
                     
     def create(self):
         super(FootRollRig,self).create()
