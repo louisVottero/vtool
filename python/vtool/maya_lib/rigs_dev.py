@@ -1324,3 +1324,41 @@ def create_joint_slice( center_joint, description, radius = 2, sections = 1, axi
                 value_offset-=value
                 
     return joints, slice_group
+
+def rig_joint_helix(joints, description, top_parent, btm_parent):
+    
+    setup = cmds.group(em = True, n = util.inc_name('setup_%s' % description))
+    
+    handle = util.IkHandle(description)
+    handle.set_solver(handle.solver_spline)
+    handle.set_start_joint(joints[0])
+    handle.set_end_joint(joints[-1])
+    handle.create()
+    
+    cmds.parent(handle.ik_handle, handle.curve, setup)
+    
+    ffd, lattice, base = util.create_lattice(handle.curve, description, [2,2,2])
+    
+    pos1 = cmds.xform(joints[0], q = True, ws = True, t = True)
+    pos2 = cmds.xform(joints[-1], q = True, ws = True, t = True)
+    
+    cmds.select(cl = True)
+    joint1 = cmds.joint(p = pos1, n = 'joint_%s_top' % description)
+    cmds.select(cl = True)
+    joint2 = cmds.joint(p = pos2, n = 'joint_%s_btm' % description)
+    cmds.joint(joint1, e = True, zso = True, oj = 'xyz', sao = 'yup')
+    
+    cmds.skinCluster([joint1, joint2], lattice, tsb = True)
+    
+    cmds.parent(joint1, joint2, setup)
+    
+    if top_parent:
+        cmds.parent(joint1, top_parent)
+    if btm_parent:
+        cmds.parent(joint2, btm_parent)
+    
+    cmds.parent(lattice, base, setup)
+    
+    
+    
+    return setup

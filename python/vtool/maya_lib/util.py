@@ -1549,6 +1549,8 @@ class IkHandle(object):
         self.curve = None
         
         self.ik_handle = None
+        self.joints = []
+            
     
     def _create_regular_ik(self):
         self.ik_handle = cmds.ikHandle( name = inc_name(self.name),
@@ -1557,17 +1559,38 @@ class IkHandle(object):
                                        sol = self.solver_type )[0]
                                        
     def _create_spline_ik(self):
-        self.ik_handle = cmds.ikHandle(name = inc_name(self.name),
-                                       startJoint = self.start_joint,
-                                       endEffector = self.end_joint,
-                                       sol = self.solver_type,
-                                       curve = self.curve, ccv = False, pcv = False)[0]
+        
+        if self.curve:
+            
+            self.ik_handle = cmds.ikHandle(name = inc_name(self.name),
+                                           startJoint = self.start_joint,
+                                           endEffector = self.end_joint,
+                                           sol = self.solver_type,
+                                           curve = self.curve, ccv = False, pcv = False)[0]
+        if not self.curve:
+            
+            self.ik_handle = cmds.ikHandle(name = inc_name(self.name),
+                                           startJoint = self.start_joint,
+                                           endEffector = self.end_joint,
+                                           sol = self.solver_type,
+                                           scv = False)
+            
+            self.curve = self.ik_handle[2]
+            self.curve = cmds.rename(self.curve, inc_name('curve_%s' % self.name))
+            
+            self.ik_handle = self.ik_handle[0]
+                                           
         
     def set_start_joint(self, joint):
         self.start_joint = joint
         
     def set_end_joint(self, joint):
         self.end_joint = joint
+        
+    def set_joints(self, joints_list):
+        self.start_joint = joints_list[0]
+        self.end_joint = joints_list[-1]
+        self.joints = joints_list
         
     def set_curve(self, curve):
         self.curve = curve
@@ -1580,10 +1603,10 @@ class IkHandle(object):
         if not self.start_joint or not self.end_joint:
             return
         
-        if not self.curve:
+        if not self.curve and not self.solver_type == self.solver_spline:
             self._create_regular_ik()
         
-        if self.curve:
+        if self.curve or self.solver_type == self.solver_spline:
             self._create_spline_ik()
 
         
@@ -8521,6 +8544,8 @@ def create_lattice(points, description, divisions = (3,3,3), falloff = (2,2,2)):
                                       divisions = divisions, 
                                       objectCentered = True, 
                                       ldv = falloff, n = 'ffd_%s' % description)
+    
+    return ffd, lattice, base
     
     
 
