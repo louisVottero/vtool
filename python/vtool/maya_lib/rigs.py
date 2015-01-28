@@ -19,14 +19,44 @@ class Rig(object):
         self.description = description
         self.side = side
         
+        self.control_parent = 'controls'
+        self.setup_parent = 'setup'
+        
+        self._create_default_groups()
+        
+        self.control_shape = self._define_control_shape()
+        
+        self.controls = []
+        
+    def _create_default_groups(self):
+                        
         self.control_group = self._create_group('controls')
         self.setup_group = self._create_group('setup')
         
         cmds.hide(self.setup_group)
         
-        self.control_shape = self._define_control_shape()
+        self._parent_default_groups()
         
-        self.controls = []
+    def _parent_default_groups(self):
+        
+        if cmds.objExists(self.control_parent) and cmds.objExists(self.control_group):
+            
+            parent = cmds.listRelatives(self.control_group, p = True)
+            if parent:
+                parent = parent[0]
+            
+            if parent and parent != self.control_parent:
+                cmds.parent(self.control_group, self.control_parent)
+                
+        if cmds.objExists(self.setup_parent) and cmds.objExists(self.setup_group):
+            
+            parent = cmds.listRelatives(self.setup_group, p = True)
+            if parent:
+                parent = parent[0]
+            
+            
+            if parent and parent != self.setup_parent:
+                cmds.parent(self.setup_group, self.setup_parent)    
         
     def _refresh(self):
         cmds.refresh()
@@ -90,8 +120,22 @@ class Rig(object):
     def set_control_shape(self, shape_name):
         self.control_shape = shape_name
                 
+    def set_control_parent(self, parent_transform):
+        
+        self.control_parent = parent_transform
+        
+        self._parent_default_groups()
+        
+    def set_setup_parent(self, parent_transform):
+        
+        self.setup_parent = parent_transform
+        
+        self._parent_default_groups()
+                
     def create(self):
-        pass
+        
+        self._parent_default_groups()
+        
 
 class JointRig(Rig):
     def __init__(self, description, side):

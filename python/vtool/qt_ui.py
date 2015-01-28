@@ -1641,8 +1641,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         self.setFont( QtGui.QFont('Courier', 9)  )
         
-        #self.setStyleSheet( 'font-style:Courier;')
-        
         shortcut = QtGui.QShortcut(QtGui.QKeySequence(self.tr("Ctrl+s")), self)
         shortcut.activated.connect(self._save)
         
@@ -1676,14 +1674,11 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         delta = event.delta()
         keys =  event.modifiers()
         
-        if not keys == QtCore.Qt.CTRL:
-            
-            return
-        
-        if delta > 0:
-            self._zoom_in_text()
-        if delta < 0:
-            self._zoom_out_text()
+        if keys == QtCore.Qt.CTRL:           
+            if delta > 0:
+                self._zoom_in_text()
+            if delta < 0:
+                self._zoom_out_text()
         
         return super(CodeTextEdit, self).wheelEvent(event)
      

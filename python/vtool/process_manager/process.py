@@ -654,30 +654,40 @@ class Process(object):
     
     
     def run_script(self, script):
-                
-        self._center_view()
-        name = util_file.get_basename(script)
-        path = util_file.get_parent_path(script)
-        
-        for external_code_path in self.external_code_paths:
-            if util_file.is_dir(external_code_path):
-                if not external_code_path in sys.path:
-                    sys.path.append(external_code_path)
-        
-        util.show('\n\a\t%s.' % name)
-        
-        module = util_file.source_python_module(script)     
-        
-        if type(module) == str:
-            return module
-        
-        if not module:
-            return
-        
-        module.process = self
-        
-        status = None
-        read = None  
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            cmds.refresh()
+            
+        try:        
+            self._center_view()
+            name = util_file.get_basename(script)
+            path = util_file.get_parent_path(script)
+            
+            for external_code_path in self.external_code_paths:
+                if util_file.is_dir(external_code_path):
+                    if not external_code_path in sys.path:
+                        sys.path.append(external_code_path)
+            
+            util.show('\n\a\t%s.' % name)
+            
+            module = util_file.source_python_module(script)     
+            
+            if type(module) == str:
+                return module
+            
+            if not module:
+                return
+            
+            module.process = self
+            
+            status = None
+            read = None
+        except Exception:
+            status = traceback.format_exc()
+            
+            print status
+            return status
+              
         try:
             if hasattr(module, 'main'):
                                 

@@ -6931,7 +6931,10 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
     
     cmds.setAttr('%s.follow' % node, len(source_list)-1)   
 
-def create_multi_follow(source_list, target_transform, node, constraint_type = 'parentConstraint', attribute_name = 'follow'):
+def create_multi_follow(source_list, target_transform, node = None, constraint_type = 'parentConstraint', attribute_name = 'follow', value = None):
+    
+    if node == None:
+        node = target_transform
     
     var = MayaEnumVariable('FOLLOW')
     var.create(node)
@@ -6963,7 +6966,13 @@ def create_multi_follow(source_list, target_transform, node, constraint_type = '
     
     constraint_editor.create_switch(node, attribute_name, constraint)
     
-    cmds.setAttr('%s.%s' % (node, attribute_name), len(source_list)-1)
+    if value == None:
+        print 'here!'
+        value = (len(source_list)-1)
+        print value
+    
+        
+    cmds.setAttr('%s.%s' % (node, attribute_name), value)
     
     return follow_group
 

@@ -550,6 +550,8 @@ class SkinWeightData(MayaCustomData):
                                 
                 info_file = util_file.create_file( 'influence.info', geo_path )
                 
+                print info_file, geo_path
+                
                 write_info = util_file.WriteFile(info_file)
                 info_lines = []
                 
