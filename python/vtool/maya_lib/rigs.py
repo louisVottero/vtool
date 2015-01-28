@@ -2192,6 +2192,7 @@ class IkAppendageRig(BufferRig):
         self.match_btm_to_joint = True
         self.create_world_switch = True
         self.create_top_control = True
+        self.pole_follow_transform = None
         self.pole_angle_joints = []
     
     def _attach_ik_joints(self, source_chain, target_chain):
@@ -2514,7 +2515,10 @@ class IkAppendageRig(BufferRig):
         
         if self.create_twist:
             
-            follow_group = util.create_follow_group(self.top_control, xform_group)
+            if not self.pole_follow_transform:
+                follow_group = util.create_follow_group(self.top_control, xform_group)
+            if self.pole_follow_transform:
+                follow_group = util.create_follow_group(self.pole_follow_transform, xform_group)
             constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo = True)[0]
             
             constraint_editor = util.ConstraintEditor()
@@ -2587,6 +2591,9 @@ class IkAppendageRig(BufferRig):
         
     def set_create_top_control(self, bool_value):
         self.create_top_control = bool_value
+    
+    def set_pole_follow_transform(self, transform):
+        self.pole_follow_transform = transform
     
     def create(self):
         super(IkAppendageRig, self).create()
