@@ -1039,6 +1039,9 @@ class FileManagerWidget(DirectoryWidget):
         
     def _activate_history_tab(self):
         
+        if not self.directory:
+            return
+        
         version_tool = util_file.VersionFile(self.directory)    
         files = version_tool.get_versions()
         
