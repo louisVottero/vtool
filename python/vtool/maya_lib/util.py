@@ -2288,6 +2288,9 @@ class ConvertJointToNub(object):
         self.control_shape = 'pin_round'
         self.add_sub_joints = False
         
+        self.right_side_fix = True
+        self.right_side_fix_axis = 'x'
+        
         self.up_object = None
         
     def set_start_joint(self, joint):
@@ -2335,9 +2338,10 @@ class ConvertJointToNub(object):
                 
                 if not self.up_object:
                     self.up_object = self.start_joint
-                    
+                
                 orient.set_aim_up_at_object(self.up_object)
                 orient.run()
+                
             
             
                 
@@ -2373,7 +2377,9 @@ class ConvertJointToNub(object):
         rig.set_end_with_locator(True)
         rig.set_create_middle_control(self.add_mid_control)
         rig.set_control_shape(self.control_shape)
+        #rig.set_control_orient(self.start_joint)
         rig.set_buffer(False)
+        rig.set_right_side_fix(self.right_side_fix, self.right_side_fix_axis)
         rig.create()
         
         self.top_control = rig.top_control
@@ -2399,6 +2405,10 @@ class ConvertJointToNub(object):
     
     def get_joints(self):
         return self.joints
+    
+    def set_right_side_fix(self, bool_value, axis = 'x'):
+        self.right_side_fix = bool_value
+        self.right_side_fix_axis = axis
 
 class FinRig(JointRig):
     
@@ -4468,11 +4478,10 @@ class TransferWeight(object):
     @undo_chunk  
     def transfer_joints_to_new_joints(self, joints, new_joints, falloff = 1, power = 4, weight_percent_change = 1):
         
-        
-        #cmds.undoInfo(state = False)
+        joints = vtool.util.convert_to_sequence(joints)
+        new_joints = vtool.util.convert_to_sequence(new_joints)
         
         if not self.skin_cluster or not self.mesh:
-            #cmds.undoInfo(state = True)
             return
         
         lock_joints(self.skin_cluster, joints)
@@ -4498,10 +4507,9 @@ class TransferWeight(object):
             source_joint_weights.append(value_map[index])
             
         if not source_joint_weights:
-            #cmds.undoInfo(state = True)
             return
             
-        verts = self.vertices#cmds.ls('%s.vtx[*]' % self.vertices, flatten = True)
+        verts = self.vertices
         
         weighted_verts = []
         weights = {}
@@ -4515,8 +4523,6 @@ class TransferWeight(object):
                 
                 value = influence_values[influence_index][int_vert_index]
                 
-                
-                
                 if value > 0.001:
                     if not int_vert_index in weighted_verts:
                         weighted_verts.append(int_vert_index)
@@ -4528,7 +4534,6 @@ class TransferWeight(object):
                         weights[int_vert_index] = value
         
         if not weighted_verts:
-            #cmds.undoInfo(state = True)
             return
         
         bar = ProgressBar('transfer weight', len(weighted_verts))
@@ -4630,7 +4635,6 @@ class TransferWeight(object):
             
         bar.end()
         
-        #cmds.undoInfo(state = True)
         
     """
     def transfer_joints_into_joint(self, joints, joint, source_mesh):
@@ -7542,6 +7546,11 @@ def get_side(transform, center_tolerance):
 
 def create_no_twist_aim(source_transform, target_transform, parent):
 
+    top_group = cmds.group(em = True, n = inc_name('no_twist_%s' % source_transform))
+    cmds.parent(top_group, parent)
+    cmds.pointConstraint(source_transform, top_group)
+
+
     #axis aim
     aim = cmds.group(em = True, n = inc_name('aim_%s' % target_transform))
     target = cmds.group(em = True, n = inc_name('target_%s' % target_transform))
@@ -7557,7 +7566,7 @@ def create_no_twist_aim(source_transform, target_transform, parent):
     
     cmds.aimConstraint(target, aim, wuo = parent, wut = 'objectrotation', wu = [0,0,0])
     
-    cmds.parent(aim, xform_target, parent)
+    cmds.parent(aim, xform_target, top_group)
     
     #pin up to axis
     pin_aim = cmds.group(em = True, n = inc_name('aim_pin_%s' % target_transform))
@@ -7571,7 +7580,7 @@ def create_no_twist_aim(source_transform, target_transform, parent):
     
     cmds.aimConstraint(pin_target, pin_aim, wuo = aim, wut = 'objectrotation')
     
-    cmds.parent(xform_pin_target, pin_aim, parent)
+    cmds.parent(xform_pin_target, pin_aim, top_group)
        
     #twist_aim
     #tool_maya.create_follow_group('CNT_SPINE_2_C', 'xform_CNT_TWEAK_ARM_1_%s' % side)

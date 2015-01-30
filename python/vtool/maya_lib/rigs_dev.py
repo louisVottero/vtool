@@ -18,6 +18,9 @@ class StickyRig(rigs.JointRig):
         self.btm_joints = []
         self.respect_side = False
         self.straight_loop = False
+        
+        self.locators = []
+        
     
     def _loop_joints(self):
         
@@ -49,7 +52,9 @@ class StickyRig(rigs.JointRig):
                     break
                 self._create_increment(negative_inc)
                 
+                self.locators.append([self.top_locator, self.btm_locator])
                 
+        print self.locators
             
            
     def _create_increment(self, inc):
@@ -214,6 +219,11 @@ class StickyRig(rigs.JointRig):
         super(StickyRig, self).create()
         
         self._loop_joints()
+        
+    def create_follow(self, follow_transform, increment, value):
+        
+        util.create_multi_follow([self.setup_group, follow_transform], , node, constraint_type, attribute_name, value)
+        
         
         
 

@@ -658,6 +658,9 @@ class Process(object):
             import maya.cmds as cmds
             cmds.refresh()
             
+        status = None
+        read = None
+            
         try:        
             self._center_view()
             name = util_file.get_basename(script)
@@ -680,8 +683,7 @@ class Process(object):
             
             module.process = self
             
-            status = None
-            read = None
+            
         except Exception:
             status = traceback.format_exc()
             
@@ -695,8 +697,8 @@ class Process(object):
                 
                 if util.is_in_maya():
                     import vtool.maya_lib.util as maya_util
-                    read = maya_util.ScriptEditorRead()
-                    read.start()     
+                    #read = maya_util.ScriptEditorRead()
+                    #read.start()     
                     
                     import maya.cmds as cmds
                     module.cmds = cmds
@@ -706,14 +708,12 @@ class Process(object):
                 module.main()
                 status = 'Success'
                 
-                if read:
-                    value = maya_util.script_editor_value
-                    read.end()
-                    
-                    for line in value:
-                        util.show('\t' + line)
-                        
-                
+                #if read:
+                #    value = maya_util.script_editor_value
+                #    read.end()
+                #    
+                #    for line in value:
+                #        util.show('\t' + line)
                                 
         except Exception:
             
