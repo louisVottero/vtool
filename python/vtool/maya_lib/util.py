@@ -7023,8 +7023,6 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
     
     arclen_node = cmds.arclen(curve, ch = True, n = inc_name('curveInfo_%s' % curve))
     
-    
-    
     arclen_node = cmds.rename(arclen_node, inc_name('curveInfo_%s' % curve))
     
     multiply_scale_offset = cmds.createNode('multiplyDivide', n = inc_name('multiplyDivide_offset_%s' % arclen_node))
@@ -7077,6 +7075,9 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
         
         arc_value = vtool.util.fade_sine(percent)
         
+        print 'adding stretchy bulge'
+        print arc_value, percent
+        
         connect_multiply('%s.outputX' % multiply_scale_offset, '%s.bulge' % plus, arc_value)
         
         connect_plus('%s.scaleOffset' % plus, '%s.input1D[0]' % plus)
@@ -7098,8 +7099,6 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
             cmds.connectAttr('%s.outputX' % multiply_offset, '%s.color1R' % blend)
         
             cmds.setAttr('%s.color2R' % blend, 1)
-        
-            
             
             attr = MayaNumberVariable('stretchyBulge')
             attr.set_min_value(0)

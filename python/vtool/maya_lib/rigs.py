@@ -3754,7 +3754,7 @@ class FootRollRig(RollRig):
         if not self.main_control_follow:
             util.create_follow_group(ball_roll, self.roll_control_xform)
         if self.main_control_follow:
-            util.create_follow_group(main_control_follow, self.roll_control_xform)
+            util.create_follow_group(self.main_control_follow, self.roll_control_xform)
         
         cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
         cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
