@@ -19,14 +19,44 @@ class Rig(object):
         self.description = description
         self.side = side
         
+        self.control_parent = 'controls'
+        self.setup_parent = 'setup'
+        
+        self._create_default_groups()
+        
+        self.control_shape = self._define_control_shape()
+        
+        self.controls = []
+        
+    def _create_default_groups(self):
+                        
         self.control_group = self._create_group('controls')
         self.setup_group = self._create_group('setup')
         
         cmds.hide(self.setup_group)
         
-        self.control_shape = self._define_control_shape()
+        self._parent_default_groups()
         
-        self.controls = []
+    def _parent_default_groups(self):
+        
+        if cmds.objExists(self.control_parent) and cmds.objExists(self.control_group):
+            
+            parent = cmds.listRelatives(self.control_group, p = True)
+            if parent:
+                parent = parent[0]
+            
+            if parent and parent != self.control_parent:
+                cmds.parent(self.control_group, self.control_parent)
+                
+        if cmds.objExists(self.setup_parent) and cmds.objExists(self.setup_group):
+            
+            parent = cmds.listRelatives(self.setup_group, p = True)
+            if parent:
+                parent = parent[0]
+            
+            
+            if parent and parent != self.setup_parent:
+                cmds.parent(self.setup_group, self.setup_parent)    
         
     def _refresh(self):
         cmds.refresh()
@@ -90,8 +120,22 @@ class Rig(object):
     def set_control_shape(self, shape_name):
         self.control_shape = shape_name
                 
+    def set_control_parent(self, parent_transform):
+        
+        self.control_parent = parent_transform
+        
+        self._parent_default_groups()
+        
+    def set_setup_parent(self, parent_transform):
+        
+        self.setup_parent = parent_transform
+        
+        self._parent_default_groups()
+                
     def create(self):
-        pass
+        
+        self._parent_default_groups()
+        
 
 class JointRig(Rig):
     def __init__(self, description, side):
@@ -208,6 +252,8 @@ class BufferRig(JointRig):
         
     def set_buffer(self, bool_value):
         self.create_buffer_joints = bool_value
+            
+    
             
     def create(self):
         super(BufferRig, self).create()
@@ -1881,8 +1927,6 @@ class IkSplineNubRig(BufferRig):
     
     def __init__(self, description, side):
         
-        
-        
         super(IkSplineNubRig, self).__init__(description, side)
         
         self.end_with_locator = False
@@ -1891,7 +1935,12 @@ class IkSplineNubRig(BufferRig):
         
         self.bool_create_middle_control = True
         
+        self.right_side_fix = True
+        self.right_side_fix_axis = 'x'
+        
         self.control_shape = 'pin'
+        
+        self.control_orient = None
         
     def _duplicate_joints(self):
         
@@ -1982,8 +2031,6 @@ class IkSplineNubRig(BufferRig):
         
         cmds.setAttr('%s.inheritsTransform' % curve, 0)
         
-        
-        
         curve = cmds.rename(curve, util.inc_name('curve_%s' % name) )
         
         top_cluster, top_handle = cmds.cluster('%s.cv[0]' % curve, n = 'clusterTop_%s' % name)
@@ -2000,8 +2047,6 @@ class IkSplineNubRig(BufferRig):
         
         cmds.pointConstraint(btm_constrain, btm_handle, mo = True)
         cmds.parentConstraint(mid_constrain, mid_handle, mo = True)
-        
-        
         
         return handle, curve
     
@@ -2022,8 +2067,14 @@ class IkSplineNubRig(BufferRig):
         
         xform = util.create_xform_group(control.get())
         
-        match = util.MatchSpace(self.joints[0], xform)
-        match.translation_rotation()
+        orient_transform = self.control_orient
+        
+        if not orient_transform:
+            orient_transform = self.joints[0]
+        
+        util.MatchSpace(orient_transform, xform).translation_rotation()
+        
+        self._fix_right_side_orient(xform)
         
         return control.get(), xform
     
@@ -2035,8 +2086,16 @@ class IkSplineNubRig(BufferRig):
         
         xform = util.create_xform_group(control.get())
         
-        match = util.MatchSpace(self.joints[-1], xform)
-        match.translation_rotation()
+        orient_translate = self.joints[-1]
+        orient_rotate = self.control_orient
+                
+        if not orient_rotate:
+            orient_rotate = self.joints[0]
+        
+        util.MatchSpace(orient_translate, xform).translation()
+        util.MatchSpace(orient_rotate, xform).rotation()
+        
+        self._fix_right_side_orient(xform)
         
         return control.get(), xform
     
@@ -2049,8 +2108,17 @@ class IkSplineNubRig(BufferRig):
         
         xform = util.create_xform_group(control.get())
         
-        match = util.MatchSpace(self.joints[-1], xform)
-        match.translation_rotation()
+        orient_translate = self.joints[-1]
+        orient_rotate = self.control_orient
+        
+        if not orient_rotate:
+            orient_rotate = self.joints[0]
+        
+        util.MatchSpace(orient_translate, xform).translation()
+        util.MatchSpace(orient_rotate, xform).rotation()
+        
+        
+        self._fix_right_side_orient(xform)
         
         return control.get(), xform
         
@@ -2071,10 +2139,43 @@ class IkSplineNubRig(BufferRig):
         
         xform = util.create_xform_group(control)
         
-        match = util.MatchSpace(self.joints[0], xform)
-        match.rotation()
+        orient_transform = self.control_orient
+        
+        if not orient_transform:
+            orient_transform = self.joints[0]
+        
+        util.MatchSpace(orient_transform, xform).translation_rotation()
+        
+        self._fix_right_side_orient(xform)
         
         return control, xform
+    
+    def _fix_right_side_orient(self, control):
+        
+        #goo = self.right_side_fix_axis
+        
+        if not self.right_side_fix:
+            return
+        
+        if not self.side == 'R':
+            return
+        
+        xform_locator = cmds.spaceLocator()[0]
+        
+        match = util.MatchSpace(control, xform_locator)
+        match.translation_rotation()
+        
+        spacer = util.create_xform_group(xform_locator)
+        
+        for letter in self.right_side_fix_axis:
+            cmds.setAttr('%s.rotate%s' % (xform_locator, letter.upper()), 180)
+            
+        #cmds.setAttr('%s.rotateZ' % xform_locator, 180)
+        
+        match = util.MatchSpace(xform_locator, control)
+        match.translation_rotation()
+        
+        cmds.delete(spacer)
     
     def set_end_with_locator(self, True):
         self.end_with_locator = True
@@ -2089,6 +2190,13 @@ class IkSplineNubRig(BufferRig):
     def set_create_middle_control(self, bool_value):
         
         self.bool_create_middle_control = bool_value
+    
+    def set_right_side_fix(self, bool_value, axis):
+        self.right_side_fix = bool_value
+        self.right_side_fix_axis = axis
+    
+    def set_control_orient(self, transform):
+        self.control_orient = transform
     
     def create(self):
         super(IkSplineNubRig, self).create()
@@ -2111,8 +2219,17 @@ class IkSplineNubRig(BufferRig):
             sub_btm_control = btm_control
             cmds.hide(btm_control)
             
-            match = util.MatchSpace(self.buffer_joints[-1], btm_control)
-            match.translation_rotation()
+            orient_translate = self.joints[-1]
+            orient_rotate = self.control_orient
+                    
+            if not orient_rotate:
+                orient_rotate = self.joints[0]
+            
+            util.MatchSpace(orient_translate, btm_control).translation()
+            util.MatchSpace(orient_rotate, btm_control).rotation()
+            
+            self._fix_right_side_orient(btm_control)
+            
         
         self.btm_control = btm_control
         self.btm_xform = btm_xform
@@ -2146,11 +2263,10 @@ class IkSplineNubRig(BufferRig):
         
         cmds.parent(btm_twist, sub_joint)
         
-        match = util.MatchSpace(self.buffer_joints[0], top_twist)
-        match.translation_rotation()
+        util.MatchSpace(self.buffer_joints[0], top_twist).translation_rotation()
         
-        match = util.MatchSpace(self.buffer_joints[-1], btm_twist)
-        match.translation_rotation()
+        util.MatchSpace(self.buffer_joints[-1], btm_twist).translation()
+        util.MatchSpace(self.buffer_joints[0], btm_twist).rotation()
         
         cmds.setAttr('%s.dTwistControlEnable' % spline_handle, 1)
         cmds.setAttr('%s.dWorldUpType' % spline_handle, 4)
@@ -2192,7 +2308,10 @@ class IkAppendageRig(BufferRig):
         self.match_btm_to_joint = True
         self.create_world_switch = True
         self.create_top_control = True
+        self.pole_follow_transform = None
         self.pole_angle_joints = []
+        self.top_control_right_side_fix = True
+        
     
     def _attach_ik_joints(self, source_chain, target_chain):
         
@@ -2270,6 +2389,8 @@ class IkAppendageRig(BufferRig):
         
             self.top_control = control.get()
             
+            
+            
         if self.top_as_locator:
             self.top_control = cmds.spaceLocator(n = 'locator_%s' % self._get_name())[0]
         
@@ -2279,6 +2400,8 @@ class IkAppendageRig(BufferRig):
         
         match = util.MatchSpace(self.ik_chain[0], control)
         match.translation_rotation()
+        
+        self._fix_right_side_orient(control)
         
         cmds.parentConstraint(control, self.ik_chain[0], mo = True)
         
@@ -2317,11 +2440,14 @@ class IkAppendageRig(BufferRig):
     
     def _fix_right_side_orient(self, control):
         
+        
         if not self.right_side_fix:
             return
-        
+    
         if not self.side == 'R':
             return
+        
+        
         
         xform_locator = cmds.spaceLocator()[0]
         
@@ -2514,7 +2640,10 @@ class IkAppendageRig(BufferRig):
         
         if self.create_twist:
             
-            follow_group = util.create_follow_group(self.top_control, xform_group)
+            if not self.pole_follow_transform:
+                follow_group = util.create_follow_group(self.top_control, xform_group)
+            if self.pole_follow_transform:
+                follow_group = util.create_follow_group(self.pole_follow_transform, xform_group)
             constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo = True)[0]
             
             constraint_editor = util.ConstraintEditor()
@@ -2587,6 +2716,9 @@ class IkAppendageRig(BufferRig):
         
     def set_create_top_control(self, bool_value):
         self.create_top_control = bool_value
+    
+    def set_pole_follow_transform(self, transform):
+        self.pole_follow_transform = transform
     
     def create(self):
         super(IkAppendageRig, self).create()
@@ -2955,17 +3087,46 @@ class TweakCurveRig(BufferRig):
 
 class IkLegRig(IkAppendageRig):
     
-    def __init__(self, description, side):
-        super(IkLegRig, self).__init__(description, side)
+    def _fix_right_side_orient(self, control, axis = 'yz'):
         
-        self.right_side_fix = False
+        
+        
+        if not self.right_side_fix:
+            return
     
-    #def _fix_right_side_orient(self, control):
-    #    return
-    
+        if not self.side == 'R':
+            return
+        
+        xform_locator = cmds.spaceLocator()[0]
+        
+        match = util.MatchSpace(control, xform_locator)
+        match.translation_rotation()
+        
+        spacer = util.create_xform_group(xform_locator)
+        
+        for letter in axis:
+        
+            cmds.setAttr('%s.rotate%s' % (xform_locator, letter.upper()), 180)
+        
+        match = util.MatchSpace(xform_locator, control)
+        match.translation_rotation()
+        
+        cmds.delete(spacer)
+           
+    def _xform_top_control(self, control):
+        
+        match = util.MatchSpace(self.ik_chain[0], control)
+        match.translation_rotation()
+        
+        self._fix_right_side_orient(control, 'z')
+        
+        cmds.parentConstraint(control, self.ik_chain[0], mo = True)
+        
+        xform_group = util.create_xform_group(control)
+        
+        cmds.parent(xform_group, self.control_group)
+            
     def _create_pole_vector(self):
-        
-        
         
         control = self._create_control('POLE')
         control.hide_scale_and_visibility_attributes()
@@ -2980,8 +3141,6 @@ class IkLegRig(IkAppendageRig):
         
         twist_var = util.MayaNumberVariable('twist')
         twist_var.create(self.btm_control)
-        
-
         
         if self.side == 'L':
             twist_var.connect_out('%s.twist' % self.ik_handle)

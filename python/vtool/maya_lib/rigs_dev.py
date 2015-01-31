@@ -16,78 +16,136 @@ class StickyRig(rigs.JointRig):
         
         self.top_joints = []
         self.btm_joints = []
+        self.respect_side = False
+        self.straight_loop = False
+        
+        self.locators = []
+        
     
     def _loop_joints(self):
         
-        top_joint_group = cmds.group(em = True, n = util.inc_name( self._get_name('group', 'joints_top')))
-        btm_joint_group = cmds.group(em = True, n = util.inc_name( self._get_name('group', 'joints_btm')))
+        self.top_joint_group = cmds.group(em = True, n = util.inc_name( self._get_name('group', 'joints_top')))
+        self.btm_joint_group = cmds.group(em = True, n = util.inc_name( self._get_name('group', 'joints_btm')))
         
-        cmds.parent(top_joint_group, btm_joint_group, self.setup_group)
+        self.top_locator_group = cmds.group(em = True, n = util.inc_name( self._get_name('group', 'locators_top')))
+        self.mid_locator_group = cmds.group(em = True, n = util.inc_name( self._get_name('group', 'locators_mid')))
+        self.btm_locator_group = cmds.group(em = True, n = util.inc_name( self._get_name('group', 'locators_btm')))
         
-        for inc in range(0, len(self.top_joints)):
+        cmds.parent(self.top_joint_group, self.btm_joint_group, self.setup_group)
+        cmds.parent(self.top_locator_group, self.mid_locator_group, self.btm_locator_group, self.setup_group)
+        
+        joint_count = len(self.top_joints)
+        
+        if self.straight_loop:
+            for inc in range(0, joint_count):
+                self._create_increment(inc)
+                
+        if not self.straight_loop:
             
-            top_joint = self.top_joints[inc]
-            btm_joint = self.btm_joints[inc]
+            for inc in range(0, joint_count):
+                
+                negative_inc = joint_count - (inc+1)
+                
+                self._create_increment(inc)
+                
+                if inc == negative_inc:
+                    break
+                self._create_increment(negative_inc)
+                
+                self.locators.append([self.top_locator, self.btm_locator])
+                
+        print self.locators
             
-            old_top_joint = top_joint
-            old_btm_joint = btm_joint
+           
+    def _create_increment(self, inc):
+        top_joint = self.top_joints[inc]
+        btm_joint = self.btm_joints[inc]
+        
+        if self.respect_side:
+            side = util.get_side(top_joint, self.respect_side_tolerance)
+            self.side = side
             
-            top_joint = cmds.duplicate(top_joint, n = util.inc_name(self._get_name('inputJoint', 'top')))[0]
-            btm_joint = cmds.duplicate(btm_joint, n = util.inc_name(self._get_name('inputJoint', 'btm')))[0]
-            
-            cmds.parentConstraint(top_joint, old_top_joint)
-            cmds.scaleConstraint(top_joint, old_top_joint)
-            
-            cmds.parentConstraint(btm_joint, old_btm_joint)
-            cmds.scaleConstraint(btm_joint, old_btm_joint)
-            
-            cmds.parent(top_joint, top_joint_group)
-            cmds.parent(btm_joint, btm_joint_group)
-            
-            control_top = self._create_sticky_control(top_joint, 'top')
-            control_btm = self._create_sticky_control(btm_joint, 'btm')
-            
-            self.top_locator = self._create_locator('top')
-            self.mid_locator = self._create_locator('mid')
-            self.btm_locator = self._create_locator('btm')
-            
-            util.MatchSpace(top_joint, self.top_locator[1]).translation_rotation()
-            util.MatchSpace(btm_joint, self.btm_locator[1]).translation_rotation()
-            
-            midpoint = util.get_midpoint(top_joint, btm_joint)
-            
-            cmds.xform(self.mid_locator[1], t = midpoint, ws = True)
-            
-            cmds.parent(self.top_locator[1], self.setup_group)
-            cmds.parent(self.mid_locator[1], self.setup_group)
-            cmds.parent(self.btm_locator[1], self.setup_group)   
-    
-            top_xform, top_driver = self._group_joint(top_joint)
-            btm_xform, btm_driver = self._group_joint(btm_joint)
-            
-            self._create_follow([self.top_locator[0], self.mid_locator[0]], top_xform, control_top[0])
-            self._create_follow([self.btm_locator[0], self.mid_locator[0]], btm_xform, control_btm[0])
-            
-            self._create_follow([self.top_locator[0], self.btm_locator[0]], self.mid_locator[1], self.mid_locator[0])
-            cmds.setAttr('%s.stick' % self.mid_locator[0], 0.5)
-            
-            #top
-            util.connect_translate(top_xform, control_top[1])
-            util.connect_translate(control_top[2], top_driver)
-            util.connect_translate(control_top[0], top_joint)
-            
-            util.connect_rotate(top_xform, control_top[1])
-            util.connect_rotate(control_top[2], top_driver)
-            util.connect_rotate(control_top[0], top_joint)
-            
-            #btm
-            util.connect_translate(btm_xform, control_btm[1])
-            util.connect_translate(control_btm[2], btm_driver)
-            util.connect_translate(control_btm[0], btm_joint)
-            
-            util.connect_rotate(btm_xform, control_btm[1])
-            util.connect_rotate(control_btm[2], btm_driver)
-            util.connect_rotate(control_btm[0], btm_joint)
+        old_top_joint = top_joint
+        old_btm_joint = btm_joint
+        
+        top_joint = cmds.duplicate(top_joint, n = util.inc_name(self._get_name('inputJoint', 'top')))[0]
+        btm_joint = cmds.duplicate(btm_joint, n = util.inc_name(self._get_name('inputJoint', 'btm')))[0]
+        
+        cmds.parentConstraint(top_joint, old_top_joint)
+        cmds.scaleConstraint(top_joint, old_top_joint)
+        
+        cmds.parentConstraint(btm_joint, old_btm_joint)
+        cmds.scaleConstraint(btm_joint, old_btm_joint)
+        
+        cmds.parent(top_joint, self.top_joint_group)
+        cmds.parent(btm_joint, self.btm_joint_group)
+        
+        control_top = self._create_sticky_control(top_joint, 'top')
+        control_btm = self._create_sticky_control(btm_joint, 'btm')
+        
+        self.top_locator = self._create_locator('top')
+        self.mid_locator = self._create_locator('mid')
+        self.btm_locator = self._create_locator('btm')
+        
+        util.MatchSpace(top_joint, self.top_locator[1]).translation_rotation()
+        util.MatchSpace(btm_joint, self.btm_locator[1]).translation_rotation()
+        
+        midpoint = util.get_midpoint(top_joint, btm_joint)
+        
+        cmds.xform(self.mid_locator[1], t = midpoint, ws = True)
+        
+        cmds.parent(self.top_locator[1], self.top_locator_group)
+        cmds.parent(self.mid_locator[1], self.mid_locator_group)
+        cmds.parent(self.btm_locator[1], self.btm_locator_group)   
+
+        top_xform, top_driver = self._group_joint(top_joint)
+        btm_xform, btm_driver = self._group_joint(btm_joint)
+        
+        self._create_follow([self.top_locator[0], self.mid_locator[0]], top_xform, top_joint)
+        
+        
+        cmds.addAttr(control_top[0], ln = 'stick', min = 0, max = 1, k = True)
+        cmds.addAttr(top_joint, ln = 'stick_offset', min = 0, max = 1, k = True)
+        
+        multiply = cmds.createNode('multiplyDivide', n = self._get_name('multiplyDivide', 'stick'))
+        
+        cmds.connectAttr('%s.stick_offset' % top_joint, '%s.input1X' % multiply)
+        cmds.connectAttr('%s.stick' % control_top[0], '%s.input2X' % multiply)
+        
+        cmds.connectAttr('%s.outputX' % multiply, '%s.stick' % top_joint)
+        
+        #average = cmds.createNode('plusMinusAverage', n = self._get_name('average', 'stick'))
+        #cmds.setAttr('%s.operation' % average, 3)
+        
+        #cmds.connectAttr('%s.stick_offset' % top_joint, '%s.input1D[0]' % average)
+        #cmds.connectAttr('%s.stick' % control_top[0], '%s.input1D[1]' % average)
+        #cmds.connectAttr('%s.output1D' % average, '%s.stick' % top_joint)
+        
+        
+        #self._create_follow([self.top_locator[0], self.mid_locator[0]], top_xform, control_top[0])
+        self._create_follow([self.btm_locator[0], self.mid_locator[0]], btm_xform, control_btm[0])
+        
+        self._create_follow([self.top_locator[0], self.btm_locator[0]], self.mid_locator[1], self.mid_locator[0])
+        cmds.setAttr('%s.stick' % self.mid_locator[0], 0.5)
+        
+        #top
+        util.connect_translate(top_xform, control_top[1])
+        util.connect_translate(control_top[2], top_driver)
+        util.connect_translate(control_top[0], top_joint)
+        
+        util.connect_rotate(top_xform, control_top[1])
+        util.connect_rotate(control_top[2], top_driver)
+        util.connect_rotate(control_top[0], top_joint)
+        
+        #btm
+        util.connect_translate(btm_xform, control_btm[1])
+        util.connect_translate(control_btm[2], btm_driver)
+        util.connect_translate(control_btm[0], btm_joint)
+        
+        util.connect_rotate(btm_xform, control_btm[1])
+        util.connect_rotate(control_btm[2], btm_driver)
+        util.connect_rotate(control_btm[0], btm_joint)
+        
            
     def _create_follow(self, source_list, target, target_control ):
         
@@ -151,12 +209,21 @@ class StickyRig(rigs.JointRig):
     def set_btm_joints(self, joint_list):
         self.btm_joints = joint_list
     
+    def set_top_stick_values(self, float_list):
+        self.top_stick_values = float_list
     
+    def set_btm_stick_values(self, float_list):
+        self.btm_stick_values = float_list
     
     def create(self):
         super(StickyRig, self).create()
         
         self._loop_joints()
+        
+    def create_follow(self, follow_transform, increment, value):
+        
+        util.create_multi_follow([self.setup_group, follow_transform], , node, constraint_type, attribute_name, value)
+        
         
         
 
