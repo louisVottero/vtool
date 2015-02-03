@@ -724,18 +724,33 @@ def clean_string(string):
     return string
 
 def show(*args):
+    try:
+        if not args:
+            return
         
-    if not args:
-        return
+        new_args = []
         
-    string_value = string.join(args)
+        for arg in args:
+            if arg != None:
+                new_args.append(arg)
+            
+        args = new_args
+        
+        if not args:
+            return
+        
+        string_value = string.join(args)
+        
+        string_value = string_value.replace('\n', '\t\n')
+        if string_value.endswith('\t\n'):
+            string_value = string_value[:-2]
+        
+        #do not remove
+        print '\t%s' % string_value
     
-    string_value = string_value.replace('\n', '\t\n')
-    if string_value.endswith('\t\n'):
-        string_value = string_value[:-2]
-    
-    #do not remove
-    print '\t%s' % string_value
+    except:
+        print 'Could not show %s' % args
+        
     
 
     

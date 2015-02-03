@@ -27,7 +27,6 @@ def undo_off(function):
             function(*args, **kwargs)
         except Exception, e:
             cmds.undoInfo(state = True)
-            raise Exception(e)
             
         cmds.undoInfo(state = True)
         
@@ -45,7 +44,9 @@ def undo_chunk(function):
             return_value = function(*args, **kwargs)
         except Exception, e:
             cmds.undoInfo(closeChunk = True)
+            print e
             raise Exception(e)
+            
             
         cmds.undoInfo(closeChunk = True)
         
@@ -1387,6 +1388,7 @@ class Control(object):
             warning('%s has no shapes' % self.control)
             
     def _create(self):
+        
         self.control = cmds.circle(ch = False, n = self.control, normal = [1,0,0])[0]
         
         if self.curve_type:
@@ -8244,6 +8246,8 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None, rig =
         create_spline_ik_stretch(curve, new_joint, curve, create_stretch_on_off = False)    
         return new_joint, ik_handle
     
+
+    
     
 @undo_chunk
 def create_joints_on_curve(curve, joint_count, description, attach = True, create_controls = False):
@@ -10242,6 +10246,28 @@ def connect_rotate(source_transform, target_transform):
 def connect_scale(source_transform, target_transform):
     
     connect_vector_attribute(source_transform, target_transform, 'scale')
+
+def connect_translate_plus(source_transform, target_transform):
+    
+    plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
+    
+    value_x = cmds.getAttr('%s.translateX' % source_transform)
+    value_y = cmds.getAttr('%s.translateY' % source_transform)
+    value_z = cmds.getAttr('%s.translateZ' % source_transform)
+    
+    cmds.connectAttr('%s.translateX' % source_transform, '%s.input3D[0].input3Dx' % plus)
+    cmds.connectAttr('%s.translateY' % source_transform, '%s.input3D[0].input3Dy' % plus)
+    cmds.connectAttr('%s.translateZ' % source_transform, '%s.input3D[0].input3Dz' % plus)
+    
+    cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1*value_x)
+    cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
+    cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
+    
+    cmds.connectAttr('%s.output3Dx' % plus, '%s.translateX' % target_transform)
+    cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % target_transform)
+    cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % target_transform)
+    
+    
 
 def connect_visibility(attribute_name, target_node, value = 1):
     
