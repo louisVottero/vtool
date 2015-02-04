@@ -2668,6 +2668,7 @@ class IkAppendageRig(BufferRig):
     def _create_stretchy(self, top_transform, btm_transform, control):
         stretchy = util.StretchyChain()
         stretchy.set_joints(self.ik_chain)
+        #dampen should be damp... dampen means wet, damp means diminish
         stretchy.set_add_dampen(True)
         stretchy.set_node_for_attributes(control)
         stretchy.set_description(self._get_name())

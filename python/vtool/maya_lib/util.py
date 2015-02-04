@@ -4409,12 +4409,10 @@ class TransferWeight(object):
         for joint in destination_joints:
             index = get_index_at_skin_influence(joint,self.skin_cluster)
             destination_joint_map[index] = joint
-            
         
         verts = self.vertices
                             
         weighted_verts = []
-        
         
         for influence_index in joint_map:
             
@@ -4473,6 +4471,8 @@ class TransferWeight(object):
             
             inc += 1
             
+        cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
+        
         bar.end()
         
         #cmds.undoInfo(state = True)
@@ -4633,7 +4633,8 @@ class TransferWeight(object):
                 break
             
             inc += 1
-            
+          
+        cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
             
         bar.end()
         
@@ -10076,6 +10077,23 @@ def connect_translate_plus(source_transform, target_transform):
     cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % target_transform)
     cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % target_transform)
     
+    return plus
+    
+def connect_translate_multiply(source_transform, target_transform, value):
+    
+    multiply = connect_multiply('%s.translateX' % source_transform, '%s.translateX' % target_transform, value)
+    
+    cmds.connectAttr('%s.translateY' % source_transform, '%s.input1Y' % multiply)
+    cmds.connectAttr('%s.translateZ' % source_transform, '%s.input1Z' % multiply)
+    
+    cmds.connectAttr('%s.outputY' % multiply, '%s.translateY' % target_transform)
+    cmds.connectAttr('%s.outputZ' % multiply, '%s.translateZ' % target_transform)
+    
+    try:
+        cmds.setAttr('%s.input2Y' % multiply, value)
+        cmds.setAttr('%s.input2Z' % multiply, value)
+    except:
+        pass
     
 
 def connect_visibility(attribute_name, target_node, value = 1):
