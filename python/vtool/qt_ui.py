@@ -13,7 +13,6 @@ try:
     
     shiboken_broken = False
     
-    print 'loading pyside'
     try:
         from shiboken import wrapInstance
     except:
@@ -21,8 +20,6 @@ try:
             from PySide.shiboken import wrapInstance
         except:
             shiboken_broken = True
-        
-    print 'shiboken broken', shiboken_broken
         
     if not shiboken_broken:
         type_QT = 'pyside'
@@ -33,8 +30,6 @@ try:
     
 except:
     type_QT = None
-
-print 'goobers', type_QT
 
 if not type_QT == 'pyside':
     try:
