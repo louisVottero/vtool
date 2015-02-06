@@ -438,6 +438,14 @@ def is_in_nuke():
     except:
         return False
 
+def get_maya_version():
+    import maya.cmds as cmds
+    
+    try:
+        cmds.about(v = True)
+    except:
+        print 'Could not get maya version. Script is not running in Maya.'
+
 def fade_sine(percent_value):
     
     input = math.pi * percent_value

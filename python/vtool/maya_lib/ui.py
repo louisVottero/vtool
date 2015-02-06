@@ -26,7 +26,11 @@ def get_maya_window():
         return sip.wrapinstance(long(ptr), QtCore.QObject)
     
     if vtool.qt_ui.is_pyside():
-        from shiboken import wrapInstance
+        try:
+            from shiboken import wrapInstance
+        except:
+            from PySide.shiboken import wrapInstance
+             
         maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
         return wrapInstance(long(maya_window_ptr), QtGui.QWidget)
     

@@ -10,18 +10,31 @@ import random
 
 try:
     from PySide import QtCore, QtGui
+    
+    shiboken_broken = False
+    
+    print 'loading pyside'
     try:
         from shiboken import wrapInstance
     except:
         try:
             from PySide.shiboken import wrapInstance
         except:
-            pass
-    type_QT = 'pyside'
-    util.show('using pyside')
+            shiboken_broken = True
+        
+    print 'shiboken broken', shiboken_broken
+        
+    if not shiboken_broken:
+        type_QT = 'pyside'
+        util.show('using pyside')
+        
+    if shiboken_broken:
+        type_QT = None
     
 except:
     type_QT = None
+
+print 'goobers', type_QT
 
 if not type_QT == 'pyside':
     try:
