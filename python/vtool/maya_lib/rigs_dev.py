@@ -782,18 +782,22 @@ class StickyLipRig(StickyRig):
         
         self._create_corner_controls()
         
-        
-class BrowRig(rigs.JointRig):
-    
+       
+class FaceCurveRig(rigs.JointRig):
+
     def __init__(self, description, side):
         
-        super(BrowRig, self).__init__(description, side)
+        super(FaceCurveRig, self).__init__(description, side)
         
         self.curve = None
         
+        self.joint_dict = {}
+        
+        self.span_count = 4
+        
     def _create_curve(self):
         
-        self.curve = util.transforms_to_curve(self.joints, 3, self.description)
+        self.curve = util.transforms_to_curve(self.joints, self.span_count, self.description)
         
         cmds.parent(self.curve, self.setup_group)
         
@@ -808,6 +812,8 @@ class BrowRig(rigs.JointRig):
         for cluster in self.clusters:
             
             control = self._create_control()
+            control.hide_scale_attributes()
+            control.rotate_shape(90, 0, 0)
             
             util.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
             
@@ -816,17 +822,56 @@ class BrowRig(rigs.JointRig):
             util.connect_translate(control.get(), cluster)
             
             cmds.parent(xform, self.control_group)
+            
+            
+    def _create_sub_joint_controls(self):
+        
+        group = cmds.group(em = True, n = self._get_name('group', 'sub_controls'))
+        
+        cmds.parent(group, self.control_group)
+        
+        self.sub_control_group = group
+        
+        
+        for joint in self.joints:
+            
+            joint_xform = self.joint_dict[joint]
+            
+            sub_control = self._create_control(sub = True)
+            sub_control.rotate_shape(90, 0, 0)
+            sub_control.scale_shape(.8,.8,.8)
+            sub_control.hide_scale_attributes()
+            
+            util.MatchSpace(joint, sub_control.get())
+            
+            xform = util.create_xform_group(sub_control.get())
+            
+            util.connect_translate(joint_xform, xform)
+                        
+            util.connect_translate(sub_control.get(), joint)
+            
+            cmds.parent(xform, group)
+            
         
     def _attach_joints_to_curve(self):
         
         for joint in self.joints:
-            util.attach_to_curve(joint, self.curve)
+            xform = util.create_xform_group(joint)
+            
+            self.joint_dict[joint] = xform
+            
+            util.attach_to_curve(xform, self.curve)
         
-    def set_brow_curve(self, curve_name):
+    def set_curve(self, curve_name):
         self.curve = curve_name
         
+    def set_control_count(self, count):
+        
+        self.span_count = count - 1
+        
+        
     def create(self):
-        super(BrowRig, self).create()
+        super(FaceCurveRig, self).create()
         
         if not self.curve:
             self._create_curve()
@@ -837,8 +882,15 @@ class BrowRig(rigs.JointRig):
                     
         self._create_controls()
         
-
-            
+        self._create_sub_joint_controls()      
+     
+class BrowRig(FaceCurveRig):
+    
+    def __init__(self, description, side):
+        
+        super(BrowRig, self).__init__(description, side)
+        
+        self.span_count = 3
         
 class EyeLidRig(rigs.JointRig):
     
@@ -1026,6 +1078,8 @@ class EyeLidRig(rigs.JointRig):
                 cmds.geometryConstraint(self.surface, offset)
                 
             cmds.parent(driver, offset)
+
+    
         
 class EyeLidSphereRig(util.BufferRig):
     

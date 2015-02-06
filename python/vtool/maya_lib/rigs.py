@@ -781,6 +781,9 @@ class FkLocalRig(FkRig):
         
         return self.control
 
+    def set_control_scale(self, bool_value):
+        self.rig_scale = bool_value
+
     def set_local_parent(self, local_parent):
         self.main_local_parent = local_parent 
     
@@ -6329,3 +6332,4 @@ class BackLeg(BufferRig):
         self._create_pole_chain()
 
         self._create_pole_vector()
+

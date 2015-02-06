@@ -210,7 +210,7 @@ class MayaObject(ApiObject):
         self.mobject = mobject
 
     def _define_api_object(self, mobject):
-        return mobject
+        return mobject 
     
     def set_node_as_mobject(self, node_name):
         
