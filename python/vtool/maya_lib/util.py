@@ -10061,9 +10061,17 @@ def connect_translate_plus(source_transform, target_transform):
     
     plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
     
+    input_x = get_attribute_input('%s.translateX' % target_transform)
+    input_y = get_attribute_input('%s.translateY' % target_transform)
+    input_z = get_attribute_input('%s.translateZ' % target_transform)
+    
     value_x = cmds.getAttr('%s.translateX' % source_transform)
     value_y = cmds.getAttr('%s.translateY' % source_transform)
     value_z = cmds.getAttr('%s.translateZ' % source_transform)
+    
+    current_value_x = cmds.getAttr('%s.translateX' % target_transform)
+    current_value_y = cmds.getAttr('%s.translateY' % target_transform)
+    current_value_z = cmds.getAttr('%s.translateZ' % target_transform)
     
     cmds.connectAttr('%s.translateX' % source_transform, '%s.input3D[0].input3Dx' % plus)
     cmds.connectAttr('%s.translateY' % source_transform, '%s.input3D[0].input3Dy' % plus)
@@ -10073,19 +10081,67 @@ def connect_translate_plus(source_transform, target_transform):
     cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
     cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
     
+    #cmds.setAttr('%s.input3D[2].input3Dx' % plus, -1*current_value_x)
+    #cmds.setAttr('%s.input3D[2].input3Dy' % plus, -1*current_value_y)
+    #cmds.setAttr('%s.input3D[2].input3Dz' % plus, -1*current_value_z)
+    
+    disconnect_attribute('%s.translateX' % target_transform)
+    disconnect_attribute('%s.translateY' % target_transform)
+    disconnect_attribute('%s.translateZ' % target_transform)
+    
     cmds.connectAttr('%s.output3Dx' % plus, '%s.translateX' % target_transform)
     cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % target_transform)
     cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % target_transform)
     
+    if input_x:
+        
+        cmds.connectAttr(input_x, '%s.input3D[3].input3Dx' % plus)
+    if input_y:
+        cmds.connectAttr(input_y, '%s.input3D[3].input3Dy' % plus)
+    if input_z:
+        cmds.connectAttr(input_z, '%s.input3D[3].input3Dz' % plus)
+    
     return plus
     
-def connect_translate_multiply(source_transform, target_transform, value):
+def connect_translate_multiply(source_transform, target_transform, value, respect_value = False):
     
     multiply = connect_multiply('%s.translateX' % source_transform, '%s.translateX' % target_transform, value)
+
+    if respect_value:
+            plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
     
-    cmds.connectAttr('%s.translateY' % source_transform, '%s.input1Y' % multiply)
-    cmds.connectAttr('%s.translateZ' % source_transform, '%s.input1Z' % multiply)
+            value_x = cmds.getAttr('%s.translateX' % source_transform)
+            value_y = cmds.getAttr('%s.translateY' % source_transform)
+            value_z = cmds.getAttr('%s.translateZ' % source_transform)
     
+            
+    
+            cmds.connectAttr('%s.translateX' % source_transform, '%s.input3D[0].input3Dx' % plus)
+            cmds.connectAttr('%s.translateY' % source_transform, '%s.input3D[0].input3Dy' % plus)
+            cmds.connectAttr('%s.translateZ' % source_transform, '%s.input3D[0].input3Dz' % plus)
+    
+            cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1*value_x)
+            cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
+            cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
+            """
+            value_x = cmds.getAttr('%s.translateX' % target_transform)
+            value_y = cmds.getAttr('%s.translateY' % target_transform)
+            value_z = cmds.getAttr('%s.translateZ' % target_transform)
+            
+            cmds.setAttr('%s.input3D[2].input3Dx' % plus, value_x)
+            cmds.setAttr('%s.input3D[2].input3Dy' % plus, value_y)
+            cmds.setAttr('%s.input3D[2].input3Dz' % plus, value_z)
+            """
+            disconnect_attribute('%s.input1X' % multiply)
+    
+            cmds.connectAttr('%s.output3Dx' % plus, '%s.input1X' % multiply)
+            cmds.connectAttr('%s.output3Dy' % plus, '%s.input1Y' % multiply)
+            cmds.connectAttr('%s.output3Dz' % plus, '%s.input1Z' % multiply)
+    
+    if not respect_value:
+        cmds.connectAttr('%s.translateY' % source_transform, '%s.input1Y' % multiply)
+        cmds.connectAttr('%s.translateZ' % source_transform, '%s.input1Z' % multiply)
+        
     cmds.connectAttr('%s.outputY' % multiply, '%s.translateY' % target_transform)
     cmds.connectAttr('%s.outputZ' % multiply, '%s.translateZ' % target_transform)
     
@@ -10094,6 +10150,11 @@ def connect_translate_multiply(source_transform, target_transform, value):
         cmds.setAttr('%s.input2Z' % multiply, value)
     except:
         pass
+    
+    if not respect_value:
+        return multiply
+    if respect_value:
+        return multiply, plus
     
 
 def connect_visibility(attribute_name, target_node, value = 1):

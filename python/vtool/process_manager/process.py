@@ -835,7 +835,8 @@ def copy_process_data(source_process, target_process, data_name, replace = False
           
         version = util_file.VersionFile(copied_path)
         version.save('Copied from %s' % filepath)
-              
+        
+    util.show('Finished copying data from %s' % filepath)          
             
 def copy_process_code(source_process, target_process, code_name, replace = False):
     
@@ -853,10 +854,14 @@ def copy_process_code(source_process, target_process, code_name, replace = False
         
         code_folder_path = target_process.get_code_folder(code_name)
         
+        print code_folder_path
+        
         code_filepath =  target_process.get_code_file(code_name)
         
+        print code_filepath
+        
         if not code_filepath:
-            raise RuntimeError('Could not find codepath: %s' % code_filepath)
+            util.show('Could not find code: %s' % code_name)
             return
         
         code_file = util_file.get_basename( code_filepath )
@@ -896,3 +901,5 @@ def copy_process_code(source_process, target_process, code_name, replace = False
           
         version = util_file.VersionFile(copied_path)
         version.save('Copied from %s' % filepath)
+        
+    util.show('Finished copying code from %s' % filepath)

@@ -468,6 +468,7 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
 #--- data widgets
 
 class DataFileWidget(vtool.qt_ui.FileManagerWidget):
+    
     def set_directory(self, directory):
         super(DataFileWidget, self).set_directory(directory)
         
@@ -497,12 +498,21 @@ class MayaDataFileWidget(DataFileWidget):
     
 class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
+    def _create_button(self, name):
+        
+        button = QtGui.QPushButton(name)
+        
+        button.setMaximumWidth(120)
+        
+        return button
+    
+    
     def _build_widgets(self):
             
-        import_button = QtGui.QPushButton('Import')
+        import_button = self._create_button('Import')
         import_button.clicked.connect(self._import_data)
         
-        export_button = QtGui.QPushButton('Export')
+        export_button = self._create_button('Export')
         export_button.clicked.connect(self._export_data)
         
         self.main_layout.addWidget(export_button) 
@@ -704,19 +714,26 @@ class MayaBinaryFileWidget(MayaFileWidget):
         
 class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
+    def _create_button(self, name):
+        
+        button = QtGui.QPushButton(name)
+        
+        button.setMaximumWidth(100)
+        
+        return button
     
     def _build_widgets(self):
         
         
         
-        save_button = QtGui.QPushButton('Save')
+        save_button = self._create_button('Save')
         
         save_button.setMinimumHeight(50)
         
-        export_button = QtGui.QPushButton('Export')
-        open_button = QtGui.QPushButton('Open')
-        import_button = QtGui.QPushButton('Import')
-        reference_button = QtGui.QPushButton('Reference')
+        export_button = self._create_button('Export')
+        open_button = self._create_button('Open')
+        import_button = self._create_button('Import')
+        reference_button = self._create_button('Reference')
         
         out_box = QtGui.QGroupBox('File Out')
         in_box = QtGui.QGroupBox('File In')

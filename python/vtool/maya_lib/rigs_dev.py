@@ -7,7 +7,7 @@ import maya.cmds as cmds
 
 import vtool.util
 import rigs
-from vtool.maya_lib.util import MatchSpace
+from vtool.maya_lib.util import MatchSpace, create_xform_group
 
 
 class StickyRig(rigs.JointRig):
@@ -30,7 +30,8 @@ class StickyRig(rigs.JointRig):
         
         self.control_dict = {}
         
-        self.sticky_control_group = None
+        self.sticky_control_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'sticky_controls')))
+        cmds.parent(self.sticky_control_group, self.control_group)
         
         self.follow_control_groups = {} 
 
@@ -186,15 +187,13 @@ class StickyRig(rigs.JointRig):
         
         
         
-        if not self.sticky_control_group:
-            self.sticky_control_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'sticky_controls')))
-            
-            cmds.parent(self.sticky_control_group, self.control_group)
             
         
         control = self._create_control(description)
         control.scale_shape(.8, .8, .8)
+        control.hide_scale_attributes()
         control_name = control.get()
+        
         
         util.MatchSpace(transform, control_name).translation_rotation()
                         
@@ -337,6 +336,7 @@ class StickyLipRig(StickyRig):
         self.center_tolerance = 0.01
         
         self.main_controls = []
+        self.corner_controls = []
         
         self.first_side = side
         
@@ -345,7 +345,9 @@ class StickyLipRig(StickyRig):
         
         self.corner_control_shape = 'square'
         
-        self.main_control_group = None
+    
+        self.main_control_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'main_controls')))
+        cmds.parent(self.main_control_group, self.control_group)
     
     def _create_curves(self):
         
@@ -483,9 +485,7 @@ class StickyLipRig(StickyRig):
         
         cluster_count = len(self.clusters_top)
         
-        if not self.main_control_group:
-            self.main_control_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'main_controls')))
-            cmds.parent(self.main_control_group, self.control_group)
+
         
         for inc in range(0, cluster_count):
         
@@ -556,6 +556,7 @@ class StickyLipRig(StickyRig):
         
         control.rotate_shape(90,0,0)
         control.scale_shape(.5, .5, .5)
+        control.hide_scale_attributes()
         
         control_name = control.get()
         
@@ -583,20 +584,22 @@ class StickyLipRig(StickyRig):
             control = self._create_control('corner')
             control.set_curve_type(self.corner_control_shape)
             control.rotate_shape(90,0,0)
+            control.hide_scale_attributes()
             
             sub_control = self._create_control('corner', sub = True)
             sub_control.set_curve_type(self.corner_control_shape)
             sub_control.rotate_shape(90,0,0)
             sub_control.scale_shape(.8, .8, .8)
+            sub_control.hide_scale_attributes()
             
             if side == 'L':
                 self.left_corner_control = control.get()
                 top_control_driver = self.main_controls[0][2]
                 btm_control_driver = self.main_controls[1][2]
                 
-                self.main_controls[0][0] = cmds.rename(self.main_controls[0][0], self.main_controls[0][0].replace('CNT_', 'ctrl') )
+                self.main_controls[0][0] = cmds.rename(self.main_controls[0][0], self.main_controls[0][0].replace('CNT_', 'ctrl_') )
                 cmds.delete('%sShape' % self.main_controls[0][0])
-                self.main_controls[1][0] = cmds.rename(self.main_controls[1][0], self.main_controls[1][0].replace('CNT_', 'ctrl') )
+                self.main_controls[1][0] = cmds.rename(self.main_controls[1][0], self.main_controls[1][0].replace('CNT_', 'ctrl_') )
                 cmds.delete('%sShape' % self.main_controls[1][0])
             
             if side == 'R':
@@ -604,9 +607,9 @@ class StickyLipRig(StickyRig):
                 top_control_driver = self.main_controls[2][2]
                 btm_control_driver = self.main_controls[3][2]
                 
-                self.main_controls[2][0] = cmds.rename(self.main_controls[2][0], self.main_controls[2][0].replace('CNT_', 'ctrl') )
+                self.main_controls[2][0] = cmds.rename(self.main_controls[2][0], self.main_controls[2][0].replace('CNT_', 'ctrl_') )
                 cmds.delete('%sShape' % self.main_controls[2][0])
-                self.main_controls[3][0] = cmds.rename(self.main_controls[3][0], self.main_controls[3][0].replace('CNT_', 'ctrl') )
+                self.main_controls[3][0] = cmds.rename(self.main_controls[3][0], self.main_controls[3][0].replace('CNT_', 'ctrl_') )
                 cmds.delete('%sShape' % self.main_controls[3][0])
             
             cmds.parent(sub_control.get(), control.get())
@@ -614,6 +617,8 @@ class StickyLipRig(StickyRig):
             util.MatchSpace(top_control_driver, control.get()).translation_rotation()
             
             xform = util.create_xform_group(control.get())
+            
+            self.corner_controls.append([control.get(), xform])
             
             top_plus = util.connect_translate_plus(control.get(), top_control_driver)
             btm_plus = util.connect_translate_plus(control.get(), btm_control_driver)
@@ -633,14 +638,6 @@ class StickyLipRig(StickyRig):
             
         
         self.side = orig_side
-       
-    def _create_lip_offsets(self):
-        
-        print 'ZIPS!!!'
-        
-        for control in self.zip_controls:
-            print control
-        
         
     def set_corner_control_shape(self, shape_name):
         self.corner_control_shape = shape_name
@@ -653,9 +650,7 @@ class StickyLipRig(StickyRig):
         for side in ['L','R']:
             
             self.side = side
-            
-            
-            
+                 
             if side == 'L':
                 corner_control = self.left_corner_control
                 top_control_driver = self.main_controls[inc][2]
@@ -680,11 +675,11 @@ class StickyLipRig(StickyRig):
         if not cmds.objExists('%s.roll' % btm_center_control):
             cmds.addAttr(btm_center_control, ln = 'roll', k = True)
         
-        if not cmds.objExists('%s.fatten' % top_center_control):
-            cmds.addAttr(top_center_control, ln = 'fatten', k = True, dv =1, min = 0.1 )
+        if not cmds.objExists('%s.bulge' % top_center_control):
+            cmds.addAttr(top_center_control, ln = 'bulge', k = True, dv =1, min = 0.1 )
             
-        if not cmds.objExists('%s.fatten' % btm_center_control):
-            cmds.addAttr(btm_center_control, ln = 'fatten', k = True, dv = 1, min = 0.1)    
+        if not cmds.objExists('%s.bulge' % btm_center_control):
+            cmds.addAttr(btm_center_control, ln = 'bulge', k = True, dv = 1, min = 0.1)    
             
         top_left_control = self.zip_controls[increment][0][1]
         btm_left_control = self.zip_controls[increment][0][0]
@@ -695,8 +690,25 @@ class StickyLipRig(StickyRig):
         util.connect_multiply('%s.roll' % top_center_control, '%s.rotateX' % top_left_driver, percent)
         util.connect_multiply('%s.roll' % btm_center_control, '%s.rotateX' % btm_left_driver, -1*percent)
         
+        cmds.connectAttr('%s.bulge' % top_center_control, '%s.scaleX' % top_left_driver)
+        cmds.connectAttr('%s.bulge' % top_center_control, '%s.scaleY' % top_left_driver)
+        cmds.connectAttr('%s.bulge' % top_center_control, '%s.scaleZ' % top_left_driver)
+            
+        cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleX' % btm_left_driver)
+        cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleY' % btm_left_driver)
+        cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleZ' % btm_left_driver)
+        
         """
-        multiply = util.connect_multiply('%s.fatten' % top_center_control, '%s.scaleX' % top_left_driver, percent)
+        util.quick_driven_key('%s.bulge' % top_center_control, '%s.scaleX' % top_left_driver, [1,2], [1,percent*2])
+        cmds.connectAttr('%s.scaleX' % top_left_driver, '%s.scaleY' % top_left_driver)
+        cmds.connectAttr('%s.scaleX' % top_left_driver, '%s.scaleZ' % top_left_driver)
+        
+        util.quick_driven_key('%s.bulge' % btm_center_control, '%s.scaleX' % btm_left_driver, [1,2], [1,percent*2])
+        cmds.connectAttr('%s.scaleX' % btm_left_driver, '%s.scaleY' % btm_left_driver)
+        cmds.connectAttr('%s.scaleX' % btm_left_driver, '%s.scaleZ' % btm_left_driver)
+        """
+        """
+        multiply = util.connect_multiply('%s.bulge' % top_center_control, '%s.scaleX' % top_left_driver, percent)
         cmds.connectAttr('%s.outputX' % multiply, '%s.scaleY' % top_left_control)
         cmds.connectAttr('%s.outputX' % multiply, '%s.scaleZ' % top_left_control)
         
@@ -715,6 +727,15 @@ class StickyLipRig(StickyRig):
             
             util.connect_multiply('%s.roll' % top_center_control, '%s.rotateX' % top_right_driver, percent)
             util.connect_multiply('%s.roll' % btm_center_control, '%s.rotateX' % btm_right_driver, -1*percent)
+            
+            cmds.connectAttr('%s.bulge' % top_center_control, '%s.scaleX' % top_right_driver)
+            cmds.connectAttr('%s.bulge' % top_center_control, '%s.scaleY' % top_right_driver)
+            cmds.connectAttr('%s.bulge' % top_center_control, '%s.scaleZ' % top_right_driver)
+            
+            cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleX' % btm_right_driver)
+            cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleY' % btm_right_driver)
+            cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleZ' % btm_right_driver)
+            
             """
             multiply = util.connect_multiply('%s.fatten' % top_center_control, '%s.scaleX' % top_right_driver, percent)
             cmds.connectAttr('%s.outputX' % multiply, '%s.scaleY' % top_right_control)
@@ -724,6 +745,25 @@ class StickyLipRig(StickyRig):
             cmds.connectAttr('%s.outputX' % multiply, '%s.scaleY' % btm_right_control)
             cmds.connectAttr('%s.outputX' % multiply, '%s.scaleZ' % btm_right_control)
             """
+            """
+            util.quick_driven_key('%s.bulge' % top_center_control, '%s.scaleX' % top_right_driver, [1,2], [1,percent*10])
+            cmds.connectAttr('%s.scaleX' % top_right_driver, '%s.scaleY' % top_right_driver)
+            cmds.connectAttr('%s.scaleX' % top_right_driver, '%s.scaleZ' % top_right_driver)
+        
+            util.quick_driven_key('%s.bulge' % btm_center_control, '%s.scaleX' % btm_right_driver, [1,2], [1,percent*10])
+            cmds.connectAttr('%s.scaleX' % btm_right_driver, '%s.scaleY' % btm_right_driver)
+            cmds.connectAttr('%s.scaleX' % btm_right_driver, '%s.scaleZ' % btm_right_driver)
+            """
+            
+    def create_follow(self, follow_transform, increment, value):
+        
+        super(StickyLipRig, self).create_follow(follow_transform, increment, value)
+        
+        for control in self.main_controls:
+            cmds.orientConstraint(self.follower_group, control[2])
+            
+        for control in self.corner_controls:
+            cmds.orientConstraint(self.follower_group, control[1])
             
     def create(self):
         super(StickyLipRig, self).create()
@@ -796,10 +836,196 @@ class BrowRig(rigs.JointRig):
         self._cluster_curve()
                     
         self._create_controls()
+        
+
             
         
+class EyeLidRig(rigs.JointRig):
+    
+    def __init__(self, description, side):
         
+        super(EyeLidRig, self).__init__(description, side)
         
+        self.surface = None
+        
+        self.offset_group = None
+        
+        self.main_joint_dict = {}
+        
+    def _create_curve(self):
+        
+        self.curve = util.transforms_to_curve(self.joints, 4, self.description)
+        
+        self.sub_curve = util.transforms_to_curve(self.joints, 4, 'sub_' + self.description)
+        
+        cmds.parent(self.curve, self.setup_group)        
+        cmds.parent(self.sub_curve, self.setup_group)
+        
+    def _cluster_curve(self):
+        
+        self.clusters = util.cluster_curve(self.curve, self.description)
+        
+        self.sub_cluster = util.cluster_curve(self.sub_curve, 'sub_' + self.description)
+        
+        cmds.parent(self.clusters, self.setup_group)
+        cmds.parent(self.sub_cluster, self.setup_group)
+        
+    def _create_controls(self):
+        
+        inc = 0
+        
+        for cluster in self.clusters:
+            
+            control = self._create_control()
+            control.hide_scale_attributes()
+            control.rotate_shape(90, 0, 0)
+            
+            
+            sub_control = self._create_control(sub = True)
+            sub_control.hide_scale_attributes()
+            
+            sub_control.scale_shape(0.5, .5, .5)
+            sub_control.rotate_shape(90, 0, 0)
+            
+            cmds.parent(sub_control.get(), control.get())
+            
+            util.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
+            
+            xform = util.create_xform_group(control.get())
+            
+            util.connect_translate(control.get(), cluster)
+            util.connect_translate(sub_control.get(), self.sub_cluster[inc])
+            
+            cmds.parent(xform, self.control_group)
+            
+            inc += 1
+        
+    def _create_joint_offsets(self, joint):
+        
+        if not self.offset_group:
+            self.offset_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'offset')))
+            cmds.parent(self.offset_group, self.setup_group)
+            
+        offset = cmds.spaceLocator(n = util.inc_name(self._get_name('locator')))[0]
+        offset_sub = cmds.spaceLocator(n = util.inc_name(self._get_name('locator_sub')))[0]
+        
+        self.offset_dict[joint] = [offset, offset_sub]
+        
+        util.MatchSpace(joint, offset).translation()
+        util.MatchSpace(joint, offset_sub).translation()
+        
+        cmds.parent(offset, self.offset_group)
+        cmds.parent(offset_sub, self.offset_group)
+        
+        return offset, offset_sub        
+        
+    def _attach_joints_to_curve(self):
+        
+        for joint in self.joints:
+            
+            parent = cmds.listRelatives(joint, p = True)[0]
+            xform = cmds.group(em = True, n = 'xform_%s' % joint)
+            MatchSpace(joint, xform).translation()
+            cmds.parent(xform, parent)
+            
+            offset = util.create_xform_group(joint, 'offset')
+            driver = util.create_xform_group(joint, 'driver')
+            
+            if not joint in self.main_joint_dict:
+                self.main_joint_dict[joint] = {}
+            
+                
+            self.main_joint_dict[joint]['xform'] = xform
+            self.main_joint_dict[joint]['driver'] = driver
+            
+            util.attach_to_curve(xform, self.curve)
+            
+            if self.surface:
+                cmds.geometryConstraint(self.surface, xform)
+                
+            cmds.parent(offset, xform)
+            
+            util.attach_to_curve(driver, self.sub_curve)
+            
+            plus = cmds.createNode('plusMinusAverage', n = 'subtract_%s' % driver)
+            
+            input_x = util.get_attribute_input('%s.translateX' % driver)
+            input_y = util.get_attribute_input('%s.translateY' % driver)
+            input_z = util.get_attribute_input('%s.translateZ' % driver)
+            
+            value_x = cmds.getAttr('%s.translateX' % driver)
+            value_y = cmds.getAttr('%s.translateY' % driver)
+            value_z = cmds.getAttr('%s.translateZ' % driver)
+            
+            cmds.connectAttr(input_x, '%s.input3D[0].input3Dx' % plus)
+            cmds.connectAttr(input_y, '%s.input3D[0].input3Dy' % plus)
+            cmds.connectAttr(input_z, '%s.input3D[0].input3Dz' % plus)
+            
+            cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1*value_x)
+            cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
+            cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
+            
+            util.disconnect_attribute( '%s.translateX' % driver)
+            util.disconnect_attribute( '%s.translateY' % driver)
+            util.disconnect_attribute( '%s.translateZ' % driver)
+            
+            cmds.connectAttr('%s.output3Dx' % plus, '%s.translateX' % driver)
+            cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % driver)
+            cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % driver)
+            
+            
+            
+    def set_surface(self, surface_name):
+        self.surface = surface_name    
+        
+    def create(self):
+        super(EyeLidRig, self).create()
+        
+        self._create_curve()
+        
+        self._cluster_curve()
+        
+        self._create_controls()
+        
+        self._attach_joints_to_curve()
+            
+    def create_fade_row(self, joints, weight):
+        
+        if len(joints) != len(self.joints):
+            util.warning('Row joint count and rig joint count do not match.')
+  
+        for inc in range(0, len(self.joints)):
+            
+            #offset, offset_sub = self._create_joint_offsets(joints[inc])
+            
+            #create_xform_group(offset)
+            
+            #source_offset, source_offset_sub = self.offset_dict[self.joints[inc]]
+            
+            
+            util.create_xform_group(joints[inc])
+            offset = util.create_xform_group(joints[inc], 'offset')
+            driver = util.create_xform_group(joints[inc], 'driver')
+            cmds.parent(driver, w = True)
+            
+            main_xform = self.main_joint_dict[self.joints[inc]]['xform']
+            main_driver = self.main_joint_dict[self.joints[inc]]['driver']
+            
+            util.connect_translate_multiply(main_xform, offset, weight, respect_value = True)
+            util.connect_translate_multiply(main_driver, joints[inc], weight, respect_value = True)
+            
+            
+            #util.connect_translate_multiply(source_offset, offset, weight, respect_value = True)
+            #util.connect_translate_multiply(source_offset_sub, offset_sub, weight, respect_value = True)
+
+            #cmds.parent(offset_sub, offset)
+            
+            #cmds.pointConstraint(offset_sub, joints[inc])
+            
+            if self.surface:
+                cmds.geometryConstraint(self.surface, offset)
+                
+            cmds.parent(driver, offset)
         
 class EyeLidSphereRig(util.BufferRig):
     
