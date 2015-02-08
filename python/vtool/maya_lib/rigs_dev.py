@@ -832,7 +832,6 @@ class FaceCurveRig(rigs.JointRig):
         
         self.sub_control_group = group
         
-        
         for joint in self.joints:
             
             joint_xform = self.joint_dict[joint]
@@ -852,7 +851,6 @@ class FaceCurveRig(rigs.JointRig):
             
             cmds.parent(xform, group)
             
-        
     def _attach_joints_to_curve(self):
         
         for joint in self.joints:
@@ -904,6 +902,8 @@ class EyeLidRig(rigs.JointRig):
         
         self.main_joint_dict = {}
         
+        self.main_controls = []
+        
     def _create_curve(self):
         
         self.curve = util.transforms_to_curve(self.joints, 4, self.description)
@@ -932,6 +932,7 @@ class EyeLidRig(rigs.JointRig):
             control.hide_scale_attributes()
             control.rotate_shape(90, 0, 0)
             
+            self.main_controls.append(control.get())
             
             sub_control = self._create_control(sub = True)
             sub_control.hide_scale_attributes()
@@ -944,8 +945,10 @@ class EyeLidRig(rigs.JointRig):
             util.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
             
             xform = util.create_xform_group(control.get())
+            driver = util.create_xform_group(control.get(), 'driver')
             
             util.connect_translate(control.get(), cluster)
+            util.connect_translate(driver, cluster)
             util.connect_translate(sub_control.get(), self.sub_cluster[inc])
             
             cmds.parent(xform, self.control_group)
@@ -1047,14 +1050,7 @@ class EyeLidRig(rigs.JointRig):
             util.warning('Row joint count and rig joint count do not match.')
   
         for inc in range(0, len(self.joints)):
-            
-            #offset, offset_sub = self._create_joint_offsets(joints[inc])
-            
-            #create_xform_group(offset)
-            
-            #source_offset, source_offset_sub = self.offset_dict[self.joints[inc]]
-            
-            
+
             util.create_xform_group(joints[inc])
             offset = util.create_xform_group(joints[inc], 'offset')
             driver = util.create_xform_group(joints[inc], 'driver')
@@ -1065,19 +1061,18 @@ class EyeLidRig(rigs.JointRig):
             
             util.connect_translate_multiply(main_xform, offset, weight, respect_value = True)
             util.connect_translate_multiply(main_driver, joints[inc], weight, respect_value = True)
-            
-            
-            #util.connect_translate_multiply(source_offset, offset, weight, respect_value = True)
-            #util.connect_translate_multiply(source_offset_sub, offset_sub, weight, respect_value = True)
 
-            #cmds.parent(offset_sub, offset)
-            
-            #cmds.pointConstraint(offset_sub, joints[inc])
-            
             if self.surface:
                 cmds.geometryConstraint(self.surface, offset)
                 
             cmds.parent(driver, offset)
+            
+    def create_control_follow(self, control, increment, weight):
+        
+        main_control = self.main_controls[increment]
+        parent = cmds.listRelatives(main_control, p = True)[0]
+        
+        util.connect_translate_multiply(control, parent, weight)
 
     
         

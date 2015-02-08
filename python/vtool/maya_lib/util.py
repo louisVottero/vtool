@@ -4459,7 +4459,7 @@ class TransferWeight(object):
                 value *= percent
                 
                 segments.append((joint, value))
-                
+              
             cmds.skinPercent(self.skin_cluster, vert_name, r = False, transformValue = segments)
 
             bar.inc()
