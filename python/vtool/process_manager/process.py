@@ -162,6 +162,16 @@ class Process(object):
     def get_name(self):
         return self.process_name
     
+    def get_basename(self):
+        
+        name = self.process_name
+        
+        if not name:
+            name = self.directory
+        
+        
+        return util_file.get_basename(name)
+    
     def get_relative_process(self, relative_path):
                     
         path = self.get_path()
