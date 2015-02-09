@@ -864,11 +864,7 @@ def copy_process_code(source_process, target_process, code_name, replace = False
         
         code_folder_path = target_process.get_code_folder(code_name)
         
-        print code_folder_path
-        
         code_filepath =  target_process.get_code_file(code_name)
-        
-        print code_filepath
         
         if not code_filepath:
             util.show('Could not find code: %s' % code_name)
