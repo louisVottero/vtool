@@ -208,8 +208,6 @@ class StickyRig(rigs.JointRig):
                
     def _group_joint(self, joint):
         
-        print joint
-        
         xform = util.create_xform_group(joint)
         driver = util.create_xform_group(joint, 'driver')
         
@@ -574,9 +572,7 @@ class StickyLipRig(StickyRig):
     def _create_corner_controls(self):
                
         orig_side = self.side
-    
-        print self.main_controls
-       
+        
         for side in ['L','R']:
             
             self.side = side
@@ -782,6 +778,128 @@ class StickyLipRig(StickyRig):
         
         self._create_corner_controls()
         
+        
+        
+class FaceSquashRig(rigs.JointRig):
+    
+    def __init__(self, description, side):
+        super(FaceSquashRig, self).__init__(description, side)
+        
+        self.surface = None
+        self.cluster_handles = []
+        self.locators = []
+    
+    def _create_ribbon(self):
+        
+        self.surface = util.transforms_to_curve(self.joints, 3, self.description)
+        
+        util.transforms_to_curve
+        
+        cmds.parent(self.surface, self.setup_group)
+        
+    def _cluster_surface(self):
+        
+        cluster_surface = util.ClusterCurve(self.surface, self.description)
+        #cluster_surface.set_join_ends(True)
+        cluster_surface.create()
+        
+        self.cluster_handles = cluster_surface.get_cluster_handle_list()
+        
+        cmds.parent(self.cluster_handles, self.setup_group)
+        
+        
+    def _attach_joints(self):
+        
+        ik = util.IkHandle(self.description)
+        
+        ik.set_joints(self.joints)
+        ik.set_curve(self.surface)
+        ik.set_solver(ik.solver_spline)
+        ik.create()
+        
+        cmds.parent(ik.ik_handle, self.setup_group)
+        
+        #for joint in self.joints:
+            
+            #util.attach_to_curve(joint, self.surface)
+        
+    def _create_locators(self):
+        
+        locators = []
+        
+        for handle in self.cluster_handles:
+            
+            locator = cmds.spaceLocator(n = util.inc_name( self._get_name('locator') ) )[0]
+            
+            util.MatchSpace(handle, locator).translation_to_rotate_pivot()
+            
+            xform = util.create_xform_group(locator)
+            
+            cmds.pointConstraint(locator, handle)
+            
+            cmds.parent(xform, self.setup_group)
+            
+            locators.append(locator)
+
+        util.connect_translate_multiply(locators[0], locators[1], .95)
+        util.connect_translate_multiply(locators[0], locators[2], .8)
+        util.connect_translate_multiply(locators[0], locators[3], .4)
+        util.connect_translate_multiply(locators[0], locators[4], .1)
+        
+        util.connect_translate_multiply(locators[-1], locators[4], .8)
+        util.connect_translate_multiply(locators[-1], locators[3], .5)
+        util.connect_translate_multiply(locators[-1], locators[2], .2)
+        util.connect_translate_multiply(locators[-1], locators[1], .05)
+        
+        """
+        for joint in self.joints:
+            util.quick_driven_key('%s.scaleX' % joint, '%s.scaleY' % joint, [1,0.5], [1, 2])
+            cmds.connectAttr('%s.scaleY' % joint, '%s.scaleZ' % joint)
+        """
+        
+        self.locators = locators
+    
+    def _create_controls(self):
+        
+        top_control = self._create_control()
+        top_control.hide_scale_attributes()
+        
+        MatchSpace(self.locators[0], top_control.get() ).translation_rotation()
+        
+        btm_control = self._create_control()
+        btm_control.hide_scale_attributes()
+        
+        MatchSpace(self.locators[-1], btm_control.get() ).translation_rotation()
+        
+        cmds.pointConstraint(top_control.get(), self.locators[0])
+        cmds.pointConstraint(btm_control.get(), self.locators[-1])
+        
+        xform_top = util.create_xform_group(top_control.get())
+        xform_btm = util.create_xform_group(btm_control.get())
+        
+        cmds.parent(xform_top, xform_btm, self.control_group)
+        
+    def create(self):
+        super(FaceSquashRig, self).create()
+        
+        self._create_ribbon()
+        
+        self._cluster_surface()
+        
+        self._create_locators()
+        
+        self._attach_joints()
+        
+        util.create_spline_ik_stretch(self.surface, self.joints, self.locators[0], create_bulge = False)
+        
+        self._create_controls()
+        
+    def set_scale_bulge(self, increment, squash_value, stretch_value):
+        
+        joint = self.joints[increment]
+        
+        util.quick_driven_key('%s.scaleX' % joint, '%s.scaleY' % joint, [1,0.5, 2], [1, squash_value, stretch_value])
+        cmds.connectAttr('%s.scaleY' % joint, '%s.scaleZ' % joint)
        
 class FaceCurveRig(rigs.JointRig):
 
@@ -881,6 +999,8 @@ class FaceCurveRig(rigs.JointRig):
         self._create_controls()
         
         self._create_sub_joint_controls()      
+    
+
      
 class BrowRig(FaceCurveRig):
     
@@ -1553,7 +1673,7 @@ class MouthTweakers(util.Rig):
                 #pos = cmds.xform(locators1[inc+1], q = True, ws = True, t = True)
                 
                 #if pos[0] < -0.1 or pos[0] > 0.1:
-                print locators1[inc], locators1[inc+1]
+                
                 aim = cmds.aimConstraint(locators1[inc+1], locators1[inc])[0]
                 #cmds.setAttr('%s.worldUpType' % aim, 4)
                 
@@ -1564,7 +1684,7 @@ class MouthTweakers(util.Rig):
                 #pos = cmds.xform(locators2[inc+1], q = True, ws = True, t = True)
                 
                 #if pos[0] < -0.1 or pos[0] > 0.1:
-                print locators2[inc], locators2[inc+1]
+                
                 aim = cmds.aimConstraint(locators2[inc+1], locators2[inc])[0]
                 #cmds.setAttr('%s.worldUpType' % aim, 4)
                 
@@ -1749,7 +1869,7 @@ class MouthTweakers(util.Rig):
             return [joint, aim, xform,control_name, aim_control, xform_control]
     
     def _create_joints_on_curve(self, curve, section_count):
-        print curve
+        
         length = cmds.arclen(curve, ch = False)
         
         sections = section_count*2
@@ -1778,8 +1898,6 @@ class MouthTweakers(util.Rig):
         
     def _create_joints_with_control_on_curve(self, curve, section_count = 5, control = False):
         
-        
-        print curve
         length = cmds.arclen(curve, ch = False)
         
         sections = section_count*2
@@ -1918,7 +2036,6 @@ class MouthTweakers(util.Rig):
         
         if self.lip_locators:
             
-            print lip_joints[0], muzzle_joints
             cmds.parent(lip_joints[0], muzzle_joints[-1])
         
         return muzzle_joints, lip_joints

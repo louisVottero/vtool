@@ -6974,10 +6974,7 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     constraint_editor.create_switch(node, attribute_name, constraint)
     
     if value == None:
-        print 'here!'
         value = (len(source_list)-1)
-        print value
-    
         
     cmds.setAttr('%s.%s' % (node, attribute_name), value)
     
@@ -7035,7 +7032,7 @@ def get_top_dag_nodes(exclude_cameras = True):
      
     return top_transforms 
 
-def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_stretch_on_off = False):
+def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_stretch_on_off = False, create_bulge = True):
     
     arclen_node = cmds.arclen(curve, ch = True, n = inc_name('curveInfo_%s' % curve))
     
@@ -7083,58 +7080,55 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
         if not create_stretch_on_off:
             cmds.connectAttr(attribute, '%s.scaleX' % joint)
         
-        #bulge cbb
-        plus = cmds.createNode('plusMinusAverage', n = 'plusMinusAverage_scale_%s' % joint)
-        
-        cmds.addAttr(plus, ln = 'scaleOffset', dv = 1, k = True)
-        cmds.addAttr(plus, ln = 'bulge', dv = 1, k = True)
-        
-        arc_value = vtool.util.fade_sine(percent)
-        
-        print 'adding stretchy bulge'
-        print arc_value, percent
-        
-        connect_multiply('%s.outputX' % multiply_scale_offset, '%s.bulge' % plus, arc_value)
-        
-        connect_plus('%s.scaleOffset' % plus, '%s.input1D[0]' % plus)
-        connect_plus('%s.bulge' % plus, '%s.input1D[1]' % plus)
-        
-        scale_value = cmds.getAttr('%s.output1D' % plus)
-        
-        multiply_offset = cmds.createNode('multiplyDivide', n = 'multiply_%s' % joint)
-        cmds.setAttr('%s.operation' % multiply_offset, 2)
-        cmds.setAttr('%s.input1X' % multiply_offset, scale_value)
-        
-        cmds.connectAttr('%s.output1D' % plus, '%s.input2X' % multiply_offset)
-        
-        blend = cmds.createNode('blendColors', n = 'blendColors_%s' % joint)
-        
-        attribute = '%s.outputR' % blend
-        
-        if node_for_attribute:
-            cmds.connectAttr('%s.outputX' % multiply_offset, '%s.color1R' % blend)
-        
-            cmds.setAttr('%s.color2R' % blend, 1)
+        if create_bulge:
+            #bulge cbb
+            plus = cmds.createNode('plusMinusAverage', n = 'plusMinusAverage_scale_%s' % joint)
             
-            attr = MayaNumberVariable('stretchyBulge')
-            attr.set_min_value(0)
-            attr.set_max_value(10)
-            attr.set_keyable(True)
-            attr.create(node_for_attribute)
+            cmds.addAttr(plus, ln = 'scaleOffset', dv = 1, k = True)
+            cmds.addAttr(plus, ln = 'bulge', dv = 1, k = True)
             
-            connect_multiply('%s.stretchyBulge' % node_for_attribute, 
-                             '%s.blender' % blend, 0.1)
+            arc_value = vtool.util.fade_sine(percent)
             
+            connect_multiply('%s.outputX' % multiply_scale_offset, '%s.bulge' % plus, arc_value)
             
-        if not node_for_attribute:
-            attribute = '%s.outputX' % multiply_offset
-
-        cmds.connectAttr(attribute, '%s.scaleY' % joint)
-        cmds.connectAttr(attribute, '%s.scaleZ' % joint)
+            connect_plus('%s.scaleOffset' % plus, '%s.input1D[0]' % plus)
+            connect_plus('%s.bulge' % plus, '%s.input1D[1]' % plus)
+            
+            scale_value = cmds.getAttr('%s.output1D' % plus)
+            
+            multiply_offset = cmds.createNode('multiplyDivide', n = 'multiply_%s' % joint)
+            cmds.setAttr('%s.operation' % multiply_offset, 2)
+            cmds.setAttr('%s.input1X' % multiply_offset, scale_value)
         
+            cmds.connectAttr('%s.output1D' % plus, '%s.input2X' % multiply_offset)
+        
+            blend = cmds.createNode('blendColors', n = 'blendColors_%s' % joint)
+        
+            attribute = '%s.outputR' % blend
+            
+            if node_for_attribute:
+                cmds.connectAttr('%s.outputX' % multiply_offset, '%s.color1R' % blend)
+            
+                cmds.setAttr('%s.color2R' % blend, 1)
+                
+                attr = MayaNumberVariable('stretchyBulge')
+                attr.set_min_value(0)
+                attr.set_max_value(10)
+                attr.set_keyable(True)
+                attr.create(node_for_attribute)
+                
+                connect_multiply('%s.stretchyBulge' % node_for_attribute, 
+                                 '%s.blender' % blend, 0.1)
+                
+            if not node_for_attribute:
+                attribute = '%s.outputX' % multiply_offset
+    
+            cmds.connectAttr(attribute, '%s.scaleY' % joint)
+            cmds.connectAttr(attribute, '%s.scaleZ' % joint)
         
         percent += segment
-        
+
+
 
 def create_bulge_chain(joints, control, max_value = 15):
     
@@ -10114,6 +10108,7 @@ def connect_translate_multiply(source_transform, target_transform, value, respec
     target_input_z = get_attribute_input(target_transform_z)
     
     if target_input_x:
+        
         if cmds.nodeType(target_input_x) == 'plusMinusAverage':
             plus = target_input_x.split('.')[0]
             indices = get_indices('%s.input3D' % plus)
@@ -10130,11 +10125,19 @@ def connect_translate_multiply(source_transform, target_transform, value, respec
             cmds.connectAttr(target_input_y, '%s.input3D[0].input3Dy' % plus)
             cmds.connectAttr(target_input_z, '%s.input3D[0].input3Dz' % plus)
             
+            disconnect_attribute(target_transform_x)
+            disconnect_attribute(target_transform_y)
+            disconnect_attribute(target_transform_z)
+            
+            cmds.connectAttr('%s.output3Dx' % plus, target_transform_x)
+            cmds.connectAttr('%s.output3Dy' % plus, target_transform_y)
+            cmds.connectAttr('%s.output3Dz' % plus, target_transform_z)
+            
             target_transform_x = '%s.input3D[1].input3Dx' % plus
             target_transform_y = '%s.input3D[1].input3Dy' % plus
             target_transform_z = '%s.input3D[1].input3Dz' % plus
     
-    multiply = connect_multiply('%s.translateX' % source_transform, target_transform_x, value)
+    multiply = connect_multiply('%s.translateX' % source_transform, target_transform_x, value, plus = False)
 
     if respect_value:
             plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
@@ -10150,15 +10153,7 @@ def connect_translate_multiply(source_transform, target_transform, value, respec
             cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1*value_x)
             cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
             cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
-            """
-            value_x = cmds.getAttr('%s.translateX' % target_transform)
-            value_y = cmds.getAttr('%s.translateY' % target_transform)
-            value_z = cmds.getAttr('%s.translateZ' % target_transform)
-            
-            cmds.setAttr('%s.input3D[2].input3Dx' % plus, value_x)
-            cmds.setAttr('%s.input3D[2].input3Dy' % plus, value_y)
-            cmds.setAttr('%s.input3D[2].input3Dz' % plus, value_z)
-            """
+
             disconnect_attribute('%s.input1X' % multiply)
     
             cmds.connectAttr('%s.output3Dx' % plus, '%s.input1X' % multiply)
@@ -10168,7 +10163,7 @@ def connect_translate_multiply(source_transform, target_transform, value, respec
     if not respect_value:
         cmds.connectAttr('%s.translateY' % source_transform, '%s.input1Y' % multiply)
         cmds.connectAttr('%s.translateZ' % source_transform, '%s.input1Z' % multiply)
-        
+                
     cmds.connectAttr('%s.outputY' % multiply, target_transform_y)
     cmds.connectAttr('%s.outputZ' % multiply, target_transform_z)
     
@@ -10316,8 +10311,7 @@ def connect_plus_new(source_attribute, target_attribute, respect_value = False):
 
 def connect_multiply(source_attribute, target_attribute, value = 0.1, skip_attach = False, plus= True):
     
-    
-    input_attribute = get_attribute_input( target_attribute,  )
+    input_attribute = get_attribute_input( target_attribute  )
 
     new_name = target_attribute.replace('.', '_')
     new_name = new_name.replace('[', '_')
@@ -10382,6 +10376,7 @@ def disconnect_attribute(attribute):
         cmds.disconnectAttr(connection, attribute)
 
 def get_indices(attribute):
+    
     
     
     
