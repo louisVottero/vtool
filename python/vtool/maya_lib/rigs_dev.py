@@ -934,13 +934,15 @@ class EyeLidRig(rigs.JointRig):
             
             self.main_controls.append(control.get())
             
-            sub_control = self._create_control(sub = True)
-            sub_control.hide_scale_attributes()
+            if self.surface:
+                sub_control = self._create_control(sub = True)
+                sub_control.hide_scale_attributes()
+                
+                sub_control.scale_shape(0.5, .5, .5)
+                sub_control.rotate_shape(90, 0, 0)
             
-            sub_control.scale_shape(0.5, .5, .5)
-            sub_control.rotate_shape(90, 0, 0)
-            
-            cmds.parent(sub_control.get(), control.get())
+                cmds.parent(sub_control.get(), control.get())
+                util.connect_translate(sub_control.get(), self.sub_cluster[inc])
             
             util.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
             
@@ -949,31 +951,11 @@ class EyeLidRig(rigs.JointRig):
             
             util.connect_translate(control.get(), cluster)
             util.connect_translate(driver, cluster)
-            util.connect_translate(sub_control.get(), self.sub_cluster[inc])
             
             cmds.parent(xform, self.control_group)
             
             inc += 1
-        
-    def _create_joint_offsets(self, joint):
-        
-        if not self.offset_group:
-            self.offset_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'offset')))
-            cmds.parent(self.offset_group, self.setup_group)
-            
-        offset = cmds.spaceLocator(n = util.inc_name(self._get_name('locator')))[0]
-        offset_sub = cmds.spaceLocator(n = util.inc_name(self._get_name('locator_sub')))[0]
-        
-        self.offset_dict[joint] = [offset, offset_sub]
-        
-        util.MatchSpace(joint, offset).translation()
-        util.MatchSpace(joint, offset_sub).translation()
-        
-        cmds.parent(offset, self.offset_group)
-        cmds.parent(offset_sub, self.offset_group)
-        
-        return offset, offset_sub        
-        
+                
     def _attach_joints_to_curve(self):
         
         for joint in self.joints:
@@ -1027,8 +1009,6 @@ class EyeLidRig(rigs.JointRig):
             cmds.connectAttr('%s.output3Dx' % plus, '%s.translateX' % driver)
             cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % driver)
             cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % driver)
-            
-            
             
     def set_surface(self, surface_name):
         self.surface = surface_name    
