@@ -921,26 +921,79 @@ class FaceCurveRig(rigs.JointRig):
         
     def _cluster_curve(self):
         
-        self.clusters = util.cluster_curve(self.curve, self.description, True)
+        self.clusters = util.cluster_curve(self.curve, self.description, True, last_pivot_end=True)
         
         cmds.parent(self.clusters, self.setup_group)
         
+    def _create_main_control(self, cluster):
+        
+        control = self._create_control()
+        control.hide_scale_attributes()
+        control.rotate_shape(90, 0, 0)
+                
+        util.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
+                
+        xform = util.create_xform_group(control.get())
+                
+        util.connect_translate(control.get(), cluster)
+                
+        cmds.parent(xform, self.control_group)
+        
     def _create_controls(self):
         
-        for cluster in self.clusters:
+        if not self.respect_side:
+            for cluster in self.clusters:        
+                self._create_main_control(cluster)
+                
+        if self.respect_side:
             
-            control = self._create_control()
-            control.hide_scale_attributes()
-            control.rotate_shape(90, 0, 0)
+            cluster_count = len(self.clusters)
             
-            util.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
+            orig_side = self.side
             
-            xform = util.create_xform_group(control.get())
+            for inc in range(0, cluster_count):
             
-            util.connect_translate(control.get(), cluster)
+                negative_inc = cluster_count - (inc+1)    
+                
+                if inc == cluster_count:
+                    break
+                
+                side = util.get_side(self.clusters[inc], 0.1)
+                self.side = side
+                
+                self._create_main_control(self.clusters[inc])
+                
+                if inc == negative_inc:
+                    break
             
-            cmds.parent(xform, self.control_group)
+                side = util.get_side(self.clusters[negative_inc], 0.1)
+                self.side = side
             
+                self._create_main_control(self.clusters[negative_inc])
+            
+                inc += 1
+                
+            self.side = orig_side
+                
+    def _create_sub_control(self, joint, joint_xform, parent):
+        
+        sub_control = self._create_control(sub = True)
+        sub_control.rotate_shape(90, 0, 0)
+        sub_control.scale_shape(.8,.8,.8)
+        #sub_control.hide_scale_attributes()
+        
+        util.MatchSpace(joint, sub_control.get())
+        
+        xform = util.create_xform_group(sub_control.get())
+        
+        util.connect_translate(joint_xform, xform)
+                    
+        util.connect_translate(sub_control.get(), joint)
+        util.connect_rotate(sub_control.get(), joint)
+        util.connect_scale(sub_control.get(), joint)
+        
+        cmds.parent(xform, parent)
+                   
             
     def _create_sub_joint_controls(self):
         
@@ -950,26 +1003,45 @@ class FaceCurveRig(rigs.JointRig):
         
         self.sub_control_group = group
         
-        for joint in self.joints:
+        if not self.respect_side:
+            for joint in self.joints:
             
-            joint_xform = self.joint_dict[joint]
+                joint_xform = self.joint_dict[joint]
+                self._create_sub_control(joint, joint_xform, group)
+        
+        if self.respect_side:
             
-            sub_control = self._create_control(sub = True)
-            sub_control.rotate_shape(90, 0, 0)
-            sub_control.scale_shape(.8,.8,.8)
-            #sub_control.hide_scale_attributes()
+            joint_count = len(self.joints)
             
-            util.MatchSpace(joint, sub_control.get())
+            orig_side = self.side
             
-            xform = util.create_xform_group(sub_control.get())
+            for inc in range(0, joint_count):
             
-            util.connect_translate(joint_xform, xform)
-                        
-            util.connect_translate(sub_control.get(), joint)
-            util.connect_rotate(sub_control.get(), joint)
-            util.connect_scale(sub_control.get(), joint)
+                negative_inc = joint_count - (inc+1)    
+                
+                if inc == joint_count:
+                    break
+                
+                side = util.get_side(self.joints[inc], 0.1)
+                self.side = side
+                
+                joint_xform = self.joint_dict[self.joints[inc]]
+                self._create_sub_control(self.joints[inc], joint_xform, group)
+                
+                if inc == negative_inc:
+                    break
             
-            cmds.parent(xform, group)
+                side = util.get_side(self.joints[negative_inc], 0.1)
+                self.side = side
+            
+                joint_xform = self.joint_dict[self.joints[negative_inc]]
+                self._create_sub_control(self.joints[negative_inc], joint_xform, group)
+            
+                inc += 1
+                
+            self.side = orig_side
+        
+                
             
     def _attach_joints_to_curve(self):
         

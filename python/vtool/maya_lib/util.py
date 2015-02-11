@@ -7538,7 +7538,7 @@ def get_side(transform, center_tolerance):
         position = transform
     
     if not type(transform) == list and not type(transform) == tuple:
-        position = cmds.xform(transform, q = True, ws = True, t = True)
+        position = cmds.xform(transform, q = True, ws = True, rp = True)
         
     if position[0] > 0:
         side = 'L'
