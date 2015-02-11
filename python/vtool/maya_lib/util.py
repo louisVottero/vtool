@@ -4442,6 +4442,9 @@ class TransferWeight(object):
         
         vert_count = len(weighted_verts)
         
+        if not vert_count:
+            return
+        
         bar = ProgressBar('transfer weight', vert_count)
         
         inc = 1
@@ -4559,57 +4562,69 @@ class TransferWeight(object):
             
             distances = get_distances(new_joints, vert_name)
             
-            smallest_distance = distances[0]
-            distances_in_range = []
-            
-            for joint_index in range(0, new_joint_count):
-                if distances[joint_index] < smallest_distance:
-                    smallest_distance = distances[joint_index]
-            
-            longest_distance = -1
-            total_distance = 0.0
-            
-            distances_away = []
-            
-            for joint_index in range(0, new_joint_count):
-
-                distance_away = distances[joint_index] - smallest_distance
-                
-                distances_away.append(distance_away)
-                
-                if distance_away > falloff:
-                    continue
-                
-                distances_in_range.append(joint_index)
-                
-                if distances[joint_index] > longest_distance:
-                    longest_distance = distances[joint_index]
-                    
-                total_distance += distance_away
-                
-                
-            total = 0.0
-            
-            inverted_distances = {}
-            
-            for joint_index in distances_in_range:
-                distance = distances_away[joint_index]
-                
-                distance_weight = distance/falloff
-                    
-                inverted_distance = 1 - distance_weight
-                
-                inverted_distance = inverted_distance**power
-                
-                inverted_distances[joint_index] = inverted_distance
-                
-                total += inverted_distance
+            found_weight = False
             
             joint_weight = {}    
+            
+            for inc2 in range(0, len(distances)):
+                if distances[inc2] <= 0.001:
+                    joint_weight[new_joints[inc2]] = 1
+                    found_weight = True
+                    break
+                          
+            if not found_weight:
+            
+                smallest_distance = distances[0]
+                distances_in_range = []
                 
-            for distance_inc in distances_in_range:
-                weight = inverted_distances[distance_inc]/total
-                joint_weight[new_joints[distance_inc]] = weight
+                for joint_index in range(0, new_joint_count):
+                    if distances[joint_index] < smallest_distance:
+                        smallest_distance = distances[joint_index]
+                
+                longest_distance = -1
+                total_distance = 0.0
+                
+                distances_away = []
+                
+                for joint_index in range(0, new_joint_count):
+    
+                    distance_away = distances[joint_index] - smallest_distance
+                    
+                    distances_away.append(distance_away)
+                    
+                    if distance_away > falloff:
+                        continue
+                    
+                    distances_in_range.append(joint_index)
+                    
+                    if distances[joint_index] > longest_distance:
+                        longest_distance = distances[joint_index]
+                        
+                    total_distance += distance_away
+                    
+                    
+                total = 0.0
+                
+                inverted_distances = {}
+                
+                for joint_index in distances_in_range:
+                    distance = distances_away[joint_index]
+                    
+                    distance_weight = distance/falloff
+                        
+                    inverted_distance = 1 - distance_weight
+                    
+                    inverted_distance = inverted_distance**power
+                    
+                    inverted_distances[joint_index] = inverted_distance
+                    
+                    total += inverted_distance
+                
+                
+                    
+                for distance_inc in distances_in_range:
+                    weight = inverted_distances[distance_inc]/total
+                    joint_weight[new_joints[distance_inc]] = weight
             
             weight_value = weights[vert_index]
             
@@ -8125,7 +8140,7 @@ def curve_to_nurb_surface(curve):
 def edges_to_curve(edges, description):
     
     cmds.select(edges)
-    
+
     curve =  cmds.polyToCurve(form = 2, degree = 3 )[0]
     
     curve = cmds.rename(curve, inc_name('curve_%s' % description))
@@ -9683,6 +9698,29 @@ def create_wrap(source_mesh, target_mesh):
     wrap.create()
     
     return wrap.base_meshes
+    
+def wire_to_mesh(edges, geometry, description):
+    
+    group = cmds.group(em = True, n = inc_name('setup_%s' % description))
+    
+    edge_path = get_edge_path(edges)
+    
+    curve = edges_to_curve(edge_path, description)
+    
+    cmds.parent(curve, group)
+    
+    wire_deformer, wire_curve = cmds.wire(geometry,  gw = False, w = curve, n = 'wire_%s' % description)
+    
+    spans = cmds.getAttr('%s.spans' % curve)
+    
+    cmds.dropoffLocator( 1, 1, wire_deformer, '%s.u[0]' % curve, '%s.u[%s]' % (curve,spans) )
+    
+    cmds.addAttr(curve, ln = 'twist', k = True)
+    cmds.connectAttr('%s.twist' % curve, '%s.wireLocatorTwist[0]' % wire_deformer)
+    cmds.connectAttr('%s.twist' % curve, '%s.wireLocatorTwist[1]' % wire_deformer)
+    
+    return group
+    
     
 @undo_chunk
 def weight_hammer_verts(verts = None, print_info = True):

@@ -513,9 +513,6 @@ class PoseTreeWidget(BaseTreeWidget):
         #    util.PoseManager().create_combo(pose_names, 'combo')
         #    return
         
-        
-        print name
-        
         pose = None
         
         if name:
