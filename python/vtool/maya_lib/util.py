@@ -21,19 +21,28 @@ import curve
 def undo_off(function):
     def wrapper(*args, **kwargs):
         
+        if not vtool.util.is_in_maya():
+            return
+        return_value = None
+                
         cmds.undoInfo(state = False)
         
         try:
             function(*args, **kwargs)
         except Exception, e:
             cmds.undoInfo(state = True)
-            
+            print e
+            raise Exception(e)
+                    
         cmds.undoInfo(state = True)
+        
+        return return_value
         
     return wrapper
 
 def undo_chunk(function):
     def wrapper(*args, **kwargs):
+        
         if not vtool.util.is_in_maya():
             return
         return_value = None
@@ -46,7 +55,6 @@ def undo_chunk(function):
             cmds.undoInfo(closeChunk = True)
             print e
             raise Exception(e)
-            
             
         cmds.undoInfo(closeChunk = True)
         
@@ -4390,7 +4398,7 @@ class TransferWeight(object):
             if not joint in influences:
                 cmds.skinCluster(self.skin_cluster, e = True, ai = joint, wt = 0.0, nw = 1)
         
-    @undo_chunk
+    @undo_off
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh = None, percent =1):
         
         #cmds.undoInfo(state = False)
@@ -4477,7 +4485,7 @@ class TransferWeight(object):
         
         #cmds.undoInfo(state = True)
          
-    @undo_chunk  
+    @undo_off  
     def transfer_joints_to_new_joints(self, joints, new_joints, falloff = 1, power = 4, weight_percent_change = 1):
         
         joints = vtool.util.convert_to_sequence(joints)
@@ -6856,7 +6864,7 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
 
     return xform_group
 
-def create_follow_group(source_transform, target_transform, prefix = 'follow'):
+def create_follow_group(source_transform, target_transform, prefix = 'follow', follow_scale = False):
     
     parent = cmds.listRelatives(target_transform, p = True)
     
@@ -6873,6 +6881,9 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow'):
     
     if parent:
         cmds.parent(follow_group, parent)
+        
+    if follow_scale:
+        connect_scale(source_transform, follow_group)
         
     return follow_group
 
@@ -6894,11 +6905,11 @@ def create_local_follow_group(source_transform, target_transform, prefix = 'foll
     if not orient_only:
         connect_translate(source_transform, follow_group)
     
-    connect_rotate(source_transform, follow_group)
+    if orient_only:
+        connect_rotate(source_transform, follow_group)
     
-    value = cmds.getAttr('%s.rotateOrder' % source_transform)
-    cmds.setAttr('%s.rotateOrder' % follow_group, value)
-    
+    #value = cmds.getAttr('%s.rotateOrder' % source_transform)
+    #cmds.setAttr('%s.rotateOrder' % follow_group, value)
     
     cmds.parent(target_transform, follow_group)
     

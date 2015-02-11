@@ -184,14 +184,10 @@ class StickyRig(rigs.JointRig):
         
          
     def _create_sticky_control(self, transform, description):
-        
-        
-        
-            
-        
+
         control = self._create_control(description)
         control.scale_shape(.8, .8, .8)
-        control.hide_scale_attributes()
+
         control_name = control.get()
         
         
@@ -554,7 +550,6 @@ class StickyLipRig(StickyRig):
         
         control.rotate_shape(90,0,0)
         control.scale_shape(.5, .5, .5)
-        control.hide_scale_attributes()
         
         control_name = control.get()
         
@@ -871,11 +866,14 @@ class FaceSquashRig(rigs.JointRig):
         
         MatchSpace(self.locators[-1], btm_control.get() ).translation_rotation()
         
-        cmds.pointConstraint(top_control.get(), self.locators[0])
-        cmds.pointConstraint(btm_control.get(), self.locators[-1])
-        
         xform_top = util.create_xform_group(top_control.get())
         xform_btm = util.create_xform_group(btm_control.get())
+        
+        top_local, top_xform = util.constrain_local(top_control.get(), self.locators[0] )
+        btm_local, btm_xform = util.constrain_local(btm_control.get(), self.locators[-1] )
+        
+        cmds.parent(top_xform, self.setup_group)
+        cmds.parent(btm_xform, self.setup_group)
         
         cmds.parent(xform_top, xform_btm, self.control_group)
         
@@ -912,6 +910,8 @@ class FaceCurveRig(rigs.JointRig):
         self.joint_dict = {}
         
         self.span_count = 4
+        
+        self.respect_side = False
         
     def _create_curve(self):
         
@@ -957,7 +957,7 @@ class FaceCurveRig(rigs.JointRig):
             sub_control = self._create_control(sub = True)
             sub_control.rotate_shape(90, 0, 0)
             sub_control.scale_shape(.8,.8,.8)
-            sub_control.hide_scale_attributes()
+            #sub_control.hide_scale_attributes()
             
             util.MatchSpace(joint, sub_control.get())
             
@@ -966,6 +966,8 @@ class FaceCurveRig(rigs.JointRig):
             util.connect_translate(joint_xform, xform)
                         
             util.connect_translate(sub_control.get(), joint)
+            util.connect_rotate(sub_control.get(), joint)
+            util.connect_scale(sub_control.get(), joint)
             
             cmds.parent(xform, group)
             
@@ -985,6 +987,8 @@ class FaceCurveRig(rigs.JointRig):
         
         self.span_count = count - 1
         
+    def set_respect_side(self, bool_value):
+        self.respect_side = bool_value
         
     def create(self):
         super(FaceCurveRig, self).create()
@@ -2820,8 +2824,6 @@ def create_curve_joint(curve, length, description, side = None):
 
 def create_mouth_muscle(top_transform, btm_transform, description, joint_count = 3, guide_prefix = 'guide'):
     
-    
-    
     cmds.select(cl = True) 
     top_joint = cmds.joint(n = util.inc_name('guide_%s' % top_transform))
     cmds.select(cl = True)
@@ -2842,10 +2844,13 @@ def create_mouth_muscle(top_transform, btm_transform, description, joint_count =
     ik = util.IkHandle('top_lip')
     ik.set_start_joint( top_joint )
     ik.set_end_joint( btm_joint )
+    ik.set_solver(ik.solver_rp)
     ik.create()
     
     cmds.parent(top_joint, top_transform)
-    cmds.parent(ik.ik_handle, btm_transform)
+    cmds.parent(ik.ik_handle, top_transform)
+    cmds.pointConstraint(btm_transform, ik.ik_handle)
+    
     
     locator1,locator2 = util.create_distance_scale( top_joint, btm_joint )
     

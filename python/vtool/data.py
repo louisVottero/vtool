@@ -460,7 +460,7 @@ class SkinWeightData(MayaCustomData):
             if not skin_cluster:
                 
                 if available_influences:
-                    skin_cluster = cmds.skinCluster(available_influences, mesh,  tsb = True)[0]
+                    skin_cluster = cmds.skinCluster(available_influences, mesh,  tsb = True, n = 'skin_%s' % mesh)[0]
                 
             cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
             
