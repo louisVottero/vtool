@@ -1110,6 +1110,11 @@ class FaceCurveRig(rigs.JointRig):
         
         self.respect_side = False
         
+        self.sub_controls_create = True
+        
+        self.local_controls = []
+        self.main_controls = []
+        
     def _create_curve(self):
         
         self.curve = util.transforms_to_curve(self.joints, self.span_count, self.description)
@@ -1131,10 +1136,18 @@ class FaceCurveRig(rigs.JointRig):
         util.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
                 
         xform = util.create_xform_group(control.get())
+        driver = util.create_xform_group(control.get(), 'driver')
                 
-        util.connect_translate(control.get(), cluster)
+        local, local_xform = util.constrain_local(control.get(), cluster)
+        local_driver = util.create_xform_group(local, 'driver')
+        
+        util.connect_translate(driver, local_driver)
                 
         cmds.parent(xform, self.control_group)
+        cmds.parent(local_xform, self.setup_group)
+        
+        self.local_controls.append([local, local_driver])
+        self.main_controls.append([control.get(), driver])
         
     def _create_controls(self):
         
@@ -1252,6 +1265,9 @@ class FaceCurveRig(rigs.JointRig):
         
         self.span_count = count - 1
         
+    def set_create_sub_controls(self, bool_value):
+        self.sub_controls_create = bool_value
+        
     def set_respect_side(self, bool_value):
         self.respect_side = bool_value
         
@@ -1267,7 +1283,17 @@ class FaceCurveRig(rigs.JointRig):
                     
         self._create_controls()
         
-        self._create_sub_joint_controls()      
+        if self.sub_controls_create:
+            self._create_sub_joint_controls()
+            
+    def create_control_follow(self, control, increment, weight):
+        
+        print 'creating follow'  
+        
+        driver = self.main_controls[increment][1]
+                
+        util.connect_translate_multiply(control, driver, weight)
+              
         
 class BrowRig(FaceCurveRig):
     
@@ -4025,7 +4051,7 @@ def create_curve_joint(curve, length, description, side = None):
     
     return joint
 
-def create_mouth_muscle(top_transform, btm_transform, description, joint_count = 3, guide_prefix = 'guide'):
+def create_mouth_muscle(top_transform, btm_transform, description, joint_count = 3, guide_prefix = 'guide', offset = 1):
     
     cmds.select(cl = True) 
     top_joint = cmds.joint(n = util.inc_name('guide_%s' % top_transform))
@@ -4055,7 +4081,7 @@ def create_mouth_muscle(top_transform, btm_transform, description, joint_count =
     cmds.pointConstraint(btm_transform, ik.ik_handle)
     
     
-    locator1,locator2 = util.create_distance_scale( top_joint, btm_joint )
+    locator1,locator2 = util.create_distance_scale( top_joint, btm_joint, offset = offset)
     
     for joint in sub_joints:
         cmds.connectAttr('%s.scaleX' % top_joint, '%s.scaleX' % joint)

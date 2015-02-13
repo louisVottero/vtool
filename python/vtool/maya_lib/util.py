@@ -27,10 +27,10 @@ def undo_off(function):
         
         try:
             function(*args, **kwargs)
-        except Exception, e:
+        except RuntimeError:
+            
             cmds.undoInfo(state = True)
-            print e
-            raise Exception(e)
+            vtool.util.show(traceback.format_exc)
                     
         cmds.undoInfo(state = True)
         
@@ -49,10 +49,10 @@ def undo_chunk(function):
         
         try:
             return_value = function(*args, **kwargs)
-        except Exception, e:
+        except RuntimeError:
+            
             cmds.undoInfo(closeChunk = True)
-            print e
-            raise Exception(e)
+            vtool.util.show(traceback.format_exc)
             
         cmds.undoInfo(closeChunk = True)
         
@@ -4376,6 +4376,10 @@ class TransferWeight(object):
     @undo_off
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh = None, percent =1):
         
+        if not self.skin_cluster:
+            vtool.util.show('No skinCluster found on %s. Could not transfer.' % self.mesh)
+            return
+        
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         source_value_map = get_skin_weights(source_skin_cluster)
         destination_value_map = get_skin_weights(self.skin_cluster)
@@ -4461,6 +4465,10 @@ class TransferWeight(object):
          
     @undo_off  
     def transfer_joints_to_new_joints(self, joints, new_joints, falloff = 1, power = 4, weight_percent_change = 1):
+        
+        if not self.skin_cluster:
+            vtool.util.show('No skinCluster found on %s. Could not transfer.' % self.mesh)
+            return
         
         joints = vtool.util.convert_to_sequence(joints)
         new_joints = vtool.util.convert_to_sequence(new_joints)
@@ -7260,9 +7268,7 @@ def create_distance_falloff(source_transform, source_local_vector = [1,0,0], tar
     match.translation_rotation()
     
     set_color([target_locator], 13)
-    
-    
-    
+
     parent = cmds.listRelatives(source_transform, p = True)
     
     if parent:
@@ -7302,7 +7308,7 @@ def create_distance_falloff(source_transform, source_local_vector = [1,0,0], tar
     
     return distance_between    
 
-def create_distance_scale(xform1, xform2, axis = 'X'):
+def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
     
     locator1 = cmds.spaceLocator(n = inc_name('locatorDistance_%s' % xform1))[0]
     
@@ -7312,6 +7318,7 @@ def create_distance_scale(xform1, xform2, axis = 'X'):
     MatchSpace(xform2, locator2).translation()
     
     distance = cmds.createNode('distanceBetween', n = inc_name('distanceBetween_%s' % xform1))
+    
     multiply = cmds.createNode('multiplyDivide', n = inc_name('multiplyDivide_%s' % xform1))
     
     cmds.connectAttr('%s.worldMatrix' % locator1, '%s.inMatrix1' % distance)
@@ -7319,10 +7326,40 @@ def create_distance_scale(xform1, xform2, axis = 'X'):
     
     distance_value = cmds.getAttr('%s.distance' % distance)
     
-    cmds.connectAttr('%s.distance' % distance, '%s.input1X' % multiply)
+    """
+    if condition != None:
+    
+        distance_offset = distance_value
+        
+        if type(condition) == float:
+            distance_offset = distance_value * condition
+        
+        condition = cmds.createNode('condition', n = inc_name('condition_%s' % xform1))
+        
+        cmds.setAttr('%s.operation' % condition, 2)
+        
+        cmds.connectAttr('%s.distance' % distance, '%s.firstTerm' % condition)
+        cmds.setAttr('%s.secondTerm' % condition, distance_offset)
+        
+        cmds.connectAttr('%s.distance' % distance, '%s.colorIfFalseR' % condition)
+        cmds.setAttr('%s.colorIfTrueR' % condition, distance_offset)
+        
+        cmds.connectAttr('%s.outColorR' % condition, '%s.input1X' % multiply)
+    
+    
+    if condition == None:
+        
+    """
+    
+    if offset != 1:
+        quick_driven_key('%s.distance' %distance, '%s.input1X' % multiply, [distance_value, distance_value*2], [distance_value, distance_value*2*offset], infinite = True)
+    
+    if offset == 1:
+        cmds.connectAttr('%s.distance' % distance, '%s.input1X' % multiply)
+    
     cmds.setAttr('%s.input2X' % multiply, distance_value)
     cmds.setAttr('%s.operation' % multiply, 2)
-    
+        
     cmds.connectAttr('%s.outputX' % multiply, '%s.scale%s' % (xform1, axis))
         
     return locator1, locator2
@@ -10712,11 +10749,18 @@ def create_blend_attribute(source, target, min_value = 0, max_value = 10):
     return multi
     
 
-def quick_driven_key(source, target, source_values, target_values):
+def quick_driven_key(source, target, source_values, target_values, infinite = False):
     
     for inc in range(0, len(source_values)):
         
-        cmds.setDrivenKeyframe(target,cd = source, driverValue = source_values[inc], value = target_values[inc], itt = 'linear', ott = 'linear')
+        cmds.setDrivenKeyframe(target,cd = source, driverValue = source_values[inc], value = target_values[inc], itt = 'spline', ott = 'spline')
+
+
+    if infinite:
+        cmds.setInfinity(target, postInfinite = 'linear', preInfinite = 'linear') 
+            
+        
+        
 
 #--- Nucleus
 

@@ -697,7 +697,8 @@ class Process(object):
         except Exception:
             status = traceback.format_exc()
             
-            print status
+            util.show(status)
+            
             return status
               
         try:

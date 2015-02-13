@@ -50,8 +50,8 @@ class Rig(object):
         
     def _parent_default_groups(self):
         
-        self._custom_parent_default_group(self.control_group, self.control_parent)
-        self._custom_parent_default_group(self.setup_group, self.setup_parent)
+        self._parent_custom_default_group(self.control_group, self.control_parent)
+        self._parent_custom_default_group(self.setup_group, self.setup_parent)
                 
     def _parent_custom_default_group(self, group, custom_parent):
         
@@ -3187,9 +3187,6 @@ class FootRollRig(RollRig):
         
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
-        
-        
-        
         
         if self.mirror_yaw and self.side == 'R':
             cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
