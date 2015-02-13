@@ -1927,6 +1927,7 @@ class StretchyChain:
         self.scale_axis = 'X'
         self.name = 'stretch'
         self.simple = False
+        self.per_joint_stretch = True
     
     def _get_joint_count(self):
         return len(self.joints)
@@ -2041,9 +2042,11 @@ class StretchyChain:
             
             multiply = connect_multiply('%s.outputX' % divide_distance, '%s.scale%s' % (self.joints[inc], self.scale_axis), 1)
             
+            
             offset_variable = MayaNumberVariable(var_name )
             offset_variable.set_variable_type(offset_variable.TYPE_DOUBLE)
             offset_variable.set_node(multiply)
+            
             
             offset_variable.create()
             offset_variable.set_value(1)
@@ -2089,6 +2092,8 @@ class StretchyChain:
             stretch_offset = MayaNumberVariable('stretch_%s' % (inc+1))
             stretch_offset.set_node(self.attribute_node)
             stretch_offset.set_variable_type(stretch_offset.TYPE_DOUBLE)
+            if not self.per_joint_stretch:
+                stretch_offset.set_keyable(False)
             
             stretch_offset.create()
             
@@ -2173,6 +2178,9 @@ class StretchyChain:
     
     def set_description(self, string_value):
         self.name = '%s_%s' % (self.name, string_value)
+    
+    def set_per_joint_stretch(self, bool_value):
+        self.per_joint_stretch = bool_value
     
     def create(self):
         
@@ -9630,12 +9638,17 @@ def skin_group(joint, group):
     
     rels = cmds.listRelatives(group, ad = True, f = True)
     
+    print rels
     
     for rel in rels:
+        
+        name = rel.split('|')[-1]
+        
         try:
-            cmds.skinCluster(joint, rel, tsb = True)
+            cmds.skinCluster(joint, rel, tsb = True, n = 'skin_%s' % name)
         except:
             pass
+            
 
 def lock_joints(skin_cluster, skip_joints = None):
     influences = get_influences_on_skin(skin_cluster)
