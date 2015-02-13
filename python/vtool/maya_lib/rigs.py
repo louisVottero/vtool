@@ -7,6 +7,7 @@ import vtool.util
 
 import maya.cmds as cmds
 
+#--- Base
 
 class Rig(object):
     
@@ -15,7 +16,9 @@ class Rig(object):
     side_center = 'C'
     
     def __init__(self, description, side):
-        self._refresh()
+        
+        cmds.refresh()
+        
         self.description = description
         self.side = side
         
@@ -27,6 +30,14 @@ class Rig(object):
         self.control_shape = self._define_control_shape()
         
         self.controls = []
+    
+    def _create_group(self,  prefix = None, description = None):
+        
+        rig_group_name = self._get_name(prefix, description)
+        
+        group = cmds.group(em = True, n = util.inc_name(rig_group_name))
+        
+        return group
         
     def _create_default_groups(self):
                         
@@ -39,27 +50,24 @@ class Rig(object):
         
     def _parent_default_groups(self):
         
-        if cmds.objExists(self.control_parent) and cmds.objExists(self.control_group):
-            
-            parent = cmds.listRelatives(self.control_group, p = True)
-            if parent:
-                parent = parent[0]
-            
-            if parent and parent != self.control_parent:
-                cmds.parent(self.control_group, self.control_parent)
+        self._custom_parent_default_group(self.control_group, self.control_parent)
+        self._custom_parent_default_group(self.setup_group, self.setup_parent)
                 
-        if cmds.objExists(self.setup_parent) and cmds.objExists(self.setup_group):
-            
-            parent = cmds.listRelatives(self.setup_group, p = True)
-            if parent:
-                parent = parent[0]
-            
-            
-            if parent and parent != self.setup_parent:
-                cmds.parent(self.setup_group, self.setup_parent)    
+    def _parent_custom_default_group(self, group, custom_parent):
         
-    def _refresh(self):
-        cmds.refresh()
+        if not cmds.objExists(group) or not cmds.objExists(custom_parent):
+            return
+            
+        parent = cmds.listRelatives(group, p = True)
+        
+        if parent:
+            parent = parent[0]
+            
+        if not parent:
+            return
+            
+        if parent != custom_parent:
+            cmds.parent(group, custom_parent)
         
     def _define_control_shape(self):
         return 'circle'
@@ -108,15 +116,7 @@ class Rig(object):
         self.controls.append(control.get())
         
         return control
-    
-    def _create_group(self,  prefix = None, description = None):
-        
-        rig_group_name = self._get_name(prefix, description)
-        
-        group = cmds.group(em = True, n = util.inc_name(rig_group_name))
-        
-        return group
-        
+            
     def set_control_shape(self, shape_name):
         self.control_shape = shape_name
                 
@@ -124,27 +124,28 @@ class Rig(object):
         
         self.control_parent = parent_transform
         
-        self._parent_default_groups()
+        self._parent_custom_default_group(self.control_group, self.control_parent)
         
     def set_setup_parent(self, parent_transform):
         
         self.setup_parent = parent_transform
         
-        self._parent_default_groups()
-                
+        self._parent_custom_default_group(self.setup_group, self.setup_parent)
+        
     def create(self):
         
         self._parent_default_groups()
         
-
 class JointRig(Rig):
+    
     def __init__(self, description, side):
         super(JointRig, self).__init__(description, side)
         
         self.joints = []
         
         self.attach_joints = True
-
+    
+    """
     def _hook_scale_constraint(self, node):
         
         constraint_editor = util.ConstraintEditor()
@@ -173,8 +174,10 @@ class JointRig(Rig):
             util.disconnect_attribute('%s.target[%s].targetParentMatrix' % (scale_constraint, inc))
 
     def _attach_joint(self, source_joint, target_joint):
+        
         if not self.attach_joints:
             return
+        
         self._hook_scale_constraint(target_joint)
         
         parent_constraint = cmds.parentConstraint(source_joint, target_joint, mo = True)[0]
@@ -186,16 +189,14 @@ class JointRig(Rig):
         constraint_editor.create_switch(self.joints[0], 'switch', scale_constraint)
         
         self._unhook_scale_constraint(scale_constraint)
-        
+    """
+    
     def _attach_joints(self, source_chain, target_chain):
         
         if not self.attach_joints:
             return
         
         util.AttachJoints(source_chain, target_chain).create()
-        
-        #for inc in range( 0, len(source_chain) ):
-        #    self._attach_joint(source_chain[inc], target_chain[inc] )
     
     def _check_joints(self, joints):
         
@@ -236,6 +237,7 @@ class BufferRig(JointRig):
     def _duplicate_joints(self):
         
         if self.create_buffer_joints:
+            
             duplicate_hierarchy = util.DuplicateHierarchy( self.joints[0] )
             
             duplicate_hierarchy.stop_at(self.joints[-1])
@@ -252,9 +254,7 @@ class BufferRig(JointRig):
         
     def set_buffer(self, bool_value):
         self.create_buffer_joints = bool_value
-            
-    
-            
+       
     def create(self):
         super(BufferRig, self).create()
         
@@ -288,15 +288,10 @@ class SparseRig(JointRig):
         
         for joint in self.joints:
             
-            
-            
             control = self._create_control()
             control.hide_visibility_attribute()
             control.set_curve_type(self.control_shape)
         
-            
-        
-            
             control_name = control.get()
         
             match = util.MatchSpace(joint, control_name)
@@ -310,7 +305,7 @@ class SparseRig(JointRig):
                     control = util.Control(control_name)
                         
             xform = util.create_xform_group(control.get())
-            driver = util.create_xform_group(control.get(), 'driver')
+            util.create_xform_group(control.get(), 'driver')
             
             cmds.parentConstraint(control_name, joint)
 
@@ -320,7 +315,6 @@ class SparseRig(JointRig):
                 control.hide_scale_attributes()
             
             cmds.parent(xform, self.control_group)
-
 
 class CurveRig(Rig):
     def __init__(self, description, side):
@@ -332,71 +326,7 @@ class CurveRig(Rig):
         
         self.curves = curve_list
 
-class SurfaceFollowCurveRig(CurveRig):
-    
-    def __init__(self, description, side):
-        super(SurfaceFollowCurveRig, self).__init__(description, side)
-        
-        self.surface = None
-        self.join_start_end = False
-    
-    def _cluster_curve(self):
-        
-        clusters = util.cluster_curve(self.curves[0], 'hat', True, join_start_end = self.join_start_end)
-        return clusters
-    
-    def _create_follow_control(self, cluster):
-        
-        control = self._create_control()
-        control.set_curve_type('cube')
-        control.hide_rotate_attributes()
-        control.hide_scale_attributes()
-        
-        sub_control = self._create_control(sub = True)
-        sub_control.set_curve_type('cube')
-        sub_control.scale_shape(.5, .5, .5)
-        sub_control.hide_rotate_attributes()
-        sub_control.hide_scale_attributes()
-        
-        match = util.MatchSpace(cluster, control.get())
-        match.translation_to_rotate_pivot()
-        
-        xform_control = util.create_xform_group(control.get())
-        cmds.parent(sub_control.get(), control.get(), r = True)
-        
-        local, xform = util.constrain_local(sub_control.get(), cluster, parent = True)
-        
-        cmds.parent(cluster, w = True)
-        
-        driver = util.create_xform_group(local, 'driver')
-        
-        util.connect_translate(control.get(), driver)
-        
-        cmds.geometryConstraint(self.surface, driver)
-        
-        cmds.parent(cluster, local)
-        
-        cmds.parent(xform_control, self.control_group)
-        cmds.parent(xform, self.setup_group)
-                
-    def _create_controls(self, clusters):
-        
-        for cluster in clusters:
-            self._create_follow_control(cluster)
-    
-    def set_surface(self, surface_name):
-        self.surface = surface_name
-    
-    def set_join_start_end(self, bool_value):
-        self.join_start_end = bool_value
-    
-    def set_locator_only(self):
-        pass
-    
-    def create(self):
-        clusters = self._cluster_curve()
-        
-        self._create_controls(clusters)
+#--- Rigs
 
 class SparseLocalRig(SparseRig):
 
@@ -448,11 +378,8 @@ class SparseLocalRig(SparseRig):
                     control_name = cmds.rename(control_name, util.inc_name(control_name[0:-1] + side))
                     control = util.Control(control_name)
             
-            
             xform = util.create_xform_group(control.get())
             driver = util.create_xform_group(control.get(), 'driver')
-            
-            
             
             if not self.local_constraint:
                 xform_joint = util.create_xform_group(joint)
@@ -487,7 +414,7 @@ class SparseLocalRig(SparseRig):
             cmds.parent(xform, self.control_group)
             
         if self.local_parent:
-            follow = util.create_follow_group(self.local_parent, self.local_xform)
+            util.create_follow_group(self.local_parent, self.local_xform)
             
 class ControlRig(Rig):
     
@@ -530,9 +457,7 @@ class ControlRig(Rig):
                 
                 xform = util.create_xform_group(control.get())    
                 cmds.parent(xform, self.control_group)                
-                    
-            
-
+                
 class GroundRig(JointRig):
     
     def __init__(self, name, side):
@@ -554,16 +479,11 @@ class GroundRig(JointRig):
                 
                 cmds.parent(control.get(), self.control_group)
                 
-            
             if inc > 0:
                 control = self._create_control(sub =  True)
                 control.set_curve_type(self.control_shape)
-            
-            #control.rotate_shape(0, 0, 90)
                 
             control.scale_shape(40*scale, 40*scale, 40*scale)
-            
-            
             
             if last_control:
                 cmds.parent(control.get(), last_control)
@@ -578,10 +498,6 @@ class GroundRig(JointRig):
         
     def set_joints(self, joints = None):
         super(GroundRig, self).set_joints(joints)
-        
-
-
-
 
 class FkRig(BufferRig):
     #CBB
@@ -791,56 +707,8 @@ class FkLocalRig(FkRig):
         super(FkLocalRig, self).create()
         
         if self.main_local_parent:
-            follow = util.create_follow_group(self.main_local_parent, self.local_xform)
-            #cmds.parent(follow, self.control_group)
-    
-class FkWithSubControlRig(FkRig):
-    
-    def _create_control(self, sub = False):
-        
-        self.control = super(FkRig, self)._create_control(sub = sub)
-        self.control.scale_shape(self.control_size,self.control_size,self.control_size)
-        
-        self.control.hide_scale_and_visibility_attributes()
-        
-        if self.control_shape:
-            self.control.set_curve_type(self.control_shape)
-        
-        self.current_xform_group = util.create_xform_group(self.control.get())
-        driver = util.create_xform_group(self.control.get(), 'driver')
-        
-        self.drivers.append(driver)
-        self.control = self.control.get()
-        
-        sub_control = self._create_sub_control(self.control)
-        
-        return sub_control
-        
-    def _create_sub_control(self, parent):
-        
-        self.last_control = self.control
-        
-        sub_control = super(FkRig, self)._create_control(sub = True)
-
-        sub_control.scale_shape(self.control_size*0.9,self.control_size*0.9,self.control_size*0.9)
-        
-        sub_control.hide_scale_and_visibility_attributes()
-        
-        if self.control_shape:
-            sub_control.set_curve_type(self.control_shape)
-        
-        util.create_xform_group(self.control)
-        util.create_xform_group(self.control, 'driver')
-        
-        sub_control = sub_control.get()
-        
-        util.connect_visibility('%s.subVisibility' % self.control, '%sShape' % sub_control, 1)
-        
-        cmds.parent(sub_control, self.control)
-        
-        return sub_control
-    
-    
+            util.create_follow_group(self.main_local_parent, self.local_xform)
+            
 class FkScaleRig(FkRig): 
     #CBB 
       
@@ -1082,91 +950,6 @@ class FkCurlRig(FkScaleRig):
     def set_attribute_control(self, control_name):
         self.attribute_control = control_name
     
-class SimpleSplineIkRig(BufferRig):
-    
-    #to be removed, use TweakCurveRig instead.
-    
-    def __init__(self, name, side):
-        super(SimpleSplineIkRig, self).__init__(name, side)
-        self.curve = None
-        self.cv_count = 10
-    
-    def _create_curve(self):
-
-        name = self._get_name()
-        
-        joints = self.buffer_joints
-        if not self.buffer_joints:
-            joints = self.joints
-
-        if not self.curve:
-                
-            self.curve = util.transforms_to_curve(joints, len(joints), name)
-            
-            name = self._get_name()
-            
-            cmds.rebuildCurve(self.curve, 
-                              spans = self.cv_count,
-                              rpo = True,  
-                              rt = 0, 
-                              end = 1, 
-                              kr = False, 
-                              kcp = False, 
-                              kep = True,  
-                              kt = False,
-                              d = 3)
-            
-            self.curve = cmds.rename(self.curve, 'curve_%s' % name)
-            
-            cmds.parent(self.curve, self.setup_group)
-    
-    def _create_spline_ik(self):
-    
-        if self.buffer_joints:
-            joints = self.buffer_joints
-        if not self.buffer_joints:
-            joints = self.joints
-            
-        children = cmds.listRelatives(joints[-1])
-        
-        if children:
-            cmds.parent(children, w = True)
-        
-        handle = cmds.ikHandle( sol = 'ikSplineSolver', 
-                       ccv = False, 
-                       pcv = False , 
-                       sj = joints[0], 
-                       ee = joints[-1], 
-                       c = self.curve, n = 'splineIk_%s' % self._get_name())[0]
-        
-        if children:
-            cmds.parent(children, joints[-1])
-            
-        cmds.parent(handle, self.setup_group)
-            
-        if self.buffer_joints != self.joints:
-            
-            follow = util.create_follow_group(self.controls[0], self.buffer_joints[0])
-            cmds.parent(follow, self.setup_group)
-        
-        """
-        var = util.MayaNumberVariable('twist')
-        var.set_variable_type(var.TYPE_DOUBLE)
-        var.create(self.controls[0])
-        var.connect_out('%s.twist' % handle)
-        """
-    def set_curve(self, curve):
-        self.curve = curve
-    
-    def set_cv_count(self, count):
-        self.cv_count = count 
-    
-    def create(self):
-        super(SimpleSplineIkRig, self).create()
-        
-        self._create_curve()
-        self._create_spline_ik()
-   
 class SimpleFkCurveRig(FkCurlNoScaleRig):
     def __init__(self, name, side):
         super(SimpleFkCurveRig, self).__init__(name, side)
@@ -1452,9 +1235,8 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             #working here to add auto fix to joint orientation.
             
             for inc in range(0, len(x_joints)):
-                attributes = util.OrientJointAttributes(x_joints[inc])
-                #attributes.delete()
-                
+                util.OrientJointAttributes(x_joints[inc])
+                                
                 orient = util.OrientJoint(x_joints[inc])
                 
                 aim = 3
@@ -1846,86 +1628,6 @@ class FkCurveLocalRig(FkCurveRig):
         
         cmds.delete(self.orig_curve) 
 
-class PointingFkCurveRig(SimpleFkCurveRig): 
-    def _create_curve(self):
-        
-        if not self.curve:
-        
-            name = self._get_name()
-            
-            self.set_control_count(1)
-            
-            self.curve = util.transforms_to_curve(self.buffer_joints, self.control_count - 1, name)
-            
-            self.curve = cmds.rebuildCurve( self.curve, 
-                                   constructionHistory = False,
-                                   replaceOriginal = True,
-                                   rebuildType = 0,
-                                   endKnots = 1,
-                                   keepRange = 0,
-                                   keepControlPoints = 0, 
-                                   keepEndPoints = 1, 
-                                   keepTangents = 0, 
-                                   spans = 1,
-                                   degree =3,
-                                   name = name)[0]
-            
-            
-            
-            cmds.parent(self.curve, self.setup_group)
-    
-    def _create_clusters(self):
-        
-        name = self._get_name()
-        
-        cluster_group = cmds.group(em = True, n = util.inc_name('clusters_%s' % name))
-        
-        btm_handle = cmds.cluster('%s.cv[0]' % self.curve, n = name)[1]
-        mid_handle = cmds.cluster('%s.cv[1:2]' % self.curve, n = name)[1]
-    
-        pos = cmds.xform('%s.cv[1]' % self.curve, q = True, ws = True, t = True)
-        cmds.xform(mid_handle, ws = True, rp = pos, sp = pos)
-    
-        top_handle = cmds.cluster('%s.cv[3:4]' % self.curve, n = name)[1]
-        
-        self.clusters = [btm_handle, mid_handle, top_handle]
-        
-        cmds.parent(self.clusters, cluster_group)
-        cmds.parent(cluster_group, self.setup_group)
-    
-    def _last_increment(self, control, current_transform):
-        pass
-    
-    def create(self):
-        super(PointingFkCurveRig, self).create()
-        
-        constraint_editor = util.ConstraintEditor()
-        constraint = constraint_editor.get_constraint(self.clusters[-1], 'parentConstraint')
-        
-        cmds.delete(constraint)
-        cmds.parentConstraint(self.controls[-1], self.clusters[-1])
-        
-        util.create_local_follow_group(self.sub_controls[-1], self.buffer_joints[-1], orient_only = False)
-        cmds.setAttr('%s.subVisibility' % self.controls[-1], 1)
-        util.create_follow_group(self.buffer_joints[-2], 'xform_%s' % self.sub_controls[-1])
-        
-        cmds.parent(self.end_locator, self.controls[-1])
-
-class NeckRig(FkCurveRig):
-    def _first_increment(self, control, current_transform):
-        
-        self.first_control = control
-        
-        #cmds.parentConstraint(self.first_control, self.clusters[self.current_increment], mo = True)
-        
-        
-        #cmds.parent(self.current_xform_group, self.control_group)
-
-
-
-    
-
-
 class IkSplineNubRig(BufferRig):
     
     def __init__(self, description, side):
@@ -1961,20 +1663,7 @@ class IkSplineNubRig(BufferRig):
             self.buffer_joints = self.joints
         
         return self.buffer_joints
-    """
-    def _duplicate_joints(self):
-        
-        duplicate_hierarchy = util.DuplicateHierarchy( self.joints[0] )
-        
-        duplicate_hierarchy.stop_at(self.joints[-1])
-        duplicate_hierarchy.replace('joint', 'buffer')
-        
-        self.buffer_joints = duplicate_hierarchy.create()
 
-        cmds.parent(self.buffer_joints[0], self.setup_group)
-        
-        return self.buffer_joints
-    """
     def _create_twist_group(self, top_control, top_handle, top_guide):
         
         name = self._get_name()
@@ -2751,194 +2440,7 @@ class IkAppendageRig(BufferRig):
             self._create_stretchy(top_control, self.sub_control, btm_control)
         if not self.sub_control:
             self._create_stretchy(top_control, self.btm_control, btm_control)
-
-class RopeRig(CurveRig):
-
-    def __init__(self, name, side):
-        super(RopeRig, self).__init__(name, side)
-        
-        self.subdivision = 0
-        
-        self._sub_run = False
-        
-        self._division_value = 2
-        self.cluster_deformers = []
-        
-    def _define_control_shape(self):
-        return 'cube'
-
-    def _rebuild_curve(self, curve, spans,inc):
-        
-        if self._sub_run:
-            curve_split = curve.split('_')
-            curve_split[-1] = 'sub%s' % (inc+1)
-            name = string.join(curve_split, '_')
-            
-        if not self._sub_run:
-            name = '%s_sub%s' % (curve, (inc+1))
-        
-        rebuilt_curve, node = cmds.rebuildCurve( curve, 
-                                           constructionHistory = True,
-                                           replaceOriginal = False,
-                                           rebuildType = 0,
-                                           endKnots = 1,
-                                           keepRange = 0,
-                                           keepControlPoints = 0, 
-                                           keepEndPoints = 1, 
-                                           keepTangents = 0, 
-                                           spans = spans,
-                                           degree =3,
-                                           name = name)
-        
-        
-        cmds.delete(rebuilt_curve, ch = True)
-        
-        return rebuilt_curve, node
-        
-    def _cluster_curve(self, curve, description):
-        
-        cluster_curve = util.ClusterCurve(curve, self._get_name(description))
-        cluster_curve.create()
-        self.cluster_deformers = cluster_curve.clusters
-        
-        return cluster_curve.get_cluster_handle_list()
-    
-    def _subdivide(self):
-        
-        curves = [self.curves[0]]
-        
-        last_curve = None
-        
-        for inc in range(0, self.subdivision):
-
-
-            if last_curve:
-                curve = last_curve
-            if not last_curve:
-                curve = self.curves[0]
-
-            curveObject = util.nodename_to_mobject(cmds.listRelatives(curve, s = True)[0])
-            curve_object = util.NurbsCurveFunction(curveObject)
-            spans = curve_object.get_span_count()
-            
-            
-            rebuilt_curve, rebuild_node = self._rebuild_curve(curve, spans*self._division_value, inc)
-            
-            curves.append(rebuilt_curve)
-            cmds.parent(rebuilt_curve, self.setup_group)
-            last_curve = rebuilt_curve
-        
-            self._sub_run = True
-            
-        self._sub_run = False
-        return curves
-
-
-        
-    def set_subdivisions(self, int_value):
-        
-        if int_value < 0:
-            int_value = 0
-        
-        self.subdivision = int_value
-        
-    def set_division_value(self, int_value):
-        if int_value < 2:
-            int_value = 2
-            
-        self._division_value = int_value
-
-    def create(self):
-
-        curves = self._subdivide()
-        
-        
-        scale = 1
-        
-        scale_section = 1.000/len(curves)
-        alt_color = False
-        
-        description = None
-        
-        inc = 0
-        
-        last_curve = None
-
-        for curve in curves:
-            if inc > 0:
-                description = 'sub%s' % inc
-            if inc == 0:
-                description = 'main'
-            
-            clusters = self._cluster_curve(curve, description)
-            
-            control_group = cmds.group(em = True, n = util.inc_name('controls_%s' % (self._get_name(description))))
-            setup_group = cmds.group(em = True, n = util.inc_name('setup_%s' % (self._get_name(description))))
-            
-            cmds.parent(control_group, self.control_group)
-            cmds.parent(setup_group, self.setup_group)
-            
-            inc2 = 0
-            
-            for cluster in clusters:
-                
-                if description:
-                    control = self._create_control(description)
-                if not description:
-                    control = self._create_control()
-                
-                if not alt_color:
-                    control.color(util.get_color_of_side(self.side))    
-                if alt_color:
-                    control.color(util.get_color_of_side(self.side, sub_color = True))
-                
-                util.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
-                
-                offset_cluster = cmds.group(em = True, n = 'offset_%s' % cluster)
-                util.MatchSpace(cluster, offset_cluster).translation_to_rotate_pivot()
-                
-                xform_cluster = util.create_xform_group(cluster)
-                
-                cmds.parent(xform_cluster, offset_cluster)
-                cmds.parent(offset_cluster, setup_group)
-                
-                xform_offset = util.create_xform_group(offset_cluster)
-                
-                
-                control.scale_shape(scale, scale, scale) 
-                
-                
-                xform = util.create_xform_group(control.get())
-                util.connect_translate(control.get(), cluster)
-                
-                control.hide_scale_attributes()
-                
-                if last_curve:
-                    util.attach_to_curve(xform, last_curve)
-                    util.attach_to_curve(xform_offset, last_curve)
-                    
-                cmds.parent(xform, control_group)
-                    
-                    
-                
-                
-                inc2 +=1
-                
-                
-            scale = scale - scale_section
-            
-            last_curve = curve
-            
-            inc += 1
-            
-            if alt_color:
-                alt_color = False 
-                continue
-            
-            if not alt_color:
-                alt_color = True
-            
-                
+               
 class TweakCurveRig(BufferRig):
     
     def __init__(self, name, side):
@@ -3076,18 +2578,191 @@ class TweakCurveRig(BufferRig):
                     cmds.parent(rivet, self.setup_group)
                 if self.maya_type == 'nurbsCurve':
                     util.attach_to_curve(joint, self.surface)
-            
-             
-            
-            
-        
-        
-    
-        
+                        
+class RopeRig(CurveRig):
 
+    def __init__(self, name, side):
+        super(RopeRig, self).__init__(name, side)
+        
+        self.subdivision = 0
+        
+        self._sub_run = False
+        
+        self._division_value = 2
+        self.cluster_deformers = []
+        
+    def _define_control_shape(self):
+        return 'cube'
+
+    def _rebuild_curve(self, curve, spans,inc):
+        
+        if self._sub_run:
+            curve_split = curve.split('_')
+            curve_split[-1] = 'sub%s' % (inc+1)
+            name = string.join(curve_split, '_')
+            
+        if not self._sub_run:
+            name = '%s_sub%s' % (curve, (inc+1))
+        
+        rebuilt_curve, node = cmds.rebuildCurve( curve, 
+                                           constructionHistory = True,
+                                           replaceOriginal = False,
+                                           rebuildType = 0,
+                                           endKnots = 1,
+                                           keepRange = 0,
+                                           keepControlPoints = 0, 
+                                           keepEndPoints = 1, 
+                                           keepTangents = 0, 
+                                           spans = spans,
+                                           degree =3,
+                                           name = name)
+        
+        
+        cmds.delete(rebuilt_curve, ch = True)
+        
+        return rebuilt_curve, node
+        
+    def _cluster_curve(self, curve, description):
+        
+        cluster_curve = util.ClusterCurve(curve, self._get_name(description))
+        cluster_curve.create()
+        self.cluster_deformers = cluster_curve.clusters
+        
+        return cluster_curve.get_cluster_handle_list()
+    
+    def _subdivide(self):
+        
+        curves = [self.curves[0]]
+        
+        last_curve = None
+        
+        for inc in range(0, self.subdivision):
+
+
+            if last_curve:
+                curve = last_curve
+            if not last_curve:
+                curve = self.curves[0]
+
+            curveObject = util.nodename_to_mobject(cmds.listRelatives(curve, s = True)[0])
+            curve_object = util.NurbsCurveFunction(curveObject)
+            spans = curve_object.get_span_count()
+            
+            
+            rebuilt_curve, rebuild_node = self._rebuild_curve(curve, spans*self._division_value, inc)
+            
+            curves.append(rebuilt_curve)
+            cmds.parent(rebuilt_curve, self.setup_group)
+            last_curve = rebuilt_curve
+        
+            self._sub_run = True
+            
+        self._sub_run = False
+        return curves
+    
+    def set_subdivisions(self, int_value):
+        
+        if int_value < 0:
+            int_value = 0
+        
+        self.subdivision = int_value
+        
+    def set_division_value(self, int_value):
+        if int_value < 2:
+            int_value = 2
+            
+        self._division_value = int_value
+
+    def create(self):
+
+        curves = self._subdivide()
+        
+        
+        scale = 1
+        
+        scale_section = 1.000/len(curves)
+        alt_color = False
+        
+        description = None
+        
+        inc = 0
+        
+        last_curve = None
+
+        for curve in curves:
+            if inc > 0:
+                description = 'sub%s' % inc
+            if inc == 0:
+                description = 'main'
+            
+            clusters = self._cluster_curve(curve, description)
+            
+            control_group = cmds.group(em = True, n = util.inc_name('controls_%s' % (self._get_name(description))))
+            setup_group = cmds.group(em = True, n = util.inc_name('setup_%s' % (self._get_name(description))))
+            
+            cmds.parent(control_group, self.control_group)
+            cmds.parent(setup_group, self.setup_group)
+            
+            inc2 = 0
+            
+            for cluster in clusters:
+                
+                if description:
+                    control = self._create_control(description)
+                if not description:
+                    control = self._create_control()
+                
+                if not alt_color:
+                    control.color(util.get_color_of_side(self.side))    
+                if alt_color:
+                    control.color(util.get_color_of_side(self.side, sub_color = True))
+                
+                util.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
+                
+                offset_cluster = cmds.group(em = True, n = 'offset_%s' % cluster)
+                util.MatchSpace(cluster, offset_cluster).translation_to_rotate_pivot()
+                
+                xform_cluster = util.create_xform_group(cluster)
+                
+                cmds.parent(xform_cluster, offset_cluster)
+                cmds.parent(offset_cluster, setup_group)
+                
+                xform_offset = util.create_xform_group(offset_cluster)
+                
+                
+                control.scale_shape(scale, scale, scale) 
+                
+                
+                xform = util.create_xform_group(control.get())
+                util.connect_translate(control.get(), cluster)
+                
+                control.hide_scale_attributes()
+                
+                if last_curve:
+                    util.attach_to_curve(xform, last_curve)
+                    util.attach_to_curve(xform_offset, last_curve)
+                    
+                cmds.parent(xform, control_group)
+                    
+                inc2 +=1
+                
+            scale = scale - scale_section
+            
+            last_curve = curve
+            
+            inc += 1
+            
+            if alt_color:
+                alt_color = False 
+                continue
+            
+            if not alt_color:
+                alt_color = True          
 #---Body Rig
 
-
+class NeckRig(FkCurveRig):
+    def _first_increment(self, control, current_transform):
+        self.first_control = control
 
 class IkLegRig(IkAppendageRig):
     
@@ -3196,288 +2871,6 @@ class IkLegRig(IkAppendageRig):
         pole_vis.connect_out('%s.visibility' % xform_group)
         pole_vis.connect_out('%s.visibility' % rig_line) 
     
-class IkQuadrupedBackLegRig(IkAppendageRig):
-    
-    def __init__(self, description, side):
-        super(IkQuadrupedBackLegRig, self).__init__(description, side)
-        
-        self.offset_control_to_locator = False
-    
-    def _duplicate_joints(self):
-        
-        super(IkAppendageRig, self)._duplicate_joints()
-        
-        duplicate = util.DuplicateHierarchy(self.joints[0])
-        duplicate.stop_at(self.joints[-1])
-        duplicate.replace('joint', 'ik')
-        self.ik_chain = duplicate.create()
-        
-        ik_group = self._create_group()
-        
-        cmds.parent(self.ik_chain[0], ik_group)
-        cmds.parent(ik_group, self.setup_group)
-        
-        self._create_offset_chain(ik_group)
-        
-        for inc in range(0, len(self.offset_chain)):
-            
-            cmds.parentConstraint(self.offset_chain[inc], self.buffer_joints[inc], mo = True)
-            util.connect_scale(self.offset_chain[inc], self.buffer_joints[inc])
-            
-            cmds.connectAttr('%s.scaleX' % self.ik_chain[inc], 
-                             '%s.scaleX' % self.offset_chain[inc])
-        
-        cmds.parentConstraint(self.ik_chain[-1], self.buffer_joints[-1], mo = True)
-        util.connect_scale(self.offset_chain[-1], self.buffer_joints[-1])
-        
-        cmds.parentConstraint(self.ik_chain[0], self.offset_chain[0], mo = True)
-    
-    def _create_offset_chain(self, parent = None):
-        
-        if not parent:
-            parent = self.setup_group
-        
-        duplicate = util.DuplicateHierarchy(self.joints[0])
-        duplicate.stop_at(self.joints[-1])
-        duplicate.replace('joint', 'offset')        
-        self.offset_chain = duplicate.create()
-        
-        cmds.parent(self.offset_chain[0], parent)
-        
-        duplicate = util.DuplicateHierarchy(self.offset_chain[-2])
-        duplicate.replace('offset', 'sway')
-        self.lower_offset_chain = duplicate.create()
-        
-        cmds.parent(self.lower_offset_chain[1], self.offset_chain[-2])
-        cmds.parent(self.lower_offset_chain[0], self.lower_offset_chain[1])
-        cmds.makeIdentity(self.lower_offset_chain, apply = True, t = 1, r = 1, s = 1, n = 0, jointOrient = True)
-        cmds.parent(self.lower_offset_chain[1], self.setup_group)
-        self.lower_offset_chain.reverse()
-        
-        cmds.connectAttr('%s.scaleX' % self.offset_chain[-2], '%s.scaleX' % self.lower_offset_chain[0])
-        
-        cmds.delete(self.offset_chain[-1])
-        self.offset_chain.pop(-1)
-        
-        cmds.orientConstraint(self.lower_offset_chain[0], self.offset_chain[-1])
-        
-    def _create_offset_control(self):
-        
-        
-        if not self.offset_control_to_locator:
-            control = self._create_control(description = 'offset')
-            control.hide_scale_and_visibility_attributes()
-            control.scale_shape(2, 2, 2)
-            control.set_curve_type('square')
-            
-            self.offset_control = control.get()
-            
-            match = util.MatchSpace(self.lower_offset_chain[1], self.offset_control)
-            match.rotation()
-
-            match = util.MatchSpace(self.lower_offset_chain[0], self.offset_control)
-            match.translation()
-        
-        if self.offset_control_to_locator:
-            self.offset_control = cmds.spaceLocator(n = 'locator_%s' % self._get_name('offset'))[0]
-            
-            match = util.MatchSpace(self.lower_offset_chain[0], self.offset_control)
-            match.translation()
-            cmds.hide(self.offset_control)
-        
-        cmds.parentConstraint(self.offset_control, self.lower_offset_chain[0], mo = True)
-
-        xform_group = util.create_xform_group(self.offset_control)
-        driver_group = util.create_xform_group(self.offset_control, 'driver')
-        
-        util.create_title(self.btm_control, 'OFFSET_ANKLE')
-                
-        offset = util.MayaNumberVariable('offsetAnkle')
-        
-        offset.create(self.btm_control)
-        offset.connect_out('%s.rotateZ' % driver_group)
-        
-        follow_group = util.create_follow_group(self.ik_chain[-2], xform_group)
-        
-        scale_constraint = cmds.scaleConstraint(self.ik_chain[-2], follow_group)[0]
-        self._unhook_scale_constraint(scale_constraint)
-        
-        cmds.parent(follow_group, self.top_control)
-        
-        if not self.offset_control_to_locator:
-            control.hide_translate_attributes()
-        
-        return self.offset_control
-    
-    def _rig_offset_chain(self):
-        
-        ik_handle = util.IkHandle( self._get_name('offset_top') )
-        
-        ik_handle.set_start_joint( self.offset_chain[0] )
-        ik_handle.set_end_joint( self.offset_chain[-1] )
-        ik_handle.set_solver(ik_handle.solver_rp)
-        ik_handle = ik_handle.create()
-
-        cmds.parent(ik_handle, self.lower_offset_chain[-1])
-
-        ik_handle_btm = util.IkHandle( self._get_name('offset_btm'))
-        ik_handle_btm.set_start_joint(self.lower_offset_chain[0])
-        ik_handle_btm.set_end_joint(self.lower_offset_chain[-1])
-        ik_handle_btm.set_solver(ik_handle_btm.solver_sc)
-        ik_handle_btm = ik_handle_btm.create()
-        
-        follow = util.create_follow_group( self.offset_control, ik_handle_btm)
-        cmds.parent(follow, self.setup_group)
-        cmds.hide(ik_handle_btm)
-    
-    def set_offset_control_to_locator(self, bool_value):
-        self.offset_control_to_locator = bool_value
-    
-    def create(self):
-        
-        super(IkQuadrupedBackLegRig, self).create()
-        
-        self._create_offset_control()
-        
-        self._rig_offset_chain()
-        
-        cmds.setAttr('%s.translateY' % self.pole_vector_xform, 0)
-        
-
-class FkQuadrupedSpineRig(FkCurveRig):
-    def __init__(self, name, side):
-        super(FkQuadrupedSpineRig, self).__init__(name, side)
-        
-        self.mid_control_joint = None
-        
-    
-    def _create_sub_control(self):
-        
-        sub_control = util.Control( self._get_control_name(sub = True) )
-        sub_control.color( util.get_color_of_side( self.side , True)  )
-        if self.control_shape:
-            sub_control.set_curve_type(self.control_shape)
-        
-        sub_control.scale_shape(.75, .75, .75)
-        
-        if self.current_increment == 0:
-            sub_control.set_curve_type('cube')
-        
-        if self.current_increment == 1:
-            other_sub_control = util.Control( self._get_control_name('reverse', sub = True))
-            other_sub_control.color( util.get_color_of_side( self.side, True ) )
-        
-            if self.control_shape:
-                other_sub_control.set_curve_type(self.control_shape)
-            
-            other_sub_control.scale_shape(2, 2, 2)
-            
-            control = self.controls[-1]
-            other_sub = other_sub_control.get()
-            
-            if self.mid_control_joint:
-                util.MatchSpace(self.mid_control_joint, other_sub).translation()
-                util.MatchSpace(control, other_sub).rotation()
-            
-            if not self.mid_control_joint:
-                util.MatchSpace(control, other_sub).translation_rotation()
-            
-            #cmds.parent(other_sub,  )
-            
-            xform = util.create_xform_group(other_sub_control.get())
-                
-            cmds.parent(xform, self.controls[-2])
-            parent = cmds.listRelatives(self.sub_controls[-1], p = True)[0]
-            xform = cmds.listRelatives(parent, p = True)[0]
-            
-            other_sub_control.hide_scale_and_visibility_attributes()
-            
-            cmds.parent(xform, other_sub)
-        
-        
-        if self.current_increment == 2:
-            pass
-        
-        return sub_control
-    
-    def set_mid_control_joint(self, joint_name):
-        self.mid_control_joint = joint_name
-    
-
-class IkQuadrupedScapula(BufferRig):
-    
-    def __init__(self, description, side):
-        super(IkQuadrupedScapula, self).__init__(description, side)
-        
-        self.control_offset = 10
-    
-    def _create_top_control(self):
-        control = self._create_control()
-        control.set_curve_type('cube')
-        control.hide_scale_and_visibility_attributes()
-        
-        self._offset_control(control)
-        
-        cmds.parent(control.get(), self.control_group)
-        
-        util.create_xform_group(control.get())
-        
-        return control.get()
-    
-    
-    
-    def _create_shoulder_control(self):
-        control = self._create_control()
-        control.set_curve_type('cube')
-        control.hide_scale_and_visibility_attributes()
-        
-        cmds.parent(control.get(), self.control_group)
-        
-        util.MatchSpace(self.joints[0], control.get()).translation()
-        cmds.pointConstraint(control.get(), self.joints[0], mo = True)
-        
-        util.create_xform_group(control.get())
-        
-        return control.get()
-    
-    def _offset_control(self, control ):
-        
-        offset = cmds.group(em = True)
-        match = util.MatchSpace(self.joints[-1], offset)
-        match.translation_rotation()
-        
-        cmds.move(self.control_offset, 0,0 , offset, os = True, wd = True, r = True)
-        
-        match = util.MatchSpace(offset, control.get())
-        match.translation()
-        
-        cmds.delete(offset)
-    
-    def _create_ik(self, control):
-        
-        handle = util.IkHandle(self._get_name())
-        handle.set_start_joint(self.joints[0])
-        handle.set_end_joint(self.joints[-1])
-        handle = handle.create()
-        
-        cmds.pointConstraint(control, handle)
-        
-        cmds.parent(handle, control)
-        cmds.hide(handle)
-        
-    
-    def set_control_offset(self, value):
-        self.control_offset = value
-    
-    def create(self):
-        
-        control = self._create_top_control()
-        self._create_shoulder_control()
-        
-        self._create_ik(control)
-        
-        rig_line = util.RiggedLine(control, self.joints[-1], self._get_name()).create()
-        cmds.parent(rig_line, self.control_group) 
     
 class RollRig(JointRig):
     
@@ -3946,1504 +3339,9 @@ class FootRollRig(RollRig):
         #cmds.connectAttr('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % toe_fk_control_xform)
         util.connect_equal_condition('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % ball_pivot, 0)
         #connect_reverse('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % ball_pivot)
-        
-
-class QuadFootRollRig(FootRollRig):
-    
-    def __init__(self, description, side):
-        super(QuadFootRollRig, self).__init__(description, side)
-        
-        self.ball_attrtribute = None
-    
-    def _define_joints(self):
-        
-        index_list = self.defined_joints
-        
-        if not index_list:
-            index_list = [0,2,1,3,4,5]
-        
-        self.ankle_index = index_list[0]
-        self.heel_index = index_list[1]
-        self.ball_index = index_list[2]
-        self.toe_index = index_list[3]
-        self.yawIn_index = index_list[4]
-        self.yawOut_index = index_list[5]
-        
-        self.ankle = self.ik_chain[self.ankle_index]
-        self.heel = self.ik_chain[self.heel_index]
-        self.ball = self.ik_chain[self.ball_index]
-        self.toe = self.ik_chain[self.toe_index]
-        self.yawIn = self.ik_chain[self.yawIn_index]
-        self.yawOut = self.ik_chain[self.yawOut_index]
-        
-    def _create_roll_attributes(self):
-        
-        attribute_control = self._get_attribute_control()
-        
-        cmds.addAttr(attribute_control, ln = 'heelRoll', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'ballRoll', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
-        
-        cmds.addAttr(attribute_control, ln = 'yawIn', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'yawOut', at = 'double', k = True)
-        
-        cmds.addAttr(attribute_control, ln = 'bankIn', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'bankOut', at = 'double', k = True)
-        
-    def _create_yawout_roll(self, parent, name, scale = 1):
-        
-        control, xform, driver = self._create_pivot_control(self.yawOut, name, scale = scale)
-
-        cmds.parent(xform, parent)
-        
-        attribute_control = self._get_attribute_control()
-        
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.%s' % (attribute_control, name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.%s' % (attribute_control, name), driverValue = 10, value = -45, itt = 'spline', ott = 'spline')
-        
-        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
                 
-        return control
-        
-    def _create_yawin_roll(self, parent, name, scale = 1):
-        
-        control, xform, driver = self._create_pivot_control(self.yawIn, name, scale = scale)
-
-        cmds.parent(xform, parent)
-        
-        attribute_control = self._get_attribute_control()
-        
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.%s' % (attribute_control, name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.%s' % (attribute_control, name), driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        
-        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
-                
-        return control
-        
-    def _create_pivot_groups(self):
-
-        
-        heel_pivot = self._create_pivot('heel', self.heel, self.control_group)
-        ball_pivot = self._create_pivot('ball', self.ball, heel_pivot)
-        toe_pivot = self._create_pivot('toe', self.toe, ball_pivot)
-        
-        toe_roll = self._create_toe_roll(toe_pivot)
-        heel_roll = self._create_heel_roll(toe_roll)
-        yawin_roll = self._create_yawin_roll(heel_roll, 'yawIn')
-        yawout_roll = self._create_yawout_roll(yawin_roll, 'yawOut')
-        bankin_roll = self._create_yawin_roll(yawout_roll, 'bankIn')
-        bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut')
-        ball_roll = self._create_ball_roll(bankout_roll)
-        
-        toe_control, toe_control_xform = self._create_toe_rotate_control()
-        toe_fk_control, toe_fk_control_xform = self._create_toe_fk_rotate_control()
-        
-        self._create_ik()
-        
-        cmds.parent(toe_control_xform, bankout_roll)
-        
-        follow_toe_control = cmds.group(em = True, n = 'follow_%s' % toe_control)
-        util.MatchSpace(toe_control, follow_toe_control).translation_rotation()
-        xform_follow = util.create_xform_group(follow_toe_control)
-        
-        cmds.parent(xform_follow, yawout_roll)
-        util.connect_rotate(toe_control, follow_toe_control)
-        
-        cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
-        
-        cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
-        cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
-        
-        return [ball_pivot, toe_fk_control_xform]
-                
-    def set_index_order(self,index_list):
-        self.defined_joints = index_list  
-        
-
-class QuadBackFootRollRig(QuadFootRollRig):
-    
-    def __init__(self, name, side):
-        super(QuadBackFootRollRig, self).__init__(name, side)
-        
-        self.add_bank = True
-    
-    def _create_toe_roll(self, parent, name = 'toeRoll', scale = 1):
-        
-        control, xform, driver = self._create_pivot_control(self.toe, name, scale = scale)
-        
-        cmds.parent(xform, parent)
-        
-        attribute_control = self._get_attribute_control()
-        
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
-        
-        return control
-    
-    def _create_heel_roll(self, parent, name = 'heelRoll', scale = 1):
-        control, xform, driver = self._create_pivot_control(self.heel, name, scale = scale)
-        
-        cmds.parent(xform, parent)
-        
-        attribute_control = self._get_attribute_control()
-        
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.%s' % (attribute_control,name), driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
-        
-        return control
-    
-    def _create_ball_roll(self, parent):
-
-        control, xform, driver = self._create_pivot_control(self.ball, 'ball')
-                
-        cmds.parent(xform, parent)
-        
-        attribute_control = self._get_attribute_control()
-        
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')        
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
-        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        #cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 20, value = 0, itt = 'spline', ott = 'spline')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
-        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
-        
-        return control
-    
-    def _create_roll_control(self, transform):
-        
-        roll_control = self._create_control('roll') 
-        roll_control.set_curve_type('square')
-        
-        self.roll_control = roll_control
-        
-        roll_control.scale_shape(.8,.8,.8)
-        
-        xform_group = util.create_xform_group(roll_control.get())
-        
-        roll_control.hide_scale_and_visibility_attributes()
-        roll_control.hide_rotate_attributes()
-        
-        
-        match = util.MatchSpace( transform, xform_group )
-        match.translation_rotation()
-
-        #cmds.parentConstraint(roll_control.get(), transform)
-        
-        cmds.parent(xform_group, self.control_group)
-        
-        self.roll_control_xform = xform_group 
-        
-        return roll_control
-    
-    def _define_joints(self):
-        
-        index_list = self.defined_joints
-        
-        if not index_list:
-            index_list = [0,1,2,3,4,5]
-        
-        self.ankle_index = index_list[0]
-        self.heel_index = index_list[1]
-        self.ball_index = index_list[2]
-        self.toe_index = index_list[3]
-        self.yawIn_index = index_list[4]
-        self.yawOut_index = index_list[5]
-        
-        self.ankle = self.ik_chain[self.ankle_index]
-        self.heel = self.ik_chain[self.heel_index]
-        self.ball = self.ik_chain[self.ball_index]
-        self.toe = self.ik_chain[self.toe_index]
-        self.yawIn = self.ik_chain[self.yawIn_index]
-        self.yawOut = self.ik_chain[self.yawOut_index]
-    
-    def _create_roll_attributes(self):
-        
-        attribute_control = self._get_attribute_control()
-        
-        util.create_title(attribute_control, 'roll')
-        
-        cmds.addAttr(attribute_control, ln = 'ballRoll', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'heelRoll', at = 'double', k = True)
-        
-        cmds.addAttr(attribute_control, ln = 'yawIn', at = 'double', k = True)
-        cmds.addAttr(attribute_control, ln = 'yawOut', at = 'double', k = True)
-        
-        if self.add_bank:
-            
-            util.create_title(attribute_control, 'bank')
-            
-            cmds.addAttr(attribute_control, ln = 'bankIn', at = 'double', k = True)
-            cmds.addAttr(attribute_control, ln = 'bankOut', at = 'double', k = True)
-        
-            cmds.addAttr(attribute_control, ln = 'bankForward', at = 'double', k = True)
-            cmds.addAttr(attribute_control, ln = 'bankBack', at = 'double', k = True)
-    
-    def _create_ik(self):
-        self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.toe)
-        cmds.parent( self.ankle_handle, self.setup_group )
-    
-    def _create_pivot_groups(self):
-
-        attribute_control = self._get_attribute_control()
-
-        self._create_ik() 
-        
-        util.create_title(attribute_control, 'pivot')
-        
-        ankle_pivot = self._create_pivot('ankle', self.ankle, self.control_group)
-        heel_pivot = self._create_pivot('heel', self.heel, ankle_pivot)
-        ball_pivot = self._create_pivot('ball', self.ball, heel_pivot)
-        toe_pivot = self._create_pivot('toe', self.toe, ball_pivot)
-        
-        
-        toe_roll = self._create_toe_roll(toe_pivot)
-        heel_roll = self._create_heel_roll(toe_roll)
-        yawin_roll = self._create_yawin_roll(heel_roll, 'yawIn')
-        yawout_roll = self._create_yawout_roll(yawin_roll, 'yawOut')
-        ball_roll = self._create_ball_roll(yawout_roll)
-        
-        if self.add_bank:
-            
-            bankin_roll = self._create_yawin_roll(ball_roll, 'bankIn', scale = .5)
-            bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut', scale = .5)
-            bankforward_roll = self._create_toe_roll(bankout_roll, 'bankForward', scale = .5)
-            bankback_roll = self._create_heel_roll(bankforward_roll, 'bankBack', scale = .5)
-        
-            cmds.parentConstraint(bankback_roll, self.roll_control_xform, mo = True)
-            cmds.parentConstraint(bankback_roll, self.ankle_handle, mo = True)
-        
-        if not self.add_bank:
-        
-            cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
-            cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
-                    
-    def set_add_bank(self, bool_value):
-        self.add_bank = bool_value
-                    
-    def create(self):
-        super(FootRollRig,self).create()
-        
-        self._define_joints()
-        
-        self._create_roll_attributes()
-        
-        self._create_pivot_groups()
-        
-        
 #---Face Rig
 
-class FaceFollowCurveRig(CurveRig):
-    def __init__(self, description, side):
-        super(FaceFollowCurveRig, self).__init__(description, side)
-        
-        self.controls = []
-        self.drivers = []
-        self.clusters = []
-        self.local_controls = []
-        
-        self.wire_falloff = 20
-        
-        self.create_joints = 0
-        
-        self.mesh = None
-        self.create_follow = False
-
-    def _rebuild_curve(self, curve, description = None, spans = 4, delete_cvs = False):
-        
-        if self.create_follow:
-            
-            follow_curve, cluster_curve = self._rebuild_with_follow(curve, description, spans, delete_cvs)
-            
-            return follow_curve, cluster_curve
-                
-        rebuilt_curve = cmds.rebuildCurve( curve, 
-                                                 constructionHistory = False,
-                                                 replaceOriginal = False,
-                                                 rebuildType = 0,
-                                                 endKnots = 1,
-                                                 keepRange = 0,
-                                                 keepControlPoints = 0, 
-                                                 keepEndPoints = 1, 
-                                                 keepTangents = 0, 
-                                                 spans = spans,
-                                                 degree = 3 )[0]
-        
-        if delete_cvs:
-            cvs = cmds.ls('%s.cv[*]' % rebuilt_curve, flatten = True)
-            cmds.delete(cvs[1], cvs[-2])
-        
-        new_curve = cmds.rename(rebuilt_curve, 'curve_%s' % self._get_name(description))
-        
-        
-        cluster_curve = new_curve
-        follow_curve = None
-        
-        cmds.parent(cluster_curve, self.setup_group)
-        
-        return follow_curve, cluster_curve
-        
-    def _rebuild_with_follow(self, curve, description, spans, delete_cvs):
-        rebuilt_curve, node = cmds.rebuildCurve( curve, 
-                                           constructionHistory = True,
-                                           replaceOriginal = False,
-                                           rebuildType = 0,
-                                           endKnots = 1,
-                                           keepRange = 0,
-                                           keepControlPoints = 0, 
-                                           keepEndPoints = 1, 
-                                           keepTangents = 0, 
-                                           spans = spans,
-                                           degree =3)
-        
-        #cmds.delete('%s.cv[1]' % rebuilt_curve)
-        
-        if delete_cvs:
-            cvs = cmds.ls('%s.cv[*]' % rebuilt_curve, flatten = True)
-            cmds.delete(cvs[1], cvs[-2])
-        
-        new_curve = cmds.duplicate(rebuilt_curve, n = 'curve_%s' % self._get_name(description))[0]
-        
-        cmds.blendShape(rebuilt_curve, new_curve, w = [0,1])
-        
-        follow_curve = rebuilt_curve
-        cluster_curve = new_curve
-        
-        cmds.parent(follow_curve, self.setup_group)
-        cmds.parent(cluster_curve, self.setup_group)
-        
-        return follow_curve, cluster_curve
-
-    def _create_inc_control(self, follow_curve, cluster_curve, inc, description = None, center_tolerance = 0.001):
-        control = self._create_control(description)
-        
-        control.rotate_shape(90, 0, 0)
-        control.hide_scale_attributes()
-        
-        cluster, handle = util.create_cluster('%s.cv[%s]' % (cluster_curve, inc), self._get_name())
-        self.clusters.append(handle)
-        
-        match = util.MatchSpace(handle, control.get())
-        match.translation_to_rotate_pivot()
-        
-        control_name = control.get()
-        
-
-        if description:
-        
-            side = control.color_respect_side(center_tolerance = center_tolerance)
-            
-            if side != 'C':
-                control_name = cmds.rename(control.get(), util.inc_name(control.get()[0:-1] + side))
-        
-        xform = util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
-        
-        bind_pre = util.create_cluster_bindpre(cluster, handle)
-        
-        local_group, xform_group = util.constrain_local(control_name, handle, parent = True)
-        
-        local_driver = util.create_xform_group(local_group, 'driver')
-        util.connect_translate(driver, local_driver)
-        util.connect_translate(xform, xform_group)
-        
-        cmds.parent(bind_pre, xform_group)
-        
-        util.attach_to_curve(xform, follow_curve)
-        
-        cmds.parent(xform, self.control_group)
-        cmds.parent(xform_group, self.setup_group)
-        
-        self.local_controls.append(local_group)
-        self.drivers.append(driver)
-        
-        return control_name, driver
-
-    def _create_controls(self, follow_curve, cluster_curve, description):
-        pass
-
-    def _create_deformation(self, deform_curve, follow_curve):
-        
-        
-        if self.mesh:
-            if not self.create_joints:
-                for mesh in self.mesh:
-                    wire, curve = cmds.wire( self.mesh, w = deform_curve, dds=[(0, self.wire_falloff)], gw = False, n = 'wire_%s' % deform_curve)
-        
-                    cmds.setAttr('%s.rotation' % wire, 0.1)
-        
-                cmds.blendShape(follow_curve, '%sBaseWire' % curve, w = [0,1])
-                
-            if self.create_joints:
-                util.create_joints_on_curve(deform_curve, self.create_joints, self.description, create_controls = False)
-                
-    def set_wire_falloff(self, value):
-        self.wire_falloff = value
-
-    def set_mesh_to_deform(self, mesh):
-        self.mesh = mesh
-        
-        if type(mesh) == type('') or type(mesh) == type(u''):
-            self.mesh = [mesh]
-            
-    def set_create_joints(self, int_value):
-        self.create_joints = int_value
-
-    def set_curves(self, top_lip_curve, btm_lip_curve):
-        super(MouthCurveRig, self).set_curves([top_lip_curve, btm_lip_curve])
-        
-    def set_create_follow(self, bool_value):
-        self.create_follow = bool_value
-
-class SingleControlFaceCurveRig(FaceFollowCurveRig):
-    def __init__(self, description, side):
-        super(SingleControlFaceCurveRig, self).__init__(description, side)
-        
-        self.attach_surface = None
-        self.curve_position_percent = 0
-        self.shape_name = 'pin'
-
-    def _rebuild_curve(self, curve, description = None, spans = 6):
-        
-        rebuilt_curve, node = cmds.rebuildCurve( curve, 
-                                           constructionHistory = True,
-                                           replaceOriginal = False,
-                                           rebuildType = 0,
-                                           endKnots = 1,
-                                           keepRange = 0,
-                                           keepControlPoints = 0, 
-                                           keepEndPoints = 1, 
-                                           keepTangents = 0, 
-                                           spans = spans,
-                                           degree =3)
-        
-        new_curve = cmds.duplicate(rebuilt_curve, n = 'curve_%s' % self._get_name(description))[0]
-        
-        cmds.blendShape(rebuilt_curve, new_curve, w = [0,1])
-        
-        follow_curve = rebuilt_curve
-        cluster_curve = new_curve
-        
-        cmds.parent(follow_curve, self.setup_group)
-        cmds.parent(cluster_curve, self.setup_group)
-        
-        return follow_curve, cluster_curve        
-    
-    def _create_control_on_curve(self, follow_curve, percent, sub = False, description = None):
-        
-        position = cmds.pointOnCurve(follow_curve, top = True, pr = percent)
-        
-        control = self._create_control(description)
-        control.set_curve_type(self.shape_name)
-        control.rotate_shape(90, 0, 0)
-        control.hide_scale_attributes()
-        
-        sub_control = None
-        
-        if sub:
-            sub_control = self._create_control(description, True)
-            sub_control.set_curve_type('cube')
-            sub_control.scale_shape(.8, .8, .8)
-            sub_control.hide_scale_attributes()
-            
-            cmds.parent(sub_control.get(), control.get())
-            
-            sub_control = sub_control.get()
-        
-        cmds.move(position[0], position[1], position[2], control.get())
-        
-        control_name = control.get()
-        cmds.parent(control_name, self.control_group)
-        
-        xform = util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
-        
-        util.attach_to_curve(xform, follow_curve)
-        
-        return control_name, sub_control, driver, xform
-    
-    def _create_full_control(self, follow_curve, cluster, description = None):
-        position = cmds.xform(cluster, q = True, ws = True, rp= True)
-        
-        control = self._create_control(description)
-        control.set_curve_type(self.shape_name)
-        control.rotate_shape(90, 0, 0)
-        control.hide_scale_attributes()        
-    
-        cmds.move(position[0], position[1], position[2], control.get())
-        
-        control_name = control.get()
-        cmds.parent(control_name, self.control_group)
-        
-        xform = util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
-        
-        util.attach_to_curve(xform, follow_curve)
-        
-        return control_name, driver        
-    
-    def _create_cluster(self, cv_deform, cv_offset, description = None, follow = True):
-        
-        cluster_group = cmds.group(em = True, n = util.inc_name(self._get_name(description)))
-        cmds.parent(cluster_group, self.setup_group)
-        
-        cluster, handle = util.create_cluster(cv_deform, self._get_name(description))
-        self.clusters.append(handle)
-        
-        bind_pre = util.create_cluster_bindpre(cluster, handle)
-        
-        #buffer = cmds.group(em = True, n = util.inc_name('buffer_%s' % handle))
-        
-        match = util.MatchSpace(handle, buffer)
-        match.translation_to_rotate_pivot()
-        
-        cmds.parent(handle, buffer)
-        cmds.parent(buffer, cluster_group)
-        
-        xform = util.create_xform_group(buffer)
-        driver3 = util.create_xform_group(buffer, 'driver3')
-        driver2 = util.create_xform_group(buffer, 'driver2')
-        driver1 = util.create_xform_group(buffer, 'driver1')
-        
-        if self.attach_surface and follow:
-            
-            surface_follow = cmds.group(em = True, n = util.inc_name('surfaceFollow_%s' % handle))
-            
-            cmds.parent(surface_follow, xform)
-        
-            match = util.MatchSpace(handle, surface_follow)
-            match.translation_to_rotate_pivot()
-            
-            cmds.pointConstraint(driver3, surface_follow, mo = True)
-            cmds.geometryConstraint(self.attach_surface, surface_follow)
-            
-            util.connect_translate(driver3, surface_follow)
-            
-            cmds.pointConstraint(surface_follow, driver2, mo = True)
-        
-        cmds.parent(bind_pre, xform)
-        
-        return xform, driver3, driver1
-        
-    def _create_full_cluster(self, follow_curve, cluster_curve, offset_curve, description= None, follow = False):
-        
-        cv_deform = '%s.cv[*]' % (cluster_curve)
-        cv_offset = '%s.cv[*]' % (offset_curve)
-        
-        xform, driver, local_driver = self._create_cluster(cv_deform, cv_offset, description, follow)
-        
-        
-        
-        return driver, local_driver, xform
-        
-        
-    def _create_inc_cluster(self, follow_curve, cluster_curve, offset_curve, inc, description = None, follow = True):
-        
-        cv_deform = '%s.cv[%s]' % (cluster_curve, inc)
-        cv_offset = '%s.cv[%s]' % (offset_curve, inc)
-        
-        xform, driver, local_driver = self._create_cluster(cv_deform, cv_offset, description, follow)
-            
-        return driver, local_driver
-    
-    def _create_clusters(self, follow_curve, deform_curve, offset_curve, description = None, follow = True):
-        
-        cvs = cmds.ls('%s.cv[*]' % deform_curve, flatten = True)
-        count = len(cvs)
-        
-        drivers = []
-        local_drivers = []
-        
-        for inc in range(0, count):
-            driver, local_driver = self._create_inc_cluster(follow_curve, deform_curve, offset_curve, inc, description, follow)
-            drivers.append(driver)
-            local_drivers.append(local_driver)
-            
-        return drivers, local_drivers
-    
-    def _create_fade(self, start_control, drivers):
-        
-        reverse_drivers = list(drivers) 
-        reverse_drivers.reverse()
-        
-        multiply_groups = {}
-        
-        if start_control:
-            multiply_groups['side1'] = util.create_follow_fade(start_control, drivers, -1)
-        
-        return multiply_groups
-    
-    def set_attach_surface(self, surface):
-        self.attach_surface = surface
-        
-    def set_curve_position(self, percent):
-        self.curve_position_percent = percent
-
-    def set_curve_shape(self, shape_name):
-        self.curve_shape = shape_name
-
-    def create(self):
-        
-        follow_curve, deform_curve = self._rebuild_curve(self.curves[0])
-        
-        position = self.curve_position_percent
-        if position == -1:
-            position = .5
-        
-        start_control, sub, control_driver, xform_control = self._create_control_on_curve(self.curves[0], position)
-        
-        if self.curve_position_percent > -1:
-            drivers, drivers_local = self._create_clusters(self.curves[0],
-                                                           deform_curve,
-                                                           follow_curve,
-                                                           follow = False)
-            
-            self._create_fade(start_control, drivers)
-            
-        if self.curve_position_percent == -1:
-            driver, driver_local, xform_cluster = self._create_full_cluster(self.curves[0], 
-                                                               deform_curve, 
-                                                               follow_curve)
-            
-            util.connect_translate(start_control, driver)
-            util.connect_rotate(start_control, driver)
-            util.connect_scale(start_control, driver)
-            
-            
-            util.connect_translate(control_driver, driver)
-            util.connect_rotate(control_driver, driver)
-            #util.connect_scale(control_driver, driver)
-            
-            util.connect_translate(xform_control, xform_cluster)
-            
-            
-            control = util.Control(start_control)
-            control.show_scale_attributes()
-            
-            
-            
-        
-            
-        
-        self._create_deformation(deform_curve, follow_curve)    
-
-class SimpleFaceCurveRig(FaceFollowCurveRig):
-    def __init__(self, description, side):
-        super(SimpleFaceCurveRig, self).__init__(description, side)
-        
-        self.attach_surface = None
-    
-    def _rebuild_curve(self, curve, description = None, spans = 6):
-        
-        rebuilt_curve, node = cmds.rebuildCurve( curve, 
-                                           constructionHistory = True,
-                                           replaceOriginal = False,
-                                           rebuildType = 0,
-                                           endKnots = 1,
-                                           keepRange = 0,
-                                           keepControlPoints = 0, 
-                                           keepEndPoints = 1, 
-                                           keepTangents = 0, 
-                                           spans = spans,
-                                           degree =3)
-        
-        new_curve = cmds.duplicate(rebuilt_curve, n = 'curve_%s' % self._get_name(description))[0]
-        
-        cmds.blendShape(rebuilt_curve, new_curve, w = [0,1])
-        
-        follow_curve = rebuilt_curve
-        cluster_curve = new_curve
-        
-        cmds.parent(follow_curve, self.setup_group)
-        cmds.parent(cluster_curve, self.setup_group)
-        
-        return follow_curve, cluster_curve
-    
-    def _create_control_on_curve(self, follow_curve, percent, sub = True, description = None):
-        
-        position = cmds.pointOnCurve(follow_curve, top = True, pr = percent)
-        
-        control = self._create_control(description)
-        control.set_curve_type('cube')
-        control.hide_scale_attributes()
-        
-        sub_control = None
-        
-        if sub:
-            sub_control = self._create_control(description, True)
-            sub_control.set_curve_type('cube')
-            sub_control.scale_shape(.8, .8, .8)
-            sub_control.hide_scale_attributes()
-            
-            cmds.parent(sub_control.get(), control.get())
-            
-            sub_control = sub_control.get()
-        
-        cmds.move(position[0], position[1], position[2], control.get())
-        
-        control_name = control.get()
-        cmds.parent(control_name, self.control_group)
-        
-        xform = util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
-        
-        util.attach_to_curve(xform, follow_curve)
-        
-        return control_name, sub_control, driver
-    
-    def _create_controls(self, curve, sub = False):
-        
-        control_dict = {}
-        
-        start_controls = self._create_control_on_curve(curve, 0, sub = sub)
-        start_offset_controls = self._create_control_on_curve(curve, 0.25, sub = sub)
-        
-        mid_controls = self._create_control_on_curve(curve, 0.5, sub = sub)
-        
-        end_offset_controls = self._create_control_on_curve(curve,0.75, sub = sub)
-        end_controls = self._create_control_on_curve(curve, 1, sub = sub)
-        
-        control_dict['start'] = start_controls
-        control_dict['start_offset'] = start_offset_controls
-        
-        control_dict['mid'] = mid_controls
-        
-        control_dict['end_offset'] = end_offset_controls
-        control_dict['end'] = end_controls
-        
-        return control_dict
-    
-    def _create_cluster(self, cv_deform, cv_offset, description = None, follow = True):
-        
-        cluster_group = cmds.group(em = True, n = util.inc_name(self._get_name(description)))
-        cmds.parent(cluster_group, self.setup_group)
-        
-        cluster, handle = util.create_cluster(cv_deform, self._get_name(description))
-        self.clusters.append(handle)
-        
-        bind_pre = util.create_cluster_bindpre(cluster, handle)
-        
-        #buffer = cmds.group(em = True, n = util.inc_name('buffer_%s' % handle))
-        
-        match = util.MatchSpace(handle, buffer)
-        match.translation_to_rotate_pivot()
-        
-        cmds.parent(handle, buffer)
-        cmds.parent(buffer, cluster_group)
-        
-        xform = util.create_xform_group(buffer)
-        driver3 = util.create_xform_group(buffer, 'driver3')
-        driver2 = util.create_xform_group(buffer, 'driver2')
-        driver1 = util.create_xform_group(buffer, 'driver1')
-        
-        if self.attach_surface and follow:
-            
-            surface_follow = cmds.group(em = True, n = util.inc_name('surfaceFollow_%s' % handle))
-            
-            cmds.parent(surface_follow, xform)
-        
-            match = util.MatchSpace(handle, surface_follow)
-            match.translation_to_rotate_pivot()
-            
-            cmds.pointConstraint(driver3, surface_follow, mo = True)
-            cmds.geometryConstraint(self.attach_surface, surface_follow)
-            
-            util.connect_translate(driver3, surface_follow)
-            
-            cmds.pointConstraint(surface_follow, driver2, mo = True)
-        
-        cmds.parent(bind_pre, xform)
-        
-        return xform, driver3, driver1
-        
-    def _create_inc_cluster(self, follow_curve, cluster_curve, offset_curve, inc, description = None, follow = True):
-        
-        cv_deform = '%s.cv[%s]' % (cluster_curve, inc)
-        cv_offset = '%s.cv[%s]' % (offset_curve, inc)
-        
-        xform, driver, local_driver = self._create_cluster(cv_deform, cv_offset, description, follow)
-            
-        return driver, local_driver
-    
-    def _create_clusters(self, follow_curve, deform_curve, offset_curve, description = None, follow = True):
-        
-        cvs = cmds.ls('%s.cv[*]' % deform_curve, flatten = True)
-        count = len(cvs)
-        
-        drivers = []
-        local_drivers = []
-        
-        for inc in range(0, count):
-            driver, local_driver = self._create_inc_cluster(follow_curve, deform_curve, offset_curve, inc, description, follow)
-            drivers.append(driver)
-            local_drivers.append(local_driver)
-            
-        return drivers, local_drivers
-    
-    def _create_fade(self, start_control, mid_control, end_control, start_offset_control, end_offset_control, drivers):
-        
-        reverse_drivers = list(drivers) 
-        reverse_drivers.reverse()
-        
-        multiply_groups = {}
-        
-        if start_control:
-            multiply_groups['side1'] = util.create_follow_fade(start_control, drivers, -1)
-        if end_control:
-            multiply_groups['side2'] = util.create_follow_fade(end_control, reverse_drivers, -1)
-        
-        if mid_control:
-            multiply_groups['sides'] = util.create_follow_fade(mid_control, drivers, -1)
-            
-        if start_offset_control:
-            multiply_groups['offset1'] = util.create_follow_fade(start_offset_control, 
-                                                            drivers[0:len(drivers)/2])
-        
-        if end_offset_control:
-            multiply_groups['offset2'] = util.create_follow_fade(end_offset_control, 
-                                                            drivers[len(drivers)/2:])
-        
-        return multiply_groups
-    
-    def set_attach_surface(self, surface):
-        self.attach_surface = surface
-    
-    def create(self):
-        
-        follow_curve, deform_curve = self._rebuild_curve(self.curves[0])
-        
-        controls = self._create_controls(self.curves[0])
-        
-        drivers, drivers_local = self._create_clusters(self.curves[0],
-                                                       deform_curve,
-                                                       follow_curve,
-                                                       follow = False)
-        
-        self._create_fade(controls['start'][0], 
-                          controls['mid'][0], 
-                          controls['end'][0],
-                          controls['start_offset'][0],
-                          controls['end_offset'][0],
-                          drivers)
-        
-        self._create_deformation(deform_curve, follow_curve)
-        
-    
-class MouthCurveRig(FaceFollowCurveRig):
-    def __init__(self, description):
-        super(MouthCurveRig, self).__init__(description, 'C')
-        self.center_tolerance = 0.01
-        self.control_shape = 'cube'
-        self.center_fade = True
-        
-    def _create_controls(self, follow_curve, cluster_curve, description):
-        
-        cvs = cmds.ls('%s.cv[*]' % cluster_curve, flatten = True)
-        count = len(cvs)
-        
-        controls = []
-        drivers = []
-        
-        for inc in range(0, count):
-        
-            control, driver = self._create_inc_control(follow_curve, cluster_curve, inc, description, center_tolerance = self.center_tolerance)
-            
-            controls.append(control)
-            drivers.append(driver)
-            
-            reverse_inc = (count - inc) -1
-            
-            if inc != reverse_inc:
-                control, driver = self._create_inc_control(follow_curve, cluster_curve,  reverse_inc, description, center_tolerance = self.center_tolerance)
-                
-                controls.append(control)
-                drivers.append(driver)
-                
-            if inc == reverse_inc:
-                break
-        
-        front_list = drivers[2], drivers[4], drivers[6]
-        back_list = drivers[3], drivers[5], drivers[6]
-        
-        util.create_follow_fade(controls[0], front_list)
-        util.create_follow_fade(controls[1], back_list)
-        
-        util.create_follow_fade(drivers[0], front_list)
-        util.create_follow_fade(drivers[1], back_list)
-        
-        if self.center_fade:
-            util.create_follow_fade(controls[-1], front_list[:-1])
-            util.create_follow_fade(controls[-1], back_list[:-1])
-        
-        return controls
-        
-    def _attach_corners(self, source_control, target_control, local_control, side, local_groups = []):
-        
-        control = self._create_control('corner', True)
-        control.hide_scale_and_visibility_attributes()
-        control.set_curve_type(self.control_shape)
-        control.hide_rotate_attributes()
-        
-        control.scale_shape(.8, .8, .8)
-        control.rotate_shape(90, 0, 0)
-        
-        match = util.MatchSpace(source_control, control.get())
-        match.translation_rotation()
-        
-        control.color_respect_side(True)
-        
-        control_name = control.get()
-        
-        if side != 'C':
-            control_name = cmds.rename(control_name, util.inc_name(control_name[0:-1] + side))
-        
-        cmds.parent(control_name, source_control)
-        
-        for local_group in local_groups:
-            util.connect_translate(control_name, local_group)
-        
-        new_name = target_control.replace('CNT_', 'ctrl_')
-        new_name = cmds.rename(target_control, new_name)
-        cmds.delete( util.get_shapes( new_name ) )
-        
-        #cmds.parentConstraint(local_control, new_name)
-        driver = cmds.listRelatives(source_control, p = True)[0]
-        
-        util.connect_translate(source_control, new_name)
-        util.connect_rotate(source_control, new_name)
-        
-        util.connect_translate(driver, new_name)
-        util.connect_rotate(driver, new_name)
-        
-        #local, xform = util.constrain_local(source_control, new_name)
-        
-        #cmds.parent(xform, self.control_group)
-        
-    def set_center_tolerance(self, tolerance_value = 0.001):
-        self.center_tolerance = tolerance_value
-        
-    def set_center_fade(self, bool_value):
-        self.center_fade = bool_value
-        
-    def create(self):
-        super(MouthCurveRig, self).create()
-
-        follow_curve_top, cluster_curve_top = self._rebuild_curve(self.curves[0],'top')
-        follow_curve_btm, cluster_curve_btm = self._rebuild_curve(self.curves[1], 'btm')
-        
-        controls_top = self._create_controls(self.curves[0], cluster_curve_top, 'top')
-        controls_btm = self._create_controls(self.curves[1], cluster_curve_btm, 'btm')
-        
-        self._attach_corners(controls_top[0], controls_btm[0], self.local_controls[0], 'R', [self.local_controls[0], self.local_controls[7]])
-        self._attach_corners(controls_top[1], controls_btm[1], self.local_controls[1], 'L', [self.local_controls[1], self.local_controls[8]])
-        
-        if follow_curve_top:
-            self._create_deformation(cluster_curve_top, follow_curve_top)
-        if follow_curve_btm:
-            self._create_deformation(cluster_curve_btm, follow_curve_btm)
-        
-        
-class CheekCurveRig(FaceFollowCurveRig):
-    
-    def _create_controls(self, follow_curve, cluster_curve, description = None):
-        
-        cvs = cmds.ls('%s.cv[*]' % cluster_curve, flatten = True)
-        count = len(cvs)
-        
-        controls = []
-        drivers = []
-        
-        for inc in range(0, count):
-            control, driver = self._create_inc_control(follow_curve, cluster_curve, inc,)
-            
-            controls.append(control)
-            drivers.append(driver)
-            
-        util.create_follow_fade(controls[2], [ drivers[0], drivers[1], drivers[3], drivers[4]])
-        util.create_follow_fade(drivers[2], [ drivers[0], drivers[1], drivers[3], drivers[4]])
-        util.create_follow_fade(controls[0], [ drivers[1], drivers[2], drivers[3] ])
-        util.create_follow_fade(controls[-1], [ drivers[-2], drivers[-3], drivers[-4] ])
-        
-        return controls
-    
-    def create(self):
-        super(CheekCurveRig, self).create()
-        
-        follow_curve_top, cluster_curve_top = self._rebuild_curve(self.curves[0], delete_cvs = True)
-        
-        self._create_controls(self.curves[0], cluster_curve_top)
-        
-        self._create_deformation(cluster_curve_top, follow_curve_top)
-        
-
-class BrowCurveRig(FaceFollowCurveRig):
-    
-    def __init__(self,description, side):
-        super(BrowCurveRig, self).__init__(description, side)
-        
-        self.middle_fade = False
-    
-    def _create_control_on_curve(self, follow_curve, percent, sub = False, description = None):
-        
-        position = cmds.pointOnCurve(follow_curve, top = True, pr = percent)
-        
-        control = self._create_control(description)
-        control.set_curve_type('square')
-        control.rotate_shape(90, 0, 0)
-        control.hide_scale_attributes()
-        
-        sub_control = None
-        
-        if sub:
-            sub_control = self._create_control(description, True)
-            sub_control.set_curve_type('cube')
-            sub_control.scale_shape(.8, .8, .8)
-            sub_control.hide_scale_attributes()
-            
-            cmds.parent(sub_control.get(), control.get())
-            
-            sub_control = sub_control.get()
-        
-        cmds.move(position[0], position[1], position[2], control.get())
-        
-        control_name = control.get()
-        cmds.parent(control_name, self.control_group)
-        
-        xform = util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
-        
-        util.attach_to_curve(xform, follow_curve)
-        
-        return control_name, sub_control, driver, xform
-    
-    def _create_controls(self, follow_curve, cluster_curve, description = None):
-        
-        cvs = cmds.ls('%s.cv[*]' % cluster_curve, flatten = True)
-        count = len(cvs)
-        
-        controls = []
-        drivers = []
-        
-        control, sub, driver, xform = self._create_control_on_curve(follow_curve, 0.5, False, description = 'all')
-        controls.append(control)
-        drivers.append(driver)
-        
-        for inc in range(0, count):
-            control, driver = self._create_inc_control(follow_curve, cluster_curve, inc,)
-            
-            if inc == 0:
-                sub_control = self._create_control('sub', True)
-                sub_control.set_curve_type('cube')
-                sub_control.scale_shape(.8,.8,.8)
-                sub_control.hide_scale_attributes()
-                
-                match = util.MatchSpace(control, sub_control.get())
-                match.translation_rotation()
-                cmds.parent(sub_control.get(), control)
-                
-                constraint_editor = util.ConstraintEditor()
-                constraint = constraint_editor.get_constraint(self.clusters[inc], 'pointConstraint')
-                cmds.delete(constraint)
-                
-                local, xform = util.constrain_local(sub_control.get(), self.clusters[inc])\
-                
-                cmds.parent(xform, self.local_controls[-1])
-                #cmds.pointConstraint(sub_control.get(), self.clusters[inc], mo = True)
-            
-            controls.append(control)
-            drivers.append(driver)
-            
-        if self.middle_fade:
-            util.create_follow_fade(controls[3], [drivers[1], drivers[2], drivers[4], drivers[5] ])
-            
-        util.create_follow_fade(controls[1], drivers[2:] )
-        util.create_follow_fade(controls[-1], drivers[1:-1])
-        
-        for driver in drivers[1:]:
-            util.connect_translate(controls[0], driver)
-        
-        return controls
-    
-    def set_middle_fade(self, bool_value):
-        
-        self.middle_fade = bool_value
-        
-    
-    def create(self):
-        super(BrowCurveRig, self).create()
-        
-        follow_curve_top, cluster_curve_top = self._rebuild_curve( self.curves[0], delete_cvs = True )
-        
-        self._create_controls(self.curves[0], cluster_curve_top)
-        
-        self._create_deformation(cluster_curve_top, follow_curve_top)
-          
-    
-class EyeCurveRig(FaceFollowCurveRig):
-    def __init__(self, description, side):
-        super(EyeCurveRig, self).__init__(description, side)
-        
-        self.attach_surface = None
-        self.top_eye_goal = None
-        self.btm_eye_goal = None
-        self.control_shape = 'cube'
-        
-    def _rebuild_curve(self, curve, description = None, spans = 21):
-        
-        rebuilt_curve, node = cmds.rebuildCurve( curve, 
-                                           constructionHistory = True,
-                                           replaceOriginal = False,
-                                           rebuildType = 0,
-                                           endKnots = 1,
-                                           keepRange = 0,
-                                           keepControlPoints = 0, 
-                                           keepEndPoints = 1, 
-                                           keepTangents = 0, 
-                                           spans = spans,
-                                           degree =3)
-        
-        new_curve = cmds.duplicate(rebuilt_curve, n = 'curve_%s' % self._get_name(description))[0]
-        
-        cmds.blendShape(rebuilt_curve, new_curve, w = [0,1])
-        
-        follow_curve = rebuilt_curve
-        cluster_curve = new_curve
-        
-        cmds.parent(follow_curve, self.setup_group)
-        cmds.parent(cluster_curve, self.setup_group)
-        
-        return follow_curve, cluster_curve
-        
-    def _create_cluster(self, cv_deform, cv_offset, description, follow = True):
-        
-        cluster_group = cmds.group(em = True, n = util.inc_name(self._get_name(description)))
-        cmds.parent(cluster_group, self.setup_group)
-        
-        cluster, handle = util.create_cluster(cv_deform, self._get_name(description = description))
-        self.clusters.append(handle)
-        
-        bind_pre = util.create_cluster_bindpre(cluster, handle)
-        
-        buffer = cmds.group(em = True, n = util.inc_name('buffer_%s' % handle))
-        
-        match = util.MatchSpace(handle, buffer)
-        match.translation_to_rotate_pivot()
-        
-        cmds.parent(handle, buffer)
-        cmds.parent(buffer, cluster_group)
-        
-        xform = util.create_xform_group(buffer)
-        driver3 = util.create_xform_group(buffer, 'driver3')
-        driver2 = util.create_xform_group(buffer, 'driver2')
-        driver1 = util.create_xform_group(buffer, 'driver1')
-        
-        if self.attach_surface and follow:
-            
-            surface_follow = cmds.group(em = True, n = util.inc_name('surfaceFollow_%s' % handle))
-            #surface_follow_offset = cmds.group(em = True, n = util.inc_name('surfaceFollowOffset_%s' % handle))
-            
-            cmds.parent(surface_follow, xform)
-            #cmds.parent(surface_follow_offset, xform)
-        
-            match = util.MatchSpace(handle, surface_follow)
-            match.translation_to_rotate_pivot()
-            
-            #match = util.MatchSpace(surface_follow, surface_follow_offset)
-            #match.translation_rotation()
-            
-            cmds.pointConstraint(driver3, surface_follow, mo = True)
-            cmds.geometryConstraint(self.attach_surface, surface_follow)
-            #cmds.geometryConstraint(self.attach_surface, surface_follow_offset)
-            
-            util.connect_translate(driver3, surface_follow)
-            
-            cmds.pointConstraint(surface_follow, driver2, mo = True)
-            
-            
-            #cmds.pointConstraint(xform, surface_follow_offset, mo = True)
-        
-        cmds.parent(bind_pre, xform)
-        
-        return xform, driver3, driver1
-        
-    def _create_inc_cluster(self, follow_curve, cluster_curve, offset_curve, inc, description, follow = True):
-        
-        cv_deform = '%s.cv[%s]' % (cluster_curve, inc)
-        cv_offset = '%s.cv[%s]' % (offset_curve, inc)
-        
-        xform, driver, local_driver = self._create_cluster(cv_deform, cv_offset, description, follow)
-            
-        return driver, local_driver
-
-    def _create_follow(self, source_drivers, target_drivers, percent = 0.6):
-        
-        count = len(source_drivers)
-        
-        for inc in range(0, count):
-            
-            util.connect_multiply('%s.translateX' % source_drivers[inc], '%s.translateX' % target_drivers[inc], percent, True)
-            util.connect_multiply('%s.translateY' % source_drivers[inc], '%s.translateY' % target_drivers[inc], percent, True)
-            util.connect_multiply('%s.translateZ' % source_drivers[inc], '%s.translateZ' % target_drivers[inc], percent, True)
-
-        return
-        
-    def _create_clusters(self, follow_curve, deform_curve, offset_curve, description, follow = True):
-        
-        cvs = cmds.ls('%s.cv[*]' % deform_curve, flatten = True)
-        count = len(cvs)
-        
-        drivers = []
-        local_drivers = []
-        
-        for inc in range(0, count):
-            driver, local_driver = self._create_inc_cluster(follow_curve, deform_curve, offset_curve, inc, description, follow)
-            drivers.append(driver)
-            local_drivers.append(local_driver)
-            
-        return drivers, local_drivers
-        
-    def _create_control_on_curve(self, follow_curve, percent, sub = True, description = None):
-        
-        position = cmds.pointOnCurve(follow_curve, top = True, pr = percent)
-        
-        control = self._create_control(description)
-        control.set_curve_type(self.control_shape)
-        control.hide_scale_attributes()
-        
-        sub_control = None
-        
-        if sub:
-            sub_control = self._create_control(description, True)
-            sub_control.set_curve_type(self.control_shape)
-            sub_control.scale_shape(.8, .8, .8)
-            sub_control.hide_scale_attributes()
-            
-            cmds.parent(sub_control.get(), control.get())
-            
-            sub_control = sub_control.get()
-        
-        cmds.move(position[0], position[1], position[2], control.get())
-        
-        control_name = control.get()
-        cmds.parent(control_name, self.control_group)
-        
-        util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
-        
-        return control_name, sub_control, driver
-        
-    def _create_fade(self, start_control, mid_control, end_control, drivers):
-        
-        reverse_drivers = list(drivers) 
-        reverse_drivers.reverse()
-        
-        multiply_groups = {}
-        
-        if start_control:
-            multiply_groups['side1'] = util.create_follow_fade(start_control, drivers, -1)
-        if end_control:
-            multiply_groups['side2'] = util.create_follow_fade(end_control, reverse_drivers, -1)
-        
-        if mid_control:
-            multiply_groups['sides'] = util.create_follow_fade(mid_control, drivers, -1)
-        
-        return multiply_groups
-    
-    def _get_y_intersection(self, curve, vector):
-        
-        duplicate_curve = cmds.duplicate(curve)
-        curve_line = cmds.curve( p=[(vector[0], vector[1]-100000, vector[2]), 
-                                    (vector[0],vector[1]+100000, vector[2]) ], d = 1 )
-        
-        parameter = cmds.curveIntersect(duplicate_curve, curve_line, ud = True, d = [0, 0, 1])
-        
-        if parameter:
-            parameter = parameter.split()
-            
-            parameter = float(parameter[0])
-            
-        if not parameter:
-            parameter =  util.get_closest_parameter_on_curve(curve, vector)
-            
-        cmds.delete(duplicate_curve, curve_line)
-        
-        return parameter                
-       
-    def _fix_lid_fade(self, top_curve, btm_curve, multiplies):
-
-        mid_control = multiplies[0]['source']
-        
-        control_position = cmds.xform(mid_control, q = True, ws = True, t = True)
-        control_position_y = [0, control_position[1], 0]
-        
-        parameter = self._get_y_intersection(btm_curve, control_position)
-        
-        control_at_curve_position = cmds.pointOnCurve(btm_curve, parameter = parameter)
-        control_at_curve_y = [0, control_at_curve_position[1], 0]
-        
-        total_distance = vtool.util.get_distance(control_position_y, control_at_curve_y)
-        
-        multi_count = len(multiplies)
-        
-        
-        for inc in range(0, multi_count):
-            multi = multiplies[inc]['node']
-            driver = multiplies[inc]['target']
-            
-            driver_position = cmds.xform(driver, q = True, ws = True, t = True)
-            driver_position_y = [0, driver_position[1], 0]
-            
-            parameter = self._get_y_intersection(btm_curve, driver_position)
-            
-            driver_at_curve = cmds.pointOnCurve(btm_curve, parameter = parameter)
-            driver_at_curve_y = [0, driver_at_curve[1], 0]
-            
-            driver_distance = vtool.util.get_distance(driver_position_y, driver_at_curve_y)
-            
-            value = (driver_distance/total_distance)
-        
-            cmds.setAttr('%s.input2Y' % multi, value)
-
-    def _create_controls(self, curve, sub = False):
-        
-        control_dict = {}
-        
-        start_controls = self._create_control_on_curve(curve, 0, sub = sub)
-        
-        mid_controls = self._create_control_on_curve(curve, 0.5, sub = sub)
-        
-        end_controls = self._create_control_on_curve(curve, 1, sub = sub)
-        
-        control_dict['start'] = start_controls
-        control_dict['mid'] = mid_controls
-        control_dict['end'] = end_controls
-        
-        return control_dict
-    
-    def set_top_eye_goal(self, curve):
-        self.top_eye_goal = curve
-    
-    def set_btm_eye_goal(self, curve):
-        self.btm_eye_goal = curve
-    
-    def set_attach_surface(self, surface):
-        self.attach_surface = surface
-    
-    def create(self):
-        super(EyeCurveRig, self).create()
-        
-        
-        follow_curve_top, deform_curve_top = self._rebuild_curve(self.curves[0], 'top')
-            
-        follow_curve_btm, deform_curve_btm = self._rebuild_curve(self.curves[1], 'btm')
-        
-        if cmds.objExists(self.curves[2]):
-            follow_curve_mid, deform_curve_mid = self._rebuild_curve(self.curves[2], 'mid')
-        
-        if cmds.objExists(self.curves[3]):
-            follow_curve_top_liner, deform_curve_top_liner = self._rebuild_curve(self.curves[3], 'top_liner')
-            
-        follow_curve_btm_liner, deform_curve_btm_liner = self._rebuild_curve(self.curves[4], 'btm_liner')
-        
-        top_control, top_sub_control, top_driver = self._create_control_on_curve(self.curves[0], 0.5)
-        
-        drivers_top, drivers_local_top = self._create_clusters(self.curves[0], 
-                                                               deform_curve_top,
-                                                               follow_curve_top,
-                                                               'top')
-        
-        btm_control, btm_sub_control, btm_driver = self._create_control_on_curve(self.curves[1], 0.5)
-        corner_control1, corner_sub_control1, corner_driver1 = self._create_control_on_curve(self.curves[0], 0)
-        corner_control2, corner_sub_control2, corner_driver2 = self._create_control_on_curve(self.curves[0], 1)
-        
-        if cmds.objExists(self.curves[3]):
-            top_liner_controls = self._create_controls(self.curves[3])
-            
-        btm_liner_controls = self._create_controls(self.curves[4])
-        
-        drivers_btm, drivers_local_btm = self._create_clusters(self.curves[1], 
-                                                               deform_curve_btm,
-                                                               follow_curve_btm,
-                                                               'btm')
-        
-        if cmds.objExists(self.curves[2]):
-            drivers_mid, drivers_local_mid = self._create_clusters(self.curves[2],
-                                                               deform_curve_mid,
-                                                               follow_curve_mid,
-                                                               'mid')
-        
-        if cmds.objExists(self.curves[3]):
-            drivers_liner_top, drivers_local_liner_top = self._create_clusters(self.curves[3],
-                                                                               deform_curve_top_liner,
-                                                                               follow_curve_top_liner,
-                                                                               'liner_top',
-                                                                               follow = False)
-        
-        #if cmds.objExists(self.curves[3]):
-        drivers_liner_btm, drivers_local_liner_btm = self._create_clusters(self.curves[4],
-                                                                           deform_curve_btm_liner,
-                                                                           follow_curve_btm_liner,
-                                                                           'liner_btm',
-                                                                           follow = False)
-    
-        if cmds.objExists(self.curves[2]):
-            self._create_follow(drivers_top, drivers_mid, 0.5)
-            self._create_follow(drivers_liner_top, drivers_mid, 0.225)
-        
-        top_fades = self._create_fade(corner_control1, top_control, corner_control2, drivers_top)
-        btm_fades = self._create_fade(corner_control1, btm_control, corner_control2, drivers_btm)
-
-        sub_fades_top = self._create_fade(corner_sub_control1, top_sub_control, corner_sub_control2, drivers_local_top)
-        sub_fades_btm = self._create_fade(corner_sub_control1, btm_sub_control, corner_sub_control2, drivers_local_btm)
-
-        if cmds.objExists(self.curves[3]):
-            liner_top_fades = self._create_fade(top_liner_controls['start'][0], 
-                                                top_liner_controls['mid'][0], 
-                                                top_liner_controls['end'][0],
-                                                drivers_liner_top)
-
-        liner_btm_fades = self._create_fade(btm_liner_controls['start'][0], 
-                                            btm_liner_controls['mid'][0], 
-                                            btm_liner_controls['end'][0],
-                                            drivers_liner_btm)
-        
-        if not self.top_eye_goal:
-            self.top_eye_goal = deform_curve_btm
-            
-        if not self.btm_eye_goal:
-            self.btm_eye_goal = deform_curve_top
-            
-            
-        self._fix_lid_fade(deform_curve_top, self.top_eye_goal, top_fades['sides'])
-        self._fix_lid_fade(deform_curve_top, self.top_eye_goal, sub_fades_top['sides'])
-        
-        self._fix_lid_fade(deform_curve_btm, self.btm_eye_goal, btm_fades['sides'])
-        self._fix_lid_fade(deform_curve_btm, self.btm_eye_goal, sub_fades_btm['sides'])
-        
-        if cmds.objExists(self.curves[3]):
-            self._fix_lid_fade(deform_curve_top_liner, self.top_eye_goal, liner_top_fades['sides'])
-            
-        self._fix_lid_fade(deform_curve_btm_liner, self.btm_eye_goal, liner_btm_fades['sides'])
-        
-        self._create_deformation(deform_curve_top, follow_curve_top)
-        self._create_deformation(deform_curve_btm, follow_curve_btm)
-        
-        if cmds.objExists(self.curves[2]):
-            self._create_deformation(deform_curve_mid, follow_curve_mid)
-        
-        if cmds.objExists(self.curves[3]):
-            self._create_deformation(deform_curve_top_liner, follow_curve_top_liner)
-            
-        self._create_deformation(deform_curve_btm_liner, follow_curve_btm_liner)
         
         
 class EyeRig(JointRig):
@@ -5686,650 +3584,3 @@ class JawRig(FkLocalRig):
     def set_create_jaw_slide_attribute(self, bool_value):
         self.jaw_slide_attribute = bool_value
         
-   
-class CustomCurveRig(BufferRig):
-    
-    def __init__(self, name, side):
-        super(CustomCurveRig, self).__init__(name, side)
-        self.locators = []
-        self.drivers = []   
-        self.control_shape = 'square'
-        self.surface = None 
-        
-    def _create_control_on_curve(self, curve, percent, sub = True, description = None):
-        
-        position = cmds.pointOnCurve(curve, top = True, pr = percent)
-        
-        control = self._create_control(description)
-        control.set_curve_type(self.control_shape)
-        control.hide_scale_attributes()
-        
-        sub_control = None
-        
-        if sub:
-            sub_control = self._create_control(description, True)
-            sub_control.set_curve_type(self.control_shape)
-            sub_control.scale_shape(.8, .8, .8)
-            sub_control.hide_scale_attributes()
-            
-            cmds.parent(sub_control.get(), control.get())
-            
-            sub_control = sub_control.get()
-        
-        cmds.move(position[0], position[1], position[2], control.get())
-        
-        control_name = control.get()
-        cmds.parent(control_name, self.control_group)
-        
-        util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
-        
-        return control_name, sub_control, driver
-    
-    def _create_locator(self, transform):
-        locator = cmds.spaceLocator(n = util.inc_name('locator_%s' % self._get_name()))[0]
-                    
-        util.MatchSpace(transform, locator).translation_rotation()
-        xform = util.create_xform_group(locator)
-        driver = util.create_xform_group(locator, 'driver')
-        
-        if self.surface:
-            cmds.geometryConstraint(self.surface, driver)
-        
-        return locator, driver, xform
-    
-    def add_fade_control(self, name, percent, sub = False, target_curve = None, extra_drivers = []):
-        
-        curve = util.transforms_to_curve(self.locators, 6, 'temp')
-        
-        control_name, sub_control_name, driver = self._create_control_on_curve(curve, percent, sub, name)
-        
-        cmds.delete(curve)
-        
-        drivers = self.drivers + extra_drivers
-        
-        multiplies = util.create_follow_fade(control_name, drivers, -1)
-        
-        if sub:
-            sub_multiplies = util.create_follow_fade(sub_control_name, self.locators, -1)
-        
-        
-        if target_curve:
-            util.fix_fade(target_curve, multiplies)
-            
-            if sub:
-                util.fix_fade(target_curve, sub_multiplies)
-                
-        return multiplies
-    
-        if sub:
-            return multiplies, sub_multiplies
-            
-    def insert_fade_control(self, control, sub_control = None, target_curve = None):
-        multiplies = util.create_follow_fade(control, self.drivers, -1)
-        
-        if sub_control:
-            sub_multiplies = util.create_follow_fade(sub_control, self.locators, -1)
-        
-        if target_curve:
-            util.fix_fade(target_curve, multiplies)
-            util.fix_fade(target_curve, sub_multiplies)
-           
-    def insert_follows(self, joints, percent = 0.5, create_locator = True):
-        
-        joint_count = len(joints)
-        
-        if create_locator:
-            locator_group = cmds.group(em = True, n = util.inc_name('locators_follow_%s' % self._get_name()))
-        
-        locators = []
-        xforms = []
-        
-        for inc in range(0, joint_count):
-            
-            if create_locator:
-                locator, driver, xform = self._create_locator(joints[inc])
-            
-            if not create_locator:
-                locator = joints[inc]
-                driver = cmds.listRelatives(joints[inc], p = True)[0]
-            
-            all_axis = ['X','Y','Z']
-            
-            for axis in all_axis:
-                util.connect_multiply('%s.translate%s' % (self.drivers[inc], axis), '%s.translate%s' % (driver, axis), percent, skip_attach = True)
-                
-                util.connect_multiply('%s.translate%s' % (self.locators[inc], axis), '%s.translate%s' % (locator, axis), percent, skip_attach = True)
-            
-            if create_locator:
-                cmds.parentConstraint(locator, joints[inc])
-                xforms.append(xform)
-            
-            locators.append(locator)
-            
-        if create_locator:
-            cmds.parent(xforms, locator_group)
-            cmds.parent(locator_group, self.setup_group)
-            
-        return locators
-            
-    def set_surface(self, surface):
-        self.surface = surface
-          
-    
-            
-    def create(self):        
-        BufferRig.create(self)
-        
-        locator_group = cmds.group(em = True, n = 'locators_%s' % self._get_name())
-        cmds.parent(locator_group, self.setup_group)
-        
-        for joint in self.joints:
-            
-            locator, driver, xform = self._create_locator(joint)
-            
-            self.locators.append(locator)
-            self.drivers.append(driver)
-            
-            cmds.parent(xform, locator_group)
-            
-            cmds.parentConstraint(locator, joint)
-        
-class CurveAndSurfaceRig(BufferRig):
-    
-    def __init__(self, description, side):
-        super(CurveAndSurfaceRig, self).__init__(description, side)
-        self.span_count = 4
-        self.surface = None
-        self.clusters = []
-        self.control_shape = 'square'
-        self.delete_end_cvs = True
-        self.respect_side = False
-    
-
-        
-    def _create_inc_control(self, curve, inc, sub = False, description = None, center_tolerance = 0.001):
-        
-        control = self._create_control(description, sub = sub)
-        
-        control.rotate_shape(90, 0, 0)
-        control.hide_scale_attributes()
-        
-        cluster, handle = util.create_cluster('%s.cv[%s]' % (curve, inc), self._get_name())
-        self.clusters.append(handle)
-        
-        match = util.MatchSpace(handle, control.get())
-        match.translation_to_rotate_pivot()
-        
-        control_name = control.get()
-        
-        if self.respect_side:
-            side = control.color_respect_side(sub, center_tolerance = center_tolerance)
-            
-            if side != 'C':
-                control_name = cmds.rename(control.get(), util.inc_name(control.get()[0:-1] + side))
-        
-        xform = util.create_xform_group(control_name)
-        driver = util.create_xform_group(control_name, 'driver')
-        
-        bind_pre = util.create_cluster_bindpre(cluster, handle)
-        
-        local_group, xform_group = util.constrain_local(control_name, handle, parent = True)
-        
-        local_driver = util.create_xform_group(local_group, 'driver')
-        util.connect_translate(driver, local_driver)
-        util.connect_translate(xform, xform_group)
-        
-        cmds.parent(bind_pre, xform_group)
-                
-        cmds.parent(xform, self.control_group)
-        cmds.parent(xform_group, self.setup_group)
-        
-        return control_name, driver
-        
-    def _create_inc_sub_control(self, control, curve, inc):
-        sub_control = self._create_inc_control(self.no_follow_curve, inc, sub = True)
-        sub_control = util.Control(sub_control[0])
-            
-        sub_control.scale_shape(.8,.8,.8)
-        sub_control.hide_scale_attributes()
-        
-        match = util.MatchSpace(control, sub_control.get())
-        match.translation_rotation()
-        cmds.parent(sub_control.get(), control)
-        
-    def _create_controls(self, description = None):
-        
-        cvs1 = cmds.ls('%s.cv[*]' % self.curve, flatten = True)
-        count = len(cvs1)
-        
-        controls = []
-        
-        for inc in range(0, count):
-            
-            control, driver = self._create_inc_control(self.curve, inc)
-            if self.surface:
-                self._create_inc_sub_control(control, self.curve, inc)
-            
-            if self.respect_side:
-                reverse_inc = (count-inc) -1
-                
-                if inc != reverse_inc:     
-                    control, driver = self._create_inc_control(self.curve, reverse_inc)
-                    if self.surface:
-                        self._create_inc_sub_control(control, self.curve, reverse_inc)    
-                
-                if inc == reverse_inc:
-                    break
-                
-        return controls               
-
-    def _attach_joints_to_curve(self):
-        
-        for joint in self.joints:
-            
-            follow_locator = cmds.spaceLocator(n = 'locatorFollow_%s' % joint)[0]
-            locator = cmds.spaceLocator(n = 'locatorNoFollow_%s' % joint)[0]
-            
-            xform = util.create_xform_group(locator)
-            
-            util.MatchSpace(joint, follow_locator).translation_rotation()
-            util.MatchSpace(joint, locator).translation_rotation()
-            
-            util.attach_to_curve(follow_locator, self.curve, maintain_offset = True)
-            util.attach_to_curve(locator, self.no_follow_curve, maintain_offset = True)
-            
-            if self.surface:
-                cmds.geometryConstraint(self.surface, follow_locator)
-            
-            cmds.parent(xform, follow_locator)
-            
-            cmds.pointConstraint(locator, joint)
-            
-            cmds.parent(follow_locator, self.setup_group)
-       
-    def set_surface(self, surface_name):
-        self.surface = surface_name
-    
-    def set_curve_spans(self, span_count):
-        
-        self.span_count = span_count
-        
-    def set_respect_side(self, bool_value):
-        self.respect_side = bool_value
-        
-    def set_delete_end_cvs(self, bool_value):
-        self.delete_end_cvs = bool_value
-        
-    def create(self):
-        
-        self.curve = util.transforms_to_curve(self.joints, self.span_count, self.description)
-        cmds.parent(self.curve, self.setup_group)
-        
-        if self.delete_end_cvs:
-            cvs = cmds.ls('%s.cv[*]' % self.curve, flatten = True)
-            cmds.delete(cvs[1], cvs[-2])
-        
-        self.no_follow_curve = cmds.duplicate(self.curve)[0]
-        
-        self._create_controls(self.curve)
-        
-        self._attach_joints_to_curve()
-        
-        
-
-     
-class BackLeg(BufferRig):
-
-    def __init__(self, description, side):
-        super(BackLeg, self).__init__(description, side)
-
-        self.curve_type = 'square'
-    
-
-    def _create_guide_chain(self):
-        
-        duplicate = util.DuplicateHierarchy(self.joints[0])
-        duplicate.stop_at(self.joints[-3])
-        duplicate.replace('joint', 'ikGuide')
-        self.ikGuideChain = duplicate.create()
-
-        
-        duplicate = util.DuplicateHierarchy(self.joints[-1])
-        duplicate.stop_at(self.joints[-1])
-        duplicate.replace('joint', 'ikGuide')
-        ball = duplicate.create()
-
-
-        
-        aim = cmds.aimConstraint(ball, self.ikGuideChain[-1], upVector = [0,-1,0])
-        cmds.delete(aim)
-
-        cmds.makeIdentity(self.ikGuideChain[-1], r = True, apply = True)
-
-        cmds.parent(ball, self.ikGuideChain[-1])
-        
-        self.ikGuideChain.append(ball[0])
-        
-        cmds.parent(self.ikGuideChain[0], self.setup_group)
-
-    def _create_sub_guide_chain(self):
-        
-        duplicate = util.DuplicateHierarchy(self.ikGuideChain[0])
-        duplicate.stop_at(self.ikGuideChain[-2])
-        duplicate.replace('ikGuide', 'ikGuideOffset')
-        self.offsetGuideChain = duplicate.create()
-
-        cmds.parent(self.offsetGuideChain[0], self.ikGuideChain[0])
-
-        duplicate = util.DuplicateHierarchy(self.ikGuideChain[2])
-        duplicate.stop_at(self.ikGuideChain[-1])
-        duplicate.replace('ikGuide', 'ikGuideOffsetBtm')
-        self.offsetGuideChainBtm = duplicate.create()
-
-        joint1 = self.offsetGuideChainBtm[0]
-        joint2 = self.offsetGuideChainBtm[1]
-        
-        cmds.parent(joint2, w = True)
-        cmds.parent(joint1, joint2)
-
-        self.offsetGuideChainBtm = [joint2, joint1]
-
-        cmds.parent(self.offsetGuideChainBtm[0], self.ikGuideChain[2])      
-
-    def _create_offset_chain(self):
-        duplicate = util.DuplicateHierarchy(self.joints[2])
-        duplicate.stop_at(self.joints[-2])
-        duplicate.replace('joint', 'offset1')
-        self.offset1Chain = duplicate.create()
-
-
-        joint1 = self.offset1Chain[0]
-        joint2 = self.offset1Chain[1]
-
-        cmds.parent(joint2, w = True)
-        
-        cmds.parent(joint1, joint2)
-
-    
-        self.offset1Chain = [joint2, joint1]
-
-        cmds.parent(self.offset1Chain[0], self.offsetGuideChainBtm[1])
-
-    def _create_offset_chain2(self):
-        duplicate = util.DuplicateHierarchy(self.joints[3])
-        duplicate.stop_at(self.joints[-1])
-        duplicate.replace('joint', 'offset2')
-        self.offset2Chain = duplicate.create()
-
-        joint1 = self.offset2Chain[0]
-        joint2 = self.offset2Chain[1]
-
-        cmds.parent(joint2, w = True)
-        
-        cmds.parent(joint1, joint2)
-
-    
-        self.offset2Chain = [joint2, joint1]
-        
-        cmds.parent(self.offset2Chain[0], self.offsetGuideChainBtm[1])
-
-    def _create_pole_chain(self):
-        cmds.select(cl =True)
-        joint1 = cmds.joint(n = util.inc_name( self._get_name('joint', 'poleTop') ) )
-        joint2 = cmds.joint(n = util.inc_name( self._get_name('joint', 'poleBtm') ) )
-
-        util.MatchSpace(self.buffer_joints[0], joint1).translation()
-        util.MatchSpace(self.buffer_joints[-1], joint2).translation()
-
-        ik_handle = util.IkHandle( self._get_name(description = 'pole') )
-        
-        ik_handle.set_start_joint( joint1 )
-        ik_handle.set_end_joint( joint2 )
-        ik_handle.set_solver(ik_handle.solver_sc)
-        self.ik_pole = ik_handle.create()
-
-        self.top_pole_ik = joint1
-
-        cmds.pointConstraint(self.btm_control, self.ik_pole)
-
-        cmds.parent(self.ik_pole, self.top_control)
-
-        cmds.parent(self.top_pole_ik, self.setup_group)
-        util.create_follow_group(self.top_control, self.top_pole_ik)
-        cmds.hide(self.ik_pole)
-
-        
-    def _create_ankle_offset_chain(self):
-        pass
-
-    def _duplicate_joints(self):
-        super(BackLeg, self)._duplicate_joints()
-
-        self._create_guide_chain()
-        self._create_sub_guide_chain()
-        self._create_offset_chain()
-        self._create_offset_chain2()
-
-        ik_chain = [self.offsetGuideChain[0], self.offsetGuideChain[1], self.offset1Chain[1], self.offset2Chain[1], self.ikGuideChain[-1]]
-        self._attach_ik_joints(ik_chain, self.buffer_joints)
-
-    def _attach_ik_joints(self, source_chain, target_chain):
-        for inc in range( 0, len(source_chain) ):
-            source = source_chain[inc]
-            target = target_chain[inc]
-            
-            cmds.parentConstraint(source, target, mo = True)
-            util.connect_scale(source, target)
-
-    def _create_top_control(self):
-        
-        control = self._create_control(description = 'top')
-        control.hide_scale_and_visibility_attributes()
-        
-        control.set_curve_type(self.curve_type)            
-        control.scale_shape(2, 2, 2)
-        
-        self.top_control = control.get()
-
-        util.MatchSpace(self.ikGuideChain[0], self.top_control).translation_rotation()
-
-        cmds.parentConstraint(self.top_control, self.ikGuideChain[0])
-
-        xform = util.create_xform_group(self.top_control)
-        cmds.parent(xform, self.control_group)
-
-    def _create_btm_control(self):
-        control = self._create_control(description = 'btm')
-        control.hide_scale_and_visibility_attributes()
-        
-        control.set_curve_type(self.curve_type)
-        control.scale_shape(2, 2, 2)
-        
-        self.btm_control = control.get()
-
-        util.MatchSpace(self.ikGuideChain[-1], self.btm_control).translation_rotation()
-
-        cmds.orientConstraint(self.btm_control, self.ikGuideChain[-1])
-
-        xform = util.create_xform_group(self.btm_control)
-        cmds.parent(xform, self.control_group)
-
-    def _create_top_offset_control(self):
-
-        control = self._create_control(description = 'top_offset')
-        control.hide_scale_and_visibility_attributes()
-        control.set_curve_type(self.curve_type)
-
-        self.top_offset = control.get()
-
-        util.MatchSpace(self.ikGuideChain[2], self.top_offset).translation_rotation()
-
-        xform_offset = util.create_xform_group(self.top_offset)
-
-        follow = util.create_follow_group(self.ikGuideChain[2], xform_offset)
-
-        cmds.parent(follow, self.top_control)
-        
-        cmds.parent(self.offsetGuideChainBtm[0], self.ikGuideChain[-1])
-
-    def _create_btm_offset_control(self):
-
-        control = self._create_control(description = 'btm_offset')
-        control.hide_scale_and_visibility_attributes()
-        control.scale_shape(2, 2, 2)
-        control.set_curve_type(self.curve_type)
-        
-        self.btm_offset = control.get()
-
-        util.MatchSpace(self.offset1Chain[0], self.btm_offset).translation()
-
-        xform = util.create_xform_group(self.btm_offset)
-        cmds.parent(xform, self.control_group)
-
-        util.create_follow_group(self.offsetGuideChainBtm[1], xform)
-
-        cmds.parentConstraint(self.ikGuideChain[-1], self.offset2Chain[0], mo = True)
-
-        cmds.parentConstraint(self.offset2Chain[-1], self.offset1Chain[0], mo = True)
-
-    def _create_pole_vector(self):
-
-        if self.side == 'L':
-            self.pole_offset = -1
-        if self.side == 'R':
-            self.pole_offset = 1      
-        
-        control = self._create_control('POLE')
-        control.hide_scale_and_visibility_attributes()
-        control.set_curve_type('cube')
-        self.pole_control = control.get()
-        
-        pole_var = util.MayaEnumVariable('POLE_VECTOR')
-        pole_var.create(self.btm_control)
-        
-        pole_vis = util.MayaNumberVariable('poleVisibility')
-        pole_vis.set_variable_type(pole_vis.TYPE_BOOL)
-        pole_vis.create(self.btm_control)
-        
-        twist_var = util.MayaNumberVariable('twist')
-        twist_var.create(self.btm_control)
-        
-        if self.side == 'L':
-            twist_var.connect_out('%s.twist' % self.main_ik)
-            
-        if self.side == 'R':
-            util.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.main_ik, -1)
-        
-        pole_joints = [self.ikGuideChain[0], self.ikGuideChain[1], self.ikGuideChain[2]]
-
-      
-        position = util.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
-
-        cmds.move(position[0], position[1], position[2], control.get())
-
-        cmds.poleVectorConstraint(control.get(), self.main_ik)
-        
-        xform_group = util.create_xform_group( control.get() )
-        
-        name = self._get_name()
-        
-        rig_line = util.RiggedLine(pole_joints[1], control.get(), name).create()
-        cmds.parent(rig_line, self.control_group)
-        
-        pole_vis.connect_out('%s.visibility' % xform_group)
-        pole_vis.connect_out('%s.visibility' % rig_line)
-        
-        self.pole_vector_xform = xform_group
-
-        cmds.parent(xform_group, self.control_group)
-
-        util.create_follow_group(self.top_pole_ik, xform_group)
-        
-    def _create_ik_guide_handle(self):
-        
-        ik_handle = util.IkHandle( self._get_name() )
-        
-        ik_handle.set_start_joint( self.ikGuideChain[0] )
-        ik_handle.set_end_joint( self.ikGuideChain[-1] )
-        ik_handle.set_solver(ik_handle.solver_rp)
-        self.ik_handle = ik_handle.create()
-        self.main_ik = self.ik_handle
-        
-        xform_ik_handle = util.create_xform_group(self.ik_handle)
-        cmds.parent(xform_ik_handle, self.setup_group)
-
-        cmds.pointConstraint(self.btm_control, self.ik_handle)
-        
-
-    def _create_ik_sub_guide_handle(self):
-
-        ik_handle = util.IkHandle( self._get_name('sub') )
-        
-        ik_handle.set_start_joint( self.offsetGuideChain[0] )
-        ik_handle.set_end_joint( self.offsetGuideChain[-1] )
-        ik_handle.set_solver(ik_handle.solver_sc)
-        self.ik_handle = ik_handle.create()
-        
-        xform_ik_handle = util.create_xform_group(self.ik_handle)
-
-        cmds.parent(xform_ik_handle, self.offset1Chain[-1])
-         
-
-    def _create_ik_sub_guide_btm_handle(self):
-        ik_handle = util.IkHandle( self._get_name('sub_btm') )
-        
-        ik_handle.set_start_joint( self.offsetGuideChainBtm[0] )
-        ik_handle.set_end_joint( self.offsetGuideChainBtm[-1] )
-        ik_handle.set_solver(ik_handle.solver_sc)
-        self.ik_handle = ik_handle.create()
-        
-        xform_ik_handle = util.create_xform_group(self.ik_handle)
-
-        cmds.parent(xform_ik_handle, self.top_offset)        
-
-    def _create_ik_offset_handle(self):
-        ik_handle = util.IkHandle( self._get_name('offset') )
-        
-        ik_handle.set_start_joint( self.offset1Chain[0] )
-        ik_handle.set_end_joint( self.offset1Chain[-1] )
-        ik_handle.set_solver(ik_handle.solver_sc)
-        self.ik_handle = ik_handle.create()
-        
-        xform_ik_handle = util.create_xform_group(self.ik_handle)
-
-        cmds.parent(xform_ik_handle, self.offsetGuideChainBtm[0])          
-
-    def _create_ik_offset2_handle(self):
-        ik_handle = util.IkHandle( self._get_name('offset') )
-        
-        ik_handle.set_start_joint( self.offset2Chain[0] )
-        ik_handle.set_end_joint( self.offset2Chain[-1] )
-        ik_handle.set_solver(ik_handle.solver_sc)
-        self.ik_handle = ik_handle.create()
-        
-        xform_ik_handle = util.create_xform_group(self.ik_handle)
-
-        cmds.parent(xform_ik_handle, self.btm_offset) 
-        
-        cmds.refresh()
-
-    def create(self):
-        super(BackLeg, self).create()
-                
-        self._create_top_control()
-        self._create_btm_control()
-        self._create_top_offset_control()
-        self._create_btm_offset_control()
-
-
-        self._create_ik_guide_handle()
-        self._create_ik_sub_guide_handle()
-        self._create_ik_sub_guide_btm_handle()
-        self._create_ik_offset_handle()
-        self._create_ik_offset2_handle()
-
-        self._create_pole_chain()
-
-        self._create_pole_vector()
-

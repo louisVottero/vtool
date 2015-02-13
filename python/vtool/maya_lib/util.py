@@ -12,9 +12,7 @@ import maya.mel as mel
 
 import vtool.util
 
-
 import curve
-
 
 #--- decorators
 
@@ -2252,39 +2250,22 @@ ControlRig = rigs.ControlRig
 GroundRig = rigs.GroundRig
 FkRig = rigs.FkRig
 FkLocalRig = rigs.FkLocalRig
-FkWithSubControlRig = rigs.FkWithSubControlRig
 FkScaleRig = rigs.FkScaleRig
 FkCurlNoScaleRig = rigs.FkCurlNoScaleRig
 FkCurlRig = rigs.FkCurlRig
-SimpleSplineIkRig = rigs.SimpleSplineIkRig
 SimpleFkCurveRig = rigs.SimpleFkCurveRig
 FkCurveRig = rigs.FkCurveRig
 FkCurveLocalRig = rigs.FkCurveLocalRig
-PointingFkCurveRig = rigs.PointingFkCurveRig
 NeckRig = rigs.NeckRig
 IkSplineNubRig = rigs.IkSplineNubRig
 IkAppendageRig = rigs.IkAppendageRig
 RopeRig = rigs.RopeRig
 TweakCurveRig = rigs.TweakCurveRig
 IkLegRig = rigs.IkLegRig
-IkQuadrupedBackLegRig = rigs.IkQuadrupedBackLegRig
-FkQuadrupedSpineRig = rigs.FkQuadrupedSpineRig
-IkQuadrupedScapula = rigs.IkQuadrupedScapula
 RollRig = rigs.RollRig
 FootRollRig = rigs.FootRollRig
-QuadFootRollRig = rigs.QuadFootRollRig
-QuadBackFootRollRig = rigs.QuadBackFootRollRig
-FaceFollowCurveRig = rigs.FaceFollowCurveRig
-SingleControlFaceCurveRig = rigs.SingleControlFaceCurveRig
-SimpleFaceCurveRig = rigs.SimpleFaceCurveRig
-MouthCurveRig = rigs.MouthCurveRig
-CheekCurveRig = rigs.CheekCurveRig
-BrowCurveRig = rigs.BrowCurveRig
-EyeCurveRig = rigs.EyeCurveRig
 EyeRig = rigs.EyeRig
 JawRig = rigs.JawRig
-CustomCurveRig = rigs.CustomCurveRig
-CurveAndSurfaceRig = rigs.CurveAndSurfaceRig
       
 #--- Misc Rig
 
@@ -3371,15 +3352,7 @@ class StoreControlData(StoreData):
                 cmds.setAttr('%s.rotateX' % other_control, orig_value_x)
                 cmds.setAttr('%s.rotateY' % other_control, -1*orig_value_y)
                 cmds.setAttr('%s.rotateZ' % other_control, -1*orig_value_z)
-                
-                #cmds.setAttr('%s.offsetZ' % const2, -180)
-            
-            
-            
-            
-            
-            
-            
+                            
     def eval_multi_transform_data(self, data_list):
         
         controls = {}
@@ -3545,8 +3518,6 @@ class Connections(object):
         
     def _store_output_connections(self, outputs):
         
-        #stores [source connection, destination_node, destination_node_attribute]
-
         output_values = []
         
         for inc in range(0, len(outputs), 2):
@@ -3595,9 +3566,7 @@ class Connections(object):
             self._store_input_connections(inputs)
         if outputs:
             self._store_output_connections(outputs)
-        
-        
-        
+            
         self.connections = inputs + outputs
         
         self.input_count = self._get_input_count()
@@ -3903,9 +3872,7 @@ class SuspensionRig(BufferRig):
         super(SuspensionRig, self).create()
         
         self._create_joint_section(self.buffer_joints[0], self.buffer_joints[1])
-       
         
-                
 #--- deformation
 
 
@@ -4409,8 +4376,6 @@ class TransferWeight(object):
     @undo_off
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh = None, percent =1):
         
-        #cmds.undoInfo(state = False)
-        
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         source_value_map = get_skin_weights(source_skin_cluster)
         destination_value_map = get_skin_weights(self.skin_cluster)
@@ -4493,8 +4458,6 @@ class TransferWeight(object):
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         
         bar.end()
-        
-        #cmds.undoInfo(state = True)
          
     @undo_off  
     def transfer_joints_to_new_joints(self, joints, new_joints, falloff = 1, power = 4, weight_percent_change = 1):
@@ -4668,36 +4631,7 @@ class TransferWeight(object):
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
             
         bar.end()
-        
-        
-    """
-    def transfer_joints_into_joint(self, joints, joint, source_mesh):
-        
-        value_map = get_skin_weights(self.skin_cluster)
-        influence_values = {}
-
-        source_joint_weights = []
-
-        for joint in joints:
-            
-            index = get_index_at_skin_influence(joint,self.skin_cluster)
-            
-            if index == None:
-                continue
-            
-            if not value_map.has_key(index):
-                continue
-            
-            influence_values[index] = value_map[index]
-            source_joint_weights.append( value_map[index] )
-            
-        if not source_joint_weights:
-            cmds.undoInfo(state = True)
-            return
-    """ 
-        
                 
-        
 class MayaWrap(object):
     
     def __init__(self, mesh):
@@ -4723,14 +4657,11 @@ class MayaWrap(object):
     def _add_driver_meshes(self):
         inc = 0
         
-        
-        
         for mesh in self.driver_meshes:
             self._connect_driver_mesh(mesh, inc)
             inc+=1
         
     def _connect_driver_mesh(self, mesh, inc):
-        
         
         base = cmds.duplicate(mesh, n = 'wrapBase_%s' % mesh)[0]
         
@@ -4751,8 +4682,6 @@ class MayaWrap(object):
             
         if not cmds.objExists('%s.smoothness' % mesh):    
             cmds.addAttr(mesh, at = 'short', sn = 'smt', ln = 'smoothness', dv = 0.0, min = 0.0, k = True)
-            
-        #cmds.addAttr(mesh, at = 'short', sn = 'wsm', ln = 'wrapSamples', dv = 10, min = 1)
         
         cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc) )
         cmds.connectAttr('%s.inflType' % mesh, '%s.inflType[%s]' % (self.wrap, inc) )
@@ -4954,10 +4883,6 @@ class PoseManager(object):
             selection = cmds.ls(sl = True, l = True)
         if meshes:
             selection = meshes
-        
-        
-        
-        #added = False
         
         pose = PoseControl()
         pose.set_pose(pose_name)
@@ -5318,23 +5243,7 @@ class BasePoseControl(object):
         cmds.setAttr('%s.eccentricity' % shader_name, .3 )
 
     def _get_blendshape(self, mesh):
-        #mesh = self.get_mesh(self.mesh_index)
-        #target_mesh = self.get_target_mesh(mesh)
         
-        
-        
-        """
-        outputs = get_attribute_outputs('%s.weight' % self.pose_control)
-        
-        if outputs:
-            for output in outputs:
-                if cmds.nodeType(output) == 'blendShape':
-                    split_output = output.split('.')
-                    
-                    return split_output[0]
-        
-        if not outputs:
-        """
         return find_deformer_by_type(mesh, 'blendShape')
 
     def _get_current_mesh(self, mesh_index):
@@ -5351,8 +5260,6 @@ class BasePoseControl(object):
         return mesh
 
     def set_pose(self, pose_name):
-        
-        
         
         if not cmds.objExists('%s.description' % pose_name):
             return
@@ -5648,12 +5555,6 @@ class BasePoseControl(object):
             cmds.delete(temp_blend, ch = True)
             cmds.delete(temp_dup)
             
-            #cmds.connectAttr('%s.outMesh' % dup, '%s.inMesh' % deformed_mesh)
-            
-            
-            
-            #cmds.disconnectAttr('%s.outMesh' % dup, '%s.inMesh' % deformed_mesh)
-            
             blend.set_envelope(1)  
             
         self.create_blend()  
@@ -5669,8 +5570,6 @@ class BasePoseControl(object):
         
         store = StoreControlData(pose_control)
         store.set_data()
-        
-        
         
         return pose_control
         
@@ -6179,9 +6078,6 @@ class PoseControl(BasePoseControl):
     
     def visibility_off(self, mesh = None, view_only = False):
         super(PoseControl, self).visibility_off(mesh, view_only)
-        
-        #if not view_only:
-        #    self.mirror()
     
     def mirror(self):
         
