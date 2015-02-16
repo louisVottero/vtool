@@ -3280,7 +3280,7 @@ class StoreControlData(StoreData):
         data = self._get_control_data()
         super(StoreControlData, self).set_data(data)   
         self.data.set_locked(True)
-            
+        
     def eval_data(self, return_only = False):
         data = super(StoreControlData, self).eval_data()
         
@@ -3319,8 +3319,7 @@ class StoreControlData(StoreData):
             
             if not control.endswith('_L'):
                 continue               
-    
-            #temp_group = cmds.group(em = True, n = inc_name('temp_%s' % control))
+            
             temp_group = cmds.duplicate(control, n = 'temp_%s' % control, po = True)[0]
             
             MatchSpace(control, temp_group).translation_rotation()
@@ -3328,8 +3327,6 @@ class StoreControlData(StoreData):
             cmds.parent(temp_group, parent_group)
             
             cmds.setAttr('%s.scaleX' % parent_group, -1)
-            
-            #temp_xform = create_xform_group(temp_group, use_duplicate = True)
             
             orig_value_x = cmds.getAttr('%s.rotateX' % control)
             orig_value_y = cmds.getAttr('%s.rotateY' % control)
@@ -3339,7 +3336,6 @@ class StoreControlData(StoreData):
             
             const1 = cmds.pointConstraint(temp_group, other_control)[0]
             const2 = cmds.orientConstraint(temp_group, other_control)[0]
-            #const = cmds.parentConstraint(temp_group, other_control)
             
             value_x = cmds.getAttr('%s.rotateX' % other_control)
             value_y = cmds.getAttr('%s.rotateY' % other_control)
@@ -7261,13 +7257,13 @@ def create_distance_falloff(source_transform, source_local_vector = [1,0,0], tar
     cmds.parent(follow_locator, source_transform)
     cmds.move(source_local_vector[0], source_local_vector[1], source_local_vector[2], follow_locator, r = True, os = True)
     
-    set_color([follow_locator], 6)
+    set_color(follow_locator, 6)
     
     target_locator = cmds.spaceLocator(n = 'target_%s' % distance_between)[0]
     match = MatchSpace(source_transform, target_locator)
     match.translation_rotation()
     
-    set_color([target_locator], 13)
+    set_color(target_locator, 13)
 
     parent = cmds.listRelatives(source_transform, p = True)
     
@@ -9946,6 +9942,8 @@ def transfer_output_connections(source_node, target_node):
         cmds.connectAttr(new_attr, outputs[inc+1], f = True)
 
 def set_color(nodes, color):
+    
+    vtool.util.convert_to_sequence(nodes)
     
     for node in nodes:
         overrideEnabled = '%s.overrideEnabled' % node

@@ -27,9 +27,13 @@ class Rig(object):
         
         self._create_default_groups()
         
-        self.control_shape = self._define_control_shape()
+        self.control_shape = 'circle'
+        self.control_size = 1
+        self.sub_control_size = 0.8
         
         self.controls = []
+        self.sub_controls = []
+        self.control_dict = {}
     
     def _create_group(self,  prefix = None, description = None):
         
@@ -68,10 +72,7 @@ class Rig(object):
             
         if parent != custom_parent:
             cmds.parent(group, custom_parent)
-        
-    def _define_control_shape(self):
-        return 'circle'
-        
+            
     def _get_name(self, prefix = None, description = None):
         
         name_list = [prefix,self.description, description, '1', self.side]
@@ -102,23 +103,39 @@ class Rig(object):
         
     def _create_control(self, description = None, sub = False):
         
-        sub_value = False
+        control = util.Control( self._get_control_name(description, sub) )
         
-        if sub:
-            sub_value = True
-        
-        control = util.Control( self._get_control_name(description, sub_value) )
-        
-        control.color( util.get_color_of_side( self.side , sub_value)  )
+        control.color( util.get_color_of_side( self.side , sub)  )
         control.hide_visibility_attribute()
         control.set_curve_type(self.control_shape)
         
-        self.controls.append(control.get())
+        if not sub:
+            control.scale_shape(self.control_size, 
+                                self.control_size, 
+                                self.control_size)
+        if sub:
+            control.scale_shape(self.sub_control_size, 
+                                self.sub_control_size, 
+                                self.sub_control_size)
+        
+        if not sub:
+            self.controls.append(control.get())
+        
+        if sub:
+            self.sub_controls.append(control.get())
+        
+        self.control_dict[control.get()] = {}
         
         return control
             
     def set_control_shape(self, shape_name):
         self.control_shape = shape_name
+        
+    def set_control_size(self, float_value):
+        self.control_size = float_value
+        
+    def set_sub_control_size(self, float_value):
+        self.sub_control_size = float_value
                 
     def set_control_parent(self, parent_transform):
         
@@ -132,6 +149,26 @@ class Rig(object):
         
         self._parent_custom_default_group(self.setup_group, self.setup_parent)
         
+    def get_control_entries(self, title):
+        
+        entries = []
+        
+        for control in self.controls:
+            if self.control_dict[control].has_key(title):
+                entries.append(self.control_dict[control][title])
+        
+        return entries
+        
+    def get_sub_control_entries(self, title):
+        
+        entries = []
+        
+        for control in self.sub_controls:
+            if self.control_dict[control].has_key(title):
+                entries.append(self.control_dict[control][title])
+        
+        return entries
+        
     def create(self):
         
         self._parent_default_groups()
@@ -144,53 +181,7 @@ class JointRig(Rig):
         self.joints = []
         
         self.attach_joints = True
-    
-    """
-    def _hook_scale_constraint(self, node):
         
-        constraint_editor = util.ConstraintEditor()
-        scale_constraint = constraint_editor.get_constraint(node, constraint_editor.constraint_scale)
-        
-        if not scale_constraint:
-            return
-        
-        weight_count = constraint_editor.get_weight_count(scale_constraint)
-        
-        cmds.connectAttr('%s.parentInverseMatrix' % node, '%s.constraintParentInverseMatrix' % scale_constraint)
-        
-        for inc in range(0, weight_count):
-            
-            target = util.get_attribute_input('%s.target[%s].targetScale' % (scale_constraint, inc), True)
-            
-            cmds.connectAttr('%s.parentInverseMatrix' % target, '%s.target[%s].targetParentMatrix' % (scale_constraint, inc) )
-
-    def _unhook_scale_constraint(self, scale_constraint):
-        constraint_editor = util.ConstraintEditor()
-        
-        weight_count = constraint_editor.get_weight_count(scale_constraint)
-        util.disconnect_attribute('%s.constraintParentInverseMatrix' % scale_constraint)
-        
-        for inc in range(0, weight_count):
-            util.disconnect_attribute('%s.target[%s].targetParentMatrix' % (scale_constraint, inc))
-
-    def _attach_joint(self, source_joint, target_joint):
-        
-        if not self.attach_joints:
-            return
-        
-        self._hook_scale_constraint(target_joint)
-        
-        parent_constraint = cmds.parentConstraint(source_joint, target_joint, mo = True)[0]
-        
-        scale_constraint = cmds.scaleConstraint(source_joint, target_joint)[0]
-        
-        constraint_editor = util.ConstraintEditor()
-        constraint_editor.create_switch(self.joints[0], 'switch', parent_constraint)
-        constraint_editor.create_switch(self.joints[0], 'switch', scale_constraint)
-        
-        self._unhook_scale_constraint(scale_constraint)
-    """
-    
     def _attach_joints(self, source_chain, target_chain):
         
         if not self.attach_joints:
@@ -263,17 +254,28 @@ class BufferRig(JointRig):
         if self.create_buffer_joints:
             self._attach_joints(self.buffer_joints, self.joints)
 
+
+class CurveRig(Rig):
+    def __init__(self, description, side):
+        super(CurveRig, self).__init__(description, side)
+        
+        self.curves = None
+    
+    def set_curve(self, curve_list):
+        
+        self.curves = curve_list
+
+#--- Rigs
+
 class SparseRig(JointRig):
     
     def __init__(self, description, side):
         super(SparseRig, self).__init__(description, side)
+        
         self.control_shape = 'cube'
         self.is_scalable = False
         self.respect_side = False
         self.respect_side_tolerance = 0.001
-        
-    def set_control_shape(self, name):
-        self.control_shape = name
         
     def set_scalable(self, bool_value):
         self.is_scalable = bool_value
@@ -289,8 +291,6 @@ class SparseRig(JointRig):
         for joint in self.joints:
             
             control = self._create_control()
-            control.hide_visibility_attribute()
-            control.set_curve_type(self.control_shape)
         
             control_name = control.get()
         
@@ -303,9 +303,9 @@ class SparseRig(JointRig):
                 if side != 'C':
                     control_name = cmds.rename(control_name, util.inc_name(control_name[0:-1] + side))
                     control = util.Control(control_name)
-                        
+              
             xform = util.create_xform_group(control.get())
-            util.create_xform_group(control.get(), 'driver')
+            driver = util.create_xform_group(control.get(), 'driver')
             
             cmds.parentConstraint(control_name, joint)
 
@@ -315,18 +315,9 @@ class SparseRig(JointRig):
                 control.hide_scale_attributes()
             
             cmds.parent(xform, self.control_group)
-
-class CurveRig(Rig):
-    def __init__(self, description, side):
-        super(CurveRig, self).__init__(description, side)
-        
-        self.curves = None
-    
-    def set_curve(self, curve_list):
-        
-        self.curves = curve_list
-
-#--- Rigs
+            
+            self.control_dict[control_name]['xform'] = xform
+            self.control_dict[control_name]['driver'] = driver
 
 class SparseLocalRig(SparseRig):
 
@@ -342,7 +333,6 @@ class SparseLocalRig(SparseRig):
         self.local_constraint = bool_value
 
     def set_control_to_pivot(self, bool_value):
-        
         self.control_to_pivot = bool_value
 
     def set_local_parent(self, local_parent):
@@ -357,18 +347,15 @@ class SparseLocalRig(SparseRig):
             cmds.parent(self.local_xform, self.setup_group)
         
         for joint in self.joints:
-            control = self._create_control()
-            control.hide_visibility_attribute()
             
-            control.set_curve_type(self.control_shape)
+            control = self._create_control()
             
             control_name = control.get()
             
             if not self.control_to_pivot:
                 match = util.MatchSpace(joint, control_name)
                 match.translation_rotation()
-            if self.control_to_pivot:
-                
+            if self.control_to_pivot:    
                 util.MatchSpace(joint, control_name).translation_to_rotate_pivot()
             
             if self.respect_side:
@@ -410,11 +397,13 @@ class SparseLocalRig(SparseRig):
                 
             util.connect_scale(control.get(), joint)
             
-            
             cmds.parent(xform, self.control_group)
             
         if self.local_parent:
             util.create_follow_group(self.local_parent, self.local_xform)
+            
+        self.control_dict[control_name]['xform'] = xform
+        self.control_dict[control_name]['driver'] = driver
             
 class ControlRig(Rig):
     
@@ -499,6 +488,8 @@ class GroundRig(JointRig):
     def set_joints(self, joints = None):
         super(GroundRig, self).set_joints(joints)
 
+#--- FK
+
 class FkRig(BufferRig):
     #CBB
     
@@ -506,14 +497,12 @@ class FkRig(BufferRig):
         super(FkRig, self).__init__(name, side)
         self.last_control = ''
         self.control = ''
-        self.controls = []
-        self.drivers = []
+        
         self.current_xform_group = ''
         self.control_size = 3
         
-        self.control_shape = None
-        
         self.transform_list = []
+        self.drivers = []
         self.current_increment = None
         
         self.use_joints = False
@@ -529,17 +518,18 @@ class FkRig(BufferRig):
         
         self.control = super(FkRig, self)._create_control(sub = sub)
         
-        self.control.scale_shape(self.control_size,self.control_size,self.control_size)
-
-        self.control.hide_scale_and_visibility_attributes()
+        self.control.hide_scale_attributes()
         
         if self.use_joints:
             self.control.set_to_joint()
         
-        self.current_xform_group = util.create_xform_group(self.control.get())
+        xform = util.create_xform_group(self.control.get())
         driver = util.create_xform_group(self.control.get(), 'driver')
         
-        #self.controls.append( self.control )
+        self.current_xform_group = xform
+        self.control_dict[self.control.get()]['xform'] = self.current_xform_group
+        self.control_dict[self.control.get()]['driver'] = driver
+        
         self.drivers.append(driver)
         self.control = self.control.get()
 
@@ -572,7 +562,7 @@ class FkRig(BufferRig):
     
     def _all_increments(self, control, current_transform):
         
-        match = util.MatchSpace(current_transform, self.current_xform_group)
+        match = util.MatchSpace(current_transform, self.control_dict[control]['xform'])
         
         if self.match_to_rotation:
             match.translation_rotation()
@@ -582,7 +572,7 @@ class FkRig(BufferRig):
         
     def _first_increment(self, control, current_transform):
         
-        cmds.parent(self.current_xform_group, self.control_group)
+        cmds.parent(self.control_dict[control]['xform'], self.control_group)
         self._attach(control, current_transform)
     
     def _last_increment(self, control, current_transform):
@@ -591,8 +581,7 @@ class FkRig(BufferRig):
     def _increment_greater_than_zero(self, control, current_transform):
         
         self._attach(control, current_transform)
-        
-        cmds.parent(self.current_xform_group, self.last_control)
+        cmds.parent(self.control_dict[control]['xform'], self.last_control)
     
     def _increment_less_than_last(self, control, current_transform):
         return
@@ -621,17 +610,18 @@ class FkRig(BufferRig):
         cmds.parentConstraint(source_transform, target_transform, mo = True)        
 
     def set_parent(self, parent):
+        #CBB this needs to be replaced with self.set_control_parent
+        
         self.parent = parent
-
-    
-    def set_control_size(self, value):
-        self.control_size = value
         
     def set_match_to_rotation(self, bool_value):
         self.match_to_rotation = bool_value
     
     def get_drivers(self):
-        return self.drivers
+        
+        drivers = self.get_control_entries('driver')
+            
+        return drivers
     
     def set_use_joints(self, bool_value):
         
@@ -1627,6 +1617,8 @@ class FkCurveLocalRig(FkCurveRig):
                 cmds.parent(rivet, self.setup_group)
         
         cmds.delete(self.orig_curve) 
+
+#---IK
 
 class IkSplineNubRig(BufferRig):
     
