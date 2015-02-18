@@ -410,6 +410,8 @@ class ControlRig(Rig):
     def __init__(self, name, side):
         super(ControlRig, self).__init__(name,side)
         
+        
+        
         self.transforms = None
         self.control_count = 1
         self.control_shape_types = {}
@@ -531,7 +533,7 @@ class FkRig(BufferRig):
         self.control_dict[self.control.get()]['driver'] = driver
         
         self.drivers.append(driver)
-        self.control = self.control.get()
+        #self.control = self.control.get()
 
         return self.control
     
@@ -562,6 +564,9 @@ class FkRig(BufferRig):
     
     def _all_increments(self, control, current_transform):
         
+                
+        xform = self.control_dict[control]['xform']
+        
         match = util.MatchSpace(current_transform, self.control_dict[control]['xform'])
         
         if self.match_to_rotation:
@@ -581,7 +586,7 @@ class FkRig(BufferRig):
     def _increment_greater_than_zero(self, control, current_transform):
         
         self._attach(control, current_transform)
-        cmds.parent(self.control_dict[control]['xform'], self.last_control)
+        cmds.parent(self.control_dict[control]['xform'], self.last_control.get())
     
     def _increment_less_than_last(self, control, current_transform):
         return
@@ -600,6 +605,8 @@ class FkRig(BufferRig):
             self.current_increment = inc
             
             control = self._create_control()
+            
+            control = control.get()
             
             self._edit_at_increment(control, transforms)
 
@@ -659,16 +666,14 @@ class FkLocalRig(FkRig):
             cmds.parent(follow, self.control_group)
         
         self.local_parent = local_group
-        
-        
+            
         return local_group, local_xform
 
     def _create_control(self, sub = False):
         
         self.last_control = self.control
         
-        self.control = super(FkRig, self)._create_control(sub = sub)
-        self.control.scale_shape(self.control_size,self.control_size,self.control_size)
+        self.control = super(FkLocalRig, self)._create_control(sub = sub)
         
         if not self.rig_scale:
             self.control.hide_scale_and_visibility_attributes()
@@ -679,11 +684,8 @@ class FkLocalRig(FkRig):
         if self.control_shape:
             self.control.set_curve_type(self.control_shape)
         
-        self.current_xform_group = util.create_xform_group(self.control.get())
-        driver = util.create_xform_group(self.control.get(), 'driver')
-        
-        self.drivers.append(driver)
-        self.control = self.control.get()
+        #self.drivers.append(driver)
+        #self.control = self.control.get()
         
         return self.control
 
@@ -710,9 +712,7 @@ class FkScaleRig(FkRig):
         self.current_xform_group = '' 
           
     def _create_control(self, sub = False): 
-        super(FkScaleRig, self)._create_control(sub) 
-          
-        control = util.Control(self.control) 
+        control = super(FkScaleRig, self)._create_control(sub) 
   
         control.show_scale_attributes() 
         cmds.setAttr( '%s.overrideEnabled' % control.get() , 1 ) 
@@ -720,7 +720,7 @@ class FkScaleRig(FkRig):
         if self.control_shape: 
             control.set_curve_type(self.control_shape) 
           
-        return self.control 
+        return self.control
           
     def _edit_at_increment(self, control, transform_list): 
         self.transform_list = transform_list 
@@ -764,7 +764,7 @@ class FkScaleRig(FkRig):
           
         cmds.setAttr('%s.radius' % buffer_joint, 0) 
           
-        cmds.connectAttr('%s.scale' % self.last_control, '%s.inverseScale' % buffer_joint) 
+        cmds.connectAttr('%s.scale' % self.last_control.get(), '%s.inverseScale' % buffer_joint) 
           
           
         match = util.MatchSpace(control, buffer_joint) 
@@ -777,8 +777,7 @@ class FkScaleRig(FkRig):
         cmds.pointConstraint(control, current_transform) 
         util.connect_rotate(control, current_transform) 
            
-        drivers = self.drivers[self.current_increment]
-        drivers = vtool.util.convert_to_sequence(drivers)
+        drivers = self.get_control_entries('driver')
         
         for driver in drivers:
             util.connect_rotate(driver, current_transform)
@@ -787,7 +786,7 @@ class FkScaleRig(FkRig):
           
         cmds.parent(self.current_xform_group, buffer_joint) 
           
-        cmds.parent(buffer_joint, self.last_control) 
+        cmds.parent(buffer_joint, self.last_control.get()) 
         
 class FkCurlNoScaleRig(FkRig):
     def __init__(self, description, side):
@@ -806,13 +805,14 @@ class FkCurlNoScaleRig(FkRig):
             return self.control
         
         if not self.attribute_control:
-            self.attribute_control = control
+            self.attribute_control = control.get()
             
         if not cmds.objExists('%s.CURL' % self.attribute_control):
             title = util.MayaEnumVariable('CURL')
             title.create(self.attribute_control)
         
-        driver = util.create_xform_group(control, 'driver2')
+        driver = util.create_xform_group(control.get(), 'driver2')
+        self.control_dict[control.get()]['driver2'] = driver
         
         other_driver = self.drivers[-1]
         self.drivers[-1] = [other_driver, driver]
@@ -826,7 +826,7 @@ class FkCurlNoScaleRig(FkRig):
             for axis in all_axis:
                 self._attach_curl_axis(driver, axis)
                 
-        return self.control    
+        return self.control
     
     def _attach_curl_axis(self, driver, axis = None):
 
@@ -886,11 +886,12 @@ class FkCurlRig(FkScaleRig):
         control = super(FkCurlRig, self)._create_control(sub)
         
         if not self.attribute_control:
-            self.attribute_control = control
+            self.attribute_control = control.get()
             
         util.create_title(self.attribute_control, 'CURL')
         
-        driver = util.create_xform_group(control, 'driver2')
+        driver = util.create_xform_group(control.get(), 'driver2')
+        self.control_dict[control.get()]['driver2'] = driver
         
         other_driver = self.drivers[-1]
         self.drivers[-1] = [other_driver, driver]
@@ -904,7 +905,7 @@ class FkCurlRig(FkScaleRig):
             for axis in all_axis:
                 self._attach_curl_axis(driver, axis)
                 
-        return self.control    
+        return self.control
     
     def _attach_curl_axis(self, driver, axis = None):
         
@@ -1017,10 +1018,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
 
         control = super(SimpleFkCurveRig, self)._create_control(sub = sub)
         
-        control = util.Control(control)
-        control.hide_scale_and_visibility_attributes()
-
-        return control.get()
+        return control
     
     def _create_sub_control(self):
             
@@ -1104,7 +1102,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             
             cmds.parentConstraint(sub_control, self.clusters[self.current_increment], mo = True)
             
-            cmds.parent(xform_sub_control, self.control)
+            cmds.parent(xform_sub_control, self.control.get())
             
             self.sub_controls.append(sub_control)
             
@@ -1401,7 +1399,6 @@ class FkCurveRig(SimpleFkCurveRig):
     def __init__(self, name, side):
         super(FkCurveRig, self).__init__(name, side)
         
-        
         self.aim_end_vectors = False
         
     def _create_aims(self, clusters):
@@ -1493,6 +1490,11 @@ class FkCurveLocalRig(FkCurveRig):
             cmds.parent(local_xform, self.setup_group)
             
             control_local_group, control_local_xform = util.constrain_local(control, local_xform)
+            
+            control_driver = self.control_dict[self.control.get()]['driver2']
+            
+            driver = util.create_xform_group( control_local_group, 'driver')
+            util.connect_rotate(control_driver, driver)
             cmds.parent(control_local_xform, self.setup_group)
             
             
@@ -1502,7 +1504,7 @@ class FkCurveLocalRig(FkCurveRig):
             self.last_local_group = control_local_group
             self.last_local_xform = control_local_xform
             
-            cmds.parent(xform_sub_control, self.control)
+            cmds.parent(xform_sub_control, self.control.get())
             self.sub_controls.append(sub_control)
             
             sub_vis = util.MayaNumberVariable('subVisibility')
@@ -3383,10 +3385,8 @@ class EyeRig(JointRig):
             group1 = cmds.group(em = True, n = self._get_name('group', 'aim'))
             group2 = cmds.group(em = True, n = self._get_name('group', 'aim'))
             
-            
             cmds.parent(group2, group1)
             cmds.parent(group1, self.setup_group)
-            
             
             util.MatchSpace(self.joints[0], group1).translation_rotation()
             
@@ -3400,7 +3400,6 @@ class EyeRig(JointRig):
             control =self._create_control()
             control.hide_scale_attributes()
             control = control.get()
-            
             
             match = util.MatchSpace(self.joints[1], control)
             match.translation_rotation()
@@ -3419,16 +3418,18 @@ class EyeRig(JointRig):
 
         if self.skip_ik:
             group1 = cmds.group(em = True, n = self._get_name('group', 'aim'))
-            group2 = cmds.group(em = True, n = self._get_name('group', 'aim'))
+            #group2 = cmds.group(em = True, n = self._get_name('group', 'aim'))
             
-            cmds.parent(group2, group1)
+            #cmds.parent(group2, group1)
             cmds.parent(group1, self.setup_group)
+            
+            
             
             util.MatchSpace(self.joints[0], group1).translation_rotation()
             
             xform = util.create_xform_group(group1)
             
-            cmds.orientConstraint(group2, self.joints[0])
+            cmds.orientConstraint(group1, self.joints[0])
         
         if self.extra_control:
             
@@ -3438,13 +3439,16 @@ class EyeRig(JointRig):
             util.MatchSpace(self.joints[0], aim_group).translation_rotation()
             util.MatchSpace(self.joints[0], parent_group).translation_rotation()
             
-            cmds.parent(aim_group, parent_group)
+            xform_parent_group = util.create_xform_group(parent_group)
+            xform_aim_group = util.create_xform_group(aim_group)
             
-            cmds.orientConstraint(group2, parent_group, mo = True)
-            cmds.parent(parent_group, self.control_group)
+            cmds.parent(xform_aim_group, group1)
             
+            util.connect_rotate(group1, parent_group)
+            #cmds.orientConstraint(group2, parent_group, mo = True)
+            cmds.parent(xform_parent_group, self.setup_group)
             
-            
+            #util.connect_rotate(aim_group, self.joints[0])
             cmds.orientConstraint(aim_group, self.joints[0])
             
             control2 = self._create_control(sub = True)
@@ -3453,12 +3457,6 @@ class EyeRig(JointRig):
         
             match = util.MatchSpace(self.joints[0], control2)
             match.translation_rotation()
-            
-            
-            
-            
-            
-            
         
             axis = self.eye_control_move[0]
             axis_value = self.eye_control_move[1]
@@ -3478,6 +3476,9 @@ class EyeRig(JointRig):
             
             xform2 = util.create_xform_group(control2)            
             cmds.parent(xform2, parent_group)
+            cmds.parent(xform_parent_group, self.control_group)
+            
+            
             
             if axis == 'X':
                 cmds.transformLimits(control2,  tx =  (0, 0), etx = (1,1) )
@@ -3548,6 +3549,9 @@ class JawRig(FkLocalRig):
         local_group, local_xform = super(JawRig, self)._attach(source_transform, target_transform)
         
         control = self.controls[-1]
+        print 'jaw control!!!'
+        print control
+        
         live_control = util.Control(control)
         live_control.rotate_shape(0, 0, 90)
         

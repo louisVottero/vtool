@@ -275,7 +275,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
     def _mirror(self, *args ):
         #*args is for probably python 2.6, which doesn't work unless you have a key argument.
         
-        
+        util.mirror_curve('curve_')
         util.mirror_xform('joint_')
         util.mirror_xform('guideJoint_')
         util.mirror_xform('process_')

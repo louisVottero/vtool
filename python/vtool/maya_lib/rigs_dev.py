@@ -7,7 +7,6 @@ import maya.cmds as cmds
 
 import vtool.util
 import rigs
-from vtool.maya_lib.util import MatchSpace, create_xform_group
 
 class SurfaceFollowCurveRig(rigs.CurveRig):
     
@@ -326,9 +325,14 @@ class StickyRig(rigs.JointRig):
                 self._create_increment(inc)
                 
                 locators1 = [self.top_locator, self.btm_locator]
-                top_control1 = self.controls[-1]
-                btm_control1 = self.controls[-2]
                 
+                if not self.controls:
+                    top_control1 = self.sub_controls[-1]
+                    btm_control1 = self.sub_controls[-2]
+                if self.controls:
+                    top_control1 = self.controls[-1]
+                    btm_control1 = self.controls[-2]
+                    
                 if inc == negative_inc:
                     self.locators.append([locators1])
                     self.zip_controls.append([[top_control1, btm_control1]])
@@ -337,9 +341,14 @@ class StickyRig(rigs.JointRig):
                 self._create_increment(negative_inc)
                 
                 locators2 = [self.top_locator, self.btm_locator]
-                top_control2 = self.controls[-1]
-                btm_control2 = self.controls[-2]
                 
+                if not self.controls:
+                    top_control2 = self.sub_controls[-1]
+                    btm_control2 = self.sub_controls[-2]
+                if self.controls:
+                    top_control2 = self.controls[-1]
+                    btm_control2 = self.controls[-2]\
+                    
                 self.locators.append([locators1, locators2])
                 self.zip_controls.append([[top_control1, btm_control1],[top_control2,btm_control2]])
                 
@@ -754,7 +763,7 @@ class StickyLipRig(StickyRig):
     def _create_main_control(self, cluster, attach_curve, description):
         
         control = self._create_control(description)
-            
+        control.hide_scale_attributes()
         control.rotate_shape(90, 0, 0)
             
         control = control.get()
@@ -1056,12 +1065,12 @@ class FaceSquashRig(rigs.JointRig):
         top_control = self._create_control()
         top_control.hide_scale_attributes()
         
-        MatchSpace(self.locators[0], top_control.get() ).translation_rotation()
+        util.MatchSpace(self.locators[0], top_control.get() ).translation_rotation()
         
         btm_control = self._create_control()
         btm_control.hide_scale_attributes()
         
-        MatchSpace(self.locators[-1], btm_control.get() ).translation_rotation()
+        util.MatchSpace(self.locators[-1], btm_control.get() ).translation_rotation()
         
         xform_top = util.create_xform_group(top_control.get())
         xform_btm = util.create_xform_group(btm_control.get())
@@ -1152,17 +1161,17 @@ class FaceCurveRig(rigs.JointRig):
     def _create_controls(self):
         
         if not self.respect_side:
+
             for cluster in self.clusters:        
                 self._create_main_control(cluster)
                 
         if self.respect_side:
-            
             cluster_count = len(self.clusters)
             
             orig_side = self.side
             
             for inc in range(0, cluster_count):
-            
+
                 negative_inc = cluster_count - (inc+1)    
                 
                 if inc == cluster_count:
@@ -1205,6 +1214,8 @@ class FaceCurveRig(rigs.JointRig):
             
     def _create_sub_joint_controls(self):
         
+        print 'creating sub controls'
+        
         group = cmds.group(em = True, n = self._get_name('group', 'sub_controls'))
         
         cmds.parent(group, self.control_group)
@@ -1212,6 +1223,11 @@ class FaceCurveRig(rigs.JointRig):
         self.sub_control_group = group
         
         if not self.respect_side:
+            
+            print 'no respect side'
+            
+            
+            
             for joint in self.joints:
             
                 joint_xform = self.joint_dict[joint]
@@ -1219,15 +1235,24 @@ class FaceCurveRig(rigs.JointRig):
         
         if self.respect_side:
             
+            print 'respect side'
+            
             joint_count = len(self.joints)
             
             orig_side = self.side
             
             for inc in range(0, joint_count):
             
+                
+            
                 negative_inc = joint_count - (inc+1)    
                 
+                print inc, negative_inc
+                
                 if inc == joint_count:
+                    break
+                
+                if inc > negative_inc:
                     break
                 
                 side = util.get_side(self.joints[inc], 0.1)
@@ -1314,8 +1339,9 @@ class EyeLidRig(rigs.JointRig):
         self.offset_group = None
         
         self.main_joint_dict = {}
-        
+        self.row_joint_dict = {}
         self.main_controls = []
+        
         
     def _create_curve(self):
         
@@ -1375,7 +1401,7 @@ class EyeLidRig(rigs.JointRig):
             
             parent = cmds.listRelatives(joint, p = True)[0]
             xform = cmds.group(em = True, n = 'xform_%s' % joint)
-            MatchSpace(joint, xform).translation()
+            util.MatchSpace(joint, xform).translation()
             cmds.parent(xform, parent)
             
             offset = util.create_xform_group(joint, 'offset')
@@ -1392,8 +1418,6 @@ class EyeLidRig(rigs.JointRig):
             if self.surface:
                 cmds.geometryConstraint(self.surface, xform)
                 
-            cmds.parent(offset, xform)
-            
             util.attach_to_curve(driver, self.sub_curve)
             
             plus = cmds.createNode('plusMinusAverage', n = 'subtract_%s' % driver)
@@ -1421,6 +1445,9 @@ class EyeLidRig(rigs.JointRig):
             cmds.connectAttr('%s.output3Dx' % plus, '%s.translateX' % driver)
             cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % driver)
             cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % driver)
+
+            cmds.parent(offset, xform)
+            
             
     def set_surface(self, surface_name):
         self.surface = surface_name    
@@ -1436,26 +1463,63 @@ class EyeLidRig(rigs.JointRig):
         
         self._attach_joints_to_curve()
             
-    def create_fade_row(self, joints, weight):
+    def create_fade_row(self, joints, weight, ignore_surface = False):
         
         if len(joints) != len(self.joints):
             util.warning('Row joint count and rig joint count do not match.')
   
         for inc in range(0, len(self.joints)):
+            """
+            groups_created = False
+            if self.row_joint_dict.has_key(joints[inc]):
+                
+                xform = self.row_joint_dict[joints[inc]]['xform']
+                offset = self.row_joint_dict[joints[inc]]['offset']
+                driver = self.row_joint_dict[joints[inc]]['driver']
+            
+            if not self.row_joint_dict.has_key(joints[inc]):
 
-            util.create_xform_group(joints[inc])
-            offset = util.create_xform_group(joints[inc], 'offset')
-            driver = util.create_xform_group(joints[inc], 'driver')
+                xform = util.create_xform_group(joints[inc])
+                offset = util.create_xform_group(joints[inc], 'offset')
+                driver = util.create_xform_group(joints[inc], 'driver')
+                
+                self.row_joint_dict[joints[inc]] = {}
+                self.row_joint_dict[joints[inc]]['xform'] = xform
+                self.row_joint_dict[joints[inc]]['offset'] = offset
+                self.row_joint_dict[joints[inc]]['driver'] = driver
+                groups_created = True
+            """
+            
+            driver = cmds.listRelatives(joints[inc], p = True)[0]
+            offset = cmds.listRelatives(driver, p = True)[0]
+            xform = cmds.listRelatives(offset, p = True)[0]
+            
+            if not xform == 'xform_%s' % joints[inc]:
+                xform = util.create_xform_group(joints[inc])
+            
+            if not offset == 'offset_%s' % joints[inc]:
+                offset = util.create_xform_group(joints[inc], 'offset')
+                
+            if not driver == 'driver_%s' % joints[inc]:
+                driver = util.create_xform_group(joints[inc], 'driver')
+            
             cmds.parent(driver, w = True)
             
             main_xform = self.main_joint_dict[self.joints[inc]]['xform']
             main_driver = self.main_joint_dict[self.joints[inc]]['driver']
             
-            util.connect_translate_multiply(main_xform, offset, weight, respect_value = True)
-            util.connect_translate_multiply(main_driver, joints[inc], weight, respect_value = True)
-
+            if not ignore_surface:
+                util.connect_translate_multiply(main_xform, offset, weight, respect_value = True)
+                util.connect_translate_multiply(main_driver, joints[inc], weight, respect_value = True)
+                
+            if ignore_surface:
+                util.connect_translate_multiply(main_xform, joints[inc], weight, respect_value = True)
+            
             if self.surface:
-                cmds.geometryConstraint(self.surface, offset)
+                connection = util.get_attribute_input('%s.geometry' % offset, node_only = True)
+                
+                if not cmds.nodeType(connection) == 'geometryConstraint':
+                    cmds.geometryConstraint(self.surface, offset)
                 
             cmds.parent(driver, offset)
             

@@ -8720,9 +8720,7 @@ def create_mesh_from_shape(shape, name = 'new_mesh'):
     mesh = cmds.listRelatives(new_shape, p = True)[0]
     
     cmds.connectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
-    
-    #cmds.dgdirty(a = True)
-    #cmds.hide(new_shape)
+
     cmds.refresh()
     
     cmds.disconnectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
@@ -10657,6 +10655,44 @@ def mirror_controls():
     for control in found:
         mirror_control(control)
 
+def mirror_curve(prefix):
+    
+    curves = cmds.ls('%s*' % prefix, type = 'transform')
+    
+    if not curves:
+        return
+    
+    for curve in curves:
+        other_curve = None
+        
+        if curve.endswith('_L'):
+            other_curve = curve[:-1] + 'R'
+            
+        if not other_curve:
+            continue
+        
+        cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
+        
+        other_cvs = cmds.ls('%s.cv[*]' % other_curve, flatten = True)
+        
+        if len(cvs) != len(other_cvs):
+            continue
+        
+        for inc in range(0, len(cvs)):
+            
+            position = cmds.xform(cvs[inc], q = True, ws = True, t = True)
+            
+            new_position = list(position)
+            
+            new_position[0] = position[0] * -1
+            
+            
+            
+            cmds.xform(other_cvs[inc], ws = True, t = new_position)
+            
+    
+    
+    
 def process_joint_weight_to_parent(mesh):
     
     scope = cmds.ls('process_*', type = 'joint')
