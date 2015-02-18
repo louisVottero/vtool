@@ -799,9 +799,15 @@ class FkCurlNoScaleRig(FkRig):
         
         
     def _create_control(self, sub = False):
+        
+        print 'creating control!!!!'
+        
         control = super(FkCurlNoScaleRig, self)._create_control(sub)
         
         if self.curl_axis == None:
+            
+            print 'returning'
+            
             return self.control
         
         if not self.attribute_control:
@@ -811,8 +817,13 @@ class FkCurlNoScaleRig(FkRig):
             title = util.MayaEnumVariable('CURL')
             title.create(self.attribute_control)
         
+        
+        
         driver = util.create_xform_group(control.get(), 'driver2')
         self.control_dict[control.get()]['driver2'] = driver
+        
+        print 'control'
+        print self.control_dict[control.get()]['driver2']
         
         other_driver = self.drivers[-1]
         self.drivers[-1] = [other_driver, driver]
@@ -1013,12 +1024,14 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         cmds.parent(self.clusters, cluster_group)
         cmds.parent(cluster_group, self.setup_group)
     
+    """
     def _create_control(self, sub = False):
         
 
         control = super(SimpleFkCurveRig, self)._create_control(sub = sub)
         
         return control
+    """
     
     def _create_sub_control(self):
             
@@ -1037,7 +1050,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
     def _first_increment(self, control, current_transform):
         
         self.first_control = control
-        
 
         if self.skip_first_control:
             control = util.Control(control)
@@ -1491,10 +1503,13 @@ class FkCurveLocalRig(FkCurveRig):
             
             control_local_group, control_local_xform = util.constrain_local(control, local_xform)
             
-            control_driver = self.control_dict[self.control.get()]['driver2']
+            if self.control_dict[self.control.get()].has_key('driver2'):
+                control_driver = self.control_dict[self.control.get()]['driver2']
             
-            driver = util.create_xform_group( control_local_group, 'driver')
-            util.connect_rotate(control_driver, driver)
+                driver = util.create_xform_group( control_local_group, 'driver')
+                util.connect_rotate(control_driver, driver)
+            
+            
             cmds.parent(control_local_xform, self.setup_group)
             
             

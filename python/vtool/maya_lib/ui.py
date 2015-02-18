@@ -54,6 +54,10 @@ def create_window(ui, dock_area = 'right'):
 def pose_manager():
     import ui_corrective
     create_window(ui_corrective.PoseManager())
+
+def shape_combo():
+    import ui_shape_combo
+    create_window(ui_shape_combo.ComboManager())
     
 def tool_manager(name = None, directory = None):
     tool_manager = ToolManager(name)
@@ -62,6 +66,7 @@ def tool_manager(name = None, directory = None):
     create_window(tool_manager)
     
     return tool_manager
+
 
 
     
@@ -133,13 +138,17 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         manager_group.setLayout(manager_layout)
         
         process_button = QtGui.QPushButton('Process Manager')
-        pose_button = QtGui.QPushButton('Pose Manager')
+        pose_button = QtGui.QPushButton('Corrective Manager')
+        shape_combo_button = QtGui.QPushButton('Shape Combo')
+        
         
         process_button.clicked.connect(self._process_manager)
         pose_button.clicked.connect(self._pose_manager)
+        shape_combo_button.clicked.connect(self._shape_combo)
         
         manager_layout.addWidget(process_button)
         manager_layout.addWidget(pose_button)
+        manager_layout.addWidget(shape_combo_button)
         
         tool_group = QtGui.QGroupBox('Tools')
         tool_layout = QtGui.QVBoxLayout()
@@ -249,6 +258,9 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
     def _process_manager(self):
         process_manager(self.directory)
+
+    def _shape_combo(self):
+        shape_combo()
 
     def _create_corrective(self):
         

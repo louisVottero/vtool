@@ -1326,7 +1326,7 @@ class BrowRig(FaceCurveRig):
         
         super(BrowRig, self).__init__(description, side)
         
-        self.span_count = 3
+        self.span_count = 4
         
 class EyeLidRig(rigs.JointRig):
     

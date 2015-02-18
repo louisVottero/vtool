@@ -10357,8 +10357,12 @@ def connect_equal_condition(source_attribute, target_attribute, equal_value):
     
     connect_plus('%s.outColorR' % condition, target_attribute)
         
-
-        
+def connect_message( input_node, destination_node, attribute ):
+            
+    cmds.addAttr(destination_node, ln = attribute, at = 'message' )
+    cmds.connectAttr('%s.message' % input_node, '%s.%s' % (destination_node, attribute))
+    
+            
 def disconnect_attribute(attribute):
     
     connection = get_attribute_input(attribute)
