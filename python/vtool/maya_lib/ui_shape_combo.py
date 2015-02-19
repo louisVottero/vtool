@@ -53,18 +53,20 @@ class ComboManager(ui.MayaWindow):
         
         header_layout.addLayout(button_layout)
         
-        shape_widget = ShapeWidget()
+        self.shape_widget = ShapeWidget()
         
-        combo_widget = ComboWidget()
+        self.combo_widget = ComboWidget()
         
         splitter = QtGui.QSplitter()
         
-        splitter.addWidget(shape_widget)
-        splitter.addWidget(combo_widget)
+        splitter.addWidget(self.shape_widget)
+        splitter.addWidget(self.combo_widget)
         splitter.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
         
         self.main_layout.addLayout(header_layout)
         self.main_layout.addWidget(splitter)
+        
+        self.shape_widget.tree.refresh()
         
     def _base_command(self):
         
@@ -82,9 +84,13 @@ class ComboManager(ui.MayaWindow):
         
         for mesh in meshes:
             self.manager.add_shape(mesh)
-                
         
+        mesh = None
         
+        if len(meshes) == 1:
+            mesh = meshes[0]
+        
+        self.shape_widget.tree.refresh(mesh)
         
 class ShapeWidget(qt_ui.BasicWidget):
     
@@ -100,14 +106,42 @@ class ShapeWidget(qt_ui.BasicWidget):
         
         header_layout.addLayout(info_layout)
                 
-        tree = ShapeTree()
-        tree.setHeaderHidden(True)
+        self.tree = ShapeTree()
+        self.tree.setHeaderHidden(True)
         
         self.main_layout.addLayout(header_layout)
-        self.main_layout.addWidget(tree)
+        self.main_layout.addWidget(self.tree)
 
 class ShapeTree(qt_ui.TreeWidget):
-    pass
+    def __init__(self):
+        super(ShapeTree, self).__init__()
+        
+    def refresh(self, mesh = None):
+        
+        self.clear()
+        
+        manager = blendshape.BlendshapeManager()
+        targets = manager.get_targets()
+        
+        select_item = None
+        
+        for target in targets:
+            
+            item = QtGui.QTreeWidgetItem()
+            item.setSizeHint(0, QtCore.QSize(100, 25))
+            
+            item.setText(0, target)
+            
+            self.addTopLevelItem(item)
+            
+            if target == mesh:
+                select_item = item
+                
+        if select_item:
+            self.setItemSelected(select_item, True)
+            self.scrollToItem(select_item)
+            
+        
 
 class ComboWidget(qt_ui.BasicWidget):
     
@@ -123,11 +157,11 @@ class ComboWidget(qt_ui.BasicWidget):
         
         header_layout.addLayout(info_layout)
         
-        tree = ComboTree()
-        tree.setHeaderHidden(True)
+        self.tree = ComboTree()
+        self.tree.setHeaderHidden(True)
         
         self.main_layout.addLayout(header_layout)
-        self.main_layout.addWidget(tree)
+        self.main_layout.addWidget(self.tree)
 
 class ComboTree(qt_ui.TreeWidget):
     pass

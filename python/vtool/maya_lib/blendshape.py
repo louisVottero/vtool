@@ -389,15 +389,33 @@ class BlendshapeManager(object):
         self.blendshape = None
         
         if cmds.objExists(self.setup_group):
-            pass
+            self.start_mesh = self._get_mesh()
+            self._get_blendshape()
+
+    def _get_mesh(self):
+        
+        return util.get_attribute_input( '%s.mesh' % self.setup_group, node_only = True )
          
     def _get_blendshape(self):
+        mesh = self._get_mesh()
         
-        blendshape = util.find_deformer_by_type(self.start_mesh, 'blendShape')
+        if not mesh:
+            return
         
-        return BlendShape(blendshape)
-            
-    def _create_blendshape(self, mesh):
+        blendshape = util.find_deformer_by_type(mesh, 'blendShape')
+        
+        self.blendshape = BlendShape(blendshape)
+        
+        return self.blendshape
+    
+    def _create_blendshape(self):
+        
+        mesh = self._get_mesh()
+        
+        found = util.find_deformer_by_type(mesh, 'blendShape')
+        
+        if found:
+            return
         
         blendshape = BlendShape()
         blendshape.create(mesh)
@@ -406,8 +424,6 @@ class BlendshapeManager(object):
         
     def _create_home(self, mesh):
         rels = cmds.listRelatives(self.setup_group)
-        
-        
         
         if rels:
             if self.home in rels:
@@ -423,18 +439,29 @@ class BlendshapeManager(object):
                         
         if not cmds.objExists(self.setup_group):
             self.setup_group = cmds.group(em = True, n = 'setup_shapes')
-            
+                
         if start_mesh:
             self._create_home(start_mesh)
+            util.connect_message(start_mesh, self.setup_group, 'mesh')
             
-        self._create_blendshape(start_mesh)
-        
-        #start again here
-        util.connect_message(start_mesh, self.setup_group, 'mesh')
+        self._create_blendshape()
         
     def add_shape(self, mesh):
         
         blendshape = self._get_blendshape()
         
         blendshape.create_target(mesh, mesh)
+    
+    def get_targets(self):
         
+        blendshape = self._get_blendshape()
+        
+        if not blendshape:
+            return []
+        
+        found = []
+        
+        for target in blendshape.targets:
+            found.append(target)
+        
+        return found
