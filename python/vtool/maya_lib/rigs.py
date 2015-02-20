@@ -671,12 +671,17 @@ class FkLocalRig(FkRig):
 
     def _create_control(self, sub = False):
         
+        print 'creating fk local control!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        
         self.last_control = self.control
         
         self.control = super(FkLocalRig, self)._create_control(sub = sub)
         
-        if not self.rig_scale:
-            self.control.hide_scale_and_visibility_attributes()
+        
+        
+        if self.rig_scale:
+            print 'shwoing scale'
+            self.control.show_scale_attributes()
         
         if self.rig_scale:
             self.control.hide_visibility_attribute()

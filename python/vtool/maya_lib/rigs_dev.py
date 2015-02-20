@@ -1204,6 +1204,7 @@ class FaceCurveRig(rigs.JointRig):
         
         xform = util.create_xform_group(sub_control.get())
         
+        
         util.connect_translate(joint_xform, xform)
                     
         util.connect_translate(sub_control.get(), joint)
@@ -1214,8 +1215,6 @@ class FaceCurveRig(rigs.JointRig):
             
     def _create_sub_joint_controls(self):
         
-        print 'creating sub controls'
-        
         group = cmds.group(em = True, n = self._get_name('group', 'sub_controls'))
         
         cmds.parent(group, self.control_group)
@@ -1224,10 +1223,6 @@ class FaceCurveRig(rigs.JointRig):
         
         if not self.respect_side:
             
-            print 'no respect side'
-            
-            
-            
             for joint in self.joints:
             
                 joint_xform = self.joint_dict[joint]
@@ -1235,19 +1230,13 @@ class FaceCurveRig(rigs.JointRig):
         
         if self.respect_side:
             
-            print 'respect side'
-            
             joint_count = len(self.joints)
             
             orig_side = self.side
             
             for inc in range(0, joint_count):
             
-                
-            
                 negative_inc = joint_count - (inc+1)    
-                
-                print inc, negative_inc
                 
                 if inc == joint_count:
                     break
@@ -1328,6 +1317,20 @@ class BrowRig(FaceCurveRig):
         
         self.span_count = 4
         
+    def _create_curve(self):
+        
+        self.curve = util.transforms_to_curve(self.joints, self.span_count, self.description)
+        
+        cmds.delete(['%s.cv[1]' % self.curve,'%s.cv[5]' % self.curve])
+        
+        cmds.parent(self.curve, self.setup_group)
+        
+    def _cluster_curve(self):
+        
+        self.clusters = util.cluster_curve(self.curve, self.description)
+        
+        cmds.parent(self.clusters, self.setup_group)
+        
 class EyeLidRig(rigs.JointRig):
     
     def __init__(self, description, side):
@@ -1381,7 +1384,12 @@ class EyeLidRig(rigs.JointRig):
                 sub_control.rotate_shape(90, 0, 0)
             
                 cmds.parent(sub_control.get(), control.get())
+                
+                util.create_xform_group(sub_control.get())
+                sub_driver = util.create_xform_group(sub_control.get(), 'driver')
+                
                 util.connect_translate(sub_control.get(), self.sub_cluster[inc])
+                util.connect_translate(sub_driver, self.sub_cluster[inc])
             
             util.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
             

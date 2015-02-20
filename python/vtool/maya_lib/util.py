@@ -10088,7 +10088,7 @@ def connect_translate_plus(source_transform, target_transform):
     
     return plus
     
-def connect_translate_multiply(source_transform, target_transform, value, respect_value = False):
+def connect_translate_multiply(source_transform, target_transform, value = 1, respect_value = False):
     
     target_transform_x = '%s.translateX' % target_transform
     target_transform_y = '%s.translateY' % target_transform
@@ -10103,6 +10103,7 @@ def connect_translate_multiply(source_transform, target_transform, value, respec
         if cmds.nodeType(target_input_x) == 'plusMinusAverage':
             plus = target_input_x.split('.')[0]
             indices = get_indices('%s.input3D' % plus)
+            indices = indices[-1]
             
             target_transform_x = '%s.input3D[%s].input3Dx' % (plus, indices)
             target_transform_y = '%s.input3D[%s].input3Dy' % (plus, indices)
