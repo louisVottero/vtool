@@ -466,8 +466,6 @@ class BlendshapeManager(object):
         
         blendshape = self._get_blendshape()
         
-        
-        
     def add_shape(self, mesh):
         
         blendshape = self._get_blendshape()
