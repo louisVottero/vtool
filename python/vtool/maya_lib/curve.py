@@ -141,7 +141,8 @@ class CurveDataInfo():
         curve_dict = self.library_curves[curve_library]
         
         if not curve_dict.has_key(curve_name):
-            util.warning('%s is not in the curve library %s.' % (curve_name, curve_library))
+            vtool.util.warning('%s is not in the curve library %s.' % (curve_name, curve_library))
+            
             return
         
         return curve_dict[curve_name]

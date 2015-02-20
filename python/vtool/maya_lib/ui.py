@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import traceback
+
 import maya.cmds as cmds
 
 import maya.OpenMayaUI as OpenMayaUI
@@ -28,8 +30,10 @@ def get_maya_window():
     if vtool.qt_ui.is_pyside():
         try:
             from shiboken import wrapInstance
-        except:
+        except RuntimeError:
             from PySide.shiboken import wrapInstance
+            
+            vtool.util.show(traceback.format_exc)
              
         maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
         return wrapInstance(long(maya_window_ptr), QtGui.QWidget)

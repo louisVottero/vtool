@@ -520,9 +520,9 @@ class SkinWeightData(MayaCustomData):
             
             try:
                 self._import_maya_data()
-            except Exception, e:
-                raise Exception(e)
-            
+            except RuntimeError:
+                util.show(traceback.format_exc)
+                            
             cmds.undoInfo(closeChunk = True)
             
         
@@ -1141,7 +1141,6 @@ class MayaAttributeData(MayaCustomData):
                 try:
                     cmds.setAttr('%s.%s' % (node_name, line_list[0]), line_list[1])    
                 except:
-                    
                     util.show('Could not set %s to %s' % (line_list[0], line_list[1]))
                     
             
@@ -1246,7 +1245,7 @@ class MayaFileData(MayaCustomData):
                       o = True, 
                       iv = True)
             
-        except Exception:
+        except RuntimeError:
             
             util.show(traceback.format_exc())
             

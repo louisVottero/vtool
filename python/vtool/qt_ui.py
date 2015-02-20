@@ -37,12 +37,11 @@ if not type_QT == 'pyside':
         from PyQt4 import QtGui, QtCore, Qt, uic
         import sip
         type_QT = 'pyqt'
-        #do not remove print
+        
         util.show('using pyQT')
         
     except:
         type_QT = None
-        pass
     
 
 def is_pyqt():
@@ -1657,8 +1656,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         shortcut_l = QtGui.QShortcut(QtGui.QKeySequence(self.tr('Ctrl+l')), self)
         shortcut_l.activated.connect(self._goto_line)
-
-        print type( QtCore.Qt.CTRL + QtCore.Qt.Key_Plus ), type(self)
         
         plus_seq = QtGui.QKeySequence( QtCore.Qt.CTRL + QtCore.Qt.Key_Plus)
         equal_seq = QtGui.QKeySequence( QtCore.Qt.CTRL + QtCore.Qt.Key_Equal)

@@ -671,16 +671,12 @@ class FkLocalRig(FkRig):
 
     def _create_control(self, sub = False):
         
-        print 'creating fk local control!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-        
         self.last_control = self.control
         
         self.control = super(FkLocalRig, self)._create_control(sub = sub)
         
-        
-        
         if self.rig_scale:
-            print 'shwoing scale'
+            
             self.control.show_scale_attributes()
         
         if self.rig_scale:
@@ -688,9 +684,6 @@ class FkLocalRig(FkRig):
         
         if self.control_shape:
             self.control.set_curve_type(self.control_shape)
-        
-        #self.drivers.append(driver)
-        #self.control = self.control.get()
         
         return self.control
 
@@ -805,13 +798,9 @@ class FkCurlNoScaleRig(FkRig):
         
     def _create_control(self, sub = False):
         
-        print 'creating control!!!!'
-        
         control = super(FkCurlNoScaleRig, self)._create_control(sub)
         
         if self.curl_axis == None:
-            
-            print 'returning'
             
             return self.control
         
@@ -826,9 +815,6 @@ class FkCurlNoScaleRig(FkRig):
         
         driver = util.create_xform_group(control.get(), 'driver2')
         self.control_dict[control.get()]['driver2'] = driver
-        
-        print 'control'
-        print self.control_dict[control.get()]['driver2']
         
         other_driver = self.drivers[-1]
         self.drivers[-1] = [other_driver, driver]
@@ -3569,9 +3555,7 @@ class JawRig(FkLocalRig):
         local_group, local_xform = super(JawRig, self)._attach(source_transform, target_transform)
         
         control = self.controls[-1]
-        print 'jaw control!!!'
-        print control
-        
+                
         live_control = util.Control(control)
         live_control.rotate_shape(0, 0, 90)
         

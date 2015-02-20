@@ -283,7 +283,7 @@ class SelectionList(ApiObject):
         try:
             self.api_object.add(name)
         except:
-            warning('Could not add %s into selection list' % name)
+            cmds.warning('Could not add %s into selection list' % name)
             return
         
         
@@ -295,7 +295,7 @@ class SelectionList(ApiObject):
             self.api_object.getDependNode(0, mobject())
             return mobject()
         except:
-            warning('Could not get mobject at index %s' % index)
+            cmds.warning('Could not get mobject at index %s' % index)
             return
    
 class TransformFunction(MayaFunction):
@@ -541,7 +541,9 @@ class MayaVariable(vtool.util.Variable):
         if not self.exists():
             return
         
-        cmds.setAttr(self._get_node_and_variable(), k = self.keyable)       
+        print self._get_node_and_variable(), self.keyable
+        
+        cmds.setAttr(self._get_node_and_variable(), k = self.keyable, cb = True)       
 
     def _set_value(self):
         if not self.exists():
@@ -552,10 +554,13 @@ class MayaVariable(vtool.util.Variable):
         self.set_locked(False)
         
         if self._get_variable_data_type() == 'attributeType':
-            cmds.setAttr(self._get_node_and_variable(), self.value )
+            if not self.variable_type == 'message':
+                cmds.setAttr(self._get_node_and_variable(), self.value )
+            if self.variable_type == 'message':
+                if self.value:
+                    connect_message(self.value, self.node, self.name)
             
-        if self._get_variable_data_type() == 'dataType':
-            
+        if self._get_variable_data_type() == 'dataType':    
             cmds.setAttr(self._get_node_and_variable(), self.value, type = self.variable_type )
         
         self.set_locked(locked_state)
@@ -576,16 +581,26 @@ class MayaVariable(vtool.util.Variable):
         
     def _get_keyable_state(self):
         if not self.exists():
-            return
+            return self.keyable
         
-        cmds.getAttr(self._get_node_and_variable(), k = True)
+        return cmds.getAttr(self._get_node_and_variable(), k = True)
 
     def _get_value(self):
         if not self.exists():
             return
-        return cmds.getAttr(self._get_node_and_variable())
+        
+        print self.variable_type, self._get_node_and_variable()
+        
+        if self.variable_type == 'message':
+            return get_attribute_input(self._get_node_and_variable(), node_only = True)
+        
+        if not self.variable_type == 'message':
+            return cmds.getAttr(self._get_node_and_variable())
 
     def _update_states(self):
+        
+        print 'exists', self.exists()
+        
         self._set_keyable_state()
         self._set_lock_state()
         self._set_value()
@@ -623,6 +638,33 @@ class MayaVariable(vtool.util.Variable):
         if not self.node or name_only:
             return self.name
 
+    def get_dict(self):
+        
+        var_dict = {}
+        
+        var_dict['value'] = self._get_value()
+        var_dict['type'] = self.variable_type
+        var_dict['key'] = self._get_keyable_state()
+        var_dict['lock'] = self._get_lock_state()
+        
+        return var_dict
+    
+    def set_dict(self, var_dict):
+        
+        value = var_dict['value']
+        self.set_value(value)
+        
+        type_value = var_dict['type']
+        self.set_variable_type(type_value)
+        
+        keyable = var_dict['key']
+        self.set_keyable(keyable)
+        
+        lock = var_dict['lock']
+        self.set_locked(lock)
+        
+        
+    
     def create(self, node = None):
         if node:
             self.node = node
@@ -721,6 +763,8 @@ class MayaNumberVariable(MayaVariable):
         
         return cmds.attributeQuery(self.name, node = self.node, maximum = True)
         
+    
+        
     def set_min_value(self, value):
         self.min_value = value
         self._set_min_state()
@@ -784,6 +828,121 @@ class MayaStringVariable(MayaVariable):
         super(MayaStringVariable, self).__init__(name)
         self.variable_type = 'string'
         self.value = ''
+    
+class Attributes(object):
+    
+    numeric_attributes = ['bool', 'long', 'short', 'float', 'double']
+    
+    
+    def __init__(self, node):
+        
+        self.node = node
+        
+        self.variables = []
+        self.attribute_dict = {}
+        
+    def _get_variable_instance(self, name, var_type):
+                
+        var = MayaVariable(name)
+        
+        if var_type in self.numeric_attributes:
+            var = MayaNumberVariable(name)
+            
+        if var_type == 'enum':
+            var = MayaEnumVariable(name)
+            
+        if var_type == 'string':
+            var = MayaStringVariable(name)
+        
+        var.set_variable_type(var_type)
+        var.set_node(self.node)    
+        
+        return var
+        
+        
+    def _store_attributes(self):
+        custom_attributes = cmds.listAttr(self.node, ud = True)
+        
+        self.variables = []
+        
+        for attribute in custom_attributes:
+            
+            node_and_attribute = '%s.%s' % (self.node, attribute)
+            
+            var_type = cmds.getAttr(node_and_attribute, type = True)
+            
+            var = self._get_variable_instance(attribute, var_type)
+            
+            var_dict = var.get_dict()    
+            
+            self.attribute_dict[attribute] = var_dict
+            
+            self.variables.append(var)
+            
+        return self.variables
+        
+    def _retrieve_attributes(self):
+        
+        variables = self._store_attributes()
+        
+        return variables
+        
+    def delete_all(self):
+        
+        variables = self._retrieve_attributes()
+        
+        for var in variables:
+            var.delete()
+        
+    def create_all(self):
+        
+        for var in self.variables:
+            var.create()
+        
+    def delete(self, name):
+        
+        self.delete_all()
+        
+        variables = []
+        
+        for variable in self.variables:
+            
+            if variable.name == name:
+                continue
+        
+            variables.append(variable)        
+            variable.create()
+            
+        self.variables = variables
+            
+    def create(self, name, var_type, index = None):
+        
+        self.delete_all()
+        
+        var_count = len(self.variables)
+        
+        remove_var = None
+        
+        for var in self.variables:
+            if var.name == name:
+                remove_var = var
+                break
+                            
+        if remove_var:
+            remove_index = self.variables.index(remove_var)
+            self.variables.pop(remove_index)
+            
+        var = self._get_variable_instance(name, var_type)
+                
+        if index > var_count:
+            index = None
+        
+        if index != None:
+            self.variables.insert(index, var)
+        if index == None:
+            self.variables.append(var)
+                
+        self.create_all()
     
 #--- rig
 
@@ -4975,8 +5134,8 @@ class PoseManager(object):
                 progress.inc()
                 progress.status('adding pose %s' % pose_name)
             
-            except Exception:
-                RuntimeError( traceback.format_exc() )
+            except RuntimeError:
+                vtool.util.show( traceback.format_exc() )
             
         progress.end()
     
@@ -6321,7 +6480,9 @@ class EnvelopeHistory(object):
             connection = self.envelope_connection[history]
             if connection:
                 cmds.connectAttr(connection, '%s.envelope' % history)
-                
+   
+
+                 
                 
 #--- definitions
 
@@ -6358,11 +6519,7 @@ def nodename_to_mobject(object_name):
     
     return selection_list.get_at_index(0)
 
-def warning(warning_string):
-    pass
-    #mglobal = OpenMaya.MGlobal()
-    
-    #mglobal.displayWarning(warning_string)
+
     
 def get_node_types(nodes, return_shape_type = True):
     
@@ -7643,7 +7800,7 @@ def get_mesh_shape(mesh, shape_index = 0):
         return shapes[0]
     
     if shape_index > shape_count:
-        warning('%s does not have a shape count up to %s' % shape_index)
+        cmds.warning('%s does not have a shape count up to %s' % shape_index)
     
 
 def get_shapes(transform):
@@ -9373,7 +9530,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh):
         index = get_index_at_skin_influence(source_joint, skin_deformer)
         
         if not index:
-            warning( 'could not find index for %s on mesh %s' % (source_joint, mesh) )
+            cmds.warning( 'could not find index for %s on mesh %s' % (source_joint, mesh) )
             return
         
         other_index = get_index_at_skin_influence(target_joint, skin_deformer)
@@ -9466,7 +9623,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     other_skin = find_deformer_by_type(target_mesh, 'skinCluster')
     
     if other_skin:
-        warning('%s already has a skin cluster.' % target_mesh)
+        cmds.warning('%s already has a skin cluster.' % target_mesh)
     
     influences = get_non_zero_influences(skin)
     
@@ -9511,7 +9668,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
             try:
                 cmds.skinCluster(other_skin, edit = True, ri = influence)
             except:
-                warning('Could not remove influence %s on mesh %s' % (influence, target_mesh))
+                cmds.warning('Could not remove influence %s on mesh %s' % (influence, target_mesh))
                 
     #cmds.undoInfo(state = True)
       
@@ -9564,8 +9721,6 @@ def skin_curve_from_mesh(source_mesh, target, include_joints = [], exclude_joint
 def skin_group(joint, group):
     
     rels = cmds.listRelatives(group, ad = True, f = True)
-    
-    print rels
     
     for rel in rels:
         
@@ -9753,7 +9908,7 @@ def chad_extract_shape(skin_mesh, corrective):
         skin = find_deformer_by_type(skin_mesh, 'skinCluster')
         
         if not skin:
-            warning('No skin found on %s.' % skin_mesh)
+            cmds.warning('No skin found on %s.' % skin_mesh)
             return
         
         file_name = __file__
@@ -9794,8 +9949,8 @@ def chad_extract_shape(skin_mesh, corrective):
         
         return offset
 
-    except Exception:
-        RuntimeError( traceback.format_exc() )
+    except RuntimeError:
+        vtool.util.show( traceback.format_exc() )
         
 
 
@@ -10359,7 +10514,11 @@ def connect_equal_condition(source_attribute, target_attribute, equal_value):
     connect_plus('%s.outColorR' % condition, target_attribute)
         
 def connect_message( input_node, destination_node, attribute ):
-          
+        
+    if not input_node or not cmds.objExists(input_node):
+        vtool.util.warning('No input node to connect message.')
+        return
+        
     if not cmds.objExists('%s.%s' % (destination_node, attribute)):  
         cmds.addAttr(destination_node, ln = attribute, at = 'message' )
         

@@ -53,8 +53,9 @@ class FolderEditor(object):
     def _create_folder(self, name):
         
         if not is_dir(self.directory_path):
-            #do not remove print
-            print '%s was not created.' % name
+            
+            util.show('%s was not created.' % name)
+             
             return
         
         path = create_dir(name, self.directory_path, True)        
@@ -733,9 +734,10 @@ def rename(directory, name, make_unique = False):
 
     try:
         os.rename(directory, renamepath)
-    except Exception, e:
-        #do not remove print
-        print e
+    except RuntimeError:
+        
+        util.show(traceback.format_exc)
+        
         return False
     
     return renamepath
@@ -820,8 +822,9 @@ def delete_dir(name, directory):
     full_path = join_path(directory, name)
     
     if not is_dir(full_path):
-        #do not remove print
-        print '%s was not deleted.' % full_path
+        
+        util.show('%s was not deleted.' % full_path)
+        
         return full_path
     
     shutil.rmtree(full_path)  
@@ -869,8 +872,9 @@ def delete_file(name, directory):
     full_path = join_path(directory, name)
     
     if not is_file(full_path):
-        #do not remove print
-        print '%s was not deleted.' % full_path
+        
+        util.show('%s was not deleted.' % full_path)
+        
         return full_path
         
     os.remove(full_path) 
@@ -939,7 +943,7 @@ def source_python_module(code_directory):
             try: fin.close()
             except: pass
             
-    except ImportError, x:
+    except ImportError:
         traceback.print_exc(file = sys.stderr)
         return None
     
@@ -967,7 +971,7 @@ def load_python_module(module_name, directory):
                                          pathname, 
                                          description)
                 
-            except Exception:
+            except RuntimeError:
                 return traceback.format_exc()
             
             finally:

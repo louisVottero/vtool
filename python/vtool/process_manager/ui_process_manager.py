@@ -297,7 +297,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         script_count = len(scripts)
         
-        util.show('\a  Running %s Scripts  \a' % self.process.get_name())
+        util.show('\n\a\tRunning %s Scripts\t\a\n' % self.process.get_name())
         
         for inc in range(0, script_count):
             
@@ -312,12 +312,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             status = self.process.run_script(scripts[inc])
             
             if not status == 'Success':
+                
                 self.code_widget.set_process_script_state(scripts[inc], 0)
                 
-                util.show(status)
+                #util.show(status)
                 
             if status == 'Success':
                 self.code_widget.set_process_script_state(scripts[inc], 1)
+                
+                util.show('\tSuccess')
             
         self.process_button.setEnabled(True)
                     

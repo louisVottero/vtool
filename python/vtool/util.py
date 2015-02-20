@@ -5,6 +5,7 @@ import math
 import time
 import string
 import datetime
+import traceback
 
 #decorators
 
@@ -15,8 +16,8 @@ def try_pass(function):
                 
         try:
             return_value = function(*args, **kwargs)
-        except Exception, e:
-            show(e)
+        except RuntimeError:
+            show(traceback.format_exc)
                     
         return return_value
                      
@@ -444,7 +445,7 @@ def get_maya_version():
     try:
         cmds.about(v = True)
     except:
-        print 'Could not get maya version. Script is not running in Maya.'
+        show('Could not get maya version. Script is not running in Maya.')
 
 def fade_sine(percent_value):
     
@@ -757,9 +758,16 @@ def show(*args):
         print '\t%s' % string_value
     
     except:
+        #do not remove
         print 'Could not show %s' % args
         
+def warning(*args):
     
+    args = list(args)
+    
+    args.insert(0, 'Warning: ')
+    
+    show(*args)
 
     
     

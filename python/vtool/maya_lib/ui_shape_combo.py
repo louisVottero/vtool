@@ -36,11 +36,11 @@ class ComboManager(ui.MayaWindow):
         header_layout.setAlignment(QtCore.Qt.AlignLeft)
         
         button_layout = QtGui.QHBoxLayout()
-        add = QtGui.QPushButton('Add')
-        add.setMinimumWidth(100)
-        add.setMinimumHeight(50)
+        self.add = QtGui.QPushButton('New')
+        self.add.setMinimumWidth(100)
+        self.add.setMinimumHeight(50)
         
-        add.clicked.connect(self._add_command)
+        self.add.clicked.connect(self._add_command)
         
         base = QtGui.QPushButton('Base')
         base.setMinimumWidth(100)
@@ -48,7 +48,7 @@ class ComboManager(ui.MayaWindow):
         
         base.clicked.connect(self._base_command)
         
-        button_layout.addWidget(add)
+        button_layout.addWidget(self.add)
         button_layout.addWidget(base)
         
         header_layout.addLayout(button_layout)

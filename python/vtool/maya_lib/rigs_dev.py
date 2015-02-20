@@ -1302,8 +1302,6 @@ class FaceCurveRig(rigs.JointRig):
             
     def create_control_follow(self, control, increment, weight):
         
-        print 'creating follow'  
-        
         driver = self.main_controls[increment][1]
                 
         util.connect_translate_multiply(control, driver, weight)

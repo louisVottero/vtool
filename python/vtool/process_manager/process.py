@@ -671,7 +671,8 @@ class Process(object):
         status = None
         read = None
             
-        try:        
+        try:
+                 
             self._center_view()
             name = util_file.get_basename(script)
             path = util_file.get_parent_path(script)
@@ -681,7 +682,7 @@ class Process(object):
                     if not external_code_path in sys.path:
                         sys.path.append(external_code_path)
             
-            util.show('\n\a\t%s.' % name)
+            util.show('\n\t\a\t%s\n\n' % name)
             
             module = util_file.source_python_module(script)     
             
@@ -708,8 +709,11 @@ class Process(object):
                 
                 if util.is_in_maya():
                     import vtool.maya_lib.util as maya_util
-                    #read = maya_util.ScriptEditorRead()
-                    #read.start()     
+                    
+                    # read
+                    read = maya_util.ScriptEditorRead()
+                    read.start()
+                    # read
                     
                     import maya.cmds as cmds
                     module.cmds = cmds
@@ -719,26 +723,33 @@ class Process(object):
                 module.main()
                 status = 'Success'
                 
-                #if read:
-                #    value = maya_util.script_editor_value
-                #    read.end()
-                #    
-                #    for line in value:
-                #        util.show('\t' + line)
+                # read
+                if read:
+                    value = maya_util.script_editor_value
+                    read.end()
+                    
+                    for line in value:
+                        util.show('\t%s' % line)
+                    
+                    if value:
+                        util.show('\n')
+                #read
                                 
         except Exception:
             
             status = traceback.format_exc()
             
+            #read
             if read:
                 value = maya_util.script_editor_value
                 read.end()
                 
                 for line in value:
                     util.show('\t' + line)
-                
-            
-            
+            #read
+            util.show(status)
+            return status
+        
         return status
                
     def run(self):
@@ -746,7 +757,7 @@ class Process(object):
         if util.is_in_maya():
             cmds.file(new = True, f = True)
             
-        util.show('\a  Running %s Scripts  \a' % self.get_name())
+        util.show('\n\a\tRunning %s Scripts\t\a' % self.get_name())
  
         scripts = self.get_manifest_scripts(False)
         

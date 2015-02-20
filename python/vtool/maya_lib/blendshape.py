@@ -308,6 +308,9 @@ class BlendShape(object):
     def set_envelope(self, value):
         cmds.setAttr('%s.envelope' % self.blendshape, value)
         
+    def set_targets_to_zero(self):
+        pass
+        
     def recreate_target(self, name, value = 1.0, mesh = None):
         if not self.is_target(name):
             return
@@ -394,7 +397,12 @@ class BlendshapeManager(object):
 
     def _get_mesh(self):
         
-        return util.get_attribute_input( '%s.mesh' % self.setup_group, node_only = True )
+        mesh = util.get_attribute_input( '%s.mesh' % self.setup_group, node_only = True )
+        
+        if not mesh:
+            return
+        
+        return mesh
          
     def _get_blendshape(self):
         mesh = self._get_mesh()
@@ -406,11 +414,17 @@ class BlendshapeManager(object):
         
         self.blendshape = BlendShape(blendshape)
         
+        if not blendshape:
+            return None
+        
         return self.blendshape
     
     def _create_blendshape(self):
         
         mesh = self._get_mesh()
+        
+        if not mesh:
+            return
         
         found = util.find_deformer_by_type(mesh, 'blendShape')
         
@@ -439,6 +453,8 @@ class BlendshapeManager(object):
                         
         if not cmds.objExists(self.setup_group):
             self.setup_group = cmds.group(em = True, n = 'setup_shapes')
+        
+            util.hide_keyable_attributes(self.setup_group)
                 
         if start_mesh:
             self._create_home(start_mesh)
@@ -446,11 +462,33 @@ class BlendshapeManager(object):
             
         self._create_blendshape()
         
+    def zero_out(self):
+        
+        blendshape = self._get_blendshape()
+        
+        
+        
     def add_shape(self, mesh):
         
         blendshape = self._get_blendshape()
         
-        blendshape.create_target(mesh, mesh)
+        if not blendshape:
+            vtool.util.warning('No blendshape.')
+            return
+        
+        if not blendshape.is_target(mesh):
+        
+            blendshape.create_target(mesh, mesh)
+                
+            var = util.MayaNumberVariable(mesh)
+            var.set_min_value(0)
+            var.set_max_value(10)
+            var.set_variable_type('float')
+            var.create(self.setup_group)
+            
+            util.connect_multiply('%s.%s' % (self.setup_group, mesh), '%s.%s' % (blendshape.blendshape, mesh))
+        
+        
     
     def get_targets(self):
         
