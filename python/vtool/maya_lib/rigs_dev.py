@@ -297,7 +297,9 @@ class StickyRig(rigs.JointRig):
         self.sticky_control_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'sticky_controls')))
         cmds.parent(self.sticky_control_group, self.control_group)
         
-        self.follow_control_groups = {} 
+        self.follow_control_groups = {}
+        
+        self.local_orient = None 
 
     def _loop_joints(self):
         
@@ -524,6 +526,9 @@ class StickyRig(rigs.JointRig):
     def set_btm_stick_values(self, float_list):
         self.btm_stick_values = float_list
     
+    def set_local_orient(self, transform):
+        self.local_orient = transform
+    
     def create(self):
         super(StickyRig, self).create()
         
@@ -532,8 +537,17 @@ class StickyRig(rigs.JointRig):
     def create_follow(self, follow_transform, increment, value):
         
         if not self.follower_group:
+            #self.local_follower_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'local_follower')))
             self.follower_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'follower')))
+            
+            
+            #cmds.parent(self.local_follower_group, self.setup_group)
             cmds.parent(self.follower_group, self.setup_group)
+            
+            if self.local_orient:
+                cmds.parent(self.follower_group, self.local_orient)
+            
+            #cmds.orientConstraint(local_follower_group, self.follower_group)
         
         follow_transform = self._create_follow_control_group(follow_transform)
         
@@ -582,7 +596,8 @@ class StickyRig(rigs.JointRig):
         if left_over_value:
             util.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % self.zip_controls[increment][right_increment][0], [start,end], [0,left_over_value])
             util.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % self.zip_controls[increment][right_increment][1], [start,end], [0,left_over_value])
-        
+
+            
         
 class StickyLipRig(StickyRig):
 
@@ -783,6 +798,9 @@ class StickyLipRig(StickyRig):
         xform = util.create_xform_group(control)
         driver = util.create_xform_group(control, 'driver')
         
+        if self.local_orient:
+            util.connect_rotate(self.local_orient, driver)
+        
         util.attach_to_curve(xform, attach_curve)
         
         local_control, local_xform = util.constrain_local(control, cluster)
@@ -865,6 +883,10 @@ class StickyLipRig(StickyRig):
             util.MatchSpace(top_control_driver, control.get()).translation_rotation()
             
             xform = util.create_xform_group(control.get())
+            driver = util.create_xform_group(control.get(), 'driver')
+            
+            if self.local_orient:
+                util.connect_rotate(self.local_orient, driver)
             
             self.corner_controls.append([control.get(), xform])
             
@@ -969,11 +991,11 @@ class StickyLipRig(StickyRig):
         
         super(StickyLipRig, self).create_follow(follow_transform, increment, value)
         
-        for control in self.main_controls:
-            cmds.orientConstraint(self.follower_group, control[2])
+        #for control in self.main_controls:
+        #    cmds.orientConstraint(self.follower_group, control[2])
             
-        for control in self.corner_controls:
-            cmds.orientConstraint(self.follower_group, control[1])
+        #for control in self.corner_controls:
+        #    cmds.orientConstraint(self.follower_group, control[1])
             
     def create(self):
         super(StickyLipRig, self).create()

@@ -769,5 +769,48 @@ def warning(*args):
     
     show(*args)
 
-    
-    
+
+def get_combos(names, sort = True, one_increment = False):
+        
+        if sort:
+            names.sort() 
+        
+        if names:         
+            name_count = len(names)
+            
+            found = []
+            
+            if name_count > 1:
+            
+                for inc in range(0, name_count):
+                    next_inc = inc+1
+                                    
+                    if next_inc < name_count:             
+                                            
+                        for inc2 in range(next_inc, name_count):
+                            first_name = names[inc]
+                            second_name = names[inc2]
+                            
+                            if first_name == '%sN' % second_name:
+                                continue
+                            
+                            if second_name == '%sN' % first_name:
+                                continue
+                            
+                            name_combo = string.join( [names[inc],names[inc2]], '_' )                    
+                            found.append(name_combo)
+                                                      
+                            sub_names = names[inc2:]             
+                            
+                            if len(sub_names) > 1:
+                                found_sub_combos = get_combos(names[inc2:], False, True)                          
+                                                                                      
+                                for combo in found_sub_combos:
+                                    sub_name_combo = string.join( [names[inc], combo], '_')                              
+                                    
+                                    found.append(sub_name_combo)
+                                    
+                    if one_increment:
+                        return found
+                
+                return found

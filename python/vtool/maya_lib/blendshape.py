@@ -464,7 +464,11 @@ class BlendshapeManager(object):
         
     def zero_out(self):
         
-        blendshape = self._get_blendshape()
+        attributes = util.Attributes(self.setup_group)
+        variables = attributes.get_variables()
+        
+        for variable in variables:
+            variable.set_value(0)
         
     def add_shape(self, mesh):
         
@@ -485,8 +489,12 @@ class BlendshapeManager(object):
             var.create(self.setup_group)
             
             util.connect_multiply('%s.%s' % (self.setup_group, mesh), '%s.%s' % (blendshape.blendshape, mesh))
+    
+    def set_target_weight(self, name, value):
         
+        value = value * 10
         
+        cmds.setAttr('%s.%s' % (self.setup_group, name), value)
     
     def get_targets(self):
         

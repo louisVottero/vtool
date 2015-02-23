@@ -538,12 +538,11 @@ class MayaVariable(vtool.util.Variable):
         cmds.setAttr(self._get_node_and_variable(), l = self.locked)
     
     def _set_keyable_state(self):
+
         if not self.exists():
             return
-        
-        print self._get_node_and_variable(), self.keyable
-        
-        cmds.setAttr(self._get_node_and_variable(), k = self.keyable, cb = True)       
+
+        cmds.setAttr(self._get_node_and_variable(), k = self.keyable)       
 
     def _set_value(self):
         if not self.exists():
@@ -589,8 +588,6 @@ class MayaVariable(vtool.util.Variable):
         if not self.exists():
             return
         
-        print self.variable_type, self._get_node_and_variable()
-        
         if self.variable_type == 'message':
             return get_attribute_input(self._get_node_and_variable(), node_only = True)
         
@@ -598,8 +595,6 @@ class MayaVariable(vtool.util.Variable):
             return cmds.getAttr(self._get_node_and_variable())
 
     def _update_states(self):
-        
-        print 'exists', self.exists()
         
         self._set_keyable_state()
         self._set_lock_state()
@@ -666,6 +661,7 @@ class MayaVariable(vtool.util.Variable):
         
     
     def create(self, node = None):
+        
         if node:
             self.node = node
         
@@ -943,6 +939,11 @@ class Attributes(object):
             self.variables.append(var)
                 
         self.create_all()
+    
+    def get_variables(self):
+        self._store_attributes()
+        
+        return self.variables
     
 #--- rig
 

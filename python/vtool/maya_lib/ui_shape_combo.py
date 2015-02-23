@@ -59,7 +59,7 @@ class ComboManager(ui.MayaWindow):
         
         splitter = QtGui.QSplitter()
         
-        self.shape_widget.tree.selectionChanged(self._selection_changed)
+        self.shape_widget.tree.itemSelectionChanged.connect(self._selection_changed)
         
         splitter.addWidget(self.shape_widget)
         splitter.addWidget(self.combo_widget)
@@ -72,9 +72,14 @@ class ComboManager(ui.MayaWindow):
         
     def _selection_changed(self):
         
-        item = self.shape_widget.tree.currentItem()
+        items = self.shape_widget.tree.selectedItems()
         
-        #continue working here
+        self.manager.zero_out()
+        
+        for item in items:
+            name = str(item.text(0))
+        
+            self.manager.set_target_weight(name, 1)
                 
     def _base_command(self):
         
@@ -124,6 +129,7 @@ class ShapeTree(qt_ui.TreeWidget):
     def __init__(self):
         super(ShapeTree, self).__init__()
         
+        self.setSelectionMode(self.ExtendedSelection)
         
     def refresh(self, mesh = None):
         
