@@ -23,6 +23,7 @@ class ComboManager(ui.MayaWindow):
         super(ComboManager, self).__init__()
         
         self.manager = blendshape.BlendshapeManager()
+        self.refresh_combo_list = True
     
     def _define_main_layout(self):
         layout = QtGui.QVBoxLayout()
@@ -59,7 +60,8 @@ class ComboManager(ui.MayaWindow):
         
         splitter = QtGui.QSplitter()
         
-        self.shape_widget.tree.itemSelectionChanged.connect(self._selection_changed)
+        self.shape_widget.tree.itemSelectionChanged.connect(self._shape_selection_changed)
+        self.combo_widget.tree.itemSelectionChanged.connect(self._combo_selection_changed)
         
         splitter.addWidget(self.shape_widget)
         splitter.addWidget(self.combo_widget)
@@ -69,17 +71,67 @@ class ComboManager(ui.MayaWindow):
         self.main_layout.addWidget(splitter)
         
         self.shape_widget.tree.refresh()
-        
-    def _selection_changed(self):
+
+    def _get_selected_shapes(self):
         
         items = self.shape_widget.tree.selectedItems()
         
-        self.manager.zero_out()
+        if not items:
+            return
+        
+        shapes = []
         
         for item in items:
             name = str(item.text(0))
         
-            self.manager.set_target_weight(name, 1)
+            shapes.append(name)
+            
+        return shapes
+        
+    def _shape_selection_changed(self):
+        
+        
+        
+        self.manager.zero_out()
+        
+        shapes = self._get_selected_shapes()
+        
+        if self.refresh_combo_list:
+            self._update_combo_selection(shapes)
+            
+        if not shapes:
+            return
+            
+        for shape in shapes:
+            self.manager.set_shape_weight(shape, 1)
+            
+        
+               
+    def _combo_selection_changed(self):
+        
+        items = self.combo_widget.tree.selectedItems()
+        
+        if not items:
+            return
+        
+        combo_name = str(items[0].text(0))
+        
+        shapes = self.manager.get_shapes_in_combo(combo_name)
+        
+        self.refresh_combo_list = False
+        self.shape_widget.tree.select_shapes(shapes)
+        self.refresh_combo_list = True
+        
+        
+    def _update_combo_selection(self, shapes):
+                
+        combos = self.manager.get_combos(shapes)
+        
+        self.combo_widget.tree.load(combos)
+        
+        
+        
+    
                 
     def _base_command(self):
         
@@ -131,25 +183,37 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self.setSelectionMode(self.ExtendedSelection)
         
+    def select_shapes(self, shapes):
+        self.clearSelection()
+        
+        for inc in range(0, self.topLevelItemCount()):
+            
+            item = self.topLevelItem(inc)
+            
+            item_name = str(item.text(0))
+            
+            if item_name in shapes:
+                item.setSelected(True)
+        
     def refresh(self, mesh = None):
         
         self.clear()
         
         manager = blendshape.BlendshapeManager()
-        targets = manager.get_targets()
+        shapes = manager.get_shapes()
         
         select_item = None
         
-        for target in targets:
+        for shape in shapes:
             
             item = QtGui.QTreeWidgetItem()
             item.setSizeHint(0, QtCore.QSize(100, 25))
             
-            item.setText(0, target)
+            item.setText(0, shape)
             
             self.addTopLevelItem(item)
             
-            if target == mesh:
+            if shape == mesh:
                 select_item = item
                 
         if select_item:
@@ -177,4 +241,16 @@ class ComboWidget(qt_ui.BasicWidget):
         self.main_layout.addWidget(self.tree)
 
 class ComboTree(qt_ui.TreeWidget):
-    pass
+    
+    def load(self, combos):
+        
+        self.clear()
+        
+        if not combos:
+            return
+        
+        for combo in combos:
+            item = QtGui.QTreeWidgetItem()
+            item.setText(0, combo)
+            
+            self.addTopLevelItem(item)

@@ -448,6 +448,8 @@ class BlendshapeManager(object):
             cmds.parent(self.home, self.setup_group)
             
             cmds.hide(self.home)
+            
+    
                         
     def setup(self, start_mesh = None):
                         
@@ -489,14 +491,20 @@ class BlendshapeManager(object):
             var.create(self.setup_group)
             
             util.connect_multiply('%s.%s' % (self.setup_group, mesh), '%s.%s' % (blendshape.blendshape, mesh))
+            
+        if blendshape.is_target(mesh):
+            blendshape.replace_target(mesh, mesh)
     
-    def set_target_weight(self, name, value):
+    def add_combo(self, mesh):
+        pass
+    
+    def set_shape_weight(self, name, value):
         
         value = value * 10
         
         cmds.setAttr('%s.%s' % (self.setup_group, name), value)
     
-    def get_targets(self):
+    def get_shapes(self):
         
         blendshape = self._get_blendshape()
         
@@ -509,3 +517,12 @@ class BlendshapeManager(object):
             found.append(target)
         
         return found
+    
+    def get_combos(self, shapes):
+        
+        return vtool.util.get_combos(shapes)
+    
+    def get_shapes_in_combo(self, combo_name):
+        
+        shapes = combo_name.split('_')
+        return shapes
