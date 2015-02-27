@@ -7058,7 +7058,7 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     if constraint_type == 'parentConstraint':
         constraint = cmds.parentConstraint(locators,  follow_group, mo = True)[0]
     if constraint_type == 'orientConstraint':
-        constraint = cmds.orientConstraint(locators,  follow_group, mo = True)[0]
+        constraint = cmds.orientConstraint(locators,  follow_group)[0]
     
     
     constraint_editor = ConstraintEditor()
@@ -8012,6 +8012,7 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     
     if parent and auto_parent:
         cmds.parent(rivet, parent)
+        
         
     if hide_shape:
         cmds.hide('%sShape' % rivet)

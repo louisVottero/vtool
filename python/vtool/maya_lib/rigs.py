@@ -775,10 +775,19 @@ class FkScaleRig(FkRig):
         cmds.pointConstraint(control, current_transform) 
         util.connect_rotate(control, current_transform) 
            
-        drivers = self.get_control_entries('driver')
+        drivers = self.get_control_entries('driver2')
         
-        for driver in drivers:
-            util.connect_rotate(driver, current_transform)
+        
+        print 'creating control!!!'
+        driver = self.control_dict[control]['driver']
+        
+        drivers = [driver]
+        if self.control_dict[control].has_key('driver2'):
+            driver2 = self.control_dict[control]['driver2']
+            drivers.append(driver2)
+        
+        for transform in drivers:
+            util.connect_rotate(transform, current_transform)
         
         util.connect_scale(control, current_transform) 
           
@@ -2578,6 +2587,7 @@ class TweakCurveRig(BufferRig):
                     cmds.parent(rivet, self.setup_group)
                 if self.maya_type == 'nurbsCurve':
                     util.attach_to_curve(joint, self.surface)
+                    cmds.orientConstraint(self.control_group, joint)
                         
 class RopeRig(CurveRig):
 
