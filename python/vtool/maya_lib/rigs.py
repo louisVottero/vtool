@@ -1039,6 +1039,8 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         sub_control.color( util.get_color_of_side( self.side , True)  )
         
         if self.control_shape:
+            
+            print 'sub control!!!!!!!!!!!!!!!!!!!!!!!!11', self.control_shape
             sub_control.set_curve_type(self.control_shape)
         
         sub_control.scale_shape(self.control_size * .9, 
@@ -1485,6 +1487,9 @@ class FkCurveLocalRig(FkCurveRig):
             sub_control = util.Control( self._get_control_name(sub = True) )
         
             sub_control.color( util.get_color_of_side( self.side , True)  )
+            
+            if self.control_shape:
+                sub_control.set_curve_type(self.control_shape)
             
             sub_control_object = sub_control
             sub_control = sub_control.get()

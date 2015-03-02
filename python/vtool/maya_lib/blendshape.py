@@ -526,3 +526,20 @@ class BlendshapeManager(object):
         
         shapes = combo_name.split('_')
         return shapes
+    
+    def remove_shape(self, name):
+        
+        target = '%s.%s' % (self.blendshape.blendshape, name)
+        
+        input_node = util.get_attribute_input(target, node_only=True)
+        
+        print input_node
+        print target
+        
+        if input_node and input_node != self.setup_group:
+            cmds.delete(input_node)
+        
+        self.blendshape.remove_target(name)
+        
+        cmds.deleteAttr( '%s.%s' % (self.setup_group,name) )
+        

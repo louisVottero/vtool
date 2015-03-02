@@ -4,6 +4,7 @@ import os
 
 import util
 import vtool.util_file
+import vtool.util
 
 
 import maya.cmds as cmds
@@ -19,7 +20,7 @@ class CurveToData(object):
         curve_shape = self._get_shape(curve)
         
         if not curve_shape:
-            util.warning('%s is not a nurbs curve.' % curve_shape)
+            vtool.util.warning('%s is not a nurbs curve.' % curve_shape)
             return 
         
         self.curve = curve_shape
@@ -181,7 +182,7 @@ class CurveDataInfo():
     def load_data_file(self, path = None):
         
         if not self.active_library:
-            util.warning('Must set active library before running this function.')
+            vtool.util.warning('Must set active library before running this function.')
             return
         
         if not path:
@@ -218,7 +219,7 @@ class CurveDataInfo():
                 
     def write_data_to_file(self):
         if not self.active_library:
-            util.warning('Must set active library before running this function.')
+            vtool.util.warning('Must set active library before running this function.')
             return
         
         path = vtool.util_file.join_path(self.curve_data_path, '%s.data' % self.active_library)
@@ -243,14 +244,14 @@ class CurveDataInfo():
     
     def get_curve_names(self):
         if not self.active_library:
-            util.warning('Must set active library before running this function.')
+            vtool.util.warning('Must set active library before running this function.')
             return
         
         return self.libraryCurves[self.active_library].keys()
         
     def set_shape_to_curve(self, curve, curve_name, checkCurve = False):
         if not self.active_library:
-            util.warning('Must set active library before running this function.')
+            vtool.util.warning('Must set active library before running this function.')
             return
         
         mel_data = self._get_curve_data(curve_name, self.active_library)
@@ -264,7 +265,7 @@ class CurveDataInfo():
             split_original_curve_data = original_curve_data.split()
             
             if len(split_mel_data) != len(split_original_curve_data):
-                util.warning('Curve data does not match stored data. Skipping %s' % curve) 
+                vtool.util.warning('Curve data does not match stored data. Skipping %s' % curve) 
                 return        
         
         if mel_data:
@@ -280,7 +281,7 @@ class CurveDataInfo():
         
     def add_curve(self, curve):
         if not self.active_library:
-            util.warning('Must set active library before running this function.')
+            vtool.util.warning('Must set active library before running this function.')
             return
         
         mel_data = self._get_mel_data(curve)
@@ -292,7 +293,7 @@ class CurveDataInfo():
         
     def create_curve(self, curve_name):
         if not self.active_library:
-            util.warning('Must set active library before running this function.')
+            vtool.util.warning('Must set active library before running this function.')
             return
         
         curve_shape = cmds.createNode('nurbsCurve')
@@ -306,7 +307,7 @@ class CurveDataInfo():
         
     def create_curves(self):
         if not self.active_library:
-            util.warning('Must set active library before running this function.')
+            vtool.util.warning('Must set active library before running this function.')
             return
         
         curves_dict = self.library_curves[self.active_library]

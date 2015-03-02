@@ -46,7 +46,6 @@ class PoseManager(ui.MayaWindow):
         self.pose.parent_changed.connect(self.pose_list.parent_changed)
         self.pose.pose_enable_changed.connect(self.pose_list.pose_enable_changed)
         
-
         self.main_layout.addWidget(self.pose_set)
         self.main_layout.addWidget(self.pose_list)
         self.main_layout.addWidget(self.pose)

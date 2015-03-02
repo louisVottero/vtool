@@ -622,6 +622,8 @@ class StickyLipRig(StickyRig):
         
         self.corner_control_shape = 'square'
         
+        self.control_count = 4
+        
         self.main_control_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'main_controls')))
         cmds.parent(self.main_control_group, self.control_group)
     
@@ -630,8 +632,8 @@ class StickyLipRig(StickyRig):
         top_cv_count = len(self.top_joints) - 3
         btm_cv_count = len(self.btm_joints) - 3
         
-        self.top_curve = util.transforms_to_curve(self.top_joints, 4, self.description + '_top')
-        self.btm_curve = util.transforms_to_curve(self.btm_joints, 4, self.description + '_btm')
+        self.top_curve = util.transforms_to_curve(self.top_joints, self.control_count, self.description + '_top')
+        self.btm_curve = util.transforms_to_curve(self.btm_joints, self.control_count, self.description + '_btm')
         
         self.top_guide_curve = util.transforms_to_curve(self.top_joints, top_cv_count, self.description + '_top_guide')
         self.btm_guide_curve = util.transforms_to_curve(self.btm_joints, top_cv_count, self.description + '_btm_guide')
@@ -906,6 +908,9 @@ class StickyLipRig(StickyRig):
             cmds.parent(xform, self.control_group)
         
         self.side = orig_side
+        
+    def set_control_count(self, int_value):
+        self.control_count = int_value
         
     def set_corner_control_shape(self, shape_name):
         self.corner_control_shape = shape_name

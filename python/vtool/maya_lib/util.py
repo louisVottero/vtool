@@ -1176,7 +1176,7 @@ class OrientJoint(object):
             
             if not top or not mid or not btm:
                 
-                warning('Could not orient %s fully with current triangle plane settings.' % self.joint)
+                vtool.util.warning('Could not orient %s fully with current triangle plane settings.' % self.joint)
                 return
             
             plane_group = get_group_in_plane(top, mid, btm)
@@ -1551,7 +1551,7 @@ class Control(object):
         self.shapes = cmds.listRelatives(self.control, shapes = True)
         
         if not self.shapes:
-            warning('%s has no shapes' % self.control)
+            vtool.util.warning('%s has no shapes' % self.control)
             
     def _create(self):
         
@@ -4235,7 +4235,7 @@ class BlendShape(object):
             return attr
             
         if self.is_target(name):            
-            warning('Could not add target %s, it already exist.' % name)
+            vtool.util.warning('Could not add target %s, it already exist.' % name)
        
     def replace_target(self, name, mesh):
         
@@ -4250,7 +4250,7 @@ class BlendShape(object):
                 cmds.disconnectAttr('%s.outMesh' % mesh, mesh_input)
                 
         if not self.is_target(name):
-            warning('Could not replace target %s, it does not exist' % name)
+            vtool.util.warning('Could not replace target %s, it does not exist' % name)
         
     def remove_target(self, name):
         target_group = self._get_input_target_group(name)
