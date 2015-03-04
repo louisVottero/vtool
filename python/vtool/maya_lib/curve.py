@@ -247,7 +247,7 @@ class CurveDataInfo():
             vtool.util.warning('Must set active library before running this function.')
             return
         
-        return self.libraryCurves[self.active_library].keys()
+        return self.library_curves[self.active_library].keys()
         
     def set_shape_to_curve(self, curve, curve_name, checkCurve = False):
         if not self.active_library:

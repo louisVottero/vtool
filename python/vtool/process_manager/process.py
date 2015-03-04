@@ -711,8 +711,8 @@ class Process(object):
                     import vtool.maya_lib.util as maya_util
                     
                     # read
-                    read = maya_util.ScriptEditorRead()
-                    read.start()
+                    #read = maya_util.ScriptEditorRead()
+                    #read.start()
                     # read
                     
                     import maya.cmds as cmds
@@ -724,15 +724,15 @@ class Process(object):
                 status = 'Success'
                 
                 # read
-                if read:
-                    value = maya_util.script_editor_value
-                    read.end()
+                #if read:
+                #    value = maya_util.script_editor_value
+                #    read.end()
                     
-                    for line in value:
-                        util.show('\t%s' % line)
+                #    for line in value:
+                #        util.show('\t%s' % line)
                     
-                    if value:
-                        util.show('\n')
+                #    if value:
+                #        util.show('\n')
                 #read
                                 
         except Exception:
@@ -740,12 +740,12 @@ class Process(object):
             status = traceback.format_exc()
             
             #read
-            if read:
-                value = maya_util.script_editor_value
-                read.end()
+            #if read:
+            #    value = maya_util.script_editor_value
+            #    read.end()
                 
-                for line in value:
-                    util.show('\t' + line)
+            #    for line in value:
+            #        util.show('\t' + line)
             #read
             util.show(status)
             return status

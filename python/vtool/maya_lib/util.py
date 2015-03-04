@@ -1571,26 +1571,37 @@ class Control(object):
         curve_data.set_shape_to_curve(self.control, type_name)
     
     
-    def set_to_joint(self):
+    def set_to_joint(self, joint = None):
         
         cmds.select(cl = True)
         name = self.get()
         
-        joint = cmds.joint()
+        joint_given = True
         
-        MatchSpace(name, joint).translation_rotation()
+        if not joint:
+            joint = cmds.joint()
+            MatchSpace(name, joint).translation_rotation()
+            joint_given = False
+            
+            
         
         shapes = self.shapes
         
         for shape in shapes:
             cmds.parent(shape, joint, r = True, s = True)
         
-        cmds.setAttr('%s.drawStyle' % joint, 2)
-            
-        transfer_relatives(name, joint)
+        
+        
+         
+        if not joint_given:
+            transfer_relatives(name, joint)
+            cmds.rename(joint, name)
+            cmds.setAttr('%s.drawStyle' % joint, 2)
             
         cmds.delete(name)
-        cmds.rename(joint, name)
+        
+        self.control = joint
+                
         
     def translate_shape(self, x,y,z):
         
@@ -7088,7 +7099,12 @@ def transfer_relatives(source_node, target_node):
     if parent:
         parent = parent[0]
         
-    children = cmds.listRelatives(source_node, c = True)
+    children = cmds.listRelatives(source_node, c = True, type = 'transform')
+
+    print 'transfer'
+    print 'children', children 
+    print 'target', target_node
+    print 'source', source_node
     
     if children:
         cmds.parent(children, target_node)
@@ -10101,6 +10117,7 @@ def set_color(nodes, color):
     vtool.util.convert_to_sequence(nodes)
     
     for node in nodes:
+        
         overrideEnabled = '%s.overrideEnabled' % node
         overrideColor = '%s.overrideColor' % node
         
