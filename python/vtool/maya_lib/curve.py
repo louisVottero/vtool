@@ -273,6 +273,8 @@ class CurveDataInfo():
         
     def add_curve_to_library(self, curve, library_name):
         
+        
+        
         mel_data = self._get_mel_data(curve)
         
         transform = self._get_curve_parent(curve)
@@ -280,6 +282,11 @@ class CurveDataInfo():
         self.library_curves[library_name][transform] = mel_data
         
     def add_curve(self, curve):
+        
+        if not curve:
+            
+            return
+        
         if not self.active_library:
             vtool.util.warning('Must set active library before running this function.')
             return

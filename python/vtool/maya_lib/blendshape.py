@@ -533,9 +533,6 @@ class BlendshapeManager(object):
         
         input_node = util.get_attribute_input(target, node_only=True)
         
-        print input_node
-        print target
-        
         if input_node and input_node != self.setup_group:
             cmds.delete(input_node)
         

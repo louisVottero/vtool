@@ -777,8 +777,6 @@ class FkScaleRig(FkRig):
            
         drivers = self.get_control_entries('driver2')
         
-        
-        print 'creating control!!!'
         driver = self.control_dict[control]['driver']
         
         drivers = [driver]
@@ -1040,7 +1038,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         
         if self.control_shape:
             
-            print 'sub control!!!!!!!!!!!!!!!!!!!!!!!!11', self.control_shape
             sub_control.set_curve_type(self.control_shape)
         
         sub_control.scale_shape(self.control_size * .9, 

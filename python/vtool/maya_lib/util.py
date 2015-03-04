@@ -1473,6 +1473,8 @@ class MatchSpace(object):
         if not translate_vector:
             translate_vector = self._get_translation()
             
+        print translate_vector
+            
         cmds.xform(self.target_transform, t = translate_vector, ws = True)
     
     def _set_rotation(self, rotation_vector = []):
@@ -1508,12 +1510,12 @@ class MatchSpace(object):
         self._set_rotation()
         
     def translation_rotation(self):
-        
+                
         self._set_scale_pivot()
         self._set_rotate_pivot()
         
         self._set_translation()
-            
+        
         self._set_rotation()
         
     def translation_to_rotate_pivot(self):
@@ -1613,6 +1615,8 @@ class Control(object):
     def rotate_shape(self, x,y,z):
         
         components = self._get_components()
+        
+        print 'rotate', components
         
         if components:
             cmds.rotate(x,y,z, components, relative = True)
@@ -7101,11 +7105,6 @@ def transfer_relatives(source_node, target_node):
         
     children = cmds.listRelatives(source_node, c = True, type = 'transform')
 
-    print 'transfer'
-    print 'children', children 
-    print 'target', target_node
-    print 'source', source_node
-    
     if children:
         cmds.parent(children, target_node)
     if parent:
@@ -10766,14 +10765,37 @@ def zero_xform_channels(transform):
 #---Rig
 
 def get_controls():
-    return cmds.ls('CNT_*', type = 'transform')
+    
+    
+    transforms = cmds.ls(type = 'transform')
+    
+    found = []
+    
+    for transform in transforms:
+        if transform.startswith('CNT_'):
+            found.append(transform)
+            continue
+                
+        if cmds.objExists('%s.control' % transform):
+            found.append(transform)
+            continue
+        
+        if cmds.objExists('%s.tag' % transform):
+            
+            if has_shape_of_type(transform, 'nurbsCurve'):
+            
+                found.append(transform)
+            
+            continue
+        
+    return found
+
     
 @undo_chunk
 def mirror_control(control):
     
     if not control:
         return
-    
     
     shapes = get_shapes(control)
     
@@ -10785,41 +10807,55 @@ def mirror_control(control):
     if not cmds.objExists('%s.cc' % shape):
         return
     
+    other_control = None
+    
     if control.endswith('_L') or control.endswith('_R'):
-        
-        other_control = None
-        
+                
         if control.endswith('_L'):
             other_control = control[0:-2] + '_R'
             
         if control.endswith('_R'):
             other_control = control[0:-2] + '_L'
+         
+    if not other_control:
+                
+        if control.find('lf') > -1 or control.find('rt') > -1:
             
-        if not cmds.objExists(other_control):
-            return
-                        
-        shapes = get_shapes(other_control)
-        
-        if not shapes:
-            return
-        
-        other_shape = shapes[0]
-        
-        if not cmds.objExists('%s.cc' % other_shape):
-            return
-        
-        cvs = cmds.ls('%s.cv[*]' % shape, flatten = True)
-        other_cvs = cmds.ls('%s.cv[*]' % other_shape, flatten = True)
-        
-        if len(cvs) != len(other_cvs):
-            return
-        
-        for inc in range(0, len(cvs)):
-            position = cmds.pointPosition(cvs[inc], world = True)
             
-            x_value = position[0] * -1
-                 
-            cmds.move(x_value, position[1], position[2], other_cvs[inc], worldSpace = True)
+            
+            if control.find('lf') > -1:
+                other_control = control.replace('lf', 'rt')
+                
+            if control.find('rt') > -1:
+                other_control = control.replace('rt', 'lf') 
+           
+    if not cmds.objExists(other_control):
+        return
+                    
+    shapes = get_shapes(other_control)
+    
+    if not shapes:
+        return
+    
+    other_shape = shapes[0]
+    
+    if not cmds.objExists('%s.cc' % other_shape):
+        return
+    
+    cvs = cmds.ls('%s.cv[*]' % shape, flatten = True)
+    other_cvs = cmds.ls('%s.cv[*]' % other_shape, flatten = True)
+    
+    if len(cvs) != len(other_cvs):
+        return
+    
+    for inc in range(0, len(cvs)):
+        position = cmds.pointPosition(cvs[inc], world = True)
+        
+        x_value = position[0] * -1
+             
+        cmds.move(x_value, position[1], position[2], other_cvs[inc], worldSpace = True)
+        
+    return other_control
 
 @undo_chunk
 def mirror_controls():
@@ -10838,8 +10874,17 @@ def mirror_controls():
     if not selection or not found:
         found = controls
     
+    mirrored_controls = []
+    
     for control in found:
-        mirror_control(control)
+        
+        if control in mirrored_controls:
+            return
+        
+        other_control = mirror_control(control)
+        
+        mirrored_controls.append(other_control)
+        
 
 def mirror_curve(prefix):
     

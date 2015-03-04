@@ -765,6 +765,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         picked = vtool.qt_ui.get_pick(folders, 'Pick the data to import.', self)
         
+        if not picked:
+            return
+        
         process_tool.create_code('import_%s' % picked, import_data = picked)
         self._add_item('import_%s.py' % picked, False)
         

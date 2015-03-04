@@ -370,9 +370,10 @@ class ControlCvData(MayaCustomData):
             shapes = maya_lib.util.get_shapes(control)          
             
             if shapes:
-                library.add_curve(shapes[0])
+                if shapes[0] != None:
+                    library.add_curve(shapes[0])
             if not shapes:
-                maya_lib.util.warning("No shape node for: %s' % control")
+                util.warning("No shape node for: %s' % control")                
             
         filepath = library.write_data_to_file()
         
