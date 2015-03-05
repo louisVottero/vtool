@@ -556,6 +556,9 @@ class SkinWeightData(MayaCustomData):
                 
                 for influence in weights:
                     
+                    if influence == None or influence == 'None':
+                        continue
+                    
                     weight_list = weights[influence]
                     
                     if not weight_list:

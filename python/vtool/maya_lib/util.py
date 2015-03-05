@@ -4572,8 +4572,11 @@ class TransferWeight(object):
         
         for influence_index in joint_map:
             
-            if not influence_index:
-                continue
+            print influence_index, joint_map[influence_index]
+            
+            #if not influence_index:
+            #    print 'joint was not an influence', joint_map[influence_index]
+            #    continue
             
             for vert_index in range(0, len(verts)):
                 
@@ -4609,8 +4612,8 @@ class TransferWeight(object):
             
             for influence_index in joint_map:
                 
-                if not influence_index:
-                    continue
+                #if not influence_index:
+                #    continue
                 
                 joint = joint_map[influence_index]
                 value = source_value_map[influence_index][vert_index]
@@ -11022,9 +11025,13 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
 
 
     if infinite:
-        cmds.setInfinity(target, postInfinite = 'linear', preInfinite = 'linear') 
-            
+        cmds.setInfinity(target, postInfinite = 'linear', preInfinite = 'linear')
+         
+    if infinite == 'post_only':
+        cmds.setInfinity(target, postInfinite = 'linear', preInfinite = 'linear')    
         
+    if infinite == 'pre_only':
+        cmds.setInfinity(target, postInfinite = 'linear', preInfinite = 'linear')    
         
 
 #--- Nucleus
