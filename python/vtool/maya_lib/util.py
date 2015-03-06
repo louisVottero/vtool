@@ -6285,11 +6285,16 @@ class PoseControl(BasePoseControl):
         other_pose = ''
         other_description = ''
         
+        """
         if self.pose_control.endswith('L'):
             other_pose = self.pose_control[:-1] + 'R'
         
         if description.endswith('L'):
             other_description =description[:-1] + 'R'
+        """
+            
+        other_pose = self.pose_control.replace('_L','_R')
+        other_description = description.replace('_L','_R')
         
         other_meshes = []
         
@@ -6339,19 +6344,21 @@ class PoseControl(BasePoseControl):
             
         cmds.setAttr('%s.envelope' % skin, 1)
         cmds.setAttr('%s.envelope' % blendshape, 1)
-        
-        store = StoreControlData(self.pose_control)
-        store.eval_mirror_data()
-            
+          
         if cmds.objExists(other_pose):
             pose = PoseControl()
             pose.set_pose(other_pose)
+            
+            pose.goto_pose()
         
         if not cmds.objExists(other_pose):
+        
+            store = StoreControlData(self.pose_control)
+            store.eval_mirror_data()
             
             pose = PoseControl(other_transform, other_description)
             pose.create()
-        
+        """   
         anim_translation = get_attribute_input('%s.translation' % self.pose_control, True)
         anim_rotation = get_attribute_input('%s.rotation' % self.pose_control, True)
         
@@ -6369,10 +6376,14 @@ class PoseControl(BasePoseControl):
         
         cmds.connectAttr(input_new_rotation, '%s.input' % new_rotate)
         cmds.connectAttr('%s.output' % new_rotate, '%s.rotation' % pose.pose_control, f = True)
-
+        
+        print 'here!!!!'
+        print anim_new_translation
+        print anim_new_rotation
+        
         cmds.delete(anim_new_translation)
         cmds.delete(anim_new_rotation)
-        
+        """
         twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
         distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
         angle_value = cmds.getAttr('%s.maxAngle' % self.pose_control)
