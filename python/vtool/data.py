@@ -349,10 +349,15 @@ class ControlCvData(MayaCustomData):
         library.set_active_library(self.name)
             
         for control in controls:
+            
+            library.set_shape_to_curve(control)
+            
+            """
             shapes = maya_lib.util.get_shapes(control)
             if shapes:
                 library.set_shape_to_curve(shapes[0], control, True)
-                
+            """
+             
         self._center_view()
         
         util.show('Imported %s data' % self.name)
@@ -366,14 +371,18 @@ class ControlCvData(MayaCustomData):
         library.set_active_library(self.name)
         
         for control in controls:
-                     
+            
+            library.add_curve(control)
+            
+            """
             shapes = maya_lib.util.get_shapes(control)          
             
             if shapes:
                 if shapes[0] != None:
-                    library.add_curve(shapes[0])
+                    library.add_curve(shapes)
             if not shapes:
                 util.warning("No shape node for: %s' % control")                
+            """
             
         filepath = library.write_data_to_file()
         

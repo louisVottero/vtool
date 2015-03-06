@@ -17,43 +17,58 @@ class CurveToData(object):
     
     def __init__(self, curve):
         
-        curve_shape = self._get_shape(curve)
+        curve_shapes = self._get_shapes(curve)
         
-        if not curve_shape:
-            vtool.util.warning('%s is not a nurbs curve.' % curve_shape)
-            return 
+        self.curves = []
+        self.curve_mobjects = []
+        self.curve_functions = []
         
-        self.curve = curve_shape
-        self.curve_mobject = util.nodename_to_mobject(self.curve)
-        self.curve_function = util.NurbsCurveFunction(self.curve_mobject)
-        
-    def _get_shape(self, curve):
-        curve_shape = None
-        
-        if not cmds.nodeType(curve) == 'nurbsCurve':
-            shapes = cmds.listRelatives(curve, s = True)
+        for curve_shape in curve_shapes:
             
-            if shapes:
+            print 'curve shape', curve_shape
+            
+            if not curve_shape:
+                vtool.util.warning('%s is not a nurbs curve.' % curve_shape)
+                continue 
+            
+            self.curves.append(curve_shape)
+            self.curve_mobjects.append( util.nodename_to_mobject(curve_shape) )
+            self.curve_functions.append( util.NurbsCurveFunction( self.curve_mobjects[-1] ))
+        
+    def _get_shapes(self, curve):
+        
+        curves = vtool.util.convert_to_sequence(curve)
+        
+        curve_shapes = []
+        
+        for curve in curves:
+            curve_shape = None
                 
-                if cmds.nodeType(shapes[0]) == 'nurbsCurve':
-                    curve_shape = shapes[0]
-
+            if not cmds.nodeType(curve) == 'nurbsCurve':
+                shapes = cmds.listRelatives(curve, s = True)
+                
+                if shapes:
                     
-        if cmds.nodeType(curve) == 'nurbsCurve':
-            curve_shape = curve
-        
-        
-        
-        return curve_shape
+                    for shape in shapes:
+                        if cmds.nodeType(shape) == 'nurbsCurve':
+                            curve_shape( shape )
     
-    def get_degree(self):
-        return self.curve_function.get_degree()
+            if cmds.nodeType(curve) == 'nurbsCurve':
+                curve_shape = curve
+                
+            if curve_shape:
+                curve_shapes.append(curve)
         
-    def get_knots(self):
-        return self.curve_function.get_knot_values()
+        return curve_shapes
+    
+    def get_degree(self, index = 0):
+        return self.curve_functions[index].get_degree()
         
-    def get_cvs(self):
-        cvs = self.curve_function.get_cv_positions()
+    def get_knots(self, index = 0):
+        return self.curve_functions[index].get_knot_values()
+        
+    def get_cvs(self, index = 0):
+        cvs = self.curve_functions[index].get_cv_positions()
         
         returnValue = []
         
@@ -64,49 +79,71 @@ class CurveToData(object):
             
         return returnValue
     
-    def get_cv_count(self):
-        return self.curve_function.get_cv_count()
+    def get_cv_count(self, index = 0):
+        return self.curve_functions[index].get_cv_count()
     
-    def get_span_count(self):
-        return self.curve_function.get_span_count()
+    def get_span_count(self, index = 0):
+        return self.curve_functions[index].get_span_count()
     
-    def get_form(self):
-        return (self.curve_function.get_form()-1)
+    def get_form(self, index = 0):
+        return (self.curve_functions[index].get_form()-1)
     
-    def create_curve_array(self):
+    def create_curve_list(self):
         
-        nurbs_curve_array = []
+        curve_arrays = []
         
-        knots = self.get_knots()
-        cvs = self.get_cvs()
-        
-        nurbs_curve_array.append(self.get_degree())
-        nurbs_curve_array.append(self.get_span_count())
-        nurbs_curve_array.append(self.get_form())
-        nurbs_curve_array.append(0)
-        nurbs_curve_array.append(3)
-        nurbs_curve_array.append(len(knots))
-        nurbs_curve_array += knots
-        nurbs_curve_array.append(self.get_cv_count())
-        nurbs_curve_array += cvs
-        
-        return nurbs_curve_array
-    
-    def create_curve_array_mel(self):
-        data = self.create_curve_array()
-        mel_curve_data = ''
-        
-        for nurbs_data in data:
-            mel_curve_data += ' %s' % str(nurbs_data)
+        for inc in range(0, len(self.curves)):
+            nurbs_curve_array = []
             
-        return mel_curve_data
+            knots = self.get_knots(inc)
+            cvs = self.get_cvs(inc)
+            
+            nurbs_curve_array.append(self.get_degree(inc))
+            nurbs_curve_array.append(self.get_span_count(inc))
+            nurbs_curve_array.append(self.get_form(inc))
+            nurbs_curve_array.append(0)
+            nurbs_curve_array.append(3)
+            nurbs_curve_array.append(len(knots))
+            nurbs_curve_array += knots
+            nurbs_curve_array.append(self.get_cv_count(inc))
+            nurbs_curve_array += cvs
+            
+            curve_arrays.append( nurbs_curve_array )
+        
+        return curve_arrays
+    
+    def create_mel_list(self):
+        curve_arrays = self.create_curve_list()
+        
+        mel_curve_data_list = []
+        for curve_array in curve_arrays:
+            mel_curve_data = ''
+            
+            for nurbs_data in curve_array:
+                mel_curve_data += ' %s' % str(nurbs_data)
+                
+            mel_curve_data_list.append(mel_curve_data)
+            
+        return mel_curve_data_list
 
 def set_nurbs_data(curve, curve_data_array):
     #errors at position 7
     cmds.setAttr('%s.cc' % curve, *curve_data_array, type = 'nurbsCurve')
     
-def set_nurbs_data_mel(curveShape, mel_curve_data):
-    mel.eval('setAttr "%s.cc" -type "nurbsCurve" %s' % (curveShape,mel_curve_data))
+def set_nurbs_data_mel(curve, mel_curve_data):
+    
+    shapes = util.get_shapes(curve)
+    
+    vtool.util.convert_to_sequence(mel_curve_data)
+    
+    for inc in range(0, len(shapes)):
+        
+        if inc < len(mel_curve_data):
+            mel.eval('setAttr "%s.cc" -type "nurbsCurve" %s' % (shapes[inc], mel_curve_data[inc]))
+        if inc > len(mel_curve_data):
+            break
+    
+        
     
 class CurveDataInfo():
     
@@ -141,6 +178,9 @@ class CurveDataInfo():
         
         curve_dict = self.library_curves[curve_library]
         
+        print 'library curve dict', curve_dict.keys()
+        print curve_name, curve_dict.has_key(curve_name),type(curve_name)
+        
         if not curve_dict.has_key(curve_name):
             vtool.util.warning('%s is not in the curve library %s.' % (curve_name, curve_library))
             
@@ -159,11 +199,11 @@ class CurveDataInfo():
             
         return parent
     
-    def _get_mel_data(self, curve):
+    def _get_mel_data_list(self, curve):
         curveData = CurveToData(curve)
-        mel_data = curveData.create_curve_array_mel()
+        mel_data_list = curveData.create_mel_list()
         
-        return mel_data
+        return mel_data_list
     
     def set_directory(self, directorypath):
         self.curve_data_path = directorypath
@@ -188,8 +228,6 @@ class CurveDataInfo():
         if not path:
             path = vtool.util_file.join_path(self.curve_data_path, '%s.data' % self.active_library)
         
-        
-        
         last_line_curve = False
         curve_name = ''
         curve_data = ''
@@ -197,24 +235,29 @@ class CurveDataInfo():
         readfile = vtool.util_file.ReadFile(path)
         data_lines = readfile.read()
         
+        curve_data_lines = []
+        
         for line in data_lines:
             
             if line.startswith('->'):
                 line_split = line.split('->')
                 curve_name = line_split[1]
+                curve_name = curve_name.strip()
                 last_line_curve = True
+                curve_data_lines = []
                                 
             if not line.startswith('->') and last_line_curve:
                 
                 curve_data = line
-                    
-            if curve_name and curve_data:
-                curve_name = curve_name.strip()
                 curve_data = curve_data.strip()
-                    
-                self.library_curves[self.active_library][curve_name] = curve_data
+                curve_data_lines.append(curve_data)
+                   
+            if curve_name and curve_data_lines:
+                
+                self.library_curves[self.active_library][curve_name] = curve_data_lines
                 curve_name = ''
-                curve_data = ''
+                curve_data_lines = []
+                
         
                 
     def write_data_to_file(self):
@@ -231,9 +274,13 @@ class CurveDataInfo():
         lines = []
         
         for curve in current_library:
-            data_string = current_library[curve]
+            
+            curve_data_lines = current_library[curve]
+            
             lines.append('-> %s' % curve)
-            lines.append('%s' % data_string)
+            
+            for curve_data in curve_data_lines:
+                lines.append('%s' % curve_data)
           
         writefile.write(lines)
         
@@ -254,32 +301,40 @@ class CurveDataInfo():
             vtool.util.warning('Must set active library before running this function.')
             return
         
-        mel_data = self._get_curve_data(curve_name, self.active_library)
+        print 'set shape to curve!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        print curve_name, self.active_library
         
-        if checkCurve and mel_data:
-            split_mel_data = mel_data.split()
-            
-            curve_data = CurveToData(curve)
-            original_curve_data =  curve_data.create_curve_array_mel()
-            
-            split_original_curve_data = original_curve_data.split()
-            
-            if len(split_mel_data) != len(split_original_curve_data):
-                vtool.util.warning('Curve data does not match stored data. Skipping %s' % curve) 
-                return        
+        mel_data_list = self._get_curve_data(curve_name, self.active_library)\
         
-        if mel_data:
-            set_nurbs_data_mel(curve, mel_data)
+        print mel_data_list
+        
+        if checkCurve and mel_data_list:
+            for mel_data in mel_data_list:
+                split_mel_data = mel_data.split()
+                
+                curve_data = CurveToData(curve)
+                original_mel_list =  curve_data.create_mel_list()
+                
+                for curve_data in original_mel_list:
+                    split_original_curve_data = curve_data.split()
+                
+                    if len(split_mel_data) != len(split_original_curve_data):
+                        vtool.util.warning('Curve data does not match stored data. Skipping %s' % curve) 
+                        return       
+        
+        if mel_data_list:
+            
+            print 'outputing ', curve, curve_name
+            
+            set_nurbs_data_mel(curve, mel_data_list)
         
     def add_curve_to_library(self, curve, library_name):
         
-        
-        
-        mel_data = self._get_mel_data(curve)
+        mel_data_list = self._get_mel_data_list(curve)
         
         transform = self._get_curve_parent(curve)
         
-        self.library_curves[library_name][transform] = mel_data
+        self.library_curves[library_name][transform] = mel_data_list
         
     def add_curve(self, curve):
         
@@ -291,12 +346,12 @@ class CurveDataInfo():
             vtool.util.warning('Must set active library before running this function.')
             return
         
-        mel_data = self._get_mel_data(curve)
+        mel_data_list = self._get_mel_data_list(curve)
         
         transform = self._get_curve_parent(curve)
                     
         if self.active_library:
-            self.library_curves[self.active_library][transform] = mel_data
+            self.library_curves[self.active_library][transform] = mel_data_list
         
     def create_curve(self, curve_name):
         if not self.active_library:
