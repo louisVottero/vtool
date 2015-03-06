@@ -1473,8 +1473,6 @@ class MatchSpace(object):
         if not translate_vector:
             translate_vector = self._get_translation()
             
-        print translate_vector
-            
         cmds.xform(self.target_transform, t = translate_vector, ws = True)
     
     def _set_rotation(self, rotation_vector = []):
@@ -1615,8 +1613,6 @@ class Control(object):
     def rotate_shape(self, x,y,z):
         
         components = self._get_components()
-        
-        print 'rotate', components
         
         if components:
             cmds.rotate(x,y,z, components, relative = True)
@@ -4571,8 +4567,6 @@ class TransferWeight(object):
         weighted_verts = []
         
         for influence_index in joint_map:
-            
-            print influence_index, joint_map[influence_index]
             
             #if not influence_index:
             #    print 'joint was not an influence', joint_map[influence_index]
