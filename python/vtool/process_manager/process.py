@@ -703,21 +703,20 @@ class Process(object):
             return status
               
         try:
+            
+            if util.is_in_maya():
+                import vtool.maya_lib.util as maya_util
+                
+                # read
+                #read = maya_util.ScriptEditorRead()
+                #read.start()
+                # read
+                
+                import maya.cmds as cmds
+                module.cmds = cmds
+                module.show = util.show
+            
             if hasattr(module, 'main'):
-                                
-                
-                
-                if util.is_in_maya():
-                    import vtool.maya_lib.util as maya_util
-                    
-                    # read
-                    #read = maya_util.ScriptEditorRead()
-                    #read.start()
-                    # read
-                    
-                    import maya.cmds as cmds
-                    module.cmds = cmds
-                    module.show = util.show
                         
                 
                 module.main()
@@ -734,11 +733,17 @@ class Process(object):
                 #    if value:
                 #        util.show('\n')
                 #read
+                
+            if not hasattr(module, 'main'):
+                
+                util_file.get_basename(script)
+                
+                util.warning('main() not found in %s.' % script)
                                 
         except Exception:
             
             status = traceback.format_exc()
-            
+
             #read
             #if read:
             #    value = maya_util.script_editor_value
@@ -747,6 +752,7 @@ class Process(object):
             #    for line in value:
             #        util.show('\t' + line)
             #read
+            
             util.show(status)
             return status
         

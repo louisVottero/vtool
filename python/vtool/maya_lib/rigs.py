@@ -107,7 +107,8 @@ class Rig(object):
         
         control.color( util.get_color_of_side( self.side , sub)  )
         control.hide_visibility_attribute()
-        control.set_curve_type(self.control_shape)
+        if self.control_shape:
+            control.set_curve_type(self.control_shape)
         
         if not sub:
             control.scale_shape(self.control_size, 
@@ -263,7 +264,7 @@ class CurveRig(Rig):
     
     def set_curve(self, curve_list):
         
-        self.curves = curve_list
+        self.curves = vtool.util.convert_to_sequence(curve_list)
 
 #--- Rigs
 

@@ -59,8 +59,9 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
     def _data_item_selection_changed(self):
         
-        item = self.data_widget.currentItem()
         items = self.data_widget.selectedItems()
+        
+        item = None
         
         if items:
             item = items[0]
@@ -190,6 +191,11 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         old_name = old_name.split('/')[-1]
         
         new_name = vtool.qt_ui.get_new_name('New Name', self, old_name)
+        
+        for inc in range(0, self.topLevelItemCount()):
+            top_item = self.topLevelItem(inc)
+            if new_name == top_item.text(0):
+                return
         
         if not new_name:
             return
@@ -781,12 +787,14 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.data_class.save(comment)
         
         self.file_changed.emit()
-        
+    
+       
     def _export_file(self):
         comment = vtool.qt_ui.get_comment(self)
         
         if comment == None:
             return
+        
         
         self.data_class.export_data(comment)
         

@@ -27,10 +27,10 @@ def undo_off(function):
         
         try:
             function(*args, **kwargs)
-        except RuntimeError:
+        except:
             
             cmds.undoInfo(state = True)
-            vtool.util.show(traceback.format_exc)
+            vtool.util.show(traceback.format_exc() )
                     
         cmds.undoInfo(state = True)
         
@@ -43,18 +43,27 @@ def undo_chunk(function):
         
         if not vtool.util.is_in_maya():
             return
+        
         return_value = None
         
+        print 'open chunk'
         cmds.undoInfo(openChunk = True)
+        
+        closed = False
         
         try:
             return_value = function(*args, **kwargs)
-        except RuntimeError:
+        except:
             
+            print 'error!!'
             cmds.undoInfo(closeChunk = True)
-            vtool.util.show(traceback.format_exc)
+            closed = True
+            vtool.util.show(traceback.format_exc())
+            print 'close chunk' 
             
-        cmds.undoInfo(closeChunk = True)
+        if not closed:
+            print 'close chunk'
+            cmds.undoInfo(closeChunk = True)
         
         return return_value
                      
@@ -309,6 +318,22 @@ class TransformFunction(MayaFunction):
 class MeshFunction(MayaFunction):
     def _define_api_object(self, mobject):
         return OpenMaya.MFnMesh(mobject)
+    
+    def get_uv_at_point(self, vector):
+    
+        point = Point(vector[0],vector[1],vector[2])
+        
+        uv = OpenMaya.MScriptUtil()
+        uvPtr = uv.asFloat2Ptr()
+        
+        self.api_object.getUVAtPoint(point.get_api_object(), uvPtr)
+        
+        u = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 0)
+        v = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 1)
+        
+        
+        
+        return u,v
    
 class NurbsSurfaceFunction(MayaFunction):
     def _define_api_object(self, mobject):
@@ -1548,7 +1573,7 @@ class Control(object):
         if not cmds.objExists(self.control):
             self._create()
             
-        self.shapes = cmds.listRelatives(self.control, shapes = True)
+        self.shapes = get_shapes(self.control)
         
         if not self.shapes:
             vtool.util.warning('%s has no shapes' % self.control)
@@ -1562,6 +1587,8 @@ class Control(object):
         
     def _get_components(self):
         
+        self.shapes = get_shapes(self.control)
+        
         return get_components_from_shapes(self.shapes)
         
     def set_curve_type(self, type_name):
@@ -1569,7 +1596,8 @@ class Control(object):
         curve_data = curve.CurveDataInfo()
         curve_data.set_active_library('default_curves')
         curve_data.set_shape_to_curve(self.control, type_name)
-    
+        
+        self.shapes = get_shapes(self.control)
     
     def set_to_joint(self, joint = None):
         
@@ -1589,10 +1617,7 @@ class Control(object):
         
         for shape in shapes:
             cmds.parent(shape, joint, r = True, s = True)
-        
-        
-        
-         
+            
         if not joint_given:
             transfer_relatives(name, joint)
             cmds.rename(joint, name)
@@ -1620,12 +1645,17 @@ class Control(object):
     def scale_shape(self, x,y,z):
         
         components = self._get_components()
+        
+        pivot = cmds.xform( self.control, q = True, rp = True, ws = True)
+        
         if components:
-            cmds.scale(x,y,z, components)
+            cmds.scale(x,y,z, components, p = pivot, r = True)
 
     def color(self, value):
         
-        set_color(self.shapes, value)
+        shapes = get_shapes(self.control)
+        
+        set_color(shapes, value)
     
     def show_scale_attributes(self):
         
@@ -1700,6 +1730,9 @@ class Control(object):
         self.control = new_name
 
     def delete_shapes(self):
+        
+        self.shapes = get_shapes(self.control)
+        
         cmds.delete(self.shapes)
         self.shapes = []
         
@@ -2778,14 +2811,8 @@ class ClusterSurface(ClusterObject):
             self.maya_type = 'nurbsCurve'
         if has_shape_of_type(self.geometry, 'nurbsSurface'):
             self.maya_type = 'nurbsSurface'
-        
-    
-    def set_join_ends(self, bool_value):
-        
-        self.join_ends = bool_value
-        
-    def set_join_both_ends(self, bool_value):
-        self.join_both_ends = bool_value
+            
+        self.cluster_u = True
     
     def _create_start_and_end_clusters(self):
         
@@ -2805,17 +2832,32 @@ class ClusterSurface(ClusterObject):
             
         if self.maya_type == 'nurbsSurface':
             
-            start_cvs = '%s.cv[0:1][0:1]' % self.geometry
+            if self.cluster_u:
+                cv_count_u = len(cmds.ls('%s.cv[*][0]' % self.geometry, flatten = True))
+                index1 = '[0:*][0]'
+                index2 = '[0:*][%s]' % (self.cv_count-1)
+                index3 = '[%s][0]' % (cv_count_u - 1)
+                index4 = '[0][%s]' % (self.cv_count-1)
+                index5 = '[%s][%s]' % (cv_count_u, self.cv_count-1) 
+            if not self.cluster_u:
+                cv_count_v = len(cmds.ls('%s.cv[0][*]' % self.geometry, flatten = True))
+                index1 = '[0][0:*]'
+                index2 = '[%s][0:*]' % (self.cv_count-1)
+                index3 = '[0][%s]' % (cv_count_v - 1)
+                index4 = '[%s][0]' % (self.cv_count-1)
+                index5 = '[%s][%s]' % (self.cv_count-1,cv_count_v)                
             
-            end_cvs = '%s.cv[0:1][%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
+            start_cvs = '%s.cv%s' % (self.geometry, index1)
+            end_cvs = '%s.cv%s' % (self.geometry,index2)
+            #end_cvs = '%s.cv[0:1][%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
             
             p1 = cmds.xform('%s.cv[0][0]' % self.geometry, q = True, ws = True, t = True)
-            p2 = cmds.xform('%s.cv[1][0]' % self.geometry, q = True, ws = True, t = True)
+            p2 = cmds.xform('%s.cv%s' % (self.geometry, index3), q = True, ws = True, t = True)
             
             start_position = vtool.util.get_midpoint(p1, p2)
             
-            p1 = cmds.xform('%s.cv[0][%s]' % (self.geometry, self.cv_count-1), q = True, ws = True, t = True)
-            p2 = cmds.xform('%s.cv[1][%s]' % (self.geometry, self.cv_count-1), q = True, ws = True, t = True)
+            p1 = cmds.xform('%s.cv%s' % (self.geometry, index4), q = True, ws = True, t = True)
+            p2 = cmds.xform('%s.cv%s' % (self.geometry, index5), q = True, ws = True, t = True)
             
             end_position = vtool.util.get_midpoint(p1, p2)
         
@@ -2844,8 +2886,18 @@ class ClusterSurface(ClusterObject):
                 end_cvs = '%s.cv[%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
                 
             if self.maya_type == 'nurbsSurface':
-                start_cvs = '%s.cv[0:1][0:1]' % self.geometry
-                end_cvs = '%s.cv[0:1][%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
+                
+                if self.cluster_u:
+                    index1 = '[0:*][0]'
+                    index2 = '[0:*][%s]' % (self.cv_count-1)
+
+                if not self.cluster_u:
+                    index1 = '[0][0:*]'
+                    index2 = '[%s][0:*]' % (self.cv_count-1)
+                
+                start_cvs = '%s.cv%s' % (self.geometry, index1)
+                end_cvs = '%s.cv%s' % (self.geometry, index2)
+                #end_cvs = '%s.cv[0:1][%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
                 
         
                 
@@ -2867,7 +2919,13 @@ class ClusterSurface(ClusterObject):
         if self.maya_type == 'nurbsCurve':
             self.cv_count = len(self.cvs)
         if self.maya_type == 'nurbsSurface':
-            self.cv_count = len(cmds.ls('%s.cv[0][*]' % self.geometry, flatten = True))
+            
+            if self.cluster_u:
+                index = '[0][*]'
+            if not self.cluster_u:
+                index = '[*][0]'
+                            
+            self.cv_count = len(cmds.ls('%s.cv%s' % (self.geometry, index), flatten = True))
         
         start_inc = 0
         
@@ -2893,7 +2951,13 @@ class ClusterSurface(ClusterObject):
             if self.maya_type == 'nurbsCurve':
                 cv = '%s.cv[%s]' % (self.geometry, inc)
             if self.maya_type == 'nurbsSurface':
-                cv = '%s.cv[0:1][%s]' % (self.geometry, inc)
+                
+                if self.cluster_u:
+                    index = '[*][%s]' % inc
+                if not self.cluster_u:
+                    index = '[%s][*]' % inc
+                
+                cv = '%s.cv%s' % (self.geometry, index)
             
             cluster, handle = self._create_cluster( cv )
             
@@ -2905,6 +2969,16 @@ class ClusterSurface(ClusterObject):
             self.handles.append(last_handle)
         
         return self.clusters
+    
+    def set_join_ends(self, bool_value):
+        
+        self.join_ends = bool_value
+        
+    def set_join_both_ends(self, bool_value):
+        self.join_both_ends = bool_value
+        
+    def set_cluster_u(self, bool_value):
+        self.cluster_u = bool_value
     
 
 class ClusterCurve(ClusterSurface):
@@ -4422,8 +4496,8 @@ class SplitMeshTarget(object):
         self.base_mesh = None
         self.split_parts = []
     
-    def set_weight_joint(self, joint, suffix):
-        self.split_parts.append([joint, suffix])
+    def set_weight_joint(self, joint, suffix = None, prefix = None, split_name = True):
+        self.split_parts.append([joint, suffix, prefix, split_name])
     
     def set_weighted_mesh(self, weighted_mesh):
         self.weighted_mesh = weighted_mesh
@@ -4452,38 +4526,53 @@ class SplitMeshTarget(object):
         for part in self.split_parts:
             joint = part[0]
             suffix = part[1]
+            prefix = part[2]
+            split_name_option = part[3]
             
-            new_target = cmds.duplicate(self.base_mesh)
-            
-            split_name = self.target_mesh.split('_')
+            new_target = cmds.duplicate(self.base_mesh)[0]
             
             target_name = self.target_mesh
             
             if self.target_mesh.endswith('N'):
                 target_name = self.target_mesh[:-1]
                 
-            new_name = '%s%s' % (target_name, suffix)
+            new_name = target_name
+                
+            if suffix:
+                new_name = '%s%s' % (new_name, suffix)
+            if prefix:
+                new_name = '%s%s' % (prefix, new_name)
             
             if self.target_mesh.endswith('N'):
                 new_name += 'N'
             
-            if len(split_name) > 1:
-                new_names = []
+            if split_name_option:
                 
-                for name in split_name:
+                split_name = self.target_mesh.split('_')
+                
+                if len(split_name) > 1:
+                    new_names = []
                     
-                    sub_name = name
-                    if name.endswith('N'):
-                        sub_name = name[:-1]
-                    sub_new_name = '%s%s' % (sub_name, suffix)
-                    
-                    if name.endswith('N'):
-                        sub_new_name += 'N'
+                    for name in split_name:
                         
-                    new_names.append(sub_new_name)
-                    
-                new_name = string.join(new_names, '_')
-                    
+                        sub_name = name
+                        if name.endswith('N'):
+                            sub_name = name[:-1]
+                        
+                        sub_new_name = sub_name
+                        
+                        if suffix:
+                            sub_new_name = '%s%s' % (sub_new_name, suffix)
+                        if prefix:
+                            sub_new_name = '%s%s' % (prefix, sub_new_name)
+                        
+                        if name.endswith('N'):
+                            sub_new_name += 'N'
+                            
+                        new_names.append(sub_new_name)
+                        
+                    new_name = string.join(new_names, '_')
+                  
             new_target = cmds.rename(new_target, new_name)    
             
             blendshape = cmds.blendShape(self.target_mesh, new_target, w = [0,1])[0]
@@ -4497,8 +4586,17 @@ class SplitMeshTarget(object):
             
             cmds.delete(new_target, ch = True)
             
-            if parent:
-                cmds.parent(new_target, parent)
+            
+            
+            current_parent = cmds.listRelatives(new_target, p = True)
+            
+            if current_parent:
+                current_parent = current_parent[0]
+            
+            if parent and current_parent:
+                if parent != current_parent:
+                    cmds.parent(new_target, parent)
+                
             targets.append(new_target)
           
         return targets
@@ -4567,10 +4665,6 @@ class TransferWeight(object):
         weighted_verts = []
         
         for influence_index in joint_map:
-            
-            #if not influence_index:
-            #    print 'joint was not an influence', joint_map[influence_index]
-            #    continue
             
             for vert_index in range(0, len(verts)):
                 
@@ -5147,7 +5241,7 @@ class PoseManager(object):
                 progress.inc()
                 progress.status('adding pose %s' % pose_name)
             
-            except RuntimeError:
+            except:
                 vtool.util.show( traceback.format_exc() )
             
         progress.end()
@@ -5733,7 +5827,7 @@ class BasePoseControl(object):
             
             blend.set_envelope(1)  
             
-        self.create_blend()  
+        self.create_blend() 
         
        
     def create(self):
@@ -6261,6 +6355,9 @@ class PoseControl(BasePoseControl):
         
         description = self.description
         
+        skin = None
+        blendshape = None
+        
         if not description:
             self._set_description(self.pose_control)
         
@@ -6279,11 +6376,16 @@ class PoseControl(BasePoseControl):
         other_pose = ''
         other_description = ''
         
+        """
         if self.pose_control.endswith('L'):
             other_pose = self.pose_control[:-1] + 'R'
         
         if description.endswith('L'):
             other_description =description[:-1] + 'R'
+        """
+            
+        other_pose = self.pose_control.replace('_L','_R')
+        other_description = description.replace('_L','_R')
         
         other_meshes = []
         
@@ -6331,21 +6433,26 @@ class PoseControl(BasePoseControl):
             
             cmds.delete(mirror_group, other_mesh)
             
-        cmds.setAttr('%s.envelope' % skin, 1)
-        cmds.setAttr('%s.envelope' % blendshape, 1)
         
-        store = StoreControlData(self.pose_control)
-        store.eval_mirror_data()
-            
+        if skin:
+            cmds.setAttr('%s.envelope' % skin, 1)
+        if blendshape:
+            cmds.setAttr('%s.envelope' % blendshape, 1)
+          
         if cmds.objExists(other_pose):
             pose = PoseControl()
             pose.set_pose(other_pose)
+            
+            pose.goto_pose()
         
         if not cmds.objExists(other_pose):
+        
+            store = StoreControlData(self.pose_control)
+            store.eval_mirror_data()
             
             pose = PoseControl(other_transform, other_description)
             pose.create()
-        
+        """   
         anim_translation = get_attribute_input('%s.translation' % self.pose_control, True)
         anim_rotation = get_attribute_input('%s.rotation' % self.pose_control, True)
         
@@ -6363,10 +6470,14 @@ class PoseControl(BasePoseControl):
         
         cmds.connectAttr(input_new_rotation, '%s.input' % new_rotate)
         cmds.connectAttr('%s.output' % new_rotate, '%s.rotation' % pose.pose_control, f = True)
-
+        
+        print 'here!!!!'
+        print anim_new_translation
+        print anim_new_rotation
+        
         cmds.delete(anim_new_translation)
         cmds.delete(anim_new_rotation)
-        
+        """
         twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
         distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
         angle_value = cmds.getAttr('%s.maxAngle' % self.pose_control)
@@ -7563,20 +7674,46 @@ def orient_attributes(scope = None):
             if relatives:
                 orient_attributes(relatives)
 
-def mirror_xform(prefix):
-    if not prefix:
-        return
+def mirror_xform(prefix = None, suffix = None, string_search = None):
     
-    scope_joints = cmds.ls('%s*' % prefix, type = 'joint')
-    scope_transforms = cmds.ls('%s*' % prefix, type = 'transform')
+    scope_joints = []
+    scope_transforms = []
     
+    joints = []
+    transforms = []
+    
+    if prefix:
+        joints = cmds.ls('%s*' % prefix, type = 'joint')
+        transforms = cmds.ls('%s*' % prefix, type = 'transform')
+        
+    scope_joints += joints
+    scope_transforms += transforms
+        
+    if suffix:    
+        joints = cmds.ls('*%s' % suffix, type = 'joint')
+        transforms = cmds.ls('*%s' % suffix, type = 'transform')
+    
+    scope_joints += joints
+    scope_transforms += transforms
+        
+    if string_search:
+        joints = cmds.ls('*%s*' % string_search, type = 'joint')
+        transforms = cmds.ls('*%s*' % string_search, type = 'transform')
+        
+    scope_joints += joints
+    scope_transforms += transforms
+        
     scope = scope_joints + scope_transforms
     
+    if not scope:
+        return
+    
     for transform in scope:
-        if not transform.endswith('_L'):
-            continue
+        if transform.endswith('_L'):
+            other= transform.replace('_L', '_R')
             
-        other= transform.replace('_L', '_R')
+        if not transform.endswith('_L'):
+            other = transform.replace('lf_', 'rt_')
        
         if cmds.objExists(other):
             
@@ -7585,12 +7722,19 @@ def mirror_xform(prefix):
             if cmds.nodeType(other) == 'joint':
                 
                 radius = cmds.getAttr('%s.radius' % transform)
-                cmds.setAttr('%s.radius' % other, radius)    
+                var = MayaNumberVariable('radius')
+                var.set_node(other)
+                var.set_value(radius)
+                #cmds.setAttr('%s.radius' % other, radius)
+                    
                 cmds.move((xform[0]*-1), xform[1], xform[2], '%s.scalePivot' % other, 
                                                              '%s.rotatePivot' % other, a = True)
             
             if cmds.nodeType(other) == 'transform':
-                cmds.move((xform[0]*-1), xform[1],xform[2], other, a = True)
+                
+                pos = [ (xform[0]*-1), xform[1],xform[2] ]
+                cmds.xform(other, ws = True, t = pos)
+                
     
 def match_joint_xform(prefix, other_prefix):
 
@@ -7854,6 +7998,25 @@ def get_shapes_in_hierarchy(transform):
     
     return shapes
 
+def rename_shapes(transform):
+    
+    shapes = get_shapes(transform)
+    
+    if shapes:
+        cmds.rename(shapes[0], '%sShape' % transform)
+        
+    if len(shapes) == 1:
+        return
+    
+    if not shapes:
+        return
+    
+    inc = 1
+    for shape in shapes[1:]:
+        
+        cmds.rename(shape, '%sShape%s' % (transform, inc))
+        inc += 1
+
 def get_component_count(transform):
     components = get_components(transform)
     
@@ -8102,27 +8265,74 @@ def attach_to_closest_transform(source_transform, target_transforms):
     
     create_follow_group(closest_transform, source_transform)
 
+def follicle_to_mesh(transform, mesh, u = None, v = None):
+    
+    mesh = get_mesh_shape(mesh)
+    
+    position = cmds.xform(transform, q = True, ws = True, t = True)
+    
+    uv = u,v
+    
+    if u == None or v == None:
+        uv = get_closest_uv_on_mesh(mesh, position)
+        
+    follicle = create_mesh_follicle(mesh, transform, uv)   
+    
+    cmds.parent(transform, follicle)
+    
+    return follicle
+
 def follicle_to_surface(transform, surface, u = None, v = None):
     
     position = cmds.xform(transform, q = True, ws = True, t = True)
 
+    uv = u,v
+
     if u == None or v == None:
         uv = get_closest_parameter_on_surface(surface, position)   
 
-    create_surface_follicle(surface, transform, uv)
+    follicle = create_surface_follicle(surface, transform, uv)
     
+    cmds.parent(transform, follicle)
     
-def create_surface_follicle(surface, description = None, uv = [0,0]):
-    
+    return follicle
+
+def create_empty_follicle(description, uv = [0,0]):
+
     follicleShape = cmds.createNode('follicle')
+    cmds.hide(follicleShape)
     
     follicle = cmds.listRelatives(follicleShape, p = True)[0]
+    cmds.setAttr('%s.inheritsTransform' % follicle, 0)
     
     if not description:
         follicle = cmds.rename(follicle, inc_name('follicle_1'))[0]
     if description:
         follicle = cmds.rename(follicle, inc_name('follicle_%s' % description))
+    
+    cmds.setAttr('%s.parameterU' % follicle, uv[0])
+    cmds.setAttr('%s.parameterV' % follicle, uv[1])
+    
+    return follicle    
+
+def create_mesh_follicle(mesh, description = None, uv = [0,0]):
+    
+    follicle = create_empty_follicle(description, uv)
+    
+    shape = cmds.listRelatives(follicle, shapes = True)[0]
         
+    cmds.connectAttr('%s.outMesh' % mesh, '%s.inputMesh' % follicle)
+    cmds.connectAttr('%s.worldMatrix' % mesh, '%s.inputWorldMatrix' % follicle)
+    
+    cmds.connectAttr('%s.outTranslate' % shape, '%s.translate' % follicle)
+    cmds.connectAttr('%s.outRotate' % shape, '%s.rotate' % follicle)
+    
+    return follicle
+    
+def create_surface_follicle(surface, description = None, uv = [0,0]):
+    
+    follicle = create_empty_follicle(description, uv)
+    
     shape = cmds.listRelatives(follicle, shapes = True)[0]
         
     cmds.connectAttr('%s.local' % surface, '%s.inputSurface' % follicle)
@@ -8130,9 +8340,6 @@ def create_surface_follicle(surface, description = None, uv = [0,0]):
     
     cmds.connectAttr('%s.outTranslate' % shape, '%s.translate' % follicle)
     cmds.connectAttr('%s.outRotate' % shape, '%s.rotate' % follicle)
-    
-    cmds.setAttr('%s.parameterU' % follicle, uv[0])
-    cmds.setAttr('%s.parameterV' % follicle, uv[1])
     
     return follicle
 
@@ -8254,6 +8461,15 @@ def edges_to_curve(edges, description):
     curve = cmds.rename(curve, inc_name('curve_%s' % description))
     
     return curve
+    
+def get_closest_uv_on_mesh(mesh, three_value_list):
+    
+    mesh_object = nodename_to_mobject(mesh)
+    
+    mesh = MeshFunction(mesh_object)
+    found = mesh.get_uv_at_point(three_value_list)
+    
+    return found
     
 def get_closest_parameter_on_curve(curve, three_value_list):
     
@@ -8918,15 +9134,20 @@ def set_all_weights_on_wire(wire_deformer, weight, mesh = None, slot = 0):
     for inc in range(0, len(indices) ):
         cmds.setAttr('%s.weightList[%s].weights[%s]' % (wire_deformer, slot, inc), weight)
 
-def set_wire_weights_from_skin_influence(wire_deformer, skin_deformer, influence):
-    index = get_index_at_skin_influence(influence, skin_deformer)
+def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence):
+    
+    skin_cluster = find_deformer_by_type(weighted_mesh, 'skinCluster')
+    index = get_index_at_skin_influence(influence, skin_cluster)
     
     if index == None:
+        vtool.util.show('No influence %s on skin %s.' % (influence, skin_cluster))
         return
     
-    weights = get_skin_weights(skin_deformer)
+    weights = get_skin_weights(skin_cluster)
     
     weight = weights[index]
+    
+    
     
     set_wire_weights(weight, wire_deformer)
 
@@ -9963,7 +10184,7 @@ def chad_extract_shape(skin_mesh, corrective):
         
         return offset
 
-    except RuntimeError:
+    except:
         vtool.util.show( traceback.format_exc() )
         
 
@@ -10010,12 +10231,60 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
     if cmds.objExists(blendshape):
         count = cmds.blendShape(blendshape, q= True, weightCount = True)
         cmds.blendShape(blendshape, edit=True, tc = False, t=(target_mesh, count+1, source_mesh, 1.0) )
-        cmds.setAttr('%s.%s' % (blendshape, source_mesh_name), weight)
+        try:
+            cmds.setAttr('%s.%s' % (blendshape, source_mesh_name), weight)
+        except:
+            pass
         
     if not cmds.objExists(blendshape):
         cmds.blendShape(source_mesh, target_mesh, tc = False, weight =[0,weight], n = blendshape, foc = True)
         
     return blendshape 
+    
+def isolate_shape_axis(base, target, axis_list = ['X','Y','Z']):
+    
+    verts = cmds.ls('%s.vtx[*]' % target, flatten = True)
+    
+    if not verts:
+        return
+    
+    vert_count = len(verts)
+    
+    axis_name = string.join(axis_list, '_')
+    
+    new_target = cmds.duplicate(target, n = '%s_%s' % (target, axis_name))[0]
+    
+    for inc in range(0, vert_count):
+        
+        base_pos = cmds.xform('%s.vtx[%s]' % (base, inc), q = True, t = True, ws = True)
+        target_pos = cmds.xform('%s.vtx[%s]' % (target, inc), q = True, t = True, ws = True)
+        
+        if (base_pos == target_pos):
+            continue
+        
+        small_x = False
+        small_y = False
+        small_z = False
+        if abs(base_pos[0]-target_pos[0]) < 0.0001:
+            small_x = True
+        if abs(base_pos[1]-target_pos[1]) < 0.0001:
+            small_y = True
+        if abs(base_pos[2]-target_pos[2]) < 0.0001:
+            small_z = True
+            
+        if small_x and small_y and small_z:
+            continue
+            
+        if not 'X' in axis_list:
+            target_pos[0] = base_pos[0]
+        if not 'Y' in axis_list:
+            target_pos[1] = base_pos[1]
+        if not 'Z' in axis_list:
+            target_pos[2] = base_pos[2]
+            
+        cmds.xform('%s.vtx[%s]' % (new_target, inc), ws = True, t = target_pos)
+        
+    return new_target
     
 def reset_tweak(tweak_node):
     
@@ -10763,7 +11032,6 @@ def zero_xform_channels(transform):
 
 def get_controls():
     
-    
     transforms = cmds.ls(type = 'transform')
     
     found = []
@@ -10784,6 +11052,7 @@ def get_controls():
                 found.append(transform)
             
             continue
+        
         
     return found
 
@@ -10826,7 +11095,7 @@ def mirror_control(control):
             if control.find('rt') > -1:
                 other_control = control.replace('rt', 'lf') 
            
-    if not cmds.objExists(other_control):
+    if not other_control or not cmds.objExists(other_control):
         return
                     
     shapes = get_shapes(other_control)
@@ -10876,7 +11145,7 @@ def mirror_controls():
     for control in found:
         
         if control in mirrored_controls:
-            return
+            continue
         
         other_control = mirror_control(control)
         
@@ -10895,31 +11164,47 @@ def mirror_curve(prefix):
         
         if curve.endswith('_L'):
             other_curve = curve[:-1] + 'R'
-            
-        if not other_curve:
-            continue
         
         cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
+            
+        if not other_curve:
+            
+            cv_count = len(cvs)
+            
+            for inc in range(0, cv_count):
+                
+                cv = '%s.cv[%s]' % (curve, inc)
+                other_cv = '%s.cv[%s]' % (curve, cv_count-(inc+1))
+                
+                position = cmds.xform(cv, q = True, ws = True, t = True)
+                
+                new_position = list(position)
+                
+                new_position[0] = position[0] * -1
+                
+                cmds.xform(other_cv, ws = True, t = new_position)
+                
+                if inc == cv_count:
+                    break
         
-        other_cvs = cmds.ls('%s.cv[*]' % other_curve, flatten = True)
+        if other_curve:
         
-        if len(cvs) != len(other_cvs):
-            continue
-        
-        for inc in range(0, len(cvs)):
+            other_cvs = cmds.ls('%s.cv[*]' % other_curve, flatten = True)
             
-            position = cmds.xform(cvs[inc], q = True, ws = True, t = True)
+            if len(cvs) != len(other_cvs):
+                continue
             
-            new_position = list(position)
-            
-            new_position[0] = position[0] * -1
-            
-            
-            
-            cmds.xform(other_cvs[inc], ws = True, t = new_position)
-            
-    
-    
+            for inc in range(0, len(cvs)):
+                
+                position = cmds.xform(cvs[inc], q = True, ws = True, t = True)
+                
+                new_position = list(position)
+                
+                new_position[0] = position[0] * -1
+                
+                
+                
+                cmds.xform(other_cvs[inc], ws = True, t = new_position)
     
 def process_joint_weight_to_parent(mesh):
     
@@ -11016,7 +11301,6 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
     for inc in range(0, len(source_values)):
         
         cmds.setDrivenKeyframe(target,cd = source, driverValue = source_values[inc], value = target_values[inc], itt = 'spline', ott = 'spline')
-
 
     if infinite:
         cmds.setInfinity(target, postInfinite = 'linear', preInfinite = 'linear')

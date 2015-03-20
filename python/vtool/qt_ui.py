@@ -1538,7 +1538,7 @@ class CodeEditTabs(BasicWidget):
         #column_number = text_cursor.columnNumber()
         block_number = text_cursor.blockNumber()
         
-        self.status.setText('Line: %s' % (block_number))
+        self.status.setText('Line: %s' % (block_number+1))
         
     def set_group(self, group):
         self.group = group
@@ -1676,6 +1676,25 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         self.skip_focus = False
         
+        self.line_numbers = CodeLineNumber(self)
+        
+        self._update_number_width(0)
+        
+        self.blockCountChanged.connect(self._update_number_width)
+        self.updateRequest.connect(self._update_number_area)
+        self.cursorPositionChanged.connect(self._line_number_highlight)
+        
+        self._line_number_highlight()
+    
+    def resizeEvent(self, event):
+        
+        super(CodeTextEdit, self).resizeEvent(event)
+        
+        rect = self.contentsRect()
+        
+        new_rect = QtCore.QRect( rect.left(), rect.top(), self._line_number_width(), rect.height() )
+        
+        self.line_numbers.setGeometry( new_rect )   
     
     def wheelEvent(self, event):
         
@@ -1689,7 +1708,88 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                 self._zoom_out_text()
         
         return super(CodeTextEdit, self).wheelEvent(event)
-     
+    
+    def _line_number_paint(self, event):
+        
+        paint = QtGui.QPainter(self.line_numbers)
+        paint.fillRect(event.rect(), QtCore.Qt.black)
+        
+        block = self.firstVisibleBlock()
+        block_number = block.blockNumber()
+        
+        top = int( self.blockBoundingGeometry(block).translated(self.contentOffset()).top() )
+        bottom = int( top + self.blockBoundingRect(block).height() )
+        
+        while block.isValid() and top <= event.rect().bottom():
+            if block.isVisible() and bottom >= event.rect().top():
+                number = block_number + 1
+                paint.setPen(QtCore.Qt.lightGray)
+                
+                paint.drawText(0, top, self.line_numbers.width(), self.fontMetrics().height(), QtCore.Qt.AlignRight, str(number))
+                
+            block = block.next()
+            top = bottom
+            bottom = top + self.blockBoundingRect(block).height()
+            
+            block_number += 1
+        
+    def _line_number_width(self):
+        
+        digits = 1
+        max_value = max(1, self.blockCount())
+        
+        while (max_value >= 10):
+            max_value /= 10
+            digits+=1
+                   
+        #size = QtGui.QFont('Courier', size)
+        
+        space = 1 + self.fontMetrics().width('1') * digits
+        
+        
+        return space
+    
+    def _line_number_highlight(self):
+        
+        extra_selection = QtGui.QTextEdit.ExtraSelection()
+        
+        selections = [extra_selection]
+        
+        print 'extra!!!'
+        print extra_selection
+        
+        if not self.isReadOnly():
+            selection = QtGui.QTextEdit.ExtraSelection()
+            
+            line_color = QtGui.QColor(QtCore.Qt.black)
+            
+            selection.format.setBackground(line_color)
+            selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
+            selection.cursor = self.textCursor()
+            selection.cursor.clearSelection()
+            selections.append(selection)
+            
+        self.setExtraSelections(selections)
+        
+            
+    
+    def _update_number_width(self, value = 0):
+        
+        self.setViewportMargins(self._line_number_width(), 0,0,0)
+        
+    def _update_number_area(self, rect, y_value):
+        
+        if y_value:
+            self.line_numbers.scroll(0, y_value)
+        
+        if not y_value:
+            self.line_numbers.update(0, rect.y(), self.line_numbers.width(), rect.height())
+            
+        if rect.contains(self.viewport().rect()):
+            self._update_number_width()
+        
+    
+    
     def _goto_line(self):
         
         line = get_comment(self, 'Goto Line', '?')
@@ -1699,19 +1799,20 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         line_number = int(line)
         
-        text_cursor = QtGui.QTextCursor()
         text_cursor = self.textCursor()
         
         block_number = text_cursor.blockNumber()
         
         number = line_number - block_number
+        
         if number > 0:
             move_type = text_cursor.NextBlock
+            number -= 2
         if number < 0:
             move_type = text_cursor.PreviousBlock
             number = abs(number)
         
-        text_cursor.movePosition(move_type, text_cursor.MoveAnchor, number)
+        text_cursor.movePosition(move_type, text_cursor.MoveAnchor, (number+1))
         self.setTextCursor(text_cursor)
         
     def _zoom_in_text(self):
@@ -1882,6 +1983,25 @@ class Highlighter(QtGui.QSyntaxHighlighter):
                     self.multiLineCommentFormat)
             startIndex = self.commentStartExpression.indexIn(text,
                     startIndex + commentLength);
+
+class CodeLineNumber(QtGui.QWidget):
+    
+    def __init__(self, code_editor):
+        super(CodeLineNumber, self).__init__()
+        
+        self.setParent(code_editor)
+        
+        self.code_editor = code_editor
+    
+    def sizeHint(self):
+        
+        return QtCore.QSize(self.code_editor._line_number_width(), 0)
+    
+    def paintEvent(self, event):
+        
+        self.code_editor._line_number_paint(event)
+        
+    
 
 #--- Custom Painted Widgets
 

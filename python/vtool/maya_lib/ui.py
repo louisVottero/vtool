@@ -30,7 +30,7 @@ def get_maya_window():
     if vtool.qt_ui.is_pyside():
         try:
             from shiboken import wrapInstance
-        except RuntimeError:
+        except:
             from PySide.shiboken import wrapInstance
             
             vtool.util.show(traceback.format_exc)
@@ -295,6 +295,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         util.mirror_xform('joint_')
         util.mirror_xform('guideJoint_')
         util.mirror_xform('process_')
+        util.mirror_xform(string_search = 'lf_')
         
     def _mirror_control(self):
         
