@@ -15,8 +15,12 @@ if vtool.qt_ui.is_pyqt():
 if vtool.qt_ui.is_pyside():
     from PySide import QtCore, QtGui
     
-
 class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
+    
+    def __init__(self):
+        super(CodeProcessWidget, self).__init__()
+        
+        self.sizes = self.splitter.sizes()
     
     def _build_widgets(self):
         
@@ -53,6 +57,8 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
             if self.skip_move:
                 self.skip_move = False
                 return
+            
+        self.sizes = self.splitter.sizes()
         
     def _define_main_layout(self):
         return QtGui.QVBoxLayout()
@@ -82,7 +88,6 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
             
             self.splitter.setSizes([section, section])
         
-        
         if not code:
             return
             
@@ -96,6 +101,10 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         code_file = vtool.util_file.join_path(path, code)
         
         self.code_widget.set_code_path(code_file)
+        
+        if self.sizes[1] != 0:
+            self.splitter.setSizes(self.sizes)
+        
                 
     def _script_rename(self, old_filepath, filepath):
         

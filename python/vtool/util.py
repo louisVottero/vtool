@@ -16,7 +16,7 @@ def try_pass(function):
                 
         try:
             return_value = function(*args, **kwargs)
-        except RuntimeError:
+        except:
             show(traceback.format_exc)
                     
         return return_value
@@ -760,6 +760,7 @@ def show(*args):
     except:
         #do not remove
         print 'Could not show %s' % args
+        raise
         
 def warning(*args):
     

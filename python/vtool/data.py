@@ -350,7 +350,7 @@ class ControlCvData(MayaCustomData):
             
         for control in controls:
             
-            library.set_shape_to_curve(control)
+            library.set_shape_to_curve(control, control, True)
             
             """
             shapes = maya_lib.util.get_shapes(control)
@@ -530,7 +530,7 @@ class SkinWeightData(MayaCustomData):
             
             try:
                 self._import_maya_data()
-            except RuntimeError:
+            except:
                 util.show(traceback.format_exc)
                             
             cmds.undoInfo(closeChunk = True)
@@ -805,9 +805,13 @@ class AnimationData(MayaCustomData):
     def export_data(self, comment):
         
         keyframes = cmds.ls(type = 'animCurve')
+        blend_weighted = cmds.ls(type = 'blendWeighted')
         
         if not keyframes:
             return
+        
+        if blend_weighted:
+            keyframes = keyframes + blend_weighted
         
         path = util_file.join_path(self.directory, 'keyframes')
         
@@ -828,7 +832,11 @@ class AnimationData(MayaCustomData):
             if not cmds.objExists(keyframe):
                 continue
             
-            inputs = maya_lib.util.get_attribute_input('%s.input' % keyframe)
+            inputs = []
+            
+            if not cmds.nodeType(keyframe) == 'blendWeighted':
+                inputs = maya_lib.util.get_attribute_input('%s.input' % keyframe)
+                
             outputs = maya_lib.util.get_attribute_outputs('%s.output' % keyframe)
                         
             if not inputs and not outputs:
@@ -887,8 +895,11 @@ class AnimationData(MayaCustomData):
             keyframe_dict = eval(line)
                 
             for key in keyframe_dict:
+                
                 if cmds.objExists(key):
                     cmds.delete(key)
+                    
+                
                 info_dict[key] = keyframe_dict[key]
         
         cmds.file(filepath, f = True, i = True, iv = True)
@@ -906,7 +917,6 @@ class AnimationData(MayaCustomData):
                         cmds.connectAttr('%s.output' % key, output)
                     except:
                         util.show('Could not connect %s.output to %s' % (key,output))
-                        
 
             input_attr = keyframes['input']
             
@@ -1258,7 +1268,7 @@ class MayaFileData(MayaCustomData):
                       o = True, 
                       iv = True)
             
-        except RuntimeError:
+        except:
             
             util.show(traceback.format_exc())
             
@@ -1266,6 +1276,11 @@ class MayaFileData(MayaCustomData):
         self._center_view()
        
     def save(self, comment):
+
+        unknown = cmds.ls(type = 'unknown')
+        
+        if unknown:
+            util.warning('This file contains unknown nodes. Try saving as maya ascii instead.')
 
         cmds.file(rename = self.filepath)
         
@@ -1286,6 +1301,12 @@ class MayaFileData(MayaCustomData):
         version.save(comment)
         
     def export_data(self, comment):
+        
+        unknown = cmds.ls(type = 'unknown')
+        
+        if unknown:
+            util.warning('This file contains unknown nodes. Try deleting the unknown nodes or saving the file in maya ascii data.')
+            return
         
         cmds.file(rename = self.filepath)
         

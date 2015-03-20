@@ -8,6 +8,99 @@ import maya.cmds as cmds
 import vtool.util
 import rigs
 
+class CurveTweakRig(rigs.CurveRig):
+    
+    def __init__(self, description, side):
+        super(CurveTweakRig, self).__init__(description, side)
+        
+        self.local_group = []
+        self.orient_transform = None
+    
+    def _create_center_group(self, description):
+        
+        center = util.get_center(self.curves)
+        
+        group = cmds.group(em = True, n = self._get_name('group', description))
+        
+        cmds.move(center[0], center[1], center[2], group, ws = True)
+    
+        return group
+    
+    def _cluster_curves(self):
+        
+        for curve in self.curves:
+            
+            clusters = util.cluster_curve(curve, self._get_name())
+            
+        self.clusters = clusters
+        
+        cmds.parent(self.clusters, self.setup_group)
+        
+    def _create_controls(self):
+        
+        self.local_group = self._create_center_group('local')
+        xform = util.create_xform_group(self.local_group)
+        cmds.parent(xform, self.setup_group)
+        
+        if self.orient_transform:
+            cmds.orientConstraint(self.orient_transform, xform)
+        
+        for cluster in self.clusters:
+            control = self._create_control()
+            
+            xform = util.create_xform_group(control.get())
+            util.MatchSpace(cluster, xform).translation_to_rotate_pivot()
+            
+            if self.orient_transform:
+                cmds.orientConstraint(self.orient_transform, xform)
+            
+            local, local_xform = util.constrain_local(control.get(), cluster)
+            
+            cmds.parent(local_xform, self.local_group)
+            cmds.parent(xform, self.control_group)
+            
+            control.hide_scale_attributes()
+    
+    def set_orient_transform(self, transform):
+        self.orient_transform = transform
+         
+    def create(self):
+        super(CurveTweakRig, self).create()
+        
+        self._cluster_curves()
+        
+        self._create_controls()
+        
+    def create_wire(self, mesh, falloff):
+        
+        for curve in self.curves:
+            wire, curve = cmds.wire( mesh, w = curve, dds=[(0, falloff)], gw = False, n = 'wire_%s' % curve)
+            cmds.setAttr('%s.rotation' % wire, 0)
+    
+    def create_main_control(self, control_shape = None):
+        
+        control = self._create_control('main')
+        
+        if control_shape:
+            control.set_curve_type(control_shape)
+        
+        util.MatchSpace(self.local_group, control.get()).translation_rotation()
+        
+        xform = util.create_xform_group(control.get())
+        
+        util.connect_translate(control.get(), self.local_group)
+        util.connect_rotate(control.get(), self.local_group)
+        
+        xforms = cmds.listRelatives(self.control_group)
+        cmds.parent(xforms, control.get())
+        
+        cmds.parent(xform, self.control_group)
+        
+        control.hide_scale_attributes()
+    
+          
+        
+
 class SurfaceFollowCurveRig(rigs.CurveRig):
     
     def __init__(self, description, side):

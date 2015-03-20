@@ -734,7 +734,7 @@ def rename(directory, name, make_unique = False):
 
     try:
         os.rename(directory, renamepath)
-    except RuntimeError:
+    except:
         
         util.show(traceback.format_exc)
         
@@ -971,7 +971,7 @@ def load_python_module(module_name, directory):
                                          pathname, 
                                          description)
                 
-            except RuntimeError:
+            except:
                 return traceback.format_exc()
             
             finally:
