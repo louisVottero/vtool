@@ -760,6 +760,7 @@ def show(*args):
     except:
         #do not remove
         print 'Could not show %s' % args
+        raise
         
         
 def warning(*args):
