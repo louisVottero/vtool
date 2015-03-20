@@ -543,8 +543,6 @@ class PoseTreeWidget(BaseTreeWidget):
         if not pose:
             return
         
-        print 'mirroring pose', pose
-        
         mirror = util.PoseManager().mirror_pose(pose)
         
         self.refresh()

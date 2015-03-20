@@ -1755,9 +1755,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         selections = [extra_selection]
         
-        print 'extra!!!'
-        print extra_selection
-        
         if not self.isReadOnly():
             selection = QtGui.QTextEdit.ExtraSelection()
             

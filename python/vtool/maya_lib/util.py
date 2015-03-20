@@ -46,7 +46,6 @@ def undo_chunk(function):
         
         return_value = None
         
-        print 'open chunk'
         cmds.undoInfo(openChunk = True)
         
         closed = False
@@ -55,14 +54,13 @@ def undo_chunk(function):
             return_value = function(*args, **kwargs)
         except:
             
-            print 'error!!'
             cmds.undoInfo(closeChunk = True)
             closed = True
             vtool.util.show(traceback.format_exc())
-            print 'close chunk' 
+             
             
         if not closed:
-            print 'close chunk'
+            
             cmds.undoInfo(closeChunk = True)
         
         return return_value
