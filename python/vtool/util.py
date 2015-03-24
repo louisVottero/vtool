@@ -17,7 +17,7 @@ def try_pass(function):
         try:
             return_value = function(*args, **kwargs)
         except:
-            show(traceback.format_exc)
+            show(traceback.format_exc())
                     
         return return_value
                      

@@ -2829,21 +2829,22 @@ class ClusterSurface(ClusterObject):
             
             
         if self.maya_type == 'nurbsSurface':
-            
+        
             if self.cluster_u:
                 cv_count_u = len(cmds.ls('%s.cv[*][0]' % self.geometry, flatten = True))
-                index1 = '[0:*][0]'
-                index2 = '[0:*][%s]' % (self.cv_count-1)
+                index1 = '[0:*][0:1]'
+                index2 = '[0:*][%s:%s]' % (self.cv_count-2, self.cv_count-1)
                 index3 = '[%s][0]' % (cv_count_u - 1)
                 index4 = '[0][%s]' % (self.cv_count-1)
                 index5 = '[%s][%s]' % (cv_count_u, self.cv_count-1) 
             if not self.cluster_u:
                 cv_count_v = len(cmds.ls('%s.cv[0][*]' % self.geometry, flatten = True))
-                index1 = '[0][0:*]'
-                index2 = '[%s][0:*]' % (self.cv_count-1)
+                index1 = '[0:1][0:*]'
+                index2 = '[%s:%s][0:*]' % (self.cv_count-2, self.cv_count-1)
                 index3 = '[0][%s]' % (cv_count_v - 1)
                 index4 = '[%s][0]' % (self.cv_count-1)
                 index5 = '[%s][%s]' % (self.cv_count-1,cv_count_v)                
+            
             
             start_cvs = '%s.cv%s' % (self.geometry, index1)
             end_cvs = '%s.cv%s' % (self.geometry,index2)
@@ -2878,39 +2879,34 @@ class ClusterSurface(ClusterObject):
         start_cvs = None
         end_cvs = None
         
-        if self.join_ends:
-            if self.maya_type == 'nurbsCurve':
-                start_cvs = '%s.cv[0:1]' % self.geometry
-                end_cvs = '%s.cv[%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
-                
-            if self.maya_type == 'nurbsSurface':
-                
-                if self.cluster_u:
-                    index1 = '[0:*][0]'
-                    index2 = '[0:*][%s]' % (self.cv_count-1)
+        if self.maya_type == 'nurbsCurve':
+            start_cvs = '%s.cv[0:1]' % self.geometry
+            end_cvs = '%s.cv[%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
+            
+        if self.maya_type == 'nurbsSurface':
+            
+            if self.cluster_u:
+                index1 = '[0:*][0]'
+                index2 = '[0:*][%s]' % (self.cv_count-1)
 
-                if not self.cluster_u:
-                    index1 = '[0][0:*]'
-                    index2 = '[%s][0:*]' % (self.cv_count-1)
-                
-                start_cvs = '%s.cv%s' % (self.geometry, index1)
-                end_cvs = '%s.cv%s' % (self.geometry, index2)
-                #end_cvs = '%s.cv[0:1][%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
-                
+            if not self.cluster_u:
+                index1 = '[0][0:*]'
+                index2 = '[%s][0:*]' % (self.cv_count-1)
+            
+            start_cvs = '%s.cv%s' % (self.geometry, index1)
+            end_cvs = '%s.cv%s' % (self.geometry, index2)
+            #end_cvs = '%s.cv[0:1][%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
         
-                
         cmds.select([start_cvs, end_cvs])
         cvs = cmds.ls(sl = True)
             
         cluster, handle = self._create_cluster(cvs)
         self.clusters.append(cluster)
         self.handles.append(handle)
-                
+        
                 
     
     def _create(self):
-        
-        
         
         self.cvs = cmds.ls('%s.cv[*]' % self.geometry, flatten = True)
         
@@ -2931,13 +2927,11 @@ class ClusterSurface(ClusterObject):
         
         if self.join_ends:
             
-            
             if not self.join_both_ends:
                 
                 last_cluster, last_handle = self._create_start_and_end_clusters()
             
             if self.join_both_ends:
-                
                 
                 self._create_start_and_end_joined_cluster()
                 
@@ -4658,16 +4652,21 @@ class TransferWeight(object):
             index = get_index_at_skin_influence(joint,self.skin_cluster)
             destination_joint_map[index] = joint
         
-        verts = self.vertices
+        verts = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)
                             
         weighted_verts = []
         
+        source_vert_count = len( cmds.ls('%s.vtx[*]' % (source_mesh), flatten = True))
+        
         for influence_index in joint_map:
+            
+            if influence_index == None:
+                continue
             
             for vert_index in range(0, len(verts)):
                 
                 int_vert_index = int(vtool.util.get_last_number(verts[vert_index]))
-                
+                 
                 value = source_value_map[influence_index][int_vert_index]
                 
                 if value > 0.001:
@@ -4692,14 +4691,15 @@ class TransferWeight(object):
             destination_value = 0
         
             for influence_index in destination_joint_map:
+                
                 destination_value += destination_value_map[influence_index][vert_index]
             
             segments = []
             
             for influence_index in joint_map:
                 
-                #if not influence_index:
-                #    continue
+                if influence_index == None:
+                    continue   
                 
                 joint = joint_map[influence_index]
                 value = source_value_map[influence_index][vert_index]
@@ -5272,16 +5272,19 @@ class BasePoseControl(object):
         
     def _refresh_meshes(self):
         
-
+        
         meshes = self._get_corrective_meshes()
         
         for mesh in meshes:
             target_mesh = self._get_mesh_target(mesh)
-            cmds.setAttr('%s.inheritsTransform' % mesh, 0)
             
-            const = cmds.parentConstraint(target_mesh, mesh)
+            if target_mesh:
+                
+                cmds.setAttr('%s.inheritsTransform' % mesh, 0)
+                unlock_attributes(mesh, only_keyable=True)
+                const = cmds.parentConstraint(target_mesh, mesh)
             
-            cmds.delete(const)
+                cmds.delete(const)
                
             
             
@@ -5433,6 +5436,8 @@ class BasePoseControl(object):
         cmds.hide(children)
         
     def _get_mesh_target(self, mesh):
+        if not mesh:
+            return None
         return cmds.getAttr('%s.mesh_pose_source' % mesh)
         
     def _get_message_attributes(self):
@@ -5773,14 +5778,23 @@ class BasePoseControl(object):
         
         for inc in range(0, self._get_mesh_count()):
             mesh = self.get_mesh(inc)
-            mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
-            meshes.append(mesh)
+            
+            mesh = self.get_target_mesh(mesh)
+            #mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
+            if mesh:
+                meshes.append(mesh)
             
         return meshes
         
     def get_target_mesh(self, mesh):
         if cmds.objExists('%s.mesh_pose_source' % mesh):
-            return cmds.getAttr('%s.mesh_pose_source' % mesh)
+            mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
+            
+            if not cmds.objExists(mesh):
+                
+                mesh = get_basename(mesh)
+                
+        return mesh
         
     def get_target_mesh_index(self, mesh):
         
@@ -7707,10 +7721,13 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
         return
     
     for transform in scope:
+        
+        other = ''
+        
         if transform.endswith('_L'):
             other= transform.replace('_L', '_R')
             
-        if not transform.endswith('_L'):
+        if not transform.endswith('_L') and not transform.endswith('_R'):
             other = transform.replace('lf_', 'rt_')
        
         if cmds.objExists(other):
@@ -7723,7 +7740,7 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
                 var = MayaNumberVariable('radius')
                 var.set_node(other)
                 var.set_value(radius)
-                #cmds.setAttr('%s.radius' % other, radius)
+                cmds.setAttr('%s.radius' % other, radius)
                     
                 cmds.move((xform[0]*-1), xform[1], xform[2], '%s.scalePivot' % other, 
                                                              '%s.rotatePivot' % other, a = True)

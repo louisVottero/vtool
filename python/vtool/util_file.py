@@ -736,7 +736,7 @@ def rename(directory, name, make_unique = False):
         os.rename(directory, renamepath)
     except:
         
-        util.show(traceback.format_exc)
+        util.show(traceback.format_exc())
         
         return False
     

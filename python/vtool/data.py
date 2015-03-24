@@ -531,7 +531,7 @@ class SkinWeightData(MayaCustomData):
             try:
                 self._import_maya_data()
             except:
-                util.show(traceback.format_exc)
+                util.show(traceback.format_exc())
                             
             cmds.undoInfo(closeChunk = True)
             
