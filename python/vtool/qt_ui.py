@@ -1758,8 +1758,11 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         if not self.isReadOnly():
             selection = QtGui.QTextEdit.ExtraSelection()
             
-            line_color = QtGui.QColor(QtCore.Qt.black)
-            
+            if util.is_in_maya():
+                line_color = QtGui.QColor(QtCore.Qt.black)
+            if not util.is_in_maya():
+                line_color = QtGui.QColor(QtCore.Qt.darkGray)
+                
             selection.format.setBackground(line_color)
             selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
             selection.cursor = self.textCursor()

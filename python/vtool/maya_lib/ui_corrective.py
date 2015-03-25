@@ -715,6 +715,7 @@ class PoseWidget(qt_ui.BasicWidget):
         self.pose_control_widget.set_values(angle, distance, twist_on, twist)
         
     def set_pose_parent_name(self, parent_name):
+
         if not parent_name:
             parent_name = ''
         

@@ -415,7 +415,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if directory == None:
             directory = ''
-                    
+        
+        directory = self.settings.get('code_directory')            
+                      
         self.settings.set('code_directory', directory)
         self.code_widget.set_code_directory(directory)
         self.settings_widget.set_code_directory(directory)
