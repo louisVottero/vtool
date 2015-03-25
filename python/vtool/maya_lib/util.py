@@ -2832,15 +2832,15 @@ class ClusterSurface(ClusterObject):
             
             if self.cluster_u:
                 cv_count_u = len(cmds.ls('%s.cv[*][0]' % self.geometry, flatten = True))
-                index1 = '[0:*][0]'
-                index2 = '[0:*][%s]' % (self.cv_count-1)
+                index1 = '[0:*][0:1]'
+                index2 = '[0:*][%s:%s]' % (self.cv_count-2, self.cv_count-1)
                 index3 = '[%s][0]' % (cv_count_u - 1)
                 index4 = '[0][%s]' % (self.cv_count-1)
                 index5 = '[%s][%s]' % (cv_count_u, self.cv_count-1) 
             if not self.cluster_u:
                 cv_count_v = len(cmds.ls('%s.cv[0][*]' % self.geometry, flatten = True))
-                index1 = '[0][0:*]'
-                index2 = '[%s][0:*]' % (self.cv_count-1)
+                index1 = '[0:1][0:*]'
+                index2 = '[%s:%s][0:*]' % (self.cv_count-2, self.cv_count-1)
                 index3 = '[0][%s]' % (cv_count_v - 1)
                 index4 = '[%s][0]' % (self.cv_count-1)
                 index5 = '[%s][%s]' % (self.cv_count-1,cv_count_v)                
