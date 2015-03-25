@@ -11113,29 +11113,30 @@ def mirror_control(control):
     if not other_control or not cmds.objExists(other_control):
         return
                     
-    shapes = get_shapes(other_control)
-    
-    if not shapes:
+    other_shapes = get_shapes(other_control)
+    if not other_shapes:
         return
     
-    other_shape = shapes[0]
-    
-    if not cmds.objExists('%s.cc' % other_shape):
-        return
-    
-    cvs = cmds.ls('%s.cv[*]' % shape, flatten = True)
-    other_cvs = cmds.ls('%s.cv[*]' % other_shape, flatten = True)
-    
-    if len(cvs) != len(other_cvs):
-        return
-    
-    for inc in range(0, len(cvs)):
-        position = cmds.pointPosition(cvs[inc], world = True)
+    for inc in range(0,len(shapes)):
+        shape = shapes[inc]
+        other_shape = other_shapes[inc]
         
-        x_value = position[0] * -1
-             
-        cmds.move(x_value, position[1], position[2], other_cvs[inc], worldSpace = True)
+        if not cmds.objExists('%s.cc' % other_shape):
+            return
         
+        cvs = cmds.ls('%s.cv[*]' % shape, flatten = True)
+        other_cvs = cmds.ls('%s.cv[*]' % other_shape, flatten = True)
+        
+        if len(cvs) != len(other_cvs):
+            return
+        
+        for inc in range(0, len(cvs)):
+            position = cmds.pointPosition(cvs[inc], world = True)
+            
+            x_value = position[0] * -1
+                 
+            cmds.move(x_value, position[1], position[2], other_cvs[inc], worldSpace = True)
+            
     return other_control
 
 @undo_chunk

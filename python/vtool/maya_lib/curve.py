@@ -172,7 +172,7 @@ class CurveDataInfo():
         if not curve_dict.has_key(curve_name):
             vtool.util.warning('%s is not in the curve library %s.' % (curve_name, curve_library))
             
-            return
+            return None, None
         
         return curve_dict[curve_name]
     
@@ -219,6 +219,7 @@ class CurveDataInfo():
         last_line_curve = False
         curve_name = ''
         curve_data = ''
+        curve_type = ''
         
         readfile = vtool.util_file.ReadFile(path)
         data_lines = readfile.read()
@@ -230,10 +231,20 @@ class CurveDataInfo():
             if line.startswith('->'):
                 
                 if curve_data_lines:
-                    self.library_curves[self.active_library][curve_name] = curve_data_lines
                     
-                line_split = line.split('->')
+                    self.library_curves[self.active_library][curve_name] = [curve_data_lines, curve_type]
+                    
+                line_split = line.split()
                 curve_name = line_split[1]
+                
+                if len(line_split) > 3:
+                    
+                    if curve_type != curve_name:
+                        curve_type = line_split[2]
+                        
+                    if not curve_type:
+                        curve_type = ''
+                        
                 curve_name = curve_name.strip()
                 last_line_curve = True
                 curve_data_lines = []
@@ -247,8 +258,8 @@ class CurveDataInfo():
                     curve_data_lines.append(curve_data) 
                     
         if curve_data_lines:
-            
-            self.library_curves[self.active_library][curve_name] = curve_data_lines   
+
+            self.library_curves[self.active_library][curve_name] = [curve_data_lines, curve_type] 
                 
     def write_data_to_file(self):
         if not self.active_library:
@@ -265,9 +276,16 @@ class CurveDataInfo():
         
         for curve in current_library:
             
-            curve_data_lines = current_library[curve]
+            curve_data_lines, curve_type = current_library[curve]
             
-            lines.append('-> %s' % curve)
+            if not curve_type:
+                if cmds.objExists('%s.curveType' % curve):
+                    curve_type = cmds.getAttr('%s.curveType' % curve)
+            
+            if curve != curve_type:
+                lines.append('-> %s %s' % (curve, curve_type))
+            if curve == curve_type:
+                lines.append('-> %s' % curve)
             
             for curve_data in curve_data_lines:
                 lines.append('%s' % curve_data)
@@ -291,24 +309,48 @@ class CurveDataInfo():
             vtool.util.warning('Must set active library before running this function.')
             return
         
-        mel_data_list = self._get_curve_data(curve_in_library, self.active_library)
-        
-        if check_curve and mel_data_list:
-            for mel_data in mel_data_list:
-                split_mel_data = mel_data.split()
-                
-                curve_data = CurveToData(curve)
-                original_mel_list =  curve_data.create_mel_list()
-                
-                for curve_data in original_mel_list:
-                    split_original_curve_data = curve_data.split()
-                
-                    if len(split_mel_data) != len(split_original_curve_data):
-                        vtool.util.warning('Curve data does not match stored data. Skipping %s' % curve) 
-                        return  
-        
+        mel_data_list, original_curve_type = self._get_curve_data(curve_in_library, self.active_library)
+
         if not mel_data_list:
             return
+        
+        
+        curve_data = CurveToData(curve)
+        original_mel_list =  curve_data.create_mel_list()
+        
+        curve_type_value = None
+        
+        curve_attr = '%s.curveType' % curve
+        
+        if cmds.objExists(curve_attr):
+            curve_type_value = cmds.getAttr('%s.curveType' % curve)
+        
+        check_curve = False
+        if check_curve:
+            
+            if curve_type_value == None or curve_type_value != original_curve_type:
+            
+                mel_count = len(mel_data_list)
+                original_count = len(original_mel_list)
+                
+                if mel_count != original_count:
+                    vtool.util.warning('Curve data does not match stored data. Skipping %s' % curve)
+                    return
+                
+                for inc in range(0, mel_count):
+                    
+                    split_mel_data = mel_data_list[inc].strip()
+                    split_orig_data = original_mel_list[inc].strip()
+                    
+                    split_mel_data = split_mel_data.split()
+                    split_orig_data = split_orig_data.split()
+                    
+                    if len(split_mel_data) != len(split_orig_data):
+                    
+                        vtool.util.warning('Curve data does not match stored data. Skipping %s' % curve)
+                        return
+                    
+
         
         data_list_count = len(mel_data_list)
         
@@ -345,31 +387,39 @@ class CurveDataInfo():
             
         util.rename_shapes(curve)
         
+        if curve_type_value:
+            attribute_value = curve_type_value
         
-    def add_curve_to_library(self, curve, library_name):
+            curve_type = util.MayaStringVariable('curveType')
+            curve_type.set_node(curve)
+            curve_type.set_value(curve_type_value)
+            curve_type.create()
         
-        mel_data_list = self._get_mel_data_list(curve)
-        
-        transform = self._get_curve_parent(curve)
-        
-        self.library_curves[library_name][transform] = mel_data_list
-        
-    def add_curve(self, curve):
+    def add_curve(self, curve, library_name = None):
         
         if not curve:
             
             return
         
-        if not self.active_library:
-            vtool.util.warning('Must set active library before running this function.')
-            return
+        if not library_name:
+            
+            library_name = self.active_library
+            
+            if not self.active_library:
+                vtool.util.warning('Must set active library before running this function.')
+                return
         
         mel_data_list = self._get_mel_data_list(curve)
         
+        curve_type = curve
+        
+        if cmds.objExists('%s.curveType' % curve):  
+            curve_type = cmds.getAttr('%s.curveType' % curve)
+            
         transform = self._get_curve_parent(curve)
-                    
-        if self.active_library:
-            self.library_curves[self.active_library][transform] = mel_data_list
+               
+        if library_name:
+            self.library_curves[library_name][transform] = [mel_data_list, curve_type]
         
     def create_curve(self, curve_name):
         if not self.active_library:
@@ -382,9 +432,7 @@ class CurveDataInfo():
         parent = cmds.rename( parent, curve_name )
         
         self.set_shape_to_curve(parent, curve_name)
-        
-        
-        
+
         return parent
         
     def create_curves(self):
