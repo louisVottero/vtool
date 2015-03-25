@@ -202,6 +202,35 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.directory = directory      
         
         self.code_list.refresh_code_list(directory)
+       
+class ProjectList(QtGui.QListWidget):
+
+    def __init__(self):
+        super(CodeList, self).__init__()
+        
+        self.setAlternatingRowColors(True)
+        self.setSelectionMode(self.NoSelection)
+
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._item_menu)
+        
+        self._create_context_menu()     
+        
+    def _item_menu(self, position):
+        
+        item = self.itemAt(position)
+        
+        if item:
+            
+            self.context_menu.exec_(self.viewport().mapToGlobal(position))
+        
+    def _create_context_menu(self):
+        
+        self.context_menu = QtGui.QMenu()
+        
+        remove_action = self.context_menu.addAction('Remove')
+        
+        remove_action.triggered.connect(self.remove_current_item)
         
         
 class CodeList(QtGui.QListWidget):
