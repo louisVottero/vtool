@@ -125,6 +125,7 @@ class Rig(object):
         if sub:
             self.sub_controls.append(control.get())
         
+        
         self.control_dict[control.get()] = {}
         
         return control
@@ -302,8 +303,19 @@ class SparseRig(JointRig):
                 side = control.color_respect_side(True, self.respect_side_tolerance)
             
                 if side != 'C':
+                    old_control_name = control_name
+                    
+                    control_data = self.control_dict[control_name]
+                    self.control_dict.pop(control_name)
+                    
                     control_name = cmds.rename(control_name, util.inc_name(control_name[0:-1] + side))
+                    
                     control = util.Control(control_name)
+                    
+                    self.control_dict[control_name] = control_data
+                    
+                    
+                    
               
             xform = util.create_xform_group(control.get())
             driver = util.create_xform_group(control.get(), 'driver')
@@ -363,7 +375,14 @@ class SparseLocalRig(SparseRig):
                 side = control.color_respect_side(True, self.respect_side_tolerance)
             
                 if side != 'C':
+                    
+                    control_data = self.control_dict[control_name]
+                    self.control_dict.pop(control_name)
+                    
                     control_name = cmds.rename(control_name, util.inc_name(control_name[0:-1] + side))
+                    
+                    self.control_dict[control_name] = control_data
+                    
                     control = util.Control(control_name)
             
             xform = util.create_xform_group(control.get())
