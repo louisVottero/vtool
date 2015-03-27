@@ -11057,6 +11057,10 @@ def zero_xform_channels(transform):
 def get_controls():
     
     transforms = cmds.ls(type = 'transform')
+    joints = cmds.ls(type = 'joint')
+    
+    if joints:
+        transforms += joints
     
     found = []
     
