@@ -175,11 +175,10 @@ class PoseListWidget(qt_ui.BasicWidget):
         current_pose = self.pose_list._current_pose()
         
         items = self.pose_list.selectedItems()
-        print items
         
         if items:
             self.options.show()
-            self.pose_widget.set_current_pose(current_pose)
+            self.pose_widget.set_pose(current_pose)
             
         if not items:
             self.options.hide()
@@ -741,7 +740,7 @@ class PoseWidget(qt_ui.BasicWidget):
     def __init__(self):
         super(PoseWidget, self).__init__()
         
-        self.current_pose = None
+        self.pose_name = None
     
     def _define_main_layout(self):
         return QtGui.QHBoxLayout()
@@ -791,8 +790,10 @@ class PoseWidget(qt_ui.BasicWidget):
     def update_meshes(self, meshes, index):
         self.mesh_widget.update_meshes(meshes, index)
         
-    def set_current_pose(self, current_pose):
-        self.current_pose = current_pose
+    def set_pose(self, pose_name):
+        self.pose_name = pose_name
+        
+        self.pose_control_widget.set_pose(pose_name)
         
     def set_values(self, angle, distance, twist_on, twist):
         self.pose_control_widget.set_values(angle, distance, twist_on, twist)
@@ -810,213 +811,6 @@ class PoseWidget(qt_ui.BasicWidget):
     def get_current_mesh(self):
         return self.mesh_widget.get_current_mesh()
 
-class PoseConeWidget(qt_ui.BasicWidget):
-    
-    pose_mirror = qt_ui.create_signal() 
-    pose_mesh = qt_ui.create_signal()
-    pose_mesh_view = qt_ui.create_signal()
-    axis_change = qt_ui.create_signal(object)
-    mesh_change = qt_ui.create_signal(object)
-    parent_change = qt_ui.create_signal(object)
-    pose_enable_change = qt_ui.create_signal(object)
-    
-    value_changed = qt_ui.create_signal(object, object, object, object)
-    
-    
-    
-    def __init__(self):
-        
-        super(PoseConeWidget, self).__init__()
-        
-        self.pose = None
-        self.emit_parent = True
-        
-    def _define_main_layout(self):
-        layout = QtGui.QVBoxLayout()
-        layout.setAlignment(QtCore.Qt.AlignTop)
-        return QtGui.QVBoxLayout()
-        
-    def sizeHint(self):
-        
-        return QtCore.QSize(100,400)
-        
-        
-    def _build_widgets(self):
-        
-        self.layout_pose = QtGui.QVBoxLayout()
-        
-        self.combo_label = QtGui.QLabel('Alignment')
-        
-        self.combo_axis = QtGui.QComboBox()
-        self.combo_axis.addItems(['X','Y','Z'])
-        
-        layout_combo = QtGui.QHBoxLayout()
-        
-        layout_combo.addWidget(self.combo_label, alignment = QtCore.Qt.AlignRight)
-        layout_combo.addWidget(self.combo_axis)
-        
-        layout_slide = QtGui.QVBoxLayout()
-        
-        layout_angle, self.max_angle = self._add_spin_widget('Max Angle')
-        layout_distance, self.max_distance = self._add_spin_widget('Max Distance')
-        layout_twist, self.twist = self._add_spin_widget('Max twist')
-        layout_twist_on, self.twist_on = self._add_spin_widget('Twist')
-                        
-        self.max_angle.setRange(0, 180)
-        
-        self.twist.setRange(0, 180)
-        self.twist_on.setRange(0,1)
-        self.max_distance.setMinimum(0)
-        self.max_distance.setMaximum(10000000)
-        
-        parent_combo = QtGui.QHBoxLayout()
-        
-        parent_label = QtGui.QLabel('Parent')
-        self.parent_text = QtGui.QLineEdit()
-        
-        self.parent_text.textChanged.connect(self._parent_name_change)
-        
-        parent_combo.addWidget(parent_label, alignment = QtCore.Qt.AlignRight)
-        parent_combo.addWidget(self.parent_text)
-        
-        
-        self.slider = QtGui.QSlider()
-        #self.slider.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-        self.slider.setOrientation(QtCore.Qt.Horizontal)
-        self.slider.setMinimum(0)
-        self.slider.setMaximum(100)
-        self.slider.setTickPosition(self.slider.TicksBothSides)
-        
-        
-        self.max_angle.valueChanged.connect(self._value_changed)
-        self.max_distance.valueChanged.connect(self._value_changed)
-        self.twist_on.valueChanged.connect(self._value_changed)
-        self.twist.valueChanged.connect(self._value_changed)
-        self.combo_axis.currentIndexChanged.connect(self._axis_change)
-        self.slider.valueChanged.connect(self._pose_enable)
-        
-        
-        #layout_slide.addWidget(self.slider)
-        layout_slide.addLayout(parent_combo)
-        layout_slide.addLayout(layout_combo)
-        layout_slide.addLayout(layout_angle)
-        layout_slide.addLayout(layout_twist)
-        layout_slide.addLayout(layout_distance)
-        layout_slide.addLayout(layout_twist_on)
-        
-        
-        #button_mesh = QtGui.QPushButton('Sculpt')
-        
-        #button_view = QtGui.QPushButton('View')
-
-        #button_mesh.clicked.connect(self._button_mesh)
-        
-        #button_mirror = QtGui.QPushButton('Mirror')
-        
-        #button_mirror.clicked.connect(self._button_mirror)
-
-        #self.main_layout.addWidget(button_mesh)
-        self.main_layout.addLayout(layout_slide)
-        #self.main_layout.addWidget(button_mirror)
-        
-    def _add_spin_widget(self, name):
-        layout = QtGui.QHBoxLayout()
-        layout.setSpacing(0)
-        layout.setContentsMargins(0,0,0,0)
-        
-        label = QtGui.QLabel(name)
-        label.setAlignment(QtCore.Qt.AlignRight)
-        
-        widget = QtGui.QDoubleSpinBox()
-        
-        widget.setCorrectionMode(widget.CorrectToNearestValue)
-        widget.setWrapping(False)
-        layout.addWidget(label)
-        layout.addWidget(widget)
-        
-        return layout, widget      
-
-
-    def _button_mirror(self):
-        self.pose_mirror.emit()
-
-    def _button_mesh(self):
-        self.pose_mesh.emit()
-
-        
-    def _axis_change(self):
-        
-        text = str( self.combo_axis.currentText() )
-        self.axis_change.emit(text)
-        
-    def _parent_name_change(self):
-        
-        self.parent_text.setStyleSheet('QLineEdit{background:red}')
-        
-        text = str( self.parent_text.text() )
-        
-        if not text:
-            #self.parent_text.setStyleSheet('QLineEdit{background:default}')
-            style = self.styleSheet()
-            self.parent_text.setStyleSheet(style)
-            
-            if self.emit_parent:
-                self.parent_change.emit(None)
-            return
-        
-        if cmds.objExists(text) and util.is_a_transform(text):
-            #self.parent_text.setStyleSheet('QLineEdit{background:default}')
-            
-            style = self.styleSheet()
-            self.parent_text.setStyleSheet(style)
-            
-            if self.emit_parent:
-                self.parent_change.emit(text)
-            
-        
-    
-    def _value_changed(self):
-        max_angle = self.max_angle.value()
-        max_distance = self.max_distance.value()
-        twist_on = self.twist_on.value()
-        twist = self.twist.value()
-        
-        self.value_changed.emit(max_angle, max_distance, twist_on, twist)
-
-    def _pose_enable(self, value):
-        
-        value = value/100.00
-        
-        self.pose_enable_change.emit(value)
-
-    def set_values(self, angle, distance, twist_on, twist):
-        
-        self.max_angle.setValue(angle)
-        self.max_distance.setValue(distance)
-        self.twist_on.setValue(twist_on)
-        self.twist.setValue(twist)
-        
-    def axis_change(self, string):
-        
-        pose_name = self._current_pose()
-        
-        if not pose_name:
-            return
-        
-        pose_name = str(pose_name)
-        
-        pose = util.PoseControl()
-        pose.set_pose(pose_name)
-        pose.set_axis(string)
-        
-    def set_parent_name(self, parent_name):
-        self.emit_parent = False
-        self.parent_text.setText(parent_name)
-        self.emit_parent = True
-        
-    def set_pose_enable(self, value):
-        value = value*100
-        self.slider.setValue(value)
 
 class MeshWidget(qt_ui.BasicWidget):
     
@@ -1246,3 +1040,254 @@ class SculptWidget(qt_ui.BasicWidget):
         self.main_layout.addWidget(self.slider)
         self.main_layout.addWidget(self.mesh_widget)
         #self.main_layout.addWidget(button_mirror)
+
+#--- pose widgets
+class PoseConeWidget(qt_ui.BasicWidget):
+    
+    pose_mirror = qt_ui.create_signal() 
+    pose_mesh = qt_ui.create_signal()
+    pose_mesh_view = qt_ui.create_signal()
+    axis_change = qt_ui.create_signal(object)
+    mesh_change = qt_ui.create_signal(object)
+    #parent_change = qt_ui.create_signal(object)
+    pose_enable_change = qt_ui.create_signal(object)
+    
+    value_changed = qt_ui.create_signal(object, object, object, object)
+    
+    
+    
+    def __init__(self):
+        
+        super(PoseConeWidget, self).__init__()
+        
+        self.pose = None
+        self.emit_parent = True
+        
+    def _define_main_layout(self):
+        layout = QtGui.QVBoxLayout()
+        layout.setAlignment(QtCore.Qt.AlignTop)
+        return QtGui.QVBoxLayout()
+        
+    def sizeHint(self):
+        
+        return QtCore.QSize(100,400)
+        
+        
+    def _build_widgets(self):
+        
+        self.layout_pose = QtGui.QVBoxLayout()
+        
+        self.combo_label = QtGui.QLabel('Alignment')
+        
+        self.combo_axis = QtGui.QComboBox()
+        self.combo_axis.addItems(['X','Y','Z'])
+        
+        layout_combo = QtGui.QHBoxLayout()
+        
+        layout_combo.addWidget(self.combo_label, alignment = QtCore.Qt.AlignRight)
+        layout_combo.addWidget(self.combo_axis)
+        
+        layout_slide = QtGui.QVBoxLayout()
+        
+        layout_angle, self.max_angle = self._add_spin_widget('Max Angle')
+        layout_distance, self.max_distance = self._add_spin_widget('Max Distance')
+        layout_twist, self.twist = self._add_spin_widget('Max twist')
+        layout_twist_on, self.twist_on = self._add_spin_widget('Twist')
+                        
+        self.max_angle.setRange(0, 180)
+        
+        self.twist.setRange(0, 180)
+        self.twist_on.setRange(0,1)
+        self.max_distance.setMinimum(0)
+        self.max_distance.setMaximum(10000000)
+        
+        parent_combo = QtGui.QHBoxLayout()
+        
+        parent_label = QtGui.QLabel('Parent')
+        self.parent_text = QtGui.QLineEdit()
+        
+        self.parent_text.textChanged.connect(self._parent_name_change)
+        
+        parent_combo.addWidget(parent_label, alignment = QtCore.Qt.AlignRight)
+        parent_combo.addWidget(self.parent_text)
+        
+        
+        self.slider = QtGui.QSlider()
+        #self.slider.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.slider.setOrientation(QtCore.Qt.Horizontal)
+        self.slider.setMinimum(0)
+        self.slider.setMaximum(100)
+        self.slider.setTickPosition(self.slider.TicksBothSides)
+        
+        
+        self.max_angle.valueChanged.connect(self._value_changed)
+        self.max_distance.valueChanged.connect(self._value_changed)
+        self.twist_on.valueChanged.connect(self._value_changed)
+        self.twist.valueChanged.connect(self._value_changed)
+        self.combo_axis.currentIndexChanged.connect(self._axis_change)
+        self.slider.valueChanged.connect(self._pose_enable)
+        
+        
+        #layout_slide.addWidget(self.slider)
+        layout_slide.addLayout(parent_combo)
+        layout_slide.addLayout(layout_combo)
+        layout_slide.addLayout(layout_angle)
+        layout_slide.addLayout(layout_twist)
+        layout_slide.addLayout(layout_distance)
+        layout_slide.addLayout(layout_twist_on)
+        
+        
+        #button_mesh = QtGui.QPushButton('Sculpt')
+        
+        #button_view = QtGui.QPushButton('View')
+
+        #button_mesh.clicked.connect(self._button_mesh)
+        
+        #button_mirror = QtGui.QPushButton('Mirror')
+        
+        #button_mirror.clicked.connect(self._button_mirror)
+
+        #self.main_layout.addWidget(button_mesh)
+        self.main_layout.addLayout(layout_slide)
+        #self.main_layout.addWidget(button_mirror)
+        
+    def _add_spin_widget(self, name):
+        layout = QtGui.QHBoxLayout()
+        layout.setSpacing(0)
+        layout.setContentsMargins(0,0,0,0)
+        
+        label = QtGui.QLabel(name)
+        label.setAlignment(QtCore.Qt.AlignRight)
+        
+        widget = QtGui.QDoubleSpinBox()
+        
+        widget.setCorrectionMode(widget.CorrectToNearestValue)
+        widget.setWrapping(False)
+        layout.addWidget(label)
+        layout.addWidget(widget)
+        
+        return layout, widget      
+
+
+    def _button_mirror(self):
+        self.pose_mirror.emit()
+
+    def _button_mesh(self):
+        self.pose_mesh.emit()
+
+        
+    def _axis_change(self):
+        
+        text = str( self.combo_axis.currentText() )
+        self.axis_change(text)
+        #self.axis_change.emit(text)
+        
+    def _parent_name_change(self):
+        
+        self.parent_text.setStyleSheet('QLineEdit{background:red}')
+        
+        text = str( self.parent_text.text() )
+        
+        if not text:
+            #self.parent_text.setStyleSheet('QLineEdit{background:default}')
+            style = self.styleSheet()
+            self.parent_text.setStyleSheet(style)
+            
+            if self.emit_parent:
+                self.parent_change.emit(None)
+            return
+        
+        if cmds.objExists(text) and util.is_a_transform(text):
+            #self.parent_text.setStyleSheet('QLineEdit{background:default}')
+            
+            style = self.styleSheet()
+            self.parent_text.setStyleSheet(style)
+            
+            self.set_parent_name(text)
+            
+            
+        
+    
+    def _value_changed(self):
+        max_angle = self.max_angle.value()
+        max_distance = self.max_distance.value()
+        twist_on = self.twist_on.value()
+        twist = self.twist.value()
+        
+        print twist, '!!!'
+        
+        self.set_values(max_angle, max_distance, twist_on, twist)
+        #self.value_changed.emit(max_angle, max_distance, twist_on, twist)
+
+    def _pose_enable(self, value):
+        
+        value = value/100.00
+        
+        self.pose_enable_change.emit(value)
+
+    def _get_pose_values(self, pose):
+                
+        max_angle = cmds.getAttr('%s.maxAngle' % pose)
+        max_distance = cmds.getAttr('%s.maxDistance' % pose)
+        twist_on = cmds.getAttr('%s.twistOffOn' % pose)
+        twist = cmds.getAttr('%s.maxTwist' % pose)
+        
+        print twist, '!!!'
+        
+        self.set_values(max_angle, max_distance, twist_on, twist)
+        
+        return max_angle, max_distance, twist_on, twist
+
+    def set_pose(self, pose_name):
+        
+        if not pose_name:
+            self.pose = None
+            return
+        
+        self.pose = pose_name
+        self._get_pose_values(self.pose)
+
+    def set_values(self, angle, distance, twist_on, twist):
+        
+        if not self.pose:
+            return
+        
+        self.max_angle.setValue(angle)
+        self.max_distance.setValue(distance)
+        self.twist_on.setValue(twist_on)
+        self.twist.setValue(twist)
+        
+        
+        cmds.setAttr('%s.maxAngle' % self.pose, angle)
+        cmds.setAttr('%s.maxDistance' % self.pose, distance)
+        cmds.setAttr('%s.maxTwist' % self.pose, twist)
+        cmds.setAttr('%s.twistOffOn' % self.pose, twist_on)
+        
+    def axis_change(self, string):
+        
+        if not self.pose:
+            return
+        
+        pose_name = str(self.pose)
+        
+        pose = util.PoseControl()
+        pose.set_pose(pose_name)
+        pose.set_axis(string)
+        
+    def set_parent_name(self, parent_name):
+        
+        self.parent_text.setText(parent_name)
+        
+        if not self.pose:
+            return
+        
+        pose = util.PoseControl()
+        pose.set_pose(self.pose)
+        
+        pose.set_parent(parent_name)
+        
+    def set_pose_enable(self, value):
+        value = value*100
+        self.slider.setValue(value)
+    
+        
