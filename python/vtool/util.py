@@ -503,8 +503,6 @@ def replace_last_number(input_string, replace_string):
         replace_string *= count
 
     return input_string[:search.start()] + replace_string + input_string[search.end():]
-
-    
     
 def get_last_number(input_string):
     
@@ -533,6 +531,82 @@ def increment_last_number(input_string):
                              )
     
     return new_string
+
+def find_special(pattern, string_value, position_string):
+    #position string = 'start','end','first','last','inside'
+    
+    char_count = len(string_value)
+    
+    found_iter = re.finditer( pattern, string_value)
+    
+    found = []
+    index_start = None
+    index_end = None
+    
+    print found_iter
+    
+    for item in found_iter:
+        found.append(item)
+    
+    print found
+    
+    if not found:
+        return None, None
+        
+    if position_string == 'end':
+        index_start = found[-1].start()
+        index_end = found[-1].end()
+        
+        print index_end, char_count
+        
+        if index_end > char_count or index_end < char_count:
+            return None, None
+        
+        return index_start, index_end
+        
+    if position_string == 'start':
+        index_start = found[0].start()
+        index_end = found[0].end()
+        
+        if index_start != 0:
+            return None, None
+
+        return index_start, index_end
+
+    if position_string == 'first':
+        index_start = found[0].start()
+        index_end = found[0].end()
+        
+        return index_start, index_end
+        
+    if position_string == 'last':
+        index_start = found[-1].start()
+        index_end = found[-1].end()
+        
+    if position_string == 'inside':
+        print found
+        for match in found:
+            start_index = match.start()
+            end_index = match.end()
+            
+            if start_index == 0:
+                continue
+            if end_index > char_count:
+                continue
+            
+            break
+            
+        index_start = start_index
+        index_end = end_index
+            
+        return index_start, index_end
+
+def replace_string(string_value, replace_string, start, end):
+    
+    first_part = string_value[:start]
+    second_part = string_value[end:]
+    
+    return first_part + replace_string + second_part
 
 def get_distance(vector1, vector2):
     

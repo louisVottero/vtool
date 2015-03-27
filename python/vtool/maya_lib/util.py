@@ -3415,8 +3415,22 @@ class StoreData(object):
         
 class StoreControlData(StoreData):
     
+    def __init__(self, node = None):
+        super(StoreControlData, self).__init__(node)
+        
+        self.controls = []
+        
+        self.side_replace = ['_L', '_R', 'end']
+    
     def _get_control_data(self):
-        controls = get_controls()
+        
+        controls = []
+        
+        if self.controls:
+            controls = self.controls
+        
+        if not self.controls:
+            controls = get_controls()
         
         control_data = {}
         
@@ -3511,12 +3525,35 @@ class StoreControlData(StoreData):
             except:
                 cmds.warning('Could not set %s.' % attribute_name)     
         
+    def _find_other_side(self, control):
+        
+        pattern_string, replace_string, position_string = self.side_replace
+            
+        start, end = vtool.util.find_special(pattern_string, control, position_string)
+        
+        if start == None:
+            return
+        
+        other_control = vtool.util.replace_string(control, replace_string, start, end)
+            
+        return other_control
+        
+        
     def set_data(self):
         
         self.data.set_locked(False)
         data = self._get_control_data()
         super(StoreControlData, self).set_data(data)   
         self.data.set_locked(True)
+    
+    def set_controls(self, controls):
+        
+        self.controls = controls
+    
+    def set_side_replace(self, replace_string, pattern_string, position_string):
+        #position can be 'start', 'end', 'first', or 'inside'
+        
+        self.side_replace = [replace_string, pattern_string, position_string]
         
     def eval_data(self, return_only = False):
         data = super(StoreControlData, self).eval_data()
@@ -3539,7 +3576,8 @@ class StoreControlData(StoreData):
         data_list = self.eval_data()
             
         for control in data_list:
-            other_control = control[:-1] + 'R'
+            
+            other_control = self._find_other_side(control)
             
             if not cmds.objExists(other_control):
                 continue
@@ -3554,8 +3592,8 @@ class StoreControlData(StoreData):
             if not self._has_transform_value(control):
                 continue 
             
-            if not control.endswith('_L'):
-                continue               
+            #if not control.endswith('_L'):
+            #    continue               
             
             temp_group = cmds.duplicate(control, n = 'temp_%s' % control, po = True)[0]
             
@@ -3615,8 +3653,6 @@ class StoreControlData(StoreData):
                     self._set_control_data(temp_group, data[control])
                                   
                 controls[control].append(temp_group)
-        
-        
         
         for control in controls:
             
@@ -5260,18 +5296,16 @@ class BasePoseControl(object):
 
         if description:
             description = description.replace(' ', '_')
-        
-        
-        self.description = description
-        
 
-        
-        
+        self.description = description
+
         self.scale = 1
         self.mesh_index = 0
         
-    def _refresh_meshes(self):
+    def _pose_type(self):
+        return 'no reader'
         
+    def _refresh_meshes(self):
         
         meshes = self._get_corrective_meshes()
         
@@ -5285,10 +5319,7 @@ class BasePoseControl(object):
                 const = cmds.parentConstraint(target_mesh, mesh)
             
                 cmds.delete(const)
-               
-            
-            
-        
+                
     def _refresh_pose_control(self):
         
         if not cmds.objExists(self.pose_control):
@@ -5314,7 +5345,6 @@ class BasePoseControl(object):
         
         if not cmds.objExists(top_group):
             top_group = cmds.group(em = True, name = top_group)
-            #cmds.parent( top_group, 'setup' )
 
         return top_group
 
@@ -5474,9 +5504,14 @@ class BasePoseControl(object):
         
         cmds.addAttr(control, ln = 'control_scale', at = 'float', dv = 1)
         
-        
         title = MayaEnumVariable('POSE')
         title.create(control)  
+        
+        pose_type = MayaStringVariable('type')
+        pose_type.set_value(self._pose_type())
+        pose_type.set_locked(True)
+        pose_type.create(control)
+        
         
         cmds.addAttr(control, ln = 'enable', at = 'double', k = True, dv = 1, min = 0, max = 1)
         cmds.addAttr(control, ln = 'weight', at = 'double', k = True, dv = 0)
@@ -5491,8 +5526,6 @@ class BasePoseControl(object):
         control.set_curve_type('pin_point')
         
         control.hide_scale_and_visibility_attributes() 
-        
-        
         
         pose_control = control.get()
         self.pose_control = control.get()
@@ -5918,24 +5951,20 @@ class BasePoseControl(object):
         
         return False
 
-    
-
-      
 class PoseControl(BasePoseControl):
     def __init__(self, transform = None, description = 'pose'):
-        
-        
-        
+                
         super(PoseControl, self).__init__(description)
         
         if transform:
             transform = transform.replace(' ', '_')
-            
-        
         
         self.transform = transform
         
         self.axis = 'X'
+    
+    def _pose_type(self):
+        return 'cone'
     
     def _get_color_for_axis(self):
         if self.axis == 'X':
@@ -6006,7 +6035,6 @@ class PoseControl(BasePoseControl):
         
         control.color( self._get_color_for_axis() )
         
-        
     def _set_axis_vectors(self):
         pose_axis = self._get_pose_axis()
         
@@ -6018,14 +6046,12 @@ class PoseControl(BasePoseControl):
         
         twist_axis = self._get_twist_axis()
         
-
         cmds.setAttr('%s.axisTwistX' % self.pose_control, twist_axis[0])
         cmds.setAttr('%s.axisTwistY' % self.pose_control, twist_axis[1])
         cmds.setAttr('%s.axisTwistZ' % self.pose_control, twist_axis[2])
         
         self._lock_axis_vector_attributes(True)
         
-
     def _lock_axis_vector_attributes(self, bool_value):
         axis = ['X','Y','Z']
         attributes = ['axisTwist', 'axisRotate']
@@ -6034,12 +6060,8 @@ class PoseControl(BasePoseControl):
             for attribute in attributes:
                 cmds.setAttr('%s.%s%s' % (self.pose_control, attribute, a), l = bool_value)
         
-        
-        
     def _create_attributes(self, control):
         super(PoseControl, self)._create_attributes(control)
-        
-        
     
         cmds.addAttr(control, ln = 'translation', at = 'double', k = True, dv = 1)
         cmds.addAttr(control, ln = 'rotation', at = 'double', k = True, dv = 1)
@@ -6072,7 +6094,6 @@ class PoseControl(BasePoseControl):
         cmds.setAttr('%s.joint' % control, self.transform, type = 'string')
         
         cmds.addAttr(control, ln = 'parent', dt = 'string')
-        
         
         self._lock_axis_vector_attributes(True)
          
@@ -6235,10 +6256,6 @@ class PoseControl(BasePoseControl):
     
     def _multiply_weight(self):
         
-        
-        
-        
-        
         multiply = self._create_node('multiplyDivide')
         
         cmds.connectAttr('%s.translation' % self.pose_control, '%s.input1X' % multiply)
@@ -6250,7 +6267,6 @@ class PoseControl(BasePoseControl):
         cmds.connectAttr('%s.enable' % self.pose_control, '%s.input2X' % multiply_offset)
         
         cmds.connectAttr('%s.outputX' % multiply_offset, '%s.weight' % self.pose_control)
-
 
     def _get_parent_constraint(self):
         constraint = ConstraintEditor()
@@ -6274,8 +6290,6 @@ class PoseControl(BasePoseControl):
         
         self.transform = transform
         
-        
-        
         return transform
 
     def get_parent(self):
@@ -6289,7 +6303,6 @@ class PoseControl(BasePoseControl):
             targets = constraint.get_targets(constraint_node)
             if targets:
                 parent = targets[0]
-            
         
         if not parent:
             parent = cmds.getAttr('%s.parent' % self.pose_control)
@@ -6383,7 +6396,6 @@ class PoseControl(BasePoseControl):
         
         if not cmds.objExists(other_transform):
             return
-        
         
         other_pose = ''
         other_description = ''
@@ -6617,9 +6629,6 @@ class EnvelopeHistory(object):
             if connection:
                 cmds.connectAttr(connection, '%s.envelope' % history)
    
-
-                 
-                
 #--- definitions
 
 def inc_name(name):
