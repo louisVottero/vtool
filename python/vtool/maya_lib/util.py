@@ -5500,7 +5500,16 @@ class BasePoseControl(object):
     def _get_mesh_target(self, mesh):
         if not mesh:
             return None
-        return cmds.getAttr('%s.mesh_pose_source' % mesh)
+        
+        target_mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
+        
+        if not cmds.objExists(target_mesh):
+            target = get_basename(target_mesh)
+            
+            if cmds.objExists(target):
+                target_mesh = target
+                
+        return target_mesh
         
     def _get_message_attributes(self):
         
