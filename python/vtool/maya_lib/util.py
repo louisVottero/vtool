@@ -4398,7 +4398,10 @@ class BlendShape(object):
             attribute_name = self._get_target_attr(name)
             
             if not cmds.getAttr(attribute_name, l = True):
-                cmds.setAttr(attribute_name, value)
+                input_attr = get_attribute_input(attribute_name)
+                
+                if not input_attr:
+                    cmds.setAttr(attribute_name, value)
     
     def set_weights(self, weights, target_name = None, mesh_index = 0):
         
@@ -5138,7 +5141,7 @@ class PoseManager(object):
         store = StoreControlData().eval_multi_transform_data(data_list)
     
     @undo_chunk
-    def create_pose(self, name = None):
+    def create_cone_pose(self, name = None):
         selection = cmds.ls(sl = True, l = True)
         
         if not selection:
@@ -5154,6 +5157,32 @@ class PoseManager(object):
             name = 'pose_%s' % joint
         
         pose = PoseControl(selection[0], name)
+        pose_control = pose.create()
+        
+        self.pose_control = pose_control
+        
+        return pose_control
+
+    @undo_chunk
+    def create_no_reader_pose(self, name = None):
+        #selection = cmds.ls(sl = True, l = True)
+        
+        #if not selection:
+        #    return
+        
+        #if not cmds.nodeType(selection[0]) == 'joint' or not len(selection):
+        #    return
+        
+        #if not name:
+        #    joint = selection[0].split('|')
+        #    joint = joint[-1]
+            
+        #    name = 'pose_%s' % joint
+        
+        name = inc_name('pose_no_reader_1')
+        
+        
+        pose = PoseNoReader(name)
         pose_control = pose.create()
         
         self.pose_control = pose_control
@@ -5180,7 +5209,8 @@ class PoseManager(object):
     
     @undo_chunk
     def add_mesh_to_pose(self, pose_name, meshes = None):
-
+        
+        print 'adding mesh to pose', pose_name, meshes
         selection = None
 
         if not meshes == None:
@@ -5194,15 +5224,15 @@ class PoseManager(object):
         if selection:
             for sel in selection:
                 
-                skin = find_deformer_by_type(sel, 'skinCluster')
+                #skin = find_deformer_by_type(sel, 'skinCluster')
                 
                 shape = get_mesh_shape(sel)
                 
-                if shape and skin:
+                if shape:
                     pose.add_mesh(sel)
                     return True
                     
-                if not shape and not skin:
+                if not shape:
                     return False
         
         if not selection:
@@ -5302,8 +5332,10 @@ class BasePoseControl(object):
         self.scale = 1
         self.mesh_index = 0
         
+        self.blend_input = None
+        
     def _pose_type(self):
-        return 'no reader'
+        return 'base'
         
     def _refresh_meshes(self):
         
@@ -5523,7 +5555,7 @@ class BasePoseControl(object):
     def _create_pose_control(self):
         
         control = Control(self._get_name())
-        control.set_curve_type('pin_point')
+        control.set_curve_type('cube')
         
         control.hide_scale_and_visibility_attributes() 
         
@@ -5674,6 +5706,7 @@ class BasePoseControl(object):
         self.disconnect_blend()
         blend.set_weight(self.pose_control, 0)
         
+        
         offset = chad_extract_shape(target_mesh, mesh)
         
         
@@ -5687,8 +5720,15 @@ class BasePoseControl(object):
         if not blend.is_target(self.pose_control):
             blend.create_target(self.pose_control, offset)
             
+        
+            
+        disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
+            
         if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
+            
             cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
+        
+        
         
         cmds.delete(offset)
         
@@ -5711,11 +5751,15 @@ class BasePoseControl(object):
         
         if blendshape:
             blend.set(blendshape)
-                
+        
+        if self.blend_input and blend.is_target(self.pose_control):
+            cmds.connectAttr(self.blend_input, '%s.%s' % (blend.blendshape, self.pose_control))
+            self.blend_input = None
+        """       
         if blend.is_target(self.pose_control):
             if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
                 cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
-                
+        """     
     def disconnect_blend(self, mesh_index = None):
         mesh = None
         
@@ -5736,9 +5780,16 @@ class BasePoseControl(object):
         if blendshape:
             blend.set(blendshape)
                 
-        if blend.is_target(self.pose_control):
-            if cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
-                cmds.disconnectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
+        input = get_attribute_input('%s.%s' % (blend.blendshape, self.pose_control))
+                
+        self.blend_input = input
+                
+        if input:
+            disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
+                
+        #if blend.is_target(self.pose_control):
+        #    if cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
+        #        cmds.disconnectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
         
     def get_blendshape(self, mesh_index = None):
         
@@ -5950,6 +6001,76 @@ class BasePoseControl(object):
             return True
         
         return False
+
+class PoseNoReader(BasePoseControl):
+    
+    def _pose_type(self):
+        return 'no reader'
+    
+    def create_blend(self, goto_pose = True, mesh_index = None):
+        
+        mesh = self._get_current_mesh(mesh_index)
+        
+        if not mesh:
+            return
+            
+        target_mesh = self.get_target_mesh(mesh)
+        
+        if not target_mesh:
+            RuntimeError('Mesh index %s, has no target mesh' % mesh_index)
+            return
+        
+        if goto_pose:
+            self.goto_pose()
+        
+        blend = BlendShape()
+        
+        blendshape = self._get_blendshape(target_mesh)
+        
+        if blendshape:
+            blend.set(blendshape)
+        
+        if not blendshape:
+            blend.create(target_mesh)
+        
+        #blend.set_envelope(0)
+        self.disconnect_blend()
+        blend.set_weight(self.pose_control, 0)
+        
+        
+        offset = chad_extract_shape(target_mesh, mesh)
+        
+        
+        blend.set_weight(self.pose_control, 1)
+        self.connect_blend()
+        #blend.set_envelope(1)
+        
+        if blend.is_target(self.pose_control):
+            blend.replace_target(self.pose_control, offset)
+        
+        if not blend.is_target(self.pose_control):
+            blend.create_target(self.pose_control, offset)
+            
+            
+        input_attr = get_attribute_input('%s.%s' % (blend.blendshape, self.pose_control))
+            
+        disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
+            
+        if input_attr:
+            weight_input = get_attribute_input('%s.weight' % self.pose_control)
+            
+            if weight_input != input_attr:
+                cmds.connectAttr(input_attr, '%s.weight' % self.pose_control)
+                
+            
+        
+        if not input_attr and input != '%s.weight' % self.pose_control:
+            cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
+        
+        
+        
+        cmds.delete(offset)
+    
 
 class PoseControl(BasePoseControl):
     def __init__(self, transform = None, description = 'pose'):
@@ -6334,6 +6455,9 @@ class PoseControl(BasePoseControl):
         cmds.setAttr('%s.parent' % self.pose_control, parent, type = 'string')
     
         if not set_string_only:
+            
+            print 'here', parent
+            
             constraint = self._get_parent_constraint()
             cmds.delete(constraint)    
             
@@ -10168,31 +10292,39 @@ def chad_extract_shape(skin_mesh, corrective):
         
         if not skin:
             cmds.warning('No skin found on %s.' % skin_mesh)
-            return
+            
+            offset = cmds.duplicate(corrective)[0]
+            other_delta = cmds.duplicate(skin_mesh)[0]
         
-        file_name = __file__
-        file_name = file_name.replace('util.py', 'cvShapeInverterDeformer.py')
-        file_name = file_name.replace('.pyc', '.py')
+            orig = get_intermediate_object(skin_mesh)
+            orig = create_mesh_from_shape(orig, 'home')
+            
+        if skin:
         
-        cmds.loadPlugin( file_name )
+            file_name = __file__
+            file_name = file_name.replace('util.py', 'cvShapeInverterDeformer.py')
+            file_name = file_name.replace('.pyc', '.py')
+            
+            cmds.loadPlugin( file_name )
+            
+            import cvShapeInverterScript as correct
+            
+            envelopes.turn_off()
+            cmds.setAttr('%s.envelope' % skin, 1)
+            
+            offset = correct.invert(skin_mesh, corrective)
+            cmds.delete(offset, ch = True)
         
-        import cvShapeInverterScript as correct
+            orig = get_intermediate_object(skin_mesh)
+            orig = create_mesh_from_shape(orig, 'home')
         
-        envelopes.turn_off()
-        cmds.setAttr('%s.envelope' % skin, 1)
+            envelopes.turn_on(respect_initial_state=True)
         
-        offset = correct.invert(skin_mesh, corrective)
-        cmds.delete(offset, ch = True)
+            cmds.setAttr('%s.envelope' % skin, 0)
+            
+            other_delta = cmds.duplicate(skin_mesh)[0]
         
-        orig = get_intermediate_object(skin_mesh)
-        orig = create_mesh_from_shape(orig, 'home')
-        
-        envelopes.turn_on(respect_initial_state=True)
-        
-        cmds.setAttr('%s.envelope' % skin, 0)
-        other_delta = cmds.duplicate(skin_mesh)[0]
-        
-        cmds.setAttr('%s.envelope' % skin, 1)
+            cmds.setAttr('%s.envelope' % skin, 1)
         
         quick_blendshape(other_delta, orig, -1)
         quick_blendshape(offset, orig, 1)
@@ -10202,7 +10334,6 @@ def chad_extract_shape(skin_mesh, corrective):
         cmds.delete(orig, ch = True)
         
         cmds.delete(other_delta, offset)
-        
         
         cmds.rename(orig, offset)
         

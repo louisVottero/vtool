@@ -1382,6 +1382,7 @@ class GetNumber(BasicWidget):
             self.spin_widget.setWrapping(False)
             
         self.spin_widget.setMaximum(100000000)
+        self.spin_widget.setButtonSymbols(self.spin_widget.NoButtons)
         
         self.spin_widget.valueChanged.connect(self._value_changed)
                     
