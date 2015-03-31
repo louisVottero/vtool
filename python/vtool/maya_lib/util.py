@@ -5509,7 +5509,11 @@ class BasePoseControl(object):
             
             if cmds.objExists(target):
                 target_mesh = target
+<<<<<<< HEAD
         
+=======
+                
+>>>>>>> branch 'master' of https://github.com/louisVottero/vtool.git
         return target_mesh
         
     def _get_message_attributes(self):
