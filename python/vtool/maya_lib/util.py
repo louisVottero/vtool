@@ -3444,10 +3444,21 @@ class StoreControlData(StoreData):
             attribute_data = {}
             
             for attribute in attributes:
-                if cmds.objExists('%s.%s' % (control,attribute)):
-                    value = cmds.getAttr('%s.%s' % (control, attribute))
                 
-                    attribute_data[attribute] = value 
+                attribute_name = '%s.%s' % (control, attribute)
+                
+                if not cmds.objExists(attribute_name):
+                    continue
+                
+                if cmds.getAttr(attribute_name, type = True) == 'message':
+                    continue
+
+                if cmds.getAttr(attribute_name, type = True) == 'string':
+                    continue
+                
+                
+                value = cmds.getAttr(attribute_name)
+                attribute_data[attribute] = value 
             
             if attribute_data:
                 control_data[control] = attribute_data
@@ -5048,6 +5059,25 @@ class MayaWrap(object):
 
         
 class PoseManager(object):
+    
+    def _get_pose_instance(self, pose_name):
+        
+        if cmds.objExists('%s.type' % pose_name):
+            pose_type = cmds.getAttr('%s.type' % pose_name)
+        
+        if not cmds.objExists('%s.type' % pose_name):
+            pose_type = 'cone'
+
+        if pose_type == 'cone':
+            pose = PoseControl()
+            
+        if pose_type == 'no reader':
+            pose = PoseNoReader()
+            
+        pose.set_pose(pose_name)
+        
+        return pose
+    
     def __init__(self):
         self.poses = []
         
@@ -5081,30 +5111,28 @@ class PoseManager(object):
         return poses
     
     def is_pose(self, name):
-        if PoseControl().is_a_pose(name):
+        
+        if BasePoseControl().is_a_pose(name):
             return True
         
         return False
     
     def get_transform(self, name):
-        pose = PoseControl()
-        pose.set_pose(name)
+        pose = self._get_pose_instance(name)
         transform = pose.get_transform()
         
         return transform
         
     def get_pose_control(self, name):
         
-        pose = PoseControl()
-        pose.set_pose(name)
+        pose = self._get_pose_instance(name)
         
         control = pose.pose_control
         
         return control
     
     def get_mesh_index(self, name, mesh):
-        pose = PoseControl()
-        pose.set_pose(name)
+        pose = self._get_pose_instance(name)
         
         mesh_index = pose.get_target_mesh_index(mesh)
         
@@ -5192,25 +5220,17 @@ class PoseManager(object):
     @undo_chunk
     def reset_pose(self, pose_name):
         
-        pose = PoseControl()
-        pose.set_pose(pose_name)
+        pose = self._get_pose_instance(pose_name)
         pose.reset_target_meshes()
     
     @undo_chunk
     def rename_pose(self, pose_name, new_name):
-        pose = BasePoseControl()
-        pose.set_pose(pose_name)
+        pose = self._get_pose_instance(pose_name)
         return pose.rename(new_name)
-    
-    def create_combo(self, pose_list, name):
-        
-        combo = ComboControl(pose_list, name)
-        combo.create()
     
     @undo_chunk
     def add_mesh_to_pose(self, pose_name, meshes = None):
         
-        print 'adding mesh to pose', pose_name, meshes
         selection = None
 
         if not meshes == None:
@@ -5218,8 +5238,7 @@ class PoseManager(object):
         if meshes:
             selection = meshes
         
-        pose = PoseControl()
-        pose.set_pose(pose_name)
+        pose = self._get_pose_instance(pose_name)
 
         if selection:
             for sel in selection:
@@ -5239,29 +5258,24 @@ class PoseManager(object):
             return False
     
     def visibility_off(self, pose_name):
-        pose = PoseControl()
-        pose.set_pose(pose_name)
+        pose = self._get_pose_instance(pose_name)
         pose.visibility_off(view_only = True)
         
     def toggle_visibility(self, pose_name, view_only = False, mesh_index = 0):
-        pose = PoseControl()
-        
-        pose.set_pose(pose_name)
+        pose = self._get_pose_instance(pose_name)
         pose.set_mesh_index(mesh_index)
         pose.toggle_vis(view_only)
     
     @undo_chunk
     def delete_pose(self, name):
-        pose = PoseControl()
-        pose.set_pose(name)
+        pose = self._get_pose_instance(name)
         pose.delete()
         
     def detach_poses(self):
         poses = self.get_poses()
         for pose_name in poses:
             
-            pose = PoseControl()
-            pose.set_pose(pose_name)
+            pose = self._get_pose_instance(pose_name)
             pose.detach()
             
             
@@ -5270,16 +5284,14 @@ class PoseManager(object):
         
         for pose_name in poses:
             
-            pose = PoseControl()
-            pose.set_pose(pose_name)
+            pose = self._get_pose_instance(pose_name)
             pose.attach()
         
     @undo_chunk    
     def create_pose_blends(self, pose_name = None):
         
         if pose_name:
-            pose = PoseControl()
-            pose.set_pose(pose_name)
+            pose = self._get_pose_instance(pose_name)
             pose.create_all_blends()
             return
         
@@ -5311,8 +5323,7 @@ class PoseManager(object):
         progress.end()
     
     def mirror_pose(self, name):
-        pose = PoseControl()
-        pose.set_pose(name)
+        pose = self._get_pose_instance(name)
         mirror = pose.mirror()
         
         return mirror        
@@ -5509,11 +5520,7 @@ class BasePoseControl(object):
             
             if cmds.objExists(target):
                 target_mesh = target
-<<<<<<< HEAD
-        
-=======
-                
->>>>>>> branch 'master' of https://github.com/louisVottero/vtool.git
+
         return target_mesh
         
     def _get_message_attributes(self):
@@ -5691,6 +5698,8 @@ class BasePoseControl(object):
             self.create_blend(goto_pose = pose, mesh_index = inc)
         
     def create_blend(self, goto_pose = True, mesh_index = None):
+        print self, self.__class__
+        print 'create blned orig'
         
         mesh = self._get_current_mesh(mesh_index)
         
@@ -6021,6 +6030,25 @@ class PoseNoReader(BasePoseControl):
     def _pose_type(self):
         return 'no reader'
     
+    def _create_attributes(self, control):
+        
+        super(PoseNoReader, self)._create_attributes(control)
+        
+        pose_input = MayaStringVariable('weight_input')
+        pose_input.set_locked(True)
+        pose_input.create(control)
+    
+    def _multiply_weight(self, destination):
+
+        
+
+        multiply = self._create_node('multiplyDivide')
+        
+        cmds.connectAttr('%s.weight' % self.pose_control, '%s.input1X' % multiply)
+        cmds.connectAttr('%s.enable' % self.pose_control, '%s.input2X' % multiply)
+        
+        cmds.connectAttr('%s.outputX' % multiply, destination)
+    
     def create_blend(self, goto_pose = True, mesh_index = None):
         
         mesh = self._get_current_mesh(mesh_index)
@@ -6051,9 +6079,7 @@ class PoseNoReader(BasePoseControl):
         self.disconnect_blend()
         blend.set_weight(self.pose_control, 0)
         
-        
         offset = chad_extract_shape(target_mesh, mesh)
-        
         
         blend.set_weight(self.pose_control, 1)
         self.connect_blend()
@@ -6064,24 +6090,22 @@ class PoseNoReader(BasePoseControl):
         
         if not blend.is_target(self.pose_control):
             blend.create_target(self.pose_control, offset)
+                
+        blend_attr = '%s.%s' % (blend.blendshape, self.pose_control)
+        weight_attr = '%s.weight' % self.pose_control
+        input_attr = get_attribute_input(blend_attr)
             
-            
-        input_attr = get_attribute_input('%s.%s' % (blend.blendshape, self.pose_control))
-            
-        disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
+        disconnect_attribute(blend_attr)
             
         if input_attr:
-            weight_input = get_attribute_input('%s.weight' % self.pose_control)
+            weight_input = get_attribute_input(weight_attr)
             
             if weight_input != input_attr:
-                cmds.connectAttr(input_attr, '%s.weight' % self.pose_control)
                 
-            
+                cmds.connectAttr(input_attr, weight_attr)
         
-        if not input_attr and input != '%s.weight' % self.pose_control:
-            cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
-        
-        
+        if input_attr != weight_attr:
+            self._multiply_weight(blend_attr)
         
         cmds.delete(offset)
     
