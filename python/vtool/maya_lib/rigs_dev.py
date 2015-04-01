@@ -2960,6 +2960,7 @@ class BackLeg(rigs.BufferRig):
 
         self.curve_type = 'square'
         self.btm_chain_xform = None
+        self.pole_offset = -1
 
     def _create_guide_chain(self):
         
@@ -3194,7 +3195,7 @@ class BackLeg(rigs.BufferRig):
         
         pole_joints = [self.ikGuideChain[0], self.ikGuideChain[1], self.ikGuideChain[2]]
       
-        position = util.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], -1 )
+        position = util.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
 
         cmds.move(position[0], position[1], position[2], control.get())
 
@@ -3300,6 +3301,9 @@ class BackLeg(rigs.BufferRig):
         cmds.parent(xform_ik_handle, self.btm_offset) 
 
         cmds.refresh()
+
+    def set_pole_offset(self, offset_value):
+        self.pole_offset = offset_value
 
     def create(self):
         super(BackLeg, self).create()
