@@ -3873,14 +3873,37 @@ class Connections(object):
     def disconnect(self):
         
         for inc in range(0, len(self.connections), 2):
+            # needs to unlock the attribute first
+            
+            
+            
             if cmds.isConnected(self.connections[inc], self.connections[inc+1], ignoreUnitConversion = True):
-                cmds.disconnectAttr(self.connections[inc], self.connections[inc+1])    
+                
+                lock_state = cmds.getAttr(self._get_node_and_variable(), l = True)
+            
+                if lock_state == True:
+                    cmds.setAttr(self._get_node_and_variable(), l = False)
+                
+                cmds.disconnectAttr(self.connections[inc], self.connections[inc+1])
+            
+                if lock_state == True:
+                    cmds.setAttr(self._get_node_and_variable(), l = True)    
+                
             
     
     def connect(self):
         for inc in range(0, len(self.connections), 2):
             if not cmds.isConnected(self.connections[inc], self.connections[inc+1], ignoreUnitConversion = True):
+                
+                lock_state = cmds.getAttr(self._get_node_and_variable(), l = True)
+            
+                if lock_state == True:
+                    cmds.setAttr(self._get_node_and_variable(), l = False)
+                
                 cmds.connectAttr(self.connections[inc], self.connections[inc+1])
+                
+                if lock_state == True:
+                    cmds.setAttr(self._get_node_and_variable(), l = True)
                 
     def refresh(self):
         self._store_connections()
