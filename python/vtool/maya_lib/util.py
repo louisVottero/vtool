@@ -5348,6 +5348,7 @@ class BasePoseControl(object):
                 
                 cmds.setAttr('%s.inheritsTransform' % mesh, 0)
                 unlock_attributes(mesh, only_keyable=True)
+                
                 const = cmds.parentConstraint(target_mesh, mesh)
             
                 cmds.delete(const)
@@ -5508,7 +5509,11 @@ class BasePoseControl(object):
             
             if cmds.objExists(target):
                 target_mesh = target
+<<<<<<< HEAD
+        
+=======
                 
+>>>>>>> branch 'master' of https://github.com/louisVottero/vtool.git
         return target_mesh
         
     def _get_message_attributes(self):
