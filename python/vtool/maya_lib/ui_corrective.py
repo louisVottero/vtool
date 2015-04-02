@@ -54,6 +54,8 @@ class PoseManager(ui.MayaWindow):
         
         new_name = str(new_name)
         self.sculpt.set_pose(new_name)
+        self.pose_list.update_current_pose()
+        
         
     def select_pose(self):
         
@@ -1197,8 +1199,6 @@ class PoseNoReaderWidget(PoseBaseWidget):
 
     
     def _get_weight_input(self):
-        
-        print 'getting weight input'
         
         pose_inst = corrective.PoseNoReader()
         pose_inst.set_pose(self.pose)

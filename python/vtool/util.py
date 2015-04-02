@@ -543,12 +543,8 @@ def find_special(pattern, string_value, position_string):
     index_start = None
     index_end = None
     
-    print found_iter
-    
     for item in found_iter:
         found.append(item)
-    
-    print found
     
     if not found:
         return None, None
@@ -556,8 +552,6 @@ def find_special(pattern, string_value, position_string):
     if position_string == 'end':
         index_start = found[-1].start()
         index_end = found[-1].end()
-        
-        print index_end, char_count
         
         if index_end > char_count or index_end < char_count:
             return None, None
@@ -584,7 +578,7 @@ def find_special(pattern, string_value, position_string):
         index_end = found[-1].end()
         
     if position_string == 'inside':
-        print found
+        
         for match in found:
             start_index = match.start()
             end_index = match.end()

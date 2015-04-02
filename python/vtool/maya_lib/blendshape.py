@@ -81,8 +81,6 @@ class BlendShape(object):
         attribute = [self.blendshape,
                      'inputTarget[%s]' % mesh_index]
         
-        print attribute
-        
         attribute = string.join(attribute, '.')
         return attribute
 
@@ -228,7 +226,6 @@ class BlendShape(object):
         
     def remove_target(self, name):
         
-        print 'remove attribute'
         target_group = self._get_input_target_group(name)
         weight_attr = self._get_weight(name)
         

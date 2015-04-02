@@ -522,7 +522,7 @@ class BasePoseControl(object):
         cmds.addAttr(control, ln = 'description', dt = 'string')
         cmds.setAttr('%s.description' % control, self.description, type = 'string')
         
-        cmds.addAttr(control, ln = 'targetName', dt = 'string')
+        #cmds.addAttr(control, ln = 'targetName', dt = 'string')
         
         
         
@@ -542,7 +542,7 @@ class BasePoseControl(object):
         cmds.addAttr(control, ln = 'meshIndex', at = 'short', dv = self.mesh_index)
         cmds.setAttr('%s.meshIndex' % self.pose_control, l = True)
 
-        cmds.addAttr(control, ln = 'inbetweenWeight', at = 'double', min = -1, max = 1, dv = 1)
+        #cmds.addAttr(control, ln = 'inbetweenWeight', at = 'double', min = -1, max = 1, dv = 1)
 
     def _create_pose_control(self):
         
@@ -1163,8 +1163,8 @@ class PoseNoReader(BasePoseControl):
         self.weight_input = attribute
         
         if not cmds.objExists('%s.weightInput' % self.pose_control):
-            cmds.addAttr(self.pose_control, ln = 'weightInput', dt = 'string')
             
+            cmds.addAttr(self.pose_control, ln = 'weightInput', dt = 'string')
             
             if not attribute:
                 attribute = ''
@@ -1181,8 +1181,6 @@ class PoseNoReader(BasePoseControl):
     def get_input(self):
         
         attribute = util.get_attribute_input('%s.weightInput' % self.pose_control, node_only = True)
-        
-        print attribute
         
         if attribute:
             return attribute
@@ -1225,8 +1223,6 @@ class PoseNoReader(BasePoseControl):
             description = description.replace(' ', '_')
         
         other_pose = self.replace_side(self.pose_control)
-        
-        print other_pose
         
         if not cmds.objExists(other_pose):
             return
