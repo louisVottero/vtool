@@ -986,6 +986,23 @@ class BasePoseControl(object):
         
         if outputs:
             for output in outputs:
+                if cmds.nodeType(output) == 'multiplyDivide':
+                    
+                    node = output.split('.')
+                
+                    found = None
+                    
+                    if len(node) == 2:
+                        node = node[0]
+                        found = node
+                    
+                    if found:
+                        
+                        output = util.get_attribute_outputs('%s.outputX' % found)
+                    
+                        if output and len(output) == 1:
+                            output = output[0]
+                
                 if cmds.nodeType(output) == 'blendShape':
                     split_output = output.split('.')
                     

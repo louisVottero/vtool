@@ -227,6 +227,8 @@ class BlendShape(object):
             vtool.util.show('Could not replace target %s, it does not exist' % name)
         
     def remove_target(self, name):
+        
+        print 'remove attribute'
         target_group = self._get_input_target_group(name)
         weight_attr = self._get_weight(name)
         
