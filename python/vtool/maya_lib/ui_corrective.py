@@ -5,6 +5,7 @@ from vtool import qt_ui
 
 import ui
 import util
+import corrective
 
 import maya.cmds as cmds
 import maya.mel as mel
@@ -31,6 +32,7 @@ class PoseManager(ui.MayaWindow):
         
         self.sculpt = SculptWidget()
         self.sculpt.setMaximumHeight(200)
+        self.sculpt.sculpted_mesh.connect(self.pose_list.update_current_pose)
         
         self.pose_list.pose_list.itemSelectionChanged.connect(self.select_pose)
         
@@ -51,7 +53,7 @@ class PoseManager(ui.MayaWindow):
     def _pose_renamed(self, new_name):
         
         new_name = str(new_name)
-        self.pose.set_pose(new_name)
+        self.sculpt.set_pose(new_name)
         
     def select_pose(self):
         
@@ -64,8 +66,6 @@ class PoseManager(ui.MayaWindow):
         
         if not items:
             return    
-        
-        
         
         pose_name = str(pose_name)
         self.sculpt.set_pose(pose_name)
@@ -99,11 +99,11 @@ class PoseSetWidget(QtGui.QWidget):
         
         
     def _button_default(self):
-        util.PoseManager().set_default_pose()
+        corrective.PoseManager().set_default_pose()
     
     def _button_reset(self):
         self.pose_reset.emit()
-        util.PoseManager().set_pose_to_default()
+        corrective.PoseManager().set_pose_to_default()
         
 class PoseListWidget(qt_ui.BasicWidget):
     
@@ -152,6 +152,10 @@ class PoseListWidget(qt_ui.BasicWidget):
     def _pose_renamed(self, new_name):
         self.pose_renamed.emit(new_name)
 
+    def update_current_pose(self):
+        
+        current_pose = self.pose_list._current_pose()
+        self.pose_widget.set_pose(current_pose)
         
     def set_pose_widget(self, widget):
         self.pose_list.pose_widget = widget
@@ -284,7 +288,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         
         self.last_selection = None
         
-        return util.PoseManager().rename_pose(str(pose_name), str(new_name))
+        return corrective.PoseManager().rename_pose(str(pose_name), str(new_name))
 
 
             
@@ -296,7 +300,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
             return
         
         if not current_str == '- new mesh -':
-            util.PoseManager().toggle_visibility(pose_name, True)
+            corrective.PoseManager().toggle_visibility(pose_name, True)
             
             
     def mesh_change(self, index):
@@ -306,7 +310,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         if not pose_name:
             return
         
-        pose = util.PoseControl()
+        pose = corrective.PoseControl()
         pose.set_pose(pose_name)
         pose.set_mesh_index(index)
         
@@ -323,7 +327,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         if not pose:
             return
         
-        util.PoseManager().delete_pose(pose)
+        corrective.PoseManager().delete_pose(pose)
         
         index = self.indexOfTopLevelItem(item)
         self.takeTopLevelItem(index)
@@ -341,7 +345,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         if not pose_name:
             return
         
-        pose = util.PoseControl()
+        pose = corrective.PoseControl()
         pose.set_pose(pose_name)
         
         pose.set_parent(parent)
@@ -410,7 +414,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.create_no_reader = pose_menu.addAction('No Reader')
         self.create_cone = pose_menu.addAction('Cone')
-        self.create_rbf = pose_menu.addAction('RBF')
+        #self.create_rbf = pose_menu.addAction('RBF')
         self.context_menu.addSeparator()
         self.rename_action = self.context_menu.addAction('Rename')
         self.delete_action = self.context_menu.addAction('Delete')
@@ -447,11 +451,20 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.refresh_action.triggered.connect(self._populate_list)
     
+    def _add_item(self, pose):
+        item = QtGui.QTreeWidgetItem()
+        item.setText(0, pose)
+        item.setSizeHint(0, QtCore.QSize(100,20))
+        self.addTopLevelItem(item)
+            
+        #item.setSelected(True)
+        #self.setCurrentItem(item)
+    
     def _populate_list(self):
         
         self.clear()
         
-        poses = util.PoseManager().get_poses()
+        poses = corrective.PoseManager().get_poses()
         
         if not poses:
             return
@@ -470,19 +483,11 @@ class PoseTreeWidget(BaseTreeWidget):
                 self.create_cone_pose(pose)
             if pose_type == 'no reader':
                 self.create_no_reader_pose(pose)
-                
-            item = QtGui.QTreeWidgetItem()
-            item.setText(0, pose)
-            item.setSizeHint(0, QtCore.QSize(100,20))
-            self.addTopLevelItem(item)
-            
-            item.setSelected(True)
-            self.setCurrentItem(item)
             
             
     def _select_joint(self):
         name = self._current_pose()
-        transform = util.PoseManager().get_transform(name)
+        transform = corrective.PoseManager().get_transform(name)
         
         util.show_channel_box()
         
@@ -492,7 +497,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         name = self._current_pose()
         
-        control = util.PoseManager().get_pose_control(name)
+        control = corrective.PoseManager().get_pose_control(name)
         
         util.show_channel_box()
         
@@ -501,13 +506,13 @@ class PoseTreeWidget(BaseTreeWidget):
     def _set_pose_data(self):
         
         name = self._current_pose()
-        control = util.PoseManager().get_pose_control(name)
-        util.PoseManager().set_pose_data(control)
+        control = corrective.PoseManager().get_pose_control(name)
+        corrective.PoseManager().set_pose_data(control)
 
     def _reset_sculpts(self):
         
         name = self._current_pose()
-        util.PoseManager().reset_pose(name)
+        corrective.PoseManager().reset_pose(name)
         
     def _select_blend(self):
         
@@ -516,7 +521,7 @@ class PoseTreeWidget(BaseTreeWidget):
         if not name:
             return
         
-        pose_inst = util.PoseControl()
+        pose_inst = corrective.PoseControl()
         pose_inst.set_pose(name)
         
         blend = pose_inst.get_blendshape()
@@ -535,10 +540,12 @@ class PoseTreeWidget(BaseTreeWidget):
             pose = name
         
         if not pose:
-            pose = util.PoseManager().create_cone_pose()
+            pose = corrective.PoseManager().create_cone_pose()
         
         if not pose:
             return
+        
+        self._add_item(pose)
 
     def create_no_reader_pose(self, name = None):
 
@@ -550,10 +557,12 @@ class PoseTreeWidget(BaseTreeWidget):
             pose = name
         
         if not pose:
-            pose = util.PoseManager().create_no_reader_pose()
+            pose = corrective.PoseManager().create_no_reader_pose()
         
         if not pose:
             return
+        
+        self._add_item(pose)
         
     
     def mirror_pose(self):
@@ -564,7 +573,7 @@ class PoseTreeWidget(BaseTreeWidget):
         if not pose:
             return
         
-        mirror = util.PoseManager().mirror_pose(pose)
+        mirror = corrective.PoseManager().mirror_pose(pose)
         
         self.refresh()
         self.select_pose(mirror)
@@ -583,11 +592,11 @@ class PoseTreeWidget(BaseTreeWidget):
             return
         
         if self.last_selection: 
-            util.PoseManager().visibility_off(self.last_selection[0])
+            corrective.PoseManager().visibility_off(self.last_selection[0])
         
         pose_names = self._get_selected_items(get_names = True)
         
-        util.PoseManager().set_pose(pose_names[0])
+        corrective.PoseManager().set_pose(pose_names[0])
         
         self.last_selection = pose_names
             
@@ -623,7 +632,7 @@ class PoseTreeItem(QtGui.QTreeWidgetItem):
             return self.pose.pose_control
         
     def load_pose(self, pose):
-        if not util.PoseControl().is_a_pose(pose):
+        if not corrective.PoseControl().is_a_pose(pose):
             return
     
         #self.pose = util.PoseControl()
@@ -650,9 +659,6 @@ class PoseWidget(qt_ui.BasicWidget):
         layout.setAlignment(QtCore.Qt.AlignRight)
         return layout
     
-    def _build_widgets(self):
-
-        self.setMaximumWidth(200)
 
     def _button_mesh(self):
         self.pose_mesh.emit()
@@ -739,7 +745,6 @@ class MeshWidget(qt_ui.BasicWidget):
     
     def sizeHint(self):    
         return QtCore.QSize(200,100)
-        
     
     def _build_widgets(self):
 
@@ -811,13 +816,13 @@ class MeshWidget(qt_ui.BasicWidget):
                     
             if new_meshes:
                 
-                util.PoseManager().add_mesh_to_pose(pose_name, new_meshes)
+                corrective.PoseManager().add_mesh_to_pose(pose_name, new_meshes)
                 
                 
         
             if not current_meshes:
             
-                util.PoseManager().add_mesh_to_pose(pose_name)
+                corrective.PoseManager().add_mesh_to_pose(pose_name)
                             
         
             self._update_meshes(pose_name)
@@ -831,7 +836,7 @@ class MeshWidget(qt_ui.BasicWidget):
                 if not mesh:
                     continue
                 
-                index = util.PoseManager().get_mesh_index(pose_name, mesh)
+                index = corrective.PoseManager().get_mesh_index(pose_name, mesh)
                 
                 
                 item = self.mesh_list.item(index)
@@ -840,7 +845,7 @@ class MeshWidget(qt_ui.BasicWidget):
                     item.setSelected(True)
                     
                 
-                util.PoseManager().toggle_visibility(pose_name, mesh_index = index)
+                corrective.PoseManager().toggle_visibility(pose_name, mesh_index = index)
             
             return
          
@@ -853,7 +858,7 @@ class MeshWidget(qt_ui.BasicWidget):
                     
                     index = index.row()
                 
-                    util.PoseManager().toggle_visibility(pose_name, mesh_index= index)
+                    corrective.PoseManager().toggle_visibility(pose_name, mesh_index= index)
         
     def _item_selected(self):
         pass
@@ -895,9 +900,9 @@ class MeshWidget(qt_ui.BasicWidget):
             pose_type = 'cone'
 
         if pose_type == 'cone':
-            self.pose_class = util.PoseControl()
+            self.pose_class = corrective.PoseControl()
         if pose_type == 'no reader':
-            self.pose_class = util.PoseNoReader()
+            self.pose_class = corrective.PoseNoReader()
 
         self.pose_class.set_pose(pose_name)
 
@@ -911,6 +916,7 @@ class MeshWidget(qt_ui.BasicWidget):
 class SculptWidget(qt_ui.BasicWidget):
     
     pose_mirror = qt_ui.create_signal()
+    sculpted_mesh = qt_ui.create_signal()
     
     def __init__(self):
         super(SculptWidget, self).__init__()
@@ -925,8 +931,8 @@ class SculptWidget(qt_ui.BasicWidget):
         return QtGui.QVBoxLayout()
     
     def _button_mesh(self):
-        print self.pose
         self.mesh_widget.add_mesh()
+        self.sculpted_mesh.emit()
         #self.pose_mesh.emit()
 
     def _button_mirror(self):
@@ -942,7 +948,6 @@ class SculptWidget(qt_ui.BasicWidget):
         self.slider.setMaximum(100)
         self.slider.setTickPosition(self.slider.NoTicks)
         
-        
         self.slider.valueChanged.connect(self._pose_enable)
         
         button_mesh = QtGui.QPushButton('Sculpt')
@@ -950,7 +955,7 @@ class SculptWidget(qt_ui.BasicWidget):
         button_mesh.setMinimumWidth(100)
 
         button_mirror = QtGui.QPushButton('Mirror')
-        button_mirror.setMinimumWidth(50)
+        button_mirror.setMaximumWidth(100)
         button_mirror.clicked.connect(self._button_mirror)
         
         v_layout = QtGui.QHBoxLayout()
@@ -960,7 +965,6 @@ class SculptWidget(qt_ui.BasicWidget):
         v_layout.addSpacing(5)
 
         button_view = QtGui.QPushButton('View')
-
 
         button_mesh.clicked.connect(self._button_mesh)
         
@@ -1020,24 +1024,39 @@ class PoseBaseWidget(qt_ui.BasicWidget):
         
         super(PoseBaseWidget, self).__init__()
         self.pose = None
-    
-    def set_pose(self, pose_name):
-        
-        if not pose_name:
-            self.pose = None
-            return
-        
-        self.pose = pose_name
 
-class PoseNoReaderWidget(PoseBaseWidget):
+        self.do_target_change = True
+
     
     def _build_widgets(self):
-        super(PoseNoReaderWidget, self)._build_widgets()
+        super(PoseBaseWidget, self)._build_widgets()
         
-        layout, widget = self._string_widget('Input')
+        """
+        h_layout = QtGui.QHBoxLayout()
         
-        self.main_layout.addLayout(layout)
+        target_layout, self.target_widget = self._string_widget('Target Name')
         
+        self.target_widget.textChanged.connect(self._target_change)
+        
+        layout, self.inbetween_index = self._add_spin_widget('Inbetween Weight')
+        
+        self.inbetween_index.valueChanged.connect( self._inbetween_change )
+        
+        self.inbetween_index.setRange(-1, 1)
+        
+        h_layout.addLayout(layout)
+        h_layout.addSpacing(5)
+        h_layout.addLayout(target_layout)
+        
+        
+        self.main_layout.addLayout(h_layout)
+        
+        line = QtGui.QFrame()
+        line.setFrameShape(QtGui.QFrame.HLine)
+        line.setFrameShadow(QtGui.QFrame.Sunken)
+        
+        self.main_layout.addWidget(line)
+        """
     def _string_widget(self, name):
         layout = QtGui.QHBoxLayout()
         
@@ -1048,6 +1067,186 @@ class PoseNoReaderWidget(PoseBaseWidget):
         layout.addWidget(text)
         
         return layout, text
+        
+    def _add_spin_widget(self, name):
+        layout = QtGui.QHBoxLayout()
+        layout.setSpacing(1)
+        layout.setContentsMargins(0,0,0,0)
+        
+        label = QtGui.QLabel(name)
+        label.setAlignment(QtCore.Qt.AlignRight)
+        
+        widget = QtGui.QDoubleSpinBox()
+        
+        widget.setCorrectionMode(widget.CorrectToNearestValue)
+        widget.setWrapping(False)
+        widget.setButtonSymbols(widget.NoButtons)
+        layout.addWidget(label)
+        layout.addSpacing(2)
+        layout.addWidget(widget)
+        
+        return layout, widget      
+        
+    def _get_inbetween_weight(self):
+        pass
+        """
+        pose = corrective.BasePoseControl()
+        pose.set_pose(self.pose)
+        
+        value = pose.get_inbetween_weight()
+        
+        self.inbetween_index.setValue(value)        
+        """
+    def _get_target_name(self):
+        pass
+        """
+        pose = corrective.BasePoseControl()
+        pose.set_pose(self.pose)
+        
+        name = pose.get_target_name()
+        
+        self.target_widget.setText(name)
+        """
+    def _inbetween_change(self):
+        pass
+        """
+        value = self.inbetween_index.value()
+        
+        self.set_inbetween_weight(value)
+        """
+    def _target_change(self):
+        pass
+        """
+        if not self.do_target_change:
+            return
+        
+        #self.target_widget.setStyleSheet('QLineEdit{background:red}')
+        
+        text = str( self.target_widget.text() )
+        
+        #if not text:
+            #self.parent_text.setStyleSheet('QLineEdit{background:default}')
+        #    style = self.styleSheet()
+        #    self.target_widget.setStyleSheet(style)
+        
+        import re
+        
+        new_text = re.sub('[^0-9a-zA-Z_]+', '', text)
+        
+        if new_text != text:
+            self.do_target_change = False
+            
+            self.target_widget.setText(new_text)
+                
+            self.do_target_change = True
+        
+        self.set_target_name(new_text)
+        
+        
+        
+        """
+        
+    
+    def set_target_name(self, string_value):
+
+        if not self.pose:
+            return
+        
+        pose = corrective.BasePoseControl()
+        pose.set_pose(self.pose)
+        
+        pose.set_target_name(string_value)
+                
+    
+    def set_inbetween_weight(self, value):
+        
+        if not self.pose:
+            return
+        
+        pose = corrective.BasePoseControl()
+        pose.set_pose(self.pose)
+        
+        pose.set_inbetween_weight(value)
+    
+    def set_pose(self, pose_name):
+        
+        if not pose_name:
+            self.pose = None
+            return
+        
+        self.pose = pose_name
+        
+        self._get_inbetween_weight()
+        self._get_target_name()
+        
+        
+
+class PoseNoReaderWidget(PoseBaseWidget):
+    
+    def _build_widgets(self):
+        super(PoseNoReaderWidget, self)._build_widgets()
+        
+        layout, widget = self._string_widget('Input')
+        
+        self.input_text = widget
+        
+        self.input_text.textChanged.connect(self._input_change)
+        
+        self.main_layout.addLayout(layout)
+        
+
+    
+    def _get_weight_input(self):
+        
+        print 'getting weight input'
+        
+        pose_inst = corrective.PoseNoReader()
+        pose_inst.set_pose(self.pose)
+        input_value = pose_inst.get_input()
+        
+        self.input_text.setText(input_value)
+        
+        return input_value
+        
+    
+    def _input_change(self):
+        
+        self.input_text.setStyleSheet('QLineEdit{background:red}')
+        
+        text = str( self.input_text.text() )
+        
+        if not text:
+            #self.parent_text.setStyleSheet('QLineEdit{background:default}')
+            style = self.styleSheet()
+            self.input_text.setStyleSheet(style)
+        
+        if util.is_attribute_numeric(text):
+            #self.parent_text.setStyleSheet('QLineEdit{background:default}')
+            
+            style = self.styleSheet()
+            self.input_text.setStyleSheet(style)
+            
+            self.set_input(text)
+            
+        if not util.is_attribute_numeric(text):
+            
+            self.set_input(text)
+            
+    def set_input(self, attribute):
+        
+        if not self.pose:
+            return
+        
+        pose = corrective.PoseNoReader()
+        pose.set_pose(self.pose)
+        
+        pose.set_input(attribute)
+        
+    def set_pose(self, pose_name):
+        super(PoseNoReaderWidget, self).set_pose(pose_name)
+        
+        self._get_weight_input()
+        
         
 class PoseConeWidget(PoseBaseWidget):
     
@@ -1060,7 +1259,7 @@ class PoseConeWidget(PoseBaseWidget):
         return layout
         
     def _build_widgets(self):
-        
+        super(PoseConeWidget, self)._build_widgets()
         self.combo_label = QtGui.QLabel('Alignment')
         
         self.combo_axis = QtGui.QComboBox()
@@ -1112,23 +1311,6 @@ class PoseConeWidget(PoseBaseWidget):
         
         #self.main_layout.addWidget(button_mirror)
         
-    def _add_spin_widget(self, name):
-        layout = QtGui.QHBoxLayout()
-        layout.setSpacing(0)
-        layout.setContentsMargins(0,0,0,0)
-        
-        label = QtGui.QLabel(name)
-        label.setAlignment(QtCore.Qt.AlignRight)
-        
-        widget = QtGui.QDoubleSpinBox()
-        
-        widget.setCorrectionMode(widget.CorrectToNearestValue)
-        widget.setWrapping(False)
-        widget.setButtonSymbols(widget.NoButtons)
-        layout.addWidget(label)
-        layout.addWidget(widget)
-        
-        return layout, widget      
 
 
     def _button_mirror(self):
@@ -1155,18 +1337,18 @@ class PoseConeWidget(PoseBaseWidget):
             style = self.styleSheet()
             self.parent_text.setStyleSheet(style)
             
-            if self.emit_parent:
-                self.parent_change.emit(None)
+            #if self.emit_parent:
+            #    self.parent_change.emit(None)
             return
         
-        if cmds.objExists(text) and util.is_a_transform(text):
+        if cmds.objExists(text) and util.is_transform(text):
             #self.parent_text.setStyleSheet('QLineEdit{background:default}')
             
             style = self.styleSheet()
             self.parent_text.setStyleSheet(style)
             
             self.set_parent_name(text)
-            
+        
             
         
     
@@ -1175,8 +1357,6 @@ class PoseConeWidget(PoseBaseWidget):
         max_distance = self.max_distance.value()
         twist_on = self.twist_on.value()
         twist = self.twist.value()
-        
-        print twist, '!!!'
         
         self.set_values(max_angle, max_distance, twist_on, twist)
         #self.value_changed.emit(max_angle, max_distance, twist_on, twist)
@@ -1196,15 +1376,13 @@ class PoseConeWidget(PoseBaseWidget):
         twist_on = cmds.getAttr('%s.twistOffOn' % pose)
         twist = cmds.getAttr('%s.maxTwist' % pose)
         
-        print twist, '!!!'
-        
         self.set_values(max_angle, max_distance, twist_on, twist)
         
         return max_angle, max_distance, twist_on, twist
 
     def _get_parent(self):
         
-        pose_inst = util.PoseControl()
+        pose_inst = corrective.PoseControl()
         pose_inst.set_pose(self.pose)
         parent = pose_inst.get_parent()
         
@@ -1245,7 +1423,7 @@ class PoseConeWidget(PoseBaseWidget):
         
         pose_name = str(self.pose)
         
-        pose = util.PoseControl()
+        pose = corrective.PoseControl()
         pose.set_pose(pose_name)
         pose.set_axis(string)
         
@@ -1256,7 +1434,7 @@ class PoseConeWidget(PoseBaseWidget):
         if not self.pose:
             return
         
-        pose = util.PoseControl()
+        pose = corrective.PoseControl()
         pose.set_pose(self.pose)
         
         pose.set_parent(parent_name)

@@ -81,6 +81,8 @@ class BlendShape(object):
         attribute = [self.blendshape,
                      'inputTarget[%s]' % mesh_index]
         
+        print attribute
+        
         attribute = string.join(attribute, '.')
         return attribute
 
@@ -185,7 +187,7 @@ class BlendShape(object):
             return True
         
     @util.undo_chunk
-    def create_target(self, name, mesh):
+    def create_target(self, name, mesh, inbetween = 1):
         
         name = name.replace(' ', '_')
         
@@ -195,7 +197,7 @@ class BlendShape(object):
             
             self._store_target(name, current_index)
             
-            mesh_input = self._get_mesh_input_for_target(name)
+            mesh_input = self._get_mesh_input_for_target(name, inbetween)
             
             cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
             
@@ -246,7 +248,6 @@ class BlendShape(object):
         
         weight_attr = self._get_weight(old_name)
         index = self.targets[old_name].index
-        
         
         cmds.aliasAttr('%s.%s' % (self.blendshape, old_name), rm = True)
         cmds.aliasAttr(new_name, weight_attr)

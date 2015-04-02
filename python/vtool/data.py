@@ -12,6 +12,7 @@ if util.is_in_maya():
     
     import maya_lib.util
     import maya_lib.curve
+    import maya_lib.corrective
 
 
 
@@ -1015,7 +1016,7 @@ class PoseData(MayaCustomData):
             self.create
             return
         
-        pose_manager = maya_lib.util.PoseManager()
+        pose_manager = maya_lib.corrective.PoseManager()
         pose_manager.set_pose_to_default()
         pose_manager.detach_poses()
         
@@ -1101,7 +1102,7 @@ class PoseData(MayaCustomData):
         if cmds.objExists('pose_gr'):
             cmds.parent(poses, 'pose_gr')
         
-        pose_manager = maya_lib.util.PoseManager()
+        pose_manager = maya_lib.corrective.PoseManager()
         pose_manager.attach_poses()
         pose_manager.create_pose_blends()
         pose_manager.set_pose_to_default()
