@@ -3590,7 +3590,7 @@ class StoreControlData(StoreData):
             
             other_control = self._find_other_side(control)
             
-            if not cmds.objExists(other_control):
+            if not other_control or cmds.objExists(other_control):
                 continue
             
             if cmds.objExists('%s.ikFk' % control):

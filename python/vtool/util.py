@@ -577,6 +577,8 @@ def find_special(pattern, string_value, position_string):
         index_start = found[-1].start()
         index_end = found[-1].end()
         
+        return index_start, index_end
+        
     if position_string == 'inside':
         
         for match in found:

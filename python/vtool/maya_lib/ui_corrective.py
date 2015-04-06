@@ -786,60 +786,54 @@ class MeshWidget(qt_ui.BasicWidget):
         if not pose_name:
             return
         
-        new_meshes = []
-        meshes = []
+        sculpt_meshes = []
+        list_meshes = []
         
         selection = cmds.ls(sl = True, l = True)
         
         if selection:
         
-            mesh_count = self.mesh_list.count()
+            mesh_list_count = self.mesh_list.count()
             
-            for thing in selection:
+            for selected in selection:
                 
-                if util.has_shape_of_type(thing, 'mesh'):
+                if util.has_shape_of_type(selected, 'mesh'):
                     
-                    pass_mesh = thing
+                    pass_mesh = selected
                     
-                    for inc in range(0, mesh_count):
+                    for inc in range(0, mesh_list_count):
                         
                         test_item = self.mesh_list.item(inc)
                         
-                        if str( test_item.text() ) == thing:
+                        if str( test_item.text() ) == selected:
+                            
                             pass_mesh = None
                             
-                            meshes.append(thing)
-                            
+                            list_meshes.append(selected)
                         
                     if pass_mesh:    
-                        new_meshes.append(pass_mesh)
+                        sculpt_meshes.append(pass_mesh)
         
-        if new_meshes or not current_meshes:
+        if sculpt_meshes or not current_meshes:
                     
-            if new_meshes:
-                
-                corrective.PoseManager().add_mesh_to_pose(pose_name, new_meshes)
-                
-                
+            if sculpt_meshes:
+                corrective.PoseManager().add_mesh_to_pose(pose_name, sculpt_meshes)
         
-            if not current_meshes:
-            
+            if not current_meshes:    
                 corrective.PoseManager().add_mesh_to_pose(pose_name)
                             
-        
             self._update_meshes(pose_name)
-                 
-        if meshes:
+        
+        if list_meshes:
             
             self.mesh_list.clearSelection()
             
-            for mesh in meshes:
+            for mesh in list_meshes:
                 
                 if not mesh:
                     continue
                 
                 index = corrective.PoseManager().get_mesh_index(pose_name, mesh)
-                
                 
                 item = self.mesh_list.item(index)
                 if item:
@@ -935,7 +929,6 @@ class SculptWidget(qt_ui.BasicWidget):
     def _button_mesh(self):
         self.mesh_widget.add_mesh()
         self.sculpted_mesh.emit()
-        #self.pose_mesh.emit()
 
     def _button_mirror(self):
         self.pose_mirror.emit()
@@ -1033,32 +1026,6 @@ class PoseBaseWidget(qt_ui.BasicWidget):
     def _build_widgets(self):
         super(PoseBaseWidget, self)._build_widgets()
         
-        """
-        h_layout = QtGui.QHBoxLayout()
-        
-        target_layout, self.target_widget = self._string_widget('Target Name')
-        
-        self.target_widget.textChanged.connect(self._target_change)
-        
-        layout, self.inbetween_index = self._add_spin_widget('Inbetween Weight')
-        
-        self.inbetween_index.valueChanged.connect( self._inbetween_change )
-        
-        self.inbetween_index.setRange(-1, 1)
-        
-        h_layout.addLayout(layout)
-        h_layout.addSpacing(5)
-        h_layout.addLayout(target_layout)
-        
-        
-        self.main_layout.addLayout(h_layout)
-        
-        line = QtGui.QFrame()
-        line.setFrameShape(QtGui.QFrame.HLine)
-        line.setFrameShadow(QtGui.QFrame.Sunken)
-        
-        self.main_layout.addWidget(line)
-        """
     def _string_widget(self, name):
         layout = QtGui.QHBoxLayout()
         
@@ -1088,88 +1055,7 @@ class PoseBaseWidget(qt_ui.BasicWidget):
         layout.addWidget(widget)
         
         return layout, widget      
-        
-    def _get_inbetween_weight(self):
-        pass
-        """
-        pose = corrective.BasePoseControl()
-        pose.set_pose(self.pose)
-        
-        value = pose.get_inbetween_weight()
-        
-        self.inbetween_index.setValue(value)        
-        """
-    def _get_target_name(self):
-        pass
-        """
-        pose = corrective.BasePoseControl()
-        pose.set_pose(self.pose)
-        
-        name = pose.get_target_name()
-        
-        self.target_widget.setText(name)
-        """
-    def _inbetween_change(self):
-        pass
-        """
-        value = self.inbetween_index.value()
-        
-        self.set_inbetween_weight(value)
-        """
-    def _target_change(self):
-        pass
-        """
-        if not self.do_target_change:
-            return
-        
-        #self.target_widget.setStyleSheet('QLineEdit{background:red}')
-        
-        text = str( self.target_widget.text() )
-        
-        #if not text:
-            #self.parent_text.setStyleSheet('QLineEdit{background:default}')
-        #    style = self.styleSheet()
-        #    self.target_widget.setStyleSheet(style)
-        
-        import re
-        
-        new_text = re.sub('[^0-9a-zA-Z_]+', '', text)
-        
-        if new_text != text:
-            self.do_target_change = False
-            
-            self.target_widget.setText(new_text)
-                
-            self.do_target_change = True
-        
-        self.set_target_name(new_text)
-        
-        
-        
-        """
-        
-    
-    def set_target_name(self, string_value):
 
-        if not self.pose:
-            return
-        
-        pose = corrective.BasePoseControl()
-        pose.set_pose(self.pose)
-        
-        pose.set_target_name(string_value)
-                
-    
-    def set_inbetween_weight(self, value):
-        
-        if not self.pose:
-            return
-        
-        pose = corrective.BasePoseControl()
-        pose.set_pose(self.pose)
-        
-        pose.set_inbetween_weight(value)
-    
     def set_pose(self, pose_name):
         
         if not pose_name:
@@ -1177,11 +1063,6 @@ class PoseBaseWidget(qt_ui.BasicWidget):
             return
         
         self.pose = pose_name
-        
-        self._get_inbetween_weight()
-        self._get_target_name()
-        
-        
 
 class PoseNoReaderWidget(PoseBaseWidget):
     
@@ -1195,9 +1076,7 @@ class PoseNoReaderWidget(PoseBaseWidget):
         self.input_text.textChanged.connect(self._input_change)
         
         self.main_layout.addLayout(layout)
-        
 
-    
     def _get_weight_input(self):
         
         pose_inst = corrective.PoseNoReader()
@@ -1216,13 +1095,12 @@ class PoseNoReaderWidget(PoseBaseWidget):
         text = str( self.input_text.text() )
         
         if not text:
-            #self.parent_text.setStyleSheet('QLineEdit{background:default}')
+            
             style = self.styleSheet()
             self.input_text.setStyleSheet(style)
         
         if util.is_attribute_numeric(text):
-            #self.parent_text.setStyleSheet('QLineEdit{background:default}')
-            
+                        
             style = self.styleSheet()
             self.input_text.setStyleSheet(style)
             
@@ -1305,14 +1183,6 @@ class PoseConeWidget(PoseBaseWidget):
         self.main_layout.addLayout(layout_distance)
         self.main_layout.addLayout(layout_twist_on)
         
-        #button_mirror = QtGui.QPushButton('Mirror')
-        
-        #button_mirror.clicked.connect(self._button_mirror)
-        
-        #self.main_layout.addWidget(button_mirror)
-        
-
-
     def _button_mirror(self):
         self.pose_mirror.emit()
 
@@ -1324,7 +1194,6 @@ class PoseConeWidget(PoseBaseWidget):
         
         text = str( self.combo_axis.currentText() )
         self.axis_change(text)
-        #self.axis_change.emit(text)
         
     def _parent_name_change(self):
         
@@ -1333,24 +1202,18 @@ class PoseConeWidget(PoseBaseWidget):
         text = str( self.parent_text.text() )
         
         if not text:
-            #self.parent_text.setStyleSheet('QLineEdit{background:default}')
+            
             style = self.styleSheet()
             self.parent_text.setStyleSheet(style)
             
-            #if self.emit_parent:
-            #    self.parent_change.emit(None)
             return
         
         if cmds.objExists(text) and util.is_transform(text):
-            #self.parent_text.setStyleSheet('QLineEdit{background:default}')
             
             style = self.styleSheet()
             self.parent_text.setStyleSheet(style)
             
             self.set_parent_name(text)
-        
-            
-        
     
     def _value_changed(self):
         max_angle = self.max_angle.value()
@@ -1359,7 +1222,6 @@ class PoseConeWidget(PoseBaseWidget):
         twist = self.twist.value()
         
         self.set_values(max_angle, max_distance, twist_on, twist)
-        #self.value_changed.emit(max_angle, max_distance, twist_on, twist)
 
     def _pose_enable(self, value):
         
