@@ -1,1 +1,0 @@
-start "ui" /b X:Tools\python26\python.exe x:/Tools/release/python/tool_pipeline/launch_maya.pyw "2014"

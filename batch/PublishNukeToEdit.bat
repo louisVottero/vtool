@@ -1,1 +1,0 @@
-start "Publish Nuke To Edit" /b X:Tools\python26\python.exe C:/Users/louis/Dropbox/code/python/tool_pipeline/publish_nuke_to_edit.py
