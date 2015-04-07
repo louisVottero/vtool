@@ -1,3 +1,5 @@
+# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
 import traceback
 
 import maya.cmds as cmds
@@ -608,8 +610,6 @@ class BasePoseControl(object):
         if string_value == None:
             return
         
-        print string_value
-        
         other = ''
         start, end = vtool.util.find_special('lf_', string_value, 'first')
         
@@ -876,11 +876,7 @@ class BasePoseControl(object):
         
     def create_all_blends(self):
         
-        print 'create all blends'
-        
         count = self._get_mesh_count()
-        
-        print 'mesh count', count
         
         pose = True
         
@@ -892,8 +888,6 @@ class BasePoseControl(object):
             self.create_blend(goto_pose = pose, mesh_index = inc)
         
     def create_blend(self, goto_pose = True, mesh_index = None):
-        
-        print 'create blend', mesh_index
         
         mesh = self._get_current_mesh(mesh_index)
         
@@ -1102,10 +1096,13 @@ class PoseNoReader(BasePoseControl):
     
     def _multiply_weight(self, destination):
 
-        multiply = self._create_node('multiplyDivide')
+        multiply = self._get_named_message_attribute('multiplyDivide1')
         
-        cmds.connectAttr('%s.weight' % self.pose_control, '%s.input1X' % multiply)
-        cmds.connectAttr('%s.enable' % self.pose_control, '%s.input2X' % multiply)
+        if not multiply:
+            multiply = self._create_node('multiplyDivide')
+        
+            cmds.connectAttr('%s.weight' % self.pose_control, '%s.input1X' % multiply)
+            cmds.connectAttr('%s.enable' % self.pose_control, '%s.input2X' % multiply)
         
         cmds.connectAttr('%s.outputX' % multiply, destination)
     
@@ -1172,10 +1169,16 @@ class PoseNoReader(BasePoseControl):
             weight_input = util.get_attribute_input(weight_attr)
             
             if not weight_input:
+                
                 self._connect_weight_input(input_attr)
-                self.set_input(input_attr)
+                
+                pose_input = weight_input.split('.')[0]
+                    
+                if pose_input != self._get_named_message_attribute('multiplyDivide1'):
+                    self.set_input(input_attr)
         
         if input_attr != weight_attr:
+            
             self._multiply_weight(blend_attr)
         
         cmds.delete(offset)
