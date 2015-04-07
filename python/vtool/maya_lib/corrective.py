@@ -522,7 +522,7 @@ class BasePoseControl(object):
         cmds.addAttr(control, ln = 'description', dt = 'string')
         cmds.setAttr('%s.description' % control, self.description, type = 'string')
         
-        cmds.addAttr(control, ln = 'targetName', dt = 'string')
+        #cmds.addAttr(control, ln = 'targetName', dt = 'string')
         
         
         
@@ -542,7 +542,7 @@ class BasePoseControl(object):
         cmds.addAttr(control, ln = 'meshIndex', at = 'short', dv = self.mesh_index)
         cmds.setAttr('%s.meshIndex' % self.pose_control, l = True)
 
-        cmds.addAttr(control, ln = 'inbetweenWeight', at = 'double', min = -1, max = 1, dv = 1)
+        #cmds.addAttr(control, ln = 'inbetweenWeight', at = 'double', min = -1, max = 1, dv = 1)
 
     def _create_pose_control(self):
         
@@ -602,6 +602,26 @@ class BasePoseControl(object):
     
         for pose in poses:
             pass
+    
+    def _replace_side(self, string_value):
+        
+        if string_value == None:
+            return
+        
+        print string_value
+        
+        other = ''
+        start, end = vtool.util.find_special('lf_', string_value, 'first')
+        
+        if start != None:
+            other = vtool.util.replace_string(string_value, 'rt_', start, end)
+            
+        start, end = vtool.util.find_special('_L', string_value, 'last')
+        
+        if start != None:
+            other = vtool.util.replace_string(string_value, '_R', start, end)
+            
+        return other
     
     #--- pose
 
@@ -855,7 +875,12 @@ class BasePoseControl(object):
     #--- blend
         
     def create_all_blends(self):
+        
+        print 'create all blends'
+        
         count = self._get_mesh_count()
+        
+        print 'mesh count', count
         
         pose = True
         
@@ -867,6 +892,8 @@ class BasePoseControl(object):
             self.create_blend(goto_pose = pose, mesh_index = inc)
         
     def create_blend(self, goto_pose = True, mesh_index = None):
+        
+        print 'create blend', mesh_index
         
         mesh = self._get_current_mesh(mesh_index)
         
@@ -907,16 +934,12 @@ class BasePoseControl(object):
         
         self.connect_blend()
         #blend.set_envelope(1)
-        
-        
-            
+                    
         util.disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
             
         if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
             
             cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
-        
-        
         
         cmds.delete(offset)
         
@@ -1163,8 +1186,8 @@ class PoseNoReader(BasePoseControl):
         self.weight_input = attribute
         
         if not cmds.objExists('%s.weightInput' % self.pose_control):
-            cmds.addAttr(self.pose_control, ln = 'weightInput', dt = 'string')
             
+            cmds.addAttr(self.pose_control, ln = 'weightInput', dt = 'string')
             
             if not attribute:
                 attribute = ''
@@ -1182,8 +1205,6 @@ class PoseNoReader(BasePoseControl):
         
         attribute = util.get_attribute_input('%s.weightInput' % self.pose_control, node_only = True)
         
-        print attribute
-        
         if attribute:
             return attribute
         
@@ -1197,19 +1218,7 @@ class PoseNoReader(BasePoseControl):
         
         util.disconnect_attribute('%s.weight' % self.pose_control)
         
-    def replace_side(self, string_value):
-        other = ''
-        start, end = vtool.util.find_special('lf_', string_value, 'first')
-        
-        if start != None:
-            other = vtool.util.replace_string(string_value, 'rt_', start, end)
-            
-        start, end = vtool.util.find_special('_L', string_value, 'end')
-        
-        if start != None:
-            other = vtool.util.replace_string(string_value, '_R', start, end)
-            
-        return other
+
         
     def mirror(self):
         
@@ -1224,9 +1233,7 @@ class PoseNoReader(BasePoseControl):
         if description:
             description = description.replace(' ', '_')
         
-        other_pose = self.replace_side(self.pose_control)
-        
-        print other_pose
+        other_pose = self._replace_side(self.pose_control)
         
         if not cmds.objExists(other_pose):
             return
@@ -1240,7 +1247,7 @@ class PoseNoReader(BasePoseControl):
             
             other_mesh = cmds.duplicate(mesh)[0]
             
-            new_name = self.replace_side(other_mesh)
+            new_name = self._replace_side(other_mesh)
             
             other_mesh = cmds.rename(other_mesh, new_name)
             other_meshes.append(other_mesh)
@@ -1248,7 +1255,7 @@ class PoseNoReader(BasePoseControl):
             target_mesh = self.get_target_mesh(mesh)
             split_name = target_mesh.split('|')
             
-            other_target_mesh = self.replace_side(split_name[-1])
+            other_target_mesh = self._replace_side(split_name[-1])
             
             skin = util.find_deformer_by_type(target_mesh, 'skinCluster')
             blendshape_node = util.find_deformer_by_type(target_mesh, 'blendShape')
@@ -1747,27 +1754,16 @@ class PoseControl(BasePoseControl):
         if description:
             description = description.replace(' ', '_')
         
-        other_transform = ''
-        
-        if transform.endswith('L'):
-            other_transform = transform[:-1] + 'R'
+        other_transform = self._replace_side(transform)
         
         if not cmds.objExists(other_transform):
             return
         
-        other_pose = ''
-        other_description = ''
+        other_pose = self._replace_side(self.pose_control)
+        other_description = self._replace_side(description)
         
-        """
-        if self.pose_control.endswith('L'):
-            other_pose = self.pose_control[:-1] + 'R'
-        
-        if description.endswith('L'):
-            other_description =description[:-1] + 'R'
-        """
-            
-        other_pose = self.pose_control.replace('_L','_R')
-        other_description = description.replace('_L','_R')
+        if not cmds.objExists(other_pose):
+            return
         
         other_meshes = []
         
