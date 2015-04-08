@@ -2705,7 +2705,16 @@ class RiggedLine(object):
         cmds.setAttr('%s.inheritsTransform' % self.top_group, 0)
     
     def _create_curve(self):
-        self.curve = cmds.curve(d = 1, p = [(0, 0, 0),(0,0,0)], k = [0, 1] , n = inc_name('guideLine_%s' % self.name))
+        self.curve = cmds.curve(d = 1, p = [(0, 0, 0),(0,0,0)], k = [0, 1], n = inc_name('guideLine_%s' % self.name))
+        cmds.delete(self.curve, ch = True)
+        
+        
+        shapes = get_shapes(self.curve)
+        new_name = cmds.rename(shapes[0], '%sShape' % self.curve)
+        
+        print 'renamed', shapes[0]
+        print new_name
+        
         cmds.setAttr('%s.template' % self.curve, 1)
         
         cmds.parent(self.curve, self.top_group)

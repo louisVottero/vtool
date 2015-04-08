@@ -1170,12 +1170,18 @@ class PoseNoReader(BasePoseControl):
             
             if not weight_input:
                 
-                self._connect_weight_input(input_attr)
+                multiply_node = self._get_named_message_attribute('multiplyDivide1')
                 
-                pose_input = weight_input.split('.')[0]
+                pose_input = input_attr.split('.')[0]
+                
+                if not pose_input == multiply_node:
                     
-                if pose_input != self._get_named_message_attribute('multiplyDivide1'):
                     self.set_input(input_attr)
+                    #self._connect_weight_input(input_attr)
+                    
+                
+                #if multiply_node:
+                #    self.set_input(input_attr)
         
         if input_attr != weight_attr:
             
@@ -1185,6 +1191,9 @@ class PoseNoReader(BasePoseControl):
         
     
     def set_input(self, attribute):
+        
+        if attribute == 'multiplyDivide_pose_no_reader_1.outputX':
+            raise
         
         self.weight_input = attribute
         

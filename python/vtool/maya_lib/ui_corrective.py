@@ -1118,6 +1118,7 @@ class PoseNoReaderWidget(PoseBaseWidget):
         pose = corrective.PoseNoReader()
         pose.set_pose(self.pose)
         
+        
         pose.set_input(attribute)
         
     def set_pose(self, pose_name):
