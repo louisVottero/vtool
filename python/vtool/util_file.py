@@ -410,6 +410,7 @@ class SettingsFile(object):
             lines.append(line)
         
         write = WriteFile(self.filepath)
+        
         write.write(lines)
     
     def set(self, name, value):

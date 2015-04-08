@@ -39,7 +39,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._setup_settings_file()
         
         project_directory = self.settings.get('project_directory')
-        self._set_default_project_directory(project_directory)
+        project_history = self.settings.get('project_history')
+        self._set_default_project_directory(project_directory, project_history)
         
         code_directory = self.settings.get('code_directory')
         if code_directory:
@@ -49,6 +50,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.item_renamed.connect(self._item_changed)
         self.view_widget.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
         self.view_widget.sync_code.connect(self._sync_code)
+           
+        self.settings_widget.set_settings(self.settings)
            
     def _sync_code(self):
         self.sync_code = True
@@ -106,6 +109,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.project_directory_changed.connect(self.set_project_directory)
         self.settings_widget.code_directory_changed.connect(self.set_code_directory)
         
+
+        
         self.tab_widget.addTab(self.settings_widget, 'Settings')       
         self.tab_widget.addTab(self.view_widget, 'View')
         self.tab_widget.addTab(self.data_widget, 'Data')
@@ -146,12 +151,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         default_directory = process.get_default_directory()
         self.set_directory(default_directory)
         
-    def _set_default_project_directory(self, directory):
+    def _set_default_project_directory(self, directory, history = None):
         
         if not directory:
             directory = util_file.join_path(self.directory, 'project')
             
-        self.settings_widget.set_project_directory(directory)
+        self.settings_widget.set_project_directory(directory, history)
+        
+        self.set_project_directory(directory)
         
     def _set_title(self, name):
         
@@ -366,7 +373,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
                 found_history.append(history_inc)
                    
-            history = found_history 
+            history = found_history
+            
+            if not current_directory in history:
+                history.insert(0, current_directory) 
 
             self.settings.set('project_history', history)
             return
@@ -374,6 +384,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if history:
             if not str(current_directory) in history:
                 history.insert(0, str(current_directory))
+                
             self.settings_widget.set_history(current_directory, history)
             
         
@@ -385,10 +396,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             util_file.create_dir(name = None, directory = directory)
         
     def set_project_directory(self, directory, sub_part = None):
+        #history should not be there...
         
         self._update_process(None)
         
         if not directory:
+            self.process.set_directory(None)
+            self.view_widget.set_directory(None)
             return
 
         if not sub_part:
@@ -414,9 +428,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def set_code_directory(self, directory):
         
         if directory == None:
-            directory = ''
-        
-        directory = self.settings.get('code_directory')            
+            directory = self.settings.get('code_directory')            
                       
         self.settings.set('code_directory', directory)
         self.code_widget.set_code_directory(directory)

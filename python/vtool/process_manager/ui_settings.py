@@ -21,6 +21,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         self.project_history = []
         self.code_directories = []
+        self.settings = None
     
     def _define_main_layout(self):
         layout = QtGui.QVBoxLayout()
@@ -29,29 +30,23 @@ class SettingsWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
-        self.project_directory_widget = qt_ui.GetDirectoryWidget()
+        self.project_directory_widget = ProjectDirectoryWidget()
         self.project_directory_widget.set_label('Project Directory')
         self.project_directory_widget.directory_changed.connect(self._project_directory_changed)
         
-        history_label = QtGui.QLabel('Previous Projects')
-        self.history_list = QtGui.QListWidget()
-        self.history_list.setAlternatingRowColors(True)
-        self.history_list.itemClicked.connect(self._history_item_selected)
-        self.history_list.setSelectionMode(self.history_list.NoSelection)
-                                
+        
+        
+        self.history_list = self.project_directory_widget.project_list
+                             
         self.code_directory_widget = CodeDirectoryWidget()
-        self.code_directory_widget.set_label('Add Code Directory')
+        #self.code_directory_widget.set_label('Code Directory')
         self.code_directory_widget.directory_changed.connect(self._code_directory_changed)
 
-        self.main_layout.addSpacing(5)
-        self.main_layout.addWidget(history_label)
-        self.main_layout.addWidget(self.history_list)
         self.main_layout.addWidget(self.project_directory_widget)
-        self.main_layout.addSpacing(15)
-        
         self.main_layout.addWidget(self.code_directory_widget)
 
     def _project_directory_changed(self, project):
+        
         self.project_directory_changed.emit(project)
         
     def _code_directory_changed(self, code_directory):
@@ -68,40 +63,16 @@ class SettingsWidget(qt_ui.BasicWidget):
     def get_project_directory(self):
         return self.project_directory_widget.get_directory()
         
-    def set_project_directory(self, directory):
-        self.project_directory_widget.set_directory(directory)
+    def set_project_directory(self, directory, history = None):
+        self.project_directory_widget.set_directory(directory, history)
+        
 
     def set_code_directory(self, directory):
         if directory:
             self.code_directory_widget.set_directory(directory)
             
-    def set_history(self, current, project_list):
-        
-        self.project_history = project_list
-        
-        self.history_list.clear()
-        
-        items = []
-        
-        select_item = None
-        
-        for history in self.project_history:
-            item = QtGui.QListWidgetItem()
-            item.setText(history)
-            item.setSizeHint(QtCore.QSize(30, 40))
-            
-            if current == history:
-                select_item = item
-                
-            
-            
-            
-            items.append(item)
-            self.history_list.addItem(item)
-        
-        
-        select_item.setSelected(True)
-        #self.history_list.clearSelection()
+    def set_history(self, directory, history):
+        self.project_directory_widget.set_directory(directory, history)
         
     def set_code_list(self, code_directories):
         
@@ -117,7 +88,229 @@ class SettingsWidget(qt_ui.BasicWidget):
             
             items.append(item)
             self.code.addItem(item)
+            
+    def set_settings(self, settings):
+        self.settings = settings
+        self.project_directory_widget.set_settings(settings)
+       
+class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
+    
+    directory_changed = qt_ui.create_signal(object)
+    
+    def __init__(self, parent = None):
+        self.project_list = None
+    
+        super(ProjectDirectoryWidget, self).__init__(parent)
         
+        self.settings = None
+    
+    def _define_main_layout(self):
+        return QtGui.QVBoxLayout()
+    
+    def _build_widgets(self):
+    
+        file_layout = QtGui.QHBoxLayout()
+    
+        self.directory_label = QtGui.QLabel('directory')
+        #self.directory_label.setMinimumWidth(100)
+        #self.directory_label.setMaximumWidth(100)
+
+        self.project_label = QtGui.QLabel('Project Libraries')
+        
+        directory_browse = QtGui.QPushButton('Browse')
+        directory_browse.setMaximumWidth(100)
+        
+        directory_browse.clicked.connect(self._browser)
+        
+        #file_layout.addWidget(self.project_label)
+        file_layout.addWidget(self.directory_label)
+        file_layout.addWidget(directory_browse)
+        
+
+        
+        self.project_list = ProjectList()
+        self.project_list.setAlternatingRowColors(True)
+        self.project_list.setSelectionMode(self.project_list.NoSelection)
+        self.project_list.directories_changed.connect(self._send_directories)
+        self.project_list.itemClicked.connect(self._project_item_selected)
+        
+        self.main_layout.addSpacing(5)
+        self.main_layout.addWidget(self.project_label)
+        self.main_layout.addLayout(file_layout)
+        self.main_layout.addWidget(self.project_list)
+        
+        self.main_layout.addSpacing(15)
+        
+        
+        
+    def _project_item_selected(self):
+        
+        item = self.project_list.currentItem()
+        
+        if not item:
+            return
+        
+        directory = item.text(1)
+        self.set_directory(directory)
+        
+        self.directory_changed.emit(directory)
+
+        
+    def _text_changed(self, directory):
+            
+        directory = str(directory)
+                
+        if not util_file.is_dir(directory):
+            return
+        
+        found = self.project_list.get_directories()
+        
+        if directory in found:
+            return
+        
+        if found:
+            found.insert(0, directory)
+            
+        if not found:
+            found = [directory] 
+        
+        self.directory_changed.emit(directory)
+        
+        self.set_label(directory)
+        
+        self.project_list.refresh_project_list(directory, found)
+        
+    def _send_directories(self, directory):
+
+        self.directory_changed.emit(directory)
+        
+        self.directory_label.setText(directory)
+
+    
+    def _browser(self):
+        
+        filename = qt_ui.get_file('C:/', self)
+        
+        filename = util_file.fix_slashes(filename)
+        
+        if filename and util_file.is_dir(filename):
+            self._text_changed(filename)
+            
+    def set_directory(self, directory, history = None):
+        
+        #self.last_directory = self.directory
+        #self.directory = directory      
+        
+        self.set_label(directory)
+        
+        if history:
+            self.project_list.refresh_project_list(directory, history)
+            
+    def set_settings(self, settings):
+        self.settings = settings
+        
+        self.project_list.set_settings(settings)
+
+class ProjectList(QtGui.QTreeWidget):
+
+    directories_changed = qt_ui.create_signal(object)
+
+    def __init__(self):
+        super(ProjectList, self).__init__()
+        
+        self.setAlternatingRowColors(True)
+        self.setSelectionMode(self.NoSelection)
+        self.setHeaderLabels(['name', 'directory'])
+
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._item_menu)
+        
+        self._create_context_menu()
+        self.settings = None     
+        
+    def _item_menu(self, position):
+        
+        item = self.itemAt(position)
+        
+        if item:
+            self.setCurrentItem(item)
+            self.context_menu.exec_(self.viewport().mapToGlobal(position))
+        
+    def _create_context_menu(self):
+        
+        self.context_menu = QtGui.QMenu()
+        
+        name_action = self.context_menu.addAction('Name')
+        remove_action = self.context_menu.addAction('Remove')
+        
+        remove_action.triggered.connect(self.remove_current_item)
+        name_action.triggered.connect(self.name_current_item)
+        
+    def name_current_item(self):
+        pass
+        
+    def remove_current_item(self):
+        
+        index = self.currentIndex()
+        
+        item = self.topLevelItem(index.row())
+        
+        self.takeTopLevelItem(index.row())
+        
+        project = self.settings.get('project_directory')
+        
+        if project == item.text(1):
+            self.directories_changed.emit('')
+        
+        if self.settings:
+            self.settings.set('project_history', self.get_directories())
+            self.settings.set('project_directory', '')
+        
+        
+    def refresh_project_list(self, current, history):
+        
+        self.clear()
+        
+        self.project_history = history
+        
+        items = []
+        
+        select_item = None
+        
+        for history in self.project_history:
+            item = QtGui.QTreeWidgetItem()
+            item.setText(1, history)
+            item.setSizeHint(0, QtCore.QSize(30, 40))
+            
+            if current == history:
+                select_item = item
+            
+            items.append(item)
+            self.addTopLevelItem(item)
+        
+        self.scrollToItem(select_item)
+        #select_item.setSelected(True)
+        #self.history_list.clearSelection()
+        
+    def get_directories(self):
+        
+        project_count = self.topLevelItemCount()
+        
+        found = []
+        
+        if project_count:
+            
+            for inc in range(0, project_count):
+            
+                item = self.topLevelItem(inc)
+                if item:
+                    found.append(str(item.text(1)))
+            
+        return found
+     
+    def set_settings(self, settings):
+        
+        self.settings = settings
 class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
     
     def __init__(self, parent = None):
@@ -134,16 +327,14 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
     
         file_layout = QtGui.QHBoxLayout()
     
-        self.directory_label = QtGui.QLabel('directory')
-        self.directory_label.setMinimumWidth(100)
-        self.directory_label.setMaximumWidth(100)
+        #self.directory_label = QtGui.QLabel('directory')
         
         directory_browse = QtGui.QPushButton('Browse')
         directory_browse.setMaximumWidth(100)
         
         directory_browse.clicked.connect(self._browser)
         
-        file_layout.addWidget(self.directory_label)
+        #file_layout.addWidget(self.directory_label)
         file_layout.addWidget(directory_browse)
         
         code_label = QtGui.QLabel('Code Libraries')
@@ -155,8 +346,9 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.main_layout.addSpacing(5)
         self.main_layout.addWidget(code_label)
-        self.main_layout.addWidget(self.code_list)
         self.main_layout.addLayout(file_layout)
+        self.main_layout.addWidget(self.code_list)
+        
         self.main_layout.addSpacing(15)
                 
     def _text_changed(self, directory):
@@ -176,12 +368,13 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
             
         if not found:
             found = [directory] 
-                
+             
         self.directory_changed.emit(found)
         
         self.code_list.refresh_code_list(found)
         
     def _send_directories(self, directories):
+        
         self.directory_changed.emit(directories)
 
     
@@ -203,35 +396,9 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.code_list.refresh_code_list(directory)
        
-class ProjectList(QtGui.QListWidget):
 
-    def __init__(self):
-        super(CodeList, self).__init__()
-        
-        self.setAlternatingRowColors(True)
-        self.setSelectionMode(self.NoSelection)
+       
 
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self._item_menu)
-        
-        self._create_context_menu()     
-        
-    def _item_menu(self, position):
-        
-        item = self.itemAt(position)
-        
-        if item:
-            
-            self.context_menu.exec_(self.viewport().mapToGlobal(position))
-        
-    def _create_context_menu(self):
-        
-        self.context_menu = QtGui.QMenu()
-        
-        remove_action = self.context_menu.addAction('Remove')
-        
-        remove_action.triggered.connect(self.remove_current_item)
-        
         
 class CodeList(QtGui.QListWidget):
     
