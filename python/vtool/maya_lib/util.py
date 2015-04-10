@@ -4776,6 +4776,8 @@ class TransferWeight(object):
         
             for influence_index in destination_joint_map:
                 
+                if influence_index == None:
+                    continue
                 destination_value += destination_value_map[influence_index][vert_index]
             
             segments = []
