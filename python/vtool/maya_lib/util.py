@@ -2712,9 +2712,6 @@ class RiggedLine(object):
         shapes = get_shapes(self.curve)
         new_name = cmds.rename(shapes[0], '%sShape' % self.curve)
         
-        print 'renamed', shapes[0]
-        print new_name
-        
         cmds.setAttr('%s.template' % self.curve, 1)
         
         cmds.parent(self.curve, self.top_group)
@@ -3888,15 +3885,15 @@ class Connections(object):
             
             if cmds.isConnected(self.connections[inc], self.connections[inc+1], ignoreUnitConversion = True):
                 
-                lock_state = cmds.getAttr(self._get_node_and_variable(), l = True)
+                lock_state = cmds.getAttr(self.connections[inc+1], l = True)
             
                 if lock_state == True:
-                    cmds.setAttr(self._get_node_and_variable(), l = False)
+                    cmds.setAttr(self.connections[inc+1], l = False)
                 
                 cmds.disconnectAttr(self.connections[inc], self.connections[inc+1])
             
                 if lock_state == True:
-                    cmds.setAttr(self._get_node_and_variable(), l = True)    
+                    cmds.setAttr(self.connections[inc+1], l = True)    
                 
             
     
@@ -3904,15 +3901,15 @@ class Connections(object):
         for inc in range(0, len(self.connections), 2):
             if not cmds.isConnected(self.connections[inc], self.connections[inc+1], ignoreUnitConversion = True):
                 
-                lock_state = cmds.getAttr(self._get_node_and_variable(), l = True)
+                lock_state = cmds.getAttr(self.connections[inc+1], l = True)
             
                 if lock_state == True:
-                    cmds.setAttr(self._get_node_and_variable(), l = False)
+                    cmds.setAttr(self.connections[inc+1], l = False)
                 
                 cmds.connectAttr(self.connections[inc], self.connections[inc+1])
                 
                 if lock_state == True:
-                    cmds.setAttr(self._get_node_and_variable(), l = True)
+                    cmds.setAttr(self.connections[inc+1], l = True)
                 
     def refresh(self):
         self._store_connections()
@@ -8377,8 +8374,6 @@ def transfer_weight_from_joint_to_parent(joint, mesh):
 def transfer_cluster_weight_to_joint(cluster, joint, mesh):
     skin = find_deformer_by_type(mesh, 'skinCluster')
     
-    #index = get_index_at_skin_influence(joint, skin)
-    
     weights = get_cluster_weights(cluster, mesh)
     
     for inc in range(0, len(weights)):
@@ -8386,7 +8381,6 @@ def transfer_cluster_weight_to_joint(cluster, joint, mesh):
         vert = '%s.vtx[%s]' % (mesh, inc)
         
         cmds.skinPercent(skin, vert, r = False, transformValue = [joint, weights[inc]])
-        #cmds.setAttr('%s.weightList[ %s ].weights[%s]' % (skin_deformer, inc, index), weights[inc])
     
 def transfer_joint_weight_to_blendshape(blendshape, joint, mesh, index = 0, target = -1):
     
