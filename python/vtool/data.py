@@ -471,8 +471,10 @@ class SkinWeightData(MayaCustomData):
             if not skin_cluster:
                 
                 if available_influences:
+                    
+                    
                     skin_cluster = cmds.skinCluster(available_influences, mesh,  tsb = True, n = 'skin_%s' % mesh)[0]
-                
+               
             cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
             
             maya_lib.util.set_skin_weights_to_zero(skin_cluster)
@@ -486,16 +488,25 @@ class SkinWeightData(MayaCustomData):
                     cmds.select(cl = True)
                     cmds.joint( n = influence, p = influence_dict[influence]['position'] )
                     cmds.skinCluster(skin_cluster, e = True, ai = influence)  
+            
+                  
                     
             influence_index_dict = maya_lib.util.get_skin_influences(skin_cluster, return_dict = True)
             
+              
+            
             progress_ui = maya_lib.util.ProgressBar('import skin', len(influence_dict.keys()))
+            
+            
             
             for influence in influences:
                 
                 progress_ui.status('importing skin mesh: %s,  influence: %s' % (mesh, influence))
                     
                 weights = influence_dict[influence]['weights']
+                
+                if not influence in influence_index_dict:
+                    continue
                 
                 index = influence_index_dict[influence]
                 
@@ -513,7 +524,9 @@ class SkinWeightData(MayaCustomData):
                 if progress_ui.break_signaled():
                     break
                 
-                influence_inc += 1    
+                influence_inc += 1
+                
+                    
             
             progress_ui.end()                    
             
@@ -527,14 +540,16 @@ class SkinWeightData(MayaCustomData):
     def import_data(self, filepath = None):
        
         if util.is_in_maya():
-            cmds.undoInfo(openChunk = True)
+            
+            cmds.undoInfo(state = False)
             
             try:
                 self._import_maya_data()
             except:
                 util.show(traceback.format_exc())
-                            
-            cmds.undoInfo(closeChunk = True)
+             
+            cmds.undoInfo(state = True)               
+            
             
         
 
