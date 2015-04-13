@@ -431,6 +431,8 @@ class SkinWeightData(MayaCustomData):
     
     def _import_maya_data(self):
         
+        cmds.undoInfo(state = False)
+        
         path = util_file.join_path(self.directory, self.name)
         
         selection = cmds.ls(sl = True)
@@ -447,6 +449,8 @@ class SkinWeightData(MayaCustomData):
         for folder in folders:
             
             mesh = folder
+            
+            
             
             if not cmds.objExists(mesh):
                 continue
@@ -536,6 +540,8 @@ class SkinWeightData(MayaCustomData):
         util.show('Imported %s data' % self.name)
                 
         self._center_view()
+        
+        cmds.undoInfo(state = True)
         
     def import_data(self, filepath = None):
        
@@ -929,10 +935,18 @@ class AnimationData(MayaCustomData):
                 for output in outputs:
                     if not cmds.objExists(output):
                         continue
+                    
+                    locked = cmds.getAttr(output, l = True)
+                    if locked:
+                        cmds.setAttr(output, l = False)
+                    
                     try:
                         cmds.connectAttr('%s.output' % key, output)
                     except:
                         util.show('Could not connect %s.output to %s' % (key,output))
+                        
+                    if locked:
+                        cmds.setAttr(output, l = False)
 
             input_attr = keyframes['input']
             
