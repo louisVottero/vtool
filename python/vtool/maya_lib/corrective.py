@@ -539,7 +539,7 @@ class BasePoseControl(object):
         pose_type.create(control)
         
         cmds.addAttr(control, ln = 'enable', at = 'double', k = True, dv = 1, min = 0, max = 1)
-        cmds.addAttr(control, ln = 'weight', at = 'double', k = True, dv = 0)
+        cmds.addAttr(control, ln = 'weight', at = 'double', k = True, dv = 1)
         
         cmds.addAttr(control, ln = 'meshIndex', at = 'short', dv = self.mesh_index)
         cmds.setAttr('%s.meshIndex' % self.pose_control, l = True)
