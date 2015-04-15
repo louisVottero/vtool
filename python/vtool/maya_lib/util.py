@@ -3721,8 +3721,13 @@ class XformTransfer(object):
     def _move_to_target(self):
         for inc in range(0, len(self.scope)):
             position = cmds.pointPosition('%s.pt[%s]' % (self.particles,inc))
-            joint = self.scope[inc]
-            cmds.move(position[0], position[1],position[2], '%s.scalePivot' % joint, '%s.rotatePivot' % joint, a = True)
+            transform = self.scope[inc]
+            
+            if cmds.nodeType(transform) == 'joint':
+                cmds.move(position[0], position[1],position[2], '%s.scalePivot' % transform, '%s.rotatePivot' % transform, a = True)
+                
+            if not cmds.nodeType(transform) == 'joint' and cmds.nodeType(transform) == 'transform':
+                cmds.move(position[0], position[1],position[2], transform, a = True)
                         
     def _cleanup(self):
         cmds.delete([self.particles,self.source_mesh])

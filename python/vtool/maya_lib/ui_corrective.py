@@ -245,7 +245,13 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         pass
 
     def _current_pose(self):
-        item = self.currentItem()
+        selected = self.selectedItems()
+        
+        item = None
+        
+        if selected:
+            item = selected[0]
+            
         if item:
             return str(item.text(0))
 
@@ -592,7 +598,11 @@ class PoseTreeWidget(BaseTreeWidget):
     
     def mirror_pose(self):
         
+        print 'mirror pose?'
+        
         pose = self._current_pose()
+        
+        print 'current pose', pose
         
         if not pose:
             return
@@ -603,6 +613,17 @@ class PoseTreeWidget(BaseTreeWidget):
         self.select_pose(mirror)
         
     def select_pose(self, pose_name = None):
+        
+        if pose_name:
+            for inc in range(0, self.topLevelItemCount()):
+                
+                if pose_name ==  str(self.topLevelItem(inc).text(0)):
+                    self.topLevelItem(inc).setSelected(True)
+                    
+                    try:
+                        cmds.setAttr('%s.weight' % pose_name, 1)
+                    except:
+                        pass
         
         items = self.selectedItems()
         
@@ -615,6 +636,8 @@ class PoseTreeWidget(BaseTreeWidget):
         pose_names = self._get_selected_items(get_names = True)
         
         corrective.PoseManager().set_pose(pose_names[0])
+        
+
         
         self.last_selection = pose_names
             
@@ -794,7 +817,7 @@ class MeshWidget(qt_ui.BasicWidget):
         
     @util.undo_chunk
     def add_mesh(self):
-        print 'add mesh!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'                
+                       
         current_meshes = self.get_current_meshes_in_list()
         
         if not current_meshes:
@@ -845,16 +868,13 @@ class MeshWidget(qt_ui.BasicWidget):
             if sculpt_meshes:
                 corrective.PoseManager().add_mesh_to_pose(pose_name, sculpt_meshes)
         
-            #if not current_meshes:    
-            #    added_meshes = corrective.PoseManager().add_mesh_to_pose(pose_name)
-            
             update_meshes = current_meshes + sculpt_meshes + added_meshes  
             self._update_meshes(pose_name, meshes = update_meshes)
         
         selection = cmds.ls(sl = True, l = True)
         
         if list_meshes:
-            print 'list meshes!!!', list_meshes
+            
             self.mesh_list.clearSelection()
             
             for mesh in list_meshes:
@@ -957,7 +977,9 @@ class SculptWidget(qt_ui.BasicWidget):
         self.sculpted_mesh.emit()
 
     def _button_mirror(self):
+        self.button_mirror.setDisabled(True)
         self.pose_mirror.emit()
+        self.button_mirror.setEnabled(True)
     
     def _build_widgets(self):
         
@@ -979,6 +1001,8 @@ class SculptWidget(qt_ui.BasicWidget):
         button_mirror.setMaximumWidth(100)
         button_mirror.clicked.connect(self._button_mirror)
         
+        self.button_mirror = button_mirror
+        
         v_layout = QtGui.QHBoxLayout()
         v_layout.addWidget(button_sculpt)
         v_layout.addSpacing(5)
@@ -987,19 +1011,9 @@ class SculptWidget(qt_ui.BasicWidget):
 
         button_sculpt.clicked.connect(self._button_sculpt)
         
-        #button_mirror = QtGui.QPushButton('Mirror')
-        
-        #button_mirror.clicked.connect(self._button_mirror)
-
         self.mesh_widget = MeshWidget()
 
-        
-        #self.main_layout.addWidget(button_mirror)
-
-        #self.main_layout.addWidget(button_mesh)
-        #self.main_layout.addWidget(self.slider)
         self.main_layout.addLayout(v_layout)
-        #self.main_layout.addWidget(self.slider)
         
         self.main_layout.addWidget(self.mesh_widget)
         self.main_layout.addWidget(button_mirror)
