@@ -206,7 +206,9 @@ class PoseManager(object):
             selection = meshes
         
         pose = self.get_pose_instance(pose_name)
-
+        
+        added_meshes = []
+        
         if selection:
             for sel in selection:
                 
@@ -214,13 +216,10 @@ class PoseManager(object):
                 
                 if shape:
                     pose.add_mesh(sel)
-                    return True
+                    added_meshes.append(sel)
                     
-                if not shape:
-                    return False
+        return added_meshes
         
-        if not selection:
-            return False
     
     def visibility_off(self, pose_name):
         pose = self.get_pose_instance(pose_name)
@@ -539,7 +538,7 @@ class BasePoseControl(object):
         pose_type.create(control)
         
         cmds.addAttr(control, ln = 'enable', at = 'double', k = True, dv = 1, min = 0, max = 1)
-        cmds.addAttr(control, ln = 'weight', at = 'double', k = True, dv = 1)
+        cmds.addAttr(control, ln = 'weight', at = 'double', k = True, dv = 0)
         
         cmds.addAttr(control, ln = 'meshIndex', at = 'short', dv = self.mesh_index)
         cmds.setAttr('%s.meshIndex' % self.pose_control, l = True)
@@ -610,18 +609,36 @@ class BasePoseControl(object):
         if string_value == None:
             return
         
-        other = ''
-        start, end = vtool.util.find_special('lf_', string_value, 'first')
+        split_value = string_value.split('|')
         
-        if start != None:
-            other = vtool.util.replace_string(string_value, 'rt_', start, end)
-            
-        start, end = vtool.util.find_special('_L', string_value, 'last')
+        fixed = []
         
-        if start != None:
-            other = vtool.util.replace_string(string_value, '_R', start, end)
+        for value in split_value:
+        
+            other = ''
+            start, end = vtool.util.find_special('lf_', value, 'first')
             
-        return other
+            if start != None:
+                other = vtool.util.replace_string(value, 'rt_', start, end)
+                
+            start, end = vtool.util.find_special('_L', value, 'last')
+            
+            if start != None:
+                other = vtool.util.replace_string(value, '_R', start, end)
+                
+            fixed.append(other)
+            
+        if len(fixed) == 1:
+            
+            return fixed[0]
+        
+        import string
+        fixed = string.join(fixed, '|')
+        
+        print fixed
+        
+        return fixed
+        
     
     #--- pose
 
@@ -750,7 +767,7 @@ class BasePoseControl(object):
         string_var.create(pose_mesh)
         string_var.set_value(mesh)
 
-        self._hide_meshes()
+        #self._hide_meshes()
 
         if toggle_vis:
             self.toggle_vis()
@@ -791,17 +808,18 @@ class BasePoseControl(object):
                 
         return mesh
         
-    def get_target_mesh_index(self, mesh):
+    def get_target_mesh_index(self, target_mesh):
         
-        meshes = self.get_target_meshes()
+        target_meshes = self.get_target_meshes()
         
         inc = 0
         
-        for target_mesh in meshes:
-            if mesh == target_mesh:
+        for target_mesh_test in target_meshes:
+            if target_mesh == target_mesh_test:
                 return inc
             
             inc += 1
+                
         
     @util.undo_chunk
     def reset_target_meshes(self):
@@ -858,6 +876,7 @@ class BasePoseControl(object):
         self._create_shader(mesh)
         
         cmds.showHidden(mesh)
+        
         cmds.hide(self.get_target_mesh(mesh))
             
     def toggle_vis(self, view_only = False):
@@ -1250,24 +1269,33 @@ class PoseNoReader(BasePoseControl):
         if not cmds.objExists(other_pose):
             return
         
+        other_pose_instance = PoseNoReader()
+        other_pose_instance.set_pose(other_pose)
+        
         other_meshes = []
+        other_target_meshes = []
         
         input_meshes = {}
 
         for inc in range(0, self._get_mesh_count()):
             mesh = self.get_mesh(inc)
+            target_mesh = self.get_target_mesh(mesh)
             
-            other_mesh = cmds.duplicate(mesh)[0]
+            index = other_pose_instance.get_target_mesh_index(target_mesh)
+            other_mesh = other_pose_instance.get_mesh(index)
             
-            new_name = self._replace_side(other_mesh)
+            if not other_mesh:
+                continue
             
-            other_mesh = cmds.rename(other_mesh, new_name)
             other_meshes.append(other_mesh)
             
-            target_mesh = self.get_target_mesh(mesh)
             split_name = target_mesh.split('|')
             
             other_target_mesh = self._replace_side(split_name[-1])
+            
+            if not other_target_mesh or not cmds.objExists(other_target_mesh):
+                other_target_mesh = target_mesh
+            
             
             skin = util.find_deformer_by_type(target_mesh, 'skinCluster')
             blendshape_node = util.find_deformer_by_type(target_mesh, 'blendShape')
@@ -1275,9 +1303,6 @@ class PoseNoReader(BasePoseControl):
             cmds.setAttr('%s.envelope' % skin, 0)
             cmds.setAttr('%s.envelope' % blendshape_node, 0)
             
-            if not cmds.objExists(other_target_mesh):
-                other_target_mesh = target_mesh
-                
             other_target_mesh_duplicate = cmds.duplicate(other_target_mesh, n = other_target_mesh)[0]
             
             home = cmds.duplicate(target_mesh, n = 'home')[0]
@@ -1285,7 +1310,9 @@ class PoseNoReader(BasePoseControl):
             mirror_group = cmds.group(em = True)
             cmds.parent(home, mirror_group)
             cmds.parent(other_mesh, mirror_group)
+            cmds.setAttr('%s.inheritsTransform' % other_mesh, 1)
             cmds.setAttr('%s.scaleX' % mirror_group, -1)
+            
             
             util.create_wrap(home, other_target_mesh_duplicate)
             
@@ -1294,9 +1321,9 @@ class PoseNoReader(BasePoseControl):
             cmds.delete(other_target_mesh_duplicate, ch = True)
             
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
+            other_target_meshes.append(other_target_mesh)
             
             cmds.delete(mirror_group, other_mesh)
-            
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
@@ -1311,14 +1338,18 @@ class PoseNoReader(BasePoseControl):
         
         inc = 0
         
-        for mesh in input_meshes:
+        for mesh in other_target_meshes:
             pose.add_mesh(mesh, False)
+            #input mesh is coming back as None
             input_mesh = pose.get_mesh(inc)
             
             fix_mesh = input_meshes[mesh]
             
             cmds.blendShape(fix_mesh, input_mesh, foc = True, w = [0,1])
-            
+            print 'mesh', mesh
+            print 'input_mesh', input_mesh
+            print 'fix mesh', fix_mesh
+            raise
             pose.create_blend(False)
             
             cmds.delete(input_mesh, ch = True)
@@ -1778,11 +1809,12 @@ class PoseControl(BasePoseControl):
             return
         
         other_meshes = []
-        
+        other_target_meshes = []
         input_meshes = {}
 
         for inc in range(0, self._get_mesh_count()):
             mesh = self.get_mesh(inc)
+            
             
             other_mesh = cmds.duplicate(mesh)[0]
             
@@ -1820,6 +1852,7 @@ class PoseControl(BasePoseControl):
             cmds.delete(other_target_mesh_duplicate, ch = True)
             
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
+            other_target_meshes.append[other_target_mesh]
             
             cmds.delete(mirror_group, other_mesh)
             
@@ -1855,7 +1888,7 @@ class PoseControl(BasePoseControl):
         
         inc = 0
         
-        for mesh in input_meshes:
+        for mesh in other_target_meshes:
             pose.add_mesh(mesh, False)
             input_mesh = pose.get_mesh(inc)
             

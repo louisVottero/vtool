@@ -4739,6 +4739,8 @@ class TransferWeight(object):
         
         source_vert_count = len( cmds.ls('%s.vtx[*]' % (source_mesh), flatten = True))
         
+        print 'joint map', joint_map
+        
         for influence_index in joint_map:
             
             if influence_index == None:
@@ -4747,7 +4749,10 @@ class TransferWeight(object):
             for vert_index in range(0, len(verts)):
                 
                 int_vert_index = int(vtool.util.get_last_number(verts[vert_index]))
-                 
+                
+                if not source_value_map.has_key(influence_index):
+                    continue
+                
                 value = source_value_map[influence_index][int_vert_index]
                 
                 if value > 0.001:
@@ -4785,6 +4790,10 @@ class TransferWeight(object):
                     continue   
                 
                 joint = joint_map[influence_index]
+                
+                if not source_value_map.has_key(influence_index):
+                    continue 
+                
                 value = source_value_map[influence_index][vert_index]
                 value *= destination_value
                 value *= percent

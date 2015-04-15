@@ -143,13 +143,38 @@ class PoseListWidget(qt_ui.BasicWidget):
         
         if items:
             self.pose_widget.show()
-            
             self.pose_widget.set_pose(current_pose)
             
         if not items:
             self.pose_widget.hide()
             
         self.pose_update.emit(current_pose)
+        
+        item_count = self.pose_list.topLevelItemCount()
+        
+        for inc in range(0, item_count):
+            
+            inc_pose_name = self.pose_list.topLevelItem(inc).text(0)
+            
+            current_weight_attribute = '%s.weight' % current_pose
+            inc_pose_attribute = '%s.weight' % inc_pose_name
+
+            if cmds.objExists(inc_pose_attribute):
+                try:
+                    cmds.setAttr(inc_pose_attribute, 0)
+                except:
+                    pass
+            
+            if inc_pose_name == current_pose:
+                
+                if cmds.objExists(current_weight_attribute):
+                    try:
+                        cmds.setAttr(current_weight_attribute, 1)
+                    except:
+                        pass
+                    
+                    continue
+            
 
     def _pose_renamed(self, new_name):
         self.pose_renamed.emit(new_name)
@@ -187,7 +212,8 @@ class PoseListWidget(qt_ui.BasicWidget):
     def pose_reset(self):
         item = self.pose_list.currentItem()
         
-        item.setSelected(False)
+        if item:
+            item.setSelected(False)
         
     def value_changed(self, max_angle, max_distance, twist_on, twist):
         
@@ -199,10 +225,7 @@ class PoseListWidget(qt_ui.BasicWidget):
         
     def pose_enable_changed(self, value):
         self.pose_list.pose_enable_changed(value)
-        
     
-       
-     
 class BaseTreeWidget(qt_ui.TreeWidget):
     
     pose_renamed = qt_ui.create_signal(object)
@@ -292,8 +315,6 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         
         return corrective.PoseManager().rename_pose(str(pose_name), str(new_name))
 
-
-            
     def view_mesh(self):
         current_str = self.pose_widget.get_current_mesh()
         pose_name = self._current_pose()
@@ -454,6 +475,8 @@ class PoseTreeWidget(BaseTreeWidget):
         self.refresh_action.triggered.connect(self._populate_list)
     
     def _add_item(self, pose):
+        
+        
         item = QtGui.QTreeWidgetItem()
         item.setText(0, pose)
         item.setSizeHint(0, QtCore.QSize(100,20))
@@ -570,7 +593,6 @@ class PoseTreeWidget(BaseTreeWidget):
     def mirror_pose(self):
         
         pose = self._current_pose()
-        #item = self.currentItem()
         
         if not pose:
             return
@@ -579,12 +601,6 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.refresh()
         self.select_pose(mirror)
-        
-        #items = self.findItems(mirror, Qt.QMatchFlags(0), 0)
-        
-        #self.setItemSelected(item, True)
-        
-
         
     def select_pose(self, pose_name = None):
         
@@ -758,28 +774,31 @@ class MeshWidget(qt_ui.BasicWidget):
     def _mesh_change(self, int_value):    
         self.mesh_change.emit(int_value)
 
-    def get_current_meshes(self):
+    def get_current_meshes_in_list(self):
         items = self.mesh_list.selectedItems()
         
         found = []
         
         for item in items:
-            found.append( str( item.text() ) )
+            found.append( str( item.longname ) )
         
         return found
 
-    def _update_meshes(self, pose_name):
+    def _update_meshes(self, pose_name, meshes = []):
         
         pose = self.pose_class
         
-        meshes =  pose.get_target_meshes()
+        target_meshes =  pose.get_target_meshes()
         
-        self.update_meshes(meshes,pose.mesh_index)
+        self.update_meshes(target_meshes,pose.mesh_index, meshes)
         
     @util.undo_chunk
     def add_mesh(self):
-                          
-        current_meshes = self.get_current_meshes()
+        print 'add mesh!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'                
+        current_meshes = self.get_current_meshes_in_list()
+        
+        if not current_meshes:
+            current_meshes = []
               
         pose_name = self.pose_name
             
@@ -788,6 +807,7 @@ class MeshWidget(qt_ui.BasicWidget):
         
         sculpt_meshes = []
         list_meshes = []
+        added_meshes = []
         
         selection = cmds.ls(sl = True, l = True)
         
@@ -801,11 +821,17 @@ class MeshWidget(qt_ui.BasicWidget):
                     
                     pass_mesh = selected
                     
+                    if cmds.objExists('%s.mesh_pose_source' % selected):
+                        source_mesh = cmds.getAttr('%s.mesh_pose_source' % selected)
+                        
+                        pass_mesh = source_mesh
+                        selected = source_mesh
+                    
                     for inc in range(0, mesh_list_count):
                         
                         test_item = self.mesh_list.item(inc)
                         
-                        if str( test_item.text() ) == selected:
+                        if str( test_item.longname ) == selected:
                             
                             pass_mesh = None
                             
@@ -819,13 +845,16 @@ class MeshWidget(qt_ui.BasicWidget):
             if sculpt_meshes:
                 corrective.PoseManager().add_mesh_to_pose(pose_name, sculpt_meshes)
         
-            if not current_meshes:    
-                corrective.PoseManager().add_mesh_to_pose(pose_name)
-                            
-            self._update_meshes(pose_name)
+            #if not current_meshes:    
+            #    added_meshes = corrective.PoseManager().add_mesh_to_pose(pose_name)
+            
+            update_meshes = current_meshes + sculpt_meshes + added_meshes  
+            self._update_meshes(pose_name, meshes = update_meshes)
+        
+        selection = cmds.ls(sl = True, l = True)
         
         if list_meshes:
-            
+            print 'list meshes!!!', list_meshes
             self.mesh_list.clearSelection()
             
             for mesh in list_meshes:
@@ -837,15 +866,13 @@ class MeshWidget(qt_ui.BasicWidget):
                 
                 item = self.mesh_list.item(index)
                 if item:
-                    
                     item.setSelected(True)
-                    
                 
                 corrective.PoseManager().toggle_visibility(pose_name, mesh_index = index)
-            
+                
+            cmds.select(selection)
             return
-         
-            
+        
         if current_meshes:
             
             indices = self.mesh_list.selectedIndexes()
@@ -857,31 +884,35 @@ class MeshWidget(qt_ui.BasicWidget):
                     corrective.PoseManager().toggle_visibility(pose_name, mesh_index= index)
         
     def _item_selected(self):
-        pass
-        """
-        indices = self.mesh_list.selectedIndexes()
         
-        if indices:
-            index = indices[0]
-            index = index.row()
         
-            util.PoseManager().toggle_visibility(self.pose_name, mesh_index = index)
-        """
+        items = self.mesh_list.selectedItems()
         
-    def update_meshes(self, meshes = [], index = 0):
+        cmds.select(cl = True)
+        
+        for item in items:
+            cmds.select(item.longname, add = True)
+        
+    def update_meshes(self, meshes = [], index = 0, added_meshes = []):
         self.mesh_list.clear()    
         
         for mesh in meshes:
         
             item = QtGui.QListWidgetItem()
             item.setSizeHint(QtCore.QSize(0,30))
-            item.setText(mesh)
+            basename = util.get_basename(mesh)
+            item.setText(basename)
+            item.longname = mesh
             self.mesh_list.addItem(item)
+            
+            if mesh in added_meshes:
+                item.setSelected(True)
            
             
         item = self.mesh_list.item(index)
         if item:
             item.setSelected(True)
+            
             
     def set_pose(self, pose_name):
         
@@ -903,11 +934,6 @@ class MeshWidget(qt_ui.BasicWidget):
         self.pose_class.set_pose(pose_name)
 
         self._update_meshes(pose_name)
-            
-        
-
-
-        
 
 class SculptWidget(qt_ui.BasicWidget):
     
@@ -926,7 +952,7 @@ class SculptWidget(qt_ui.BasicWidget):
     def _define_main_layout(self):
         return QtGui.QVBoxLayout()
     
-    def _button_mesh(self):
+    def _button_sculpt(self):
         self.mesh_widget.add_mesh()
         self.sculpted_mesh.emit()
 
@@ -945,23 +971,21 @@ class SculptWidget(qt_ui.BasicWidget):
         
         self.slider.valueChanged.connect(self._pose_enable)
         
-        button_mesh = QtGui.QPushButton('Sculpt')
-        #button_mesh.setMinimumHeight(50)
-        button_mesh.setMinimumWidth(100)
+        button_sculpt = QtGui.QPushButton('Sculpt')
+        
+        button_sculpt.setMinimumWidth(100)
 
         button_mirror = QtGui.QPushButton('Mirror')
         button_mirror.setMaximumWidth(100)
         button_mirror.clicked.connect(self._button_mirror)
         
         v_layout = QtGui.QHBoxLayout()
-        v_layout.addWidget(button_mesh)
+        v_layout.addWidget(button_sculpt)
         v_layout.addSpacing(5)
         v_layout.addWidget(self.slider)
         v_layout.addSpacing(5)
 
-        button_view = QtGui.QPushButton('View')
-
-        button_mesh.clicked.connect(self._button_mesh)
+        button_sculpt.clicked.connect(self._button_sculpt)
         
         #button_mirror = QtGui.QPushButton('Mirror')
         
