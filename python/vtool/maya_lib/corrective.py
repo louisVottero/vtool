@@ -1250,7 +1250,7 @@ class PoseNoReader(BasePoseControl):
         if not cmds.objExists(other_pose):
             return
         
-        other_meshes = []
+        other_target_meshes = []
         
         input_meshes = {}
 
@@ -1262,12 +1262,13 @@ class PoseNoReader(BasePoseControl):
             new_name = self._replace_side(other_mesh)
             
             other_mesh = cmds.rename(other_mesh, new_name)
-            other_meshes.append(other_mesh)
+            
             
             target_mesh = self.get_target_mesh(mesh)
             split_name = target_mesh.split('|')
             
             other_target_mesh = self._replace_side(split_name[-1])
+            
             
             skin = util.find_deformer_by_type(target_mesh, 'skinCluster')
             blendshape_node = util.find_deformer_by_type(target_mesh, 'blendShape')
@@ -1293,12 +1294,16 @@ class PoseNoReader(BasePoseControl):
             
             cmds.delete(other_target_mesh_duplicate, ch = True)
             
+            other_target_meshes.append(other_target_mesh)
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
             
             cmds.delete(mirror_group, other_mesh)
             
         
+        print 'turn on skin?', skin
         if skin:
+            
+            print 'turning envelope back on for skin'
             cmds.setAttr('%s.envelope' % skin, 1)
         if blendshape_node:
             cmds.setAttr('%s.envelope' % blendshape_node, 1)
@@ -1311,11 +1316,18 @@ class PoseNoReader(BasePoseControl):
         
         inc = 0
         
-        for mesh in input_meshes:
+        for mesh in other_target_meshes:
             pose.add_mesh(mesh, False)
             input_mesh = pose.get_mesh(inc)
             
             fix_mesh = input_meshes[mesh]
+            
+            print 'mesh', mesh
+            print 'fix mesh', fix_mesh
+            print 'input mesh', input_mesh
+            print input_meshes
+            print inc
+            
             
             cmds.blendShape(fix_mesh, input_mesh, foc = True, w = [0,1])
             
@@ -1778,6 +1790,7 @@ class PoseControl(BasePoseControl):
             return
         
         other_meshes = []
+        other_target_meshes = []
         
         input_meshes = {}
 
@@ -1794,6 +1807,8 @@ class PoseControl(BasePoseControl):
             target_mesh = self.get_target_mesh(mesh)
             split_name = target_mesh.split('|')
             other_target_mesh = split_name[-1][:-1] + 'R'
+            
+            
             
             skin = util.find_deformer_by_type(target_mesh, 'skinCluster')
             blendshape_node = util.find_deformer_by_type(target_mesh, 'blendShape')
@@ -1819,6 +1834,7 @@ class PoseControl(BasePoseControl):
             
             cmds.delete(other_target_mesh_duplicate, ch = True)
             
+            other_target_meshes.append(other_target_mesh)
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
             
             cmds.delete(mirror_group, other_mesh)
@@ -1855,7 +1871,7 @@ class PoseControl(BasePoseControl):
         
         inc = 0
         
-        for mesh in input_meshes:
+        for mesh in other_target_meshes:
             pose.add_mesh(mesh, False)
             input_mesh = pose.get_mesh(inc)
             
