@@ -517,6 +517,9 @@ class Process(object):
                 
                 for filename in files:
                     
+                    if not filename:
+                        continue
+                    
                     if filename.endswith(script):
                         
                         found.append(filename)
