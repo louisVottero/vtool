@@ -51,6 +51,8 @@ def create_window(ui, dock_area = 'right'):
         
     allowedAreas = ['right', 'left']
     
+    print 'Creating dock window.', ui_name, ui
+    
     cmds.dockControl(dockName,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name, w=350, fl = False, visible = True)
     
     ui.show()
