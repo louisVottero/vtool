@@ -1286,8 +1286,6 @@ class PoseNoReader(BasePoseControl):
         
         util.disconnect_attribute('%s.weight' % self.pose_control)
         
-
-        
     def mirror(self):
         
         description = self.description
@@ -1338,8 +1336,7 @@ class PoseNoReader(BasePoseControl):
             
             if not other_target_mesh or not cmds.objExists(other_target_mesh):
                 other_target_mesh = target_mesh
-            
-            
+        
             skin = util.find_deformer_by_type(target_mesh, 'skinCluster')
             blendshape_node = util.find_deformer_by_type(target_mesh, 'blendShape')
             
@@ -1355,7 +1352,6 @@ class PoseNoReader(BasePoseControl):
             cmds.parent(other_mesh_duplicate, mirror_group)
             cmds.setAttr('%s.scaleX' % mirror_group, -1)
             
-            
             util.create_wrap(home, other_target_mesh_duplicate)
             
             cmds.blendShape(other_mesh_duplicate, home, foc = True, w = [0, 1])
@@ -1366,9 +1362,6 @@ class PoseNoReader(BasePoseControl):
             other_target_meshes.append(other_target_mesh)        
         
             cmds.delete(mirror_group, other_mesh_duplicate)
-        
-            #print home
-            
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
@@ -1394,7 +1387,6 @@ class PoseNoReader(BasePoseControl):
             fix_mesh = input_meshes[mesh]
             
             cmds.blendShape(fix_mesh, input_mesh, foc = True, w = [0,1])
-            
             
             other_pose_instance.create_blend(False)
             
