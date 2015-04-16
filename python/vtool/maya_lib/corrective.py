@@ -176,7 +176,6 @@ class PoseManager(object):
         
         name = util.inc_name('pose_no_reader_1')
         
-        
         pose = PoseNoReader(name)
         pose_control = pose.create()
         
@@ -308,6 +307,8 @@ class BasePoseControl(object):
         self.mesh_index = 0
         
         self.blend_input = None
+        
+        self.left_right = True
     
     #--- private
       
@@ -416,6 +417,9 @@ class BasePoseControl(object):
         
         self._connect_node(mesh, 'mesh', inc)
 
+    def _multiply_weight(self):
+        pass
+
     def _get_named_message_attribute(self, name):
         
         node = util.get_attribute_input('%s.%s' % (self.pose_control, name), True)
@@ -523,6 +527,30 @@ class BasePoseControl(object):
                 
         return nodes
 
+    def _get_mirror_pose_instance(self):
+        other_pose = self._replace_side(self.pose_control)
+        
+        self.left_right = True
+        
+        if not cmds.objExists(other_pose):
+            other_pose = self._replace_side(self.pose_control, False)
+            self.left_right = False
+            if not other_pose:
+                return
+        
+        pose = None
+        
+        if self._pose_type() == 'cone':
+            pose = PoseControl()
+            
+        if self._pose_type() == 'no reader':
+            pose = PoseNoReader()
+        
+        other_pose_instance = pose
+        other_pose_instance.set_pose(other_pose)
+        
+        return other_pose_instance
+
     def _create_attributes(self, control):
         
         cmds.addAttr(control, ln = 'description', dt = 'string')
@@ -563,6 +591,57 @@ class BasePoseControl(object):
         self._create_attributes(pose_control)
         
         return pose_control
+    
+    def _create_mirror_mesh(self, target_mesh):
+        
+        skin = None
+        blendshape_node = None
+        
+        other_mesh = target_mesh
+        
+        if not other_mesh:
+            return None, None
+        
+        other_mesh_duplicate = cmds.duplicate(other_mesh, n = 'duplicate_corrective_temp_%s' % other_mesh)[0]
+        
+        split_name = target_mesh.split('|')
+        
+        other_target_mesh = self._replace_side(split_name[-1], self.left_right)
+        
+        if not other_target_mesh or not cmds.objExists(other_target_mesh):    
+            other_target_mesh = target_mesh
+    
+        skin = util.find_deformer_by_type(target_mesh, 'skinCluster')
+        blendshape_node = util.find_deformer_by_type(target_mesh, 'blendShape')
+        
+        if skin:
+            cmds.setAttr('%s.envelope' % skin, 0)
+        if blendshape_node:
+            cmds.setAttr('%s.envelope' % blendshape_node, 0)
+        
+        other_target_mesh_duplicate = cmds.duplicate(other_target_mesh, n = other_target_mesh)[0]
+        home = cmds.duplicate(target_mesh, n = 'home')[0]
+
+        if skin:
+            cmds.setAttr('%s.envelope' % skin, 1)
+        if blendshape_node:
+            cmds.setAttr('%s.envelope' % blendshape_node, 1)
+
+        mirror_group = cmds.group(em = True)
+        cmds.parent(home, mirror_group)
+        cmds.parent(other_mesh_duplicate, mirror_group)
+        cmds.setAttr('%s.scaleX' % mirror_group, -1)
+        
+        util.create_wrap(home, other_target_mesh_duplicate)
+        
+        cmds.blendShape(other_mesh_duplicate, home, foc = True, w = [0, 1])
+        
+        cmds.delete(other_target_mesh_duplicate, ch = True)
+        
+        cmds.delete(mirror_group, other_mesh_duplicate)
+        
+        return other_target_mesh, other_target_mesh_duplicate
+
     
     def _delete_connected_nodes(self):
         nodes = self._get_connected_nodes()
@@ -910,8 +989,6 @@ class BasePoseControl(object):
         
     def visibility_on(self, mesh):
         
-        print 'visibility on', mesh
-        
         if not mesh:
             mesh = self.get_mesh(self.mesh_index)
         
@@ -974,7 +1051,6 @@ class BasePoseControl(object):
         if not blendshape_node:
             blend.create(target_mesh)
         
-        #blend.set_envelope(0)
         self.disconnect_blend()
         
         blend.set_weight(self.pose_control, 0)
@@ -988,10 +1064,9 @@ class BasePoseControl(object):
             blend.create_target(self.pose_control, offset)
         
         self.connect_blend()
-        #blend.set_envelope(1)
                     
         util.disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
-            
+        
         if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
             
             cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
@@ -1019,13 +1094,10 @@ class BasePoseControl(object):
             blend.set(blendshape_node)
         
         if self.blend_input and blend.is_target(self.pose_control):
+
             cmds.connectAttr(self.blend_input, '%s.%s' % (blend.blendshape, self.pose_control))
             self.blend_input = None
-        """       
-        if blend.is_target(self.pose_control):
-            if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
-                cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
-        """     
+ 
     def disconnect_blend(self, mesh_index = None):
         mesh = None
         
@@ -1052,19 +1124,21 @@ class BasePoseControl(object):
                 
         if input:
             util.disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
-                
-        #if blend.is_target(self.pose_control):
-        #    if cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
-        #        cmds.disconnectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
-       
-    
+
     def delete_blend_input(self):
         
         outputs = util.get_attribute_outputs('%s.weight' % self.pose_control)
         
+        removed_already = False
+        
         if outputs:
             for output in outputs:
+                
+                removed_already = False
+                
                 if cmds.nodeType(output) == 'multiplyDivide':
+                    
+                    
                     
                     node = output.split('.')
                 
@@ -1078,10 +1152,22 @@ class BasePoseControl(object):
                         
                         output = util.get_attribute_outputs('%s.outputX' % found)
                     
-                        if output and len(output) == 1:
+                        if len(output) == 1:
                             output = output[0]
+                            
+                        if len(output) > 1:
+                            for this_output in output:
+                    
+                                split_output = this_output.split('.')
+                                
+                                blend = blendshape.BlendShape(split_output[0])
+                                
+                                blend.remove_target(split_output[1])            
+                    
+                                removed_already = True
                 
-                if cmds.nodeType(output) == 'blendShape':
+                if cmds.nodeType(output) == 'blendShape' and not removed_already:
+                    
                     split_output = output.split('.')
                     
                     blend = blendshape.BlendShape(split_output[0])
@@ -1177,6 +1263,9 @@ class PoseNoReader(BasePoseControl):
             return
         
         cmds.connectAttr(attribute, weight_attr)
+    
+
+        
     
     def create_blend(self, goto_pose = True, mesh_index = None):
         
@@ -1291,14 +1380,11 @@ class PoseNoReader(BasePoseControl):
         
         util.disconnect_attribute('%s.weight' % self.pose_control)
         
-
+    
         
     def mirror(self):
         
         description = self.description
-        
-        skin = None
-        blendshape_node = None
         
         if not description:
             self._set_description(self.pose_control)
@@ -1306,83 +1392,28 @@ class PoseNoReader(BasePoseControl):
         if description:
             description = description.replace(' ', '_')
         
-        other_pose = self._replace_side(self.pose_control)
-        
-        left_right = True
-        
-        if not cmds.objExists(other_pose):
-            other_pose = self._replace_side(self.pose_control, False)
-            left_right = False
-            if not other_pose:
-                return
-        
-        other_pose_instance = PoseNoReader()
-        other_pose_instance.set_pose(other_pose)
+        other_pose_instance = self._get_mirror_pose_instance()
         
         other_target_meshes = []
-        
         input_meshes = {}
 
         for inc in range(0, self._get_mesh_count()):
+
             mesh = self.get_mesh(inc)
             target_mesh = self.get_target_mesh(mesh)
             
+            other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
+
+            if other_target_mesh == None:
+                continue
+
             index = other_pose_instance.get_target_mesh_index(target_mesh)
             
-            if index != None:
-                other_mesh = other_pose_instance.get_mesh(index)
-            
             if index == None:
-                other_mesh = other_pose_instance.add_mesh(target_mesh)
-            
-            other_mesh = target_mesh
-            
-            if not other_mesh:
-                continue
-            
-            other_mesh_duplicate = cmds.duplicate(other_mesh, n = 'duplicate_corrective_temp_%s' % other_mesh)[0]
-            
-            target_mesh = self.get_target_mesh(mesh)
-            split_name = target_mesh.split('|')
-            
-            other_target_mesh = self._replace_side(split_name[-1], left_right)
-            
-            if not other_target_mesh or not cmds.objExists(other_target_mesh):
+                other_pose_instance.add_mesh(target_mesh)
                 
-                other_target_mesh = target_mesh
-        
-            skin = util.find_deformer_by_type(target_mesh, 'skinCluster')
-            blendshape_node = util.find_deformer_by_type(target_mesh, 'blendShape')
-            
-            if skin:
-                cmds.setAttr('%s.envelope' % skin, 0)
-            if blendshape_node:
-                cmds.setAttr('%s.envelope' % blendshape_node, 0)
-            
-            other_target_mesh_duplicate = cmds.duplicate(other_target_mesh, n = other_target_mesh)[0]
-            home = cmds.duplicate(target_mesh, n = 'home')[0]
-
-            if skin:
-                cmds.setAttr('%s.envelope' % skin, 1)
-            if blendshape_node:
-                cmds.setAttr('%s.envelope' % blendshape_node, 1)
-
-            mirror_group = cmds.group(em = True)
-            cmds.parent(home, mirror_group)
-            cmds.parent(other_mesh_duplicate, mirror_group)
-            cmds.setAttr('%s.scaleX' % mirror_group, -1)
-            
-            util.create_wrap(home, other_target_mesh_duplicate)
-            
-            cmds.blendShape(other_mesh_duplicate, home, foc = True, w = [0, 1])
-            
-            cmds.delete(other_target_mesh_duplicate, ch = True)
-            
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
-            other_target_meshes.append(other_target_mesh)        
-        
-            cmds.delete(mirror_group, other_mesh_duplicate)
-            
+            other_target_meshes.append(other_target_mesh)
         
         other_pose_instance.goto_pose()
         cmds.setAttr('%s.weight' % self.pose_control, 0)
@@ -1422,6 +1453,8 @@ class PoseControl(BasePoseControl):
             transform = transform.replace(' ', '_')
         
         self.transform = transform
+        
+        
         
         self.axis = 'X'
     
@@ -1839,12 +1872,7 @@ class PoseControl(BasePoseControl):
     
     def mirror(self):
         
-        transform = self.get_transform()
-        
         description = self.description
-        
-        skin = None
-        blendshape_node = None
         
         if not description:
             self._set_description(self.pose_control)
@@ -1852,115 +1880,57 @@ class PoseControl(BasePoseControl):
         if description:
             description = description.replace(' ', '_')
         
-        other_transform = self._replace_side(transform)
+        other_pose_instance = self._get_mirror_pose_instance()
         
-        if not cmds.objExists(other_transform):
+        if not other_pose_instance or not other_pose_instance.pose_control:
+            vtool.util.warning('Could not find corresponding pose to %s.' % self.pose_control)
             return
-        
-        other_pose = self._replace_side(self.pose_control)
-        other_description = self._replace_side(description)
-        
-        if not cmds.objExists(other_pose):
-            return
-        
-        other_meshes = []
-        other_target_meshes = []
         
         other_target_meshes = []
         input_meshes = {}
 
         for inc in range(0, self._get_mesh_count()):
-            mesh = self.get_mesh(inc)
-            
-            
-            other_mesh = cmds.duplicate(mesh)[0]
-            
-            new_name = mesh.replace('_L', '_R')
-            
-            other_mesh = cmds.rename(other_mesh, new_name)
-            
-            target_mesh = self.get_target_mesh(mesh)
-            split_name = target_mesh.split('|')
-            other_target_mesh = split_name[-1][:-1] + 'R'
-            
-            skin = util.find_deformer_by_type(target_mesh, 'skinCluster')
-            blendshape_node = util.find_deformer_by_type(target_mesh, 'blendShape')
-            
-            cmds.setAttr('%s.envelope' % skin, 0)
-            cmds.setAttr('%s.envelope' % blendshape_node, 0)
-            
-            if not cmds.objExists(other_target_mesh):
-                other_target_mesh = target_mesh
-                
-            other_target_mesh_duplicate = cmds.duplicate(other_target_mesh, n = other_target_mesh)[0]
-            
-            home = cmds.duplicate(target_mesh, n = 'home')[0]
 
-            mirror_group = cmds.group(em = True)
-            cmds.parent(home, mirror_group)
-            cmds.parent(other_mesh, mirror_group)
-            cmds.setAttr('%s.scaleX' % mirror_group, -1)
+            mesh = self.get_mesh(inc)
+            target_mesh = self.get_target_mesh(mesh)
             
-            util.create_wrap(home, other_target_mesh_duplicate)
-            
-            cmds.blendShape(other_mesh, home, foc = True, w = [0, 1])
-            
-            cmds.delete(other_target_mesh_duplicate, ch = True)
-            
+            other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
+                
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
-            other_target_meshes.append[other_target_mesh]
+            other_target_meshes.append(other_target_mesh)
             
-            cmds.delete(mirror_group, other_mesh)
-            
-        
-        if skin:
-            cmds.setAttr('%s.envelope' % skin, 1)
-        if blendshape_node:
-            cmds.setAttr('%s.envelope' % blendshape_node, 1)
-          
-        if cmds.objExists(other_pose):
-            pose = PoseControl()
-            pose.set_pose(other_pose)
-            
-            pose.goto_pose()
-        
-        if not cmds.objExists(other_pose):
-        
-            store = util.StoreControlData(self.pose_control)
-            store.eval_mirror_data()
-            
-            pose = PoseControl(other_transform, other_description)
-            pose.create()
+        other_pose_instance.goto_pose()
 
         twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
         distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
         angle_value = cmds.getAttr('%s.maxAngle' % self.pose_control)
         maxTwist_value = cmds.getAttr('%s.maxTwist' % self.pose_control)
         
-        cmds.setAttr('%s.twistOffOn' % pose.pose_control, twist_on_value)
-        cmds.setAttr('%s.maxDistance' % pose.pose_control, distance_value)
-        cmds.setAttr('%s.maxAngle' % pose.pose_control, angle_value)
-        cmds.setAttr('%s.maxTwist' % pose.pose_control, maxTwist_value)
+        cmds.setAttr('%s.twistOffOn' % other_pose_instance.pose_control, twist_on_value)
+        cmds.setAttr('%s.maxDistance' % other_pose_instance.pose_control, distance_value)
+        cmds.setAttr('%s.maxAngle' % other_pose_instance.pose_control, angle_value)
+        cmds.setAttr('%s.maxTwist' % other_pose_instance.pose_control, maxTwist_value)
         
         inc = 0
         
         for mesh in other_target_meshes:
-            pose.add_mesh(mesh, False)
-            input_mesh = pose.get_mesh(inc)
+        
+            other_pose_instance.add_mesh(mesh, False)
+            input_mesh = other_pose_instance.get_mesh(inc)
             
             fix_mesh = input_meshes[mesh]
             
             cmds.blendShape(fix_mesh, input_mesh, foc = True, w = [0,1])
             
-            pose.create_blend(False)
+            other_pose_instance.create_blend(False)
             
             cmds.delete(input_mesh, ch = True)
             cmds.delete(fix_mesh)
             inc += 1
         
-        return pose.pose_control
-                
-
+        return other_pose_instance.pose_control
+                 
+                 
 class ComboControl(BasePoseControl):
     def __init__(self, pose_list = None, description = 'combo'):
         super(ComboControl, self).__init__(description)

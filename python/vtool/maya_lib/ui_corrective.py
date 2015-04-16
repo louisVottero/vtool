@@ -598,11 +598,7 @@ class PoseTreeWidget(BaseTreeWidget):
     
     def mirror_pose(self):
         
-        print 'mirror pose?'
-        
         pose = self._current_pose()
-        
-        print 'current pose', pose
         
         if not pose:
             return
@@ -682,11 +678,6 @@ class PoseTreeItem(QtGui.QTreeWidgetItem):
        
 class PoseWidget(qt_ui.BasicWidget):
 
-    pose_mirror = qt_ui.create_signal() 
-    pose_mesh = qt_ui.create_signal()
-    mesh_change = qt_ui.create_signal(object)
-    pose_enable_changed = qt_ui.create_signal(object)
-    
     def __init__(self):
         super(PoseWidget, self).__init__()
         
@@ -700,7 +691,7 @@ class PoseWidget(qt_ui.BasicWidget):
         layout.setAlignment(QtCore.Qt.AlignRight)
         return layout
     
-
+    """
     def _button_mesh(self):
         self.pose_mesh.emit()
 
@@ -727,7 +718,7 @@ class PoseWidget(qt_ui.BasicWidget):
 
     def update_meshes(self, meshes, index):
         self.mesh_widget.update_meshes(meshes, index)
-        
+    """    
     def set_pose(self, pose_name):
         
         if not pose_name:

@@ -852,7 +852,6 @@ class Attributes(object):
     
     numeric_attributes = ['bool', 'long', 'short', 'float', 'double']
     
-    
     def __init__(self, node):
         
         self.node = node
@@ -877,7 +876,6 @@ class Attributes(object):
         var.set_node(self.node)    
         
         return var
-        
         
     def _store_attributes(self):
         custom_attributes = cmds.listAttr(self.node, ud = True)
@@ -9610,7 +9608,6 @@ def unlock_attributes(node, attributes = [], only_keyable = False):
         for attr in attrs:
             cmds.setAttr('%s.%s' % (node, attr), l = False)
     
-  
 def zero_xform_channels(transform):
     
     channels = ['translate',
@@ -9633,10 +9630,6 @@ def zero_xform_channels(transform):
                 cmds.setAttr(transform + '.' + channel + axis, 1)
             except:
                 pass
-    
-  
-
-
 
 #---Rig
 
