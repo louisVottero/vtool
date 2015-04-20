@@ -5344,6 +5344,17 @@ def playblast(filename):
                    clearCache = True, 
                    forceOverwrite = True)
 
+def is_referenced(node):
+    
+    if not cmds.objExists(node):
+        return False
+    
+    is_node_referenced = cmds.referenceQuery(node, isNodeReferenced = True)
+    
+    print node, is_node_referenced
+    
+    return is_node_referenced
+
 def get_current_audio_node():
     
     play_slider = mel.eval('global string $gPlayBackSlider; string $goo = $gPlayBackSlider')

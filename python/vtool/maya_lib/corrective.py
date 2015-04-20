@@ -401,12 +401,15 @@ class BasePoseControl(object):
     def _connect_node(self, node, maya_node_type, inc = 1):
         attribute = '%s%s' % (maya_node_type, inc)
         
-        cmds.addAttr(self.pose_control, ln = attribute, at = 'message' )
-        cmds.connectAttr('%s.message' % node, '%s.%s' % (self.pose_control, attribute))
+        if not cmds.objExists('%s.%s' % (self.pose_control, attribute)):
+            cmds.addAttr(self.pose_control, ln = attribute, at = 'message' )
+            
+        if not cmds.isConnected('%s.message' % node, '%s.%s' % (self.pose_control, attribute)):
+            cmds.connectAttr('%s.message' % node, '%s.%s' % (self.pose_control, attribute))
     
     def _connect_mesh(self, mesh):
-        messages = self._get_mesh_message_attributes()
         
+        messages = self._get_mesh_message_attributes()
         
         index = self.get_mesh_index(mesh)
         
@@ -415,7 +418,8 @@ class BasePoseControl(object):
         
         inc = len(messages) + 1
         
-        self._connect_node(mesh, 'mesh', inc)
+        self._connect_node(mesh, 'mesh', inc)       
+        
 
     def _multiply_weight(self):
         pass
@@ -1027,6 +1031,8 @@ class BasePoseControl(object):
         
     def create_blend(self, goto_pose = True, mesh_index = None):
         
+        print 'create blend'
+        
         mesh = self._get_current_mesh(mesh_index)
         
         if not mesh:
@@ -1071,7 +1077,11 @@ class BasePoseControl(object):
             
             cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
         
-        cmds.delete(offset)
+        if not util.is_referenced(blend.blendshape):
+            
+            print 'here!!!'
+            
+            cmds.delete(offset)
         
     def connect_blend(self, mesh_index = None):
         mesh = None
@@ -1269,13 +1279,22 @@ class PoseNoReader(BasePoseControl):
     
     def create_blend(self, goto_pose = True, mesh_index = None):
         
+        this_index = mesh_index
+        
+        if not mesh_index:
+            this_index = self.mesh_index
+        
+        old_delta = self._get_named_message_attribute('delta%s' % (this_index + 1))
+        if old_delta:
+            cmds.delete(old_delta)
+        
         mesh = self._get_current_mesh(mesh_index)
         
         if not mesh:
             return
             
         target_mesh = self.get_target_mesh(mesh)
-        
+                
         if not target_mesh:
             RuntimeError('Mesh index %s, has no target mesh' % mesh_index)
             return
@@ -1296,6 +1315,9 @@ class PoseNoReader(BasePoseControl):
         #blend.set_envelope(0)
         self.disconnect_blend()
         blend.set_weight(self.pose_control, 0)
+        
+        
+            
         
         offset = util.chad_extract_shape(target_mesh, mesh)
         
@@ -1327,18 +1349,30 @@ class PoseNoReader(BasePoseControl):
                 if not pose_input == multiply_node:
                     
                     self.set_input(input_attr)
-                    #self._connect_weight_input(input_attr)
-                    
-                
-                #if multiply_node:
-                #    self.set_input(input_attr)
         
         if input_attr != weight_attr:
             
             self._multiply_weight(blend_attr)
         
-        cmds.delete(offset)
         
+        if not util.is_referenced(blend.blendshape):
+            
+            cmds.delete(offset)
+
+        if util.is_referenced(blend.blendshape):
+            
+            offset = cmds.rename(offset, 'delta_%s' % self.pose_control)
+            
+            deltas = 'deltas_%s' % self.pose_control
+            
+            if not cmds.objExists('deltas_%s' % self.pose_control):
+                deltas = cmds.group(em = True, n = 'deltas_%s' % self.pose_control)
+                cmds.parent(deltas, self.pose_control)
+                
+            cmds.parent(offset, deltas)
+            cmds.hide(offset)
+            self._connect_node(offset, 'delta', (this_index+1))
+            
     
     def set_input(self, attribute):
         
@@ -1931,33 +1965,3 @@ class PoseControl(BasePoseControl):
         return other_pose_instance.pose_control
                  
                  
-class ComboControl(BasePoseControl):
-    def __init__(self, pose_list = None, description = 'combo'):
-        super(ComboControl, self).__init__(description)
-        
-        self.pose_list = pose_list
-        
-    def _connect_poses(self):
-        last_multiply = None
-        
-        for inc in range(0, len( self.pose_list ) ):
-            pose = self.pose_list[inc]
-            
-            self._connect_node(pose, 'pose', inc)
-            
-            multiply = self._create_node('multiplyDivide')
-            
-            cmds.connectAttr('%s.weight' % pose, '%s.input1X' % multiply)
-            
-            if last_multiply:
-                cmds.connectAttr('%s.outputX' % last_multiply, '%s.input2X' % multiply)
-    
-            last_multiply = multiply 
-            
-        cmds.connectAttr('%s.outputX' % last_multiply, '%s.weight' % self.pose_control)
-       
-    def create(self):
-        
-        super(ComboControl, self).create()
-        
-        self._connect_poses()
