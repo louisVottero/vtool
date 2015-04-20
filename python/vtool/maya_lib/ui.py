@@ -33,7 +33,7 @@ def get_maya_window():
         except:
             from PySide.shiboken import wrapInstance
             
-            vtool.util.show(traceback.format_exc)
+            #vtool.util.show(traceback.format_exc)
              
         maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
         return wrapInstance(long(maya_window_ptr), QtGui.QWidget)

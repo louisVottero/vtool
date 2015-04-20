@@ -549,11 +549,8 @@ class SkinWeightData(MayaCustomData):
             
             cmds.undoInfo(state = False)
             
-            try:
-                self._import_maya_data()
-            except:
-                util.show(traceback.format_exc())
-             
+            self._import_maya_data()
+                         
             cmds.undoInfo(state = True)               
             
             
