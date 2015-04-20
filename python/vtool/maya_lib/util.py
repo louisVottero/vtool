@@ -6474,6 +6474,13 @@ def is_a_shape(node):
     
     return False
 
+def is_a_mesh(node):
+    
+    if cmds.objExists('%s.vtx[0]' % node):
+        return True
+    
+    return False
+
 def has_shape_of_type(node, maya_type):
     
     test = None
@@ -6509,8 +6516,7 @@ def get_selected_meshes():
             if shapes:
                 found.append(thing)
                 
-    return found
-        
+    return found        
 
 def get_mesh_shape(mesh, shape_index = 0):
     
@@ -7522,6 +7528,7 @@ def get_influences_on_skin(skin_deformer):
     return influences
 
 def get_non_zero_influences(skin_deformer):
+    
     influences = cmds.skinCluster(skin_deformer, q = True, wi = True)
     
     return influences
