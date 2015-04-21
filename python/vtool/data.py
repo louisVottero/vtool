@@ -1400,6 +1400,10 @@ class MayaAsciiFileData(MayaFileData):
     
 
 class ImageFileData(CustomData):
+    #image data could be stored out with resolution levels, 1K, 2K, 3K, 4K 
+    #this can than have an expression that automatically switches them besed on distance from the camera.
+    #images could also be saved out in accordance with desired format of the specified renderer.
+    #saving out images can be an important part of rigging when normal maps and displacement are hooked up to drivers. 
     pass
 
 class MayaImageFileData(CustomData):
