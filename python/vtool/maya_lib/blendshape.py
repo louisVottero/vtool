@@ -209,6 +209,12 @@ class BlendShape(object):
         if self.is_target(name):            
             vtool.util.show('Could not add target %s, it already exist.' % name)
        
+    
+    def insert_target(self, name, mesh, index):
+        
+        pass
+           
+    
     def replace_target(self, name, mesh):
         
         name = name.replace(' ', '_')

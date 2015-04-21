@@ -27,7 +27,7 @@ def undo_off(function):
         
         try:
             function(*args, **kwargs)
-        except:
+        except (RuntimeError):
             
             cmds.undoInfo(state = True)
             vtool.util.show(traceback.format_exc() )
@@ -52,7 +52,7 @@ def undo_chunk(function):
         
         try:
             return_value = function(*args, **kwargs)
-        except:
+        except (RuntimeError):
             
             cmds.undoInfo(closeChunk = True)
             closed = True
@@ -990,7 +990,8 @@ class OrientJointAttributes(object):
     
     def _create_attributes(self):
         
-        MayaEnumVariable('Orient_Info'.upper()).create(self.joint)
+        self.title = MayaEnumVariable('Orient_Info'.upper())
+        self.title.create(self.joint)
         
         attr = self._create_axis_attribute('aimAxis')
         self.attributes.append(attr)
@@ -1038,7 +1039,8 @@ class OrientJointAttributes(object):
 
     def _delete_attributes(self):
         
-        self.title.delete()
+        if self.title:
+            self.title.delete()
         
         for attribute in self.attributes:
             attribute.delete()
@@ -4896,6 +4898,9 @@ class TransferWeight(object):
             
             distances = get_distances(new_joints, vert_name)
             
+            if not distances:
+                return
+            
             found_weight = False
             
             joint_weight = {}    
@@ -5338,6 +5343,17 @@ def playblast(filename):
                    filename = filename, 
                    clearCache = True, 
                    forceOverwrite = True)
+
+def is_referenced(node):
+    
+    if not cmds.objExists(node):
+        return False
+    
+    is_node_referenced = cmds.referenceQuery(node, isNodeReferenced = True)
+    
+    print node, is_node_referenced
+    
+    return is_node_referenced
 
 def get_current_audio_node():
     
@@ -6469,6 +6485,13 @@ def is_a_shape(node):
     
     return False
 
+def is_a_mesh(node):
+    
+    if cmds.objExists('%s.vtx[0]' % node):
+        return True
+    
+    return False
+
 def has_shape_of_type(node, maya_type):
     
     test = None
@@ -6504,8 +6527,7 @@ def get_selected_meshes():
             if shapes:
                 found.append(thing)
                 
-    return found
-        
+    return found        
 
 def get_mesh_shape(mesh, shape_index = 0):
     
@@ -6974,6 +6996,7 @@ def transforms_to_nurb_surface(transforms, description, spans = -1, offset_axis 
     return loft[0]
 
 def transforms_to_curve(transforms, spans, description):
+    
     transform_positions = []
         
     for joint in transforms:
@@ -6994,6 +7017,7 @@ def transforms_to_curve(transforms, spans, description):
                                 spans = spans, 
                                 degree = 3, 
                                 tol =  0.01)
+    
     
     curve = cmds.rename( curve, inc_name('curve_%s' % description) )
     
@@ -7515,6 +7539,7 @@ def get_influences_on_skin(skin_deformer):
     return influences
 
 def get_non_zero_influences(skin_deformer):
+    
     influences = cmds.skinCluster(skin_deformer, q = True, wi = True)
     
     return influences
@@ -8796,25 +8821,34 @@ def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
     return top_group, joints
         
     
-def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
+def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape_node = None):
     
     source_mesh_name = source_mesh.split('|')[-1]
     
-    if not blendshape:
-        blendshape = 'blendshape_%s' % target_mesh
+    #import blendshape
     
-    if cmds.objExists(blendshape):
-        count = cmds.blendShape(blendshape, q= True, weightCount = True)
-        cmds.blendShape(blendshape, edit=True, tc = False, t=(target_mesh, count+1, source_mesh, 1.0) )
+    if not blendshape_node:
+        blendshape_node = 'blendshape_%s' % target_mesh
+    
+    if cmds.objExists(blendshape_node):
+        
+        count = cmds.blendShape(blendshape_node, q= True, weightCount = True)
+        
+        #blend_inst = blendshape.BlendShape(blendshape_node)
+        #blend_inst.create_target(source_mesh_name, source_mesh)
+        
+        cmds.blendShape(blendshape_node, edit=True, tc = False, t=(target_mesh, count+1, source_mesh, 1.0) )
+        
         try:
-            cmds.setAttr('%s.%s' % (blendshape, source_mesh_name), weight)
+            cmds.setAttr('%s.%s' % (blendshape_node, source_mesh_name), weight)
         except:
             pass
         
-    if not cmds.objExists(blendshape):
-        cmds.blendShape(source_mesh, target_mesh, tc = False, weight =[0,weight], n = blendshape, foc = True)
+    if not cmds.objExists(blendshape_node):
+        print 'here'
+        cmds.blendShape(source_mesh, target_mesh, tc = False, weight =[0,weight], n = blendshape_node, foc = True)
         
-    return blendshape 
+    return blendshape_node
     
 def isolate_shape_axis(base, target, axis_list = ['X','Y','Z']):
     

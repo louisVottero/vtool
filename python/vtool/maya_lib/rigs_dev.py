@@ -1247,7 +1247,7 @@ class FaceCurveRig(rigs.JointRig):
     def _create_curve(self):
         
         self.curve = util.transforms_to_curve(self.joints, self.span_count, self.description)
-        
+
         cmds.parent(self.curve, self.setup_group)
         
     def _cluster_curve(self):
@@ -1399,6 +1399,7 @@ class FaceCurveRig(rigs.JointRig):
         
         self.span_count = count - 1
         
+        
     def set_create_sub_controls(self, bool_value):
         self.sub_controls_create = bool_value
         
@@ -1439,13 +1440,19 @@ class BrowRig(FaceCurveRig):
         
         self.curve = util.transforms_to_curve(self.joints, self.span_count, self.description)
         
-        cmds.delete(['%s.cv[1]' % self.curve,'%s.cv[5]' % self.curve])
+        if self.span_count >= 3:
+            cmds.delete(['%s.cv[1]' % self.curve,'%s.cv[5]' % self.curve])
         
         cmds.parent(self.curve, self.setup_group)
         
     def _cluster_curve(self):
         
-        self.clusters = util.cluster_curve(self.curve, self.description)
+        
+        if self.span_count >= 3:
+            self.clusters = util.cluster_curve(self.curve, self.description)
+            
+        if self.span_count == 2:
+            self.clusters = util.cluster_curve(self.curve, self.description, join_ends = True)
         
         cmds.parent(self.clusters, self.setup_group)
         
