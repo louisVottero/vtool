@@ -1013,6 +1013,7 @@ class AtomData(MayaCustomData):
 class PoseData(MayaCustomData):
 
     maya_binary = 'mayaBinary'
+    maya_ascii = 'mayaAscii'
 
     def _data_name(self):
         return 'pose'
@@ -1026,7 +1027,7 @@ class PoseData(MayaCustomData):
     def _save_file(self, filepath):
         cmds.file(rename = filepath)
         
-        cmds.file(exportSelected = True, prompt = False, force = True, pr = True, ch = False, chn = True, exp = True, con = False, stx = 'always', typ = self.maya_binary, sh = False)
+        cmds.file(exportSelected = True, prompt = False, force = True, pr = True, ch = False, chn = True, exp = True, con = False, stx = 'always', typ = self.maya_ascii, sh = False)
         
     def _import_file(self, filepath):
                 
@@ -1396,4 +1397,11 @@ class MayaAsciiFileData(MayaFileData):
     
     def _set_maya_file_type(self):
         return self.maya_ascii
+    
+
+class ImageFileData(CustomData):
+    pass
+
+class MayaImageFileData(CustomData):
+    pass
     
