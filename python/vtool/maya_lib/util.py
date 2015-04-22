@@ -2128,6 +2128,7 @@ class StretchyChain:
         self.name = 'stretch'
         self.simple = False
         self.per_joint_stretch = True
+        self.vector = False
     
     def _get_joint_count(self):
         return len(self.joints)
@@ -2193,11 +2194,16 @@ class StretchyChain:
         distance_between = cmds.createNode('distanceBetween', 
                                            n = inc_name('distanceBetween_%s' % self.name) )
         
-        cmds.connectAttr('%s.worldMatrix' % top_locator, 
-                         '%s.inMatrix1' % distance_between)
+        if self.vector:
+            cmds.connectAttr('%s.translate' % top_locator, '%s.point1' % distance_between)
+            cmds.connectAttr('%s.translate' % btm_locator, '%s.point2' % distance_between)
         
-        cmds.connectAttr('%s.worldMatrix' % btm_locator, 
-                         '%s.inMatrix2' % distance_between)
+        if not self.vector:
+            cmds.connectAttr('%s.worldMatrix' % top_locator, 
+                             '%s.inMatrix1' % distance_between)
+            
+            cmds.connectAttr('%s.worldMatrix' % btm_locator, 
+                             '%s.inMatrix2' % distance_between)
         
         cmds.connectAttr('%s.distance' % distance_between, '%s.input1X' % distance_offset)
         
@@ -2369,6 +2375,9 @@ class StretchyChain:
     
     def set_distance_offset(self, attribute):
         self.distance_offset_attribute = attribute
+    
+    def set_vector_instead_of_matrix(self, bool_value):
+        self.vector = bool_value
     
     def set_add_dampen(self, bool_value):
         self.add_dampen = bool_value

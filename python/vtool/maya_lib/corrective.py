@@ -990,6 +990,7 @@ class BasePoseControl(object):
         if not view_only:    
             self.create_blend()
             
+        print 'selection after vis off', cmds.ls(sl = True)
         
     def visibility_on(self, mesh):
         
@@ -1001,14 +1002,22 @@ class BasePoseControl(object):
         cmds.showHidden(mesh)
         
         cmds.hide(self.get_target_mesh(mesh))
+        
+        print 'vis on'
             
     def toggle_vis(self, view_only = False):
         mesh = self.get_mesh(self.mesh_index)
+        target_mesh = self.get_target_mesh(mesh)
         
+        if cmds.getAttr('%s.visibility' % target_mesh) == 1:
+            if cmds.getAttr('%s.visibility' % mesh) == 1:
+                cmds.setAttr('%s.visibility' % target_mesh, 0)
+                return    
+            
         if cmds.getAttr('%s.visibility' % mesh) == 1:
             self.visibility_off(mesh, view_only)
             return
-        
+            
         if cmds.getAttr('%s.visibility' % mesh) == 0:
             self.visibility_on(mesh)
             return
@@ -1273,11 +1282,10 @@ class PoseNoReader(BasePoseControl):
             return
         
         cmds.connectAttr(attribute, weight_attr)
-    
 
-        
-    
     def create_blend(self, goto_pose = True, mesh_index = None):
+        
+        
         
         this_index = mesh_index
         
@@ -1315,9 +1323,6 @@ class PoseNoReader(BasePoseControl):
         #blend.set_envelope(0)
         self.disconnect_blend()
         blend.set_weight(self.pose_control, 0)
-        
-        
-            
         
         offset = util.chad_extract_shape(target_mesh, mesh)
         
@@ -1361,18 +1366,21 @@ class PoseNoReader(BasePoseControl):
 
         if util.is_referenced(blend.blendshape):
             
-            offset = cmds.rename(offset, 'delta_%s' % self.pose_control)
+            print self.pose_control
             
+            offset = cmds.rename(offset, 'delta_%s' % mesh)
+            print 'first', offset
             deltas = 'deltas_%s' % self.pose_control
             
             if not cmds.objExists('deltas_%s' % self.pose_control):
                 deltas = cmds.group(em = True, n = 'deltas_%s' % self.pose_control)
                 cmds.parent(deltas, self.pose_control)
-                
-            cmds.parent(offset, deltas)
+            print 'second', offset
+            print 'parent', cmds.parent(offset, deltas)
             cmds.hide(offset)
             self._connect_node(offset, 'delta', (this_index+1))
             
+        print 'selection after create blend', cmds.ls(sl = True)
     
     def set_input(self, attribute):
         

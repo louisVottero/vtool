@@ -771,6 +771,8 @@ class FkScaleRig(FkRig):
       
     def _increment_greater_than_zero(self, control, current_transform): 
           
+        print 'current transform', current_transform
+          
         cmds.select(cl = True) 
           
         name = self._get_name('jointFk') 
@@ -2052,9 +2054,16 @@ class IkAppendageRig(BufferRig):
         duplicate = util.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-1])
         duplicate.replace('joint', 'ik')
-        self.ik_chain = duplicate.create()
+        
+        self.ik_chain = self.buffer_joints
                 
-        self._attach_ik_joints(self.ik_chain, self.buffer_joints)
+        if not self.create_buffer_joints:
+            
+            util.AttachJoints(self.ik_chain, self.buffer_joints).create()
+        
+        if self.create_buffer_joints:
+            pass    
+            #self._attach_ik_joints(self.ik_chain, self.buffer_joints)
         
         ik_group = self._create_group()
         
@@ -2395,11 +2404,19 @@ class IkAppendageRig(BufferRig):
         stretchy.set_add_dampen(True)
         stretchy.set_node_for_attributes(control)
         stretchy.set_description(self._get_name())
-        
+        stretchy.set_vector_instead_of_matrix(True)
         top_locator, btm_locator = stretchy.create()
         
         cmds.parent(top_locator, top_transform)
         cmds.parent(btm_locator, btm_transform)
+        
+        """
+        cmds.parent(top_locator, self.setup_group)
+        cmds.parent(btm_locator, self.setup_group)
+        
+        cmds.pointConstraint(top_transform, top_locator)
+        cmds.pointConstraint(btm_transform, btm_locator)
+        """
         
     def _create_tweakers(self):
         pass
@@ -3142,6 +3159,7 @@ class FootRollRig(RollRig):
         return ik_handle.create()
 
     def _create_ik(self):
+    
         self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.ball)
         self.ball_handle = self._create_ik_handle( 'ball', self.ball, self.toe)
         
