@@ -4753,8 +4753,6 @@ class TransferWeight(object):
         
         source_vert_count = len( cmds.ls('%s.vtx[*]' % (source_mesh), flatten = True))
         
-        print 'joint map', joint_map
-        
         for influence_index in joint_map:
             
             if influence_index == None:
@@ -5359,8 +5357,6 @@ def is_referenced(node):
         return False
     
     is_node_referenced = cmds.referenceQuery(node, isNodeReferenced = True)
-    
-    print node, is_node_referenced
     
     return is_node_referenced
 
@@ -8854,7 +8850,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape_node = Non
             pass
         
     if not cmds.objExists(blendshape_node):
-        print 'here'
+        
         cmds.blendShape(source_mesh, target_mesh, tc = False, weight =[0,weight], n = blendshape_node, foc = True)
         
     return blendshape_node

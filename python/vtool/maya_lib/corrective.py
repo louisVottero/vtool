@@ -989,8 +989,6 @@ class BasePoseControl(object):
     
         if not view_only:    
             self.create_blend()
-            
-        print 'selection after vis off', cmds.ls(sl = True)
         
     def visibility_on(self, mesh):
         
@@ -1003,8 +1001,6 @@ class BasePoseControl(object):
         
         cmds.hide(self.get_target_mesh(mesh))
         
-        print 'vis on'
-            
     def toggle_vis(self, view_only = False):
         mesh = self.get_mesh(self.mesh_index)
         target_mesh = self.get_target_mesh(mesh)
@@ -1039,8 +1035,6 @@ class BasePoseControl(object):
             self.create_blend(goto_pose = pose, mesh_index = inc)
         
     def create_blend(self, goto_pose = True, mesh_index = None):
-        
-        print 'create blend'
         
         mesh = self._get_current_mesh(mesh_index)
         
@@ -1087,8 +1081,6 @@ class BasePoseControl(object):
             cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
         
         if not util.is_referenced(blend.blendshape):
-            
-            print 'here!!!'
             
             cmds.delete(offset)
         
@@ -1366,21 +1358,16 @@ class PoseNoReader(BasePoseControl):
 
         if util.is_referenced(blend.blendshape):
             
-            print self.pose_control
-            
             offset = cmds.rename(offset, 'delta_%s' % mesh)
-            print 'first', offset
+            
             deltas = 'deltas_%s' % self.pose_control
             
             if not cmds.objExists('deltas_%s' % self.pose_control):
                 deltas = cmds.group(em = True, n = 'deltas_%s' % self.pose_control)
                 cmds.parent(deltas, self.pose_control)
-            print 'second', offset
-            print 'parent', cmds.parent(offset, deltas)
+                
             cmds.hide(offset)
             self._connect_node(offset, 'delta', (this_index+1))
-            
-        print 'selection after create blend', cmds.ls(sl = True)
     
     def set_input(self, attribute):
         

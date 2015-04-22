@@ -770,9 +770,7 @@ class FkScaleRig(FkRig):
         util.connect_scale(control, current_transform) 
       
     def _increment_greater_than_zero(self, control, current_transform): 
-          
-        print 'current transform', current_transform
-          
+
         cmds.select(cl = True) 
           
         name = self._get_name('jointFk') 

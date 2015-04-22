@@ -338,8 +338,6 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
     def _transfer_joints(self):
         
-        print 'transfer joints!'
-        
         scope = cmds.ls(sl = True)
         
         node_types = util.get_node_types(scope)
@@ -363,8 +361,6 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         joints = cmds.ls('joint_*', type = 'joint')
         
         joints = guideJoints + joints + ac_joints + locators + sk_joints
-        
-        print joints
         
         if not joints:
             return
