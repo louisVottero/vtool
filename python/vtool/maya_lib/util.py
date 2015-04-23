@@ -9730,7 +9730,7 @@ def unlock_attributes(node, attributes = [], only_keyable = False):
     
     if attrs:
         for attr in attrs:
-            cmds.setAttr('%s.%s' % (node, attr), l = False)
+            cmds.setAttr('%s.%s' % (node, attr), l = False, k = True)
     
 def zero_xform_channels(transform):
     
