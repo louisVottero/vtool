@@ -458,7 +458,7 @@ class IteratePolygonFaces(MayaIterator):
     def get_face_center_vectors(self):
         center_vectors = []
         
-        for inc in range(0, self.api_object.count):
+        for inc in range(0, self.api_object.count()):
             
             point = self.api_object.center()
             
@@ -467,6 +467,8 @@ class IteratePolygonFaces(MayaIterator):
             self.api_object.next()
         
         self.api_object.reset()
+        
+        return center_vectors
             
     def get_closest_face(self, vector):
         
@@ -503,7 +505,14 @@ class IteratePolygonFaces(MayaIterator):
         
         self.api_object.reset()
         return int_array
+    
+    def get_center(self, face_id):
         
+        point = OpenMaya.MPoint()
+        
+        point = self.api_object.center()
+        
+        return point.x, point.y, point.z
     
     
 #--- variables
@@ -6542,7 +6551,8 @@ def get_mesh_shape(mesh, shape_index = 0):
         mesh = mesh.split('.')[0]
     
     if cmds.nodeType(mesh) == 'mesh':
-        mesh = cmds.listRelatives(p = True)[0]
+        
+        mesh = cmds.listRelatives(mesh, p = True)[0]
         
     shapes = get_shapes(mesh)
     if not shapes:
@@ -6686,8 +6696,65 @@ def edge_to_vertex(edges):
             verts.append('%s.vtx[%s]' % (mesh, vert2))
             
     return verts
-        
 
+def get_face_center(mesh, face_id):
+
+    mesh = get_mesh_shape(mesh)
+
+    face_iter = IteratePolygonFaces(mesh)
+    
+    center = face_iter.get_center(face_id)
+    
+    return center
+    
+def get_face_centers(mesh):
+    
+    mesh = get_mesh_shape(mesh)
+    
+    face_iter = IteratePolygonFaces(mesh)
+    
+    return face_iter.get_face_center_vectors()
+    
+    """
+    faceCenter = []
+
+    selection = OpenMaya.MSelectionList()
+    OpenMaya.MGlobal.getActiveSelectionList(selection)
+    print ("Number of objects in selection: %s " % selection.length())
+
+    iter = OpenMaya.MItSelectionList (selection, OpenMaya.MFn.kMeshPolygonComponent)
+
+    while not iter.isDone():
+        status = OpenMaya.MStatus
+        dagPath = OpenMaya.MDagPath()
+        component = OpenMaya.MObject()
+
+        iter.getDagPath(dagPath, component)
+
+        polyIter = OpenMaya.MItMeshPolygon(dagPath, component)
+
+        while not polyIter.isDone():
+
+            i = 0
+            i = polyIter.index()
+            faceInfo = [0]
+            faceInfo[0] = ("The center point of face %s is:" %i)
+            faceCenter+=faceInfo
+
+            center = OpenMaya.MPoint
+            center = polyIter.center(OpenMaya.MSpace.kWorld)
+            point = [0.0,0.0,0.0]
+            point[0] = center.x
+            point[1] = center.y
+            point[2] = center.z
+            faceCenter += point
+            
+            polyIter.next()
+            
+        iter.next()
+     
+    return faceCenter     
+    """
 def get_slots(attribute):
     
     slots = cmds.listAttr(attribute, multi = True)
@@ -6881,6 +6948,38 @@ def follicle_to_mesh(transform, mesh, u = None, v = None):
     cmds.parent(transform, follicle)
     
     return follicle
+
+def create_joints_on_faces(mesh, face_ids = [], follow = True, name = None):
+    
+    mesh = get_mesh_shape(mesh)
+    
+    if not face_ids:
+        centers = get_face_centers(mesh)
+        
+    if face_ids:
+        centers = []
+        
+        for face_id in face_ids:
+            center = get_face_center(mesh, face_id)
+            
+            centers.append(center)
+    
+    joints = []
+    
+    for center in centers:
+        cmds.select(cl = True)
+        
+        if not name:
+            name = 'joint_mesh_1'
+        
+        joint = cmds.joint(p = center, n = inc_name(name))
+        joints.append(joint)
+        
+        if follow:
+            follicle_to_mesh(joint, mesh)
+            cmds.makeIdentity(joint, jo = True, apply = True, t = True, r = True, s = True)
+    
+    return joints
 
 def follicle_to_surface(transform, surface, u = None, v = None):
     
@@ -9766,6 +9865,8 @@ def get_controls():
         transforms += joints
     
     found = []
+    found_with_value = []
+    
     
     for transform in transforms:
         if transform.startswith('CNT_'):
@@ -9779,11 +9880,18 @@ def get_controls():
         if cmds.objExists('%s.tag' % transform):
             
             if has_shape_of_type(transform, 'nurbsCurve'):
-            
+                
+                
                 found.append(transform)
+                value = cmds.getAttr('%s.tag' % transform)
+                
+                if value:
+                    found_with_value.append(transform)
             
             continue
         
+    if found_with_value:
+        found = found_with_value
         
     return found
 
