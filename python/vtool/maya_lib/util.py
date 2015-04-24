@@ -4207,382 +4207,6 @@ class SuspensionRig(BufferRig):
         
 #--- deformation
 
-"""
-class BlendShape(object):
-    def __init__(self, blendshape_name = None):
-        self.blendshape = blendshape_name
-        
-        self.meshes = []
-        self.targets = {}
-        self.weight_indices = []
-        
-        
-        if self.blendshape:
-            self.set(blendshape_name)
-        
-    def _store_meshes(self):
-        if not self.blendshape:
-            return
-        
-        meshes = cmds.deformer(self.blendshape, q = True, geometry = True)
-        self.meshes = meshes
-        
-    def _store_targets(self):
-        
-        if not self.blendshape:
-            return
-        
-        target_attrs = cmds.listAttr(self._get_input_target(0), multi = True)
-        
-        if not target_attrs:
-            return
-
-        alias_index_map = map_blend_target_alias_to_index(self.blendshape)
-        
-        if not alias_index_map:
-            return 
-        
-        for index in alias_index_map:
-            alias = alias_index_map[index]
-            
-            self._store_target(alias, index)
-            
-    def _store_target(self, name, index):
-        target = BlendShapeTarget(name, index)
-        
-        self.targets[name] = target
-        self.weight_indices.append(index)
-
-    def _get_target_attr(self, name):
-        return '%s.%s' % (self.blendshape, name)
-
-    def _get_weight(self, name):
-        
-        name = name.replace(' ', '_')
-        
-        target_index = self.targets[name].index
-        return '%s.weight[%s]' % (self.blendshape, target_index)
-
-    def _get_weights(self, target_name, mesh_index):
-        mesh = self.meshes[mesh_index]
-                        
-        vertex_count = get_component_count(mesh)
-        
-        attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
-        
-        weights = []
-        
-        for inc in range(0, vertex_count):
-            weight = cmds.getAttr('%s[%s]' % (attribute, inc))
-            
-            weights.append(weight)
-            
-        return weights      
-
-    def _get_input_target(self, mesh_index = 0):
-        attribute = [self.blendshape,
-                     'inputTarget[%s]' % mesh_index]
-        
-        attribute = string.join(attribute, '.')
-        return attribute
-
-    def _get_input_target_base_weights_attribute(self, mesh_index = 0):
-        input_attribute = self._get_input_target(mesh_index)
-        
-        attribute = [input_attribute,
-                     'baseWeights']
-        
-        attribute = string.join(attribute, '.')
-        
-        return attribute
-
-    def _get_input_target_group(self, name, mesh_index = 0):
-        target_index = self.targets[name].index
-    
-        input_attribute = self._get_input_target(mesh_index)
-        
-        attribute = [input_attribute,
-                     'inputTargetGroup[%s]' % target_index]
-        
-        attribute = string.join(attribute, '.')
-        return attribute
-    
-    def _get_input_target_group_weights_attribute(self, name, mesh_index = 0):
-        input_attribute = self._get_input_target_group(name, mesh_index)
-        
-        attribute = [input_attribute,
-                     'targetWeights']
-        
-        attribute = string.join(attribute, '.')
-        
-        return attribute        
-    
-    def _get_mesh_input_for_target(self, name, inbetween = 1):
-        target_index = self.targets[name].index
-        
-        value = inbetween * 1000 + 5000
-        
-        attribute = [self.blendshape,
-                     'inputTarget[0]',
-                     'inputTargetGroup[%s]' % target_index,
-                     'inputTargetItem[%s]' % value,
-                     'inputGeomTarget']
-        
-        attribute = string.join(attribute, '.')
-        
-        return attribute
-        
-    def _get_next_index(self):
-        if self.weight_indices:
-            return self.weight_indices[-1] + 1
-        if not self.weight_indices:
-            return 0
-
-    def _disconnect_targets(self):
-        for target in self.targets:
-            self._disconnect_target(target)
-            
-    def _disconnect_target(self, name):
-        target_attr = self._get_target_attr(name)
-        
-        connection = get_attribute_input(target_attr)
-        
-        if not connection:
-            return
-        
-        cmds.disconnectAttr(connection, target_attr)
-        
-        self.targets[name].connection = connection
-    
-    def _zero_target_weights(self):
-        for target in self.targets:
-            attr = self._get_target_attr(target)
-            value = cmds.getAttr(attr)
-            
-            self.set_weight(target, 0)
-
-            self.targets[target].value = value  
-        
-    def _restore_target_weights(self):
-        for target in self.targets:
-            self.set_weight(target, self.targets[target].value )
-        
-    def _restore_connections(self):
-        for target in self.targets:
-            connection = self.targets[target].connection
-            
-            if not connection:
-                return
-            
-            cmds.connectAttr(connection, self._get_target_attr(target)) 
-
-    def create(self, mesh):
-        
-        self.blendshape = cmds.deformer(mesh, type = 'blendShape', foc = True)[0]
-        self._store_targets()
-        self._store_meshes()
-
-    def is_target(self, name):
-        if name in self.targets:
-            return True
-        
-    @undo_chunk
-    def create_target(self, name, mesh):
-        
-        name = name.replace(' ', '_')
-        
-        if not self.is_target(name):
-            
-            current_index = self._get_next_index()
-            
-            self._store_target(name, current_index)
-            
-            mesh_input = self._get_mesh_input_for_target(name)
-              
-            
-                        
-            cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
-            
-            cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 1)
-            cmds.aliasAttr(name, '%s.weight[%s]' % (self.blendshape, current_index))
-            cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 0)
-            
-            attr = '%s.%s' % (self.blendshape, name)
-            return attr
-            
-        if self.is_target(name):            
-            vtool.util.warning('Could not add target %s, it already exist.' % name)
-       
-    def replace_target(self, name, mesh):
-        
-        name = name.replace(' ', '_')
-        
-        if self.is_target(name):
-            
-            mesh_input = self._get_mesh_input_for_target(name)
-            
-            if not cmds.isConnected('%s.outMesh' % mesh, mesh_input):
-                cmds.connectAttr('%s.outMesh' % mesh, mesh_input)
-                cmds.disconnectAttr('%s.outMesh' % mesh, mesh_input)
-                
-        if not self.is_target(name):
-            vtool.util.warning('Could not replace target %s, it does not exist' % name)
-        
-    def remove_target(self, name):
-        target_group = self._get_input_target_group(name)
-        weight_attr = self._get_weight(name)
-        
-        cmds.removeMultiInstance(target_group, b = True)
-        cmds.removeMultiInstance(weight_attr, b = True)
-        
-        self.weight_indices.remove( self.targets[name].index )
-        self.targets.pop(name)
-        
-        cmds.aliasAttr('%s.%s' % (self.blendshape, name), rm = True)
-       
-    def rename_target(self, old_name, new_name):
-        
-        old_name = old_name.replace(' ', '_')
-        new_name = new_name.replace(' ', '_')
-        
-        weight_attr = self._get_weight(old_name)
-        index = self.targets[old_name].index
-        
-        
-        cmds.aliasAttr('%s.%s' % (self.blendshape, old_name), rm = True)
-        cmds.aliasAttr(new_name, weight_attr)
-        
-        self.targets.pop(old_name)
-        self._store_target(new_name, index)
-        
-    def set_weight(self, name, value):
-        if self.is_target(name):
-            
-            attribute_name = self._get_target_attr(name)
-            
-            if not cmds.getAttr(attribute_name, l = True):
-                input_attr = get_attribute_input(attribute_name)
-                
-                if not input_attr:
-                    cmds.setAttr(attribute_name, value)
-    
-    def set_weights(self, weights, target_name = None, mesh_index = 0):
-        
-        mesh = self.meshes[mesh_index]
-        
-        vertex_count  = get_component_count(mesh)
-        
-        weights = vtool.util.convert_to_sequence(weights)
-        
-        if len(weights) == 1:
-            weights = weights * vertex_count
-        
-        inc = 0
-        
-        if target_name == None:
-            
-            attribute = self._get_input_target_base_weights_attribute(mesh_index)
-            
-            for weight in weights:     
-                cmds.setAttr('%s[%s]' % (attribute, inc), weight)
-                inc += 1
-                
-        if target_name:
-            
-            attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
-            
-            for weight in weights:
-                cmds.setAttr('%s[%s]' % (attribute, inc), weight)
-                inc += 1
-        
-    def set_invert_weights(self, target_name = None, mesh_index = 0):
-        
-        weights = self._get_weights(target_name, mesh_index)
-        
-        new_weights = []
-        
-        for weight in weights:
-            
-            new_weight = 1 - weight
-            
-            new_weights.append(new_weight)
-                    
-        self.set_weights(new_weights, target_name, mesh_index)
-    
-    def set_envelope(self, value):
-        cmds.setAttr('%s.envelope' % self.blendshape, value)
-        
-    def recreate_target(self, name, value = 1.0, mesh = None):
-        if not self.is_target(name):
-            return
-        
-        new_name = inc_name(name)
-        
-        self._disconnect_targets()
-        self._zero_target_weights()
-        
-        self.set_weight(name, value)
-        
-        output_attribute = '%s.outputGeometry[0]' % self.blendshape
-        
-        if not mesh:
-            mesh = cmds.deformer(self.blendshape, q = True, geometry = True)[0]
-        
-        if mesh:
-            new_mesh = cmds.duplicate(mesh, name = new_name)[0]
-            
-            cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
-            cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
-
-        self._restore_connections()
-        self._restore_target_weights()
-        
-        return new_mesh
-        
-    def recreate_all(self, mesh = None):
-        self._disconnect_targets()
-        self._zero_target_weights()
-        
-        meshes = []
-        
-        for target in self.targets:
-            new_name = inc_name(target)
-            
-            self.set_weight(target, 1)
-                    
-            output_attribute = '%s.outputGeometry[0]' % self.blendshape
-            
-            if not mesh:
-                mesh = cmds.deformer(self.blendshape, q = True, geometry = True)[0]
-            
-            if mesh:
-                new_mesh = cmds.duplicate(mesh, name = new_name)[0]
-                
-                cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
-                cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
-                
-            self.set_weight(target, 0)
-                
-            meshes.append(new_mesh)
-        
-        self._restore_connections()
-        self._restore_target_weights()
-        
-        return meshes
-        
-    def set(self, blendshape_name):
-        self.blendshape = blendshape_name
-        self._store_targets()
-        self._store_meshes()
-    
-class BlendShapeTarget(object):
-    def __init__(self, name, index):
-        self.name = name
-        self.index = index
-        self.connection = None
-        self.value = 0
-"""
-
 class SplitMeshTarget(object):
     
     def __init__(self, target_mesh):
@@ -8525,7 +8149,7 @@ def transfer_cluster_weight_to_joint(cluster, joint, mesh):
         
         cmds.skinPercent(skin, vert, r = False, transformValue = [joint, weights[inc]])
     
-def transfer_joint_weight_to_blendshape(blendshape, joint, mesh, index = 0, target = -1):
+def transfer_joint_weight_to_blendshape(blendshape_node, joint, mesh, index = 0, target = -1):
     
     skin = find_deformer_by_type(mesh, 'skinCluster')
     weights = get_skin_weights(skin)
@@ -8538,12 +8162,12 @@ def transfer_joint_weight_to_blendshape(blendshape, joint, mesh, index = 0, targ
     
     if target == -1:
         for weight in weight_values:
-            cmds.setAttr('%s.inputTarget[%s].baseWeights[%s]' % (blendshape, index, inc), weight)
+            cmds.setAttr('%s.inputTarget[%s].baseWeights[%s]' % (blendshape_node, index, inc), weight)
             inc += 1
             
     if target >= 0:
         for weight in weight_values:
-            cmds.setAttr('%s.inputTarget[%s].inputTargetGroup[%s].targetWeights[%s]' % (blendshape, index, target, inc), weight)
+            cmds.setAttr('%s.inputTarget[%s].inputTargetGroup[%s].targetWeights[%s]' % (blendshape_node, index, target, inc), weight)
             inc += 1
     
 @undo_chunk   
@@ -8789,9 +8413,9 @@ def exclusive_bind_wrap(source_mesh, target_mesh):
     
     return wraps
 
-def map_blend_target_alias_to_index(blendshape):
+def map_blend_target_alias_to_index(blendshape_node):
     
-    aliases = cmds.aliasAttr(blendshape, query = True)
+    aliases = cmds.aliasAttr(blendshape_node, query = True)
     
     alias_map = {}
     
@@ -8808,8 +8432,8 @@ def map_blend_target_alias_to_index(blendshape):
         
     return alias_map
 
-def map_blend_index_to_target_alias(blendshape):
-    aliases = cmds.aliasAttr(blendshape, query = True)
+def map_blend_index_to_target_alias(blendshape_node):
+    aliases = cmds.aliasAttr(blendshape_node, query = True)
     
     alias_map = {}
     
@@ -8826,8 +8450,8 @@ def map_blend_index_to_target_alias(blendshape):
         
     return alias_map
 
-def get_index_at_alias(alias, blendshape):
-    map = map_blend_index_to_target_alias(blendshape)
+def get_index_at_alias(alias, blendshape_node):
+    map = map_blend_index_to_target_alias(blendshape_node)
     
     if alias in map:
         return map[alias]
@@ -8927,11 +8551,11 @@ def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
     return top_group, joints
         
     
-def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape_node = None):
+def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
+    
+    blendshape_node = blendshape
     
     source_mesh_name = source_mesh.split('|')[-1]
-    
-    #import blendshape
     
     if not blendshape_node:
         blendshape_node = 'blendshape_%s' % target_mesh
@@ -8939,9 +8563,6 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape_node = Non
     if cmds.objExists(blendshape_node):
         
         count = cmds.blendShape(blendshape_node, q= True, weightCount = True)
-        
-        #blend_inst = blendshape.BlendShape(blendshape_node)
-        #blend_inst.create_target(source_mesh_name, source_mesh)
         
         cmds.blendShape(blendshape_node, edit=True, tc = False, t=(target_mesh, count+1, source_mesh, 1.0) )
         
@@ -9890,6 +9511,9 @@ def get_controls():
             
             continue
         
+    print found_with_value
+    print found
+        
     if found_with_value:
         found = found_with_value
         
@@ -10286,7 +9910,7 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None):
     
     if switch_control:
         
-        blendshape = cmds.blendShape(curve, new_curve, blend_curve, w = [0,1],n = 'blendShape_%s' % follicle)[0]
+        blendshape_node = cmds.blendShape(curve, new_curve, blend_curve, w = [0,1],n = 'blendShape_%s' % follicle)[0]
         
         if not cmds.objExists('%s.dynamic' % switch_control):
             
@@ -10299,7 +9923,7 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None):
             variable.create()
         
         remap = RemapAttributesToAttribute(switch_control, 'dynamic')
-        remap.create_attributes(blendshape, [curve, new_curve])
+        remap.create_attributes(blendshape_node, [curve, new_curve])
         remap.create()
         """
         variable = MayaNumberVariable('attract')
