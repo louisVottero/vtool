@@ -1005,6 +1005,8 @@ class BasePoseControl(object):
         mesh = self.get_mesh(self.mesh_index)
         target_mesh = self.get_target_mesh(mesh)
         
+        
+        
         if cmds.getAttr('%s.visibility' % target_mesh) == 1:
             if cmds.getAttr('%s.visibility' % mesh) == 1:
                 cmds.setAttr('%s.visibility' % target_mesh, 0)
