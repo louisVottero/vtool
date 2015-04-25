@@ -197,7 +197,12 @@ class TreeWidget(QtGui.QTreeWidget):
         self.itemExpanded.connect(self._item_expanded)
 
         self.setExpandsOnDoubleClick(False)
-        self.setAlternatingRowColors(True)
+        
+        version = util.get_maya_version()
+        
+        if version < 2016:
+            self.setAlternatingRowColors(True)
+            
         self.setSortingEnabled(True)
         
         self.sortByColumn(self.title_text_index, QtCore.Qt.AscendingOrder)

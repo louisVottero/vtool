@@ -440,12 +440,20 @@ def is_in_nuke():
         return False
 
 def get_maya_version():
-    import maya.cmds as cmds
     
-    try:
-        cmds.about(v = True)
-    except:
-        show('Could not get maya version. Script is not running in Maya.')
+    if is_in_maya():
+        import maya.cmds as cmds
+        
+        try:
+            version = cmds.about(v = True)
+            split_version = version.split()
+            version = int(split_version[0])
+            return version
+        except:
+            show('Could not get maya version. Script is not running in Maya.')
+
+    if not is_in_maya():
+        return
 
 def fade_sine(percent_value):
     

@@ -23,7 +23,6 @@ class ComboManager(ui.MayaWindow):
         super(ComboManager, self).__init__()
         
         self.manager = blendshape.BlendshapeManager()
-        self.manager.zero_out()
         self.refresh_combo_list = True
         
         self.shape_widget.tree.manager = self.manager
@@ -160,6 +159,8 @@ class ComboManager(ui.MayaWindow):
     def _add_command(self):
         
         meshes = util.get_selected_meshes()
+        
+        print 'add', meshes
         
         for mesh in meshes:
             self.manager.add_shape(mesh)

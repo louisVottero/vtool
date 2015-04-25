@@ -393,15 +393,20 @@ class BlendshapeManager(object):
     def __init__(self):
         
         self.start_mesh = None
-        self.setup_group = 'setup_shapes'
+        self.setup_group = 'shape_combo'
         self.home = 'home'
         self.blendshape = None
         
         if cmds.objExists(self.setup_group):
             self.start_mesh = self._get_mesh()
             self._get_blendshape()
+            
+        if self.start_mesh:
+            self.setup(self.start_mesh)
 
     def _get_mesh(self):
+        
+        print 'in get mesh', self.setup_group
         
         mesh = util.get_attribute_input( '%s.mesh' % self.setup_group, node_only = True )
         
@@ -460,7 +465,7 @@ class BlendshapeManager(object):
     def setup(self, start_mesh = None):
                         
         if not cmds.objExists(self.setup_group):
-            self.setup_group = cmds.group(em = True, n = 'setup_shapes')
+            self.setup_group = cmds.group(em = True, n = self.setup_group)
         
             util.hide_keyable_attributes(self.setup_group)
                 
@@ -472,6 +477,9 @@ class BlendshapeManager(object):
         
     def zero_out(self):
         
+        if not self.setup_group:
+            return 
+        
         attributes = util.Attributes(self.setup_group)
         variables = attributes.get_variables()
         
@@ -479,6 +487,12 @@ class BlendshapeManager(object):
             variable.set_value(0)
         
     def add_shape(self, mesh):
+        print 'add shape'
+        
+        home = self._get_mesh()
+        
+        if home == mesh:
+            return
         
         blendshape = self._get_blendshape()
         
@@ -513,6 +527,8 @@ class BlendshapeManager(object):
     def get_shapes(self):
         
         blendshape = self._get_blendshape()
+        
+        print 'blendshape!', blendshape
         
         if not blendshape:
             return []
