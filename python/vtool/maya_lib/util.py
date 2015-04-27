@@ -8589,7 +8589,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
     
     source_mesh_name = source_mesh.split('|')[-1]
     
-    bad_blendshape = True
+    bad_blendshape = False
     long_path = None
     
     if not blendshape_node:
@@ -8602,11 +8602,16 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
         target_shapes = get_shapes_in_hierarchy(target_mesh)
         
         if len(shapes) == len(target_shapes):
+                        
+            long_path = cmds.ls(shapes[0], l = True)[0]
             
-            long_path = cmds.ls(shapes[0], l = True)
+            if long_path != target_shapes[0]:
+                
+                bad_blendshape = True
+        
+        if len(shapes) != len(target_shapes):
             
-            if long_path == target_shapes[0]:
-                bad_blendshape = False
+            bad_blendshape = True
         
         long_path = None
         
@@ -8623,6 +8628,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
                     test_shape = '|%s' % shape
                     if not test_shape in target_shape:
                         bad_blendshape = True
+                        
                         break
                     
                 if bad_blendshape:
@@ -8637,13 +8643,20 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
                 cmds.setAttr('%s.%s' % (blendshape_node, source_mesh_name), weight)
             except:
                 pass
-        
+            
+            return
+       
     if bad_blendshape:
         blendshape_node = inc_name(blendshape_node)
         
     if not cmds.objExists(blendshape_node):
         
         cmds.blendShape(source_mesh, target_mesh, tc = False, weight =[0,weight], n = blendshape_node, foc = True)
+        
+    try:
+        cmds.setAttr('%s.%s' % (blendshape_node, source_mesh_name), weight)
+    except:
+        pass
         
     return blendshape_node
     
