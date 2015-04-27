@@ -508,7 +508,11 @@ class IteratePolygonFaces(MayaIterator):
     
     def get_center(self, face_id):
         
-        point = OpenMaya.MPoint()
+        #point = OpenMaya.MPoint()
+        script_util = OpenMaya.MScriptUtil()
+        prev = script_util.asIntPtr()
+        
+        self.api_object.setIndex(face_id, prev)
         
         point = self.api_object.center()
         
@@ -6232,6 +6236,8 @@ def get_shapes_in_hierarchy(transform):
     
     return shapes
 
+
+
 def rename_shapes(transform):
     
     shapes = get_shapes(transform)
@@ -6573,22 +6579,43 @@ def follicle_to_mesh(transform, mesh, u = None, v = None):
     
     return follicle
 
-def create_joints_on_faces(mesh, face_ids = [], follow = True, name = None):
+def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
     
     mesh = get_mesh_shape(mesh)
     
-    if not face_ids:
-        centers = get_face_centers(mesh)
+    centers = []
+    face_ids = []
+     
+    if faces:
+        for face in faces:
+            
+            if type(face) == str or type(face) == unicode:
+                sub_faces = cmds.ls(face, flatten = True)
+                
+                
+                
+                for sub_face in sub_faces:
+                    id_value = vtool.util.get_last_number(sub_face)
+                    
+                    face_ids.append(id_value) 
         
+        if type(face) == int:
+            face_ids.append(face)
+           
     if face_ids:
         centers = []
         
         for face_id in face_ids:
-            center = get_face_center(mesh, face_id)
             
+            center = get_face_center(mesh, face_id)
             centers.append(center)
     
+    if not face_ids:
+        centers = get_face_centers(mesh)
+    
+    
     joints = []
+    follicles = []
     
     for center in centers:
         cmds.select(cl = True)
@@ -6600,10 +6627,15 @@ def create_joints_on_faces(mesh, face_ids = [], follow = True, name = None):
         joints.append(joint)
         
         if follow:
-            follicle_to_mesh(joint, mesh)
+            follicle = follicle_to_mesh(joint, mesh)
+            follicles.append(follicle)
             cmds.makeIdentity(joint, jo = True, apply = True, t = True, r = True, s = True)
     
-    return joints
+    if follicles:
+        return joints, follicles
+    if not follicles:
+        return joints
+    
 
 def follicle_to_surface(transform, surface, u = None, v = None):
     
@@ -8557,19 +8589,57 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
     
     source_mesh_name = source_mesh.split('|')[-1]
     
+    bad_blendshape = True
+    long_path = None
+    
     if not blendshape_node:
         blendshape_node = 'blendshape_%s' % target_mesh
     
     if cmds.objExists(blendshape_node):
         
-        count = cmds.blendShape(blendshape_node, q= True, weightCount = True)
+        shapes = cmds.deformer(blendshape_node, q = True, g = True)
         
-        cmds.blendShape(blendshape_node, edit=True, tc = False, t=(target_mesh, count+1, source_mesh, 1.0) )
+        target_shapes = get_shapes_in_hierarchy(target_mesh)
         
-        try:
-            cmds.setAttr('%s.%s' % (blendshape_node, source_mesh_name), weight)
-        except:
-            pass
+        if len(shapes) == len(target_shapes):
+            
+            long_path = cmds.ls(shapes[0], l = True)
+            
+            if long_path == target_shapes[0]:
+                bad_blendshape = False
+        
+        long_path = None
+        
+        if not bad_blendshape:
+            
+            bad_blendshape = False
+            
+            for target_shape in target_shapes:
+                
+                for shape in shapes:
+                    
+                    long_path = cmds.ls(shape, l = True)
+                    
+                    test_shape = '|%s' % shape
+                    if not test_shape in target_shape:
+                        bad_blendshape = True
+                        break
+                    
+                if bad_blendshape:
+                    break
+    
+        if not bad_blendshape:
+            count = cmds.blendShape(blendshape_node, q= True, weightCount = True)
+            
+            cmds.blendShape(blendshape_node, edit=True, tc = False, t=(target_mesh, count+1, source_mesh, 1.0) )
+            
+            try:
+                cmds.setAttr('%s.%s' % (blendshape_node, source_mesh_name), weight)
+            except:
+                pass
+        
+    if bad_blendshape:
+        blendshape_node = inc_name(blendshape_node)
         
     if not cmds.objExists(blendshape_node):
         
@@ -9510,10 +9580,7 @@ def get_controls():
                     found_with_value.append(transform)
             
             continue
-        
-    print found_with_value
-    print found
-        
+    
     if found_with_value:
         found = found_with_value
         
