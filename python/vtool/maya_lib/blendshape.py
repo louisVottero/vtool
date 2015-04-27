@@ -487,7 +487,6 @@ class BlendshapeManager(object):
             variable.set_value(0)
         
     def add_shape(self, mesh):
-        print '-------------adding shape', mesh
         
         home = self._get_mesh()
         
@@ -503,7 +502,7 @@ class BlendshapeManager(object):
         if not blendshape.is_target(mesh):
             blendshape.create_target(mesh, mesh)
         
-        print 'creating attribute'
+        
         var = util.MayaNumberVariable(mesh)
         var.set_min_value(0)
         var.set_max_value(10)
