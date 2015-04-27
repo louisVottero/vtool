@@ -2349,7 +2349,6 @@ class IkAppendageRig(BufferRig):
         pole_vis.set_variable_type(pole_vis.TYPE_BOOL)
         pole_vis.create(self.btm_control)
         
-        
         twist_var = util.MayaNumberVariable('twist')
         twist_var.create(self.btm_control)
         
