@@ -77,18 +77,19 @@ class ComboManager(ui.MayaWindow):
         self.main_layout.addSpacing(10)
         self.main_layout.addWidget(splitter)
         
-        self.shape_widget.tree.refresh()
+        self.shape_widget.tree.load()
 
     def _get_selected_shapes(self):
         
-        items = self.shape_widget.tree.selectedItems()
+        shape_items = self.shape_widget.tree.selectedItems()
         
-        if not items:
+        
+        if not shape_items:
             return
         
         shapes = []
         
-        for item in items:
+        for item in shape_items:
             name = str(item.text(0))
         
             shapes.append(name)
@@ -114,12 +115,12 @@ class ComboManager(ui.MayaWindow):
                
     def _combo_selection_changed(self):
         
-        items = self.combo_widget.tree.selectedItems()
+        combo_items = self.combo_widget.tree.selectedItems()
         
-        if not items:
+        if not combo_items:
             return
         
-        combo_name = str(items[0].text(0))
+        combo_name = str(combo_items[0].text(0))
         
         shapes = self.manager.get_shapes_in_combo(combo_name)
         
@@ -127,14 +128,13 @@ class ComboManager(ui.MayaWindow):
         self.shape_widget.tree.select_shapes(shapes)
         self.refresh_combo_list = True
         
-        
     def _update_combo_selection(self, shapes):
         
         if not shapes:
             self.combo_widget.tree.clear()
             return
                 
-        combos = self.manager.get_combos(shapes)
+        combos = self.manager.find_possible_combos(shapes)
         
         if not combos:
             self.combo_widget.tree.clear()
@@ -155,22 +155,30 @@ class ComboManager(ui.MayaWindow):
         self.shape_widget.tree.clearSelection()
         #self.manager.zero_out()
         
-        
     def _add_command(self):
         
         meshes = util.get_selected_meshes()
+                
+        print meshes
+                
+        shapes, combos, inbetweens = self.manager.get_shape_and_combo_lists(meshes)
         
-        print 'add', meshes
+        print shapes
+        print combos
         
-        for mesh in meshes:
-            self.manager.add_shape(mesh)
+        for shape in shapes:
+            self.manager.add_shape(shape)
+            
+        for combo in combos:
+            self.manager.add_combo(shape)
         
         mesh = None
         
-        if len(meshes) == 1:
-            mesh = meshes[0]
-        
-        self.shape_widget.tree.refresh(mesh)
+        if meshes:
+            mesh = meshes[-1]
+            self.shape_widget.tree.load(mesh)
+            
+            self.combo_widget.tree.load()
         
 class ShapeWidget(qt_ui.BasicWidget):
     
@@ -247,7 +255,7 @@ class ShapeTree(qt_ui.TreeWidget):
             if item_name in shapes:
                 item.setSelected(True)
         
-    def refresh(self, mesh = None):
+    def load(self, mesh = None):
         
         self.clear()
         
@@ -294,7 +302,12 @@ class ComboWidget(qt_ui.BasicWidget):
 
 class ComboTree(qt_ui.TreeWidget):
     
-    def load(self, combos):
+    def load(self, combos = None):
+        
+        if not combos:
+            manager = blendshape.BlendshapeManager()
+            combos = manager.get_combos()
+        
         
         self.clear()
         

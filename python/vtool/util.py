@@ -450,7 +450,7 @@ def get_maya_version():
             version = int(split_version[0])
             return version
         except:
-            show('Could not get maya version. Script is not running in Maya.')
+            show('Could not get maya version.')
 
     if not is_in_maya():
         return
@@ -850,7 +850,7 @@ def warning(*args):
     show(*args)
 
 
-def get_combos(names, sort = True, one_increment = False):
+def find_possible_combos(names, sort = True, one_increment = False):
         
         if sort:
             names.sort() 
@@ -883,7 +883,7 @@ def get_combos(names, sort = True, one_increment = False):
                             sub_names = names[inc2:]             
                             
                             if len(sub_names) > 1:
-                                found_sub_combos = get_combos(names[inc2:], False, True)                          
+                                found_sub_combos = find_combos(names[inc2:], False, True)                          
                                                                                       
                                 for combo in found_sub_combos:
                                     sub_name_combo = string.join( [names[inc], combo], '_')                              

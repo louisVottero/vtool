@@ -487,7 +487,7 @@ class BlendshapeManager(object):
             variable.set_value(0)
         
     def add_shape(self, mesh):
-        print 'add shape'
+        print '-------------adding shape', mesh
         
         home = self._get_mesh()
         
@@ -501,22 +501,23 @@ class BlendshapeManager(object):
             return
         
         if not blendshape.is_target(mesh):
-        
             blendshape.create_target(mesh, mesh)
-                
-            var = util.MayaNumberVariable(mesh)
-            var.set_min_value(0)
-            var.set_max_value(10)
-            var.set_variable_type('float')
-            var.create(self.setup_group)
-            
-            util.connect_multiply('%s.%s' % (self.setup_group, mesh), '%s.%s' % (blendshape.blendshape, mesh))
+        
+        print 'creating attribute'
+        var = util.MayaNumberVariable(mesh)
+        var.set_min_value(0)
+        var.set_max_value(10)
+        var.set_variable_type('float')
+        var.create(self.setup_group)
+                    
+        util.connect_multiply('%s.%s' % (self.setup_group, mesh), '%s.%s' % (blendshape.blendshape, mesh))
             
         if blendshape.is_target(mesh):
             blendshape.replace_target(mesh, mesh)
     
     def add_combo(self, mesh):
-        pass
+        #will need to get the delta here and do the multiply divide math
+        self.add_shape(mesh)
     
     def set_shape_weight(self, name, value):
         
@@ -528,7 +529,23 @@ class BlendshapeManager(object):
         
         blendshape = self._get_blendshape()
         
-        print 'blendshape!', blendshape
+        if not blendshape:
+            return []
+        
+        found = []
+        
+        for target in blendshape.targets:
+            
+            split_target = target.split('_')
+            
+            if split_target and len(split_target) == 1:
+                found.append(target)
+            
+        return found
+    
+    def get_combos(self):
+        
+        blendshape = self._get_blendshape()
         
         if not blendshape:
             return []
@@ -536,18 +553,43 @@ class BlendshapeManager(object):
         found = []
         
         for target in blendshape.targets:
-            found.append(target)
-        
+            
+            split_target = target.split('_')
+            
+            if split_target and len(split_target) > 1:
+                found.append(target)
+            
         return found
-    
-    def get_combos(self, shapes):
         
-        return vtool.util.get_combos(shapes)
+    
+    def find_possible_combos(self, shapes):
+        
+        return vtool.util.find_possible_combos(shapes)
     
     def get_shapes_in_combo(self, combo_name):
         
         shapes = combo_name.split('_')
         return shapes
+    
+    def get_shape_and_combo_lists(self, meshes):
+        
+        shapes = []
+        combos = []
+        inbetweens = []
+        
+        #inbetweens still needs to be sorted
+        
+        for mesh in meshes:
+            
+            split_shape = mesh.split('_')
+            
+            if len(split_shape) == 1:
+                shapes.append(mesh)
+                
+            if len(split_shape) > 1:
+                combos.append(mesh)
+                
+        return shapes, combos, inbetweens
     
     def remove_shape(self, name):
         
