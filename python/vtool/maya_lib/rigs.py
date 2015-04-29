@@ -2349,7 +2349,6 @@ class IkAppendageRig(BufferRig):
         pole_vis.set_variable_type(pole_vis.TYPE_BOOL)
         pole_vis.create(self.btm_control)
         
-        
         twist_var = util.MayaNumberVariable('twist')
         twist_var.create(self.btm_control)
         
@@ -2368,12 +2367,15 @@ class IkAppendageRig(BufferRig):
         
         xform_group = util.create_xform_group( control.get() )
         
+        follow_group = None
+        
         if self.create_twist:
             
             if not self.pole_follow_transform:
                 follow_group = util.create_follow_group(self.top_control, xform_group)
             if self.pole_follow_transform:
                 follow_group = util.create_follow_group(self.pole_follow_transform, xform_group)
+                
             constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo = True)[0]
             
             constraint_editor = util.ConstraintEditor()
@@ -2381,9 +2383,16 @@ class IkAppendageRig(BufferRig):
             cmds.setAttr('%s.autoTwist' % self.btm_control, 0)
         
         if not self.create_twist:
-            follow_group = util.create_follow_group(self.top_control, xform_group)
+            if self.pole_follow_transform:
+                follow_group = util.create_follow_group(self.pole_follow_transform, xform_group)
+                
+            
+            if not self.pole_follow_transform:
+                follow_group = xform_group
+            #    follow_group = util.create_follow_group(self.top_control, xform_group)
         
-        cmds.parent(follow_group,  self.control_group )
+        if follow_group:
+            cmds.parent(follow_group,  self.control_group )
         
         name = self._get_name()
         
@@ -2457,7 +2466,9 @@ class IkAppendageRig(BufferRig):
         self.create_top_control = bool_value
     
     def set_pole_follow_transform(self, transform):
+        
         self.pole_follow_transform = transform
+        
     
     def create(self):
         super(IkAppendageRig, self).create()

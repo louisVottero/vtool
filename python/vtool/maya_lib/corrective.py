@@ -907,14 +907,25 @@ class PoseBase(object):
         return meshes
         
     def get_target_mesh(self, mesh):
+        
+        long_name = None
+        
         if cmds.objExists('%s.mesh_pose_source' % mesh):
-            mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
+            target_mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
             
-            if not cmds.objExists(mesh):
+            long_name = target_mesh
+            
+            if not cmds.objExists(long_name):
                 
-                mesh = util.get_basename(mesh)
+                target_mesh = util.get_basename(long_name)
                 
-        return mesh
+                if cmds.objExists(target_mesh):
+                
+                    long_name = cmds.ls(target_mesh, l = True)[0]
+                
+                    cmds.setAttr('%s.mesh_pose_source' % mesh, long_name, type = 'string')
+                
+        return long_name
         
     def get_target_mesh_index(self, target_mesh):
         
