@@ -101,6 +101,9 @@ class BasicWindow(QtGui.QMainWindow):
         main_widget = QtGui.QWidget()
         
         self.main_layout = self._define_main_layout()
+        
+        util.show('Main layout: %s' % self.main_layout)
+        
         main_widget.setLayout(self.main_layout)
         
         self.setCentralWidget( main_widget )
@@ -277,7 +280,6 @@ class TreeWidget(QtGui.QTreeWidget):
     
         if not current_item:        
             self._emit_item_click(current_item)
-          
         
     def _emit_item_click(self, item):
         
@@ -355,7 +357,6 @@ class TreeWidget(QtGui.QTreeWidget):
         return item
     
     def _item_rename_valid(self, old_name, item):
-        
         
         new_name = item.text(self.title_text_index)
         
@@ -2167,6 +2168,16 @@ def critical(message, parent = None):
     message_box = QtGui.QMessageBox(parent)
     
     message_box.critical(parent, 'Critical Error', message)
+    
+def warning(message, parent = None):
+    
+    message_box = QtGui.QMessageBox(parent)
+    message_box.warning(parent, 'Warning', message)
+
+def about(message, parent = None):
+    
+    message_box = QtGui.QMessageBox(parent)
+    message_box.about(parent, 'About', message)
 
 def get_pick(list, text_message, parent = None):
     

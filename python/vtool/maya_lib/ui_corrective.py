@@ -231,9 +231,13 @@ class BaseTreeWidget(qt_ui.TreeWidget):
     pose_renamed = qt_ui.create_signal(object)
     
     def __init__(self):
+        
+        self.edit_state = False
         super(BaseTreeWidget, self).__init__()
         self.setSortingEnabled(True)
         self.setSelectionMode(self.SingleSelection)
+        
+        
         
         self.text_edit = False
         
@@ -299,28 +303,23 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         if state:
             self._item_renamed(item)
         if not state:
-            
             item.setText(0, self.old_name)
             
         self.pose_renamed.emit(item.text(0))
+        self.resizeColumnToContents(0)
         
     def _item_renamed(self, item):    
         
         new_name = item.text(0)
         
-        new_name = self.rename_pose(self.old_name, new_name)
+        new_name = corrective.PoseManager().rename_pose(str(self.old_name), str(new_name))
+        
         item.setText(0, new_name)
-    
+
 
     def refresh(self):
         self._populate_list()
         
-    def rename_pose(self, pose_name, new_name):
-        
-        self.last_selection = None
-        
-        return corrective.PoseManager().rename_pose(str(pose_name), str(new_name))
-
     def view_mesh(self):
         current_str = self.pose_widget.get_current_mesh()
         pose_name = self._current_pose()
@@ -339,7 +338,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         if not pose_name:
             return
         
-        pose = corrective.PoseControl()
+        pose = corrective.PoseCone()
         pose.set_pose(pose_name)
         pose.set_mesh_index(index)
         
@@ -374,7 +373,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         if not pose_name:
             return
         
-        pose = corrective.PoseControl()
+        pose = corrective.PoseCone()
         pose.set_pose(pose_name)
         
         pose.set_parent(parent)
@@ -395,7 +394,10 @@ class PoseTreeWidget(BaseTreeWidget):
         self.item_context = []
         
         super(PoseTreeWidget, self).__init__()
-        self.setHeaderLabels(['pose'])
+        self.setHeaderLabels(['pose', 'type'])
+       
+        self.header().setStretchLastSection(False)
+        self.header().setResizeMode(0, self.header().Stretch)
         
         self.last_selection = []
     
@@ -431,8 +433,7 @@ class PoseTreeWidget(BaseTreeWidget):
         if not item:
             for item in self.item_context:
                 item.setVisible(False)
-        
-        
+            
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
         
     def _create_context_menu(self):
@@ -443,6 +444,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.create_no_reader = pose_menu.addAction('No Reader')
         self.create_cone = pose_menu.addAction('Cone')
+        self.create_combo = pose_menu.addAction('Combo')
         #self.create_rbf = pose_menu.addAction('RBF')
         self.context_menu.addSeparator()
         self.rename_action = self.context_menu.addAction('Rename')
@@ -467,6 +469,8 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.create_cone.triggered.connect(self.create_cone_pose)
         self.create_no_reader.triggered.connect(self.create_no_reader_pose)
+        self.create_combo.triggered.connect(self.create_combo_pose)
+        
         self.rename_action.triggered.connect(self._rename_pose)
         self.delete_action.triggered.connect(self.delete_pose)
         
@@ -477,20 +481,20 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.select_blend_action.triggered.connect(self._select_blend)
         
-        
         self.refresh_action.triggered.connect(self._populate_list)
     
     def _add_item(self, pose):
         
-        
         item = QtGui.QTreeWidgetItem()
+        item.setSizeHint(0, QtCore.QSize(100, 30))
         item.setText(0, pose)
-        item.setSizeHint(0, QtCore.QSize(100,20))
+        
+        if cmds.objExists('%s.type' % pose):
+            type_name = cmds.getAttr('%s.type' % pose)
+            item.setText(1, type_name)
+        
         self.addTopLevelItem(item)
-            
-        #item.setSelected(True)
-        #self.setCurrentItem(item)
-    
+        
     def _populate_list(self):
         
         self.clear()
@@ -552,7 +556,7 @@ class PoseTreeWidget(BaseTreeWidget):
         if not name:
             return
         
-        pose_inst = corrective.PoseControl()
+        pose_inst = corrective.PoseCone()
         pose_inst.set_pose(name)
         
         blend = pose_inst.get_blendshape()
@@ -595,7 +599,10 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self._add_item(pose)
         
-    
+    def create_combo_pose(self, name = None):
+        qt_ui.about('Combo pose not yet implemented. Coming soon...', self)
+        pass
+        
     def mirror_pose(self):
         
         pose = self._current_pose()
@@ -648,33 +655,7 @@ class PoseTreeWidget(BaseTreeWidget):
         cmds.setAttr('%s.maxTwist' % poses[-1], twist)
         cmds.setAttr('%s.twistOffOn' % poses[-1], twist_on)
         
-class ComboTreeWidget(BaseTreeWidget):
-    def __init__(self):
-        super(ComboTreeWidget, self).__init__()
-        self.setHeaderLabels(['combo'])
-        
-class PoseTreeItem(QtGui.QTreeWidgetItem):
-    def __init__(self, name):
-        super(PoseTreeItem, self).__init__()
-        
-        self.pose = None
-        
-        self.setText(0, name)
-        
-        self.setSizeHint(30,100)
-        
-    def _rename(self, new_name):
-        
-        if self.pose.rename(new_name):
-            return self.pose.pose_control
-        
-    def load_pose(self, pose):
-        if not corrective.PoseControl().is_a_pose(pose):
-            return
-    
-        #self.pose = util.PoseControl()
-        #self.pose.set_pose(pose)
-        #self.pose.select()
+
        
 class PoseWidget(qt_ui.BasicWidget):
 
@@ -691,34 +672,6 @@ class PoseWidget(qt_ui.BasicWidget):
         layout.setAlignment(QtCore.Qt.AlignRight)
         return layout
     
-    """
-    def _button_mesh(self):
-        self.pose_mesh.emit()
-
-    def _pose_mirror(self):
-        self.pose_mirror.emit()
-        
-    def _pose_mesh(self):
-        self.pose_mesh.emit()
-        
-    def _axis_change(self, value):
-        self.axis_change.emit(value)
-        
-    def _mesh_change(self, value):
-        self.mesh_change.emit(value)
-        
-    def _value_changed(self, value1, value2, value3, value4):
-        self.value_changed.emit(value1, value2, value3, value4)
-        
-    def _parent_changed(self, parent):
-        self.parent_changed.emit(parent)
-        
-    def _pose_enable_changed(self, value):
-        self.pose_enable_changed.emit(value)
-
-    def update_meshes(self, meshes, index):
-        self.mesh_widget.update_meshes(meshes, index)
-    """    
     def set_pose(self, pose_name):
         
         if not pose_name:
@@ -813,7 +766,7 @@ class MeshWidget(qt_ui.BasicWidget):
         
         if not current_meshes:
             current_meshes = []
-              
+            
         pose_name = self.pose_name
             
         if not pose_name:
@@ -875,6 +828,9 @@ class MeshWidget(qt_ui.BasicWidget):
                 
                 index = corrective.PoseManager().get_mesh_index(pose_name, mesh)
                 
+                if index == None:
+                    continue
+                
                 item = self.mesh_list.item(index)
                 if item:
                     item.setSelected(True)
@@ -896,7 +852,6 @@ class MeshWidget(qt_ui.BasicWidget):
         
     def _item_selected(self):
         
-        
         items = self.mesh_list.selectedItems()
         
         cmds.select(cl = True)
@@ -910,7 +865,7 @@ class MeshWidget(qt_ui.BasicWidget):
         for mesh in meshes:
         
             item = QtGui.QListWidgetItem()
-            item.setSizeHint(QtCore.QSize(0,30))
+            item.setSizeHint(QtCore.QSize(0,20))
             basename = util.get_basename(mesh)
             item.setText(basename)
             item.longname = mesh
@@ -920,9 +875,12 @@ class MeshWidget(qt_ui.BasicWidget):
                 item.setSelected(True)
            
             
-        item = self.mesh_list.item(index)
-        if item:
-            item.setSelected(True)
+        
+        if not added_meshes:   
+            
+            item = self.mesh_list.item(index)
+            if item:
+                item.setSelected(True)
             
             
     def set_pose(self, pose_name):
@@ -938,7 +896,7 @@ class MeshWidget(qt_ui.BasicWidget):
             pose_type = 'cone'
 
         if pose_type == 'cone':
-            self.pose_class = corrective.PoseControl()
+            self.pose_class = corrective.PoseCone()
         if pose_type == 'no reader':
             self.pose_class = corrective.PoseNoReader()
 
@@ -964,13 +922,21 @@ class SculptWidget(qt_ui.BasicWidget):
         return QtGui.QVBoxLayout()
     
     def _button_sculpt(self):
-        self.mesh_widget.add_mesh()
-        self.sculpted_mesh.emit()
+        try:
+            self.button_sculpt.setDisabled(True)
+            self.mesh_widget.add_mesh()
+            self.sculpted_mesh.emit()
+            self.button_sculpt.setEnabled(True)
+        except:
+            self.button_sculpt.setEnabled(True)
 
     def _button_mirror(self):
-        self.button_mirror.setDisabled(True)
-        self.pose_mirror.emit()
-        self.button_mirror.setEnabled(True)
+        try:
+            self.button_mirror.setDisabled(True)
+            self.pose_mirror.emit()
+            self.button_mirror.setEnabled(True)
+        except:
+            self.button_mirror.setEnabled(True)
     
     def _build_widgets(self):
         
@@ -984,9 +950,8 @@ class SculptWidget(qt_ui.BasicWidget):
         
         self.slider.valueChanged.connect(self._pose_enable)
         
-        button_sculpt = QtGui.QPushButton('Sculpt')
-        
-        button_sculpt.setMinimumWidth(100)
+        self.button_sculpt = QtGui.QPushButton('Sculpt')
+        self.button_sculpt.setMinimumWidth(100)
 
         button_mirror = QtGui.QPushButton('Mirror')
         button_mirror.setMaximumWidth(100)
@@ -995,12 +960,12 @@ class SculptWidget(qt_ui.BasicWidget):
         self.button_mirror = button_mirror
         
         v_layout = QtGui.QHBoxLayout()
-        v_layout.addWidget(button_sculpt)
+        v_layout.addWidget(self.button_sculpt)
         v_layout.addSpacing(5)
         v_layout.addWidget(self.slider)
         v_layout.addSpacing(5)
 
-        button_sculpt.clicked.connect(self._button_sculpt)
+        self.button_sculpt.clicked.connect(self._button_sculpt)
         
         self.mesh_widget = MeshWidget()
 
@@ -1274,7 +1239,7 @@ class PoseConeWidget(PoseBaseWidget):
 
     def _get_parent(self):
         
-        pose_inst = corrective.PoseControl()
+        pose_inst = corrective.PoseCone()
         pose_inst.set_pose(self.pose)
         parent = pose_inst.get_parent()
         
@@ -1315,7 +1280,7 @@ class PoseConeWidget(PoseBaseWidget):
         
         pose_name = str(self.pose)
         
-        pose = corrective.PoseControl()
+        pose = corrective.PoseCone()
         pose.set_pose(pose_name)
         pose.set_axis(string)
         
@@ -1326,7 +1291,7 @@ class PoseConeWidget(PoseBaseWidget):
         if not self.pose:
             return
         
-        pose = corrective.PoseControl()
+        pose = corrective.PoseCone()
         pose.set_pose(self.pose)
         
         pose.set_parent(parent_name)
@@ -1335,4 +1300,5 @@ class PoseConeWidget(PoseBaseWidget):
         value = value*100
         self.slider.setValue(value)
     
-        
+class PoseComboWidget(PoseBaseWidget):
+    pass

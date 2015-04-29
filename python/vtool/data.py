@@ -450,8 +450,8 @@ class SkinWeightData(MayaCustomData):
             
             mesh = folder
             
-            if not maya_lib.util.is_a_mesh(mesh):
-                continue
+            #if not maya_lib.util.is_a_mesh(mesh):
+            #    continue
             
             if not cmds.objExists(mesh):
                 continue

@@ -9,9 +9,7 @@ import vtool.util
 
         
 class PoseManager(object):
-    
 
-    
     def __init__(self):
         self.poses = []
         
@@ -32,7 +30,7 @@ class PoseManager(object):
     
     def is_pose(self, name):
         
-        if BasePoseControl().is_a_pose(name):
+        if PoseBase().is_a_pose(name):
             return True
         
         return False
@@ -46,7 +44,7 @@ class PoseManager(object):
             pose_type = 'cone'
 
         if pose_type == 'cone':
-            pose = PoseControl()
+            pose = PoseCone()
             
         if pose_type == 'no reader':
             pose = PoseNoReader()
@@ -151,7 +149,7 @@ class PoseManager(object):
             
             name = 'pose_%s' % joint
         
-        pose = PoseControl(selection[0], name)
+        pose = PoseCone(selection[0], name)
         pose_control = pose.create()
         
         self.pose_control = pose_control
@@ -160,19 +158,6 @@ class PoseManager(object):
 
     @util.undo_chunk
     def create_no_reader_pose(self, name = None):
-        #selection = cmds.ls(sl = True, l = True)
-        
-        #if not selection:
-        #    return
-        
-        #if not cmds.nodeType(selection[0]) == 'joint' or not len(selection):
-        #    return
-        
-        #if not name:
-        #    joint = selection[0].split('|')
-        #    joint = joint[-1]
-            
-        #    name = 'pose_%s' % joint
         
         name = util.inc_name('pose_no_reader_1')
         
@@ -293,14 +278,14 @@ class PoseManager(object):
         
         return mirror        
 
-class BasePoseControl(object):
+class PoseBase(object):
     def __init__(self, description = 'pose'):
         
         self.pose_control = None
 
         if description:
             description = description.replace(' ', '_')
-
+            
         self.description = description
 
         self.scale = 1
@@ -411,6 +396,7 @@ class BasePoseControl(object):
         
         messages = self._get_mesh_message_attributes()
         
+        
         index = self.get_mesh_index(mesh)
         
         if index != None:
@@ -418,7 +404,9 @@ class BasePoseControl(object):
         
         inc = len(messages) + 1
         
-        self._connect_node(mesh, 'mesh', inc)       
+        empty_index = self._get_empty_mesh_message_index()
+        
+        self._connect_node(mesh, 'mesh', empty_index)       
         
 
     def _multiply_weight(self):
@@ -448,6 +436,21 @@ class BasePoseControl(object):
                 
         return messages
         
+    def _get_empty_mesh_message_index(self):
+        messages = self._get_mesh_message_attributes()
+        
+        inc = 1
+        for message in messages:
+            
+            message_input = util.get_attribute_input('%s.%s' % (self.pose_control, message))
+            
+            if not message_input:
+                break
+            
+            inc+=1
+        
+        return inc
+    
     def _get_mesh_count(self):
         attrs = self._get_mesh_message_attributes()
         
@@ -545,7 +548,7 @@ class BasePoseControl(object):
         pose = None
         
         if self._pose_type() == 'cone':
-            pose = PoseControl()
+            pose = PoseCone()
             
         if self._pose_type() == 'no reader':
             pose = PoseNoReader()
@@ -559,10 +562,6 @@ class BasePoseControl(object):
         
         cmds.addAttr(control, ln = 'description', dt = 'string')
         cmds.setAttr('%s.description' % control, self.description, type = 'string')
-        
-        #cmds.addAttr(control, ln = 'targetName', dt = 'string')
-        
-        
         
         cmds.addAttr(control, ln = 'control_scale', at = 'float', dv = 1)
         
@@ -782,6 +781,8 @@ class BasePoseControl(object):
         
     def rename(self, description):
         
+        description = util.inc_name(description)
+        
         meshes = self.get_target_meshes()
         
         old_description = self.description
@@ -793,6 +794,7 @@ class BasePoseControl(object):
                 blend = blendshape.BlendShape(blendshape_node)
                 blend.rename_target(old_description, description)
 
+        
         self._set_description(description)
         
         self._rename_nodes()
@@ -814,9 +816,6 @@ class BasePoseControl(object):
         
         store = util.StoreControlData(self.pose_control)
         store.eval_data()
-        
-
-    
         
     #--- mesh
       
@@ -1005,7 +1004,7 @@ class BasePoseControl(object):
         mesh = self.get_mesh(self.mesh_index)
         target_mesh = self.get_target_mesh(mesh)
         
-        
+        print mesh, target_mesh
         
         if cmds.getAttr('%s.visibility' % target_mesh) == 1:
             if cmds.getAttr('%s.visibility' % mesh) == 1:
@@ -1241,7 +1240,7 @@ class BasePoseControl(object):
         
         return cmds.getAttr('%s.inbetweenWeight' % self.pose_control)
 
-class PoseNoReader(BasePoseControl):
+class PoseNoReader(PoseBase):
     
     def _pose_type(self):
         return 'no reader'
@@ -1373,8 +1372,6 @@ class PoseNoReader(BasePoseControl):
     
     def set_input(self, attribute):
         
-        if attribute == 'multiplyDivide_pose_no_reader_1.outputX':
-            raise
         
         self.weight_input = attribute
         
@@ -1475,10 +1472,10 @@ class PoseNoReader(BasePoseControl):
         return other_pose_instance.pose_control
     
 
-class PoseControl(BasePoseControl):
+class PoseCone(PoseBase):
     def __init__(self, transform = None, description = 'pose'):
                 
-        super(PoseControl, self).__init__(description)
+        super(PoseCone, self).__init__(description)
         
         if transform:
             transform = transform.replace(' ', '_')
@@ -1533,7 +1530,7 @@ class PoseControl(BasePoseControl):
             return [0,0,1]
         
     def _create_pose_control(self):
-        pose_control = super(PoseControl, self)._create_pose_control()
+        pose_control = super(PoseCone, self)._create_pose_control()
          
         self._position_control(pose_control)
         
@@ -1587,7 +1584,7 @@ class PoseControl(BasePoseControl):
                 cmds.setAttr('%s.%s%s' % (self.pose_control, attribute, a), l = bool_value)
         
     def _create_attributes(self, control):
-        super(PoseControl, self)._create_attributes(control)
+        super(PoseCone, self)._create_attributes(control)
     
         cmds.addAttr(control, ln = 'translation', at = 'double', k = True, dv = 1)
         cmds.addAttr(control, ln = 'rotation', at = 'double', k = True, dv = 1)
@@ -1889,7 +1886,7 @@ class PoseControl(BasePoseControl):
         self.set_parent(parent)
     
     def create(self):
-        pose_control = super(PoseControl, self).create()
+        pose_control = super(PoseCone, self).create()
         
         self._create_pose_math(self.transform, pose_control)
         self._multiply_weight()
@@ -1899,7 +1896,7 @@ class PoseControl(BasePoseControl):
         return pose_control
     
     def visibility_off(self, mesh = None, view_only = False):
-        super(PoseControl, self).visibility_off(mesh, view_only)
+        super(PoseCone, self).visibility_off(mesh, view_only)
     
     def mirror(self):
         
@@ -1961,4 +1958,5 @@ class PoseControl(BasePoseControl):
         
         return other_pose_instance.pose_control
                  
-                 
+class PoseCombo(PoseBase):
+    pass

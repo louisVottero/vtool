@@ -4792,8 +4792,6 @@ class EnvelopeHistory(object):
     
     def turn_off(self):
         
-        
-        
         for history in self.history:
             
             connection = self.envelope_connection[history]

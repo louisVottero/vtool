@@ -23,6 +23,39 @@ def try_pass(function):
                      
     return wrapper
 
+#--- query
+
+def is_in_maya():
+    try:
+        import maya.cmds as cmds
+        return True
+    except:
+        return False
+    
+def is_in_nuke():
+    try:
+        import nuke
+        return True
+    except:
+        return False
+
+def get_maya_version():
+    
+    if is_in_maya():
+        import maya.cmds as cmds
+        
+        try:
+            version = cmds.about(v = True)
+            split_version = version.split()
+            version = int(split_version[0])
+            return version
+        except:
+            show('Could not get maya version.')
+
+    if not is_in_maya():
+        return
+
+
 class StopWatch(object):
     def __init__(self):
         self.time = None
@@ -38,6 +71,8 @@ class StopWatch(object):
         
         show('end timer: %s seconds' % seconds)
         
+
+#--- math
 
 class VectorBase(object):
     pass
@@ -302,6 +337,269 @@ class Part(object):
     
     
 
+
+class Hierarchy(object):
+    
+    def __init__(self, top_of_hierarchy):
+        self.top_of_hierarchy = top_of_hierarchy
+        self.generations = []
+        self.branches = []
+        
+        self._get_hierarchy()
+    
+    def _get_hierarachy(self):
+        self.generations =[]
+        self.branches = []
+    
+    def create_branch(self, name):
+        
+        branch = Branch(name)
+        self.branches.append(branch)
+        
+        return branch
+    
+    def get_generation(self, inc):
+        pass
+    
+
+
+class Branch(object):
+    
+    def __init__(self, name):
+        self.name = name
+        self.parent = ''
+        self.children = []        
+        
+    def add_child(self, branch):
+        self.children.append(branch)
+    
+    def set_children(self, branch_list):
+        self.children = branch_list
+        
+    def set_parent(self, branch):
+        self.parent = branch
+        
+
+#def hard_light_two_percents(percent1, percent2):
+#    
+#    value = percent1 < 128 ? ( 2 * percent2 * percent1 ) / 255 
+#                 : 255 - ( ( 2 * ( 255 - percent2 ) * ( 255 - percent1 ) ) / 255
+
+def fade_sine(percent_value):
+    
+    input = math.pi * percent_value
+    
+    return math.sin(input)
+
+def fade_sigmoid(percent_value):
+    
+    if percent_value == 0:
+        return 0
+    
+    if percent_value == 1:
+        return 1
+    
+    input = percent_value * 10 + 1
+    
+    return ( 2 / (1 + (math.e**(-0.70258*input)) ) ) -1 
+    
+
+def get_distance(vector1, vector2):
+    
+    vector1 = Vector(vector1)
+    vector2 = Vector(vector2)
+    
+    vector = vector1 - vector2
+    
+    dist = vector()
+    
+    return math.sqrt( (dist[0] * dist[0]) + (dist[1] * dist[1]) + (dist[2] * dist[2]) )
+
+def get_distance_2D(vector1_2D, vector2_2D):
+    
+    dist = vector1_2D[0] - vector2_2D[0], vector1_2D[1] - vector2_2D[1]
+
+    return get_magnitude_2D(dist)    
+    
+def get_magnitude_2D(vector_2D):
+    return math.sqrt( (vector_2D[0] * vector_2D[0]) + (vector_2D[1] * vector_2D[1]) )
+
+def get_dot_product(vector1, vector2):
+    return (vector1.x * vector2.x) + (vector1.y * vector2.y) + (vector1.z * vector2.z)
+
+def get_dot_product_2D(vector1_2D, vector2_2D):
+    
+    return (vector1_2D.x * vector2_2D.x) + (vector1_2D.y * vector2_2D.y)
+    
+def get_average(numbers):
+    
+    total = 0.0
+    
+    for number in numbers:
+        total += number
+        
+    return total/ len(numbers)
+
+
+def get_midpoint(vector1, vector2):
+    
+    values = []
+    
+    for inc in range(0, 3):
+        values.append( get_average( [vector1[inc], vector2[inc] ]) )
+    
+    return values
+
+def get_inbetween_vector(vector1, vector2, percent = 0.5):
+    vector1 = Vector(vector1)
+    vector2 = Vector(vector2)
+    percent = 1 - percent
+
+    vector = ((vector1 - vector2) * percent) + vector2
+    
+    return vector()
+
+def get_simple_center_vector(list_of_vectors):
+    
+    #needs to be tested
+    
+    vector_count = list_of_vectors
+    
+    vector_sum = Vector(0,0,0)
+    
+    for vector in list_of_vectors:
+        new_vector = Vector(*vector)
+        
+        vector_sum += new_vector
+        
+    simple_center_vector = vector_sum/vector_count
+    
+    return simple_center_vector
+
+def convert_to_sequence(variable, sequence_type = list):
+    if not type(variable) == sequence_type:
+        if sequence_type == list:
+            return [variable]
+        if sequence_type == tuple:
+            return (variable)
+    
+    return variable
+
+def line_side(start_vector, end_vector, position_vector):
+    return ((end_vector.x - start_vector.x)*(position_vector.y - start_vector.y) - (end_vector.y - start_vector.y)*(position_vector.x - start_vector.x)) > 0
+
+
+def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp = True):
+    
+    start_to_position = position_vector - start_vector
+    start_to_end = end_vector - start_vector
+    
+    start_to_end_value = start_to_end.x*start_to_end.x + start_to_end.y*start_to_end.y
+    other_value = start_to_position.x*start_to_end.x + start_to_position.y*start_to_end.y
+    
+    percent = float(other_value)/float(start_to_end_value)
+
+    if clamp:
+        
+        if percent < 0.0:
+            percent = 0.0
+        if percent > 1:
+            percent = 1.0
+            
+    return percent
+            
+def closest_point_to_line_2D(start_vector, end_vector, position_vector, clamp = True, return_percent = False):
+    
+    start_to_position = position_vector - start_vector
+    start_to_end = end_vector - start_vector
+    
+    start_to_end_value = start_to_end.x*start_to_end.x + start_to_end.y*start_to_end.y
+    other_value = start_to_position.x*start_to_end.x + start_to_position.y*start_to_end.y
+    
+    percent = float(other_value)/float(start_to_end_value)
+
+    if clamp:
+        
+        if percent < 0.0:
+            percent = 0.0
+        if percent > 1:
+            percent = 1.0    
+
+    closest_vector = start_vector + start_to_end * percent
+
+    if not return_percent:
+        return closest_vector
+    if return_percent:
+        return closest_vector, percent 
+
+
+
+#--- time
+
+def convert_number_to_month(month_int):
+    
+    months = ['January', 
+              'February', 
+              'March', 
+              'April', 
+              'May', 
+              'June', 
+              'July', 
+              'August',
+              'September',
+              'October',
+              'November',
+              'December']
+    
+    month_int -= 1
+    
+    if month_int < 0 or month_int > 11:
+        return
+    
+    return months[month_int]
+
+def get_current_time(date_and_time = True):
+    
+    mtime = time.time() 
+    
+    date_value = datetime.datetime.fromtimestamp(mtime)
+    
+    hour = str(date_value.hour)
+    minute = str(date_value.minute)
+    second = date_value.second
+    
+    second = str( int(second) )
+    
+    if len(hour) == 1:
+        hour = '0'+hour
+    if len(minute) == 1:
+        minute = '0'+minute
+    if len(second) == 1:
+        second = second + '0'
+
+    time_value = '%s:%s:%s' % (hour,minute,second)
+
+    if not date_and_time:
+        return time_value
+
+    if date_and_time:
+        
+        year = date_value.year
+        month = date_value.month
+        day = date_value.day
+        return '%s-%s-%s %s' % (year,month,day,time_value)
+
+def get_current_date():
+    mtime = time.time() 
+    date_value = datetime.datetime.fromtimestamp(mtime)
+    year = date_value.year
+    month = date_value.month
+    day = date_value.day
+    
+    return '%s-%s-%s' % (year,month,day)
+
+#--- strings
+
 class FindUniqueString(object):
     
     def __init__(self, test_string):
@@ -377,102 +675,6 @@ class FindUniqueString(object):
     def get(self):
         return self._search()
 
-class Hierarchy(object):
-    
-    def __init__(self, top_of_hierarchy):
-        self.top_of_hierarchy = top_of_hierarchy
-        self.generations = []
-        self.branches = []
-        
-        self._get_hierarchy()
-    
-    def _get_hierarachy(self):
-        self.generations =[]
-        self.branches = []
-    
-    def create_branch(self, name):
-        
-        branch = Branch(name)
-        self.branches.append(branch)
-        
-        return branch
-    
-    def get_generation(self, inc):
-        pass
-    
-
-
-class Branch(object):
-    
-    def __init__(self, name):
-        self.name = name
-        self.parent = ''
-        self.children = []        
-        
-    def add_child(self, branch):
-        self.children.append(branch)
-    
-    def set_children(self, branch_list):
-        self.children = branch_list
-        
-    def set_parent(self, branch):
-        self.parent = branch
-        
-
-#def hard_light_two_percents(percent1, percent2):
-#    
-#    value = percent1 < 128 ? ( 2 * percent2 * percent1 ) / 255 
-#                 : 255 - ( ( 2 * ( 255 - percent2 ) * ( 255 - percent1 ) ) / 255
-
-
-def is_in_maya():
-    try:
-        import maya.cmds as cmds
-        return True
-    except:
-        return False
-    
-def is_in_nuke():
-    try:
-        import nuke
-        return True
-    except:
-        return False
-
-def get_maya_version():
-    
-    if is_in_maya():
-        import maya.cmds as cmds
-        
-        try:
-            version = cmds.about(v = True)
-            split_version = version.split()
-            version = int(split_version[0])
-            return version
-        except:
-            show('Could not get maya version.')
-
-    if not is_in_maya():
-        return
-
-def fade_sine(percent_value):
-    
-    input = math.pi * percent_value
-    
-    return math.sin(input)
-
-def fade_sigmoid(percent_value):
-    
-    if percent_value == 0:
-        return 0
-    
-    if percent_value == 1:
-        return 1
-    
-    input = percent_value * 10 + 1
-    
-    return ( 2 / (1 + (math.e**(-0.70258*input)) ) ) -1 
-    
 
 def regular_expression_search(expression_code, input_string):
     
@@ -612,194 +814,6 @@ def replace_string(string_value, replace_string, start, end):
     
     return first_part + replace_string + second_part
 
-def get_distance(vector1, vector2):
-    
-    vector1 = Vector(vector1)
-    vector2 = Vector(vector2)
-    
-    vector = vector1 - vector2
-    
-    dist = vector()
-    
-    return math.sqrt( (dist[0] * dist[0]) + (dist[1] * dist[1]) + (dist[2] * dist[2]) )
-
-def get_distance_2D(vector1_2D, vector2_2D):
-    
-    dist = vector1_2D[0] - vector2_2D[0], vector1_2D[1] - vector2_2D[1]
-
-    return get_magnitude_2D(dist)    
-    
-def get_magnitude_2D(vector_2D):
-    return math.sqrt( (vector_2D[0] * vector_2D[0]) + (vector_2D[1] * vector_2D[1]) )
-
-def get_dot_product(vector1, vector2):
-    return (vector1.x * vector2.x) + (vector1.y * vector2.y) + (vector1.z * vector2.z)
-
-def get_dot_product_2D(vector1_2D, vector2_2D):
-    
-    return (vector1_2D.x * vector2_2D.x) + (vector1_2D.y * vector2_2D.y)
-    
-def get_average(numbers):
-    
-    total = 0.0
-    
-    for number in numbers:
-        total += number
-        
-    return total/ len(numbers)
-
-
-def get_midpoint(vector1, vector2):
-    
-    values = []
-    
-    for inc in range(0, 3):
-        values.append( get_average( [vector1[inc], vector2[inc] ]) )
-    
-    return values
-
-def get_inbetween_vector(vector1, vector2, percent = 0.5):
-    vector1 = Vector(vector1)
-    vector2 = Vector(vector2)
-    percent = 1 - percent
-
-    vector = ((vector1 - vector2) * percent) + vector2
-    
-    return vector()
-
-def get_simple_center_vector(list_of_vectors):
-    
-    #needs to be tested
-    
-    vector_count = list_of_vectors
-    
-    vector_sum = Vector(0,0,0)
-    
-    for vector in list_of_vectors:
-        new_vector = Vector(*vector)
-        
-        vector_sum += new_vector
-        
-    simple_center_vector = vector_sum/vector_count
-    
-    return simple_center_vector
-
-def convert_to_sequence(variable, sequence_type = list):
-    if not type(variable) == sequence_type:
-        if sequence_type == list:
-            return [variable]
-        if sequence_type == tuple:
-            return (variable)
-    
-    return variable
-
-def convert_number_to_month(month_int):
-    
-    months = ['January', 
-              'February', 
-              'March', 
-              'April', 
-              'May', 
-              'June', 
-              'July', 
-              'August',
-              'September',
-              'October',
-              'November',
-              'December']
-    
-    month_int -= 1
-    
-    if month_int < 0 or month_int > 11:
-        return
-    
-    return months[month_int]
-
-def line_side(start_vector, end_vector, position_vector):
-    return ((end_vector.x - start_vector.x)*(position_vector.y - start_vector.y) - (end_vector.y - start_vector.y)*(position_vector.x - start_vector.x)) > 0
-
-def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp = True):
-    
-    start_to_position = position_vector - start_vector
-    start_to_end = end_vector - start_vector
-    
-    start_to_end_value = start_to_end.x*start_to_end.x + start_to_end.y*start_to_end.y
-    other_value = start_to_position.x*start_to_end.x + start_to_position.y*start_to_end.y
-    
-    percent = float(other_value)/float(start_to_end_value)
-
-    if clamp:
-        
-        if percent < 0.0:
-            percent = 0.0
-        if percent > 1:
-            percent = 1.0
-            
-    return percent
-            
-def closest_point_to_line_2D(start_vector, end_vector, position_vector, clamp = True, return_percent = False):
-    
-    start_to_position = position_vector - start_vector
-    start_to_end = end_vector - start_vector
-    
-    start_to_end_value = start_to_end.x*start_to_end.x + start_to_end.y*start_to_end.y
-    other_value = start_to_position.x*start_to_end.x + start_to_position.y*start_to_end.y
-    
-    percent = float(other_value)/float(start_to_end_value)
-
-    if clamp:
-        
-        if percent < 0.0:
-            percent = 0.0
-        if percent > 1:
-            percent = 1.0    
-
-    closest_vector = start_vector + start_to_end * percent
-
-    if not return_percent:
-        return closest_vector
-    if return_percent:
-        return closest_vector, percent 
-
-def get_current_time(date_and_time = True):
-    
-    mtime = time.time() 
-    
-    date_value = datetime.datetime.fromtimestamp(mtime)
-    
-    hour = str(date_value.hour)
-    minute = str(date_value.minute)
-    second = date_value.second
-    
-    second = str( int(second) )
-    
-    if len(hour) == 1:
-        hour = '0'+hour
-    if len(minute) == 1:
-        minute = '0'+minute
-    if len(second) == 1:
-        second = second + '0'
-
-    time_value = '%s:%s:%s' % (hour,minute,second)
-
-    if not date_and_time:
-        return time_value
-
-    if date_and_time:
-        
-        year = date_value.year
-        month = date_value.month
-        day = date_value.day
-        return '%s-%s-%s %s' % (year,month,day,time_value)
-
-def get_current_date():
-    mtime = time.time() 
-    date_value = datetime.datetime.fromtimestamp(mtime)
-    year = date_value.year
-    month = date_value.month
-    day = date_value.day
-    
-    return '%s-%s-%s' % (year,month,day)
 
 def clean_string(string):
     
@@ -809,6 +823,10 @@ def clean_string(string):
     string = string.replace('\\', '_')
     
     return string
+
+def clean_string_alpha_numeric(string):
+    
+    pass
 
 def show(*args):
     try:
@@ -883,7 +901,7 @@ def find_possible_combos(names, sort = True, one_increment = False):
                             sub_names = names[inc2:]             
                             
                             if len(sub_names) > 1:
-                                found_sub_combos = find_combos(names[inc2:], False, True)                          
+                                found_sub_combos = find_possible_combos(names[inc2:], False, True)                          
                                                                                       
                                 for combo in found_sub_combos:
                                     sub_name_combo = string.join( [names[inc], combo], '_')                              

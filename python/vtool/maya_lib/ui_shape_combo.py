@@ -78,6 +78,7 @@ class ComboManager(ui.MayaWindow):
         self.main_layout.addWidget(splitter)
         
         self.shape_widget.tree.load()
+        self.combo_widget.tree.load()
 
     def _get_selected_shapes(self):
         
@@ -134,13 +135,10 @@ class ComboManager(ui.MayaWindow):
             self.combo_widget.tree.clear()
             return
                 
-        combos = self.manager.find_possible_combos(shapes)
+        combos = self.manager.get_combos()
+        possible_combos = self.manager.find_possible_combos(shapes)
         
-        if not combos:
-            self.combo_widget.tree.clear()
-            return
-        
-        self.combo_widget.tree.load(combos)
+        self.combo_widget.tree.load(combos, possible_combos)
     
     def _base_command(self):
         
@@ -158,19 +156,14 @@ class ComboManager(ui.MayaWindow):
     def _add_command(self):
         
         meshes = util.get_selected_meshes()
-                
-        print meshes
-                
+         
         shapes, combos, inbetweens = self.manager.get_shape_and_combo_lists(meshes)
-        
-        print shapes
-        print combos
         
         for shape in shapes:
             self.manager.add_shape(shape)
             
         for combo in combos:
-            self.manager.add_combo(shape)
+            self.manager.add_combo(combo)
         
         mesh = None
         
@@ -223,10 +216,17 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self.context_menu = QtGui.QMenu()
         
+        self.create_action = self.context_menu.addAction('Rename')
+        
+        
         self.create_action = self.context_menu.addAction('Remove')
         self.context_menu.addSeparator()
         
+        self.create_action.triggered.connect(self.rename)
         self.create_action.triggered.connect(self.remove)
+        
+    def rename(self):
+        pass
         
     def remove(self):
         
@@ -276,6 +276,8 @@ class ShapeTree(qt_ui.TreeWidget):
             if shape == mesh:
                 select_item = item
                 
+        
+                
         if select_item:
             self.setItemSelected(select_item, True)
             self.scrollToItem(select_item)
@@ -302,7 +304,12 @@ class ComboWidget(qt_ui.BasicWidget):
 
 class ComboTree(qt_ui.TreeWidget):
     
-    def load(self, combos = None):
+    def __init__(self):
+        super(ComboTree, self).__init__()
+        
+        self.setSortingEnabled(False)
+    
+    def load(self, combos = None, possible_combos = None):
         
         if not combos:
             manager = blendshape.BlendshapeManager()
@@ -311,11 +318,31 @@ class ComboTree(qt_ui.TreeWidget):
         
         self.clear()
         
-        if not combos:
-            return
-        
         for combo in combos:
             item = QtGui.QTreeWidgetItem()
+            item.setSizeHint(0, QtCore.QSize(100, 25))
             item.setText(0, combo)
+            font = item.font(0)
+            font.setBold(True)
+            item.setFont(0, font)
+            
+            
             
             self.addTopLevelItem(item)
+            
+            if possible_combos:
+            
+                if combo in possible_combos:
+                    index = possible_combos.index(combo)
+                    possible_combos.pop(index)
+                
+        
+        if possible_combos:
+            for combo in possible_combos:
+                
+                item = QtGui.QTreeWidgetItem()
+                item.setSizeHint(0, QtCore.QSize(100, 25))
+                item.setText(0, combo)
+                
+                self.addTopLevelItem(item)
+                   

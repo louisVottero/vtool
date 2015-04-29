@@ -58,7 +58,9 @@ class BlendShape(object):
         
         name = name.replace(' ', '_')
         
+        print name, self.targets.has_key(name)
         target_index = self.targets[name].index
+        
         return '%s.weight[%s]' % (self.blendshape, target_index)
 
     def _get_weights(self, target_name, mesh_index):
@@ -406,8 +408,6 @@ class BlendshapeManager(object):
 
     def _get_mesh(self):
         
-        print 'in get mesh', self.setup_group
-        
         mesh = util.get_attribute_input( '%s.mesh' % self.setup_group, node_only = True )
         
         if not mesh:
@@ -501,7 +501,6 @@ class BlendshapeManager(object):
         
         if not blendshape.is_target(mesh):
             blendshape.create_target(mesh, mesh)
-        
         
         var = util.MayaNumberVariable(mesh)
         var.set_min_value(0)
