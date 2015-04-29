@@ -792,6 +792,7 @@ class PoseBase(object):
             
             if blendshape_node:
                 blend = blendshape.BlendShape(blendshape_node)
+                
                 blend.rename_target(old_description, description)
 
         

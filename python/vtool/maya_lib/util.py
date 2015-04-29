@@ -8613,25 +8613,22 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
         
         long_path = None
         
+        
         if not bad_blendshape:
             
             bad_blendshape = False
             
-            for target_shape in target_shapes:
+            for inc in range(0, len(target_shapes)):
+            
+                target_shape = target_shapes[inc]
+                shape = shapes[inc]
                 
-                for shape in shapes:
-                    
-                    long_path = cmds.ls(shape, l = True)
-                    
-                    test_shape = '|%s' % shape
-                    if not test_shape in target_shape:
-                        bad_blendshape = True
-                        
-                        break
-                    
-                if bad_blendshape:
+                long_path = cmds.ls(shape, l = True)[0]
+                
+                if not long_path in target_shape:
+                    bad_blendshape = True
                     break
-    
+        
         if not bad_blendshape:
             count = cmds.blendShape(blendshape_node, q= True, weightCount = True)
             
