@@ -34,6 +34,8 @@ class PoseManager(ui.MayaWindow):
         self.sculpt.setMaximumHeight(200)
         self.sculpt.sculpted_mesh.connect(self.pose_list.update_current_pose)
         
+        self.pose_list.pose_list_refresh.connect(self.sculpt.mesh_widget.update_meshes)
+        
         self.pose_list.pose_list.itemSelectionChanged.connect(self.select_pose)
         
         self.pose_list.set_pose_widget(self.sculpt)
@@ -42,6 +44,8 @@ class PoseManager(ui.MayaWindow):
         self.pose_set.pose_reset.connect(self.pose_list.pose_reset)
         
         self.sculpt.pose_mirror.connect(self.pose_list.mirror_pose)
+        
+        
         
         self.main_layout.addWidget(self.pose_set)
         self.main_layout.addWidget(self.pose_list)
@@ -112,6 +116,7 @@ class PoseListWidget(qt_ui.BasicWidget):
     pose_added = qt_ui.create_signal(object)
     pose_renamed = qt_ui.create_signal(object)
     pose_update = qt_ui.create_signal(object)
+    pose_list_refresh = qt_ui.create_signal()
  
     def __init__(self):
         super(PoseListWidget, self).__init__()
@@ -125,6 +130,8 @@ class PoseListWidget(qt_ui.BasicWidget):
     def _build_widgets(self):
         
         self.pose_list = PoseTreeWidget()
+        
+        self.pose_list.list_refresh.connect(self.pose_list_refresh.emit)
         
         self.pose_list.itemSelectionChanged.connect(self._update_pose_widget)
         
@@ -227,6 +234,8 @@ class PoseListWidget(qt_ui.BasicWidget):
         self.pose_list.pose_enable_changed(value)
     
 class BaseTreeWidget(qt_ui.TreeWidget):
+
+    list_refresh = qt_ui.create_signal()
     
     pose_renamed = qt_ui.create_signal(object)
     
@@ -237,7 +246,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         self.setSortingEnabled(True)
         self.setSelectionMode(self.SingleSelection)
         
-        
+        ui.new_scene_signal.signal.connect(self.refresh)
         
         self.text_edit = False
         
@@ -246,8 +255,9 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         self.pose_widget = None
 
     def _populate_list(self):
-        pass
-
+        self.clear()
+        self.list_refresh.emit()
+        
     def _current_pose(self):
         selected = self.selectedItems()
         
@@ -315,8 +325,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         new_name = corrective.PoseManager().rename_pose(str(self.old_name), str(new_name))
         
         item.setText(0, new_name)
-
-
+    
     def refresh(self):
         self._populate_list()
         
@@ -329,7 +338,6 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         
         if not current_str == '- new mesh -':
             corrective.PoseManager().toggle_visibility(pose_name, True)
-            
             
     def mesh_change(self, index):
         
@@ -394,6 +402,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self.item_context = []
         
         super(PoseTreeWidget, self).__init__()
+        
         self.setHeaderLabels(['pose', 'type'])
        
         self.header().setStretchLastSection(False)
@@ -497,7 +506,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
     def _populate_list(self):
         
-        self.clear()
+        super(PoseTreeWidget, self)._populate_list()   
         
         poses = corrective.PoseManager().get_poses()
         
@@ -518,7 +527,8 @@ class PoseTreeWidget(BaseTreeWidget):
                 self.create_cone_pose(pose)
             if pose_type == 'no reader':
                 self.create_no_reader_pose(pose)
-            
+        
+         
             
     def _select_joint(self):
         name = self._current_pose()

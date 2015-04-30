@@ -4,6 +4,7 @@
 
 import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
+import vtool.util
 import math
 
 
@@ -83,11 +84,15 @@ def invert(base=None, corrective=None, name=None):
             cmds.setAttr('%s.%s%s' % (invertedShape, attr, x), lock=False)
     cmds.setAttr('%s.visibility' % invertedShape, 1)
     deformer = cmds.deformer(invertedShape, type='cvShapeInverter')[0]
-
+    print 'deformer', deformer
     # Calculate the inversion matrices
     oDeformer = getMObject(deformer)
     fnDeformer = OpenMaya.MFnDependencyNode(oDeformer)
+    
+    #maya_version = vtool.util.get_maya_version()
+    
     plugMatrix = fnDeformer.findPlug('inversionMatrix', False)
+    
     fnMatrixData = OpenMaya.MFnMatrixData()
     for i in range(numPoints):
         matrix = OpenMaya.MMatrix()

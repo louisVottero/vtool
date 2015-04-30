@@ -27,8 +27,14 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
 
         # Read the matrices
         if not self.__initialized:
-            inputAttribute = OpenMayaMPx.cvar.MPxDeformerNode_input
-            inputGeom = OpenMayaMPx.cvar.MPxDeformerNode_inputGeom
+            
+            #doesn't work in maya 2016
+            #inputAttribute = OpenMayaMPx.cvar.MPxDeformerNode_input
+            #inputGeom = OpenMayaMPx.cvar.MPxDeformerNode_inputGeom
+            
+            inputAttribute = OpenMayaMPx.MPxDeformerNode.input.fget()
+            inputGeom = OpenMayaMPx.MPxDeformerNode.inputGeom.fget()
+            
             hInput = data.outputArrayValue(inputAttribute)
             hInput.jumpToElement(geomIndex)
             oInputGeom = hInput.outputValue().child(inputGeom).asMesh()
@@ -90,14 +96,18 @@ def creator():
 
 
 def initialize():
+    
     mAttr = OpenMaya.MFnMatrixAttribute()
     tAttr = OpenMaya.MFnTypedAttribute()
     nAttr = OpenMaya.MFnNumericAttribute()
 
-    outputGeom = OpenMayaMPx.cvar.MPxDeformerNode_outputGeom
+    #doesn't work in Maya 2016
+    #outputGeom = OpenMayaMPx.cvar.MPxDeformerNode_outputGeom
 
-    cvShapeInverter.aActivate = nAttr.create('activate', 'activate',
-            OpenMaya.MFnNumericData.kBoolean)
+    outputGeom = OpenMayaMPx.MPxDeformerNode.outputGeom.fget()
+    
+
+    cvShapeInverter.aActivate = nAttr.create('activate', 'activate', OpenMaya.MFnNumericData.kBoolean)
     cvShapeInverter.addAttribute(cvShapeInverter.aActivate)
     cvShapeInverter.attributeAffects(cvShapeInverter.aActivate, outputGeom)
 
@@ -117,8 +127,7 @@ def initialize():
 
 def initializePlugin(mobject):
     plugin = OpenMayaMPx.MFnPlugin(mobject)
-    plugin.registerNode(cvShapeInverter.kPluginNodeName, cvShapeInverter.kPluginNodeId, creator,
-            initialize, OpenMayaMPx.MPxNode.kDeformerNode)
+    plugin.registerNode(cvShapeInverter.kPluginNodeName, cvShapeInverter.kPluginNodeId, creator, initialize, OpenMayaMPx.MPxNode.kDeformerNode)
 
 
 def uninitializePlugin(mobject):

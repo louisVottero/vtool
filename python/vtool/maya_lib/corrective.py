@@ -1076,6 +1076,9 @@ class PoseBase(object):
         
         blend.set_weight(self.pose_control, 0)
         offset = util.chad_extract_shape(target_mesh, mesh)
+        
+        print offset, target_mesh, mesh
+        
         blend.set_weight(self.pose_control, 1)
         
         if blend.is_target(self.pose_control):

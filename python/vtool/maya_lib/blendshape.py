@@ -219,6 +219,9 @@ class BlendShape(object):
     
     def replace_target(self, name, mesh):
         
+        if not mesh:
+            return
+        
         name = name.replace(' ', '_')
         
         if self.is_target(name):
