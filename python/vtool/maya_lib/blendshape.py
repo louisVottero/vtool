@@ -253,6 +253,9 @@ class BlendShape(object):
        
     def rename_target(self, old_name, new_name):
         
+        if not self.targets.has_key(old_name):
+            return
+        
         old_name = old_name.replace(' ', '_')
         new_name = new_name.replace(' ', '_')
         

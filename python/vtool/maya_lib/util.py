@@ -6419,7 +6419,10 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     if auto_parent:
         parent = cmds.listRelatives(transform, p = True)
     
-    shape = cmds.listRelatives(mesh, shapes = True)[0]
+    shape = get_mesh_shape(mesh)
+    #shape = cmds.listRelatives(mesh, shapes = True)[0]
+    
+    print 'attach shape', shape
     
     face_iter = IteratePolygonFaces(shape)
     
@@ -6427,6 +6430,8 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
         position = cmds.xform(transform, q = True, rp = True, ws = True)
     if not rotate_pivot: 
         position = get_center(transform)
+    
+    print 'attach position', position
     
     if not face:
         face_id = face_iter.get_closest_face(position)
@@ -6625,9 +6630,13 @@ def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
         joints.append(joint)
         
         if follow:
-            follicle = follicle_to_mesh(joint, mesh)
+            follicle = attach_to_mesh(joint, mesh, hide_shape = True, constrain = False, rotate_pivot = True)
+            
+            
+            
+            #follicle = follicle_to_mesh(joint, mesh)
             follicles.append(follicle)
-            cmds.makeIdentity(joint, jo = True, apply = True, t = True, r = True, s = True)
+            #cmds.makeIdentity(joint, jo = True, apply = True, t = True, r = True, s = True)
     
     if follicles:
         return joints, follicles
@@ -8382,11 +8391,14 @@ def create_wrap(source_mesh, target_mesh):
     
     return wrap.base_meshes
     
-def wire_to_mesh(edges, geometry, description):
+def wire_to_mesh(edges, geometry, description, auto_edge_path = True):
     
     group = cmds.group(em = True, n = inc_name('setup_%s' % description))
     
-    edge_path = get_edge_path(edges)
+    if auto_edge_path:
+        edge_path = get_edge_path(edges)
+    if not auto_edge_path:
+        edge_path = cmds.ls(edges, flatten = True)
     
     curve = edges_to_curve(edge_path, description)
     
@@ -8408,6 +8420,9 @@ def wire_to_mesh(edges, geometry, description):
 @undo_chunk
 def weight_hammer_verts(verts = None, print_info = True):
     
+    if is_a_mesh(verts):
+        verts = cmds.ls('%s.vtx[*]' % verts, flatten = True)
+    
     if verts:
         verts = cmds.ls(verts, flatten = True)
     
@@ -8422,7 +8437,8 @@ def weight_hammer_verts(verts = None, print_info = True):
         cmds.select(vert)
         
         if print_info:
-            vtool.util.show(inc, 'of', count)
+            #vtool.util.show(inc, 'of', count)
+            print inc, 'of', count
             
         
         mel.eval('weightHammerVerts;')
@@ -8613,25 +8629,22 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
         
         long_path = None
         
+        
         if not bad_blendshape:
             
             bad_blendshape = False
             
-            for target_shape in target_shapes:
+            for inc in range(0, len(target_shapes)):
+            
+                target_shape = target_shapes[inc]
+                shape = shapes[inc]
                 
-                for shape in shapes:
-                    
-                    long_path = cmds.ls(shape, l = True)
-                    
-                    test_shape = '|%s' % shape
-                    if not test_shape in target_shape:
-                        bad_blendshape = True
-                        
-                        break
-                    
-                if bad_blendshape:
+                long_path = cmds.ls(shape, l = True)[0]
+                
+                if not long_path in target_shape:
+                    bad_blendshape = True
                     break
-    
+        
         if not bad_blendshape:
             count = cmds.blendShape(blendshape_node, q= True, weightCount = True)
             
