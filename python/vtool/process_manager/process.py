@@ -451,7 +451,7 @@ class Process(object):
         
     def rename_code(self, old_name, new_name):
         
-        new_name = util.clean_string(new_name)
+        new_name = util.clean_file_string(new_name)
         
         code_folder = data.DataFolder(old_name, self.get_code_path())
         code_folder.rename(new_name)

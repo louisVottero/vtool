@@ -814,8 +814,7 @@ def replace_string(string_value, replace_string, start, end):
     
     return first_part + replace_string + second_part
 
-
-def clean_string(string):
+def clean_file_string(string):
     
     if string == '/':
         return '_'
@@ -824,9 +823,13 @@ def clean_string(string):
     
     return string
 
-def clean_string_alpha_numeric(string):
+def clean_name_string(string_value, clean_chars = '_', remove_char = '_'):
     
-    pass
+    string_value = re.sub('^[^A-Za-z0-9%s]+' % clean_chars, '', string_value)
+    string_value = re.sub('[^A-Za-z0-9%s]+$' % clean_chars, '', string_value)
+    string_value = re.sub('[^A-Za-z0-9]', remove_char, string_value)
+    
+    return string_value
 
 def show(*args):
     try:

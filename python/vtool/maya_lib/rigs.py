@@ -2411,12 +2411,14 @@ class IkAppendageRig(BufferRig):
         stretchy.set_add_dampen(True)
         stretchy.set_node_for_attributes(control)
         stretchy.set_description(self._get_name())
-        stretchy.set_vector_instead_of_matrix(True)
+        #this is new stretch distance
+        #stretchy.set_vector_instead_of_matrix(False)
         top_locator, btm_locator = stretchy.create()
         
         cmds.parent(top_locator, top_transform)
         cmds.parent(btm_locator, btm_transform)
         
+        #this is new stretch distance
         """
         cmds.parent(top_locator, self.setup_group)
         cmds.parent(btm_locator, self.setup_group)

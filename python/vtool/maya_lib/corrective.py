@@ -348,6 +348,7 @@ class PoseBase(object):
         return util.inc_name(self.description) 
     
     def _set_description(self, description):
+        
         cmds.setAttr('%s.description' % self.pose_control, description, type = 'string' )
         self.description = description
 
@@ -781,11 +782,13 @@ class PoseBase(object):
         
     def rename(self, description):
         
+        description = vtool.util.clean_name_string(description)
+        
         description = util.inc_name(description)
         
         meshes = self.get_target_meshes()
         
-        old_description = self.description
+        old_description = vtool.util.clean_name_string( self.description )
         
         for mesh in meshes:
             blendshape_node = self._get_blendshape(mesh)

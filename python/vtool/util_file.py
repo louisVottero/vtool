@@ -818,7 +818,7 @@ def create_dir(name, directory, make_unique = False):
     
 def delete_dir(name, directory):
     
-    util.clean_string(name)
+    util.clean_file_string(name)
     
     full_path = join_path(directory, name)
     
@@ -849,7 +849,7 @@ def refresh_dir(directory):
 
 def create_file(name, directory, make_unique = False):
     
-    name = util.clean_string(name)
+    name = util.clean_file_string(name)
     
     full_path = join_path(directory, name)
         
