@@ -20,6 +20,8 @@ if vtool.qt_ui.is_pyside():
 
 #--- signals
 
+
+"""
 class new_scene_object(QtCore.QObject):
     signal = vtool.qt_ui.create_signal()
 
@@ -38,8 +40,9 @@ def emit_open_scene_signal():
     new_scene_signal.signal.emit()
 
 #--- script jobs
-cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui;ui.emit_new_scene_signal()'], protected = False)
-cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui;ui.emit_open_scene_signal()'], protected = False)
+#cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui;ui.emit_new_scene_signal()'], protected = False)
+#cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui;ui.emit_open_scene_signal()'], protected = False)
+"""
   
 #--- ui 
 

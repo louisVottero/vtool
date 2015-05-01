@@ -246,7 +246,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         self.setSortingEnabled(True)
         self.setSelectionMode(self.SingleSelection)
         
-        ui.new_scene_signal.signal.connect(self.refresh)
+        #ui.new_scene_signal.signal.connect(self.refresh)
         
         self.text_edit = False
         

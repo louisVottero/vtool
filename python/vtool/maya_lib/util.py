@@ -7309,6 +7309,8 @@ def get_influences_on_skin(skin_deformer):
 
 def get_non_zero_influences(skin_deformer):
     
+    print 'get non zero', skin_deformer
+    
     influences = cmds.skinCluster(skin_deformer, q = True, wi = True)
     
     return influences
@@ -8237,6 +8239,9 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
         influences = found
     
     if not other_skin:  
+        
+        print 'influences', influences
+        
         other_skin = cmds.skinCluster(influences, target_mesh, tsb=True, n = 'skin_%s' % target_mesh)[0]
         
     if other_skin:
