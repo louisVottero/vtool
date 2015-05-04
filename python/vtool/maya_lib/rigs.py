@@ -2817,7 +2817,150 @@ class RopeRig(CurveRig):
                 continue
             
             if not alt_color:
-                alt_color = True          
+                
+                alt_color = True
+                
+class ConvertJointToNub(object):
+
+    def __init__(self, name, side = 'C'):
+        self.start_joint = None
+        self.end_joint = None
+        self.count = 10
+        self.prefix = 'joint'
+        self.name = name
+        self.side = side
+        
+        self.add_mid_control = True
+        
+        self.joints = []
+        self.control_group = None
+        self.setup_group = None
+        self.control_shape = 'pin_round'
+        self.add_sub_joints = False
+        
+        self.right_side_fix = True
+        self.right_side_fix_axis = 'x'
+        
+        self.up_object = None
+        
+    def set_start_joint(self, joint):
+        self.start_joint = joint
+    
+    def set_end_joint(self, joint):
+        self.end_joint = joint
+        
+    def set_joints(self, joints):
+        self.joints = joints
+        
+    def set_create_mid_control(self, bool_value):
+        self.add_mid_control = bool_value
+        
+    def set_joint_count(self, count):
+        self.count = count
+        
+    def set_control_shape(self, shape_type_name):
+        self.control_shape = shape_type_name
+        
+    def set_prefix(self, prefix):
+        self.prefix = prefix
+        
+    def set_add_sub_joints(self, bool_value):
+        self.add_sub_joints = bool_value
+        
+    def set_up_object(self, name):
+        self.up_object = name
+        
+    def create(self):
+        
+        parent_joints = False
+        
+        if not self.joints:
+            parent_joints = True
+            joints = util.subdivide_joint(self.start_joint, 
+                                     self.end_joint, 
+                                     self.count, self.prefix, 
+                                     '%s_1_%s' % (self.name,self.side), True)
+            
+            
+            
+            for joint in joints[:-1]:
+                orient = util.OrientJoint(joint)
+                
+                if not self.up_object:
+                    self.up_object = self.start_joint
+                
+                orient.set_aim_up_at_object(self.up_object)
+                orient.run()
+                
+            
+            
+                
+            cmds.makeIdentity(joints[-1], r = True, jo = True, apply = True)
+            
+            
+            self.joints = joints
+            
+            
+        parent_map = {}
+            
+        if self.add_sub_joints:
+            
+            new_joints = []
+            
+            for joint in self.joints:
+                duplicate = cmds.duplicate(joint, po = True)
+                
+                new_name = joint[0].upper() + joint[1:]
+                
+                new_joint = cmds.rename(joint, 'xform%s' % new_name)
+                duplicate = cmds.rename(duplicate, joint)
+                cmds.parent(duplicate, w = True)
+                
+                new_joints.append(new_joint)
+                
+                parent_map[new_joint] = duplicate
+                
+            self.joints = new_joints
+        
+        rig = IkSplineNubRig(self.name, self.side)
+        rig.set_joints(self.joints)
+        rig.set_end_with_locator(True)
+        rig.set_create_middle_control(self.add_mid_control)
+        rig.set_control_shape(self.control_shape)
+        #rig.set_control_orient(self.start_joint)
+        rig.set_buffer(False)
+        rig.set_right_side_fix(self.right_side_fix, self.right_side_fix_axis)
+        rig.create()
+        
+        self.top_control = rig.top_control
+        self.btm_control = rig.btm_control
+        self.top_xform = rig.top_xform
+        self.btm_xform = rig.btm_xform
+        
+        if parent_joints:
+            cmds.parent(joints[0], rig.setup_group)
+        
+        if parent_map:
+            for joint in parent_map:
+                cmds.parent(parent_map[joint], joint)
+        
+        self.control_group = rig.control_group
+        self.setup_group = rig.setup_group
+        
+    def get_control_group(self):
+        return self.control_group
+    
+    def get_setup_group(self):
+        return self.setup_group
+    
+    def get_joints(self):
+        return self.joints
+    
+    def set_right_side_fix(self, bool_value, axis = 'x'):
+        self.right_side_fix = bool_value
+        self.right_side_fix_axis = axis
+
+                          
 #---Body Rig
 
 class NeckRig(FkCurveRig):

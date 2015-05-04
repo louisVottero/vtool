@@ -462,10 +462,6 @@ class SkinWeightData(MayaCustomData):
         for folder in folders:
             
             mesh = folder
-
-            
-            #if not maya_lib.util.is_a_mesh(mesh):
-            #    continue
             
             if not cmds.objExists(mesh):
                 continue
@@ -513,16 +509,10 @@ class SkinWeightData(MayaCustomData):
                     cmds.select(cl = True)
                     cmds.joint( n = influence, p = influence_dict[influence]['position'] )
                     cmds.skinCluster(skin_cluster, e = True, ai = influence)  
-            
-                  
-                    
+              
             influence_index_dict = maya_lib.util.get_skin_influences(skin_cluster, return_dict = True)
             
-              
-            
             progress_ui = maya_lib.util.ProgressBar('import skin', len(influence_dict.keys()))
-            
-            
             
             for influence in influences:
                 
@@ -550,8 +540,6 @@ class SkinWeightData(MayaCustomData):
                     break
                 
                 influence_inc += 1
-                
-                    
             
             progress_ui.end()                    
             
@@ -573,11 +561,7 @@ class SkinWeightData(MayaCustomData):
             self._import_maya_data()
                          
             cmds.undoInfo(state = True)               
-            
-            
-        
-
-                    
+      
     def export_data(self, comment):
         
         path = util_file.join_path(self.directory, self.name)
