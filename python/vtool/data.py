@@ -569,6 +569,13 @@ class SkinWeightData(MayaCustomData):
         selection = cmds.ls(sl = True)
         
         for thing in selection:
+            
+            split_thing = thing.split('|')
+            
+            if len(split_thing) > 1:
+                cmds.warning('\tSkin export failed. There is more than one %s.' % maya_lib.util.get_basename(thing))
+                continue
+            
             skin = maya_lib.util.find_deformer_by_type(thing, 'skinCluster')
             
             if skin:
@@ -606,7 +613,7 @@ class SkinWeightData(MayaCustomData):
                 
                 write_info.write(info_lines)
                 
-                util.show('Exported %s data' % self.name)
+                util.show('Exported %s data on %s' % (self.name, thing))
         
         version = util_file.VersionFile(path)
         version.save(comment)
@@ -945,7 +952,7 @@ class AnimationData(MayaCustomData):
                     try:
                         cmds.connectAttr('%s.output' % key, output)
                     except:
-                        util.show('Could not connect %s.output to %s' % (key,output))
+                        cmds.warning('\tCould not connect %s.output to %s' % (key,output))
                         
                     if locked:
                         cmds.setAttr(output, l = False)
@@ -959,7 +966,7 @@ class AnimationData(MayaCustomData):
                 try:
                     cmds.connectAttr(input_attr, '%s.input' % key)
                 except:
-                    util.show('Could not connect %s to %s.input' % (input_attr,key))
+                    cmds.warning('\tCould not connect %s to %s.input' % (input_attr,key))
                     
         
 
@@ -1180,7 +1187,7 @@ class MayaAttributeData(MayaCustomData):
 
             if not cmds.objExists(node_name):
                 
-                util.show('Could not import attributes for %s' % node_name )
+                cmds.warning( '\tCould not import attributes for %s' % node_name ) 
                 continue
             
             lines = util_file.get_file_lines(filepath)
@@ -1197,7 +1204,7 @@ class MayaAttributeData(MayaCustomData):
                 try:
                     cmds.setAttr('%s.%s' % (node_name, line_list[0]), line_list[1])    
                 except:
-                    util.show('Could not set %s to %s' % (line_list[0], line_list[1]))
+                    cmds.warning('\tCould not set %s to %s' % (line_list[0], line_list[1]))
                     
             
         self._center_view()
@@ -1313,7 +1320,16 @@ class MayaFileData(MayaCustomData):
         unknown = cmds.ls(type = 'unknown')
         
         if unknown:
-            util.warning('This file contains unknown nodes. Try saving as maya ascii instead.')
+            
+            value = cmds.confirmDialog( title='Unknown Nodes!', message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
+                                        button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
+            
+            if value == 'Yes':
+                maya_lib.util.delete_unknown_nodes()
+            
+            if value == 'No':
+                cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
+                return
 
         cmds.file(rename = self.filepath)
         

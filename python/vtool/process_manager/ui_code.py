@@ -527,7 +527,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
             item = items[0]
     
-            code_name = item.text(0)
+            code_name = item.get_text()
             code_name = code_name.split('.')[0]
             
             code_path = process_tool.get_code_folder(code_name)
@@ -550,10 +550,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             return
         
-        name = str(item.text(self.title_text_index))
+        name = str(item.get_text)
         
         if name == 'manifest':
-            item.setText(self.title_text_index, self.old_name)
+            item.set_text(self.old_name)
             return
         
         if name.find('.'):
@@ -601,7 +601,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         filepath = process_tool.get_code_file(new_file_name)
         
-        item.setText(self.title_text_index, file_name)
+        item.set_text(file_name)
         
         self.item_renamed.emit(old_filepath, filepath)
         
@@ -701,7 +701,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             item = self.topLevelItem(inc)
             
-            name = item.text(0)
+            name = item.get_text()
             state = item.checkState(0)
             
             if state == 0:
@@ -787,7 +787,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         item.set_state(2)
         
-        name = item.text(0)
+        name = item.get_text()
         name = name.split('.')
         name = name[0]
         
@@ -812,7 +812,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         items = self.selectedItems()
         item = items[0]
         
-        name = item.text(0)
+        name = item.get_text()
         name = name.split('.')
         name = name[0]
         
@@ -843,11 +843,34 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         
         self.setSizeHint(0, QtCore.QSize(10, 30))
         
-        self.status_icon = self._radial_fill_icon(0.6, 0.6, 0.6)
+        maya_version = vtool.util.get_maya_version()
+        
+        if maya_version > 2015 or maya_version == 0:
+            self.status_icon = self._square_fill_icon(0.6, 0.6, 0.6)
+            
+        if maya_version < 2016 and maya_version != 0:
+            self.status_icon = self._radial_fill_icon(0.6, 0.6, 0.6)
         
         self.setCheckState(0, QtCore.Qt.Unchecked)
     
+    def _square_fill_icon(self, r,g,b):
+        
+        pixmap = QtGui.QPixmap(20, 20)
+        pixmap.fill(QtGui.QColor.fromRgbF(r, g, b, 1))
+        
+        painter = QtGui.QPainter(pixmap)
+        painter.fillRect(0, 0, 100, 100, QtGui.QColor.fromRgbF(r, g, b, 1))
+        painter.end()
+        
+        icon = QtGui.QIcon(pixmap)
+        
+        self.setIcon(0, icon)
+        
+    
     def _radial_fill_icon(self, r,g,b):
+        
+        self._square_fill_icon(r, g, b)
+        
         
         pixmap = QtGui.QPixmap(20, 20)
         pixmap.fill(QtCore.Qt.transparent)
@@ -874,20 +897,47 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
                         
     def set_state(self, state):
         
-        if state == 0:
-            self._radial_fill_icon(1.0, 0.0, 0.0)    
-        if state == 1:
-            self._radial_fill_icon(0.0, 1.0, 0.0)
-        if state == -1:
-            self._radial_fill_icon(0.6, 0.6, 0.6)
-        if state == 2:
-            self._radial_fill_icon(1.0, 1.0, 0.0)
+        
+        maya_version = vtool.util.get_maya_version()
+        
+        
+        if maya_version < 2016 and maya_version != 0:
+            
+            if state == 0:
+                self._radial_fill_icon(1.0, 0.0, 0.0)    
+            if state == 1:
+                self._radial_fill_icon(0.0, 1.0, 0.0)
+            if state == -1:
+                self._radial_fill_icon(0.6, 0.6, 0.6)
+            if state == 2:
+                self._radial_fill_icon(1.0, 1.0, 0.0)
+        
+        if maya_version > 2015 or maya_version == 0:
+    
+            if state == 0:
+                self._square_fill_icon(1.0, 0.0, 0.0)    
+            if state == 1:
+                self._square_fill_icon(0.0, 1.0, 0.0)
+            if state == -1:
+                self._square_fill_icon(0.6, 0.6, 0.6)
+            if state == 2:
+                self._square_fill_icon(1.0, 1.0, 0.0)
     
     def set_text(self, text):
-        self.setText(0, text)
+        text = '   ' + text
+        
+        super(ManifestItem, self).setText(0, text)
         
     def get_text(self):
-        return self.text(0)
+        text_value = super(ManifestItem, self).text(0)
+        return str(text_value).strip()
+    
+    def text(self, index):
+        
+        return self.get_text()
+    
+    def setText(self, index, text):
+        return self.set_text(text)
     
 class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
     
@@ -898,36 +948,7 @@ class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
         
         self.setSizePolicy(QtGui.QSizePolicy(10, 40))
     
-    def _radial_fill_icon(self, r,g,b):
-        pass
-        """
-        pixmap = QtGui.QPixmap(20, 20)
-        pixmap.fill(QtCore.Qt.transparent)
-        gradient = QtGui.QRadialGradient(10, 10, 10)
-        gradient.setColorAt(0, QtGui.QColor.fromRgbF(r, g, b, 1))
-        gradient.setColorAt(1, QtGui.QColor.fromRgbF(0, 0, 0, 0))
-        
-        painter = QtGui.QPainter(pixmap)
-        painter.fillRect(0, 0, 100, 100, gradient)
-        painter.end()
-        
-        self.status_icon.setPixmap(pixmap)
-        """
-        
-    def _gradiant_fill_icon(self, r,g,b):
-        
-        pixmap = QtGui.QPixmap(20,20)
-        pixmap.fill(QtCore.Qt.transparent)
-        gradient = QtGui.QGradient()
-        
-        gradient.setColorAt(0, QtGui.QColor.fromRgbF(r,g,b,1))
-        gradient.setColorAt(1, QtGui.QColor.fromRgbF(0, 0, 0, 0))
-        
-        painter = QtGui.QPainter(pixmap)
-        painter.fillRect(0,0,100,100,gradient)
-        painter.end()
-        
-        self.status_icon.setPixmap(pixmap)
+
     
     def _build_widgets(self):
         

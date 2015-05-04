@@ -4698,6 +4698,14 @@ def get_current_audio_node():
     
     return cmds.timeControl(play_slider, q = True, s = True)
 
+def delete_unknown_nodes():
+    
+    unknown = cmds.ls(type = 'unknown')
+
+    for node in unknown:
+        cmds.lockNode(node, lock = False)
+        cmds.delete(node)
+
 #--- shading
 
 def apply_shading_engine(shader_name, mesh):
@@ -6117,16 +6125,12 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     shape = get_mesh_shape(mesh)
     #shape = cmds.listRelatives(mesh, shapes = True)[0]
     
-    print 'attach shape', shape
-    
     face_iter = IteratePolygonFaces(shape)
     
     if rotate_pivot:
         position = cmds.xform(transform, q = True, rp = True, ws = True)
     if not rotate_pivot: 
         position = get_center(transform)
-    
-    print 'attach position', position
     
     if not face:
         face_id = face_iter.get_closest_face(position)
@@ -7003,8 +7007,6 @@ def get_influences_on_skin(skin_deformer):
     return influences
 
 def get_non_zero_influences(skin_deformer):
-    
-    print 'get non zero', skin_deformer
     
     influences = cmds.skinCluster(skin_deformer, q = True, wi = True)
     
