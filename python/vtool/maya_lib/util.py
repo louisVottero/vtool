@@ -2456,40 +2456,6 @@ class StretchyChain:
                 self._create_other_distance_offset(distance_offset)
                 
         return top_locator, btm_locator
-
-#--- Rig Class Placeholders
-
-#These are only for backwards compatibility. 
-#They should not be used within this module!!!
-#new classes built after this change will not be added to this list
-import rigs
-reload(rigs)
-
-Rig = rigs.Rig
-JointRig = rigs.JointRig
-BufferRig = rigs.BufferRig
-SparseRig = rigs.SparseRig
-SparseLocalRig = rigs.SparseLocalRig
-ControlRig = rigs.ControlRig
-GroundRig = rigs.GroundRig
-FkRig = rigs.FkRig
-FkLocalRig = rigs.FkLocalRig
-FkScaleRig = rigs.FkScaleRig
-FkCurlNoScaleRig = rigs.FkCurlNoScaleRig
-FkCurlRig = rigs.FkCurlRig
-SimpleFkCurveRig = rigs.SimpleFkCurveRig
-FkCurveRig = rigs.FkCurveRig
-FkCurveLocalRig = rigs.FkCurveLocalRig
-NeckRig = rigs.NeckRig
-IkSplineNubRig = rigs.IkSplineNubRig
-IkAppendageRig = rigs.IkAppendageRig
-RopeRig = rigs.RopeRig
-TweakCurveRig = rigs.TweakCurveRig
-IkLegRig = rigs.IkLegRig
-RollRig = rigs.RollRig
-FootRollRig = rigs.FootRollRig
-EyeRig = rigs.EyeRig
-JawRig = rigs.JawRig
       
 #--- Misc Rig
 
@@ -8216,13 +8182,17 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     
     vtool.util.show('skinning %s' % target_mesh)
     
-    
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
+    
+    if not skin:
+        cmds.warning('%s has no skin. Nothing to copy.' % source_mesh)
+        return
     
     other_skin = find_deformer_by_type(target_mesh, 'skinCluster')
     
     if other_skin:
         cmds.warning('%s already has a skin cluster.' % target_mesh)
+    
     
     influences = get_non_zero_influences(skin)
     
@@ -8240,8 +8210,6 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     
     if not other_skin:  
         
-        print 'influences', influences
-        
         other_skin = cmds.skinCluster(influences, target_mesh, tsb=True, n = 'skin_%s' % target_mesh)[0]
         
     if other_skin:
@@ -8250,7 +8218,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                                  ds = other_skin, 
                                  noMirror = True, 
                                  surfaceAssociation = 'closestPoint', 
-                                 influenceAssociation = ['closestJoint'], 
+                                 influenceAssociation = ['name'], 
                                  normalize = True)
         
         if uv_space:
@@ -8258,7 +8226,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                                  ds = other_skin, 
                                  noMirror = True, 
                                  surfaceAssociation = 'closestPoint', 
-                                 influenceAssociation = ['closestJoint'],
+                                 influenceAssociation = ['name'],
                                  uvSpace = ['map1','map1'], 
                                  normalize = True)
             
@@ -8511,7 +8479,7 @@ def get_index_at_alias(alias, blendshape_node):
 def chad_extract_shape(skin_mesh, corrective):
     
     try:
-    
+   
         envelopes = EnvelopeHistory(skin_mesh)
         
         skin = find_deformer_by_type(skin_mesh, 'skinCluster')

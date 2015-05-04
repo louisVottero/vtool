@@ -848,6 +848,7 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         self.setCheckState(0, QtCore.Qt.Unchecked)
     
     def _radial_fill_icon(self, r,g,b):
+        
         pixmap = QtGui.QPixmap(20, 20)
         pixmap.fill(QtCore.Qt.transparent)
         gradient = QtGui.QRadialGradient(10, 10, 10)
@@ -861,6 +862,7 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         icon = QtGui.QIcon(pixmap)
         
         self.setIcon(0, icon)
+        
         
     def setData(self, column, role, value):
         super(ManifestItem, self).setData(column, role, value)
@@ -897,6 +899,8 @@ class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
         self.setSizePolicy(QtGui.QSizePolicy(10, 40))
     
     def _radial_fill_icon(self, r,g,b):
+        pass
+        """
         pixmap = QtGui.QPixmap(20, 20)
         pixmap.fill(QtCore.Qt.transparent)
         gradient = QtGui.QRadialGradient(10, 10, 10)
@@ -908,6 +912,7 @@ class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
         painter.end()
         
         self.status_icon.setPixmap(pixmap)
+        """
         
     def _gradiant_fill_icon(self, r,g,b):
         

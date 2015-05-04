@@ -427,7 +427,20 @@ class SkinWeightData(MayaCustomData):
             influence_dict = read_thread.run(influence_dict, folder_path, influence)
                     
         return influence_dict
+    
+    def _test_shape(self, mesh, shape_types):
         
+        
+        
+        
+        for shape_type in shape_types:
+            
+            if maya_lib.util.has_shape_of_type(mesh, shape_type):
+                
+                return True
+        
+        return False
+            
     
     def _import_maya_data(self):
         
@@ -449,11 +462,19 @@ class SkinWeightData(MayaCustomData):
         for folder in folders:
             
             mesh = folder
+
             
             #if not maya_lib.util.is_a_mesh(mesh):
             #    continue
             
             if not cmds.objExists(mesh):
+                continue
+            
+            shape_types = ['mesh','nurbsSurface', 'nurbsCurve', 'lattice']
+            shape_is_good = self._test_shape(mesh, shape_types)
+            
+            if not shape_is_good:
+                cmds.warning('%s does not have a supported shape node. Currently supported nodes include: %s.' % (mesh, shape_types))
                 continue
             
             skin_cluster = maya_lib.util.find_deformer_by_type(mesh, 'skinCluster')
@@ -476,9 +497,7 @@ class SkinWeightData(MayaCustomData):
             if not skin_cluster:
                 
                 if available_influences:
-                    
-                      
-                    print 'skin_data!!', mesh, available_influences      
+                          
                     skin_cluster = cmds.skinCluster(available_influences, mesh,  tsb = True, n = 'skin_%s' % mesh)[0]
                
             cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
