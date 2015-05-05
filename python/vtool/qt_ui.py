@@ -1952,6 +1952,13 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         start_position = cursor.anchor()
         end_position = cursor.position()
         
+        if start_position > end_position:
+            
+            temp_position = end_position
+            
+            end_position = start_position
+            start_position = temp_position
+        
         if event.key() == QtCore.Qt.Key_Tab:
             
             if not cursor.hasSelection():
@@ -2188,8 +2195,6 @@ class FindTextWidget(BasicDialog):
         cursor.insertText( self.replace_string.get_text() )
 
         self.text_widget.setTextCursor(cursor)
-        
-        #get_permission('Wrap Search?', self)
     
     def _replace_find(self):
         
