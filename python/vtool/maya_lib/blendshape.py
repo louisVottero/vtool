@@ -254,7 +254,10 @@ class BlendShape(object):
     def rename_target(self, old_name, new_name):
         
         if not self.targets.has_key(old_name):
-            return
+            return old_name
+        
+        if self.targets.has_key(new_name):
+            return old_name
         
         old_name = old_name.replace(' ', '_')
         new_name = new_name.replace(' ', '_')
@@ -267,6 +270,8 @@ class BlendShape(object):
         
         self.targets.pop(old_name)
         self._store_target(new_name, index)
+        
+        return new_name
         
     def set_weight(self, name, value):
         if self.is_target(name):
@@ -466,7 +471,16 @@ class BlendshapeManager(object):
             
             cmds.hide(self.home)
             
-    
+    def _get_variable_name(self, target):
+        
+        return '%s.%s' % (self.setup_group, target)
+                    
+    def _get_variable(self, target):
+        attributes = util.Attributes(self.setup_group)
+        
+        var = attributes.get_variable(target)
+        
+        return var
                         
     def setup(self, start_mesh = None):
                         
@@ -594,6 +608,14 @@ class BlendshapeManager(object):
                 combos.append(mesh)
                 
         return shapes, combos, inbetweens
+    
+    def rename_shape(self, old_name, new_name):
+        
+        name = self.blendshape.rename_target(old_name, new_name)
+        
+        
+        
+        return name
     
     def remove_shape(self, name):
         

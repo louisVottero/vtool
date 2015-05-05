@@ -693,8 +693,6 @@ class MayaVariable(vtool.util.Variable):
         
         lock = var_dict['lock']
         self.set_locked(lock)
-        
-        
     
     def create(self, node = None):
         
@@ -890,6 +888,17 @@ class Attributes(object):
         
         return var
         
+    def _retrieve_attribute(self, attribute_name):
+        
+        node_and_attribute = '%s.%s' % (self.node, attribute_name)
+        
+        var_type = cmds.getAttr(node_and_attribute, type = True)
+        
+        var = self._get_variable_instance(attribute_name, var_type)
+        var.set_node(self.node)
+        
+        return var
+        
     def _store_attributes(self):
         custom_attributes = cmds.listAttr(self.node, ud = True)
         
@@ -897,14 +906,10 @@ class Attributes(object):
         
         for attribute in custom_attributes:
             
-            node_and_attribute = '%s.%s' % (self.node, attribute)
-            
-            var_type = cmds.getAttr(node_and_attribute, type = True)
-            
-            var = self._get_variable_instance(attribute, var_type)
-            
+            var = self._retrieve_attribute(attribute)    
+        
             var_dict = var.get_dict()    
-            
+        
             self.attribute_dict[attribute] = var_dict
             
             self.variables.append(var)
@@ -978,6 +983,23 @@ class Attributes(object):
         self._store_attributes()
         
         return self.variables
+    
+    def get_variable(self, attribute_name):
+        
+        self._store_attributes()
+        
+        if attribute_name in self.attribute_dict[attribute_name]:
+            return self.attribute_dict[attribute_name]
+    
+    def rename_variable(self, old_name, new_name):
+        
+        var = self.get_variable(old_name)
+        
+        var.set_name(new_name)
+        
+        self.delete_all()
+        self.create_all()
+        
     
 #--- rig
 

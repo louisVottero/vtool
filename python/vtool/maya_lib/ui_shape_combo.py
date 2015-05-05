@@ -1,11 +1,13 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from vtool import qt_ui
-
+import vtool.util
 
 import ui
 import util
 import blendshape
+
+
 
 import maya.cmds as cmds
 import maya.mel as mel
@@ -55,8 +57,7 @@ class ComboManager(ui.MayaWindow):
         button_layout.addWidget(base)
         button_layout.addSpacing(10)
         button_layout.addWidget(self.add)
-        
-        
+                
         header_layout.addLayout(button_layout)
         
         self.shape_widget = ShapeWidget()
@@ -67,7 +68,6 @@ class ComboManager(ui.MayaWindow):
         
         self.shape_widget.tree.itemSelectionChanged.connect(self._shape_selection_changed)
         self.combo_widget.tree.itemSelectionChanged.connect(self._combo_selection_changed)
-        
         
         splitter.addWidget(self.shape_widget)
         splitter.addWidget(self.combo_widget)
@@ -83,7 +83,6 @@ class ComboManager(ui.MayaWindow):
     def _get_selected_shapes(self):
         
         shape_items = self.shape_widget.tree.selectedItems()
-        
         
         if not shape_items:
             return
@@ -111,8 +110,6 @@ class ComboManager(ui.MayaWindow):
             
         for shape in shapes:
             self.manager.set_shape_weight(shape, 1)
-            
-        
                
     def _combo_selection_changed(self):
         
@@ -216,17 +213,36 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self.context_menu = QtGui.QMenu()
         
-        self.create_action = self.context_menu.addAction('Rename')
+        self.rename_action = self.context_menu.addAction('Rename')
         
         
-        self.create_action = self.context_menu.addAction('Remove')
+        self.remove_action = self.context_menu.addAction('Remove')
         self.context_menu.addSeparator()
         
-        self.create_action.triggered.connect(self.rename)
-        self.create_action.triggered.connect(self.remove)
+        self.rename_action.triggered.connect(self.rename)
+        self.remove_action.triggered.connect(self.remove)
         
     def rename(self):
-        pass
+        
+        items = self.selectedItems()
+        
+        if not items:
+            return
+        
+        item = items[0]
+        
+        old_name = str(item.text(0))
+        
+        new_name = qt_ui.get_new_name('New name', self, item.text(0))
+        
+        new_name = vtool.util.clean_name_string(new_name)
+        
+        new_name = self.manager.rename_shape(old_name, new_name)
+        
+        if new_name == old_name:
+            return
+        
+        item.setText(0, new_name)
         
     def remove(self):
         
