@@ -248,7 +248,6 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         policy.setHorizontalPolicy(policy.Maximum)
         policy.setHorizontalStretch(0)
         
-        
         self.setSizePolicy(policy)
         
         self.exteranl_code_libarary = None

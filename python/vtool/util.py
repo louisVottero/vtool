@@ -834,6 +834,8 @@ def clean_name_string(string_value, clean_chars = '_', remove_char = '_'):
     
     return string_value
 
+
+
 def show(*args):
     try:
         if not args:

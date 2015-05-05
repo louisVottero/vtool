@@ -6,7 +6,9 @@ import util
 import util_file
 import threading
 import string
+import re
 import random
+
 
 try:
     from PySide import QtCore, QtGui
@@ -134,7 +136,7 @@ class DirectoryWindow(BasicWindow):
 class BasicWidget(QtGui.QWidget):
 
     def __init__(self, parent = None):
-        super(BasicWidget, self).__init__()
+        super(BasicWidget, self).__init__(parent)
         
         self.main_layout = self._define_main_layout() 
         self.main_layout.setContentsMargins(2,2,2,2)
@@ -151,6 +153,28 @@ class BasicWidget(QtGui.QWidget):
         
     def _build_widgets(self):
         pass
+    
+class BasicDialog(QtGui.QDialog):
+    
+    def __init__(self, parent = None):
+        super(BasicDialog, self).__init__(parent)
+        
+        self.main_layout = self._define_main_layout() 
+        self.main_layout.setContentsMargins(2,2,2,2)
+        self.main_layout.setSpacing(2)
+        
+        self.setLayout(self.main_layout)
+        
+        self._build_widgets()  
+            
+    def _define_main_layout(self):
+        layout = QtGui.QVBoxLayout()
+        layout.setAlignment(QtCore.Qt.AlignTop)
+        return layout
+
+    def _build_widgets(self):
+        pass
+       
         
 class BasicDockWidget(QtGui.QDockWidget):
     def __init__(self, parent = None):
@@ -1501,10 +1525,19 @@ class CodeEditTabs(BasicWidget):
         self.tabs.tabCloseRequested.connect(self._close_tab)
         self.tabs.currentChanged.connect(self._tab_changed)
         
+        self.previous_widget = None
+        
     
     def _tab_changed(self):
-        
+          
         current_widget = self.tabs.currentWidget()
+        
+        if self.previous_widget:
+            if self.previous_widget.find_widget:    
+                self.previous_widget.set_find_widget(current_widget)
+                
+        
+        self.previous_widget = current_widget
         
         self.tabChanged.emit(current_widget)
     
@@ -1658,11 +1691,14 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         self.setFont( QtGui.QFont('Courier', 9)  )
         
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence(self.tr("Ctrl+s")), self)
-        shortcut.activated.connect(self._save)
+        shortcut_save = QtGui.QShortcut(QtGui.QKeySequence(self.tr("Ctrl+s")), self)
+        shortcut_save.activated.connect(self._save)
         
-        shortcut_l = QtGui.QShortcut(QtGui.QKeySequence(self.tr('Ctrl+l')), self)
-        shortcut_l.activated.connect(self._goto_line)
+        shortcut_find = QtGui.QShortcut(QtGui.QKeySequence(self.tr('Ctrl+f')), self)
+        shortcut_find.activated.connect(self._find)
+        
+        shortcut_goto_line = QtGui.QShortcut(QtGui.QKeySequence(self.tr('Ctrl+l')), self)
+        shortcut_goto_line.activated.connect(self._goto_line)
         
         plus_seq = QtGui.QKeySequence( QtCore.Qt.CTRL + QtCore.Qt.Key_Plus)
         equal_seq = QtGui.QKeySequence( QtCore.Qt.CTRL + QtCore.Qt.Key_Equal)
@@ -1692,6 +1728,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         self.cursorPositionChanged.connect(self._line_number_highlight)
         
         self._line_number_highlight()
+        
+        self.find_widget = None
     
     def resizeEvent(self, event):
         
@@ -1715,6 +1753,13 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                 self._zoom_out_text()
         
         return super(CodeTextEdit, self).wheelEvent(event)
+    
+    def focusInEvent(self, event):
+        
+        super(CodeTextEdit, self).focusInEvent(event)
+        
+        if not self.skip_focus:
+            self._update_request()
     
     def _line_number_paint(self, event):
         
@@ -1795,7 +1840,20 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         if rect.contains(self.viewport().rect()):
             self._update_number_width()
         
+    def _save(self):
+        self.save.emit()
+        
+        self.last_modified = util_file.get_last_modified_date(self.filepath)
     
+    def _find(self):
+        
+        find_widget = FindTextWidget(self)
+        find_widget.show()
+        
+        self.find_widget = find_widget
+        
+        
+        
     
     def _goto_line(self):
         
@@ -1843,12 +1901,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         font.setPointSize( size )
         self.setFont( QtGui.QFont('Courier', size) )
         
-    def focusInEvent(self, event):
-        
-        super(CodeTextEdit, self).focusInEvent(event)
-        
-        if not self.skip_focus:
-            self._update_request()
+
          
                         
     def _update_request(self):
@@ -1876,18 +1929,133 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     def _setup_highlighter(self):
         self.highlighter = Highlighter(self.document())
     
-    def _save(self):
-        self.save.emit()
+    def _remove_tab(self,string_value):
         
-        self.last_modified = util_file.get_last_modified_date(self.filepath)
+        string_section = string_value[0:4]
+        
+        if string_section == '    ':
+            return string_value[4:]
+        
+        return string_value
+        
+        
+    def _add_tab(self,string_value):
+    
+        return '    %s' % string_value
     
     def keyPressEvent(self, event):
         
         pass_on = True
         
+        cursor = self.textCursor()
+        
+        start_position = cursor.anchor()
+        end_position = cursor.position()
+        
         if event.key() == QtCore.Qt.Key_Tab:
-            self.insertPlainText('    ')
+            
+            if not cursor.hasSelection():
+                
+                self.insertPlainText('    ')
+                start_position += 4
+                end_position = start_position
+            
+            if cursor.hasSelection():
+                
+                cursor.setPosition(start_position)
+                cursor.movePosition(QtGui.QTextCursor.StartOfLine)
+                cursor.setPosition(end_position,QtGui.QTextCursor.KeepAnchor)
+                
+                text = cursor.selection()
+                text = text.toPlainText()
+                
+                split_text = text.split('\n')
+                
+                edited = []
+                
+                inc = 0
+                
+                for text_split in split_text:
+                    
+                    
+                    edited.append( self._add_tab(text_split) )
+                    if inc == 0:
+                        start_position += 4
+                        
+                    end_position += 4
+                    inc+=1
+            
+                edited_text = string.join(edited, '\n')
+                cursor.insertText(edited_text)
+                self.setTextCursor(cursor)
+                
+
+                
             pass_on = False
+            
+        if event.key() == QtCore.Qt.Key_Backtab:
+            
+            if not cursor.hasSelection():
+                
+                cursor = self.textCursor()
+                
+                cursor.movePosition(QtGui.QTextCursor.StartOfLine)
+                cursor.movePosition(QtGui.QTextCursor.Right, QtGui.QTextCursor.KeepAnchor, 4)
+                
+                text = cursor.selection()
+                text = text.toPlainText()
+                
+                if text:
+                    
+                    
+                    if text == '    ':
+                        
+                        cursor.insertText('')
+                        self.setTextCursor(cursor)
+                        start_position -= 4
+                        end_position = start_position
+            
+            if cursor.hasSelection():
+                
+                cursor.setPosition(start_position)
+                cursor.movePosition(QtGui.QTextCursor.StartOfLine)
+                cursor.setPosition(end_position,QtGui.QTextCursor.KeepAnchor)
+                cursor.movePosition(QtGui.QTextCursor.EndOfLine, QtGui.QTextCursor.KeepAnchor)
+                self.setTextCursor(cursor)
+                text = cursor.selection()
+                text = text.toPlainText()
+                split_text = text.split('\n')
+                
+                edited = []
+                
+                inc = 0
+                
+                for text_split in split_text:
+                    new_string_value = self._remove_tab(text_split)
+                    
+                    if new_string_value != text_split:
+                        if inc == 0:
+                            start_position -= 4
+                        end_position -=4
+                    
+                    edited.append( new_string_value )
+                    
+                    inc += 1
+            
+                edited_text = string.join(edited, '\n')
+            
+                cursor.insertText(edited_text)
+                self.setTextCursor(cursor)
+            
+
+        
+            pass_on = False 
+        
+        cursor = self.textCursor()
+        cursor.setPosition(start_position)
+        cursor.setPosition(end_position,QtGui.QTextCursor.KeepAnchor)
+        self.setTextCursor(cursor)
+    
         
         if pass_on:
             super(CodeTextEdit, self).keyPressEvent(event)
@@ -1905,15 +2073,149 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
             
             self.setPlainText(text)
             
+            
         self.filepath = filepath
         
         self.last_modified = util_file.get_last_modified_date(self.filepath)
     
+    def set_find_widget(self, widget):
+        
+        
+        self.find_widget.set_find_widget(widget)
+        
+    
     def load_modification_date(self):
         
         self.last_modified = util_file.get_last_modified_date(self.filepath)
+      
+class FindTextWidget(BasicDialog):
+    
+    def __init__(self, text_widget):
+        self.found_match = False
         
+        super(FindTextWidget, self).__init__(parent = text_widget)
+        
+        self.text_widget = text_widget
+        
+        
+        self.text_widget.cursorPositionChanged.connect(self._reset_found_match)
+        
+    def _build_widgets(self):
+        super(FindTextWidget, self)._build_widgets()
+        
+        self.find_string = GetString( 'Find' )
+        self.replace_string = GetString( 'Replace' )
+        
+        h_layout = QtGui.QHBoxLayout()
+        h_layout2 = QtGui.QHBoxLayout()
+        
+        find_button = QtGui.QPushButton('Find')
+        replace_button = QtGui.QPushButton('Replace')
+        replace_all_button = QtGui.QPushButton('Replace All')
+        replace_find_button = QtGui.QPushButton('Replace/Find')
+        
+        find_button.setMaximumWidth(100)
+        replace_button.setMaximumWidth(100)
+        
+        replace_find_button.setMaximumWidth(100)
+        replace_all_button.setMaximumWidth(100)
+        
+        h_layout.addWidget(find_button)
+        h_layout.addWidget(replace_button)
+        
+        h_layout2.addWidget(replace_find_button)
+        h_layout2.addWidget(replace_all_button)
+        
+        find_button.clicked.connect(self._find)
+        replace_button.clicked.connect(self._replace)
+        replace_find_button.clicked.connect(self._replace_find)
+        replace_all_button.clicked.connect(self._replace_all)
+        
+        self.main_layout.addWidget(self.find_string)
+        self.main_layout.addWidget(self.replace_string)
+        self.main_layout.addLayout(h_layout)
+        self.main_layout.addLayout(h_layout2)
+        
+        self.setMaximumHeight(125)
+        
+    def _reset_found_match(self):
+        self.found_match = False
+        
+    def _get_cursor_index(self):
+        
+        cursor = self.text_widget.textCursor()
+        return cursor.position()
+        
+    def _move_cursor(self,start,end):
+        
+        cursor = self.text_widget.textCursor()
+        
+        cursor.setPosition(start)
+        
+        cursor.movePosition(QtGui.QTextCursor.Right,QtGui.QTextCursor.KeepAnchor,end - start)
+        
+        self.text_widget.setTextCursor(cursor)
+        
+        
+    def _find(self):
+        
+        text = self.text_widget.toPlainText()
+
+        find_text = str(self.find_string.get_text())
+        
+        pattern = re.compile( find_text, 0)
+
+        start = self._get_cursor_index()
+
+        match = pattern.search(text,start)
+
+        if match:
             
+            start = match.start()
+            end = match.end()
+            
+            self._move_cursor(start,end)
+            self.found_match = True
+        
+    def _replace(self):
+        
+        
+        if not self.found_match:
+            return
+        
+        cursor = self.text_widget.textCursor()
+    
+        cursor.insertText( self.replace_string.get_text() )
+
+        self.text_widget.setTextCursor(cursor)
+        
+        #get_permission('Wrap Search?', self)
+    
+    def _replace_find(self):
+        
+        self._replace()
+        self._find()
+        
+    def _replace_all(self):
+        
+        cursor = self.text_widget.textCursor()
+        
+        cursor.setPosition(0)
+        self.text_widget.setTextCursor(cursor)
+        
+        self._find()
+        
+        while self.found_match:
+            self._replace()
+            self._find()
+            
+    def set_widget(self, widget):
+        
+        self.found_match = False
+        self.text_widget = widget
+            
+
+     
 class Highlighter(QtGui.QSyntaxHighlighter):
     
     def __init__(self, parent=None):
