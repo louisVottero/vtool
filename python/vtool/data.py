@@ -427,7 +427,20 @@ class SkinWeightData(MayaCustomData):
             influence_dict = read_thread.run(influence_dict, folder_path, influence)
                     
         return influence_dict
+    
+    def _test_shape(self, mesh, shape_types):
         
+        
+        
+        
+        for shape_type in shape_types:
+            
+            if maya_lib.util.has_shape_of_type(mesh, shape_type):
+                
+                return True
+        
+        return False
+            
     
     def _import_maya_data(self):
         
@@ -450,10 +463,14 @@ class SkinWeightData(MayaCustomData):
             
             mesh = folder
             
-            #if not maya_lib.util.is_a_mesh(mesh):
-            #    continue
-            
             if not cmds.objExists(mesh):
+                continue
+            
+            shape_types = ['mesh','nurbsSurface', 'nurbsCurve', 'lattice']
+            shape_is_good = self._test_shape(mesh, shape_types)
+            
+            if not shape_is_good:
+                cmds.warning('%s does not have a supported shape node. Currently supported nodes include: %s.' % (mesh, shape_types))
                 continue
             
             skin_cluster = maya_lib.util.find_deformer_by_type(mesh, 'skinCluster')
@@ -476,9 +493,7 @@ class SkinWeightData(MayaCustomData):
             if not skin_cluster:
                 
                 if available_influences:
-                    
-                      
-                    print 'skin_data!!', mesh, available_influences      
+                          
                     skin_cluster = cmds.skinCluster(available_influences, mesh,  tsb = True, n = 'skin_%s' % mesh)[0]
                
             cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
@@ -494,16 +509,10 @@ class SkinWeightData(MayaCustomData):
                     cmds.select(cl = True)
                     cmds.joint( n = influence, p = influence_dict[influence]['position'] )
                     cmds.skinCluster(skin_cluster, e = True, ai = influence)  
-            
-                  
-                    
+              
             influence_index_dict = maya_lib.util.get_skin_influences(skin_cluster, return_dict = True)
             
-              
-            
             progress_ui = maya_lib.util.ProgressBar('import skin', len(influence_dict.keys()))
-            
-            
             
             for influence in influences:
                 
@@ -531,8 +540,6 @@ class SkinWeightData(MayaCustomData):
                     break
                 
                 influence_inc += 1
-                
-                    
             
             progress_ui.end()                    
             
@@ -554,11 +561,7 @@ class SkinWeightData(MayaCustomData):
             self._import_maya_data()
                          
             cmds.undoInfo(state = True)               
-            
-            
-        
-
-                    
+      
     def export_data(self, comment):
         
         path = util_file.join_path(self.directory, self.name)
@@ -566,6 +569,13 @@ class SkinWeightData(MayaCustomData):
         selection = cmds.ls(sl = True)
         
         for thing in selection:
+            
+            split_thing = thing.split('|')
+            
+            if len(split_thing) > 1:
+                cmds.warning('\tSkin export failed. There is more than one %s.' % maya_lib.util.get_basename(thing))
+                continue
+            
             skin = maya_lib.util.find_deformer_by_type(thing, 'skinCluster')
             
             if skin:
@@ -603,7 +613,7 @@ class SkinWeightData(MayaCustomData):
                 
                 write_info.write(info_lines)
                 
-                util.show('Exported %s data' % self.name)
+                util.show('Exported %s data on %s' % (self.name, thing))
         
         version = util_file.VersionFile(path)
         version.save(comment)
@@ -942,7 +952,7 @@ class AnimationData(MayaCustomData):
                     try:
                         cmds.connectAttr('%s.output' % key, output)
                     except:
-                        util.show('Could not connect %s.output to %s' % (key,output))
+                        cmds.warning('\tCould not connect %s.output to %s' % (key,output))
                         
                     if locked:
                         cmds.setAttr(output, l = False)
@@ -956,7 +966,7 @@ class AnimationData(MayaCustomData):
                 try:
                     cmds.connectAttr(input_attr, '%s.input' % key)
                 except:
-                    util.show('Could not connect %s to %s.input' % (input_attr,key))
+                    cmds.warning('\tCould not connect %s to %s.input' % (input_attr,key))
                     
         
 
@@ -1177,7 +1187,7 @@ class MayaAttributeData(MayaCustomData):
 
             if not cmds.objExists(node_name):
                 
-                util.show('Could not import attributes for %s' % node_name )
+                cmds.warning( '\tCould not import attributes for %s' % node_name ) 
                 continue
             
             lines = util_file.get_file_lines(filepath)
@@ -1194,7 +1204,7 @@ class MayaAttributeData(MayaCustomData):
                 try:
                     cmds.setAttr('%s.%s' % (node_name, line_list[0]), line_list[1])    
                 except:
-                    util.show('Could not set %s to %s' % (line_list[0], line_list[1]))
+                    cmds.warning('\tCould not set %s to %s' % (line_list[0], line_list[1]))
                     
             
         self._center_view()
@@ -1310,7 +1320,16 @@ class MayaFileData(MayaCustomData):
         unknown = cmds.ls(type = 'unknown')
         
         if unknown:
-            util.warning('This file contains unknown nodes. Try saving as maya ascii instead.')
+            
+            value = cmds.confirmDialog( title='Unknown Nodes!', message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
+                                        button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
+            
+            if value == 'Yes':
+                maya_lib.util.delete_unknown_nodes()
+            
+            if value == 'No':
+                cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
+                return
 
         cmds.file(rename = self.filepath)
         

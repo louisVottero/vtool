@@ -53,7 +53,7 @@ def get_maya_version():
             show('Could not get maya version.')
 
     if not is_in_maya():
-        return
+        return 0
 
 
 class StopWatch(object):

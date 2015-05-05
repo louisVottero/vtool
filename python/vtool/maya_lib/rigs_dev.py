@@ -1599,7 +1599,7 @@ class EyeLidRig(rigs.JointRig):
     def create_fade_row(self, joints, weight, ignore_surface = False):
         
         if len(joints) != len(self.joints):
-            util.warning('Row joint count and rig joint count do not match.')
+            cmds.warning('Row joint count and rig joint count do not match.')
   
         for inc in range(0, len(self.joints)):
             """
@@ -1952,7 +1952,7 @@ class CurveAndSurfaceRig(rigs.BufferRig):
         
         self._attach_joints_to_curve()
 
-class EyeLidSphereRig(util.BufferRig):
+class EyeLidSphereRig(rigs.BufferRig):
     
     def __init__(self, description, side):
         super(EyeLidSphereRig, self).__init__(description, side)
@@ -2024,7 +2024,7 @@ class EyeLidSphereRig(util.BufferRig):
                 
                 inc+=1
 
-class EyeLidSphereRig2(util.BufferRig):
+class EyeLidSphereRig2(rigs.BufferRig):
     
     def __init__(self, description, side):
         
@@ -2385,7 +2385,7 @@ class EyeLidSphereRig2(util.BufferRig):
         
         cmds.parent(self.top_group, self.setup_group)
        
-class MouthTweakers(util.Rig):
+class MouthTweakers(rigs.Rig):
 
 
     def __init__(self, description, side):
@@ -2960,6 +2960,8 @@ class MouthTweakers(util.Rig):
         self._create_locator_controls(self.sub_locators2)
         """
 
+#--- Body
+
 class BackLeg(rigs.BufferRig):
 
     def __init__(self, description, side):
@@ -3330,7 +3332,7 @@ class BackLeg(rigs.BufferRig):
 
         self._create_pole_vector()   
    
-class FrontLeg(util.BufferRig):
+class FrontLeg(rigs.BufferRig):
 
     def __init__(self, description, side):
         super(FrontLeg, self).__init__(description, side)
@@ -3661,7 +3663,143 @@ class FrontLeg(util.BufferRig):
         self._create_pole_chain()
 
         self._create_pole_vector()   
-  
+
+class FinRig(rigs.JointRig):
+    
+    def _create_top_control(self):
+        top_control = self._create_control('top')
+        top_control.hide_scale_and_visibility_attributes()
+        top_control.set_curve_type('cube')
+        top_control.scale_shape(2, 2, 2)
+        
+        top_control = top_control.get()
+        
+        match = util.MatchSpace(self.joints[0], top_control)
+        match.translation_rotation()
+        
+        cmds.parent(top_control, self.control_group)
+        
+        util.create_xform_group(top_control)
+        
+        spread = util.MayaNumberVariable('spread')
+        spread.create(top_control)
+        
+        return top_control
+    
+    def _create_sub_controls(self, parent):
+        
+        sub_controls = []
+        drivers = []
+        
+        joint_count = len(self.joints)
+        
+        section = 2.00/joint_count
+        
+        spread_offset = 1.00
+        
+        for joint in self.joints:
+    
+            sub_control = self._create_control(sub = True)
+            sub_control.hide_scale_and_visibility_attributes()
+            
+            sub_control = sub_control.get()
+            
+            match = util.MatchSpace(joint, sub_control)
+            match.translation_rotation()
+            
+            #cmds.parent(sub_control, parent)
+            
+            xform = util.create_xform_group(sub_control)
+            driver = util.create_xform_group(sub_control, 'driver')
+            
+            cmds.parentConstraint(sub_control, joint)
+            cmds.scaleConstraint(sub_control, joint)
+            
+            util.connect_multiply('%s.spread' % parent, '%s.rotateZ' % driver, spread_offset)
+            
+            
+            util.connect_plus('%s.translateX' % parent, '%s.translateX' % driver)
+            util.connect_plus('%s.translateY' % parent, '%s.translateY' % driver)
+            util.connect_plus('%s.translateZ' % parent, '%s.translateZ' % driver)
+            
+            util.connect_plus('%s.rotateX' % parent, '%s.rotateX' % driver)
+            util.connect_plus('%s.rotateY' % parent, '%s.rotateY' % driver)
+            util.connect_plus('%s.rotateZ' % parent, '%s.rotateZ' % driver)
+            
+            
+            
+            sub_controls.append(sub_control)
+            drivers.append(driver)
+            cmds.parent(xform, self.control_group)
+            
+            spread_offset -= section
+            
+        util.create_attribute_lag(sub_controls[0], 'rotateY',  drivers[1:])
+    
+    def create(self):
+        super(FinRig, self).create()
+        
+        top_control = self._create_top_control()
+        
+        self._create_sub_controls(top_control)
+
+class SuspensionRig(rigs.BufferRig):
+    
+    def __init__(self, description, side):
+        
+        self.sections = []
+        self.scale_constrain = None
+        
+        super(SuspensionRig, self).__init__(description, side)
+                    
+    def _create_joint_section(self, top_joint, btm_joint):
+
+        ik = util.IkHandle( self._get_name() )
+        
+        ik.set_start_joint(top_joint)
+        ik.set_end_joint(btm_joint)
+        ik.set_solver(ik.solver_sc)
+        ik.create()
+        
+        handle = ik.ik_handle
+        
+        stretch = util.StretchyChain()
+        stretch.set_simple(True)
+        
+        stretch.set_joints([top_joint, btm_joint])
+        stretch.set_description(self._get_name())        
+                
+        top_locator, btm_locator = stretch.create()
+        
+        top_control = self._create_control('top')
+        top_control.rotate_shape(0, 0, 90)
+        xform_top_control = util.create_xform_group(top_control.get())
+        util.MatchSpace(top_joint, xform_top_control).translation_rotation()
+        
+        btm_control = self._create_control('btm')
+        btm_control.rotate_shape(0, 0, 90)
+        xform_btm_control = util.create_xform_group(btm_control.get())
+        util.MatchSpace(btm_joint, xform_btm_control).translation_rotation()
+        
+        
+        cmds.parent(xform_top_control, xform_btm_control, self.control_group)
+        cmds.parent(top_locator, top_control.get())
+        cmds.parent(btm_locator, btm_control.get())
+        
+        cmds.pointConstraint(top_control.get(), top_joint)
+        cmds.parent(handle, btm_control.get())
+        
+        self.controls = [top_control.control, btm_control.control]
+        self.xforms = [xform_top_control, xform_btm_control]
+        
+        cmds.hide(handle)
+                    
+    def create(self):
+        
+        super(SuspensionRig, self).create()
+        
+        self._create_joint_section(self.buffer_joints[0], self.buffer_joints[1])
+
 #--- Misc
 
 class WeightFade(object):

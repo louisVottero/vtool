@@ -33,7 +33,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_tab = 0
         self.last_process = None
         self.sync_code = False
+        self.kill_process = False
+        
         super(ProcessManagerWindow, self).__init__(parent) 
+        
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Escape), self)
+        shortcut.activated.connect(self._set_kill_process)
         
         self._set_default_directory()
         self._setup_settings_file()
@@ -129,6 +134,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_button = QtGui.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
         self.process_button.setMaximumWidth(200)
+        
+        self.stop_button = QtGui.QPushButton('STOP!')
+        self.stop_button.setMaximumWidth(50)
+        self.stop_button.hide()
+        
         self.browser_button = QtGui.QPushButton('Browse')
         self.browser_button.setMaximumWidth(100)
         help_button = QtGui.QPushButton('?')
@@ -136,7 +146,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         button_layout = QtGui.QHBoxLayout()
         
+        button_layout.addWidget(self.stop_button)
         button_layout.addWidget(self.process_button)
+        
+        
                 
         button_layout.addWidget(self.browser_button)
         button_layout.addWidget(help_button)
@@ -144,6 +157,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.browser_button.clicked.connect(self._browser)
         self.process_button.clicked.connect(self._process)
         help_button.clicked.connect(self._open_help)
+        self.stop_button.clicked.connect(self._set_kill_process)
         
         self.main_layout.addLayout( button_layout )
         
@@ -230,6 +244,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.code_widget.code_widget.code_edit.save_tabs(self.last_process)
         self.code_widget.code_widget.code_edit.clear()
         self.code_widget.script_widget.code_manifest_tree.clearSelection()
+           
+
                 
         items = self.view_widget.tree_widget.selectedItems()
         if items:
@@ -274,7 +290,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             return self.process.get_path()
            
+    def _set_kill_process(self):
+        self.kill_process = True
+        
     def _process(self):
+        
+
         
         if util.is_in_maya():
             import maya.cmds as cmds
@@ -282,6 +303,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 result = qt_ui.get_permission('Changes not saved. Run process anyways?', self)
                 if not result:
                     return
+                
+        self.kill_process = False
+        self.stop_button.show()
         
         self.process_button.setDisabled(True)
         
@@ -307,8 +331,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         util.show('\n\a\tRunning %s Scripts\t\a\n' % self.process.get_name())
         
         for inc in range(0, script_count):
-            
-            state = states[inc]
+        
+            if self.kill_process:
+                self.kill_process = False
+                break
+                
+        
+            current_scripts, current_states = self.process.get_manifest()    
+            state = current_states[inc]
             
             if not state:
                 self.code_widget.set_process_script_state(scripts[inc], -1)
@@ -330,6 +360,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 util.show('\tSuccess')
             
         self.process_button.setEnabled(True)
+        self.stop_button.hide()
                     
     def _browser(self):
         

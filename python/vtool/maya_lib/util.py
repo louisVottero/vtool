@@ -2478,261 +2478,11 @@ class StretchyChain:
                 self._create_other_distance_offset(distance_offset)
                 
         return top_locator, btm_locator
-
-#--- Rig Class Placeholders
-
-#These are only for backwards compatibility. 
-#They should not be used within this module!!!
-#new classes built after this change will not be added to this list
-import rigs
-reload(rigs)
-
-Rig = rigs.Rig
-JointRig = rigs.JointRig
-BufferRig = rigs.BufferRig
-SparseRig = rigs.SparseRig
-SparseLocalRig = rigs.SparseLocalRig
-ControlRig = rigs.ControlRig
-GroundRig = rigs.GroundRig
-FkRig = rigs.FkRig
-FkLocalRig = rigs.FkLocalRig
-FkScaleRig = rigs.FkScaleRig
-FkCurlNoScaleRig = rigs.FkCurlNoScaleRig
-FkCurlRig = rigs.FkCurlRig
-SimpleFkCurveRig = rigs.SimpleFkCurveRig
-FkCurveRig = rigs.FkCurveRig
-FkCurveLocalRig = rigs.FkCurveLocalRig
-NeckRig = rigs.NeckRig
-IkSplineNubRig = rigs.IkSplineNubRig
-IkAppendageRig = rigs.IkAppendageRig
-RopeRig = rigs.RopeRig
-TweakCurveRig = rigs.TweakCurveRig
-IkLegRig = rigs.IkLegRig
-RollRig = rigs.RollRig
-FootRollRig = rigs.FootRollRig
-EyeRig = rigs.EyeRig
-JawRig = rigs.JawRig
       
 #--- Misc Rig
 
-class ConvertJointToNub(object):
 
-    def __init__(self, name, side = 'C'):
-        self.start_joint = None
-        self.end_joint = None
-        self.count = 10
-        self.prefix = 'joint'
-        self.name = name
-        self.side = side
-        
-        self.add_mid_control = True
-        
-        self.joints = []
-        self.control_group = None
-        self.setup_group = None
-        self.control_shape = 'pin_round'
-        self.add_sub_joints = False
-        
-        self.right_side_fix = True
-        self.right_side_fix_axis = 'x'
-        
-        self.up_object = None
-        
-    def set_start_joint(self, joint):
-        self.start_joint = joint
-    
-    def set_end_joint(self, joint):
-        self.end_joint = joint
-        
-    def set_joints(self, joints):
-        self.joints = joints
-        
-    def set_create_mid_control(self, bool_value):
-        self.add_mid_control = bool_value
-        
-    def set_joint_count(self, count):
-        self.count = count
-        
-    def set_control_shape(self, shape_type_name):
-        self.control_shape = shape_type_name
-        
-    def set_prefix(self, prefix):
-        self.prefix = prefix
-        
-    def set_add_sub_joints(self, bool_value):
-        self.add_sub_joints = bool_value
-        
-    def set_up_object(self, name):
-        self.up_object = name
-        
-    def create(self):
-        
-        parent_joints = False
-        
-        if not self.joints:
-            parent_joints = True
-            joints = subdivide_joint(self.start_joint, 
-                                     self.end_joint, 
-                                     self.count, self.prefix, 
-                                     '%s_1_%s' % (self.name,self.side), True)
-            
-            
-            
-            for joint in joints[:-1]:
-                orient = OrientJoint(joint)
-                
-                if not self.up_object:
-                    self.up_object = self.start_joint
-                
-                orient.set_aim_up_at_object(self.up_object)
-                orient.run()
-                
-            
-            
-                
-            cmds.makeIdentity(joints[-1], r = True, jo = True, apply = True)
-            
-            
-            self.joints = joints
-            
-            
-        parent_map = {}
-            
-        if self.add_sub_joints:
-            
-            new_joints = []
-            
-            for joint in self.joints:
-                duplicate = cmds.duplicate(joint, po = True)
-                
-                new_name = joint[0].upper() + joint[1:]
-                
-                new_joint = cmds.rename(joint, 'xform%s' % new_name)
-                duplicate = cmds.rename(duplicate, joint)
-                cmds.parent(duplicate, w = True)
-                
-                new_joints.append(new_joint)
-                
-                parent_map[new_joint] = duplicate
-                
-            self.joints = new_joints
-        
-        rig = IkSplineNubRig(self.name, self.side)
-        rig.set_joints(self.joints)
-        rig.set_end_with_locator(True)
-        rig.set_create_middle_control(self.add_mid_control)
-        rig.set_control_shape(self.control_shape)
-        #rig.set_control_orient(self.start_joint)
-        rig.set_buffer(False)
-        rig.set_right_side_fix(self.right_side_fix, self.right_side_fix_axis)
-        rig.create()
-        
-        self.top_control = rig.top_control
-        self.btm_control = rig.btm_control
-        self.top_xform = rig.top_xform
-        self.btm_xform = rig.btm_xform
-        
-        if parent_joints:
-            cmds.parent(joints[0], rig.setup_group)
-        
-        if parent_map:
-            for joint in parent_map:
-                cmds.parent(parent_map[joint], joint)
-        
-        self.control_group = rig.control_group
-        self.setup_group = rig.setup_group
-        
-    def get_control_group(self):
-        return self.control_group
-    
-    def get_setup_group(self):
-        return self.setup_group
-    
-    def get_joints(self):
-        return self.joints
-    
-    def set_right_side_fix(self, bool_value, axis = 'x'):
-        self.right_side_fix = bool_value
-        self.right_side_fix_axis = axis
 
-class FinRig(JointRig):
-    
-    def _create_top_control(self):
-        top_control = self._create_control('top')
-        top_control.hide_scale_and_visibility_attributes()
-        top_control.set_curve_type('cube')
-        top_control.scale_shape(2, 2, 2)
-        
-        top_control = top_control.get()
-        
-        match = MatchSpace(self.joints[0], top_control)
-        match.translation_rotation()
-        
-        cmds.parent(top_control, self.control_group)
-        
-        create_xform_group(top_control)
-        
-        spread = MayaNumberVariable('spread')
-        spread.create(top_control)
-        
-        return top_control
-    
-    def _create_sub_controls(self, parent):
-        
-        sub_controls = []
-        drivers = []
-        
-        joint_count = len(self.joints)
-        
-        section = 2.00/joint_count
-        
-        spread_offset = 1.00
-        
-        for joint in self.joints:
-    
-            sub_control = self._create_control(sub = True)
-            sub_control.hide_scale_and_visibility_attributes()
-            
-            sub_control = sub_control.get()
-            
-            match = MatchSpace(joint, sub_control)
-            match.translation_rotation()
-            
-            #cmds.parent(sub_control, parent)
-            
-            xform = create_xform_group(sub_control)
-            driver = create_xform_group(sub_control, 'driver')
-            
-            cmds.parentConstraint(sub_control, joint)
-            cmds.scaleConstraint(sub_control, joint)
-            
-            connect_multiply('%s.spread' % parent, '%s.rotateZ' % driver, spread_offset)
-            
-            
-            connect_plus('%s.translateX' % parent, '%s.translateX' % driver)
-            connect_plus('%s.translateY' % parent, '%s.translateY' % driver)
-            connect_plus('%s.translateZ' % parent, '%s.translateZ' % driver)
-            
-            connect_plus('%s.rotateX' % parent, '%s.rotateX' % driver)
-            connect_plus('%s.rotateY' % parent, '%s.rotateY' % driver)
-            connect_plus('%s.rotateZ' % parent, '%s.rotateZ' % driver)
-            
-            
-            
-            sub_controls.append(sub_control)
-            drivers.append(driver)
-            cmds.parent(xform, self.control_group)
-            
-            spread_offset -= section
-            
-        create_attribute_lag(sub_controls[0], 'rotateY',  drivers[1:])
-    
-    def create(self):
-        super(FinRig, self).create()
-        
-        top_control = self._create_top_control()
-        
-        self._create_sub_controls(top_control)
         
   
 
@@ -4174,62 +3924,7 @@ class StickyTransform(object):
         self._create_locators()
         self._create_constraints()
         
-class SuspensionRig(BufferRig):
-    
-    def __init__(self, description, side):
-        
-        self.sections = []
-        self.scale_constrain = None
-        
-        super(SuspensionRig, self).__init__(description, side)
-                    
-    def _create_joint_section(self, top_joint, btm_joint):
 
-        ik = IkHandle( self._get_name() )
-        
-        ik.set_start_joint(top_joint)
-        ik.set_end_joint(btm_joint)
-        ik.set_solver(ik.solver_sc)
-        ik.create()
-        
-        handle = ik.ik_handle
-        
-        stretch = StretchyChain()
-        stretch.set_simple(True)
-        
-        stretch.set_joints([top_joint, btm_joint])
-        stretch.set_description(self._get_name())        
-                
-        top_locator, btm_locator = stretch.create()
-        
-        top_control = self._create_control('top')
-        top_control.rotate_shape(0, 0, 90)
-        xform_top_control = create_xform_group(top_control.get())
-        MatchSpace(top_joint, xform_top_control).translation_rotation()
-        
-        btm_control = self._create_control('btm')
-        btm_control.rotate_shape(0, 0, 90)
-        xform_btm_control = create_xform_group(btm_control.get())
-        MatchSpace(btm_joint, xform_btm_control).translation_rotation()
-        
-        
-        cmds.parent(xform_top_control, xform_btm_control, self.control_group)
-        cmds.parent(top_locator, top_control.get())
-        cmds.parent(btm_locator, btm_control.get())
-        
-        cmds.pointConstraint(top_control.get(), top_joint)
-        cmds.parent(handle, btm_control.get())
-        
-        self.controls = [top_control.control, btm_control.control]
-        self.xforms = [xform_top_control, xform_btm_control]
-        
-        cmds.hide(handle)
-                    
-    def create(self):
-        
-        super(SuspensionRig, self).create()
-        
-        self._create_joint_section(self.buffer_joints[0], self.buffer_joints[1])
         
 #--- deformation
 
@@ -5024,6 +4719,14 @@ def get_current_audio_node():
     play_slider = mel.eval('global string $gPlayBackSlider; string $goo = $gPlayBackSlider')
     
     return cmds.timeControl(play_slider, q = True, s = True)
+
+def delete_unknown_nodes():
+    
+    unknown = cmds.ls(type = 'unknown')
+
+    for node in unknown:
+        cmds.lockNode(node, lock = False)
+        cmds.delete(node)
 
 #--- shading
 
@@ -6444,16 +6147,12 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     shape = get_mesh_shape(mesh)
     #shape = cmds.listRelatives(mesh, shapes = True)[0]
     
-    print 'attach shape', shape
-    
     face_iter = IteratePolygonFaces(shape)
     
     if rotate_pivot:
         position = cmds.xform(transform, q = True, rp = True, ws = True)
     if not rotate_pivot: 
         position = get_center(transform)
-    
-    print 'attach position', position
     
     if not face:
         face_id = face_iter.get_closest_face(position)
@@ -7330,8 +7029,6 @@ def get_influences_on_skin(skin_deformer):
     return influences
 
 def get_non_zero_influences(skin_deformer):
-    
-    print 'get non zero', skin_deformer
     
     influences = cmds.skinCluster(skin_deformer, q = True, wi = True)
     
@@ -8238,13 +7935,17 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     
     vtool.util.show('skinning %s' % target_mesh)
     
-    
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
+    
+    if not skin:
+        cmds.warning('%s has no skin. Nothing to copy.' % source_mesh)
+        return
     
     other_skin = find_deformer_by_type(target_mesh, 'skinCluster')
     
     if other_skin:
         cmds.warning('%s already has a skin cluster.' % target_mesh)
+    
     
     influences = get_non_zero_influences(skin)
     
@@ -8262,8 +7963,6 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     
     if not other_skin:  
         
-        print 'influences', influences
-        
         other_skin = cmds.skinCluster(influences, target_mesh, tsb=True, n = 'skin_%s' % target_mesh)[0]
         
     if other_skin:
@@ -8272,7 +7971,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                                  ds = other_skin, 
                                  noMirror = True, 
                                  surfaceAssociation = 'closestPoint', 
-                                 influenceAssociation = ['closestJoint'], 
+                                 influenceAssociation = ['name'], 
                                  normalize = True)
         
         if uv_space:
@@ -8280,7 +7979,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                                  ds = other_skin, 
                                  noMirror = True, 
                                  surfaceAssociation = 'closestPoint', 
-                                 influenceAssociation = ['closestJoint'],
+                                 influenceAssociation = ['name'],
                                  uvSpace = ['map1','map1'], 
                                  normalize = True)
             
@@ -8533,7 +8232,7 @@ def get_index_at_alias(alias, blendshape_node):
 def chad_extract_shape(skin_mesh, corrective):
     
     try:
-    
+   
         envelopes = EnvelopeHistory(skin_mesh)
         
         skin = find_deformer_by_type(skin_mesh, 'skinCluster')
