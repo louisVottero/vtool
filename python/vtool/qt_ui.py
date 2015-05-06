@@ -2036,7 +2036,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                 cursor.movePosition(QtGui.QTextCursor.EndOfLine, QtGui.QTextCursor.KeepAnchor)
                 self.setTextCursor(cursor)
                 text = cursor.selection()
-                text = text.toPlainText()
+                text = str(text.toPlainText())
+                
                 split_text = text.split('\n')
                 
                 edited = []
