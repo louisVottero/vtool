@@ -1533,8 +1533,10 @@ class CodeEditTabs(BasicWidget):
         current_widget = self.tabs.currentWidget()
         
         if self.previous_widget:
-            if self.previous_widget.find_widget:    
+            if self.previous_widget.find_widget:
+                current_widget.find_widget = self.previous_widget.find_widget    
                 self.previous_widget.set_find_widget(current_widget)
+                
                 
         
         self.previous_widget = current_widget
@@ -1841,7 +1843,11 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
             self._update_number_width()
         
     def _save(self):
-        self.save.emit()
+        
+        try:
+            self.save.emit()
+        except:
+            pass
         
         self.last_modified = util_file.get_last_modified_date(self.filepath)
     
@@ -2087,9 +2093,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     
     def set_find_widget(self, widget):
         
-        
-        self.find_widget.set_find_widget(widget)
-        
+        self.find_widget.set_widget(widget)
     
     def load_modification_date(self):
         
@@ -2103,7 +2107,6 @@ class FindTextWidget(BasicDialog):
         super(FindTextWidget, self).__init__(parent = text_widget)
         
         self.text_widget = text_widget
-        
         
         self.text_widget.cursorPositionChanged.connect(self._reset_found_match)
         
@@ -2167,7 +2170,7 @@ class FindTextWidget(BasicDialog):
     def _find(self):
         
         text = self.text_widget.toPlainText()
-
+        
         find_text = str(self.find_string.get_text())
         
         pattern = re.compile( find_text, 0)
@@ -2183,6 +2186,8 @@ class FindTextWidget(BasicDialog):
             
             self._move_cursor(start,end)
             self.found_match = True
+        if not match:
+            self.found_match = False
         
     def _replace(self):
         

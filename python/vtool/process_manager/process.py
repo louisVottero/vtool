@@ -2,6 +2,7 @@
 
 import sys
 import traceback
+import string
 
 from vtool import util
 from vtool import util_file
@@ -173,7 +174,7 @@ class Process(object):
         return util_file.get_basename(name)
     
     def get_relative_process(self, relative_path):
-                    
+              
         path = self.get_path()
         
         if not path:
@@ -182,38 +183,47 @@ class Process(object):
         split_path = self.get_path().split('/')
         split_relative_path = relative_path.split('/')
         
-        if not len(split_relative_path):
-            return
+        up_directory = 0
         
-        position = len(split_relative_path)
+        new_sub_path = []
         
-        import string
-        if position > 1:
-            start_path = string.join(split_path[:-position], '/')
-        if position == 1:
-            start_path = string.join(split_path,'/')
+        for sub_path in split_relative_path:
+            if sub_path == '..':
+                up_directory +=1
+            if sub_path != '..':
+                new_sub_path.append(sub_path)
         
-        split_path_count = len(split_path[:-position])
-        
-        end_path = [] 
-        
-        for inc in range(0, position):
-            if split_relative_path[inc] == '..':
-                
-                folder = split_path[split_path_count + inc]
-                
-                end_path.append(folder)
-                continue
+        if up_directory:
             
-            end_path.append(split_relative_path[inc])
-
-        if end_path:
-            end_path = string.join(end_path, '/')
-        if not end_path:
-            end_path = relative_path
+            new_path = split_path[:-up_directory]
+            new_path = new_path + new_sub_path
+            
+        if up_directory == 0:
+            
+            new_path = split_path + split_relative_path
+            
+            new_path_test = string.join(new_path, '/')
+            
+            if not util_file.is_dir(new_path_test):
+                
+                temp_split_path = list(split_path)
+                
+                temp_split_path.reverse()
+                
+                found_path = []
+                
+                for inc in range(0, len(temp_split_path)):
+                    if temp_split_path[inc] == split_relative_path[0]:
+                        found_path = temp_split_path[inc+1:]
+                
+                found_path.reverse()
+                new_path = found_path + split_relative_path
         
-        process = Process(end_path)
-        process.set_directory(start_path)
+        process_name = string.join([new_path[-1]], '/')
+        process_directory = string.join(new_path[:-1], '/')
+        
+        process = Process(process_name)
+        process.set_directory(process_directory)
         
         return process
     
