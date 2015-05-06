@@ -1127,7 +1127,7 @@ class SaveFileWidget(DirectoryWidget):
     def _build_widgets(self):
         
         self.save_button = QtGui.QPushButton('Save')
-        load_button = QtGui.QPushButton('Open Latest')
+        load_button = QtGui.QPushButton('Open')
         
         self.save_button.clicked.connect(self._save)
         load_button.clicked.connect(self._open)
@@ -1531,6 +1531,16 @@ class CodeEditTabs(BasicWidget):
     def _tab_changed(self):
           
         current_widget = self.tabs.currentWidget()
+        
+        if not current_widget:
+            
+            if self.previous_widget:
+                if self.previous_widget.find_widget:
+                    self.previous_widget.find_widget.close()
+            
+            return
+        
+        
         
         if self.previous_widget:
             if self.previous_widget.find_widget:

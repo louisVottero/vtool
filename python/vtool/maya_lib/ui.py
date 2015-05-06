@@ -20,8 +20,6 @@ if vtool.qt_ui.is_pyside():
 
 #--- signals
 
-
-"""
 class new_scene_object(QtCore.QObject):
     signal = vtool.qt_ui.create_signal()
 
@@ -32,17 +30,14 @@ new_scene_signal = new_scene_object()
 open_scene_signal = open_scene_object()
 
 def emit_new_scene_signal():
-    print 'emitting new scene signal!!'
     new_scene_signal.signal.emit()
 
 def emit_open_scene_signal():
-    print 'emitting open scen sginal!!!S'
     new_scene_signal.signal.emit()
 
 #--- script jobs
-#cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui;ui.emit_new_scene_signal()'], protected = False)
-#cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui;ui.emit_open_scene_signal()'], protected = False)
-"""
+cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui;ui.emit_new_scene_signal()'], protected = False)
+cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui;ui.emit_open_scene_signal()'], protected = False)
   
 #--- ui 
 
@@ -80,9 +75,11 @@ def create_window(ui, dock_area = 'right'):
     
     print 'Creating dock window.', ui_name, ui
     
-    cmds.dockControl(dockName,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name, w=350, fl = False, visible = True)
-    
-    ui.show()
+    try:
+        cmds.dockControl(dockName,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name, w=350, fl = False, visible = True)
+        ui.show()
+    except:
+        vtool.util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
 
 def pose_manager():
     import ui_corrective

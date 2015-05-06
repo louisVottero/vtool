@@ -507,11 +507,9 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     def _create_button(self, name):
         
         button = QtGui.QPushButton(name)
-        
         button.setMaximumWidth(120)
         
         return button
-    
     
     def _build_widgets(self):
             
@@ -730,8 +728,6 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
     def _build_widgets(self):
         
-        
-        
         save_button = self._create_button('Save')
         
         save_button.setMinimumHeight(50)
@@ -743,9 +739,6 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
         out_box = QtGui.QGroupBox('File Out')
         in_box = QtGui.QGroupBox('File In')
-        
-        
-        
         
         out_box_layout = QtGui.QVBoxLayout()
         in_box_layout = QtGui.QVBoxLayout()
@@ -821,6 +814,7 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
 class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
     def _build_widgets(self):
+        
         super(MayaHistoryFileWidget, self)._build_widgets()
         import_button = QtGui.QPushButton('Import')
         import_button.setMaximumWidth(100)
@@ -850,7 +844,6 @@ class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         
         maya_file = vtool.data.MayaFileData()
         maya_file.import_data(version_file)  
-
 
         
 file_widgets = { 'maya.binary' : MayaBinaryFileWidget,

@@ -1051,9 +1051,9 @@ class PoseData(MayaCustomData):
         #dir_path = util_file.join_path(self.directory, self.name)
         dir_path = util_file.create_dir(self.name, self.directory)
         
-        if not util_file.is_dir(dir_path):
-            self.create
-            return
+        #if not util_file.is_dir(dir_path):
+        #    self.create
+        #    return
         
         pose_manager = maya_lib.corrective.PoseManager()
         pose_manager.set_pose_to_default()
@@ -1118,6 +1118,9 @@ class PoseData(MayaCustomData):
         
         pose_files = util_file.get_files(path)
         
+        print 'path!', path
+        print 'files', pose_files
+        
         if not pose_files:
             return
         
@@ -1137,6 +1140,8 @@ class PoseData(MayaCustomData):
                         poses.append(pose)
         
                     self._import_file(pose_path)
+                    
+        print poses
                     
         if cmds.objExists('pose_gr'):
             cmds.parent(poses, 'pose_gr')
