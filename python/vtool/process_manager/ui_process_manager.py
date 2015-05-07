@@ -34,6 +34,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_process = None
         self.sync_code = False
         self.kill_process = False
+        self.build_widget = None
         
         super(ProcessManagerWindow, self).__init__(parent) 
         
@@ -73,14 +74,41 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if not items:
             self._update_process(None)
+            self.build_widget.hide()
             return
         
         item = items[0]
         
         name = item.get_name()
         
+        self._update_build_widget(name)
+        
+        
         self._set_title(name)
         self._update_process(name)
+        
+    def _update_build_widget(self, process_name):
+        
+        
+        
+        path = self.view_widget.tree_widget.directory
+        path = util_file.join_path(path, process_name)
+        data_path = util_file.join_path(path, '_data/build')
+        
+        from vtool import data
+        
+        if not util_file.is_dir(data_path):
+            
+            data_dir = util_file.join_path(path, '_data')
+            
+            data_folder = data.DataFolder('build', data_dir)
+            data_type = data_folder.get_data_type()
+            if data_type == None:
+                data_folder.set_data_type('maya.ascii')
+        
+        
+        self.build_widget.set_directory(data_path)
+        self.build_widget.show()
         
     def sizeHint(self):
         return QtCore.QSize(400,800)
@@ -108,6 +136,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         
         self.data_widget = ui_data.DataProcessWidget()
+        
+        
         
         self.code_widget = ui_code.CodeProcessWidget()
         self.settings_widget = ui_settings.SettingsWidget()
@@ -149,6 +179,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
         button_layout.addWidget(self.browser_button)
         button_layout.addWidget(help_button)
+        
+        self.build_widget = ProcessBuildDataWidget()
+        self.build_widget.hide()
+        
                 
         self.browser_button.clicked.connect(self._browser)
         self.process_button.clicked.connect(self._process)
@@ -156,6 +190,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.stop_button.clicked.connect(self._set_kill_process)
         
         self.main_layout.addLayout( button_layout )
+        self.main_layout.addWidget( self.build_widget )
         
     def _set_default_directory(self):
         default_directory = process.get_default_directory()
@@ -203,6 +238,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         
     def _tab_changed(self):
+        
+        if self.tab_widget.currentIndex() == 0:
+            if self.build_widget:
+                self.build_widget.hide()     
+             
+        if self.tab_widget.currentIndex() == 1:
+            if self.build_widget:
+                self.build_widget.show()
                 
         if self.tab_widget.currentIndex() > 1:
             item = self.view_widget.tree_widget.currentItem()
@@ -214,6 +257,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process.load(process_name)
             
             if item and self.tab_widget.currentIndex() == 2:
+                if self.build_widget:
+                    self.build_widget.hide()
                 
                 path = self.view_widget.tree_widget.directory
                 path = util_file.join_path(path, self.process.get_name())
@@ -224,6 +269,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 return
             
             if item and self.tab_widget.currentIndex() == 3:
+                
+                if self.build_widget:
+                    self.build_widget.show()
                 
                 path = self.view_widget.tree_widget.directory
                 path = util_file.join_path(path, self.process.get_name())
@@ -429,6 +477,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not util_file.is_dir(directory):
             util_file.create_dir(name = None, directory = directory)
         
+        
+        
     def set_project_directory(self, directory, sub_part = None):
         #history should not be there...
         
@@ -476,3 +526,30 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings.set('code_directory', directory)
         self.code_widget.set_code_directory(directory)
         self.settings_widget.set_code_directory(directory)
+
+
+       
+
+class ProcessBuildDataWidget(ui_data.MayaAsciiFileWidget):
+    
+    def _define_main_tab_name(self):
+        return 'BUILD'
+    
+    def _define_save_widget(self):
+        return ProcessSaveFileWidget()
+    
+class ProcessSaveFileWidget(ui_data.MayaSaveFileWidget):
+    
+    def _build_widgets(self):
+        
+        save_button = self._create_button('Save')
+        open_button = self._create_button('Open')
+                
+        save_button.clicked.connect( self._save_file )
+        open_button.clicked.connect( self._open_file )
+    
+        self.main_layout.addWidget(save_button)
+        self.main_layout.addWidget(open_button)
+        
+        self.main_layout.setAlignment(QtCore.Qt.AlignTop)
+        

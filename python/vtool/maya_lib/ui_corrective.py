@@ -6,6 +6,7 @@ from vtool import qt_ui
 import ui
 import util
 import corrective
+import vtool.util
 
 import maya.cmds as cmds
 import maya.mel as mel
@@ -246,7 +247,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         self.setSortingEnabled(True)
         self.setSelectionMode(self.SingleSelection)
         
-        #ui.new_scene_signal.signal.connect(self.refresh)
+        ui.new_scene_signal.signal.connect(self.refresh)
         
         self.text_edit = False
         
@@ -412,6 +413,8 @@ class PoseTreeWidget(BaseTreeWidget):
     
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
+        
+        
         
         self._create_context_menu()
         
@@ -737,9 +740,25 @@ class MeshWidget(qt_ui.BasicWidget):
         
         self.mesh_list.setSelectionMode(self.mesh_list.ExtendedSelection)
         
-    
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._item_menu)
+        
+        self._create_context_menu()
+        
     def sizeHint(self):    
         return QtCore.QSize(200,100)
+    
+    def _item_menu(self, position):
+        
+        self.context_menu.exec_(self.mesh_list.viewport().mapToGlobal(position))
+        
+    def _create_context_menu(self):
+        
+        self.context_menu = QtGui.QMenu()
+        
+        remove = self.context_menu.addAction('Remove')
+                
+        remove.triggered.connect(self.remove_mesh)
     
     def _build_widgets(self):
 
@@ -771,11 +790,20 @@ class MeshWidget(qt_ui.BasicWidget):
         
     @util.undo_chunk
     def add_mesh(self):
-                       
+                    
         current_meshes = self.get_current_meshes_in_list()
         
         if not current_meshes:
             current_meshes = []
+            
+        missing_meshes = ''
+        
+        for current_mesh in current_meshes:
+            if not current_mesh or not cmds.objExists(current_mesh):
+                missing_meshes += '\n%s' % current_mesh
+                
+        if missing_meshes: 
+            qt_ui.warning('Cannot find: %s' % missing_meshes, self)
             
         pose_name = self.pose_name
             
@@ -820,6 +848,39 @@ class MeshWidget(qt_ui.BasicWidget):
         if sculpt_meshes or not current_meshes:
                     
             if sculpt_meshes:
+                
+                vtool.util.convert_to_sequence(sculpt_meshes)
+                
+                mesh_info = 'mesh'
+                sculpt_name = ''
+                
+                sculpt_count = len(sculpt_meshes)
+                
+                inc = 0
+                
+                for sculpt in sculpt_meshes:
+                    name = util.get_basename(sculpt)
+                    
+                    if sculpt_count == 1:
+                        sculpt_name = name
+                        continue
+                    if inc == (sculpt_count-1):
+                        sculpt_name += '\n%s' % name
+                        inc+=1
+                        continue
+                    if sculpt_count > 1:
+                        sculpt_name += '\n%s' % name
+                    
+                    inc+=1 
+                
+                if len(sculpt_meshes) > 1:
+                    mesh_info = 'meshes'
+                
+                permission = qt_ui.get_permission('Add %s:  %s  ?' % (mesh_info, sculpt_name), self)
+                
+                if not permission:
+                    return
+                
                 corrective.PoseManager().add_mesh_to_pose(pose_name, sculpt_meshes)
         
             update_meshes = current_meshes + sculpt_meshes + added_meshes  
@@ -859,6 +920,21 @@ class MeshWidget(qt_ui.BasicWidget):
                     index = index.row()
                 
                     corrective.PoseManager().toggle_visibility(pose_name, mesh_index= index)
+     
+    def remove_mesh(self):
+        
+        meshes = self.get_current_meshes_in_list()
+        
+        if not meshes:
+            return
+        
+        self.pose_class.remove_mesh(meshes[0])
+        
+        indices = self.mesh_list.selectedIndexes()
+        
+        if indices:
+            index = indices[0].row()
+            self.mesh_list.takeItem(index)
         
     def _item_selected(self):
         
@@ -867,7 +943,8 @@ class MeshWidget(qt_ui.BasicWidget):
         cmds.select(cl = True)
         
         for item in items:
-            cmds.select(item.longname, add = True)
+            if cmds.objExists(item.longname):
+                cmds.select(item.longname, add = True)
         
     def update_meshes(self, meshes = [], index = 0, added_meshes = []):
         self.mesh_list.clear()    

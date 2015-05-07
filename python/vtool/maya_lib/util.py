@@ -8474,6 +8474,8 @@ def is_attribute_numeric(node_dot_attribute):
     if not is_attribute(node_dot_attribute):
         return False
     
+    print node_dot_attribute
+    
     attr_type = cmds.getAttr(node_dot_attribute, type = True)
     
     numeric_types = ['bool',

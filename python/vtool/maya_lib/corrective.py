@@ -203,7 +203,15 @@ class PoseManager(object):
                     added_meshes.append(sel)
                     
         return added_meshes
+    
+    def remove_mesh_from_pose(self, pose_name, mesh):
         
+        pose = self.get_pose_instance(pose_name)
+        
+        shape = util.get_mesh_shape(mesh)
+        
+        if shape:
+            pose.remove_mesh(mesh)
     
     def visibility_off(self, pose_name):
         pose = self.get_pose_instance(pose_name)
@@ -306,6 +314,9 @@ class PoseBase(object):
         
         for mesh in meshes:
             target_mesh = self._get_mesh_target(mesh)
+            
+            if not target_mesh or not cmds.objExists(target_mesh):
+                continue
             
             if target_mesh:
                 
@@ -842,6 +853,8 @@ class PoseBase(object):
         
     def add_mesh(self, mesh, toggle_vis = True):
         
+        
+        
         if mesh.find('.vtx'):
             mesh = mesh.split('.')[0]
             
@@ -878,13 +891,34 @@ class PoseBase(object):
         string_var = util.MayaStringVariable('mesh_pose_source')
         string_var.create(pose_mesh)
         string_var.set_value(mesh)
-
-        #self._hide_meshes()
-
+        
         if toggle_vis:
             self.toggle_vis()
         
         return pose_mesh
+    
+    def remove_mesh(self, mesh):
+        
+        index = self.get_target_mesh_index(mesh)
+        target_mesh = self.get_target_mesh(mesh)
+        
+        if index == None:
+            return
+
+        if target_mesh and cmds.objExists(target_mesh):        
+            blend_name = self.get_blendshape(index)
+            
+            if blend_name:
+                blend = blendshape.BlendShape(blend_name)
+                blend.remove_target(self.pose_control)
+        
+        pose_mesh = self.get_mesh(index)
+        
+        attributes = self._get_mesh_message_attributes()
+        attribute = attributes[index]
+        
+        cmds.delete(pose_mesh)
+        util.disconnect_attribute(attribute)
         
     def get_mesh(self, index):
         
@@ -928,13 +962,15 @@ class PoseBase(object):
                     long_name = cmds.ls(target_mesh, l = True)[0]
                 
                     cmds.setAttr('%s.mesh_pose_source' % mesh, long_name, type = 'string')
+                if not cmds.objExists(target_mesh):
+                    long_name = target_mesh
                 
         return long_name
         
     def get_target_mesh_index(self, target_mesh):
         
         target_meshes = self.get_target_meshes()
-
+        
         inc = 0
         
         for target_mesh_test in target_meshes:
@@ -999,7 +1035,9 @@ class PoseBase(object):
         
         cmds.hide(mesh)
 
-        cmds.showHidden(self.get_target_mesh(mesh))
+        target_mesh = self.get_target_mesh(mesh)
+        if target_mesh and cmds.objExists(target_mesh):
+            cmds.showHidden()
     
         if not view_only:    
             self.create_blend()
@@ -1013,7 +1051,10 @@ class PoseBase(object):
         
         cmds.showHidden(mesh)
         
-        cmds.hide(self.get_target_mesh(mesh))
+        target_mesh = self.get_target_mesh(mesh) 
+        
+        if target_mesh and cmds.objExists(target_mesh):
+            cmds.hide()
         
     def toggle_vis(self, view_only = False):
         mesh = self.get_mesh(self.mesh_index)
