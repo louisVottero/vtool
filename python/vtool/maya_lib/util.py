@@ -1643,8 +1643,6 @@ class Control(object):
             joint = cmds.joint()
             MatchSpace(name, joint).translation_rotation()
             joint_given = False
-            
-            
         
         shapes = self.shapes
         
@@ -1690,6 +1688,12 @@ class Control(object):
         
         set_color(shapes, value)
     
+    def show_rotate_attributes(self):
+        
+        cmds.setAttr('%s.rotateX' % self.control, l = False, k = True)
+        cmds.setAttr('%s.rotateY' % self.control, l = False, k = True)
+        cmds.setAttr('%s.rotateZ' % self.control, l = False, k = True)
+        
     def show_scale_attributes(self):
         
         cmds.setAttr('%s.scaleX' % self.control, l = False, k = True)

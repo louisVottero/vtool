@@ -198,14 +198,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _set_default_project_directory(self, directory, history = None):
         
-        print 'set default project', directory
-        
         if directory:
             if type(directory) != list:
                 directory = ['', directory]
         
         if not directory:
-            directory = ['', util_file.join_path(self.directory, 'project')]
+            directory = ['default', util_file.join_path(self.directory, 'project')]
         
         self.settings_widget.set_project_directory(directory, history)
         
@@ -428,13 +426,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
               
     def _set_project_history(self, current_directory, previous_directory):
         
-        print 'set project history'
-        print 'current', current_directory
-        print 'previous', previous_directory
-        
         history = self.settings.get('project_history')
-        
-        print 'history', history
         
         if previous_directory != current_directory and previous_directory:
 
@@ -447,7 +439,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
                 history_inc = history[inc]
                 
-                if not util_file.is_dir(history_inc):
+                if not util_file.is_dir(history_inc[1]):
                     continue
                 
                 if history_inc in found_history:
@@ -459,7 +451,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             if not current_directory in history:
                 history.insert(0, current_directory) 
-
+                
             self.settings.set('project_history', history)
             return
             
@@ -482,8 +474,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def set_project_directory(self, directory, sub_part = None):
         #history should not be there...
         
-        print 'set project directory', directory
-        
         if type(directory) != list:
             directory = ['', directory]
         
@@ -503,8 +493,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
             self.project_directory = directory
             self.settings.set('project_directory', self.project_directory)
-            
-            print 'set history', directory, previous_project
             
             self._set_project_history(directory, previous_project)
             

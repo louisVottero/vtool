@@ -145,25 +145,24 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         if not item:
             return
         
-        directory = item.text(1)
+        directory = [item.text(0), item.text(1)]
+        
         self.set_directory(directory)
         
         self.directory_changed.emit(directory)
 
-        
     def _text_changed(self, directory):
-        
-        print 'setting directory'
-            
+         
         if type(directory) != list:
             directory = ['', directory]
-                
-        if not util_file.is_dir(directory):
+        
+        if not util_file.is_dir(directory[1]):
+            
             return
         
         found = self.project_list.get_directories()
         
-        if directory in found:
+        if directory in found:    
             return
         
         if found:
@@ -174,7 +173,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.directory_changed.emit(directory)
         
-        self.set_label(directory)
+        self.set_label(directory[1])
         
         self.project_list.refresh_project_list(directory, found)
         
@@ -220,6 +219,10 @@ class ProjectList(QtGui.QTreeWidget):
         self.setSelectionMode(self.NoSelection)
         self.setHeaderLabels(['name', 'directory'])
 
+
+        self.setColumnWidth(0, 200)
+        
+
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
@@ -239,10 +242,16 @@ class ProjectList(QtGui.QTreeWidget):
         self.context_menu = QtGui.QMenu()
         
         name_action = self.context_menu.addAction('Name')
+        
+        moveup_action = self.context_menu.addAction('Move Up')
+        movedown_action = self.context_menu.addAction('Move Down')
+        
         remove_action = self.context_menu.addAction('Remove')
         
         remove_action.triggered.connect(self.remove_current_item)
         name_action.triggered.connect(self.name_current_item)
+        moveup_action.triggered.connect(self.move_current_item_up)
+        movedown_action.triggered.connect(self.move_current_item_down)
         
     def name_current_item(self):
         
@@ -255,12 +264,60 @@ class ProjectList(QtGui.QTreeWidget):
         
         item.setText(0, new_name)
         
-        print 'new name!!!!!!!!!!!!!!!', new_name
-        
         if self.settings:
             
             self.settings.set('project_history', self.get_directories())
             self.settings.set('project_directory', [new_name, project_directory])
+        
+    def move_current_item_up(self):
+        
+        current_index = self.currentIndex()
+        
+        if current_index == None:
+            return
+        
+        current_index = current_index.row()
+        
+        if current_index == 0:
+            return
+        
+        current_item = self.takeTopLevelItem(current_index)
+        
+        self.insertTopLevelItem( (current_index - 1), current_item)
+        
+        name = str( current_item.text(0) )
+        directory = str( current_item.text(1) )
+        
+        if self.settings:
+            
+            self.settings.set('project_history', self.get_directories())
+            self.settings.set('project_directory', [name, directory])
+        
+    def move_current_item_down(self):
+        
+        current_index = self.currentIndex()
+        
+        if current_index == None:
+            return
+        
+        current_index = current_index.row()
+        
+        count = self.topLevelItemCount()
+        
+        if current_index == (count-1):
+            return
+        
+        current_item = self.takeTopLevelItem(current_index)
+        
+        self.insertTopLevelItem( (current_index + 1), current_item)
+        
+        name = str(current_item.text(0))
+        directory = str(current_item.text(1))
+        
+        if self.settings:
+            
+            self.settings.set('project_history', self.get_directories())
+            self.settings.set('project_directory', [name, directory])
         
     def remove_current_item(self):
         
