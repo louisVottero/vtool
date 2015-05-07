@@ -34,8 +34,6 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.project_directory_widget.set_label('Project Directory')
         self.project_directory_widget.directory_changed.connect(self._project_directory_changed)
         
-        
-        
         self.history_list = self.project_directory_widget.project_list
                              
         self.code_directory_widget = CodeDirectoryWidget()
@@ -51,15 +49,19 @@ class SettingsWidget(qt_ui.BasicWidget):
         
     def _code_directory_changed(self, code_directory):
         self.code_directory_changed.emit(code_directory)
-        
+      
+    """ 
     def _history_item_selected(self):
+        
         item = self.history_list.currentItem()
         if not item:
             return
         
         directory = item.text()
-        self.set_project_directory(directory)
         
+        self.set_project_directory(directory)
+    """
+     
     def get_project_directory(self):
         return self.project_directory_widget.get_directory()
         
@@ -112,8 +114,6 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         file_layout = QtGui.QHBoxLayout()
     
         self.directory_label = QtGui.QLabel('directory')
-        #self.directory_label.setMinimumWidth(100)
-        #self.directory_label.setMaximumWidth(100)
 
         self.project_label = QtGui.QLabel('Project Libraries')
         
@@ -121,12 +121,9 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         directory_browse.setMaximumWidth(100)
         
         directory_browse.clicked.connect(self._browser)
-        
-        #file_layout.addWidget(self.project_label)
+
         file_layout.addWidget(self.directory_label)
         file_layout.addWidget(directory_browse)
-        
-
         
         self.project_list = ProjectList()
         self.project_list.setAlternatingRowColors(True)
@@ -140,8 +137,6 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.main_layout.addWidget(self.project_list)
         
         self.main_layout.addSpacing(15)
-        
-        
         
     def _project_item_selected(self):
         
@@ -157,8 +152,11 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
 
         
     def _text_changed(self, directory):
+        
+        print 'setting directory'
             
-        directory = str(directory)
+        if type(directory) != list:
+            directory = ['', directory]
                 
         if not util_file.is_dir(directory):
             return
@@ -172,7 +170,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
             found.insert(0, directory)
             
         if not found:
-            found = [directory] 
+            found = directory 
         
         self.directory_changed.emit(directory)
         
@@ -198,17 +196,17 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
             
     def set_directory(self, directory, history = None):
         
-        #self.last_directory = self.directory
-        #self.directory = directory      
+        if type(directory) != list:
+            directory = ['', directory]
         
-        self.set_label(directory)
+        self.set_label(directory[1])
         
         if history:
             self.project_list.refresh_project_list(directory, history)
             
     def set_settings(self, settings):
-        self.settings = settings
         
+        self.settings = settings
         self.project_list.set_settings(settings)
 
 class ProjectList(QtGui.QTreeWidget):
@@ -247,7 +245,22 @@ class ProjectList(QtGui.QTreeWidget):
         name_action.triggered.connect(self.name_current_item)
         
     def name_current_item(self):
-        pass
+        
+        item = self.currentItem()
+        
+        old_name = item.text(0)
+        project_directory = item.text(1)
+        
+        new_name = qt_ui.get_new_name('Name Project', self, old_name)
+        
+        item.setText(0, new_name)
+        
+        print 'new name!!!!!!!!!!!!!!!', new_name
+        
+        if self.settings:
+            
+            self.settings.set('project_history', self.get_directories())
+            self.settings.set('project_directory', [new_name, project_directory])
         
     def remove_current_item(self):
         
@@ -266,8 +279,10 @@ class ProjectList(QtGui.QTreeWidget):
             self.settings.set('project_history', self.get_directories())
             self.settings.set('project_directory', '')
         
-        
     def refresh_project_list(self, current, history):
+        
+        if type(current) != list:
+            current = ['', current]
         
         self.clear()
         
@@ -278,19 +293,22 @@ class ProjectList(QtGui.QTreeWidget):
         select_item = None
         
         for history in self.project_history:
+            
+            if type(history) != list:
+                history = ['', history]
+            
             item = QtGui.QTreeWidgetItem()
-            item.setText(1, history)
+            item.setText(0, history[0])
+            item.setText(1, history[1])
             item.setSizeHint(0, QtCore.QSize(30, 40))
             
-            if current == history:
+            if current[1] == history[1]:
                 select_item = item
             
             items.append(item)
             self.addTopLevelItem(item)
         
         self.scrollToItem(select_item)
-        #select_item.setSelected(True)
-        #self.history_list.clearSelection()
         
     def get_directories(self):
         
@@ -304,13 +322,18 @@ class ProjectList(QtGui.QTreeWidget):
             
                 item = self.topLevelItem(inc)
                 if item:
-                    found.append(str(item.text(1)))
+                    
+                    name = item.text(0)
+                    directory = item.text(1)
+                    
+                    found.append([name, directory])
             
         return found
      
     def set_settings(self, settings):
         
         self.settings = settings
+        
 class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
     
     def __init__(self, parent = None):
@@ -327,14 +350,11 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
     
         file_layout = QtGui.QHBoxLayout()
     
-        #self.directory_label = QtGui.QLabel('directory')
-        
         directory_browse = QtGui.QPushButton('Browse')
         directory_browse.setMaximumWidth(100)
         
         directory_browse.clicked.connect(self._browser)
         
-        #file_layout.addWidget(self.directory_label)
         file_layout.addWidget(directory_browse)
         
         code_label = QtGui.QLabel('Code Libraries')
@@ -376,7 +396,6 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
     def _send_directories(self, directories):
         
         self.directory_changed.emit(directories)
-
     
     def _browser(self):
         
@@ -395,11 +414,7 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.directory = directory      
         
         self.code_list.refresh_code_list(directory)
-       
-
-       
-
-        
+    
 class CodeList(QtGui.QListWidget):
     
     directories_changed = qt_ui.create_signal(object)

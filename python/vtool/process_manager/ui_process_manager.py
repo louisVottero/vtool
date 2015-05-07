@@ -114,8 +114,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.project_directory_changed.connect(self.set_project_directory)
         self.settings_widget.code_directory_changed.connect(self.set_code_directory)
         
-
-        
         self.tab_widget.addTab(self.settings_widget, 'Settings')       
         self.tab_widget.addTab(self.view_widget, 'View')
         self.tab_widget.addTab(self.data_widget, 'Data')
@@ -127,7 +125,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.main_layout.addSpacing(4)
         self.main_layout.addLayout(self.header_layout)
-        #self.main_layout.addWidget( self.active_title )
+        
         self.main_layout.addSpacing(4)
         self.main_layout.addWidget( self.tab_widget )
         
@@ -148,8 +146,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         button_layout.addWidget(self.stop_button)
         button_layout.addWidget(self.process_button)
-        
-        
                 
         button_layout.addWidget(self.browser_button)
         button_layout.addWidget(help_button)
@@ -167,9 +163,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _set_default_project_directory(self, directory, history = None):
         
+        print 'set default project', directory
+        
+        if directory:
+            if type(directory) != list:
+                directory = ['', directory]
+        
         if not directory:
-            directory = util_file.join_path(self.directory, 'project')
-            
+            directory = ['', util_file.join_path(self.directory, 'project')]
+        
         self.settings_widget.set_project_directory(directory, history)
         
         self.set_project_directory(directory)
@@ -244,15 +246,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.code_widget.code_widget.code_edit.save_tabs(self.last_process)
         self.code_widget.code_widget.code_edit.clear()
         self.code_widget.script_widget.code_manifest_tree.clearSelection()
-           
-
-                
+        
         items = self.view_widget.tree_widget.selectedItems()
         if items:
             title = items[0].get_name()
         if not items:
             title = '-'
-            
                 
         if name:
             
@@ -294,8 +293,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.kill_process = True
         
     def _process(self):
-        
-
         
         if util.is_in_maya():
             import maya.cmds as cmds
@@ -368,7 +365,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if not directory:
             
-            directory = self.project_directory
+            directory = self.project_directory[1]
 
         if directory and self.tab_widget.currentIndex() == 0:
             util_file.open_browser(self.directory)
@@ -382,8 +379,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             util_file.open_browser(path)    
               
     def _set_project_history(self, current_directory, previous_directory):
-          
+        
+        print 'set project history'
+        print 'current', current_directory
+        print 'previous', previous_directory
+        
         history = self.settings.get('project_history')
+        
+        print 'history', history
         
         if previous_directory != current_directory and previous_directory:
 
@@ -394,7 +397,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             for inc in range(0, len(history)):
                 
-                history_inc = str(history[inc])
+                history_inc = history[inc]
                 
                 if not util_file.is_dir(history_inc):
                     continue
@@ -413,8 +416,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
             
         if history:
-            if not str(current_directory) in history:
-                history.insert(0, str(current_directory))
+            if not current_directory in history:
+                history.insert(0, current_directory)
                 
             self.settings_widget.set_history(current_directory, history)
             
@@ -429,6 +432,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def set_project_directory(self, directory, sub_part = None):
         #history should not be there...
         
+        print 'set project directory', directory
+        
+        if type(directory) != list:
+            directory = ['', directory]
+        
         self._update_process(None)
         
         if not directory:
@@ -440,15 +448,19 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
             previous_project = self.project_directory
             
-            if not util_file.is_dir(directory):
-                util_file.create_dir(None, directory)
+            if not util_file.is_dir(directory[1]):
+                util_file.create_dir(None, directory[1])
         
             self.project_directory = directory
-            self.settings.set('project_directory', str(self.project_directory))
+            self.settings.set('project_directory', self.project_directory)
+            
+            print 'set history', directory, previous_project
+            
             self._set_project_history(directory, previous_project)
             
             self.view_widget.clear_sub_path_filter()
         
+            directory = directory[1]
         
         if sub_part:
             directory = sub_part
@@ -464,6 +476,3 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings.set('code_directory', directory)
         self.code_widget.set_code_directory(directory)
         self.settings_widget.set_code_directory(directory)
-        
-
-        

@@ -1019,8 +1019,6 @@ class PoseBase(object):
         mesh = self.get_mesh(self.mesh_index)
         target_mesh = self.get_target_mesh(mesh)
         
-        print mesh, target_mesh
-        
         if cmds.getAttr('%s.visibility' % target_mesh) == 1:
             if cmds.getAttr('%s.visibility' % mesh) == 1:
                 cmds.setAttr('%s.visibility' % target_mesh, 0)
@@ -1080,8 +1078,6 @@ class PoseBase(object):
         
         blend.set_weight(self.pose_control, 0)
         offset = util.chad_extract_shape(target_mesh, mesh)
-        
-        print offset, target_mesh, mesh
         
         blend.set_weight(self.pose_control, 1)
         
