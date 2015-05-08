@@ -8887,6 +8887,88 @@ def connect_rotate_multiply(source_transform, target_transform, value = 1, respe
     if respect_value:
         return multiply, plus
     
+def connect_scale_multiply(source_transform, target_transform, value = 1, respect_value = False):
+    
+    target_transform_x = '%s.scaleX' % target_transform
+    target_transform_y = '%s.scaleY' % target_transform
+    target_transform_z = '%s.scaleZ' % target_transform
+    
+    target_input_x = get_attribute_input(target_transform_x)
+    target_input_y = get_attribute_input(target_transform_y)
+    target_input_z = get_attribute_input(target_transform_z)
+    
+    if target_input_x:
+        
+        if cmds.nodeType(target_input_x) == 'plusMinusAverage':
+            plus = target_input_x.split('.')[0]
+            indices = get_indices('%s.input3D' % plus)
+            indices = indices[-1]
+            
+            target_transform_x = '%s.input3D[%s].input3Dx' % (plus, indices)
+            target_transform_y = '%s.input3D[%s].input3Dy' % (plus, indices)
+            target_transform_z = '%s.input3D[%s].input3Dz' % (plus, indices)
+            
+        if not cmds.nodeType(target_input_x) == 'plusMinusAverage':
+            
+            plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
+            
+            cmds.connectAttr(target_input_x, '%s.input3D[0].input3Dx' % plus)
+            cmds.connectAttr(target_input_y, '%s.input3D[0].input3Dy' % plus)
+            cmds.connectAttr(target_input_z, '%s.input3D[0].input3Dz' % plus)
+            
+            disconnect_attribute(target_transform_x)
+            disconnect_attribute(target_transform_y)
+            disconnect_attribute(target_transform_z)
+            
+            cmds.connectAttr('%s.output3Dx' % plus, target_transform_x)
+            cmds.connectAttr('%s.output3Dy' % plus, target_transform_y)
+            cmds.connectAttr('%s.output3Dz' % plus, target_transform_z)
+            
+            target_transform_x = '%s.input3D[1].input3Dx' % plus
+            target_transform_y = '%s.input3D[1].input3Dy' % plus
+            target_transform_z = '%s.input3D[1].input3Dz' % plus
+    
+    multiply = connect_multiply('%s.scaleX' % source_transform, target_transform_x, value, plus = False)
+
+    if respect_value:
+            plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
+    
+            value_x = cmds.getAttr('%s.scaleX' % source_transform)
+            value_y = cmds.getAttr('%s.scaleY' % source_transform)
+            value_z = cmds.getAttr('%s.scaleZ' % source_transform)
+    
+            cmds.connectAttr('%s.scaleX' % source_transform, '%s.input3D[0].input3Dx' % plus)
+            cmds.connectAttr('%s.scaleY' % source_transform, '%s.input3D[0].input3Dy' % plus)
+            cmds.connectAttr('%s.scaleZ' % source_transform, '%s.input3D[0].input3Dz' % plus)
+    
+            cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1*value_x)
+            cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
+            cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
+
+            disconnect_attribute('%s.input1X' % multiply)
+    
+            cmds.connectAttr('%s.output3Dx' % plus, '%s.input1X' % multiply)
+            cmds.connectAttr('%s.output3Dy' % plus, '%s.input1Y' % multiply)
+            cmds.connectAttr('%s.output3Dz' % plus, '%s.input1Z' % multiply)
+    
+    if not respect_value:
+        cmds.connectAttr('%s.scaleY' % source_transform, '%s.input1Y' % multiply)
+        cmds.connectAttr('%s.scaleZ' % source_transform, '%s.input1Z' % multiply)
+                
+    cmds.connectAttr('%s.outputY' % multiply, target_transform_y)
+    cmds.connectAttr('%s.outputZ' % multiply, target_transform_z)
+    
+    try:
+        cmds.setAttr('%s.input2Y' % multiply, value)
+        cmds.setAttr('%s.input2Z' % multiply, value)
+    except:
+        pass
+    
+    if not respect_value:
+        return multiply
+    if respect_value:
+        return multiply, plus
+    
 
 def connect_visibility(attribute_name, target_node, value = 1):
     

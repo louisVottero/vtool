@@ -5,6 +5,7 @@ import sys
 from vtool import qt_ui
 from vtool import util_file
 from vtool import util
+from vtool import data
 
 import process
 import ui_view
@@ -56,11 +57,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.item_renamed.connect(self._item_changed)
         self.view_widget.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
         self.view_widget.sync_code.connect(self._sync_code)
+        self.view_widget.tree_widget.itemDoubleClicked.connect(self._item_double_clicked)
            
         self.settings_widget.set_settings(self.settings)
            
     def _sync_code(self):
         self.sync_code = True
+          
+    def _item_double_clicked(self):
+        
+        self.tab_widget.setCurrentIndex(3)
                 
     def _item_changed(self, item):
         
@@ -95,19 +101,27 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         path = util_file.join_path(path, process_name)
         data_path = util_file.join_path(path, '_data/build')
         
-        from vtool import data
+        data_dir = util_file.join_path(path, '_data')
         
-        if not util_file.is_dir(data_path):
-            
-            data_dir = util_file.join_path(path, '_data')
+        if util_file.is_dir(data_dir):
             
             data_folder = data.DataFolder('build', data_dir)
             data_type = data_folder.get_data_type()
-            if data_type == None:
+            
+            data_type = data_folder.get_data_type()
+            
+            
+            if data_type == 'maya.ascii':
+                self.build_widget.set_data_type(self.build_widget.ascii_data)
+            if data_type == 'maya.binary':
+                self.build_widget.set_data_type(self.build_widget.binary_data)
+            
+            if data_type == 'None':
                 data_folder.set_data_type('maya.ascii')
         
         
         self.build_widget.set_directory(data_path)
+        
         self.build_widget.show()
         
     def sizeHint(self):
@@ -161,7 +175,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process_button = QtGui.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
-        self.process_button.setMaximumWidth(200)
+        self.process_button.setMinimumWidth(200)
         
         self.stop_button = QtGui.QPushButton('STOP!')
         self.stop_button.setMaximumWidth(50)
@@ -172,10 +186,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         help_button = QtGui.QPushButton('?')
         help_button.setMaximumWidth(60)       
         
+        btm_layout = QtGui.QVBoxLayout()
+        
         button_layout = QtGui.QHBoxLayout()
         
-        button_layout.addWidget(self.stop_button)
-        button_layout.addWidget(self.process_button)
+        button_layout.addWidget(self.process_button, alignment = QtCore.Qt.AlignLeft)
+        button_layout.addWidget(self.stop_button, alignment = QtCore.Qt.AlignLeft)
+        
                 
         button_layout.addWidget(self.browser_button)
         button_layout.addWidget(help_button)
@@ -183,14 +200,21 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget = ProcessBuildDataWidget()
         self.build_widget.hide()
         
+        btm_layout.addLayout(button_layout, alignment = QtCore.Qt.AlignLeft)
+        btm_layout.addSpacing(10)
+        btm_layout.addWidget(self.build_widget, alignment = QtCore.Qt.AlignBottom)
+        
                 
         self.browser_button.clicked.connect(self._browser)
         self.process_button.clicked.connect(self._process)
         help_button.clicked.connect(self._open_help)
         self.stop_button.clicked.connect(self._set_kill_process)
         
-        self.main_layout.addLayout( button_layout )
-        self.main_layout.addWidget( self.build_widget )
+        #self.main_layout.addLayout( button_layout )
+        self.main_layout.addLayout(btm_layout)
+        
+        self.build_widget.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        #self.main_layout.addWidget( self.build_widget, alignment = QtCore.Qt.AlignBottom )
         
     def _set_default_directory(self):
         default_directory = process.get_default_directory()
@@ -518,26 +542,53 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
        
 
-class ProcessBuildDataWidget(ui_data.MayaAsciiFileWidget):
+class ProcessBuildDataWidget(ui_data.MayaFileWidget):
+    
+    ascii_data = data.MayaAsciiFileData()
+    binary_data = data.MayaBinaryFileData()
+    
+    def __init__(self):
+        self.data_class_type = self.ascii_data
+        
+        super(ProcessBuildDataWidget,self).__init__()
+        
+        self.main_layout.setAlignment(QtCore.Qt.AlignBottom)
+        
+        #self.tab_widget.setTabPosition(self.tab_widget.)
+        
     
     def _define_main_tab_name(self):
         return 'BUILD'
     
+    def _define_data_class(self):
+        return self.data_class_type
+    
     def _define_save_widget(self):
         return ProcessSaveFileWidget()
     
+    def set_data_type(self, data_class):
+        
+        
+        self.data_class_type = data_class
+        self.save_widget.set_data_class(data_class)
+        
+        
+    
+    
 class ProcessSaveFileWidget(ui_data.MayaSaveFileWidget):
+    
     
     def _build_widgets(self):
         
         save_button = self._create_button('Save')
+        save_button.setMinimumWidth(100)
         open_button = self._create_button('Open')
-                
+        open_button.setMinimumWidth(100)
         save_button.clicked.connect( self._save_file )
         open_button.clicked.connect( self._open_file )
-    
+        
+        self.main_layout.setAlignment(QtCore.Qt.AlignLeft)
         self.main_layout.addWidget(save_button)
         self.main_layout.addWidget(open_button)
-        
-        self.main_layout.setAlignment(QtCore.Qt.AlignTop)
+
         

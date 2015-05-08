@@ -158,11 +158,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.setColumnWidth(1, 20)
                 
         self.setSelectionBehavior(self.SelectItems)
-        
-        
-    def mouseDoubleClickEvent(self, event):
-        return
     
+    def mouseDoubleClickEvent(self, event):
+        self.doubleClicked.emit(0)
     
     def mouseMoveEvent(self, event):
         model_index =  self.indexAt(event.pos())
@@ -324,7 +322,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
         if not target_process:
             self.scrollToItem(new_item)
-            
     
     def _copy_special_process(self):
         self.copy_special_process.emit()
@@ -340,7 +337,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         item = super(ProcessTreeWidget, self)._edit_finish(item)  
     
         self.item_renamed.emit(item)
-        
         
     def _item_rename_valid(self, old_name, item):
         

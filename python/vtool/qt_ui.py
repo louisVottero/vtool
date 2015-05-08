@@ -226,7 +226,6 @@ class TreeWidget(QtGui.QTreeWidget):
         self.setExpandsOnDoubleClick(False)
         
         version = util.get_maya_version()
-        
         if version < 2016:
             self.setAlternatingRowColors(True)
             
