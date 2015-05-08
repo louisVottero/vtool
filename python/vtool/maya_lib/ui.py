@@ -80,7 +80,6 @@ def create_window(ui, dock_area = 'right'):
         ui.show()
     except:
         vtool.util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
-        cmds.deleteUI(dock_name, control = True)
 
 def pose_manager():
     import ui_corrective
