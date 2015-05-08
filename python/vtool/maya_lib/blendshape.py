@@ -14,7 +14,6 @@ class BlendShape(object):
         self.targets = {}
         self.weight_indices = []
         
-        
         if self.blendshape:
             self.set(blendshape_name)
         
@@ -176,11 +175,27 @@ class BlendShape(object):
             
             cmds.connectAttr(connection, self._get_target_attr(target)) 
 
+    #--- blendshape deformer
+
     def create(self, mesh):
         
         self.blendshape = cmds.deformer(mesh, type = 'blendShape', foc = True)[0]
         self._store_targets()
         self._store_meshes()
+
+    def rename(self, name):
+        self.blendshape = cmds.rename(self.blendshape, name)
+        self.set(self.blendshape)
+
+    def set_envelope(self, value):
+        cmds.setAttr('%s.envelope' % self.blendshape, value)
+    
+    def set(self, blendshape_name):
+        self.blendshape = blendshape_name
+        self._store_targets()
+        self._store_meshes()
+        
+    #--- target
 
     def is_target(self, name):
         if name in self.targets:
@@ -248,9 +263,6 @@ class BlendShape(object):
         
         cmds.aliasAttr('%s.%s' % (self.blendshape, name), rm = True)
        
-    def rename(self, name):
-        self.blendshape = cmds.rename(self.blendshape, name)
-       
     def rename_target(self, old_name, new_name):
         
         if not self.targets.has_key(old_name):
@@ -272,6 +284,71 @@ class BlendShape(object):
         self._store_target(new_name, index)
         
         return new_name
+    
+    def recreate_target(self, name, value = 1.0, mesh = None):
+        if not self.is_target(name):
+            return
+        
+        new_name = util.inc_name(name)
+        
+        self._disconnect_targets()
+        self._zero_target_weights()
+        
+        self.set_weight(name, value)
+        
+        output_attribute = '%s.outputGeometry[0]' % self.blendshape
+        
+        if not mesh:
+            mesh = cmds.deformer(self.blendshape, q = True, geometry = True)[0]
+        
+        if mesh:
+            new_mesh = cmds.duplicate(mesh, name = new_name)[0]
+            
+            cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
+            cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
+
+        self._restore_connections()
+        self._restore_target_weights()
+        
+        return new_mesh
+        
+    def recreate_all(self, mesh = None):
+    
+        self._disconnect_targets()
+        self._zero_target_weights()
+        
+        meshes = []
+        
+        for target in self.targets:
+            new_name = util.inc_name(target)
+            
+            self.set_weight(target, 1)
+                    
+            output_attribute = '%s.outputGeometry[0]' % self.blendshape
+            
+            if not mesh:
+                mesh = cmds.deformer(self.blendshape, q = True, geometry = True)[0]
+            
+            if mesh:
+                new_mesh = cmds.duplicate(mesh, name = new_name)[0]
+                
+                cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
+                cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
+                
+            self.set_weight(target, 0)
+                
+            meshes.append(new_mesh)
+        
+        self._restore_connections()
+        self._restore_target_weights()
+        
+        return meshes
+    
+    def set_targets_to_zero(self):
+        self._zero_target_weights()
+        
+    
+    #--- weights
         
     def set_weight(self, name, value):
         if self.is_target(name):
@@ -324,74 +401,7 @@ class BlendShape(object):
                     
         self.set_weights(new_weights, target_name, mesh_index)
     
-    def set_envelope(self, value):
-        cmds.setAttr('%s.envelope' % self.blendshape, value)
-        
-    def set_targets_to_zero(self):
-        pass
-        
-    def recreate_target(self, name, value = 1.0, mesh = None):
-        if not self.is_target(name):
-            return
-        
-        new_name = util.inc_name(name)
-        
-        self._disconnect_targets()
-        self._zero_target_weights()
-        
-        self.set_weight(name, value)
-        
-        output_attribute = '%s.outputGeometry[0]' % self.blendshape
-        
-        if not mesh:
-            mesh = cmds.deformer(self.blendshape, q = True, geometry = True)[0]
-        
-        if mesh:
-            new_mesh = cmds.duplicate(mesh, name = new_name)[0]
-            
-            cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
-            cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
-
-        self._restore_connections()
-        self._restore_target_weights()
-        
-        return new_mesh
-        
-    def recreate_all(self, mesh = None):
-        self._disconnect_targets()
-        self._zero_target_weights()
-        
-        meshes = []
-        
-        for target in self.targets:
-            new_name = util.inc_name(target)
-            
-            self.set_weight(target, 1)
-                    
-            output_attribute = '%s.outputGeometry[0]' % self.blendshape
-            
-            if not mesh:
-                mesh = cmds.deformer(self.blendshape, q = True, geometry = True)[0]
-            
-            if mesh:
-                new_mesh = cmds.duplicate(mesh, name = new_name)[0]
-                
-                cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
-                cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
-                
-            self.set_weight(target, 0)
-                
-            meshes.append(new_mesh)
-        
-        self._restore_connections()
-        self._restore_target_weights()
-        
-        return meshes
-        
-    def set(self, blendshape_name):
-        self.blendshape = blendshape_name
-        self._store_targets()
-        self._store_meshes()
+    
     
 class BlendShapeTarget(object):
     def __init__(self, name, index):
@@ -505,7 +515,9 @@ class BlendshapeManager(object):
         
         for variable in variables:
             variable.set_value(0)
-        
+    
+    #--- shapes
+      
     def add_shape(self, mesh):
         
         home = self._get_mesh()
@@ -533,10 +545,6 @@ class BlendshapeManager(object):
         if blendshape.is_target(mesh):
             blendshape.replace_target(mesh, mesh)
     
-    def add_combo(self, mesh):
-        #will need to get the delta here and do the multiply divide math
-        self.add_shape(mesh)
-    
     def set_shape_weight(self, name, value):
         
         value = value * 10
@@ -561,6 +569,31 @@ class BlendshapeManager(object):
             
         return found
     
+    def rename_shape(self, old_name, new_name):
+        
+        name = self.blendshape.rename_target(old_name, new_name)
+        
+        return name
+        
+    def remove_shape(self, name):
+        
+        target = '%s.%s' % (self.blendshape.blendshape, name)
+        
+        input_node = util.get_attribute_input(target, node_only=True)
+        
+        if input_node and input_node != self.setup_group:
+            cmds.delete(input_node)
+        
+        self.blendshape.remove_target(name)
+        
+        cmds.deleteAttr( '%s.%s' % (self.setup_group,name) )
+    
+    #---  combos
+    
+    def add_combo(self, mesh):
+        #will need to get the delta here and do the multiply divide math
+        self.add_shape(mesh)
+    
     def get_combos(self):
         
         blendshape = self._get_blendshape()
@@ -579,7 +612,6 @@ class BlendshapeManager(object):
             
         return found
         
-    
     def find_possible_combos(self, shapes):
         
         return vtool.util.find_possible_combos(shapes)
@@ -609,24 +641,5 @@ class BlendshapeManager(object):
                 
         return shapes, combos, inbetweens
     
-    def rename_shape(self, old_name, new_name):
-        
-        name = self.blendshape.rename_target(old_name, new_name)
-        
-        
-        
-        return name
     
-    def remove_shape(self, name):
-        
-        target = '%s.%s' % (self.blendshape.blendshape, name)
-        
-        input_node = util.get_attribute_input(target, node_only=True)
-        
-        if input_node and input_node != self.setup_group:
-            cmds.delete(input_node)
-        
-        self.blendshape.remove_target(name)
-        
-        cmds.deleteAttr( '%s.%s' % (self.setup_group,name) )
         

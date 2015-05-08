@@ -61,7 +61,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         self.set_project_directory(directory)
     """
-     
+    
     def get_project_directory(self):
         return self.project_directory_widget.get_directory()
         
