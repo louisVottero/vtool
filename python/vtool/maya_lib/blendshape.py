@@ -30,6 +30,8 @@ class BlendShape(object):
         if not self.blendshape:
             return
         
+        print self._get_input_target(0)
+        
         target_attrs = cmds.listAttr(self._get_input_target(0), multi = True)
         
         if not target_attrs:
@@ -80,6 +82,9 @@ class BlendShape(object):
         return weights      
 
     def _get_input_target(self, mesh_index = 0):
+        
+        print 'blendshape name!!', self.blendshape
+        
         attribute = [self.blendshape,
                      'inputTarget[%s]' % mesh_index]
         

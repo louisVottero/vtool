@@ -1217,18 +1217,18 @@ class PoseBase(object):
                     
                     if found:
                         
-                        output = util.get_attribute_outputs('%s.outputX' % found)
-                    
-                        if len(output) == 1:
-                            output = output[0]
-                            
-                        if len(output) > 1:
-                            for this_output in output:
-                    
+                        output_value = util.get_attribute_outputs('%s.outputX' % found)
+                        
+                        if output_value and len(output_value) == 1:
+                            output = output_value[0]
+                        
+                        if output_value and len(output_value) > 1:
+                            for this_output in output_value:
+                
                                 split_output = this_output.split('.')
                                 
                                 blend = blendshape.BlendShape(split_output[0])
-                                
+                
                                 blend.remove_target(split_output[1])            
                     
                                 removed_already = True
@@ -1463,6 +1463,8 @@ class PoseNoReader(PoseBase):
         
         util.disconnect_attribute('%s.weight' % self.pose_control)
         
+        self.delete_blend_input()
+                
     
         
     def mirror(self):
