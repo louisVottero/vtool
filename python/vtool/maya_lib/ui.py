@@ -63,20 +63,20 @@ def get_maya_window():
 def create_window(ui, dock_area = 'right'): 
     
     ui_name = str(ui.objectName())
-    dockName = '%sDock' % ui_name
-    dockName = dockName.replace(' ', '_')
+    dock_name = '%sDock' % ui_name
+    dock_name = dock_name.replace(' ', '_')
     
-    path = 'MayaWindow|%s' % dockName
+    path = 'MayaWindow|%s' % dock_name
     
     if cmds.dockControl(path,ex = True):    
-        cmds.deleteUI(dockName, control = True)
+        cmds.deleteUI(dock_name, control = True)
         
     allowedAreas = ['right', 'left']
     
     print 'Creating dock window.', ui_name, ui
     
     try:
-        cmds.dockControl(dockName,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name, w=350, fl = False, visible = True)
+        cmds.dockControl(dock_name,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name, w=350, fl = False, visible = True)
         ui.show()
     except:
         vtool.util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)

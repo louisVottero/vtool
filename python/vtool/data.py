@@ -1035,8 +1035,8 @@ class PoseData(MayaCustomData):
 
     def _save_file(self, filepath):
         cmds.file(rename = filepath)
-        
-        cmds.file(exportSelected = True, prompt = False, force = True, pr = True, ch = False, chn = True, exp = True, con = False, stx = 'always', typ = self.maya_ascii, sh = False)
+        #ch     chn     con     exp     sh
+        cmds.file(exportSelected = True, prompt = False, force = True, pr = True, ch = False, chn = True, exp = True, con = False, sh = False, stx = 'never', typ = self.maya_ascii)
         
     def _import_file(self, filepath):
                 
@@ -1045,6 +1045,19 @@ class PoseData(MayaCustomData):
         
         if not util_file.is_file(filepath):
             mel.eval('warning "File does not exist"')
+
+    def _filter_inputs(self, inputs):
+        
+        found = []
+        
+        for node in inputs:
+            if cmds.nodeType(node) == 'hyperLayout':
+                cmds.delete(node)
+                
+            
+            found.append(node)
+        
+        return found
 
     def export_data(self, comment):
         
@@ -1091,11 +1104,13 @@ class PoseData(MayaCustomData):
             
             if outputs:
                 inputs = inputs + outputs
-
+                
             path = util_file.join_path(dir_path, '%s.mb' % pose)                              
             
             cmds.select(cl = True)
             cmds.select(inputs, ne = True)
+            
+            inputs = self._filter_inputs(inputs)
             
             self._save_file(path)
             
@@ -1118,9 +1133,6 @@ class PoseData(MayaCustomData):
         
         pose_files = util_file.get_files(path)
         
-        print 'path!', path
-        print 'files', pose_files
-        
         if not pose_files:
             return
         
@@ -1140,9 +1152,7 @@ class PoseData(MayaCustomData):
                         poses.append(pose)
         
                     self._import_file(pose_path)
-                    
-        print poses
-                    
+        
         if cmds.objExists('pose_gr'):
             cmds.parent(poses, 'pose_gr')
         
@@ -1334,7 +1344,7 @@ class MayaFileData(MayaCustomData):
             
             if value == 'No':
                 cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
-                return
+                
 
         cmds.file(rename = self.filepath)
         

@@ -200,7 +200,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget = ProcessBuildDataWidget()
         self.build_widget.hide()
         
-        btm_layout.addLayout(button_layout, alignment = QtCore.Qt.AlignLeft)
+        btm_layout.addLayout(button_layout)
         btm_layout.addSpacing(10)
         btm_layout.addWidget(self.build_widget, alignment = QtCore.Qt.AlignBottom)
         

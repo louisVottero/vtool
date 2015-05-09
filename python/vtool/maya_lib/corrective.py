@@ -753,6 +753,25 @@ class PoseBase(object):
         
         return fixed
     
+    def _set_visibility(self, node, bool_value):
+        
+        if bool_value:
+            try:
+                cmds.setAttr('%s.lodVisibility' % node, 1)
+                cmds.setAttr('%s.visibility' % node, 1)
+                
+            except:
+                
+                pass
+    
+        if not bool_value:
+            try:
+                cmds.setAttr('%s.lodVisibility' % node, 0)
+                cmds.setAttr('%s.visibility' % node, 0)
+                
+            except:
+                pass
+    
     #--- pose
 
     def is_a_pose(self, node):
@@ -1026,6 +1045,8 @@ class PoseBase(object):
             
         self.create_blend() 
 
+    
+
     def visibility_off(self, mesh = None, view_only = False):
         
         if not mesh:
@@ -1033,12 +1054,15 @@ class PoseBase(object):
         
         #self._create_shader(mesh)
         
-        cmds.hide(mesh)
-
+        self._set_visibility(mesh, 0)
+        
+        
         target_mesh = self.get_target_mesh(mesh)
+        
         if target_mesh and cmds.objExists(target_mesh):
-            cmds.showHidden()
-    
+            self._set_visibility(target_mesh, 1)
+            
+            
         if not view_only:    
             self.create_blend()
         
@@ -1049,27 +1073,32 @@ class PoseBase(object):
         
         self._create_shader(mesh)
         
-        cmds.showHidden(mesh)
+        self._set_visibility(mesh, 1)
+        
+        
+        #cmds.showHidden(mesh)
         
         target_mesh = self.get_target_mesh(mesh) 
         
         if target_mesh and cmds.objExists(target_mesh):
-            cmds.hide()
+            
+            self._set_visibility(target_mesh, 0)
         
     def toggle_vis(self, view_only = False):
         mesh = self.get_mesh(self.mesh_index)
         target_mesh = self.get_target_mesh(mesh)
         
-        if cmds.getAttr('%s.visibility' % target_mesh) == 1:
-            if cmds.getAttr('%s.visibility' % mesh) == 1:
-                cmds.setAttr('%s.visibility' % target_mesh, 0)
+        if cmds.getAttr('%s.lodVisibility' % target_mesh) == 1:
+            if cmds.getAttr('%s.lodVisibility' % mesh) == 1:
+                self._set_visibility(target_mesh, 0)
+                
                 return    
             
-        if cmds.getAttr('%s.visibility' % mesh) == 1:
+        if cmds.getAttr('%s.lodVisibility' % mesh) == 1:
             self.visibility_off(mesh, view_only)
             return
             
-        if cmds.getAttr('%s.visibility' % mesh) == 0:
+        if cmds.getAttr('%s.lodVisibility' % mesh) == 0:
             self.visibility_on(mesh)
             return
         
@@ -1217,18 +1246,18 @@ class PoseBase(object):
                     
                     if found:
                         
-                        output = util.get_attribute_outputs('%s.outputX' % found)
-                    
-                        if len(output) == 1:
-                            output = output[0]
-                            
-                        if len(output) > 1:
-                            for this_output in output:
-                    
+                        output_value = util.get_attribute_outputs('%s.outputX' % found)
+                        
+                        if output_value and len(output_value) == 1:
+                            output = output_value[0]
+                        
+                        if output_value and len(output_value) > 1:
+                            for this_output in output_value:
+                
                                 split_output = this_output.split('.')
                                 
                                 blend = blendshape.BlendShape(split_output[0])
-                                
+                
                                 blend.remove_target(split_output[1])            
                     
                                 removed_already = True
@@ -1463,6 +1492,8 @@ class PoseNoReader(PoseBase):
         
         util.disconnect_attribute('%s.weight' % self.pose_control)
         
+        self.delete_blend_input()
+                
     
         
     def mirror(self):

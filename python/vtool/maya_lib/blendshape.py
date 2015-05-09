@@ -78,6 +78,7 @@ class BlendShape(object):
         return weights      
 
     def _get_input_target(self, mesh_index = 0):
+        
         attribute = [self.blendshape,
                      'inputTarget[%s]' % mesh_index]
         
