@@ -57,7 +57,6 @@ class BlendShape(object):
         
         name = name.replace(' ', '_')
         
-        print name, self.targets.has_key(name)
         target_index = self.targets[name].index
         
         return '%s.weight[%s]' % (self.blendshape, target_index)
@@ -572,6 +571,9 @@ class BlendshapeManager(object):
     def rename_shape(self, old_name, new_name):
         
         name = self.blendshape.rename_target(old_name, new_name)
+        
+        attributes = util.Attributes(self.setup_group)
+        attributes.rename_variable(old_name, new_name)
         
         return name
         
