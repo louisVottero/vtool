@@ -175,7 +175,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.set_label(directory[1])
         
-        self.project_list.refresh_project_list(directory, found)
+        #self.project_list.refresh_project_list(directory, found)
         
     def _send_directories(self, directory):
 
@@ -219,10 +219,8 @@ class ProjectList(QtGui.QTreeWidget):
         self.setSelectionMode(self.NoSelection)
         self.setHeaderLabels(['name', 'directory'])
 
-
         self.setColumnWidth(0, 200)
         
-
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
@@ -284,6 +282,8 @@ class ProjectList(QtGui.QTreeWidget):
         current_item = self.takeTopLevelItem(current_index)
         
         self.insertTopLevelItem( (current_index - 1), current_item)
+
+        self.setCurrentItem(current_item)
         
         name = str( current_item.text(0) )
         directory = str( current_item.text(1) )
@@ -310,6 +310,8 @@ class ProjectList(QtGui.QTreeWidget):
         current_item = self.takeTopLevelItem(current_index)
         
         self.insertTopLevelItem( (current_index + 1), current_item)
+        
+        self.setCurrentItem(current_item)
         
         name = str(current_item.text(0))
         directory = str(current_item.text(1))
@@ -366,6 +368,7 @@ class ProjectList(QtGui.QTreeWidget):
             self.addTopLevelItem(item)
         
         self.scrollToItem(select_item)
+        self.setCurrentItem(select_item)
         
     def get_directories(self):
         
@@ -515,7 +518,11 @@ class CodeList(QtGui.QListWidget):
         self.clear()
     
         for directory in directories:
-            self.addItem(directory)
+            item = QtGui.QListWidgetItem()
+            item.setText(directory)
+            item.setSizeHint(QtCore.QSize(30, 40))
+            
+            self.addItem(item)
             
             
     def get_directories(self):

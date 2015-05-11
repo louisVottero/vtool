@@ -26,11 +26,11 @@ def undo_off(function):
         cmds.undoInfo(state = False)
         
         try:
-            function(*args, **kwargs)
+            return_value = function(*args, **kwargs)
         except (RuntimeError):
             
-            cmds.undoInfo(state = True)
-            vtool.util.show(traceback.format_exc() )
+            cmds.undoInfo( state = True )
+            vtool.util.show( traceback.format_exc() )
                     
         cmds.undoInfo(state = True)
         
@@ -69,7 +69,6 @@ def undo_chunk(function):
 
 def is_batch():
     return cmds.about(batch = True)
-
 
 class ScriptEditorRead(object):
     
@@ -927,19 +926,19 @@ class Attributes(object):
         variables = []
         
         if retrieve or not self.variables:
-            print 'retrieving!!!!'
+            
             variables = self._retrieve_attributes()
         if not retrieve and self.variables:
             variables = self.variables
         
         for var in variables:
-            print 'deleting vars'
+            
             var.delete()
         
     def create_all(self):
         
         for var in self.variables:
-            print var.name
+            
             var.create()
         
     def delete(self, name):
@@ -8487,8 +8486,6 @@ def is_attribute_numeric(node_dot_attribute):
     
     if not is_attribute(node_dot_attribute):
         return False
-    
-    print node_dot_attribute
     
     attr_type = cmds.getAttr(node_dot_attribute, type = True)
     
