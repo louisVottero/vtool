@@ -300,6 +300,7 @@ class BoundingBox(object):
 class Variable(object):
     
     def __init__(self, name = 'empty' ):
+        
         self.name = name
         self.value = 0
         self.node = None

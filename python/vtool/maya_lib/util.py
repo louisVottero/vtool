@@ -26,11 +26,11 @@ def undo_off(function):
         cmds.undoInfo(state = False)
         
         try:
-            function(*args, **kwargs)
+            return_value = function(*args, **kwargs)
         except (RuntimeError):
             
-            cmds.undoInfo(state = True)
-            vtool.util.show(traceback.format_exc() )
+            cmds.undoInfo( state = True )
+            vtool.util.show( traceback.format_exc() )
                     
         cmds.undoInfo(state = True)
         
@@ -69,7 +69,6 @@ def undo_chunk(function):
 
 def is_batch():
     return cmds.about(batch = True)
-
 
 class ScriptEditorRead(object):
     
@@ -909,29 +908,37 @@ class Attributes(object):
             var = self._retrieve_attribute(attribute)    
         
             var_dict = var.get_dict()    
-        
+            
             self.attribute_dict[attribute] = var_dict
             
             self.variables.append(var)
             
         return self.variables
-        
+    
     def _retrieve_attributes(self):
         
         variables = self._store_attributes()
         
         return variables
         
-    def delete_all(self):
+    def delete_all(self, retrieve = False):
         
-        variables = self._retrieve_attributes()
+        variables = []
+        
+        if retrieve or not self.variables:
+            
+            variables = self._retrieve_attributes()
+        if not retrieve and self.variables:
+            variables = self.variables
         
         for var in variables:
+            
             var.delete()
         
     def create_all(self):
         
         for var in self.variables:
+            
             var.create()
         
     def delete(self, name):
@@ -988,14 +995,16 @@ class Attributes(object):
         
         self._store_attributes()
         
-        if attribute_name in self.attribute_dict[attribute_name]:
-            return self.attribute_dict[attribute_name]
+        return self._retrieve_attribute(attribute_name)
     
     def rename_variable(self, old_name, new_name):
         
         var = self.get_variable(old_name)
         
         var.set_name(new_name)
+        
+        #here it needs to rename the attribute in maya as well!!!!!!!!!!!
+        #!!!!!!!!!!!!!
         
         self.delete_all()
         self.create_all()
@@ -8477,8 +8486,6 @@ def is_attribute_numeric(node_dot_attribute):
     
     if not is_attribute(node_dot_attribute):
         return False
-    
-    print node_dot_attribute
     
     attr_type = cmds.getAttr(node_dot_attribute, type = True)
     
