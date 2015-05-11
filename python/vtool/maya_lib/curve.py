@@ -321,6 +321,7 @@ class CurveDataInfo():
         curve_type_value = None
         
         curve_attr = '%s.curveType' % curve
+        print curve_attr
         
         if cmds.objExists(curve_attr):
             curve_type_value = cmds.getAttr('%s.curveType' % curve)

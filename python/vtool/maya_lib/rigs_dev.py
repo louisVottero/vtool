@@ -3800,6 +3800,379 @@ class SuspensionRig(rigs.BufferRig):
         
         self._create_joint_section(self.buffer_joints[0], self.buffer_joints[1])
 
+
+class BackLeg2(rigs.BufferRig):
+
+    def __init__(self, description, side):
+        super(BackLeg2, self).__init__(description, side)
+
+        self.curve_type = 'square'
+        self.btm_chain_xform = None
+        self.pole_offset = -1
+
+    def _create_guide_chain(self):
+        
+        duplicate = util.DuplicateHierarchy(self.joints[0])
+        duplicate.stop_at(self.joints[-3])
+        duplicate.replace('joint', 'ikGuide')
+        self.ikGuideChain = duplicate.create()
+        
+        duplicate = util.DuplicateHierarchy(self.joints[-1])
+        duplicate.stop_at(self.joints[-1])
+        duplicate.replace('joint', 'ikGuide')
+        ball = duplicate.create()
+        
+        aim = cmds.aimConstraint(ball, self.ikGuideChain[-1], upVector = [0,-1,0])
+        cmds.delete(aim)
+
+        cmds.makeIdentity(self.ikGuideChain[-1], r = True, apply = True)
+
+        cmds.parent(ball, self.ikGuideChain[-1])
+        
+        self.ikGuideChain.append(ball[0])
+        
+        cmds.parent(self.ikGuideChain[0], self.setup_group)
+
+    def _create_sub_guide_chain(self):
+        
+        duplicate = util.DuplicateHierarchy(self.ikGuideChain[0])
+        duplicate.stop_at(self.ikGuideChain[-2])
+        duplicate.replace('ikGuide', 'ikGuideOffset')
+        self.offsetGuideChain = duplicate.create()
+        
+        cmds.parent(self.offsetGuideChain[0], self.ikGuideChain[0])
+
+        duplicate = util.DuplicateHierarchy(self.ikGuideChain[2])
+        duplicate.stop_at(self.ikGuideChain[-1])
+        duplicate.replace('ikGuide', 'ikGuideOffsetBtm')
+        self.offsetGuideChainBtm = duplicate.create()
+
+        joint1 = self.offsetGuideChainBtm[0]
+        joint2 = self.offsetGuideChainBtm[1]
+        
+        cmds.parent(joint2, w = True)
+        cmds.parent(joint1, joint2)
+
+        xform = util.create_xform_group(joint2)
+        self.btm_chain_xform = xform
+        
+        self.offsetGuideChainBtm = [joint2, joint1]
+
+        cmds.parent(xform, self.ikGuideChain[2])      
+
+    def _create_offset_chain(self):
+        duplicate = util.DuplicateHierarchy(self.joints[2])
+        duplicate.stop_at(self.joints[-2])
+        duplicate.replace('joint', 'offset1')
+        self.offset1Chain = duplicate.create()
+
+        joint1 = self.offset1Chain[0]
+        joint2 = self.offset1Chain[1]
+
+        cmds.parent(joint2, w = True)
+
+        cmds.parent(joint1, joint2)
+    
+        self.offset1Chain = [joint2, joint1]
+
+        cmds.parent(self.offset1Chain[0], self.offsetGuideChainBtm[1])
+
+    def _create_offset_chain2(self):
+        duplicate = util.DuplicateHierarchy(self.joints[3])
+        duplicate.stop_at(self.joints[-1])
+        duplicate.replace('joint', 'offset2')
+        self.offset2Chain = duplicate.create()
+
+        joint1 = self.offset2Chain[0]
+        joint2 = self.offset2Chain[1]
+
+        cmds.parent(joint2, w = True)
+
+        cmds.parent(joint1, joint2)
+
+        self.offset2Chain = [joint2, joint1]
+
+        cmds.parent(self.offset2Chain[0], self.offsetGuideChainBtm[1])
+
+    def _create_pole_chain(self):
+        cmds.select(cl =True)
+        joint1 = cmds.joint(n = util.inc_name( self._get_name('joint', 'poleTop') ) )
+        joint2 = cmds.joint(n = util.inc_name( self._get_name('joint', 'poleBtm') ) )
+
+        util.MatchSpace(self.buffer_joints[0], joint1).translation()
+        util.MatchSpace(self.buffer_joints[-1], joint2).translation()
+
+        ik_handle = util.IkHandle( self._get_name(description = 'pole') )
+        
+        ik_handle.set_start_joint( joint1 )
+        ik_handle.set_end_joint( joint2 )
+        ik_handle.set_solver(ik_handle.solver_sc)
+        self.ik_pole = ik_handle.create()
+
+        self.top_pole_ik = joint1
+
+        cmds.pointConstraint(self.btm_control, self.ik_pole)
+
+        cmds.parent(self.ik_pole, self.top_control)
+
+        cmds.parent(self.top_pole_ik, self.setup_group)
+        util.create_follow_group(self.top_control, self.top_pole_ik)
+        cmds.hide(self.ik_pole)
+    
+    def _duplicate_joints(self):
+        super(BackLeg2, self)._duplicate_joints()
+
+        self._create_guide_chain()
+        self._create_sub_guide_chain()
+        self._create_offset_chain()
+        self._create_offset_chain2()
+
+        ik_chain = [self.offsetGuideChain[0], self.offsetGuideChain[1], self.offset1Chain[1], self.offset2Chain[1], self.ikGuideChain[-1]]
+        self._attach_ik_joints(ik_chain, self.buffer_joints)
+
+    def _attach_ik_joints(self, source_chain, target_chain):
+        for inc in range( 0, len(source_chain) ):
+            source = source_chain[inc]
+            target = target_chain[inc]
+            
+            cmds.parentConstraint(source, target, mo = True)
+            util.connect_scale(source, target)
+
+    def _create_top_control(self):
+        
+        control = self._create_control(description = 'top')
+        control.hide_scale_and_visibility_attributes()
+        
+        control.set_curve_type(self.curve_type)            
+        control.scale_shape(2, 2, 2)
+        
+        self.top_control = control.get()
+
+        util.MatchSpace(self.ikGuideChain[0], self.top_control).translation_rotation()
+
+        cmds.parentConstraint(self.top_control, self.ikGuideChain[0])
+
+        xform = util.create_xform_group(self.top_control)
+        cmds.parent(xform, self.control_group)
+
+    def _create_btm_control(self):
+        control = self._create_control(description = 'btm')
+        control.hide_scale_and_visibility_attributes()
+        
+        control.set_curve_type(self.curve_type)
+        control.scale_shape(2, 2, 2)
+        
+        self.btm_control = control.get()
+
+        util.MatchSpace(self.ikGuideChain[-1], self.btm_control).translation_rotation()
+
+        cmds.orientConstraint(self.btm_control, self.ikGuideChain[-1])
+
+        xform = util.create_xform_group(self.btm_control)
+        cmds.parent(xform, self.control_group)
+
+    def _create_top_offset_control(self):
+
+        control = self._create_control(description = 'top_offset')
+        control.hide_scale_and_visibility_attributes()
+        control.set_curve_type(self.curve_type)
+
+        self.top_offset = control.get()
+
+        util.MatchSpace(self.ikGuideChain[2], self.top_offset).translation()
+
+        xform_offset = util.create_xform_group(self.top_offset)
+
+        follow = util.create_follow_group(self.ikGuideChain[2], xform_offset)
+
+        cmds.parent(follow, self.top_control)
+        
+        cmds.parent(self.btm_chain_xform, self.ikGuideChain[-1])
+
+    def _create_btm_offset_control(self):
+
+        control = self._create_control(description = 'btm_offset')
+        control.hide_scale_and_visibility_attributes()
+        control.scale_shape(2, 2, 2)
+        control.set_curve_type(self.curve_type)
+        
+        self.btm_offset = control.get()
+
+        util.MatchSpace(self.offset1Chain[0], self.btm_offset).translation()
+
+        xform = util.create_xform_group(self.btm_offset)
+        
+        driver = util.create_xform_group(self.btm_offset, 'driver')
+        util.MatchSpace(self.ikGuideChain[-1], driver).rotate_scale_pivot_to_translation()
+        
+        cmds.parent(xform, self.control_group)
+
+        util.create_follow_group(self.offsetGuideChainBtm[1], xform)
+
+        cmds.parentConstraint(self.ikGuideChain[-1], self.offset2Chain[0], mo = True)
+
+        cmds.parentConstraint(self.offset2Chain[-1], self.offset1Chain[0], mo = True)
+
+    def _create_pole_vector(self):
+
+        #if self.side == 'L':
+        #    self.pole_offset = -1
+        #if self.side == 'R':
+        #    self.pole_offset = 1      
+        
+        control = self._create_control('POLE')
+        control.hide_scale_and_visibility_attributes()
+        control.set_curve_type('cube')
+        self.pole_control = control.get()
+        
+        pole_var = util.MayaEnumVariable('POLE_VECTOR')
+        pole_var.create(self.btm_control)
+        
+        pole_vis = util.MayaNumberVariable('poleVisibility')
+        pole_vis.set_variable_type(pole_vis.TYPE_BOOL)
+        pole_vis.create(self.btm_control)
+        
+        twist_var = util.MayaNumberVariable('twist')
+        twist_var.create(self.btm_control)
+        
+        if self.side == 'L':
+            twist_var.connect_out('%s.twist' % self.main_ik)
+            
+        if self.side == 'R':
+            util.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.main_ik, -1)
+        
+        pole_joints = [self.ikGuideChain[0], self.ikGuideChain[1], self.ikGuideChain[2]]
+      
+        position = util.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
+
+        cmds.move(position[0], position[1], position[2], control.get())
+
+        cmds.poleVectorConstraint(control.get(), self.main_ik)
+        
+        xform_group = util.create_xform_group( control.get() )
+        
+        name = self._get_name()
+        
+        rig_line = util.RiggedLine(pole_joints[1], control.get(), name).create()
+        cmds.parent(rig_line, self.control_group)
+        
+        pole_vis.connect_out('%s.visibility' % xform_group)
+        pole_vis.connect_out('%s.visibility' % rig_line)
+        
+        self.pole_vector_xform = xform_group
+
+        cmds.parent(xform_group, self.control_group)
+
+        util.create_follow_group(self.top_pole_ik, xform_group)
+
+    def _create_ik_guide_handle(self):
+        
+        ik_handle = util.IkHandle( self._get_name() )
+        
+        ik_handle.set_start_joint( self.ikGuideChain[0] )
+        ik_handle.set_end_joint( self.ikGuideChain[-1] )
+        ik_handle.set_solver(ik_handle.solver_rp)
+        self.ik_handle = ik_handle.create()
+        self.main_ik = self.ik_handle
+        
+        xform_ik_handle = util.create_xform_group(self.ik_handle)
+        cmds.parent(xform_ik_handle, self.setup_group)
+
+        cmds.pointConstraint(self.btm_control, self.ik_handle)
+        
+    def _create_ik_sub_guide_handle(self):
+
+        ik_handle = util.IkHandle( self._get_name('sub') )
+        
+        ik_handle.set_start_joint( self.offsetGuideChain[0] )
+        ik_handle.set_end_joint( self.offsetGuideChain[-1] )
+        ik_handle.set_solver(ik_handle.solver_sc)
+        self.ik_handle = ik_handle.create()
+        
+        xform_ik_handle = util.create_xform_group(self.ik_handle)
+
+        cmds.parent(xform_ik_handle, self.offset1Chain[-1])
+         
+        stretch = util.StretchyChain()
+        stretch.set_joints(self.ikGuideChain[0:4])
+        stretch.set_node_for_attributes(self.btm_control)
+        stretch.set_per_joint_stretch(False)
+        stretch.set_add_dampen(True)
+        
+        cmds.connectAttr('%s.scaleX' % self.ikGuideChain[0], '%s.scaleX' % self.offsetGuideChain[0])
+        cmds.connectAttr('%s.scaleX' % self.ikGuideChain[1], '%s.scaleX' % self.offsetGuideChain[1])
+        
+        cmds.connectAttr('%s.scaleX' % self.ikGuideChain[2], '%s.scaleX' % self.btm_chain_xform)
+        cmds.connectAttr('%s.scaleX' % self.ikGuideChain[2], '%s.scaleY' % self.btm_chain_xform)
+        cmds.connectAttr('%s.scaleX' % self.ikGuideChain[2], '%s.scaleZ' % self.btm_chain_xform)
+        
+        top_locator, btm_locator = stretch.create()
+        
+        cmds.parent(top_locator, self.top_control)
+        cmds.parent(btm_locator, self.btm_control)
+        
+
+    def _create_ik_sub_guide_btm_handle(self):
+        ik_handle = util.IkHandle( self._get_name('sub_btm') )
+        
+        ik_handle.set_start_joint( self.offsetGuideChainBtm[0] )
+        ik_handle.set_end_joint( self.offsetGuideChainBtm[-1] )
+        ik_handle.set_solver(ik_handle.solver_sc)
+        self.ik_handle = ik_handle.create()
+        
+        xform_ik_handle = util.create_xform_group(self.ik_handle)
+
+        cmds.parent(xform_ik_handle, self.top_offset)        
+
+    def _create_ik_offset_handle(self):
+        ik_handle = util.IkHandle( self._get_name('offset') )
+        
+        ik_handle.set_start_joint( self.offset1Chain[0] )
+        ik_handle.set_end_joint( self.offset1Chain[-1] )
+        ik_handle.set_solver(ik_handle.solver_sc)
+        self.ik_handle = ik_handle.create()
+        
+        xform_ik_handle = util.create_xform_group(self.ik_handle)
+
+        cmds.parent(xform_ik_handle, self.offsetGuideChainBtm[0])          
+
+    def _create_ik_offset2_handle(self):
+        ik_handle = util.IkHandle( self._get_name('offset') )
+        
+        ik_handle.set_start_joint( self.offset2Chain[0] )
+        ik_handle.set_end_joint( self.offset2Chain[-1] )
+        ik_handle.set_solver(ik_handle.solver_sc)
+        self.ik_handle = ik_handle.create()
+        
+        xform_ik_handle = util.create_xform_group(self.ik_handle)
+
+        cmds.parent(xform_ik_handle, self.btm_offset) 
+
+        cmds.refresh()
+
+    def set_pole_offset(self, offset_value):
+        self.pole_offset = offset_value
+
+    def create(self):
+        super(BackLeg2, self).create()
+                
+        self._create_top_control()
+        self._create_btm_control()
+        self._create_top_offset_control()
+        self._create_btm_offset_control()
+
+        self._create_ik_guide_handle()
+        self._create_ik_sub_guide_handle()
+        self._create_ik_sub_guide_btm_handle()
+        self._create_ik_offset_handle()
+        self._create_ik_offset2_handle()
+
+        self._create_pole_chain()
+
+        self._create_pole_vector()   
+
+
+
 #--- Misc
 
 class WeightFade(object):
