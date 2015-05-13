@@ -175,7 +175,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process_button = QtGui.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
-        self.process_button.setMinimumWidth(200)
+        self.process_button.setMinimumWidth(150)
+        self.process_button.setMinimumHeight(40)
         
         self.stop_button = QtGui.QPushButton('STOP!')
         self.stop_button.setMaximumWidth(50)
