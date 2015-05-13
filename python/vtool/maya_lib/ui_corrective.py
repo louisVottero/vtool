@@ -31,22 +31,18 @@ class PoseManager(ui.MayaWindow):
         self.pose_set = PoseSetWidget()
         self.pose_list = PoseListWidget()
         
+        
         self.sculpt = SculptWidget()
         self.sculpt.setMaximumHeight(200)
-        self.sculpt.sculpted_mesh.connect(self.pose_list.update_current_pose)
-        
-        self.pose_list.pose_list_refresh.connect(self.sculpt.mesh_widget.update_meshes)
-        
-        self.pose_list.pose_list.itemSelectionChanged.connect(self.select_pose)
         
         self.pose_list.set_pose_widget(self.sculpt)
+        
+        self.sculpt.sculpted_mesh.connect(self.pose_list.update_current_pose)
+        self.pose_list.pose_list_refresh.connect(self.sculpt.mesh_widget.update_meshes)
+        self.pose_list.pose_list.itemSelectionChanged.connect(self.select_pose)
         self.pose_list.pose_renamed.connect(self._pose_renamed)
-        
         self.pose_set.pose_reset.connect(self.pose_list.pose_reset)
-        
         self.sculpt.pose_mirror.connect(self.pose_list.mirror_pose)
-        
-        
         
         self.main_layout.addWidget(self.pose_set)
         self.main_layout.addWidget(self.pose_list)
@@ -835,6 +831,8 @@ class MeshWidget(qt_ui.BasicWidget):
                     for inc in range(0, mesh_list_count):
                         
                         test_item = self.mesh_list.item(inc)
+                        
+                        print 'compare', test_item.longname, selected
                         
                         if str( test_item.longname ) == selected:
                             

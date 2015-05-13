@@ -609,16 +609,13 @@ class PoseBase(object):
     
     def _create_mirror_mesh(self, target_mesh):
         
-        skin = None
-        blendshape_node = None
-        
         other_mesh = target_mesh
         
         if not other_mesh:
             return None, None
-        
+
         other_mesh_duplicate = cmds.duplicate(other_mesh, n = 'duplicate_corrective_temp_%s' % other_mesh)[0]
-        
+
         split_name = target_mesh.split('|')
         
         other_target_mesh = self._replace_side(split_name[-1], self.left_right)
@@ -633,7 +630,8 @@ class PoseBase(object):
             cmds.setAttr('%s.envelope' % skin, 0)
         if blendshape_node:
             cmds.setAttr('%s.envelope' % blendshape_node, 0)
-        
+            
+
         other_target_mesh_duplicate = cmds.duplicate(other_target_mesh, n = other_target_mesh)[0]
         home = cmds.duplicate(target_mesh, n = 'home')[0]
 
@@ -643,8 +641,13 @@ class PoseBase(object):
             cmds.setAttr('%s.envelope' % blendshape_node, 1)
 
         mirror_group = cmds.group(em = True)
-        cmds.parent(home, mirror_group)
+        
+        if other_target_mesh == target_mesh:
+            cmds.parent(home, mirror_group)
+            
         cmds.parent(other_mesh_duplicate, mirror_group)
+        
+        #may need to do z or y axis eventually
         cmds.setAttr('%s.scaleX' % mirror_group, -1)
         
         util.create_wrap(home, other_target_mesh_duplicate)
@@ -725,10 +728,10 @@ class PoseBase(object):
                 if start != None:
                     other = vtool.util.replace_string(value, 'rt_', start, end)
                     
-                start, end = vtool.util.find_special('_L', value, 'last')
+                start, end = vtool.util.find_special('L', value, 'last')
                 
                 if start != None:
-                    other = vtool.util.replace_string(value, '_R', start, end)
+                    other = vtool.util.replace_string(value, 'R', start, end)
                     
             if not left_right:
                 
@@ -872,7 +875,13 @@ class PoseBase(object):
         
     def add_mesh(self, mesh, toggle_vis = True):
         
+        mesh = cmds.ls(mesh, l = True)
         
+        if not mesh:
+            return
+        
+        if len(mesh) >= 1:
+            mesh = mesh[0]
         
         if mesh.find('.vtx'):
             mesh = mesh.split('.')[0]
@@ -1498,6 +1507,8 @@ class PoseNoReader(PoseBase):
         
     def mirror(self):
         
+        print 'mirror!!!'
+        
         description = self.description
         
         if not description:
@@ -1516,15 +1527,18 @@ class PoseNoReader(PoseBase):
             mesh = self.get_mesh(inc)
             target_mesh = self.get_target_mesh(mesh)
             
+            #'is this adding properly?
             other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
-
+            
+            print 'other mesh!!', other_target_mesh
+            
             if other_target_mesh == None:
                 continue
 
-            index = other_pose_instance.get_target_mesh_index(target_mesh)
+            index = other_pose_instance.get_target_mesh_index(other_target_mesh)
             
             if index == None:
-                other_pose_instance.add_mesh(target_mesh)
+                other_pose_instance.add_mesh(other_target_mesh)
                 
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
             other_target_meshes.append(other_target_mesh)
@@ -1986,6 +2000,8 @@ class PoseCone(PoseBase):
     
     def mirror(self):
         
+        print 'mirror pose cone'
+        
         description = self.description
         
         if not description:
@@ -2008,7 +2024,18 @@ class PoseCone(PoseBase):
             mesh = self.get_mesh(inc)
             target_mesh = self.get_target_mesh(mesh)
             
+            if target_mesh == None:
+                continue
+            
             other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
+
+            index = other_pose_instance.get_target_mesh_index(other_target_mesh)
+            
+            if index == None:
+                
+                
+                
+                other_pose_instance.add_mesh(other_target_mesh)
                 
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
             other_target_meshes.append(other_target_mesh)
@@ -2028,13 +2055,15 @@ class PoseCone(PoseBase):
         inc = 0
         
         for mesh in other_target_meshes:
-        
-            other_pose_instance.add_mesh(mesh, False)
+            
+            #other_pose_instance.add_mesh(mesh, False)
             input_mesh = other_pose_instance.get_mesh(inc)
             
             fix_mesh = input_meshes[mesh]
             
-            cmds.blendShape(fix_mesh, input_mesh, foc = True, w = [0,1])
+            input_mesh_name = util.get_basename(input_mesh)
+            
+            cmds.blendShape(fix_mesh, input_mesh, foc = True, w = [0,1], n = 'blendshape_%s' % input_mesh_name)
             
             other_pose_instance.create_blend(False)
             
