@@ -3383,6 +3383,7 @@ class WorldStickyFadeRig(WorldStickyRig):
             
             corner_offset = cmds.group(em = True, n = self._get_name('offset', 'corner'))
             corner_offset_xform = util.create_xform_group(corner_offset)
+            corner_offset_driver = util.create_xform_group(corner_offset, 'driver')
             
             if side == 'L':
                 joint = self.top_joints[0]
@@ -3430,7 +3431,10 @@ class WorldStickyFadeRig(WorldStickyRig):
             
             self.corner_offsets.append(corner_offset)
             
+            
             cmds.pointConstraint(sub_control.get(), corner_offset)
+            #cmds.pointConstraint(control.get(), corner_offset)
+            
             
         self.side =orig_side
 
