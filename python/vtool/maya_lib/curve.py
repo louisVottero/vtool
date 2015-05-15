@@ -237,7 +237,7 @@ class CurveDataInfo():
                 line_split = line.split()
                 curve_name = line_split[1]
                 
-                if len(line_split) > 3:
+                if len(line_split) > 2:
                     
                     if curve_type != curve_name:
                         curve_type = line_split[2]
@@ -256,7 +256,7 @@ class CurveDataInfo():
                     curve_data = line
                     curve_data = curve_data.strip()
                     curve_data_lines.append(curve_data) 
-                    
+         
         if curve_data_lines:
 
             self.library_curves[self.active_library][curve_name] = [curve_data_lines, curve_type] 
@@ -305,6 +305,7 @@ class CurveDataInfo():
         return self.library_curves[self.active_library].keys()
         
     def set_shape_to_curve(self, curve, curve_in_library, check_curve = False):
+        
         if not self.active_library:
             vtool.util.warning('Must set active library before running this function.')
             return
@@ -314,19 +315,18 @@ class CurveDataInfo():
         if not mel_data_list:
             return
         
-        
         curve_data = CurveToData(curve)
         original_mel_list =  curve_data.create_mel_list()
         
         curve_type_value = None
         
         curve_attr = '%s.curveType' % curve
-        print curve_attr
         
         if cmds.objExists(curve_attr):
             curve_type_value = cmds.getAttr('%s.curveType' % curve)
-        
-        check_curve = False
+        if not cmds.objExists(curve_attr):
+            curve_type_value = curve_in_library
+
         if check_curve:
             
             if curve_type_value == None or curve_type_value != original_curve_type:
@@ -337,6 +337,7 @@ class CurveDataInfo():
                 if mel_count != original_count:
                     vtool.util.warning('Curve data does not match stored data. Skipping %s' % curve)
                     return
+                
                 
                 for inc in range(0, mel_count):
                     
@@ -350,7 +351,7 @@ class CurveDataInfo():
                     
                         vtool.util.warning('Curve data does not match stored data. Skipping %s' % curve)
                         return
-                    
+                 
 
         
         data_list_count = len(mel_data_list)
@@ -360,13 +361,10 @@ class CurveDataInfo():
         if not shapes:
             return
         
-        shapes_count = len(shapes)
+        shape_color = None
         
-        if shapes_count != data_list_count:
-            if check_curve:
-                return
-            if not check_curve and shapes_count > 1:
-                cmds.delete(shapes[1:])
+        if len(shapes):
+            shape_color = cmds.getAttr('%s.overrideColor' % shapes[0])
         
         if len(shapes) < mel_data_list:
             
@@ -375,7 +373,13 @@ class CurveDataInfo():
             for inc in range(current_index, len(mel_data_list)):
                 
                 curve_shape = cmds.createNode('nurbsCurve')
-        
+                
+                
+                if shape_color != None:
+                    cmds.setAttr('%s.overrideEnabled' % curve_shape, 1)
+                    cmds.setAttr('%s.overrideColor' % curve_shape, shape_color)
+                    
+                
                 parent = cmds.listRelatives(curve_shape, parent = True)[0]
                 
                 cmds.parent(curve_shape, curve, r = True, s = True)
@@ -388,13 +392,15 @@ class CurveDataInfo():
             
         util.rename_shapes(curve)
         
-        if curve_type_value:
-            attribute_value = curve_type_value
+        curve_type = util.MayaStringVariable('curveType')
+        curve_type.set_node(curve)
         
-            curve_type = util.MayaStringVariable('curveType')
-            curve_type.set_node(curve)
-            curve_type.set_value(curve_type_value)
+        if not cmds.objExists('%s.curveType' % curve):
             curve_type.create()
+        
+        if curve_type_value != None:
+            curve_type.set_value(curve_type_value)
+            
         
     def add_curve(self, curve, library_name = None):
         

@@ -351,6 +351,11 @@ class ControlCvData(MayaCustomData):
             
         for control in controls:
             
+            shapes = maya_lib.util.get_shapes(control)
+            
+            if not shapes:
+                continue
+            
             library.set_shape_to_curve(control, control, True)
             
             """

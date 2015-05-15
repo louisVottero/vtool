@@ -278,6 +278,7 @@ class SparseRig(JointRig):
         self.is_scalable = False
         self.respect_side = False
         self.respect_side_tolerance = 0.001
+        self.match_scale = False
         
     def set_scalable(self, bool_value):
         self.is_scalable = bool_value
@@ -285,6 +286,9 @@ class SparseRig(JointRig):
     def set_respect_side(self, bool_value, tolerance = 0.001):
         self.respect_side = bool_value
         self.respect_side_tolerance = tolerance
+    
+    def set_match_scale(self, bool_value):
+        self.match_scale = bool_value
         
     def create(self):
         
@@ -318,6 +322,11 @@ class SparseRig(JointRig):
                     
               
             xform = util.create_xform_group(control.get())
+            
+            if self.match_scale:
+                const = cmds.scaleConstraint(joint, xform)
+                cmds.delete(const)
+            
             driver = util.create_xform_group(control.get(), 'driver')
             
             cmds.parentConstraint(control_name, joint)
@@ -331,6 +340,8 @@ class SparseRig(JointRig):
             
             self.control_dict[control_name]['xform'] = xform
             self.control_dict[control_name]['driver'] = driver
+            
+    
 
 class SparseLocalRig(SparseRig):
 

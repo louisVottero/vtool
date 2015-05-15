@@ -4560,6 +4560,17 @@ def prefix_name(node, prefix, name, separator = '_'):
     
     return new_name
 
+def prefix_hierarchy(top_group, prefix):
+    
+    relatives = cmds.listRelatives(top_group, ad = True)
+     
+    relatives.append(top_group)
+     
+    for relative in relatives:
+
+        cmds.rename(relative, '%s_%s' % (prefix, relative))
+    
+    
 def pad_number(name):
         
     number = vtool.util.get_last_number(name)
