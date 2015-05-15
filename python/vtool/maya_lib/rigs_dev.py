@@ -3368,7 +3368,10 @@ class WorldStickyFadeRig(WorldStickyRig):
         super(WorldStickyFadeRig, self).__init__(description, side)
         
         self.corner_offsets = []
+        self.sub_corner_offsets = []
+        
         self.corner_control_shape = 'square'
+        
         self.corner_match = []
         self.corner_xforms = []
         self.corner_controls = []
@@ -3383,7 +3386,9 @@ class WorldStickyFadeRig(WorldStickyRig):
             
             corner_offset = cmds.group(em = True, n = self._get_name('offset', 'corner'))
             corner_offset_xform = util.create_xform_group(corner_offset)
-            corner_offset_driver = util.create_xform_group(corner_offset, 'driver')
+            
+            sub_corner_offset = cmds.duplicate(corner_offset, n = self._get_name('subOffset', 'corner'))[0]
+            cmds.parent(sub_corner_offset, corner_offset)
             
             if side == 'L':
                 joint = self.top_joints[0]
@@ -3427,13 +3432,13 @@ class WorldStickyFadeRig(WorldStickyRig):
                 cmds.delete(const)
             
             cmds.parent(xform, self.control_group)
-            cmds.parent(corner_offset_xform, self.control_group)
+            cmds.parent(corner_offset_xform, xform)
             
             self.corner_offsets.append(corner_offset)
+            self.sub_corner_offsets.append(sub_corner_offset)
             
-            
-            cmds.pointConstraint(sub_control.get(), corner_offset)
-            #cmds.pointConstraint(control.get(), corner_offset)
+            cmds.pointConstraint(control.get(), corner_offset)
+            cmds.pointConstraint(sub_control.get(), sub_corner_offset)
             
             
         self.side =orig_side
@@ -3492,8 +3497,11 @@ class WorldStickyFadeRig(WorldStickyRig):
                  
             if side == 'L':
                 
-                corner_control = self.corner_offsets[0]
-                
+                if inc > 0:
+                    corner_control = self.corner_offsets[0]
+                if inc == 0:
+                    corner_control = self.sub_corner_offsets[0]
+                    
                 top_control = self.zip_controls[inc][0][1]
                 btm_control = self.zip_controls[inc][0][0]
         
@@ -3502,8 +3510,11 @@ class WorldStickyFadeRig(WorldStickyRig):
             
             if side == 'R':
                 
-                corner_control = self.corner_offsets[1]
-                
+                if inc > 0:
+                    corner_control = self.corner_offsets[1]
+                if inc == 0:
+                    corner_control = self.sub_corner_offsets[1]
+                        
                 #minus 4 and 3 to skip the corner controls
                 top_control = self.zip_controls[inc][1][1]
                 btm_control = self.zip_controls[inc][1][0]
