@@ -2980,6 +2980,8 @@ class WorldJawRig(rigs.BufferRig):
         self.control_dict[self.control.get()]['xform'] = xform
         self.control_dict[self.control.get()]['driver'] = driver
         
+        cmds.parent(xform, self.control_group)
+        
         #self.control.rotate_shape(0, 0, 90)    
     
     def _attach(self):
@@ -2997,7 +2999,6 @@ class WorldJawRig(rigs.BufferRig):
         
         multi = util.connect_multiply('%s.rotateX' % self.control.get(), '%s.translateZ' % driver)
         var.connect_out('%s.input2X' % multi)
-        
     
     def set_jaw_slide_offset(self, value):
         self.jaw_slide_offset = value
@@ -3473,9 +3474,6 @@ class WorldStickyFadeRig(WorldStickyRig):
                 
         if increment == 'corner':
             
-            print self.follower_group, follow_transform, self.corner_xforms[0]
-            print self.follower_group, follow_transform, self.corner_xforms[1]
-            
             util.create_multi_follow([self.follower_group, follow_transform], self.corner_xforms[0], self.corner_xforms[0], value = value)
             util.create_multi_follow([self.follower_group, follow_transform], self.corner_xforms[1], self.corner_xforms[1], value = value)
 
@@ -3489,7 +3487,7 @@ class WorldStickyFadeRig(WorldStickyRig):
             self.side = side
                  
             if side == 'L':
-                print 'doing left'
+                
                 corner_control = self.corner_offsets[0]
                 
                 top_control = self.zip_controls[inc][0][1]
@@ -3499,7 +3497,7 @@ class WorldStickyFadeRig(WorldStickyRig):
                 btm_control_driver = self.control_dict[btm_control][1]
             
             if side == 'R':
-                print 'doing right'
+                
                 corner_control = self.corner_offsets[1]
                 
                 #minus 4 and 3 to skip the corner controls
@@ -4715,7 +4713,7 @@ class SimpleBackLeg(rigs.BufferRig):
         duplicate.stop_at(self.joints[3])
         ik_chain = duplicate.create()
         
-        print ik_chain
+        
         
         #self._attach_ik_joints(ik_chain, self.buffer_joints)
         
@@ -4849,7 +4847,7 @@ class BackLeg2(rigs.BufferRig):
     def _create_guide_chain(self):
         
         
-        print self.joints
+        
         
         duplicate = util.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-3])
@@ -4900,7 +4898,7 @@ class BackLeg2(rigs.BufferRig):
         
         self.offsetGuideChainBtm = [joint2, joint1]
         
-        print 'triangle parent', self.ikGuideChain[2]
+        
 
         cmds.parent(xform, self.ikGuideChain[2])      
 
