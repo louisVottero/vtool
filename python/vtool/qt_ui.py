@@ -1916,9 +1916,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         font.setPointSize( size )
         self.setFont( QtGui.QFont('Courier', size) )
         
-
-         
-                        
     def _update_request(self):
                 
         
@@ -1961,7 +1958,15 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     def keyPressEvent(self, event):
         
         pass_on = True
-        
+    
+        if event.key() == QtCore.Qt.Key_Backtab or event.key() == QtCore.Qt.Key_Tab:
+            self._handle_tab(event)
+            pass_on = False
+    
+        if pass_on:
+            super(CodeTextEdit, self).keyPressEvent(event)
+    
+    def _handle_tab(self, event):    
         cursor = self.textCursor()
         
         start_position = cursor.anchor()
@@ -1998,8 +2003,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                 inc = 0
                 
                 for text_split in split_text:
-                    
-                    
+                        
                     edited.append( self._add_tab(text_split) )
                     if inc == 0:
                         start_position += 4
@@ -2011,10 +2015,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                 cursor.insertText(edited_text)
                 self.setTextCursor(cursor)
                 
-
-                
-            pass_on = False
-            
         if event.key() == QtCore.Qt.Key_Backtab:
             
             if not cursor.hasSelection():
@@ -2069,21 +2069,11 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
             
                 cursor.insertText(edited_text)
                 self.setTextCursor(cursor)
-            
-
-        
-            pass_on = False 
         
         cursor = self.textCursor()
         cursor.setPosition(start_position)
         cursor.setPosition(end_position,QtGui.QTextCursor.KeepAnchor)
         self.setTextCursor(cursor)
-    
-        
-        if pass_on:
-            super(CodeTextEdit, self).keyPressEvent(event)
-    
-    
     
     def set_file(self, filepath):
         
@@ -2201,7 +2191,6 @@ class FindTextWidget(BasicDialog):
         
     def _replace(self):
         
-        
         if not self.found_match:
             return
         
@@ -2241,8 +2230,6 @@ class Highlighter(QtGui.QSyntaxHighlighter):
     def __init__(self, parent=None):
         super(Highlighter, self).__init__(parent)
 
-        
-
         keywordFormat = QtGui.QTextCharFormat()
         keywordFormat.setForeground(QtGui.QColor(0, 150, 150))
         keywordFormat.setFontWeight(QtGui.QFont.Bold)
@@ -2268,8 +2255,6 @@ class Highlighter(QtGui.QSyntaxHighlighter):
                 quotationFormat))
         self.highlightingRules.append((QtCore.QRegExp("\"[^\"]*\""),
                 quotationFormat))
-        
-        
         
         singleLineCommentFormat = QtGui.QTextCharFormat()
         singleLineCommentFormat.setForeground(QtCore.Qt.red)
@@ -2329,8 +2314,6 @@ class CodeLineNumber(QtGui.QWidget):
     def paintEvent(self, event):
         
         self.code_editor._line_number_paint(event)
-        
-    
 
 #--- Custom Painted Widgets
 
