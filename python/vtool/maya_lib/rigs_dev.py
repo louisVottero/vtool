@@ -4715,11 +4715,10 @@ class SimpleBackLeg(rigs.BufferRig):
         duplicate.stop_at(self.joints[3])
         ik_chain = duplicate.create()
         
-        print ik_chain
-        
-        #self._attach_ik_joints(ik_chain, self.buffer_joints)
+        self._attach_ik_joints(ik_chain, self.buffer_joints)
         
         self.ik_chain = ik_chain
+        self.pole_offset = 5
         
         return self.ik_chain
     
@@ -4755,7 +4754,8 @@ class SimpleBackLeg(rigs.BufferRig):
         cmds.parent(self.ik_pole, self.top_control)
 
         cmds.parent(self.top_pole_ik, self.setup_group)
-        util.create_follow_group(self.top_control, self.top_pole_ik)
+        #cmds.parent(self.ik_pole, self.btm_control)
+        util.create_follow_group(self.offset_control, self.top_pole_ik)
         cmds.hide(self.ik_pole)
         
     def _create_pole_vector(self):
@@ -4781,18 +4781,18 @@ class SimpleBackLeg(rigs.BufferRig):
         twist_var.create(self.btm_control)
         
         if self.side == 'L':
-            twist_var.connect_out('%s.twist' % self.main_ik)
+            twist_var.connect_out('%s.twist' % self.ik_handle_top)
             
         if self.side == 'R':
-            util.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.main_ik, -1)
+            util.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle_top, -1)
         
-        pole_joints = [self.ikGuideChain[0], self.ikGuideChain[1], self.ikGuideChain[2]]
+        pole_joints = [self.ik_chain[0], self.ik_chain[1], self.ik_chain[2]]
       
         position = util.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
 
         cmds.move(position[0], position[1], position[2], control.get())
 
-        cmds.poleVectorConstraint(control.get(), self.main_ik)
+        cmds.poleVectorConstraint(control.get(), self.ik_handle_top)
         
         xform_group = util.create_xform_group( control.get() )
         
@@ -4810,6 +4810,9 @@ class SimpleBackLeg(rigs.BufferRig):
 
         util.create_follow_group(self.top_pole_ik, xform_group)
         
+        
+        #cmds.parent(self.xform_offset_control, follow)
+        
     def _create_ik(self):
         
         ik_handle = util.IkHandle( self._get_name() )
@@ -4826,15 +4829,84 @@ class SimpleBackLeg(rigs.BufferRig):
         ik_handle.set_solver(ik_handle.solver_sc)
         self.ik_handle_btm = ik_handle.create()
         
+    def _create_top_control(self):
+        
+        control = self._create_control('top')
+        
+        control.rotate_shape(0, 0, 90)
+        control.hide_scale_attributes()
+        
+        util.MatchSpace(self.buffer_joints[0], control.get()).translation_rotation()
+        
+        xform = util.create_xform_group(control.get())
+        
+        cmds.pointConstraint(control.get(), self.ik_chain[0])
+        
+        self.top_control = control.get()
+        
+        cmds.parent(xform, self.control_group)
+        
+    def _create_btm_control(self):
+        
+        control = self._create_control('btm')
+        control.hide_scale_attributes()
+        
+        util.MatchSpace(self.buffer_joints[-1], control.get()).translation_rotation()
+        
+        xform = util.create_xform_group(control.get())
+        
+        self.btm_control = control.get()
+        
+        cmds.orientConstraint(self.btm_control, self.ik_chain[-1])
+        
+        cmds.parent(xform, self.control_group)
+        
+    def _create_offset_control(self):
+        
+        control = self._create_control('offset', True)
+        control.set_curve_type('square')
+        control.hide_scale_attributes()
+        
+        util.MatchSpace(self.buffer_joints[-1], control.get()).translation()
+        util.MatchSpace(self.buffer_joints[-2], control.get()).rotation()
+        
+        xform = util.create_xform_group(control.get())
+        driver = util.create_xform_group(control.get(), 'driver')
+        
+        cmds.parent(xform, self.top_control)
+        
+        cmds.pointConstraint(self.btm_control, xform)
+        
+        self.offset_control = control.get()
+        self.xform_offset_control = xform
+        
+    def _attach_ik_handles(self):
+        
+        top_ik = self.ik_handle_top
+        btm_ik = self.ik_handle_btm
+        
+        cmds.parent(top_ik, self.offset_control)
+        cmds.parent(btm_ik, self.offset_control)
+        
+        #cmds.parent(group1, self.btm_control.get())
+        
+        cmds.hide(top_ik, btm_ik)
+        
     def create(self):
         super(SimpleBackLeg, self).create()
         
-        self._duplicate_joints()
+        #self._duplicate_joints()
         
         self._create_ik()
         
-        #self._create_pole_chain()
-        #self._create_pole_vector()
+        self._create_top_control()
+        self._create_btm_control()
+        self._create_offset_control()
+        
+        self._attach_ik_handles()
+        
+        self._create_pole_chain()
+        self._create_pole_vector()
     
 
 class BackLeg2(rigs.BufferRig):
@@ -4990,7 +5062,7 @@ class BackLeg2(rigs.BufferRig):
         control.set_curve_type(self.curve_type)            
         control.scale_shape(2, 2, 2)
         
-        self.top_control = control.get()
+        self.top_control = control 
 
         util.MatchSpace(self.ikGuideChain[0], self.top_control).translation_rotation()
 
@@ -5006,7 +5078,7 @@ class BackLeg2(rigs.BufferRig):
         control.set_curve_type(self.curve_type)
         control.scale_shape(2, 2, 2)
         
-        self.btm_control = control.get()
+        self.btm_control = control 
 
         util.MatchSpace(self.ikGuideChain[-1], self.btm_control).translation_rotation()
 
@@ -5022,7 +5094,7 @@ class BackLeg2(rigs.BufferRig):
         control.hide_scale_and_visibility_attributes()
         control.set_curve_type(self.curve_type)
 
-        self.top_offset = control.get()
+        self.top_offset = control 
 
         util.MatchSpace(self.ikGuideChain[2], self.top_offset).translation()
 
@@ -5042,7 +5114,7 @@ class BackLeg2(rigs.BufferRig):
         control.scale_shape(2, 2, 2)
         control.set_curve_type(self.curve_type)
         
-        self.btm_offset = control.get()
+        self.btm_offset = control 
 
         util.MatchSpace(self.offset1Chain[0], self.btm_offset).translation()
 

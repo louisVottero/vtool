@@ -123,11 +123,13 @@ def set_nurbs_data(curve, curve_data_array):
     
 def set_nurbs_data_mel(curve, mel_curve_data):
     
+    
+    
     shapes = util.get_shapes(curve)
     
     vtool.util.convert_to_sequence(mel_curve_data)
     
-    for inc in range(0, len(shapes)):
+    for inc in range(0, len(mel_curve_data)):
         
         if inc < len(mel_curve_data):
             mel.eval('setAttr "%s.cc" -type "nurbsCurve" %s' % (shapes[inc], mel_curve_data[inc]))
@@ -192,6 +194,55 @@ class CurveDataInfo():
         mel_data_list = curveData.create_mel_list()
         
         return mel_data_list
+    
+    def _get_curve_type(self, maya_curve):
+    
+        curve_type_value = None
+        
+        curve_attr = '%s.curveType' % maya_curve
+        
+        if cmds.objExists(curve_attr):
+            curve_type_value = cmds.getAttr('%s.curveType' % maya_curve)
+    
+        return curve_type_value
+    
+    
+    def _is_curve_of_type(self, existing_curve, type_curve):
+        
+        mel_data_list, original_curve_type = self._get_curve_data(type_curve, self.active_library)
+
+        if not mel_data_list:
+            return False
+        
+        curve_data = CurveToData(existing_curve)
+            
+        original_mel_list =  curve_data.create_mel_list()
+    
+        curve_type_value = self._get_curve_type(existing_curve)
+        
+        if type_curve == None or curve_type_value != original_curve_type:
+            
+            mel_count = len(mel_data_list)
+            original_count = len(original_mel_list)
+            
+            if mel_count != original_count:
+                vtool.util.warning('Curve data does not match stored data. Skipping %s.' % existing_curve)
+                return False
+            
+            for inc in range(0, mel_count):
+                
+                split_mel_data = mel_data_list[inc].strip()
+                split_orig_data = original_mel_list[inc].strip()
+                
+                split_mel_data = split_mel_data.split()
+                split_orig_data = split_orig_data.split()
+                
+                if len(split_mel_data) != len(split_orig_data):
+                
+                    vtool.util.warning('Curve data does not match stored data. Skipping %s' % existing_curve)
+                    return False
+    
+        return True
     
     def set_directory(self, directorypath):
         self.curve_data_path = directorypath
@@ -315,29 +366,37 @@ class CurveDataInfo():
         if not mel_data_list:
             return
         
+        """
         curve_data = CurveToData(curve)
+            
         original_mel_list =  curve_data.create_mel_list()
+        """
         
-        curve_type_value = None
+        curve_type_value = self._get_curve_type(curve)
         
-        curve_attr = '%s.curveType' % curve
-        
-        if cmds.objExists(curve_attr):
-            curve_type_value = cmds.getAttr('%s.curveType' % curve)
-        if not cmds.objExists(curve_attr):
+        if not curve_type_value or not cmds.objExists(curve_type_value):
             curve_type_value = curve_in_library
 
         if check_curve:
+            print 'check curve!!!'
+            is_curve = self._is_curve_of_type(curve, curve_in_library)
             
+            print 'match', is_curve
+            
+            if not is_curve:    
+                return
+        
+        """
+        if check_curve:
+            print 'check curvE!'
             if curve_type_value == None or curve_type_value != original_curve_type:
             
                 mel_count = len(mel_data_list)
                 original_count = len(original_mel_list)
                 
                 if mel_count != original_count:
-                    vtool.util.warning('Curve data does not match stored data. Skipping %s' % curve)
+                    vtool.util.warning('Curve data does not match stored data. Skipping %s.' % curve)
                     return
-                
                 
                 for inc in range(0, mel_count):
                     
@@ -351,10 +410,9 @@ class CurveDataInfo():
                     
                         vtool.util.warning('Curve data does not match stored data. Skipping %s' % curve)
                         return
-                 
-
-        
-        data_list_count = len(mel_data_list)
+                    
+            print 'passed check curve!!'
+        """
         
         shapes = util.get_shapes(curve)
         
@@ -366,8 +424,10 @@ class CurveDataInfo():
         if len(shapes):
             shape_color = cmds.getAttr('%s.overrideColor' % shapes[0])
         
-        if len(shapes) < mel_data_list:
-            
+        if len(shapes) > len(mel_data_list):
+            cmds.delete(shapes[ len(mel_data_list): ])
+        
+        if len(shapes) < len(mel_data_list):
             current_index = len(shapes)
             
             for inc in range(current_index, len(mel_data_list)):
@@ -385,7 +445,7 @@ class CurveDataInfo():
                 cmds.parent(curve_shape, curve, r = True, s = True)
                 
                 cmds.delete(parent)
-     
+                
         if mel_data_list:
             
             set_nurbs_data_mel(curve, mel_data_list)
@@ -398,9 +458,8 @@ class CurveDataInfo():
         if not cmds.objExists('%s.curveType' % curve):
             curve_type.create()
         
-        if curve_type_value != None:
+        if curve_type_value != None and curve_type_value != curve:
             curve_type.set_value(curve_type_value)
-            
         
     def add_curve(self, curve, library_name = None):
         
