@@ -84,7 +84,7 @@ def invert(base=None, corrective=None, name=None):
             cmds.setAttr('%s.%s%s' % (invertedShape, attr, x), lock=False)
     cmds.setAttr('%s.visibility' % invertedShape, 1)
     deformer = cmds.deformer(invertedShape, type='cvShapeInverter')[0]
-    print 'deformer', deformer
+    
     # Calculate the inversion matrices
     oDeformer = getMObject(deformer)
     fnDeformer = OpenMaya.MFnDependencyNode(oDeformer)

@@ -1507,8 +1507,6 @@ class PoseNoReader(PoseBase):
         
     def mirror(self):
         
-        print 'mirror!!!'
-        
         description = self.description
         
         if not description:
@@ -1529,8 +1527,6 @@ class PoseNoReader(PoseBase):
             
             #'is this adding properly?
             other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
-            
-            print 'other mesh!!', other_target_mesh
             
             if other_target_mesh == None:
                 continue
@@ -1999,8 +1995,6 @@ class PoseCone(PoseBase):
         super(PoseCone, self).visibility_off(mesh, view_only)
     
     def mirror(self):
-        
-        print 'mirror pose cone'
         
         description = self.description
         

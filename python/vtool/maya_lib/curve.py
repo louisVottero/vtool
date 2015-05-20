@@ -206,7 +206,6 @@ class CurveDataInfo():
     
         return curve_type_value
     
-    
     def _is_curve_of_type(self, existing_curve, type_curve):
         
         mel_data_list, original_curve_type = self._get_curve_data(type_curve, self.active_library)
@@ -243,6 +242,49 @@ class CurveDataInfo():
                     return False
     
         return True
+    
+    def _match_shapes_to_data(self, curve, data_list):
+        
+        shapes = util.get_shapes(curve)
+        
+        if not shapes:
+            return
+        
+        shape_color = None
+        
+        if len(shapes):
+            shape_color = cmds.getAttr('%s.overrideColor' % shapes[0])
+        
+        if len(shapes) > len(data_list):
+            cmds.delete(shapes[ len(data_list): ])
+        
+        if len(shapes) < len(data_list):
+            current_index = len(shapes)
+            
+            for inc in range(current_index, len(data_list)):
+                
+                curve_shape = cmds.createNode('nurbsCurve')
+                
+                if shape_color != None:
+                    cmds.setAttr('%s.overrideEnabled' % curve_shape, 1)
+                    cmds.setAttr('%s.overrideColor' % curve_shape, shape_color)
+                
+                parent = cmds.listRelatives(curve_shape, parent = True)[0]
+                
+                cmds.parent(curve_shape, curve, r = True, s = True)
+                
+                cmds.delete(parent)
+    
+    def _set_curve_type(self, curve, curve_type_value):
+        
+        curve_type = util.MayaStringVariable('curveType')
+        curve_type.set_node(curve)
+        
+        if not cmds.objExists('%s.curveType' % curve):
+            curve_type.create()
+        
+        if curve_type_value != None and curve_type_value != curve:
+            curve_type.set_value(curve_type_value)
     
     def set_directory(self, directorypath):
         self.curve_data_path = directorypath
@@ -366,100 +408,26 @@ class CurveDataInfo():
         if not mel_data_list:
             return
         
-        """
-        curve_data = CurveToData(curve)
-            
-        original_mel_list =  curve_data.create_mel_list()
-        """
-        
         curve_type_value = self._get_curve_type(curve)
         
         if not curve_type_value or not cmds.objExists(curve_type_value):
             curve_type_value = curve_in_library
 
         if check_curve:
-            print 'check curve!!!'
+        
             is_curve = self._is_curve_of_type(curve, curve_in_library)
-            
-            print 'match', is_curve
             
             if not is_curve:    
                 return
         
-        """
-        if check_curve:
-            print 'check curvE!'
-            if curve_type_value == None or curve_type_value != original_curve_type:
-            
-                mel_count = len(mel_data_list)
-                original_count = len(original_mel_list)
-                
-                if mel_count != original_count:
-                    vtool.util.warning('Curve data does not match stored data. Skipping %s.' % curve)
-                    return
-                
-                for inc in range(0, mel_count):
-                    
-                    split_mel_data = mel_data_list[inc].strip()
-                    split_orig_data = original_mel_list[inc].strip()
-                    
-                    split_mel_data = split_mel_data.split()
-                    split_orig_data = split_orig_data.split()
-                    
-                    if len(split_mel_data) != len(split_orig_data):
-                    
-                        vtool.util.warning('Curve data does not match stored data. Skipping %s' % curve)
-                        return
-                    
-            print 'passed check curve!!'
-        """
-        
-        shapes = util.get_shapes(curve)
-        
-        if not shapes:
-            return
-        
-        shape_color = None
-        
-        if len(shapes):
-            shape_color = cmds.getAttr('%s.overrideColor' % shapes[0])
-        
-        if len(shapes) > len(mel_data_list):
-            cmds.delete(shapes[ len(mel_data_list): ])
-        
-        if len(shapes) < len(mel_data_list):
-            current_index = len(shapes)
-            
-            for inc in range(current_index, len(mel_data_list)):
-                
-                curve_shape = cmds.createNode('nurbsCurve')
-                
-                
-                if shape_color != None:
-                    cmds.setAttr('%s.overrideEnabled' % curve_shape, 1)
-                    cmds.setAttr('%s.overrideColor' % curve_shape, shape_color)
-                    
-                
-                parent = cmds.listRelatives(curve_shape, parent = True)[0]
-                
-                cmds.parent(curve_shape, curve, r = True, s = True)
-                
-                cmds.delete(parent)
+        self._match_shapes_to_data(curve, mel_data_list)
                 
         if mel_data_list:
-            
             set_nurbs_data_mel(curve, mel_data_list)
             
         util.rename_shapes(curve)
         
-        curve_type = util.MayaStringVariable('curveType')
-        curve_type.set_node(curve)
-        
-        if not cmds.objExists('%s.curveType' % curve):
-            curve_type.create()
-        
-        if curve_type_value != None and curve_type_value != curve:
-            curve_type.set_value(curve_type_value)
+        self._set_curve_type(curve, curve_type_value)
         
     def add_curve(self, curve, library_name = None):
         

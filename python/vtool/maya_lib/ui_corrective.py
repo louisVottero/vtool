@@ -832,8 +832,6 @@ class MeshWidget(qt_ui.BasicWidget):
                         
                         test_item = self.mesh_list.item(inc)
                         
-                        print 'compare', test_item.longname, selected
-                        
                         if str( test_item.longname ) == selected:
                             
                             pass_mesh = None
