@@ -280,6 +280,7 @@ class CurveDataInfo():
         curve_type = util.MayaStringVariable('curveType')
         curve_type.set_node(curve)
         
+        
         if not cmds.objExists('%s.curveType' % curve):
             curve_type.create()
         

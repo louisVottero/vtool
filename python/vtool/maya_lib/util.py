@@ -5318,7 +5318,37 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
         
         percent += segment
 
+def create_simple_spline_ik_stretch(curve, joints):
+    
+    arclen_node = cmds.arclen(curve, ch = True, n = inc_name('curveInfo_%s' % curve))
+    
+    arclen_node = cmds.rename(arclen_node, inc_name('curveInfo_%s' % curve))
+    
+    multiply_scale_offset = cmds.createNode('multiplyDivide', n = inc_name('multiplyDivide_offset_%s' % arclen_node))
+    cmds.setAttr('%s.operation' % multiply_scale_offset, 2 )
+    
+    multiply = cmds.createNode('multiplyDivide', n = inc_name('multiplyDivide_%s' % arclen_node))
+    
+    cmds.connectAttr('%s.arcLength' % arclen_node, '%s.input1X' % multiply_scale_offset)
+    
+    cmds.connectAttr('%s.outputX' % multiply_scale_offset, '%s.input1X' % multiply)
+    
+    cmds.setAttr('%s.input2X' % multiply, cmds.getAttr('%s.arcLength' % arclen_node))
+    cmds.setAttr('%s.operation' % multiply, 2)
+    
+    joint_count = len(joints)
+    
+    segment = 1.00/joint_count
+    
+    percent = 0
+    
+    for joint in joints:
+        
+        attribute = '%s.outputX' % multiply
 
+        cmds.connectAttr(attribute, '%s.scaleY' % joint)
+        
+        percent += segment
 
 def create_bulge_chain(joints, control, max_value = 15):
     
@@ -8157,6 +8187,7 @@ def wire_to_mesh(edges, geometry, description, auto_edge_path = True):
     wire_deformer, wire_curve = cmds.wire(geometry,  gw = False, w = curve, n = 'wire_%s' % description)
     
     spans = cmds.getAttr('%s.spans' % curve)
+    
     
     cmds.dropoffLocator( 1, 1, wire_deformer, '%s.u[0]' % curve, '%s.u[%s]' % (curve,spans) )
     

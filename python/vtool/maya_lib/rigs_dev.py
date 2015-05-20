@@ -596,8 +596,10 @@ class StickyRig(rigs.JointRig):
             cmds.parent(group, self.follower_group)
             util.create_xform_group(group)
                         
-            util.connect_translate_plus(follow_control, group)
-            util.connect_rotate(follow_control, group)
+            cmds.parentConstraint(follow_control, group)
+                        
+            #util.connect_translate_plus(follow_control, group)
+            #util.connect_rotate(follow_control, group)
             
             self.follow_control_groups[follow_control] = group
             
@@ -633,7 +635,6 @@ class StickyRig(rigs.JointRig):
         if not self.follower_group:
             #self.local_follower_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'local_follower')))
             self.follower_group = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'follower')))
-            
             
             #cmds.parent(self.local_follower_group, self.setup_group)
             cmds.parent(self.follower_group, self.setup_group)
@@ -3129,8 +3130,6 @@ class WorldStickyRig(rigs.JointRig):
         util.MatchSpace(top_joint, self.top_locator[1]).translation()
         util.MatchSpace(btm_joint, self.btm_locator[1]).translation()
         
-        
-        
         midpoint = util.get_midpoint(top_joint, btm_joint)
         
         cmds.xform(self.mid_top_locator[1], t = midpoint, ws = True)
@@ -3219,6 +3218,7 @@ class WorldStickyRig(rigs.JointRig):
                         
             util.connect_translate_plus(follow_control, group)
             util.connect_rotate(follow_control, group)
+            util.connect_scale(follow_control, group)
             
             self.follow_control_groups[follow_control] = group
             
@@ -3388,7 +3388,7 @@ class WorldStickyFadeRig(WorldStickyRig):
             corner_offset_xform = util.create_xform_group(corner_offset)
             
             sub_corner_offset = cmds.duplicate(corner_offset, n = self._get_name('subOffset', 'corner'))[0]
-            cmds.parent(sub_corner_offset, corner_offset)
+            #cmds.parent(sub_corner_offset, corner_offset_xform)
             
             if side == 'L':
                 joint = self.top_joints[0]
@@ -3466,7 +3466,6 @@ class WorldStickyFadeRig(WorldStickyRig):
         if increment != 'corner':
             locators = self.locators[increment]
     
-        
             top_locator1 = locators[0][0][1]
             btm_locator1 = locators[0][1][1]
             
