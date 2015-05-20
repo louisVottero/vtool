@@ -2980,6 +2980,8 @@ class WorldJawRig(rigs.BufferRig):
         self.control_dict[self.control.get()]['xform'] = xform
         self.control_dict[self.control.get()]['driver'] = driver
         
+        cmds.parent(xform, self.control_group)
+        
         #self.control.rotate_shape(0, 0, 90)    
     
     def _attach(self):
@@ -2997,7 +2999,6 @@ class WorldJawRig(rigs.BufferRig):
         
         multi = util.connect_multiply('%s.rotateX' % self.control.get(), '%s.translateZ' % driver)
         var.connect_out('%s.input2X' % multi)
-        
     
     def set_jaw_slide_offset(self, value):
         self.jaw_slide_offset = value
@@ -3367,7 +3368,10 @@ class WorldStickyFadeRig(WorldStickyRig):
         super(WorldStickyFadeRig, self).__init__(description, side)
         
         self.corner_offsets = []
+        self.sub_corner_offsets = []
+        
         self.corner_control_shape = 'square'
+        
         self.corner_match = []
         self.corner_xforms = []
         self.corner_controls = []
@@ -3382,6 +3386,9 @@ class WorldStickyFadeRig(WorldStickyRig):
             
             corner_offset = cmds.group(em = True, n = self._get_name('offset', 'corner'))
             corner_offset_xform = util.create_xform_group(corner_offset)
+            
+            sub_corner_offset = cmds.duplicate(corner_offset, n = self._get_name('subOffset', 'corner'))[0]
+            cmds.parent(sub_corner_offset, corner_offset)
             
             if side == 'L':
                 joint = self.top_joints[0]
@@ -3425,11 +3432,14 @@ class WorldStickyFadeRig(WorldStickyRig):
                 cmds.delete(const)
             
             cmds.parent(xform, self.control_group)
-            cmds.parent(corner_offset_xform, self.control_group)
+            cmds.parent(corner_offset_xform, xform)
             
             self.corner_offsets.append(corner_offset)
+            self.sub_corner_offsets.append(sub_corner_offset)
             
-            cmds.pointConstraint(sub_control.get(), corner_offset)
+            cmds.pointConstraint(control.get(), corner_offset)
+            cmds.pointConstraint(sub_control.get(), sub_corner_offset)
+            
             
         self.side =orig_side
 
@@ -3489,6 +3499,11 @@ class WorldStickyFadeRig(WorldStickyRig):
                 
                 corner_control = self.corner_offsets[0]
                 
+                if inc > 0:
+                    corner_control = self.corner_offsets[0]
+                if inc == 0:
+                    corner_control = self.sub_corner_offsets[0]
+                    
                 top_control = self.zip_controls[inc][0][1]
                 btm_control = self.zip_controls[inc][0][0]
         
@@ -3499,6 +3514,11 @@ class WorldStickyFadeRig(WorldStickyRig):
                 
                 corner_control = self.corner_offsets[1]
                 
+                if inc > 0:
+                    corner_control = self.corner_offsets[1]
+                if inc == 0:
+                    corner_control = self.sub_corner_offsets[1]
+                        
                 #minus 4 and 3 to skip the corner controls
                 top_control = self.zip_controls[inc][1][1]
                 btm_control = self.zip_controls[inc][1][0]
@@ -4916,6 +4936,7 @@ class BackLeg2(rigs.BufferRig):
         self.pole_offset = -1
 
     def _create_guide_chain(self):
+        
         
         duplicate = util.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-3])
