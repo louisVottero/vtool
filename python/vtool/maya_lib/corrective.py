@@ -244,7 +244,7 @@ class PoseManager(object):
             pose = self.get_pose_instance(pose_name)
             pose.attach()
         
-    @util.undo_chunk    
+    @util.undo_chunk  
     def create_pose_blends(self, pose_name = None):
         
         if pose_name:
@@ -259,24 +259,18 @@ class PoseManager(object):
     
         for inc in range(count) :
             
-            try:
-                if progress.break_signaled():
-                    break
-                
-                pose_name = poses[inc]
-                
-                pose = self.get_pose_instance(pose_name)
-                
-                pose.set_pose(pose_name)
-                pose.create_all_blends()
-                             
-                #cmds.refresh()
-                
-                progress.inc()
-                progress.status('adding pose %s' % pose_name)
+            if progress.break_signaled():
+                break
             
-            except:
-                vtool.util.show( traceback.format_exc() )
+            pose_name = poses[inc]
+            
+            pose = self.get_pose_instance(pose_name)
+            
+            pose.set_pose(pose_name)
+            pose.create_all_blends()
+            
+            progress.inc()
+            progress.status('adding pose %s' % pose_name)
             
         progress.end()
     

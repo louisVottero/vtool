@@ -202,7 +202,7 @@ class CurveDataInfo():
         curve_attr = '%s.curveType' % maya_curve
         
         if cmds.objExists(curve_attr):
-            curve_type_value = cmds.getAttr('%s.curveType' % maya_curve)
+            curve_type_value = cmds.getAttr(curve_attr)
     
         return curve_type_value
     
@@ -279,7 +279,7 @@ class CurveDataInfo():
         
         curve_type = util.MayaStringVariable('curveType')
         curve_type.set_node(curve)
-        
+        curve_type.set_locked(True)
         
         if not cmds.objExists('%s.curveType' % curve):
             curve_type.create()

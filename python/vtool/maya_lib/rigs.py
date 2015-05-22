@@ -1291,12 +1291,21 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         if children:
             cmds.parent(children, w = True)
         
+        handle = util.IkHandle(self._get_name())
+        handle.set_solver(handle.solver_spline)
+        handle.set_start_joint(joints[0])
+        handle.set_end_joint(joints[-1])
+        handle.set_curve(self.ik_curve)
+        handle = handle.create()
+        
+        """
         handle = cmds.ikHandle( sol = 'ikSplineSolver', 
                        ccv = False, 
                        pcv = False , 
                        sj = joints[0], 
                        ee = joints[-1], 
                        c = self.ik_curve, n = 'splineIk_%s' % self._get_name())[0]
+        """
         
         if children:
             cmds.parent(children, joints[-1])
@@ -1583,13 +1592,21 @@ class FkCurveLocalRig(FkCurveRig):
         if children:
             cmds.parent(children, w = True)
         
+        handle = util.IkHandle(self._get_name())
+        handle.set_solver(handle.solver_spline)
+        handle.set_curve(self.curve)
+        handle.set_start_joint(self.buffer_joints[0])
+        handle.set_end_joint(self.buffer_joints[-1])
+        handle = handle.create()
+        
+        """
         handle = cmds.ikHandle( sol = 'ikSplineSolver', 
                        ccv = False, 
                        pcv = False , 
                        sj = self.buffer_joints[0], 
                        ee = self.buffer_joints[-1], 
                        c = self.curve)[0]
-        
+        """
         if children:
             cmds.parent(children, self.buffer_joints[-1])
             
@@ -1742,10 +1759,12 @@ class IkSplineNubRig(BufferRig):
         
         cmds.makeIdentity(guide_btm, r = True, jo = True, apply = True)
         
-        handle = cmds.ikHandle(sj = guide_top, 
-                               ee = guide_btm, 
-                               solver = 'ikSCsolver', 
-                               name = util.inc_name('handle_%s' % name))[0]
+        handle = util.IkHandle(name)
+        handle.set_solver(handle.solver_sc)
+        handle.set_start_joint(guide_top)
+        handle.set_end_joint(guide_btm)
+        
+        handle = handle.create()
         
         return guide_top, handle
     
@@ -1757,12 +1776,23 @@ class IkSplineNubRig(BufferRig):
         cmds.hide(spline_setup_group)
         cluster_group = cmds.group( em = True, n = util.inc_name('clusterSetup_%s' % name))
         
+        handle = util.IkHandle(name)
+        handle.set_solver(handle.solver_spline)
+        handle.set_start_joint(self.buffer_joints[0])
+        handle.set_end_joint(self.buffer_joints[-1])
+        
+        ik_handle = handle.create()
+        curve = handle.curve
+        
+        ik_handle = cmds.rename(ik_handle, util.inc_name('handle_spline_%s' % name))
+        
+        """
         handle, effector, curve = cmds.ikHandle(sj = self.buffer_joints[0], 
                                                 ee = self.buffer_joints[-1], 
                                                 sol = 'ikSplineSolver', 
                                                 pcv = False, 
                                                 name = util.inc_name('handle_spline_%s' % name))
-        
+        """
         cmds.setAttr('%s.inheritsTransform' % curve, 0)
         
         curve = cmds.rename(curve, util.inc_name('curve_%s' % name) )
@@ -1772,7 +1802,7 @@ class IkSplineNubRig(BufferRig):
         btm_cluster, btm_handle = cmds.cluster('%s.cv[3]' % curve, n = 'clusterBtm_%s' % name)
         
         cmds.parent([top_handle, mid_handle, btm_handle], cluster_group )
-        cmds.parent([handle, curve], spline_setup_group)
+        cmds.parent([ik_handle, curve], spline_setup_group)
         cmds.parent(cluster_group, spline_setup_group)
         
         cmds.parent(spline_setup_group, self.setup_group)
@@ -1782,7 +1812,7 @@ class IkSplineNubRig(BufferRig):
         cmds.pointConstraint(btm_constrain, btm_handle, mo = True)
         cmds.parentConstraint(mid_constrain, mid_handle, mo = True)
         
-        return handle, curve
+        return ik_handle, curve
     
     def _setup_stretchy(self, curve, control):
         
@@ -2902,15 +2932,10 @@ class ConvertJointToNub(object):
                 
                 orient.set_aim_up_at_object(self.up_object)
                 orient.run()
-                
             
-            
-                
             cmds.makeIdentity(joints[-1], r = True, jo = True, apply = True)
             
-            
             self.joints = joints
-            
             
         parent_map = {}
             

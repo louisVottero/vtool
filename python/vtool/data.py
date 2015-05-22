@@ -1064,6 +1064,7 @@ class PoseData(MayaCustomData):
         
         return found
 
+    
     def export_data(self, comment):
         
         #dir_path = util_file.join_path(self.directory, self.name)
@@ -1127,7 +1128,10 @@ class PoseData(MayaCustomData):
                 
         util.show('Exported poses')
     
+    @maya_lib.util.undo_off
     def import_data(self):
+        
+        
         path = util_file.join_path(self.directory, self.name)
         
         if not path:
@@ -1139,6 +1143,7 @@ class PoseData(MayaCustomData):
         pose_files = util_file.get_files(path)
         
         if not pose_files:
+            
             return
         
         poses = []
@@ -1167,6 +1172,10 @@ class PoseData(MayaCustomData):
         pose_manager.set_pose_to_default()
         
         util.show('Imported %s data' % self.name)
+        
+        
+        
+        
         
 class MayaAttributeData(MayaCustomData):
     def _data_name(self):

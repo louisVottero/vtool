@@ -338,6 +338,8 @@ class SimpleSplineIkRig(rigs.BufferRig):
                        ee = joints[-1], 
                        c = self.curve, n = 'splineIk_%s' % self._get_name())[0]
         
+        
+        
         if children:
             cmds.parent(children, joints[-1])
             
@@ -347,6 +349,8 @@ class SimpleSplineIkRig(rigs.BufferRig):
             
             follow = util.create_follow_group(self.controls[0], self.buffer_joints[0])
             cmds.parent(follow, self.setup_group)
+        
+        cmds.rename(handle[1], 'effector_%s' % handle[0])
         
         """
         var = util.MayaNumberVariable('twist')

@@ -690,14 +690,12 @@ class Process(object):
             name = util_file.get_basename(script)
             path = util_file.get_parent_path(script)
             
-            print self.external_code_paths
+            
             
             for external_code_path in self.external_code_paths:
                 if util_file.is_dir(external_code_path):
                     if not external_code_path in sys.path:
                         sys.path.append(external_code_path)
-                        
-                        print 'added path to sys', external_code_path
             
             util.show('\n\t\a\t%s\n\n' % name)
             

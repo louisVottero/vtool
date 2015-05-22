@@ -16,52 +16,91 @@ import curve
 
 #--- decorators
 
+undo_chunk_active = False
+
+
 def undo_off(function):
     def wrapper(*args, **kwargs):
         
         if not vtool.util.is_in_maya():
             return
         return_value = None
-                
-        cmds.undoInfo(state = False)
+        
+        undo_state = cmds.undoInfo(state = True, q = True)
+        
+        if undo_state:
+            cmds.undoInfo(state = False)
+            vtool.util.show('Undo off.')
         
         try:
             return_value = function(*args, **kwargs)
         except (RuntimeError):
             
+            if undo_state:
+                cmds.undoInfo( state = True )
+                vtool.util.show('Undo on.')
+                vtool.util.show( traceback.format_exc() )
+            
+            raise(RuntimeError)
+        
+        if undo_state:          
             cmds.undoInfo( state = True )
-            vtool.util.show( traceback.format_exc() )
-                    
-        cmds.undoInfo(state = True)
+            vtool.util.show('Undo on.')
         
         return return_value
         
     return wrapper
 
+
+
 def undo_chunk(function):
+    
     def wrapper(*args, **kwargs):
+        
+        global undo_chunk_active
         
         if not vtool.util.is_in_maya():
             return
+    
+        undo_state = cmds.undoInfo(state = True, q = True)
         
         return_value = None
         
-        cmds.undoInfo(openChunk = True)
+        closed = True
         
-        closed = False
+        if not undo_chunk_active and undo_state:
+            cmds.undoInfo(openChunk = True)
+            vtool.util.show('Open undo chunk.')
+            
+            undo_chunk_active = True
+            closed = False
+        
         
         try:
             return_value = function(*args, **kwargs)
         except (RuntimeError):
             
-            cmds.undoInfo(closeChunk = True)
-            closed = True
+            if undo_chunk_active:
+                cmds.undoInfo(closeChunk = True)
+                vtool.util.show('Close undo chunk.')
+                
+                closed = True
+                
+                undo_chunk_active = False
+                
+                raise(RuntimeError)
+                
             vtool.util.show(traceback.format_exc())
              
             
         if not closed:
-            
-            cmds.undoInfo(closeChunk = True)
+            if undo_chunk_active:
+                cmds.undoInfo(closeChunk = True)
+                vtool.util.show('Close undo chunk.')
+                
+                undo_chunk_active = False
+        
+        
         
         return return_value
                      
@@ -1811,33 +1850,44 @@ class IkHandle(object):
             
     
     def _create_regular_ik(self):
-        self.ik_handle = cmds.ikHandle( name = inc_name(self.name),
+        ik_handle, effector = cmds.ikHandle( name = inc_name(self.name),
                                        startJoint = self.start_joint,
                                        endEffector = self.end_joint,
-                                       sol = self.solver_type )[0]
+                                       sol = self.solver_type )
+                           
+        cmds.rename(effector, 'effector_%s' % ik_handle)
+        self.ik_handle = ik_handle
+        
                                        
     def _create_spline_ik(self):
         
         if self.curve:
             
-            self.ik_handle = cmds.ikHandle(name = inc_name(self.name),
+            ik_handle = cmds.ikHandle(name = inc_name(self.name),
                                            startJoint = self.start_joint,
                                            endEffector = self.end_joint,
                                            sol = self.solver_type,
-                                           curve = self.curve, ccv = False, pcv = False)[0]
+                                           curve = self.curve, ccv = False, pcv = False)
+            
+            cmds.rename(ik_handle[1], 'effector_%s' % ik_handle[0])
+            self.ik_handle = ik_handle[0]
+            
         if not self.curve:
             
-            self.ik_handle = cmds.ikHandle(name = inc_name(self.name),
+            ik_handle = cmds.ikHandle(name = inc_name(self.name),
                                            startJoint = self.start_joint,
                                            endEffector = self.end_joint,
                                            sol = self.solver_type,
-                                           scv = False)
+                                           scv = False,
+                                           pcv = False)
             
-            self.curve = self.ik_handle[2]
+            cmds.rename(ik_handle[1], 'effector_%s' % ik_handle[0])
+            self.ik_handle = ik_handle[0]
+            
+            self.curve = ik_handle[2]
             self.curve = cmds.rename(self.curve, inc_name('curve_%s' % self.name))
             
-            self.ik_handle = self.ik_handle[0]
-                                           
+            self.ik_handle = ik_handle[0]
         
     def set_start_joint(self, joint):
         self.start_joint = joint
@@ -4749,8 +4799,9 @@ def delete_unknown_nodes():
     unknown = cmds.ls(type = 'unknown')
 
     for node in unknown:
-        cmds.lockNode(node, lock = False)
-        cmds.delete(node)
+        if cmds.objExists(node):
+            cmds.lockNode(node, lock = False)
+            cmds.delete(node)
 
 #--- shading
 
