@@ -15,6 +15,7 @@ class PoseManager(object):
         
         self.pose_group = 'pose_gr'
 
+    def _check_pose_group(self):
         if not cmds.objExists(self.pose_group):
             
             selection = cmds.ls(sl = True)
@@ -26,7 +27,6 @@ class PoseManager(object):
             
             if selection:
                 cmds.select(selection)
-
     
     def is_pose(self, name):
         
@@ -54,6 +54,9 @@ class PoseManager(object):
         return pose
                         
     def get_poses(self):
+        
+        self._check_pose_group()
+        
         relatives = cmds.listRelatives(self.pose_group)
         
         if not relatives:
@@ -106,10 +109,16 @@ class PoseManager(object):
             return mesh_index
     
     def set_default_pose(self):
+        
+        self._check_pose_group()
+        
         store = util.StoreControlData(self.pose_group)
         store.set_data()
         
     def set_pose_to_default(self):
+        
+        self._check_pose_group()
+        
         store = util.StoreControlData(self.pose_group)
         store.eval_data()
     
@@ -237,14 +246,14 @@ class PoseManager(object):
             
             
     def attach_poses(self):
+        
         poses = self.get_poses()
         
         for pose_name in poses:
             
             pose = self.get_pose_instance(pose_name)
             pose.attach()
-        
-    @util.undo_chunk  
+    
     def create_pose_blends(self, pose_name = None):
         
         if pose_name:
@@ -616,7 +625,7 @@ class PoseBase(object):
         
         if not other_target_mesh or not cmds.objExists(other_target_mesh):    
             other_target_mesh = target_mesh
-    
+            
         skin = util.find_deformer_by_type(target_mesh, 'skinCluster')
         blendshape_node = util.find_deformer_by_type(target_mesh, 'blendShape')
         
@@ -634,24 +643,25 @@ class PoseBase(object):
         if blendshape_node:
             cmds.setAttr('%s.envelope' % blendshape_node, 1)
 
-        mirror_group = cmds.group(em = True)
+        mirror_group = cmds.group(em = True, n = util.inc_name('corretive_mirror_group'))
         
-        if other_target_mesh == target_mesh:
-            cmds.parent(home, mirror_group)
+        #if other_target_mesh == target_mesh:
+        cmds.parent(home, mirror_group)
             
         cmds.parent(other_mesh_duplicate, mirror_group)
         
         #may need to do z or y axis eventually
         cmds.setAttr('%s.scaleX' % mirror_group, -1)
         
+        
         util.create_wrap(home, other_target_mesh_duplicate)
         
         cmds.blendShape(other_mesh_duplicate, home, foc = True, w = [0, 1])
         
         cmds.delete(other_target_mesh_duplicate, ch = True)
-        
+                       
         cmds.delete(mirror_group, other_mesh_duplicate)
-        
+                       
         return other_target_mesh, other_target_mesh_duplicate
 
     
@@ -961,8 +971,8 @@ class PoseBase(object):
             
             mesh = self.get_target_mesh(mesh)
             #mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
-            if mesh:
-                meshes.append(mesh)
+            
+            meshes.append(mesh)
             
         return meshes
         
@@ -1088,7 +1098,11 @@ class PoseBase(object):
             self._set_visibility(target_mesh, 0)
         
     def toggle_vis(self, view_only = False):
+        
+        
+        
         mesh = self.get_mesh(self.mesh_index)
+        
         target_mesh = self.get_target_mesh(mesh)
         
         if cmds.getAttr('%s.lodVisibility' % target_mesh) == 1:
@@ -1494,10 +1508,7 @@ class PoseNoReader(PoseBase):
     def detach(self):
         
         util.disconnect_attribute('%s.weight' % self.pose_control)
-        
         self.delete_blend_input()
-                
-    
         
     def mirror(self):
         
@@ -1520,6 +1531,7 @@ class PoseNoReader(PoseBase):
             target_mesh = self.get_target_mesh(mesh)
             
             #'is this adding properly?
+            
             other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
             
             if other_target_mesh == None:
@@ -1537,7 +1549,7 @@ class PoseNoReader(PoseBase):
         cmds.setAttr('%s.weight' % self.pose_control, 0)
         
         inc = 0
-            
+        
         for mesh in other_target_meshes:
             
             index = other_pose_instance.get_target_mesh_index(mesh)
@@ -2016,12 +2028,10 @@ class PoseCone(PoseBase):
                 continue
             
             other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
-
+            
             index = other_pose_instance.get_target_mesh_index(other_target_mesh)
             
             if index == None:
-                
-                
                 
                 other_pose_instance.add_mesh(other_target_mesh)
                 

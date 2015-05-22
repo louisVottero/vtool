@@ -1776,6 +1776,8 @@ class IkSplineNubRig(BufferRig):
         cmds.hide(spline_setup_group)
         cluster_group = cmds.group( em = True, n = util.inc_name('clusterSetup_%s' % name))
         
+        #do not do this way unless heavily tested first
+        """
         handle = util.IkHandle(name)
         handle.set_solver(handle.solver_spline)
         handle.set_start_joint(self.buffer_joints[0])
@@ -1785,17 +1787,20 @@ class IkSplineNubRig(BufferRig):
         curve = handle.curve
         
         ik_handle = cmds.rename(ik_handle, util.inc_name('handle_spline_%s' % name))
-        
         """
-        handle, effector, curve = cmds.ikHandle(sj = self.buffer_joints[0], 
+        
+        #here 
+        ik_handle, effector, curve = cmds.ikHandle(sj = self.buffer_joints[0], 
                                                 ee = self.buffer_joints[-1], 
                                                 sol = 'ikSplineSolver', 
                                                 pcv = False, 
                                                 name = util.inc_name('handle_spline_%s' % name))
-        """
+        #to here  could be replaced some day
+        
         cmds.setAttr('%s.inheritsTransform' % curve, 0)
         
         curve = cmds.rename(curve, util.inc_name('curve_%s' % name) )
+        effector = cmds.rename(effector, util.inc_name('effector_%s' % name))
         
         top_cluster, top_handle = cmds.cluster('%s.cv[0]' % curve, n = 'clusterTop_%s' % name)
         mid_cluster, mid_handle = cmds.cluster('%s.cv[1:2]' % curve, n = 'clusterMid_%s' % name)

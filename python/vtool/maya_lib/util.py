@@ -7303,7 +7303,7 @@ def create_mesh_from_shape(shape, name = 'new_mesh'):
     
     cmds.disconnectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
     
-    mesh = cmds.rename(mesh, name)
+    mesh = cmds.rename(mesh, inc_name(name))
     
     MatchSpace(parent, mesh).translation_rotation()
     
@@ -8379,6 +8379,8 @@ def chad_extract_shape(skin_mesh, corrective):
         
             cmds.setAttr('%s.envelope' % skin, 1)
         
+        
+        
         quick_blendshape(other_delta, orig, -1)
         quick_blendshape(offset, orig, 1)
         
@@ -8389,10 +8391,10 @@ def chad_extract_shape(skin_mesh, corrective):
         cmds.delete(other_delta, offset)
         
         cmds.rename(orig, offset)
-        
+                
         return offset
 
-    except:
+    except (RuntimeError):
         vtool.util.show( traceback.format_exc() )
         
 

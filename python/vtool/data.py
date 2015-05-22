@@ -1067,12 +1067,9 @@ class PoseData(MayaCustomData):
     
     def export_data(self, comment):
         
-        #dir_path = util_file.join_path(self.directory, self.name)
-        dir_path = util_file.create_dir(self.name, self.directory)
         
-        #if not util_file.is_dir(dir_path):
-        #    self.create
-        #    return
+        
+        dir_path = util_file.create_dir(self.name, self.directory)
         
         pose_manager = maya_lib.corrective.PoseManager()
         pose_manager.set_pose_to_default()
@@ -1383,8 +1380,14 @@ class MayaFileData(MayaCustomData):
         unknown = cmds.ls(type = 'unknown')
         
         if unknown:
-            util.warning('This file contains unknown nodes. Try deleting the unknown nodes or saving the file in maya ascii data.')
-            return
+            value = cmds.confirmDialog( title='Unknown Nodes!', message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
+                                        button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
+            
+            if value == 'Yes':
+                maya_lib.util.delete_unknown_nodes()
+            
+            if value == 'No':
+                cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
         
         cmds.file(rename = self.filepath)
         
@@ -1445,14 +1448,4 @@ class MayaAsciiFileData(MayaFileData):
     def _set_maya_file_type(self):
         return self.maya_ascii
     
-
-class ImageFileData(CustomData):
-    #image data could be stored out with resolution levels, 1K, 2K, 3K, 4K 
-    #this can than have an expression that automatically switches them besed on distance from the camera.
-    #images could also be saved out in accordance with desired format of the specified renderer.
-    #saving out images can be an important part of rigging when normal maps and displacement are hooked up to drivers. 
-    pass
-
-class MayaImageFileData(CustomData):
-    pass
     

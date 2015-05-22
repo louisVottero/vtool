@@ -507,6 +507,9 @@ class PoseTreeWidget(BaseTreeWidget):
         
         super(PoseTreeWidget, self)._populate_list()   
         
+        if not cmds.objExists('pose_gr'):
+            return
+        
         poses = corrective.PoseManager().get_poses()
         
         if not poses:
@@ -527,8 +530,6 @@ class PoseTreeWidget(BaseTreeWidget):
             if pose_type == 'no reader':
                 self.create_no_reader_pose(pose)
         
-         
-            
     def _select_joint(self):
         name = self._current_pose()
         transform = corrective.PoseManager().get_transform(name)
@@ -786,7 +787,7 @@ class MeshWidget(qt_ui.BasicWidget):
         
     @util.undo_chunk
     def add_mesh(self):
-                    
+        
         current_meshes = self.get_current_meshes_in_list()
         
         if not current_meshes:
@@ -840,6 +841,8 @@ class MeshWidget(qt_ui.BasicWidget):
                         
                     if pass_mesh:    
                         sculpt_meshes.append(pass_mesh)
+        
+        
         
         if sculpt_meshes or not current_meshes:
                     
@@ -902,6 +905,7 @@ class MeshWidget(qt_ui.BasicWidget):
                 if item:
                     item.setSelected(True)
                 
+                
                 corrective.PoseManager().toggle_visibility(pose_name, mesh_index = index)
                 
             cmds.select(selection)
@@ -910,6 +914,7 @@ class MeshWidget(qt_ui.BasicWidget):
         if current_meshes:
             
             indices = self.mesh_list.selectedIndexes()
+            
             if indices:
                 for index in indices:
                     
@@ -917,6 +922,7 @@ class MeshWidget(qt_ui.BasicWidget):
                 
                     corrective.PoseManager().toggle_visibility(pose_name, mesh_index= index)
      
+        
     def remove_mesh(self):
         
         meshes = self.get_current_meshes_in_list()
@@ -946,7 +952,10 @@ class MeshWidget(qt_ui.BasicWidget):
         self.mesh_list.clear()    
         
         for mesh in meshes:
-        
+            
+            if not mesh:
+                continue
+            
             item = QtGui.QListWidgetItem()
             item.setSizeHint(QtCore.QSize(0,20))
             basename = util.get_basename(mesh)

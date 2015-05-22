@@ -668,11 +668,29 @@ class AtomFileWidget(MayaDataFileWidget):
         return 'ATOM file'
         
 class PoseFileWidget(MayaDataFileWidget):
+    
+    def _define_save_widget(self):
+        return MayaPoseSaveFileWidget()
+    
     def _define_data_class(self):
         return vtool.data.PoseData()
     
     def _define_main_tab_name(self):
         return 'Pose Targets'
+        
+class MayaPoseSaveFileWidget(MayaDataSaveFileWidget):
+            
+    def _export_data(self):
+        
+        vtool.qt_ui.get_permission('Exporting poses will disconnect them in the current scene.\nContinue?', self)
+        
+        comment = vtool.qt_ui.get_comment(self)
+        if comment == None:
+            return
+        
+        self.data_class.export_data(comment)
+        self.file_changed.emit()
+
         
 class MayaShadersFileWidget(MayaDataFileWidget):
     
