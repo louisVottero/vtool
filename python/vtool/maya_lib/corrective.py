@@ -306,8 +306,6 @@ class PoseBase(object):
         
         self.left_right = True
     
-    #--- private
-      
     def _pose_type(self):
         return 'base'
         
@@ -339,7 +337,12 @@ class PoseBase(object):
         cmds.showHidden( shapes )
         
         if not cmds.objExists('%s.enable' % self.pose_control):
+            
             cmds.addAttr(self.pose_control, ln = 'enable', at = 'double', k = True, dv = 1, min = 0, max = 1)
+            
+            self._multiply_weight()
+            
+            """
             multiply = self._get_named_message_attribute('multiplyDivide2')
             
             multiply_offset = self._create_node('multiplyDivide')
@@ -349,7 +352,8 @@ class PoseBase(object):
         
             cmds.disconnectAttr('%s.outputX' % multiply, '%s.weight' % self.pose_control)
             cmds.connectAttr('%s.outputX' % multiply_offset, '%s.weight' % self.pose_control)
-        
+            """
+            
     def _create_top_group(self):
         top_group = 'pose_gr'
         
@@ -763,21 +767,19 @@ class PoseBase(object):
     def _set_visibility(self, node, bool_value):
         
         if bool_value:
+            
             try:
                 cmds.setAttr('%s.lodVisibility' % node, 1)
                 cmds.setAttr('%s.visibility' % node, 1)
-                
             except:
-                
-                pass
+                print 'Could not set visibility on %s.' % node
     
         if not bool_value:
             try:
                 cmds.setAttr('%s.lodVisibility' % node, 0)
-                cmds.setAttr('%s.visibility' % node, 0)
-                
+                cmds.setAttr('%s.visibility' % node, 0)    
             except:
-                pass
+                print 'Could not set visibility on %s.' % node
     
     #--- pose
 
