@@ -73,6 +73,7 @@ def create_window(ui, dock_area = 'right'):
         
     allowedAreas = ['right', 'left']
     
+    #do not remove
     print 'Creating dock window.', ui_name, ui
     
     try:

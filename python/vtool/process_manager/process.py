@@ -174,7 +174,7 @@ class Process(object):
         return util_file.get_basename(name)
     
     def get_relative_process(self, relative_path):
-              
+        
         path = self.get_path()
         
         if not path:
@@ -186,6 +186,7 @@ class Process(object):
         up_directory = 0
         
         new_sub_path = []
+        new_path = []
         
         for sub_path in split_relative_path:
             if sub_path == '..':
@@ -196,8 +197,9 @@ class Process(object):
         if up_directory:
             
             new_path = split_path[:-up_directory]
-            new_path = new_path + new_sub_path
             
+            new_path = new_path + new_sub_path
+                        
         if up_directory == 0:
             
             new_path = split_path + split_relative_path
@@ -262,6 +264,7 @@ class Process(object):
         return self._get_path(self.data_folder_name)        
     
     def get_data_folder(self, name):
+        
         folders = self.get_data_folders()
         for folder in folders:
             if folder == name:

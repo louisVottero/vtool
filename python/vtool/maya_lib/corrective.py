@@ -439,6 +439,8 @@ class PoseBase(object):
         
     def _get_mesh_message_attributes(self):
         
+        
+        
         if not self.pose_control:
             return
         
@@ -471,6 +473,7 @@ class PoseBase(object):
         return inc
     
     def _get_mesh_count(self):
+        
         attrs = self._get_mesh_message_attributes()
         
         return len(attrs)
@@ -934,24 +937,26 @@ class PoseBase(object):
     def remove_mesh(self, mesh):
         
         index = self.get_target_mesh_index(mesh)
-        target_mesh = self.get_target_mesh(mesh)
+        mesh = self.get_mesh(index)
         
         if index == None:
             return
 
-        if target_mesh and cmds.objExists(target_mesh):        
+        if mesh == None:
+            raise
+        
+        if mesh and cmds.objExists(mesh):        
             blend_name = self.get_blendshape(index)
             
             if blend_name:
                 blend = blendshape.BlendShape(blend_name)
+                
                 blend.remove_target(self.pose_control)
-        
-        pose_mesh = self.get_mesh(index)
         
         attributes = self._get_mesh_message_attributes()
         attribute = attributes[index]
         
-        cmds.delete(pose_mesh)
+        cmds.delete(mesh)
         util.disconnect_attribute(attribute)
         
     def get_mesh(self, index):
@@ -966,6 +971,7 @@ class PoseBase(object):
         return mesh
     
     def get_target_meshes(self):
+        
         meshes = []
         
         for inc in range(0, self._get_mesh_count()):
@@ -998,7 +1004,7 @@ class PoseBase(object):
                     cmds.setAttr('%s.mesh_pose_source' % mesh, long_name, type = 'string')
                 if not cmds.objExists(target_mesh):
                     long_name = target_mesh
-                
+               
         return long_name
         
     def get_target_mesh_index(self, target_mesh):
@@ -1008,6 +1014,7 @@ class PoseBase(object):
         inc = 0
         
         for target_mesh_test in target_meshes:
+            
             if target_mesh == target_mesh_test:
                 return inc
             

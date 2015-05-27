@@ -1128,13 +1128,13 @@ class PoseData(MayaCustomData):
     @maya_lib.util.undo_off
     def import_data(self):
         
-        
         path = util_file.join_path(self.directory, self.name)
         
         if not path:
             return      
         
         if not util_file.is_dir(path):
+            
             return  
         
         pose_files = util_file.get_files(path)
@@ -1144,6 +1144,8 @@ class PoseData(MayaCustomData):
             return
         
         poses = []
+        
+        cmds.renderThumbnailUpdate( False )
         
         for pose_file in pose_files:
             pose_path = util_file.join_path(path, pose_file)
@@ -1170,8 +1172,8 @@ class PoseData(MayaCustomData):
         
         util.show('Imported %s data' % self.name)
         
-        
-        
+        cmds.dgdirty(a = True)
+        cmds.renderThumbnailUpdate( True )
         
         
 class MayaAttributeData(MayaCustomData):

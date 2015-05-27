@@ -189,8 +189,6 @@ class JointRig(Rig):
         if not self.attach_joints:
             return
         
-        print 'attaching joints', self.__class__, source_chain, target_chain
-        
         util.AttachJoints(source_chain, target_chain).create()
     
     def _check_joints(self, joints):

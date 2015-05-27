@@ -26,6 +26,7 @@ def undo_off(function):
             return
         return_value = None
         
+        
         undo_state = cmds.undoInfo(state = True, q = True)
         
         if undo_state:
@@ -56,6 +57,8 @@ def undo_off(function):
 def undo_chunk(function):
     
     def wrapper(*args, **kwargs):
+        
+        
         
         global undo_chunk_active
         
@@ -2227,6 +2230,7 @@ class StretchyChain:
         self.simple = False
         self.per_joint_stretch = True
         self.vector = False
+        self.extra_joint = None
     
     def _get_joint_count(self):
         return len(self.joints)
@@ -3139,6 +3143,9 @@ class AttachJoints(object):
         if not scale_constraint:
             return
         
+        scale_constraint_to_world(scale_constraint)
+        
+        """
         weight_count = constraint_editor.get_weight_count(scale_constraint)
         
         cmds.connectAttr('%s.parentInverseMatrix' % node, '%s.constraintParentInverseMatrix' % scale_constraint)
@@ -3148,18 +3155,22 @@ class AttachJoints(object):
             target = get_attribute_input('%s.target[%s].targetScale' % (scale_constraint, inc), True)
             
             cmds.connectAttr('%s.parentInverseMatrix' % target, '%s.target[%s].targetParentMatrix' % (scale_constraint, inc) )
-
-    def _unhook_scale_constraint(self, scale_constraint):
-        constraint_editor = ConstraintEditor()
+        """
         
-        print 'scale constraint is', cmds.objExists(scale_constraint)
+    def _unhook_scale_constraint(self, scale_constraint):
+        
+        scale_constraint_to_local(scale_constraint)
+        
+        """
+        constraint_editor = ConstraintEditor()
         
         weight_count = constraint_editor.get_weight_count(scale_constraint)
         disconnect_attribute('%s.constraintParentInverseMatrix' % scale_constraint)
         
         for inc in range(0, weight_count):
             disconnect_attribute('%s.target[%s].targetParentMatrix' % (scale_constraint, inc))
-
+        """
+        
     def _attach_joint(self, source_joint, target_joint):
         
         
@@ -3170,7 +3181,6 @@ class AttachJoints(object):
         
         scale_constraint = cmds.scaleConstraint(source_joint, target_joint)[0]
         
-        print source_joint, target_joint, parent_constraint, scale_constraint
         #if source_joint == 'buffer_foot_L_1':
         #    raise()
         
@@ -6020,6 +6030,36 @@ def create_pole_chain(top_transform, btm_transform, name):
     ik_pole = ik_handle.create()
 
     return joint1, joint2, ik_pole
+
+def scale_constraint_to_local(scale_constraint):
+        
+    constraint_editor = ConstraintEditor()
+        
+    weight_count = constraint_editor.get_weight_count(scale_constraint)
+    disconnect_attribute('%s.constraintParentInverseMatrix' % scale_constraint)
+    
+    for inc in range(0, weight_count):
+        disconnect_attribute('%s.target[%s].targetParentMatrix' % (scale_constraint, inc))
+
+def scale_constraint_to_world(scale_constraint):
+    
+    constraint_editor = ConstraintEditor()
+    
+    weight_count = constraint_editor.get_weight_count(scale_constraint)
+    
+    node = get_attribute_outputs('%s.constraintScaleX' % scale_constraint, node_only = True)
+    
+    
+    if node:
+        cmds.connectAttr('%s.parentInverseMatrix' % node[0], '%s.constraintParentInverseMatrix' % scale_constraint)
+    
+    for inc in range(0, weight_count):
+        
+        target = get_attribute_input('%s.target[%s].targetScale' % (scale_constraint, inc), True)
+        
+        cmds.connectAttr('%s.parentInverseMatrix' % target, '%s.target[%s].targetParentMatrix' % (scale_constraint, inc) )
+        
+    
 #--- animation
 
 def get_input_keyframes(node, node_only = True):
