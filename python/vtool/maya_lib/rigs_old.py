@@ -371,6 +371,7 @@ class QuadFootRollRig(rigs.FootRollRig):
         
     def _create_pivot_groups(self):
 
+        print 'create pivot groups!!!'
         
         heel_pivot = self._create_pivot('heel', self.heel, self.control_group)
         ball_pivot = self._create_pivot('ball', self.ball, heel_pivot)
@@ -402,6 +403,9 @@ class QuadFootRollRig(rigs.FootRollRig):
         
         cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
         cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
+        
+        print 'create_pivots stuff', ball_pivot, toe_fk_control_xform
+        
         
         return [ball_pivot, toe_fk_control_xform]
                 

@@ -2332,12 +2332,16 @@ class StretchyChain:
         if not stretch_condition:
             pass
         
+        self.divide_distance = multiply.node
+        
         return multiply.node
 
     def _create_offsets(self, divide_distance, distance_node):
         stretch_offsets = []
         
         plus_total_offset = cmds.createNode('plusMinusAverage', n = inc_name('plusMinusAverage_total_offset_%s' % self.name))
+        self.plus_total_offset = plus_total_offset
+        
         cmds.setAttr('%s.operation' % plus_total_offset, 3)
         
         for inc in range(0, self._get_joint_count()-1 ):
@@ -2361,11 +2365,14 @@ class StretchyChain:
             stretch_offsets.append(multiply)
         
         multiply = cmds.createNode('multiplyDivide', n = inc_name('multiplyDivide_orig_distance_%s' % self.name))
+        
         self.orig_distance = multiply
         
         length = self._get_length()
         cmds.setAttr('%s.input1X' % multiply, length)
         cmds.connectAttr('%s.output1D' % plus_total_offset, '%s.input2X' % multiply)
+        
+        self.stretch_offsets = stretch_offsets
         
         return stretch_offsets
         
@@ -2462,6 +2469,52 @@ class StretchyChain:
         for plug in plugs:
                 cmds.connectAttr( "%s.outValue" % remap, plug)
         
+    def _add_joint(self, joint):
+        
+        inc = len(self.stretch_offsets) + 1
+        
+        var_name = 'offset%s' % (inc)
+            
+        multiply = connect_multiply('%s.outputX' % self.divide_distance, '%s.scale%s' % (joint, self.scale_axis), 1)
+            
+            
+        offset_variable = MayaNumberVariable(var_name )
+        offset_variable.set_variable_type(offset_variable.TYPE_DOUBLE)
+        offset_variable.set_node(multiply)
+            
+            
+        offset_variable.create()
+        offset_variable.set_value(1)
+        offset_variable.set_min_value(0.1)
+        offset_variable.connect_out('%s.input2X' % multiply)
+        offset_variable.connect_out('%s.input1D[%s]' % (self.plus_total_offset, inc))
+        
+        
+        stretch_offset = MayaNumberVariable('stretch_%s' % (inc))
+        stretch_offset.set_node(self.attribute_node)
+        stretch_offset.set_variable_type(stretch_offset.TYPE_DOUBLE)
+        
+        if not self.per_joint_stretch:
+            stretch_offset.set_keyable(False)
+        
+        stretch_offset.create()
+        
+        stretch_offset.set_value(1)
+        stretch_offset.set_min_value(0.1)
+        
+        stretch_offset.connect_out('%s.offset%s' % (multiply, inc) )   
+        
+        child_joint = cmds.listRelatives(joint, type = 'joint')
+        
+        if child_joint:
+            distance =  get_distance(joint, child_joint[0])
+            
+            length = cmds.getAttr('%s.input1X' % self.orig_distance)
+            length+=distance
+            
+            cmds.setAttr('%s.input1X' % self.orig_distance, length)
+    
+        
     def set_joints(self, joints):
         self.joints = joints
         
@@ -2489,6 +2542,9 @@ class StretchyChain:
     def set_per_joint_stretch(self, bool_value):
         self.per_joint_stretch = bool_value
     
+    def set_extra_joint(self, joint):
+        self.extra_joint = joint
+    
     def create(self):
         
         top_locator, btm_locator = self._build_stretch_locators()
@@ -2507,8 +2563,6 @@ class StretchyChain:
                 cmds.connectAttr('%s.outputX' % distance_offset, '%s.input1X' % divide_distance)
                 
                 cmds.connectAttr('%s.outputX' % divide_distance, '%s.scale%s' % (joint, self.scale_axis))
-            
-            
         
         if not self.simple:
         
@@ -2531,6 +2585,9 @@ class StretchyChain:
                 self._create_attributes(stretch_on_off)
                 self._create_offset_attributes(stretch_offsets)
                 
+                if self.extra_joint:
+                    self._add_joint(self.extra_joint)
+                
                 if self.add_dampen:
                     self._create_dampen(stretch_distance, ['%s.firstTerm' % stretch_condition,
                                                            '%s.colorIfTrueR' % stretch_condition,
@@ -2540,8 +2597,14 @@ class StretchyChain:
             if self.distance_offset_attribute:
                 self._create_other_distance_offset(distance_offset)
                 
+        
+                
         return top_locator, btm_locator
-      
+    
+    
+            
+        
+    
 #--- Misc Rig
 
 
@@ -2555,6 +2618,7 @@ class RiggedLine(object):
         self.top = top_transform
         self.btm = btm_transform
         self.local = False
+        self.extra_joint = None
     
     def _build_top_group(self):
         
@@ -2620,9 +2684,11 @@ class RiggedLine(object):
             cmds.pointConstraint(self.top, self.cluster1[1])
             cmds.pointConstraint(self.btm, self.cluster2[1])
     
+
     def set_local(self, bool_value):
         self.local = bool_value
-        
+    
+
     
     def create(self):
         
@@ -3086,6 +3152,8 @@ class AttachJoints(object):
     def _unhook_scale_constraint(self, scale_constraint):
         constraint_editor = ConstraintEditor()
         
+        print 'scale constraint is', cmds.objExists(scale_constraint)
+        
         weight_count = constraint_editor.get_weight_count(scale_constraint)
         disconnect_attribute('%s.constraintParentInverseMatrix' % scale_constraint)
         
@@ -3094,6 +3162,7 @@ class AttachJoints(object):
 
     def _attach_joint(self, source_joint, target_joint):
         
+        
         self._hook_scale_constraint(target_joint)
         
         parent_constraint = cmds.parentConstraint(source_joint, target_joint, mo = True)[0]
@@ -3101,16 +3170,24 @@ class AttachJoints(object):
         
         scale_constraint = cmds.scaleConstraint(source_joint, target_joint)[0]
         
+        print source_joint, target_joint, parent_constraint, scale_constraint
+        #if source_joint == 'buffer_foot_L_1':
+        #    raise()
+        
         constraint_editor = ConstraintEditor()
         constraint_editor.create_switch(self.target_joints[0], 'switch', parent_constraint)
         constraint_editor.create_switch(self.target_joints[0], 'switch', scale_constraint)
         
         self._unhook_scale_constraint(scale_constraint)
         
+        
+        
     def _attach_joints(self, source_chain, target_chain):
         
         for inc in range( 0, len(source_chain) ):
             self._attach_joint(source_chain[inc], target_chain[inc] )
+            
+
     
     def set_source_and_target_joints(self, source_joints, target_joints):
         self.source_joints = source_joints
@@ -3118,6 +3195,7 @@ class AttachJoints(object):
     
     def create(self):
         self._attach_joints(self.source_joints, self.target_joints)
+
 
 class Hierarchy(vtool.util.Hierarchy):
     
@@ -5882,7 +5960,6 @@ def create_no_twist_aim(source_transform, target_transform, parent):
     cmds.parent(top_group, parent)
     cmds.pointConstraint(source_transform, top_group)
 
-
     #axis aim
     aim = cmds.group(em = True, n = inc_name('aim_%s' % target_transform))
     target = cmds.group(em = True, n = inc_name('target_%s' % target_transform))
@@ -5922,6 +5999,27 @@ def create_no_twist_aim(source_transform, target_transform, parent):
     
     cmds.orientConstraint(pin_aim, target_transform, mo = True)
 
+def create_pole_chain(top_transform, btm_transform, name):
+        
+    cmds.select(cl =True)
+    
+    joint1 = cmds.joint(n = inc_name( name ) )
+    joint2 = cmds.joint(n = inc_name( name ) )
+
+    MatchSpace(top_transform, joint1).translation()
+    MatchSpace(btm_transform, joint2).translation()
+    
+    cmds.joint(joint1, e = True, oj = 'xyz', secondaryAxisOrient = 'xup', zso = True)
+    cmds.makeIdentity(joint2, jo = True, apply = True)
+
+    ik_handle = IkHandle( name )
+    
+    ik_handle.set_start_joint( joint1 )
+    ik_handle.set_end_joint( joint2 )
+    ik_handle.set_solver(ik_handle.solver_rp)
+    ik_pole = ik_handle.create()
+
+    return joint1, joint2, ik_pole
 #--- animation
 
 def get_input_keyframes(node, node_only = True):
@@ -9275,14 +9373,11 @@ def connect_message( input_node, destination_node, attribute ):
 def disconnect_attribute(attribute):
     
     connection = get_attribute_input(attribute)
-
+    
     if connection:
         cmds.disconnectAttr(connection, attribute)
 
 def get_indices(attribute):
-    
-    
-    
     
     multi_attributes = cmds.listAttr(attribute, multi = True)
     

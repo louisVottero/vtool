@@ -4727,18 +4727,37 @@ class SimpleBackLeg(rigs.BufferRig):
     def __init__(self, description, side):
         super(SimpleBackLeg, self).__init__(description, side)
         
+        self.pole_offset = 5
+        self.create_sub_control = True
+        
     def _duplicate_joints(self):
         super(SimpleBackLeg, self)._duplicate_joints()
         
         duplicate = util.DuplicateHierarchy(self.joints[0])
         duplicate.replace('joint', 'ik')
-        duplicate.stop_at(self.joints[3])
+        duplicate.stop_at(self.joints[2])
         ik_chain = duplicate.create()
         
-        self._attach_ik_joints(ik_chain, self.buffer_joints)
+        duplicate = util.DuplicateHierarchy(self.joints[-2])
+        duplicate.replace('joint', 'offset')
+        duplicate.stop_at(self.joints[-1])
+        self.lower_offset_chain = duplicate.create()
+        
+        cmds.parent( self.lower_offset_chain[-1], w = True )
+        cmds.parent(self.lower_offset_chain[0], self.lower_offset_chain[-1])
+        self.lower_offset_chain = [self.lower_offset_chain[-1], self.lower_offset_chain[0]]
+        
+        cmds.joint(self.lower_offset_chain[0], e = True, oj = 'xyz', secondaryAxisOrient = 'yup', zso = True)
+        cmds.makeIdentity(self.lower_offset_chain[-1], jo = True, apply = True)
+        
+        attach_chain = ik_chain[:-1] + [self.lower_offset_chain[-1], self.lower_offset_chain[0]]
+        
+        self._attach_ik_joints(attach_chain, self.buffer_joints)
         
         self.ik_chain = ik_chain
-        self.pole_offset = 5
+        
+        cmds.parent(self.ik_chain[0], self.setup_group)
+        cmds.parent(self.lower_offset_chain[0], self.setup_group)
         
         return self.ik_chain
     
@@ -4752,35 +4771,45 @@ class SimpleBackLeg(rigs.BufferRig):
             
         
     def _create_pole_chain(self):
-        cmds.select(cl =True)
         
-        joint1 = cmds.joint(n = util.inc_name( self._get_name('joint', 'poleTop') ) )
-        joint2 = cmds.joint(n = util.inc_name( self._get_name('joint', 'poleBtm') ) )
-
-        util.MatchSpace(self.buffer_joints[0], joint1).translation()
-        util.MatchSpace(self.buffer_joints[-1], joint2).translation()
+        #first
+        joint1, joint2, ik = util.create_pole_chain(self.buffer_joints[0], self.buffer_joints[-1], 'pole')
         
-        cmds.joint(joint1, e = True, oj = 'xyz', secondaryAxisOrient = 'xup', zso = True)
-        cmds.makeIdentity(joint2, jo = True, apply = True)
-
-        ik_handle = util.IkHandle( self._get_name(description = 'pole') )
+        joint1 = cmds.rename(joint1, self._get_name('joint', 'poleTop'))
+        joint2 = cmds.rename(joint2, self._get_name('joint', 'poleBtm'))
         
-        ik_handle.set_start_joint( joint1 )
-        ik_handle.set_end_joint( joint2 )
-        ik_handle.set_solver(ik_handle.solver_rp)
-        self.ik_pole = ik_handle.create()
+        #cmds.pointConstraint(self.btm_control, ik)
 
-        self.top_pole_ik = joint1
+        cmds.parent(ik, self.group_main_ik)
 
-        cmds.pointConstraint(self.btm_control, self.ik_pole)
-
-        cmds.parent(self.ik_pole, self.top_control)
-
-        cmds.parent(self.top_pole_ik, self.top_control)
-        #cmds.parent(self.ik_pole, self.btm_control)
-        #util.create_follow_group(self.offset_control, self.top_pole_ik)
-        cmds.hide(self.ik_pole)
+        cmds.parent(joint1, self.top_control)
         
+        cmds.hide(ik)
+        
+        self.top_pole_joint = joint1
+        self.ik_pole = ik
+        self.xform_ik_pole = util.create_xform_group(ik)
+
+        #second
+        joint1, joint2, ik = util.create_pole_chain(self.buffer_joints[0], self.buffer_joints[-1], 'pole2')
+        
+        
+        
+        joint1 = cmds.rename(joint1, self._get_name('joint', 'poleTop2'))
+        joint2 = cmds.rename(joint2, self._get_name('joint', 'poleBtm2'))
+        
+        #cmds.pointConstraint(self.btm_control, ik)
+
+        cmds.parent(ik, self.group_main_ik)
+        
+
+        cmds.parent(joint1, self.top_control)
+        
+        cmds.hide(ik)
+        
+        self.top_pole_joint2 = joint1
+        self.ik_pole2 = ik
+
     def _create_pole_vector(self):
 
         #if self.side == 'L':
@@ -4825,7 +4854,7 @@ class SimpleBackLeg(rigs.BufferRig):
         cmds.move(position[0], position[1], position[2], control.get())
 
         #cmds.poleVectorConstraint(control.get(), self.ik_handle_top)
-        cmds.poleVectorConstraint(control.get(), self.ik_pole)
+        cmds.poleVectorConstraint(control.get(), self.ik_pole2)
         
         xform_group = util.create_xform_group( control.get() )
         
@@ -4839,7 +4868,7 @@ class SimpleBackLeg(rigs.BufferRig):
         
         self.pole_vector_xform = xform_group
 
-        #cmds.parent(xform_group, self.top_pole_ik)
+        cmds.parent(xform_group, self.top_pole_joint)
 
         #util.create_follow_group(self.top_pole_ik, xform_group)
         
@@ -4855,14 +4884,14 @@ class SimpleBackLeg(rigs.BufferRig):
         ik_handle = util.IkHandle( self._get_name() )
         
         ik_handle.set_start_joint( self.ik_chain[0] )
-        ik_handle.set_end_joint( self.ik_chain[-2] )
+        ik_handle.set_end_joint( self.ik_chain[-1] )
         ik_handle.set_solver(ik_handle.solver_sc)
         self.ik_handle_top = ik_handle.create()
         
         ik_handle = util.IkHandle( self._get_name() )
         
-        ik_handle.set_start_joint( self.ik_chain[-2] )
-        ik_handle.set_end_joint( self.ik_chain[-1] )
+        ik_handle.set_start_joint( self.lower_offset_chain[0] )
+        ik_handle.set_end_joint( self.lower_offset_chain[1] )
         ik_handle.set_solver(ik_handle.solver_sc)
         self.ik_handle_btm = ik_handle.create()
         
@@ -4882,6 +4911,7 @@ class SimpleBackLeg(rigs.BufferRig):
         self.top_control = control.get()
         
         cmds.parent(xform, self.control_group)
+        cmds.parent(self.group_main_ik, self.top_control)
         
     def _create_btm_control(self):
         
@@ -4894,7 +4924,27 @@ class SimpleBackLeg(rigs.BufferRig):
         
         self.btm_control = control.get()
         
-        cmds.orientConstraint(self.btm_control, self.ik_chain[-1])
+        self.btm_ik_control = self.btm_control
+        
+        if self.create_sub_control:
+            sub_control = self._create_control('BTM', sub = True)
+            sub_control.scale_shape(.8, .8, .8)
+            sub_control.hide_scale_and_visibility_attributes()
+            
+            xform_group = util.create_xform_group( sub_control.get() )
+            
+            self.sub_control = sub_control.get()
+        
+            cmds.parent(xform_group, control.get())
+            
+            util.MatchSpace(control.get(), xform_group).translation_rotation()
+            
+            util.connect_visibility('%s.subVisibility' % self.btm_control, '%sShape' % self.sub_control, 1)
+        
+            self.btm_ik_control = self.sub_control
+        
+        cmds.orientConstraint(self.btm_ik_control, self.ik_chain[-1])
+        cmds.pointConstraint(self.btm_ik_control, self.group_main_ik)
         
         cmds.parent(xform, self.control_group)
         
@@ -4910,9 +4960,11 @@ class SimpleBackLeg(rigs.BufferRig):
         xform = util.create_xform_group(control.get())
         driver = util.create_xform_group(control.get(), 'driver')
         
-        cmds.parent(xform, self.top_pole_ik)
+        cmds.parent(xform, self.top_pole_joint2)
         
-        cmds.pointConstraint(self.btm_control, xform)
+        cmds.pointConstraint(self.group_main_ik, xform)
+        util.create_follow_group(control.get(), self.lower_offset_chain[0])
+        
         
         self.offset_control = control.get()
         self.xform_offset_control = xform
@@ -4922,47 +4974,38 @@ class SimpleBackLeg(rigs.BufferRig):
         top_ik = self.ik_handle_top
         btm_ik = self.ik_handle_btm
         
-        cmds.parent(top_ik, self.offset_control)
+        cmds.parent(top_ik, self.lower_offset_chain[0])
         cmds.parent(btm_ik, self.offset_control)
         
-        #cmds.parent(group1, self.btm_control.get())
-        
         cmds.hide(top_ik, btm_ik)
-    
-      
-    def _create_aim_setup(self):
         
-        #cmds.group(em = True, n = )
+    def _create_stretchy(self, top_transform, btm_transform, control):
         
-        aim = cmds.spaceLocator(n = util.inc_name( self._get_name('locator', 'aim') ) )[0]       
-        target = cmds.spaceLocator(n = util.inc_name( self._get_name('locator', 'target') ) )[0]
-        up = cmds.spaceLocator(n = util.inc_name( self._get_name('locator', 'up') ) )[0]
+        stretchy = util.StretchyChain()
+        stretchy.set_joints(self.ik_chain)
+        #dampen should be damp... dampen means wet, damp means diminish
+        stretchy.set_add_dampen(True)
+        stretchy.set_node_for_attributes(control)
+        stretchy.set_description(self._get_name())
+        stretchy.set_extra_joint(self.lower_offset_chain[0])
         
-        util.MatchSpace(self.joints[-1], aim ).translation_rotation()
-        util.MatchSpace(self.joints[0], target ).translation_rotation()
-        util.MatchSpace(self.joints[-1], up ).translation_rotation()
+        #this is new stretch distance
+        #stretchy.set_vector_instead_of_matrix(False)
+        top_locator, btm_locator = stretchy.create()
         
-        cmds.move(1, 0, 0, up, r = True)
         
-        cmds.pointConstraint(self.btm_control, aim)
         
-        cmds.parent(target, self.top_control)
-        cmds.parent(aim, self.top_control)
-        cmds.parent(up, self.btm_control)
+        cmds.parent(top_locator, top_transform)
+        cmds.parent(btm_locator, btm_transform)
         
-        aim = cmds.aimConstraint(target, aim, aimVector = [0,1,0], upVector = [0,0,0], wuo = up, wut = 'object')
-        
-        util.create_multi_follow([self.btm_control ,self.top_control], up, self.btm_control, attribute_name = 'offsetFollow', value = 0.5)
-        
-        self.aim_locator = aim
-        self.aim_up_locator = up
-        self.aim_target_lcoator = target
-        
+    def set_pole_offset(self, value):
+        self.pole_offset = value
         
     def create(self):
         super(SimpleBackLeg, self).create()
         
-        #self._duplicate_joints()
+        self.group_main_ik = cmds.group(em = True, n = util.inc_name(self._get_name('group', 'main_ik')))
+        util.MatchSpace(self.joints[-1], self.group_main_ik).translation_rotation()
         
         self._create_ik()
         
@@ -4970,16 +5013,15 @@ class SimpleBackLeg(rigs.BufferRig):
         self._create_btm_control()
         
         self._create_pole_chain()
+    
         self._create_pole_vector()
-        #self._create_aim_setup()
         
         self._create_offset_control()
         
         self._attach_ik_handles()
         
+        self._create_stretchy(self.top_control, self.btm_control, self.btm_control)
         
-        
-    
 
 class BackLeg2(rigs.BufferRig):
 

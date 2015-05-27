@@ -189,6 +189,8 @@ class JointRig(Rig):
         if not self.attach_joints:
             return
         
+        print 'attaching joints', self.__class__, source_chain, target_chain
+        
         util.AttachJoints(source_chain, target_chain).create()
     
     def _check_joints(self, joints):
@@ -255,6 +257,8 @@ class BufferRig(JointRig):
         
         if self.create_buffer_joints:
             self._attach_joints(self.buffer_joints, self.joints)
+
+
 
 
 class CurveRig(Rig):
@@ -672,7 +676,6 @@ class FkRig(BufferRig):
         
         if self.parent:
             cmds.parent(self.control_group, self.parent)
-
 
 class FkLocalRig(FkRig):
     
@@ -3556,6 +3559,7 @@ class FootRollRig(RollRig):
         
         cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
         cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
+        
         
         return [ball_pivot, toe_fk_control_xform]
         
