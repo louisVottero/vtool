@@ -5414,6 +5414,276 @@ class BackLeg2(rigs.BufferRig):
         
         self.create_aim_setup()
         
+class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
+    
+    def __init__(self, description, side):
+        super(IkQuadrupedBackLegRig, self).__init__(description, side)
+        
+        self.offset_control_to_locator = False
+    
+    def _duplicate_joints(self):
+        
+        super(rigs.IkAppendageRig, self)._duplicate_joints()
+        
+        duplicate = util.DuplicateHierarchy(self.joints[0])
+        duplicate.stop_at(self.joints[-1])
+        duplicate.replace('joint', 'ik')
+        self.ik_chain = duplicate.create()
+        
+        ik_group = self._create_group()
+        
+        cmds.parent(self.ik_chain[0], ik_group)
+        cmds.parent(ik_group, self.setup_group)
+        
+        self._create_offset_chain(ik_group)
+        
+        for inc in range(0, len(self.offset_chain)):
+            
+            cmds.parentConstraint(self.offset_chain[inc], self.buffer_joints[inc], mo = True)
+            util.connect_scale(self.offset_chain[inc], self.buffer_joints[inc])
+            
+            cmds.connectAttr('%s.scaleX' % self.ik_chain[inc], 
+                             '%s.scaleX' % self.offset_chain[inc])
+        
+        cmds.parentConstraint(self.ik_chain[-1], self.buffer_joints[-1], mo = True)
+        util.connect_scale(self.offset_chain[-1], self.buffer_joints[-1])
+        
+        cmds.parentConstraint(self.ik_chain[0], self.offset_chain[0], mo = True)
+    
+    def _create_twist_joint(self, top_control):
+        
+        top_guide_joint, btm_guide_joint = self._create_top_btm_joint( [self.buffer_joints[-1], self.buffer_joints[0]], 'guide')
+        top_guidetwist_joint, btm_guidetwist_joint = self._create_top_btm_joint( [self.buffer_joints[0], self.buffer_joints[-1]], 'guideTwist')
+        
+        self.twist_guide = top_guidetwist_joint
+        
+        guide_ik = self._create_twist_ik([top_guide_joint, btm_guide_joint], 'guide')
+        twist_guide_ik = self._create_twist_ik([top_guidetwist_joint, btm_guidetwist_joint], 'guideTwist')
+        
+        cmds.parent(top_guidetwist_joint, top_guide_joint)
+        cmds.parent(twist_guide_ik, top_guide_joint)
+        
+        cmds.parent(top_guide_joint, self.setup_group)
+        cmds.parent(guide_ik, self.setup_group)
+        
+        if self.sub_control:
+            cmds.pointConstraint( self.sub_control, top_guide_joint )
+        if not self.sub_control:
+            cmds.pointConstraint( self.btm_control, top_guide_joint )
+            
+        cmds.pointConstraint( top_control, guide_ik )
+        
+        self.offset_locator = None
+        self.off_offset_locator = cmds.spaceLocator(self._get_name('offset', 'guideTwist'))[0]
+        util.MatchSpace( self.sub_control, self.off_offset_locator ).translation_rotation()
+        cmds.parent(self.off_offset_locator, self.top_control)
+        
+        
+        
+        if self.sub_control:
+            self.offset_locator = cmds.spaceLocator(n = 'offset_%s' % self.sub_control)[0]
+            cmds.parent(self.offset_locator, self.sub_control)
+            
+            match = util.MatchSpace(self.sub_control, self.offset_locator)
+            match.translation_rotation()
+            
+        if not self.sub_control:
+            self.offset_locator = cmds.spaceLocator(n = 'offset_%s' % self.btm_control)[0]
+            cmds.parent(self.offset_locator, self.btm_control)
+            
+            match = util.MatchSpace(self.btm_control, self.offset_locator)
+            match.translation_rotation()
+        
+        cmds.hide(self.offset_locator)
+        
+        cmds.pointConstraint( self.offset_locator, twist_guide_ik, mo = True )
+        
+        cmds.orientConstraint( self.offset_locator, twist_guide_ik, mo = True )
+        cmds.orientConstraint( self.off_offset_locator, twist_guide_ik, mo = True )
+        
+        self.twist_guide_ik
+        
+        self.offset_pole_locator = self.offset_locator
+    
+    def _create_pole_vector(self):
+        
+        control = self._create_control('POLE')
+        control.hide_scale_and_visibility_attributes()
+        control.set_curve_type('cube')
+        self.poleControl = control.get()
+        
+        util.create_title(self.btm_control, 'POLE_VECTOR')
+        
+        pole_vis = util.MayaNumberVariable('poleVisibility')
+        pole_vis.set_variable_type(pole_vis.TYPE_BOOL)
+        pole_vis.create(self.btm_control)
+        
+        twist_var = util.MayaNumberVariable('twist')
+        twist_var.create(self.btm_control)
+        
+        if self.side == 'L':
+            twist_var.connect_out('%s.twist' % self.ik_handle)
+            
+        if self.side == 'R':
+            util.connect_multiply('%s.twist' % self.btm_control, '%s.twist' % self.ik_handle, -1)
+        
+        pole_joints = self._get_pole_joints()
+        
+        position = util.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
+        cmds.move(position[0], position[1], position[2], control.get())
+
+        cmds.poleVectorConstraint(control.get(), self.ik_handle)
+        
+        xform_group = util.create_xform_group( control.get() )
+        
+        follow_group = None
+        
+        if self.create_twist:
+            
+            if not self.pole_follow_transform:
+                follow_group = util.create_follow_group(self.top_control, xform_group)
+            if self.pole_follow_transform:
+                follow_group = util.create_follow_group(self.pole_follow_transform, xform_group)
+            
+            #constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo = True)[0]
+            
+            constraint_editor = util.ConstraintEditor()
+            constraint = constraint_editor.get_constraint(self.twist_guide_ik, 'orientConstraint')
+            constraint_editor.create_switch(self.btm_control, 'autoTwist', constraint)
+            cmds.setAttr('%s.autoTwist' % self.btm_control, 0)
+        
+        if not self.create_twist:
+            if self.pole_follow_transform:
+                follow_group = util.create_follow_group(self.pole_follow_transform, xform_group)
+                
+            
+            if not self.pole_follow_transform:
+                follow_group = xform_group
+            #    follow_group = util.create_follow_group(self.top_control, xform_group)
+        
+        if follow_group:
+            cmds.parent(follow_group,  self.control_group )
+        
+        name = self._get_name()
+        
+        rig_line = util.RiggedLine(pole_joints[1], control.get(), name).create()
+        cmds.parent(rig_line, self.control_group)
+        
+        pole_vis.connect_out('%s.visibility' % xform_group)
+        pole_vis.connect_out('%s.visibility' % rig_line)
+        
+        self.pole_vector_xform = xform_group
+    
+    def _create_offset_chain(self, parent = None):
+        
+        if not parent:
+            parent = self.setup_group
+        
+        duplicate = util.DuplicateHierarchy(self.joints[0])
+        duplicate.stop_at(self.joints[-1])
+        duplicate.replace('joint', 'offset')        
+        self.offset_chain = duplicate.create()
+        
+        cmds.parent(self.offset_chain[0], self.ik_chain[0])
+        
+        duplicate = util.DuplicateHierarchy(self.offset_chain[-2])
+        duplicate.replace('offset', 'sway')
+        self.lower_offset_chain = duplicate.create()
+        
+        cmds.parent(self.lower_offset_chain[1], self.offset_chain[-2])
+        cmds.parent(self.lower_offset_chain[0], self.lower_offset_chain[1])
+        cmds.makeIdentity(self.lower_offset_chain, apply = True, t = 1, r = 1, s = 1, n = 0, jointOrient = True)
+        cmds.parent(self.lower_offset_chain[1], self.ik_chain[-2])
+        self.lower_offset_chain.reverse()
+        
+        cmds.connectAttr('%s.scaleX' % self.offset_chain[-2], '%s.scaleX' % self.lower_offset_chain[0])
+        
+        cmds.delete(self.offset_chain[-1])
+        self.offset_chain.pop(-1)
+        
+        cmds.orientConstraint(self.lower_offset_chain[0], self.offset_chain[-1])
+        
+    def _create_offset_control(self):
+        
+        
+        if not self.offset_control_to_locator:
+            control = self._create_control(description = 'offset')
+            control.hide_scale_and_visibility_attributes()
+            control.scale_shape(2, 2, 2)
+            control.set_curve_type('square')
+            
+            self.offset_control = control.get()
+            
+            match = util.MatchSpace(self.lower_offset_chain[1], self.offset_control)
+            match.rotation()
+
+            match = util.MatchSpace(self.lower_offset_chain[0], self.offset_control)
+            match.translation()
+        
+        if self.offset_control_to_locator:
+            self.offset_control = cmds.spaceLocator(n = 'locator_%s' % self._get_name('offset'))[0]
+            
+            match = util.MatchSpace(self.lower_offset_chain[0], self.offset_control)
+            match.translation()
+            cmds.hide(self.offset_control)
+        
+        cmds.parentConstraint(self.offset_control, self.lower_offset_chain[0], mo = True)
+
+        xform_group = util.create_xform_group(self.offset_control)
+        driver_group = util.create_xform_group(self.offset_control, 'driver')
+        
+        util.create_title(self.btm_control, 'OFFSET_ANKLE')
+                
+        offset = util.MayaNumberVariable('offsetAnkle')
+        
+        offset.create(self.btm_control)
+        offset.connect_out('%s.rotateZ' % driver_group)
+        
+        follow_group = util.create_follow_group(self.ik_chain[-2], xform_group)
+        
+        scale_constraint = cmds.scaleConstraint(self.ik_chain[-2], follow_group)[0]
+        self._unhook_scale_constraint(scale_constraint)
+        
+        cmds.parent(follow_group, self.top_control)
+        
+        if not self.offset_control_to_locator:
+            control.hide_translate_attributes()
+        
+        return self.offset_control
+    
+    def _rig_offset_chain(self):
+        
+        ik_handle = util.IkHandle( self._get_name('offset_top') )
+        
+        ik_handle.set_start_joint( self.offset_chain[0] )
+        ik_handle.set_end_joint( self.offset_chain[-1] )
+        ik_handle.set_solver(ik_handle.solver_rp)
+        ik_handle = ik_handle.create()
+
+        cmds.parent(ik_handle, self.lower_offset_chain[-1])
+
+        ik_handle_btm = util.IkHandle( self._get_name('offset_btm'))
+        ik_handle_btm.set_start_joint(self.lower_offset_chain[0])
+        ik_handle_btm.set_end_joint(self.lower_offset_chain[-1])
+        ik_handle_btm.set_solver(ik_handle_btm.solver_sc)
+        ik_handle_btm = ik_handle_btm.create()
+        
+        follow = util.create_follow_group( self.offset_control, ik_handle_btm)
+        cmds.parent(follow, self.setup_group)
+        cmds.hide(ik_handle_btm)
+    
+    def set_offset_control_to_locator(self, bool_value):
+        self.offset_control_to_locator = bool_value
+    
+    def create(self):
+        
+        super(IkQuadrupedBackLegRig, self).create()
+        
+        self._create_offset_control()
+        
+        self._rig_offset_chain()
+        
+        cmds.setAttr('%s.translateY' % self.pole_vector_xform, 0)
 
 
 

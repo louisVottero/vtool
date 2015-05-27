@@ -57,7 +57,7 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
         duplicate.replace('joint', 'offset')        
         self.offset_chain = duplicate.create()
         
-        cmds.parent(self.offset_chain[0], parent)
+        #cmds.parent(self.offset_chain[0], self.ik_chain[0])
         
         duplicate = util.DuplicateHierarchy(self.offset_chain[-2])
         duplicate.replace('offset', 'sway')
