@@ -5414,10 +5414,10 @@ class BackLeg2(rigs.BufferRig):
         
         self.create_aim_setup()
         
-class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
+class IkBackLegRig(rigs.IkAppendageRig):
     
     def __init__(self, description, side):
-        super(IkQuadrupedBackLegRig, self).__init__(description, side)
+        super(IkBackLegRig, self).__init__(description, side)
         
         self.offset_control_to_locator = False
     
@@ -5474,11 +5474,9 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
         cmds.pointConstraint( top_control, guide_ik )
         
         self.offset_locator = None
-        self.off_offset_locator = cmds.spaceLocator(self._get_name('offset', 'guideTwist'))[0]
+        self.off_offset_locator = cmds.spaceLocator(n = self._get_name('offset', 'guideTwist'))[0]
         util.MatchSpace( self.sub_control, self.off_offset_locator ).translation_rotation()
         cmds.parent(self.off_offset_locator, self.top_control)
-        
-        
         
         if self.sub_control:
             self.offset_locator = cmds.spaceLocator(n = 'offset_%s' % self.sub_control)[0]
@@ -5501,7 +5499,7 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
         cmds.orientConstraint( self.offset_locator, twist_guide_ik, mo = True )
         cmds.orientConstraint( self.off_offset_locator, twist_guide_ik, mo = True )
         
-        self.twist_guide_ik
+        self.twist_guide_ik = twist_guide_ik
         
         self.offset_pole_locator = self.offset_locator
     
@@ -5642,7 +5640,8 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
         follow_group = util.create_follow_group(self.ik_chain[-2], xform_group)
         
         scale_constraint = cmds.scaleConstraint(self.ik_chain[-2], follow_group)[0]
-        self._unhook_scale_constraint(scale_constraint)
+        util.scale_constraint_to_local(scale_constraint)
+        #self._unhook_scale_constraint(scale_constraint)
         
         cmds.parent(follow_group, self.top_control)
         
@@ -5677,7 +5676,7 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
     
     def create(self):
         
-        super(IkQuadrupedBackLegRig, self).create()
+        super(IkBackLegRig, self).create()
         
         self._create_offset_control()
         
