@@ -1063,7 +1063,7 @@ class PoseBase(object):
     
 
     def visibility_off(self, mesh = None, view_only = False):
-        
+        print 'setting vis off'
         if not mesh:
             mesh = self.get_mesh(self.mesh_index)
         
@@ -1077,12 +1077,15 @@ class PoseBase(object):
         if target_mesh and cmds.objExists(target_mesh):
             self._set_visibility(target_mesh, 1)
             
+        print 'view only?', view_only
             
-        if not view_only:    
+        if not view_only: 
+            print 'about to run create blend', self.__class__   
             self.create_blend()
         
     def visibility_on(self, mesh):
         
+        print 'setting vis on'
         if not mesh:
             mesh = self.get_mesh(self.mesh_index)
         
@@ -1100,8 +1103,6 @@ class PoseBase(object):
             self._set_visibility(target_mesh, 0)
         
     def toggle_vis(self, view_only = False):
-        
-        
         
         mesh = self.get_mesh(self.mesh_index)
         
@@ -1121,7 +1122,6 @@ class PoseBase(object):
             self.visibility_on(mesh)
             return
         
-        
     #--- blend
         
     def create_all_blends(self):
@@ -1138,6 +1138,8 @@ class PoseBase(object):
             self.create_blend(goto_pose = pose, mesh_index = inc)
         
     def create_blend(self, goto_pose = True, mesh_index = None):
+        
+        print 'creating blend'
         
         mesh = self._get_current_mesh(mesh_index)
         

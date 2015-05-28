@@ -880,6 +880,7 @@ class MeshWidget(qt_ui.BasicWidget):
                 if not permission:
                     return
                 
+                
                 corrective.PoseManager().add_mesh_to_pose(pose_name, sculpt_meshes)
         
             update_meshes = current_meshes + sculpt_meshes + added_meshes  
@@ -905,7 +906,7 @@ class MeshWidget(qt_ui.BasicWidget):
                 if item:
                     item.setSelected(True)
                 
-                
+                print 'toggling vis ui'
                 corrective.PoseManager().toggle_visibility(pose_name, mesh_index = index)
                 
             cmds.select(selection)
