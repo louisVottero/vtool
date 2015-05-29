@@ -356,6 +356,7 @@ class BlendShape(object):
             attribute_name = self._get_target_attr(name)
             
             if not cmds.getAttr(attribute_name, l = True):
+                
                 cmds.setAttr(attribute_name, value)
     
     def set_weights(self, weights, target_name = None, mesh_index = 0):

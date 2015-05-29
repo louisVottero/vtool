@@ -766,6 +766,8 @@ class MayaShadersData(CustomData):
             
             name = filename.split('.')[0]
             
+            print 'name!!!', name
+            
             cmds.file(filepath, f = True, i = True, iv = True)
             
             if not name in info_dict:
@@ -779,6 +781,8 @@ class MayaShadersData(CustomData):
             for mesh in meshes:
                 if not cmds.objExists(mesh):
                     continue
+                
+                print mesh
                 
                 cmds.sets( mesh, e = True, forceElement = name)
     

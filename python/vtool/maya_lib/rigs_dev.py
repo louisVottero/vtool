@@ -5418,44 +5418,6 @@ class BackLeg2(rigs.BufferRig):
         self.create_aim_setup()
      
 class IkFrontLegRig(rigs.IkAppendageRig):
-    pass
-        
-class IkBackLegRig(rigs.IkAppendageRig):
-    
-    def __init__(self, description, side):
-        super(IkBackLegRig, self).__init__(description, side)
-        
-        self.offset_control_to_locator = False
-        self.right_side_fix = False
-    
-    def _duplicate_joints(self):
-        
-        super(rigs.IkAppendageRig, self)._duplicate_joints()
-        
-        duplicate = util.DuplicateHierarchy(self.joints[0])
-        duplicate.stop_at(self.joints[-1])
-        duplicate.replace('joint', 'ik')
-        self.ik_chain = duplicate.create()
-        
-        ik_group = self._create_group()
-        
-        cmds.parent(self.ik_chain[0], ik_group)
-        cmds.parent(ik_group, self.setup_group)
-        
-        self._create_offset_chain(ik_group)
-        
-        for inc in range(0, len(self.offset_chain)):
-            
-            cmds.parentConstraint(self.offset_chain[inc], self.buffer_joints[inc], mo = True)
-            util.connect_scale(self.offset_chain[inc], self.buffer_joints[inc])
-            
-            cmds.connectAttr('%s.scaleX' % self.ik_chain[inc], 
-                             '%s.scaleX' % self.offset_chain[inc])
-        
-        cmds.orientConstraint(self.ik_chain[-1], self.buffer_joints[-1], mo = True)
-        #util.connect_scale(self.offset_chain[-1], self.buffer_joints[-1])
-        
-        cmds.parentConstraint(self.ik_chain[0], self.offset_chain[0], mo = True)
     
     def _create_twist_joint(self, top_control):
         
@@ -5498,35 +5460,10 @@ class IkBackLegRig(rigs.IkAppendageRig):
         cmds.orientConstraint( self.off_offset_locator, guide_ik, mo = True )
         cmds.orientConstraint( self.offset_locator, guide_ik, mo = True )
         
-        
-        
         self.twist_guide_ik = guide_ik
         
         self.offset_pole_locator = self.offset_locator
-    
-    def _create_stretchy(self, top_transform, btm_transform, control):
-        stretchy = util.StretchyChain()
-        stretchy.set_joints(self.ik_chain)
-        #dampen should be damp... dampen means wet, damp means diminish
-        stretchy.set_add_dampen(True, 'damp')
-        stretchy.set_node_for_attributes(control)
-        stretchy.set_description(self._get_name())
-        #this is new stretch distance
-        #stretchy.set_vector_instead_of_matrix(False)
-        top_locator, btm_locator = stretchy.create()
         
-        cmds.parent(top_locator, top_transform)
-        cmds.parent(btm_locator, self.offset_locator)
-        
-        #this is new stretch distance
-        """
-        cmds.parent(top_locator, self.setup_group)
-        cmds.parent(btm_locator, self.setup_group)
-        
-        cmds.pointConstraint(top_transform, top_locator)
-        cmds.pointConstraint(btm_transform, btm_locator)
-        """
-    
     def _create_pole_vector(self):
         
         control = self._create_control('POLE')
@@ -5550,7 +5487,8 @@ class IkBackLegRig(rigs.IkAppendageRig):
         if self.side == 'R':
             twist_var.connect_out('%s.twist' % self.ik_handle)
         
-        pole_joints = self.joints[:-1]
+        
+        pole_joints = self.joints[:3]
         
         position = util.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
         cmds.move(position[0], position[1], position[2], control.get())
@@ -5600,6 +5538,75 @@ class IkBackLegRig(rigs.IkAppendageRig):
         pole_vis.connect_out('%s.visibility' % rig_line)
         
         self.pole_vector_xform = xform_group
+        
+    def _create_stretchy(self, top_transform, btm_transform, control):
+        stretchy = util.StretchyChain()
+        stretchy.set_joints(self.ik_chain)
+        #dampen should be damp... dampen means wet, damp means diminish
+        stretchy.set_add_dampen(True, 'damp')
+        stretchy.set_node_for_attributes(control)
+        stretchy.set_description(self._get_name())
+        #this is new stretch distance
+        #stretchy.set_vector_instead_of_matrix(False)
+        top_locator, btm_locator = stretchy.create()
+        
+        cmds.parent(top_locator, top_transform)
+        cmds.parent(btm_locator, self.offset_locator)
+        
+        #this is new stretch distance
+        """
+        cmds.parent(top_locator, self.setup_group)
+        cmds.parent(btm_locator, self.setup_group)
+        
+        cmds.pointConstraint(top_transform, top_locator)
+        cmds.pointConstraint(btm_transform, btm_locator)
+        """
+        
+    def create(self):
+        super(IkFrontLegRig, self).create()
+        
+        cmds.setAttr('%s.translateY' % self.pole_vector_xform, 0)
+        
+        ik_xform = cmds.listRelatives(self.ik_handle, p = True)
+        cmds.parent(ik_xform, self.offset_locator)
+        
+class IkBackLegRig(IkFrontLegRig):
+    
+    def __init__(self, description, side):
+        super(IkBackLegRig, self).__init__(description, side)
+        
+        self.offset_control_to_locator = False
+        self.right_side_fix = False
+    
+    def _duplicate_joints(self):
+        
+        super(rigs.IkAppendageRig, self)._duplicate_joints()
+        
+        duplicate = util.DuplicateHierarchy(self.joints[0])
+        duplicate.stop_at(self.joints[-1])
+        duplicate.replace('joint', 'ik')
+        self.ik_chain = duplicate.create()
+        
+        ik_group = self._create_group()
+        
+        cmds.parent(self.ik_chain[0], ik_group)
+        cmds.parent(ik_group, self.setup_group)
+        
+        self._create_offset_chain(ik_group)
+        
+        for inc in range(0, len(self.offset_chain)):
+            
+            cmds.parentConstraint(self.offset_chain[inc], self.buffer_joints[inc], mo = True)
+            util.connect_scale(self.offset_chain[inc], self.buffer_joints[inc])
+            
+            cmds.connectAttr('%s.scaleX' % self.ik_chain[inc], 
+                             '%s.scaleX' % self.offset_chain[inc])
+        
+        cmds.orientConstraint(self.ik_chain[-1], self.buffer_joints[-1], mo = True)
+        
+        cmds.parentConstraint(self.ik_chain[0], self.offset_chain[0], mo = True)
+    
+
     
     def _create_offset_chain(self, parent = None):
         
@@ -5711,10 +5718,7 @@ class IkBackLegRig(rigs.IkAppendageRig):
         
         self._rig_offset_chain()
         
-        cmds.setAttr('%s.translateY' % self.pole_vector_xform, 0)
         
-        ik_xform = cmds.listRelatives(self.ik_handle, p = True)
-        cmds.parent(ik_xform, self.offset_locator)
 
 class IkScapulaRig(rigs.BufferRig):
     

@@ -986,6 +986,11 @@ class PoseBase(object):
         
         inc = 0
         
+        target_mesh = cmds.ls(target_mesh, l = True)
+        
+        if target_mesh: 
+            target_mesh = target_mesh[0]
+                
         for target_mesh_test in target_meshes:
             
             if target_mesh == target_mesh_test:
@@ -1134,11 +1139,16 @@ class PoseBase(object):
         if not blendshape_node:
             blend.create(target_mesh)
         
-        self.disconnect_blend()
+        blend_attribute = '%s.%s' % (blend.blendshape, self.pose_control)
+        
+        
+        self.disconnect_blend(mesh_index)
+        
+        attr = util.get_attribute_input(blend_attribute)
         
         blend.set_weight(self.pose_control, 0)
-        offset = util.chad_extract_shape(target_mesh, mesh)
         
+        offset = util.chad_extract_shape(target_mesh, mesh)
         blend.set_weight(self.pose_control, 1)
         
         if blend.is_target(self.pose_control):
@@ -1147,7 +1157,7 @@ class PoseBase(object):
         if not blend.is_target(self.pose_control):
             blend.create_target(self.pose_control, offset)
         
-        self.connect_blend()
+        self.connect_blend(mesh_index)
                     
         util.disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
         
@@ -1204,11 +1214,12 @@ class PoseBase(object):
         if blendshape_node:
             blend.set(blendshape_node)
                 
-        input = util.get_attribute_input('%s.%s' % (blend.blendshape, self.pose_control))
+        input_value = util.get_attribute_input('%s.%s' % (blend.blendshape, self.pose_control))
                 
-        self.blend_input = input
+        self.blend_input = input_value
                 
-        if input:
+        if input_value:
+            
             util.disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
 
     def delete_blend_input(self):
