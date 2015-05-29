@@ -215,7 +215,6 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self.rename_action = self.context_menu.addAction('Rename')
         
-        
         self.remove_action = self.context_menu.addAction('Remove')
         self.context_menu.addSeparator()
         
@@ -292,8 +291,6 @@ class ShapeTree(qt_ui.TreeWidget):
             if shape == mesh:
                 select_item = item
                 
-        
-                
         if select_item:
             self.setItemSelected(select_item, True)
             self.scrollToItem(select_item)
@@ -331,7 +328,6 @@ class ComboTree(qt_ui.TreeWidget):
             manager = blendshape.BlendshapeManager()
             combos = manager.get_combos()
         
-        
         self.clear()
         
         for combo in combos:
@@ -342,8 +338,6 @@ class ComboTree(qt_ui.TreeWidget):
             font.setBold(True)
             item.setFont(0, font)
             
-            
-            
             self.addTopLevelItem(item)
             
             if possible_combos:
@@ -351,7 +345,6 @@ class ComboTree(qt_ui.TreeWidget):
                 if combo in possible_combos:
                     index = possible_combos.index(combo)
                     possible_combos.pop(index)
-                
         
         if possible_combos:
             for combo in possible_combos:
