@@ -9404,9 +9404,16 @@ def connect_message( input_node, destination_node, attribute ):
             
 def disconnect_attribute(attribute):
     
+    print 'disconnect_attribute!!!!!!!'
+    
     connection = get_attribute_input(attribute)
     
+    print 'connection!!!!', connection
+    
     if connection:
+        
+        print 'actually disconnecting!!!'
+        
         cmds.disconnectAttr(connection, attribute)
 
 def get_indices(attribute):
