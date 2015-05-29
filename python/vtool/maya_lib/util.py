@@ -26,12 +26,10 @@ def undo_off(function):
             return
         return_value = None
         
-        
         undo_state = cmds.undoInfo(state = True, q = True)
         
         if undo_state:
             cmds.undoInfo(state = False)
-            vtool.util.show('Undo off.')
         
         try:
             return_value = function(*args, **kwargs)
@@ -39,14 +37,13 @@ def undo_off(function):
             
             if undo_state:
                 cmds.undoInfo( state = True )
-                vtool.util.show('Undo on.')
+                
                 vtool.util.show( traceback.format_exc() )
             
             raise(RuntimeError)
         
         if undo_state:          
             cmds.undoInfo( state = True )
-            vtool.util.show('Undo on.')
         
         return return_value
         
@@ -57,8 +54,6 @@ def undo_off(function):
 def undo_chunk(function):
     
     def wrapper(*args, **kwargs):
-        
-        
         
         global undo_chunk_active
         
@@ -73,11 +68,9 @@ def undo_chunk(function):
         
         if not undo_chunk_active and undo_state:
             cmds.undoInfo(openChunk = True)
-            vtool.util.show('Open undo chunk.')
-            
+                        
             undo_chunk_active = True
             closed = False
-        
         
         try:
             return_value = function(*args, **kwargs)
@@ -85,7 +78,6 @@ def undo_chunk(function):
             
             if undo_chunk_active:
                 cmds.undoInfo(closeChunk = True)
-                vtool.util.show('Close undo chunk.')
                 
                 closed = True
                 
@@ -94,16 +86,12 @@ def undo_chunk(function):
                 raise(RuntimeError)
                 
             vtool.util.show(traceback.format_exc())
-             
             
         if not closed:
             if undo_chunk_active:
                 cmds.undoInfo(closeChunk = True)
-                vtool.util.show('Close undo chunk.')
                 
                 undo_chunk_active = False
-        
-        
         
         return return_value
                      
