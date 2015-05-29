@@ -986,6 +986,11 @@ class PoseBase(object):
         
         inc = 0
         
+        target_mesh = cmds.ls(target_mesh, l = True)
+        
+        if target_mesh: 
+            target_mesh = target_mesh[0]
+                
         for target_mesh_test in target_meshes:
             
             if target_mesh == target_mesh_test:
@@ -1110,8 +1115,6 @@ class PoseBase(object):
         
     def create_blend(self, goto_pose = True, mesh_index = None):
         
-        print 'creating blend!!!!!!', mesh_index
-        
         mesh = self._get_current_mesh(mesh_index)
         
         if not mesh:
@@ -1141,15 +1144,9 @@ class PoseBase(object):
         
         self.disconnect_blend(mesh_index)
         
-        print 'blend attr', blend_attribute
-        
         attr = util.get_attribute_input(blend_attribute)
         
-        print 'attribute!!!!!!', attr
-        
         blend.set_weight(self.pose_control, 0)
-        
-        print 'attribute22222', attr
         
         offset = util.chad_extract_shape(target_mesh, mesh)
         blend.set_weight(self.pose_control, 1)
@@ -1222,8 +1219,6 @@ class PoseBase(object):
         self.blend_input = input_value
                 
         if input_value:
-            
-            print 'diconnect!!!', blend.blendshape, self.pose_control
             
             util.disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
 
