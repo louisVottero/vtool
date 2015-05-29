@@ -2103,17 +2103,19 @@ class IkAppendageRig(BufferRig):
         self.ik_chain = self.buffer_joints
                 
         if not self.create_buffer_joints:
-            
-            util.AttachJoints(self.ik_chain, self.buffer_joints).create()
+            pass
+            #util.AttachJoints(self.ik_chain, self.buffer_joints).create()
         
         if self.create_buffer_joints:
-            pass    
+                
+            
             #self._attach_ik_joints(self.ik_chain, self.buffer_joints)
+            
+            ik_group = self._create_group()
+            cmds.parent(self.ik_chain[0], ik_group)
+            cmds.parent(ik_group, self.setup_group)
+            
         
-        ik_group = self._create_group()
-        
-        cmds.parent(self.ik_chain[0], ik_group)
-        cmds.parent(ik_group, self.setup_group)
     
     def _create_buffer_joint(self):
         
@@ -3259,6 +3261,20 @@ class RollRig(JointRig):
         util.AttachJoints(joints_attach_2, target_joints).create()
         
         cmds.connectAttr('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.switch' % target_joints[0] )
+                 
+    def _create_ik_fk_attribute(self):
+        
+        util.create_title(self.roll_control.get(), 'IK_FK')
+        ik_fk = util.MayaNumberVariable(self.ik_attribute)
+        ik_fk.set_variable_type(ik_fk.TYPE_DOUBLE)
+        ik_fk.set_min_value(0)
+        ik_fk.set_max_value(1)
+        
+        if self.add_hik:
+            ik_fk.set_max_value(2)
+            
+        ik_fk.create(self.roll_control.get())
+        
                     
     def set_create_roll_controls(self, bool_value):
         
@@ -3292,19 +3308,10 @@ class RollRig(JointRig):
         
         self._create_roll_control(self.joints[0])
         
+        self._create_ik_fk_attribute()
+        
         self._mix_joints(joint_chain1, joint_chain2)
         
-        
-        util.create_title(self.roll_control.get(), 'IK_FK')
-        ik_fk = util.MayaNumberVariable(self.ik_attribute)
-        ik_fk.set_variable_type(ik_fk.TYPE_DOUBLE)
-        ik_fk.set_min_value(0)
-        ik_fk.set_max_value(1)
-        
-        if self.add_hik:
-            ik_fk.set_max_value(2)
-            
-        ik_fk.create(self.roll_control.get())
         
         util.create_title(self._get_attribute_control(), 'FOOT_PIVOTS')
                 

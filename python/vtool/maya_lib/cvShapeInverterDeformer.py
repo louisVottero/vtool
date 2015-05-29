@@ -2,6 +2,8 @@ import maya.OpenMayaMPx as OpenMayaMPx
 import maya.OpenMaya as OpenMaya
 import math
 
+import vtool.util as util
+
 class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
     kPluginNodeName = "cvShapeInverter"
     kPluginNodeId = OpenMaya.MTypeId(0x00115805)
@@ -18,22 +20,25 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
 
     def deform( self, data, itGeo, localToWorldMatrix, geomIndex):
         
-
         run = data.inputValue(cvShapeInverter.aActivate).asBool()
         if not run:
             return 0
             #return OpenMaya.MStatus.kSuccess
         
-
         # Read the matrices
         if not self.__initialized:
             
-            #doesn't work in maya 2016
-            #inputAttribute = OpenMayaMPx.cvar.MPxDeformerNode_input
-            #inputGeom = OpenMayaMPx.cvar.MPxDeformerNode_inputGeom
+            if util.get_maya_version() < 2016:
+                
+                #maya not be the best way to access this... 
+                #might have to do it this way just because of a bug in Maya 2016.
+                inputAttribute = OpenMayaMPx.cvar.MPxDeformerNode_input
+                inputGeom = OpenMayaMPx.cvar.MPxDeformerNode_inputGeom
             
-            inputAttribute = OpenMayaMPx.MPxDeformerNode.input.fget()
-            inputGeom = OpenMayaMPx.MPxDeformerNode.inputGeom.fget()
+            if util.get_maya_version() > 2015:
+            
+                inputAttribute = OpenMayaMPx.MPxDeformerNode.input.fget()
+                inputGeom = OpenMayaMPx.MPxDeformerNode.inputGeom.fget()
             
             hInput = data.outputArrayValue(inputAttribute)
             hInput.jumpToElement(geomIndex)
@@ -100,10 +105,7 @@ def initialize():
     mAttr = OpenMaya.MFnMatrixAttribute()
     tAttr = OpenMaya.MFnTypedAttribute()
     nAttr = OpenMaya.MFnNumericAttribute()
-
-    #doesn't work in Maya 2016
-    #outputGeom = OpenMayaMPx.cvar.MPxDeformerNode_outputGeom
-
+    
     outputGeom = OpenMayaMPx.MPxDeformerNode.outputGeom.fget()
     
 
@@ -115,8 +117,7 @@ def initialize():
     cvShapeInverter.addAttribute(cvShapeInverter.aCorrectiveGeo)
     cvShapeInverter.attributeAffects(cvShapeInverter.aCorrectiveGeo, outputGeom)
 
-    cvShapeInverter.aDeformedPoints = tAttr.create('deformedPoints', 'dp',
-            OpenMaya.MFnData.kPointArray)
+    cvShapeInverter.aDeformedPoints = tAttr.create('deformedPoints', 'dp', OpenMaya.MFnData.kPointArray)
     cvShapeInverter.addAttribute(cvShapeInverter.aDeformedPoints)
 
     cvShapeInverter.aMatrix = mAttr.create('inversionMatrix', 'im')
@@ -127,7 +128,11 @@ def initialize():
 
 def initializePlugin(mobject):
     plugin = OpenMayaMPx.MFnPlugin(mobject)
-    plugin.registerNode(cvShapeInverter.kPluginNodeName, cvShapeInverter.kPluginNodeId, creator, initialize, OpenMayaMPx.MPxNode.kDeformerNode)
+    plugin.registerNode(cvShapeInverter.kPluginNodeName, 
+                        cvShapeInverter.kPluginNodeId, 
+                        creator, 
+                        initialize, 
+                        OpenMayaMPx.MPxNode.kDeformerNode)
 
 
 def uninitializePlugin(mobject):

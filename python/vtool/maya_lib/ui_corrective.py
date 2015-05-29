@@ -57,7 +57,6 @@ class PoseManager(ui.MayaWindow):
         self.sculpt.set_pose(new_name)
         self.pose_list.update_current_pose()
         
-        
     def select_pose(self):
         
         self.pose_list.pose_list.select_pose()
@@ -100,7 +99,6 @@ class PoseSetWidget(QtGui.QWidget):
         self.main_layout.addWidget(button_reset)
         self.main_layout.addWidget(button_default)
         
-        
     def _button_default(self):
         corrective.PoseManager().set_default_pose()
     
@@ -114,7 +112,7 @@ class PoseListWidget(qt_ui.BasicWidget):
     pose_renamed = qt_ui.create_signal(object)
     pose_update = qt_ui.create_signal(object)
     pose_list_refresh = qt_ui.create_signal()
- 
+    
     def __init__(self):
         super(PoseListWidget, self).__init__()
         
@@ -367,9 +365,6 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         del(item)
         
         self.last_selection = None
-        
-    def select_pose(self):
-        pass
     
     def parent_changed(self, parent):
         
@@ -409,8 +404,6 @@ class PoseTreeWidget(BaseTreeWidget):
     
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
-        
-        
         
         self._create_context_menu()
         
@@ -577,8 +570,6 @@ class PoseTreeWidget(BaseTreeWidget):
         
     def create_cone_pose(self, name = None):
         
-        pose_names = self._get_selected_items(True)
-        
         pose = None
         
         if name:
@@ -593,8 +584,6 @@ class PoseTreeWidget(BaseTreeWidget):
         self._add_item(pose)
 
     def create_no_reader_pose(self, name = None):
-
-        pose_names = self._get_selected_items(True)
         
         pose = None
         
@@ -650,8 +639,6 @@ class PoseTreeWidget(BaseTreeWidget):
         
         corrective.PoseManager().set_pose(pose_names[0])
         
-
-        
         self.last_selection = pose_names
             
     def value_changed(self, max_angle, max_distance, twist_on, twist):
@@ -665,8 +652,6 @@ class PoseTreeWidget(BaseTreeWidget):
         cmds.setAttr('%s.maxTwist' % poses[-1], twist)
         cmds.setAttr('%s.twistOffOn' % poses[-1], twist_on)
         
-
-       
 class PoseWidget(qt_ui.BasicWidget):
 
     def __init__(self):
@@ -842,8 +827,6 @@ class MeshWidget(qt_ui.BasicWidget):
                     if pass_mesh:    
                         sculpt_meshes.append(pass_mesh)
         
-        
-        
         if sculpt_meshes or not current_meshes:
                     
             if sculpt_meshes:
@@ -880,7 +863,6 @@ class MeshWidget(qt_ui.BasicWidget):
                 if not permission:
                     return
                 
-                
                 corrective.PoseManager().add_mesh_to_pose(pose_name, sculpt_meshes)
         
             update_meshes = current_meshes + sculpt_meshes + added_meshes  
@@ -906,7 +888,6 @@ class MeshWidget(qt_ui.BasicWidget):
                 if item:
                     item.setSelected(True)
                 
-                print 'toggling vis ui'
                 corrective.PoseManager().toggle_visibility(pose_name, mesh_index = index)
                 
             cmds.select(selection)
@@ -922,8 +903,7 @@ class MeshWidget(qt_ui.BasicWidget):
                     index = index.row()
                 
                     corrective.PoseManager().toggle_visibility(pose_name, mesh_index= index)
-     
-        
+    
     def remove_mesh(self):
         
         meshes = self.get_current_meshes_in_list()
@@ -966,15 +946,12 @@ class MeshWidget(qt_ui.BasicWidget):
             
             if mesh in added_meshes:
                 item.setSelected(True)
-           
-            
         
         if not added_meshes:   
             
             item = self.mesh_list.item(index)
             if item:
                 item.setSelected(True)
-            
             
     def set_pose(self, pose_name):
         
@@ -1095,9 +1072,6 @@ class SculptWidget(qt_ui.BasicWidget):
         value = value*100
         self.slider.setValue(value)
         
-    
-        
-
 #--- pose widgets
 
 class PoseBaseWidget(qt_ui.BasicWidget):
@@ -1212,7 +1186,6 @@ class PoseNoReaderWidget(PoseBaseWidget):
         super(PoseNoReaderWidget, self).set_pose(pose_name)
         
         self._get_weight_input()
-        
         
 class PoseConeWidget(PoseBaseWidget):
     

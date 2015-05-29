@@ -2231,6 +2231,7 @@ class StretchyChain:
         self.per_joint_stretch = True
         self.vector = False
         self.extra_joint = None
+        self.damp_name = 'dampen'
     
     def _get_joint_count(self):
         return len(self.joints)
@@ -2434,14 +2435,14 @@ class StretchyChain:
         min_length = get_distance(self.joints[0], self.joints[-1])
         #max_length = self._get_length()
 
-        dampen = MayaNumberVariable('dampen')
+        dampen = MayaNumberVariable(self.damp_name)
         dampen.set_node(self.attribute_node)
         dampen.set_variable_type(dampen.TYPE_DOUBLE)
         dampen.set_min_value(0)
         dampen.set_max_value(1)
         dampen.create()
         
-        remap = cmds.createNode( "remapValue" , n = "dampen_remapValue_%s" % self.name )
+        remap = cmds.createNode( "remapValue" , n = "%s_remapValue_%s" % (self.damp_name, self.name) )
         cmds.setAttr("%s.value[2].value_Position" % remap, 0.4);
         cmds.setAttr("%s.value[2].value_FloatValue" % remap, 0.666);
         cmds.setAttr("%s.value[2].value_Interp" % remap, 3)
@@ -2450,8 +2451,8 @@ class StretchyChain:
         cmds.setAttr("%s.value[3].value_FloatValue" % remap, 0.9166);
         cmds.setAttr("%s.value[3].value_Interp" % remap, 1)
     
-        multi = cmds.createNode ( "multiplyDivide", n = "dampen_offset_%s" % self.name)
-        add_double = cmds.createNode( "addDoubleLinear", n = "dampen_addDouble_%s" % self.name)
+        multi = cmds.createNode ( "multiplyDivide", n = "%s_offset_%s" % (self.damp_name, self.name))
+        add_double = cmds.createNode( "addDoubleLinear", n = "%s_addDouble_%s" % (self.damp_name, self.name))
 
         dampen.connect_out('%s.input2X' % multi)
         
@@ -2534,8 +2535,11 @@ class StretchyChain:
     def set_vector_instead_of_matrix(self, bool_value):
         self.vector = bool_value
     
-    def set_add_dampen(self, bool_value):
+    def set_add_dampen(self, bool_value, damp_name = None):
         self.add_dampen = bool_value
+        
+        if damp_name:
+            self.damp_name = damp_name
     
     def set_simple(self, bool_value):
         self.simple = bool_value
@@ -6026,7 +6030,7 @@ def create_pole_chain(top_transform, btm_transform, name):
     
     ik_handle.set_start_joint( joint1 )
     ik_handle.set_end_joint( joint2 )
-    ik_handle.set_solver(ik_handle.solver_rp)
+    ik_handle.set_solver(ik_handle.solver_sc)
     ik_pole = ik_handle.create()
 
     return joint1, joint2, ik_pole
