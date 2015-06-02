@@ -3208,9 +3208,6 @@ class WorldStickyRig(rigs.JointRig):
         
         return locator, xform, driver
     
-    
-    
-    
     def _create_follow_control_group(self, follow_control):
     
         if not follow_control in self.follow_control_groups.keys():
@@ -3268,17 +3265,16 @@ class WorldStickyRig(rigs.JointRig):
         top_locator1 = locators[0][0][1]
         btm_locator1 = locators[0][1][1]
         
-        util.create_multi_follow([self.follower_group, follow_transform], top_locator1, top_locator1, value = value)
-        util.create_multi_follow([self.follower_group, follow_transform], btm_locator1, btm_locator1, value = 1-value)
+        follow_top = util.create_multi_follow([self.follower_group, follow_transform], top_locator1, top_locator1, value = value)
+        follow_btm = util.create_multi_follow([self.follower_group, follow_transform], btm_locator1, btm_locator1, value = 1-value)
         
         if len(locators) > 1:
             top_locator2 = locators[1][0][1]
             btm_locator2 = locators[1][1][1]
         
-            util.create_multi_follow([self.follower_group, follow_transform], top_locator2, top_locator2, value = value)
-         
+            util.create_multi_follow([self.follower_group, follow_transform], top_locator2, top_locator2, value = value) 
             util.create_multi_follow([self.follower_group, follow_transform], btm_locator2, btm_locator2, value = 1-value)
-                
+            
     def create_zip(self, attribute_control, increment, start, end, end_value = 1):
         
         left_over_value = 1.0 - end_value
@@ -3448,6 +3444,18 @@ class WorldStickyFadeRig(WorldStickyRig):
             
         self.side =orig_side
 
+    def _rename_followers(self, follow, description):
+        
+        const = util.ConstraintEditor()
+        constraint = const.get_constraint(follow, 'parentConstraint')
+        names = const.get_weight_names(constraint)
+        
+        follower1 = names[0][:-2]
+        follower2 = names[1][:-2]
+        
+        cmds.rename(follower1, util.inc_name('%s_%s' % (description, follower1)))
+        cmds.rename(follower2, util.inc_name('%s_%s' % (description, follower2)))
+        
     def set_corner_match(self, left_transform, right_transform):
         self.corner_match = [left_transform, right_transform]
 
@@ -3474,16 +3482,22 @@ class WorldStickyFadeRig(WorldStickyRig):
             top_locator1 = locators[0][0][1]
             btm_locator1 = locators[0][1][1]
             
-            util.create_multi_follow([self.follower_group, follow_transform], top_locator1, top_locator1, value = value)
-            util.create_multi_follow([self.follower_group, follow_transform], btm_locator1, btm_locator1, value = 1-value)
+            follow_top = util.create_multi_follow([self.follower_group, follow_transform], top_locator1, top_locator1, value = value)
+            follow_btm = util.create_multi_follow([self.follower_group, follow_transform], btm_locator1, btm_locator1, value = 1-value)        
+            
+                    
+            self._rename_followers(follow_top, 'top')
+            self._rename_followers(follow_btm, 'btm')
             
             if len(locators) > 1:
                 top_locator2 = locators[1][0][1]
                 btm_locator2 = locators[1][1][1]
             
-                util.create_multi_follow([self.follower_group, follow_transform], top_locator2, top_locator2, value = value)
-             
-                util.create_multi_follow([self.follower_group, follow_transform], btm_locator2, btm_locator2, value = 1-value)
+                follow_top = util.create_multi_follow([self.follower_group, follow_transform], top_locator2, top_locator2, value = value)
+                follow_btm = util.create_multi_follow([self.follower_group, follow_transform], btm_locator2, btm_locator2, value = 1-value)
+            
+                self._rename_followers(follow_top, 'top')
+                self._rename_followers(follow_btm, 'btm')
                 
         if increment == 'corner':
             
