@@ -669,6 +669,21 @@ class MayaVariable(vtool.util.Variable):
         return cmds.objExists(self._get_node_and_variable())
 
     #--- set
+    def set_name(self, name):
+        
+        var_name = self._get_node_and_variable()
+        
+        print var_name
+        
+        if cmds.objExists(var_name):
+            cmds.renameAttr(var_name, name)
+            
+        super(MayaVariable, self).set_name(name)
+        
+        var_name = self._get_node_and_variable()
+        print var_name, cmds.getAttr(var_name)
+        
+    
     def set_value(self, value):
         super(MayaVariable, self).set_value(value)
         self._set_value()
@@ -899,6 +914,7 @@ class Attributes(object):
         self.variables = []
         self.attribute_dict = {}
         
+        
     def _get_variable_instance(self, name, var_type):
                 
         var = MayaVariable(name)
@@ -920,6 +936,9 @@ class Attributes(object):
     def _retrieve_attribute(self, attribute_name):
         
         node_and_attribute = '%s.%s' % (self.node, attribute_name)
+        
+        if not cmds.objExists(node_and_attribute):
+            return
         
         var_type = cmds.getAttr(node_and_attribute, type = True)
         
@@ -948,9 +967,8 @@ class Attributes(object):
     def _retrieve_attributes(self):
         
         variables = self._store_attributes()
-        
-        return variables
-        
+        return variables    
+    
     def delete_all(self, retrieve = False):
         
         variables = []
@@ -1029,15 +1047,27 @@ class Attributes(object):
     
     def rename_variable(self, old_name, new_name):
         
+        if not self.node:
+            return
+        
         var = self.get_variable(old_name)
+        
+        if not var:
+            vtool.util.warning('Could not rename attribute, %s.%s.' % (self.node, old_name))
+            return
         
         var.set_name(new_name)
         
-        #here it needs to rename the attribute in maya as well!!!!!!!!!!!
-        #!!!!!!!!!!!!!
+        
+        self._store_attributes()
+        
+        connections = Connections(self.node)
+        connections.disconnect()
         
         self.delete_all()
         self.create_all()
+        
+        connections.connect()
         
     
 #--- rig
@@ -9556,8 +9586,13 @@ def create_title(node, name):
   
 def lock_attributes(node, bool_value = True, attributes = None, hide = False):
     
+    print 'about to lock', node, attributes
+    
     if not attributes:
         attributes = cmds.listAttr(node, k = True)
+    
+    if attributes:
+        attributes = vtool.util.convert_to_sequence(attributes)
     
     for attribute in attributes:
         attribute_name = '%s.%s' % (node, attribute)
@@ -9572,8 +9607,6 @@ def lock_attributes(node, bool_value = True, attributes = None, hide = False):
         if hide:
             cmds.setAttr(attribute_name, k = False)
             cmds.setAttr(attribute_name, cb = False)
-            
-        
         
 def unlock_attributes(node, attributes = [], only_keyable = False):
     

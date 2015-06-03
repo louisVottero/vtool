@@ -836,17 +836,17 @@ def clean_name_string(string_value, clean_chars = '_', remove_char = '_'):
     return string_value
 
 
+def show_list_to_string(*args):
 
-def show(*args):
     try:
         if not args:
             return
-        
+            
         new_args = []
         
         for arg in args:
             if arg != None:
-                new_args.append(arg)
+                new_args.append(str(arg))
             
         args = new_args
         
@@ -858,6 +858,15 @@ def show(*args):
         string_value = string_value.replace('\n', '\t\n')
         if string_value.endswith('\t\n'):
             string_value = string_value[:-2]
+            
+        return string_value
+    except:
+        raise(RuntimeError)
+
+def show(*args):
+    try:
+        
+        string_value = show_list_to_string(*args)
         
         #do not remove
         print '\t%s' % string_value
@@ -865,17 +874,24 @@ def show(*args):
     except:
         #do not remove
         print 'Could not show %s' % args
-        raise
+        raise(RuntimeError)
         
         
 def warning(*args):
     
-    args = list(args)
+    try:    
+        string_value = show_list_to_string(*args)
+        
+        #do not remove
+        if not is_in_maya():
+            print '\tWarning %s' % string_value
+        if is_in_maya():
+            import maya.cmds as cmds
+            cmds.warning(string_value)
     
-    args.insert(0, 'Warning: ')
-    
-    show(*args)
-
+    except:
+        raise(RuntimeError)
+        
 
 def find_possible_combos(names, sort = True, one_increment = False):
         

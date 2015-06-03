@@ -3208,9 +3208,6 @@ class WorldStickyRig(rigs.JointRig):
         
         return locator, xform, driver
     
-    
-    
-    
     def _create_follow_control_group(self, follow_control):
     
         if not follow_control in self.follow_control_groups.keys():
@@ -3268,17 +3265,16 @@ class WorldStickyRig(rigs.JointRig):
         top_locator1 = locators[0][0][1]
         btm_locator1 = locators[0][1][1]
         
-        util.create_multi_follow([self.follower_group, follow_transform], top_locator1, top_locator1, value = value)
-        util.create_multi_follow([self.follower_group, follow_transform], btm_locator1, btm_locator1, value = 1-value)
+        follow_top = util.create_multi_follow([self.follower_group, follow_transform], top_locator1, top_locator1, value = value)
+        follow_btm = util.create_multi_follow([self.follower_group, follow_transform], btm_locator1, btm_locator1, value = 1-value)
         
         if len(locators) > 1:
             top_locator2 = locators[1][0][1]
             btm_locator2 = locators[1][1][1]
         
-            util.create_multi_follow([self.follower_group, follow_transform], top_locator2, top_locator2, value = value)
-         
+            util.create_multi_follow([self.follower_group, follow_transform], top_locator2, top_locator2, value = value) 
             util.create_multi_follow([self.follower_group, follow_transform], btm_locator2, btm_locator2, value = 1-value)
-                
+            
     def create_zip(self, attribute_control, increment, start, end, end_value = 1):
         
         left_over_value = 1.0 - end_value
@@ -3291,29 +3287,49 @@ class WorldStickyRig(rigs.JointRig):
         if not cmds.objExists('%s.zipR' % attribute_control):
             cmds.addAttr(attribute_control, ln = 'zipR', min = 0, max = 10, k = True)
             
-        util.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % self.zip_controls[increment][0][0], [start,end], [0,end_value])
-        util.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % self.zip_controls[increment][0][1], [start,end], [0,end_value])
+        left_top_control = self.zip_controls[increment][0][0]
+        left_btm_control = self.zip_controls[increment][0][1]
+            
+        util.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % left_top_control, [start,end], [0,end_value])
+        util.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % left_btm_control, [start,end], [0,end_value])
                 
         if left_over_value:
-            util.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % self.zip_controls[increment][0][0], [start,end], [0,left_over_value])
-            util.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % self.zip_controls[increment][0][1], [start,end], [0,left_over_value])
+            util.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % left_top_control, [start,end], [0,left_over_value])
+            util.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % left_btm_control, [start,end], [0,left_over_value])
+        
+        cmds.setAttr('%s.stick' % left_top_control, lock = True)
+        cmds.setAttr('%s.stick' % left_btm_control, lock = True)
         
         right_increment = 1
         
         if len(self.zip_controls[increment]) == 1:
             right_increment = 0
         
-        util.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % self.zip_controls[increment][right_increment][0], [start,end], [0,end_value])
-        util.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % self.zip_controls[increment][right_increment][1], [start,end], [0,end_value])
+        right_top_control = self.zip_controls[increment][right_increment][0]
+        right_btm_control = self.zip_controls[increment][right_increment][1]
+        
+        util.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % right_top_control, [start,end], [0,end_value])
+        util.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % right_btm_control, [start,end], [0,end_value])
         
         if left_over_value:
-            util.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % self.zip_controls[increment][right_increment][0], [start,end], [0,left_over_value])
-            util.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % self.zip_controls[increment][right_increment][1], [start,end], [0,left_over_value])
+            util.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % right_top_control, [start,end], [0,left_over_value])
+            util.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % right_btm_control, [start,end], [0,left_over_value])
 
-
+        cmds.setAttr('%s.stick' % right_top_control, lock = True)
+        cmds.setAttr('%s.stick' % right_btm_control, lock = True)
     def create_roll(self, control, increment, percent):
-        top_center_control = control
-        btm_center_control = control
+        
+        control = vtool.util.convert_to_sequence(control)
+        
+        if len(control) == 1:
+            top_center_control = control[0]
+            btm_center_control = control[0]
+        if len(control) > 1:
+            top_center_control = control[0]
+            btm_center_control = control[1]
+        
+        print top_center_control
+        print btm_center_control
         
         util.create_title(top_center_control, 'LIP')
         
@@ -3448,6 +3464,18 @@ class WorldStickyFadeRig(WorldStickyRig):
             
         self.side =orig_side
 
+    def _rename_followers(self, follow, description):
+        
+        const = util.ConstraintEditor()
+        constraint = const.get_constraint(follow, 'parentConstraint')
+        names = const.get_weight_names(constraint)
+        
+        follower1 = names[0][:-2]
+        follower2 = names[1][:-2]
+        
+        cmds.rename(follower1, util.inc_name('%s_%s' % (description, follower1)))
+        cmds.rename(follower2, util.inc_name('%s_%s' % (description, follower2)))
+        
     def set_corner_match(self, left_transform, right_transform):
         self.corner_match = [left_transform, right_transform]
 
@@ -3474,16 +3502,22 @@ class WorldStickyFadeRig(WorldStickyRig):
             top_locator1 = locators[0][0][1]
             btm_locator1 = locators[0][1][1]
             
-            util.create_multi_follow([self.follower_group, follow_transform], top_locator1, top_locator1, value = value)
-            util.create_multi_follow([self.follower_group, follow_transform], btm_locator1, btm_locator1, value = 1-value)
+            follow_top = util.create_multi_follow([self.follower_group, follow_transform], top_locator1, top_locator1, value = value)
+            follow_btm = util.create_multi_follow([self.follower_group, follow_transform], btm_locator1, btm_locator1, value = 1-value)        
+            
+                    
+            self._rename_followers(follow_top, 'top')
+            self._rename_followers(follow_btm, 'btm')
             
             if len(locators) > 1:
                 top_locator2 = locators[1][0][1]
                 btm_locator2 = locators[1][1][1]
             
-                util.create_multi_follow([self.follower_group, follow_transform], top_locator2, top_locator2, value = value)
-             
-                util.create_multi_follow([self.follower_group, follow_transform], btm_locator2, btm_locator2, value = 1-value)
+                follow_top = util.create_multi_follow([self.follower_group, follow_transform], top_locator2, top_locator2, value = value)
+                follow_btm = util.create_multi_follow([self.follower_group, follow_transform], btm_locator2, btm_locator2, value = 1-value)
+            
+                self._rename_followers(follow_top, 'top')
+                self._rename_followers(follow_btm, 'btm')
                 
         if increment == 'corner':
             
@@ -5740,8 +5774,6 @@ class IkScapulaRig(rigs.BufferRig):
         
         return control.get()
     
-    
-    
     def _create_shoulder_control(self):
         control = self._create_control()
         control.set_curve_type(self.control_shape)
@@ -5795,6 +5827,8 @@ class IkScapulaRig(rigs.BufferRig):
         
         rig_line = util.RiggedLine(control, self.joints[-1], self._get_name()).create()
         cmds.parent(rig_line, self.control_group) 
+
+
 
 
 class IkQuadSpineRig(rigs.FkCurveRig):
@@ -6150,6 +6184,114 @@ class BackFootRollRig(QuadFootRollRig):
         self._create_roll_attributes()
         
         self._create_pivot_groups()
+
+class IkSpineRig(rigs.BufferRig):
+    
+    def _create_surface(self):
+        
+        surface = util.transforms_to_nurb_surface(self.joints, self.description, 2, 'Z', 1)
+        self.surface = surface
+        cmds.parent(surface, self.setup_group)
+        
+    def _create_clusters(self):
+
+        cluster_surface = util.ClusterSurface(self.surface, self.description)
+        cluster_surface.create()
+        
+        self.clusters = cluster_surface.handles
+        
+        print 'clusters!!!', self.clusters
+    
+    def _attach_to_surface(self):
+        
+        for joint in self.buffer_joints:
+            util.attach_to_surface(joint, self.surface)
+    
+    def _create_btm_control(self):
+        
+        btm_control = self._create_control('btm')
+        btm_control.hide_scale_attributes()
+        sub_control = self._create_control('btm', sub = True)
+        sub_control.hide_scale_attributes()
+        
+        btm_control = btm_control.get()
+        sub_control = sub_control.get()
+        
+        util.MatchSpace(self.clusters[0], btm_control).translation_to_rotate_pivot()
+        xform = util.create_xform_group(btm_control)
+        
+        util.create_follow_group(btm_control, self.clusters[0])
+        cmds.parent(xform, self.control_group)
+        
+        util.MatchSpace(self.clusters[1], sub_control).translation_to_rotate_pivot()
+        xform = util.create_xform_group(sub_control)
+        
+        util.create_follow_group(sub_control, self.clusters[1])
+        cmds.parent(xform, btm_control)
+        
+        self.btm_control = btm_control
+
+    def _create_top_control(self):
+        
+        top_control = self._create_control('top')
+        top_control.hide_scale_attributes()
+        sub_control = self._create_control('top', sub = True)
+        sub_control.hide_scale_attributes()
+        
+        top_control = top_control.get()
+        sub_control = sub_control.get()
+        
+        util.MatchSpace(self.clusters[-1], top_control).translation_to_rotate_pivot()
+        xform = util.create_xform_group(top_control)
+        
+        util.create_follow_group(top_control, self.clusters[-1])
+        cmds.parent(xform, self.control_group)
+        
+        util.MatchSpace(self.clusters[-2], sub_control).translation_to_rotate_pivot()
+        xform = util.create_xform_group(sub_control)
+        
+        util.create_follow_group(sub_control, self.clusters[-2])
+        cmds.parent(xform, top_control)  
+        
+        self.top_control = top_control      
+        
+    def _create_mid_control(self):
+
+        mid_control = self._create_control('mid', True)
+        mid_control.hide_scale_attributes()
+        
+        mid_control = mid_control.get()
+        
+        util.MatchSpace(self.clusters[2], mid_control).translation_to_rotate_pivot()
+        xform = util.create_xform_group(mid_control)
+        
+        util.create_follow_group(mid_control, self.clusters[2])
+        cmds.parent(xform, self.control_group)
+        
+        util.create_multi_follow([self.top_control, self.btm_control], xform, mid_control, value = .5)
+    
+    def _create_controls(self):
+        
+        cluster_count = len(self.clusters)
+        
+        for inc in range(0, cluster_count):
+            
+            if inc == 0:
+                self._create_top_control()
+                
+            if inc == cluster_count-1:
+                self._create_btm_control()
+        
+        self._create_mid_control()
+    
+    def create(self):
+        super(IkSpineRig, self).create()
+        
+        self._create_surface()
+        self._create_clusters()
+        self._attach_to_surface()
+
+        self._create_controls()
 
 #--- Misc
 

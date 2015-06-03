@@ -2114,8 +2114,6 @@ class IkAppendageRig(BufferRig):
             ik_group = self._create_group()
             cmds.parent(self.ik_chain[0], ik_group)
             cmds.parent(ik_group, self.setup_group)
-            
-        
     
     def _create_buffer_joint(self):
         
