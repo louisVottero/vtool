@@ -1129,7 +1129,7 @@ class PoseData(MayaCustomData):
                 
         util.show('Exported poses')
     
-    @maya_lib.util.undo_off
+    
     def import_data(self):
         
         path = util_file.join_path(self.directory, self.name)

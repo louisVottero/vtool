@@ -214,7 +214,8 @@ class BlendShape(object):
             
             mesh_input = self._get_mesh_input_for_target(name, inbetween)
             
-            cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
+            if cmds.objExists(mesh):
+                cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
             
             cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 1)
             cmds.aliasAttr(name, '%s.weight[%s]' % (self.blendshape, current_index))
@@ -532,6 +533,7 @@ class BlendshapeManager(object):
             vtool.util.warning('No blendshape.')
             return
         
+        
         if not blendshape.is_target(mesh):
             blendshape.create_target(mesh, mesh)
         
@@ -541,10 +543,11 @@ class BlendshapeManager(object):
         var.set_variable_type('float')
         var.create(self.setup_group)
                     
-        util.connect_multiply('%s.%s' % (self.setup_group, mesh), '%s.%s' % (blendshape.blendshape, mesh))
-            
-        if blendshape.is_target(mesh):
-            blendshape.replace_target(mesh, mesh)
+        multiply = util.connect_multiply('%s.%s' % (self.setup_group, mesh), '%s.%s' % (blendshape.blendshape, mesh))
+        cmds.rename(multiply, util.inc_name('multiply_shape_combo_1'))
+        
+        #if blendshape.is_target(mesh):
+        #    blendshape.replace_target(mesh, mesh)
     
     def set_shape_weight(self, name, value):
         
@@ -595,6 +598,9 @@ class BlendshapeManager(object):
     #---  combos
     
     def add_combo(self, mesh):
+        
+        
+        
         #will need to get the delta here and do the multiply divide math
         self.add_shape(mesh)
     

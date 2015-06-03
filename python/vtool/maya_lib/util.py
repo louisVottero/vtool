@@ -914,6 +914,7 @@ class Attributes(object):
         self.variables = []
         self.attribute_dict = {}
         
+        
     def _get_variable_instance(self, name, var_type):
                 
         var = MayaVariable(name)
@@ -966,9 +967,8 @@ class Attributes(object):
     def _retrieve_attributes(self):
         
         variables = self._store_attributes()
-        
-        return variables
-        
+        return variables    
+    
     def delete_all(self, retrieve = False):
         
         variables = []
@@ -1058,10 +1058,16 @@ class Attributes(object):
         
         var.set_name(new_name)
         
+        
         self._store_attributes()
+        
+        connections = Connections(self.node)
+        connections.disconnect()
         
         self.delete_all()
         self.create_all()
+        
+        connections.connect()
         
     
 #--- rig
@@ -9580,8 +9586,13 @@ def create_title(node, name):
   
 def lock_attributes(node, bool_value = True, attributes = None, hide = False):
     
+    print 'about to lock', node, attributes
+    
     if not attributes:
         attributes = cmds.listAttr(node, k = True)
+    
+    if attributes:
+        attributes = vtool.util.convert_to_sequence(attributes)
     
     for attribute in attributes:
         attribute_name = '%s.%s' % (node, attribute)
@@ -9596,8 +9607,6 @@ def lock_attributes(node, bool_value = True, attributes = None, hide = False):
         if hide:
             cmds.setAttr(attribute_name, k = False)
             cmds.setAttr(attribute_name, cb = False)
-            
-        
         
 def unlock_attributes(node, attributes = [], only_keyable = False):
     
