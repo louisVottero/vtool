@@ -3328,8 +3328,6 @@ class WorldStickyRig(rigs.JointRig):
             top_center_control = control[0]
             btm_center_control = control[1]
         
-        print top_center_control
-        print btm_center_control
         
         util.create_title(top_center_control, 'LIP')
         
@@ -6199,8 +6197,6 @@ class IkSpineRig(rigs.BufferRig):
         cluster_surface.create()
         
         self.clusters = cluster_surface.handles
-        
-        print 'clusters!!!', self.clusters
     
     def _attach_to_surface(self):
         

@@ -137,6 +137,7 @@ class ReadFile(FileManager):
         self.open_file = None
     
     def _get_lines(self):
+                
         lines = self.open_file.read()
         return get_text_lines(lines)
         

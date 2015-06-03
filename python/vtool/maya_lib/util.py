@@ -38,7 +38,9 @@ def undo_off(function):
             if undo_state:
                 cmds.undoInfo( state = True )
                 
-                vtool.util.show( traceback.format_exc() )
+                # do not remove
+                print traceback.format_exc()
+                
             
             raise(RuntimeError)
         
@@ -82,10 +84,14 @@ def undo_chunk(function):
                 closed = True
                 
                 undo_chunk_active = False
+            
+                # do not remove
+                print traceback.format_exc()
                 
-                raise(RuntimeError)
                 
-            vtool.util.show(traceback.format_exc())
+            raise(RuntimeError)
+                
+            
             
         if not closed:
             if undo_chunk_active:
@@ -673,16 +679,12 @@ class MayaVariable(vtool.util.Variable):
         
         var_name = self._get_node_and_variable()
         
-        print var_name
-        
         if cmds.objExists(var_name):
             cmds.renameAttr(var_name, name)
             
         super(MayaVariable, self).set_name(name)
         
         var_name = self._get_node_and_variable()
-        print var_name, cmds.getAttr(var_name)
-        
     
     def set_value(self, value):
         super(MayaVariable, self).set_value(value)
@@ -5890,11 +5892,16 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
             
             if cmds.nodeType(other) == 'joint':
                 
+                
                 radius = cmds.getAttr('%s.radius' % transform)
-                var = MayaNumberVariable('radius')
-                var.set_node(other)
-                var.set_value(radius)
-                cmds.setAttr('%s.radius' % other, radius)
+                
+                if not is_referenced(other):
+                    var = MayaNumberVariable('radius')
+                    var.set_node(other)
+                    var.set_value(radius)
+                
+                if not cmds.getAttr('%s.radius' % other, l = True):
+                    cmds.setAttr('%s.radius' % other, radius)
                     
                 cmds.move((xform[0]*-1), xform[1], xform[2], '%s.scalePivot' % other, 
                                                              '%s.rotatePivot' % other, a = True)
@@ -9585,8 +9592,6 @@ def create_title(node, name):
     title.create(node)
   
 def lock_attributes(node, bool_value = True, attributes = None, hide = False):
-    
-    print 'about to lock', node, attributes
     
     if not attributes:
         attributes = cmds.listAttr(node, k = True)

@@ -113,8 +113,6 @@ class ComboManager(ui.MayaWindow):
                
     def _combo_selection_changed(self):
         
-        print 'selecting combos!!!'
-        
         combo_items = self.combo_widget.tree.selectedItems()
         
         if not combo_items:
@@ -124,7 +122,6 @@ class ComboManager(ui.MayaWindow):
         
         shapes = self.manager.get_shapes_in_combo(combo_name)
         
-        print 'settting weight!', combo_name
         self.manager.set_shape_weight(combo_name, 1)
         
         self.refresh_combo_list = False
