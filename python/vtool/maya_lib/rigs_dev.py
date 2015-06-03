@@ -5796,6 +5796,63 @@ class IkScapulaRig(rigs.BufferRig):
         rig_line = util.RiggedLine(control, self.joints[-1], self._get_name()).create()
         cmds.parent(rig_line, self.control_group) 
 
+
+class IkQuadSpineRig(rigs.FkCurveRig):
+    def __init__(self, name, side):
+        super(IkQuadSpineRig, self).__init__(name, side)
+        
+        self.mid_control_joint = None
+    
+    def _create_sub_control(self):
+        
+        sub_control = util.Control( self._get_control_name(sub = True) )
+        sub_control.color( util.get_color_of_side( self.side , True)  )
+        if self.control_shape:
+            sub_control.set_curve_type(self.control_shape)
+        
+        sub_control.scale_shape(.75, .75, .75)
+        
+        if self.current_increment == 0:
+            sub_control.set_curve_type(self.control_shape)
+        
+        if self.current_increment == 1:
+            other_sub_control = util.Control( self._get_control_name('reverse', sub = True))
+            other_sub_control.color( util.get_color_of_side( self.side, True ) )
+        
+            if self.control_shape:
+                other_sub_control.set_curve_type(self.control_shape)
+            
+            other_sub_control.scale_shape(2, 2, 2)
+            
+            control = self.controls[-1]
+            other_sub = other_sub_control.get()
+            
+            if self.mid_control_joint:
+                util.MatchSpace(self.mid_control_joint, other_sub).translation()
+                util.MatchSpace(control, other_sub).rotation()
+            
+            if not self.mid_control_joint:
+                util.MatchSpace(control, other_sub).translation_rotation()
+            
+            xform = util.create_xform_group(other_sub_control.get())
+                
+            cmds.parent(xform, self.controls[-2])
+            parent = cmds.listRelatives(self.sub_controls[-1], p = True)[0]
+            xform = cmds.listRelatives(parent, p = True)[0]
+            
+            other_sub_control.hide_scale_and_visibility_attributes()
+            
+            cmds.parent(xform, other_sub)
+        
+        if self.current_increment == 2:
+            pass
+        
+        return sub_control
+    
+    def set_mid_control_joint(self, joint_name):
+        self.mid_control_joint = joint_name
+        
+
 class QuadFootRollRig(rigs.FootRollRig):
     
     def __init__(self, description, side):
