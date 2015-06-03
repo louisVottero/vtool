@@ -190,7 +190,7 @@ class VersionFile(object):
     def __init__(self, filepath):
         self.filepath = filepath
                 
-        self.file = get_basename(self.filepath)
+        self.filename = get_basename(self.filepath)
         self.path = get_dirname(filepath)
         
         self.version_folder = None
@@ -656,7 +656,8 @@ def inc_path_name(directory, padding = 0):
     
     return unique_path.get()
 
-def get_file_lines(filepath): 
+def get_file_lines(filepath):
+    
     read = ReadFile(filepath)
     
     return read.read()
