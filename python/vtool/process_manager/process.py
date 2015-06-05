@@ -398,9 +398,6 @@ class Process(object):
     
     def get_code_file(self, name, basename = False):
         
-        
-        
-        
         data_folder = data.DataFolder(name, self.get_code_path())
         
         
@@ -585,16 +582,21 @@ class Process(object):
             if not line:
                 continue
             
+            states.append(False)
+            
             split_line = line.split()
             if len(split_line):
-                scripts.append(split_line[0])
                 
-            if len(split_line) == 2:
-                states.append(eval(split_line[1]))
+                script_name = string.join(split_line[:-1])
                 
-            if len(split_line) == 1:
-                states.append(False)
-                           
+                scripts.append(script_name)
+                
+            if len(split_line) >= 2:
+                
+                state = eval(split_line[-1])
+                
+                states[-1] = state
+                                           
         return scripts, states
         
     def sync_manifest(self):
