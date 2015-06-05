@@ -72,6 +72,24 @@ class Rig(object):
             
         if parent != custom_parent:
             cmds.parent(group, custom_parent)
+        
+    def _create_setup_group(self, description):
+        
+        group = self._create_group('setup', description)
+        
+        if self.setup_group:
+            cmds.parent(group, self.setup_group)
+        
+        return group
+        
+    def _create_control_group(self, description):
+        
+        group = self._create_group('controls', description)
+        
+        if self.control_group:
+            cmds.parent(group, self.control_group)
+            
+        return group
             
     def _get_name(self, prefix = None, description = None):
         

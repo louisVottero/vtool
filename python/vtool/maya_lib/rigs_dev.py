@@ -5650,7 +5650,7 @@ class IkBackLegRig(IkFrontLegRig):
         duplicate.replace('joint', 'offset')        
         self.offset_chain = duplicate.create()
         
-        #cmds.parent(self.offset_chain[0], self.ik_chain[0])
+        cmds.parent(self.offset_chain[0], self.setup_group)
         
         duplicate = util.DuplicateHierarchy(self.offset_chain[-2])
         duplicate.replace('offset', 'sway')
@@ -6197,11 +6197,18 @@ class IkSpineRig(rigs.BufferRig):
         cluster_surface.create()
         
         self.clusters = cluster_surface.handles
+        
+        cluster_group = self._create_setup_group('clusters')
+        
+        cmds.parent(self.clusters, cluster_group)
     
     def _attach_to_surface(self):
         
+        rivet_group = self._create_setup_group('rivets')
+        
         for joint in self.buffer_joints:
-            util.attach_to_surface(joint, self.surface)
+            rivet = util.attach_to_surface(joint, self.surface)
+            cmds.parent(rivet, rivet_group)
     
     def _create_btm_control(self):
         
