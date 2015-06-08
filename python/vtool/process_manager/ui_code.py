@@ -104,11 +104,13 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         if self.sizes[1] != 0:
             self.splitter.setSizes(self.sizes)
+            
+        
         
                 
     def _script_rename(self, old_filepath, filepath):
         
-        tab_index = self.code_widget.code_edit.get_tab_from_filepath( old_filepath )
+        self.code_widget.code_edit.get_tab_from_filepath( old_filepath )
         
         self.code_widget.code_edit.rename_tab(old_filepath, filepath)
         
@@ -158,6 +160,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.code_edit.hide()
         
         self.code_edit.tabChanged.connect(self._tab_changed)
+        
         self.code_edit.no_tabs.connect(self._collapse)
         
         self.save_file = ui_data.ScriptFileWidget()        
@@ -229,6 +232,8 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.save_file.set_directory(folder_path)
         
         self._load_file_text(path)
+        
+        
         
         if path:
             self.save_file.show()
