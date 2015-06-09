@@ -5451,6 +5451,12 @@ class BackLeg2(rigs.BufferRig):
      
 class IkFrontLegRig(rigs.IkAppendageRig):
     
+    
+    def __init__(self, description, side):
+        super(IkFrontLegRig, self).__init__(description, side)
+        
+        self.right_side_fix = False
+    
     def _create_twist_joint(self, top_control):
         
         top_guide_joint, btm_guide_joint, guide_ik = util.create_pole_chain(self.buffer_joints[0], self.buffer_joints[-1], 'guide')

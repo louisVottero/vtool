@@ -1525,8 +1525,7 @@ class CodeEditTabs(BasicWidget):
         self.tabs.currentChanged.connect(self._tab_changed)
         
         self.previous_widget = None
-        
-    
+            
     def _tab_changed(self):
           
         current_widget = self.tabs.currentWidget()
@@ -1548,7 +1547,7 @@ class CodeEditTabs(BasicWidget):
                 
                 
         
-        self.previous_widget = current_widget
+        self.previous_widget = current_widget.text_edit
         
         self.tabChanged.emit(current_widget)
     
@@ -1563,10 +1562,7 @@ class CodeEditTabs(BasicWidget):
         if self.tabs.count() == 0:
             self.no_tabs.emit()
     
-    def _save(self):
-        
-        
-        current_widget = self.tabs.currentWidget()
+    def _save(self, current_widget):
         
         current_widget.document().setModified(False)
         
@@ -1574,22 +1570,24 @@ class CodeEditTabs(BasicWidget):
     
     def _build_widgets(self):
         
-        self.tabs = QtGui.QTabWidget()
-        self.status = QtGui.QLabel('line number:')
+        self.tabs = CodeTabs()
+        
+        
         self.main_layout.addWidget(self.tabs)
-        self.main_layout.addWidget(self.status)
         
-    def _cursor_changed(self):
+        self.tabs.double_click.connect(self._tab_double_click)
         
-        index = self.tabs.currentIndex()
-        tab_name = str( self.tabs.tabText(index) )
+
         
-        code_widget = self.code_tab_map[tab_name]
-        text_cursor = code_widget.textCursor()
-        #column_number = text_cursor.columnNumber()
-        block_number = text_cursor.blockNumber()
+    def _tab_double_click(self, index):
         
-        self.status.setText('Line: %s' % (block_number+1))
+        title = str(self.tabs.tabText(index))
+        code_widget = self.code_tab_map[title]
+        filepath = code_widget.filepath        
+        
+        self._close_tab(index)
+        
+        self.add_floating_tab(filepath)
         
     def set_group(self, group):
         self.group = group
@@ -1597,30 +1595,64 @@ class CodeEditTabs(BasicWidget):
     def goto_tab(self, name):
         
         if self.code_tab_map.has_key(name):
-            widget = self.code_tab_map[name]
         
+            widget = self.code_tab_map[name]
+                
             self.tabs.setCurrentWidget(widget)
+        
+    def add_floating_tab(self, filepath):
+        
+        basename = util_file.get_basename(filepath)
+        
+        if self.code_tab_map.has_key(basename):
+            #do something
+            return
+        
+        code_edit_widget = CodeEdit()
+        code_edit_widget.filepath = filepath
+        code_edit_widget.add_menu_bar()
+        code_edit_widget.set_file(filepath)
+        
+        code_widget = code_edit_widget.text_edit
+        code_widget.titlename = basename
+        code_widget.set_file(filepath)
+        code_widget.save.connect(self._save)
+        
+        window = BasicWindow()
+        basename = util_file.get_basename(filepath)
+        window.setWindowTitle(basename)
+        window.main_layout.addWidget(code_edit_widget)
+        
+        code_widget.window = window
+        
+        #self.code_tab_map[basename] = code_widget
+        
+        window.show()
         
     def add_tab(self, filepath):
         
         basename = util_file.get_basename(filepath)
         
-        
         if self.code_tab_map.has_key(basename):
             self.goto_tab(basename)
             return
                 
-        code_widget = CodeTextEdit()
+        code_edit_widget = CodeEdit()
+        code_edit_widget.filepath = filepath
+        #code_edit_widget.set_file(filepath)
+        
+        code_widget = code_edit_widget.text_edit
         code_widget.set_file(filepath)
         code_widget.titlename = basename
-        code_widget.filepath = filepath
-        code_widget.cursorPositionChanged.connect(self._cursor_changed)
+        
         
         code_widget.save.connect(self._save)
         
-        self.code_tab_map[basename] = code_widget
         
-        self.tabs.addTab(code_widget, basename)
+        
+        self.code_tab_map[basename] = code_edit_widget
+        
+        self.tabs.addTab(code_edit_widget, basename)
         
         self.goto_tab(basename)
       
@@ -1631,7 +1663,7 @@ class CodeEditTabs(BasicWidget):
         for inc in range(0, self.tabs.count()):
             widget = self.tabs.widget(inc)
             
-            if widget.document().isModified():
+            if widget.text_edit.document().isModified():
                 found.append(widget)
                 
         self.multi_save.emit(found, note)
@@ -1688,11 +1720,94 @@ class CodeEditTabs(BasicWidget):
         
         widget.filepath = new_path
         
-        
+class CodeTabs(QtGui.QTabWidget):
     
+    double_click = create_signal(object)
+    
+    def __init__(self):
+        super(CodeTabs, self).__init__()
+        
+        self.code_tab_bar = CodeTabBar()
+        
+        self.setTabBar( self.code_tab_bar )
+        
+        self.code_tab_bar.double_click.connect(self._bar_double_click)
+    
+    def _bar_double_click(self, index):
+    
+        self.double_click.emit(index)
+        
+class CodeTabBar(QtGui.QTabBar):
+    
+    double_click = create_signal(object)
+    
+    def __init__(self):
+        super(CodeTabBar, self).__init__()
+        self.setAcceptDrops(True)
+    
+    def mouseDoubleClickEvent(self, event):
+        super(CodeTabBar, self).mouseDoubleClickEvent(event)
+        
+        index = self.currentIndex()
+        
+        self.double_click.emit(index)
+        
+        
+class CodeEdit(BasicWidget):
+    
+    def __init__(self):
+        super(CodeEdit, self).__init__()
+        
+        self.text_edit.cursorPositionChanged.connect(self._cursor_changed)
+    
+    def _build_widgets(self):
+        
+        self.text_edit = CodeTextEdit()
+        
+        self.status_layout = QtGui.QHBoxLayout()
+        
+        self.status = QtGui.QLabel('Line:')
+        
+        
+        self.status_layout.addWidget(self.status)
+        
+        
+        self.main_layout.addWidget(self.text_edit)
+        self.main_layout.addLayout(self.status_layout)
+        
+    def _build_menu_bar(self):
+        
+        self.menu_bar = QtGui.QMenuBar()
+        
+        self.main_layout.insertWidget(0, self.menu_bar)
+        
+        file_menu = self.menu_bar.addMenu('File')
+        save_action = file_menu.addAction('Save')
+        
+        save_action.triggered.connect(self.text_edit._save)
+        
+    def _cursor_changed(self):
+        
+        code_widget = self.text_edit
+        text_cursor = code_widget.textCursor()
+        #column_number = text_cursor.columnNumber()
+        block_number = text_cursor.blockNumber()
+        
+        self.status.setText('Line: %s' % (block_number+1))
+    
+    def add_menu_bar(self):
+        
+        self._build_menu_bar()
+        
+    def set_file(self, filepath):
+        
+        self.fullpath = QtGui.QLabel('Fullpath: %s' % filepath )
+        self.status_layout.addWidget(self.fullpath)
+        
+        
 class CodeTextEdit(QtGui.QPlainTextEdit):
     
-    save = create_signal()
+    save = create_signal(object)
     
     def __init__(self):
         
@@ -1775,7 +1890,12 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     def _line_number_paint(self, event):
         
         paint = QtGui.QPainter(self.line_numbers)
-        paint.fillRect(event.rect(), QtCore.Qt.black)
+        
+        if not util.is_in_maya():
+            paint.fillRect(event.rect(), QtCore.Qt.lightGray)
+        
+        if util.is_in_maya():
+            paint.fillRect(event.rect(), QtCore.Qt.black)
         
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
@@ -1786,7 +1906,11 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
                 number = block_number + 1
-                paint.setPen(QtCore.Qt.lightGray)
+                
+                if util.is_in_maya():
+                    paint.setPen(QtCore.Qt.lightGray)
+                if not util.is_in_maya():
+                    paint.setPen(QtCore.Qt.black)
                 
                 paint.drawText(0, top, self.line_numbers.width(), self.fontMetrics().height(), QtCore.Qt.AlignRight, str(number))
                 
@@ -1804,11 +1928,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         while (max_value >= 10):
             max_value /= 10
             digits+=1
-                   
-        #size = QtGui.QFont('Courier', size)
         
         space = 1 + self.fontMetrics().width('1') * digits
-        
         
         return space
     
@@ -1824,7 +1945,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
             if util.is_in_maya():
                 line_color = QtGui.QColor(QtCore.Qt.black)
             if not util.is_in_maya():
-                line_color = QtGui.QColor(QtCore.Qt.darkGray)
+                line_color = QtGui.QColor(QtCore.Qt.lightGray)
                 
             selection.format.setBackground(line_color)
             selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
@@ -1833,8 +1954,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
             selections.append(selection)
             
         self.setExtraSelections(selections)
-        
-            
     
     def _update_number_width(self, value = 0):
         
@@ -1854,7 +1973,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     def _save(self):
         
         try:
-            self.save.emit()
+            self.save.emit(self)
         except:
             pass
         
@@ -1866,9 +1985,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         find_widget.show()
         
         self.find_widget = find_widget
-        
-        
-        
     
     def _goto_line(self):
         
@@ -2231,7 +2347,11 @@ class Highlighter(QtGui.QSyntaxHighlighter):
         super(Highlighter, self).__init__(parent)
 
         keywordFormat = QtGui.QTextCharFormat()
-        keywordFormat.setForeground(QtGui.QColor(0, 150, 150))
+        if not util.is_in_maya():
+            keywordFormat.setForeground(QtGui.QColor(0, 150, 150))
+        if util.is_in_maya():
+            keywordFormat.setForeground(QtCore.Qt.green)
+        
         keywordFormat.setFontWeight(QtGui.QFont.Bold)
 
         keywordPatterns = ["\\bdef\\b", "\\bclass\\b", "\\bimport\\b","\\breload\\b", '\\bpass\\b','\\breturn\\b']
@@ -2250,7 +2370,12 @@ class Highlighter(QtGui.QSyntaxHighlighter):
         self.highlightingRules.append((QtCore.QRegExp("[0-9]+"), numberFormat))
         
         quotationFormat = QtGui.QTextCharFormat()
+        
         quotationFormat.setForeground(QtCore.Qt.darkGreen)
+        
+        if util.is_in_maya():
+            quotationFormat.setForeground(QtGui.QColor(230, 230, 0))
+        
         self.highlightingRules.append((QtCore.QRegExp("\'[^\']*\'"),
                 quotationFormat))
         self.highlightingRules.append((QtCore.QRegExp("\"[^\"]*\""),
@@ -2262,12 +2387,20 @@ class Highlighter(QtGui.QSyntaxHighlighter):
                 singleLineCommentFormat))
 
         self.multiLineCommentFormat = QtGui.QTextCharFormat()
-        self.multiLineCommentFormat.setForeground(QtCore.Qt.darkGray)
+        
+        self.multiLineCommentFormat.setForeground(QtCore.Qt.darkGreen)
+        
+        if util.is_in_maya():
+            self.multiLineCommentFormat.setForeground(QtGui.QColor(230, 230, 0))
         
         self.commentStartExpression = QtCore.QRegExp('"""')
         self.commentEndExpression = QtCore.QRegExp('"""')
         
-    def highlightBlock(self, text):
+        #self.commentStartExpression2 = QtCore.QRegExp("'''")
+        #self.commentEndExpression2 = QtCore.QRegExp("'''")
+        
+    def highlightRules(self, text):
+
         for pattern, format in self.highlightingRules:
             expression = QtCore.QRegExp(pattern)
             index = expression.indexIn(text)
@@ -2277,6 +2410,8 @@ class Highlighter(QtGui.QSyntaxHighlighter):
                 index = expression.indexIn(text, index + length)
 
         self.setCurrentBlockState(0)
+        
+    def highlightComments(self, text):
         endIndex = -1
 
         startIndex = 0
@@ -2293,10 +2428,19 @@ class Highlighter(QtGui.QSyntaxHighlighter):
             else:
                 commentLength = endIndex - startIndex + self.commentEndExpression.matchedLength()
 
-            self.setFormat(startIndex, commentLength,
-                    self.multiLineCommentFormat)
+            self.setFormat(startIndex, 
+                           commentLength,
+                           self.multiLineCommentFormat)
+            
             startIndex = self.commentStartExpression.indexIn(text,
-                    startIndex + commentLength);
+                                                             startIndex + commentLength);
+        
+        
+    def highlightBlock(self, text):
+        
+        self.highlightRules(text)
+        self.highlightComments(text)
+        
 
 class CodeLineNumber(QtGui.QWidget):
     
