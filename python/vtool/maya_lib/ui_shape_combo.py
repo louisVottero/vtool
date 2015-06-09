@@ -122,8 +122,9 @@ class ComboManager(ui.MayaWindow):
         
         shapes = self.manager.get_shapes_in_combo(combo_name)
         
-        self.manager.set_shape_weight(combo_name, 1)
-        
+        if self.manager.blendshape.is_target(combo_name):
+            self.manager.set_shape_weight(combo_name, 1)
+            
         self.refresh_combo_list = False
         self.shape_widget.tree.select_shapes(shapes)
         self.refresh_combo_list = True
@@ -154,10 +155,9 @@ class ComboManager(ui.MayaWindow):
         
     def _add_command(self):
         
-        
-        
         meshes = util.get_selected_meshes()
-         
+        combo_items = self.combo_widget.tree.selectedItems()
+        
         shapes, combos, inbetweens = self.manager.get_shape_and_combo_lists(meshes)
         
         for shape in shapes:
@@ -165,6 +165,9 @@ class ComboManager(ui.MayaWindow):
         
         for combo in combos:
             self.manager.add_combo(combo)
+        
+        for combo_item in combo_items:
+            self.manager.add_combo(str(combo_item.text(0)))
         
         mesh = None
         

@@ -202,7 +202,7 @@ class BlendShape(object):
             return True
         
     @util.undo_chunk
-    def create_target(self, name, mesh, inbetween = 1):
+    def create_target(self, name, mesh = None, inbetween = 1):
         
         name = name.replace(' ', '_')
         
@@ -428,6 +428,7 @@ class BlendshapeManager(object):
             
         if self.start_mesh:
             self.setup(self.start_mesh)
+            
 
     def _get_mesh(self):
         
@@ -500,8 +501,11 @@ class BlendshapeManager(object):
             self.setup_group = cmds.group(em = True, n = self.setup_group)
         
             util.hide_keyable_attributes(self.setup_group)
-                
-        if start_mesh:
+        
+        
+        test_home = util.get_attribute_input('%s.mesh' % self.setup_group, node_only = True)
+        
+        if start_mesh and not test_home:
             self._create_home(start_mesh)
             util.connect_message(start_mesh, self.setup_group, 'mesh')
             
@@ -533,9 +537,11 @@ class BlendshapeManager(object):
             vtool.util.warning('No blendshape.')
             return
         
+        if blendshape.is_target(mesh):
+            blendshape.replace_target(mesh, mesh)
+            return
         
-        if not blendshape.is_target(mesh):
-            blendshape.create_target(mesh, mesh)
+        blendshape.create_target(mesh, mesh)
         
         var = util.MayaNumberVariable(mesh)
         var.set_min_value(0)
@@ -546,8 +552,6 @@ class BlendshapeManager(object):
         multiply = util.connect_multiply('%s.%s' % (self.setup_group, mesh), '%s.%s' % (blendshape.blendshape, mesh))
         cmds.rename(multiply, util.inc_name('multiply_shape_combo_1'))
         
-        #if blendshape.is_target(mesh):
-        #    blendshape.replace_target(mesh, mesh)
     
     def set_shape_weight(self, name, value):
         
@@ -598,11 +602,29 @@ class BlendshapeManager(object):
     #---  combos
     
     def add_combo(self, mesh):
+          
+        home = self._get_mesh()
         
+        if home == mesh:
+            return
         
+        blendshape = self._get_blendshape()
         
-        #will need to get the delta here and do the multiply divide math
-        self.add_shape(mesh)
+        if not blendshape:
+            vtool.util.warning('No blendshape.')
+            return
+        
+        if blendshape.is_target(mesh):
+            blendshape.replace_target(mesh, mesh)
+            return
+        
+        blendshape.create_target(mesh, mesh)
+        
+        var = util.MayaNumberVariable(mesh)
+        var.set_min_value(0)
+        var.set_max_value(10)
+        var.set_variable_type('float')
+        var.create(self.setup_group)
     
     def get_combos(self):
         
