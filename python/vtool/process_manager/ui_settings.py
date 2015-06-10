@@ -190,8 +190,21 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         filename = util_file.fix_slashes(filename)
         
+        found = self.project_list.get_directories()
+        
+        if filename in found:    
+            return
+        
+        if found:
+            found.insert(0, filename)
+            
+        if not found:
+            found = filename 
+        
         if filename and util_file.is_dir(filename):
             self._text_changed(filename)
+            
+            self.project_list.refresh_project_list(filename, found)
             
     def set_directory(self, directory, history = None):
         
@@ -351,8 +364,9 @@ class ProjectList(QtGui.QTreeWidget):
         
         select_item = None
         
+        
         for history in self.project_history:
-            
+                
             if type(history) != list:
                 history = ['', history]
             
