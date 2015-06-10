@@ -37,7 +37,6 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.history_list = self.project_directory_widget.project_list
                              
         self.code_directory_widget = CodeDirectoryWidget()
-        #self.code_directory_widget.set_label('Code Directory')
         self.code_directory_widget.directory_changed.connect(self._code_directory_changed)
 
         self.main_layout.addWidget(self.project_directory_widget)
