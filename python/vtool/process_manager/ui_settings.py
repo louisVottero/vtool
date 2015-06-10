@@ -133,8 +133,8 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.main_layout.addSpacing(5)
         self.main_layout.addWidget(self.project_label)
-        self.main_layout.addLayout(file_layout)
         self.main_layout.addWidget(self.project_list)
+        self.main_layout.addLayout(file_layout)
         
         self.main_layout.addSpacing(15)
         
@@ -426,8 +426,8 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.main_layout.addSpacing(5)
         self.main_layout.addWidget(code_label)
-        self.main_layout.addLayout(file_layout)
         self.main_layout.addWidget(self.code_list)
+        self.main_layout.addLayout(file_layout)
         
         self.main_layout.addSpacing(15)
                 

@@ -177,13 +177,21 @@ class WriteFile(FileManager):
         self.open_file.write('%s\n' % line)
         self.close_file()
                 
-    def write(self, lines):
+    def write(self, lines, last_line_empty = True):
         
         self.write_file()
         
+        inc = 0
         for line in lines:
+
+            if inc == len(lines)-1 and not last_line_empty:
+                self.open_file.write('%s' % line)
+                break
+            
             self.open_file.write('%s\n' % line)
             
+            inc+= 1
+
         self.close_file()
 
 class VersionFile(object):

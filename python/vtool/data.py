@@ -266,7 +266,7 @@ class ScriptData(FileData):
         filepath = util_file.join_path(self.directory, self._get_file_name())
         
         write_file = util_file.WriteFile(filepath)
-        write_file.write(lines)
+        write_file.write(lines, last_line_empty = False)
         
         version = util_file.VersionFile(filepath)
         version.save(comment)
@@ -303,10 +303,6 @@ class ScriptPythonData(ScriptData):
     def open(self):
         lines = ''
         return lines
-
-
-        
-          
 
 class ScriptMelData(ScriptData):
 

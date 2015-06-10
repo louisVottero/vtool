@@ -98,9 +98,6 @@ def tool_manager(name = None, directory = None):
     
     return tool_manager
 
-
-
-    
 def process_manager(directory = None):
     window = ProcessMayaWindow()
     
