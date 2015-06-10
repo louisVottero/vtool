@@ -1838,19 +1838,15 @@ class CodeEdit(BasicWidget):
         self.line_number = QtGui.QLabel('Line:')
         self.save_state = QtGui.QLabel('No Changes')
         
-        
         self.status_layout.addWidget(self.line_number)
         self.status_layout.addWidget(self.save_state)
-        
         
         self.main_layout.addWidget(self.text_edit)
         self.main_layout.addLayout(self.status_layout)
         
-        
         self.text_edit.save_done.connect(self._save)
         self.text_edit.textChanged.connect(self._text_changed)
         self.text_edit.file_set.connect(self._text_file_set)
-        
         
     def _build_menu_bar(self):
         
@@ -1860,8 +1856,21 @@ class CodeEdit(BasicWidget):
         
         file_menu = self.menu_bar.addMenu('File')
         save_action = file_menu.addAction('Save')
+        browse_action = file_menu.addAction('Browse')
+        
         
         save_action.triggered.connect(self.text_edit._save)
+        browse_action.triggered.connect(self._open_browser)
+        
+    def _open_browser(self):
+        
+        filepath = self.text_edit.filepath
+        
+        filepath_only = util_file.get_dirname(filepath)
+        
+        util_file.open_browser(filepath_only)
+        
+        
         
     def _cursor_changed(self):
         

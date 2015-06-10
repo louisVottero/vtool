@@ -32,6 +32,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.code_widget.collapse.connect(self._close_splitter)
         self.script_widget.script_open.connect(self._code_change)
+        self.script_widget.script_open_external.connect(self._open_external)
         self.script_widget.script_focus.connect(self._script_focus)
         self.script_widget.script_rename.connect(self._script_rename)
         self.script_widget.script_remove.connect(self._script_remove)
@@ -112,10 +113,24 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         if not open_in_window:
             if self.sizes[1] != 0:
                 self.splitter.setSizes(self.sizes)
+        
+    def _open_external(self, code):
+
+        if not code:
+            return
+
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        split_code = code.split('.')
+        
+        path = process_tool.get_code_folder(split_code[0])
+
+        code_file = vtool.util_file.join_path(path, code)
+        
+        util_file.open_browser(code_file)
              
     def _script_rename(self, old_filepath, filepath):
-        
-        #self.code_widget.code_edit.get_tab_from_filepath( old_filepath )
         
         self.code_widget.code_edit.rename_tab(old_filepath, filepath)
         
@@ -259,6 +274,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
 class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     
     script_open = vtool.qt_ui.create_signal(object, object)
+    script_open_external = vtool.qt_ui.create_signal(object)
     script_focus = vtool.qt_ui.create_signal(object)
     script_rename = vtool.qt_ui.create_signal(object, object)
     script_remove = vtool.qt_ui.create_signal(object)
@@ -286,6 +302,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
                 
         self.code_manifest_tree.item_renamed.connect(self._rename)
         self.code_manifest_tree.script_open.connect(self._script_open)
+        self.code_manifest_tree.script_open_external.connect(self._script_open_external)
         self.code_manifest_tree.script_focus.connect(self._script_focus)
         self.code_manifest_tree.item_removed.connect(self._remove_code)
                 
@@ -300,6 +317,12 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
             code_folder = self._get_current_code()
             self.script_open.emit(code_folder, open_in_window)
+            
+    def _script_open_external(self):
+        
+        if self.code_manifest_tree.handle_selection_change:
+            code_folder = self._get_current_code()
+            self.script_open_external.emit(code_folder)
     
     def _script_focus(self, code_name):
         
@@ -381,6 +404,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     
     item_renamed = vtool.qt_ui.create_signal(object, object)
     script_open = vtool.qt_ui.create_signal(object, object)
+    script_open_external = vtool.qt_ui.create_signal()
     script_focus = vtool.qt_ui.create_signal(object)
     item_removed = vtool.qt_ui.create_signal(object)
     
@@ -494,6 +518,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.context_menu.addSeparator()
         new_window_action = self.context_menu.addAction('Open In New Window')
+        external_window_action = self.context_menu.addAction('Open In External')
         browse_action = self.context_menu.addAction('Browse')
         refresh_action = self.context_menu.addAction('Refresh')
         
@@ -507,6 +532,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         delete_action.triggered.connect(self.remove_current_item)
         
         new_window_action.triggered.connect(self._open_in_new_window)
+        external_window_action.triggered.connect(self._open_in_external)
         browse_action.triggered.connect(self._browse_to_code)
         refresh_action.triggered.connect(self._refresh_action)
     
@@ -563,6 +589,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         item = items[0]
         
         self.script_open.emit(item, True)
+        
+    def _open_in_external(self):
+        
+        self.script_open_external.emit()
         
     def _browse_to_code(self):
         items = self.selectedItems()
