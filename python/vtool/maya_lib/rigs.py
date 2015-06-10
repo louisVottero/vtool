@@ -513,7 +513,13 @@ class GroundRig(JointRig):
         scale = 1
         last_control = None
         
+        controls = []
+        
+        first_control = None
+        
         for inc in range(0, 3):
+            
+            
             if inc == 0:
                 control = self._create_control()
                 
@@ -521,9 +527,16 @@ class GroundRig(JointRig):
                 
                 cmds.parent(control.get(), self.control_group)
                 
+                first_control = control.get()
+                
             if inc > 0:
                 control = self._create_control(sub =  True)
                 control.set_curve_type(self.control_shape)
+                
+                util.connect_visibility('%s.subVisibility' % first_control, '%sShape' % control.get(), 1)
+                
+                
+            controls.append(control.get())
                 
             control.scale_shape(40*scale, 40*scale, 40*scale)
             
@@ -534,6 +547,10 @@ class GroundRig(JointRig):
             scale*=.9
             
             control.hide_scale_and_visibility_attributes()
+        
+        if self.joints and self.description != 'ground':
+            xform = util.create_xform_group(controls[0])
+            util.MatchSpace(self.joints[0], xform).translation_rotation()
         
         if self.joints:   
             cmds.parentConstraint(control.get(), self.joints[0])
@@ -2558,13 +2575,17 @@ class IkAppendageRig(BufferRig):
         if self.create_twist:
             self._create_twist_joint(top_control)
         
+        
         self._create_pole_vector()
+        
         
         if self.sub_control:
             self._create_stretchy(top_control, self.sub_control, btm_control)
         if not self.sub_control:
             self._create_stretchy(top_control, self.btm_control, btm_control)
-               
+        
+        
+            
 class TweakCurveRig(BufferRig):
     
     def __init__(self, name, side):

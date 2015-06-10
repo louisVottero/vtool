@@ -95,8 +95,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _update_build_widget(self, process_name):
         
-        
-        
         path = self.view_widget.tree_widget.directory
         path = util_file.join_path(path, process_name)
         data_path = util_file.join_path(path, '_data/build')

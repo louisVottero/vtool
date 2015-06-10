@@ -462,6 +462,8 @@ class SkinWeightData(MayaCustomData):
         
         for folder in folders:
             
+            util.show('Importing weights on %s' % folder)
+            
             mesh = folder
             
             if not cmds.objExists(mesh):
@@ -484,32 +486,26 @@ class SkinWeightData(MayaCustomData):
             influence_dict = self._get_influences(folder_path)
 
             influences = influence_dict.keys()
+            
+            if not influences:
+                continue
+            
             influences.sort()
             
-            available_influences = []
             for influence in influences:
-                if cmds.objExists(influence):
-                    available_influences.append(influence)
+                if not cmds.objExists(influence):
+                    cmds.select(cl = True)
+                    cmds.joint( n = influence, p = influence_dict[influence]['position'] )
             
             if not skin_cluster:
-                
-                if available_influences:
-                          
-                    skin_cluster = cmds.skinCluster(available_influences, mesh,  tsb = True, n = 'skin_%s' % mesh)[0]
-               
+                skin_cluster = cmds.skinCluster(influences, mesh,  tsb = True, n = 'skin_%s' % mesh)[0]
+            
             cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
             
             maya_lib.util.set_skin_weights_to_zero(skin_cluster)
             cmds.refresh()
             
             influence_inc = 0
-            
-            for influence in influences:
-                
-                if not cmds.objExists(influence):
-                    cmds.select(cl = True)
-                    cmds.joint( n = influence, p = influence_dict[influence]['position'] )
-                    cmds.skinCluster(skin_cluster, e = True, ai = influence)  
               
             influence_index_dict = maya_lib.util.get_skin_influences(skin_cluster, return_dict = True)
             
