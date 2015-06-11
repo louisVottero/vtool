@@ -396,7 +396,7 @@ class SettingsFile(object):
             
             value = fix_slashes(value)
             
-            value = eval(str(value))
+            value = eval( str(value) )
             
             self.settings_dict[name] = value
             

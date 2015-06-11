@@ -33,7 +33,7 @@ def undo_off(function):
         
         try:
             return_value = function(*args, **kwargs)
-        except (RuntimeError):
+        except:
             
             if undo_state:
                 cmds.undoInfo( state = True )
@@ -41,7 +41,6 @@ def undo_off(function):
                 # do not remove
                 print traceback.format_exc()
                 
-            
             raise(RuntimeError)
         
         if undo_state:          
@@ -76,7 +75,7 @@ def undo_chunk(function):
         
         try:
             return_value = function(*args, **kwargs)
-        except (RuntimeError):
+        except:
             
             if undo_chunk_active:
                 cmds.undoInfo(closeChunk = True)
@@ -90,8 +89,6 @@ def undo_chunk(function):
                 
                 
             raise(RuntimeError)
-                
-            
             
         if not closed:
             if undo_chunk_active:
@@ -4253,14 +4250,28 @@ class TransferWeight(object):
         influences = get_influences_on_skin(self.skin_cluster)
         
         for joint in joints:
+            
+            if not cmds.objExists(joint):
+                continue
+            
             if not joint in influences:
                 cmds.skinCluster(self.skin_cluster, e = True, ai = joint, wt = 0.0, nw = 1)
         
     @undo_off
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh = None, percent =1):
         
+        vtool.util.show('start: Transfer joint to joint.')
+        
         if not self.skin_cluster:
             vtool.util.show('No skinCluster found on %s. Could not transfer.' % self.mesh)
+            return
+        
+        if not destination_joints:
+            vtool.util.warning('Destination joints do not exists.')
+            return
+            
+        if not source_joints:
+            vtool.util.warning('Source joints do not exist.')
             return
         
         source_skin_cluster = self._get_skin_cluster(source_mesh)
@@ -4271,10 +4282,18 @@ class TransferWeight(object):
         destination_joint_map = {}
         
         for joint in source_joints:
+            if not cmds.objExists(joint):
+                vtool.util.warning('%s does not exist.' % joint)
+                continue
+                        
             index = get_index_at_skin_influence(joint,source_skin_cluster)
             joint_map[index] = joint
             
         for joint in destination_joints:
+            if not cmds.objExists(joint):
+                vtool.util.warning('%s does not exist.' % joint)
+                continue
+            
             index = get_index_at_skin_influence(joint,self.skin_cluster)
             destination_joint_map[index] = joint
         
@@ -4356,17 +4375,29 @@ class TransferWeight(object):
             
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         
+        vtool.util.show('done: Transfer joint to joint.')
+        
         bar.end()
          
     @undo_off  
     def transfer_joints_to_new_joints(self, joints, new_joints, falloff = 1, power = 4, weight_percent_change = 1):
         
+        vtool.util.show('start: Transfer joints to new joints.')
+        
         if not self.skin_cluster:
-            vtool.util.show('No skinCluster found on %s. Could not transfer.' % self.mesh)
+            vtool.util.warning('No skinCluster found on %s. Could not transfer.' % self.mesh)
             return
         
         joints = vtool.util.convert_to_sequence(joints)
         new_joints = vtool.util.convert_to_sequence(new_joints)
+        
+        if not new_joints:
+            vtool.util.warning('Destination joints do not exists.')
+            return
+            
+        if not joints:
+            vtool.util.warning('Source joints do not exist.')
+            return
         
         if not self.skin_cluster or not self.mesh:
             return
@@ -4381,6 +4412,10 @@ class TransferWeight(object):
         source_joint_weights = []
         
         for joint in joints:
+            
+            if not cmds.objExists(joint):
+                vtool.util.warning('%s does not exist.' % joint)
+                continue
             
             index = get_index_at_skin_influence(joint,self.skin_cluster)
             
@@ -4406,7 +4441,6 @@ class TransferWeight(object):
             for vert_index in range(0, len(verts)):
                 
                 int_vert_index = vtool.util.get_last_number(verts[vert_index])
-                
                 
                 value = influence_values[influence_index][int_vert_index]
                 
@@ -4437,6 +4471,7 @@ class TransferWeight(object):
             distances = get_distances(new_joints, vert_name)
             
             if not distances:
+                vtool.util.show('error: No distances found. Check your target joints.')
                 return
             
             found_weight = False
@@ -4497,8 +4532,6 @@ class TransferWeight(object):
                     
                     total += inverted_distance
                 
-                
-                    
                 for distance_inc in distances_in_range:
                     weight = inverted_distances[distance_inc]/total
                     joint_weight[new_joints[distance_inc]] = weight
@@ -4535,8 +4568,8 @@ class TransferWeight(object):
             inc += 1
           
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
-            
         bar.end()
+        vtool.util.show('done: Transfer joints to new joints.')
                 
 class MayaWrap(object):
     
@@ -9614,6 +9647,8 @@ def lock_attributes(node, bool_value = True, attributes = None, hide = False):
             cmds.setAttr(attribute_name, cb = False)
         
 def unlock_attributes(node, attributes = [], only_keyable = False):
+    
+    attributes = vtool.util.convert_to_sequence(attributes)
     
     if not attributes:
         if only_keyable == False:

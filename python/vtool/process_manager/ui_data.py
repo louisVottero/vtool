@@ -80,8 +80,12 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                     
                     if key == data_type:
                         
+                        print 'key is data', key, data_type
+                        
                         if self.file_widget:
+                            self.file_widget.close()
                             self.file_widget.deleteLater()
+                            self.file_widget = None
                         
                         self.file_widget = file_widgets[key]()
                         
@@ -96,8 +100,10 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         if not item:
             if not self.file_widget:
                 return
-                                    
+                                
+                
             if self.file_widget:
+                self.file_widget.hide()
                 self.file_widget.deleteLater()
                 self.file_widget = None
                 

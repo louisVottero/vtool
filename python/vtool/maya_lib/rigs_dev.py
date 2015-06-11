@@ -8,7 +8,7 @@ import maya.cmds as cmds
 import vtool.util
 import rigs
 import rigs_old
-from vtool.maya_lib.util import create_xform_group
+from vtool.maya_lib.util import create_xform_group, create_multi_follow
 
 class CurveTweakRig(rigs.CurveRig):
     
@@ -5495,12 +5495,13 @@ class IkFrontLegRig(rigs.IkAppendageRig):
         
         cmds.pointConstraint( self.offset_locator, guide_ik, mo = True )
         
-        cmds.orientConstraint( self.off_offset_locator, guide_ik, mo = True )
-        cmds.orientConstraint( self.offset_locator, guide_ik, mo = True )
+        #cmds.orientConstraint( self.off_offset_locator, guide_ik, mo = True )
+        #cmds.orientConstraint( self.offset_locator, guide_ik, mo = True )
         
         self.twist_guide_ik = guide_ik
         
         self.offset_pole_locator = self.offset_locator
+                
         
     def _create_pole_vector(self):
         
@@ -5526,33 +5527,33 @@ class IkFrontLegRig(rigs.IkAppendageRig):
             twist_var.connect_out('%s.twist' % self.ik_handle)
         
         
-        pole_joints = self.joints[:3]
+        pole_joints = self._get_pole_joints()
         
         position = util.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
         cmds.move(position[0], position[1], position[2], control.get())
-
+        
         cmds.poleVectorConstraint(control.get(), self.ik_handle)
         
         xform_group = util.create_xform_group( control.get() )
         
         follow_group = None
-        
+        self.pole_vector_xform = xform_group
         
         if self.create_twist:
-            """
-            if not self.pole_follow_transform:
-                follow_group = util.create_follow_group(self.top_control, xform_group)
-            if self.pole_follow_transform:
-                follow_group = util.create_follow_group(self.pole_follow_transform, xform_group)
-            """
-            constraint = cmds.parentConstraint(self.twist_guide, xform_group, mo = True)[0]
+
+                
+            cmds.parentConstraint(self.twist_guide, xform_group, mo = True)[0]
             
             follow_group = xform_group
             
-            constraint_editor = util.ConstraintEditor()
-            constraint = constraint_editor.get_constraint(self.twist_guide_ik, 'orientConstraint')
-            constraint_editor.create_switch(self.btm_control, 'autoTwist', constraint)
-            cmds.setAttr('%s.autoTwist' % self.btm_control, 0)
+            #constraint_editor = util.ConstraintEditor()
+            
+            
+            util.create_multi_follow([self.off_offset_locator, self.offset_locator], self.twist_guide_ik, self.btm_control, attribute_name = 'autoTwist', value = 0)
+            
+            util.unlock_attributes(self.btm_control, 'FOLLOW')
+            cmds.deleteAttr( self.btm_control, at='FOLLOW' )
+            
         
         
         if not self.create_twist:
@@ -5562,7 +5563,6 @@ class IkFrontLegRig(rigs.IkAppendageRig):
             
             if not self.pole_follow_transform:
                 follow_group = xform_group
-            #    follow_group = util.create_follow_group(self.top_control, xform_group)
         
         if follow_group:
             cmds.parent(follow_group,  self.control_group )
@@ -5575,7 +5575,8 @@ class IkFrontLegRig(rigs.IkAppendageRig):
         pole_vis.connect_out('%s.visibility' % xform_group)
         pole_vis.connect_out('%s.visibility' % rig_line)
         
-        self.pole_vector_xform = xform_group
+        
+        
         
     def _create_stretchy(self, top_transform, btm_transform, control):
         stretchy = util.StretchyChain()
@@ -5602,11 +5603,13 @@ class IkFrontLegRig(rigs.IkAppendageRig):
         
     def create(self):
         super(IkFrontLegRig, self).create()
+        #turn me back on right away
         
         cmds.setAttr('%s.translateY' % self.pole_vector_xform, 0)
         
         ik_xform = cmds.listRelatives(self.ik_handle, p = True)
         cmds.parent(ik_xform, self.offset_locator)
+        
         
 class IkBackLegRig(IkFrontLegRig):
     
@@ -5674,6 +5677,16 @@ class IkBackLegRig(IkFrontLegRig):
         self.offset_chain.pop(-1)
         
         cmds.orientConstraint(self.lower_offset_chain[0], self.offset_chain[-1])
+    
+
+    def _get_pole_joints(self):
+        
+        if not self.pole_angle_joints:
+        
+            return [self.ik_chain[0], self.ik_chain[1], self.ik_chain[2]]
+            
+        return self.pole_angle_joints
+                
         
     def _create_offset_control(self):
         
@@ -5723,7 +5736,7 @@ class IkBackLegRig(IkFrontLegRig):
             control.hide_translate_attributes()
         
         return self.offset_control
-     
+    
     def _rig_offset_chain(self):
         
         ik_handle = util.IkHandle( self._get_name('offset_top') )
@@ -5755,6 +5768,7 @@ class IkBackLegRig(IkFrontLegRig):
         self._create_offset_control()
         
         self._rig_offset_chain()
+        
         
         
 
