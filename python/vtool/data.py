@@ -263,6 +263,8 @@ class ScriptData(FileData):
     
     def save(self, lines, comment = None):
         
+        
+        
         filepath = util_file.join_path(self.directory, self._get_file_name())
         
         write_file = util_file.WriteFile(filepath)
@@ -431,9 +433,6 @@ class SkinWeightData(MayaCustomData):
     
     def _test_shape(self, mesh, shape_types):
         
-        
-        
-        
         for shape_type in shape_types:
             
             if maya_lib.util.has_shape_of_type(mesh, shape_type):
@@ -441,11 +440,8 @@ class SkinWeightData(MayaCustomData):
                 return True
         
         return False
-            
-    
-    def _import_maya_data(self):
         
-        cmds.undoInfo(state = False)
+    def _import_maya_data(self):
         
         path = util_file.join_path(self.directory, self.name)
         
@@ -458,6 +454,7 @@ class SkinWeightData(MayaCustomData):
             folders = util_file.get_folders(path)
         
         if not folders:
+            util.warning('No mesh folders found in skin data.')
             return
         
         for folder in folders:
@@ -467,6 +464,7 @@ class SkinWeightData(MayaCustomData):
             mesh = folder
             
             if not cmds.objExists(mesh):
+                util.warning('Skipping %s. It does not exist.' % mesh)
                 continue
             
             shape_types = ['mesh','nurbsSurface', 'nurbsCurve', 'lattice']
@@ -547,8 +545,6 @@ class SkinWeightData(MayaCustomData):
                 
         self._center_view()
         
-        cmds.undoInfo(state = True)
-        
     def import_data(self, filepath = None):
        
         if util.is_in_maya():
@@ -570,7 +566,7 @@ class SkinWeightData(MayaCustomData):
             split_thing = thing.split('|')
             
             if len(split_thing) > 1:
-                cmds.warning('\tSkin export failed. There is more than one %s.' % maya_lib.util.get_basename(thing))
+                util.warning('Skin export failed. There is more than one %s.' % maya_lib.util.get_basename(thing))
                 continue
             
             skin = maya_lib.util.find_deformer_by_type(thing, 'skinCluster')
@@ -671,6 +667,7 @@ class DeformerWeightData(MayaCustomData):
     
     def export_data(self, comment = None):
         
+        
         path = util_file.join_path(self.directory, self.name)
         
         meshes = maya_lib.util.get_selected_meshes()
@@ -681,6 +678,10 @@ class DeformerWeightData(MayaCustomData):
             wires = maya_lib.util.find_deformer_by_type(mesh, 'wire', return_all = True)
             
             deformers = clusters + wires
+            
+            if not deformers:
+                util.warning('Did not find a cluster or wire deformer on %s.' % mesh)
+                continue
             
             for deformer in deformers:
                 weights = maya_lib.util.get_deformer_weights(deformer, mesh)
@@ -695,6 +696,8 @@ class DeformerWeightData(MayaCustomData):
                 info_lines = [weights]
                 
                 write_info.write(info_lines)
+    
+        util.show('Exported %s data' % self.name)
     
     def import_data(self):
         
@@ -718,7 +721,8 @@ class DeformerWeightData(MayaCustomData):
             
             maya_lib.util.set_deformer_weights(weights, deformer)    
                  
-
+        util.show('Imported %s data' % self.name)
+        
 class MayaShadersData(CustomData):
     
     maya_ascii = 'mayaAscii'
@@ -892,6 +896,8 @@ class AnimationData(MayaCustomData):
         version = util_file.VersionFile(path)
         version.save(comment)
         
+        util.show('Exported %s data.' % self.name)
+        
     def import_data(self):
         
         path = util_file.join_path(self.directory, 'keyframes')
@@ -965,11 +971,7 @@ class AnimationData(MayaCustomData):
                 except:
                     cmds.warning('\tCould not connect %s to %s.input' % (input_attr,key))
                     
-        
-
-
-                
-
+        util.show('Imported %s data.' % self.name)
         
 class AtomData(MayaCustomData):
 
@@ -1059,8 +1061,6 @@ class PoseData(MayaCustomData):
     
     def export_data(self, comment):
         
-        
-        
         dir_path = util_file.create_dir(self.name, self.directory)
         
         pose_manager = maya_lib.corrective.PoseManager()
@@ -1072,6 +1072,7 @@ class PoseData(MayaCustomData):
         poses.append('pose_gr')
         
         if not poses:
+            util.warning('Found no poses to export.')
             return
         
         for pose in poses:
@@ -1115,7 +1116,7 @@ class PoseData(MayaCustomData):
             if rels:
                 cmds.parent(rels, 'pose_gr')
                 
-        util.show('Exported poses')
+        util.show('Exported %s data.' % self.name)
     
     
     def import_data(self):
@@ -1126,13 +1127,11 @@ class PoseData(MayaCustomData):
             return      
         
         if not util_file.is_dir(path):
-            
             return  
         
         pose_files = util_file.get_files(path)
         
         if not pose_files:
-            
             return
         
         poses = []
@@ -1162,7 +1161,7 @@ class PoseData(MayaCustomData):
         pose_manager.create_pose_blends()
         pose_manager.set_pose_to_default()
         
-        util.show('Imported %s data' % self.name)
+        util.show('Imported %s data.' % self.name)
         
         cmds.dgdirty(a = True)
         cmds.renderThumbnailUpdate( True )
@@ -1181,9 +1180,6 @@ class MayaAttributeData(MayaCustomData):
     def import_data(self):
         
         path = util_file.join_path(self.directory, self.name)
-        
-        
-        
         
         selection = cmds.ls(sl = True)
         
@@ -1207,12 +1203,10 @@ class MayaAttributeData(MayaCustomData):
 
             if not cmds.objExists(node_name):
                 
-                cmds.warning( '\tCould not import attributes for %s' % node_name ) 
+                util.warning( 'Skipping attribute import for %s. It does not exist.' % node_name ) 
                 continue
             
             lines = util_file.get_file_lines(filepath)
-            
-            
             
             for line in lines:
                 
@@ -1224,8 +1218,7 @@ class MayaAttributeData(MayaCustomData):
                 try:
                     cmds.setAttr('%s.%s' % (node_name, line_list[0]), line_list[1])    
                 except:
-                    cmds.warning('\tCould not set %s to %s' % (line_list[0], line_list[1]))
-                    
+                    util.warning('\tCould not set %s to %s. Maybe it is locked or connected.' % (line_list[0], line_list[1]))
             
         self._center_view()
 
@@ -1237,6 +1230,10 @@ class MayaAttributeData(MayaCustomData):
             util_file.create_dir(self.name, self.directory)
         
         selection = cmds.ls(sl = True)
+        
+        if not selection:
+            util.warning('Nothing selected. Please select at least one node to export attributes.')
+            return
         
         for thing in selection:
             
@@ -1308,8 +1305,6 @@ class MayaFileData(MayaCustomData):
         
         
     def open(self, filepath = None):
-        
-        
         
         open_file = None
         
@@ -1441,5 +1436,4 @@ class MayaAsciiFileData(MayaFileData):
     
     def _set_maya_file_type(self):
         return self.maya_ascii
-    
     

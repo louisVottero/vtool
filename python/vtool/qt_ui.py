@@ -1565,7 +1565,7 @@ class CodeEditTabs(BasicWidget):
         
         if hasattr(current_widget, 'text_edit'):
             current_widget = current_widget.text_edit
-            
+           
         current_widget.document().setModified(False)
         
         self.save.emit(current_widget)

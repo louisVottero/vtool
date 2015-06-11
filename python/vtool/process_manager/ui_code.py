@@ -189,7 +189,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         self.code_edit.no_tabs.connect(self._collapse)
         
-        self.save_file = ui_data.ScriptFileWidget()        
+        self.save_file = ui_data.ScriptFileWidget()       
         
         self.code_edit.save.connect( self._code_saved )
         self.code_edit.multi_save.connect(self._multi_save)
@@ -202,16 +202,8 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.save_file.hide()
         
     def _tab_changed(self, widget):
-        
-        if not widget:
-            return
-        
-        widget = widget.text_edit
-        
-        directory = vtool.util_file.get_dirname(widget.filepath)
-        self.save_file.set_directory(directory)
-        self.save_file.set_text_widget(widget)
-        
+        pass
+    
     def _collapse(self):
         self.collapse.emit()
         
@@ -224,10 +216,13 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
             self.code_edit.add_floating_tab(path)
                   
     def _code_saved(self, code_edit_widget):
-                
+         
         if not code_edit_widget:
             return
         
+        filepath = vtool.util_file.get_dirname(code_edit_widget.filepath)
+        
+        self.save_file.set_directory(filepath)
         self.save_file.set_text_widget(code_edit_widget)
         
         self.save_file.save_widget._save()

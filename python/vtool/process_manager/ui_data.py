@@ -80,8 +80,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                     
                     if key == data_type:
                         
-                        print 'key is data', key, data_type
-                        
                         if self.file_widget:
                             self.file_widget.close()
                             self.file_widget.deleteLater()
@@ -482,6 +480,7 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
 class DataFileWidget(vtool.qt_ui.FileManagerWidget):
     
     def set_directory(self, directory):
+        
         super(DataFileWidget, self).set_directory(directory)
         
         parent_path = vtool.util_file.get_parent_path(directory)
