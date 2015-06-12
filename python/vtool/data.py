@@ -14,8 +14,6 @@ if util.is_in_maya():
     import maya_lib.curve
     import maya_lib.corrective
 
-
-
 class DataManager(object):
     
     def __init__(self):
@@ -222,8 +220,6 @@ class FileData(Data):
     def create(self):
         name = self.name
         
-        #path = vtool.create_dir(name, self.directory)
-        
         self.file = util_file.create_file('%s.%s' % (name, self.data_extension), self.directory)    
     
     def get_file(self):
@@ -262,8 +258,6 @@ class FileData(Data):
 class ScriptData(FileData):
     
     def save(self, lines, comment = None):
-        
-        
         
         filepath = util_file.join_path(self.directory, self._get_file_name())
         
@@ -340,7 +334,6 @@ class ControlCvData(MayaCustomData):
     
     def import_data(self):
         
-        
         controls = maya_lib.util.get_controls()
 
         library = maya_lib.curve.CurveDataInfo()
@@ -355,16 +348,10 @@ class ControlCvData(MayaCustomData):
                 continue
             
             library.set_shape_to_curve(control, control, True)
-            
-            """
-            shapes = maya_lib.util.get_shapes(control)
-            if shapes:
-                library.set_shape_to_curve(shapes[0], control, True)
-            """
              
         self._center_view()
         
-        util.show('Imported %s data' % self.name)
+        util.show('Imported %s data.' % self.name)
     
     def export_data(self, comment):
         
@@ -378,22 +365,12 @@ class ControlCvData(MayaCustomData):
             
             library.add_curve(control)
             
-            """
-            shapes = maya_lib.util.get_shapes(control)          
-            
-            if shapes:
-                if shapes[0] != None:
-                    library.add_curve(shapes)
-            if not shapes:
-                util.warning("No shape node for: %s' % control")                
-            """
-            
         filepath = library.write_data_to_file()
         
         version = util_file.VersionFile(filepath)
         version.save(comment)
         
-        util.show('Exported control cvs')
+        util.show('Exported %s data.' % self.name)
           
 class SkinWeightData(MayaCustomData):
 

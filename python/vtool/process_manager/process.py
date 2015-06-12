@@ -687,15 +687,13 @@ class Process(object):
             cmds.refresh()
             
         status = None
-        read = None
+        #read = None
             
         try:
                  
             self._center_view()
             name = util_file.get_basename(script)
-            path = util_file.get_parent_path(script)
-            
-            
+            #path = util_file.get_parent_path(script)
             
             for external_code_path in self.external_code_paths:
                 if util_file.is_dir(external_code_path):

@@ -379,7 +379,8 @@ class Branch(object):
         
     def set_parent(self, branch):
         self.parent = branch
-        
+
+               
 
 #def hard_light_two_percents(percent1, percent2):
 #    

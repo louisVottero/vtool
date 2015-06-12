@@ -140,8 +140,6 @@ class ReadFile(FileManager):
                 
         lines = self.open_file.read()
         return get_text_lines(lines)
-        
-        
     
     def read(self ):
 
@@ -447,6 +445,10 @@ class SettingsFile(object):
         self._read()
         
         return self.filepath
+
+class FileInfo(FileManager):
+    
+    pass
 
 class FindUniquePath(util.FindUniqueString):
     
@@ -918,6 +920,7 @@ def copy_file(filepath, filepath_destination):
 #---- python
 
 def import_python_module(module_name, directory):
+    
     if not is_dir(directory):
         return
         
@@ -934,8 +937,7 @@ def import_python_module(module_name, directory):
                         
         exec('import %s' % script_name)
         exec('reload(%s)' % script_name)
-         
-        
+            
         module = eval(script_name)
         
         sys.path.remove(directory)
@@ -943,9 +945,11 @@ def import_python_module(module_name, directory):
     return module
 
 def source_python_module(code_directory):
+    
     try:
         try:
-            
+            for path in sys.path:
+                print path
             fin = open(code_directory, 'rb')
             import md5
             return  imp.load_source(md5.new(code_directory).hexdigest(), code_directory, fin)
@@ -956,12 +960,7 @@ def source_python_module(code_directory):
             
     except ImportError:
         traceback.print_exc(file = sys.stderr)
-        return None
-    
-    except:
-        traceback.print_exc(file = sys.stderr)
-        return None
-      
+        return None      
 
 def load_python_module(module_name, directory):
         

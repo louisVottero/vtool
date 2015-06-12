@@ -537,9 +537,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings.set('code_directory', directory)
         self.code_widget.set_code_directory(directory)
         self.settings_widget.set_code_directory(directory)
-
-
-       
+        
+        directories = util.convert_to_sequence(directory)
+        
+        for directory in directories:
+            
+            if util_file.is_dir(directory):
+                if not directory in sys.path:
+                    sys.path.append(directory)
 
 class ProcessBuildDataWidget(ui_data.MayaFileWidget):
     

@@ -14,13 +14,15 @@ import vtool.util
 
 import curve
 
-#--- decorators
-
 undo_chunk_active = False
+current_progress_bar = None
 
+#--- decorators
 
 def undo_off(function):
     def wrapper(*args, **kwargs):
+        
+        global current_progress_bar
         
         if not vtool.util.is_in_maya():
             return
@@ -37,11 +39,15 @@ def undo_off(function):
             
             if undo_state:
                 cmds.undoInfo( state = True )
-                
+                    
                 # do not remove
                 print traceback.format_exc()
                 
             raise(RuntimeError)
+        
+            if current_progress_bar:
+                current_progress_bar.end()
+                current_progress_bar = None
         
         if undo_state:          
             cmds.undoInfo( state = True )
@@ -50,13 +56,12 @@ def undo_off(function):
         
     return wrapper
 
-
-
 def undo_chunk(function):
     
     def wrapper(*args, **kwargs):
         
         global undo_chunk_active
+        global current_progress_bar
         
         if not vtool.util.is_in_maya():
             return
@@ -86,15 +91,19 @@ def undo_chunk(function):
             
                 # do not remove
                 print traceback.format_exc()
-                
-                
+            
             raise(RuntimeError)
+
+            if current_progress_bar:
+                current_progress_bar.end()
+                current_progress_bar = None
             
         if not closed:
             if undo_chunk_active:
                 cmds.undoInfo(closeChunk = True)
                 
                 undo_chunk_active = False
+
         
         return return_value
                      
@@ -341,9 +350,6 @@ class TransformFunction(MayaFunction):
     
     def _define_api_object(self, mobject):
         return OpenMaya.MFnTransform
-    
-    
-    
     
 class MeshFunction(MayaFunction):
     def _define_api_object(self, mobject):
@@ -4230,8 +4236,7 @@ class TransferWeight(object):
             self.vertices = mesh
             
             self.mesh = mesh[0].split('.')[0]
-
-
+            
         skin_deformer = self._get_skin_cluster(self.mesh)
         
         self.skin_cluster= None
@@ -4260,19 +4265,22 @@ class TransferWeight(object):
     @undo_off
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh = None, percent =1):
         
-        vtool.util.show('start: Transfer joint to joint.')
+        vtool.util.show('Start: %s transfer joint to joint.' % self.mesh)
         
         if not self.skin_cluster:
             vtool.util.show('No skinCluster found on %s. Could not transfer.' % self.mesh)
             return
         
         if not destination_joints:
-            vtool.util.warning('Destination joints do not exists.')
+            vtool.util.warning('Destination joints do not exist.')
             return
             
         if not source_joints:
             vtool.util.warning('Source joints do not exist.')
             return
+        
+        if not source_mesh:
+            source_mesh = self.mesh
         
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         source_value_map = get_skin_weights(source_skin_cluster)
@@ -4301,8 +4309,6 @@ class TransferWeight(object):
                             
         weighted_verts = []
         
-        source_vert_count = len( cmds.ls('%s.vtx[*]' % (source_mesh), flatten = True))
-        
         for influence_index in joint_map:
             
             if influence_index == None:
@@ -4327,6 +4333,7 @@ class TransferWeight(object):
         vert_count = len(weighted_verts)
         
         if not vert_count:
+            vtool.util.warning('Found no weights for specified influences on %s.' % source_skin_cluster)
             return
         
         bar = ProgressBar('transfer weight', vert_count)
@@ -4375,14 +4382,14 @@ class TransferWeight(object):
             
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         
-        vtool.util.show('done: Transfer joint to joint.')
+        vtool.util.show('Done: %s transfer joint to joint.' % self.mesh)
         
         bar.end()
          
     @undo_off  
     def transfer_joints_to_new_joints(self, joints, new_joints, falloff = 1, power = 4, weight_percent_change = 1):
         
-        vtool.util.show('start: Transfer joints to new joints.')
+        vtool.util.show('Start: %s transfer joints to new joints.' % self.mesh)
         
         if not self.skin_cluster:
             vtool.util.warning('No skinCluster found on %s. Could not transfer.' % self.mesh)
@@ -4429,6 +4436,7 @@ class TransferWeight(object):
             source_joint_weights.append(value_map[index])
             
         if not source_joint_weights:
+            vtool.util.warning('Found no weights for specified influences on %s.' % self.skin_cluster)
             return
             
         verts = self.vertices
@@ -4455,6 +4463,7 @@ class TransferWeight(object):
                         weights[int_vert_index] = value
         
         if not weighted_verts:
+            vtool.util.warning('Found no weights for specified influences on %s.' % self.skin_cluster)
             return
         
         bar = ProgressBar('transfer weight', len(weighted_verts))
@@ -4471,7 +4480,8 @@ class TransferWeight(object):
             distances = get_distances(new_joints, vert_name)
             
             if not distances:
-                vtool.util.show('error: No distances found. Check your target joints.')
+                vtool.util.show('Error: No distances found. Check your target joints.')
+                bar.end()
                 return
             
             found_weight = False
@@ -4569,7 +4579,7 @@ class TransferWeight(object):
           
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         bar.end()
-        vtool.util.show('done: Transfer joints to new joints.')
+        vtool.util.show('Done: %s transfer joints to new joints.' % self.mesh)
                 
 class MayaWrap(object):
     
@@ -10447,6 +10457,9 @@ class ProgressBar(object):
                                         isInterruptable=True,
                                         status= title,
                                         maxValue= count )
+        
+        global current_progress_bar 
+        current_progress_bar = self
     
     def inc(self, inc = 1):
         if is_batch():

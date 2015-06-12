@@ -1505,6 +1505,8 @@ class LoginWidget( BasicWidget ):
             
         if not bool_value:
             self.login_state.hide()
+     
+#--- Code Editor
         
 class CodeEditTabs(BasicWidget):
     
@@ -1667,8 +1669,10 @@ class CodeEditTabs(BasicWidget):
             widget = self.tabs.widget(inc)
             
             if widget.text_edit.document().isModified():
-                found.append(widget)
-                
+                found.append(widget.text_edit)
+        
+        print found
+        
         self.multi_save.emit(found, note)
         
     def clear(self):
@@ -1848,6 +1852,8 @@ class CodeEdit(BasicWidget):
         self.text_edit.textChanged.connect(self._text_changed)
         self.text_edit.file_set.connect(self._text_file_set)
         
+        self.text_edit.set_completer( PythonCompleter() )
+        
     def _build_menu_bar(self):
         
         self.menu_bar = QtGui.QMenuBar()
@@ -1857,7 +1863,6 @@ class CodeEdit(BasicWidget):
         file_menu = self.menu_bar.addMenu('File')
         save_action = file_menu.addAction('Save')
         browse_action = file_menu.addAction('Browse')
-        
         
         save_action.triggered.connect(self.text_edit._save)
         browse_action.triggered.connect(self._open_browser)
@@ -1870,13 +1875,10 @@ class CodeEdit(BasicWidget):
         
         util_file.open_browser(filepath_only)
         
-        
-        
     def _cursor_changed(self):
         
         code_widget = self.text_edit
         text_cursor = code_widget.textCursor()
-        #column_number = text_cursor.columnNumber()
         block_number = text_cursor.blockNumber()
         
         self.line_number.setText('Line: %s' % (block_number+1))
@@ -1959,6 +1961,10 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         self._line_number_highlight()
         
         self.find_widget = None
+        
+        self.completer = None
+        
+    
     
     def resizeEvent(self, event):
         
@@ -1984,12 +1990,57 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         return super(CodeTextEdit, self).wheelEvent(event)
     
     def focusInEvent(self, event):
+
+        if self.completer:
+            self.completer.setWidget(self)
         
         super(CodeTextEdit, self).focusInEvent(event)
         
         if not self.skip_focus:
             self._update_request()
+            
+    def keyPressEvent(self, event):
+        
+        if self.completer.popup().isVisible():
+         
+            if event.key() == QtCore.Qt.Key_Enter:
+                event.ignore()
+                return
+            if event.key() == QtCore.Qt.Key_Return:
+                event.ignore()
+                return
+
+        pass_on = True
     
+        if event.key() == QtCore.Qt.Key_Backtab or event.key() == QtCore.Qt.Key_Tab:
+            self._handle_tab(event)
+            pass_on = False
+
+        if pass_on:
+            super(CodeTextEdit, self).keyPressEvent(event)
+
+        text = self.completer.text_under_cursor()
+        
+        if not text:
+            self.completer.popup().hide()
+        
+        if text:
+            if text != self.completer.completionPrefix():
+                self.completer.setCompletionPrefix(text)
+                self.completer.popup().setCurrentIndex(self.completer.completionModel().index(0,0))
+            
+            
+            rect = self.cursorRect()
+            rect.translate(0, 2)
+            
+            rect.setWidth(self.completer.popup().sizeHintForColumn(0) 
+                          + self.completer.popup().verticalScrollBar().sizeHint().width())
+            
+            self.completer.complete(rect)
+
+    
+    
+        
     def _line_number_paint(self, event):
         
         paint = QtGui.QPainter(self.line_numbers)
@@ -2195,16 +2246,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     
         return '    %s' % string_value
     
-    def keyPressEvent(self, event):
-        
-        pass_on = True
     
-        if event.key() == QtCore.Qt.Key_Backtab or event.key() == QtCore.Qt.Key_Tab:
-            self._handle_tab(event)
-            pass_on = False
-    
-        if pass_on:
-            super(CodeTextEdit, self).keyPressEvent(event)
     
     def _handle_tab(self, event):    
         cursor = self.textCursor()
@@ -2331,6 +2373,14 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         self.last_modified = util_file.get_last_modified_date(self.filepath)
         
         self.file_set.emit()
+    
+
+    def set_completer(self, completer):
+        
+        self.completer = completer
+        
+        self.completer.setWidget(self)
+
     
     def set_find_widget(self, widget):
         
@@ -2590,6 +2640,51 @@ class CodeLineNumber(QtGui.QWidget):
     def paintEvent(self, event):
         
         self.code_editor._line_number_paint(event)
+
+class PythonCompleter(QtGui.QCompleter):
+    
+    def __init__(self):
+        super(PythonCompleter, self).__init__()
+        
+        #model = QtGui.QStringListModel(['global','good','bad','better'], self)
+        model = QtGui.QStringListModel([], self)
+        #model.setStringList(['global'])
+        
+        self.setCompletionMode(self.PopupCompletion)
+        self.setCaseSensitivity(QtCore.Qt.CaseSensitive)
+        self.setModel(model)
+        self.setModelSorting(self.CaseInsensitivelySortedModel)
+        self.setWrapAround(False)
+        self.activated.connect(self._insert_completion)
+    
+    def _insert_completion(self, completion_string):
+        
+        widget = self.widget()
+        
+        cursor = widget.textCursor()
+        
+        if completion_string == self.completionPrefix():
+            return
+        
+        extra = len(completion_string) - len(self.completionPrefix())
+        
+        cursor.movePosition(cursor.Left)
+        cursor.movePosition(cursor.EndOfWord)
+        cursor.insertText( completion_string[-extra:] )
+        
+        widget.setTextCursor(cursor)
+
+    def text_under_cursor(self):
+        
+        cursor = self.widget().textCursor()
+        cursor.select(cursor.WordUnderCursor)
+        
+        return cursor.selectedText()
+
+    def setWidget(self, widget):
+        super(PythonCompleter, self).setWidget(widget)
+        
+        self.setParent(widget)
 
 #--- Custom Painted Widgets
 

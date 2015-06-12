@@ -202,7 +202,10 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.save_file.hide()
         
     def _tab_changed(self, widget):
-        pass
+        filepath = vtool.util_file.get_dirname(widget.filepath)
+        
+        self.save_file.set_directory(filepath)
+        self.save_file.set_text_widget(widget)
     
     def _collapse(self):
         self.collapse.emit()
@@ -216,7 +219,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
             self.code_edit.add_floating_tab(path)
                   
     def _code_saved(self, code_edit_widget):
-         
+        
         if not code_edit_widget:
             return
         
