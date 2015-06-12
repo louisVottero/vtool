@@ -204,8 +204,10 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
     def _tab_changed(self, widget):
         filepath = vtool.util_file.get_dirname(widget.filepath)
         
+        
+        
         self.save_file.set_directory(filepath)
-        self.save_file.set_text_widget(widget)
+        self.save_file.set_text_widget(widget.text_edit)
     
     def _collapse(self):
         self.collapse.emit()

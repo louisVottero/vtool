@@ -73,7 +73,7 @@ def invert(base=None, corrective=None, name=None):
 
     invertedShape = cmds.duplicate(base, name=name)[0]
     # Delete the unnessary shapes
-    shapes = cmds.listRelatives(invertedShape, children=True, shapes=True)
+    shapes = cmds.listRelatives(invertedShape, children=True, shapes=True, fullPath = True)
     for s in shapes:
         if cmds.getAttr('%s.intermediateObject' % s):
             cmds.delete(s)

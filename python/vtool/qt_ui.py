@@ -1671,8 +1671,6 @@ class CodeEditTabs(BasicWidget):
             if widget.text_edit.document().isModified():
                 found.append(widget.text_edit)
         
-        print found
-        
         self.multi_save.emit(found, note)
         
     def clear(self):

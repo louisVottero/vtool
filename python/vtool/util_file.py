@@ -948,8 +948,7 @@ def source_python_module(code_directory):
     
     try:
         try:
-            for path in sys.path:
-                print path
+            
             fin = open(code_directory, 'rb')
             import md5
             return  imp.load_source(md5.new(code_directory).hexdigest(), code_directory, fin)

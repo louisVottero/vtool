@@ -5800,7 +5800,8 @@ class IkScapulaRig(rigs.BufferRig):
         cmds.parent(control.get(), self.control_group)
         
         util.MatchSpace(self.joints[0], control.get()).translation()
-        cmds.pointConstraint(control.get(), self.joints[0], mo = True)
+        cmds.parentConstraint(control.get(), self.joints[0], mo = True)
+        #cmds.pointConstraint(control.get(), self.joints[0], mo = True)
         
         util.create_xform_group(control.get())
         
@@ -5824,6 +5825,7 @@ class IkScapulaRig(rigs.BufferRig):
         handle = util.IkHandle(self._get_name())
         handle.set_start_joint(self.joints[0])
         handle.set_end_joint(self.joints[-1])
+        handle.set_solver(handle.solver_sc)
         handle = handle.create()
         
         cmds.pointConstraint(control, handle)
