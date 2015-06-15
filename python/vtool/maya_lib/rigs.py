@@ -3385,9 +3385,7 @@ class FootRollRig(RollRig):
         
         
         self.yawOut = self.ik_chain[self.yawOut_index]
-
         
-
     def _create_ik_handle(self, name, start_joint, end_joint):
         
         name = self._get_name(name)

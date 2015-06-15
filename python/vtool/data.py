@@ -41,7 +41,6 @@ class DataManager(object):
                 
     def get_type_instance(self, data_type):
         
-        
         for data in self.available_data:
             
             if data.is_type_match(data_type):
@@ -108,6 +107,7 @@ class DataFolder(util_file.FileManager):
         return self.settings.get('data_type')
     
     def set_data_type(self, data_type):
+        
         if not self.settings:
             self._load_folder()
 
@@ -123,13 +123,15 @@ class DataFolder(util_file.FileManager):
             return
         
         data_type = self.settings.get('data_type')
+        if not data_type:
+            data_type = self.data_type
         
         if not data_type:
             return
         
         data_manager = DataManager()
         instance = data_manager.get_type_instance(data_type)
-
+        
         if instance:
             instance.set_directory(self.folder_path)
             instance.set_name(self.name)
@@ -518,6 +520,17 @@ class SkinWeightData(MayaCustomData):
             cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
             cmds.skinCluster(skin_cluster, edit = True, forceNormalizeWeights = True)
             
+        
+        blend_weights_attr = '%s.blendWeights' % skin_cluster
+                
+        if cmds.objExists(blend_weights_attr):
+            file_path = util_file.join_path(folder_path, 'weight.blendWeights')
+        
+            influence = influence.split('.')[0]
+        
+            lines = util_file.get_file_lines(file_path)
+            weights = eval(lines[0])
+            
         util.show('Imported %s data' % self.name)
                 
         self._center_view()
@@ -539,6 +552,8 @@ class SkinWeightData(MayaCustomData):
         selection = cmds.ls(sl = True)
         
         for thing in selection:
+            
+            util.show('Exporting weights on %s' % thing)
             
             split_thing = thing.split('|')
             
@@ -578,12 +593,20 @@ class SkinWeightData(MayaCustomData):
                     
                     influence_line = thread.run(influence, skin, weights[influence], geo_path)
                     
-                    info_lines.append(influence_line)
+                    if influence_line:
+                        info_lines.append(influence_line)
                 
+                
+                blend_weights_attr = '%s.blendWeights' % skin
+                
+                if cmds.objExists(blend_weights_attr):
+                    blend_weights = maya_lib.util.get_skin_blend_weights(skin)
+                    
+                    filepath = util_file.create_file('weight.blendWeights', geo_path)
+                    write = util_file.WriteFile(filepath)
+                    write.write_line(blend_weights)
                 
                 write_info.write(info_lines)
-                
-                util.show('Exported %s data on %s' % (self.name, thing))
         
         version = util_file.VersionFile(path)
         version.save(comment)
@@ -596,6 +619,9 @@ class LoadWeightFileThread(threading.Thread):
     def run(self, influence_index, skin, weights, path):
         
         influence_name = maya_lib.util.get_skin_influence_at_index(influence_index, skin)
+        
+        if not influence_name or not cmds.objExists(influence_name):
+            return
         
         filepath = util_file.create_file('%s.weights' % influence_name, path)
         
@@ -1258,6 +1284,8 @@ class MayaFileData(MayaCustomData):
             to_select = ['persp','side','top','front']
         
         cmds.select(to_select, r = True )
+    
+    
     
     def import_data(self, filepath = None):
         

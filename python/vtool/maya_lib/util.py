@@ -7436,6 +7436,35 @@ def get_skin_weights(skin_deformer):
                 
     return value_map
 
+def get_skin_blend_weights(skin_deformer):
+    
+    indices = get_indices('%s.weightList' % skin_deformer)
+    
+    blend_weights_attr = '%s.blendWeights' % skin_deformer
+    blend_weights = get_indices(blend_weights_attr)
+    blend_weight_dict = {}
+        
+    if blend_weights:
+    
+        for blend_weight in blend_weights:
+            blend_weight_dict[blend_weight] = cmds.getAttr('%s.blendWeights[%s]' % (skin_deformer, blend_weight))
+    
+    
+    values = []
+    
+    for inc in range(0, len(indices)):
+        
+        if inc in blend_weight_dict:
+            values.append( blend_weight_dict[inc] )
+            continue
+                    
+        if not inc in blend_weight_dict:
+            values.append( 0.0 )
+            continue
+
+    return values
+
+
 def set_skin_weights_to_zero(skin_deformer):
     weights = cmds.ls('%s.weightList[*]' % skin_deformer)
         

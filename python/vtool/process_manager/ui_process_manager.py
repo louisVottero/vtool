@@ -5,7 +5,6 @@ import sys
 from vtool import qt_ui
 from vtool import util_file
 from vtool import util
-from vtool import data
 
 import process
 import ui_view
@@ -101,22 +100,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         data_dir = util_file.join_path(path, '_data')
         
-        if util_file.is_dir(data_dir):
-            
-            data_folder = data.DataFolder('build', data_dir)
-            data_type = data_folder.get_data_type()
-            
-            data_type = data_folder.get_data_type()
-            
-            
-            if data_type == 'maya.ascii':
-                self.build_widget.set_data_type(self.build_widget.ascii_data)
-            if data_type == 'maya.binary':
-                self.build_widget.set_data_type(self.build_widget.binary_data)
-            
-            if data_type == 'None':
-                data_folder.set_data_type('maya.ascii')
-        
+        self.build_widget.update_data(data_dir)
         
         self.build_widget.set_directory(data_path)
         
@@ -146,10 +130,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
         self.view_widget = ui_view.ViewProcessWidget()
         
-        
         self.data_widget = ui_data.DataProcessWidget()
-        
-        
         
         self.code_widget = ui_code.CodeProcessWidget()
         self.settings_widget = ui_settings.SettingsWidget()
@@ -196,7 +177,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         button_layout.addWidget(self.browser_button)
         button_layout.addWidget(help_button)
         
-        self.build_widget = ProcessBuildDataWidget()
+        self.build_widget = ui_data.ProcessBuildDataWidget()
         self.build_widget.hide()
         
         
@@ -546,54 +527,5 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if util_file.is_dir(directory):
                 if not directory in sys.path:
                     sys.path.append(directory)
-
-class ProcessBuildDataWidget(ui_data.MayaFileWidget):
-    
-    ascii_data = data.MayaAsciiFileData()
-    binary_data = data.MayaBinaryFileData()
-    
-    def __init__(self):
-        self.data_class_type = self.ascii_data
-        
-        super(ProcessBuildDataWidget,self).__init__()
-        
-        self.main_layout.setAlignment(QtCore.Qt.AlignBottom)
-        
-        #self.tab_widget.setTabPosition(self.tab_widget.)
-        
-    
-    def _define_main_tab_name(self):
-        return 'BUILD'
-    
-    def _define_data_class(self):
-        return self.data_class_type
-    
-    def _define_save_widget(self):
-        return ProcessSaveFileWidget()
-    
-    def set_data_type(self, data_class):
-        
-        
-        self.data_class_type = data_class
-        self.save_widget.set_data_class(data_class)
-        
-        
-    
-    
-class ProcessSaveFileWidget(ui_data.MayaSaveFileWidget):
-    
-    
-    def _build_widgets(self):
-        
-        save_button = self._create_button('Save')
-        save_button.setMinimumWidth(100)
-        open_button = self._create_button('Open')
-        open_button.setMinimumWidth(100)
-        save_button.clicked.connect( self._save_file )
-        open_button.clicked.connect( self._open_file )
-        
-        self.main_layout.setAlignment(QtCore.Qt.AlignLeft)
-        self.main_layout.addWidget(save_button)
-        self.main_layout.addWidget(open_button)
-
-        
+                    
+                    

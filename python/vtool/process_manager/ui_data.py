@@ -487,7 +487,7 @@ class DataFileWidget(vtool.qt_ui.FileManagerWidget):
         name = vtool.util_file.get_basename(directory)
         
         data_folder = vtool.data.DataFolder(name, parent_path)
-        
+                        
         instance = data_folder.get_folder_data_instance()
         
         self.save_widget.set_directory(directory)
@@ -495,6 +495,7 @@ class DataFileWidget(vtool.qt_ui.FileManagerWidget):
         
         self.history_widget.set_directory(directory)
         self.history_widget.set_data_class(instance)
+                
 
 class MayaDataFileWidget(DataFileWidget):
 
@@ -506,6 +507,7 @@ class MayaDataFileWidget(DataFileWidget):
         
     def _define_history_widget(self):
         return MayaDataHistoryFileWidget()
+    
     
 class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
@@ -868,6 +870,64 @@ class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         
         maya_file = vtool.data.MayaFileData()
         maya_file.import_data(version_file)  
+
+class ProcessBuildDataWidget(MayaFileWidget):
+    
+    ascii_data = vtool.data.MayaAsciiFileData()
+    binary_data = vtool.data.MayaBinaryFileData()
+    
+    def __init__(self):
+        
+        self.data_class_type = self.ascii_data
+        
+        super(ProcessBuildDataWidget,self).__init__()
+        
+        self.main_layout.setAlignment(QtCore.Qt.AlignBottom)
+    
+    def _define_main_tab_name(self):
+        return 'BUILD'
+    
+    def _define_data_class(self):
+        return self.data_class_type
+    
+    def _define_save_widget(self):
+        return ProcessSaveFileWidget()
+    
+    def update_data(self, data_directory):
+        
+        data_folder = vtool.data.DataFolder('build', data_directory)
+        
+        data_type = data_folder.get_data_type()
+        
+        if data_type == 'maya.ascii':
+            self.set_data_type(self.ascii_data)
+        if data_type == 'maya.binary':
+            self.set_data_type(self.binary_data)
+        
+        if data_type == 'None':
+            data_folder.set_data_type('maya.ascii')
+            self.set_data_type(self.ascii_data)
+
+    def set_data_type(self, data_class):
+        
+        self.data_class_type = data_class
+        self.save_widget.set_data_class(data_class)
+    
+    
+class ProcessSaveFileWidget(MayaSaveFileWidget):
+    
+    def _build_widgets(self):
+        
+        save_button = self._create_button('Save')
+        save_button.setMinimumWidth(100)
+        open_button = self._create_button('Open')
+        open_button.setMinimumWidth(100)
+        save_button.clicked.connect( self._save_file )
+        open_button.clicked.connect( self._open_file )
+        
+        self.main_layout.setAlignment(QtCore.Qt.AlignLeft)
+        self.main_layout.addWidget(save_button)
+        self.main_layout.addWidget(open_button)
 
         
 file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
