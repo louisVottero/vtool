@@ -756,6 +756,9 @@ class FkLocalRig(FkRig):
 
     def set_control_scale(self, bool_value):
         self.rig_scale = bool_value
+        
+    def set_scalable(self, bool_value):
+        self.rig_scale = bool_value
 
     def set_local_parent(self, local_parent):
         self.main_local_parent = local_parent 
@@ -1044,6 +1047,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         self.ribbon_offset = 1
         self.ribbon_offset_axis = 'Y'
         self.create_follows = True
+        self.closest_y = False
 
     def _create_curve(self):
         
@@ -1333,15 +1337,9 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         handle.set_end_joint(joints[-1])
         handle.set_curve(self.ik_curve)
         handle = handle.create()
-        
-        """
-        handle = cmds.ikHandle( sol = 'ikSplineSolver', 
-                       ccv = False, 
-                       pcv = False , 
-                       sj = joints[0], 
-                       ee = joints[-1], 
-                       c = self.ik_curve, n = 'splineIk_%s' % self._get_name())[0]
-        """
+
+        if self.closest_y:
+            cmds.setAttr('%s.dWorldUpAxis' % handle, 2)
         
         if children:
             cmds.parent(children, joints[-1])
@@ -1444,6 +1442,9 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
 
     def set_skip_first_control(self, bool_value):
         self.skip_first_control = bool_value
+        
+    def set_closest_y(self, bool_value):
+        self.closest_y = bool_value
         
     def set_create_follows(self, bool_value):
         self.create_follows = bool_value
@@ -2666,6 +2667,9 @@ class TweakCurveRig(BufferRig):
         self.control_count = int_value
         
     def set_use_ribbon(self, bool_value):
+        self.use_ribbon = bool_value
+        
+    def set_ribbon(self, bool_value):
         self.use_ribbon = bool_value
         
     def set_ribbon_offset(self, float_value):
