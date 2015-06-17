@@ -8,7 +8,6 @@ import maya.cmds as cmds
 import vtool.util
 import rigs
 import rigs_old
-from vtool.maya_lib.util import create_xform_group, create_multi_follow
 
 class CurveTweakRig(rigs.CurveRig):
     
@@ -3429,8 +3428,8 @@ class WorldStickyFadeRig(WorldStickyRig):
             
             cmds.parent(sub_control.get(), control.get())
                 
-            xform = create_xform_group(control.get())
-            driver = create_xform_group(control.get(), 'driver')
+            xform = util.create_xform_group(control.get())
+            driver = util.create_xform_group(control.get(), 'driver')
             
             self.corner_xforms.append(xform)
             self.corner_controls.append(control.get())
@@ -3458,7 +3457,6 @@ class WorldStickyFadeRig(WorldStickyRig):
             
             cmds.pointConstraint(control.get(), corner_offset)
             cmds.pointConstraint(sub_control.get(), sub_corner_offset)
-            
             
         self.side =orig_side
 
@@ -6317,6 +6315,206 @@ class IkSpineRig(rigs.BufferRig):
         self._create_controls()
 
 #--- Misc
+
+class BendyRig(rigs.Rig):
+    
+    def __init__(self, description, side):
+        super(BendyRig, self).__init__(description, side)
+        
+        self.guide_enabled = True
+        self.top_twist_enabled = True
+        self.btm_twist_enabled = True
+        
+        self.top_control_as_locator = False
+        self.btm_control_as_locator = False
+        
+        self.start_joint = None
+        self.end_joint = None
+        
+        self.joint_count = 5
+        self.tweak_joints = []
+        
+        self.up_object = None
+        
+    def _create_tweak_joints(self):
+        
+        if not self.tweak_joints:
+            
+            joints = util.subdivide_joint(self.start_joint, 
+                                     self.end_joint, 
+                                     self.joint_count - 2, 'joint', 
+                                     '%s_1_%s' % (self.description,self.side), True)
+            
+            for joint in joints[:-1]:
+                orient = util.OrientJoint(joint)
+                
+                if not self.up_object:
+                    self.up_object = self.start_joint
+                
+                orient.set_aim_up_at_object(self.up_object)
+                orient.run()
+            
+            cmds.makeIdentity(joints[-1], r = True, jo = True, apply = True)
+            
+            self.tweak_joints = joints
+            
+        #cmds.parent(self.tweak_joints, self.start_joint)
+            
+        cmds.parentConstraint(self.top_control, joints[0])
+        cmds.parentConstraint(self.btm_control, joints[-1])
+    
+    def _create_guide(self):
+        
+        if not self.start_joint or not self.end_joint:
+            return
+        
+        name = self._get_name()
+    
+        position_top = cmds.xform(self.start_joint, q = True, t = True, ws = True)
+        position_btm = cmds.xform(self.end_joint, q = True, t = True, ws = True)
+    
+        cmds.select(cl = True)
+        guide_top = cmds.joint( p = position_top, n = self._get_name('twist', 'top') )
+        cmds.select(cl = True)
+        guide_btm = cmds.joint( p = position_btm, n = self._get_name('twist', 'btm') )
+        
+        util.MatchSpace(self.start_joint, guide_top).rotation()
+        
+        cmds.makeIdentity(guide_top, r = True, apply = True)
+        
+        cmds.parent(guide_btm, guide_top)
+        
+        cmds.makeIdentity(guide_btm, r = True, jo = True, apply = True)
+        
+        handle = util.IkHandle(name)
+        handle.set_solver(handle.solver_sc)
+        handle.set_start_joint(guide_top)
+        handle.set_end_joint(guide_btm)
+        
+        handle = handle.create()
+        
+        cmds.parent(guide_top, self.setup_group)
+        
+        util.create_follow_group(guide_top, self.top_control_xform)
+        cmds.parent(handle, self.btm_control)
+    
+    def _create_controls(self):
+        
+        self.main_control_group = self._create_control_group('main')
+        
+        self._create_top_control()
+        self._create_btm_control()
+        
+        util.create_follow_group(self.start_joint, self.main_control_group)
+    
+    def _create_top_control(self):
+        
+        control = None
+        
+        if not self.top_control_as_locator:
+            control = self._create_control()
+            control = control.get()
+            
+        if self.top_control_as_locator:
+            locator = cmds.spaceLocator(n = self._get_name('locator'))[0]
+            control = locator
+            
+        util.MatchSpace(self.start_joint, control).translation_rotation()
+        xform = util.create_xform_group(control)
+        
+        cmds.parent(xform, self.main_control_group )
+        
+        self.top_control = control
+        self.top_control_xform = xform
+    
+    def _create_btm_control(self):
+        
+        control = None
+        
+        if not self.btm_control_as_locator:
+            control = self._create_control()
+            control = control.get()
+            
+        if self.btm_control_as_locator:
+            locator = cmds.spaceLocator(n = self._get_name('locator'))[0]
+            control = locator
+            
+        util.MatchSpace(self.end_joint, control).translation_rotation()
+        xform = util.create_xform_group(control)
+        
+        cmds.parent(xform, self.main_control_group )
+        
+        self.btm_control = control   
+        self.btm_control_xform = xform
+         
+    def _create_mid_controls(self):
+        
+        self._create_sparse_mid_controls()
+    
+    def _create_sparse_mid_controls(self):
+        
+        for joint in self.tweak_joints[1:-1]:
+            control = self._create_control()
+            control = control.get()
+            
+            util.MatchSpace(joint, control).translation_rotation()
+            xform = util.create_xform_group(control)
+            
+            cmds.parent(xform, self.main_control_group)
+            
+            cmds.parentConstraint(control, joint)
+    
+    
+            
+    def _create_top_twist(self):
+        pass
+    
+    def _create_btm_twist(self):
+        pass
+    
+    def set_create_guide(self, bool_value):
+        self.guide_enabled = bool_value
+        
+    def set_create_top_twist(self, bool_value):
+        self.top_twist_enabled = bool_value
+        
+    def set_create_btm_twist(self, bool_value):
+        self.btm_twist_enabled = bool_value
+        
+    def set_top_control_as_locator(self, bool_value):
+        self.top_control_as_locator = bool_value
+        
+    def set_btm_control_as_locator(self, bool_value):
+        self.btm_control_as_locator = bool_value
+        
+    def set_joint_count(self, value):
+        self.joint_count = value
+        
+    def set_tweak_joints(self, list_of_joints):
+        self.tweak_joints = list_of_joints
+        
+    def set_start_joint(self, joint_name):
+        self.start_joint = joint_name
+        
+    def set_end_joint(self, joint_name):
+        self.end_joint = joint_name
+        
+    def create(self):
+        
+        self._create_controls()
+        
+        self._create_tweak_joints()
+        
+        self._create_mid_controls()
+        
+        if self.guide_enabled:
+            self._create_guide()
+    
+        
+    
+    
+class BendyChainRig(rigs.Rig):
+    pass
 
 class WeightFade(object):
     

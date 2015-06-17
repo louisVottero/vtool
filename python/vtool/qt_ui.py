@@ -8,6 +8,7 @@ import threading
 import string
 import re
 import random
+import sys
 
 
 try:
@@ -1671,8 +1672,6 @@ class CodeEditTabs(BasicWidget):
             if widget.text_edit.document().isModified():
                 found.append(widget.text_edit)
         
-        print found
-        
         self.multi_save.emit(found, note)
         
     def clear(self):
@@ -2021,8 +2020,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
 
         text = self.completer.text_under_cursor()
         
-        if not text:
-            self.completer.popup().hide()
+        #if not text:
+        #    self.completer.popup().hide()
         
         if text:
             if text != self.completer.completionPrefix():
@@ -2372,6 +2371,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         self.last_modified = util_file.get_last_modified_date(self.filepath)
         
+        self.completer.set_filepath(filepath)
+        
         self.file_set.emit()
     
 
@@ -2380,6 +2381,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         self.completer = completer
         
         self.completer.setWidget(self)
+        
+        self.completer.set_filepath(self.filepath)
 
     
     def set_find_widget(self, widget):
@@ -2646,16 +2649,52 @@ class PythonCompleter(QtGui.QCompleter):
     def __init__(self):
         super(PythonCompleter, self).__init__()
         
+        self.model_strings = []
+        
         #model = QtGui.QStringListModel(['global','good','bad','better'], self)
-        model = QtGui.QStringListModel([], self)
+        self.string_model =QtGui.QStringListModel(self.model_strings, self)
         #model.setStringList(['global'])
         
         self.setCompletionMode(self.PopupCompletion)
         self.setCaseSensitivity(QtCore.Qt.CaseSensitive)
-        self.setModel(model)
+        self.setModel(self.string_model)
         self.setModelSorting(self.CaseInsensitivelySortedModel)
         self.setWrapAround(False)
         self.activated.connect(self._insert_completion)
+        
+        self._construct_model_string()
+        
+    def _construct_model_string(self):
+        
+        modules = self._get_available_modules()
+        
+        self.model_strings = modules
+        
+        self.string_model.setStringList(self.model_strings)
+    
+    def _get_available_modules(self):
+        
+        imports = []
+        
+        for path in sys.path:
+            
+            fix_path = util_file.fix_slashes(path)
+            
+            if not util_file.is_dir(fix_path):
+                continue
+            
+            python_files = util_file.get_files_with_extension('py', fix_path, fullpath = False)
+            
+            for python_file in python_files:
+                
+                python_file_name = python_file.split('.')[0]
+                
+                import_name = 'import %s' % python_file_name
+                
+                if not import_name in imports:
+                    imports.append(import_name)
+        
+        return imports
     
     def _insert_completion(self, completion_string):
         
@@ -2674,17 +2713,29 @@ class PythonCompleter(QtGui.QCompleter):
         
         widget.setTextCursor(cursor)
 
-    def text_under_cursor(self):
+    def _get_top_level_list(self):
         
-        cursor = self.widget().textCursor()
-        cursor.select(cursor.WordUnderCursor)
-        
-        return cursor.selectedText()
-
+        pass
+    
     def setWidget(self, widget):
         super(PythonCompleter, self).setWidget(widget)
         
         self.setParent(widget)
+
+    def text_under_cursor(self):
+        
+        cursor = self.widget().textCursor()
+        
+        cursor.select(cursor.LineUnderCursor)
+        
+        return cursor.selectedText()
+    
+    def set_filepath(self, filepath):
+        if not filepath:
+            print 'no path'
+            return
+        
+        self.filepath = filepath
 
 #--- Custom Painted Widgets
 
