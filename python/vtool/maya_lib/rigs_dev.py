@@ -5798,7 +5798,8 @@ class IkScapulaRig(rigs.BufferRig):
         cmds.parent(control.get(), self.control_group)
         
         util.MatchSpace(self.joints[0], control.get()).translation()
-        cmds.pointConstraint(control.get(), self.joints[0], mo = True)
+        cmds.parentConstraint(control.get(), self.joints[0], mo = True)
+        #cmds.pointConstraint(control.get(), self.joints[0], mo = True)
         
         util.create_xform_group(control.get())
         
@@ -5822,6 +5823,7 @@ class IkScapulaRig(rigs.BufferRig):
         handle = util.IkHandle(self._get_name())
         handle.set_start_joint(self.joints[0])
         handle.set_end_joint(self.joints[-1])
+        handle.set_solver(handle.solver_sc)
         handle = handle.create()
         
         cmds.pointConstraint(control, handle)
@@ -6044,8 +6046,6 @@ class BackFootRollRig(QuadFootRollRig):
     def _create_heel_roll(self, parent, name = 'heelRoll', scale = 1):
         control, xform, driver = self._create_pivot_control(self.heel, name, scale = scale)
         
-        
-        
         cmds.parent(xform, parent)
         
         attribute_control = self._get_attribute_control()
@@ -6178,6 +6178,7 @@ class BackFootRollRig(QuadFootRollRig):
             
             bankin_roll = self._create_yawin_roll(ball_roll, 'bankIn', scale = .5)
             bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut', scale = .5)
+            #testing
             #bankforward_roll = self._create_toe_roll(bankout_roll, 'bankForward', scale = .5)
             #bankback_roll = self._create_heel_roll(bankforward_roll, 'bankBack', scale = .5)
         
