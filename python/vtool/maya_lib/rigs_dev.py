@@ -6395,8 +6395,14 @@ class BendyRig(rigs.Rig):
         handle = handle.create()
         
         cmds.parent(guide_top, self.setup_group)
+        util.create_follow_group(self.start_joint, guide_top)
         
-        util.create_follow_group(guide_top, self.top_control_xform)
+        control_guide = self._create_control_group('guide')
+        
+        cmds.parent(self.top_control_xform, control_guide)
+        cmds.parent(self.mid_xforms, control_guide)
+        
+        util.create_follow_group(guide_top, control_guide)
         cmds.parent(handle, self.btm_control)
     
     def _create_controls(self):
@@ -6454,6 +6460,9 @@ class BendyRig(rigs.Rig):
     
     def _create_sparse_mid_controls(self):
         
+        self.mid_xforms = []
+        self.mid_controls = []
+        
         for joint in self.tweak_joints[1:-1]:
             control = self._create_control()
             control = control.get()
@@ -6464,8 +6473,9 @@ class BendyRig(rigs.Rig):
             cmds.parent(xform, self.main_control_group)
             
             cmds.parentConstraint(control, joint)
-    
-    
+            
+            self.mid_xforms.append(xform)
+            self.mid_controls.append(control)
             
     def _create_top_twist(self):
         pass
