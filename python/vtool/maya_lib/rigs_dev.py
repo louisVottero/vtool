@@ -6156,6 +6156,9 @@ class BackFootRollRig(QuadFootRollRig):
     
     def _create_pivot_groups(self):
 
+        #toe_control, toe_control_xform = self._create_toe_rotate_control()
+        toe_fk_control, toe_fk_control_xform = self._create_toe_fk_rotate_control()
+
         attribute_control = self._get_attribute_control()
 
         self._create_ik() 
@@ -6186,7 +6189,7 @@ class BackFootRollRig(QuadFootRollRig):
             cmds.parentConstraint(bankout_roll, self.ankle_handle, mo = True)
         
         if not self.add_bank:
-        
+            cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
             cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
             cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
                     
@@ -6201,6 +6204,8 @@ class BackFootRollRig(QuadFootRollRig):
         self._create_roll_attributes()
         
         self._create_pivot_groups()
+
+
 
 class IkSpineRig(rigs.BufferRig):
     

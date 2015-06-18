@@ -3369,6 +3369,7 @@ class FootRollRig(RollRig):
         self.main_control_follow = None
     
     def _define_joints(self):
+        
         self.ankle_index = 0
         self.heel_index = 1
         self.ball_index = 2
@@ -3376,13 +3377,11 @@ class FootRollRig(RollRig):
         self.yawIn_index = 4
         self.yawOut_index = 5
         
-        
         self.ankle = self.ik_chain[self.ankle_index]
         self.heel = self.ik_chain[self.heel_index]
         self.ball = self.ik_chain[self.ball_index]
         self.toe = self.ik_chain[self.toe_index]
         self.yawIn = self.ik_chain[self.yawIn_index]
-        
         
         self.yawOut = self.ik_chain[self.yawOut_index]
         
@@ -3501,8 +3500,6 @@ class FootRollRig(RollRig):
         
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
-        
-            
         
         if self.mirror_yaw and self.side == 'R':
             cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
