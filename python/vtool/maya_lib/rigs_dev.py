@@ -6380,9 +6380,9 @@ class BendyRig(rigs.Rig):
         position_btm = cmds.xform(self.end_joint, q = True, t = True, ws = True)
     
         cmds.select(cl = True)
-        guide_top = cmds.joint( p = position_top, n = self._get_name('twist', 'top') )
+        guide_top = cmds.joint( p = position_btm, n = self._get_name('twist', 'top') )
         cmds.select(cl = True)
-        guide_btm = cmds.joint( p = position_btm, n = self._get_name('twist', 'btm') )
+        guide_btm = cmds.joint( p = position_top, n = self._get_name('twist', 'btm') )
         
         util.MatchSpace(self.start_joint, guide_top).rotation()
         

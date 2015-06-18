@@ -11,9 +11,7 @@ if qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
 if qt_ui.is_pyside():
     from PySide import QtCore, QtGui
-        
-        
- 
+
 class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
     description = 'Process'

@@ -526,10 +526,13 @@ class SkinWeightData(MayaCustomData):
         if cmds.objExists(blend_weights_attr):
             file_path = util_file.join_path(folder_path, 'weight.blendWeights')
         
-            influence = influence.split('.')[0]
+            if util_file.is_file(file_path):
         
-            lines = util_file.get_file_lines(file_path)
-            weights = eval(lines[0])
+                influence = influence.split('.')[0]
+            
+                
+                lines = util_file.get_file_lines(file_path)
+                weights = eval(lines[0])
             
         util.show('Imported %s data' % self.name)
                 
