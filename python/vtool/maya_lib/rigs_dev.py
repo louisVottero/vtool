@@ -6227,19 +6227,26 @@ class BackFootRollRig(QuadFootRollRig):
         yawin_roll = self._create_yawin_roll(heel_roll, 'yawIn')
         yawout_roll = self._create_yawout_roll(yawin_roll, 'yawOut')
         
+        next_roll = yawout_roll
         
+        if not self.extra_ball:
+            ball_roll = self._create_ball_roll(yawout_roll)
+            next_roll = ball_roll
+        
+            
         if self.add_bank:
             
-            bankin_roll = self._create_yawin_roll(yawout_roll, 'bankIn', scale = .5)
+            bankin_roll = self._create_yawin_roll(next_roll, 'bankIn', scale = .5)
             bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut', scale = .5)
             #testing
             #bankforward_roll = self._create_toe_roll(bankout_roll, 'bankForward', scale = .5)
             #bankback_roll = self._create_heel_roll(bankforward_roll, 'bankBack', scale = .5)
 
             next_roll = bankout_roll
+            
         if not self.add_bank:
-            next_roll = yawout_roll
-
+            if not self.extra_ball:
+                next_roll = yawout_roll
 
         if self.extra_ball:
             ball_roll = self._create_ball_roll(next_roll)
@@ -6250,8 +6257,11 @@ class BackFootRollRig(QuadFootRollRig):
             cmds.parentConstraint(extra_roll, self.ankle_handle, mo = True)
         
         if not self.extra_ball:
-            ball_roll = self._create_ball_roll(next_roll)
-            cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
+            
+            if not self.add_bank:
+                cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
+            if self.add_bank:
+                cmds.parentConstraint(bankout_roll, self.ankle_handle, mo = True)
         
         cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
             
