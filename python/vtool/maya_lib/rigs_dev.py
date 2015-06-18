@@ -6025,6 +6025,7 @@ class BackFootRollRig(QuadFootRollRig):
         super(BackFootRollRig, self).__init__(name, side)
         
         self.add_bank = True
+        self.extra_ball = None
     
     def _create_toe_roll(self, parent, name = 'toeRoll', scale = 1):
         
@@ -6080,6 +6081,28 @@ class BackFootRollRig(QuadFootRollRig):
         
         return control
     
+    def _create_extra_roll(self, parent):
+
+        control, xform, driver = self._create_pivot_control(self.extra_ball, 'extra')
+        
+        util.disconnect_attribute('%sShape.visibility' % control)
+        cmds.setAttr('%sShape.visibility' % control, 1)
+        
+        util.connect_reverse('%s.ikFk' % self.roll_control.get(), '%sShape.visibility' % control)
+        
+        cmds.parent(xform, parent)
+        
+        attribute_control = self._get_attribute_control()
+        
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.extraRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')        
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.extraRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.extraRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        #cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 20, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        
+        return control
+    
     def _create_roll_control(self, transform):
         
         roll_control = self._create_control('roll') 
@@ -6108,20 +6131,35 @@ class BackFootRollRig(QuadFootRollRig):
     
     def _define_joints(self):
         
-        index_list = self.defined_joints
+        #index_list = self.defined_joints
         
-        if not index_list:
-            index_list = [0,1,2,3,4,5]
+        #if not index_list:
+        #    index_list = [0,1,2,3,4,5]
         
-        self.ankle_index = index_list[0]
-        self.heel_index = index_list[1]
-        self.ball_index = index_list[2]
-        self.toe_index = index_list[3]
-        self.yawIn_index = index_list[4]
-        self.yawOut_index = index_list[5]
+        print self.ik_chain
         
+        self.ankle_index = 0
+        self.heel_index = 1
+        
+        if self.extra_ball:
+            self.extra_ball_index = 2
+            self.ball_index = 3
+            self.toe_index = 4
+            self.yawIn_index = 5
+            self.yawOut_index = 6
+        
+        if not self.extra_ball:
+            self.ball_index = 2
+            self.toe_index = 3
+            self.yawIn_index = 4
+            self.yawOut_index = 5
+            
         self.ankle = self.ik_chain[self.ankle_index]
         self.heel = self.ik_chain[self.heel_index]
+        
+        if self.extra_ball:
+            self.extra_ball = self.ik_chain[self.extra_ball_index]
+            
         self.ball = self.ik_chain[self.ball_index]
         self.toe = self.ik_chain[self.toe_index]
         self.yawIn = self.ik_chain[self.yawIn_index]
@@ -6134,6 +6172,10 @@ class BackFootRollRig(QuadFootRollRig):
         util.create_title(attribute_control, 'roll')
         
         cmds.addAttr(attribute_control, ln = 'ballRoll', at = 'double', k = True)
+        
+        if self.extra_ball:
+            cmds.addAttr(attribute_control, ln = 'extraRoll', at = 'double', k = True)
+            
         cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
         cmds.addAttr(attribute_control, ln = 'heelRoll', at = 'double', k = True)
         
@@ -6151,9 +6193,19 @@ class BackFootRollRig(QuadFootRollRig):
             #cmds.addAttr(attribute_control, ln = 'bankBack', at = 'double', k = True)
     
     def _create_ik(self):
-        self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.toe)
-        cmds.parent( self.ankle_handle, self.setup_group )
-    
+        if not self.extra_ball:
+            self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.toe)
+            cmds.parent( self.ankle_handle, self.setup_group )
+                
+        if self.extra_ball:
+            self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.extra_ball)
+            self.extra_handle = self._create_ik_handle( 'ball', self.extra_ball, self.ball)
+            self.ball_handle = self._create_ik_handle( 'ball', self.ball, self.toe)
+            
+            cmds.parent(self.ankle_handle, self.setup_group)
+            cmds.parent(self.extra_handle, self.setup_group)
+            cmds.parent(self.ball_handle, self.setup_group)
+        
     def _create_pivot_groups(self):
 
         #toe_control, toe_control_xform = self._create_toe_rotate_control()
@@ -6170,33 +6222,53 @@ class BackFootRollRig(QuadFootRollRig):
         ball_pivot = self._create_pivot('ball', self.ball, heel_pivot)
         toe_pivot = self._create_pivot('toe', self.toe, ball_pivot)
         
-        
         toe_roll = self._create_toe_roll(toe_pivot)
         heel_roll = self._create_heel_roll(toe_roll)
         yawin_roll = self._create_yawin_roll(heel_roll, 'yawIn')
         yawout_roll = self._create_yawout_roll(yawin_roll, 'yawOut')
-        ball_roll = self._create_ball_roll(yawout_roll)
+        
         
         if self.add_bank:
             
-            bankin_roll = self._create_yawin_roll(ball_roll, 'bankIn', scale = .5)
+            bankin_roll = self._create_yawin_roll(yawout_roll, 'bankIn', scale = .5)
             bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut', scale = .5)
             #testing
             #bankforward_roll = self._create_toe_roll(bankout_roll, 'bankForward', scale = .5)
             #bankback_roll = self._create_heel_roll(bankforward_roll, 'bankBack', scale = .5)
-        
-            cmds.parentConstraint(bankout_roll, self.roll_control_xform, mo = True)
-            cmds.parentConstraint(bankout_roll, self.ankle_handle, mo = True)
-        
+
+            next_roll = bankout_roll
         if not self.add_bank:
-            cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
-            cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
+            next_roll = yawout_roll
+
+
+        if self.extra_ball:
+            ball_roll = self._create_ball_roll(next_roll)
+            extra_roll = self._create_extra_roll(ball_roll)
+            
+            cmds.parentConstraint(ball_roll, self.extra_handle, mo = True)
+            cmds.parentConstraint(ball_roll, self.ball_handle, mo = True)
+            cmds.parentConstraint(extra_roll, self.ankle_handle, mo = True)
+        
+        if not self.extra_ball:
+            ball_roll = self._create_ball_roll(next_roll)
             cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
+        
+        cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
+            
+        cmds.connectAttr('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % toe_fk_control_xform)
                     
     def set_add_bank(self, bool_value):
         self.add_bank = bool_value
+             
+    def set_extra_ball(self, joint_name):
+        
+        self.extra_ball = joint_name
                     
     def create(self):
+        
+        if self.extra_ball:
+            self.joints.insert(2, self.extra_ball)
+        
         super(rigs.FootRollRig,self).create()
         
         self._define_joints()
@@ -6204,8 +6276,6 @@ class BackFootRollRig(QuadFootRollRig):
         self._create_roll_attributes()
         
         self._create_pivot_groups()
-
-
 
 class IkSpineRig(rigs.BufferRig):
     

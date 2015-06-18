@@ -3186,6 +3186,8 @@ class RollRig(JointRig):
         duplicate.only_these(self.joints)
         joints = duplicate.create()
         
+        print 'duplicate joints', joints
+        
         cmds.parent(joints[0], self.setup_group)
         
         return joints
@@ -3217,6 +3219,8 @@ class RollRig(JointRig):
     
     def _create_pivot_control(self, source_transform, description, sub = False, no_control = False, scale = 1):
         
+        print 'create pivot'
+        print source_transform, description
         
         if self.create_roll_controls:
             control = self._create_control(description, sub)

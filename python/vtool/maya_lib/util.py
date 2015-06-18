@@ -2174,42 +2174,42 @@ class DuplicateHierarchy(object):
     
     def _duplicate_hierarchy(self, transform):
             
-            if transform == self.stop_at_transform:
-                self.stop = True
+        if transform == self.stop_at_transform:
+            self.stop = True
+        
+        if self.stop:
+            return
+        
+        top_duplicate = self._duplicate(transform)
+        
+        children = self._get_children(transform)
+        
+        if children:
+            duplicate = None
+            duplicates = []
             
-            if self.stop:
-                return
-            
-            top_duplicate = self._duplicate(transform)
-            
-            children = self._get_children(transform)
-            
-            if children:
-                duplicate = None
-                duplicates = []
-                
-                for child in children:
+            for child in children:
 
-                    if self.only_these_transforms and not child in self.only_these_transforms:
-                        continue
+                if self.only_these_transforms and not child in self.only_these_transforms:
+                    continue
+                
+                duplicate = self._duplicate_hierarchy(child)
+                
+                if not duplicate:
+                    break
+                
+                duplicates.append(duplicate)
+                
+                if cmds.nodeType(top_duplicate) == 'joint' and cmds.nodeType(duplicate) == 'joint':
                     
-                    duplicate = self._duplicate_hierarchy(child)
+                    if cmds.isConnected('%s.scale' % transform, '%s.inverseScale' % duplicate):
+                        cmds.disconnectAttr('%s.scale' % transform, '%s.inverseScale' % duplicate)
+                        cmds.connectAttr('%s.scale' % top_duplicate, '%s.inverseScale' % duplicate)
                     
-                    if not duplicate:
-                        break
-                    
-                    duplicates.append(duplicate)
-                    
-                    if cmds.nodeType(top_duplicate) == 'joint' and cmds.nodeType(duplicate) == 'joint':
-                        
-                        if cmds.isConnected('%s.scale' % transform, '%s.inverseScale' % duplicate):
-                            cmds.disconnectAttr('%s.scale' % transform, '%s.inverseScale' % duplicate)
-                            cmds.connectAttr('%s.scale' % top_duplicate, '%s.inverseScale' % duplicate)
-                        
-                if duplicates:
-                    cmds.parent(duplicates, top_duplicate)
-            
-            return top_duplicate
+            if duplicates:
+                cmds.parent(duplicates, top_duplicate)
+        
+        return top_duplicate
     
     def only_these(self, list_of_transforms):
         self.only_these_transforms = list_of_transforms
