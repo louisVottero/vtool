@@ -2061,8 +2061,10 @@ class IkSplineNubRig(BufferRig):
         
         self._setup_stretchy(curve, top_control)
         
-        cmds.parentConstraint(top_control, top_joint, mo = True)
-        cmds.parentConstraint(sub_btm_control, sub_handle, mo = True)
+        util.create_follow_group(top_control, top_joint)
+        #cmds.parentConstraint(top_control, top_joint, mo = True)
+        util.create_follow_group(sub_btm_control, sub_handle)
+        #cmds.parentConstraint(sub_btm_control, sub_handle, mo = True)
         
         top_twist = cmds.group(em = True, n = 'topTwist_%s' % spline_handle)
         btm_twist = cmds.group(em = True, n = 'btmTwist_%s' % spline_handle)
@@ -2085,6 +2087,8 @@ class IkSplineNubRig(BufferRig):
         #cmds.parent(btm_twist, sub_btm_control)
         
         cmds.pointConstraint(sub_btm_control, handle, mo = True)
+        util.create_xform_group(handle)
+        util.create_xform_group(sub_handle)
         
         cmds.parent(btm_xform, top_control)
         

@@ -324,7 +324,9 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         util.mirror_xform('guideJoint_')
         util.mirror_xform('process_')
         util.mirror_xform(string_search = 'lf_')
-        util.mirror_curve(suffix = '_wire')
+        
+        #not sure when this was implemented... but couldn't find it, needs to be reimplemented.
+        #util.mirror_curve(suffix = '_wire')
         
     def _mirror_control(self):
         

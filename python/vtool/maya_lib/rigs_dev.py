@@ -3118,10 +3118,12 @@ class WorldStickyRig(rigs.JointRig):
         self.btm_controls.append(control_btm[0])
 
         cmds.parentConstraint(control_top[0], top_joint)
-        cmds.scaleConstraint(control_top[0], top_joint)
+        constraint = cmds.scaleConstraint(control_top[0], top_joint)[0]
+        util.scale_constraint_to_local(constraint)
         
         cmds.parentConstraint(control_btm[0], btm_joint)
-        cmds.scaleConstraint(control_btm[0], btm_joint)
+        constraint = cmds.scaleConstraint(control_btm[0], btm_joint)[0]
+        util.scale_constraint_to_local(constraint)
         
         self.top_locator = self._create_locator('top')
         self.mid_top_locator = self._create_locator('mid_top')
@@ -3177,13 +3179,8 @@ class WorldStickyRig(rigs.JointRig):
         control_name = control.get()
         
         util.MatchSpace(transform, control_name).translation_rotation()
-               
-        
-                        
+                
         control = control_name
-        
-        
-        
         
         xform = util.create_xform_group(control)
         driver = util.create_xform_group(control, 'driver')
@@ -3225,6 +3222,22 @@ class WorldStickyRig(rigs.JointRig):
             
         return self.follow_control_groups[follow_control]
         
+    def _connect_bulge_scale(self, main_control, joint, joint_control):
+        
+        constraint = cmds.listRelatives(joint, type = 'scaleConstraint')
+        if constraint:
+            cmds.delete(constraint)
+            
+        multiply = util.connect_multiply('%s.bulge' % main_control, '%s.scaleX' % joint)
+        cmds.connectAttr('%s.outputY' % multiply, '%s.scaleY' % joint)
+        cmds.connectAttr('%s.outputZ' % multiply, '%s.scaleZ' % joint)
+        
+        cmds.connectAttr('%s.bulge' % main_control, '%s.input1Y' % multiply)
+        cmds.connectAttr('%s.bulge' % main_control, '%s.input1Z' % multiply)
+        
+        cmds.connectAttr('%s.scaleX' % joint_control, '%s.input2X' % multiply)
+        cmds.connectAttr('%s.scaleY' % joint_control, '%s.input2Y' % multiply)
+        cmds.connectAttr('%s.scaleZ' % joint_control, '%s.input2Z' % multiply)
     
     def set_respect_side(self, bool_value, tolerance = 0.001):
         self.respect_side = bool_value
@@ -3316,6 +3329,8 @@ class WorldStickyRig(rigs.JointRig):
 
         cmds.setAttr('%s.stick' % right_top_control, lock = True)
         cmds.setAttr('%s.stick' % right_btm_control, lock = True)
+        
+        
     def create_roll(self, control, increment, percent):
         
         control = vtool.util.convert_to_sequence(control)
@@ -3347,9 +3362,15 @@ class WorldStickyRig(rigs.JointRig):
         
         top_left_driver = self.control_dict[top_left_control][1]
         btm_left_driver = self.control_dict[btm_left_control][1]
-                
+        
+        top_joint = self.top_joints[increment]
+        btm_joint = self.btm_joints[increment]
+        
         util.connect_multiply('%s.roll' % top_center_control, '%s.rotateX' % top_left_driver, percent)
         util.connect_multiply('%s.roll' % btm_center_control, '%s.rotateX' % btm_left_driver, -1*percent)
+        
+        self._connect_bulge_scale(top_center_control, top_joint, top_left_control)
+        self._connect_bulge_scale(btm_center_control, btm_joint, btm_left_control)
         
         cmds.connectAttr('%s.bulge' % top_center_control, '%s.scaleX' % top_left_driver)
         cmds.connectAttr('%s.bulge' % top_center_control, '%s.scaleY' % top_left_driver)
@@ -3369,6 +3390,12 @@ class WorldStickyRig(rigs.JointRig):
             
             util.connect_multiply('%s.roll' % top_center_control, '%s.rotateX' % top_right_driver, percent)
             util.connect_multiply('%s.roll' % btm_center_control, '%s.rotateX' % btm_right_driver, -1*percent)
+        
+            top_joint = self.top_joints[(increment+1)*-1]
+            btm_joint = self.btm_joints[(increment+1)*-1]
+        
+            self._connect_bulge_scale(top_center_control, top_joint, top_right_control)
+            self._connect_bulge_scale(btm_center_control, btm_joint, btm_right_control)
             
             cmds.connectAttr('%s.bulge' % top_center_control, '%s.scaleX' % top_right_driver)
             cmds.connectAttr('%s.bulge' % top_center_control, '%s.scaleY' % top_right_driver)
@@ -3378,7 +3405,6 @@ class WorldStickyRig(rigs.JointRig):
             cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleY' % btm_right_driver)
             cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleZ' % btm_right_driver)
             
-
             
 class WorldStickyFadeRig(WorldStickyRig):       
 
@@ -5548,10 +5574,7 @@ class IkFrontLegRig(rigs.IkAppendageRig):
             
             
             util.create_multi_follow([self.off_offset_locator, self.offset_locator], self.twist_guide_ik, self.btm_control, attribute_name = 'autoTwist', value = 0)
-            
-            util.unlock_attributes(self.btm_control, 'FOLLOW')
-            cmds.deleteAttr( self.btm_control, at='FOLLOW' )
-            
+                        
         
         
         if not self.create_twist:

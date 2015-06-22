@@ -3206,6 +3206,8 @@ class AttachJoints(object):
         parent_constraint = cmds.parentConstraint(source_joint, target_joint, mo = True)[0]
         #cmds.setAttr('%s.interpType' % parent_constraint, 2)
         
+        print 'joints!!!', source_joint, target_joint
+        
         scale_constraint = cmds.scaleConstraint(source_joint, target_joint)[0]
         
         #if source_joint == 'buffer_foot_L_1':
@@ -4265,7 +4267,7 @@ class TransferWeight(object):
     @undo_off
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh = None, percent =1):
         
-        vtool.util.show('Start: %s transfer joint to joint.' % self.mesh)
+        #vtool.util.show('Start: %s transfer joint to joint.' % self.mesh)
         
         if not self.skin_cluster:
             vtool.util.show('No skinCluster found on %s. Could not transfer.' % self.mesh)
@@ -4389,7 +4391,7 @@ class TransferWeight(object):
     @undo_off  
     def transfer_joints_to_new_joints(self, joints, new_joints, falloff = 1, power = 4, weight_percent_change = 1):
         
-        vtool.util.show('Start: %s transfer joints to new joints.' % self.mesh)
+        #vtool.util.show('Start: %s transfer joints to new joints.' % self.mesh)
         
         if not self.skin_cluster:
             vtool.util.warning('No skinCluster found on %s. Could not transfer.' % self.mesh)
@@ -5339,8 +5341,9 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     if node == None:
         node = target_transform
     
-    var = MayaEnumVariable('FOLLOW')
-    var.create(node)
+    if attribute_name == 'follow':
+        var = MayaEnumVariable('FOLLOW')
+        var.create(node)
     
     locators = []
     
