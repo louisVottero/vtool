@@ -2670,7 +2670,7 @@ class PythonCompleter(QtGui.QCompleter):
         
         imports = []
         
-        visited_paths = []
+        #visited_paths = []
         
         paths = sys.path
         
@@ -2678,8 +2678,8 @@ class PythonCompleter(QtGui.QCompleter):
             
             fix_path = util_file.fix_slashes(path)
             
-            if fix_path in visited_paths:
-                continue
+            #if fix_path in visited_paths:
+            #    continue
             
             if not util_file.is_dir(fix_path):
                 continue
@@ -2694,8 +2694,9 @@ class PythonCompleter(QtGui.QCompleter):
                 if '__init__.py' in files:
                     import_name = 'import %s' % folder
                     #imports.append(import_name)
-                    if not folder in imports:
-                        imports.append(folder)
+                    #if not folder in imports:
+                    #    imports.append(folder)
+                    imports.append(str(folder))
             
             python_files = util_file.get_files_with_extension('py', fix_path, fullpath = False)
             
@@ -2706,15 +2707,18 @@ class PythonCompleter(QtGui.QCompleter):
                 
                 python_file_name = python_file.split('.')[0]
                 
-                import_name = 'import %s' % python_file_name
+                #import_name = 'import %s' % python_file_name
                 
-                if not python_file_name in imports:
-                    imports.append(python_file_name)
+                #if not python_file_name in imports:
+                imports.append(str(python_file_name))
                 
                 #if not import_name in imports:
                 #    imports.append(import_name)
                     
-            visited_paths.append(fix_path)
+            #visited_paths.append(fix_path)
+        
+        if imports:
+            imports = list(set(imports))
         
         return imports
     
@@ -2757,6 +2761,8 @@ class PythonCompleter(QtGui.QCompleter):
         self.string_model.setStringList([])
         
     def handle_text(self, text):
+        
+        text = str(text)
         
         text_count = len(text)
         test_text = None
