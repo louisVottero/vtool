@@ -392,6 +392,9 @@ class SettingsFile(object):
             name = split_line[0].strip()
             value = split_line[-1].strip()
             
+            if not value:
+                continue
+            
             value = fix_slashes(value)
             
             value = eval( str(value) )

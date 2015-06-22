@@ -1962,8 +1962,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         self.find_widget = None
         
         self.completer = None
-        
-    
     
     def resizeEvent(self, event):
         
@@ -2024,22 +2022,18 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         #    self.completer.popup().hide()
         
         if text:
-            if text != self.completer.completionPrefix():
-                self.completer.setCompletionPrefix(text)
-                self.completer.popup().setCurrentIndex(self.completer.completionModel().index(0,0))
             
+            result = self.completer.handle_text(text)
             
-            rect = self.cursorRect()
-            rect.translate(0, 2)
-            
-            rect.setWidth(self.completer.popup().sizeHintForColumn(0) 
-                          + self.completer.popup().verticalScrollBar().sizeHint().width())
-            
-            self.completer.complete(rect)
+            if result == True:
+                rect = self.cursorRect()
+                rect.translate(0, 2)
+                
+                rect.setWidth(self.completer.popup().sizeHintForColumn(0) 
+                              + self.completer.popup().verticalScrollBar().sizeHint().width())
+                
+                self.completer.complete(rect)
 
-    
-    
-        
     def _line_number_paint(self, event):
         
         paint = QtGui.QPainter(self.line_numbers)
@@ -2225,9 +2219,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
             self.last_modified = last_modified
             
         self.skip_focus = False
-        
-                    
-                
+             
     def _setup_highlighter(self):
         self.highlighter = Highlighter(self.document())
     
@@ -2244,8 +2236,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     def _add_tab(self,string_value):
     
         return '    %s' % string_value
-    
-    
     
     def _handle_tab(self, event):    
         cursor = self.textCursor()
@@ -2651,6 +2641,8 @@ class PythonCompleter(QtGui.QCompleter):
         
         self.model_strings = []
         
+        self.reset_list = True
+        
         #model = QtGui.QStringListModel(['global','good','bad','better'], self)
         self.string_model =QtGui.QStringListModel(self.model_strings, self)
         #model.setStringList(['global'])
@@ -2664,35 +2656,65 @@ class PythonCompleter(QtGui.QCompleter):
         
         self._construct_model_string()
         
+        self.refresh_completer = True
+        
     def _construct_model_string(self):
+        pass
+        #modules = self._get_available_modules()
         
-        modules = self._get_available_modules()
+        #self.model_strings = modules
         
-        self.model_strings = modules
-        
-        self.string_model.setStringList(self.model_strings)
+        #self.string_model.setStringList(self.model_strings)
     
     def _get_available_modules(self):
         
         imports = []
         
-        for path in sys.path:
+        visited_paths = []
+        
+        paths = sys.path
+        
+        for path in paths:
             
             fix_path = util_file.fix_slashes(path)
             
+            if fix_path in visited_paths:
+                continue
+            
             if not util_file.is_dir(fix_path):
                 continue
+            
+            folders = util_file.get_folders(fix_path)
+            
+            for folder in folders:
+                
+                folder_path = util_file.join_path(fix_path, folder)
+                files = util_file.get_files_with_extension('py', folder_path, fullpath = False)
+                
+                if '__init__.py' in files:
+                    import_name = 'import %s' % folder
+                    #imports.append(import_name)
+                    if not folder in imports:
+                        imports.append(folder)
             
             python_files = util_file.get_files_with_extension('py', fix_path, fullpath = False)
             
             for python_file in python_files:
                 
+                if python_file == '__init__.py':
+                    continue
+                
                 python_file_name = python_file.split('.')[0]
                 
                 import_name = 'import %s' % python_file_name
                 
-                if not import_name in imports:
-                    imports.append(import_name)
+                if not python_file_name in imports:
+                    imports.append(python_file_name)
+                
+                #if not import_name in imports:
+                #    imports.append(import_name)
+                    
+            visited_paths.append(fix_path)
         
         return imports
     
@@ -2705,10 +2727,10 @@ class PythonCompleter(QtGui.QCompleter):
         if completion_string == self.completionPrefix():
             return
         
-        extra = len(completion_string) - len(self.completionPrefix())
+        extra = len(completion_string) - len(self.completionPrefix() )
         
-        cursor.movePosition(cursor.Left)
-        cursor.movePosition(cursor.EndOfWord)
+        #cursor.movePosition(cursor.Left)
+        #cursor.movePosition(cursor.EndOfWord)
         cursor.insertText( completion_string[-extra:] )
         
         widget.setTextCursor(cursor)
@@ -2717,11 +2739,62 @@ class PythonCompleter(QtGui.QCompleter):
         
         pass
     
+    
     def setWidget(self, widget):
+        
         super(PythonCompleter, self).setWidget(widget)
         
         self.setParent(widget)
 
+    def load_imports(self):
+        
+        imports = self._get_available_modules()
+        imports.sort()
+        self.string_model.setStringList(imports)
+    
+    def clear_completer_list(self):
+        
+        self.string_model.setStringList([])
+        
+    def handle_text(self, text):
+        
+        text_count = len(text)
+        test_text = None
+        test_index = -1    
+        
+        if text_count > 6:
+            
+            test_index = text.rfind('import ')
+            
+            if test_index > -1:
+                test_index+=7
+        
+        if test_index >= 0:
+        
+            test_text = text[test_index:]
+            
+            if self.refresh_completer:
+                self.load_imports()
+                self.refresh_completer = False
+                
+            if test_text and test_text != self.completionPrefix():
+                
+                self.setCompletionPrefix(test_text)
+                self.popup().setCurrentIndex(self.completionModel().index(0,0))
+            
+            if not test_text:
+                self.setCompletionPrefix('')
+        
+            return True
+        
+        if test_index == -1:
+            
+            self.popup().hide()
+            self.clear_completer_list()
+            self.refresh_completer = True
+        
+            return False
+            
     def text_under_cursor(self):
         
         cursor = self.widget().textCursor()
@@ -2732,7 +2805,6 @@ class PythonCompleter(QtGui.QCompleter):
     
     def set_filepath(self, filepath):
         if not filepath:
-            print 'no path'
             return
         
         self.filepath = filepath
