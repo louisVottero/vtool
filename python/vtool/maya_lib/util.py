@@ -8275,6 +8275,16 @@ def transfer_joint_weight_to_blendshape(blendshape_node, joint, mesh, index = 0,
             cmds.setAttr('%s.inputTarget[%s].inputTargetGroup[%s].targetWeights[%s]' % (blendshape_node, index, target, inc), weight)
             inc += 1
     
+def add_missing_influences(skin1, skin2):
+
+    influences1 = get_non_zero_influences(skin1)
+    influences2 = get_non_zero_influences(skin2)
+    
+    for influence1 in influences1:
+        
+        if not influence1 in influences2:
+            cmds.skinCluster(skin2, edit = True, ai = influence1, wt = 0.0, nw = 1)
+    
 @undo_chunk   
 def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_joints = [], uv_space = False):
     

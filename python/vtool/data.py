@@ -1116,7 +1116,7 @@ class PoseData(MayaCustomData):
             if outputs:
                 inputs = inputs + outputs
                 
-            path = util_file.join_path(dir_path, '%s.mb' % pose)                              
+            path = util_file.join_path(dir_path, '%s.ma' % pose)                              
             
             cmds.select(cl = True)
             cmds.select(inputs, ne = True)
