@@ -1091,8 +1091,8 @@ class PoseData(MayaCustomData):
                 cmds.parent(pose, w = True)
                 
             if pose == 'pose_gr':
-                rels = cmds.listRelatives(pose)
                 
+                rels = cmds.listRelatives(pose)
                 cmds.parent(rels, w = True)
             
             inputs = maya_lib.util.get_inputs(pose)
@@ -1121,6 +1121,8 @@ class PoseData(MayaCustomData):
                 
             if rels:
                 cmds.parent(rels, 'pose_gr')
+        
+        pose_manager.attach_poses()
                 
         util.show('Exported %s data.' % self.name)
     
@@ -1152,6 +1154,12 @@ class PoseData(MayaCustomData):
                 
                 pose = split_name[0]
                 
+                
+                if cmds.objExists(pose):
+                    
+                    
+                    cmds.delete(pose)
+                
                 if not cmds.objExists(pose):
         
                     if pose != 'pose_gr':
@@ -1159,12 +1167,17 @@ class PoseData(MayaCustomData):
         
                     self._import_file(pose_path)
         
-        if cmds.objExists('pose_gr'):
+        
+        if cmds.objExists('pose_gr') and poses:
             cmds.parent(poses, 'pose_gr')
         
+        
         pose_manager = maya_lib.corrective.PoseManager()
-        pose_manager.attach_poses()
-        pose_manager.create_pose_blends()
+        
+        pose_manager.attach_poses(poses)
+        
+        pose_manager.create_pose_blends(poses)
+        
         pose_manager.set_pose_to_default()
         
         util.show('Imported %s data.' % self.name)

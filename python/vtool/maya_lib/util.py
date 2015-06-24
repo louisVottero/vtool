@@ -8597,11 +8597,14 @@ def chad_extract_shape(skin_mesh, corrective):
             
         if skin:
         
-            file_name = __file__
-            file_name = file_name.replace('util.py', 'cvShapeInverterDeformer.py')
-            file_name = file_name.replace('.pyc', '.py')
+            plugins = cmds.pluginInfo(q = True, ls = True)
             
-            cmds.loadPlugin( file_name )
+            if not 'cvShapeInverterDeformer' in plugins:
+                file_name = __file__
+                file_name = file_name.replace('util.py', 'cvShapeInverterDeformer.py')
+                file_name = file_name.replace('.pyc', '.py')
+                
+                cmds.loadPlugin( file_name )
             
             import cvShapeInverterScript as correct
             

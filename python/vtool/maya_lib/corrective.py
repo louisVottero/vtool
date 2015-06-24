@@ -7,6 +7,7 @@ import util
 import blendshape
 import vtool.util
 
+
         
 class PoseManager(object):
 
@@ -14,6 +15,7 @@ class PoseManager(object):
         self.poses = []
         
         self.pose_group = 'pose_gr'
+        self.detached_attributes = {}
 
     def _check_pose_group(self):
         if not cmds.objExists(self.pose_group):
@@ -108,6 +110,17 @@ class PoseManager(object):
             
             return mesh_index
     
+    def set_weights_to_zero(self):
+
+        poses = self.get_poses()
+        
+        for pose_name in poses:
+                
+            input = util.get_attribute_input('%s.weight' % pose_name)
+            if not input:
+                cmds.setAttr('%s.weight' % pose_name, 0)
+    
+    
     def set_default_pose(self):
         
         self._check_pose_group()
@@ -121,6 +134,9 @@ class PoseManager(object):
         
         store = util.StoreControlData(self.pose_group)
         store.eval_data()
+        
+        self.set_weights_to_zero()
+        
     
     def set_pose(self, pose):
         store = util.StoreControlData(pose)
@@ -239,29 +255,43 @@ class PoseManager(object):
         
     def detach_poses(self):
         poses = self.get_poses()
-        for pose_name in poses:
-            
-            pose = self.get_pose_instance(pose_name)
-            pose.detach()
-            
-            
-    def attach_poses(self):
         
-        poses = self.get_poses()
+        detached_attributes = {}
         
         for pose_name in poses:
             
             pose = self.get_pose_instance(pose_name)
-            pose.attach()
+            detached = pose.detach()
+            
+            detached_attributes[pose_name] = detached
+        
+        self.detached_attributes = detached_attributes
+        
+    def attach_poses(self, poses = None):
+        
+        if not poses:
+            poses = self.get_poses()
+        
+        for pose_name in poses:
+            
+            detached = None
+            
+            if self.detached_attributes:
+                detached = self.detached_attributes[pose_name]
+            
+            pose = self.get_pose_instance(pose_name)
+            pose.attach(detached)
+            
+        
     
-    def create_pose_blends(self, pose_name = None):
+    def create_pose_blends(self, poses = None):
         
-        if pose_name:
-            pose = self.get_pose_instance(pose_name)
-            pose.create_all_blends()
-            return
         
-        poses = self.get_poses()
+        if not poses:
+            poses = self.get_poses()
+        if poses:
+            vtool.util.convert_to_sequence(poses)
+        
         count = len(poses)
 
         progress = util.ProgressBar('adding poses ... ', count)
@@ -305,6 +335,8 @@ class PoseBase(object):
         self.blend_input = None
         
         self.left_right = True
+        
+        self.disconnected_attributes = None
     
     def _pose_type(self):
         return 'base'
@@ -492,8 +524,19 @@ class PoseBase(object):
         return False
     
     def _hide_meshes(self):
+        
         children = cmds.listRelatives(self.pose_control, f = True, type = 'transform')
-        cmds.hide(children)
+        
+        for child in children:
+            self._set_visibility(child, False)
+        
+        
+    def _show_meshes(self):
+        
+        children = cmds.listRelatives(self.pose_control, f = True, type = 'transform')
+        
+        for child in children:
+            self._set_visibility(child, True)
         
     def _get_mesh_target(self, mesh):
         if not mesh:
@@ -757,6 +800,7 @@ class PoseBase(object):
             except:
                 vtool.util.show( 'Could not set visibility on %s.' % node )
     
+
     #--- pose
 
     def is_a_pose(self, node):
@@ -779,6 +823,7 @@ class PoseBase(object):
         self._refresh_meshes()
 
     def goto_pose(self):
+        
         store = util.StoreControlData(self.pose_control)
         store.eval_data()
     
@@ -1115,6 +1160,10 @@ class PoseBase(object):
         
     def create_blend(self, goto_pose = True, mesh_index = None):
         
+        
+        manager = PoseManager()
+        manager.set_weights_to_zero()
+        
         mesh = self._get_current_mesh(mesh_index)
         
         if not mesh:
@@ -1323,6 +1372,35 @@ class PoseBase(object):
         
         return cmds.getAttr('%s.inbetweenWeight' % self.pose_control)
 
+    def disconnect_weight_outputs(self):
+        
+        self.disconnected_attributes = None
+        
+        outputs = util.get_attribute_outputs('%s.weight' % self.pose_control)
+        
+        for output in outputs:
+            
+            node = output.split('.')[0]
+            
+            if cmds.nodeType(node) == 'multiplyDivide' and cmds.isConnected('%s.enable' % self.pose_control, '%s.input2X' % node):
+                continue
+            
+            util.disconnect_attribute(output)
+        
+        return outputs
+        
+    def reconnect_weight_outputs(self, outputs):
+        
+        if not outputs:
+            return
+        
+        for attribute in outputs:
+            
+            input_value = util.get_attribute_input(attribute)
+            
+            if not input_value:
+                cmds.connectAttr('%s.weight' % self.pose_control, attribute)
+
 class PoseNoReader(PoseBase):
     
     def _pose_type(self):
@@ -1360,6 +1438,9 @@ class PoseNoReader(PoseBase):
         cmds.connectAttr(attribute, weight_attr)
 
     def create_blend(self, goto_pose = True, mesh_index = None):
+        
+        manager = PoseManager()
+        manager.set_weights_to_zero()
         
         this_index = mesh_index
         
@@ -1477,13 +1558,23 @@ class PoseNoReader(PoseBase):
         
         return cmds.getAttr('%s.weightInput' % self.pose_control)
 
-    def attach(self):
+    def attach(self, outputs = None):
         attribute = self.get_input()
         self.set_input(attribute)
         
+        if outputs:
+            self.reconnect_weight_outputs(outputs)
+            
+        self._hide_meshes()
+        
     def detach(self):
-        util.disconnect_attribute('%s.weight' % self.pose_control)
-        self.delete_blend_input()
+        
+        outputs = self.disconnect_weight_outputs()
+        
+        #self.delete_blend_input()
+        self._show_meshes()
+        
+        return outputs
         
     def mirror(self):
         
@@ -1930,7 +2021,9 @@ class PoseCone(PoseBase):
         if not set_string_only:
             
             constraint = self._get_parent_constraint()
-            cmds.delete(constraint)    
+            
+            if constraint:
+                cmds.delete(constraint)    
             
             if parent:
                 cmds.parentConstraint(parent, self.pose_control, mo = True)
@@ -1947,15 +2040,26 @@ class PoseCone(PoseBase):
         if constraint:
             cmds.delete(constraint)
         
-        self.delete_blend_input()
-            
-    def attach(self):
+        outputs = self.disconnect_weight_outputs()
+        
+        self._show_meshes()
+        
+        return outputs
+        
+    def attach(self, outputs = None):
+        
         transform = self.get_transform()
         parent = self.get_parent()
         
         self.set_transform(transform)
         self.set_parent(parent)
-    
+        
+        if outputs:
+            self.reconnect_weight_outputs(outputs)
+        
+        self._hide_meshes()
+        
+        
     def create(self):
         pose_control = super(PoseCone, self).create()
         
@@ -1965,9 +2069,6 @@ class PoseCone(PoseBase):
         self.pose_control = pose_control
         
         return pose_control
-    
-    def visibility_off(self, mesh = None, view_only = False):
-        super(PoseCone, self).visibility_off(mesh, view_only)
     
     def mirror(self):
         

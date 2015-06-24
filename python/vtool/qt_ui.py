@@ -2761,13 +2761,23 @@ class PythonCompleter(QtGui.QCompleter):
         text_count = len(text)
         test_text = None
         test_index = -1    
+        add_import = False
         
-        if text_count > 6:
+        if text_count >= 5:
             
-            test_index = text.rfind('import ')
+            test_index = text.rfind('from ')
             
             if test_index > -1:
-                test_index+=7
+                test_index += 5
+                add_import = True
+            
+            if test_index < 0:
+                test_index = text.rfind('import ')
+            
+                if test_index > -1:
+                    test_index+=7
+        
+        print test_index
         
         if test_index >= 0:
         
