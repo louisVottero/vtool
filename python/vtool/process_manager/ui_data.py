@@ -689,17 +689,7 @@ class PoseFileWidget(MayaDataFileWidget):
 class MayaPoseSaveFileWidget(MayaDataSaveFileWidget):
             
     def _export_data(self):
-        
-        #permission = vtool.qt_ui.get_permission('Exporting poses will disconnect them in the current scene.\nContinue?', self)
-        
-        #if not permission:
-        #    return
-        
-        #comment = vtool.qt_ui.get_comment(self)
-        
-        #if comment == None:
-        #    return
-        
+
         comment = ''
         
         self.data_class.export_data(comment)

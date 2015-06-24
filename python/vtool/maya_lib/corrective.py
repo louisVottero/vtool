@@ -263,7 +263,8 @@ class PoseManager(object):
             pose = self.get_pose_instance(pose_name)
             detached = pose.detach()
             
-            detached_attributes[pose_name] = detached
+            if detached:
+                detached_attributes[pose_name] = detached
         
         self.detached_attributes = detached_attributes
         
@@ -277,7 +278,8 @@ class PoseManager(object):
             detached = None
             
             if self.detached_attributes:
-                detached = self.detached_attributes[pose_name]
+                if self.detached_attributes.has_key(pose_name):
+                    detached = self.detached_attributes[pose_name]
             
             pose = self.get_pose_instance(pose_name)
             pose.attach(detached)
@@ -527,6 +529,9 @@ class PoseBase(object):
         
         children = cmds.listRelatives(self.pose_control, f = True, type = 'transform')
         
+        if not children:
+            return
+        
         for child in children:
             self._set_visibility(child, False)
         
@@ -534,6 +539,9 @@ class PoseBase(object):
     def _show_meshes(self):
         
         children = cmds.listRelatives(self.pose_control, f = True, type = 'transform')
+        
+        if not children:
+            return
         
         for child in children:
             self._set_visibility(child, True)
@@ -1377,6 +1385,9 @@ class PoseBase(object):
         self.disconnected_attributes = None
         
         outputs = util.get_attribute_outputs('%s.weight' % self.pose_control)
+        
+        if not outputs:
+            return
         
         for output in outputs:
             

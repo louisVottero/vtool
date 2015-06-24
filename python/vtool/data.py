@@ -1066,6 +1066,15 @@ class PoseData(MayaCustomData):
 
     
     def export_data(self, comment):
+        unknown = cmds.ls(type = 'unknown')
+        
+        if unknown:
+            
+            value = cmds.confirmDialog( title='Unknown Nodes!', message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
+                                    button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
+        
+            if value == 'Yes':
+                maya_lib.util.delete_unknown_nodes()
         
         dir_path = util_file.create_dir(self.name, self.directory)
         
