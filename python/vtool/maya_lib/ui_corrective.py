@@ -445,7 +445,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.create_no_reader = pose_menu.addAction('No Reader')
         self.create_cone = pose_menu.addAction('Cone')
-        self.create_combo = pose_menu.addAction('Combo')
+        #self.create_combo = pose_menu.addAction('Combo')
         #self.create_rbf = pose_menu.addAction('RBF')
         self.context_menu.addSeparator()
         self.rename_action = self.context_menu.addAction('Rename')

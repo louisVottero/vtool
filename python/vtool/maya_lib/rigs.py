@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+
+
 import string
 
 import util
@@ -2048,6 +2050,9 @@ class IkSplineNubRig(BufferRig):
         
         top_joint, handle = self._create_joint_line()
         sub_joint, sub_handle = self._create_joint_line()
+        
+        
+        
         cmds.parent(sub_joint, top_joint)
         cmds.parent(sub_handle, top_joint)
         
@@ -2081,8 +2086,7 @@ class IkSplineNubRig(BufferRig):
         
         cmds.connectAttr('%s.worldMatrix' % top_twist, '%s.dWorldUpMatrix' % spline_handle)
         cmds.connectAttr('%s.worldMatrix' % btm_twist, '%s.dWorldUpMatrixEnd' % spline_handle)
-        
-        
+                
         cmds.parent(top_twist, top_control)
         #cmds.parent(btm_twist, sub_btm_control)
         
