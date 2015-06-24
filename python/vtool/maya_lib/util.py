@@ -3206,8 +3206,6 @@ class AttachJoints(object):
         parent_constraint = cmds.parentConstraint(source_joint, target_joint, mo = True)[0]
         #cmds.setAttr('%s.interpType' % parent_constraint, 2)
         
-        print 'joints!!!', source_joint, target_joint
-        
         scale_constraint = cmds.scaleConstraint(source_joint, target_joint)[0]
         
         #if source_joint == 'buffer_foot_L_1':

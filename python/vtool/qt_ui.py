@@ -2783,8 +2783,6 @@ class PythonCompleter(QtGui.QCompleter):
                 if test_index > -1:
                     test_index+=7
         
-        print test_index
-        
         if test_index >= 0:
         
             test_text = text[test_index:]

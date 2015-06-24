@@ -6159,8 +6159,6 @@ class BackFootRollRig(QuadFootRollRig):
         #if not index_list:
         #    index_list = [0,1,2,3,4,5]
         
-        print self.ik_chain
-        
         self.ankle_index = 0
         self.heel_index = 1
         
