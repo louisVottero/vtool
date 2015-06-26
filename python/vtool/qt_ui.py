@@ -2800,9 +2800,7 @@ class PythonCompleter(QtGui.QCompleter):
             for inc in range(0, split_line_count):
                 if split_line[inc] == current_word:
                     current_inc = inc
-                   
-            print current_inc
-                    
+       
             if current_inc > 0:
                 
                 if split_line[current_inc].find('.') > -1 and current_char:
@@ -2818,11 +2816,7 @@ class PythonCompleter(QtGui.QCompleter):
                         if sub_split_count >= 1:
                             test_text = sub_split[-1]
                         
-                        print 'test text', test_text, sub_split
-                        
                         import_sub_part = string.join(sub_split[:-1], '.')
-                        
-                        print 'sub part', import_sub_part
                         
                         module_path = util_file.get_package_path_from_name(import_sub_part)
                         
@@ -2849,7 +2843,7 @@ class PythonCompleter(QtGui.QCompleter):
                     
                     if split_line[2] == 'import':
                         
-                        module_path = util_file.get_module_path_from_name(split_line[1])
+                        module_path = util_file.get_package_path_from_name(split_line[1])
                         
                         test_text = ''
                         
