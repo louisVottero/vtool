@@ -476,6 +476,8 @@ class FindUniquePath(util.FindUniqueString):
         
         return join_path(self.parent_path, name)
 
+
+
 #---- get
 
 def get_basename(directory):
@@ -956,7 +958,8 @@ def source_python_module(code_directory):
             import md5
             return  imp.load_source(md5.new(code_directory).hexdigest(), code_directory, fin)
         
-        finally:            
+        finally:
+            
             try: fin.close()
             except: pass
             
@@ -991,6 +994,106 @@ def load_python_module(module_name, directory):
                     filepath.close()
             
             return module
+        
+def get_package_path_from_name(module_name, return_module_paths = False):
+    
+    split_name = module_name.split('.')
+    
+    path = None
+    
+    for name in split_name:
+        
+        if path:
+            
+            test_path = join_path(path, name)
+            
+            if not is_dir(test_path):
+                
+                if not return_module_paths:
+                    return None
+                
+                if return_module_paths:
+                    print 'here', test_path
+                    test_path = join_path(path, '%s.py' % name)
+                    return test_path
+                
+            files = get_files(test_path)
+            
+            if '__init__.py' in files:
+                path = test_path
+            
+            if not '__init__.py' in files:
+                return None
+        
+        if not path:
+            try:
+                module = imp.find_module(name)
+                
+                path = module[1]
+                path = fix_slashes(path)
+                
+                print 'found path!, ',path
+                
+            except:
+                return None
+            
+    return path
+    
+def get_line_imports(lines):
+    
+    module_dict = {}
+    
+    for line in lines:
+        
+        split_line = line.split()
+        split_line_count = len(split_line)
+        
+        for inc in range(0, split_line_count):
+            
+            module_prefix = ''
+            
+            if split_line[inc] == 'import':
+                
+                print split_line
+                
+                if inc > 1:
+                    if split_line[inc-2] == 'from':
+                        module_prefix = split_line[inc-1]
+                
+                if inc < split_line_count - 1 and inc > 1:
+                    module = split_line[inc+1]
+                    
+                    if module_prefix:
+                        module = '%s.%s' % (module_prefix, module)
+                    
+                    module_path = get_package_path_from_name(module, return_module_paths=True)
+                    
+                    module_dict[module] = module_path
+                    
+                    print module_path
+    
+    return module_dict
+                    
+def get_line_classes(lines):
+    
+    class_dict = {}
+    
+    for line in lines:
+        
+        split_line = line.split()
+        split_line_count = len(split_line)
+        
+        for inc in range(0, split_line_count):
+            if split_line[inc] == 'class':
+                
+                if inc < split_line_count - 1 and inc > 1:
+                    class_name = split_line[inc+1]
+                    
+                    class_dict[class_name] = class_name
+                    
+    return class_dict
+        
+        
         
 def launch_maya(version, script = None):
     if sys.platform == 'win32':

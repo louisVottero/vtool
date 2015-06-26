@@ -908,7 +908,7 @@ def find_possible_combos(names, sort = True, one_increment = False):
             
                 for inc in range(0, name_count):
                     next_inc = inc+1
-                                    
+                    
                     if next_inc < name_count:             
                                             
                         for inc2 in range(next_inc, name_count):
@@ -938,3 +938,4 @@ def find_possible_combos(names, sort = True, one_increment = False):
                         return found
                 
                 return found
+

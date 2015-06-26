@@ -2,6 +2,8 @@
 
 global type_QT
 
+
+
 import util
 import util_file
 import threading
@@ -11,7 +13,9 @@ import random
 import sys
 
 
+
 try:
+    
     from PySide import QtCore, QtGui
     
     shiboken_broken = False
@@ -2033,6 +2037,11 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                               + self.completer.popup().verticalScrollBar().sizeHint().width())
                 
                 self.completer.complete(rect)
+            
+            if result == False:
+                self.completer.popup().hide()
+                self.completer.clear_completer_list()
+                self.completer.refresh_completer = True
 
     def _line_number_paint(self, event):
         
@@ -2666,13 +2675,18 @@ class PythonCompleter(QtGui.QCompleter):
         
         #self.string_model.setStringList(self.model_strings)
     
-    def _get_available_modules(self):
+    
+    
+    def _get_available_modules(self, paths = None):
         
         imports = []
         
         #visited_paths = []
         
-        paths = sys.path
+        if not paths:
+            paths = sys.path
+        if paths:
+            paths = util.convert_to_sequence(paths)
         
         for path in paths:
             
@@ -2750,10 +2764,11 @@ class PythonCompleter(QtGui.QCompleter):
         
         self.setParent(widget)
 
-    def load_imports(self):
+    def load_imports(self, paths = None):
         
-        imports = self._get_available_modules()
+        imports = self._get_available_modules(paths)
         imports.sort()
+        
         self.string_model.setStringList(imports)
     
     def clear_completer_list(self):
@@ -2762,53 +2777,98 @@ class PythonCompleter(QtGui.QCompleter):
         
     def handle_text(self, text):
         
-        text = str(text)
-        
-        text_count = len(text)
-        test_text = None
-        test_index = -1    
-        add_import = False
-        
-        if text_count >= 5:
+        if text:
+            cursor = self.widget().textCursor()
+            column = cursor.columnNumber() - 1
+            cursor.select(cursor.WordUnderCursor)
+            current_word = cursor.selectedText()
             
-            test_index = text.rfind('from ')
+            current_char = text[column]
+            current_char = current_char.strip()
             
-            if test_index > -1:
-                test_index += 5
-                add_import = True
+            text = str(text)
             
-            if test_index < 0:
-                test_index = text.rfind('import ')
+            split_line = text.split()
             
-                if test_index > -1:
-                    test_index+=7
-        
-        if test_index >= 0:
-        
-            test_text = text[test_index:]
+            if not split_line:
+                return
             
-            if self.refresh_completer:
-                self.load_imports()
-                self.refresh_completer = False
+            split_line_count = len(split_line)
+            
+            current_inc = split_line_count-1
+            
+            for inc in range(0, split_line_count):
+                if split_line[inc] == current_word:
+                    current_inc = inc
+                   
+            print current_inc
+                    
+            if current_inc > 0:
                 
-            if test_text and test_text != self.completionPrefix():
+                if split_line[current_inc].find('.') > -1 and current_char:
                 
-                self.setCompletionPrefix(test_text)
-                self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                    split_part = split_line[current_inc]
+                    sub_split = split_part.split('.')
+                    sub_split_count = len(sub_split)
+                
+                    if split_line[current_inc-1] == 'import' or split_line[current_inc-1] == 'from':
+                    
+                        test_text = ''
+                        
+                        if sub_split_count >= 1:
+                            test_text = sub_split[-1]
+                        
+                        print 'test text', test_text, sub_split
+                        
+                        import_sub_part = string.join(sub_split[:-1], '.')
+                        
+                        print 'sub part', import_sub_part
+                        
+                        module_path = util_file.get_package_path_from_name(import_sub_part)
+                        
+                        self.load_imports(module_path)
+                        
+                        self.setCompletionPrefix(test_text)
+                        self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                
+                        return True
+                        
+                    """
+                    #adding in completion for non imports
+                    text = self.widget().toPlainText()
+                        
+                    print text, type(text)
+                    #lines = ['import vtool', 'from vtool' ]
+                        
+                    pass
+                    #module = util_file.source_python_module(self.filepath)
+                    """ 
+            if split_line[0] == 'from':
             
-            if not test_text:
-                self.setCompletionPrefix('')
+                if split_line_count >= 3:
+                    
+                    if split_line[2] == 'import':
+                        
+                        module_path = util_file.get_module_path_from_name(split_line[1])
+                        
+                        test_text = ''
+                        
+                        if split_line_count >= 4:
+                            test_text = split_line[3]
+                            
+                            if test_text and not current_char:
+                                return False
+                        
+                        if module_path:
+                            
+                            self.load_imports(module_path)
+                        
+                            self.setCompletionPrefix(test_text)
+                            self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                            return True
         
-            return True
-        
-        if test_index == -1:
-            
-            self.popup().hide()
-            self.clear_completer_list()
-            self.refresh_completer = True
-        
-            return False
-            
+        return False
+    
     def text_under_cursor(self):
         
         cursor = self.widget().textCursor()
@@ -2822,6 +2882,8 @@ class PythonCompleter(QtGui.QCompleter):
             return
         
         self.filepath = filepath
+        
+    
 
 #--- Custom Painted Widgets
 
