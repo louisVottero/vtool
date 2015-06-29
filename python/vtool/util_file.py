@@ -1013,7 +1013,6 @@ def get_package_path_from_name(module_name, return_module_paths = False):
                     return None
                 
                 if return_module_paths:
-                    print 'here', test_path
                     test_path = join_path(path, '%s.py' % name)
                     return test_path
                 
@@ -1031,8 +1030,6 @@ def get_package_path_from_name(module_name, return_module_paths = False):
                 
                 path = module[1]
                 path = fix_slashes(path)
-                
-                print 'found path!, ',path
                 
             except:
                 return None
@@ -1054,47 +1051,67 @@ def get_line_imports(lines):
             
             if split_line[inc] == 'import':
                 
-                print split_line
-                
                 if inc > 1:
                     if split_line[inc-2] == 'from':
                         module_prefix = split_line[inc-1]
                 
-                if inc < split_line_count - 1 and inc > 1:
+                if inc < split_line_count - 1:
+                    
                     module = split_line[inc+1]
+                    namespace = module
                     
                     if module_prefix:
                         module = '%s.%s' % (module_prefix, module)
                     
                     module_path = get_package_path_from_name(module, return_module_paths=True)
                     
-                    module_dict[module] = module_path
-                    
-                    print module_path
+                    module_dict[namespace] = module_path
     
     return module_dict
                     
-def get_line_classes(lines):
+def get_line_defined(lines):
     
-    class_dict = {}
+    defined = []
     
     for line in lines:
         
         split_line = line.split()
         split_line_count = len(split_line)
         
+        indent = 0
+        indents = []
+        
+        indent = len(line) - len(line.lstrip())
+        indents.append(indent)
+        
         for inc in range(0, split_line_count):
+            
+            name = None
+            
             if split_line[inc] == 'class':
                 
-                if inc < split_line_count - 1 and inc > 1:
-                    class_name = split_line[inc+1]
+                if inc < split_line_count - 1:
+                    name = split_line[inc+1]
+            
+                     
+            if split_line[inc] == 'def' and indent == 0:
+                
+                if inc < split_line_count - 1:
                     
-                    class_dict[class_name] = class_name
+                    name = split_line[inc+1]
+            
+            if name:
+                match = re.search('[_A-Za-z0-9]+', name )
+                        
+                if match:
+                    name = match.group(0)     
+                    defined.append(name)
+    
                     
-    return class_dict
-        
-        
-        
+    return defined
+    
+
+    
 def launch_maya(version, script = None):
     if sys.platform == 'win32':
         path = 'C:\\Program Files\\Autodesk\\Maya%s\\bin\\maya.exe' % version

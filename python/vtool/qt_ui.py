@@ -2771,15 +2771,30 @@ class PythonCompleter(QtGui.QCompleter):
         
         self.string_model.setStringList(imports)
     
+    def load_sub_imports(self, path):
+        
+        lines = util_file.get_file_lines( path )
+        
+        defined = util_file.get_line_defined(lines)
+        
+        self.string_model.setStringList(defined)
+        
+    
     def clear_completer_list(self):
         
         self.string_model.setStringList([])
         
     def handle_text(self, text):
         
+        print 'text', text
+        
         if text:
             cursor = self.widget().textCursor()
             column = cursor.columnNumber() - 1
+            
+            if column == -1:
+                return False
+            
             cursor.select(cursor.WordUnderCursor)
             current_word = cursor.selectedText()
             
@@ -2791,7 +2806,7 @@ class PythonCompleter(QtGui.QCompleter):
             split_line = text.split()
             
             if not split_line:
-                return
+                return False
             
             split_line_count = len(split_line)
             
@@ -2800,10 +2815,8 @@ class PythonCompleter(QtGui.QCompleter):
             for inc in range(0, split_line_count):
                 if split_line[inc] == current_word:
                     current_inc = inc
-                   
-            print current_inc
                     
-            if current_inc > 0:
+            if current_inc >= 0:
                 
                 if split_line[current_inc].find('.') > -1 and current_char:
                 
@@ -2818,11 +2831,7 @@ class PythonCompleter(QtGui.QCompleter):
                         if sub_split_count >= 1:
                             test_text = sub_split[-1]
                         
-                        print 'test text', test_text, sub_split
-                        
                         import_sub_part = string.join(sub_split[:-1], '.')
-                        
-                        print 'sub part', import_sub_part
                         
                         module_path = util_file.get_package_path_from_name(import_sub_part)
                         
@@ -2833,23 +2842,36 @@ class PythonCompleter(QtGui.QCompleter):
                 
                         return True
                         
-                    """
-                    #adding in completion for non imports
                     text = self.widget().toPlainText()
+                    lines = util_file.get_text_lines(text)    
                         
-                    print text, type(text)
-                    #lines = ['import vtool', 'from vtool' ]
+                    imports = util_file.get_line_imports(lines)
+                    
+                    if sub_split_count == 2:
                         
-                    pass
-                    #module = util_file.source_python_module(self.filepath)
-                    """ 
+                        if imports.has_key(sub_split[0]):
+                            
+                            path = imports[sub_split[0]]
+                            
+                            if util_file.is_file(path):
+                                self.load_sub_imports(path)
+                            
+                            if util_file.is_dir(path):
+                                self.load_imports(path)
+                            
+                            test_text = sub_split[1]
+                            
+                            self.setCompletionPrefix(test_text)
+                            self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                            return True
+                    
             if split_line[0] == 'from':
             
                 if split_line_count >= 3:
                     
                     if split_line[2] == 'import':
                         
-                        module_path = util_file.get_module_path_from_name(split_line[1])
+                        module_path = util_file.get_package_path_from_name(split_line[1])
                         
                         test_text = ''
                         
