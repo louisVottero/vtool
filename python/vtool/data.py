@@ -520,30 +520,30 @@ class SkinWeightData(MayaCustomData):
             cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
             cmds.skinCluster(skin_cluster, edit = True, forceNormalizeWeights = True)
         
-        file_path = util_file.join_path(folder_path, 'settings.info')
-        
-        if util_file.is_file(file_path):
-        
-            lines = util_file.get_file_lines(file_path)
-            for line in lines:
-                
-                test_line = line.strip()
-                
-                if not test_line:
-                    continue
-                
-                line_list = eval(line)
-        
-                attr_name = line_list[0]
-                value = line_list[1]
-        
-                if attr_name == 'blendWeights':
+            file_path = util_file.join_path(folder_path, 'settings.info')
+            
+            if util_file.is_file(file_path):
+            
+                lines = util_file.get_file_lines(file_path)
+                for line in lines:
                     
-                    maya_lib.util.set_skin_blend_weights(skin_cluster, value)
-                
-                if attr_name == 'skinningMethod':
+                    test_line = line.strip()
                     
-                    cmds.setAttr('%s.skinningMethod' % skin_cluster, value)
+                    if not test_line:
+                        continue
+                    
+                    line_list = eval(line)
+            
+                    attr_name = line_list[0]
+                    value = line_list[1]
+            
+                    if attr_name == 'blendWeights':
+                        
+                        maya_lib.util.set_skin_blend_weights(skin_cluster, value)
+                    
+                    if attr_name == 'skinningMethod':
+                        
+                        cmds.setAttr('%s.skinningMethod' % skin_cluster, value)
 
         util.show('Imported %s data' % self.name)
                 
@@ -709,7 +709,8 @@ class DeformerWeightData(MayaCustomData):
         
         path = util_file.join_path(self.directory, self.name)
         
-        util_file.refresh_dir(path)
+        util_file.create_dir(self.name, self.directory)
+        
         
         meshes = maya_lib.util.get_selected_meshes()
         
@@ -761,7 +762,11 @@ class DeformerWeightData(MayaCustomData):
             
             deformer = filename.split('.')[0]
             
-            maya_lib.util.set_deformer_weights(weights, deformer)    
+            if cmds.objExists(deformer):
+                maya_lib.util.set_deformer_weights(weights, deformer)
+                
+            if not cmds.objExists(deformer):
+                util.warning('Import failed: Deformer %s does not exist.' % deformer)    
                  
         util.show('Imported %s data' % self.name)
         

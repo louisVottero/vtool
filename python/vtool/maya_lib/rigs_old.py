@@ -115,8 +115,9 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
         follow_group = util.create_follow_group(self.ik_chain[-2], xform_group)
         
         scale_constraint = cmds.scaleConstraint(self.ik_chain[-2], follow_group)[0]
-        self._unhook_scale_constraint(scale_constraint)
         
+        util.scale_constraint_to_local(scale_constraint)
+                
         cmds.parent(follow_group, self.top_control)
         
         if not self.offset_control_to_locator:
