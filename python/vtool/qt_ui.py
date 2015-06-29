@@ -2786,8 +2786,6 @@ class PythonCompleter(QtGui.QCompleter):
         
     def handle_text(self, text):
         
-        print 'text', text
-        
         if text:
             cursor = self.widget().textCursor()
             column = cursor.columnNumber() - 1
@@ -2815,14 +2813,9 @@ class PythonCompleter(QtGui.QCompleter):
             for inc in range(0, split_line_count):
                 if split_line[inc] == current_word:
                     current_inc = inc
-<<<<<<< HEAD
                     
             if current_inc >= 0:
-=======
        
-            if current_inc > 0:
->>>>>>> branch 'master' of https://github.com/louisVottero/vtool.git
-                
                 if split_line[current_inc].find('.') > -1 and current_char:
                 
                     split_part = split_line[current_inc]

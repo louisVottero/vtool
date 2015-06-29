@@ -519,21 +519,32 @@ class SkinWeightData(MayaCustomData):
             
             cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
             cmds.skinCluster(skin_cluster, edit = True, forceNormalizeWeights = True)
-            
         
-        blend_weights_attr = '%s.blendWeights' % skin_cluster
+        file_path = util_file.join_path(folder_path, 'settings.info')
+        
+        if util_file.is_file(file_path):
+        
+            lines = util_file.get_file_lines(file_path)
+            for line in lines:
                 
-        if cmds.objExists(blend_weights_attr):
-            file_path = util_file.join_path(folder_path, 'weight.blendWeights')
-        
-            if util_file.is_file(file_path):
-        
-                influence = influence.split('.')[0]
-            
+                test_line = line.strip()
                 
-                lines = util_file.get_file_lines(file_path)
-                weights = eval(lines[0])
-            
+                if not test_line:
+                    continue
+                
+                line_list = eval(line)
+        
+                attr_name = line_list[0]
+                value = line_list[1]
+        
+                if attr_name == 'blendWeights':
+                    
+                    maya_lib.util.set_skin_blend_weights(skin_cluster, value)
+                
+                if attr_name == 'skinningMethod':
+                    
+                    cmds.setAttr('%s.skinningMethod' % skin_cluster, value)
+
         util.show('Imported %s data' % self.name)
                 
         self._center_view()
@@ -566,6 +577,9 @@ class SkinWeightData(MayaCustomData):
             
             skin = maya_lib.util.find_deformer_by_type(thing, 'skinCluster')
             
+            if not skin:
+                util.warning('Skin export failed. No skinCluster found on %s.' % thing)
+            
             if skin:
                 
                 geo_path = util_file.join_path(path, thing)
@@ -579,7 +593,7 @@ class SkinWeightData(MayaCustomData):
                                 
                 info_file = util_file.create_file( 'influence.info', geo_path )
                 
-                write_info = util_file.WriteFile(info_file)
+                
                 info_lines = []
                 
                 for influence in weights:
@@ -594,22 +608,41 @@ class SkinWeightData(MayaCustomData):
                     
                     thread = LoadWeightFileThread()
                     
+                
+                    util_file.ReadFile(geo_path)
+                    
                     influence_line = thread.run(influence, skin, weights[influence], geo_path)
                     
                     if influence_line:
                         info_lines.append(influence_line)
                 
+                write_info = util_file.WriteFile(info_file)
+                write_info.write(info_lines)        
+                
+                settings_file = util_file.create_file('settings.info', geo_path)
                 
                 blend_weights_attr = '%s.blendWeights' % skin
+                skin_method_attr = '%s.skinningMethod' % skin
+                
+                settings_lines = []
                 
                 if cmds.objExists(blend_weights_attr):
                     blend_weights = maya_lib.util.get_skin_blend_weights(skin)
                     
-                    filepath = util_file.create_file('weight.blendWeights', geo_path)
-                    write = util_file.WriteFile(filepath)
-                    write.write_line(blend_weights)
+                    write = util_file.WriteFile(settings_file)
+                    settings_lines.append("['blendWeights', %s]" % blend_weights)
+                    
                 
-                write_info.write(info_lines)
+                if cmds.objExists(skin_method_attr):
+                    
+                    skin_method = cmds.getAttr(skin_method_attr)
+                    
+                    
+                    settings_lines.append("['skinningMethod', %s]" % skin_method)
+                
+                write_settings = util_file.WriteFile(settings_file)
+                write_settings.write(settings_lines)
+                
         
         version = util_file.VersionFile(path)
         version.save(comment)

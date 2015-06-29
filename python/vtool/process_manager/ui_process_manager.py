@@ -88,7 +88,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._update_build_widget(name)
         
-        
         self._set_title(name)
         self._update_process(name)
         
