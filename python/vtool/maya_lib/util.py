@@ -4477,6 +4477,7 @@ class TransferWeight(object):
             
             vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
             
+            
             distances = get_distances(new_joints, vert_name)
             
             if not distances:
@@ -4565,6 +4566,16 @@ class TransferWeight(object):
                 value = value[vert_index] * change
                 
                 segments.append((joints[joint_index], value ))
+            
+            if vert_index == 940:
+                
+                value = 0
+                
+                total_value = 0
+                
+                for segment in segments:
+                    total_value += segment[1]
+                    
             
             cmds.skinPercent(self.skin_cluster, vert_name, r = False, transformValue = segments)
             
