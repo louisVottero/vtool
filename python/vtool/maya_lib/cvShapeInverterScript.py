@@ -26,16 +26,16 @@ def invert(base=None, corrective=None, name=None):
             cmds.undoInfo(closeChunk=True)
             raise RuntimeError, 'Select base then corrective'
         base, corrective = sel
-
+        
     # Get points on base mesh
     basePoints = getPoints(base)
     numPoints = basePoints.length()
 
     # Get points on corrective mesh
-    correctivePoints = getPoints(corrective)
+    #correctivePoints = getPoints(corrective)
 
     # Get the intermediate mesh
-    shapes = cmds.listRelatives(base, children=True, shapes=True)
+    shapes = cmds.listRelatives(base, children=True, shapes=True, f = True)
     
     if not shapes:
         raise RuntimeError('No intermediate shape found for %s.' % base)
@@ -50,6 +50,7 @@ def invert(base=None, corrective=None, name=None):
         raise RuntimeError('No intermediate shape found for %s.' % base)
 
     # Get the component offset axes
+    
     origPoints = getPoints(origMesh)
     xPoints = OpenMaya.MPointArray(origPoints)
     yPoints = OpenMaya.MPointArray(origPoints)
@@ -125,7 +126,7 @@ def getShape(node):
     @return The associated shape node.
     """
     if cmds.nodeType(node) == 'transform':
-        shapes = cmds.listRelatives(node, shapes=True)
+        shapes = cmds.listRelatives(node, shapes=True, f = True)
         if not shapes:
             raise RuntimeError, '%s has no shape' % node
         return shapes[0]
@@ -153,9 +154,13 @@ def getDagPath(node):
     @return The dag path of a node.
     """
     selectionList = OpenMaya.MSelectionList()
+    
     selectionList.add(node)
     pathNode = OpenMaya.MDagPath()
     selectionList.getDagPath(0, pathNode)
+    
+    
+    
     return pathNode
 
 
@@ -166,6 +171,7 @@ def getPoints(path, space=OpenMaya.MSpace.kObject):
     @param[in] space Space to get the points.
     @return The MPointArray of points.
     """
+    
     if isinstance(path, str) or isinstance(path, unicode):
         path = getDagPath(getShape(path))
     itGeo = OpenMaya.MItGeometry(path)

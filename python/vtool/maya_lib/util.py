@@ -7544,17 +7544,17 @@ def get_blendshape_weights(blendshape_deformer, mesh, index = -1):
 
 def get_intermediate_object(transform):
     
-    shapes = cmds.listRelatives(transform, s = True)
+    shapes = cmds.listRelatives(transform, s = True, f = True)
     
     return shapes[-1]
 
 def create_mesh_from_shape(shape, name = 'new_mesh'):
     
-    parent = cmds.listRelatives(shape, p = True)[0]
+    parent = cmds.listRelatives(shape, p = True, f = True)[0]
     
     new_shape = cmds.createNode('mesh')
     
-    mesh = cmds.listRelatives(new_shape, p = True)[0]
+    mesh = cmds.listRelatives(new_shape, p = True, f = True)[0]
     
     cmds.connectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
 
@@ -8642,6 +8642,7 @@ def chad_extract_shape(skin_mesh, corrective):
             cmds.delete(offset, ch = True)
         
             orig = get_intermediate_object(skin_mesh)
+            
             orig = create_mesh_from_shape(orig, 'home')
         
             envelopes.turn_on(respect_initial_state=True)
