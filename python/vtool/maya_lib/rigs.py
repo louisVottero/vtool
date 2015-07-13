@@ -2453,7 +2453,7 @@ class IkAppendageRig(BufferRig):
         
         position = util.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
         cmds.move(position[0], position[1], position[2], control.get())
-
+        
         cmds.poleVectorConstraint(control.get(), self.ik_handle)
         
         xform_group = util.create_xform_group( control.get() )
@@ -2494,6 +2494,7 @@ class IkAppendageRig(BufferRig):
         pole_vis.connect_out('%s.visibility' % rig_line)
         
         self.pole_vector_xform = xform_group
+        
 
     def _create_stretchy(self, top_transform, btm_transform, control):
         stretchy = util.StretchyChain()
@@ -2567,7 +2568,6 @@ class IkAppendageRig(BufferRig):
         super(IkAppendageRig, self).create()
         
         self._create_ik_handle()
-        
         
         if self.create_top_control:
             top_control = self._create_top_control()

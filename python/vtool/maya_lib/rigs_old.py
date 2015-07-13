@@ -153,6 +153,7 @@ class IkQuadrupedBackLegRig(rigs.IkAppendageRig):
         
         super(IkQuadrupedBackLegRig, self).create()
         
+        
         self._create_offset_control()
         
         self._rig_offset_chain()
