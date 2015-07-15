@@ -214,7 +214,7 @@ class BlendShape(object):
             
             mesh_input = self._get_mesh_input_for_target(name, inbetween)
             
-            if cmds.objExists(mesh):
+            if mesh and cmds.objExists(mesh):
                 cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
             
             cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 1)
