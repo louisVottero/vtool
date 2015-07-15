@@ -472,7 +472,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.create_cone.triggered.connect(self.create_cone_pose)
         self.create_no_reader.triggered.connect(self.create_no_reader_pose)
-        self.create_timeline.triggered.connect(self.create_timeline)
+        self.create_timeline.triggered.connect(self.create_timeline_pose)
         #self.create_combo.triggered.connect(self.create_combo_pose)
         
         self.rename_action.triggered.connect(self._rename_pose)
@@ -601,7 +601,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self._add_item(pose)
         
-    def create_timeline(self, name = None):
+    def create_timeline_pose(self, name = None):
         
         pose = None
         

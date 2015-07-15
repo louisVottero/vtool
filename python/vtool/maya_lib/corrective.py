@@ -201,8 +201,8 @@ class PoseManager(object):
     
     def create_timeline_pose(self, name = None):
         
-        current_time = cmds.currentTime()
-        time_name = current_time.replace('.', '_')
+        current_time = cmds.currentTime(q = True)
+        time_name = str(current_time).replace('.', '_')
         
         if not name:
             name = util.inc_name('pose_timeline_%s_1' % time_name)
@@ -2176,6 +2176,19 @@ class PoseTimeline(PoseNoReader):
     def _pose_type(self):
         return 'timeline'
     
+    def _create_pose_control(self):
+        
+        control = cmds.group(em = True, n = self._get_name())
+        
+        control.hide_scale_and_visibility_attributes() 
+        
+        pose_control = control
+        self.pose_control = control
+        
+        self._create_attributes(pose_control)
+        
+        return pose_control
+    
     def _create_attributes(self, control):
         
         super(PoseTimeline, self)._create_attributes(control)
@@ -2198,7 +2211,7 @@ class PoseTimeline(PoseNoReader):
         
         cmds.parent(pose_control, top_group)
         
-        current_time = cmds.currentTime()
+        current_time = cmds.currentTime(q = True)
         cmds.setAttr('%s.timePosition' % pose_control, current_time)
         
         return pose_control
