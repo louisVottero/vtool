@@ -2669,6 +2669,7 @@ class PythonCompleter(QtGui.QCompleter):
         self._construct_model_string()
         
         self.refresh_completer = True
+        self.sub_activated = False
         
     def _construct_model_string(self):
         pass
@@ -2809,18 +2810,18 @@ class PythonCompleter(QtGui.QCompleter):
             if column == -1:
                 return False
             
-            cursor.select(cursor.WordUnderCursor)
-            current_word = cursor.selectedText()
-            
-            current_char = text[column]
-            current_char = current_char.strip()
-            
             text = str(text)
             
             split_line = text.split()
             
             if not split_line:
                 return False
+            
+            cursor.select(cursor.WordUnderCursor)
+            current_word = cursor.selectedText()
+            
+            current_char = text[column]
+            current_char = current_char.strip()
             
             split_line_count = len(split_line)
             
@@ -2832,8 +2833,14 @@ class PythonCompleter(QtGui.QCompleter):
     
             if current_inc >= 0:
                 
-                if split_line[current_inc].find('.') > -1 and current_char:
+                if current_char == '.':
+                    self.sub_activated = column
                 
+                #if self.sub_activated and self.sub_activated < column:
+                #    self.sub_activated = False
+                
+                if split_line[current_inc].find('.') > -1 and current_char and self.sub_activated:
+                    
                     split_part = split_line[current_inc]
                     sub_split = split_part.split('.')
                     sub_split_count = len(sub_split)
@@ -2851,9 +2858,13 @@ class PythonCompleter(QtGui.QCompleter):
                         
                         self.load_imports(module_path)
                         
+                        if self.currentCompletion() and self.currentCompletion() == current_word:
+                            self.sub_activated = False
+                            return False
+                        
                         self.setCompletionPrefix(test_text)
                         self.popup().setCurrentIndex(self.completionModel().index(0,0))
-                
+    
                         return True
                         
                     text = self.widget().toPlainText()
@@ -2875,8 +2886,13 @@ class PythonCompleter(QtGui.QCompleter):
                             
                             test_text = sub_split[1]
                             
+                            if self.currentCompletion() and self.currentCompletion() == current_word:
+                                self.sub_activated = False
+                                return False
+                            
                             self.setCompletionPrefix(test_text)
                             self.popup().setCurrentIndex(self.completionModel().index(0,0))
+    
                             return True
                     
             if split_line[0] == 'from':
@@ -2893,16 +2909,22 @@ class PythonCompleter(QtGui.QCompleter):
                             test_text = split_line[3]
                             
                             if test_text and not current_char:
+                                
                                 return False
                         
                         if module_path:
                             
                             self.load_imports(module_path)
+                            
+                            if self.currentCompletion() and self.currentCompletion() == current_word:
+                                return False
                         
                             self.setCompletionPrefix(test_text)
                             self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                            
                             return True
-        
+    
+        self.sub_activated = False
         return False
     
     def text_under_cursor(self):
