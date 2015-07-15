@@ -51,6 +51,9 @@ class PoseManager(object):
         if pose_type == 'no reader':
             pose = PoseNoReader()
             
+        if pose_type == 'timeline':
+            pose = PoseTimeline
+            
         pose.set_pose(pose_name)
         
         return pose
@@ -139,8 +142,10 @@ class PoseManager(object):
         
     
     def set_pose(self, pose):
-        store = util.StoreControlData(pose)
-        store.eval_data()
+        
+        pose_instance = self.get_pose_instance(pose)
+        pose_instance.goto_pose()
+        
         
     def set_pose_data(self, pose):
         store = util.StoreControlData(pose)
@@ -184,9 +189,25 @@ class PoseManager(object):
     @util.undo_chunk
     def create_no_reader_pose(self, name = None):
         
-        name = util.inc_name('pose_no_reader_1')
+        if not name:
+            name = util.inc_name('pose_no_reader_1')
         
         pose = PoseNoReader(name)
+        pose_control = pose.create()
+        
+        self.pose_control = pose_control
+        
+        return pose_control
+    
+    def create_timeline_pose(self, name = None):
+        
+        current_time = cmds.currentTime()
+        time_name = current_time.replace('.', '_')
+        
+        if not name:
+            name = util.inc_name('pose_timeline_%s_1' % time_name)
+        
+        pose = PoseTimeline(name)
         pose_control = pose.create()
         
         self.pose_control = pose_control
@@ -1582,7 +1603,6 @@ class PoseNoReader(PoseBase):
         
         outputs = self.disconnect_weight_outputs()
         
-        #self.delete_blend_input()
         self._show_meshes()
         
         return outputs
@@ -2150,6 +2170,38 @@ class PoseCone(PoseBase):
             inc += 1
         
         return other_pose_instance.pose_control
-                 
+    
+class PoseTimeline(PoseNoReader):
+    
+    def _pose_type(self):
+        return 'timeline'
+    
+    def _create_attributes(self, control):
+        
+        super(PoseTimeline, self)._create_attributes(control)
+        
+        pose_time = util.MayaNumberVariable('timePosition')
+        
+        pose_time.create(control)
+        
+    def goto_pose(self):
+        
+        current_time = cmds.getAttr('%s.timePosition' % self.pose_control)
+        cmds.currentTime(current_time)
+        
+    def create(self):
+        
+        top_group = self._create_top_group()
+        
+        pose_control = self._create_pose_control()
+        self.pose_control = pose_control
+        
+        cmds.parent(pose_control, top_group)
+        
+        current_time = cmds.currentTime()
+        cmds.setAttr('%s.timePosition' % pose_control, current_time)
+        
+        return pose_control
+        
 class PoseCombo(PoseBase):
     pass

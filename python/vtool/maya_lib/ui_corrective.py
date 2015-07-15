@@ -444,7 +444,9 @@ class PoseTreeWidget(BaseTreeWidget):
         pose_menu = self.context_menu.addMenu('New Pose')
         
         self.create_no_reader = pose_menu.addAction('No Reader')
+        self.create_timeline = pose_menu.addAction('Timeline')
         self.create_cone = pose_menu.addAction('Cone')
+        
         #self.create_combo = pose_menu.addAction('Combo')
         #self.create_rbf = pose_menu.addAction('RBF')
         self.context_menu.addSeparator()
@@ -470,6 +472,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.create_cone.triggered.connect(self.create_cone_pose)
         self.create_no_reader.triggered.connect(self.create_no_reader_pose)
+        self.create_timeline.triggered.connect(self.create_timeline)
         #self.create_combo.triggered.connect(self.create_combo_pose)
         
         self.rename_action.triggered.connect(self._rename_pose)
@@ -593,6 +596,21 @@ class PoseTreeWidget(BaseTreeWidget):
         if not pose:
             pose = corrective.PoseManager().create_no_reader_pose()
         
+        if not pose:
+            return
+        
+        self._add_item(pose)
+        
+    def create_timeline(self, name = None):
+        
+        pose = None
+        
+        if name:
+            pose = name
+            
+        if not pose:
+            pose = corrective.PoseManager().create_timeline_pose()
+            
         if not pose:
             return
         
@@ -1187,6 +1205,9 @@ class PoseNoReaderWidget(PoseBaseWidget):
         
         self._get_weight_input()
         
+class PoseTimelineWidget(PoseBaseWidget):
+    pass
+
 class PoseConeWidget(PoseBaseWidget):
     
     def __init__(self):
