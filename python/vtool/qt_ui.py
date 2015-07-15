@@ -2033,8 +2033,11 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                 rect = self.cursorRect()
                 rect.translate(0, 2)
                 
-                rect.setWidth(self.completer.popup().sizeHintForColumn(0) 
-                              + self.completer.popup().verticalScrollBar().sizeHint().width())
+                width = self.completer.popup().sizeHintForColumn(0) + self.completer.popup().verticalScrollBar().sizeHint().width()
+                if width > 350:
+                    width = 350
+                
+                rect.setWidth(width)
                 
                 self.completer.complete(rect)
             
@@ -2763,7 +2766,7 @@ class PythonCompleter(QtGui.QCompleter):
         super(PythonCompleter, self).setWidget(widget)
         
         self.setParent(widget)
-
+        
     def load_imports(self, paths = None):
         
         imports = self._get_available_modules(paths)
@@ -2773,10 +2776,23 @@ class PythonCompleter(QtGui.QCompleter):
     
     def load_sub_imports(self, path):
         
-        lines = util_file.get_file_lines( path )
+        lines = util_file.get_file_lines(path)
         
         defined = util_file.get_line_defined(lines)
         
+        """
+        parse = util_file.ParsePython(path)
+        
+        defined = []
+        
+        for child in parse.main_scope.children:
+            
+            if child.scope_type == 'def':
+                defined.append(child.name + child.bracket_string)
+            if child.scope_type == 'class':
+                defined.append(child.name + '()')
+            
+        """
         self.string_model.setStringList(defined)
         
     
@@ -2813,9 +2829,9 @@ class PythonCompleter(QtGui.QCompleter):
             for inc in range(0, split_line_count):
                 if split_line[inc] == current_word:
                     current_inc = inc
-                    
+    
             if current_inc >= 0:
-       
+                
                 if split_line[current_inc].find('.') > -1 and current_char:
                 
                     split_part = split_line[current_inc]
@@ -2828,7 +2844,7 @@ class PythonCompleter(QtGui.QCompleter):
                         
                         if sub_split_count >= 1:
                             test_text = sub_split[-1]
-                        
+                            
                         import_sub_part = string.join(sub_split[:-1], '.')
                         
                         module_path = util_file.get_package_path_from_name(import_sub_part)
@@ -2864,7 +2880,7 @@ class PythonCompleter(QtGui.QCompleter):
                             return True
                     
             if split_line[0] == 'from':
-            
+                
                 if split_line_count >= 3:
                     
                     if split_line[2] == 'import':
@@ -2903,8 +2919,6 @@ class PythonCompleter(QtGui.QCompleter):
         
         self.filepath = filepath
         
-    
-
 #--- Custom Painted Widgets
 
 class TimelineWidget(QtGui.QWidget):

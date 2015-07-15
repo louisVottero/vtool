@@ -354,7 +354,8 @@ class SparseRig(JointRig):
             cmds.parentConstraint(control_name, joint)
 
             if self.is_scalable:
-                cmds.scaleConstraint(control.get(), joint)
+                scale_constraint = cmds.scaleConstraint(control.get(), joint)[0]
+                util.scale_constraint_to_local(scale_constraint)
             if not self.is_scalable:
                 control.hide_scale_attributes()
             

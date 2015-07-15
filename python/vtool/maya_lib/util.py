@@ -4369,7 +4369,8 @@ class TransferWeight(object):
                 
                 segments.append((joint, value))
               
-            cmds.skinPercent(self.skin_cluster, vert_name, r = False, transformValue = segments)
+            if segments:
+                cmds.skinPercent(self.skin_cluster, vert_name, r = False, transformValue = segments)
 
             bar.inc()
             
@@ -4976,7 +4977,7 @@ def apply_shading_engine(shader_name, mesh):
     
 def get_shading_engine_geo(shader_name):
     pass
-
+    
 def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
     
     if name:
@@ -5882,7 +5883,7 @@ def orient_attributes(scope = None):
         scope = get_top_dag_nodes()
     
     for transform in scope:
-        relatives = cmds.listRelatives(transform)
+        relatives = cmds.listRelatives(transform, f = True)
         
         if not cmds.objExists('%s.ORIENT_INFO' % transform):
             if relatives:
@@ -8306,7 +8307,11 @@ def add_missing_influences(skin1, skin2):
     
 @undo_chunk   
 def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_joints = [], uv_space = False):
-    
+    ''' 
+    This skins a mesh based on the skinning of another mesh.  
+    Source mesh must be skinned.  The target mesh will be skinned with the joints in the source.
+    The skinning from the source mesh will be projected onto the target mesh.
+    '''
     vtool.util.show('skinning %s' % target_mesh)
     
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
@@ -8336,8 +8341,8 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
         influences = found
     
     if not other_skin:  
-        
-        other_skin = cmds.skinCluster(influences, target_mesh, tsb=True, n = 'skin_%s' % target_mesh)[0]
+        skin_name = get_basename(target_mesh)
+        other_skin = cmds.skinCluster(influences, target_mesh, tsb=True, n = inc_name('skin_%s' % skin_name))[0]
         
     if other_skin:
         if not uv_space:
@@ -8368,7 +8373,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                 cmds.warning('Could not remove influence %s on mesh %s' % (influence, target_mesh))
                 
     #cmds.undoInfo(state = True)
-      
+    
 
 def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints = []):
     

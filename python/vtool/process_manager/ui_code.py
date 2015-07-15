@@ -450,9 +450,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     def mouseDoubleClickEvent(self, event):
         
         items = self.selectedItems()
-        item = items[0]
+        if items:
+            item = items[0]
         
-        self.script_open.emit(item, False)
+            self.script_open.emit(item, False)
 
     
 

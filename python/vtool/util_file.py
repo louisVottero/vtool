@@ -17,6 +17,7 @@ import stat
 
 import util
 
+
 class WatchDirectoryThread(threading.Thread):
     
     def __init__(self):
@@ -476,7 +477,168 @@ class FindUniquePath(util.FindUniqueString):
         
         return join_path(self.parent_path, name)
 
+class ParsePython(object):
+    
+    def __init__(self, filepath):
+        
+        self.filepath = filepath
+        
+        self.main_scope = PythonScope('main')
+        self.main_scope.set_indent(0)
+        
+        self.last_scope = self.main_scope
+        self.last_parent_scope = self.main_scope
+        
+        self.scope_types = ['class', 'def'] 
+        self.logic_scope_types = ['if', 'elif', 'else', 'while']
+        self.try_scope_types = ['try','except','finally']
+        
+        self.indents = []
+        self.current_scope_lines = []
+        
+        
+        self._parse()
+        
+        
+    def _set_scope(self, scope):
+        
+        self.last_scope.set_scope_lines(self.current_scope_lines)
+        self.current_scope_lines = []
+        self.last_scope = scope
+        
+    def _parse(self):
+        
+        lines = []
+        
+        if is_file(self.filepath):
+            lines = get_file_lines(self.filepath)
+        
+        for line in lines:
 
+            strip_line = line.strip()
+            
+            if not strip_line:
+                continue
+            
+            indent = 0
+            
+            match = re.search('^ +(?=[^ ])', line)
+            
+            if match:
+                indent = len(match.group(0))
+ 
+            if self.indents:
+                last_indent = self.indents[-1]
+                
+                if indent < last_indent:            
+                    pass
+        
+            self.find_scope_type(strip_line, indent)
+            
+            self.current_scope_lines.append(line)
+            
+    def find_scope_type(self, line, indent):
+            
+        for scope_type in self.scope_types:
+            match = re.search('%s(.*?):' % scope_type, line)
+            
+            if not match:
+                continue
+            
+            scope_line = match.group(0)
+            
+            match = re.search('(?<=%s)(.*?)(?=\()' % scope_type, scope_line)
+            
+            if not match:
+                continue
+            
+            scope_name = match.group(0)
+            scope_name = scope_name.strip()
+            
+            match = re.search('\((.*?)\)', scope_line)
+            
+            if not match:
+                continue
+            
+            scope_bracket = match.group()
+            
+            parent_scope = self.main_scope
+            
+            if self.indents:
+            
+                if indent > self.indents[-1]:
+                    parent_scope = self.last_scope
+                
+                if indent == self.indents[-1]:
+                    parent_scope = self.last_parent_scope
+                
+                if indent < self.indents[-1]:
+                    
+                    if indent == 0:
+                        parent_scope == self.main_scope
+                    
+                    if indent > 0:
+                        parent_indent = self.last_scope.parent.indent
+                        parent_scope = self.last_scope.parent
+                        
+                        #need to go up the scope until finding a matching indent
+                        """
+                        while parent_indent != indent:
+                            
+                            parent_indent = self.last_scope.parent.indent
+                            parent_scope = self.last_scope.parent
+                        """
+                    
+            sub_scope = PythonScope(scope_name)
+            sub_scope.set_bracket(scope_bracket)
+            sub_scope.set_parent(parent_scope)   
+            sub_scope.set_indent(indent)
+            sub_scope.set_scope_type(scope_type)         
+            
+            self.last_parent_scope = parent_scope
+            self.last_scope = sub_scope
+            self.indents.append(indent)
+            
+            return True
+        
+        return False
+            
+class PythonScope(object):
+    
+    def __init__(self, name):
+        
+        self.name = name
+        self.parent = None
+        self.children = []
+        
+        self.bracket_string = '()'
+        self.docstring = ''
+        self.scope_lines = []
+        self.scope_type = ''
+        
+        self.indent = None
+        
+    def set_scope_type(self, scope_type_name):
+        self.scope_type = scope_type_name
+        
+    def set_bracket(self, bracket_string):
+        
+        self.bracket_string = bracket_string
+    
+    def set_scope_lines(self, lines):
+        self.scope_lines = lines
+
+    def set_parent(self, parent_scope):
+        self.parent = parent_scope
+        parent_scope.set_child(self)
+    
+    def set_child(self, child_scope):
+        self.children.append(child_scope)
+        
+    def set_indent(self, indent):
+        self.indent = indent
+    
+    
 
 #---- get
 
@@ -1084,6 +1246,11 @@ def get_line_defined(lines):
         indent = len(line) - len(line.lstrip())
         indents.append(indent)
         
+        last_line_def = False
+        last_line_class = False
+        
+        
+        
         for inc in range(0, split_line_count):
             
             name = None
@@ -1091,21 +1258,33 @@ def get_line_defined(lines):
             if split_line[inc] == 'class':
                 
                 if inc < split_line_count - 1:
+                    
                     name = split_line[inc+1]
-            
+                    match = re.search('[_A-Za-z0-9]+', name )
+                    if match:
+                        name = match.group(0)
+                        
+                    last_line_class = True
+                    last_line_def = False
                      
             if split_line[inc] == 'def' and indent == 0:
                 
                 if inc < split_line_count - 1:
                     
-                    name = split_line[inc+1]
+                    match = re.search('[_A-Za-z0-9]+\((.*?)\)', line )
+                    
+                    if match:
+                        
+                        name = match.group(0)
+                    
+                    last_line_def = True
+                    last_line_class = False
+            
+                    
             
             if name:
-                match = re.search('[_A-Za-z0-9]+', name )
-                        
-                if match:
-                    name = match.group(0)     
-                    defined.append(name)
+    
+                defined.append(name)
     
                     
     return defined
