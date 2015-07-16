@@ -4142,7 +4142,10 @@ class SplitMeshTarget(object):
         self.split_parts = []
     
     def set_weight_joint(self, joint, suffix = None, prefix = None, split_name = True):
-        self.split_parts.append([joint, suffix, prefix, split_name])
+        self.split_parts.append([joint, None, suffix, prefix, split_name])
+    
+    def set_weight_joint_replace_end(self, joint, replace, split_name = True):
+        self.split_parts.append([joint, replace, None, None, split_name])
     
     def set_weighted_mesh(self, weighted_mesh):
         self.weighted_mesh = weighted_mesh
@@ -4170,9 +4173,10 @@ class SplitMeshTarget(object):
         
         for part in self.split_parts:
             joint = part[0]
-            suffix = part[1]
-            prefix = part[2]
-            split_name_option = part[3]
+            replace = part[1]
+            suffix = part[2]
+            prefix = part[3]
+            split_name_option = part[4]
             
             new_target = cmds.duplicate(self.base_mesh)[0]
             
@@ -4182,6 +4186,10 @@ class SplitMeshTarget(object):
                 target_name = self.target_mesh[:-1]
                 
             new_name = target_name
+                
+            if replace:
+                
+                new_name = re.sub(replace[0], replace[1], new_name)
                 
             if suffix:
                 new_name = '%s%s' % (new_name, suffix)
@@ -4223,8 +4231,6 @@ class SplitMeshTarget(object):
             blendshape_node = cmds.blendShape(self.target_mesh, new_target, w = [0,1])[0]
             
             target_index = get_index_at_skin_influence(joint, skin_cluster)
-            
-            
             
             weights = skin_weights[target_index]
             
@@ -8638,7 +8644,9 @@ def get_index_at_alias(alias, blendshape_node):
         return map[alias]
 
 @undo_chunk
-def chad_extract_shape(skin_mesh, corrective):
+def chad_extract_shape(skin_mesh, corrective, replace = False):
+    print 'extract!!'
+    print 'skin mesh', skin_mesh, 'corrective', corrective
     
     try:
    
@@ -8696,7 +8704,16 @@ def chad_extract_shape(skin_mesh, corrective):
         cmds.delete(other_delta, offset)
         
         cmds.rename(orig, offset)
-                
+        
+        if replace:
+            parent = cmds.listRelatives(corrective, p = True)
+            cmds.delete(corrective)
+            
+            offset = cmds.rename(offset, corrective)
+            
+            if parent:
+                cmds.parent(offset, parent)
+        
         return offset
 
     except (RuntimeError):
@@ -10075,9 +10092,15 @@ def create_blend_attribute(source, target, min_value = 0, max_value = 10):
 
 def quick_driven_key(source, target, source_values, target_values, infinite = False):
     
+    print target, source, source_values, target_values
+    
     for inc in range(0, len(source_values)):
         
+        
+        
         cmds.setDrivenKeyframe(target,cd = source, driverValue = source_values[inc], value = target_values[inc], itt = 'spline', ott = 'spline')
+        
+        
 
     if infinite:
         cmds.setInfinity(target, postInfinite = 'linear', preInfinite = 'linear')

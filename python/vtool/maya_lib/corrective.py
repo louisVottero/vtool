@@ -61,7 +61,7 @@ class PoseManager(object):
             pose = PoseNoReader()
             
         if pose_type == 'timeline':
-            pose = PoseTimeline
+            pose = PoseTimeline()
             
         pose.set_pose(pose_name)
         
@@ -2189,7 +2189,7 @@ class PoseTimeline(PoseNoReader):
         
         control = cmds.group(em = True, n = self._get_name())
         
-        control.hide_scale_and_visibility_attributes() 
+        util.hide_keyable_attributes(control)
         
         pose_control = control
         self.pose_control = control

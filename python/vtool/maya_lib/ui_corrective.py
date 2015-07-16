@@ -706,6 +706,9 @@ class PoseWidget(qt_ui.BasicWidget):
             
         if pose_type == 'cone':
             self.pose_control_widget = PoseConeWidget()
+            
+        if pose_type == 'timeline':
+            self.pose_control_widget = PoseTimelineWidget()
         
         self.pose_control_widget.set_pose(pose_name)
         
@@ -987,6 +990,8 @@ class MeshWidget(qt_ui.BasicWidget):
             self.pose_class = corrective.PoseCone()
         if pose_type == 'no reader':
             self.pose_class = corrective.PoseNoReader()
+        if pose_type == 'timeline':
+            self.pose_class = corrective.PoseTimeline()
 
         self.pose_class.set_pose(pose_name)
 
