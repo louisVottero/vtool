@@ -7,8 +7,17 @@ import util
 import blendshape
 import vtool.util
 
-
-        
+def get_corrective_instance(corrective_type):
+    
+    if corrective_type == 'cone':
+        return PoseCone()
+    
+    if corrective_type == 'no_reader':
+        return PoseNoReader()
+    
+    if corrective_type == 'timeline':
+        return PoseTimeline()
+    
 class PoseManager(object):
 
     def __init__(self):

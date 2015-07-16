@@ -20,6 +20,13 @@ current_progress_bar = None
 #--- decorators
 
 def undo_off(function):
+    """
+    Maya sometimes has operations that generate a huge undo stack and use lots of memory.
+    This is meant to handle turning off the undo temporarily for the duration of a function.
+    
+    @function Pass in the instance of the function to wrap.
+    """
+    
     def wrapper(*args, **kwargs):
         
         global current_progress_bar
@@ -57,6 +64,12 @@ def undo_off(function):
     return wrapper
 
 def undo_chunk(function):
+    """
+    Maya sometimes has operations that generate a huge undo stack and use lots of memory.
+    This is meant to handle creating one undo chunk for a function that has many small operations.
+    
+    @function Pass in the instance of the function to wrap.
+    """
     
     def wrapper(*args, **kwargs):
         
@@ -110,9 +123,14 @@ def undo_chunk(function):
     return wrapper
 
 def is_batch():
+    """
+    Return True if Maya is in batch mode.
+    """
+    
     return cmds.about(batch = True)
 
 class ScriptEditorRead(object):
+    
     
     def __init__(self):
         
@@ -206,6 +224,11 @@ maya_data_mappings = {
 #--- classes
 
 class FindUniqueName(vtool.util.FindUniqueString):
+    """
+    This class is intended to find a name that doesn't clash with other names in the Maya scene.
+    It will increment the last number in the name. 
+    If no number is found it will append a 1 to the end of the name.
+    """
     
     def _get_scope_list(self):
 
@@ -233,6 +256,10 @@ class FindUniqueName(vtool.util.FindUniqueString):
 
     
 class ApiObject(object):
+    """
+    A wrapper object for MObjects.
+    """
+    
     def __init__(self):
         self.api_object = self._define_api_object()
         
@@ -7482,8 +7509,11 @@ def set_skin_blend_weights(skin_deformer, weights):
     indices = get_indices('%s.weightList' % skin_deformer)
     
     for inc in range(0, len(indices)):
-        
-        cmds.setAttr('%s.blendWeights[%s]' % (skin_deformer, inc), weights[inc])
+        if cmds.objExists('%s.blendWeights[%s]' % (skin_deformer, inc)):
+            try:
+                cmds.setAttr('%s.blendWeights[%s]' % (skin_deformer, inc), weights[inc])
+            except:
+                pass
         
 
 def set_skin_weights_to_zero(skin_deformer):
@@ -8522,7 +8552,6 @@ def wire_to_mesh(edges, geometry, description, auto_edge_path = True):
     
     return group
     
-    
 @undo_chunk
 def weight_hammer_verts(verts = None, print_info = True):
     
@@ -8546,7 +8575,6 @@ def weight_hammer_verts(verts = None, print_info = True):
             #vtool.util.show(inc, 'of', count)
             #do not remove
             print inc, 'of', count
-            
         
         mel.eval('weightHammerVerts;')
             
@@ -8657,8 +8685,6 @@ def chad_extract_shape(skin_mesh, corrective):
             other_delta = cmds.duplicate(skin_mesh)[0]
         
             cmds.setAttr('%s.envelope' % skin, 1)
-        
-        
         
         quick_blendshape(other_delta, orig, -1)
         quick_blendshape(offset, orig, 1)
