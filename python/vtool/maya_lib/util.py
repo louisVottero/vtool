@@ -7587,7 +7587,7 @@ def get_intermediate_object(transform):
 
 def create_mesh_from_shape(shape, name = 'new_mesh'):
     
-    parent = cmds.listRelatives(shape, p = True, f = True)[0]
+    parent = cmds.listRelatives(shape, p = True, f = True)
     
     new_shape = cmds.createNode('mesh')
     
@@ -7601,7 +7601,8 @@ def create_mesh_from_shape(shape, name = 'new_mesh'):
     
     mesh = cmds.rename(mesh, inc_name(name))
     
-    MatchSpace(parent, mesh).translation_rotation()
+    if parent:
+        MatchSpace(parent[0], mesh).translation_rotation()
     
     
     
@@ -8645,11 +8646,9 @@ def get_index_at_alias(alias, blendshape_node):
 
 @undo_chunk
 def chad_extract_shape(skin_mesh, corrective, replace = False):
-    print 'extract!!'
-    print 'skin mesh', skin_mesh, 'corrective', corrective
-    
+
     try:
-   
+
         envelopes = EnvelopeHistory(skin_mesh)
         
         skin = find_deformer_by_type(skin_mesh, 'skinCluster')
@@ -8719,6 +8718,42 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
     except (RuntimeError):
         vtool.util.show( traceback.format_exc() )
         
+def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = True):
+    """
+    @orig_mesh[in] The unchanged base mesh.
+    @source_meshes[in] Where the mesh has moved. Can be a list or a single target. 
+    @corrective_mesh[in] Where the mesh needs to move to.
+    """
+    
+    sources = vtool.util.convert_to_sequence(source_meshes)
+    
+    offset = cmds.duplicate(corrective_mesh)[0]
+    orig = create_mesh_from_shape(orig_mesh, 'home')
+    
+    for source in sources:
+        other_delta = cmds.duplicate(source)[0]
+        quick_blendshape(other_delta, orig, -1)
+    
+    quick_blendshape(offset, orig, 1)
+    
+    cmds.select(cl = True)
+    
+    cmds.delete(orig, ch = True)
+    
+    cmds.delete(other_delta, offset)
+    
+    corrective = cmds.rename(orig, 'delta_%s' % corrective_mesh)
+
+    if replace:
+        parent = cmds.listRelatives(corrective_mesh, p = True)
+        cmds.delete(corrective_mesh)
+        
+        corrective = cmds.rename(corrective, corrective_mesh)
+        
+        if parent:
+            cmds.parent(corrective, parent[0])
+    
+    return corrective
 
 
 def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
@@ -10092,16 +10127,10 @@ def create_blend_attribute(source, target, min_value = 0, max_value = 10):
 
 def quick_driven_key(source, target, source_values, target_values, infinite = False):
     
-    print target, source, source_values, target_values
-    
     for inc in range(0, len(source_values)):
-        
-        
-        
+          
         cmds.setDrivenKeyframe(target,cd = source, driverValue = source_values[inc], value = target_values[inc], itt = 'spline', ott = 'spline')
-        
-        
-
+    
     if infinite:
         cmds.setInfinity(target, postInfinite = 'linear', preInfinite = 'linear')
          
