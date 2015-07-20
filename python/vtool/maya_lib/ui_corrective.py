@@ -527,6 +527,8 @@ class PoseTreeWidget(BaseTreeWidget):
                 self.create_cone_pose(pose)
             if pose_type == 'no reader':
                 self.create_no_reader_pose(pose)
+            if pose_type == 'timeline':
+                self.create_timeline_pose(pose)   
         
     def _select_joint(self):
         name = self._current_pose()
@@ -702,6 +704,7 @@ class PoseWidget(qt_ui.BasicWidget):
         if self.pose_control_widget:
             self.pose_control_widget.deleteLater()
             self.pose_control_widget = None
+        
         
         if pose_type == 'no reader':
             self.pose_control_widget = PoseNoReaderWidget()
@@ -995,13 +998,8 @@ class MeshWidget(qt_ui.BasicWidget):
         if not cmds.objExists('%s.type' % pose_name):
             pose_type = 'cone'
 
-        if pose_type == 'cone':
-            self.pose_class = corrective.PoseCone()
-        if pose_type == 'no reader':
-            self.pose_class = corrective.PoseNoReader()
-        if pose_type == 'timeline':
-            self.pose_class = corrective.PoseTimeline()
-
+        self.pose_class = corrective.get_corrective_instance(pose_type)
+        
         self.pose_class.set_pose(pose_name)
 
         self._update_meshes(pose_name)

@@ -54,14 +54,8 @@ class PoseManager(object):
         if not cmds.objExists('%s.type' % pose_name):
             pose_type = 'cone'
 
-        if pose_type == 'cone':
-            pose = PoseCone()
-            
-        if pose_type == 'no reader':
-            pose = PoseNoReader()
-            
-        if pose_type == 'timeline':
-            pose = PoseTimeline()
+        pose = get_corrective_instance(pose_type)
+
             
         pose.set_pose(pose_name)
         
@@ -549,10 +543,13 @@ class PoseBase(object):
     def _check_if_mesh_is_child(self, mesh):
         children = cmds.listRelatives(self.pose_control, f = True)
         
+        if not children:
+            return False
+        
         for child in children:
             if child == mesh:
                 return True
-            
+        
         return False
     
     def _hide_meshes(self):
