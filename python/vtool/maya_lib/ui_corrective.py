@@ -963,7 +963,7 @@ class MeshWidget(qt_ui.BasicWidget):
     def update_meshes(self, meshes = [], index = 0, added_meshes = []):
         self.mesh_list.clear()    
         
-        self.handle_selection_change = False
+        #self.handle_selection_change = False
         
         for mesh in meshes:
             
@@ -986,7 +986,7 @@ class MeshWidget(qt_ui.BasicWidget):
             if item:
                 item.setSelected(True)
                 
-        self.handle_selection_change = True
+        #self.handle_selection_change = True
             
     def set_pose(self, pose_name):
         
