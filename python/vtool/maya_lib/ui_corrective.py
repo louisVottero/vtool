@@ -72,6 +72,8 @@ class PoseManager(ui.MayaWindow):
         pose_name = str(pose_name)
         self.sculpt.set_pose(pose_name)
         
+        cmds.select(pose_name, r = True)
+        
 class PoseSetWidget(QtGui.QWidget): 
     
     pose_reset = qt_ui.create_signal()
@@ -748,6 +750,8 @@ class MeshWidget(qt_ui.BasicWidget):
         
         self._create_context_menu()
         
+        self.handle_selection_change = True
+        
     def sizeHint(self):    
         return QtCore.QSize(200,100)
     
@@ -942,6 +946,9 @@ class MeshWidget(qt_ui.BasicWidget):
         
     def _item_selected(self):
         
+        if not self.handle_selection_change:
+            return
+        
         items = self.mesh_list.selectedItems()
         
         cmds.select(cl = True)
@@ -952,6 +959,8 @@ class MeshWidget(qt_ui.BasicWidget):
         
     def update_meshes(self, meshes = [], index = 0, added_meshes = []):
         self.mesh_list.clear()    
+        
+        self.handle_selection_change = False
         
         for mesh in meshes:
             
@@ -973,17 +982,17 @@ class MeshWidget(qt_ui.BasicWidget):
             item = self.mesh_list.item(index)
             if item:
                 item.setSelected(True)
+                
+        self.handle_selection_change = True
             
     def set_pose(self, pose_name):
         
         self.pose_name = pose_name
         
         if cmds.objExists('%s.type' % pose_name):
-        
             pose_type = cmds.getAttr('%s.type' % pose_name)
         
         if not cmds.objExists('%s.type' % pose_name):
-            
             pose_type = 'cone'
 
         if pose_type == 'cone':

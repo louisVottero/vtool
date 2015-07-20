@@ -2221,7 +2221,10 @@ class PoseTimeline(PoseNoReader):
         cmds.parent(pose_control, top_group)
         
         current_time = cmds.currentTime(q = True)
-        cmds.setAttr('%s.timePosition' % pose_control, current_time)
+        
+        cmds.setKeyframe('%s.weight' % pose_control, t = current_time, v = 1)
+        cmds.setKeyframe('%s.weight' % pose_control, t = (current_time-5), v = 0)
+        cmds.setKeyframe('%s.weight' % pose_control, t = (current_time+5), v = 0)
         
         return pose_control
         
