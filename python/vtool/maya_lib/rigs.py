@@ -842,13 +842,15 @@ class FkScaleRig(FkRig):
         match.translation_rotation() 
           
         cmds.makeIdentity(buffer_joint, apply = True, r = True) 
-          
-        #cmds.parentConstraint(control, current_transform)
         
-        cmds.pointConstraint(control, current_transform) 
-        util.connect_rotate(control, current_transform) 
+        if vtool.util.get_maya_version() >= 2015:  
+            cmds.parentConstraint(control, current_transform)
+        
+        if vtool.util.get_maya_version() <= 2014:
+            cmds.pointConstraint(control, current_transform) 
+            util.connect_rotate(control, current_transform) 
            
-        drivers = self.get_control_entries('driver2')
+        #drivers = self.get_control_entries('driver2')
         
         driver = self.control_dict[control]['driver']
         
@@ -857,8 +859,9 @@ class FkScaleRig(FkRig):
             driver2 = self.control_dict[control]['driver2']
             drivers.append(driver2)
         
-        for transform in drivers:
-            util.connect_rotate(transform, current_transform)
+        if vtool.util.get_maya_version() <= 2014:
+            for transform in drivers:
+                util.connect_rotate(transform, current_transform)
         
         util.connect_scale(control, current_transform) 
           
