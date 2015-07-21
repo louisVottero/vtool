@@ -4232,6 +4232,9 @@ class SplitMeshTarget(object):
             
             target_index = get_index_at_skin_influence(joint, skin_cluster)
             
+            if not skin_weights.has_key(target_index):
+                vtool.util.warning('%s not in %s.' % (joint, skin_cluster))
+                
             weights = skin_weights[target_index]
             
             import blendshape
