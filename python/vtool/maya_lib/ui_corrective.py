@@ -977,8 +977,8 @@ class MeshWidget(qt_ui.BasicWidget):
             item.longname = mesh
             self.mesh_list.addItem(item)
             
-            if mesh in added_meshes:
-                item.setSelected(True)
+            #if mesh in added_meshes:
+            item.setSelected(True)
         
         if not added_meshes:   
             
