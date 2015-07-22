@@ -3223,8 +3223,6 @@ class AttachJoints(object):
         for inc in range( 0, len(source_chain) ):
             self._attach_joint(source_chain[inc], target_chain[inc] )
             
-
-    
     def set_source_and_target_joints(self, source_joints, target_joints):
         self.source_joints = source_joints
         self.target_joints = target_joints
@@ -5244,6 +5242,28 @@ def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
         multiplies.append(multi_dict)
         
     return multiplies
+
+def create_match_group(transform, prefix = 'match', use_duplicate = False):
+
+    parent = cmds.listRelatives(transform, p = True, f = True)
+    
+    basename = get_basename(transform)
+    
+    name = '%s_%s' % (prefix, basename)
+    
+    if not use_duplicate:    
+        xform_group = cmds.group(em = True, n = inc_name( name ))
+        match_space = MatchSpace(transform, xform_group)
+        match_space.translation_rotation()
+        
+        if parent:
+            cmds.parent(xform_group, parent[0])    
+        
+    if use_duplicate:
+        xform_group = cmds.duplicate(transform, po = True)
+        xform_group = cmds.rename(xform_group, inc_name(name))
+    
+    return xform_group    
 
 def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
     

@@ -2219,9 +2219,13 @@ class PoseTimeline(PoseNoReader):
         
         current_time = cmds.currentTime(q = True)
         
+        cmds.setAttr('%s.timePosition' % self.pose_control, current_time)
+        
         cmds.setKeyframe('%s.weight' % pose_control, t = current_time, v = 1)
         cmds.setKeyframe('%s.weight' % pose_control, t = (current_time-5), v = 0)
         cmds.setKeyframe('%s.weight' % pose_control, t = (current_time+5), v = 0)
+        
+        
         
         return pose_control
         
