@@ -3199,31 +3199,9 @@ class AttachJoints(object):
         
         scale_constraint_to_world(scale_constraint)
         
-        """
-        weight_count = constraint_editor.get_weight_count(scale_constraint)
-        
-        cmds.connectAttr('%s.parentInverseMatrix' % node, '%s.constraintParentInverseMatrix' % scale_constraint)
-        
-        for inc in range(0, weight_count):
-            
-            target = get_attribute_input('%s.target[%s].targetScale' % (scale_constraint, inc), True)
-            
-            cmds.connectAttr('%s.parentInverseMatrix' % target, '%s.target[%s].targetParentMatrix' % (scale_constraint, inc) )
-        """
-        
     def _unhook_scale_constraint(self, scale_constraint):
         
         scale_constraint_to_local(scale_constraint)
-        
-        """
-        constraint_editor = ConstraintEditor()
-        
-        weight_count = constraint_editor.get_weight_count(scale_constraint)
-        disconnect_attribute('%s.constraintParentInverseMatrix' % scale_constraint)
-        
-        for inc in range(0, weight_count):
-            disconnect_attribute('%s.target[%s].targetParentMatrix' % (scale_constraint, inc))
-        """
         
     def _attach_joint(self, source_joint, target_joint):
         
@@ -3231,20 +3209,14 @@ class AttachJoints(object):
         self._hook_scale_constraint(target_joint)
         
         parent_constraint = cmds.parentConstraint(source_joint, target_joint, mo = True)[0]
-        #cmds.setAttr('%s.interpType' % parent_constraint, 2)
         
         scale_constraint = cmds.scaleConstraint(source_joint, target_joint)[0]
-        
-        #if source_joint == 'buffer_foot_L_1':
-        #    raise()
         
         constraint_editor = ConstraintEditor()
         constraint_editor.create_switch(self.target_joints[0], 'switch', parent_constraint)
         constraint_editor.create_switch(self.target_joints[0], 'switch', scale_constraint)
         
         self._unhook_scale_constraint(scale_constraint)
-        
-        
         
     def _attach_joints(self, source_chain, target_chain):
         
