@@ -1351,8 +1351,6 @@ class MayaFileData(MayaCustomData):
         
         cmds.select(to_select, r = True )
     
-    
-    
     def import_data(self, filepath = None):
         
         if open == True:
@@ -1372,8 +1370,6 @@ class MayaFileData(MayaCustomData):
         cmds.file(import_file, f = True, i = True, iv = True)
         
         self._center_view()
-        
-        
         
     def open(self, filepath = None):
         
@@ -1398,7 +1394,6 @@ class MayaFileData(MayaCustomData):
             
             util.show(traceback.format_exc())
             
-        
         self._center_view()
        
     def save(self, comment):
@@ -1407,14 +1402,16 @@ class MayaFileData(MayaCustomData):
         
         if unknown:
             
-            value = cmds.confirmDialog( title='Unknown Nodes!', message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
+            value = cmds.confirmDialog( title='Unknown Nodes!', 
+                                        message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
                                         button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
             
             if value == 'Yes':
                 maya_lib.util.delete_unknown_nodes()
             
             if value == 'No':
-                cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
+                if self.maya_file_type == self.maya_binary:
+                    cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
                 
 
         cmds.file(rename = self.filepath)
@@ -1440,14 +1437,16 @@ class MayaFileData(MayaCustomData):
         unknown = cmds.ls(type = 'unknown')
         
         if unknown:
-            value = cmds.confirmDialog( title='Unknown Nodes!', message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
+            value = cmds.confirmDialog( title='Unknown Nodes!', 
+                                        message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
                                         button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
             
             if value == 'Yes':
                 maya_lib.util.delete_unknown_nodes()
             
             if value == 'No':
-                cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
+                if self.maya_file_type == self.maya_binary:
+                    cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
         
         cmds.file(rename = self.filepath)
         
