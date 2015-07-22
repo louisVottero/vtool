@@ -12,7 +12,7 @@ def get_corrective_instance(corrective_type):
     if corrective_type == 'cone':
         return PoseCone()
     
-    if corrective_type == 'no_reader':
+    if corrective_type == 'no reader':
         return PoseNoReader()
     
     if corrective_type == 'timeline':
