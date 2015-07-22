@@ -394,8 +394,6 @@ class MeshFunction(MayaFunction):
         u = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 0)
         v = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 1)
         
-        
-        
         return u,v
    
 class NurbsSurfaceFunction(MayaFunction):
