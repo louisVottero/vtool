@@ -2879,6 +2879,10 @@ class PythonCompleter(QtGui.QCompleter):
                             path = imports[sub_split[0]]
                             
                             if util_file.is_file(path):
+                                #self.sub_thread = GetSubImportsThread(path)
+                                #self.sub_thread.search_text = sub_split[1]
+                                #self.sub_thread.finished.connect(self._load_text)
+                                #here need to setup _load_text
                                 self.load_sub_imports(path)
                             
                             if util_file.is_dir(path):
@@ -2940,7 +2944,22 @@ class PythonCompleter(QtGui.QCompleter):
             return
         
         self.filepath = filepath
+
+class GetSubImportsThread(QtCore.QThread):
+    
+    def __init__(self, path, parent = None):
         
+        super(GetSubImportsThread, self).__init__(parent)
+        
+        self.path = path
+        
+    def run(self):
+        lines = util_file.get_file_lines(self.path)
+        
+        defined = util_file.get_line_defined(lines)
+        
+        self.string_model.setStringList(defined)        
+   
 #--- Custom Painted Widgets
 
 class TimelineWidget(QtGui.QWidget):
