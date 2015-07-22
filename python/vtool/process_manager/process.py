@@ -243,8 +243,6 @@ class Process(object):
         
         part_process.set_directory(self.get_path())  
         
-        
-        
         return part_process    
         
     #--- data
@@ -337,7 +335,6 @@ class Process(object):
         data_folder = data.DataFolder(name, self.get_data_path())
         
         data_folder.delete()
-        
     
     #code ---
     
@@ -476,7 +473,6 @@ class Process(object):
     def delete_code(self, name):
         
         util_file.delete_dir(name, self.get_code_path())
-        
         
     #--- manifest
         
@@ -680,7 +676,6 @@ class Process(object):
             
         return False
     
-    
     def run_script(self, script):
         if util.is_in_maya():
             import maya.cmds as cmds
@@ -794,7 +789,7 @@ def get_default_directory():
     if not util.is_in_maya():
         return util_file.join_path(util_file.get_user_dir(), 'documents/process_manager')
     
-def copy_process(source_process, target_process = None, ):
+def copy_process(source_process, target_process = None ):
     
     source_name = source_process.get_name()
     source_name = source_name.split('/')[-1]
@@ -823,9 +818,11 @@ def copy_process(source_process, target_process = None, ):
     
     sub_folders = source_process.get_sub_processes()
     
+    sub_target_process = new_process
+    
     for sub_folder in sub_folders:
         
-        sub_process = target_process.get_sub_process(sub_folder)
+        sub_process = sub_target_process.get_sub_process(sub_folder)
         source_sub_process = source_process.get_sub_process(sub_folder)
         
         if not sub_process.is_process():
@@ -922,7 +919,6 @@ def copy_process_code(source_process, target_process, code_name, replace = False
     
     if not target_process.is_code_folder(code_name):
         code_folder_path = target_process.create_code(code_name, 'script.python')
-    
     
     path = source_process.get_code_path()
     data_folder = data.DataFolder(code_name, path)
