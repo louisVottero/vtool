@@ -41,6 +41,8 @@ class PoseManager(object):
     
     def is_pose(self, name):
         
+        print 'is pose?', name
+        
         if PoseBase().is_a_pose(name):
             return True
         
@@ -63,6 +65,8 @@ class PoseManager(object):
                         
     def get_poses(self):
         
+        print 'get poses'
+        
         self._check_pose_group()
         
         relatives = cmds.listRelatives(self.pose_group)
@@ -75,7 +79,7 @@ class PoseManager(object):
         for relative in relatives:
             if self.is_pose(relative):
                 poses.append(relative)
-                
+        
         return poses
 
     def get_all_pose_inbetween_target(self):
@@ -116,7 +120,7 @@ class PoseManager(object):
             
             return mesh_index
     
-    def set_pose_gr(self, pose_gr_name):
+    def set_pose_group(self, pose_gr_name):
     
         self.pose_group = pose_gr_name
     
@@ -847,7 +851,12 @@ class PoseBase(object):
     #--- pose
 
     def is_a_pose(self, node):
+        
+        
+        
         if cmds.objExists('%s.POSE' % node ):
+            
+            print node, 'is a pose'
             return True
         
         return False
@@ -1257,6 +1266,13 @@ class PoseBase(object):
         
         if not util.is_referenced(blend.blendshape):
             cmds.delete(offset)
+            
+    def create_sub_poses(self):
+        
+        manager = PoseManager()
+        manager.set_pose_group(self.pose_control)
+        
+        return manager.get_poses()
         
     def connect_blend(self, mesh_index = None):
         mesh = None
