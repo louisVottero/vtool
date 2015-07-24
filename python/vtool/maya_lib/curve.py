@@ -219,35 +219,39 @@ class CurveDataInfo():
 
         if not mel_data_list:
             return False
-        
-        curve_data = CurveToData(existing_curve)
-            
-        original_mel_list =  curve_data.create_mel_list()
     
         curve_type_value = self._get_curve_type(existing_curve)
         
-        if type_curve == None or curve_type_value != original_curve_type:
-            
-            mel_count = len(mel_data_list)
-            original_count = len(original_mel_list)
-            
-            if mel_count != original_count:
-                vtool.util.warning('Curve data does not match stored data. Skipping %s.' % existing_curve)
+        if curve_type_value:
+            if curve_type_value != original_curve_type:
                 return False
-            
-            for inc in range(0, mel_count):
+        
+                #this maybe could be added back in as an option
+                """
+                original_mel_list =  curve_data.create_mel_list()
+                curve_data = CurveToData(existing_curve)
+                 
+                mel_count = len(mel_data_list)
+                original_count = len(original_mel_list)
                 
-                split_mel_data = mel_data_list[inc].strip()
-                split_orig_data = original_mel_list[inc].strip()
-                
-                split_mel_data = split_mel_data.split()
-                split_orig_data = split_orig_data.split()
-                
-                if len(split_mel_data) != len(split_orig_data):
-                
-                    vtool.util.warning('Curve data does not match stored data. Skipping %s' % existing_curve)
+               
+                if mel_count != original_count:
+                    vtool.util.warning('Curve data does not match stored data. Skipping %s.' % existing_curve)
                     return False
-    
+                
+                for inc in range(0, mel_count):
+                    
+                    split_mel_data = mel_data_list[inc].strip()
+                    split_orig_data = original_mel_list[inc].strip()
+                    
+                    split_mel_data = split_mel_data.split()
+                    split_orig_data = split_orig_data.split()
+                    
+                    if len(split_mel_data) != len(split_orig_data):
+                    
+                        vtool.util.warning('Curve data does not match stored data. Skipping %s' % existing_curve)
+                        return False
+                """
         return True
     
     def _match_shapes_to_data(self, curve, data_list):
@@ -378,10 +382,25 @@ class CurveDataInfo():
             
             curve_data_lines, curve_type = current_library[curve]
             
+            
+            
             if not curve_type:
                 if cmds.objExists('%s.curveType' % curve):
                     curve_type = cmds.getAttr('%s.curveType' % curve)
-            
+                    
+                    """
+                    curve_color = 0
+                    
+                    if cmds.getAttr('%s.overrideEnabled' % curve):
+                        curve_color = cmds.getAttr('%s.overrideColor' % curve)
+                        
+                    if not cmds.getAttr('%s.overrideEnabled' % curve):
+                        shapes = util.get_shapes(curve)
+                        
+                        if shapes:
+                            if cmds.getAttr('%s.overrideEnabled' % shapes[0]):
+                                curve_color = cmds.getAttr('%s.overrideColor' % shapes[0])
+                    """
             if curve != curve_type:
                 lines.append('-> %s %s' % (curve, curve_type))
             if curve == curve_type:
@@ -419,8 +438,6 @@ class CurveDataInfo():
         
         if not curve_type_value or not cmds.objExists(curve_type_value):
             curve_type_value = curve_in_library
-
-        
 
         if check_curve:
         
