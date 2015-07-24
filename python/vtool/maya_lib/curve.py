@@ -123,17 +123,24 @@ def set_nurbs_data(curve, curve_data_array):
     
 def set_nurbs_data_mel(curve, mel_curve_data):
     
-    
-    
     shapes = util.get_shapes(curve)
     
     vtool.util.convert_to_sequence(mel_curve_data)
     
-    for inc in range(0, len(mel_curve_data)):
+    data_count = len(mel_curve_data)
+    
+    history = cmds.listHistory(curve)
+    
+    create_input = util.get_attribute_input('%s.create' % curve)
+    
+    if create_input:
+        vtool.util.warning('%s has history.  Importing cv data may fail to change the shape.' % curve)
+    
+    for inc in range(0, data_count):
         
-        if inc < len(mel_curve_data):
+        if inc < data_count:
             mel.eval('setAttr "%s.cc" -type "nurbsCurve" %s' % (shapes[inc], mel_curve_data[inc]))
-        if inc > len(mel_curve_data):
+        if inc > data_count:
             break
     
         
@@ -352,7 +359,6 @@ class CurveDataInfo():
                     curve_data_lines.append(curve_data) 
          
         if curve_data_lines:
-
             self.library_curves[self.active_library][curve_name] = [curve_data_lines, curve_type] 
                 
     def write_data_to_file(self):
@@ -405,7 +411,7 @@ class CurveDataInfo():
             return
         
         mel_data_list, original_curve_type = self._get_curve_data(curve_in_library, self.active_library)
-
+        
         if not mel_data_list:
             return
         
@@ -414,14 +420,19 @@ class CurveDataInfo():
         if not curve_type_value or not cmds.objExists(curve_type_value):
             curve_type_value = curve_in_library
 
+        
+
         if check_curve:
         
             is_curve = self._is_curve_of_type(curve, curve_in_library)
             
             if not is_curve:    
+        
                 return
         
         self._match_shapes_to_data(curve, mel_data_list)
+                
+        
                 
         if mel_data_list:
             set_nurbs_data_mel(curve, mel_data_list)

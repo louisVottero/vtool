@@ -1027,6 +1027,13 @@ class SculptWidget(qt_ui.BasicWidget):
             self.mesh_widget.add_mesh()
             self.sculpted_mesh.emit()
             self.button_sculpt.setEnabled(True)
+            
+            if self.pose:
+
+                try:
+                    cmds.setAttr('%s.weight' % self.pose, 1)
+                except:
+                    pass
         except:
             self.button_sculpt.setEnabled(True)
 

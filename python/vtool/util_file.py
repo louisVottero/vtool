@@ -14,7 +14,6 @@ import tempfile
 import threading
 import stat
 
-
 import util
 
 
@@ -164,6 +163,7 @@ class WriteFile(FileManager):
     def write_file(self):
         if self.append:
             self.append_file()
+            self.close_file()
             
         if not self.append:
             super(WriteFile, self).write_file()
@@ -180,17 +180,20 @@ class WriteFile(FileManager):
         
         self.write_file()
         
-        inc = 0
-        for line in lines:
-
-            if inc == len(lines)-1 and not last_line_empty:
-                self.open_file.write('%s' % line)
-                break
+        try:
+            inc = 0
+            for line in lines:
+    
+                if inc == len(lines)-1 and not last_line_empty:
+                    self.open_file.write('%s' % line)
+                    break
+                
+                self.open_file.write('%s\n' % line)
+                
+                inc+= 1
+        except:
+            print 'Could not write to file %s.' % self.filepath
             
-            self.open_file.write('%s\n' % line)
-            
-            inc+= 1
-
         self.close_file()
 
 class VersionFile(object):

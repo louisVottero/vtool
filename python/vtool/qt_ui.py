@@ -227,6 +227,7 @@ class TreeWidget(QtGui.QTreeWidget):
         self.title_text_index = 0
 
         self.itemExpanded.connect(self._item_expanded)
+        self.itemCollapsed.connect(self._item_collapsed)
 
         self.setExpandsOnDoubleClick(False)
         
@@ -337,8 +338,14 @@ class TreeWidget(QtGui.QTreeWidget):
             return
             
     def _item_expanded(self, item):
+        
         self._add_sub_items(item) 
+        
         #self.resizeColumnToContents(self.title_text_index)
+        
+    def _item_collapsed(self, item):
+        
+        pass
         
     def _edit_start(self, item):
         

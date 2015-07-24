@@ -35,18 +35,24 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.sync_code = False
         self.kill_process = False
         self.build_widget = None
+        self.last_item = None
+        
         
         super(ProcessManagerWindow, self).__init__(parent) 
-        
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Escape), self)
-        shortcut.activated.connect(self._set_kill_process)
         
         self._set_default_directory()
         self._setup_settings_file()
         
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Escape), self)
+        shortcut.activated.connect(self._set_kill_process)
+        
+        
+        
         project_directory = self.settings.get('project_directory')
         project_history = self.settings.get('project_history')
         self._set_default_project_directory(project_directory, project_history)
+        
+        
         
         code_directory = self.settings.get('code_directory')
         if code_directory:
@@ -58,6 +64,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.sync_code.connect(self._sync_code)
         self.view_widget.tree_widget.itemDoubleClicked.connect(self._item_double_clicked)
            
+        self.view_widget.set_settings( self.settings )
         self.settings_widget.set_settings(self.settings)
            
     def _sync_code(self):
@@ -73,14 +80,21 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._set_title(name)
         
+        
+        
     def _item_selection_changed(self):
         
         items = self.view_widget.tree_widget.selectedItems()
         
         if not items:
-            self._update_process(None)
-            self.build_widget.hide()
-            return
+            
+            if self.last_item:
+                self.view_widget.tree_widget.setCurrentItem(self.last_item)
+                return
+            if not self.last_item:
+                self._update_process(None)
+                self.build_widget.hide()
+                return
         
         item = items[0]
         
@@ -90,6 +104,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._set_title(name)
         self._update_process(name)
+        self.last_item = item
         
     def _update_build_widget(self, process_name):
         
@@ -111,6 +126,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _setup_settings_file(self):
         
         settings_file = util_file.SettingsFile()
+        
         settings_file.set_directory(self.directory)
         
         self.settings = settings_file
@@ -198,6 +214,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _set_default_directory(self):
         default_directory = process.get_default_directory()
+        
         self.set_directory(default_directory)
         
     def _set_default_project_directory(self, directory, history = None):
@@ -215,9 +232,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _set_title(self, name):
         
+        if not name:
+            return
+        
+        if self.project_directory:
+            self.settings.set('process', [name, self.project_directory[1]])
+        
         name = name.replace('/', '  /  ')
         
         self.active_title.setText(name)
+        
+
         
     def _open_help(self):
         import webbrowser
@@ -292,7 +317,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_tab = 1
         
     def _update_process(self, name):
-         
+        
+
+        
         self.code_widget.code_widget.code_edit.save_tabs(self.last_process)
         self.code_widget.code_widget.code_edit.clear()
         self.code_widget.script_widget.code_manifest_tree.clearSelection()

@@ -98,7 +98,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         if not item:
             if not self.file_widget:
                 return
-                                
                 
             if self.file_widget:
                 self.file_widget.hide()
@@ -115,8 +114,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         basename = vtool.util_file.get_basename(directory)
         
         self.label.setText(basename)
-        
-        
                 
     def set_directory(self, directory):
         super(DataProcessWidget, self).set_directory(directory)
@@ -792,8 +789,34 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.main_layout.addWidget(in_box)
         
         self.main_layout.setAlignment(QtCore.Qt.AlignTop)
+
+    def _skip_mismatch_file(self):
+        if vtool.util.is_in_maya():
+            
+            import maya.cmds as cmds
+            current_directory = cmds.file(q = True, expandName = True)
+            
+            test_directory = vtool.util_file.get_dirname(self.directory)
+            
+            if current_directory.endswith('unknown') or current_directory.endswith('untitled'):
+                return False
+            
+            if not current_directory.startswith(test_directory):
+                result = vtool.qt_ui.get_permission('Root directory different.\nAre you sure you are saving to the right place?', self)
+            
+                if result:
+                    return False
+                if not result:
+                    return True
+            
+        return False
+
     
     def _save_file(self):
+        
+        if self._skip_mismatch_file():
+            return
+        
         comment = vtool.qt_ui.get_comment(self)
         
         if comment == None:
@@ -805,18 +828,20 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
        
     def _export_file(self):
+        
+        if self._skip_mismatch_file():
+            return
+        
         comment = vtool.qt_ui.get_comment(self)
         
         if comment == None:
             return
-        
         
         self.data_class.export_data(comment)
         
         self.file_changed.emit()
         
     def _open_file(self):
-        
         
         if vtool.util.is_in_maya():
             import maya.cmds as cmds
