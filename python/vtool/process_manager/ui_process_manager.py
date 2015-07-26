@@ -37,7 +37,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget = None
         self.last_item = None
         
-        
         super(ProcessManagerWindow, self).__init__(parent) 
         
         self._set_default_directory()
@@ -46,13 +45,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         shortcut = QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Escape), self)
         shortcut.activated.connect(self._set_kill_process)
         
-        
-        
         project_directory = self.settings.get('project_directory')
         project_history = self.settings.get('project_history')
         self._set_default_project_directory(project_directory, project_history)
-        
-        
         
         code_directory = self.settings.get('code_directory')
         if code_directory:
@@ -516,8 +511,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
 
         if not sub_part:
-        
-            previous_project = self.project_directory
+            
+            if self.project_directory:
+                previous_project = self.project_directory[1]
+            if not self.project_directory:
+                previous_project = None
             
             if not util_file.is_dir(directory[1]):
                 util_file.create_dir(None, directory[1])

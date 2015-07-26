@@ -669,6 +669,8 @@ class PoseTreeWidget(BaseTreeWidget):
         if not poses:
             return
         
+        
+        
         cmds.setAttr('%s.maxAngle' % poses[-1], max_angle)
         cmds.setAttr('%s.maxDistance' % poses[-1], max_distance)
         cmds.setAttr('%s.maxTwist' % poses[-1], twist)
@@ -1334,12 +1336,30 @@ class PoseConeWidget(PoseBaseWidget):
         
         pose = self.pose
                
+        x = cmds.getAttr("%s.axisRotateX" % pose)
+        y = cmds.getAttr("%s.axisRotateY" % pose)
+        z = cmds.getAttr("%s.axisRotateZ" % pose)
+        
+        axis = [x,y,z]
+        
+        if axis == [1,0,0]:
+            self.combo_axis.setCurrentIndex(0)
+        if axis == [0,1,0]:
+            self.combo_axis.setCurrentIndex(1)
+        if axis == [0,0,1]:
+            self.combo_axis.setCurrentIndex(2)
+            
+               
         max_angle = cmds.getAttr('%s.maxAngle' % pose)
         max_distance = cmds.getAttr('%s.maxDistance' % pose)
         twist_on = cmds.getAttr('%s.twistOffOn' % pose)
         twist = cmds.getAttr('%s.maxTwist' % pose)
         
+        
+        
         self.set_values(max_angle, max_distance, twist_on, twist)
+        
+        
         
         return max_angle, max_distance, twist_on, twist
 
@@ -1389,6 +1409,7 @@ class PoseConeWidget(PoseBaseWidget):
         pose = corrective.PoseCone()
         pose.set_pose(pose_name)
         pose.set_axis(string)
+        
         
     def set_parent_name(self, parent_name):
         

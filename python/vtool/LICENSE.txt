@@ -3,4 +3,7 @@ Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 Permision is granted to use vtool software package in ways that Louis Vottero is aware. 
 Do not duplicate or modify with the intention to sell or distribute.
 All other exceptions and uses of the software without written consent by Louis Vottero are prohibited.
-The user or company with copy of the software must show permission was granted by Louis Vottero if conflict arises. 
+The user or company with copy of the software must show permission was granted by Louis Vottero if conflict arises.
+
+Louis Vottero is not responsible for any damage caused by using vtool software or its components.
+  

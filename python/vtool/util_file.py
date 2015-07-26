@@ -163,7 +163,6 @@ class WriteFile(FileManager):
     def write_file(self):
         if self.append:
             self.append_file()
-            self.close_file()
             
         if not self.append:
             super(WriteFile, self).write_file()
@@ -240,6 +239,8 @@ class VersionFile(object):
             
     def save_comment(self, comment = None, version_file = None, ):
         
+         
+        
         version = version_file.split('.')
         if version:
             version = version[-1]
@@ -251,6 +252,8 @@ class VersionFile(object):
         
         comment.replace('"', '\"')
         
+        
+        
         comment_file = WriteFile(self.comment_file)
         comment_file.set_append(True)
         comment_file.write(['version = %s; comment = "%s"; user = "%s"' % (version, comment, user)])
@@ -259,7 +262,6 @@ class VersionFile(object):
     def save(self, comment = None):
         
         self._create_version_folder()
-        
         self._create_comment_file()
         
         inc_file_name = self._increment_version_file_name()

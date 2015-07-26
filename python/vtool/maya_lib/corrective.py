@@ -41,6 +41,8 @@ class PoseManager(object):
     
     def is_pose(self, name):
         
+        print 'is pose?', name
+        
         if PoseBase().is_a_pose(name):
             return True
         
@@ -63,6 +65,8 @@ class PoseManager(object):
                         
     def get_poses(self):
         
+        print 'get poses'
+        
         self._check_pose_group()
         
         relatives = cmds.listRelatives(self.pose_group)
@@ -75,7 +79,7 @@ class PoseManager(object):
         for relative in relatives:
             if self.is_pose(relative):
                 poses.append(relative)
-                
+        
         return poses
 
     def get_all_pose_inbetween_target(self):
@@ -115,6 +119,10 @@ class PoseManager(object):
         if mesh_index != None:
             
             return mesh_index
+    
+    def set_pose_group(self, pose_gr_name):
+    
+        self.pose_group = pose_gr_name
     
     def set_weights_to_zero(self):
 
@@ -183,6 +191,7 @@ class PoseManager(object):
             name = 'pose_%s' % joint
         
         pose = PoseCone(selection[0], name)
+        pose.set_pose_group(self.pose_group)
         pose_control = pose.create()
         
         self.pose_control = pose_control
@@ -196,6 +205,7 @@ class PoseManager(object):
             name = util.inc_name('pose_no_reader_1')
         
         pose = PoseNoReader(name)
+        pose.set_pose_group(self.pose_group)
         pose_control = pose.create()
         
         self.pose_control = pose_control
@@ -211,6 +221,7 @@ class PoseManager(object):
             name = util.inc_name('pose_timeline_%s_1' % time_name)
         
         pose = PoseTimeline(name)
+        pose.set_pose_group(self.pose_group)
         pose_control = pose.create()
         
         self.pose_control = pose_control
@@ -312,7 +323,6 @@ class PoseManager(object):
     
     def create_pose_blends(self, poses = None):
         
-        
         if not poses:
             poses = self.get_poses()
         if poses:
@@ -361,6 +371,7 @@ class PoseBase(object):
         self.blend_input = None
         
         self.left_right = True
+        self.pose_gr = 'pose_gr'
         
         self.disconnected_attributes = None
     
@@ -401,10 +412,11 @@ class PoseBase(object):
             self._multiply_weight()
         
     def _create_top_group(self):
-        top_group = 'pose_gr'
-        
+        top_group = self.pose_gr
+                
         if not cmds.objExists(top_group):
             top_group = cmds.group(em = True, name = top_group)
+            
 
         return top_group
 
@@ -839,10 +851,20 @@ class PoseBase(object):
     #--- pose
 
     def is_a_pose(self, node):
+        
+        
+        
         if cmds.objExists('%s.POSE' % node ):
+            
+            print node, 'is a pose'
             return True
         
         return False
+
+    def set_pose_group(self, pose_group_name):
+        
+        self.pose_gr = pose_group_name
+    
 
     def set_pose(self, pose_name):
         
@@ -1195,7 +1217,6 @@ class PoseBase(object):
         
     def create_blend(self, goto_pose = True, mesh_index = None):
         
-        
         manager = PoseManager()
         manager.set_weights_to_zero()
         
@@ -1223,12 +1244,7 @@ class PoseBase(object):
         if not blendshape_node:
             blend.create(target_mesh)
         
-        blend_attribute = '%s.%s' % (blend.blendshape, self.pose_control)
-        
-        
         self.disconnect_blend(mesh_index)
-        
-        attr = util.get_attribute_input(blend_attribute)
         
         blend.set_weight(self.pose_control, 0)
         
@@ -1246,12 +1262,17 @@ class PoseBase(object):
         util.disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
         
         if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
-            
             cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
         
         if not util.is_referenced(blend.blendshape):
-            
             cmds.delete(offset)
+            
+    def create_sub_poses(self):
+        
+        manager = PoseManager()
+        manager.set_pose_group(self.pose_control)
+        
+        return manager.get_poses()
         
     def connect_blend(self, mesh_index = None):
         mesh = None
@@ -1567,6 +1588,7 @@ class PoseNoReader(PoseBase):
                 
             cmds.hide(offset)
             self._connect_node(offset, 'delta', (this_index+1))
+            cmds.parent(offset, deltas)
     
     def set_input(self, attribute):
         
@@ -2001,6 +2023,8 @@ class PoseCone(PoseBase):
         self._position_control(self.pose_control)
         
         self._set_axis_vectors()
+        
+    
         
     def get_transform(self):
         matrix = self._get_named_message_attribute('multMatrix1')
