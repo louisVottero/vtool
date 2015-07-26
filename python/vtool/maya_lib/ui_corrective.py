@@ -19,7 +19,7 @@ if qt_ui.is_pyside():
 
 class PoseManager(ui.MayaWindow):
     
-    title = 'Corrective Manager'
+    title = 'Correctives'
     
     def _define_main_layout(self):
         layout = QtGui.QVBoxLayout()

@@ -162,16 +162,16 @@ class ModelManager(vtool.qt_ui.BasicWidget):
 class RigManager(vtool.qt_ui.DirectoryWidget):
     def _build_widgets(self):
         
-        manager_group = QtGui.QGroupBox('Managers')
+        manager_group = QtGui.QGroupBox('Applications')
         manager_layout = QtGui.QVBoxLayout()
         manager_layout.setContentsMargins(2,2,2,2)
         manager_layout.setSpacing(2)
         
         manager_group.setLayout(manager_layout)
         
-        process_button = QtGui.QPushButton('Process Manager')
-        pose_button = QtGui.QPushButton('Corrective Manager')
-        shape_combo_button = QtGui.QPushButton('Shape Combo')
+        process_button = QtGui.QPushButton('VETALA')
+        pose_button = QtGui.QPushButton('Correctives')
+        shape_combo_button = QtGui.QPushButton('Shape Combos')
         
         
         process_button.clicked.connect(self._process_manager)

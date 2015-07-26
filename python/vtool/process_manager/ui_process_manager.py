@@ -19,7 +19,7 @@ if qt_ui.is_pyside():
     
 class ProcessManagerWindow(qt_ui.BasicWindow):
     
-    title = 'Process Manager'
+    title = 'VETALA'
     
     def __init__(self, parent = None):
         
