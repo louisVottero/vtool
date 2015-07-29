@@ -640,6 +640,21 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self._rename_item(item, name)
         
+    def _name_clash(self, name):
+        for inc in range(0, self.topLevelItemCount()):    
+            
+            other_name = self.topLevelItem(inc).get_text()
+            other_name = str(other_name)
+            
+            if other_name.find('.'):
+                other_name = other_name.split('.')
+                other_name = other_name[0]
+            
+            if name == other_name:
+                return True
+            
+        return False
+        
     def _rename_item(self, item, new_name):
         
         new_name = str(new_name)
@@ -652,21 +667,20 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             split_old_name = self.old_name.split('.')
             old_name = split_old_name[0]
         
-        for inc in range(0, self.topLevelItemCount()):
-            
-            other_name = self.topLevelItem(inc).get_text()
-            other_name = str(other_name)
-            
-            if other_name.find('.'):
-                other_name = other_name.split('.')
-                other_name = other_name[0]
-            
-            if new_name == other_name:
-                return
+        inc = 1
         
+        pre_new_name = new_name
+        
+        while self._name_clash(new_name):
+            new_name = pre_new_name + str(inc)
+            inc += 1
+            
+            if inc >= 1000:
+                return
+           
         if old_name == new_name:
             return
-            
+         
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         
