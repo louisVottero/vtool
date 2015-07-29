@@ -126,7 +126,7 @@ class ProcessMayaWindow(ui_process_manager.ProcessManagerWindow):
         super(ProcessMayaWindow, self).__init__( get_maya_window() )
     
 class ToolManager(MayaDirectoryWindow):
-    title = 'HUB'
+    title = 'VETALA  HUB'
     
     def __init__(self, name = None):
         if name:

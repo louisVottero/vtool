@@ -184,10 +184,10 @@ class WriteFile(FileManager):
             for line in lines:
     
                 if inc == len(lines)-1 and not last_line_empty:
-                    self.open_file.write('%s' % line)
+                    self.open_file.write(str('%s' % line))
                     break
                 
-                self.open_file.write('%s\n' % line)
+                self.open_file.write(str('%s\n' % line))
                 
                 inc+= 1
         except:

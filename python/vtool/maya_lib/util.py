@@ -1756,7 +1756,9 @@ class Control(object):
         cmds.delete(name)
         
         self.control = joint
-                
+        
+        if joint_given:
+            rename_shapes(self.control)
         
     def translate_shape(self, x,y,z):
         
@@ -1956,6 +1958,9 @@ class IkHandle(object):
         
     def set_solver(self, type_name):
         self.solver_type = type_name
+    
+    def set_full_name(self, fullname):
+        self.name = fullname
     
     def create(self):
         

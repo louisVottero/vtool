@@ -1,7 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-
-
 import string
 
 import util
@@ -275,10 +273,7 @@ class BufferRig(JointRig):
         
         if self.create_buffer_joints:
             self._attach_joints(self.buffer_joints, self.joints)
-
-
-
-
+            
 class CurveRig(Rig):
     def __init__(self, description, side):
         super(CurveRig, self).__init__(description, side)
@@ -584,6 +579,8 @@ class FkRig(BufferRig):
         
         self.connect_to_driver = None
         self.match_to_rotation = True
+        
+        self.create_sub_controls = False
 
     def _create_control(self, sub = False):
         
@@ -606,6 +603,37 @@ class FkRig(BufferRig):
         self.drivers.append(driver)
         #self.control = self.control.get()
 
+        if self.create_sub_controls and not sub:
+            
+            subs = []
+            
+            for inc in range(0,2):
+
+                if inc == 0:
+                    sub_control = super(FkRig, self)._create_control(sub =  True)
+                    sub_control.set_curve_type(self.control_shape)
+                    sub_control.scale_shape(2,2,2)
+                if inc == 1:
+                    sub_control = super(FkRig, self)._create_control(description = 'sub', sub =  True)
+                    sub_control.set_curve_type(self.control_shape)
+                
+                sub_control.hide_translate_attributes()
+                sub_control.hide_scale_and_visibility_attributes()
+                
+                util.MatchSpace(self.control.get(), sub_control.get()).translation_rotation()
+                
+                util.connect_visibility('%s.subVisibility' % self.control.get(), '%sShape' % sub_control.get(), 1)
+                
+                subs.append(sub_control.get())
+                
+                if inc == 0:
+                    cmds.parent(sub_control.get(), self.control.get())
+                if inc == 1:
+                    
+                    cmds.parent(sub_control.get(), self.sub_controls[-2])
+                
+            self.control_dict[self.control.get()]['subs'] = subs
+                
         return self.control
     
     def _edit_at_increment(self, control, transform_list):
@@ -657,8 +685,16 @@ class FkRig(BufferRig):
     def _increment_greater_than_zero(self, control, current_transform):
         
         self._attach(control, current_transform)
-        cmds.parent(self.control_dict[control]['xform'], self.last_control.get())
-    
+        
+        if not self.create_sub_controls:
+            cmds.parent(self.control_dict[control]['xform'], self.last_control.get())
+            
+        if self.create_sub_controls:
+            
+            last_control = self.control_dict[self.last_control.get()]['subs'][-1]
+            
+            cmds.parent(self.control_dict[control]['xform'], last_control)
+            
     def _increment_less_than_last(self, control, current_transform):
         return
     
@@ -685,7 +721,12 @@ class FkRig(BufferRig):
     
     def _attach(self, source_transform, target_transform):
         
-        cmds.parentConstraint(source_transform, target_transform, mo = True)        
+        if not self.create_sub_controls:
+            cmds.parentConstraint(source_transform, target_transform, mo = True)
+            
+        if self.create_sub_controls:
+            source_transform = self.control_dict[source_transform]['subs'][-1]
+            cmds.parentConstraint(source_transform, target_transform, mo = True)        
 
     def set_parent(self, parent):
         #CBB this needs to be replaced with self.set_control_parent
@@ -704,6 +745,10 @@ class FkRig(BufferRig):
     def set_use_joints(self, bool_value):
         
         self.use_joints = bool_value
+    
+    def set_create_sub_controls(self, bool_value):
+        
+        self.create_sub_controls = bool_value
     
     def create(self):
         super(FkRig, self).create()
@@ -752,8 +797,6 @@ class FkLocalRig(FkRig):
         if self.rig_scale:
             self.control.hide_visibility_attribute()
         
-        if self.control_shape:
-            self.control.set_curve_type(self.control_shape)
         
         return self.control
 
@@ -788,8 +831,6 @@ class FkScaleRig(FkRig):
         control.show_scale_attributes() 
         cmds.setAttr( '%s.overrideEnabled' % control.get() , 1 ) 
           
-        if self.control_shape: 
-            control.set_curve_type(self.control_shape) 
           
         return self.control
           
@@ -835,9 +876,10 @@ class FkScaleRig(FkRig):
           
         cmds.setAttr('%s.radius' % buffer_joint, 0) 
           
-        cmds.connectAttr('%s.scale' % self.last_control.get(), '%s.inverseScale' % buffer_joint) 
-          
-          
+        if not self.create_sub_controls:
+            cmds.connectAttr('%s.scale' % self.last_control.get(), '%s.inverseScale' % buffer_joint)
+
+        
         match = util.MatchSpace(control, buffer_joint) 
         match.translation_rotation() 
           
@@ -867,8 +909,12 @@ class FkScaleRig(FkRig):
           
         cmds.parent(self.current_xform_group, buffer_joint) 
           
-        cmds.parent(buffer_joint, self.last_control.get()) 
-        
+        if not self.create_sub_controls:
+            cmds.parent(buffer_joint, self.last_control.get())
+        if self.create_sub_controls: 
+            last_control = self.control_dict[self.last_control.get()]['subs'][-1]
+            cmds.parent(buffer_joint, last_control)
+            
 class FkCurlNoScaleRig(FkRig):
     def __init__(self, description, side):
         super(FkCurlNoScaleRig, self).__init__(description, side)
@@ -893,8 +939,6 @@ class FkCurlNoScaleRig(FkRig):
         if not cmds.objExists('%s.CURL' % self.attribute_control):
             title = util.MayaEnumVariable('CURL')
             title.create(self.attribute_control)
-        
-        
         
         driver = util.create_xform_group(control.get(), 'driver2')
         self.control_dict[control.get()]['driver2'] = driver

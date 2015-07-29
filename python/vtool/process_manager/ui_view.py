@@ -211,19 +211,15 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     def _item_menu(self, position):
         
         item = self.itemAt(position)
-        
-        index = self.indexAt(position)
-        
-        if item and item.parent():
-            self.new_top_level_action.setVisible(True)
             
-        if item and index.column() == 0:
+        if item:
+            self.new_top_level_action.setVisible(True)
             self.rename_action.setVisible(True)
             self.copy_action.setVisible(True)
             self.copy_special_action.setVisible(True)
             self.remove_action.setVisible(True)
         
-        if not item or index.column() > 0:
+        if not item:
             self.new_top_level_action.setVisible(False)
             self.rename_action.setVisible(False)
             self.copy_action.setVisible(False)
@@ -299,6 +295,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if not rename_worked:
             item.setText(0, old_name)
         
+        if rename_worked:
+            self.item_renamed.emit(item)
         
     def _copy_process(self):
         
@@ -400,6 +398,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         for process_path in process_paths:
             self._add_process_item(process_path)
             
+            
+            
+            
     def _get_parent_path(self, item):
         
         parents = self.get_tree_item_path(item)
@@ -426,7 +427,35 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                     return True
         
         return False
+
+    def _goto_settings_process(self):
+        
+        if not self.settings:
+            return
+        
+        settings_process = self.settings.get('process')
+            
+        if not settings_process:
+            return
+        
+        iterator = QtGui.QTreeWidgetItemIterator(self)
+        
+        while iterator.value():
+            item = iterator.value()
+            
+            if hasattr(item, 'directory') and hasattr(item, 'name'):
+            
+                if item.directory == settings_process[1]:
+                        
+                    if settings_process[0].startswith(item.name):
+                        index = self.indexFromItem(item)
+                        self.setExpanded(index, True)
+                        
+                    if settings_process[0] == item.name:
+                        self.setCurrentItem(item)
                 
+            iterator += 1
+
     def _add_process_items(self, item, path):
         
         parts = process.find_processes(path)
@@ -483,20 +512,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if item.has_parts():
             QtGui.QTreeWidgetItem(item)
         
-        if self.settings:
-            settings_process = self.settings.get('process')
-            
-            if settings_process:
-                
-                if item.directory == settings_process[1]:
-                    
-                    if settings_process[0].startswith(item.name):
-                        index = self.indexFromItem(item)
-                        self.setExpanded(index, True)
-                    
-                    if settings_process[0] == item.name:
-                        self.setCurrentItem(item)
-                    
+       
         
         return item
 
@@ -556,6 +572,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 
         self.current_item = None
         self.last_item = None
+        
+        self._goto_settings_process()
         
         
         
@@ -634,6 +652,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         process_settings = self.settings.get('process')
         
+        self._goto_settings_process()
+        
+        """
         if process_settings:
             iterator = QtGui.QTreeWidgetItemIterator(self)
             
@@ -655,7 +676,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 if current_item.name == process_settings[0]:
 
                     self.setCurrentItem(current_item)
-
+        """
 
                 
 class SimpleItem(qt_ui.TreeWidgetItem):
