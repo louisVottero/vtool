@@ -75,8 +75,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._set_title(name)
         
-        
-        
     def _item_selection_changed(self):
         
         items = self.view_widget.tree_widget.selectedItems()

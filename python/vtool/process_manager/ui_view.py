@@ -268,6 +268,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.new_top_process.emit()
     
     def _rename_process(self):
+        
+        print 'rename!'
         items = self.selectedItems()
         
         if not items:
@@ -284,10 +286,28 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if not new_name:
             return
         
+        parent = item.parent()
+        if not parent:
+            parent = self.invisibleRootItem()
+        
+        siblingCount = parent.childCount()
+        
+        name_inc = 1
+        pre_inc_name = new_name
+        
+        for inc in range(0, siblingCount):
+            
+            child_item = parent.child(inc)
+            
+            if child_item.text(0) == new_name:
+                new_name = pre_inc_name + str(name_inc)
+                name_inc += 1
+                
         item.setText(0, new_name)
         
         if not self._item_rename_valid(old_name, item):
             item.setText(0, old_name)
+            
             return
         
         rename_worked = self._item_renamed(item)
@@ -650,33 +670,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     def set_settings(self, settings):
         self.settings = settings
         
-        process_settings = self.settings.get('process')
-        
         self._goto_settings_process()
         
-        """
-        if process_settings:
-            iterator = QtGui.QTreeWidgetItemIterator(self)
-            
-            while(iterator.value()):
-                
-                current_item = iterator.value()
-                iterator += 1
-                
-                if not hasattr(current_item, 'name') or not hasattr(current_item, 'directory'):
-                    continue
-                
-                if not process_settings[1] == current_item.directory:
-                    continue
-                
-                if process_settings[0].startswith(current_item.name):
-                    index = self.indexFromItem(current_item)
-                    self.setExpanded(index, True)
-                
-                if current_item.name == process_settings[0]:
 
-                    self.setCurrentItem(current_item)
-        """
 
                 
 class SimpleItem(qt_ui.TreeWidgetItem):
