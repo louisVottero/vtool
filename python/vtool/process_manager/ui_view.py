@@ -18,7 +18,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
     sync_code = qt_ui.create_signal()
     
-               
     def __init__(self):
         
         self.settings = None

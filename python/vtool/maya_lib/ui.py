@@ -98,18 +98,27 @@ def tool_manager(name = None, directory = None):
     tool_manager = ToolManager(name)
     tool_manager.set_directory(directory)
     
-    create_window(tool_manager)
+    funct = lambda : create_window(tool_manager)
+    
+    import maya.utils
+    maya.utils.executeDeferred(funct)
     
     return tool_manager
 
 def process_manager(directory = None):
     window = ProcessMayaWindow()
     
-    create_window(window)
+    funct = lambda : create_window(window)
+    
+    import maya.utils
+    maya.utils.executeDeferred(funct)
+    
+    
+    #create_window(window)
     
     if directory:
         window.set_code_directory(directory)
-        
+     
     return window
 
 class MayaWindow(vtool.qt_ui.BasicWindow):
