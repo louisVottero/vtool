@@ -1,5 +1,6 @@
 Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+
 Vetala software package is usable only by permission from Louis Vottero.   
 Do not duplicate or modify with the intent to sell or distribute.
 All other exceptions and uses of the software without written consent by Louis Vottero are prohibited.

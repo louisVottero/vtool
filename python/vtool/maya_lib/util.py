@@ -5346,10 +5346,12 @@ def create_local_follow_group(source_transform, target_transform, prefix = 'foll
         
     return follow_group    
 
-def create_multi_follow_direct(source_list, target_transform, node, constraint_type = 'parentConstraint'):
-    var = MayaEnumVariable('FOLLOW')
-    var.create(node)
+def create_multi_follow_direct(source_list, target_transform, node, constraint_type = 'parentConstraint', attribute_name = 'follow', value = None):
     
+    if attribute_name == 'follow':
+        var = MayaEnumVariable('FOLLOW')
+        var.create(node)
+            
     locators = []
 
     for source in source_list:
@@ -5373,9 +5375,13 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
     
     constraint_editor = ConstraintEditor()
     
-    constraint_editor.create_switch(node, 'follow', constraint)
+    constraint_editor.create_switch(node, attribute_name, constraint)
+
+    if value == None:
+        value = (len(source_list)-1)
     
-    cmds.setAttr('%s.follow' % node, len(source_list)-1)   
+    cmds.setAttr('%s.%s' % (node, attribute_name), value)
+       
 
 def create_multi_follow(source_list, target_transform, node = None, constraint_type = 'parentConstraint', attribute_name = 'follow', value = None):
     
