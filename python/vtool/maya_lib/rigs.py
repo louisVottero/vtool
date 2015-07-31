@@ -28,6 +28,8 @@ class Rig(object):
         self._create_default_groups()
         
         self.control_shape = 'circle'
+        self.sub_control_shape = None
+        
         self.control_size = 1
         self.sub_control_size = 0.8
         
@@ -127,12 +129,18 @@ class Rig(object):
         control.hide_visibility_attribute()
         if self.control_shape:
             control.set_curve_type(self.control_shape)
+            
+            if sub:
+                control.set_curve_type(self.sub_control_shape)
+            
         
         if not sub:
+                        
             control.scale_shape(self.control_size, 
                                 self.control_size, 
                                 self.control_size)
         if sub:
+            
             control.scale_shape(self.sub_control_size, 
                                 self.sub_control_size, 
                                 self.sub_control_size)
@@ -150,6 +158,9 @@ class Rig(object):
             
     def set_control_shape(self, shape_name):
         self.control_shape = shape_name
+        
+    def set_sub_control_shape(self, shape_name):
+        self.sub_control_shape = shape_name
         
     def set_control_size(self, float_value):
         self.control_size = float_value
@@ -612,10 +623,14 @@ class FkRig(BufferRig):
                 if inc == 0:
                     sub_control = super(FkRig, self)._create_control(sub =  True)
                     sub_control.set_curve_type(self.control_shape)
+                    if self.sub_control_shape:
+                        sub_control.set_curve_type(self.sub_control_shape)    
                     sub_control.scale_shape(2,2,2)
                 if inc == 1:
                     sub_control = super(FkRig, self)._create_control(description = 'sub', sub =  True)
                     sub_control.set_curve_type(self.control_shape)
+                    if self.sub_control_shape:
+                        sub_control.set_curve_type(self.sub_control_shape)
                 
                 sub_control.hide_translate_attributes()
                 sub_control.hide_scale_and_visibility_attributes()
@@ -1960,8 +1975,6 @@ class IkSplineNubRig(BufferRig):
         control.scale_shape(.5, .5, .5)
         control.hide_scale_and_visibility_attributes()
         
-        control.set_curve_type(self.control_shape)
-        
         xform = util.create_xform_group(control.get())
         
         orient_translate = self.joints[-1]
@@ -1985,7 +1998,7 @@ class IkSplineNubRig(BufferRig):
             control.scale_shape(.5, .5, .5)
             control.hide_scale_and_visibility_attributes()
             
-            control.set_curve_type(self.control_shape)
+            
             control = control.get()
         
         if not self.bool_create_middle_control:
@@ -2283,8 +2296,6 @@ class IkAppendageRig(BufferRig):
         control = self._create_control(description = 'btm')
         control.hide_scale_and_visibility_attributes()
         
-        if self.curve_type:
-            control.set_curve_type(self.curve_type)
             
         control.scale_shape(2, 2, 2)
         
@@ -3278,6 +3289,10 @@ class RollRig(JointRig):
             
             control_object = control
             control.set_curve_type(self.control_shape)
+            if sub:
+                if self.sub_control_shape:
+                    control.set_curve_type(self.sub_control_shape)
+                            
             control.scale_shape(scale, scale, scale)
             control = control.get()
         
