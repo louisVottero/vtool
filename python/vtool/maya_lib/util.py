@@ -5478,7 +5478,9 @@ def get_top_dag_nodes(exclude_cameras = True):
      
     return top_transforms 
 
-def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_stretch_on_off = False, create_bulge = True):
+def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_stretch_on_off = False, create_bulge = True, scale_axis = 'X'):
+    
+    scale_axis = scale_axis.capitalize()
     
     arclen_node = cmds.arclen(curve, ch = True, n = inc_name('curveInfo_%s' % curve))
     
@@ -5519,12 +5521,12 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
             cmds.connectAttr(attribute, '%s.color1R' % blend)
             cmds.setAttr('%s.color2R' % blend, 1)
             
-            cmds.connectAttr('%s.outputR' % blend, '%s.scaleX' % joint)
+            cmds.connectAttr('%s.outputR' % blend, '%s.scale%s' % (joint, scale_axis))
             
             cmds.connectAttr('%s.stretchOnOff' % node_for_attribute, '%s.blender' % blend)
             
         if not create_stretch_on_off:
-            cmds.connectAttr(attribute, '%s.scaleX' % joint)
+            cmds.connectAttr(attribute, '%s.scale%s' % (joint, scale_axis))
         
         if create_bulge:
             #bulge cbb
@@ -5569,8 +5571,15 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
             if not node_for_attribute:
                 attribute = '%s.outputX' % multiply_offset
     
-            cmds.connectAttr(attribute, '%s.scaleY' % joint)
-            cmds.connectAttr(attribute, '%s.scaleZ' % joint)
+            if scale_axis == 'X':
+                cmds.connectAttr(attribute, '%s.scaleY' % joint)
+                cmds.connectAttr(attribute, '%s.scaleZ' % joint)
+            if scale_axis == 'Y':
+                cmds.connectAttr(attribute, '%s.scaleX' % joint)
+                cmds.connectAttr(attribute, '%s.scaleZ' % joint)
+            if scale_axis == 'Z':
+                cmds.connectAttr(attribute, '%s.scaleX' % joint)
+                cmds.connectAttr(attribute, '%s.scaleY' % joint)
         
         percent += segment
 

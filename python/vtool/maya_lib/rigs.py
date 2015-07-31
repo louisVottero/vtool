@@ -1113,6 +1113,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         self.ribbon_offset_axis = 'Y'
         self.create_follows = True
         self.closest_y = False
+        self.stretch_axis = 'X'
 
     def _create_curve(self):
         
@@ -1282,7 +1283,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             return
         
         if self.stretchy:    
-            util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1], self.stretch_on_off)
+            util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1], self.stretch_on_off, self.stretch_axis)
     
     def _loop(self, transforms):
                 
@@ -1485,6 +1486,9 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         
     def set_stretch_on_off(self, bool_value):
         self.stretch_on_off = bool_value
+    
+    def set_stretch_axis(self, axis_letter):
+        self.stretch_axis = axis_letter
     
     def set_curve(self, curve):
         self.curve = curve
@@ -2186,6 +2190,7 @@ class IkAppendageRig(BufferRig):
         self.pole_follow_transform = None
         self.pole_angle_joints = []
         self.top_control_right_side_fix = True
+        self.stretch_axis = 'X'
         
     
     def _attach_ik_joints(self, source_chain, target_chain):
@@ -2557,11 +2562,14 @@ class IkAppendageRig(BufferRig):
 
     def _create_stretchy(self, top_transform, btm_transform, control):
         stretchy = util.StretchyChain()
+        
         stretchy.set_joints(self.ik_chain)
         #dampen should be damp... dampen means wet, damp means diminish
         stretchy.set_add_dampen(True)
         stretchy.set_node_for_attributes(control)
         stretchy.set_description(self._get_name())
+        stretchy.set_scale_axis(self.stretch_axis)
+        
         #this is new stretch distance
         #stretchy.set_vector_instead_of_matrix(False)
         top_locator, btm_locator = stretchy.create()
@@ -2587,6 +2595,9 @@ class IkAppendageRig(BufferRig):
     
     def set_create_stretchy(self, bool_value):
         self.create_stretchy = bool_value
+    
+    def set_stretch_axis(self, axis_letter):
+        self.stretch_axis = axis_letter
     
     def set_pole_offset(self, value):
         self.pole_offset = value
