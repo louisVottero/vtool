@@ -3258,6 +3258,8 @@ class RollRig(JointRig):
         self.side_roll_axis = 'Z'
         self.top_roll_axis = 'Y'
         
+        self.right_side_fix = False
+        
     def duplicate_joints(self):
         
         duplicate = util.DuplicateHierarchy(self.joints[0])
@@ -3282,14 +3284,19 @@ class RollRig(JointRig):
         group = cmds.group(em = True, n = name)
         
         match = util.MatchSpace(source_transform, group)
-        match.translation()
+        match.translation_rotation()
         
         xform_group = util.create_xform_group(group)
         
         attribute_control = self._get_attribute_control()
         
         cmds.addAttr(attribute_control, ln = '%sPivot' % description, at = 'double', k = True)
+        
+        
         cmds.connectAttr('%s.%sPivot' % (attribute_control, description), '%s.rotateY' % group)
+        
+        if self.right_side_fix and self.side == 'R':
+            util.insert_multiply('%s.rotateY' % group, -1) 
         
         return group, xform_group
     
@@ -3421,6 +3428,9 @@ class RollRig(JointRig):
         
     def set_top_roll_axis(self, axis_letter):
         self.top_roll_axis = axis_letter
+    
+    def set_right_side_fix(self, bool_value):
+        self.right_side_fix = bool_value
     
     def create(self):
         super(RollRig, self).create()

@@ -9597,6 +9597,24 @@ def connect_multiply(source_attribute, target_attribute, value = 0.1, skip_attac
     
     return multi
 
+def insert_multiply(target_attribute, value = 0.1):
+    
+    new_name = target_attribute.replace('.', '_')
+    new_name = new_name.replace('[', '_')
+    new_name = new_name.replace(']', '_')
+    
+    input_attr = get_attribute_input(target_attribute)
+    
+    multi = cmds.createNode('multiplyDivide', n = 'multiplyDivide_%s' % new_name) 
+    
+    if input_attr:
+        disconnect_attribute(target_attribute)
+        cmds.connectAttr(input_attr, '%s.input1X' % multi)
+        
+    cmds.connectAttr('%s.outputX' % multi, target_attribute)
+    
+    cmds.setAttr('%s.input2X' % multi, value)
+
 def connect_blend(source_attribute1, source_attribute2, target_attribute, value = 0.5 ):
     blend = cmds.createNode('blendColors', n = 'blendColors_%s' % source_attribute1)
     
