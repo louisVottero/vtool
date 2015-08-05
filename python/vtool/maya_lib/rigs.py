@@ -28,6 +28,8 @@ class Rig(object):
         self._create_default_groups()
         
         self.control_shape = 'circle'
+        self.sub_control_shape = None
+        
         self.control_size = 1
         self.sub_control_size = 0.8
         
@@ -127,12 +129,18 @@ class Rig(object):
         control.hide_visibility_attribute()
         if self.control_shape:
             control.set_curve_type(self.control_shape)
+            
+            if sub:
+                control.set_curve_type(self.sub_control_shape)
+            
         
         if not sub:
+                        
             control.scale_shape(self.control_size, 
                                 self.control_size, 
                                 self.control_size)
         if sub:
+            
             control.scale_shape(self.sub_control_size, 
                                 self.sub_control_size, 
                                 self.sub_control_size)
@@ -150,6 +158,9 @@ class Rig(object):
             
     def set_control_shape(self, shape_name):
         self.control_shape = shape_name
+        
+    def set_sub_control_shape(self, shape_name):
+        self.sub_control_shape = shape_name
         
     def set_control_size(self, float_value):
         self.control_size = float_value
@@ -612,10 +623,14 @@ class FkRig(BufferRig):
                 if inc == 0:
                     sub_control = super(FkRig, self)._create_control(sub =  True)
                     sub_control.set_curve_type(self.control_shape)
+                    if self.sub_control_shape:
+                        sub_control.set_curve_type(self.sub_control_shape)    
                     sub_control.scale_shape(2,2,2)
                 if inc == 1:
                     sub_control = super(FkRig, self)._create_control(description = 'sub', sub =  True)
                     sub_control.set_curve_type(self.control_shape)
+                    if self.sub_control_shape:
+                        sub_control.set_curve_type(self.sub_control_shape)
                 
                 sub_control.hide_translate_attributes()
                 sub_control.hide_scale_and_visibility_attributes()
@@ -1098,6 +1113,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         self.ribbon_offset_axis = 'Y'
         self.create_follows = True
         self.closest_y = False
+        self.stretch_axis = 'X'
 
     def _create_curve(self):
         
@@ -1267,7 +1283,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             return
         
         if self.stretchy:    
-            util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1], self.stretch_on_off)
+            util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1], self.stretch_on_off, self.stretch_axis)
     
     def _loop(self, transforms):
                 
@@ -1470,6 +1486,9 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         
     def set_stretch_on_off(self, bool_value):
         self.stretch_on_off = bool_value
+    
+    def set_stretch_axis(self, axis_letter):
+        self.stretch_axis = axis_letter
     
     def set_curve(self, curve):
         self.curve = curve
@@ -1960,8 +1979,6 @@ class IkSplineNubRig(BufferRig):
         control.scale_shape(.5, .5, .5)
         control.hide_scale_and_visibility_attributes()
         
-        control.set_curve_type(self.control_shape)
-        
         xform = util.create_xform_group(control.get())
         
         orient_translate = self.joints[-1]
@@ -1985,7 +2002,7 @@ class IkSplineNubRig(BufferRig):
             control.scale_shape(.5, .5, .5)
             control.hide_scale_and_visibility_attributes()
             
-            control.set_curve_type(self.control_shape)
+            
             control = control.get()
         
         if not self.bool_create_middle_control:
@@ -2173,6 +2190,7 @@ class IkAppendageRig(BufferRig):
         self.pole_follow_transform = None
         self.pole_angle_joints = []
         self.top_control_right_side_fix = True
+        self.stretch_axis = 'X'
         
     
     def _attach_ik_joints(self, source_chain, target_chain):
@@ -2283,8 +2301,6 @@ class IkAppendageRig(BufferRig):
         control = self._create_control(description = 'btm')
         control.hide_scale_and_visibility_attributes()
         
-        if self.curve_type:
-            control.set_curve_type(self.curve_type)
             
         control.scale_shape(2, 2, 2)
         
@@ -2546,11 +2562,14 @@ class IkAppendageRig(BufferRig):
 
     def _create_stretchy(self, top_transform, btm_transform, control):
         stretchy = util.StretchyChain()
+        
         stretchy.set_joints(self.ik_chain)
         #dampen should be damp... dampen means wet, damp means diminish
         stretchy.set_add_dampen(True)
         stretchy.set_node_for_attributes(control)
         stretchy.set_description(self._get_name())
+        stretchy.set_scale_axis(self.stretch_axis)
+        
         #this is new stretch distance
         #stretchy.set_vector_instead_of_matrix(False)
         top_locator, btm_locator = stretchy.create()
@@ -2576,6 +2595,9 @@ class IkAppendageRig(BufferRig):
     
     def set_create_stretchy(self, bool_value):
         self.create_stretchy = bool_value
+    
+    def set_stretch_axis(self, axis_letter):
+        self.stretch_axis = axis_letter
     
     def set_pole_offset(self, value):
         self.pole_offset = value
@@ -3236,6 +3258,8 @@ class RollRig(JointRig):
         self.side_roll_axis = 'Z'
         self.top_roll_axis = 'Y'
         
+        self.right_side_fix = False
+        
     def duplicate_joints(self):
         
         duplicate = util.DuplicateHierarchy(self.joints[0])
@@ -3260,14 +3284,19 @@ class RollRig(JointRig):
         group = cmds.group(em = True, n = name)
         
         match = util.MatchSpace(source_transform, group)
-        match.translation()
+        match.translation_rotation()
         
         xform_group = util.create_xform_group(group)
         
         attribute_control = self._get_attribute_control()
         
         cmds.addAttr(attribute_control, ln = '%sPivot' % description, at = 'double', k = True)
+        
+        
         cmds.connectAttr('%s.%sPivot' % (attribute_control, description), '%s.rotateY' % group)
+        
+        if self.right_side_fix and self.side == 'R':
+            util.insert_multiply('%s.rotateY' % group, -1) 
         
         return group, xform_group
     
@@ -3278,6 +3307,10 @@ class RollRig(JointRig):
             
             control_object = control
             control.set_curve_type(self.control_shape)
+            if sub:
+                if self.sub_control_shape:
+                    control.set_curve_type(self.sub_control_shape)
+                            
             control.scale_shape(scale, scale, scale)
             control = control.get()
         
@@ -3395,6 +3428,9 @@ class RollRig(JointRig):
         
     def set_top_roll_axis(self, axis_letter):
         self.top_roll_axis = axis_letter
+    
+    def set_right_side_fix(self, bool_value):
+        self.right_side_fix = bool_value
     
     def create(self):
         super(RollRig, self).create()

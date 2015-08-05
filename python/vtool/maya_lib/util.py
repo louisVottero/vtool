@@ -5499,7 +5499,9 @@ def get_top_dag_nodes(exclude_cameras = True):
      
     return top_transforms 
 
-def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_stretch_on_off = False, create_bulge = True):
+def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_stretch_on_off = False, create_bulge = True, scale_axis = 'X'):
+    
+    scale_axis = scale_axis.capitalize()
     
     arclen_node = cmds.arclen(curve, ch = True, n = inc_name('curveInfo_%s' % curve))
     
@@ -5540,12 +5542,12 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
             cmds.connectAttr(attribute, '%s.color1R' % blend)
             cmds.setAttr('%s.color2R' % blend, 1)
             
-            cmds.connectAttr('%s.outputR' % blend, '%s.scaleX' % joint)
+            cmds.connectAttr('%s.outputR' % blend, '%s.scale%s' % (joint, scale_axis))
             
             cmds.connectAttr('%s.stretchOnOff' % node_for_attribute, '%s.blender' % blend)
             
         if not create_stretch_on_off:
-            cmds.connectAttr(attribute, '%s.scaleX' % joint)
+            cmds.connectAttr(attribute, '%s.scale%s' % (joint, scale_axis))
         
         if create_bulge:
             #bulge cbb
@@ -5590,8 +5592,15 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
             if not node_for_attribute:
                 attribute = '%s.outputX' % multiply_offset
     
-            cmds.connectAttr(attribute, '%s.scaleY' % joint)
-            cmds.connectAttr(attribute, '%s.scaleZ' % joint)
+            if scale_axis == 'X':
+                cmds.connectAttr(attribute, '%s.scaleY' % joint)
+                cmds.connectAttr(attribute, '%s.scaleZ' % joint)
+            if scale_axis == 'Y':
+                cmds.connectAttr(attribute, '%s.scaleX' % joint)
+                cmds.connectAttr(attribute, '%s.scaleZ' % joint)
+            if scale_axis == 'Z':
+                cmds.connectAttr(attribute, '%s.scaleX' % joint)
+                cmds.connectAttr(attribute, '%s.scaleY' % joint)
         
         percent += segment
 
@@ -9639,6 +9648,24 @@ def connect_multiply(source_attribute, target_attribute, value = 0.1, skip_attac
     lock_state.restore_initial()
     
     return multi
+
+def insert_multiply(target_attribute, value = 0.1):
+    
+    new_name = target_attribute.replace('.', '_')
+    new_name = new_name.replace('[', '_')
+    new_name = new_name.replace(']', '_')
+    
+    input_attr = get_attribute_input(target_attribute)
+    
+    multi = cmds.createNode('multiplyDivide', n = 'multiplyDivide_%s' % new_name) 
+    
+    if input_attr:
+        disconnect_attribute(target_attribute)
+        cmds.connectAttr(input_attr, '%s.input1X' % multi)
+        
+    cmds.connectAttr('%s.outputX' % multi, target_attribute)
+    
+    cmds.setAttr('%s.input2X' % multi, value)
 
 def connect_blend(source_attribute1, source_attribute2, target_attribute, value = 0.5 ):
     blend = cmds.createNode('blendColors', n = 'blendColors_%s' % source_attribute1)
