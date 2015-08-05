@@ -229,7 +229,8 @@ class CurveDataInfo():
             if curve_type_value != original_curve_type:
                 return False
         
-                #this maybe could be added back in as an option
+                #this maybe could be added back in as an option. 
+                #It does a deeper check if compatible.
                 """
                 original_mel_list =  curve_data.create_mel_list()
                 curve_data = CurveToData(existing_curve)

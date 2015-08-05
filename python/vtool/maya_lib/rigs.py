@@ -30,6 +30,9 @@ class Rig(object):
         self.control_shape = 'circle'
         self.sub_control_shape = None
         
+        self.control_color = None
+        self.sub_control_color = None
+        
         self.control_size = 1
         self.sub_control_size = 0.8
         
@@ -126,8 +129,17 @@ class Rig(object):
         control = util.Control( self._get_control_name(description, sub) )
         
         control.color( util.get_color_of_side( self.side , sub)  )
+        
+        if self.control_color >=0 and not sub:
+            control.color( self.control_color )
+            
+        if self.sub_control_color >= 0 and sub:
+            control.color( self.control_color )
+            
         control.hide_visibility_attribute()
+        
         if self.control_shape:
+            
             control.set_curve_type(self.control_shape)
             
             if sub:
@@ -161,12 +173,20 @@ class Rig(object):
         
     def set_sub_control_shape(self, shape_name):
         self.sub_control_shape = shape_name
+    
+    def set_control_color(self, color):
+        self.control_color = color
+        
+    def set_sub_control_color(self, color):
+        self.sub_control_color = color
         
     def set_control_size(self, float_value):
         self.control_size = float_value
         
     def set_sub_control_size(self, float_value):
         self.sub_control_size = float_value
+        
+    
                 
     def set_control_parent(self, parent_transform):
         
