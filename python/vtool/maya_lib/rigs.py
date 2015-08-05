@@ -802,7 +802,7 @@ class FkLocalRig(FkRig):
         self.main_local_parent = None
         self.local_xform = None
         self.rig_scale = False
-    
+        
     def _attach(self, source_transform, target_transform):
         
         local_group, local_xform = util.constrain_local(source_transform, target_transform, scale_connect = self.rig_scale)

@@ -6807,10 +6807,11 @@ def create_empty_follicle(description, uv = [0,0]):
     cmds.hide(follicleShape)
     
     follicle = cmds.listRelatives(follicleShape, p = True)[0]
+    
     cmds.setAttr('%s.inheritsTransform' % follicle, 0)
     
     if not description:
-        follicle = cmds.rename(follicle, inc_name('follicle_1'))[0]
+        follicle = cmds.rename(follicle, inc_name('follicle_1'))
     if description:
         follicle = cmds.rename(follicle, inc_name('follicle_%s' % description))
     
