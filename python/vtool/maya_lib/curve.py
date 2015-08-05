@@ -222,6 +222,9 @@ class CurveDataInfo():
     
         curve_type_value = self._get_curve_type(existing_curve)
         
+        if not original_curve_type:
+            return True
+        
         if curve_type_value:
             if curve_type_value != original_curve_type:
                 return False
@@ -443,15 +446,13 @@ class CurveDataInfo():
         
             is_curve = self._is_curve_of_type(curve, curve_in_library)
             
-            if not is_curve:    
-        
+            if not is_curve:
                 return
         
         self._match_shapes_to_data(curve, mel_data_list)
-                
         
-                
         if mel_data_list:
+            
             set_nurbs_data_mel(curve, mel_data_list)
             
         util.rename_shapes(curve)

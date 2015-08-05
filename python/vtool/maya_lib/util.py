@@ -1736,6 +1736,8 @@ class Control(object):
         cmds.select(cl = True)
         name = self.get()
         
+        curve_type = '%s.curveType' % name
+        
         joint_given = True
         
         if not joint:
@@ -1759,6 +1761,12 @@ class Control(object):
         
         if joint_given:
             rename_shapes(self.control)
+            
+        var = MayaStringVariable('curveType')
+        var.create(joint)
+        var.set_value(curve_type)
+        
+        cmds.setAttr('%s.radius' % joint, k = False, ch = False)
         
     def translate_shape(self, x,y,z):
         
@@ -1874,10 +1882,6 @@ class Control(object):
         cmds.delete(self.shapes)
         self.shapes = []
         
-    
-    
-    
-
 class IkHandle(object):
     
     solver_rp = 'ikRPsolver'
@@ -4775,6 +4779,23 @@ class EnvelopeHistory(object):
             if connection:
                 cmds.connectAttr(connection, '%s.envelope' % history)
    
+class LockState(object):
+    
+    def __init__(self, attribute):
+        
+        self.lock_state = cmds.getAttr(attribute, l = True)
+        self.attribute = attribute
+        
+    def unlock(self):
+        cmds.setAttr( self.attribute, l = False)
+        
+    def lock(self):
+        cmds.setAttr( self.attribute, l = True)
+        
+    def restore_initial(self):
+        
+        cmds.setAttr( self.attribute, l = self.lock_state)
+   
 #--- definitions
 
 def inc_name(name):
@@ -6180,7 +6201,33 @@ def scale_constraint_to_world(scale_constraint):
         target = get_attribute_input('%s.target[%s].targetScale' % (scale_constraint, inc), True)
         
         cmds.connectAttr('%s.parentInverseMatrix' % target, '%s.target[%s].targetParentMatrix' % (scale_constraint, inc) )
+    
+def duplicate_joint_section(joint, name = ''):
+    
+    rels = cmds.listRelatives(joint, type = 'joint', f = True)
+    
+    if not rels:
+        return
+    
+    child = rels[0]
+    
+    if not name:
+        name = 'duplicate_%s' % joint
+    
+    duplicate = cmds.duplicate(joint, po = True, n = name)[0]
+    sub_duplicate = None
+    
+    if child:
+        sub_duplicate = cmds.duplicate(child, po = True, n = (name + '_end'))[0] 
+        cmds.parent(sub_duplicate, duplicate)
+        cmds.makeIdentity(sub_duplicate, jo = True, r = True, apply = True)
         
+    if not sub_duplicate:
+        return duplicate
+    if sub_duplicate:
+        return duplicate, sub_duplicate   
+    
+            
     
 #--- animation
 
@@ -9567,6 +9614,9 @@ def connect_multiply(source_attribute, target_attribute, value = 0.1, skip_attac
     
     input_attribute = get_attribute_input( target_attribute  )
 
+    lock_state = LockState(target_attribute)
+    lock_state.unlock()
+
     new_name = target_attribute.replace('.', '_')
     new_name = new_name.replace('[', '_')
     new_name = new_name.replace(']', '_')
@@ -9585,6 +9635,8 @@ def connect_multiply(source_attribute, target_attribute, value = 0.1, skip_attac
     if not plus:
         if not cmds.isConnected('%s.outputX' % multi, target_attribute):
             cmds.connectAttr('%s.outputX' % multi, target_attribute, f = True)
+    
+    lock_state.restore_initial()
     
     return multi
 
@@ -9860,7 +9912,6 @@ def get_controls():
     found = []
     found_with_value = []
     
-    
     for transform in transforms:
         if transform.startswith('CNT_'):
             found.append(transform)
@@ -9882,12 +9933,15 @@ def get_controls():
                     found_with_value.append(transform)
             
             continue
+        
+        if cmds.objExists('%s.curveType' % transform):
+            found.append(transform)
+            continue
     
     if found_with_value:
         found = found_with_value
         
     return found
-
     
 @undo_chunk
 def mirror_control(control):
@@ -9914,12 +9968,17 @@ def mirror_control(control):
             
         if control.endswith('_R'):
             other_control = control[0:-2] + '_L'
+            
+    if not other_control:
+        if control.startswith('L_'):
+            other_control = 'R_' + control[2:]
+            
+        if control.startswith('R_'):
+            other_control = 'L_' + control[2:]
          
     if not other_control:
                 
         if control.find('lf') > -1 or control.find('rt') > -1:
-            
-            
             
             if control.find('lf') > -1:
                 other_control = control.replace('lf', 'rt')
