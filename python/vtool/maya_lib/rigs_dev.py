@@ -3429,7 +3429,7 @@ class WorldStickyFadeRig(WorldStickyRig):
             self.side = side
             
             corner_offset = cmds.group(em = True, n = self._get_name('offset', 'corner'))
-            corner_offset_xform = util.create_xform_group(corner_offset)
+            #corner_offset_xform = util.create_xform_group(corner_offset)
             
             sub_corner_offset = cmds.duplicate(corner_offset, n = self._get_name('subOffset', 'corner'))[0]
             #cmds.parent(sub_corner_offset, corner_offset_xform)
@@ -3460,7 +3460,7 @@ class WorldStickyFadeRig(WorldStickyRig):
             self.corner_xforms.append(xform)
             self.corner_controls.append(control.get())
             
-            util.MatchSpace(joint, corner_offset_xform).translation()
+            #util.MatchSpace(joint, corner_offset_xform).translation()
             if not self.corner_match:
                 util.MatchSpace(joint, xform).translation_rotation()
             if self.corner_match:
@@ -3476,13 +3476,19 @@ class WorldStickyFadeRig(WorldStickyRig):
                 cmds.delete(const)
             
             cmds.parent(xform, self.control_group)
-            cmds.parent(corner_offset_xform, xform)
+            
             
             self.corner_offsets.append(corner_offset)
             self.sub_corner_offsets.append(sub_corner_offset)
             
+            #const = cmds.pointConstraint(control.get(), corner_offset_xform)
+            #cmds.delete(const)
             cmds.pointConstraint(control.get(), corner_offset)
             cmds.pointConstraint(sub_control.get(), sub_corner_offset)
+            
+            corner_offset_xform = util.create_xform_group(corner_offset)
+            cmds.parent(corner_offset_xform, xform)
+            cmds.parent(sub_corner_offset, corner_offset_xform)
             
         self.side =orig_side
 
