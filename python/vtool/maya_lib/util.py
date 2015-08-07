@@ -1773,7 +1773,7 @@ class Control(object):
         components = self._get_components()
         
         if components:
-            cmds.move(x,y,z, components, relative = True)
+            cmds.move(x,y,z, components, relative = True, os = True)
         
     def rotate_shape(self, x,y,z):
         
@@ -6380,8 +6380,6 @@ def get_shapes_in_hierarchy(transform):
     
     return shapes
 
-
-
 def rename_shapes(transform):
     
     shapes = get_shapes(transform)
@@ -9499,7 +9497,11 @@ def connect_visibility(attribute_name, target_node, value = 1):
         cmds.addAttr(split_name[0], ln = split_name[1], at = 'bool', dv = value,k = True)
         
     for thing in nodes: 
-        cmds.connectAttr(attribute_name, '%s.visibility' % thing)
+        
+        if not cmds.isConnected(attribute_name, '%s.visibility' % thing):
+            cmds.connectAttr(attribute_name, '%s.visibility' % thing)
+        if cmds.isConnected(attribute_name, '%s.visibility' % thing):
+            vtool.util.warning( attribute_name + ' and ' + thing + '.visibility are already connected')
 
 def connect_plus(source_attribute, target_attribute, respect_value = False):
     
@@ -10332,7 +10334,7 @@ def connect_follicle_to_hair(follicle, hair_system):
     
     cmds.refresh()
     
-def add_follicle_to_curve(curve, hair_system = None, switch_control = None):
+def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attribute_name = 'dynamic'):
     
     parent = cmds.listRelatives(curve, p = True)
     
@@ -10368,9 +10370,9 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None):
         
         blendshape_node = cmds.blendShape(curve, new_curve, blend_curve, w = [0,1],n = 'blendShape_%s' % follicle)[0]
         
-        if not cmds.objExists('%s.dynamic' % switch_control):
+        if not cmds.objExists('%s.%s' % (switch_control, attribute_name)):
             
-            variable = MayaNumberVariable('dynamic')
+            variable = MayaNumberVariable(attribute_name)
             variable.set_variable_type(variable.TYPE_DOUBLE)
             variable.set_node(switch_control)
             variable.set_min_value(0)
@@ -10378,7 +10380,7 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None):
             variable.set_keyable(True)
             variable.create()
         
-        remap = RemapAttributesToAttribute(switch_control, 'dynamic')
+        remap = RemapAttributesToAttribute(switch_control, attribute_name)
         remap.create_attributes(blendshape_node, [curve, new_curve])
         remap.create()
         """

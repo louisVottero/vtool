@@ -1391,9 +1391,15 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             #working here to add auto fix to joint orientation.
             
             for inc in range(0, len(x_joints)):
-                util.OrientJointAttributes(x_joints[inc])
-                                
+                #util.OrientJointAttributes(x_joints[inc])
+                
+                orient = util.OrientJointAttributes(x_joints[inc])
+                orient.delete()
+                #orient._create_attributes()
+                         
                 orient = util.OrientJoint(x_joints[inc])
+                
+                
                 
                 aim = 3
                 if inc == len(x_joints)-1:
