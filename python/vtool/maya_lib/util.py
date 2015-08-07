@@ -276,6 +276,10 @@ class ApiObject(object):
         return
 
 class MayaObject(ApiObject):
+    """
+    Wrapper for Api MObject
+    """
+    
     def __init__(self, mobject = None):
 
         if type(mobject) == str or type(mobject) == unicode:
@@ -584,7 +588,11 @@ class IteratePolygonFaces(MayaIterator):
     
 #--- variables
 class MayaVariable(vtool.util.Variable):
-
+    """
+    Convenience class for dealing with Maya attributes.
+    """
+    
+    
     TYPE_BOOL = 'bool'
     TYPE_LONG = 'long'
     TYPE_SHORT = 'short'
@@ -4799,15 +4807,24 @@ class LockState(object):
 #--- definitions
 
 def inc_name(name):
+    """
+    Finds a unique name by adding a number to the end.
+    """
     unique = FindUniqueName(name)
     return unique.get()
 
 def prefix_name(node, prefix, name, separator = '_'):
+    """
+    Adds a prefix to a name
+    """
     new_name = cmds.rename(node, '%s%s%s' % (prefix,separator, name))
     
     return new_name
 
 def prefix_hierarchy(top_group, prefix):
+    """
+    Prefix all the names in a hierarchy.
+    """
     
     relatives = cmds.listRelatives(top_group, ad = True)
      
@@ -4819,7 +4836,10 @@ def prefix_hierarchy(top_group, prefix):
     
     
 def pad_number(name):
-        
+    """
+    Add a number to a name.
+    """
+    
     number = vtool.util.get_last_number(name)
     
     number_string = str(number)
@@ -4836,15 +4856,19 @@ def pad_number(name):
     
 
 def nodename_to_mobject(object_name):
+    """
+    Initialize an MObject of the named node.
+    """
     
     selection_list = SelectionList()
     selection_list.create_by_name(object_name)
     
     return selection_list.get_at_index(0)
 
-
-    
 def get_node_types(nodes, return_shape_type = True):
+    """
+    Get the maya node types for the nodes supplied.
+    """
     
     found_type = {}
     
@@ -4867,15 +4891,21 @@ def get_node_types(nodes, return_shape_type = True):
     return found_type
      
 def get_basename(name):
+    """
+    Get the basename in a hierarchy name.
+    If top|model|face is supplied, face will be returned.
+    """
     split_name = name.split('|')
     
     basename = split_name[-1]
     
-    
-    
     return basename
 
 def get_visible_hud_displays():
+    """
+    Get viewport hud displays.
+    """    
+    
     found = []
         
     displays = cmds.headsUpDisplay(q = True, lh = True)
@@ -4889,6 +4919,9 @@ def get_visible_hud_displays():
     return found
 
 def set_hud_visibility(bool_value, displays = None):
+    """
+    Set the viewport hud display visibility.
+    """
     
     if not displays:
         displays = cmds.headsUpDisplay(q = True, lh = True) 
@@ -4897,6 +4930,9 @@ def set_hud_visibility(bool_value, displays = None):
         cmds.headsUpDisplay(display, e = True, vis = bool_value)
 
 def set_hud_lines(lines, name):
+    """
+    Set the viewport hud text for the named hud.
+    """
     
     huds = []
     
@@ -4919,7 +4955,9 @@ def set_hud_lines(lines, name):
     return huds
     
 def show_channel_box():
-    
+    """
+    Makes the channel box visible.
+    """
     docks = mel.eval('global string $gUIComponentDockControlArray[]; string $goo[] = $gUIComponentDockControlArray;')
     
     if 'Channel Box / Layer Editor' in docks:
@@ -4938,6 +4976,9 @@ def show_channel_box():
             cmds.dockControl(dock, edit = True, visible = True)
     
 def playblast(filename):
+    """
+    Playblast the viewport to the given filename path.
+    """
     
     min = cmds.playbackOptions(query = True, minTime = True)
     max = cmds.playbackOptions(query = True, maxTime = True)
@@ -4986,12 +5027,18 @@ def is_referenced(node):
     return is_node_referenced
 
 def get_current_audio_node():
+    """
+    Get the current audio node. Important when getting sound in a playblast.
+    """
     
     play_slider = mel.eval('global string $gPlayBackSlider; string $goo = $gPlayBackSlider')
     
     return cmds.timeControl(play_slider, q = True, s = True)
 
 def delete_unknown_nodes():
+    """
+    This will find all unknown nodes. Unlock and delete them.
+    """
     
     unknown = cmds.ls(type = 'unknown')
 
@@ -5003,12 +5050,19 @@ def delete_unknown_nodes():
 #--- shading
 
 def apply_shading_engine(shader_name, mesh):
+    """
+    Adds the named shading engine to the mesh.
+    """
     cmds.sets(mesh, e = True, forceElement = shader_name)
     
 def get_shading_engine_geo(shader_name):
     pass
     
 def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
+    """
+    Create a new shader to be applied to the named mesh.
+    """
+    
     
     if name:
         if not cmds.objExists(name):
@@ -5035,7 +5089,9 @@ def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
     
 
 def create_display_layer(name, nodes):
-    
+    """
+    Create a display layer containing the supplied nodes.
+    """
     layer = cmds.createDisplayLayer( name = name )
     cmds.editDisplayLayerMembers( layer, nodes, noRecurse = True)
     cmds.setAttr( '%s.displayType' % layer, 2 )
@@ -5043,6 +5099,7 @@ def create_display_layer(name, nodes):
 #--- space
 
 def is_transform(node):
+    
     if not cmds.objExists(node):
         return False
     
@@ -5053,19 +5110,21 @@ def is_transform(node):
 
 
 def get_closest_transform(source_transform, targets):
+    """
+    Given the list of target transforms, find the closest to the source transform.
+    """
+    least_distant = 1000000.0
+    closest_target = None
+    
+    for target in targets:
         
-        least_distant = 1000000.0
-        closest_target = None
+        distance = get_distance(source_transform, target)
         
-        for target in targets:
+        if distance < least_distant:
+            least_distant = distance
+            closest_target = target
             
-            distance = get_distance(source_transform, target)
-            
-            if distance < least_distant:
-                least_distant = distance
-                closest_target = target
-                
-        return closest_target 
+    return closest_target 
 
 def get_distance(source, target):
     #CBB
