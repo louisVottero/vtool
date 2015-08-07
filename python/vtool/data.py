@@ -334,13 +334,24 @@ class ControlCvData(MayaCustomData):
     def _data_type(self):
         return 'maya.control_cvs'
     
-    def import_data(self):
+    def import_data(self, filename = None):
+        
+        if not filename:
+            directory = self.directory
+            name = self.name
+        
+        if filename:
+            directory = util_file.get_dirname(filename)
+            name = util_file.get_basename(filename)
         
         controls = maya_lib.util.get_controls()
-
+        
         library = maya_lib.curve.CurveDataInfo()
-        library.set_directory(self.directory)
-        library.set_active_library(self.name)
+        library.set_directory(directory)
+        if filename:
+            library.set_active_library(name, skip_extension= True)
+        if not filename:
+            library.set_active_library(name)
             
         for control in controls:
             
@@ -420,9 +431,14 @@ class SkinWeightData(MayaCustomData):
         
         return False
         
-    def _import_maya_data(self):
+    def _import_maya_data(self, filepath = None):
         
-        path = util_file.join_path(self.directory, self.name)
+        
+        
+        if not filepath:
+            path = util_file.join_path(self.directory, self.name)
+        if filepath:
+            path = filepath
         
         selection = cmds.ls(sl = True)
         
@@ -555,7 +571,7 @@ class SkinWeightData(MayaCustomData):
             
             cmds.undoInfo(state = False)
             
-            self._import_maya_data()
+            self._import_maya_data(filepath)
                          
             cmds.undoInfo(state = True)               
       

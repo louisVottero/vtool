@@ -309,12 +309,20 @@ class CurveDataInfo():
         self.library_curves = {}
         self._initialize_library_curve()
     
-    def set_active_library(self, library_name):
+    def set_active_library(self, library_name, skip_extension = False):
         
-        vtool.util_file.create_file('%s.data' % library_name, self.curve_data_path)
+        if not skip_extension:
+            filename = '%s.data' % library_name
+        if skip_extension:
+            filename = library_name
+          
+        path = vtool.util_file.create_file(filename, self.curve_data_path)
         self.active_library = library_name
         self.library_curves[library_name] = {}
-        self.load_data_file()
+        if skip_extension:
+            self.load_data_file(path)
+        if not skip_extension:
+            self.load_data_file()
      
     def load_data_file(self, path = None):
         
@@ -336,6 +344,8 @@ class CurveDataInfo():
         curve_data_lines = []
         
         for line in data_lines:
+            
+            curve_type = ''
             
             if line.startswith('->'):
                 
@@ -385,8 +395,6 @@ class CurveDataInfo():
         for curve in current_library:
             
             curve_data_lines, curve_type = current_library[curve]
-            
-            
             
             if not curve_type:
                 if cmds.objExists('%s.curveType' % curve):
