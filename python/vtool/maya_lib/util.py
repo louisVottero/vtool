@@ -3559,15 +3559,20 @@ class StoreControlData(StoreData):
     def eval_data(self, return_only = False):
         data = super(StoreControlData, self).eval_data()
         
+        
+        
         if return_only:
             return data
         
         if not data:
             return
-
+        
         for control in data:
             
+                
             attribute_data = data[control]
+            
+            
             
             self._set_control_data(control, attribute_data)
             
@@ -5112,7 +5117,7 @@ def add_to_isolate_select(nodes):
             for node in nodes:
                 cmds.isolateSelect(panel, addDagObject = node)
                 
-            cmds.isolateSelect(panel, update = True)
+            #cmds.isolateSelect(panel, update = True)
 
 def get_model_panels():
     
@@ -6431,9 +6436,10 @@ def create_shape_from_shape(shape, name = 'new_shape'):
     
     mesh = cmds.listRelatives(new_shape, p = True, f = True)[0]
     
+    add_to_isolate_select([mesh])
+    
     cmds.connectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
     
-    add_to_isolate_select(mesh)
     cmds.refresh()
     
     cmds.disconnectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)

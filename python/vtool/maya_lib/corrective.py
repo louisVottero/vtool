@@ -41,8 +41,6 @@ class PoseManager(object):
     
     def is_pose(self, name):
         
-        print 'is pose?', name
-        
         if PoseBase().is_a_pose(name):
             return True
         
@@ -64,8 +62,6 @@ class PoseManager(object):
         return pose
                         
     def get_poses(self):
-        
-        print 'get poses'
         
         self._check_pose_group()
         
@@ -856,7 +852,6 @@ class PoseBase(object):
         
         if cmds.objExists('%s.POSE' % node ):
             
-            print node, 'is a pose'
             return True
         
         return False
@@ -1532,6 +1527,7 @@ class PoseNoReader(PoseBase):
             blend.set(blendshape_node)
         
         if not blendshape_node:
+            
             blend.create(target_mesh)
         
         self.disconnect_blend()
