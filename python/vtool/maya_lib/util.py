@@ -5096,6 +5096,29 @@ def create_display_layer(name, nodes):
     cmds.editDisplayLayerMembers( layer, nodes, noRecurse = True)
     cmds.setAttr( '%s.displayType' % layer, 2 )
 
+#--- ui
+
+def add_to_isolate_select(nodes):
+    
+    if is_batch():
+        return
+    
+    nodes = vtool.util.convert_to_sequence(nodes)
+    
+    model_panels = get_model_panels()
+    
+    for panel in model_panels:
+        if cmds.isolateSelect(panel, q = True, state = True):
+            for node in nodes:
+                cmds.isolateSelect(panel, addDagObject = node)
+                
+            cmds.isolateSelect(panel, update = True)
+
+def get_model_panels():
+    
+    return cmds.getPanel(type = 'modelPanel')
+    
+
 #--- space
 
 def is_transform(node):
@@ -6400,6 +6423,29 @@ def get_mesh_shape(mesh, shape_index = 0):
     if shape_index > shape_count:
         cmds.warning('%s does not have a shape count up to %s' % shape_index)
     
+def create_shape_from_shape(shape, name = 'new_shape'):
+    
+    parent = cmds.listRelatives(shape, p = True, f = True)
+    
+    new_shape = cmds.createNode('mesh')
+    
+    mesh = cmds.listRelatives(new_shape, p = True, f = True)[0]
+    
+    cmds.connectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
+    
+    add_to_isolate_select(mesh)
+    cmds.refresh()
+    
+    cmds.disconnectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
+    
+    mesh = cmds.rename(mesh, inc_name(name))
+    
+    if parent:
+        MatchSpace(parent[0], mesh).translation_rotation()
+    
+    
+    
+    return mesh
 
 def get_shapes(transform):
     if is_a_shape(transform):
@@ -7703,28 +7749,7 @@ def get_intermediate_object(transform):
     
     return shapes[-1]
 
-def create_mesh_from_shape(shape, name = 'new_mesh'):
-    
-    parent = cmds.listRelatives(shape, p = True, f = True)
-    
-    new_shape = cmds.createNode('mesh')
-    
-    mesh = cmds.listRelatives(new_shape, p = True, f = True)[0]
-    
-    cmds.connectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
 
-    cmds.refresh()
-    
-    cmds.disconnectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
-    
-    mesh = cmds.rename(mesh, inc_name(name))
-    
-    if parent:
-        MatchSpace(parent[0], mesh).translation_rotation()
-    
-    
-    
-    return mesh
     
 
 def invert_blendshape_weight(blendshape_deformer, index = -1):
@@ -8778,7 +8803,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
             other_delta = cmds.duplicate(skin_mesh)[0]
         
             orig = get_intermediate_object(skin_mesh)
-            orig = create_mesh_from_shape(orig, 'home')
+            orig = create_shape_from_shape(orig, 'home')
             
         if skin:
         
@@ -8801,7 +8826,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
             orig = get_intermediate_object(skin_mesh)
             
-            orig = create_mesh_from_shape(orig, 'home')
+            orig = create_shape_from_shape(orig, 'home')
         
             envelopes.turn_on(respect_initial_state=True)
         
@@ -8846,7 +8871,7 @@ def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = Tr
     sources = vtool.util.convert_to_sequence(source_meshes)
     
     offset = cmds.duplicate(corrective_mesh)[0]
-    orig = create_mesh_from_shape(orig_mesh, 'home')
+    orig = create_shape_from_shape(orig_mesh, 'home')
     
     for source in sources:
         other_delta = cmds.duplicate(source)[0]
