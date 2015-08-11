@@ -2,7 +2,6 @@
 
 from vtool import qt_ui
 
-
 import ui
 import util
 import corrective
@@ -31,7 +30,6 @@ class PoseManager(ui.MayaWindow):
         self.pose_set = PoseSetWidget()
         self.pose_list = PoseListWidget()
         
-        
         self.sculpt = SculptWidget()
         self.sculpt.setMaximumHeight(200)
         
@@ -47,9 +45,6 @@ class PoseManager(ui.MayaWindow):
         self.main_layout.addWidget(self.pose_set)
         self.main_layout.addWidget(self.pose_list)
         self.main_layout.addWidget(self.sculpt)
-        
-    def _update_lists(self):
-        self.pose_list.refresh()
         
     def _pose_renamed(self, new_name):
         
@@ -156,6 +151,9 @@ class PoseListWidget(qt_ui.BasicWidget):
         
         item_count = self.pose_list.topLevelItemCount()
         
+        auto_key_state = cmds.autoKeyframe(q = True, state = True)
+        cmds.autoKeyframe(state = False)
+        
         for inc in range(0, item_count):
             
             inc_pose_name = self.pose_list.topLevelItem(inc).text(0)
@@ -164,6 +162,7 @@ class PoseListWidget(qt_ui.BasicWidget):
             inc_pose_attribute = '%s.weight' % inc_pose_name
 
             if cmds.objExists(inc_pose_attribute):
+                
                 try:
                     cmds.setAttr(inc_pose_attribute, 0)
                 except:
@@ -172,14 +171,16 @@ class PoseListWidget(qt_ui.BasicWidget):
             if inc_pose_name == current_pose:
                 
                 if cmds.objExists(current_weight_attribute):
-                    try:
+                    
+                    try:    
                         cmds.setAttr(current_weight_attribute, 1)
                     except:
                         pass
                     
                     continue
-            
-
+                
+        cmds.autoKeyframe(state = auto_key_state)
+                
     def _pose_renamed(self, new_name):
         self.pose_renamed.emit(new_name)
 
@@ -202,6 +203,7 @@ class PoseListWidget(qt_ui.BasicWidget):
         
     def add_mesh(self):
         self.pose_list.add_mesh()
+        self.select(self.pose)
         
     def view_mesh(self):
         self.pose_list.view_mesh()
@@ -644,10 +646,15 @@ class PoseTreeWidget(BaseTreeWidget):
                 if pose_name ==  str(self.topLevelItem(inc).text(0)):
                     self.topLevelItem(inc).setSelected(True)
                     
+                    auto_key_state = cmds.autoKeyframe(q = True, state = True)
+                    cmds.autoKeyframe(state = False)
+                    
                     try:
                         cmds.setAttr('%s.weight' % pose_name, 1)
                     except:
                         pass
+                    
+                    cmds.autoKeyframe(state = auto_key_state)
         
         items = self.selectedItems()
         
@@ -803,6 +810,9 @@ class MeshWidget(qt_ui.BasicWidget):
     @util.undo_chunk
     def add_mesh(self):
         
+        if self.pose_class:
+            self.pose_class.goto_pose()
+        
         current_meshes = self.get_current_meshes_in_list()
         
         if not current_meshes:
@@ -934,6 +944,8 @@ class MeshWidget(qt_ui.BasicWidget):
                 
                     corrective.PoseManager().toggle_visibility(pose_name, mesh_index= index)
     
+        
+    
     def remove_mesh(self):
         
         meshes = self.get_current_meshes_in_list()
@@ -1024,20 +1036,33 @@ class SculptWidget(qt_ui.BasicWidget):
         return QtGui.QVBoxLayout()
     
     def _button_sculpt(self):
+        
         try:
+            
             self.button_sculpt.setDisabled(True)
             self.mesh_widget.add_mesh()
+            
             self.sculpted_mesh.emit()
             self.button_sculpt.setEnabled(True)
             
+            
             if self.pose:
+
+                auto_key_state = cmds.autoKeyframe(q = True, state = True)
+                cmds.autoKeyframe(state = False)
 
                 try:
                     cmds.setAttr('%s.weight' % self.pose, 1)
                 except:
                     pass
+                
+                cmds.autoKeyframe(state = auto_key_state)
+            
+                cmds.select(self.pose)
+                
         except:
             self.button_sculpt.setEnabled(True)
+
 
     def _button_mirror(self):
         try:

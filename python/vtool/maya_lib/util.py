@@ -164,6 +164,7 @@ def read_script(msg, msgType, filterOutput, clientData):
     This is the callback function that gets called when Maya wants to print something.
     It will take the msg and output it to the terminal rather than the Maya Script Editor
     '''
+    
     OpenMaya.MScriptUtil.setBool(filterOutput, True)
     
     global script_editor_value

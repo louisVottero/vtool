@@ -433,8 +433,6 @@ class SkinWeightData(MayaCustomData):
         
     def _import_maya_data(self, filepath = None):
         
-        
-        
         if not filepath:
             path = util_file.join_path(self.directory, self.name)
         if filepath:
