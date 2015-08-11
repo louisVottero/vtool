@@ -268,7 +268,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
     def _rename_process(self):
         
-        print 'rename!'
         items = self.selectedItems()
         
         if not items:

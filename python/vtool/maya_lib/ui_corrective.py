@@ -136,7 +136,9 @@ class PoseListWidget(qt_ui.BasicWidget):
         self.main_layout.addWidget(self.pose_widget)
 
     def _update_pose_widget(self):
+        
         current_pose = self.pose_list._current_pose()
+        current_weight_attribute = '%s.weight' % current_pose
         
         items = self.pose_list.selectedItems()
         
@@ -156,17 +158,9 @@ class PoseListWidget(qt_ui.BasicWidget):
         
         for inc in range(0, item_count):
             
-            inc_pose_name = self.pose_list.topLevelItem(inc).text(0)
+            inc_pose_name = self.pose_list.topLevelItem(inc).text(0)    
             
-            current_weight_attribute = '%s.weight' % current_pose
             inc_pose_attribute = '%s.weight' % inc_pose_name
-
-            if cmds.objExists(inc_pose_attribute):
-                
-                try:
-                    cmds.setAttr(inc_pose_attribute, 0)
-                except:
-                    pass
             
             if inc_pose_name == current_pose:
                 
@@ -175,10 +169,17 @@ class PoseListWidget(qt_ui.BasicWidget):
                     try:    
                         cmds.setAttr(current_weight_attribute, 1)
                     except:
-                        pass
+                        vtool.util.warning('Could not set %s to 1.' % current_weight_attribute )
                     
-                    continue
+                continue
+
+            if cmds.objExists(inc_pose_attribute):
                 
+                try:
+                    cmds.setAttr(inc_pose_attribute, 0)
+                except:
+                    vtool.util.warning('Could not set %s to 0.' % current_weight_attribute )
+
         cmds.autoKeyframe(state = auto_key_state)
                 
     def _pose_renamed(self, new_name):
@@ -1126,6 +1127,14 @@ class SculptWidget(qt_ui.BasicWidget):
         self.pose = pose_name
         
         self.mesh_widget.set_pose(pose_name)
+        
+        auto_key_state = cmds.autoKeyframe(q = True, state = True)
+        cmds.autoKeyframe(state = False)
+        
+        cmds.setAttr('%s.weight' % pose_name, 1)
+        
+        cmds.autoKeyframe(state = auto_key_state)
+
         
         self.set_pose_enable()
         
