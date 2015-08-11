@@ -100,6 +100,9 @@ class BasicWindow(QtGui.QMainWindow):
     title = 'BasicWindow'
 
     def __init__(self, parent = None):
+        
+        self.main_layout = self._define_main_layout()
+        
         super(BasicWindow, self).__init__(parent)
         
         self.setWindowTitle(self.title)
@@ -107,7 +110,7 @@ class BasicWindow(QtGui.QMainWindow):
         
         main_widget = QtGui.QWidget()
         
-        self.main_layout = self._define_main_layout()
+        
         
         util.show('Main layout: %s' % self.main_layout)
         

@@ -1234,9 +1234,6 @@ class PoseData(MayaCustomData):
         
         if cmds.objExists('pose_gr') and poses:
             cmds.parent(poses, 'pose_gr')
-            
-        
-        
         
         pose_manager = maya_lib.corrective.PoseManager()
         

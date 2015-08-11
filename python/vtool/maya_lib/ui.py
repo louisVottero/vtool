@@ -83,7 +83,7 @@ def create_window(ui, dock_area = 'right'):
         
         #do not remove
         print traceback.format_exc()
-        
+        print ui.layout()
         vtool.util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
 
 def pose_manager():
@@ -179,17 +179,16 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         manager_group.setLayout(manager_layout)
         
         process_button = QtGui.QPushButton('VETALA')
-        pose_button = QtGui.QPushButton('Correctives')
-        shape_combo_button = QtGui.QPushButton('Shape Combos')
-        
-        
         process_button.clicked.connect(self._process_manager)
-        pose_button.clicked.connect(self._pose_manager)
-        shape_combo_button.clicked.connect(self._shape_combo)
-        
         manager_layout.addWidget(process_button)
+        
+        pose_button = QtGui.QPushButton('Correctives')
+        pose_button.clicked.connect(self._pose_manager)
         manager_layout.addWidget(pose_button)
-        manager_layout.addWidget(shape_combo_button)
+        
+        #shape_combo_button = QtGui.QPushButton('Shape Combos')
+        #shape_combo_button.clicked.connect(self._shape_combo)
+        #manager_layout.addWidget(shape_combo_button)
         
         tool_group = QtGui.QGroupBox('Tools')
         tool_layout = QtGui.QVBoxLayout()
