@@ -210,8 +210,13 @@ class PoseManager(object):
     
     def create_timeline_pose(self, name = None):
         
-        current_time = cmds.currentTime(q = True)
-        time_name = str(current_time).replace('.', '_')
+        current_time = str(cmds.currentTime(q = True))
+        time_number_strings = current_time.split('.')
+        
+        seconds_name = time_number_strings[0]
+        sub_seconds_name = time_number_strings[1]
+        
+        time_name = seconds_name.rjust(4, '0') + '_' + sub_seconds_name.rjust(2, '0')
         
         if not name:
             name = util.inc_name('pose_timeline_%s_1' % time_name)
@@ -490,7 +495,7 @@ class PoseBase(object):
     def _get_mesh_message_attributes(self):
         
         if not self.pose_control:
-            return
+            return []
         
         attributes = cmds.listAttr(self.pose_control, ud = True)
         

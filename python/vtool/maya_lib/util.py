@@ -3560,21 +3560,14 @@ class StoreControlData(StoreData):
     def eval_data(self, return_only = False):
         data = super(StoreControlData, self).eval_data()
         
-        
-        
         if return_only:
             return data
         
         if not data:
             return
         
-        for control in data:
-            
-                
+        for control in data:        
             attribute_data = data[control]
-            
-            
-            
             self._set_control_data(control, attribute_data)
             
         return data
