@@ -2245,8 +2245,6 @@ class PoseTimeline(PoseNoReader):
         cmds.setKeyframe('%s.weight' % pose_control, t = (current_time-5), v = 0)
         cmds.setKeyframe('%s.weight' % pose_control, t = (current_time+5), v = 0)
         
-        
-        
         return pose_control
         
 class PoseCombo(PoseBase):
