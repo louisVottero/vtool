@@ -76,7 +76,7 @@ class PoseManager(ui.MayaWindow):
         cmds.select(pose_name, r = True)
         
     def check_for_mesh(self, pose):
-        print 'check for mesh!!!'
+        
         self.sculpt.set_pose(pose)
         self.sculpt.mesh_widget.add_mesh()
         
@@ -853,15 +853,10 @@ class MeshWidget(qt_ui.BasicWidget):
     @util.undo_chunk
     def add_mesh(self):
         
-        print 'add mesh!'
-        print self.pose_name, self.pose_class
-        
         if self.pose_class:
             self.pose_class.goto_pose()
         
         current_meshes = self.get_current_meshes_in_list()
-        
-        print 'meshes', current_meshes
         
         if not current_meshes:
             current_meshes = []
