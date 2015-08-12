@@ -144,9 +144,20 @@ class PoseListWidget(qt_ui.BasicWidget):
         
         self.pose_list.pose_renamed.connect(self._pose_renamed)
         self.pose_list.pose_deleted.connect(self._pose_deleted)
-                
+        
+        self.filter_names = QtGui.QLineEdit()
+        self.filter_names.setPlaceholderText('filter names')
+
+        self.filter_names.textChanged.connect(self._filter_names)
+        
         self.main_layout.addWidget(self.pose_list)
+        self.main_layout.addWidget(self.filter_names)
         self.main_layout.addWidget(self.pose_widget)
+    
+    def _filter_names(self, text):
+        
+        self.pose_list.filter_names(text)
+        self.skip_name_filter = False
 
     def _update_pose_widget(self):
         
