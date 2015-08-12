@@ -193,7 +193,8 @@ class PoseListWidget(qt_ui.BasicWidget):
                     try:    
                         cmds.setAttr(current_weight_attribute, 1)
                     except:
-                        vtool.util.warning('Could not set %s to 1.' % current_weight_attribute )
+                        pass
+                        #vtool.util.warning('Could not set %s to 1.' % current_weight_attribute )
                     
                 continue
 
@@ -202,7 +203,8 @@ class PoseListWidget(qt_ui.BasicWidget):
                 try:
                     cmds.setAttr(inc_pose_attribute, 0)
                 except:
-                    vtool.util.warning('Could not set %s to 0.' % current_weight_attribute )
+                    pass
+                    #vtool.util.warning('Could not set %s to 0.' % current_weight_attribute )
 
         cmds.autoKeyframe(state = auto_key_state)
                 
@@ -1190,7 +1192,10 @@ class SculptWidget(qt_ui.BasicWidget):
         auto_key_state = cmds.autoKeyframe(q = True, state = True)
         cmds.autoKeyframe(state = False)
         
-        cmds.setAttr('%s.weight' % pose_name, 1)
+        try:
+            cmds.setAttr('%s.weight' % pose_name, 1)
+        except:
+            pass
         
         cmds.autoKeyframe(state = auto_key_state)
 
