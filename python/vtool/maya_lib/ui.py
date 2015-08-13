@@ -79,13 +79,13 @@ def create_window(ui, dock_area = 'right'):
     try:
         cmds.dockControl(dock_name,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name, w=350, fl = False, visible = True)
         ui.show()
+    
     except:
-        
         #do not remove
         print traceback.format_exc()
         print ui.layout()
         vtool.util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
-
+    
 def pose_manager():
     import ui_corrective
     create_window(ui_corrective.PoseManager())

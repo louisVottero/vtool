@@ -498,9 +498,12 @@ class TreeWidget(QtGui.QTreeWidget):
             
             string = str(string)
             
-            if not text.startswith(string) and not text.startswith(string.upper()):
+            if text.find(string) == -1:
+                self.setItemHidden(item, True)
                 
-                self.setItemHidden(item, True)  
+            #if not text.startswith(string) and not text.startswith(string.upper()):
+                
+            #    self.setItemHidden(item, True)  
             
     def get_tree_item_path(self, tree_item):
                 

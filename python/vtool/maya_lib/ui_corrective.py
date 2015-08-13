@@ -39,6 +39,8 @@ class PoseManager(ui.MayaWindow):
         self.pose_list.pose_list_refresh.connect(self.sculpt.mesh_widget.update_meshes)
         self.pose_list.pose_list.itemSelectionChanged.connect(self.select_pose)
         self.pose_list.pose_renamed.connect(self._pose_renamed)
+        self.pose_list.pose_deleted.connect(self._pose_deleted)
+        self.pose_list.pose_list.check_for_mesh.connect(self.check_for_mesh)
         self.pose_set.pose_reset.connect(self.pose_list.pose_reset)
         self.sculpt.pose_mirror.connect(self.pose_list.mirror_pose)
         
@@ -51,6 +53,10 @@ class PoseManager(ui.MayaWindow):
         new_name = str(new_name)
         self.sculpt.set_pose(new_name)
         self.pose_list.update_current_pose()
+        
+    def _pose_deleted(self):
+        
+        self.sculpt.set_pose(None)
         
     def select_pose(self):
         
@@ -68,6 +74,11 @@ class PoseManager(ui.MayaWindow):
         self.sculpt.set_pose(pose_name)
         
         cmds.select(pose_name, r = True)
+        
+    def check_for_mesh(self, pose):
+        
+        self.sculpt.set_pose(pose)
+        self.sculpt.mesh_widget.add_mesh()
         
 class PoseSetWidget(QtGui.QWidget): 
     
@@ -107,6 +118,7 @@ class PoseListWidget(qt_ui.BasicWidget):
     
     pose_added = qt_ui.create_signal(object)
     pose_renamed = qt_ui.create_signal(object)
+    pose_deleted = qt_ui.create_signal()
     pose_update = qt_ui.create_signal(object)
     pose_list_refresh = qt_ui.create_signal()
     
@@ -131,9 +143,21 @@ class PoseListWidget(qt_ui.BasicWidget):
         self.pose_widget.hide()
         
         self.pose_list.pose_renamed.connect(self._pose_renamed)
-                
+        self.pose_list.pose_deleted.connect(self._pose_deleted)
+        
+        self.filter_names = QtGui.QLineEdit()
+        self.filter_names.setPlaceholderText('filter names')
+
+        self.filter_names.textChanged.connect(self._filter_names)
+        
         self.main_layout.addWidget(self.pose_list)
+        self.main_layout.addWidget(self.filter_names)
         self.main_layout.addWidget(self.pose_widget)
+    
+    def _filter_names(self, text):
+        
+        self.pose_list.filter_names(text)
+        self.skip_name_filter = False
 
     def _update_pose_widget(self):
         
@@ -169,7 +193,8 @@ class PoseListWidget(qt_ui.BasicWidget):
                     try:    
                         cmds.setAttr(current_weight_attribute, 1)
                     except:
-                        vtool.util.warning('Could not set %s to 1.' % current_weight_attribute )
+                        pass
+                        #vtool.util.warning('Could not set %s to 1.' % current_weight_attribute )
                     
                 continue
 
@@ -178,12 +203,16 @@ class PoseListWidget(qt_ui.BasicWidget):
                 try:
                     cmds.setAttr(inc_pose_attribute, 0)
                 except:
-                    vtool.util.warning('Could not set %s to 0.' % current_weight_attribute )
+                    pass
+                    #vtool.util.warning('Could not set %s to 0.' % current_weight_attribute )
 
         cmds.autoKeyframe(state = auto_key_state)
                 
     def _pose_renamed(self, new_name):
         self.pose_renamed.emit(new_name)
+        
+    def _pose_deleted(self):
+        self.pose_deleted.emit()
 
     def update_current_pose(self):
         
@@ -236,7 +265,7 @@ class PoseListWidget(qt_ui.BasicWidget):
 class BaseTreeWidget(qt_ui.TreeWidget):
 
     list_refresh = qt_ui.create_signal()
-    
+    pose_deleted = qt_ui.create_signal()
     pose_renamed = qt_ui.create_signal(object)
     
     def __init__(self):
@@ -370,6 +399,8 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         del(item)
         
         self.last_selection = None
+        
+        self.pose_deleted.emit()
     
     def parent_changed(self, parent):
         
@@ -393,6 +424,8 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         cmds.setAttr('%s.enable' % pose_name, value)
         
 class PoseTreeWidget(BaseTreeWidget):
+    
+    check_for_mesh = qt_ui.create_signal(object)
 
     def __init__(self):
         
@@ -578,7 +611,11 @@ class PoseTreeWidget(BaseTreeWidget):
            
         cmds.select(blend, r = True)
         
+
+        
     def create_cone_pose(self, name = None):
+        
+        selection = cmds.ls(sl = True, l = True)
         
         pose = None
         
@@ -591,9 +628,17 @@ class PoseTreeWidget(BaseTreeWidget):
         if not pose:
             return
         
+        if selection:
+            cmds.select(selection)
+            self.check_for_mesh.emit(pose)
+        
         self._add_item(pose)
+        
+        
 
     def create_no_reader_pose(self, name = None):
+        
+        selection = cmds.ls(sl = True, l = True)
         
         pose = None
         
@@ -606,10 +651,18 @@ class PoseTreeWidget(BaseTreeWidget):
         if not pose:
             return
         
+        if selection:
+            cmds.select(selection)
+            self.check_for_mesh.emit(pose)
+        
         self._add_item(pose)
         
-    def create_timeline_pose(self, name = None):
         
+        
+    def create_timeline_pose(self, name = None):
+                
+        selection = cmds.ls(sl = True, l = True)
+                
         pose = None
         
         if name:
@@ -620,6 +673,10 @@ class PoseTreeWidget(BaseTreeWidget):
             
         if not pose:
             return
+        
+        if selection:
+            cmds.select(selection)
+            self.check_for_mesh.emit(pose)
         
         self._add_item(pose)
         
@@ -676,8 +733,6 @@ class PoseTreeWidget(BaseTreeWidget):
         
         if not poses:
             return
-        
-        
         
         cmds.setAttr('%s.maxAngle' % poses[-1], max_angle)
         cmds.setAttr('%s.maxDistance' % poses[-1], max_distance)
@@ -847,6 +902,11 @@ class MeshWidget(qt_ui.BasicWidget):
                 
                 if util.has_shape_of_type(selected, 'mesh'):
                     
+                    if selected.find('.vtx') > -1:
+                        split_selected = selected.split('.vtx')
+                        if split_selected > 1:
+                            selected = split_selected[0]
+                    
                     pass_mesh = selected
                     
                     if cmds.objExists('%s.mesh_pose_source' % selected):
@@ -944,8 +1004,6 @@ class MeshWidget(qt_ui.BasicWidget):
                     index = index.row()
                 
                     corrective.PoseManager().toggle_visibility(pose_name, mesh_index= index)
-    
-        
     
     def remove_mesh(self):
         
@@ -1120,18 +1178,24 @@ class SculptWidget(qt_ui.BasicWidget):
       
     def set_pose(self, pose_name):
         
+        self.mesh_widget.set_pose(pose_name)
+        
         if not pose_name:
             self.pose = None
+            
             return
         
         self.pose = pose_name
         
-        self.mesh_widget.set_pose(pose_name)
+        
         
         auto_key_state = cmds.autoKeyframe(q = True, state = True)
         cmds.autoKeyframe(state = False)
         
-        cmds.setAttr('%s.weight' % pose_name, 1)
+        try:
+            cmds.setAttr('%s.weight' % pose_name, 1)
+        except:
+            pass
         
         cmds.autoKeyframe(state = auto_key_state)
 
