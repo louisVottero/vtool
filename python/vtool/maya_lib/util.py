@@ -1469,6 +1469,8 @@ class OrientJoint(object):
         
     def run(self):
         
+        print 'run orient!'
+        
         self._freeze()
         
         self._get_relatives()

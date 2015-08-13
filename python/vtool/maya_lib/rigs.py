@@ -1399,8 +1399,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
                          
                 orient = util.OrientJoint(x_joints[inc])
                 
-                
-                
                 aim = 3
                 if inc == len(x_joints)-1:
                     aim = 5
