@@ -427,9 +427,6 @@ class Process(object):
                 test_path = util_file.inc_path_name(test_path)
                 name = util_file.get_basename(test_path)
         
-        
-        
-        
         data_folder = data.DataFolder(name, path)
         data_folder.set_data_type(data_type)
         

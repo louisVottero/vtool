@@ -395,6 +395,15 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
             
             self.data_type_tree_widget.add_data_type(data_type)
             
+        count = self.data_type_tree_widget.topLevelItemCount()
+        
+        for inc in range(0, count):
+            
+            item = self.data_type_tree_widget.topLevelItem(inc)
+            print item.text(0)
+            if str(item.text(0)) == 'maya' and vtool.util.is_in_maya():
+                item.setExpanded(True)
+            
     def _add(self):
                 
         data_type = self.data_type_tree_widget.get_data_type()
@@ -442,7 +451,9 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
         item = QtGui.QTreeWidgetItem(parent)
         item.setText(0, data_type)
         
-        self.addTopLevelItem(item)
+        #self.addTopLevelItem(item)
+        
+        return item
         
     def add_data_type(self, data_type):
         
@@ -456,10 +467,13 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
         if not group_item:
             item = QtGui.QTreeWidgetItem()
             item.setText(0, split_type[0])
-            self.addTopLevelItem(item)
+            self.addTopLevelItem(item)    
             group_item = item
         
-        self._add_data_item(split_type[1], group_item)
+        new_item = self._add_data_item(split_type[1], group_item)
+        
+        return new_item
+        
     
     def get_data_type(self):
         
@@ -960,4 +974,4 @@ file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.shaders' : MayaShadersFileWidget,
                  'maya.attributes' : MayaAttributesFileWidget,
                  'maya.pose' : PoseFileWidget,
-                 'maya.animation': AnimationFileWidget,}
+                 'maya.animation': AnimationFileWidget}

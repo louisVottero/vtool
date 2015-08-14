@@ -13,6 +13,7 @@ if util.is_in_maya():
     import maya_lib.util
     import maya_lib.curve
     import maya_lib.corrective
+    import maya_lib.ui
 
 class DataManager(object):
     
@@ -1113,13 +1114,62 @@ class PoseData(MayaCustomData):
         for node in inputs:
             if cmds.nodeType(node) == 'hyperLayout':
                 cmds.delete(node)
-                
             
             found.append(node)
         
         return found
 
-    
+    def _get_inputs(self, pose):
+        
+        if not pose:
+            return []
+        
+        sub_inputs = self._get_sub_inputs(pose)
+        
+        inputs = maya_lib.util.get_inputs(pose)
+        outputs = maya_lib.util.get_outputs(pose)
+
+        if inputs:
+            inputs.append(pose)
+
+        if not inputs:
+            inputs = [pose]
+        
+        if outputs:
+            inputs = inputs + outputs                              
+        
+        if sub_inputs:
+            
+            inputs = inputs + sub_inputs
+        
+        return inputs
+  
+    def _get_sub_inputs(self, pose):
+        
+        manager = maya_lib.corrective.PoseManager()
+        manager.set_pose_group(pose)
+        
+        sub_poses = manager.get_poses()
+        inputs = []
+        
+        if sub_poses:
+            sub_inputs = []
+            for sub_pose in sub_poses:
+        
+                sub_inputs = self._get_inputs(sub_pose)
+                inputs = inputs + sub_inputs
+        
+        return inputs
+  
+    def _select_inputs(self, pose):
+        
+        inputs = self._get_inputs(pose)
+        
+        cmds.select(cl = True)
+        cmds.select(inputs, ne = True)
+        
+        return inputs
+            
     def export_data(self, comment):
         unknown = cmds.ls(type = 'unknown')
         
@@ -1159,24 +1209,10 @@ class PoseData(MayaCustomData):
                 rels = cmds.listRelatives(pose)
                 cmds.parent(rels, w = True)
             
-            inputs = maya_lib.util.get_inputs(pose)
-            outputs = maya_lib.util.get_outputs(pose)
-
-            if inputs:
-                inputs.append(pose)
-
-            if not inputs:
-                inputs = [pose]
+            inputs = self._select_inputs(pose)
+            self._filter_inputs(inputs)
             
-            if outputs:
-                inputs = inputs + outputs
-                
-            path = util_file.join_path(dir_path, '%s.ma' % pose)                              
-            
-            cmds.select(cl = True)
-            cmds.select(inputs, ne = True)
-            
-            inputs = self._filter_inputs(inputs)
+            path = util_file.join_path(dir_path, '%s.ma' % pose)
             
             self._save_file(path)
             
@@ -1196,7 +1232,7 @@ class PoseData(MayaCustomData):
         path = util_file.join_path(self.directory, self.name)
         
         if not path:
-            return      
+            return
         
         if not util_file.is_dir(path):
             return  
@@ -1218,10 +1254,7 @@ class PoseData(MayaCustomData):
                 
                 pose = split_name[0]
                 
-                
                 if cmds.objExists(pose):
-                    
-                    
                     cmds.delete(pose)
                 
                 if not cmds.objExists(pose):
@@ -1230,7 +1263,6 @@ class PoseData(MayaCustomData):
                         poses.append(pose)
         
                     self._import_file(pose_path)
-        
         
         if cmds.objExists('pose_gr') and poses:
             cmds.parent(poses, 'pose_gr')
@@ -1247,6 +1279,8 @@ class PoseData(MayaCustomData):
         
         cmds.dgdirty(a = True)
         cmds.renderThumbnailUpdate( True )
+        
+        maya_lib.ui.emit_new_scene_signal()
         
         
 class MayaAttributeData(MayaCustomData):

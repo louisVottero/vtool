@@ -1469,8 +1469,6 @@ class OrientJoint(object):
         
     def run(self):
         
-        print 'run orient!'
-        
         self._freeze()
         
         self._get_relatives()
@@ -3449,7 +3447,6 @@ class StoreControlData(StoreData):
                 if cmds.getAttr(attribute_name, type = True) == 'string':
                     continue
                 
-                
                 value = cmds.getAttr(attribute_name)
                 attribute_data[attribute] = value 
             
@@ -3542,11 +3539,47 @@ class StoreControlData(StoreData):
             
         return other_control
         
+    def remove_data(self, control):
         
-    def set_data(self):
+        data = self.get_data()
+        
+        if data:
+            
+            data = eval(data)
+        
+
+        if data.has_key(control):
+            data.pop(control)
+        
+        self.set_data(data)
+        
+    def remove_pose_control_data(self):
+        
+        print 'remove pose control data'
+        data = self.get_data()
+        
+        if data:
+            data = eval(data)
+
+        found_keys = []
+
+        for key in data:
+            if cmds.objExists('%s.POSE' % key):
+                found_keys.append(key)
+                
+        for key in found_keys:
+            data.pop(key)
+            
+        self.set_data(data)
+        print 'finish remove pose control data'
+            
+    def set_data(self, data= None):
         
         self.data.set_locked(False)
-        data = self._get_control_data()
+        
+        if data == None:
+            data = self._get_control_data()
+        
         super(StoreControlData, self).set_data(data)   
         self.data.set_locked(True)
     

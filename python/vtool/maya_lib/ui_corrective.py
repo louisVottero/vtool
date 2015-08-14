@@ -159,6 +159,23 @@ class PoseListWidget(qt_ui.BasicWidget):
         self.pose_list.filter_names(text)
         self.skip_name_filter = False
 
+    def _set_sub_pose_weight(self, pose, weight_value):
+        
+        manager = corrective.PoseManager()
+        manager.set_pose_group(pose)
+        sub_poses = manager.get_poses()
+        
+        for sub_pose in sub_poses:
+            self._set_sub_pose_weight(sub_pose, weight_value)
+            
+            weight_attribute = '%s.weight' % sub_pose
+            
+            if cmds.objExists(weight_attribute):
+                try:    
+                    cmds.setAttr(weight_attribute, weight_value)
+                except:
+                    pass
+
     def _update_pose_widget(self):
         
         current_pose = self.pose_list._current_pose()
@@ -190,17 +207,18 @@ class PoseListWidget(qt_ui.BasicWidget):
                 
                 if cmds.objExists(current_weight_attribute):
                     
-                    try:    
+                    try:
+                        self._set_sub_pose_weight(current_pose, 0)    
                         cmds.setAttr(current_weight_attribute, 1)
                     except:
                         pass
-                        #vtool.util.warning('Could not set %s to 1.' % current_weight_attribute )
                     
                 continue
 
             if cmds.objExists(inc_pose_attribute):
                 
                 try:
+                    self._set_sub_pose_weight(inc_pose_name, 0)
                     cmds.setAttr(inc_pose_attribute, 0)
                 except:
                     pass
@@ -429,9 +447,15 @@ class PoseTreeWidget(BaseTreeWidget):
 
     def __init__(self):
         
+        
         self.item_context = []
+        self.context_menu_item = None
         
         super(PoseTreeWidget, self).__init__()
+        
+        self.setDragDropMode(self.InternalMove)
+        self.setDragEnabled(True)
+        self.setAcceptDrops(True)  
         
         self.setHeaderLabels(['pose', 'type'])
        
@@ -451,6 +475,14 @@ class PoseTreeWidget(BaseTreeWidget):
         
         item = self.itemAt(event.pos())
         
+        parent = self.invisibleRootItem()
+        
+        if item:
+            parent = item.parent()
+        
+        self.drag_parent = parent
+        self.dragged_item = item
+        
         if not item or model_index.column() == 1:
             self.clearSelection()
             
@@ -461,73 +493,130 @@ class PoseTreeWidget(BaseTreeWidget):
         if model_index.column() == 0 and item:
             super(PoseTreeWidget, self).mousePressEvent(event)
         
+    def dropEvent(self, event):
+
+        position = event.pos()
+        entered_item = self.itemAt(position)
+        
+        super(PoseTreeWidget, self).dropEvent(event)
+        
+        self.dragged_item.setDisabled(True)        
+        
+        pose_parent = 'pose_gr'
+        
+        pose = self.dragged_item.text(0)
+        
+        if entered_item:
+            pose_parent = entered_item.text(0)
+        
+        cmds.parent(pose, pose_parent)
+        
+        self.dragged_item.setDisabled(False)
+    
     def _item_menu(self, position):
+        
+        
                 
         item = self.itemAt(position)
-            
+        
+        self.context_menu_item = item
+        
+        self._create_pose_options_context()
+        
         if item:
             for item in self.item_context:
+                
                 item.setVisible(True)
             
         if not item:
             for item in self.item_context:
+                
                 item.setVisible(False)
-            
+        
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
+        
+        
         
     def _create_context_menu(self):
         
         self.context_menu = QtGui.QMenu()
+        self.context_menu.setTearOffEnabled(True)
         
-        pose_menu = self.context_menu.addMenu('New Pose')
+        self.create_cone = self.context_menu.addAction('New Cone')
+        self.create_no_reader = self.context_menu.addAction('New No Reader')
+        self.create_timeline = self.context_menu.addAction('New Timeline')
         
-        self.create_no_reader = pose_menu.addAction('No Reader')
-        self.create_timeline = pose_menu.addAction('Timeline')
-        self.create_cone = pose_menu.addAction('Cone')
+        self.item_context = []
         
-        #self.create_combo = pose_menu.addAction('Combo')
         #self.create_rbf = pose_menu.addAction('RBF')
         self.context_menu.addSeparator()
+        
         self.rename_action = self.context_menu.addAction('Rename')
         self.delete_action = self.context_menu.addAction('Delete')
         self.context_menu.addSeparator()
-        self.select_pose_action = self.context_menu.addAction('Select Pose')
-        self.select_joint_action = self.context_menu.addAction('Select Joint')
-        self.select_blend_action = self.context_menu.addAction('Select Blendshape')
+        self.option_menu = self.context_menu.addMenu('Options')
+        #self._create_pose_options_context()
         self.context_menu.addSeparator()
         self.set_pose_action = self.context_menu.addAction('Update Pose')
         self.reset_sculpts_action = self.context_menu.addAction('Reset Sculpt')
         self.context_menu.addSeparator()
         self.refresh_action = self.context_menu.addAction('Refresh')
         
-        self.item_context = [self.rename_action, 
-                        self.delete_action,
-                        self.reset_sculpts_action,
-                        self.set_pose_action,
-                        self.select_joint_action,
-                        self.select_pose_action,
-                        self.select_blend_action]
+        self.item_context = self.item_context + [self.rename_action, 
+                                                 self.delete_action,
+                                                 self.reset_sculpts_action,
+                                                 self.set_pose_action]
         
         self.create_cone.triggered.connect(self.create_cone_pose)
         self.create_no_reader.triggered.connect(self.create_no_reader_pose)
         self.create_timeline.triggered.connect(self.create_timeline_pose)
-        #self.create_combo.triggered.connect(self.create_combo_pose)
         
         self.rename_action.triggered.connect(self._rename_pose)
         self.delete_action.triggered.connect(self.delete_pose)
-        
-        self.select_joint_action.triggered.connect(self._select_joint)
-        self.select_pose_action.triggered.connect(self._select_pose)
         self.set_pose_action.triggered.connect(self._set_pose_data)
         self.reset_sculpts_action.triggered.connect(self._reset_sculpts)
         
-        self.select_blend_action.triggered.connect(self._select_blend)
-        
         self.refresh_action.triggered.connect(self._populate_list)
-    
-    def _add_item(self, pose):
+
+    def _create_pose_options_context(self):
         
-        item = QtGui.QTreeWidgetItem()
+        self.option_menu.clear()
+        
+        if not self.context_menu_item:
+            self.option_menu.setDisabled(True)
+        
+        if self.context_menu_item:
+            
+            self.option_menu.setDisabled(False)
+            
+            self.select_pose_action = self.option_menu.addAction('Select Pose')
+            self.select_blend_action = self.option_menu.addAction('Select Blendshape')
+        
+            self.select_pose_action.triggered.connect(self._select_pose)
+            self.select_blend_action.triggered.connect(self._select_blend)
+            
+            pose = self.context_menu_item.text(0)
+            
+            if cmds.objExists('%s.type' % pose):
+                pose_type = cmds.getAttr('%s.type' % pose)
+                
+                if pose_type == 'cone':
+                    self._create_cone_context_menu()
+        
+        
+    def _create_base_context_menu(self):
+        pass
+    
+    def _create_cone_context_menu(self):
+        self.select_joint_action = self.option_menu.addAction('Select Joint')
+        self.select_joint_action.triggered.connect(self._select_joint)
+        
+    def _create_no_reader_context_menu(self):
+        pass
+    
+    def _add_item(self, pose, parent):
+        
+        item = QtGui.QTreeWidgetItem(parent)
         item.setSizeHint(0, QtCore.QSize(100, 30))
         item.setText(0, pose)
         
@@ -536,6 +625,8 @@ class PoseTreeWidget(BaseTreeWidget):
             item.setText(1, type_name)
         
         self.addTopLevelItem(item)
+        
+        return item
         
     def _populate_list(self):
         
@@ -551,21 +642,28 @@ class PoseTreeWidget(BaseTreeWidget):
         
         for pose in poses:
             
-            if cmds.objExists('%s.type' % pose):
-            
-                pose_type = cmds.getAttr('%s.type' % pose)
-            
-            if not cmds.objExists('%s.type' % pose):
-                
-                pose_type = 'cone'
-            
-            if pose_type == 'cone':
-                self.create_cone_pose(pose)
-            if pose_type == 'no reader':
-                self.create_no_reader_pose(pose)
-            if pose_type == 'timeline':
-                self.create_timeline_pose(pose)   
+            pose_item = self._add_pose_item(pose)
         
+            sub_manager = corrective.PoseManager()
+            sub_manager.set_pose_group(pose)
+            
+            sub_poses = sub_manager.get_poses()
+            
+            for sub_pose in sub_poses:
+                self._add_pose_item(sub_pose, pose_item)
+               
+    def _add_pose_item(self, pose_name, parent = None):
+         
+        if cmds.objExists('%s.type' % pose_name):
+            pose_type = cmds.getAttr('%s.type' % pose_name)
+        
+        if not cmds.objExists('%s.type' % pose_name):
+            pose_type = 'cone'
+        
+        new_item = self.create_pose(pose_type, pose_name, parent)
+
+        return new_item 
+                      
     def _select_joint(self):
         name = self._current_pose()
         transform = corrective.PoseManager().get_transform(name)
@@ -611,9 +709,7 @@ class PoseTreeWidget(BaseTreeWidget):
            
         cmds.select(blend, r = True)
         
-
-        
-    def create_cone_pose(self, name = None):
+    def create_pose(self, pose_type, name = None, parent = None):
         
         selection = cmds.ls(sl = True, l = True)
         
@@ -623,7 +719,7 @@ class PoseTreeWidget(BaseTreeWidget):
             pose = name
         
         if not pose:
-            pose = corrective.PoseManager().create_cone_pose()
+            pose = corrective.PoseManager().create_pose(pose_type, name)
         
         if not pose:
             return
@@ -632,58 +728,19 @@ class PoseTreeWidget(BaseTreeWidget):
             cmds.select(selection)
             self.check_for_mesh.emit(pose)
         
-        self._add_item(pose)
+        item = self._add_item(pose, parent)
         
+        return item
+    
+    def create_cone_pose(self):
+        self.create_pose('cone', None, None)
+    
+    def create_no_reader_pose(self):
+        self.create_pose('no reader', None, None)
         
-
-    def create_no_reader_pose(self, name = None):
-        
-        selection = cmds.ls(sl = True, l = True)
-        
-        pose = None
-        
-        if name:
-            pose = name
-        
-        if not pose:
-            pose = corrective.PoseManager().create_no_reader_pose()
-        
-        if not pose:
-            return
-        
-        if selection:
-            cmds.select(selection)
-            self.check_for_mesh.emit(pose)
-        
-        self._add_item(pose)
-        
-        
-        
-    def create_timeline_pose(self, name = None):
-                
-        selection = cmds.ls(sl = True, l = True)
-                
-        pose = None
-        
-        if name:
-            pose = name
-            
-        if not pose:
-            pose = corrective.PoseManager().create_timeline_pose()
-            
-        if not pose:
-            return
-        
-        if selection:
-            cmds.select(selection)
-            self.check_for_mesh.emit(pose)
-        
-        self._add_item(pose)
-        
-    def create_combo_pose(self, name = None):
-        qt_ui.about('Combo pose not yet implemented. Coming soon...', self)
-        pass
-        
+    def create_timeline_pose(self):
+        self.create_pose('timeline', None, None)
+    
     def mirror_pose(self):
         
         pose = self._current_pose()
@@ -727,17 +784,6 @@ class PoseTreeWidget(BaseTreeWidget):
         corrective.PoseManager().set_pose(pose_names[0])
         
         self.last_selection = pose_names
-            
-    def value_changed(self, max_angle, max_distance, twist_on, twist):
-        poses = self._get_selected_items(True)
-        
-        if not poses:
-            return
-        
-        cmds.setAttr('%s.maxAngle' % poses[-1], max_angle)
-        cmds.setAttr('%s.maxDistance' % poses[-1], max_distance)
-        cmds.setAttr('%s.maxTwist' % poses[-1], twist)
-        cmds.setAttr('%s.twistOffOn' % poses[-1], twist_on)
         
 class PoseWidget(qt_ui.BasicWidget):
 
@@ -783,9 +829,6 @@ class PoseWidget(qt_ui.BasicWidget):
         self.pose_control_widget.set_pose(pose_name)
         
         self.main_layout.addWidget(self.pose_control_widget)
-        
-    def set_values(self, angle, distance, twist_on, twist):
-        self.pose_control_widget.set_values(angle, distance, twist_on, twist)
         
     def set_pose_parent_name(self, parent_name):
 
@@ -1071,7 +1114,7 @@ class MeshWidget(qt_ui.BasicWidget):
         if not cmds.objExists('%s.type' % pose_name):
             pose_type = 'cone'
 
-        self.pose_class = corrective.get_corrective_instance(pose_type)
+        self.pose_class = corrective.corrective_type[pose_type]
         
         self.pose_class.set_pose(pose_name)
 
@@ -1332,6 +1375,7 @@ class PoseConeWidget(PoseBaseWidget):
     def __init__(self):
         
         super(PoseConeWidget, self).__init__()
+        self.value_update_enable = True
         
     def _define_main_layout(self):
         layout = QtGui.QVBoxLayout()
@@ -1417,6 +1461,10 @@ class PoseConeWidget(PoseBaseWidget):
             self.set_parent_name(text)
     
     def _value_changed(self):
+        
+        if not self.value_update_enable:
+            return
+        
         max_angle = self.max_angle.value()
         max_distance = self.max_distance.value()
         twist_on = self.twist_on.value()
@@ -1453,11 +1501,7 @@ class PoseConeWidget(PoseBaseWidget):
         twist_on = cmds.getAttr('%s.twistOffOn' % pose)
         twist = cmds.getAttr('%s.maxTwist' % pose)
         
-        
-        
         self.set_values(max_angle, max_distance, twist_on, twist)
-        
-        
         
         return max_angle, max_distance, twist_on, twist
 
@@ -1487,15 +1531,18 @@ class PoseConeWidget(PoseBaseWidget):
         if not self.pose:
             return
         
+        self.value_update_enable = False
         self.max_angle.setValue(angle)
         self.max_distance.setValue(distance)
         self.twist_on.setValue(twist_on)
         self.twist.setValue(twist)
+        self.value_update_enable = True
         
         cmds.setAttr('%s.maxAngle' % self.pose, angle)
         cmds.setAttr('%s.maxDistance' % self.pose, distance)
         cmds.setAttr('%s.maxTwist' % self.pose, twist)
         cmds.setAttr('%s.twistOffOn' % self.pose, twist_on)
+        
         
     def axis_change(self, string):
         

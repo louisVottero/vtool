@@ -62,6 +62,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.set_settings( self.settings )
         self.settings_widget.set_settings(self.settings)
            
+
+           
     def _sync_code(self):
         self.sync_code = True
           
@@ -71,7 +73,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
     def _item_changed(self, item):
         
-        name = item.get_name()
+        name = '-'
+        
+        if hasattr(item, 'name'):
+            
+            name = item.get_name()
         
         self._set_title(name)
         
@@ -92,9 +98,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         item = items[0]
         
         name = item.get_name()
-        
+
         self._update_build_widget(name)
-        
+
         self._set_title(name)
         self._update_process(name)
         self.last_item = item
@@ -106,6 +112,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         data_path = util_file.join_path(path, '_data/build')
         
         data_dir = util_file.join_path(path, '_data')
+        
+        if not util_file.is_dir(data_dir):
+            return
         
         self.build_widget.update_data(data_dir)
         

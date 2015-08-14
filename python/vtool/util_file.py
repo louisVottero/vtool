@@ -927,6 +927,16 @@ def rename(directory, name, make_unique = False):
     
     return renamepath
 
+def move(path1, path2):
+    
+    try:
+        shutil.move(path1, path2)
+    except:
+        util.warning('Failed to move %s to %s' % (path1, path2))
+        return False
+    
+    return True
+
 def comment(filepath, comment, comment_directory):
     
     comment_file = create_file('comments.txt', comment_directory)
