@@ -507,10 +507,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.context_menu = QtGui.QMenu()
         
         new_python = self.context_menu.addAction('New Python Code')
-        new_python_folder = self.context_menu.addAction('New Python Folder')
         new_data_import = self.context_menu.addAction('New Data Import')
         
-        self.new_actions = [new_python, new_python_folder, new_data_import]
+        self.new_actions = [new_python, new_data_import]
         
         self.context_menu.addSeparator()
         
@@ -527,7 +526,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.edit_actions = [run_action, rename_action, delete_action]
         
         new_python.triggered.connect(self.create_python_code)
-        new_python_folder.triggered.connect(self.create_python_folder)
         new_data_import.triggered.connect(self.create_import_code)
         
         run_action.triggered.connect(self.run_current_item)
@@ -858,9 +856,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.scrollToItem(item)
         self.setItemSelected(item, True)
-        
-    def create_python_folder(self):
-        pass
         
     def create_import_code(self):
         process_tool = process.Process()
