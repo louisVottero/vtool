@@ -3413,6 +3413,34 @@ class StoreControlData(StoreData):
         
         self.side_replace = ['_L', '_R', 'end']
     
+    def _get_single_control_data(self, control):
+    
+        attributes = cmds.listAttr(control, k = True)
+            
+        if not attributes:
+            return
+        
+        attribute_data = {}
+        
+        for attribute in attributes:
+            
+            attribute_name = '%s.%s' % (control, attribute)
+            
+            if not cmds.objExists(attribute_name):
+                continue
+            
+            if cmds.getAttr(attribute_name, type = True) == 'message':
+                continue
+
+            if cmds.getAttr(attribute_name, type = True) == 'string':
+                continue
+            
+            value = cmds.getAttr(attribute_name)
+            attribute_data[attribute] = value 
+        
+        return attribute_data
+
+    
     def _get_control_data(self):
         
         controls = []
@@ -3427,32 +3455,11 @@ class StoreControlData(StoreData):
         
         for control in controls:
             
-            attributes = cmds.listAttr(control, k = True)
-            
-            if not attributes:
-                continue
-            
-            attribute_data = {}
-            
-            for attribute in attributes:
-                
-                attribute_name = '%s.%s' % (control, attribute)
-                
-                if not cmds.objExists(attribute_name):
-                    continue
-                
-                if cmds.getAttr(attribute_name, type = True) == 'message':
-                    continue
-
-                if cmds.getAttr(attribute_name, type = True) == 'string':
-                    continue
-                
-                value = cmds.getAttr(attribute_name)
-                attribute_data[attribute] = value 
+            attribute_data = self._get_single_control_data(control)
             
             if attribute_data:
                 control_data[control] = attribute_data
-            
+                        
         return control_data
         
     def _has_transform_value(self, control):
@@ -3503,6 +3510,15 @@ class StoreControlData(StoreData):
          
         if rotate:
             return 'orient'
+    
+    def _set_control_data_in_dict(self, control, attribute_data):
+        
+        data = self.eval_data(return_only=True)
+        
+        data[control] = attribute_data
+        
+        self.set_data(data)
+    
     
     def _set_control_data(self, control, data):
         for attribute in data:
@@ -3555,7 +3571,6 @@ class StoreControlData(StoreData):
         
     def remove_pose_control_data(self):
         
-        print 'remove pose control data'
         data = self.get_data()
         
         if data:
@@ -3571,8 +3586,7 @@ class StoreControlData(StoreData):
             data.pop(key)
             
         self.set_data(data)
-        print 'finish remove pose control data'
-            
+                    
     def set_data(self, data= None):
         
         self.data.set_locked(False)
@@ -3582,6 +3596,17 @@ class StoreControlData(StoreData):
         
         super(StoreControlData, self).set_data(data)   
         self.data.set_locked(True)
+    
+    def set_control_data_attribute(self, control, data = None):
+        
+        if not data:
+            data = self._get_single_control_data(control)
+        
+        if data:
+            self._set_control_data_in_dict(control, data)
+        if not data:
+            vtool.util.warning('Error setting data for %s' % control )
+        
     
     def set_controls(self, controls):
         

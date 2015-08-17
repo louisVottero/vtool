@@ -44,7 +44,7 @@ class PoseManager(object):
             pose_type = 'cone'
 
         pose = corrective_type[pose_type]
-
+        
         pose.set_pose(pose_name)
         
         return pose
@@ -445,9 +445,15 @@ class PoseBase(object):
             
             cmds.rename(node, util.inc_name('%s_%s' % (node_type, self.description)))
 
-    def _create_node(self, maya_node_type):
+    def _create_node(self, maya_node_type, description = None):
         
-        node = cmds.createNode(maya_node_type, n = util.inc_name('%s_%s' % (maya_node_type, self.description)))
+        if not description:
+            name = util.inc_name('%s_%s' % (maya_node_type, self.description))
+            
+        if description:
+            name = util.inc_name('%s_%s_%s' % (maya_node_type, description, self.description))
+        
+        node = cmds.createNode(maya_node_type, n = name)
         
         messages = self._get_message_attributes()
         
@@ -678,19 +684,15 @@ class PoseBase(object):
         
     def _create_pose_control(self):
         
-        pose_control = cmds.group(em = True, n = self._get_name())
-        util.hide_keyable_attributes(pose_control)
+        #pose_control = cmds.group(em = True, n = self._get_name())
+        #util.hide_keyable_attributes(pose_control)
         
-        #control = util.Control(self._get_name())
-        #control.set_curve_type('cube')
-        #control.hide_scale_and_visibility_attributes()
-        #pose_control = control.get()
+        control = util.Control(self._get_name())
+        control.set_curve_type('cube')
+        control.hide_scale_and_visibility_attributes()
+        pose_control = control.get()
         
         self.pose_control = pose_control
-        
-        if cmds.objExists('%s.curveType' % pose_control):
-            cmds.setAttr('%s.curveType' % pose_control, l = False)
-            cmds.deleteAttr('%s.curveType' % pose_control)
         
         self._create_attributes(pose_control)
         
@@ -879,12 +881,15 @@ class PoseBase(object):
 
     def set_pose(self, pose_name):
         
-        if cmds.objExists('%s.curveType' % pose_name):
-            cmds.setAttr('%s.curveType' % pose_name, l = False)
-            cmds.deleteAttr('%s.curveType' % pose_name)
+        #if cmds.objExists('%s.curveType' % pose_name):
+            #cmds.setAttr('%s.curveType' % pose_name, l = False)
+            #cmds.deleteAttr('%s.curveType' % pose_name)
             
-            store = util.StoreControlData(pose_name)
-            store.remove_pose_control_data()
+            #store = util.StoreControlData(pose_name)
+            #store.remove_pose_control_data()
+            
+        store = util.StoreControlData(pose_name)
+        store.set_control_data_attribute(pose_name)
             
         if not cmds.objExists('%s.description' % pose_name):
             return
@@ -1528,6 +1533,17 @@ class PoseNoReader(PoseBase):
     
     def _pose_type(self):
         return 'no reader'
+   
+    def _create_pose_control(self):
+        
+        pose_control = cmds.group(em = True, n = self._get_name())
+        util.hide_keyable_attributes(pose_control)
+        
+        self.pose_control = pose_control
+        
+        self._create_attributes(pose_control)
+        
+        return pose_control
     
     def _create_attributes(self, control):
         
@@ -1830,7 +1846,7 @@ class PoseCone(PoseBase):
         
     def _create_pose_control(self):
         pose_control = super(PoseCone, self)._create_pose_control()
-         
+        
         self._position_control(pose_control)
             
         match = util.MatchSpace(self.transform, pose_control)
@@ -1841,7 +1857,7 @@ class PoseCone(PoseBase):
         if parent:
             cmds.parentConstraint(parent[0], pose_control, mo = True)
             cmds.setAttr('%s.parent' % pose_control, parent[0], type = 'string')
-        
+                
         return pose_control
         
     def _position_control(self, control):
@@ -1964,7 +1980,7 @@ class PoseCone(PoseBase):
         return angle_between
         
     def _remap_value_angle(self, angle_between):
-        remap = self._create_node('remapValue')
+        remap = self._create_node('remapValue', 'angle')
         
         cmds.connectAttr('%s.angle' % angle_between, '%s.inputValue' % remap)
         
@@ -1979,7 +1995,9 @@ class PoseCone(PoseBase):
         return remap
     
     def _remap_value_distance(self, distance_between):
-        remap = cmds.createNode('remapValue', n = 'remapValue_distance_%s' % self.description)
+        
+        remap = self._create_node('remapValue', 'distance')
+        #remap = cmds.createNode('remapValue', n = 'remapValue_distance_%s' % self.description)
         
         cmds.connectAttr('%s.distance' % distance_between, '%s.inputValue' % remap)
         
@@ -1992,6 +2010,26 @@ class PoseCone(PoseBase):
         cmds.setAttr('%s.inputMax' % remap, 1)
         
         return remap        
+    
+    def _fix_remap_value_distance(self):
+        
+        input_value = util.get_attribute_input('%s.translation' % self.pose_control, node_only = True)
+        key_input = util.get_attribute_input('%s.input' % input_value)
+        
+        if key_input:
+            return
+                    
+        if not cmds.objExists('remapValue3'):
+            distance = self._get_named_message_attribute('distanceBetween1')
+            
+            remap = self._remap_value_distance(distance)
+            
+            input_value = util.get_attribute_input('%s.translation' % self.pose_control, node_only = True)
+            
+            if input_value:
+                
+                if cmds.nodeType(input_value).startswith('animCurve'):
+                    cmds.connectAttr('%s.outValue' % remap, '%s.input' % input_value)
         
     def _multiply_remaps(self, remap, remap_twist):
         
@@ -2168,6 +2206,8 @@ class PoseCone(PoseBase):
     
     def detach(self):
         
+        self._fix_remap_value_distance()
+        
         super(PoseCone, self).detach()
         
         parent = self.get_parent()
@@ -2201,8 +2241,9 @@ class PoseCone(PoseBase):
         if outputs:
             self.reconnect_weight_outputs(outputs)
         
-        self._hide_meshes()
+        self._fix_remap_value_distance()
         
+        self._hide_meshes()
         
     def create(self):
         pose_control = super(PoseCone, self).create()

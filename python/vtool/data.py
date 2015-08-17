@@ -1181,6 +1181,10 @@ class PoseData(MayaCustomData):
             if value == 'Yes':
                 maya_lib.util.delete_unknown_nodes()
         
+        dirpath = util_file.join_path(self.directory, self.name)
+        if util_file.is_dir(dirpath):
+            util_file.delete_dir(dirpath)
+        
         dir_path = util_file.create_dir(self.name, self.directory)
         
         pose_manager = maya_lib.corrective.PoseManager()
