@@ -37,7 +37,7 @@ class DataManager(object):
         
         for data in self.available_data:          
             types.append( data.get_type() )
-            
+    -        
         return types
                 
     def get_type_instance(self, data_type):
@@ -161,8 +161,84 @@ class DataFolder(util_file.FileManager):
         directory = util_file.get_dirname(self.folder_path)
         
         util_file.delete_dir(name, directory)
+    
+class DataFile(util_file.FileManager):
+    
+    def __init__(self, name, directory):
         
+        self.name = name
+        self.directory = directory
         
+        self.filepath = util_file.join_path(name, directory)
+        
+        super(DataFile, self).__init__(self.filepath)
+    
+    def _get_name_no_extension(self):
+        
+        if self.name.endswith('.py'):
+            return self.name[:-3]
+        
+    def _get_folder(self):
+        
+        name = self._get_name_no_extension()
+        
+        folderpath = util_file.join_path(self.directory, name)
+        
+        if util_file.is_dir(folderpath):
+            return folderpath
+        
+    def _create_folder(self):
+        
+        name = self._get_name_no_extension()
+        folder = util_file.create_dir(name, self.directory)
+        return folder
+        
+    def _create_versions_folder(self):
+        
+        version_path = util_file.create_dir('.versions', self.directory)
+        self.version_folder = util_file.create_dir('.%s' % self.name, version_path)
+        
+    def version_file(self, comment):
+        
+        self._create_versions_folder()
+        version_file = util_file.VersionFile(self.filepath)
+        version_file.set_version_folder(self.version_folder)
+        version_file.save(comment)
+        
+    def add_child(self, filepath):
+        
+        folder = self._create_folder()
+        
+        child_name = util_file.get_basename(filepath)
+        new_child_path = util_file.join_path(folder, child_name)
+        
+        util_file.move(filepath, new_child_path)
+        
+        path_name = util_file.join_path(self.name, child_name)
+        
+        return self.directory, path_name
+        
+    def delete(self):
+        
+        folder = self._get_folder()
+        
+        if folder:
+            util_file.delete_dir(self.name, self.directory)
+            
+        if util_file.is_file(self.filepath)
+            util_file.delete_file(self.name, self.directory)
+    
+    def rename(self, new_name):
+        
+        filepath = util_file.rename(self.filepath, new_name)
+        
+        if not filepath:
+            return
+        
+        self.name = new_name
+        self.filepath = filepath
+        
+        return self.filepath
     
 class Data(object):
     def __init__(self, name = None):
