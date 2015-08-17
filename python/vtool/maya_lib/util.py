@@ -3414,6 +3414,9 @@ class StoreControlData(StoreData):
         self.side_replace = ['_L', '_R', 'end']
     
     def _get_single_control_data(self, control):
+        
+        if not control:
+            return
     
         attributes = cmds.listAttr(control, k = True)
             
@@ -3515,9 +3518,10 @@ class StoreControlData(StoreData):
         
         data = self.eval_data(return_only=True)
         
-        data[control] = attribute_data
+        if data:
+            data[control] = attribute_data
         
-        self.set_data(data)
+            self.set_data(data)
     
     
     def _set_control_data(self, control, data):

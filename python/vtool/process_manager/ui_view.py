@@ -208,8 +208,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             return      
 
         self.dragged_item.setDisabled(False)
-
-        
         
         old_directory = self.dragged_item.directory
         old_name_full = self.dragged_item.get_name()

@@ -13,7 +13,6 @@ if util.is_in_maya():
     import maya_lib.util
     import maya_lib.curve
     import maya_lib.corrective
-    import maya_lib.ui
 
 class DataManager(object):
     
@@ -1283,9 +1282,7 @@ class PoseData(MayaCustomData):
         
         cmds.dgdirty(a = True)
         cmds.renderThumbnailUpdate( True )
-        
-        maya_lib.ui.emit_new_scene_signal()
-        
+                
         
 class MayaAttributeData(MayaCustomData):
     def _data_name(self):

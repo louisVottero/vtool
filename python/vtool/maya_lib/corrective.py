@@ -43,7 +43,7 @@ class PoseManager(object):
         if not cmds.objExists('%s.type' % pose_name):
             pose_type = 'cone'
 
-        pose = corrective_type[pose_type]
+        pose = corrective_type[pose_type]()
         
         pose.set_pose(pose_name)
         
@@ -1210,6 +1210,9 @@ class PoseBase(object):
         if target_mesh and cmds.objExists(target_mesh):
             
             self._set_visibility(target_mesh, 0)
+            
+            if not util.is_batch():
+                util.add_to_isolate_select(mesh)
         
     def toggle_vis(self, view_only = False):
         
@@ -1254,8 +1257,6 @@ class PoseBase(object):
         if not mesh:
             return
         
-        
-
         manager = PoseManager()
         manager.set_weights_to_zero()
         
@@ -1309,7 +1310,9 @@ class PoseBase(object):
         manager = PoseManager()
         manager.set_pose_group(self.pose_control)
         children = manager.get_poses()
+        
         if children:
+            
             for child in children:
                 
                 child_instance = manager.get_pose_instance(child)
@@ -1318,8 +1321,9 @@ class PoseBase(object):
                 child_instance.create_blend(goto_pose = True, mesh_index = sub_mesh_index)
             
             mesh = self.get_mesh_index(mesh)
+            
+            
             self.create_blend(True, mesh, False)
-        
         
     def detach_sub_poses(self):
         
@@ -2373,6 +2377,6 @@ class PoseTimeline(PoseNoReader):
         
         return pose_control
         
-corrective_type = { 'cone' : PoseCone(),
-                     'no reader' : PoseNoReader(),
-                     'timeline' : PoseTimeline() }
+corrective_type = { 'cone' : PoseCone,
+                     'no reader' : PoseNoReader,
+                     'timeline' : PoseTimeline }
