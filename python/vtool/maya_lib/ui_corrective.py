@@ -77,8 +77,11 @@ class PoseManager(ui.MayaWindow):
         
     def check_for_mesh(self, pose):
         
+        selection = cmds.ls(sl = True)
+        print 'about to up dialog', pose
+        
         self.sculpt.set_pose(pose)
-        self.sculpt.mesh_widget.add_mesh()
+        self.sculpt.mesh_widget.add_mesh(selection)
         
 class PoseSetWidget(QtGui.QWidget): 
     
@@ -397,6 +400,21 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         pose.set_pose(pose_name)
         pose.set_mesh_index(index)
         
+    def _remove_current_item(self):
+        
+        item = self.currentItem()
+        
+        parent_item = item.parent()
+        
+        if not parent_item:
+            parent_item = self.invisibleRootItem()    
+        
+        index = parent_item.indexOfChild(item)
+        item = parent_item.takeChild(index)
+        
+        
+        del(item)
+        
     def delete_pose(self):
         
         permission = qt_ui.get_permission('Delete Pose?', self)
@@ -405,16 +423,13 @@ class BaseTreeWidget(qt_ui.TreeWidget):
             return
         
         pose = self._current_pose()
-        item = self.currentItem()
         
         if not pose:
             return
         
         corrective.PoseManager().delete_pose(pose)
         
-        index = self.indexOfTopLevelItem(item)
-        self.takeTopLevelItem(index)
-        del(item)
+        self._remove_current_item()
         
         self.last_selection = None
         
@@ -469,6 +484,8 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self._create_context_menu()
         
+        self.update_select = True
+        
     def mousePressEvent(self, event):
         
         model_index =  self.indexAt(event.pos())
@@ -506,10 +523,18 @@ class PoseTreeWidget(BaseTreeWidget):
         
         pose = self.dragged_item.text(0)
         
+        current_parent = cmds.listRelatives(pose, p = True)
+        
         if entered_item:
             pose_parent = entered_item.text(0)
         
-        cmds.parent(pose, pose_parent)
+        if current_parent:
+            
+            current_parent = current_parent[0]
+            
+            if pose_parent != current_parent:
+                if pose_parent:
+                    cmds.parent(pose, pose_parent)
         
         self.dragged_item.setDisabled(False)
     
@@ -725,10 +750,16 @@ class PoseTreeWidget(BaseTreeWidget):
             return
         
         if selection:
-            cmds.select(selection)
+            print 'selection!', selection
+            cmds.select(selection, r = True)
+                
             self.check_for_mesh.emit(pose)
-        
+            
         item = self._add_item(pose, parent)
+        
+        self.update_select = False
+        item.setSelected(True)
+        self.update_select = True
         
         return item
     
@@ -754,7 +785,10 @@ class PoseTreeWidget(BaseTreeWidget):
         self.select_pose(mirror)
         
     def select_pose(self, pose_name = None):
-        
+                
+        if not self.update_select:
+            return
+                
         if pose_name:
             for inc in range(0, self.topLevelItemCount()):
                 
@@ -776,12 +810,19 @@ class PoseTreeWidget(BaseTreeWidget):
         if not items:
             return
         
-        if self.last_selection: 
-            corrective.PoseManager().visibility_off(self.last_selection[0])
+        if self.last_selection:
+            if cmds.objExists(self.last_selection[0]): 
+                corrective.PoseManager().visibility_off(self.last_selection[0])
         
         pose_names = self._get_selected_items(get_names = True)
         
-        corrective.PoseManager().set_pose(pose_names[0])
+        if pose_names:
+            if not cmds.objExists(pose_names[0]):
+                self._remove_current_item()
+            
+            if cmds.objExists(pose_names[0]):
+                
+                corrective.PoseManager().set_pose(pose_names[0])
         
         self.last_selection = pose_names
         
@@ -902,12 +943,19 @@ class MeshWidget(qt_ui.BasicWidget):
         
         pose = self.pose_class
         
+        if not cmds.objExists(pose.pose_control):
+            return
+        
         target_meshes =  pose.get_target_meshes()
         
         self.update_meshes(target_meshes,pose.mesh_index, meshes)
         
     @util.undo_chunk
-    def add_mesh(self):
+    def add_mesh(self, selection = None):
+        
+        
+        if not selection:
+            selection = cmds.ls(sl = True, l = True)
         
         if self.pose_class:
             self.pose_class.goto_pose()
@@ -935,7 +983,9 @@ class MeshWidget(qt_ui.BasicWidget):
         list_meshes = []
         added_meshes = []
         
-        selection = cmds.ls(sl = True, l = True)
+        
+        
+        print 'add mesh selection!', selection
         
         if selection:
         
@@ -968,7 +1018,8 @@ class MeshWidget(qt_ui.BasicWidget):
                             
                             list_meshes.append(selected)
                         
-                    if pass_mesh:    
+                    if pass_mesh:   
+                        print 'pass mesh', pass_mesh 
                         sculpt_meshes.append(pass_mesh)
         
         if sculpt_meshes or not current_meshes:
@@ -1114,7 +1165,7 @@ class MeshWidget(qt_ui.BasicWidget):
         if not cmds.objExists('%s.type' % pose_name):
             pose_type = 'cone'
 
-        self.pose_class = corrective.corrective_type[pose_type]
+        self.pose_class = corrective.corrective_type[pose_type]()
         
         self.pose_class.set_pose(pose_name)
 
@@ -1229,8 +1280,6 @@ class SculptWidget(qt_ui.BasicWidget):
             return
         
         self.pose = pose_name
-        
-        
         
         auto_key_state = cmds.autoKeyframe(q = True, state = True)
         cmds.autoKeyframe(state = False)
