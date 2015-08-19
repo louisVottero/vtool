@@ -78,7 +78,6 @@ class PoseManager(ui.MayaWindow):
     def check_for_mesh(self, pose):
         
         selection = cmds.ls(sl = True)
-        print 'about to up dialog', pose
         
         self.sculpt.set_pose(pose)
         self.sculpt.mesh_widget.add_mesh(selection)
@@ -485,6 +484,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self._create_context_menu()
         
         self.update_select = True
+        self.item_select = True
         
     def mousePressEvent(self, event):
         
@@ -657,6 +657,8 @@ class PoseTreeWidget(BaseTreeWidget):
         
         super(PoseTreeWidget, self)._populate_list()   
         
+        
+        
         if not cmds.objExists('pose_gr'):
             return
         
@@ -664,6 +666,8 @@ class PoseTreeWidget(BaseTreeWidget):
         
         if not poses:
             return
+        
+        self.item_select = False
         
         for pose in poses:
             
@@ -676,6 +680,8 @@ class PoseTreeWidget(BaseTreeWidget):
             
             for sub_pose in sub_poses:
                 self._add_pose_item(sub_pose, pose_item)
+               
+        self.item_select = True
                
     def _add_pose_item(self, pose_name, parent = None):
          
@@ -750,7 +756,7 @@ class PoseTreeWidget(BaseTreeWidget):
             return
         
         if selection:
-            print 'selection!', selection
+            
             cmds.select(selection, r = True)
                 
             self.check_for_mesh.emit(pose)
@@ -758,7 +764,8 @@ class PoseTreeWidget(BaseTreeWidget):
         item = self._add_item(pose, parent)
         
         self.update_select = False
-        item.setSelected(True)
+        if self.item_select:
+            item.setSelected(True)
         self.update_select = True
         
         return item
@@ -854,7 +861,9 @@ class PoseWidget(qt_ui.BasicWidget):
             pose_type = 'cone'
         
         if self.pose_control_widget:
+            self.pose_control_widget.close()
             self.pose_control_widget.deleteLater()
+            del self.pose_control_widget
             self.pose_control_widget = None
         
         
@@ -983,10 +992,6 @@ class MeshWidget(qt_ui.BasicWidget):
         list_meshes = []
         added_meshes = []
         
-        
-        
-        print 'add mesh selection!', selection
-        
         if selection:
         
             mesh_list_count = self.mesh_list.count()
@@ -1019,7 +1024,7 @@ class MeshWidget(qt_ui.BasicWidget):
                             list_meshes.append(selected)
                         
                     if pass_mesh:   
-                        print 'pass mesh', pass_mesh 
+                        
                         sculpt_meshes.append(pass_mesh)
         
         if sculpt_meshes or not current_meshes:
