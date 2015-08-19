@@ -484,6 +484,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self._create_context_menu()
         
         self.update_select = True
+        self.item_select = True
         
     def mousePressEvent(self, event):
         
@@ -656,6 +657,8 @@ class PoseTreeWidget(BaseTreeWidget):
         
         super(PoseTreeWidget, self)._populate_list()   
         
+        
+        
         if not cmds.objExists('pose_gr'):
             return
         
@@ -663,6 +666,8 @@ class PoseTreeWidget(BaseTreeWidget):
         
         if not poses:
             return
+        
+        self.item_select = False
         
         for pose in poses:
             
@@ -675,6 +680,8 @@ class PoseTreeWidget(BaseTreeWidget):
             
             for sub_pose in sub_poses:
                 self._add_pose_item(sub_pose, pose_item)
+               
+        self.item_select = True
                
     def _add_pose_item(self, pose_name, parent = None):
          
@@ -757,7 +764,8 @@ class PoseTreeWidget(BaseTreeWidget):
         item = self._add_item(pose, parent)
         
         self.update_select = False
-        item.setSelected(True)
+        if self.item_select:
+            item.setSelected(True)
         self.update_select = True
         
         return item
@@ -853,7 +861,9 @@ class PoseWidget(qt_ui.BasicWidget):
             pose_type = 'cone'
         
         if self.pose_control_widget:
+            self.pose_control_widget.close()
             self.pose_control_widget.deleteLater()
+            del self.pose_control_widget
             self.pose_control_widget = None
         
         
