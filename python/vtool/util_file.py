@@ -89,8 +89,6 @@ class FileManager(object):
     
     def __init__(self, filepath, skip_warning = False):
         
-        print filepath
-        
         self.filepath = filepath
         
         if not skip_warning:

@@ -707,6 +707,13 @@ class MayaPoseSaveFileWidget(MayaDataSaveFileWidget):
         
         self.data_class.export_data(comment)
         self.file_changed.emit()
+        
+    def _import_data(self):
+        
+        from vtool.maya_lib import ui
+        ui.delete_scene_script_jobs()
+        self.data_class.import_data()
+        ui.create_scene_script_jobs()
 
         
 class MayaShadersFileWidget(MayaDataFileWidget):

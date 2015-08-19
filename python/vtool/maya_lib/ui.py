@@ -36,9 +36,26 @@ def emit_open_scene_signal():
     new_scene_signal.signal.emit()
 
 #--- script jobs
-cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui;ui.emit_new_scene_signal()'], protected = False)
-cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui;ui.emit_open_scene_signal()'], protected = False)
+job_new_scene = None
+job_open_scene = None
+def create_scene_script_jobs():
+    
+    global job_new_scene
+    global job_open_scene
+    
+    job_new_scene = cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui;ui.emit_new_scene_signal()'], protected = False)
+    job_open_scene = cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui;ui.emit_open_scene_signal()'], protected = False)
+
+create_scene_script_jobs()
   
+def delete_scene_script_jobs():
+    
+    global job_new_scene
+    global job_open_scene
+    
+    cmds.scriptJob(kill = job_new_scene)
+    cmds.scriptJob(kill = job_open_scene)
+    
 #--- ui 
 
 def get_maya_window():

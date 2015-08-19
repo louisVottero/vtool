@@ -479,6 +479,16 @@ def get_simple_center_vector(list_of_vectors):
     return simple_center_vector
 
 def convert_to_sequence(variable, sequence_type = list):
+    
+    if type(variable) == list and sequence_type == tuple:
+        
+        variable = tuple(variable)
+    
+    if type(variable) == tuple and sequence_type == list:
+        
+        variable = list(variable)
+        
+    
     if not type(variable) == sequence_type:
         if sequence_type == list:
             return [variable]

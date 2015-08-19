@@ -9,7 +9,6 @@ import vtool.util
 
 import maya.cmds as cmds
 import maya.mel as mel
-from _ctypes import alignment
 
 if qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
@@ -74,6 +73,11 @@ class PoseManager(ui.MayaWindow):
         self.sculpt.set_pose(pose_name)
         
         cmds.select(pose_name, r = True)
+        
+        #pose_control_widget = self.pose_list.pose_widget.pose_control_widget
+        
+        #if type(pose_control_widget) == PoseConeWidget:
+        #    pose_control_widget._get_pose_values()
         
     def check_for_mesh(self, pose):
         
@@ -179,7 +183,7 @@ class PoseListWidget(qt_ui.BasicWidget):
                     pass
 
     def _update_pose_widget(self):
-        
+       
         current_pose = self.pose_list._current_pose()
         current_weight_attribute = '%s.weight' % current_pose
         
@@ -227,6 +231,8 @@ class PoseListWidget(qt_ui.BasicWidget):
                     #vtool.util.warning('Could not set %s to 0.' % current_weight_attribute )
 
         cmds.autoKeyframe(state = auto_key_state)
+        
+        
                 
     def _pose_renamed(self, new_name):
         self.pose_renamed.emit(new_name)
@@ -690,7 +696,7 @@ class PoseTreeWidget(BaseTreeWidget):
             pose_type = 'cone'
         
         new_item = self.create_pose(pose_type, pose_name, parent)
-
+        
         return new_item 
                       
     def _select_joint(self):
@@ -818,7 +824,7 @@ class PoseTreeWidget(BaseTreeWidget):
         if self.last_selection:
             if cmds.objExists(self.last_selection[0]): 
                 corrective.PoseManager().visibility_off(self.last_selection[0])
-        
+
         pose_names = self._get_selected_items(get_names = True)
         
         if pose_names:
@@ -828,7 +834,7 @@ class PoseTreeWidget(BaseTreeWidget):
             if cmds.objExists(pose_names[0]):
                 
                 corrective.PoseManager().set_pose(pose_names[0])
-        
+                
         self.last_selection = pose_names
         
 class PoseWidget(qt_ui.BasicWidget):
@@ -869,6 +875,7 @@ class PoseWidget(qt_ui.BasicWidget):
             self.pose_control_widget = PoseNoReaderWidget()
             
         if pose_type == 'cone':
+            
             self.pose_control_widget = PoseConeWidget()
             
         if pose_type == 'timeline':
@@ -1351,6 +1358,8 @@ class PoseBaseWidget(qt_ui.BasicWidget):
 
     def set_pose(self, pose_name):
         
+        
+        
         if not pose_name:
             self.pose = None
             return
@@ -1492,6 +1501,15 @@ class PoseConeWidget(PoseBaseWidget):
         text = str( self.combo_axis.currentText() )
         self.axis_change(text)
         
+    def _set_ui_values(self, angle, distance, twist_on, twist):
+        
+        self.value_update_enable = False
+        self.max_angle.setValue(angle)
+        self.max_distance.setValue(distance)
+        self.twist_on.setValue(twist_on)
+        self.twist.setValue(twist)
+        self.value_update_enable = True
+        
     def _parent_name_change(self):
         
         self.parent_text.setStyleSheet('QLineEdit{background:red}')
@@ -1514,6 +1532,8 @@ class PoseConeWidget(PoseBaseWidget):
     
     def _value_changed(self):
         
+        
+        
         if not self.value_update_enable:
             return
         
@@ -1523,12 +1543,24 @@ class PoseConeWidget(PoseBaseWidget):
         twist = self.twist.value()
         
         self.set_values(max_angle, max_distance, twist_on, twist)
+        
 
     def _pose_enable(self, value):
         
         value = value/100.00
         
         self.pose_enable_change.emit(value)
+
+    def _get_pose_node_values(self):
+        
+        pose = self.pose
+        
+        max_angle = cmds.getAttr('%s.maxAngle' % pose)
+        max_distance = cmds.getAttr('%s.maxDistance' % pose)
+        twist_on = cmds.getAttr('%s.twistOffOn' % pose)
+        twist = cmds.getAttr('%s.maxTwist' % pose)
+        
+        return max_angle, max_distance, twist_on, twist
 
     def _get_pose_values(self):
         
@@ -1546,14 +1578,10 @@ class PoseConeWidget(PoseBaseWidget):
             self.combo_axis.setCurrentIndex(1)
         if axis == [0,0,1]:
             self.combo_axis.setCurrentIndex(2)
-            
-               
-        max_angle = cmds.getAttr('%s.maxAngle' % pose)
-        max_distance = cmds.getAttr('%s.maxDistance' % pose)
-        twist_on = cmds.getAttr('%s.twistOffOn' % pose)
-        twist = cmds.getAttr('%s.maxTwist' % pose)
         
-        self.set_values(max_angle, max_distance, twist_on, twist)
+        max_angle, max_distance, twist_on, twist = self._get_pose_node_values()
+        
+        self._set_ui_values(max_angle, max_distance, twist_on, twist)
         
         return max_angle, max_distance, twist_on, twist
 
@@ -1568,6 +1596,7 @@ class PoseConeWidget(PoseBaseWidget):
         return parent
 
     def set_pose(self, pose_name):
+        
         super(PoseConeWidget, self).set_pose(pose_name)
         
         if not pose_name:
@@ -1577,19 +1606,13 @@ class PoseConeWidget(PoseBaseWidget):
         self.pose = pose_name
         self._get_pose_values()
         self._get_parent()
+        
 
     def set_values(self, angle, distance, twist_on, twist):
         
         if not self.pose:
             return
-        
-        self.value_update_enable = False
-        self.max_angle.setValue(angle)
-        self.max_distance.setValue(distance)
-        self.twist_on.setValue(twist_on)
-        self.twist.setValue(twist)
-        self.value_update_enable = True
-        
+                
         cmds.setAttr('%s.maxAngle' % self.pose, angle)
         cmds.setAttr('%s.maxDistance' % self.pose, distance)
         cmds.setAttr('%s.maxTwist' % self.pose, twist)

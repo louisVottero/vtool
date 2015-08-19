@@ -1924,7 +1924,37 @@ class IkHandle(object):
         cmds.rename(effector, 'effector_%s' % ik_handle)
         self.ik_handle = ik_handle
         
-                                       
+    def _create_spline_ik(self):
+        
+        if self.curve:
+            
+            ik_handle = cmds.ikHandle(name = inc_name(self.name),
+                                           startJoint = self.start_joint,
+                                           endEffector = self.end_joint,
+                                           sol = self.solver_type,
+                                           curve = self.curve, ccv = False, pcv = False)
+            
+            cmds.rename(ik_handle[1], 'effector_%s' % ik_handle[0])
+            self.ik_handle = ik_handle[0]
+            
+        if not self.curve:
+            
+            ik_handle = cmds.ikHandle(name = inc_name(self.name),
+                                           startJoint = self.start_joint,
+                                           endEffector = self.end_joint,
+                                           sol = self.solver_type,
+                                           scv = False,
+                                           pcv = False)
+            
+            cmds.rename(ik_handle[1], 'effector_%s' % ik_handle[0])
+            self.ik_handle = ik_handle[0]
+            
+            self.curve = ik_handle[2]
+            self.curve = cmds.rename(self.curve, inc_name('curve_%s' % self.name))
+            
+            self.ik_handle = ik_handle[0]
+        
+    """                                   
     def _create_spline_ik(self):
         
         if not self.curve:
@@ -1941,7 +1971,7 @@ class IkHandle(object):
         self.ik_handle = ik_handle[0]
         
         self.curve = cmds.rename(self.curve, inc_name('curve_%s' % self.name))
-        
+    """ 
         
     def set_start_joint(self, joint):
         self.start_joint = joint
@@ -3446,6 +3476,9 @@ class StoreControlData(StoreData):
         
         for control in controls:
             
+            if cmds.objExists('%s.POSE' % control):
+                continue
+            
             attribute_data = self._get_single_control_data(control)
             
             if attribute_data:
@@ -3595,11 +3628,13 @@ class StoreControlData(StoreData):
             data = self._get_single_control_data(control)
         
         if data:
+            
             self._set_control_data_in_dict(control, data)
         if not data:
             vtool.util.warning('Error setting data for %s' % control )
         
     
+        
     def set_controls(self, controls):
         
         self.controls = controls
@@ -3610,6 +3645,7 @@ class StoreControlData(StoreData):
         self.side_replace = [replace_string, pattern_string, position_string]
         
     def eval_data(self, return_only = False):
+        
         data = super(StoreControlData, self).eval_data()
         
         if return_only:
@@ -3618,7 +3654,11 @@ class StoreControlData(StoreData):
         if not data:
             return
         
-        for control in data:        
+        for control in data:
+            
+            if cmds.objExists('%s.POSE' % control):
+                continue
+                
             attribute_data = data[control]
             self._set_control_data(control, attribute_data)
             
@@ -3686,6 +3726,9 @@ class StoreControlData(StoreData):
             
             for control in data:
                 
+                if cmds.objExists('%s.POSE' % control):
+                    continue
+                
                 if not self._has_transform_value(control):
                     continue
                 
@@ -3707,6 +3750,7 @@ class StoreControlData(StoreData):
                 controls[control].append(temp_group)
         
         for control in controls:
+            
             
             constraint_type = self._get_constraint_type(control)
             

@@ -275,8 +275,10 @@ class PoseManager(object):
             pose.remove_mesh(mesh)
     
     def visibility_off(self, pose_name):
+        
         pose = self.get_pose_instance(pose_name)
         pose.visibility_off(view_only = True)
+        
         
     def toggle_visibility(self, pose_name, view_only = False, mesh_index = 0):
         
@@ -881,16 +883,6 @@ class PoseBase(object):
 
     def set_pose(self, pose_name):
         
-        #if cmds.objExists('%s.curveType' % pose_name):
-            #cmds.setAttr('%s.curveType' % pose_name, l = False)
-            #cmds.deleteAttr('%s.curveType' % pose_name)
-            
-            #store = util.StoreControlData(pose_name)
-            #store.remove_pose_control_data()
-            
-        store = util.StoreControlData(pose_name)
-        store.set_control_data_attribute(pose_name)
-            
         if not cmds.objExists('%s.description' % pose_name):
             return
         
