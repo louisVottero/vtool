@@ -39,8 +39,12 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.code_directory_widget = CodeDirectoryWidget()
         self.code_directory_widget.directory_changed.connect(self._code_directory_changed)
 
+        self.editor_directory_widget = ExternalEditorWidget()
+        self.editor_directory_widget.set_label('External Editor')
+
         self.main_layout.addWidget(self.project_directory_widget)
         self.main_layout.addWidget(self.code_directory_widget)
+        self.main_layout.addWidget(self.editor_directory_widget)
 
     def _project_directory_changed(self, project):
         
@@ -93,10 +97,40 @@ class SettingsWidget(qt_ui.BasicWidget):
     def set_settings(self, settings):
         self.settings = settings
         self.project_directory_widget.set_settings(settings)
-       
-class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
+        self.editor_directory_widget.set_settings(settings)
+        
+class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
     
-    directory_changed = qt_ui.create_signal(object)
+    def __init__(self, parent = None):
+           
+        super(ExternalEditorWidget, self).__init__(parent)
+        
+        self.settings = None
+        
+    def _browser(self):
+        
+        filename = qt_ui.get_file(self.get_directory() , self)
+        
+        filename = util_file.fix_slashes(filename)
+        
+        if filename and util_file.is_file(filename):
+            self.directory_edit.setText(filename)
+            self.directory_changed.emit(filename)
+            self.settings.set('external_editor', str(filename))
+    
+    
+    
+    def set_settings(self, settings):
+        
+        self.settings = settings
+        
+        filename = self.settings.get('external_editor')
+        
+        if util_file.is_file(str(filename)):
+            self.set_directory_text(filename)
+            
+   
+class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
     
     def __init__(self, parent = None):
         self.project_list = None
@@ -185,7 +219,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
     
     def _browser(self):
         
-        filename = qt_ui.get_file('C:/', self)
+        filename = qt_ui.get_folder('C:/', self)
         
         filename = util_file.fix_slashes(filename)
         
@@ -472,7 +506,7 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
     
     def _browser(self):
         
-        filename = qt_ui.get_file('C:/', self)
+        filename = qt_ui.get_folder('C:/', self)
         
         filename = util_file.fix_slashes(filename)
         

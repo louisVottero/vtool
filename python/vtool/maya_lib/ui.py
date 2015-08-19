@@ -216,21 +216,23 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         self.main_layout.setAlignment(QtCore.Qt.AlignTop)
         
     def _create_structure_widgets(self, parent):
+        
         subdivide_joint_button =  vtool.qt_ui.GetIntNumberButton('subdivide joint')
         subdivide_joint_button.set_value(1)
         subdivide_joint_button.clicked.connect(self._subdivide_joint)
         subdivide_joint_button.setToolTip('select parent and child joint')
         
         add_orient = QtGui.QPushButton('Add Orient')
+        add_orient.setMaximumWidth(80)
         add_orient.setToolTip('select joints')
-        orient_joints = QtGui.QPushButton('Orient')
+        orient_joints = QtGui.QPushButton('Orient Joints')
         orient_joints.setMinimumHeight(40)
         
-        mirror = QtGui.QPushButton('Mirror')
+        mirror = QtGui.QPushButton('Mirror Transforms')
         mirror.setMinimumHeight(40)
         
-        match_joints = QtGui.QPushButton('Match')
-        match_joints.setMinimumHeight(40)
+        #match_joints = QtGui.QPushButton('Match')
+        #match_joints.setMinimumHeight(40)
         
         joints_on_curve = vtool.qt_ui.GetIntNumberButton('create joints on curve')
         joints_on_curve.set_value(10)
@@ -246,7 +248,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         add_orient.clicked.connect(self._add_orient)
         orient_joints.clicked.connect(self._orient)
         mirror.clicked.connect(self._mirror)
-        match_joints.clicked.connect(self._match_joints)
+        #match_joints.clicked.connect(self._match_joints)
         joints_on_curve.clicked.connect(self._joints_on_curve)
         snap_to_curve.clicked.connect(self._snap_joints_to_curve)
         transfer_joints.clicked.connect(self._transfer_joints)
@@ -255,16 +257,26 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         main_layout = parent.main_layout
         
-        main_layout.addWidget(add_orient)
-        main_layout.addWidget(orient_joints)
+        orient_layout = QtGui.QHBoxLayout()
+        orient_layout.addWidget(orient_joints)
+        orient_layout.addWidget(add_orient)
+        
+        main_layout.addSpacing(20)
+        #main_layout.addWidget(add_orient)
         main_layout.addWidget(mirror)
-        main_layout.addWidget(match_joints)
+        main_layout.addLayout(orient_layout)
+        main_layout.addSpacing(20)
+        main_layout.addWidget(self.joint_axis_check)
+        
+        main_layout.addSpacing(20)
+        #main_layout.addWidget(orient_joints)
+        #main_layout.addWidget(match_joints)
         main_layout.addWidget(subdivide_joint_button)
         main_layout.addWidget(joints_on_curve)
         main_layout.addWidget(snap_to_curve)
         main_layout.addWidget(transfer_joints)
         main_layout.addWidget(transfer_process)
-        main_layout.addWidget(self.joint_axis_check)
+        
         
     def _match_joints(self):
         util.match_joint_xform('joint_', 'guideJoint_')
@@ -328,10 +340,10 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         #*args is for probably python 2.6, which doesn't work unless you have a key argument.
         
         util.mirror_curve('curve_')
-        util.mirror_xform('joint_')
-        util.mirror_xform('guideJoint_')
-        util.mirror_xform('process_')
-        util.mirror_xform(string_search = 'lf_')
+        util.mirror_xform()
+        #util.mirror_xform('guideJoint_')
+        #util.mirror_xform('process_')
+        #util.mirror_xform(string_search = 'lf_')
         
         #not sure when this was implemented... but couldn't find it, needs to be reimplemented.
         #util.mirror_curve(suffix = '_wire')
