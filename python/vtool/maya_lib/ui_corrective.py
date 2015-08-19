@@ -78,7 +78,6 @@ class PoseManager(ui.MayaWindow):
     def check_for_mesh(self, pose):
         
         selection = cmds.ls(sl = True)
-        print 'about to up dialog', pose
         
         self.sculpt.set_pose(pose)
         self.sculpt.mesh_widget.add_mesh(selection)
@@ -983,10 +982,6 @@ class MeshWidget(qt_ui.BasicWidget):
         list_meshes = []
         added_meshes = []
         
-        
-        
-        print 'add mesh selection!', selection
-        
         if selection:
         
             mesh_list_count = self.mesh_list.count()
@@ -1019,7 +1014,7 @@ class MeshWidget(qt_ui.BasicWidget):
                             list_meshes.append(selected)
                         
                     if pass_mesh:   
-                        print 'pass mesh', pass_mesh 
+                        
                         sculpt_meshes.append(pass_mesh)
         
         if sculpt_meshes or not current_meshes:
