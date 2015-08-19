@@ -165,43 +165,55 @@ class DataFile(util_file.FileManager):
     
     def __init__(self, name, directory):
         
-        self.name = name
-        self.directory = directory
         
-        self.filepath = util_file.join_path(name, directory)
+        self.filepath = util_file.create_file(name, directory)
+        
+        self.name = util_file.get_basename(self.filepath)
+        self.directory = util_file.get_dirname(self.filepath)
         
         super(DataFile, self).__init__(self.filepath)
-    
-    def _get_name_no_extension(self):
-        
-        if self.name.endswith('.py'):
-            return self.name[:-3]
         
     def _get_folder(self):
         
-        name = self._get_name_no_extension()
+        name = util_file.get_basename_no_extension(self.name)
         
-        folderpath = util_file.join_path(self.directory, name)
-        
-        if util_file.is_dir(folderpath):
-            return folderpath
+        dirpath = util_file.join_path(self.directory, name)
+
+        return dirpath
         
     def _create_folder(self):
         
-        name = self._get_name_no_extension()
+        name = util_file.get_basename_no_extension(self.name)
+        
         folder = util_file.create_dir(name, self.directory)
         return folder
+    
+    def _rename_folder(self, new_name):
         
-    def _create_versions_folder(self):
+        dirpath = self._get_folder()
         
-        version_path = util_file.create_dir('.versions', self.directory)
-        self.version_folder = util_file.create_dir('.%s' % self.name, version_path)
+        
+        if not util_file.is_dir(dirpath):
+            return
+        
+        print 'renaming', dirpath
+        
+        new_name = util_file.get_basename_no_extension(new_name)
+        
+        if util_file.is_dir(dirpath):
+            util_file.rename(dirpath, new_name)
+        
+    def _create_version_folder(self):
+        
+        self.version_path = util_file.create_dir('.versions', self.directory)
         
     def version_file(self, comment):
         
-        self._create_versions_folder()
+        self._create_version_folder()
         version_file = util_file.VersionFile(self.filepath)
-        version_file.set_version_folder(self.version_folder)
+        version_file.set_version_folder(self.version_path)
+        version_file.set_version_folder_name('.%s' % self.name)
+        version_file.set_version_name(self.name)
         version_file.save(comment)
         
     def add_child(self, filepath):
@@ -234,8 +246,13 @@ class DataFile(util_file.FileManager):
         if not filepath:
             return
         
+        self._rename_folder(new_name)
+        
         self.name = new_name
+        self.directory = util_file.get_dirname(filepath)
         self.filepath = filepath
+        
+        
         
         return self.filepath
     

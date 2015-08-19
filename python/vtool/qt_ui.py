@@ -1338,6 +1338,7 @@ class GetString(BasicWidget):
     
     
 
+
 class GetDirectoryWidget(DirectoryWidget):
     
     directory_changed = create_signal(object)
@@ -1368,7 +1369,7 @@ class GetDirectoryWidget(DirectoryWidget):
         
     def _browser(self):
         
-        filename = get_file(self.get_directory() , self)
+        filename = get_folder(self.get_directory() , self)
         
         filename = util_file.fix_slashes(filename)
         
@@ -1390,6 +1391,10 @@ class GetDirectoryWidget(DirectoryWidget):
         super(GetDirectoryWidget, self).set_directory(directory)
         
         self.directory_edit.setText(directory)
+        
+    def set_directory_text(self, text):
+        
+        self.directory_edit.setText(text)
         
     def get_directory(self):
         return self.directory_edit.text()
@@ -3089,8 +3094,20 @@ def get_comment(parent = None,text_message = 'add comment', title = 'save'):
     
     if ok:
         return comment
-    
+
 def get_file(directory, parent = None):
+    fileDialog = QtGui.QFileDialog(parent)
+    
+    if directory:
+        fileDialog.setDirectory(directory)
+    
+    directory = fileDialog.getOpenFileName()
+    
+    if directory:
+        return directory[0]
+    
+    
+def get_folder(directory, parent = None):
     fileDialog = QtGui.QFileDialog(parent)
     
     if directory:
@@ -3098,7 +3115,9 @@ def get_file(directory, parent = None):
     
     directory = fileDialog.getExistingDirectory()
     
-    return directory
+    if directory:
+        return directory
+    
 
 def get_permission(message, parent = None):
     

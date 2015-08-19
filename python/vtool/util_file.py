@@ -89,6 +89,8 @@ class FileManager(object):
     
     def __init__(self, filepath, skip_warning = False):
         
+        print filepath
+        
         self.filepath = filepath
         
         if not skip_warning:
@@ -202,28 +204,30 @@ class VersionFile(object):
         self.filename = get_basename(self.filepath)
         self.path = get_dirname(filepath)
         
+        self.version_folder_name = 'version'
+        self.version_name = 'version'
         self.version_folder = None
         
     def _create_version_folder(self):
-
-        self.version_folder = create_dir('version', self.path)
+        
+        self.version_folder = create_dir(self.version_folder_name, self.path)
         
     def _create_comment_file(self):
         self.comment_file = create_file('comments.txt', self.version_folder)
         
     def _increment_version_file_name(self):
         
-        path = join_path(self.version_folder, 'version.1')
+        path = join_path(self.version_folder, self.version_name + '.1')
         
         return inc_path_name(path)
         
     def _get_version_path(self, version_int):
-        path = join_path(self._get_version_folder(), 'version.%s' % version_int)
+        path = join_path(self._get_version_folder(), self.version_name + '.' + str(version_int))
         
         return path
         
     def _get_version_folder(self):
-        path = join_path(self.filepath, 'version')
+        path = join_path(self.filepath, self.version_folder_name)
         
         return path
     
@@ -279,6 +283,12 @@ class VersionFile(object):
     
     def set_version_folder(self, folder_path):
         self.path = folder_path
+        
+    def set_version_folder_name(self, name):
+        self.version_folder_name = name
+        
+    def set_version_name(self, name):
+        self.version_name = name
         
     def get_version_path(self, version_int):
         return self._get_version_path(version_int)
@@ -338,7 +348,7 @@ class VersionFile(object):
             
         for filepath in files: 
             
-            if not filepath.startswith('version'):
+            if not filepath.startswith(self.version_name):
                 continue
             
             split_name = filepath.split('.')
@@ -346,7 +356,6 @@ class VersionFile(object):
             if not len(split_name) == 2:
                 continue
             
-            name = split_name[0]
             number = int(split_name[1])
             
             number_list.append(number)
@@ -366,7 +375,8 @@ class VersionFile(object):
         
         latest_version = versions[-1]
         
-        return join_path(self.filepath, 'version/%s' % latest_version)
+        return join_path(self.filepath, '%s/%s' % (self.version_folder_name, latest_version))
+       
        
 class SettingsFile(object):
     
@@ -650,6 +660,15 @@ class PythonScope(object):
 def get_basename(directory):
     return os.path.basename(directory)
 
+def get_basename_no_extension(filepath):
+    
+    basename = get_basename(filepath)
+    dot_split = basename.split('.')
+    
+    new_name = string.join(dot_split[:-1], '.')
+    
+    return new_name
+
 def get_dirname(directory):
     try:
         return os.path.dirname(directory)
@@ -863,6 +882,9 @@ def open_browser(filepath):
 #---- edit
 
 def fix_slashes(directory):
+    
+    print 'fixing slashes', directory
+    
     directory = directory.replace('\\','/')
     directory = directory.replace('//', '/')
     

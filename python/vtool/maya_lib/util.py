@@ -1927,33 +1927,21 @@ class IkHandle(object):
                                        
     def _create_spline_ik(self):
         
-        if self.curve:
-            
-            ik_handle = cmds.ikHandle(name = inc_name(self.name),
-                                           startJoint = self.start_joint,
-                                           endEffector = self.end_joint,
-                                           sol = self.solver_type,
-                                           curve = self.curve, ccv = False, pcv = False)
-            
-            cmds.rename(ik_handle[1], 'effector_%s' % ik_handle[0])
-            self.ik_handle = ik_handle[0]
-            
         if not self.curve:
+            self.curve = transforms_to_curve(self.joints, 1, inc_name('curve_%s' % self.name))
             
-            ik_handle = cmds.ikHandle(name = inc_name(self.name),
-                                           startJoint = self.start_joint,
-                                           endEffector = self.end_joint,
-                                           sol = self.solver_type,
-                                           scv = False,
-                                           pcv = False)
-            
-            cmds.rename(ik_handle[1], 'effector_%s' % ik_handle[0])
-            self.ik_handle = ik_handle[0]
-            
-            self.curve = ik_handle[2]
-            self.curve = cmds.rename(self.curve, inc_name('curve_%s' % self.name))
-            
-            self.ik_handle = ik_handle[0]
+        
+        ik_handle = cmds.ikHandle(name = inc_name(self.name),
+                                       startJoint = self.start_joint,
+                                       endEffector = self.end_joint,
+                                       sol = self.solver_type,
+                                       curve = self.curve, ccv = False, pcv = False)
+        
+        cmds.rename(ik_handle[1], 'effector_%s' % ik_handle[0])
+        self.ik_handle = ik_handle[0]
+        
+        self.curve = cmds.rename(self.curve, inc_name('curve_%s' % self.name))
+        
         
     def set_start_joint(self, joint):
         self.start_joint = joint
@@ -6110,6 +6098,35 @@ def orient_attributes(scope = None):
             if relatives:
                 orient_attributes(relatives)
 
+def find_transform_right_side(transform):
+    
+    other = ''
+    
+    if transform.endswith('_L'):
+        other = transform.replace('_L', '_R')
+        
+        if cmds.objExists(other):
+            return other
+    
+    other = ''
+        
+    if transform.startswith('L_') and not transform.endswith('_R'):
+        
+        other = transform.replace('L_', 'R_')
+        
+        if cmds.objExists(other):
+            return other 
+        
+    other = ''
+        
+    if transform.find('lf_') > -1 and not transform.endswith('_R') and not transform.startswith('L_'):
+        other = transform.replace('lf_', 'rt_')
+        
+        if cmds.objExists(other):
+            return other
+        
+    return ''
+
 def mirror_xform(prefix = None, suffix = None, string_search = None):
     
     scope_joints = []
@@ -6117,6 +6134,10 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
     
     joints = []
     transforms = []
+    
+    if not prefix and not suffix and not string_search:
+        joints = cmds.ls(type ='joint')
+        transforms = cmds.ls(type = 'transform')
     
     if prefix:
         joints = cmds.ls('%s*' % prefix, type = 'joint')
@@ -6146,20 +6167,19 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
     
     for transform in scope:
         
-        other = ''
         
-        if transform.endswith('_L'):
-            other= transform.replace('_L', '_R')
-            
-        if not transform.endswith('_L') and not transform.endswith('_R'):
-            other = transform.replace('lf_', 'rt_')
+        
+        other = ''
+        other = find_transform_right_side(transform)
+       
+        if is_translate_rotate_connected(other):
+            continue
        
         if cmds.objExists(other):
             
             xform = cmds.xform(transform, q = True, ws = True, t = True)
             
             if cmds.nodeType(other) == 'joint':
-                
                 
                 radius = cmds.getAttr('%s.radius' % transform)
                 
@@ -9159,6 +9179,24 @@ def is_attribute_numeric(node_dot_attribute):
     
     if attr_type in numeric_types:
         return True
+    
+def is_translate_rotate_connected(transform):
+    
+    main_attr = ['translate', 'rotate']
+    sub_attr = ['X','Y','Z']
+    
+    for attr in main_attr:
+        
+        for sub in sub_attr:
+            
+            name = transform + '.' + attr + sub
+            
+            input_value = get_attribute_input(name)
+            
+            if input_value:
+                return True
+        
+    return False
 
 def get_inputs(node, node_only = True):
     
