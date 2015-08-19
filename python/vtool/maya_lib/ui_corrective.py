@@ -750,7 +750,7 @@ class PoseTreeWidget(BaseTreeWidget):
             return
         
         if selection:
-            print 'selection!', selection
+            
             cmds.select(selection, r = True)
                 
             self.check_for_mesh.emit(pose)
