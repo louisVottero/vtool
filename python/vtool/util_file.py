@@ -882,9 +882,7 @@ def open_browser(filepath):
 #---- edit
 
 def fix_slashes(directory):
-    
-    print 'fixing slashes', directory
-    
+        
     directory = directory.replace('\\','/')
     directory = directory.replace('//', '/')
     

@@ -196,8 +196,6 @@ class DataFile(util_file.FileManager):
         if not util_file.is_dir(dirpath):
             return
         
-        print 'renaming', dirpath
-        
         new_name = util_file.get_basename_no_extension(new_name)
         
         if util_file.is_dir(dirpath):

@@ -3103,8 +3103,11 @@ def get_file(directory, parent = None):
     
     directory = fileDialog.getOpenFileName()
     
+    directory = util.convert_to_sequence(directory)
+    directory = directory[0]
+    
     if directory:
-        return directory[0]
+        return directory
     
     
 def get_folder(directory, parent = None):

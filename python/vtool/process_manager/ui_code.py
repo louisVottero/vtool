@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import subprocess
+
 import vtool.qt_ui
 import vtool.util_file
 import vtool.util
@@ -47,6 +49,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.splitter.moveSplitter(width, 1)
         
         self.splitter.splitterMoved.connect(self._splitter_moved)
+        self.settings = None
                 
     def _splitter_moved(self, pos, index):
         
@@ -128,7 +131,13 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
 
         code_file = vtool.util_file.join_path(path, code)
         
-        util_file.open_browser(code_file)
+        external_editor = self.settings.get('external_editor')
+        
+        if external_editor:
+            p = subprocess.Popen([external_editor, code_file])
+        
+        if not external_editor:
+            util_file.open_browser(code_file)
              
     def _script_rename(self, old_filepath, filepath):
         
@@ -161,6 +170,10 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
     def set_external_code_library(self, code_directory):
         self.script_widget.set_external_code_library(code_directory)
+        
+    def set_settings(self, settings):
+        
+        self.settings = settings
             
         
 class CodeWidget(vtool.qt_ui.BasicWidget):

@@ -657,8 +657,6 @@ class PoseTreeWidget(BaseTreeWidget):
         
         super(PoseTreeWidget, self)._populate_list()   
         
-        
-        
         if not cmds.objExists('pose_gr'):
             return
         

@@ -61,9 +61,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
            
         self.view_widget.set_settings( self.settings )
         self.settings_widget.set_settings(self.settings)
-           
-
-           
+        
     def _sync_code(self):
         self.sync_code = True
           
@@ -311,6 +309,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
          
                 code_directory = self.settings.get('code_directory')
                 self.code_widget.set_external_code_library(code_directory)
+                
+                self.code_widget.set_settings(self.settings)
                 
                 self.last_tab = 3
                 
