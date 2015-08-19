@@ -83,7 +83,9 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                         if self.file_widget:
                             self.file_widget.close()
                             self.file_widget.deleteLater()
+                            del self.file_widget
                             self.file_widget = None
+                            
                         
                         self.file_widget = file_widgets[key]()
                         
@@ -400,7 +402,7 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         for inc in range(0, count):
             
             item = self.data_type_tree_widget.topLevelItem(inc)
-            print item.text(0)
+            
             if str(item.text(0)) == 'maya' and vtool.util.is_in_maya():
                 item.setExpanded(True)
             

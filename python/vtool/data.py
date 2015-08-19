@@ -36,7 +36,7 @@ class DataManager(object):
         
         for data in self.available_data:          
             types.append( data.get_type() )
-    -        
+    
         return types
                 
     def get_type_instance(self, data_type):
@@ -224,7 +224,7 @@ class DataFile(util_file.FileManager):
         if folder:
             util_file.delete_dir(self.name, self.directory)
             
-        if util_file.is_file(self.filepath)
+        if util_file.is_file(self.filepath):
             util_file.delete_file(self.name, self.directory)
     
     def rename(self, new_name):
