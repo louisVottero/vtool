@@ -2049,8 +2049,6 @@ class IkSplineNubRig(BufferRig):
     
     def _fix_right_side_orient(self, control):
         
-        #goo = self.right_side_fix_axis
-        
         if not self.right_side_fix:
             return
         
@@ -2066,8 +2064,6 @@ class IkSplineNubRig(BufferRig):
         
         for letter in self.right_side_fix_axis:
             cmds.setAttr('%s.rotate%s' % (xform_locator, letter.upper()), 180)
-            
-        #cmds.setAttr('%s.rotateZ' % xform_locator, 180)
         
         match = util.MatchSpace(xform_locator, control)
         match.translation_rotation()
