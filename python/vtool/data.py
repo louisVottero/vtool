@@ -1273,7 +1273,9 @@ class PoseData(MayaCustomData):
         
         dirpath = util_file.join_path(self.directory, self.name)
         if util_file.is_dir(dirpath):
-            util_file.delete_dir(dirpath)
+            name = util_file.get_basename(dirpath)
+            dirname = util_file.get_dirname(dirpath)
+            util_file.delete_dir(name, dirname)
         
         dir_path = util_file.create_dir(self.name, self.directory)
         
