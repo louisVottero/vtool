@@ -8924,6 +8924,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         skin = find_deformer_by_type(skin_mesh, 'skinCluster')
         
+        """
         if not skin:
             cmds.warning('No skin found on %s.' % skin_mesh)
             
@@ -8934,34 +8935,37 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
             orig = create_shape_from_shape(orig, 'home')
             
         if skin:
+        """
+        plugins = cmds.pluginInfo(q = True, ls = True)
         
-            plugins = cmds.pluginInfo(q = True, ls = True)
+        if not 'cvShapeInverterDeformer' in plugins:
+            file_name = __file__
+            file_name = file_name.replace('util.py', 'cvShapeInverterDeformer.py')
+            file_name = file_name.replace('.pyc', '.py')
             
-            if not 'cvShapeInverterDeformer' in plugins:
-                file_name = __file__
-                file_name = file_name.replace('util.py', 'cvShapeInverterDeformer.py')
-                file_name = file_name.replace('.pyc', '.py')
-                
-                cmds.loadPlugin( file_name )
-            
-            import cvShapeInverterScript as correct
-            
-            envelopes.turn_off()
+            cmds.loadPlugin( file_name )
+        
+        import cvShapeInverterScript as correct
+        
+        envelopes.turn_off()
+        if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
-            
-            offset = correct.invert(skin_mesh, corrective)
-            cmds.delete(offset, ch = True)
         
-            orig = get_intermediate_object(skin_mesh)
-            
-            orig = create_shape_from_shape(orig, 'home')
-        
-            envelopes.turn_on(respect_initial_state=True)
-        
+        offset = correct.invert(skin_mesh, corrective)
+        cmds.delete(offset, ch = True)
+    
+        orig = get_intermediate_object(skin_mesh)
+        orig = create_shape_from_shape(orig, 'home')
+    
+        envelopes.turn_on(respect_initial_state=True)
+    
+        if skin:
             cmds.setAttr('%s.envelope' % skin, 0)
-            
-            other_delta = cmds.duplicate(skin_mesh)[0]
         
+        other_delta = cmds.duplicate(skin_mesh)[0]
+        #above to comment was indented
+        
+        if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
         
         quick_blendshape(other_delta, orig, -1)
