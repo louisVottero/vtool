@@ -4107,7 +4107,6 @@ class MirrorControlKeyframes():
         
     def _get_output_keyframes(self):
         
-        
         found = get_output_keyframes(self.node)
                 
         return found
@@ -5191,6 +5190,13 @@ def create_display_layer(name, nodes):
     cmds.editDisplayLayerMembers( layer, nodes, noRecurse = True)
     cmds.setAttr( '%s.displayType' % layer, 2 )
 
+def delete_display_layers():
+    
+    layers = cmds.ls('displayLayer')
+    
+    for layer in layers:
+        cmds.delete(layer)
+
 #--- ui
 
 def add_to_isolate_select(nodes):
@@ -5204,7 +5210,7 @@ def add_to_isolate_select(nodes):
     
     for panel in model_panels:
         if cmds.isolateSelect(panel, q = True, state = True):
-            for node in nodes:
+            for node in nodes: 
                 cmds.isolateSelect(panel, addDagObject = node)
                 
             #cmds.isolateSelect(panel, update = True)
