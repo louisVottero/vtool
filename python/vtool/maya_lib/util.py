@@ -6,12 +6,12 @@ import string
 import re
 import traceback
 
-import maya.OpenMaya as OpenMaya
+
 import maya.cmds as cmds
 import maya.mel as mel
 
 import vtool.util
-
+import api
 import curve
 
 undo_chunk_active = False
@@ -253,340 +253,56 @@ class FindUniqueName(vtool.util.FindUniqueString):
         
         return number
 
+class TrackNodes(object):
+    """
+        This helps track new nodes that get added to a scene after a function runs.
+        
+        Usage:
+        track_nodes = TrackNodes()
+        track_nodes.load()
+        my_function()
+        new_nodes = track_nodes.get_delta()
+        
+    """
+    def __init__(self):
+        self.nodes = None
+        self.node_type = None
+        self.delta = None
+        
+    def load(self, node_type = None):
+        """
+            node_type corresponds to the maya node type. 
+            For example, you can give node_type the string "animCurve" to load only keyframes.
+            When after running get_delta(), the delta will only contain keyframes.
+        """
+        self.node_type = node_type
+        
+        if self.node_type:
+            self.nodes = cmds.ls(type = node_type)
+        if not self.node_type:
+            self.nodes = cmds.ls()
+        
+    def get_delta(self):
+        """
+            Get the new nodes in the Maya scene created after load() was executed.
+            The load() node_type variable is stored in the class and used when getting the delta.
+        """
+        if self.node_type:
+            current_nodes = cmds.ls(type = self.node_type)
+        if not self.node_type:
+            current_nodes = cmds.ls()
+            
+        new_set = set(current_nodes).difference(self.nodes)
+        
+        
+        return list(new_set)
+        
+        
+
 #--- api
 
     
-class ApiObject(object):
-    """
-    A wrapper object for MObjects.
-    """
-    
-    def __init__(self):
-        self.api_object = self._define_api_object()
         
-    def __call__(self):
-        return self.api_object
-        
-    def _define_api_object(self):
-        return 
-        
-    def get_api_object(self):
-        return self.api_object
-        
-    def get(self):
-        return
-
-class MayaObject(ApiObject):
-    """
-    Wrapper for Api MObject
-    """
-    
-    def __init__(self, mobject = None):
-
-        if type(mobject) == str or type(mobject) == unicode:
-            mobject = nodename_to_mobject(mobject)
-            self.api_object = self._define_api_object(mobject)
-        
-        if mobject:
-            self.api_object = self._define_api_object(mobject)
-            
-        if not mobject:
-            self.api_object = OpenMaya.MObject()
-            
-        self.mobject = mobject
-
-    def _define_api_object(self, mobject):
-        return mobject 
-    
-    def set_node_as_mobject(self, node_name):
-        
-        mobject = nodename_to_mobject(node_name)    
-        self.api_object = self._define_api_object(mobject)
-        
-    
-class MayaIterator(MayaObject):
-    pass
-    
-class MayaFunction(MayaObject):
-    pass
-
-class DoubleArray(ApiObject):
-    def _define_api_object(self):
-        return OpenMaya.MDoubleArray()
-    
-    def get(self):
-        numbers = []
-        
-        length = self.api_object.length()
-        
-        for inc in range(0, length):
-            numbers.append( self.api_object[inc] )
-        
-        return numbers
-
-class PointArray(ApiObject):
-    def _define_api_object(self):
-        return OpenMaya.MPointArray()
-    
-    def get(self):
-        values = []
-        length = self.api_object.length()
-        
-        for inc in range(0, length):
-            point = OpenMaya.MPoint()
-            
-            point = self.api_object[inc]
-            
-            part = [point.x,point.y,point.z]
-            
-            values.append(part)
-            
-        return values
-
-class Point(ApiObject):
-    def __init__(self, x = 0, y = 0, z = 0, w = 1):
-        self.api_object = self._define_api_object(x,y,z,w)
-        
-    def _define_api_object(self, x, y, z, w):
-        return OpenMaya.MPoint(x,y,z,w)
-            
-    def get(self):
-        return [self.api_object.x, self.api_object.y, self.api_object.z, self.api_object.w]
-    
-class SelectionList(ApiObject):
-    def _define_api_object(self):
-        return OpenMaya.MSelectionList()
-        
-    def create_by_name(self, name):
-        
-        
-        try:
-            self.api_object.add(name)
-        except:
-            cmds.warning('Could not add %s into selection list' % name)
-            return
-        
-        
-    def get_at_index(self, index = 0):
-        
-        mobject = MayaObject()
-        
-        try:
-            self.api_object.getDependNode(0, mobject())
-            return mobject()
-        except:
-            cmds.warning('Could not get mobject at index %s' % index)
-            return
-   
-class TransformFunction(MayaFunction):
-    
-    def _define_api_object(self, mobject):
-        return OpenMaya.MFnTransform
-    
-class MeshFunction(MayaFunction):
-    def _define_api_object(self, mobject):
-        return OpenMaya.MFnMesh(mobject)
-    
-    def get_uv_at_point(self, vector):
-    
-        point = Point(vector[0],vector[1],vector[2])
-        
-        uv = OpenMaya.MScriptUtil()
-        uvPtr = uv.asFloat2Ptr()
-        
-        self.api_object.getUVAtPoint(point.get_api_object(), uvPtr)
-        
-        u = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 0)
-        v = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 1)
-        
-        return u,v
-   
-class NurbsSurfaceFunction(MayaFunction):
-    def _define_api_object(self, mobject):
-        return OpenMaya.MFnNurbsSurface(mobject)
-            
-    def get_closest_parameter(self, vector):
-        
-        point = Point( vector[0],
-                       vector[1],
-                       vector[2] )
-                
-        u = OpenMaya.MScriptUtil()   
-        uPtr = u.asDoublePtr()
-        OpenMaya.MScriptUtil.setDouble(uPtr, 0.0)
-        
-        v = OpenMaya.MScriptUtil()   
-        vPtr = v.asDoublePtr()
-        OpenMaya.MScriptUtil.setDouble(vPtr, 0.0)
-                
-        space = OpenMaya.MSpace.kObject
-        
-        self.api_object.closestPoint(point.get_api_object(), 0, uPtr, vPtr, 0, 0.00001, space)
-        
-        
-        
-        u = OpenMaya.MScriptUtil.getDouble(uPtr)
-        v = OpenMaya.MScriptUtil.getDouble(vPtr)
-        
-        return u,v
-            
-class NurbsCurveFunction(MayaFunction):
-    def _define_api_object(self, mobject):
-        return OpenMaya.MFnNurbsCurve(mobject)
-            
-    def get_degree(self):
-        return self.api_object.degree()
-    
-    def get_cv_count(self):
-        return self.api_object.numCVs()
-        
-    def get_cv_positions(self):
-        point = PointArray()
-        
-        self.api_object.getCVs( point.get_api_object() )
-        
-        return point.get()
-        
-    def get_form(self):
-        return self.api_object.form()
-    
-    def get_knot_count(self):
-        return self.api_object.numKnots()
-    
-    def get_span_count(self):
-        return self.api_object.numSpans()
-    
-    def get_knot_values(self):
-        knots = DoubleArray()
-        
-        self.api_object.getKnots( knots.get_api_object() )
-        
-        return knots.get()
-
-    def get_position_at_parameter(self, param):
-        
-        point = Point()
-        
-        self.api_object.getPointAtParam(param, point.get_api_object() )
-        return point.get()[0:3]
-
-    def get_closest_position(self, three_value_list):
-        
-        point = Point( three_value_list[0],
-                       three_value_list[1],
-                       three_value_list[2] )
-        
-        point = self.api_object.closestPoint(point.get_api_object())
-                
-        return [point.x,point.y,point.z]
-    
-    def get_parameter_at_position(self, three_value_list):
-        
-        point = Point(three_value_list[0],
-                      three_value_list[1],
-                      three_value_list[2])     
-        
-        u = OpenMaya.MScriptUtil()   
-        uPtr = u.asDoublePtr()
-        OpenMaya.MScriptUtil.setDouble(uPtr, 0.0)
-        
-        space = OpenMaya.MSpace.kObject
-        
-        self.api_object.getParamAtPoint(point.get_api_object(), uPtr, 0.00001, space )
-        
-        return OpenMaya.MScriptUtil.getDouble(uPtr)
-    
-    def get_parameter_at_length(self, double):
-        return self.api_object.findParamFromLength(double)
-
-        
-class IterateEdges(MayaIterator):
-    def _define_api_object(self, mobject):
-        return OpenMaya.MItMeshEdge(mobject)
-    
-    def get_vertices(self, edge_id):
-        
-        script_util = OpenMaya.MScriptUtil()
-        prev = script_util.asIntPtr()
-        
-        self.api_object.setIndex(edge_id, prev)
-        
-        vert1_id = self.api_object.index(0)
-        vert2_id = self.api_object.index(1)
-        
-        self.api_object.reset()
-        return [vert1_id, vert2_id]
-        
-
-class IteratePolygonFaces(MayaIterator):
-    
-    def _define_api_object(self, mobject):
-        return OpenMaya.MItMeshPolygon(mobject)
-    
-    def get_face_center_vectors(self):
-        center_vectors = []
-        
-        for inc in range(0, self.api_object.count()):
-            
-            point = self.api_object.center()
-            
-            center_vectors.append([point.x,point.y,point.z] )
-            
-            self.api_object.next()
-        
-        self.api_object.reset()
-        
-        return center_vectors
-            
-    def get_closest_face(self, vector):
-        
-        closest_distance = None
-        closest_face = None
-        
-        while not self.api_object.isDone():
-            center = self.api_object.center()
-            
-            distance = vtool.util.get_distance(vector, [center.x,center.y,center.z])
-            
-            if distance < 0.001:
-                closest_face = self.api_object.index()
-                self.api_object.reset()
-                return closest_face
-            
-            if distance < closest_distance or not closest_distance:
-                closest_distance = distance
-                closest_face = self.api_object.index()
-                
-            self.api_object.next()
-        
-        self.api_object.reset()
-        return closest_face
-
-    def get_edges(self, face_id):
-        
-        script_util = OpenMaya.MScriptUtil()
-        prev = script_util.asIntPtr()
-        self.api_object.setIndex(face_id, prev)
-        
-        int_array = OpenMaya.MIntArray()
-        self.api_object.getEdges(int_array)
-        
-        self.api_object.reset()
-        return int_array
-    
-    def get_center(self, face_id):
-        
-        #point = OpenMaya.MPoint()
-        script_util = OpenMaya.MScriptUtil()
-        prev = script_util.asIntPtr()
-        
-        self.api_object.setIndex(face_id, prev)
-        
-        point = self.api_object.center()
-        
-        return point.x, point.y, point.z
-    
-    
 #--- variables
 class MayaVariable(vtool.util.Variable):
     """
@@ -1259,22 +975,22 @@ class OrientJoint(object):
         
     def _get_relatives(self):
         
-        parent = cmds.listRelatives(self.joint, p = True)
+        parent = cmds.listRelatives(self.joint, p = True, f = True)
         
         if parent:
             self.parent = parent[0]
             
-            grand_parent = cmds.listRelatives(self.parent, p = True)
+            grand_parent = cmds.listRelatives(self.parent, p = True, f = True)
             
             if grand_parent:
                 self.grand_parent = grand_parent[0]
                 
-        children = cmds.listRelatives(self.joint)
+        children = cmds.listRelatives(self.joint, f = True)
         
         if children:
             self.child = children[0]
             
-            grand_children = cmds.listRelatives(self.child)
+            grand_children = cmds.listRelatives(self.child, f = True)
             
             if grand_children:
                 self.grand_child = grand_children[0]
@@ -1436,15 +1152,17 @@ class OrientJoint(object):
         self.delete_later += nodes
         
     def _freeze(self):
-        children = cmds.listRelatives(self.joint)
+        children = cmds.listRelatives(self.joint, f = True)
         
         if children:
-            cmds.parent(children, w = True)
+            
+            children = cmds.parent(children, w = True)
         
         cmds.makeIdentity(self.joint, apply = True, r = True, s = True)
         
         if children:
             cmds.parent(children, self.joint)
+        
       
     def set_aim_vector(self, vector_list):
         self.aim_vector = vector_list
@@ -1504,7 +1222,7 @@ class PinXform(object):
         self.delete_later = []
 
     def pin(self):
-        parent = cmds.listRelatives(self.xform)
+        parent = cmds.listRelatives(self.xform, p = True, f = True)
         
         if parent:
             parent = parent[0]
@@ -1515,7 +1233,7 @@ class PinXform(object):
             self.delete_later.append(constraint)
             self.delete_later.append(pin)
         
-        children = cmds.listRelatives(self.xform)
+        children = cmds.listRelatives(self.xform, f = True)
         
         if not children:
             return
@@ -1760,7 +1478,7 @@ class Control(object):
             cmds.parent(shape, joint, r = True, s = True)
             
         if not joint_given:
-            transfer_relatives(name, joint)
+            transfer_relatives(name, joint, reparent = True)
             cmds.rename(joint, name)
             cmds.setAttr('%s.drawStyle' % joint, 2)
             
@@ -1954,24 +1672,7 @@ class IkHandle(object):
             
             self.ik_handle = ik_handle[0]
         
-    """                                   
-    def _create_spline_ik(self):
-        
-        if not self.curve:
-            self.curve = transforms_to_curve(self.joints, 1, inc_name('curve_%s' % self.name))
-            
-        
-        ik_handle = cmds.ikHandle(name = inc_name(self.name),
-                                       startJoint = self.start_joint,
-                                       endEffector = self.end_joint,
-                                       sol = self.solver_type,
-                                       curve = self.curve, ccv = False, pcv = False)
-        
-        cmds.rename(ik_handle[1], 'effector_%s' % ik_handle[0])
-        self.ik_handle = ik_handle[0]
-        
-        self.curve = cmds.rename(self.curve, inc_name('curve_%s' % self.name))
-    """ 
+
         
     def set_start_joint(self, joint):
         self.start_joint = joint
@@ -3070,13 +2771,13 @@ class Rivet(object):
         edge_index_1 = vtool.util.get_last_number(self.edges[0])
         edge_index_2 = vtool.util.get_last_number(self.edges[1])
         
-        vert_iterator = IterateEdges(shape)
+        vert_iterator = api.IterateEdges(shape)
         vert_ids = vert_iterator.get_vertices(edge_index_1)
         
         edge_to_curve_1 = cmds.createNode('polyEdgeToCurve', n = inc_name('rivetCurve1_%s' % self.name))
         cmds.setAttr('%s.inputComponents' % edge_to_curve_1, 2,'vtx[%s]' % vert_ids[0], 'vtx[%s]' % vert_ids[1], type='componentList')
         
-        vert_iterator = IterateEdges(shape)
+        vert_iterator = api.IterateEdges(shape)
         vert_ids = vert_iterator.get_vertices(edge_index_2)
         
         edge_to_curve_2 = cmds.createNode('polyEdgeToCurve', n = inc_name('rivetCurve2_%s' % self.name))
@@ -4950,19 +4651,12 @@ def pad_number(name):
     return renamed
     
 
-def nodename_to_mobject(object_name):
-    """
-    Initialize an MObject of the named node.
-    """
-    
-    selection_list = SelectionList()
-    selection_list.create_by_name(object_name)
-    
-    return selection_list.get_at_index(0)
+
 
 def get_node_types(nodes, return_shape_type = True):
     """
-    Get the maya node types for the nodes supplied.
+        Get the maya node types for the nodes supplied.
+        Return = dict[node_type_name] = node list of matching nodes
     """
     
     found_type = {}
@@ -4990,6 +4684,7 @@ def get_basename(name):
     Get the basename in a hierarchy name.
     If top|model|face is supplied, face will be returned.
     """
+    
     split_name = name.split('|')
     
     basename = split_name[-1]
@@ -5053,6 +4748,7 @@ def show_channel_box():
     """
     Makes the channel box visible.
     """
+    
     docks = mel.eval('global string $gUIComponentDockControlArray[]; string $goo[] = $gUIComponentDockControlArray;')
     
     if 'Channel Box / Layer Editor' in docks:
@@ -5194,7 +4890,11 @@ def create_display_layer(name, nodes):
 #--- ui
 
 def add_to_isolate_select(nodes):
-    
+    """
+        Add the specified nodes into every viewport's isolate select. 
+        This will only work on viewports that have isolate select turned on.
+        Use when nodes are not being evaluated because isolate select causes them to be invisible.
+    """
     if is_batch():
         return
     
@@ -5231,6 +4931,7 @@ def get_closest_transform(source_transform, targets):
     """
     Given the list of target transforms, find the closest to the source transform.
     """
+    
     least_distant = 1000000.0
     closest_target = None
     
@@ -5245,6 +4946,10 @@ def get_closest_transform(source_transform, targets):
     return closest_target 
 
 def get_distance(source, target):
+    """
+        Get the distance between the source transform and the target transform.
+        Return float
+    """
     #CBB
     
     vector1 = cmds.xform(source, 
@@ -5270,6 +4975,10 @@ def get_distance(source, target):
     return vtool.util.get_distance(vector1, vector2)
 
 def get_midpoint( source, target):
+    """
+        Get the midpoint between the source transform and the target transform.
+        Return = vector list
+    """
     vector1 = cmds.xform(source, 
                          query = True, 
                          worldSpace = True, 
@@ -5284,6 +4993,9 @@ def get_midpoint( source, target):
     return vtool.util.get_midpoint(vector1, vector2)
 
 def get_distances(sources, target):
+    """
+        Given a list of source transforms, return a list of distances to the target transform
+    """
     
     distances = []
     
@@ -5297,7 +5009,10 @@ def get_distances(sources, target):
         
 def get_polevector(transform1, transform2, transform3, offset = 1):
     #CBB
-    
+    """
+        Given 3 transforms (arm, elbow, wrist)  return a vector of where the pole vector should be located.
+        Return vector list
+    """
     distance = get_distance(transform1, transform3)
     
     group = get_group_in_plane(transform1, 
@@ -5338,6 +5053,11 @@ def get_group_in_plane(transform1, transform2, transform3):
     return pole_group2
 
 def  get_center(thing):
+    """
+        Get the center of a selection. Selection can be component or transform.
+        Return vector list
+    """
+    
     
     components = get_components_in_hierarchy(thing)
     
@@ -5350,6 +5070,10 @@ def  get_center(thing):
     return bounding_box.get_center()
 
 def get_btm_center(thing):
+    """
+        Get the bottom center of a selection. Selection can be component or transform.
+        Return vector list
+    """
     
     components = get_components_in_hierarchy(thing)
     
@@ -5362,6 +5086,11 @@ def get_btm_center(thing):
     return bounding_box.get_ymin_center()
 
 def get_top_center(thing):
+    """
+        Get the top center of a selection. Selection can be component or transform.
+        Return vector list
+    """
+    
     components = get_components_in_hierarchy(thing)
     
     if components:
@@ -5406,6 +5135,7 @@ def get_transform_list_from_distance(source_transform, transform_list):
         
     return found
 
+
 def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
     
     distance_list, distance_dict, original_distance_order = get_ordered_distance_and_transform(source_guide, drivers)
@@ -5445,7 +5175,11 @@ def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
     return multiplies
 
 def create_match_group(transform, prefix = 'match', use_duplicate = False):
-
+    """
+        Create a group that matches a transform.
+        Naming = 'match_' + transform
+        Return name of the new group
+    """
     parent = cmds.listRelatives(transform, p = True, f = True)
     
     basename = get_basename(transform)
@@ -5467,6 +5201,13 @@ def create_match_group(transform, prefix = 'match', use_duplicate = False):
     return xform_group    
 
 def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
+    """
+        Create a group above a transform that matches transformation of the transform. 
+        This is good for zeroing out the values of a transform.
+        Naming = 'xform_' + transform
+        Return name of the new group
+        
+    """
     
     parent = cmds.listRelatives(transform, p = True, f = True)
     
@@ -5491,7 +5232,9 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
     return xform_group
 
 def create_follow_group(source_transform, target_transform, prefix = 'follow', follow_scale = False):
-    
+    """
+        Create a group above a target_transform that is constrained to the source_transform.
+    """
     parent = cmds.listRelatives(target_transform, p = True)
     
     name = '%s_%s' % (prefix, target_transform)
@@ -5582,7 +5325,13 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
        
 
 def create_multi_follow(source_list, target_transform, node = None, constraint_type = 'parentConstraint', attribute_name = 'follow', value = None):
-    
+    """
+        Create a group above a target_transform that is constrained between multiple source transforms.
+        node = The name of the node to add attributes to.
+        constraint_type = 'parentConstraint', 'pointConstraint', or 'orientConstraint'
+        attribute_name = the name of the attribute to be created on node.
+        value = the initial value of the attribute to be created on node.
+    """
     if node == None:
         node = target_transform
     
@@ -5626,7 +5375,11 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
 
 
 def get_hierarchy(node_name):
-    
+    """
+        Return the path to the node.  
+        The node is not included in the path.
+        node_name = The name of the node.
+    """
     parent_path = cmds.listRelatives(node_name, f = True)[0]
     
     if parent_path:
@@ -5635,20 +5388,34 @@ def get_hierarchy(node_name):
     if split_path:
         return split_path
         
-def transfer_relatives(source_node, target_node):
-    parent = cmds.listRelatives(source_node, p = True)
-    if parent:
-        parent = parent[0]
+def transfer_relatives(source_node, target_node, reparent = False):
+    """
+        Reparent the children of source_node under target_node.
+        If reparent, move the target_node under the parent of source_node. 
+    """
+    
+    parent = None
+    
+    if reparent:
+        parent = cmds.listRelatives(source_node, p = True)
+        if parent:
+            parent = parent[0]
         
     children = cmds.listRelatives(source_node, c = True, type = 'transform')
 
     if children:
         cmds.parent(children, target_node)
+    
+    
     if parent:
         cmds.parent(target_node, parent)
         
 def get_outliner_sets():
-
+    
+    """
+        Get the sets found in the outliner.
+    """
+    
     sets = cmds.ls(type = 'objectSet')
                 
     top_sets = []
@@ -5666,6 +5433,11 @@ def get_outliner_sets():
     return top_sets
 
 def get_top_dag_nodes(exclude_cameras = True):
+    
+    """
+        Get transforms that sit at the very top of the hierarchy.
+    """
+    
     top_transforms = cmds.ls(assemblies = True)
     
     cameras = ['persp', 'top', 'front', 'side']
@@ -5879,13 +5651,10 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
         
         match = MatchSpace(parent_world, xform_group)
         match.translation_rotation()
-        
-        
+            
     match = MatchSpace(source_transform, local_group)
     
     match.translation_rotation()
-    
-    
     
     connect_translate(source_transform, local_group)
     connect_rotate(source_transform, local_group)
@@ -5908,7 +5677,11 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
     return local_group, xform_group
 
 def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', name = 'sub_1', duplicate = False):
-    
+    """
+        Add evenly spaced joints inbetween joint1 and joint2.
+        count = the number of inbetween joints to add.
+        
+    """
     if not joint1 and not joint2:
         selection = cmds.ls(sl = True)
         
@@ -6121,7 +5894,6 @@ def add_orient_attributes(transform):
         orient = OrientJointAttributes(thing)
         orient.set_default_values()
     
-#@undo_chunk
 def orient_attributes(scope = None):
     if not scope:
         scope = get_top_dag_nodes()
@@ -6143,6 +5915,15 @@ def orient_attributes(scope = None):
                 orient_attributes(relatives)
 
 def find_transform_right_side(transform):
+    """
+        Try to find the right side of a transform.
+        *_L will be converted to *_R 
+        if not 
+        l_* will be converted to R_*
+        if not 
+        *lf_* will be converted to *rt_*
+        Return the name of the right side transform if it exists.
+    """
     
     other = ''
     
@@ -6275,16 +6056,7 @@ def match_orient(prefix, other_prefix):
         if not cmds.objExists(other_joint):
             cmds.makeIdentity(joint, apply = True, jo = True)
 
-def get_axis_vector(axis_name):
-    
-    if axis_name == 'X':
-        return (1,0,0)
-    
-    if axis_name == 'Y':
-        return (0,1,0)
-    
-    if axis_name == 'Z':
-        return (0,0,1)
+
 
 def get_y_intersection(curve, vector):
     
@@ -6706,7 +6478,7 @@ def get_face_center(mesh, face_id):
 
     mesh = get_mesh_shape(mesh)
 
-    face_iter = IteratePolygonFaces(mesh)
+    face_iter = api.IteratePolygonFaces(mesh)
     
     center = face_iter.get_center(face_id)
     
@@ -6716,7 +6488,7 @@ def get_face_centers(mesh):
     
     mesh = get_mesh_shape(mesh)
     
-    face_iter = IteratePolygonFaces(mesh)
+    face_iter = api.IteratePolygonFaces(mesh)
     
     return face_iter.get_face_center_vectors()
     
@@ -6799,7 +6571,7 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     shape = get_mesh_shape(mesh)
     #shape = cmds.listRelatives(mesh, shapes = True)[0]
     
-    face_iter = IteratePolygonFaces(shape)
+    face_iter = api.IteratePolygonFaces(shape)
     
     if rotate_pivot:
         position = cmds.xform(transform, q = True, rp = True, ws = True)
@@ -7092,7 +6864,8 @@ def transforms_to_nurb_surface(transforms, description, spans = -1, offset_axis 
         MatchSpace(transform, transform_1).translation_rotation()
         MatchSpace(transform, transform_2).translation_rotation()
         
-        vector = get_axis_vector(offset_axis)
+        vector = vtool.util.get_axis_vector(offset_axis)
+        
         
         cmds.move(vector[0]*offset_amount, 
                   vector[1]*offset_amount, 
@@ -7202,9 +6975,8 @@ def edges_to_curve(edges, description):
     
 def get_closest_uv_on_mesh(mesh, three_value_list):
     
-    mesh_object = nodename_to_mobject(mesh)
     
-    mesh = MeshFunction(mesh_object)
+    mesh = api.MeshFunction(mesh)
     found = mesh.get_uv_at_point(three_value_list)
     
     return found
@@ -7216,8 +6988,7 @@ def get_closest_parameter_on_curve(curve, three_value_list):
     if curve_shapes:
         curve = curve_shapes[0]
     
-    curveObject = nodename_to_mobject(curve)
-    curve = NurbsCurveFunction(curveObject)
+    curve = api.NurbsCurveFunction(curve)
         
     newPoint = curve.get_closest_position( three_value_list )
     
@@ -7229,8 +7000,7 @@ def get_closest_parameter_on_surface(surface, vector):
     if shapes:
         surface = shapes[0]
     
-    surfaceObject = nodename_to_mobject(surface)
-    surface = NurbsSurfaceFunction(surfaceObject)
+    surface = api.NurbsSurfaceFunction(surface)
         
     uv = surface.get_closest_parameter(vector)
     
@@ -7251,8 +7021,7 @@ def get_closest_position_on_curve(curve, three_value_list):
     if curve_shapes:
         curve = curve_shapes[0]
     
-    curveObject = nodename_to_mobject(curve)
-    curve = NurbsCurveFunction(curveObject)
+    curve = api.NurbsCurveFunction(curve)
         
     return curve.get_closest_position( three_value_list )
 
@@ -7262,8 +7031,7 @@ def get_parameter_from_curve_length(curve, length_value):
     if curve_shapes:
         curve = curve_shapes[0]
         
-    curveObject = nodename_to_mobject(curve)
-    curve = NurbsCurveFunction(curveObject)
+    curve = api.NurbsCurveFunction(curve)
     
     return curve.get_parameter_at_length(length_value)
 
@@ -8619,7 +8387,11 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     This skins a mesh based on the skinning of another mesh.  
     Source mesh must be skinned.  The target mesh will be skinned with the joints in the source.
     The skinning from the source mesh will be projected onto the target mesh.
+    exlude_joints = joints to exclude from the target's skin cluster.
+    include_joints = only include the specified joints. 
+    If exlude_joints, only exclude_joints in include_joints will be excluded.
     '''
+    
     vtool.util.show('skinning %s' % target_mesh)
     
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
@@ -8684,6 +8456,14 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     
 
 def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints = []):
+    ''' 
+    This skins a group of meshes based on the skinning of the source mesh.  
+    Source mesh must be skinned.  The target group will be skinned with the joints in the source.
+    The skinning from the source mesh will be projected onto the meshes in the group.
+    exlude_joints = joints to exclude from the target's skin cluster.
+    include_joints = only include the specified joints. 
+    If exlude_joints, only exclude_joints in include_joints will be excluded.
+    '''
     
     old_selection = cmds.ls(sl = True)
     
@@ -8706,6 +8486,15 @@ def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints
 
     
 def skin_lattice_from_mesh(source_mesh, target, divisions = [10,10,10], falloff = [2,2,2], name = None, include_joints = [], exclude_joints = []):
+    ''' 
+    This skins a lattice based on the skinning of the source mesh.
+    The lattice is generated automatically around the target mesh using divisions and falloff parameters.  
+    Source mesh must be skinned.  The target lattice will be skinned with the joints in the source.
+    The skinning from the source mesh will be projected onto the target lattice.
+    exlude_joints = joints to exclude from the target's skin cluster.
+    include_joints = only include the specified joints. 
+    If exlude_joints, only exclude_joints in include_joints will be excluded.
+    '''
     
     group = cmds.group(em = True, n = 'lattice_%s_gr' % target)
     
@@ -8725,11 +8514,22 @@ def skin_lattice_from_mesh(source_mesh, target, divisions = [10,10,10], falloff 
     return group
 
 def skin_curve_from_mesh(source_mesh, target, include_joints = [], exclude_joints = []):
+    ''' 
+    This skins a curve based on the skinning of the source mesh.  
+    Source mesh must be skinned.  The target curve will be skinned with the joints in the source.
+    The skinning from the source mesh will be projected onto the curve.
+    exlude_joints = joints to exclude from the target's skin cluster.
+    include_joints = only include the specified joints. 
+    If exlude_joints, only exclude_joints in include_joints will be excluded.
+    '''
     
     skin_mesh_from_mesh(source_mesh, target, exclude_joints = exclude_joints, include_joints = include_joints)
 
 def skin_group(joint, group):
-    
+    """
+    Skin all the meshes in a group to a joint.  
+    Good for attaching the face geo to the head joint.
+    """
     rels = cmds.listRelatives(group, ad = True, f = True)
     
     for rel in rels:
@@ -8744,7 +8544,6 @@ def skin_group(joint, group):
 
 def lock_joints(skin_cluster, skip_joints = None):
     influences = get_influences_on_skin(skin_cluster)
-        
         
     if skip_joints:
         for influence in influences:
@@ -8763,6 +8562,11 @@ def lock_joints(skin_cluster, skip_joints = None):
             cmds.skinCluster( skin_cluster, e= True, inf= influence, lw = True )    
 
 def get_closest_verts_to_joints(joints, verts):
+
+    """
+        Get the closest vertices to a joint.
+        Return dict[joint] = vertex list
+    """
 
     distance_dict = {}
 
@@ -8797,6 +8601,11 @@ def get_closest_verts_to_joints(joints, verts):
     return joint_map    
 
 def create_wrap(source_mesh, target_mesh):
+    """
+        Create an Maya exclusive bind wrap. 
+        Source_mesh drives target_mesh.
+    """
+    
     wrap = MayaWrap(target_mesh)
     wrap.set_driver_meshes([source_mesh])
     
@@ -8805,7 +8614,13 @@ def create_wrap(source_mesh, target_mesh):
     return wrap.base_meshes
     
 def wire_to_mesh(edges, geometry, description, auto_edge_path = True):
-    
+    """
+        One mesh follows the other via a wire deformer.
+        A nurbs curve is generated automatically from the edges provided.
+        edges = The edges from the source mesh to build the wire curve from.
+        geometry = The target geometry that should follow.
+        auto_edge_path = The command will try fill in gaps between edges.
+    """
     group = cmds.group(em = True, n = inc_name('setup_%s' % description))
     
     if auto_edge_path:
@@ -8832,7 +8647,11 @@ def wire_to_mesh(edges, geometry, description, auto_edge_path = True):
     
 @undo_chunk
 def weight_hammer_verts(verts = None, print_info = True):
-    
+    """
+        Convenience to use Maya's weight hammer command on many verts individually.
+        verts = The names of verts to weigth hammer. 
+        If verts = None, currently selected verts will be hammered.
+    """
     if is_a_mesh(verts):
         verts = cmds.ls('%s.vtx[*]' % verts, flatten = True)
     
@@ -8873,6 +8692,11 @@ def exclusive_bind_wrap(source_mesh, target_mesh):
     return wraps
 
 def map_blend_target_alias_to_index(blendshape_node):
+    """
+        For blendshape_node:
+        Given a blendshape weight alias, map the blendshape target index.
+        Return dict[alias] = target index
+    """
     
     aliases = cmds.aliasAttr(blendshape_node, query = True)
     
@@ -8892,6 +8716,14 @@ def map_blend_target_alias_to_index(blendshape_node):
     return alias_map
 
 def map_blend_index_to_target_alias(blendshape_node):
+    
+    """
+        For blendshape_node:
+        Given a blendshape target index, map the blendshape weight alias.
+        Return dict[target index] = weight alias
+    """
+    
+    
     aliases = cmds.aliasAttr(blendshape_node, query = True)
     
     alias_map = {}
@@ -8910,6 +8742,11 @@ def map_blend_index_to_target_alias(blendshape_node):
     return alias_map
 
 def get_index_at_alias(alias, blendshape_node):
+    """
+        Given a blendshape weight alias, map the blendshape target index.
+        Return target index
+    """
+    
     map = map_blend_index_to_target_alias(blendshape_node)
     
     if alias in map:
@@ -8917,7 +8754,7 @@ def get_index_at_alias(alias, blendshape_node):
 
 @undo_chunk
 def chad_extract_shape(skin_mesh, corrective, replace = False):
-
+    
     try:
 
         envelopes = EnvelopeHistory(skin_mesh)
@@ -8991,9 +8828,14 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
 def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = True):
     """
+    Create a delta following the equation:
+    delta = orig_mesh + corrective_mesh - source_meshes
+    
     @orig_mesh[in] The unchanged base mesh.
     @source_meshes[in] Where the mesh has moved. Can be a list or a single target. 
     @corrective_mesh[in] Where the mesh needs to move to.
+    
+    Return new delta mesh
     """
     
     sources = vtool.util.convert_to_sequence(source_meshes)
@@ -9028,6 +8870,11 @@ def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = Tr
 
 
 def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
+    """
+        Create evenly spaced joints on a surface.
+        uv_count = number of joints on u and v
+        offset = the offset from the border.
+    """
     
     section_u = (1.0-offset*2) / (uv_count[0]-1)
     section_v = (1.0-offset*2) / (uv_count[1]-1)
@@ -9060,7 +8907,12 @@ def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
         
     
 def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
-    
+    """
+        Create a blendshape. Add target source_mesh into the target_mesh.
+        If target_mesh already has a blendshape, add source_mesh into existing blendshape.
+        blendshape = The name of the blendshape to work with.
+        return The blendshape node.
+    """
     blendshape_node = blendshape
     
     source_mesh_name = source_mesh.split('|')[-1]
@@ -9134,6 +8986,15 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
     return blendshape_node
     
 def isolate_shape_axis(base, target, axis_list = ['X','Y','Z']):
+    """
+        Given a base mesh, only take axis movement on the target that is specified in axis_list.
+        base = The base mesh that has no targets applied.
+        target = The target mesh vertices moved to a different position than the base.
+        axis_list = The axises of movement allowed. If axis_list = ['X'], 
+                    only vertex movement on x will be present in the result.
+        Result = A new mesh with verts moving only on the isolated axises.  
+    """
+    
     
     verts = cmds.ls('%s.vtx[*]' % target, flatten = True)
     
@@ -9179,7 +9040,9 @@ def isolate_shape_axis(base, target, axis_list = ['X','Y','Z']):
     return new_target
     
 def reset_tweak(tweak_node):
-    
+    """
+        Reset the tweak node in deformation history.
+    """
     if not cmds.objExists('%s.vlist' % tweak_node):
         return
     indices = get_indices('%s.vlist' % tweak_node)
@@ -9243,6 +9106,10 @@ def is_translate_rotate_connected(transform):
     return False
 
 def get_inputs(node, node_only = True):
+    """
+        Get all the inputs into the specified node.
+        Return = list
+    """
     
     if node_only:
         plugs = False
@@ -9259,6 +9126,11 @@ def get_inputs(node, node_only = True):
 
     
 def get_outputs(node, node_only = True):
+    """
+        Get all the outputs from the specified node.
+        Return = list
+    """
+    
     
     if node_only:
         plugs = False
@@ -10450,19 +10322,34 @@ def create_blend_attribute(source, target, min_value = 0, max_value = 10):
 
 def quick_driven_key(source, target, source_values, target_values, infinite = False):
     
+    track_nodes = TrackNodes()
+    track_nodes.load('animCurve')
+    
     for inc in range(0, len(source_values)):
           
         cmds.setDrivenKeyframe(target,cd = source, driverValue = source_values[inc], value = target_values[inc], itt = 'spline', ott = 'spline')
     
+    keys = track_nodes.get_delta()
+    
+    if not keys:
+        return
+    
+    keyframe = keys[0]
+    
+    function = api.KeyframeFunction(keyframe)
+    
     if infinite:
-        cmds.setInfinity(target, postInfinite = 'linear', preInfinite = 'linear')
+        
+        function.set_pre_infinity(function.linear)
+        function.set_post_infinity(function.linear)
          
     if infinite == 'post_only':
-        cmds.setInfinity(target, postInfinite = 'linear', preInfinite = 'linear')    
+        
+        function.set_post_infinity(function.linear)    
         
     if infinite == 'pre_only':
-        cmds.setInfinity(target, postInfinite = 'linear', preInfinite = 'linear')    
-        
+            
+        function.set_pre_infinity(function.linear)
 
 #--- Nucleus
 

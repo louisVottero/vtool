@@ -387,6 +387,17 @@ class Branch(object):
 #    value = percent1 < 128 ? ( 2 * percent2 * percent1 ) / 255 
 #                 : 255 - ( ( 2 * ( 255 - percent2 ) * ( 255 - percent1 ) ) / 255
 
+def get_axis_vector(axis_name):
+    
+    if axis_name == 'X':
+        return (1,0,0)
+    
+    if axis_name == 'Y':
+        return (0,1,0)
+    
+    if axis_name == 'Z':
+        return (0,0,1)
+
 def fade_sine(percent_value):
     
     input = math.pi * percent_value

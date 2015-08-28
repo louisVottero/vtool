@@ -345,22 +345,24 @@ class CurveDataInfo():
         
         for line in data_lines:
             
-            curve_type = ''
-            
             if line.startswith('->'):
                 
                 if curve_data_lines:
                     
                     self.library_curves[self.active_library][curve_name] = [curve_data_lines, curve_type]
+                    curve_type = ''
+                    curve_name = ''
+                    curve_data = ''
                     
                 line_split = line.split()
+                
                 curve_name = line_split[1]
                 
                 if len(line_split) > 2:
                     
                     if curve_type != curve_name:
                         curve_type = line_split[2]
-                        
+                    
                     if not curve_type:
                         curve_type = ''
                         
@@ -436,6 +438,8 @@ class CurveDataInfo():
         return self.library_curves[self.active_library].keys()
         
     def set_shape_to_curve(self, curve, curve_in_library, check_curve = False):
+        
+        
         
         if not self.active_library:
             vtool.util.warning('Must set active library before running this function.')

@@ -431,6 +431,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.setIndentation(False)
         
+        
+        
         self.setDragDropMode(self.InternalMove)
         self.setDefaultDropAction(QtCore.Qt.MoveAction)
         self.invisibleRootItem().setFlags(QtCore.Qt.ItemIsDropEnabled) 
