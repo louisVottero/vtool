@@ -10,6 +10,8 @@ import traceback
 import maya.cmds as cmds
 import maya.mel as mel
 
+import maya.OpenMaya as OpenMaya
+
 import vtool.util
 import api
 import curve
@@ -4901,12 +4903,17 @@ def add_to_isolate_select(nodes):
         This will only work on viewports that have isolate select turned on.
         Use when nodes are not being evaluated because isolate select causes them to be invisible.
     """
+    return
     if is_batch():
         return
+    
+    print 'add isolate start'
     
     nodes = vtool.util.convert_to_sequence(nodes)
     
     model_panels = get_model_panels()
+    
+    print model_panels
     
     for panel in model_panels:
         if cmds.isolateSelect(panel, q = True, state = True):
@@ -4914,6 +4921,8 @@ def add_to_isolate_select(nodes):
                 cmds.isolateSelect(panel, addDagObject = node)
                 
             #cmds.isolateSelect(panel, update = True)
+            
+    print 'add isolate end'
 
 def get_model_panels():
     
@@ -5341,13 +5350,17 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     if node == None:
         node = target_transform
     
-    if attribute_name == 'follow':
-        var = MayaEnumVariable('FOLLOW')
-        var.create(node)
-    
     locators = []
     
+    if len(source_list) < 2:
+        vtool.util.warning('Can not create multi follow with less than 2 source transforms.')
+        return
+    
     follow_group = create_xform_group(target_transform, 'follow')
+    
+    if attribute_name == 'follow':
+        var = MayaEnumVariable('FOLLOW')
+        var.create(node)    
 
     for source in source_list:
         
@@ -8612,8 +8625,10 @@ def create_wrap(source_mesh, target_mesh):
         Source_mesh drives target_mesh.
     """
     
+    source_mesh = vtool.util.convert_to_sequence(source_mesh)
+    
     wrap = MayaWrap(target_mesh)
-    wrap.set_driver_meshes([source_mesh])
+    wrap.set_driver_meshes(source_mesh)
     
     wrap.create()
     
@@ -8687,11 +8702,9 @@ def weight_hammer_verts(verts = None, print_info = True):
 def exclusive_bind_wrap(source_mesh, target_mesh):
     wrap = MayaWrap(target_mesh)
     
-    if type(source_mesh) == type(u'') or type(source_mesh) == type(''):
-        wrap.set_driver_meshes([source_mesh])
-        
-    if type(source_mesh) == list:
-        wrap.set_driver_meshes(source_mesh)
+    source_mesh = vtool.util.convert_to_sequence(source_mesh)
+    
+    wrap.set_driver_meshes(source_mesh)
         
     wraps = wrap.create()
     
@@ -8760,7 +8773,10 @@ def get_index_at_alias(alias, blendshape_node):
 
 @undo_chunk
 def chad_extract_shape(skin_mesh, corrective, replace = False):
+
+
     
+
     try:
 
         envelopes = EnvelopeHistory(skin_mesh)
@@ -8794,7 +8810,11 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
         
+        watch = vtool.util.StopWatch()
+        watch.start()
         offset = correct.invert(skin_mesh, corrective)
+        watch.end()
+                
         cmds.delete(offset, ch = True)
     
         orig = get_intermediate_object(skin_mesh)
@@ -8806,7 +8826,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
             cmds.setAttr('%s.envelope' % skin, 0)
         
         other_delta = cmds.duplicate(skin_mesh)[0]
-        #above to comment was indented
+        
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
@@ -8830,7 +8850,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
             
             if parent:
                 cmds.parent(offset, parent)
-        
+                
         return offset
 
     except (RuntimeError):

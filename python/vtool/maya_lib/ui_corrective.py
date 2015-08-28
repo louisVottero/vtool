@@ -978,7 +978,7 @@ class MeshWidget(qt_ui.BasicWidget):
         
         if not current_meshes:
             current_meshes = []
-            
+        
         missing_meshes = ''
         
         for current_mesh in current_meshes:
@@ -1108,7 +1108,7 @@ class MeshWidget(qt_ui.BasicWidget):
                     index = index.row()
                 
                     corrective.PoseManager().toggle_visibility(pose_name, mesh_index= index)
-    
+                    
     def remove_mesh(self):
         
         meshes = self.get_current_meshes_in_list()
@@ -1203,17 +1203,19 @@ class SculptWidget(qt_ui.BasicWidget):
         try:
             
             self.button_sculpt.setDisabled(True)
+                       
             self.mesh_widget.add_mesh()
+            
             
             self.sculpted_mesh.emit()
             self.button_sculpt.setEnabled(True)
             
             
             if self.pose:
-
+    
                 auto_key_state = cmds.autoKeyframe(q = True, state = True)
                 cmds.autoKeyframe(state = False)
-
+    
                 try:
                     cmds.setAttr('%s.weight' % self.pose, 1)
                 except:

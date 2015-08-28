@@ -3,8 +3,10 @@
 import os
 
 import util
+import api
 import vtool.util_file
 import vtool.util
+
 
 
 import maya.cmds as cmds
@@ -30,8 +32,8 @@ class CurveToData(object):
                 continue 
             
             self.curves.append(curve_shape)
-            self.curve_mobjects.append( util.nodename_to_mobject(curve_shape) )
-            self.curve_functions.append( util.NurbsCurveFunction( self.curve_mobjects[-1] ))
+            self.curve_mobjects.append( api.nodename_to_mobject(curve_shape) )
+            self.curve_functions.append( api.NurbsCurveFunction( self.curve_mobjects[-1] ))
         
     def _get_shapes(self, curve):
         
