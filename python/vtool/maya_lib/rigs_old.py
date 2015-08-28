@@ -417,6 +417,33 @@ class QuadBackFootRollRig(QuadFootRollRig):
         super(QuadBackFootRollRig, self).__init__(name, side)
         
         self.add_bank = True
+        self.right_side_fix = False
+        self.right_side_fix_axis = ['X']
+    
+    def _fix_right_side_orient(self, control):
+        
+        
+        if not self.right_side_fix:
+            return
+        
+        if not self.side == 'R':
+            return
+        
+        xform_locator = cmds.spaceLocator()[0]
+        
+        match = util.MatchSpace(control, xform_locator)
+        match.translation_rotation()
+        
+        spacer = util.create_xform_group(xform_locator)
+        
+        for letter in self.right_side_fix_axis:
+        
+            cmds.setAttr('%s.rotate%s' % (xform_locator, letter.upper()), 180)
+        
+        match = util.MatchSpace(xform_locator, control)
+        match.translation_rotation()
+        
+        cmds.delete(spacer)
     
     def _create_toe_roll(self, parent, name = 'toeRoll', scale = 1):
         
@@ -484,6 +511,9 @@ class QuadBackFootRollRig(QuadFootRollRig):
         
         match = util.MatchSpace( transform, xform_group )
         match.translation_rotation()
+        
+        if self.right_side_fix and self.side == 'R':
+            self._fix_right_side_orient(xform_group)
 
         #cmds.parentConstraint(roll_control.get(), transform)
         
@@ -567,8 +597,9 @@ class QuadBackFootRollRig(QuadFootRollRig):
             bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut', scale = .5)
             bankforward_roll = self._create_toe_roll(bankout_roll, 'bankForward', scale = .5)
             bankback_roll = self._create_heel_roll(bankforward_roll, 'bankBack', scale = .5)
-        
-            cmds.parentConstraint(bankback_roll, self.roll_control_xform, mo = True)
+            
+            util.create_follow_group(bankback_roll,self.roll_control_xform)
+            #cmds.parentConstraint(bankback_roll, self.roll_control_xform, mo = True)
             cmds.parentConstraint(bankback_roll, self.ankle_handle, mo = True)
         
         if not self.add_bank:
@@ -578,6 +609,9 @@ class QuadBackFootRollRig(QuadFootRollRig):
                     
     def set_add_bank(self, bool_value):
         self.add_bank = bool_value
+                 
+    def set_right_side_fix(self, bool_value):
+        self.right_side_fix = bool_value
                     
     def create(self):
         super(rigs.FootRollRig,self).create()

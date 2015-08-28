@@ -679,6 +679,15 @@ class AnimationFileWidget(MayaDataFileWidget):
     
     def _define_main_tab_name(self):
         return 'Animation Keyframes'
+    
+class ControlAnimationFileWidget(MayaDataFileWidget):
+    def _define_data_class(self):
+        return vtool.data.ControlAnimationData()
+        
+    
+    def _define_main_tab_name(self):
+        return 'Control Animation Keyframes'
+    
         
 class AtomFileWidget(MayaDataFileWidget):
     

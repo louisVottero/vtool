@@ -25,6 +25,7 @@ class DataManager(object):
                                SkinWeightData(),
                                DeformerWeightData(),
                                AnimationData(),
+                               ControlAnimationData(),
                                #AtomData(),
                                MayaShadersData(),
                                MayaAttributeData(),
@@ -986,10 +987,18 @@ class AnimationData(MayaCustomData):
     def _data_type(self):
         return 'maya.animation'
     
+    def _get_keyframes(self):
+        keyframes = cmds.ls(type = 'animCurve')
+        return keyframes
+
+    def _get_blend_weighted(self):
+        blend_weighted = cmds.ls(type = 'blendWeighted')
+        return blend_weighted
+    
     def export_data(self, comment):
         
-        keyframes = cmds.ls(type = 'animCurve')
-        blend_weighted = cmds.ls(type = 'blendWeighted')
+        keyframes = self._get_keyframes()
+        blend_weighted = self._get_blend_weighted()
         
         if not keyframes:
             return
@@ -1124,6 +1133,33 @@ class AnimationData(MayaCustomData):
                     cmds.warning('\tCould not connect %s to %s.input' % (input_attr,key))
                     
         util.show('Imported %s data.' % self.name)
+
+    
+class ControlAnimationData(AnimationData):
+        
+    def _data_name(self):
+        return 'control_animation'
+    
+    def _data_type(self):
+        return 'maya.control_animation'
+    
+    def _get_keyframes(self):
+        
+        controls = maya_lib.util.get_controls()
+        
+        keyframes = []
+        
+        
+        for control in controls:
+            sub_keyframes = maya_lib.util.get_input_keyframes(control, node_only = True)
+            if sub_keyframes:
+                keyframes += sub_keyframes
+        
+        return keyframes
+
+    def _get_blend_weighted(self):
+        
+        return None
         
 class AtomData(MayaCustomData):
 
@@ -1263,6 +1299,8 @@ class PoseData(MayaCustomData):
     def export_data(self, comment):
         unknown = cmds.ls(type = 'unknown')
         
+        
+        
         if unknown:
             
             value = cmds.confirmDialog( title='Unknown Nodes!', message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
@@ -1273,7 +1311,9 @@ class PoseData(MayaCustomData):
         
         dirpath = util_file.join_path(self.directory, self.name)
         if util_file.is_dir(dirpath):
-            util_file.delete_dir(dirpath)
+            name = util_file.get_basename(dirpath)
+            dirname = util_file.get_dirname(dirpath)
+            util_file.delete_dir(name, dirname)
         
         dir_path = util_file.create_dir(self.name, self.directory)
         
@@ -1290,6 +1330,9 @@ class PoseData(MayaCustomData):
             return
         
         for pose in poses:
+            
+            cmds.editDisplayLayerMembers("defaultLayer", pose)
+            
             parent = None
             rels = None
             
