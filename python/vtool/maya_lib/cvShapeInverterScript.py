@@ -4,11 +4,13 @@
 
 import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
-import vtool.util
 import math
+
+from vtool import util
 
 
 def invert(base=None, corrective=None, name=None):
+    
     """@brief Inverts a shape through the deformation chain.
 
     @param[in] base Deformed base mesh.
@@ -16,9 +18,10 @@ def invert(base=None, corrective=None, name=None):
     @param[in] name Name of the generated inverted shape.
     @return The name of the inverted shape.
     """
+    
     if not cmds.pluginInfo('cvShapeInverterDeformer.py', query=True, loaded=True):
         cmds.loadPlugin('cvShapeInverterDeformer.py')
-        
+            
     cmds.undoInfo(openChunk=True)
     if not base or not corrective:
         sel = cmds.ls(sl=True)
@@ -48,7 +51,7 @@ def invert(base=None, corrective=None, name=None):
     else:
         cmds.undoInfo(closeChunk=True)
         raise RuntimeError('No intermediate shape found for %s.' % base)
-
+    
     # Get the component offset axes
     
     origPoints = getPoints(origMesh)
@@ -67,30 +70,37 @@ def invert(base=None, corrective=None, name=None):
     setPoints(origMesh, zPoints)
     zPoints = getPoints(base)
     setPoints(origMesh, origPoints)
-
+    
     # Create the mesh to get the inversion deformer
     if not name:
         name = '%s_inverted' % corrective
 
-    invertedShape = cmds.duplicate(base, name=name)[0]
+    base_shape = getShape(base)
+    invertedShape = create_shape_from_shape(base_shape)
+    #invertedShape = cmds.duplicate(base, name = name)[0]
+    
     # Delete the unnessary shapes
     shapes = cmds.listRelatives(invertedShape, children=True, shapes=True, fullPath = True)
+    
     for s in shapes:
         if cmds.getAttr('%s.intermediateObject' % s):
             cmds.delete(s)
+    
     setPoints(invertedShape, origPoints)
+    
     # Unlock the transformation attrs
     for attr in 'trs':
         for x in 'xyz':
             cmds.setAttr('%s.%s%s' % (invertedShape, attr, x), lock=False)
+            
     cmds.setAttr('%s.visibility' % invertedShape, 1)
+    
     deformer = cmds.deformer(invertedShape, type='cvShapeInverter')[0]
     
     # Calculate the inversion matrices
+    
     oDeformer = getMObject(deformer)
     fnDeformer = OpenMaya.MFnDependencyNode(oDeformer)
-    
-    #maya_version = vtool.util.get_maya_version()
     
     plugMatrix = fnDeformer.findPlug('inversionMatrix', False)
     
@@ -215,3 +225,38 @@ def setMatrixCell(matrix, value, row, column):
     """
     OpenMaya.MScriptUtil.setDoubleArray(matrix[row], column, value)
 
+
+def create_shape_from_shape(shape):
+    parent = cmds.listRelatives(shape, p = True, f = True)
+            
+    new_shape = cmds.createNode('mesh')
+    
+    mesh = cmds.listRelatives(new_shape, p = True, f = True)[0]
+    
+    #add_to_isolate_select([mesh])
+    
+    cmds.connectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
+    
+    cmds.refresh()
+    
+    cmds.disconnectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
+    
+    
+    
+    if parent:
+        parent = parent[0]
+        
+        print 'parent!'
+        
+        mesh = cmds.rename(mesh, '%s_inverted' % parent)    
+        
+        translate = cmds.xform(parent, q = True, ws = True, t = True)
+        rotate = cmds.xform(parent, q = True, ws = True, ro = True)
+        
+        cmds.xform(mesh, ws = True, t = translate)
+        cmds.xform(mesh, ws = True, ro = rotate)
+            
+    return mesh
+    
+    #if parent:
+    #    MatchSpace(parent[0], mesh).translation_rotation()

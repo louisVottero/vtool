@@ -2,7 +2,9 @@ import maya.OpenMayaMPx as OpenMayaMPx
 import maya.OpenMaya as OpenMaya
 import math
 
-import vtool.util as util
+from vtool import util
+
+API_VERSION = OpenMaya.MGlobal.apiVersion()
 
 class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
     kPluginNodeName = "cvShapeInverter"
@@ -22,23 +24,19 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
         
         run = data.inputValue(cvShapeInverter.aActivate).asBool()
         if not run:
+            
             return 0
             #return OpenMaya.MStatus.kSuccess
         
         # Read the matrices
         if not self.__initialized:
             
-            if util.get_maya_version() < 2016:
-                
-                #maya not be the best way to access this... 
-                #might have to do it this way just because of a bug in Maya 2016.
+            if API_VERSION < 201600:
                 inputAttribute = OpenMayaMPx.cvar.MPxDeformerNode_input
                 inputGeom = OpenMayaMPx.cvar.MPxDeformerNode_inputGeom
-            
-            if util.get_maya_version() > 2015:
-            
-                inputAttribute = OpenMayaMPx.MPxDeformerNode.input.fget()
-                inputGeom = OpenMayaMPx.MPxDeformerNode.inputGeom.fget()
+            else:
+                inputAttribute = OpenMayaMPx.cvar.MPxGeometryFilter_input
+                inputGeom = OpenMayaMPx.cvar.MPxGeometryFilter_inputGeom
             
             hInput = data.outputArrayValue(inputAttribute)
             hInput.jumpToElement(geomIndex)
@@ -106,8 +104,10 @@ def initialize():
     tAttr = OpenMaya.MFnTypedAttribute()
     nAttr = OpenMaya.MFnNumericAttribute()
     
-    outputGeom = OpenMayaMPx.MPxDeformerNode.outputGeom.fget()
-    
+    if API_VERSION < 201600:
+        outputGeom = OpenMayaMPx.cvar.MPxDeformerNode_outputGeom
+    else:
+        outputGeom = OpenMayaMPx.cvar.MPxGeometryFilter_outputGeom    
 
     cvShapeInverter.aActivate = nAttr.create('activate', 'activate', OpenMaya.MFnNumericData.kBoolean)
     cvShapeInverter.addAttribute(cvShapeInverter.aActivate)

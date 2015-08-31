@@ -1299,8 +1299,6 @@ class PoseData(MayaCustomData):
     def export_data(self, comment):
         unknown = cmds.ls(type = 'unknown')
         
-        
-        
         if unknown:
             
             value = cmds.confirmDialog( title='Unknown Nodes!', message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
@@ -1310,10 +1308,12 @@ class PoseData(MayaCustomData):
                 maya_lib.util.delete_unknown_nodes()
         
         dirpath = util_file.join_path(self.directory, self.name)
+        
         if util_file.is_dir(dirpath):
             name = util_file.get_basename(dirpath)
             dirname = util_file.get_dirname(dirpath)
             util_file.delete_dir(name, dirname)
+        
         
         dir_path = util_file.create_dir(self.name, self.directory)
         

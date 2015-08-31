@@ -43,8 +43,8 @@ def create_scene_script_jobs():
     global job_new_scene
     global job_open_scene
     
-    job_new_scene = cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui;ui.emit_new_scene_signal();print "Vtool: Created new scene signal."'], protected = False)
-    job_open_scene = cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui;ui.emit_open_scene_signal();print "Vtool: Created open scene singal.'], protected = False)
+    job_new_scene = cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui;ui.emit_new_scene_signal();print "Vetala: Emit new scene."'], protected = False)
+    job_open_scene = cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui;ui.emit_open_scene_signal();print "Vetala: Emit open scene."'], protected = False)
 
 create_scene_script_jobs()
   

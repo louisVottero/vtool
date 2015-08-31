@@ -179,7 +179,6 @@ class BlendShape(object):
 
     def create(self, mesh):
         
-        
         blendshape = cmds.deformer(mesh, type = 'blendShape', foc = True)[0]
         
         mesh_name = util.get_basename(mesh)

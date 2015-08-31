@@ -6345,7 +6345,9 @@ def create_shape_from_shape(shape, name = 'new_shape'):
     
     parent = cmds.listRelatives(shape, p = True, f = True)
     
-    new_shape = cmds.createNode('mesh')
+    shape_type = cmds.nodeType(shape)
+    
+    new_shape = cmds.createNode(shape_type)
     
     mesh = cmds.listRelatives(new_shape, p = True, f = True)[0]
     
@@ -6361,8 +6363,6 @@ def create_shape_from_shape(shape, name = 'new_shape'):
     
     if parent:
         MatchSpace(parent[0], mesh).translation_rotation()
-    
-    
     
     return mesh
 
@@ -8774,7 +8774,8 @@ def get_index_at_alias(alias, blendshape_node):
 @undo_chunk
 def chad_extract_shape(skin_mesh, corrective, replace = False):
 
-
+    displays = get_visible_hud_displays()
+    set_hud_visibility(False, displays)
     
 
     try:
@@ -8810,10 +8811,10 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
         
-        watch = vtool.util.StopWatch()
-        watch.start()
+        #watch = vtool.util.StopWatch()
+        #watch.start()
         offset = correct.invert(skin_mesh, corrective)
-        watch.end()
+        #watch.end()
                 
         cmds.delete(offset, ch = True)
     
@@ -8825,8 +8826,11 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         if skin:
             cmds.setAttr('%s.envelope' % skin, 0)
         
-        other_delta = cmds.duplicate(skin_mesh)[0]
+        #other_delta = cmds.duplicate(skin_mesh)[0]
         
+        skin_shapes = get_shapes(skin_mesh)
+        
+        other_delta = create_shape_from_shape(skin_shapes[0], inc_name(skin_mesh))
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
@@ -8851,10 +8855,15 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
             if parent:
                 cmds.parent(offset, parent)
                 
+        
+        set_hud_visibility(True, displays)
+                
         return offset
 
     except (RuntimeError):
         vtool.util.show( traceback.format_exc() )
+        
+        set_hud_visibility(True, displays)
         
 def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = True):
     """

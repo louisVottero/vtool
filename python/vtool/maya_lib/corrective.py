@@ -863,7 +863,34 @@ class PoseBase(object):
                 pass
                 #vtool.util.show( 'Could not set visibility on %s.' % node )
     
+    def _initialize_blendshape_node(self, target_mesh):
+        
+        blend = blendshape.BlendShape()
+        
+        blendshape_node = self._get_blendshape(target_mesh)
+        
+        #referenced = util.is_referenced(blendshape_node)
+                
+        #if blendshape_node and not referenced:
+        if blendshape_node:
+            blend.set(blendshape_node)
+        
+        #if not blendshape_node or referenced:
+        if not blendshape_node:
+            blend.create(target_mesh)
 
+        """        
+        skin_cluster = util.find_deformer_by_type(target_mesh, 'skinCluster')
+        
+        if skin_cluster:
+            try:
+                cmds.reorderDeformers(skin_cluster, blend.blendshape, target_mesh)
+            except:
+                pass
+        """
+        
+        return blend
+    
     #--- pose
 
     def is_a_pose(self, node):
@@ -1260,16 +1287,8 @@ class PoseBase(object):
         
         if goto_pose:
             self.goto_pose()
-        
-        blend = blendshape.BlendShape()
-        
-        blendshape_node = self._get_blendshape(target_mesh)
-        
-        if blendshape_node:
-            blend.set(blendshape_node)
-        
-        if not blendshape_node:
-            blend.create(target_mesh)
+                
+        blend = self._initialize_blendshape_node(target_mesh)
         
         self.disconnect_blend(mesh_index)
         
@@ -1384,13 +1403,33 @@ class PoseBase(object):
         if blendshape_node:
             blend.set(blendshape_node)
                 
-        input_value = util.get_attribute_input('%s.%s' % (blend.blendshape, self.pose_control))
+        desired_attribute = '%s.%s' % (blend.blendshape, self.pose_control)
+        
+        input_multiply = util.get_attribute_input( '%s.multiplyDivide1' % self.pose_control, node_only = True)
+        
+        if input_multiply:
+            outputs = util.get_attribute_outputs('%s.outputX' % input_multiply)
+            
+            for output_value in outputs:
+                if output_value.startswith(blendshape_node):
+                    
+                    if not cmds.objExists(desired_attribute):
+                        cmds.aliasAttr(self.pose_control, output_value)               
+        
+        
+        
+        if not cmds.objExists(desired_attribute):
+            return
+        
+        input_value = util.get_attribute_input(desired_attribute)
                 
         self.blend_input = input_value
                 
         if input_value:
             
-            util.disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
+            util.disconnect_attribute(desired_attribute)
+            
+            
 
     def delete_blend_input(self):
         
@@ -1602,16 +1641,7 @@ class PoseNoReader(PoseBase):
         if goto_pose:
             self.goto_pose()
         
-        blend = blendshape.BlendShape()
-        
-        blendshape_node = self._get_blendshape(target_mesh)
-        
-        if blendshape_node:
-            blend.set(blendshape_node)
-        
-        if not blendshape_node:
-            
-            blend.create(target_mesh)
+        blend = self._initialize_blendshape_node(target_mesh)
         
         self.disconnect_blend()
         blend.set_weight(self.pose_control, 0)

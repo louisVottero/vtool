@@ -5,6 +5,8 @@ import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
 import maya.OpenMayaAnim as OpenMayaAnim
 
+ 
+
 import vtool.util
 
 #--- old api
@@ -19,6 +21,12 @@ def nodename_to_mobject(object_name):
     
     return selection_list.get_at_index(0)
 
+
+def duplicate(node):
+    
+    dag_node = DagNode(node)
+    dag_node.duplicate()
+    
 class ApiObject(object):
     """
     A wrapper object for MObjects.
@@ -378,3 +386,13 @@ class KeyframeFunction(MayaFunction):
         
         self.api_object.setPreInfinityType(infinity_type)
 
+class DagNode(MayaFunction):
+    
+    def _define_api_object(self, mobject):
+        
+        return OpenMaya.MFnDagNode(mobject)
+    
+    def duplicate(self):
+        
+        self.api_object.duplicate()
+        
