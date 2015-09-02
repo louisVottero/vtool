@@ -4907,13 +4907,9 @@ def add_to_isolate_select(nodes):
     if is_batch():
         return
     
-    print 'add isolate start'
-    
     nodes = vtool.util.convert_to_sequence(nodes)
     
     model_panels = get_model_panels()
-    
-    print model_panels
     
     for panel in model_panels:
         if cmds.isolateSelect(panel, q = True, state = True):
@@ -4922,8 +4918,6 @@ def add_to_isolate_select(nodes):
                 
             #cmds.isolateSelect(panel, update = True)
             
-    print 'add isolate end'
-
 def get_model_panels():
     
     return cmds.getPanel(type = 'modelPanel')

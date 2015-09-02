@@ -233,20 +233,14 @@ def create_shape_from_shape(shape):
     
     mesh = cmds.listRelatives(new_shape, p = True, f = True)[0]
     
-    #add_to_isolate_select([mesh])
-    
     cmds.connectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
     
     cmds.refresh()
     
     cmds.disconnectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
     
-    
-    
     if parent:
         parent = parent[0]
-        
-        print 'parent!'
         
         mesh = cmds.rename(mesh, '%s_inverted' % parent)    
         

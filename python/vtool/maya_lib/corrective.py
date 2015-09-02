@@ -1287,10 +1287,10 @@ class PoseBase(object):
         
         if goto_pose:
             self.goto_pose()
-                
-        blend = self._initialize_blendshape_node(target_mesh)
         
         self.disconnect_blend(mesh_index)
+                
+        blend = self._initialize_blendshape_node(target_mesh)
         
         blend.set_weight(self.pose_control, 0)
         
@@ -1384,6 +1384,7 @@ class PoseBase(object):
             self.blend_input = None
  
     def disconnect_blend(self, mesh_index = None):
+        
         mesh = None
         
         if mesh_index == None:
@@ -1641,9 +1642,10 @@ class PoseNoReader(PoseBase):
         if goto_pose:
             self.goto_pose()
         
+        self.disconnect_blend()
+        
         blend = self._initialize_blendshape_node(target_mesh)
         
-        self.disconnect_blend()
         blend.set_weight(self.pose_control, 0)
         
         offset = util.chad_extract_shape(target_mesh, mesh)
