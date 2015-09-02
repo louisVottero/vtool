@@ -4570,6 +4570,21 @@ class EnvelopeHistory(object):
                 
             cmds.setAttr('%s.envelope' % history, 0)
  
+    def turn_off_referenced(self):
+        
+        for history in self.history:
+            
+            if not is_referenced(history):
+                continue
+            
+            connection = self.envelope_connection[history]
+            
+            if connection:
+                cmds.disconnectAttr(connection, '%s.envelope' % history)
+                
+            cmds.setAttr('%s.envelope' % history, 0)
+        
+ 
     def turn_on(self, respect_initial_state = False):
         for history in self.history:
             
@@ -4680,7 +4695,7 @@ def get_node_types(nodes, return_shape_type = True):
         
     return found_type
      
-def get_basename(name):
+def get_basename(name, remove_namespace = False):
     """
     Get the basename in a hierarchy name.
     If top|model|face is supplied, face will be returned.
@@ -4690,7 +4705,9 @@ def get_basename(name):
     
     basename = split_name[-1]
     
-    return basename
+    split_basename = basename.split(':')
+    
+    return split_basename[-1]
 
 def get_visible_hud_displays():
     """
@@ -4903,7 +4920,7 @@ def add_to_isolate_select(nodes):
         This will only work on viewports that have isolate select turned on.
         Use when nodes are not being evaluated because isolate select causes them to be invisible.
     """
-    return
+    
     if is_batch():
         return
     
@@ -7450,6 +7467,10 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
         if cmds.objectType(thing, isa = "shape") and not cmds.nodeType(thing) == 'lattice':
             return found
         
+    if not found:
+        return None
+        
+        
     return found
 
 def get_influences_on_skin(skin_deformer):
@@ -8767,11 +8788,7 @@ def get_index_at_alias(alias, blendshape_node):
 
 @undo_chunk
 def chad_extract_shape(skin_mesh, corrective, replace = False):
-
-    displays = get_visible_hud_displays()
-    set_hud_visibility(False, displays)
     
-
     try:
 
         envelopes = EnvelopeHistory(skin_mesh)
@@ -8802,13 +8819,12 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         import cvShapeInverterScript as correct
         
         envelopes.turn_off()
+        
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
         
-        #watch = vtool.util.StopWatch()
-        #watch.start()
+        
         offset = correct.invert(skin_mesh, corrective)
-        #watch.end()
                 
         cmds.delete(offset, ch = True)
     
@@ -8816,15 +8832,19 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         orig = create_shape_from_shape(orig, 'home')
     
         envelopes.turn_on(respect_initial_state=True)
-    
+        envelopes.turn_off_referenced()
+        
         if skin:
             cmds.setAttr('%s.envelope' % skin, 0)
-        
-        #other_delta = cmds.duplicate(skin_mesh)[0]
         
         skin_shapes = get_shapes(skin_mesh)
         
         other_delta = create_shape_from_shape(skin_shapes[0], inc_name(skin_mesh))
+        
+        blendshapes = find_deformer_by_type(skin_mesh, 'blendShape', return_all = True)
+        
+        for blendshape in blendshapes[1:]:
+            cmds.setAttr('%s.envelope' % blendshape, 0)
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
@@ -8835,8 +8855,8 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         cmds.select(cl = True)
         
         cmds.delete(orig, ch = True)
-        
-        cmds.delete(other_delta, offset)
+        cmds.delete(other_delta)
+        cmds.delete(offset)
         
         cmds.rename(orig, offset)
         
@@ -8848,16 +8868,14 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
             
             if parent:
                 cmds.parent(offset, parent)
-                
         
-        set_hud_visibility(True, displays)
+        envelopes.turn_on(respect_initial_state=True)
                 
         return offset
 
     except (RuntimeError):
         vtool.util.show( traceback.format_exc() )
         
-        set_hud_visibility(True, displays)
         
 def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = True):
     """
@@ -8953,8 +8971,10 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
     bad_blendshape = False
     long_path = None
     
+    base_name = get_basename(target_mesh, remove_namespace = True)
+    
     if not blendshape_node:
-        blendshape_node = 'blendshape_%s' % target_mesh
+        blendshape_node = 'blendshape_%s' % base_name
     
     if cmds.objExists(blendshape_node):
         

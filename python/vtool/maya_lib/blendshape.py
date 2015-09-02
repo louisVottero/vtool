@@ -184,7 +184,9 @@ class BlendShape(object):
         mesh_name = util.get_basename(mesh)
         
         if not self.blendshape:
-            self.blendshape = cmds.rename(blendshape, 'blendshape_%s' % mesh_name)
+            base_mesh_name = util.get_basename(mesh_name, remove_namespace = True)
+            new_name = 'blendshape_%s' % base_mesh_name
+            self.blendshape = cmds.rename(blendshape, new_name)
         
         self._store_targets()
         self._store_meshes()
@@ -269,6 +271,11 @@ class BlendShape(object):
         self.targets.pop(name)
         
         cmds.aliasAttr('%s.%s' % (self.blendshape, name), rm = True)
+       
+    def disconnect_target(self, name, inbetween = 1):
+        target = self._get_mesh_input_for_target(name, inbetween)
+        
+        util.disconnect_attribute(target)
        
     def rename_target(self, old_name, new_name):
         

@@ -682,6 +682,9 @@ class PoseTreeWidget(BaseTreeWidget):
             
             sub_poses = sub_manager.get_poses()
             
+            if not sub_poses:
+                continue
+            
             for sub_pose in sub_poses:
                 self._add_pose_item(sub_pose, pose_item)
                

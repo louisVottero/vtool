@@ -750,6 +750,8 @@ class Process(object):
                 
                 util.warning('main() not found in %s.' % script)
                                 
+            del module
+                                
         except Exception:
             
             status = traceback.format_exc()

@@ -3,6 +3,7 @@
 import string
 
 import util
+import api
 import vtool.util
 
 import maya.cmds as cmds
@@ -2892,8 +2893,8 @@ class RopeRig(CurveRig):
             if not last_curve:
                 curve = self.curves[0]
 
-            curveObject = util.nodename_to_mobject(cmds.listRelatives(curve, s = True)[0])
-            curve_object = util.NurbsCurveFunction(curveObject)
+            curveObject = api.nodename_to_mobject(cmds.listRelatives(curve, s = True)[0])
+            curve_object = api.NurbsCurveFunction(curveObject)
             spans = curve_object.get_span_count()
             
             
