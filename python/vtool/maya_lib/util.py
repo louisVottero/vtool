@@ -1465,8 +1465,6 @@ class Control(object):
         cmds.select(cl = True)
         name = self.get()
         
-        curve_type = '%s.curveType' % name
-        
         joint_given = True
         
         if not joint:
@@ -1484,6 +1482,11 @@ class Control(object):
             cmds.rename(joint, name)
             cmds.setAttr('%s.drawStyle' % joint, 2)
             
+        curve_type_value = ''
+            
+        if cmds.objExists('%s.curveType' % name):
+            curve_type_value = cmds.getAttr('%s.curveType' % name)    
+        
         cmds.delete(name)
         
         self.control = joint
@@ -1493,9 +1496,9 @@ class Control(object):
             
         var = MayaStringVariable('curveType')
         var.create(joint)
-        var.set_value(curve_type)
+        var.set_value(curve_type_value)
         
-        cmds.setAttr('%s.radius' % joint, k = False, ch = False)
+        cmds.setAttr('%s.radius' % joint, l = True, k = False, ch = False)
         
     def translate_shape(self, x,y,z):
         

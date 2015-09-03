@@ -2,16 +2,13 @@
 
 import os
 
-import util
+#import util  do not import util, curve is used in util
 import api
 import vtool.util_file
 import vtool.util
 
-
-
 import maya.cmds as cmds
 import maya.mel as mel
-
 
 current_path = os.path.split(__file__)[0]
 
@@ -125,7 +122,7 @@ def set_nurbs_data(curve, curve_data_array):
     
 def set_nurbs_data_mel(curve, mel_curve_data):
     
-    shapes = util.get_shapes(curve)
+    shapes = get_shapes(curve)
     
     vtool.util.convert_to_sequence(mel_curve_data)
     
@@ -133,7 +130,7 @@ def set_nurbs_data_mel(curve, mel_curve_data):
     
     history = cmds.listHistory(curve)
     
-    create_input = util.get_attribute_input('%s.create' % curve)
+    create_input = get_attribute_input('%s.create' % curve)
     
     if create_input:
         vtool.util.warning('%s has history.  Importing cv data may fail to change the shape.' % curve)
@@ -144,8 +141,6 @@ def set_nurbs_data_mel(curve, mel_curve_data):
             mel.eval('setAttr "%s.cc" -type "nurbsCurve" %s' % (shapes[inc], mel_curve_data[inc]))
         if inc > data_count:
             break
-    
-        
     
 class CurveDataInfo():
     
@@ -262,7 +257,7 @@ class CurveDataInfo():
     
     def _match_shapes_to_data(self, curve, data_list):
         
-        shapes = util.get_shapes(curve)
+        shapes = get_shapes(curve)
         
         if not shapes:
             return
@@ -294,15 +289,7 @@ class CurveDataInfo():
     
     def _set_curve_type(self, curve, curve_type_value):
         
-        curve_type = util.MayaStringVariable('curveType')
-        curve_type.set_node(curve)
-        curve_type.set_locked(True)
-        
-        if not cmds.objExists('%s.curveType' % curve):
-            curve_type.create()
-        
-        if curve_type_value != None and curve_type_value != curve:
-            curve_type.set_value(curve_type_value)
+        create_curve_type_attribute(curve, curve_type_value)
     
     def set_directory(self, directorypath):
         self.curve_data_path = directorypath
@@ -470,7 +457,7 @@ class CurveDataInfo():
             
             set_nurbs_data_mel(curve, mel_data_list)
             
-        util.rename_shapes(curve)
+        rename_shapes(curve)
         
         self._set_curve_type(curve, curve_type_value)
         
@@ -522,4 +509,64 @@ class CurveDataInfo():
         curves_dict = self.library_curves[self.active_library]
         
         for curve in curves_dict:
-            self.create_curve(curve)    
+            self.create_curve(curve)
+            
+def get_shapes(transform):
+    if is_a_shape(transform):
+        parent = cmds.listRelatives(transform, p = True, f = True)
+        return cmds.listRelatives(parent, s = True, f = True)
+    
+    return cmds.listRelatives(transform, s = True, f = True)  
+
+def is_a_shape(node):
+    if cmds.objectType(node, isAType = 'shape'):
+        return True
+    
+    return False  
+
+def get_attribute_input(node_and_attribute, node_only = False):
+    
+    connections = []
+    
+    if cmds.objExists(node_and_attribute):
+        
+        connections = cmds.listConnections(node_and_attribute, 
+                                           plugs = True, 
+                                           connections = False, 
+                                           destination = False, 
+                                           source = True,
+                                           skipConversionNodes = True)
+        if connections:
+            if not node_only:
+                return connections[0]
+            if node_only:
+                return connections[0].split('.')[0]
+            
+def create_curve_type_attribute(node, value):
+    
+    if not cmds.objExists('%s.curveType' % node):
+        cmds.addAttr(node, ln = 'curveType', dt = 'string') 
+
+    if value != None and value != node:
+        cmds.setAttr('%s.curveType' % node, value, type = 'string', )
+        
+    cmds.setAttr('%s.curveType' % node, l = True, k = False) 
+
+def rename_shapes(transform):
+    
+    shapes = get_shapes(transform)
+    
+    if shapes:
+        cmds.rename(shapes[0], '%sShape' % transform)
+        
+    if len(shapes) == 1:
+        return
+    
+    if not shapes:
+        return
+    
+    inc = 1
+    for shape in shapes[1:]:
+        
+        cmds.rename(shape, '%sShape%s' % (transform, inc))
+        inc += 1

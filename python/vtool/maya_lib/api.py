@@ -5,8 +5,6 @@ import maya.cmds as cmds
 import maya.OpenMaya as OpenMaya
 import maya.OpenMayaAnim as OpenMayaAnim
 
- 
-
 import vtool.util
 
 #--- old api
