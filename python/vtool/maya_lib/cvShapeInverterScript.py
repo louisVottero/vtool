@@ -233,7 +233,7 @@ def create_shape_from_shape(shape):
     
     mesh = cmds.listRelatives(new_shape, p = True, f = True)[0]
     
-    #add_to_isolate_select([mesh])
+    add_to_isolate_select([mesh])
     
     cmds.connectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
     
@@ -241,12 +241,8 @@ def create_shape_from_shape(shape):
     
     cmds.disconnectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
     
-    
-    
     if parent:
         parent = parent[0]
-        
-        print 'parent!'
         
         mesh = cmds.rename(mesh, '%s_inverted' % parent)    
         
@@ -258,5 +254,34 @@ def create_shape_from_shape(shape):
             
     return mesh
     
-    #if parent:
-    #    MatchSpace(parent[0], mesh).translation_rotation()
+def add_to_isolate_select(nodes):
+    """
+        Add the specified nodes into every viewport's isolate select. 
+        This will only work on viewports that have isolate select turned on.
+        Use when nodes are not being evaluated because isolate select causes them to be invisible.
+    """
+    
+    if is_batch():
+        return
+    
+    nodes = util.convert_to_sequence(nodes)
+    
+    model_panels = get_model_panels()
+    
+    for panel in model_panels:
+        if cmds.isolateSelect(panel, q = True, state = True):
+            for node in nodes: 
+                cmds.isolateSelect(panel, addDagObject = node)
+                
+            #cmds.isolateSelect(panel, update = True)
+            
+def is_batch():
+    """
+    Return True if Maya is in batch mode.
+    """
+    
+    return cmds.about(batch = True)
+
+def get_model_panels():
+    
+    return cmds.getPanel(type = 'modelPanel')

@@ -6,6 +6,7 @@ import maya.cmds as cmds
 import util
 import blendshape
 import vtool.util
+import time
     
 class PoseManager(object):
 
@@ -334,8 +335,10 @@ class PoseManager(object):
         count = len(poses)
 
         progress = util.ProgressBar('adding poses ... ', count)
-    
-        for inc in range(count) :
+        
+        for inc in range(count):
+            
+            time.sleep(1)
             
             if progress.break_signaled():
                 break
@@ -869,26 +872,27 @@ class PoseBase(object):
         
         blendshape_node = self._get_blendshape(target_mesh)
         
-        #referenced = util.is_referenced(blendshape_node)
-                
-        #if blendshape_node and not referenced:
+        referenced = False
+        
         if blendshape_node:
+            referenced = util.is_referenced(blendshape_node)
+                
+        if blendshape_node and not referenced:
             blend.set(blendshape_node)
         
-        #if not blendshape_node or referenced:
-        if not blendshape_node:
+        if not blendshape_node or referenced:
             blend.create(target_mesh)
-
-        """        
-        skin_cluster = util.find_deformer_by_type(target_mesh, 'skinCluster')
-        
-        if skin_cluster:
-            try:
-                cmds.reorderDeformers(skin_cluster, blend.blendshape, target_mesh)
-            except:
-                pass
-        """
-        
+          
+        if referenced:
+            skin_cluster = util.find_deformer_by_type(target_mesh, 'skinCluster')
+            
+            if skin_cluster:
+                try:
+                    cmds.reorderDeformers(skin_cluster, blend.blendshape, target_mesh)
+                except:
+                    pass
+            
+            
         return blend
     
     #--- pose
@@ -1287,10 +1291,10 @@ class PoseBase(object):
         
         if goto_pose:
             self.goto_pose()
-                
-        blend = self._initialize_blendshape_node(target_mesh)
         
         self.disconnect_blend(mesh_index)
+                
+        blend = self._initialize_blendshape_node(target_mesh)
         
         blend.set_weight(self.pose_control, 0)
         
@@ -1305,13 +1309,13 @@ class PoseBase(object):
         
         self.connect_blend(mesh_index)
                     
-        util.disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
+        #util.disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
         
         if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
             cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
         
-        if not util.is_referenced(blend.blendshape):
-            cmds.delete(offset)
+        #if not util.is_referenced(blend.blendshape):
+        cmds.delete(offset)
         
         if sub_poses:
             self.create_sub_poses(sub_pass_mesh)
@@ -1384,6 +1388,7 @@ class PoseBase(object):
             self.blend_input = None
  
     def disconnect_blend(self, mesh_index = None):
+        
         mesh = None
         
         if mesh_index == None:
@@ -1405,19 +1410,6 @@ class PoseBase(object):
                 
         desired_attribute = '%s.%s' % (blend.blendshape, self.pose_control)
         
-        input_multiply = util.get_attribute_input( '%s.multiplyDivide1' % self.pose_control, node_only = True)
-        
-        if input_multiply:
-            outputs = util.get_attribute_outputs('%s.outputX' % input_multiply)
-            
-            for output_value in outputs:
-                if output_value.startswith(blendshape_node):
-                    
-                    if not cmds.objExists(desired_attribute):
-                        cmds.aliasAttr(self.pose_control, output_value)               
-        
-        
-        
         if not cmds.objExists(desired_attribute):
             return
         
@@ -1427,9 +1419,7 @@ class PoseBase(object):
                 
         if input_value:
             
-            util.disconnect_attribute(desired_attribute)
-            
-            
+            util.disconnect_attribute(desired_attribute)   
 
     def delete_blend_input(self):
         
@@ -1594,11 +1584,15 @@ class PoseNoReader(PoseBase):
         
         if not multiply:
             multiply = self._create_node('multiplyDivide')
+            
+            if not cmds.isConnected('%s.weight' % self.pose_control, '%s.input1X' % multiply):
+                cmds.connectAttr('%s.weight' % self.pose_control, '%s.input1X' % multiply)
+                
+            if not cmds.isConnected('%s.enable' % self.pose_control, '%s.input2X' % multiply):
+                cmds.connectAttr('%s.enable' % self.pose_control, '%s.input2X' % multiply)
         
-            cmds.connectAttr('%s.weight' % self.pose_control, '%s.input1X' % multiply)
-            cmds.connectAttr('%s.enable' % self.pose_control, '%s.input2X' % multiply)
-        
-        cmds.connectAttr('%s.outputX' % multiply, destination)
+        if not cmds.isConnected('%s.outputX' % multiply, destination):
+            cmds.connectAttr('%s.outputX' % multiply, destination)
     
     def _connect_weight_input(self, attribute):
         
@@ -1641,9 +1635,10 @@ class PoseNoReader(PoseBase):
         if goto_pose:
             self.goto_pose()
         
+        self.disconnect_blend()
+        
         blend = self._initialize_blendshape_node(target_mesh)
         
-        self.disconnect_blend()
         blend.set_weight(self.pose_control, 0)
         
         offset = util.chad_extract_shape(target_mesh, mesh)
@@ -1661,7 +1656,7 @@ class PoseNoReader(PoseBase):
         weight_attr = '%s.weight' % self.pose_control
         input_attr = util.get_attribute_input(blend_attr)
             
-        util.disconnect_attribute(blend_attr)
+        #util.disconnect_attribute(blend_attr)
             
         if input_attr:
             weight_input = util.get_attribute_input(weight_attr)
@@ -1676,29 +1671,10 @@ class PoseNoReader(PoseBase):
                     
                     self.set_input(input_attr)
         
-        if input_attr != weight_attr:
-            
-            self._multiply_weight(blend_attr)
+        self._multiply_weight(blend_attr)
         
-        
-        if not util.is_referenced(blend.blendshape):
-            
-            cmds.delete(offset)
-
-        if util.is_referenced(blend.blendshape):
-            
-            offset = cmds.rename(offset, 'delta_%s' % mesh)
-            
-            deltas = 'deltas_%s' % self.pose_control
-            
-            if not cmds.objExists('deltas_%s' % self.pose_control):
-                deltas = cmds.group(em = True, n = 'deltas_%s' % self.pose_control)
-                cmds.parent(deltas, self.pose_control)
-                
-            cmds.hide(offset)
-            self._connect_node(offset, 'delta', (this_index+1))
-            cmds.parent(offset, deltas)
-            
+        cmds.delete(offset)
+         
         if sub_poses:
             self.create_sub_poses(sub_pass_mesh)
     

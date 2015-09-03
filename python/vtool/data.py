@@ -1383,7 +1383,10 @@ class PoseData(MayaCustomData):
         
         cmds.renderThumbnailUpdate( False )
         
+        
         for pose_file in pose_files:
+            
+            
             pose_path = util_file.join_path(path, pose_file)
             
             if util_file.is_file(pose_path):
