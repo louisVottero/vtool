@@ -565,8 +565,13 @@ class CodeList(QtGui.QListWidget):
         self.clear()
     
         for directory in directories:
+            
+            name = directory
+            
+            if not util_file.is_dir(directory):
+                name = 'Directory Not Valid!   %s' % directory
             item = QtGui.QListWidgetItem()
-            item.setText(directory)
+            item.setText(name)
             item.setSizeHint(QtCore.QSize(30, 40))
             
             self.addItem(item)
