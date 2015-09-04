@@ -380,7 +380,9 @@ class MayaVariable(vtool.util.Variable):
         
         if self._get_variable_data_type() == 'attributeType':
             if not self.variable_type == 'message':
-                cmds.setAttr(self._get_node_and_variable(), self.value )
+                
+                    cmds.setAttr(self._get_node_and_variable(), self.value )
+
             if self.variable_type == 'message':
                 if self.value:
                     connect_message(self.value, self.node, self.name)
@@ -633,7 +635,9 @@ class MayaEnumVariable(MayaVariable):
         
         self._set_enum_state()
 
-    def _set_enum_state(self):
+    
+
+    def _set_enum_state(self, set_value = True):
         
         if not self.exists():
             return
@@ -647,7 +651,15 @@ class MayaEnumVariable(MayaVariable):
         
         cmds.addAttr(self._get_node_and_variable(), edit = True, enumName = enum_name)
         
-        self.set_value(value)
+        if set_value:
+            self.set_value(value)
+    
+    def _set_value(self):
+        if not self.enum_names:
+            return
+        
+        self._set_enum_state(set_value = False)
+        super(MayaEnumVariable, self)._set_value()
     
     def set_enum_names(self, name_list):
         self.enum_names = name_list

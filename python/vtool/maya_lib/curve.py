@@ -547,6 +547,8 @@ def create_curve_type_attribute(node, value):
     if not cmds.objExists('%s.curveType' % node):
         cmds.addAttr(node, ln = 'curveType', dt = 'string') 
 
+    cmds.setAttr('%s.curveType' % node, l = False)
+
     if value != None and value != node:
         cmds.setAttr('%s.curveType' % node, value, type = 'string', )
         

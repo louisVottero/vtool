@@ -113,6 +113,9 @@ class PoseManager(object):
 
         poses = self.get_poses()
         
+        if not poses:
+            return
+        
         for pose_name in poses:
                 
             input = util.get_attribute_input('%s.weight' % pose_name)
