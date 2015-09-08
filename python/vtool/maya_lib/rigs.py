@@ -12,6 +12,8 @@ import maya.cmds as cmds
 
 class Rig(object):
     
+    "Base class for rigs."
+    
     side_left = 'L'
     side_right = 'R'
     side_center = 'C'
@@ -154,6 +156,7 @@ class Rig(object):
                                 self.control_size)
         if sub:
             
+            
             control.scale_shape(self.sub_control_size, 
                                 self.sub_control_size, 
                                 self.sub_control_size)
@@ -170,38 +173,68 @@ class Rig(object):
         return control
             
     def set_control_shape(self, shape_name):
+        """
+            Sets the look of the controls, based on predifined names.
+        """
         self.control_shape = shape_name
         
     def set_sub_control_shape(self, shape_name):
+        """
+            Sets the look of the curve for the sub controls.
+        """
         self.sub_control_shape = shape_name
     
-    def set_control_color(self, color):
-        self.control_color = color
+    def set_control_color(self, int_color):
+        """
+            Set the color of the control based on an integer value. 
+        """
+        self.control_color = int_color
         
-    def set_sub_control_color(self, color):
-        self.sub_control_color = color
+    def set_sub_control_color(self, int_color):
+        """
+            Set the color of sub controls.
+        """
+        self.sub_control_color = int_color
         
     def set_control_size(self, float_value):
+        """
+            Sets the default size of the control curve.
+        """
+        
         self.control_size = float_value
         
     def set_sub_control_size(self, float_value):
+        """
+            Sets the default size of the sub control curve.
+        """
+        
         self.sub_control_size = float_value
         
-    
-                
     def set_control_parent(self, parent_transform):
+        """
+            Not tested.
+            Sets the parent of the control group for this rig.
+        """
         
         self.control_parent = parent_transform
         
         self._parent_custom_default_group(self.control_group, self.control_parent)
         
     def set_setup_parent(self, parent_transform):
+        """
+            Not tested.
+            Sets the parent of the setup group for this rig.
+        """
         
         self.setup_parent = parent_transform
         
         self._parent_custom_default_group(self.setup_group, self.setup_parent)
         
     def get_control_entries(self, title):
+        """
+            Get entries for every control. 
+            For example, title could be "xform".  It would return all the xform nodes.
+        """
         
         entries = []
         
@@ -212,6 +245,10 @@ class Rig(object):
         return entries
         
     def get_sub_control_entries(self, title):
+        """
+            Get entries for every sub control. 
+            For example, title could be "xform".  It would return all the xform nodes.
+        """
         
         entries = []
         
@@ -222,11 +259,18 @@ class Rig(object):
         return entries
         
     def create(self):
+        """
+            Create the rig.  Set commands must be set before running this.
+        """
         
         self._parent_default_groups()
         
 class JointRig(Rig):
+    """
+        Joint rig class adds attaching buffer chain functionality.
+        Also the ability to specify a joint chain for a rig.
     
+    """
     def __init__(self, description, side):
         super(JointRig, self).__init__(description, side)
         
@@ -254,6 +298,9 @@ class JointRig(Rig):
         
     
     def set_joints(self, joints):
+        """
+            Set the joints that the rig should work on.
+        """
         
         if type(joints) != list:
             self.joints = [joints]
@@ -267,10 +314,15 @@ class JointRig(Rig):
         self._check_joints(self.joints)
 
     def set_attach_joints(self, bool_value):
-        
+        """
+            Turn off/on joint attaching.
+        """
         self.attach_joints = bool_value
         
 class BufferRig(JointRig):
+    """
+        Extends JointRig with ability to create buffer chains.
+    """
     
     def __init__(self, name, side):
         super(BufferRig, self).__init__(name, side)
@@ -296,6 +348,10 @@ class BufferRig(JointRig):
         return self.buffer_joints
         
     def set_buffer(self, bool_value):
+        """
+            Turn off/on the creation of a buffer chain.  
+            Used for switching between different rigs.
+        """
         self.create_buffer_joints = bool_value
        
     def create(self):
@@ -307,19 +363,29 @@ class BufferRig(JointRig):
             self._attach_joints(self.buffer_joints, self.joints)
             
 class CurveRig(Rig):
+    """
+        A rig class that accepts curves instead of joints as the base structure.
+    """
     def __init__(self, description, side):
         super(CurveRig, self).__init__(description, side)
         
         self.curves = None
     
     def set_curve(self, curve_list):
+        """
+            Set the curves to work on.
+        """
         
+        curve_list = vtool.util.convert_to_sequence(curve_list)
         self.curves = vtool.util.convert_to_sequence(curve_list)
 
 #--- Rigs
 
 class SparseRig(JointRig):
+    """
+        This class create controls on joints. The controls are not interconnected.
     
+    """
     def __init__(self, description, side):
         super(SparseRig, self).__init__(description, side)
         
@@ -330,13 +396,26 @@ class SparseRig(JointRig):
         self.match_scale = False
         
     def set_scalable(self, bool_value):
+        """
+            Turn off/on the ability for controls to scale the joints.
+        """
         self.is_scalable = bool_value
         
     def set_respect_side(self, bool_value, tolerance = 0.001):
+        """
+            Respecting side will change the color of controls based on their position along the X coordinate.
+            Less than x will be red. Greater than x will be blue.
+            Inside the center axis will be yellow.
+            This will also change the naming of the control. 
+            The end suffix letter will change to L, R or C depending on where it is in space. 
+        """
         self.respect_side = bool_value
         self.respect_side_tolerance = tolerance
     
     def set_match_scale(self, bool_value):
+        """
+            Match the size of the control to the scale of the joint.
+        """
         self.match_scale = bool_value
         
     def create(self):
@@ -366,9 +445,6 @@ class SparseRig(JointRig):
                     control = util.Control(control_name)
                     
                     self.control_dict[control_name] = control_data
-                    
-                    
-                    
               
             xform = util.create_xform_group(control.get())
             
@@ -491,8 +567,6 @@ class ControlRig(Rig):
     def __init__(self, name, side):
         super(ControlRig, self).__init__(name,side)
         
-        
-        
         self.transforms = None
         self.control_count = 1
         self.control_shape_types = {}
@@ -553,7 +627,7 @@ class GroundRig(JointRig):
             if inc == 0:
                 control = self._create_control()
                 
-                control.set_curve_type(self.control_shape)
+                
                 
                 cmds.parent(control.get(), self.control_group)
                 
@@ -561,7 +635,7 @@ class GroundRig(JointRig):
                 
             if inc > 0:
                 control = self._create_control(sub =  True)
-                control.set_curve_type(self.control_shape)
+                
                 
                 util.connect_visibility('%s.subVisibility' % first_control, '%sShape' % control.get(), 1)
                 
