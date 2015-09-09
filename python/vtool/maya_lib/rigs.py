@@ -613,6 +613,8 @@ class FkRig(BufferRig):
         self.match_to_rotation = True
         
         self.create_sub_controls = False
+        self.use_joint_controls = False
+        self.use_joints
 
     def _create_control(self, sub = False):
         
@@ -620,11 +622,8 @@ class FkRig(BufferRig):
         
         self.control = super(FkRig, self)._create_control(sub = sub)
         
-        self.control.hide_scale_attributes()
-        
-        if self.use_joints:
-            self.control.set_to_joint()
-        
+        self._set_control_attributes(self.control)
+                
         xform = util.create_xform_group(self.control.get())
         driver = util.create_xform_group(self.control.get(), 'driver')
         
@@ -671,6 +670,10 @@ class FkRig(BufferRig):
             self.control_dict[self.control.get()]['subs'] = subs
                 
         return self.control
+    
+    def _set_control_attributes(self, control):
+        
+        control.hide_scale_attributes()
     
     def _edit_at_increment(self, control, transform_list):
         self.transform_list = transform_list
@@ -755,15 +758,50 @@ class FkRig(BufferRig):
 
             inc += 1
     
-    def _attach(self, source_transform, target_transform):
+    def _attach(self, control, target_transform):
         
-        if not self.create_sub_controls:
-            cmds.parentConstraint(source_transform, target_transform, mo = True)
-            
         if self.create_sub_controls:
-            source_transform = self.control_dict[source_transform]['subs'][-1]
-            cmds.parentConstraint(source_transform, target_transform, mo = True)        
-
+            control = self.control_dict[control]['subs'][-1]
+        
+        if not self.use_joint_controls:
+            cmds.parentConstraint(control, target_transform, mo = True)
+            
+        
+        #if self.use_joint_controls:
+        #    self._insert_shape(control, target_transform)
+            
+            
+    def _insert_shape(self, control, joint):
+        
+        print control, joint
+        
+        parent = cmds.listRelatives(control, p = True)[0]
+        
+        cmds.parent(joint, parent)
+        
+        name = control
+        
+        control = util.Control(control)
+        control.set_to_joint(joint)
+        control.hide_visibility_attribute()
+        
+        self._set_control_attributes(control)
+        
+        cmds.rename(joint, name)
+        
+    def _convert_to_joints(self):
+        for inc in range(0, len(self.controls)):
+            
+            control = self.controls[inc]
+            joint = self.buffer_joints[inc]
+            
+            constraint = util.ConstraintEditor()
+            
+            const = constraint.get_constraint(joint, 'parentConstraint')
+            cmds.delete(const)
+            
+            self._insert_shape(control, joint)
+                
     def set_parent(self, parent):
         #CBB this needs to be replaced with self.set_control_parent
         
@@ -778,14 +816,14 @@ class FkRig(BufferRig):
             
         return drivers
     
-    def set_use_joints(self, bool_value):
+    def set_use_joint_controls(self, bool_value):
         
-        self.use_joints = bool_value
+        self.use_joint_controls = bool_value
     
     def set_create_sub_controls(self, bool_value):
         
         self.create_sub_controls = bool_value
-    
+            
     def create(self):
         super(FkRig, self).create()
         
@@ -793,6 +831,12 @@ class FkRig(BufferRig):
         
         if self.parent:
             cmds.parent(self.control_group, self.parent)
+            
+        if self.use_joint_controls:
+            self._convert_to_joints()
+        
+            
+        
 
 class FkLocalRig(FkRig):
     
@@ -864,11 +908,15 @@ class FkScaleRig(FkRig):
     def _create_control(self, sub = False): 
         control = super(FkScaleRig, self)._create_control(sub) 
   
-        control.show_scale_attributes() 
-        cmds.setAttr( '%s.overrideEnabled' % control.get() , 1 ) 
-          
-          
+        self._set_control_attributes(control) 
+        
         return self.control
+  
+    def _set_control_attributes(self, control):
+        super(FkScaleRig, self)._set_control_attributes(control)
+                
+        control.show_scale_attributes()
+        cmds.setAttr( '%s.overrideEnabled' % control.get() , 1 ) 
           
     def _edit_at_increment(self, control, transform_list): 
         self.transform_list = transform_list 
@@ -1815,6 +1863,7 @@ class FkCurveLocalRig(FkCurveRig):
                 cmds.parent(rivet, self.setup_group)
         
         cmds.delete(self.orig_curve) 
+
 
 #---IK
 
