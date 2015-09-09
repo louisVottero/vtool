@@ -767,6 +767,10 @@ class LoadWeightFileThread(threading.Thread):
         
         filepath = util_file.create_file('%s.weights' % influence_name, path)
         
+        if not util_file.is_file(filepath):
+            util.show('%s is not a valid path.' % filepath)
+            return
+        
         write = util_file.WriteFile(filepath)
         write.write_line(weights)     
         

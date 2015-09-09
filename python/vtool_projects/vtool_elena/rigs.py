@@ -1,5 +1,6 @@
 from vtool.maya_lib import util
 import vtool.util
+import string
 
 import maya.cmds as cmds
 
@@ -68,18 +69,18 @@ def create_match_group(transform, name):
     
     return group
 
-def create_position_group(transforms, target_transform):
+def create_position_group(transform, target_transform):
     
-    transforms = vtool.util.convert_to_sequence(transforms)
+    name = target_transform + '_pos'
     
-    for transform in transforms:
-        name = target_transform.replace('space', 'pos')
+    pos = cmds.group(em = True, n = util.inc_name(name))
+
+    util.MatchSpace(target_transform, pos).translation_rotation()
+    cmds.parent(pos, transform)
+    cmds.parentConstraint(pos, target_transform)
+    
+    
         
-        pos = cmds.group(em = True, n = util.inc_name(name))
-    
-        util.MatchSpace(target_transform, pos).translation_rotation()
-        cmds.parent(pos, transform)
-        cmds.parentConstraint(pos, target_transform)
 
 def create_control( name, shape = 'circle'):
     
@@ -111,48 +112,16 @@ def create_joint_control(joint, shape = 'circle'):
     attrs = util.OrientJointAttributes(joint)
     attrs.delete()
     
+    if control.get().find('_joint') > -1:
+        new_name = control.get().replace('joint', 'ctrl')
+        cmds.rename(control.get(), new_name)
+    
+        control = Control(new_name)
+    
+    
+    
     return control
-
-def create_follow_switches(source_transforms, target_transform, constraint_type = 'parent', values = []):
     
-    inc = 0
-    
-    for transform in source_transforms:
-        
-        follower = cmds.group(em = True, n = util.inc_name('%s_pos' % transform))
-        
-        util.MatchSpace(target_transform, follower).translation_rotation()
-        
-        cmds.parent(follower, transform)
-        
-        if constraint_type == 'parent':
-            constraint = cmds.parentConstraint(follower, target_transform)
-        if constraint_type == 'point':
-            constraint = cmds.pointConstraint(follower, target_transform)
-        if constraint_type == 'orient':
-            constraint = cmds.orientConstraint(follower, target_transform)
-            
-        constraint = constraint[0]
-        
-        print inc
-        
-        constraint_attr = '%s.%sW%s' % (constraint,
-                                        follower,
-                                        inc)
-        
-        cmds.addAttr(target_transform, ln = transform, min = 0, max = 1, k = True)
-        
-        attribute_name = '%s.%s' % (target_transform, transform)
-        
-        cmds.connectAttr(attribute_name,  constraint_attr)
-        
-        if inc < len(values):
-            cmds.setAttr(attribute_name, values[inc])
-        
-        inc += 1
-    
-def create_space_switch():
-    pass
 
 def add_length(control, offset_joint):
     
@@ -231,6 +200,91 @@ def create_stretchy_spline_ik(curve, side, description1, description2):
     cmds.connectAttr('%s.outputX' % multi_stretch, '%s.input1X' % multi_length)
     
     return multi_length
+
+class SpaceSwitch(object):
+
+    def __init__(self, target_transform, attribute_control):
+        
+        self.constraint_type = 'parentConstraint'
+        self.target_transform = target_transform
+        self.attribute_control = attribute_control
+        
+        self.transforms = {}
+        self.keys = []
+
+    def set_constraint_type(self, constraint_type):
+        self.constraint_type = constraint_type
+
+    def add_space(self, transform, name):
+        self.transforms[name] = transform
+        self.keys.append(name)
+
+    def create(self):
+        
+        
+        name = self.target_transform.replace('_space', '')
+        split_name = self.target_transform.split('_')
+        
+        constraint = None
+        
+        conditions = []
+        
+        for key in self.keys:
+        
+            if not self.transforms.has_key(key):
+                continue
+        
+            transform = self.transforms[key]
+        
+            transform_name = transform.replace('_space', '')
+            split_transform_name = transform_name.split('_')
+            
+            new_split_name = split_name + split_transform_name
+            name = string.join(new_split_name, '_')
+            
+            name = name + 'Space'
+            
+            space = cmds.group(em = True, n = name)
+            util.MatchSpace(self.target_transform, space).translation_rotation()
+            
+            exec('constraint = cmds.%s(space, self.target_transform, mo = True)[0]' % self.constraint_type)
+            
+            condition = cmds.createNode('condition', n = name + '_cond1')
+            conditions.append(condition)
+                    
+            cmds.parent(space, transform)
+        
+        attribute = 'space'
+        
+        if self.constraint_type == 'pointConstraint':
+            attribute = 't_' + attribute
+        if self.constraint_type == 'orientConstraint':
+            attribute = 'o_' + attribute
+            
+        enum_var = util.MayaEnumVariable(attribute)
+        enum_var.set_locked(False)
+        enum_var.set_enum_names(self.keys)
+        enum_var.create(self.attribute_control)
+        
+        const_edit = util.ConstraintEditor()
+        weights = const_edit.get_weight_names(constraint)
+        
+        for inc in range(0, len(weights)):
+            
+            condition = conditions[inc]
+            weight = weights[inc]
+            
+            cmds.connectAttr('%s.%s' % (self.attribute_control, attribute),
+                             '%s.firstTerm' % condition)
+            
+            cmds.connectAttr('%s.outColorR' % condition, 
+                             '%s.%s' % (constraint, weight))
+            
+            cmds.setAttr('%s.secondTerm' % condition, inc)
+            cmds.setAttr('%s.colorIfTrueR' % condition, 1)
+            cmds.setAttr('%s.colorIfFalseR' % condition, 0)
+        
+
     
 class Rig(object):
     
@@ -295,6 +349,10 @@ class IkFkAppendageRig( Rig ):
         top = self._create_joint_control(self.joints[0], 'cube')
         mid = self._create_joint_control(self.joints[1], 'cube')
         end = self._create_joint_control(self.joints[2])
+        
+        self.joints[0] = top.get()
+        self.joints[1] = mid.get()
+        self.joints[2] = end.get()
         
         mid.translate_shape(0.5, 0, 0)
         
@@ -409,8 +467,6 @@ class IkFkAppendageRig( Rig ):
         
         cmds.parentConstraint(self.main_ik_control.get(), group)[0]
         
-        self._create_state_switch(self.ik_handle)
-    
         self._constraint_pole_vector()
     
     def _create_state_switch(self, ik_handle):
@@ -851,7 +907,7 @@ class IkFkAppendageRig( Rig ):
         self._create_main_ik_control()
         self._create_pole_vector_control()
         self._create_ik_handle()
-        self._create_stretchy() 
+        
            
     def _create_bendy(self):
         
@@ -952,7 +1008,13 @@ class IkFkAppendageRig( Rig ):
         self._create_ik_fk_attribute()
         
         self._create_fk()
+        
         self._create_ik()
+        self._create_state_switch(self.ik_handle)
+        self._create_stretchy()
+        
+        
+        
         self._create_bendy()
         self._create_twist_correct()
         
@@ -989,7 +1051,6 @@ class ArmRig( IkFkAppendageRig ):
         self._create_pole_vector_control()
         self._create_ik_handle()
         self._create_ik_hand()
-        self._create_stretchy() 
 
     def _create_main_ik_controls(self):
         
@@ -1071,6 +1132,10 @@ class LegRig(IkFkAppendageRig):
         top = self._create_joint_control(self.joints[0], 'cube')
         mid = self._create_joint_control(self.joints[1], 'cube')
         end = self._create_joint_control(self.joints[2], 'cube')
+        
+        self.joints[0] = top.get()
+        self.joints[1] = mid.get()
+        self.joints[2] = end.get()
         
         mid.translate_shape(0.5, 0, 0)
         
@@ -1686,7 +1751,7 @@ class FootRig(Rig):
         
     def create(self):
         
-        self._create_toe_control()
+        
         
         if not self.attribute_control:
             return
@@ -1700,6 +1765,7 @@ class FootRig(Rig):
         self._create_ik()
         
         self._connect_groups()
+        self._create_toe_control()
 
 class NeckRig(SpineRig):
     
