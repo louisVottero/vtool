@@ -247,6 +247,9 @@ class PoseManager(object):
     @util.undo_chunk
     def add_mesh_to_pose(self, pose_name, meshes = None):
         
+        if cmds.objExists('pose_gr'):
+            util.add_to_isolate_select('pose_gr')
+        
         selection = None
 
         if not meshes == None:
