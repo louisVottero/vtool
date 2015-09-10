@@ -10545,8 +10545,9 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     
     outputs = get_attribute_outputs('%s.worldSpace' % curve)
     
-    for output in outputs:
-        cmds.connectAttr('%s.worldSpace' % blend_curve, output, f = True)
+    if outputs:
+        for output in outputs:
+            cmds.connectAttr('%s.worldSpace' % blend_curve, output, f = True)
     
     if parent:
         cmds.parent(follicle, parent)
