@@ -247,6 +247,10 @@ class PoseManager(object):
     @util.undo_chunk
     def add_mesh_to_pose(self, pose_name, meshes = None):
         
+        #bandaid fix. Seems like this should be more proceedural instead of just naming the group
+        if cmds.objExists('pose_gr'):
+            util.add_to_isolate_select('pose_gr')
+        
         selection = None
 
         if not meshes == None:

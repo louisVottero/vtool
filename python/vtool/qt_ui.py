@@ -1468,6 +1468,60 @@ class GetIntNumberButton(GetNumberButton):
         spin_widget = QtGui.QSpinBox()
         return spin_widget
        
+class Slider(BasicWidget):
+    
+    value_changed = create_signal(object)
+    
+    def __init__(self, title = None, parent = None):
+        
+        self.title = title
+        
+        super(Slider, self).__init__(parent)
+        
+        self.emit_value_change = True
+        
+        
+    def _build_widgets(self):
+        
+        self.label = QtGui.QLabel()
+        self.label.setText(self.title)
+        self.slider = QtGui.QSlider()
+        self.slider.setOrientation(QtCore.Qt.Horizontal)
+        
+        self.slider.valueChanged.connect(self._value_change)
+        
+        self.main_layout.addWidget(self.label)
+        self.main_layout.addWidget(self.slider)
+        
+    def set_title(self, title):
+        
+        self.label.setText(title)
+        
+        self.title = title
+        
+    def _value_change(self, value):
+        
+        if self.emit_value_change:
+            self.value_changed.emit(value)
+    
+    def _reset_slider(self):
+        
+        self.emit_value_change = False
+        self.slider.setValue(0)
+        self.emit_value_change = True
+    
+    def set_auto_recenter(self, bool_value):
+        
+        if bool_value:
+            
+            self.slider.sliderReleased.connect(self._reset_slider)
+            
+        if not bool_value:
+            self.slider.sliderReleased.disconnect(self._reset_slider)
+        
+    
+        
+       
 class ProgressBar(QtGui.QProgressBar):
     
     def set_count(self, count):

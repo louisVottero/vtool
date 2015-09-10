@@ -715,7 +715,7 @@ class SkinWeightData(MayaCustomData):
                     thread = LoadWeightFileThread()
                     
                 
-                    util_file.ReadFile(geo_path)
+                    #util_file.ReadFile(geo_path)
                     
                     influence_line = thread.run(influence, skin, weights[influence], geo_path)
                     
@@ -766,6 +766,10 @@ class LoadWeightFileThread(threading.Thread):
             return
         
         filepath = util_file.create_file('%s.weights' % influence_name, path)
+        
+        if not util_file.is_file(filepath):
+            util.show('%s is not a valid path.' % filepath)
+            return
         
         write = util_file.WriteFile(filepath)
         write.write_line(weights)     

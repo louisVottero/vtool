@@ -1474,6 +1474,8 @@ class Control(object):
     
     def set_to_joint(self, joint = None):
         
+        cmds.setAttr('%s.radius' % joint, l = True, k = False, cb = False)
+        
         cmds.select(cl = True)
         name = self.get()
         
@@ -1488,11 +1490,18 @@ class Control(object):
         
         for shape in shapes:
             cmds.parent(shape, joint, r = True, s = True)
-            
+        
         if not joint_given:
             transfer_relatives(name, joint, reparent = True)
             cmds.rename(joint, name)
-            cmds.setAttr('%s.drawStyle' % joint, 2)
+            
+        if joint_given:
+            transfer_relatives(name, joint, reparent = False)
+            
+            
+        
+        
+        cmds.setAttr('%s.drawStyle' % joint, 2)
             
         curve_type_value = ''
             
@@ -1510,7 +1519,7 @@ class Control(object):
         var.create(joint)
         var.set_value(curve_type_value)
         
-        cmds.setAttr('%s.radius' % joint, l = True, k = False, ch = False)
+        
         
     def translate_shape(self, x,y,z):
         
@@ -6466,7 +6475,8 @@ def get_components_in_hierarchy(transform):
     
     return get_components_from_shapes(shapes)
 
-def get_components_from_shapes(shapes):
+def get_components_from_shapes(shapes = None):
+    
     components = []
     if shapes:
         for shape in shapes:
@@ -9025,6 +9035,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
                 
                 if not long_path in target_shape:
                     bad_blendshape = True
+                    
                     break
         
         if not bad_blendshape:
@@ -9040,6 +9051,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
             return
        
     if bad_blendshape:
+        
         blendshape_node = inc_name(blendshape_node)
         
     if not cmds.objExists(blendshape_node):

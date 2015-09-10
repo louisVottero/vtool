@@ -186,6 +186,13 @@ class ModelManager(vtool.qt_ui.BasicWidget):
         pass
         
 class RigManager(vtool.qt_ui.DirectoryWidget):
+    
+    def __init__(self):
+        super(RigManager, self).__init__()
+        
+        self.scale_controls = []
+        self.last_scale_value = None
+    
     def _build_widgets(self):
         
         manager_group = QtGui.QGroupBox('Applications')
@@ -232,6 +239,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         self.main_layout.setAlignment(QtCore.Qt.AlignTop)
         
+        
     def _create_structure_widgets(self, parent):
         
         subdivide_joint_button =  vtool.qt_ui.GetIntNumberButton('subdivide joint')
@@ -260,6 +268,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         transfer_process = QtGui.QPushButton('transfer process weights to parent')
         
         self.joint_axis_check = QtGui.QCheckBox('joint axis visibility')
+    
         
         
         add_orient.clicked.connect(self._add_orient)
@@ -308,8 +317,16 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         mirror_controls.clicked.connect(self._mirror_controls)
         mirror_controls.setMinimumHeight(40)
         
+        size_slider = vtool.qt_ui.Slider('Scale Control(s)')
+        size_slider.value_changed.connect(self._scale_control)
+        size_slider.slider.setRange(-200, 200)
+        size_slider.set_auto_recenter(True)
+        size_slider.slider.sliderReleased.connect(self._reset_scale_slider)
+        
+        
         parent.main_layout.addWidget(mirror_control)
         parent.main_layout.addWidget(mirror_controls)
+        parent.main_layout.addWidget(size_slider)
         
     def _create_deformation_widgets(self, parent):
         corrective_button = QtGui.QPushButton('Create Corrective')
@@ -461,6 +478,55 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         bool_value = self.joint_axis_check.isChecked()
         
         util.joint_axis_visibility(bool_value)
-
-
-
+        
+    def _reset_scale_slider(self):
+        
+        self.scale_controls = []
+        self.last_scale_value = None
+        
+        cmds.undoInfo(closeChunk = True)
+        
+    def _get_components(self, thing):
+        
+        shapes = util.get_shapes(thing)
+        
+        return util.get_components_from_shapes(shapes)
+        
+    
+    def _scale_control(self, value):
+        
+        if self.last_scale_value == None:
+            self.last_scale_value = 0
+            cmds.undoInfo(openChunk = True)
+        
+        if value == self.last_scale_value:
+            return
+        
+        if value > self.last_scale_value:
+            pass_value = 1.01
+        
+        if value < self.last_scale_value:
+            pass_value = .99
+            
+        things = cmds.ls(sl = True)
+        
+        if not things:
+            return
+            """
+            if not self.scale_controls:
+                self.scale_controls = util.get_controls()
+            if self.scale_controls:
+                things = self.scale_controls
+            """
+        if things:
+            for thing in things:
+                
+                components = self._get_components(thing)
+        
+                pivot = cmds.xform( thing, q = True, rp = True, ws = True)
+        
+                if components:
+                    cmds.scale(pass_value, pass_value, pass_value, components, p = pivot, r = True)
+                
+        self.last_scale_value = value        
+    
