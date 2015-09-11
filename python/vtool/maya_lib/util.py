@@ -4453,7 +4453,9 @@ class MayaWrap(object):
     
     def _create_wrap(self):
         
-        self.wrap = cmds.deformer(self.mesh, type = 'wrap', n = 'wrap_%s' % self.mesh)[0]
+        basename = get_basename(self.mesh)
+        
+        self.wrap = cmds.deformer(self.mesh, type = 'wrap', n = 'wrap_%s' % basename)[0]
         cmds.setAttr('%s.exclusiveBind' % self.wrap, 1)
         return self.wrap                 
     
@@ -4503,7 +4505,7 @@ class MayaWrap(object):
         relatives = cmds.listRelatives(mesh, ad = True)
                     
         for relative in relatives:
-            shapes = cmds.listRelatives(relative, s = True)
+            shapes = cmds.listRelatives(relative, s = True, f = True)
             
             if shapes and cmds.nodeType(shapes[0]) == geo_type:
                 self.meshes.append(relative)
@@ -5748,8 +5750,6 @@ def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', n
     if not joint1 or not joint2:
         return
     
-    
-    
     vector1 = cmds.xform(joint1, query = True, worldSpace = True, translation = True)
     vector2 = cmds.xform(joint2, query = True, worldSpace = True, translation = True)
     
@@ -5773,14 +5773,14 @@ def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', n
     value = offset
     
     last_joint = None
-    
+        
     for inc in range(0, count):
         
         position = vtool.util.get_inbetween_vector(vector1, vector2, value)
         
         cmds.select(cl = True)
         joint = cmds.joint( p = position, n = inc_name(name), r = radius)
-            
+        cmds.setAttr('%s.radius' % joint, radius)
         joints.append(joint)
 
         value += offset

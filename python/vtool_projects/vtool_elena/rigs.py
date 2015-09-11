@@ -699,6 +699,12 @@ class IkFkAppendageRig( Rig ):
         
         joint2 = util.duplicate_joint_section(self.joints[1], '%s_lo%s0_joint' % (self.side, self.description))
         
+        cmds.setAttr('%s.radius' % joint1[0], .1)
+        cmds.setAttr('%s.radius' % joint1[1], .1)
+        
+        cmds.setAttr('%s.radius' % joint2[0], .1)
+        cmds.setAttr('%s.radius' % joint2[1], .1)
+        
         if self.side == 'R':
             
             orient = util.OrientJointAttributes(joint1[0])
@@ -853,6 +859,8 @@ class IkFkAppendageRig( Rig ):
         util.MatchSpace(self.joints[1], joint2).translation_rotation()
         cmds.makeIdentity(joint2, apply = True, r = True)
         
+        cmds.hide(joint0,joint1,joint2)
+        
         self.bendy_up_guide_joints = [joint0,joint1,joint2]
         
         #lo
@@ -873,6 +881,8 @@ class IkFkAppendageRig( Rig ):
         joint2 = cmds.joint(n = '%s_lo%s2_ctrl' % (self.side, self.description))
         util.MatchSpace(self.joints[2], joint2).translation_rotation()
         cmds.makeIdentity(joint2, apply = True, r = True)
+        
+        cmds.hide(joint0,joint1,joint2)
         
         self.bendy_lo_guide_joints = [joint0,joint1,joint2]
         
@@ -1285,6 +1295,7 @@ class SpineRig( Rig ):
             position = cmds.pointPosition(cvs[inc])
             joint = cmds.joint(n = '%s%s_ctrl_joint' % (self.description, inc))
             joints.append(joint)
+            cmds.hide(joint)
             cmds.xform(joint, ws = True, t = position)
             
             if inc > 0 and inc < len(cvs)-1:
@@ -1365,6 +1376,7 @@ class ClavicleRig( Rig ):
         handle.create()
         
         cmds.hide(handle.ik_handle)
+        cmds.hide(end_joint)
         
         cmds.parent(handle.ik_handle, self.control.get())
         
