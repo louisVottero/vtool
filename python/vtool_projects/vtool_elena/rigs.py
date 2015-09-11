@@ -399,6 +399,9 @@ class IkFkAppendageRig( Rig ):
     def _create_top_orient_ik(self):
         
         joint_top_orient = util.duplicate_joint_section(self.joints[0], self._get_name('UpFk_aimJoint'))
+        
+        cmds.hide(joint_top_orient[0])
+        
         cmds.parent(joint_top_orient[0], self.top_orient_control.get())
         
         self.top_aim_joint = joint_top_orient[0]
@@ -1756,6 +1759,8 @@ class FootRig(Rig):
         self.toe_ik = handle.ik_handle
         
         cmds.parent(self.toe_ik, self.toe_rotate)
+        
+        cmds.hide(self.ankle_ik, self.toe_ik)
         
     def _create_toe_control(self):
         

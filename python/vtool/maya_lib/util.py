@@ -6046,10 +6046,10 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
     
     for transform in scope:
         
-        
-        
         other = ''
         other = find_transform_right_side(transform)
+       
+        
        
         if is_translate_rotate_connected(other):
             continue
@@ -6074,10 +6074,20 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
                                                              '%s.rotatePivot' % other, a = True)
             
             if cmds.nodeType(other) == 'transform':
-                
+                        
                 pos = [ (xform[0]*-1), xform[1],xform[2] ]
+                                
                 cmds.xform(other, ws = True, t = pos)
+                pivot = cmds.xform(transform, q = True, ws = True, rp = True)
+                cmds.move((pivot[0]*-1), pivot[1], pivot[2], '%s.scalePivot' % other, 
+                                                             '%s.rotatePivot' % other, a = True)
                 
+                if cmds.objExists('%s.localPosition' % transform):
+                    local_position = cmds.getAttr('%s.localPosition' % transform)[0]
+                    
+                    cmds.setAttr('%s.localPositionX' % transform, (local_position[0] * -1))
+                    cmds.setAttr('%s.localPositionY' % transform, local_position[1])
+                    cmds.setAttr('%s.localPositionZ' % transform, local_position[2])
     
 def match_joint_xform(prefix, other_prefix):
 
