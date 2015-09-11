@@ -1211,6 +1211,11 @@ class LegRig(IkFkAppendageRig):
         util.connect_multiply('%s.outputX' % reverse, '%s.twist' % self.ik_handle, pole_offset)
     
 class SpineRig( Rig ):
+
+    def __init__(self, description, side):
+        super(SpineRig, self).__init__(description, side)
+        
+        self.control_shape = 'octogon'
     
     def _create_fk_controls(self):
         
@@ -1224,7 +1229,7 @@ class SpineRig( Rig ):
         for locator in self.locators:
             
             
-            control, space = create_fk_control(locator, util.inc_name('%sFk1_ctrl' % self.description), 'octogon')
+            control, space = create_fk_control(locator, util.inc_name('%sFk1_ctrl' % self.description), self.control_shape)
             self.fk_controls.append(control)
             
             if inc == 0:
@@ -1766,6 +1771,8 @@ class FootRig(Rig):
         
         self._connect_groups()
         self._create_toe_control()
+        
+        cmds.delete(self.locators)
 
 class NeckRig(SpineRig):
     
@@ -1835,6 +1842,8 @@ class NeckRig(SpineRig):
             create_position_group(joint, spacer)
             
     def create(self):
+    
+        self.control_shape = 'circle'
         
         self._create_top_neck_locator()
 
@@ -1866,46 +1875,154 @@ class TongueRig(Rig):
     def __init__(self, description, side):
         super(TongueRig, self).__init__(description, side)
         
-        self.names = ['root', 'base', 'mid', 'tip', 'end']
+        self.names = ['root', 'base', 'mid1', 'mid2', 'tip']
+    
+        self.no_touch_group = cmds.group(em = True, n = 'BG_Tongue_DoNotTouch')
+        self.main_group = cmds.group(em = True, n = 'Move_G')
     
     def _create_curve(self):
         
-        self.curve = util.transforms_to_curve(self.joints, 3, self.description)
+        self.curve = util.transforms_to_curve(self.joints[1:], 3, self.description)
+        cmds.parent(self.curve, self.main_group)
     
     def _create_clusters(self):
         
+        group = cmds.group(em = True, n = 'BG_Tongue_Clusters')
+        
         cluster_curve = util.ClusterCurve(self.curve, self.description)
+        cluster_curve.set_join_ends(False)
         cluster_curve.create()
-        self.clusters = cluster_curve.clusters
+        
+        self.clusters = cluster_curve.handles
+        
+        cmds.parent(self.clusters, group)
+        cmds.parent(group, self.no_touch_group)
     
     def _create_controls(self):
         
-        main_group = cmds.group(em = True, n = 'Move_G')
+        
+        
+        
         tongue_group = cmds.group(em = True, n = 'BG_%s_grp' % self.description)
         shift_group = cmds.group(em = True, n = 'BG_%s_jawSift_grp' % self.description)
         
         cmds.parent(shift_group, tongue_group)
-        cmds.parent(tongue_group, main_group)
+        cmds.parent(tongue_group, self.main_group)
+        
+        self.controls = []
         
         for inc in range(0, len(self.names)):
             
             camel_name = '%s%s' % (self.description, self.names[inc].capitalize())
             
             shape_name = 'circle'
+            rotate = 90
             
-            if inc == 0 or inc == len(self.names)-1:
+            if inc == 0:
+                continue 
+            
+            if inc == len(self.names)-1:
                 shape_name = 'cube'
+                rotate = 0
             
             control = create_control('BGCtrl_%sLoc' % camel_name, shape_name)
             
-            space = create_space_group(control.get(), 'BG_%s_driven_grp' % camel_name)
+            control.rotate_shape(rotate, 0, 0)
+            control.scale_shape(.2, .2, .2)
             
             
+            space = create_space_group(control.get(), 'BG_%s_orient_grp' % camel_name)
+            driver = create_space_group(control.get(), 'BG_%s_driver_grp' % camel_name)
+            
+            util.MatchSpace(self.clusters[inc], space).translation_to_rotate_pivot()
+            if inc > 1:
+                util.MatchSpace(self.controls[0].get(), space).rotate_scale_pivot_to_translation()
+                cmds.orientConstraint(self.controls[0].get(), space)
             
             cmds.parent(space, shift_group)
             
+            if inc == len(self.names)-1:
+                util.MatchSpace(self.controls[-1].get(), control.get()).rotate_scale_pivot_to_translation()
+                util.MatchSpace(self.controls[-1].get(), driver).rotate_scale_pivot_to_translation()
+            
+            #set_color_to_side(control.get(), self.side)
+            
+            self.controls.append(control)
+            
+    def _create_attach_group(self, parent, cluster, value):
+        
+        offset = cmds.group(em = True, n = util.inc_name('%s_offset_1' % cluster))
+        util.MatchSpace(cluster, offset).translation_to_rotate_pivot()
+        
+        const = cmds.parentConstraint(offset, cluster)[0]
+        
+        const_edit = util.ConstraintEditor()
+        weight_names = const_edit.get_weight_names(const)
+        
+        cmds.setAttr('%s.%s' % (const, weight_names[-1]), value)
+        
+        cmds.parent(offset, parent)
+            
+    def _attach_controls(self):
+        
+        self._create_attach_group(self.controls[0].get(), self.clusters[0], .8)
+        self._create_attach_group(self.controls[1].get(), self.clusters[0], .2)
+        
+        self._create_attach_group(self.controls[0].get(), self.clusters[1], .8)
+        self._create_attach_group(self.controls[1].get(), self.clusters[1], .2)
+        
+        self._create_attach_group(self.controls[0].get(), self.clusters[2], .4)
+        self._create_attach_group(self.controls[1].get(), self.clusters[2], .5)
+        self._create_attach_group(self.controls[2].get(), self.clusters[2], .1)
+
+        self._create_attach_group(self.controls[1].get(), self.clusters[3], .5)
+        self._create_attach_group(self.controls[2].get(), self.clusters[3], .5)        
+
+        self._create_attach_group(self.controls[1].get(), self.clusters[4], .2)
+        self._create_attach_group(self.controls[2].get(), self.clusters[4], .25)
+        self._create_attach_group(self.controls[3].get(), self.clusters[4], .55)
+        
+        self._create_attach_group(self.controls[3].get(), self.clusters[5], 1)           
+            
+    def _create_spline_ik(self):
+        
+        ik = util.IkHandle('temp_ik')
+        ik.set_full_name('BG_tongueIk_Handle')
+        ik.set_curve(self.curve)
+        ik.set_solver(ik.solver_spline)
+        ik.set_start_joint(self.joints[1])
+        ik.set_end_joint(self.joints[-1])
+        ik.create()
+        
+        self.handle = ik.ik_handle
+        cmds.parent(self.handle, self.no_touch_group)
+
+        cmds.connectAttr('%s.worldMatrix' % self.controls[0].get(), '%s.dWorldUpMatrix' % self.handle)
+        cmds.connectAttr('%s.worldMatrix' % self.controls[-1].get(), '%s.dWorldUpMatrixEnd' % self.handle)
+        
+        cmds.setAttr('%s.dTwistControlEnable' % self.handle, 1)
+        cmds.setAttr('%s.dWorldUpType' % self.handle, 4)
+
+    def _create_stretchy(self,curve):
+    
+        length_node = cmds.arclen(curve, ch = True, n = self._get_name('_curveInfo'))
+        length = cmds.getAttr('%s.arcLength' % length_node)
+        
+        multi_normal = cmds.createNode('multiplyDivide', n = self._get_name('_multiplyDivide'))
+        
+        cmds.setAttr('%s.operation' % multi_normal, 2)
+        cmds.setAttr('%s.input2X' % multi_normal, length)
+        
+        cmds.connectAttr('%s.arcLength' % length_node, '%s.input1X' % multi_normal)
+        
+        for joint in self.joints[1:-1]:
+            cmds.connectAttr('%s.outputX' % multi_normal, '%s.scaleX' % joint)
+                
     def create(self):
         
         self._create_curve()
-        #self._create_clusters()
+        self._create_clusters()
         self._create_controls()
+        self._attach_controls()
+        self._create_spline_ik()
+        self._create_stretchy(self.curve)
