@@ -3948,10 +3948,14 @@ class SplitMeshTarget(object):
         self.split_parts = []
     
     def set_weight_joint(self, joint, suffix = None, prefix = None, split_name = True):
-        self.split_parts.append([joint, None, suffix, prefix, split_name])
+        self.split_parts.append([joint, None, suffix, prefix, None, split_name])
+        
+    def set_weight_insert_index(self, joint, insert_index, insert_name, split_name = True):
+        
+        self.split_parts.append([joint, None,None,None, [insert_index, insert_name], split_name])
     
     def set_weight_joint_replace_end(self, joint, replace, split_name = True):
-        self.split_parts.append([joint, replace, None, None, split_name])
+        self.split_parts.append([joint, replace, None, None, None, split_name])
     
     def set_weighted_mesh(self, weighted_mesh):
         self.weighted_mesh = weighted_mesh
@@ -3982,7 +3986,8 @@ class SplitMeshTarget(object):
             replace = part[1]
             suffix = part[2]
             prefix = part[3]
-            split_name_option = part[4]
+            split_index = part[4]
+            split_name_option = part[5]
             
             new_target = cmds.duplicate(self.base_mesh)[0]
             
@@ -4012,6 +4017,8 @@ class SplitMeshTarget(object):
                 if len(split_name) > 1:
                     new_names = []
                     
+                    inc = 0
+                    
                     for name in split_name:
                         
                         sub_name = name
@@ -4028,18 +4035,35 @@ class SplitMeshTarget(object):
                         if name.endswith('N'):
                             sub_new_name += 'N'
                             
+                        if split_index and split_index[0] == inc:
+                            new_names.append(split_index[1])
+                            
                         new_names.append(sub_new_name)
                         
+                        inc += 1
+                        
                     new_name = string.join(new_names, '_')
-                  
+            
+            if not split_name_option:
+                new_name = new_name[:split_index[0]] + split_index[1] + new_name[split_index[0]:]
+            
             new_target = cmds.rename(new_target, new_name)    
             
             blendshape_node = cmds.blendShape(self.target_mesh, new_target, w = [0,1])[0]
             
+            
+            
             target_index = get_index_at_skin_influence(joint, skin_cluster)
             
+            if target_index == None:
+                vtool.util.warning('Joint %s is not in skinCluster %s' % (joint, skin_cluster))
+                cmds.delete(new_target, ch = True)
+                return
+                       
             if not skin_weights.has_key(target_index):
-                vtool.util.warning('%s not in %s.' % (joint, skin_cluster))
+                vtool.util.warning('Joint %s not in skinCluster %s.' % (joint, skin_cluster))
+                cmds.delete(new_target, ch = True)
+                return
                 
             weights = skin_weights[target_index]
             
