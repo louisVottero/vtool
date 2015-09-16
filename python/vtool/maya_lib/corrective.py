@@ -713,13 +713,12 @@ class PoseBase(object):
     def _create_mirror_mesh(self, target_mesh):
         
         other_mesh = target_mesh
+        split_name = target_mesh.split('|')
         
         if not other_mesh:
             return None, None
 
-        other_mesh_duplicate = cmds.duplicate(other_mesh, n = 'duplicate_corrective_temp_%s' % other_mesh)[0]
-
-        split_name = target_mesh.split('|')
+        other_mesh_duplicate = cmds.duplicate(other_mesh, n = 'duplicate_corrective_temp_%s' % split_name[-1])[0]
         
         other_target_mesh = self._replace_side(split_name[-1], self.left_right)
         
@@ -734,15 +733,24 @@ class PoseBase(object):
         if blendshape_node:
             cmds.setAttr('%s.envelope' % blendshape_node, 0)
             
-        other_target_mesh_duplicate = cmds.duplicate(other_target_mesh, n = other_target_mesh)[0]
+        
+        other_target_name = util.get_basename(other_target_mesh)
+            
+        other_target_mesh_duplicate = cmds.duplicate(other_target_mesh, n = other_target_name)[0]
         home = cmds.duplicate(target_mesh, n = 'home')[0]
+
+        
 
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
         if blendshape_node:
             cmds.setAttr('%s.envelope' % blendshape_node, 1)
 
+        
         mirror_group = cmds.group(em = True, n = util.inc_name('corretive_mirror_group'))
+        
+        util.unlock_attributes(home)
+        util.unlock_attributes(other_mesh_duplicate)
         
         cmds.parent(home, mirror_group)
             
@@ -2312,6 +2320,8 @@ class PoseCone(PoseBase):
                 
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
             other_target_meshes.append(other_target_mesh)
+            
+            
             
         other_pose_instance.goto_pose()
 
