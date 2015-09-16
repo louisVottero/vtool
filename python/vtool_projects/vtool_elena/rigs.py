@@ -1557,6 +1557,8 @@ class FingerRig(Rig):
             
             new_name = joint.replace('_joint', '_ctrl')
             
+            cmds.setAttr('%s.drawStyle' % joint, 2)
+            
             dup = cmds.duplicate(joint, po = True, n = new_name)[0]
             
             if self.main_control:
