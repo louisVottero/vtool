@@ -297,8 +297,7 @@ class Rig(object):
         self.description = description
         self.side = side
         
-        if not cmds.objExists('DoNotTouch'):
-            cmds.group(em = True, n = 'DoNotTouch')
+        
         
         name = self._get_name('_all')
         
@@ -319,8 +318,11 @@ class Rig(object):
         return name
     
     def set_joints(self, joints):
-        
+                       
         self.joints = vtool.util.convert_to_sequence(joints)
+        
+        #for joint in self.joints:
+        #    cmds.setAttr('%s.drawStyle' % joint, 2)
         
     def set_locators(self, locators):
         self.locators = vtool.util.convert_to_sequence(locators)
@@ -429,6 +431,7 @@ class IkFkAppendageRig( Rig ):
         spacer = create_space_group(control.get())
         cmds.parent(spacer, self.main_group)
         self.main_ik_control = control
+        
         self.main_ik_control_space = spacer
         set_color_to_side(self.main_ik_control.get(), self.side)
         
@@ -1015,6 +1018,9 @@ class IkFkAppendageRig( Rig ):
     
     def create(self):
         
+        if not cmds.objExists('DoNotTouch'):
+            cmds.group(em = True, n = 'DoNotTouch')
+        
         self._create_bendy_chain()
         
         self._create_top_orient()
@@ -1116,12 +1122,15 @@ class LegRig(IkFkAppendageRig):
         
     def _create_ik_fk_attribute(self):
         
-        attribute_name = '%sState' % self.description
+        create_attr_separator(self.top_orient_control.get())
+        attribute_name = 'fkIk'
         var = util.MayaEnumVariable(attribute_name)
         var.set_enum_names(['fk','ik', self.mid_attribute_name])
         var.set_locked(False)
         
         var.create(self.top_orient_control.get())
+        
+        
         
         self.state_attribute_name = attribute_name
         
@@ -1205,7 +1214,9 @@ class LegRig(IkFkAppendageRig):
         clamp = cmds.createNode('clamp', n = self._get_name('UpV_ctrl_side_clamp'))
         reverse = cmds.createNode('reverse', n = self._get_name('_upV_side_reverse'))
         
-        cmds.connectAttr('%s.legState' % self.top_orient_control.get(), '%s.input1D[0]' % plus)
+        
+        
+        cmds.connectAttr('%s.%s' % (self.top_orient_control.get(), self.state_attribute_name), '%s.input1D[0]' % plus)
         cmds.setAttr('%s.input1D[1]' % plus, -1)
         cmds.connectAttr('%s.output1D' % plus, '%s.inputR' % clamp)
         
@@ -1451,6 +1462,9 @@ class SpineRig( Rig ):
         
     def create(self):
         
+        if not cmds.objExists('DoNotTouch'):
+            cmds.group(em = True, n = 'DoNotTouch')
+        
         self._create_fk_controls()
         
         self._create_spline_ik()
@@ -1510,6 +1524,10 @@ class ClavicleRig( Rig ):
         cmds.parent(handle.ik_handle, self.control.get())
         
     def create(self):
+        
+        if not cmds.objExists('DoNotTouch'):
+            cmds.group(em = True, n = 'DoNotTouch')
+        
         self._create_control()
         
         self._create_ik()
@@ -1588,6 +1606,9 @@ class HandRig(Rig):
         
     def create(self):
         
+        if not cmds.objExists('DoNotTouch'):
+            cmds.group(em = True, n = 'DoNotTouch')
+        
         self.main_group = cmds.rename(self.main_group, self.main_group.replace('all', 'grp'))
         
         util.MatchSpace(self.joints[0], self.main_group).translation_rotation()
@@ -1662,6 +1683,8 @@ class FingerRig(Rig):
             
             new_name = joint.replace('_joint', '_ctrl')
             
+            cmds.setAttr('%s.drawStyle' % joint, 2)
+            
             dup = cmds.duplicate(joint, po = True, n = new_name)[0]
             
             if self.main_control:
@@ -1728,6 +1751,10 @@ class FingerRig(Rig):
         self.main_control = main_control
     
     def create(self):
+        
+        if not cmds.objExists('DoNotTouch'):
+            cmds.group(em = True, n = 'DoNotTouch')
+        
         self._create_slider_control()
         self._create_controls()
         
@@ -1899,7 +1926,8 @@ class FootRig(Rig):
         
     def create(self):
         
-        
+        if not cmds.objExists('DoNotTouch'):
+            cmds.group(em = True, n = 'DoNotTouch')
         
         if not self.attribute_control:
             return
@@ -1986,6 +2014,9 @@ class NeckRig(SpineRig):
             
     def create(self):
     
+        if not cmds.objExists('DoNotTouch'):
+            cmds.group(em = True, n = 'DoNotTouch')
+    
         self.control_shape = 'circle'
         
         self._create_top_neck_locator()
@@ -2025,6 +2056,10 @@ class TongueRig(Rig):
         self.names = ['root', 'base', 'mid1', 'mid2', 'tip']
     
         self.no_touch_group = cmds.group(em = True, n = 'BG_Tongue_DoNotTouch')
+        cmds.hide(self.no_touch_group)
+        
+        cmds.delete(self.main_group)
+        
         self.main_group = cmds.group(em = True, n = 'Move_G')
     
     def _create_curve(self):
@@ -2046,9 +2081,6 @@ class TongueRig(Rig):
         cmds.parent(group, self.no_touch_group)
     
     def _create_controls(self):
-        
-        
-        
         
         tongue_group = cmds.group(em = True, n = 'BG_%s_grp' % self.description)
         shift_group = cmds.group(em = True, n = 'BG_%s_jawSift_grp' % self.description)
@@ -2149,6 +2181,8 @@ class TongueRig(Rig):
         
         cmds.setAttr('%s.dTwistControlEnable' % self.handle, 1)
         cmds.setAttr('%s.dWorldUpType' % self.handle, 4)
+        
+        cmds.hide(self.handle)
 
     def _create_stretchy(self,curve):
     

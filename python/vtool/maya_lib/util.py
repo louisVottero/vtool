@@ -6442,6 +6442,30 @@ def get_shapes(transform):
     
     return cmds.listRelatives(transform, s = True, f = True)
 
+def get_of_type_in_hierarchy(transform, node_type):
+    """
+        Get nodes of type in a hierarchy.
+    """
+    relatives = cmds.listRelatives(transform, ad = True, type = node_type, f = True)
+    
+    found = []
+    
+    for relative in relatives:
+        if cmds.objectType(relative, isa = 'shape'):
+            parent = cmds.listRelatives(relative, f = True, p = True)[0]
+            
+            if parent:
+                
+                if not parent in found:
+                    found.append(parent)
+                
+        if not cmds.objectType(relative, isa = 'shape'):
+            found.append(relative)
+            
+    return found
+              
+            
+
 def get_shapes_in_hierarchy(transform):
     
     hierarchy = [transform]
@@ -9082,7 +9106,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
             except:
                 pass
             
-            return
+            return blendshape_node
        
     if bad_blendshape:
         
