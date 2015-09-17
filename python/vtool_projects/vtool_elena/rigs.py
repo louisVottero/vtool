@@ -69,7 +69,7 @@ def create_match_group(transform, name):
     
     return group
 
-def create_position_group(transform, target_transform):
+def create_position_group(transform, target_transform, constraint_type = 'parentConstraint'):
     
     name = target_transform + '_pos'
     
@@ -77,7 +77,8 @@ def create_position_group(transform, target_transform):
 
     util.MatchSpace(target_transform, pos).translation_rotation()
     cmds.parent(pos, transform)
-    cmds.parentConstraint(pos, target_transform)
+    
+    exec( 'cmds.%s(pos, target_transform)' % constraint_type )
     
     
         
@@ -1229,6 +1230,29 @@ class SpineRig( Rig ):
         super(SpineRig, self).__init__(description, side)
         
         self.control_shape = 'octogon'
+        self.attribute_control = None
+        self.stretch_attribute_name = self.description
+    
+    def _create_attributes(self):
+        
+        print 'creating attributes!', self.attribute_control, self.stretch_attribute_name
+        ik_vis = util.MayaNumberVariable('ikCon')
+        ik_vis.set_variable_type('bool')
+        ik_vis.create(self.attribute_control)
+        
+        create_attr_separator(self.attribute_control, 'STRETCHY')
+        
+        print 'attribute_name', self.stretch_attribute_name
+        
+        spine_stretchy = util.MayaNumberVariable('%sStretchy' % self.stretch_attribute_name)
+        spine_stretchy.set_min_value(0)
+        spine_stretchy.set_max_value(1)
+        spine_stretchy.set_value(1)
+        spine_stretchy.create(self.attribute_control)
+        
+        for spacer in self.bend_spacers:
+            cmds.connectAttr('%s.ikCon' % self.attribute_control, '%s.visibility' % spacer)
+        
     
     def _create_fk_controls(self):
         
@@ -1259,7 +1283,10 @@ class SpineRig( Rig ):
             inc += 1
             
         
-        cmds.parent(first_space, self.main_group)    
+        cmds.parent(first_space, self.main_group)
+        
+        if not self.attribute_control:
+            self.attribute_control = self.fk_controls[0].get()    
             
     def _create_spline_ik(self):
         
@@ -1281,7 +1308,13 @@ class SpineRig( Rig ):
         self.ik_spline = ik_handle.ik_handle
         cmds.hide(self.curve)
         
+        cmds.addAttr(self.curve, ln = 'scalePower')
+        
+        
+        
         return ik_handle.ik_handle
+        
+
         
     def _attach_curve(self):
         
@@ -1291,6 +1324,7 @@ class SpineRig( Rig ):
         
         joints = []
         self.bend_spacers = []
+        
         
         for inc in range(0, len(cvs)):
             
@@ -1313,6 +1347,7 @@ class SpineRig( Rig ):
                 
                 self.bend_spacers.append(space)
                 
+                
                 if inc_name == 'lo':
                     inc_name = 'up'
         
@@ -1327,11 +1362,92 @@ class SpineRig( Rig ):
     def _set_bendy_scale(self):
         multi = create_stretchy_spline_ik(self.curve, self.side, self.description, '')
         
+        input_multi = util.get_attribute_input('%s.input1X' % multi, node_only = True)
+        
+        
+        reverse = cmds.createNode('reverse', n = '%s_autoStretch_reverse' % self.description)
+        
+        plus = cmds.createNode('plusMinusAverage', n = '%s_autoStretch_plus' % self.description)
+        
+        cmds.connectAttr('%s.%sStretchy' % (self.attribute_control, self.stretch_attribute_name), '%s.input2X' % input_multi)
+        cmds.connectAttr('%s.%sStretchy' % (self.attribute_control, self.stretch_attribute_name), '%s.inputX' % reverse)
+        
+        cmds.connectAttr('%s.outputX' % input_multi, '%s.input1D[0]' % plus)
+        cmds.connectAttr('%s.outputX' % reverse, '%s.input1D[1]' % plus)
+        
+        util.disconnect_attribute('%s.input1X' % multi)
+        
+        cmds.connectAttr('%s.output1D' % plus, '%s.input1X' % multi)
+        
         value = cmds.getAttr('%s.translateX' % self.joints[-1])
         cmds.setAttr('%s.input2X' % multi, value)
         
+        scale_square_multi = cmds.createNode('multiplyDivide', n = '%s_scaleSquare_multi' % self.description)
+        scale_square_art_div = cmds.createNode('multiplyDivide', n = '%s_scaleSquare_artDiv' % self.description)
+        
+        cmds.connectAttr('%s.output1D' % plus, '%s.input1X' % scale_square_multi)
+        cmds.setAttr('%s.operation' % scale_square_multi, 3)
+        cmds.setAttr('%s.input2X' % scale_square_multi, 0.5)
+        
+        cmds.connectAttr('%s.outputX' % scale_square_multi, '%s.input2X' % scale_square_art_div)
+        cmds.setAttr('%s.input1X' % scale_square_art_div, 1)
+        
+        inc = 0
+        
         for joint in self.joints[1:]:
             cmds.connectAttr('%s.outputX' % multi, '%s.translateX' % joint)
+            
+            mult_joint = cmds.createNode('multiplyDivide', n = '%s_%s_power' % (self.description, joint))
+            cmds.setAttr('%s.operation' % mult_joint, 3)
+            
+            cache = cmds.createNode('frameCache', n = '%s_%s_frameCache' % (self.description, joint))
+            
+            cmds.connectAttr('%s.outputX' % scale_square_art_div, '%s.input1X' % mult_joint)
+            
+            cmds.connectAttr('%s.outputX' % mult_joint, '%s.scaleY' % joint)
+            cmds.connectAttr('%s.outputX' % mult_joint, '%s.scaleZ' % joint)
+            
+            cmds.connectAttr('%s.scalePower' % self.curve, '%s.stream' % cache)
+            cmds.connectAttr('%s.varying' % cache, '%s.input2X' % mult_joint)
+            
+            cmds.setAttr('%s.varyTime' % cache, inc)
+            
+            inc+=1
+            
+        
+
+    def _create_spine_distance(self):
+        
+        locator1 = cmds.spaceLocator(n = util.inc_name('%s_ctrl1_pos' % self.description))[0]
+        locator2 = cmds.spaceLocator(n = util.inc_name('%s_ctrl2_pos' % self.description))[0]
+        
+        util.MatchSpace(self.joints[-1], locator2).translation_rotation()
+        util.MatchSpace(self.joints[0], locator1).translation_rotation()
+        
+        distance = cmds.createNode('distanceBetween', n = util.inc_name('%s_distance' % self.description))
+        
+        cmds.connectAttr('%s.worldPosition' % locator1, '%s.point1' % distance)
+        cmds.connectAttr('%s.worldPosition' % locator2, '%s.point2' % distance)
+        
+        self.distance = distance
+        
+        distance_value = cmds.getAttr('%s.distance' % distance)
+        
+        util.quick_driven_key('%s.distance' % distance, '%s.scaleY' % self.ctrl_joints[0], 
+                              [0, distance_value], [0, 1])
+        
+        cmds.connectAttr('%s.scaleY' % self.ctrl_joints[0], '%s.scaleX' % self.ctrl_joints[0])
+        cmds.connectAttr('%s.scaleY' % self.ctrl_joints[0], '%s.scaleZ' % self.ctrl_joints[0])
+        
+        cmds.connectAttr('%s.scaleY' % self.ctrl_joints[0], '%s.scaleY' % self.ctrl_joints[-1])
+        
+        cmds.parent(locator1, locator2, self.main_group)
+        
+    def set_attribute_control(self, control_name):
+        self.attribute_control = control_name
+
+    def set_stretch_attribute_name(self, name):
+        self.stretch_attribute_name = name
         
     def create(self):
         
@@ -1341,9 +1457,19 @@ class SpineRig( Rig ):
         
         joints = self._attach_curve()
         self._skin_curve(joints)
-        self._set_bendy_scale()
+
         
         cmds.parent(self.joints[0], self.main_group)
+        
+        create_position_group(self.ctrl_joints[0], self.bend_spacers[0], 'pointConstraint')
+        create_position_group(self.ctrl_joints[-1], self.bend_spacers[-1], 'pointConstraint')
+        
+        self._create_attributes()
+
+        self._set_bendy_scale()
+        
+        self._create_spine_distance()
+        
         
 class ClavicleRig( Rig ):
     
@@ -1873,7 +1999,7 @@ class NeckRig(SpineRig):
         ik_joint1, ik_joint2 = self._create_joint_section()
         
         self._skin_curve(joints)
-        self._set_bendy_scale()
+        
         
         cmds.parent(self.joints[0], self.main_group)
         
@@ -1881,6 +2007,10 @@ class NeckRig(SpineRig):
         self._create_ik_stretch(ik_joint1, ik_joint2)
         
         self._connect_bend_spacers(ik_joint1)
+        
+        self._create_attributes()
+        
+        self._set_bendy_scale()
         
 #--- Face
 
