@@ -927,13 +927,15 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 value = qt_ui.get_permission('Start a new scene?', self)
                 if value:
                 
+                    
                     import maya.cmds as cmds
+                    """
                     if cmds.file(q = True, mf = True):
                         result = qt_ui.get_permission('Changes not saved. Run process anyways?', self)
                         if not result:
                             return
-                        
-                        cmds.file(new = True, f = True)
+                    """ 
+                    cmds.file(new = True, f = True)
     
                 if value == None:
                     return
