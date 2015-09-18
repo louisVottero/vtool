@@ -3180,13 +3180,16 @@ def get_permission(message, parent = None):
     
     message_box = QtGui.QMessageBox(parent)
     
-    message = message_box.question(parent, 'Permission', message, message_box.Yes | message_box.No )
+    message = message_box.question(parent, 'Permission', message, message_box.Yes | message_box.No | message_box.Cancel )
     
     if message == message_box.Yes:
         return True
     
     if message == message_box.No:
         return False
+    
+    if message == message_box.Cancel:
+        return None
     
 def get_new_name(message, parent = None, old_name = None):
     

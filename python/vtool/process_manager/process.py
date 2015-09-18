@@ -86,6 +86,7 @@ class Process(object):
         self.process_name = name
         self.parts = []
         self.external_code_paths = []
+        self.runtime_values = {}
         
     def _set_name(self, new_name):
         
@@ -781,6 +782,17 @@ class Process(object):
         
         for script in scripts:
             self.run_script(script)
+            
+    def set_runtime_value(self, name, value):
+        self.runtime_values[name] = value
+        
+    def get_runtime_value(self, name):
+        
+        if self.runtime_values.has_key(name):
+            return self.runtime_values[name]
+        
+    def get_runtime_value_keys(self):
+        return self.runtime_values.keys()
  
 def get_default_directory():
     if util.is_in_maya():

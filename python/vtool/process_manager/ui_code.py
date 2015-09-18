@@ -431,7 +431,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.setIndentation(False)
         
-        
+        self.setSelectionMode(self.ExtendedSelection)
         
         self.setDragDropMode(self.InternalMove)
         self.setDefaultDropAction(QtCore.Qt.MoveAction)
@@ -528,7 +528,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.context_menu.addSeparator()
         
-        run_action = self.context_menu.addAction('Run')
+        self.run_action = self.context_menu.addAction('Run')
         rename_action = self.context_menu.addAction(self.tr('Rename'))
         delete_action = self.context_menu.addAction('Delete')
         
@@ -538,12 +538,13 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         browse_action = self.context_menu.addAction('Browse')
         refresh_action = self.context_menu.addAction('Refresh')
         
-        self.edit_actions = [run_action, rename_action, delete_action]
+        self.edit_actions = [self.run_action, rename_action, delete_action]
+        
         
         new_python.triggered.connect(self.create_python_code)
         new_data_import.triggered.connect(self.create_import_code)
         
-        run_action.triggered.connect(self.run_current_item)
+        self.run_action.triggered.connect(self.run_current_item)
         rename_action.triggered.connect(self._activate_rename)
         delete_action.triggered.connect(self.remove_current_item)
         
@@ -568,6 +569,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if not item:
             
             self._edit_actions_visible(False)
+            
+        if len(items) > 1:
+            self._edit_actions_visible(False)
+            self.run_action.setVisible(True)
             
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
             
@@ -828,6 +833,26 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         process_tool.sync_manifest()
         
+    def _run_item(self, item, process_tool):
+        
+        item.set_state(2)
+        
+        name = item.get_text()
+        name = name.split('.')
+        name = name[0]
+        
+        code_file = process_tool.get_code_file(name)
+        
+        status = process_tool.run_script(code_file)
+        
+        if status == 'Success':
+            item.set_state(1)
+        if not status == 'Success':
+            item.set_state(0)
+            
+            vtool.util.show(status) 
+            
+        self.scrollToItem(item)       
 
     def refresh(self, sync = False):
         
@@ -847,7 +872,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         script_name = vtool.util_file.get_basename(directory)
         
+        
+        
         item = self._get_item_by_name(script_name)
+        
+        
         
         if not util_file.is_file(directory):
             
@@ -857,6 +886,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
 
 
         item.set_state(state)
+        self.scrollToItem(item)
         
         
     def create_python_code(self):
@@ -886,32 +916,38 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         process_tool.create_code('import_%s' % picked, import_data = picked)
         self._add_item('import_%s.py' % picked, False)
         
-    def run_current_item(self, external_code_libary = None):
+    def run_current_item(self, external_code_library = None):
         
         items = self.selectedItems()
-        item = items[0]
         
-        item.set_state(2)
-        
-        name = item.get_text()
-        name = name.split('.')
-        name = name[0]
-        
+        if len(items) > 1:
+            
+            if vtool.util.is_in_maya():
+                
+                value = qt_ui.get_permission('Start a new scene?', self)
+                if value:
+                
+                    import maya.cmds as cmds
+                    if cmds.file(q = True, mf = True):
+                        result = qt_ui.get_permission('Changes not saved. Run process anyways?', self)
+                        if not result:
+                            return
+                        
+                        cmds.file(new = True, f = True)
+    
+                if value == None:
+                    return
+
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
-        if external_code_libary:
-            process_tool.set_external_code_library(external_code_libary)
-        code_file = process_tool.get_code_file(name)
         
-        status = process_tool.run_script(code_file)
+        if external_code_library:
+            process_tool.set_external_code_library(external_code_library)
+            
+        for item in items:
+            self._run_item(item, process_tool)
         
-        if status == 'Success':
-            item.set_state(1)
-        if not status == 'Success':
-            item.set_state(0)
-            
-            vtool.util.show(status)
-            
+
         
     def remove_current_item(self):
         
