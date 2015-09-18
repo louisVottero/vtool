@@ -224,6 +224,16 @@ class SpaceSwitch(object):
 
     def create(self):
         
+        if not cmds.objExists('world_space_grp'):
+            cmds.group(em = True, n = 'world_space_grp')
+        if cmds.objExists('world'):
+            parent = cmds.listRelatives('world_space_grp', p = True)
+            
+            if parent:
+                parent = parent[0]
+            
+            if not parent == 'world':
+                cmds.parent('world_space_grp', 'world')
         
         name = self.target_transform.replace('_space', '')
         split_name = self.target_transform.split('_')
@@ -231,6 +241,10 @@ class SpaceSwitch(object):
         constraint = None
         
         conditions = []
+        
+        if not 'world' in self.keys:
+            self.transforms['world'] = 'world_space_grp'
+            self.keys.append('world')
         
         for key in self.keys:
         
@@ -529,11 +543,13 @@ class IkFkAppendageRig( Rig ):
 
     def _create_stretchy(self):
         
-        self._create_stretchy_attributes(self.main_ik_control.get())
+        control = self.pole_control
         
-        distance_clamp, distance_multi = self._create_stretchy_distance(self.main_ik_control.get())
+        self._create_stretchy_attributes(control)
         
-        stretch_plus, ratio_plus = self._create_stretchy_attribute_offset(self.main_ik_control.get())
+        distance_clamp, distance_multi = self._create_stretchy_distance(control)
+        
+        stretch_plus, ratio_plus = self._create_stretchy_attribute_offset(control)
         
         cmds.connectAttr('%s.output1D' % stretch_plus, '%s.minR' % distance_clamp)
         cmds.connectAttr('%s.output2Dx' % ratio_plus, '%s.input1X' % distance_multi)
@@ -572,6 +588,7 @@ class IkFkAppendageRig( Rig ):
         
         multiply = util.connect_multiply('%s.distance' % distance, '%s.inputR' % clamp, 1)
         multiply = cmds.rename(multiply, self._get_name('Ik_distance_normalize'))
+        cmds.setAttr('%s.operation' % multiply, 2)
         
         distance_value = cmds.getAttr('%s.distance' % distance)
         
@@ -708,6 +725,9 @@ class IkFkAppendageRig( Rig ):
         
         joint2 = util.duplicate_joint_section(self.joints[1], '%s_lo%s0_joint' % (self.side, self.description))
         
+        
+        
+        
         cmds.setAttr('%s.radius' % joint1[0], .1)
         cmds.setAttr('%s.radius' % joint1[1], .1)
         
@@ -723,7 +743,10 @@ class IkFkAppendageRig( Rig ):
             orient.set_aim_up_at(0)
             orient.set_up_vector([0,-1,0])
             orient.run()
+            
             cmds.makeIdentity(joint1[1], apply = True, jo = True)
+        
+            
             
             orient = util.OrientJointAttributes(joint2[0])
             orient.delete()
@@ -733,6 +756,8 @@ class IkFkAppendageRig( Rig ):
             orient.set_aim_up_at(0)
             orient.run()
             cmds.makeIdentity(joint2[1], apply = True, jo = True)
+        
+        
         
         cmds.parent(joint1[0], joint2[0], self.main_group)
         
@@ -904,6 +929,8 @@ class IkFkAppendageRig( Rig ):
         
         cmds.connectAttr('%s.worldMatrix' % top_end, '%s.dWorldUpMatrix' % ik)
         
+        
+        
         btm, btm_edit, btm_end = self._locator_group('lo')
         
         util.MatchSpace(btm_parent, btm).translation_rotation()
@@ -912,8 +939,11 @@ class IkFkAppendageRig( Rig ):
         
         cmds.connectAttr('%s.worldMatrix' % btm_end, '%s.dWorldUpMatrixEnd' % ik)
         
+        cmds.move(0,0,1, top_end, relative = True)
+        cmds.move(0,0,1, btm_end, relative = True)
+        
         cmds.setAttr('%s.dTwistControlEnable' % ik, 1)
-        cmds.setAttr('%s.dWorldUpType' % ik, 4)
+        cmds.setAttr('%s.dWorldUpType' % ik, 2)
         
         return top, btm, top_edit, btm_edit
         
@@ -1248,15 +1278,13 @@ class SpineRig( Rig ):
     
     def _create_attributes(self):
         
-        print 'creating attributes!', self.attribute_control, self.stretch_attribute_name
+        
         ik_vis = util.MayaNumberVariable('ikCon')
         ik_vis.set_variable_type('bool')
         ik_vis.create(self.attribute_control)
         
         create_attr_separator(self.attribute_control, 'STRETCHY')
-        
-        print 'attribute_name', self.stretch_attribute_name
-        
+                
         spine_stretchy = util.MayaNumberVariable('%sStretchy' % self.stretch_attribute_name)
         spine_stretchy.set_min_value(0)
         spine_stretchy.set_max_value(1)
@@ -1305,6 +1333,8 @@ class SpineRig( Rig ):
         
         self.curve = util.transforms_to_curve(self.joints, 1, util.inc_name(self._get_name('Curve')))
         
+        self.curve = cmds.rename(self.curve, util.inc_name(self._get_name('Curve')))
+        
         ik_handle = util.IkHandle(self._get_name('Curve'))
         ik_handle.set_solver(ik_handle.solver_spline)
         ik_handle.set_curve(self.curve)
@@ -1323,11 +1353,19 @@ class SpineRig( Rig ):
         
         cmds.addAttr(self.curve, ln = 'scalePower')
         
+        btm_group = cmds.group(em = True, n = self._get_name('_upV1_edit'))
+        util.MatchSpace(self.joints[0], btm_group).translation_rotation()
+        top_group = cmds.group(em = True, n = self._get_name('_upV2_edit'))
+        util.MatchSpace(self.joints[-1], top_group).translation_rotation()
+        cmds.parent(btm_group, top_group, self.main_group)
         
+        cmds.connectAttr('%s.worldMatrix[0]' % btm_group, '%s.dWorldUpMatrix' % self.ik_spline)
+        cmds.connectAttr('%s.worldMatrix[0]' % top_group, '%s.dWorldUpMatrixEnd' % self.ik_spline)
+        cmds.setAttr('%s.dTwistControlEnable' % self.ik_spline, 1)
+        cmds.setAttr('%s.dWorldUpType' % self.ik_spline, 4)
+
         
         return ik_handle.ik_handle
-        
-
         
     def _attach_curve(self):
         
@@ -1970,6 +2008,8 @@ class NeckRig(SpineRig):
         self.top_neck_control = cmds.spaceLocator(n = self._get_name('_ctrl2'))[0]
         util.MatchSpace(self.joints[-1], self.top_neck_control).translation()
         cmds.parent(self.top_neck_control, self.main_group)
+        
+        cmds.hide(self.top_neck_control)
         
     def _create_joint_section(self):
     

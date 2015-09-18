@@ -1233,8 +1233,6 @@ class OrientJoint(object):
         
         self._cleanup()
         
-        if self.joint == 'R_thumb_base_ctrl':
-            print 'about to finish'
         self._freeze()
         
 class PinXform(object):
@@ -1246,11 +1244,16 @@ class PinXform(object):
         parent = cmds.listRelatives(self.xform, p = True, f = True)
         
         if parent:
+            
             parent = parent[0]
+            
             
             pin = cmds.duplicate(parent, po = True, n = inc_name('pin1'))[0]
             
-            cmds.parent(pin, w = True)
+            try:
+                cmds.parent(pin, w = True)
+            except:
+                pass
             
             #pin = cmds.group(em = True, n = 'pin1')    
             #MatchSpace(parent, pin).translation_rotation()
@@ -1267,6 +1270,11 @@ class PinXform(object):
         for child in children:
             
             pin = cmds.duplicate(child, po = True, n = inc_name('pin1'))[0]
+            
+            try:
+                cmds.parent(pin, w = True)
+            except:
+                pass
             
             constraint = cmds.parentConstraint(pin, child, mo = True)[0]
             self.delete_later.append(constraint)
@@ -6693,6 +6701,15 @@ def get_available_slot(attribute):
     return int( slots[-1] )+1
 
 def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None, point_constrain = False, auto_parent = False, hide_shape= False, inherit_transform = False, local = False, rotate_pivot = False, constrain = True):
+    
+    """
+    
+        Be default this will attach the center point of the transform (including hierarchy and shapes) to the mesh.
+        Important: If you need to attach to the rotate pivot of the transform make sure to set rotate_pivot = True
+    
+    """
+    
+    
     parent = None
     if auto_parent:
         parent = cmds.listRelatives(transform, p = True)
@@ -6700,7 +6717,7 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     shape = get_mesh_shape(mesh)
     #shape = cmds.listRelatives(mesh, shapes = True)[0]
     
-    face_iter = api.IteratePolygonFaces(shape)
+    
     
     if rotate_pivot:
         position = cmds.xform(transform, q = True, rp = True, ws = True)
@@ -6708,10 +6725,14 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
         position = get_center(transform)
     
     if not face:
-        face_id = face_iter.get_closest_face(position)
+        
+        face_fn = api.MeshFunction(shape)
+        face_id = face_fn.get_closest_face(position)
+        
     if face:
         face_id = face
     
+    face_iter = api.IteratePolygonFaces(shape)
     edges = face_iter.get_edges(face_id)
     
     edge1 = '%s.e[%s]' % (mesh, edges[0])
@@ -8658,9 +8679,9 @@ def skin_curve_from_mesh(source_mesh, target, include_joints = [], exclude_joint
     
     skin_mesh_from_mesh(source_mesh, target, exclude_joints = exclude_joints, include_joints = include_joints)
 
-def skin_group(joint, group):
+def skin_group(joints, group):
     """
-    Skin all the meshes in a group to a joint.  
+    Skin all the meshes in a group to the specified joints.  
     Good for attaching the face geo to the head joint.
     """
     rels = cmds.listRelatives(group, ad = True, f = True)
@@ -8670,7 +8691,7 @@ def skin_group(joint, group):
         name = rel.split('|')[-1]
         
         try:
-            cmds.skinCluster(joint, rel, tsb = True, n = 'skin_%s' % name)
+            cmds.skinCluster(joints, rel, tsb = True, n = 'skin_%s' % name)
         except:
             pass
             

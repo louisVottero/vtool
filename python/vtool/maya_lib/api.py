@@ -17,7 +17,11 @@ def nodename_to_mobject(object_name):
     selection_list = SelectionList()
     selection_list.create_by_name(object_name)
     
-    return selection_list.get_at_index(0)
+    
+    if cmds.objectType(object_name, isAType = 'transform'):
+        return selection_list.get_deg_path(0)
+    if not cmds.objectType(object_name, isAType = 'transform'):
+        return selection_list.get_at_index(0) 
 
 
 def duplicate(node):
@@ -69,7 +73,8 @@ class MayaObject(ApiObject):
     
     def set_node_as_mobject(self, node_name):
         
-        mobject = nodename_to_mobject(node_name)    
+        mobject = nodename_to_mobject(node_name)
+            
         self.api_object = self._define_api_object(mobject)
         
     
@@ -127,13 +132,14 @@ class SelectionList(ApiObject):
         return OpenMaya.MSelectionList()
         
     def create_by_name(self, name):
-        
+                
         
         try:
             self.api_object.add(name)
         except:
             cmds.warning('Could not add %s into selection list' % name)
             return
+        
         
         
     def get_at_index(self, index = 0):
@@ -146,6 +152,13 @@ class SelectionList(ApiObject):
         except:
             cmds.warning('Could not get mobject at index %s' % index)
             return
+        
+    def get_deg_path(self, index):
+        
+        nodeDagPath = OpenMaya.MDagPath()
+        self.api_object.getDagPath(0, nodeDagPath)
+        
+        return nodeDagPath
    
 class TransformFunction(MayaFunction):
     
@@ -169,6 +182,21 @@ class MeshFunction(MayaFunction):
         v = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 1)
         
         return u,v
+    
+    def get_closest_face(self, vector):
+        
+        pointA = OpenMaya.MPoint(vector[0], vector[1], vector[2])
+        pointB = OpenMaya.MPoint()
+        space = OpenMaya.MSpace.kWorld
+         
+        util = OpenMaya.MScriptUtil()
+        util.createFromInt(0)
+        idPointer = util.asIntPtr()
+         
+        self.api_object.getClosestPoint(pointA, pointB, space, idPointer)  
+        idx = OpenMaya.MScriptUtil(idPointer).asInt()
+        
+        return idx
    
 class NurbsSurfaceFunction(MayaFunction):
     def _define_api_object(self, mobject):
