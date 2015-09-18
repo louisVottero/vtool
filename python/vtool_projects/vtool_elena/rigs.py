@@ -192,8 +192,10 @@ def create_stretchy_spline_ik(curve, side, description1, description2):
     multi_stretch = cmds.createNode('multiplyDivide', n = get_name(description1, '_%sAutoStretch_multi' % description2, side))
     multi_length = cmds.createNode('multiplyDivide', n = get_name(description1, '_%sJointLength_multi' % description2, side))
     
+    cmds.setAttr('%s.operation' % multi_factor, 2)
     cmds.setAttr('%s.operation' % multi_normal, 2)
     cmds.setAttr('%s.input2X' % multi_normal, length)
+    
     
     cmds.connectAttr('%s.arcLength' % length_node, '%s.input1X' % multi_factor)
     cmds.connectAttr('%s.outputX' % multi_factor, '%s.input1X' % multi_normal)
@@ -403,7 +405,7 @@ class IkFkAppendageRig( Rig ):
         
         joint_top_orient = util.duplicate_joint_section(self.joints[0], self._get_name('UpFk_aimJoint'))
         
-        cmds.hide(joint_top_orient[0])
+        #cmds.hide(joint_top_orient[0])
         
         cmds.parent(joint_top_orient[0], self.top_orient_control.get())
         
@@ -1616,6 +1618,8 @@ class HandRig(Rig):
         self._create_hand_control()
         self.add_hand_attrs(self.hand_control)
         self._setup_side_groups()
+        
+        
 class FingerRig(Rig):
     
     def __init__(self, description, side):
@@ -1675,32 +1679,43 @@ class FingerRig(Rig):
         
         joint_count = len(self.joints)
         last_control = None
-
         
         for inc in range(0, joint_count):
             
             joint = self.joints[inc]
             
-            new_name = joint.replace('_joint', '_ctrl')
+            xform1_name = joint.replace('_ctrl', '_joint')
+            xform2_name = joint.replace('_ctrl', '_orient_joint')
+            
+            
+            
+            xform2 = cmds.duplicate(joint, po = True, n = xform2_name)[0]
+            xform1 = cmds.duplicate(joint, po = True, n = xform1_name)[0]
+            
             
             cmds.setAttr('%s.drawStyle' % joint, 2)
-            
-            dup = cmds.duplicate(joint, po = True, n = new_name)[0]
             
             if self.main_control:
                 vis_attr = '%s.fkCtrlVis' % self.main_control
                 if cmds.objExists(vis_attr):
                     cmds.connectAttr(vis_attr, '%s.visibility' % joint)
             
-            cmds.parent(dup, joint)
-            control = create_joint_control(dup, 'cube')
+            #if last_control:
+            #    cmds.parent(dup, last_control)
+                
+            cmds.parent(joint, xform1)
+            cmds.parent(xform1, xform2)
+            
+            #if not last_control:
+            #    parent = cmds.listRelatives(joint, p = True)
+            #    cmds.parent(dup, parent)
+                
+            control = create_joint_control(joint, 'cube')
             control.scale_shape(.1, .1, .2)
             control.translate_shape(0, .2, 0)
             control.color(self.color)
             
-            if last_control:
-                cmds.parent(joint, last_control)
-            last_control = dup
+            last_control = joint
         
             spread_value = self.spread_value
             sub_spread_value = self.spread_value/5
@@ -1708,38 +1723,41 @@ class FingerRig(Rig):
             if inc == 0:
                 
                 util.quick_driven_key('%s.spread' % self.slider_control.get(), 
-                                      '%s.rotateY' % control.get(), 
+                                      '%s.rotateY' % xform1, 
                                       [-10, 0, 10], 
                                       [sub_spread_value,0,(-1*sub_spread_value)], infinite = True)
             
             if inc == 1:
-                util.connect_multiply('%s.length' % self.slider_control.get(), '%s.scaleX' % control.get())
+                
                 util.quick_driven_key('%s.scrunch' % self.slider_control.get(), 
-                                      '%s.rotateZ' % joint , [-10,0,10], [-15,0,60], infinite = True)
+                                      '%s.rotateZ' % xform2 , [-10,0,10], [-15,0,60], infinite = True)
                 
                 util.quick_driven_key('%s.spread' % self.slider_control.get(), 
-                                      '%s.rotateY' % control.get(), 
+                                      '%s.rotateY' % xform1, 
                                       [-10, 0, 10], 
                                       [spread_value,0,(-1*spread_value)], infinite = True)
                 
                 util.quick_driven_key('%s.twist' % self.slider_control.get(), 
-                                      '%s.rotateX' % joint , [-10,0,10], [30,0,-30], infinite = True)
+                                      '%s.rotateX' % xform2 , [-10,0,10], [30,0,-30], infinite = True)
                 
             if inc == 2:
                 util.quick_driven_key('%s.scrunch' % self.slider_control.get(), 
-                                      '%s.rotateZ' % joint , [-10,0,10], [15,0,-106], infinite = True)               
+                                      '%s.rotateZ' % xform2, [-10,0,10], [15,0,-106], infinite = True)               
             if inc == 3:
                 util.quick_driven_key('%s.scrunch' % self.slider_control.get(), 
-                                      '%s.rotateZ' % joint , [-10,0,10], [15,0,-60], infinite = True)
+                                      '%s.rotateZ' % xform2, [-10,0,10], [15,0,-60], infinite = True)
             if inc >=1:
+                util.connect_multiply('%s.length' % self.slider_control.get(), '%s.scaleX' % control.get())
+                
                 util.quick_driven_key('%s.curl' % self.slider_control.get(), 
-                                      '%s.rotateZ' % joint , [-10,0,10], [9,0,-90], infinite = True)    
+                                      '%s.rotateZ' % xform2, [-10,0,10], [9,0,-90], infinite = True)    
                 util.quick_driven_key('%s.lean' % self.slider_control.get(), 
-                                      '%s.rotateY' % joint , [-10,0,10], [-17,0,17], infinite = True)
+                                      '%s.rotateY' % xform2, [-10,0,10], [-17,0,17], infinite = True)
             
             util.quick_driven_key('%s.bend%s' % (self.slider_control.get(), (inc+1)),
-                                  '%s.rotateZ' % joint, [-40,0,40],[200,0,-200])
+                                  '%s.rotateZ' % xform2, [-40,0,40],[200,0,-200])
             
+            control.hide_scale_attributes()    
         
     def set_color(self, color):
         self.color = color

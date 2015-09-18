@@ -1201,7 +1201,11 @@ class OrientJoint(object):
         
     def run(self):
         
+        
         self._freeze()
+        
+        if self.joint == 'R_thumb_base_ctrl':
+            print 'run'
         
         self._get_relatives()
         self._pin()
@@ -1228,6 +1232,9 @@ class OrientJoint(object):
         self._create_aim()
         
         self._cleanup()
+        
+        if self.joint == 'R_thumb_base_ctrl':
+            print 'about to finish'
         self._freeze()
         
 class PinXform(object):
@@ -1241,8 +1248,13 @@ class PinXform(object):
         if parent:
             parent = parent[0]
             
-            pin = cmds.group(em = True, n = 'pin1')
-            MatchSpace(parent, pin).translation_rotation()
+            pin = cmds.duplicate(parent, po = True, n = inc_name('pin1'))[0]
+            
+            cmds.parent(pin, w = True)
+            
+            #pin = cmds.group(em = True, n = 'pin1')    
+            #MatchSpace(parent, pin).translation_rotation()
+            
             constraint = cmds.parentConstraint(pin, parent, mo = True)[0]
             self.delete_later.append(constraint)
             self.delete_later.append(pin)
@@ -1253,13 +1265,17 @@ class PinXform(object):
             return
         
         for child in children:
-            pin = cmds.group(em = True, n = 'pin1') 
-            MatchSpace(child, pin).translation_rotation()
+            
+            pin = cmds.duplicate(child, po = True, n = inc_name('pin1'))[0]
+            
             constraint = cmds.parentConstraint(pin, child, mo = True)[0]
             self.delete_later.append(constraint)
             self.delete_later.append(pin)
             
     def unpin(self):
+        
+        
+        
         if self.delete_later:
             cmds.delete(self.delete_later)
         
