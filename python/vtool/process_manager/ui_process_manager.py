@@ -373,6 +373,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _process(self):
         
+        
+        
         if util.is_in_maya():
             import maya.cmds as cmds
             if cmds.file(q = True, mf = True):
@@ -386,6 +388,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_button.setDisabled(True)
         
         self.code_widget.reset_process_script_state()
+        
+        try:
+            #this was not working when processing in a new Vetala session without going to the code tab.
+            self.code_widget.refresh_manifest()
+        except:
+            pass
         
         self.tab_widget.setCurrentIndex(3)
         

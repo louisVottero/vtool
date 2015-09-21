@@ -14,14 +14,16 @@ def nodename_to_mobject(object_name):
     Initialize an MObject of the named node.
     """
     
+    if not cmds.objExists(object_name):
+        return
+    
     selection_list = SelectionList()
     selection_list.create_by_name(object_name)
-    
-    
-    if cmds.objectType(object_name, isAType = 'transform'):
+        
+    if cmds.objectType(object_name, isAType = 'transform') or cmds.objectType(object_name, isAType = 'shape'):
         return selection_list.get_deg_path(0)
-    if not cmds.objectType(object_name, isAType = 'transform'):
-        return selection_list.get_at_index(0) 
+    
+    return selection_list.get_at_index(0) 
 
 
 def duplicate(node):
@@ -166,6 +168,7 @@ class TransformFunction(MayaFunction):
         return OpenMaya.MFnTransform
     
 class MeshFunction(MayaFunction):
+    
     def _define_api_object(self, mobject):
         return OpenMaya.MFnMesh(mobject)
     

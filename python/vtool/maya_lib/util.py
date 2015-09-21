@@ -4011,6 +4011,10 @@ class SplitMeshTarget(object):
             suffix = part[2]
             prefix = part[3]
             split_index = part[4]
+            
+            if not split_index:
+                split_index = [0,'']
+            
             split_name_option = part[5]
             
             new_target = cmds.duplicate(self.base_mesh)[0]
@@ -4068,7 +4072,10 @@ class SplitMeshTarget(object):
                         
                     new_name = string.join(new_names, '_')
             
+            
+            
             if not split_name_option:
+                
                 new_name = new_name[:split_index[0]] + split_index[1] + new_name[split_index[0]:]
             
             new_target = cmds.rename(new_target, new_name)    

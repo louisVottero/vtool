@@ -766,6 +766,8 @@ class PoseBase(object):
         cmds.delete(other_target_mesh_duplicate, ch = True)               
         cmds.delete(mirror_group, other_mesh_duplicate)
                        
+        print 'other target!!!', other_target_mesh
+                       
         return other_target_mesh, other_target_mesh_duplicate
 
     def _delete_connected_nodes(self):
@@ -1146,6 +1148,7 @@ class PoseBase(object):
                     long_name = cmds.ls(target_mesh, l = True)[0]
                 
                     cmds.setAttr('%s.mesh_pose_source' % mesh, long_name, type = 'string')
+                    
                 if not cmds.objExists(target_mesh):
                     long_name = target_mesh
                
@@ -1175,8 +1178,12 @@ class PoseBase(object):
         
         inc = 0
         
+        print 'atttributes!!', attributes, mesh
+        
         for attribute in attributes:
             stored_mesh = self._get_named_message_attribute(attribute)
+            
+            print 'stored mesh', stored_mesh
             
             if stored_mesh == mesh:
                 return inc
@@ -2339,7 +2346,16 @@ class PoseCone(PoseBase):
         
         for mesh in other_target_meshes:
             
-            input_mesh = other_pose_instance.get_mesh(inc)
+            """
+            print 'target mesh', mesh
+            
+            input_mesh = mesh
+            
+            #input_mesh = other_pose_instance.get_target_mesh(mesh)
+            
+            print 'input mesh', input_mesh
+            """
+            input_mesh = other_pose_instance.get_mesh(index)
             
             fix_mesh = input_meshes[mesh]
             

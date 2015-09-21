@@ -168,6 +168,9 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     def set_process_script_state(self, directory, state):
         self.script_widget.set_process_script_state(directory, state)
         
+    def refresh_manifest(self):
+        self.script_widget.code_manifest_tree.refresh()
+        
     def set_external_code_library(self, code_directory):
         self.script_widget.set_external_code_library(code_directory)
         
@@ -639,7 +642,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             util_file.open_browser(code_path)
             
     def _define_header(self):
-        return ['       Scripts']
+        return ['       Manifest']
     
     def _edit_finish(self, item):
         super(CodeManifestTree, self)._edit_finish(item)
@@ -856,6 +859,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
 
     def refresh(self, sync = False):
         
+        
+        
         if sync:
             self._sync_manifest()
         
@@ -926,7 +931,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 
                 value = qt_ui.get_permission('Start a new scene?', self)
                 if value:
-                
                     
                     import maya.cmds as cmds
                     """
