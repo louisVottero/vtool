@@ -794,8 +794,8 @@ class PoseTreeWidget(BaseTreeWidget):
             return
         
         mirror = corrective.PoseManager().mirror_pose(pose)
-        
         self.refresh()
+        
         self.select_pose(mirror)
         
     def select_pose(self, pose_name = None):

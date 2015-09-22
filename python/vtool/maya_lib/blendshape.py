@@ -96,6 +96,10 @@ class BlendShape(object):
         return attribute
 
     def _get_input_target_group(self, name, mesh_index = 0):
+        
+        if not self.targets.has_key(name):
+            return
+        
         target_index = self.targets[name].index
     
         input_attribute = self._get_input_target(mesh_index)
@@ -266,6 +270,8 @@ class BlendShape(object):
         
         cmds.removeMultiInstance(target_group, b = True)
         cmds.removeMultiInstance(weight_attr, b = True)
+        
+        
         
         self.weight_indices.remove( self.targets[name].index )
         self.targets.pop(name)

@@ -373,8 +373,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _process(self):
         
-        
-        
         if util.is_in_maya():
             import maya.cmds as cmds
             if cmds.file(q = True, mf = True):
@@ -430,7 +428,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.code_widget.set_process_script_state(scripts[inc], 2)
             
-            status = self.process.run_script(scripts[inc])
+            status = self.process.run_script(scripts[inc], False)
             
             if not status == 'Success':
                 

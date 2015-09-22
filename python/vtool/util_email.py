@@ -65,3 +65,11 @@ class BeanfieldEmail(Email):
         self.server = smtplib.SMTP('smtp.beanfield.com')
         self.server.set_debuglevel(1)
 
+class LocalHost(Email):
+    
+    def __init__(self, user):
+        super(LocalHost, self).__init__(user, '')
+        
+    def _setup_server(self):
+        self.server = smtplib.SMTP('localhost')
+        

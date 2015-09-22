@@ -846,7 +846,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         code_file = process_tool.get_code_file(name)
         
-        status = process_tool.run_script(code_file)
+        status = process_tool.run_script(code_file, False)
         
         if status == 'Success':
             item.set_state(1)

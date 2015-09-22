@@ -8917,7 +8917,7 @@ def get_index_at_alias(alias, blendshape_node):
 def chad_extract_shape(skin_mesh, corrective, replace = False):
     
     try:
-
+        
         envelopes = EnvelopeHistory(skin_mesh)
         
         skin = find_deformer_by_type(skin_mesh, 'skinCluster')
@@ -8949,15 +8949,14 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
-        
-        
+
         offset = correct.invert(skin_mesh, corrective)
-                
+        
         cmds.delete(offset, ch = True)
-    
+        
         orig = get_intermediate_object(skin_mesh)
         orig = create_shape_from_shape(orig, 'home')
-    
+        
         envelopes.turn_on(respect_initial_state=True)
         envelopes.turn_off_referenced()
         
@@ -8965,8 +8964,8 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
             cmds.setAttr('%s.envelope' % skin, 0)
         
         skin_shapes = get_shapes(skin_mesh)
-        
-        other_delta = create_shape_from_shape(skin_shapes[0], inc_name(skin_mesh))
+        skin_mesh_name = get_basename(skin_mesh)
+        other_delta = create_shape_from_shape(skin_shapes[0], inc_name(skin_mesh_name))
         
         blendshapes = find_deformer_by_type(skin_mesh, 'blendShape', return_all = True)
         

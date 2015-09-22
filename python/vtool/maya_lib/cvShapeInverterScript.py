@@ -76,6 +76,7 @@ def invert(base=None, corrective=None, name=None):
         name = '%s_inverted' % corrective
 
     base_shape = getShape(base)
+    
     invertedShape = create_shape_from_shape(base_shape)
     #invertedShape = cmds.duplicate(base, name = name)[0]
     
@@ -244,7 +245,11 @@ def create_shape_from_shape(shape):
     if parent:
         parent = parent[0]
         
-        mesh = cmds.rename(mesh, '%s_inverted' % parent)    
+        parent_name = parent.split('|')
+        if parent_name:
+            parent_name = parent_name[-1]
+            
+        mesh = cmds.rename(mesh, '%s_inverted' % parent_name)    
         
         translate = cmds.xform(parent, q = True, ws = True, t = True)
         rotate = cmds.xform(parent, q = True, ws = True, ro = True)

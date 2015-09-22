@@ -674,7 +674,7 @@ class Process(object):
             
         return False
     
-    def run_script(self, script):
+    def run_script(self, script, hard_error = True):
         if util.is_in_maya():
             import maya.cmds as cmds
             cmds.refresh()
@@ -710,6 +710,9 @@ class Process(object):
             status = traceback.format_exc()
             
             util.show(status)
+            
+            if hard_error:
+                raise()
             
             return status
               
@@ -767,6 +770,10 @@ class Process(object):
             #read
             
             util.show(status)
+            
+            if hard_error:
+                raise()
+            
             return status
         
         return status

@@ -499,7 +499,8 @@ class PoseBase(object):
         
         empty_index = self._get_empty_mesh_message_index()
         
-        self._connect_node(mesh, 'mesh', empty_index)       
+        self._connect_node(mesh, 'mesh', empty_index)
+               
         
 
     def _multiply_weight(self):
@@ -717,12 +718,14 @@ class PoseBase(object):
         
         if not other_mesh:
             return None, None
-
+        
         other_mesh_duplicate = cmds.duplicate(other_mesh, n = 'duplicate_corrective_temp_%s' % split_name[-1])[0]
         
         other_target_mesh = self._replace_side(split_name[-1], self.left_right)
         
-        if not other_target_mesh or not cmds.objExists(other_target_mesh):    
+        if not other_target_mesh or not cmds.objExists(other_target_mesh):
+            if other_target_mesh:    
+                vtool.util.warning('Could not find %s to mirror to!\nUsing %s as other mesh, which may cause errors!' % (other_target_mesh, target_mesh) )
             other_target_mesh = target_mesh
             
         skin = util.find_deformer_by_type(target_mesh, 'skinCluster')
@@ -733,20 +736,16 @@ class PoseBase(object):
         if blendshape_node:
             cmds.setAttr('%s.envelope' % blendshape_node, 0)
             
-        
         other_target_name = util.get_basename(other_target_mesh)
             
         other_target_mesh_duplicate = cmds.duplicate(other_target_mesh, n = other_target_name)[0]
         home = cmds.duplicate(target_mesh, n = 'home')[0]
-
         
-
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
         if blendshape_node:
             cmds.setAttr('%s.envelope' % blendshape_node, 1)
-
-        
+            
         mirror_group = cmds.group(em = True, n = util.inc_name('corretive_mirror_group'))
         
         util.unlock_attributes(home)
@@ -765,9 +764,7 @@ class PoseBase(object):
         
         cmds.delete(other_target_mesh_duplicate, ch = True)               
         cmds.delete(mirror_group, other_mesh_duplicate)
-                       
-        print 'other target!!!', other_target_mesh
-                       
+        
         return other_target_mesh, other_target_mesh_duplicate
 
     def _delete_connected_nodes(self):
@@ -1089,7 +1086,7 @@ class PoseBase(object):
             return
 
         if mesh == None:
-            raise
+            return
         
         if mesh and cmds.objExists(mesh):        
             blend_name = self.get_blendshape(index)
@@ -1106,6 +1103,10 @@ class PoseBase(object):
         util.disconnect_attribute(attribute)
         
     def get_mesh(self, index):
+        
+        if index == None:
+            
+            return
         
         mesh_attributes = self._get_mesh_message_attributes()
         
@@ -1126,7 +1127,8 @@ class PoseBase(object):
             mesh = self.get_target_mesh(mesh)
             #mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
             
-            meshes.append(mesh)
+            if mesh:
+                meshes.append(mesh)
             
         return meshes
         
@@ -1138,6 +1140,12 @@ class PoseBase(object):
             target_mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
             
             long_name = target_mesh
+            
+            if cmds.objExists(target_mesh):
+                long_name = cmds.ls(target_mesh, l = True)[0]
+                
+                if long_name != target_mesh:
+                    cmds.setAttr('%s.mesh_pose_source' % mesh, long_name, type = 'string')
             
             if not cmds.objExists(long_name):
                 
@@ -1151,13 +1159,13 @@ class PoseBase(object):
                     
                 if not cmds.objExists(target_mesh):
                     long_name = target_mesh
-               
+        
         return long_name
         
     def get_target_mesh_index(self, target_mesh):
         
         target_meshes = self.get_target_meshes()
-        
+                
         inc = 0
         
         target_mesh = cmds.ls(target_mesh, l = True)
@@ -1178,12 +1186,8 @@ class PoseBase(object):
         
         inc = 0
         
-        print 'atttributes!!', attributes, mesh
-        
         for attribute in attributes:
             stored_mesh = self._get_named_message_attribute(attribute)
-            
-            print 'stored mesh', stored_mesh
             
             if stored_mesh == mesh:
                 return inc
@@ -1262,22 +1266,23 @@ class PoseBase(object):
     def toggle_vis(self, view_only = False):
         
         mesh = self.get_mesh(self.mesh_index)
-        
         target_mesh = self.get_target_mesh(mesh)
         
-        if cmds.getAttr('%s.lodVisibility' % target_mesh) == 1:
+        if target_mesh and mesh:
+            if cmds.getAttr('%s.lodVisibility' % target_mesh) == 1:
+                if cmds.getAttr('%s.lodVisibility' % mesh) == 1:
+                    self._set_visibility(target_mesh, 0)
+            
+                    return    
+            
+        if mesh:
             if cmds.getAttr('%s.lodVisibility' % mesh) == 1:
-                self._set_visibility(target_mesh, 0)
-                
-                return    
+                self.visibility_off(mesh, view_only)
+                return
             
-        if cmds.getAttr('%s.lodVisibility' % mesh) == 1:
-            self.visibility_off(mesh, view_only)
-            return
-            
-        if cmds.getAttr('%s.lodVisibility' % mesh) == 0:
-            self.visibility_on(mesh)
-            return
+            if cmds.getAttr('%s.lodVisibility' % mesh) == 0:
+                self.visibility_on(mesh)
+                return
         
     #--- blend
         
@@ -1330,7 +1335,7 @@ class PoseBase(object):
             blend.create_target(self.pose_control, offset)
         
         self.connect_blend(mesh_index)
-                    
+                 
         #util.disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
         
         if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
@@ -1769,6 +1774,9 @@ class PoseNoReader(PoseBase):
 
             mesh = self.get_mesh(inc)
             target_mesh = self.get_target_mesh(mesh)
+            
+            if target_mesh == None:
+                continue
             
             other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
             
@@ -2310,7 +2318,7 @@ class PoseCone(PoseBase):
         input_meshes = {}
 
         for inc in range(0, self._get_mesh_count()):
-
+            
             mesh = self.get_mesh(inc)
             target_mesh = self.get_target_mesh(mesh)
             
@@ -2328,8 +2336,6 @@ class PoseCone(PoseBase):
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
             other_target_meshes.append(other_target_mesh)
             
-            
-            
         other_pose_instance.goto_pose()
 
         twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
@@ -2346,15 +2352,8 @@ class PoseCone(PoseBase):
         
         for mesh in other_target_meshes:
             
-            """
-            print 'target mesh', mesh
+            index = other_pose_instance.get_target_mesh_index(mesh)
             
-            input_mesh = mesh
-            
-            #input_mesh = other_pose_instance.get_target_mesh(mesh)
-            
-            print 'input mesh', input_mesh
-            """
             input_mesh = other_pose_instance.get_mesh(index)
             
             fix_mesh = input_meshes[mesh]
@@ -2365,9 +2364,15 @@ class PoseCone(PoseBase):
             
             other_pose_instance.create_blend(False)
             
+            #turning on inheritsTransform to avoid a warning message.
+            cmds.setAttr('%s.inheritsTransform' % input_mesh, 1)
+            
             cmds.delete(input_mesh, ch = True)
+            
             cmds.delete(fix_mesh)
             inc += 1
+            
+        
         
         return other_pose_instance.pose_control
     
