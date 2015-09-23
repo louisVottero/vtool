@@ -9106,10 +9106,10 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
             
             cmds.blendShape(blendshape_node, edit=True, tc = False, t=(target_mesh, count+1, source_mesh, 1.0) )
             
-            #try:
-            cmds.setAttr('%s.%s' % (blendshape_node, source_mesh_name), weight)
-            #except:
-            #    pass
+            try:
+                cmds.setAttr('%s.%s' % (blendshape_node, source_mesh_name), weight)
+            except:
+                pass
             
             return blendshape_node
        
@@ -9121,10 +9121,10 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
         
         cmds.blendShape(source_mesh, target_mesh, tc = False, weight =[0,weight], n = blendshape_node, foc = True)
         
-    #try:
-    cmds.setAttr('%s.%s' % (blendshape_node, source_mesh_name), weight)
-    #except:
-    #    pass
+    try:
+        cmds.setAttr('%s.%s' % (blendshape_node, source_mesh_name), weight)
+    except:
+        pass
         
     return blendshape_node
     
