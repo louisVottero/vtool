@@ -1074,21 +1074,14 @@ class PoseBase(object):
     
     def remove_mesh(self, mesh):
         
-        print 'remove mesh!', mesh
-        
         index = self.get_target_mesh_index(mesh)
         mesh = self.get_mesh(index)
-        
-        print 'remove mesh after!', index, mesh
         
         if index == None:
             return
 
         if mesh == None:
             return
-        
-        
-        
         
         if mesh and cmds.objExists(mesh):        
             blend_name = self.get_blendshape(index)
@@ -1176,9 +1169,7 @@ class PoseBase(object):
     def get_target_mesh_index(self, target_mesh):
         
         target_meshes = self.get_target_meshes()
-                
-        print 'getting index in ',target_meshes
-                
+        
         inc = 0
         
         target_mesh = cmds.ls(target_mesh, l = True)
@@ -1255,7 +1246,7 @@ class PoseBase(object):
         if not view_only:
             
             index = self.get_mesh_index(mesh)
-            self.create_blend(mesh_index=index)
+            self.create_blend(index)
         
     def visibility_on(self, mesh):
         
@@ -1277,7 +1268,8 @@ class PoseBase(object):
         
     def toggle_vis(self, mesh_index, view_only = False):
         
-        print 'toggling vis!!!!!!!!!!!!'
+        if mesh_index == None:
+            return
         
         mesh = self.get_mesh(mesh_index)
         target_mesh = self.get_target_mesh(mesh)
@@ -1661,7 +1653,7 @@ class PoseNoReader(PoseBase):
         
         this_index = mesh_index
         
-        if not mesh_index:
+        if mesh_index == None:
             return
         
         old_delta = self._get_named_message_attribute('delta%s' % (this_index + 1))
@@ -1678,7 +1670,7 @@ class PoseNoReader(PoseBase):
         if goto_pose:
             self.goto_pose()
         
-        self.disconnect_blend()
+        self.disconnect_blend(this_index)
         
         blend = self._initialize_blendshape_node(target_mesh)
         
@@ -1687,7 +1679,8 @@ class PoseNoReader(PoseBase):
         offset = util.chad_extract_shape(target_mesh, mesh)
         
         blend.set_weight(self.pose_control, 1)
-        self.connect_blend()
+        
+        self.connect_blend(this_index)
         
         if blend.is_target(self.pose_control):
             blend.replace_target(self.pose_control, offset)
