@@ -383,17 +383,8 @@ class BaseTreeWidget(qt_ui.TreeWidget):
     
     def refresh(self):
         self._populate_list()
-        
-    def view_mesh(self):
-        current_str = self.pose_widget.get_current_mesh()
-        pose_name = self._current_pose()
-        
-        if not pose_name:
-            return
-        
-        if not current_str == '- new mesh -':
-            corrective.PoseManager().toggle_visibility(pose_name, True)
-            
+      
+    """  
     def mesh_change(self, index):
         
         pose_name = self._current_pose()
@@ -403,8 +394,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         
         pose = corrective.PoseCone()
         pose.set_pose(pose_name)
-        pose.set_mesh_index(index)
-        
+    """ 
     def _remove_current_item(self):
         
         item = self.currentItem()
@@ -960,16 +950,76 @@ class MeshWidget(qt_ui.BasicWidget):
         
         pose = self.pose_class
         
-        if not cmds.objExists(pose.pose_control):
+        if not pose or not pose_name:
             return
+        
+        if not cmds.objExists(pose_name):
+            return
+        
+        pose.set_pose(pose_name)
         
         target_meshes =  pose.get_target_meshes()
         
-        self.update_meshes(target_meshes,pose.mesh_index, meshes)
+        self.update_meshes(target_meshes, meshes)
+        
+    def _is_in_mesh_list(self, mesh):
+        
+        mesh_list_count = self.mesh_list.count()
+        
+        for inc in range(0, mesh_list_count):
+                    
+            test_item = self.mesh_list.item(inc)
+            
+            if str( test_item.longname ) == mesh:                
+                return True
+            
+        return False
+    
+    def _get_mesh_from_vertex(self, mesh):
+        
+        if mesh.find('.vtx') > -1:
+            split_selected = mesh.split('.vtx')
+            if split_selected > 1:
+                mesh = split_selected[0]
+                
+                return mesh
+        
+        return mesh
+    
+    def _get_sculpt_permission(self, sculpt_meshes):
+        
+        mesh_info = 'mesh'
+        sculpt_name = ''
+                
+        sculpt_count = len(sculpt_meshes)
+                
+        inc = 0
+        
+        for sculpt in sculpt_meshes:
+            name = util.get_basename(sculpt)
+            
+            if sculpt_count == 1:
+                sculpt_name = name
+                continue
+            if inc == (sculpt_count-1):
+                sculpt_name += '\n%s' % name
+                inc+=1
+                continue
+            if sculpt_count > 1:
+                sculpt_name += '\n%s' % name
+            
+            inc+=1 
+        
+        if len(sculpt_meshes) > 1:
+            mesh_info = 'meshes'
+        
+        permission = qt_ui.get_permission('Add %s:  %s  ?' % (mesh_info, sculpt_name), self)
+        
+        return permission        
+        
         
     @util.undo_chunk
     def add_mesh(self, selection = None):
-        
         
         if not selection:
             selection = cmds.ls(sl = True, l = True)
@@ -992,7 +1042,7 @@ class MeshWidget(qt_ui.BasicWidget):
             qt_ui.warning('Cannot find: %s' % missing_meshes, self)
             
         pose_name = self.pose_name
-            
+        
         if not pose_name:
             return
         
@@ -1001,72 +1051,36 @@ class MeshWidget(qt_ui.BasicWidget):
         added_meshes = []
         
         if selection:
-        
-            mesh_list_count = self.mesh_list.count()
             
             for selected in selection:
                 
-                if util.has_shape_of_type(selected, 'mesh'):
+                if not util.has_shape_of_type(selected, 'mesh'):
+                    continue
                     
-                    if selected.find('.vtx') > -1:
-                        split_selected = selected.split('.vtx')
-                        if split_selected > 1:
-                            selected = split_selected[0]
+                selected = self._get_mesh_from_vertex(selected)
+                
+                pass_mesh = selected
+                
+                if cmds.objExists('%s.mesh_pose_source' % selected):
+                    source_mesh = cmds.getAttr('%s.mesh_pose_source' % selected)
                     
-                    pass_mesh = selected
+                    pass_mesh = source_mesh
+                    selected = source_mesh
                     
-                    if cmds.objExists('%s.mesh_pose_source' % selected):
-                        source_mesh = cmds.getAttr('%s.mesh_pose_source' % selected)
-                        
-                        pass_mesh = source_mesh
-                        selected = source_mesh
+                if self._is_in_mesh_list(selected):
+                    pass_mesh = None
+                    list_meshes.append(selected)
                     
-                    for inc in range(0, mesh_list_count):
-                        
-                        test_item = self.mesh_list.item(inc)
-                        
-                        if str( test_item.longname ) == selected:
-                            
-                            pass_mesh = None
-                            
-                            list_meshes.append(selected)
-                        
-                    if pass_mesh:   
-                        
-                        sculpt_meshes.append(pass_mesh)
+                if pass_mesh:   
+                    sculpt_meshes.append(pass_mesh)
         
         if sculpt_meshes or not current_meshes:
                     
             if sculpt_meshes:
                 
-                vtool.util.convert_to_sequence(sculpt_meshes)
+                sculpt_meshes = vtool.util.convert_to_sequence(sculpt_meshes)
                 
-                mesh_info = 'mesh'
-                sculpt_name = ''
-                
-                sculpt_count = len(sculpt_meshes)
-                
-                inc = 0
-                
-                for sculpt in sculpt_meshes:
-                    name = util.get_basename(sculpt)
-                    
-                    if sculpt_count == 1:
-                        sculpt_name = name
-                        continue
-                    if inc == (sculpt_count-1):
-                        sculpt_name += '\n%s' % name
-                        inc+=1
-                        continue
-                    if sculpt_count > 1:
-                        sculpt_name += '\n%s' % name
-                    
-                    inc+=1 
-                
-                if len(sculpt_meshes) > 1:
-                    mesh_info = 'meshes'
-                
-                permission = qt_ui.get_permission('Add %s:  %s  ?' % (mesh_info, sculpt_name), self)
+                permission = self._get_sculpt_permission(sculpt_meshes)
                 
                 if not permission:
                     return
@@ -1077,6 +1091,7 @@ class MeshWidget(qt_ui.BasicWidget):
             self._update_meshes(pose_name, meshes = update_meshes)
         
         selection = cmds.ls(sl = True, l = True)
+        
         
         if list_meshes:
             
@@ -1096,7 +1111,7 @@ class MeshWidget(qt_ui.BasicWidget):
                 if item:
                     item.setSelected(True)
                 
-                corrective.PoseManager().toggle_visibility(pose_name, mesh_index = index)
+                corrective.PoseManager().toggle_visibility(index, pose_name)
                 
             cmds.select(selection)
             return
@@ -1110,7 +1125,7 @@ class MeshWidget(qt_ui.BasicWidget):
                     
                     index = index.row()
                 
-                    corrective.PoseManager().toggle_visibility(pose_name, mesh_index= index)
+                    corrective.PoseManager().toggle_visibility(index, pose_name)
                     
     def remove_mesh(self):
         
@@ -1140,7 +1155,7 @@ class MeshWidget(qt_ui.BasicWidget):
             if cmds.objExists(item.longname):
                 cmds.select(item.longname, add = True)
         
-    def update_meshes(self, meshes = [], index = 0, added_meshes = []):
+    def update_meshes(self, meshes = [], added_meshes = []):
         self.mesh_list.clear()    
         
         #self.handle_selection_change = False
@@ -1160,11 +1175,11 @@ class MeshWidget(qt_ui.BasicWidget):
             #if mesh in added_meshes:
             item.setSelected(True)
         
-        if not added_meshes:   
+        #if not added_meshes:   
             
-            item = self.mesh_list.item(index)
-            if item:
-                item.setSelected(True)
+        #    item = self.mesh_list.item(index)
+        #    if item:
+        #        item.setSelected(True)
                 
         #self.handle_selection_change = True
             
@@ -1208,14 +1223,12 @@ class SculptWidget(qt_ui.BasicWidget):
             self.button_sculpt.setDisabled(True)
                        
             self.mesh_widget.add_mesh()
-            
-            
             self.sculpted_mesh.emit()
+            
             self.button_sculpt.setEnabled(True)
             
-            
             if self.pose:
-    
+                
                 auto_key_state = cmds.autoKeyframe(q = True, state = True)
                 cmds.autoKeyframe(state = False)
     

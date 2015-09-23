@@ -421,6 +421,9 @@ class Process(object):
         
         path = self.get_code_path()
         
+        if not path:
+            return
+        
         if inc_name:
             test_path = util_file.join_path(path, name)
             
@@ -562,6 +565,9 @@ class Process(object):
     def get_manifest(self):
         
         manifest_file = self.get_manifest_file()
+        
+        if not util_file.is_file(manifest_file):
+            return
         
         lines = util_file.get_file_lines(manifest_file)
         
@@ -709,12 +715,12 @@ class Process(object):
         except Exception:
             status = traceback.format_exc()
             
-            util.show(status)
-            
             if hard_error:
-                raise()
+                raise
             
-            return status
+            if not hard_error:
+                util.show(status)
+                return status
               
         try:
             
@@ -769,12 +775,14 @@ class Process(object):
             #        util.show('\t' + line)
             #read
             
-            util.show(status)
+            
             
             if hard_error:
-                raise()
+                raise
             
-            return status
+            if not hard_error:
+                util.show(status)
+                return status
         
         return status
                

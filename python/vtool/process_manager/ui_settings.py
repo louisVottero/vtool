@@ -221,6 +221,9 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         filename = qt_ui.get_folder('C:/', self)
         
+        if not filename:
+            return
+        
         filename = util_file.fix_slashes(filename)
         
         found = self.project_list.get_directories()
@@ -232,7 +235,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
             found.insert(0, filename)
             
         if not found:
-            found = filename 
+            found = [filename] 
         
         if filename and util_file.is_dir(filename):
             self._text_changed(filename)
@@ -507,6 +510,9 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
     def _browser(self):
         
         filename = qt_ui.get_folder('C:/', self)
+        
+        if not filename:
+            return
         
         filename = util_file.fix_slashes(filename)
         

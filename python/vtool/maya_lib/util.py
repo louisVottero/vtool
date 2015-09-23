@@ -6461,6 +6461,7 @@ def create_shape_from_shape(shape, name = 'new_shape'):
     
     mesh = cmds.rename(mesh, inc_name(name))
     
+    
     if parent:
         MatchSpace(parent[0], mesh).translation_rotation()
     

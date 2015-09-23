@@ -285,14 +285,21 @@ class PoseManager(object):
     def visibility_off(self, pose_name):
         
         pose = self.get_pose_instance(pose_name)
-        pose.visibility_off(view_only = True)
+        
+        count = pose.get_mesh_count()
+        
+        for inc in range(0, count):
+            mesh = pose.get_mesh(inc)
+            pose.visibility_off(mesh, view_only = True)
         
         
-    def toggle_visibility(self, pose_name, view_only = False, mesh_index = 0):
+    def toggle_visibility(self, mesh_index, pose_name, view_only = False):
+        
+        if mesh_index == None:
+            return
         
         pose = self.get_pose_instance(pose_name)
-        pose.set_mesh_index(mesh_index)
-        pose.toggle_vis(view_only)
+        pose.toggle_vis(mesh_index, view_only)
     
     @util.undo_chunk
     def delete_pose(self, name):
@@ -379,7 +386,7 @@ class PoseBase(object):
         self.description = description
 
         self.scale = 1
-        self.mesh_index = 0
+        #self.mesh_index = 0
         
         self.blend_input = None
         
@@ -692,8 +699,8 @@ class PoseBase(object):
         cmds.addAttr(control, ln = 'enable', at = 'double', k = True, dv = 1, min = 0, max = 1)
         cmds.addAttr(control, ln = 'weight', at = 'double', k = True, dv = 0)
         
-        cmds.addAttr(control, ln = 'meshIndex', at = 'short', dv = self.mesh_index)
-        cmds.setAttr('%s.meshIndex' % self.pose_control, l = True)
+        #cmds.addAttr(control, ln = 'meshIndex', at = 'short', dv = self.mesh_index)
+        #cmds.setAttr('%s.meshIndex' % self.pose_control, l = True)
         
     def _create_pose_control(self):
         
@@ -790,7 +797,8 @@ class PoseBase(object):
         mesh = None
         
         if mesh_index == None:
-            mesh = self.get_mesh(self.mesh_index)
+            return
+            #mesh = self.get_mesh(self.mesh_index)
         if mesh_index != None:
             mesh = self.get_mesh(mesh_index)
             
@@ -932,7 +940,7 @@ class PoseBase(object):
             return
         
         self.description = cmds.getAttr('%s.description' % pose_name)
-        self.mesh_index = cmds.getAttr('%s.meshIndex' % pose_name)
+        #self.mesh_index = cmds.getAttr('%s.meshIndex' % pose_name)
         
         self.pose_control = pose_name
         
@@ -1014,17 +1022,6 @@ class PoseBase(object):
         
         return False
         
-    def set_mesh_index(self, index):
-        mesh_count = self._get_mesh_count()
-        
-        if index > mesh_count-1:
-            index = 0
-            
-        cmds.setAttr('%s.meshIndex' % self.pose_control, l = False)
-        self.mesh_index = index
-        cmds.setAttr('%s.meshIndex' % self.pose_control, index)
-        cmds.setAttr('%s.meshIndex' % self.pose_control, l = True)
-        
     def add_mesh(self, mesh, toggle_vis = True):
         
         mesh = cmds.ls(mesh, l = True)
@@ -1066,27 +1063,32 @@ class PoseBase(object):
         
         index = self._get_mesh_count()
         
-        self.set_mesh_index(index-1)
-        
         string_var = util.MayaStringVariable('mesh_pose_source')
         string_var.create(pose_mesh)
         string_var.set_value(mesh)
         
         if toggle_vis:
-            self.toggle_vis()
+            self.toggle_vis(index-1)
         
         return pose_mesh
     
     def remove_mesh(self, mesh):
         
+        print 'remove mesh!', mesh
+        
         index = self.get_target_mesh_index(mesh)
         mesh = self.get_mesh(index)
+        
+        print 'remove mesh after!', index, mesh
         
         if index == None:
             return
 
         if mesh == None:
             return
+        
+        
+        
         
         if mesh and cmds.objExists(mesh):        
             blend_name = self.get_blendshape(index)
@@ -1101,7 +1103,7 @@ class PoseBase(object):
         
         cmds.delete(mesh)
         util.disconnect_attribute(attribute)
-        
+    
     def get_mesh(self, index):
         
         if index == None:
@@ -1116,6 +1118,15 @@ class PoseBase(object):
         mesh = util.get_attribute_input('%s.%s' % (self.pose_control, mesh_attributes[index]), True)
         
         return mesh
+
+    def get_mesh_count(self):
+        
+        attrs = self._get_mesh_message_attributes()
+        
+        if attrs:
+            return len(attrs)
+    
+        return 0
     
     def get_target_meshes(self):
         
@@ -1125,10 +1136,8 @@ class PoseBase(object):
             mesh = self.get_mesh(inc)
             
             mesh = self.get_target_mesh(mesh)
-            #mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
             
-            if mesh:
-                meshes.append(mesh)
+            meshes.append(mesh)
             
         return meshes
         
@@ -1162,9 +1171,13 @@ class PoseBase(object):
         
         return long_name
         
+    
+        
     def get_target_mesh_index(self, target_mesh):
         
         target_meshes = self.get_target_meshes()
+                
+        print 'getting index in ',target_meshes
                 
         inc = 0
         
@@ -1225,30 +1238,29 @@ class PoseBase(object):
             
             blend.set_envelope(1)  
             
-        self.create_blend() 
+            self.create_blend(inc) 
         
-    def visibility_off(self, mesh = None, view_only = False):
+    def visibility_off(self, mesh, view_only = False):
         
         if not mesh:
-            mesh = self.get_mesh(self.mesh_index)
-        
-        #self._create_shader(mesh)
+            return
         
         self._set_visibility(mesh, 0)
-        
         
         target_mesh = self.get_target_mesh(mesh)
         
         if target_mesh and cmds.objExists(target_mesh):
             self._set_visibility(target_mesh, 1)
             
-        if not view_only:    
-            self.create_blend()
+        if not view_only:
+            
+            index = self.get_mesh_index(mesh)
+            self.create_blend(mesh_index=index)
         
     def visibility_on(self, mesh):
         
         if not mesh:
-            mesh = self.get_mesh(self.mesh_index)
+            return
         
         self._create_shader(mesh)
         
@@ -1263,9 +1275,11 @@ class PoseBase(object):
             if not util.is_batch():
                 util.add_to_isolate_select(mesh)
         
-    def toggle_vis(self, view_only = False):
+    def toggle_vis(self, mesh_index, view_only = False):
         
-        mesh = self.get_mesh(self.mesh_index)
+        print 'toggling vis!!!!!!!!!!!!'
+        
+        mesh = self.get_mesh(mesh_index)
         target_mesh = self.get_target_mesh(mesh)
         
         if target_mesh and mesh:
@@ -1297,9 +1311,9 @@ class PoseBase(object):
             if inc > 0:
                 pose = False
                 
-            self.create_blend(goto_pose = pose, mesh_index = inc)
+            self.create_blend(inc, goto_pose = pose)
         
-    def create_blend(self, goto_pose = True, mesh_index = None, sub_poses = True):
+    def create_blend(self, mesh_index, goto_pose = True, sub_poses = True):
         
         mesh = self._get_current_mesh(mesh_index)
         sub_pass_mesh = mesh
@@ -1335,13 +1349,10 @@ class PoseBase(object):
             blend.create_target(self.pose_control, offset)
         
         self.connect_blend(mesh_index)
-                 
-        #util.disconnect_attribute('%s.%s' % (blend.blendshape, self.pose_control))
         
         if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
             cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
         
-        #if not util.is_referenced(blend.blendshape):
         cmds.delete(offset)
         
         if sub_poses:
@@ -1353,6 +1364,8 @@ class PoseBase(object):
         manager.set_pose_group(self.pose_control)
         children = manager.get_poses()
         
+        mesh_index = None
+        
         if children:
             
             for child in children:
@@ -1360,12 +1373,12 @@ class PoseBase(object):
                 child_instance = manager.get_pose_instance(child)
                 
                 sub_mesh_index = child_instance.get_mesh_index(mesh)
-                child_instance.create_blend(goto_pose = True, mesh_index = sub_mesh_index)
+                child_instance.create_blend(sub_mesh_index, goto_pose = True)
             
-            mesh = self.get_mesh_index(mesh)
+            mesh_index = self.get_mesh_index(mesh)
             
             
-            self.create_blend(True, mesh, False)
+            self.create_blend(mesh_index, True, False)
         
     def detach_sub_poses(self):
         
@@ -1393,7 +1406,8 @@ class PoseBase(object):
         mesh = None
         
         if mesh_index == None:
-            mesh = self.get_mesh(self.mesh_index)
+            return
+        
         if mesh_index != None:
             mesh = self.get_mesh(mesh_index)
             
@@ -1419,7 +1433,8 @@ class PoseBase(object):
         mesh = None
         
         if mesh_index == None:
-            mesh = self.get_mesh(self.mesh_index)
+            return
+        
         if mesh_index != None:
             mesh = self.get_mesh(mesh_index)
             
@@ -1500,7 +1515,8 @@ class PoseBase(object):
         mesh = None
         
         if mesh_index == None:
-            mesh = self.get_mesh(self.mesh_index)
+            return
+            
         if mesh_index != None:
             mesh = self.get_mesh(mesh_index)
             
@@ -1632,7 +1648,7 @@ class PoseNoReader(PoseBase):
         
         cmds.connectAttr(attribute, weight_attr)
 
-    def create_blend(self, goto_pose = True, mesh_index = None, sub_poses = True):
+    def create_blend(self, mesh_index, goto_pose = True, sub_poses = True):
         
         mesh = self._get_current_mesh(mesh_index)
         sub_pass_mesh = mesh
@@ -1646,7 +1662,7 @@ class PoseNoReader(PoseBase):
         this_index = mesh_index
         
         if not mesh_index:
-            this_index = self.mesh_index
+            return
         
         old_delta = self._get_named_message_attribute('delta%s' % (this_index + 1))
         if old_delta:
@@ -1682,9 +1698,7 @@ class PoseNoReader(PoseBase):
         blend_attr = '%s.%s' % (blend.blendshape, self.pose_control)
         weight_attr = '%s.weight' % self.pose_control
         input_attr = util.get_attribute_input(blend_attr)
-            
-        #util.disconnect_attribute(blend_attr)
-            
+        
         if input_attr:
             weight_input = util.get_attribute_input(weight_attr)
             
@@ -1811,7 +1825,7 @@ class PoseNoReader(PoseBase):
             
             cmds.blendShape(fix_mesh, input_mesh, foc = True, w = [0,1])
             
-            other_pose_instance.create_blend(False)
+            other_pose_instance.create_blend(index, False)
             
             cmds.delete(input_mesh, ch = True)
             cmds.delete(fix_mesh)
@@ -2029,7 +2043,6 @@ class PoseCone(PoseBase):
     def _remap_value_distance(self, distance_between):
         
         remap = self._create_node('remapValue', 'distance')
-        #remap = cmds.createNode('remapValue', n = 'remapValue_distance_%s' % self.description)
         
         cmds.connectAttr('%s.distance' % distance_between, '%s.inputValue' % remap)
         
@@ -2300,6 +2313,12 @@ class PoseCone(PoseBase):
     
     def mirror(self):
         
+        count = self.get_mesh_count()
+        
+        for inc in range(0, count):
+            mesh = self.get_mesh(inc)
+            self.visibility_off(mesh, view_only = False)
+        
         description = self.description
         
         if not description:
@@ -2362,7 +2381,7 @@ class PoseCone(PoseBase):
             
             cmds.blendShape(fix_mesh, input_mesh, foc = True, w = [0,1], n = 'blendshape_%s' % input_mesh_name)
             
-            other_pose_instance.create_blend(False)
+            other_pose_instance.create_blend(index, False)
             
             #turning on inheritsTransform to avoid a warning message.
             cmds.setAttr('%s.inheritsTransform' % input_mesh, 1)
@@ -2371,8 +2390,6 @@ class PoseCone(PoseBase):
             
             cmds.delete(fix_mesh)
             inc += 1
-            
-        
         
         return other_pose_instance.pose_control
     
