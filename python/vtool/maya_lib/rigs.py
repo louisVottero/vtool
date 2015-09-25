@@ -868,8 +868,6 @@ class FkRig(BufferRig):
             
     def _insert_shape(self, control, joint):
         
-        print control, joint
-        
         parent = cmds.listRelatives(control, p = True)[0]
         
         cmds.parent(joint, parent)

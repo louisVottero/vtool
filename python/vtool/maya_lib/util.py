@@ -6349,8 +6349,11 @@ def duplicate_joint_section(joint, name = ''):
 def get_input_keyframes(node, node_only = True):
     
     inputs = get_inputs(node, node_only)
-    
+
     found = []
+    
+    if not inputs:
+        return found
     
     for input_value in inputs:
         if cmds.nodeType(input_value).startswith('animCurve'):
@@ -6363,6 +6366,9 @@ def get_output_keyframes(node):
     outputs = get_outputs(node)
     
     found = []
+    
+    if not outputs:
+        return found
     
     for output in outputs:
         

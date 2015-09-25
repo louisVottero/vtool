@@ -1196,7 +1196,7 @@ class PoseBase(object):
             if stored_mesh == mesh:
                 return inc
             
-            inc += 1       
+            inc += 1
         
     @util.undo_chunk
     def reset_target_meshes(self):
@@ -1308,7 +1308,7 @@ class PoseBase(object):
     def create_blend(self, mesh_index, goto_pose = True, sub_poses = True):
         
         mesh = self._get_current_mesh(mesh_index)
-        sub_pass_mesh = mesh
+        
         
         if not mesh:
             return
@@ -1317,6 +1317,8 @@ class PoseBase(object):
         manager.set_weights_to_zero()
         
         target_mesh = self.get_target_mesh(mesh)
+        
+        sub_pass_mesh = target_mesh
         
         if not target_mesh:
             RuntimeError('Mesh index %s, has no target mesh' % mesh_index)
@@ -1356,19 +1358,17 @@ class PoseBase(object):
         manager.set_pose_group(self.pose_control)
         children = manager.get_poses()
         
-        mesh_index = None
-        
         if children:
             
             for child in children:
                 
                 child_instance = manager.get_pose_instance(child)
                 
-                sub_mesh_index = child_instance.get_mesh_index(mesh)
+                sub_mesh_index = self.get_target_mesh_index(mesh)
+                
                 child_instance.create_blend(sub_mesh_index, goto_pose = True)
             
-            mesh_index = self.get_mesh_index(mesh)
-            
+            mesh_index = self.get_target_mesh_index(mesh)
             
             self.create_blend(mesh_index, True, False)
         
@@ -1378,8 +1378,11 @@ class PoseBase(object):
         manager.set_pose_group(self.pose_control)
         children = manager.get_poses()
         
+        if not children:
+            return
+        
         for child in children:
-            
+        
             child_instance= manager.get_pose_instance(child)
             child_instance.detach()
             
@@ -1388,6 +1391,9 @@ class PoseBase(object):
         manager = PoseManager()
         manager.set_pose_group(self.pose_control)
         children = manager.get_poses()
+        
+        if not children:
+            return
         
         for child in children:
             

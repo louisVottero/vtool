@@ -522,7 +522,6 @@ class PoseTreeWidget(BaseTreeWidget):
         
         if not result:
             entered_item.removeChild(self.dragged_item)
-            print self.drag_parent
             
             self.drag_parent.addChild(self.dragged_item)
             return      
