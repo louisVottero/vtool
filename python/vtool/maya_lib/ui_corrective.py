@@ -491,7 +491,10 @@ class PoseTreeWidget(BaseTreeWidget):
         parent = self.invisibleRootItem()
         
         if item:
-            parent = item.parent()
+            item_parent = item.parent()
+            
+            if item_parent:
+                parent = item_parent
         
         self.drag_parent = parent
         self.dragged_item = item
@@ -508,31 +511,43 @@ class PoseTreeWidget(BaseTreeWidget):
         
     def dropEvent(self, event):
 
+
+
         position = event.pos()
         entered_item = self.itemAt(position)
         
         super(PoseTreeWidget, self).dropEvent(event)
+
+        result = qt_ui.get_permission('Parent item %s?' % self.dragged_item.text(0), self)
         
-        self.dragged_item.setDisabled(True)        
-        
-        pose_parent = 'pose_gr'
-        
-        pose = self.dragged_item.text(0)
-        
-        current_parent = cmds.listRelatives(pose, p = True)
-        
-        if entered_item:
-            pose_parent = entered_item.text(0)
-        
-        if current_parent:
+        if not result:
+            entered_item.removeChild(self.dragged_item)
+            print self.drag_parent
             
-            current_parent = current_parent[0]
-            
-            if pose_parent != current_parent:
-                if pose_parent:
-                    cmds.parent(pose, pose_parent)
+            self.drag_parent.addChild(self.dragged_item)
+            return      
         
-        self.dragged_item.setDisabled(False)
+        if result:
+            self.dragged_item.setDisabled(True)
+            
+            pose_parent = 'pose_gr'
+            
+            pose = self.dragged_item.text(0)
+            
+            current_parent = cmds.listRelatives(pose, p = True)
+            
+            if entered_item:
+                pose_parent = entered_item.text(0)
+            
+            if current_parent:
+                
+                current_parent = current_parent[0]
+                
+                if pose_parent != current_parent:
+                    if pose_parent:
+                        cmds.parent(pose, pose_parent)
+            
+            self.dragged_item.setDisabled(False)
     
     def _item_menu(self, position):
         

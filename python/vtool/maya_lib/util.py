@@ -1207,6 +1207,13 @@ class OrientJoint(object):
         self._get_relatives()
         self._pin()
         
+        try:
+            cmds.setAttr('%s.rotateAxisX' % self.joint, 0)
+            cmds.setAttr('%s.rotateAxisY' % self.joint, 0)
+            cmds.setAttr('%s.rotateAxisZ' % self.joint, 0)
+        except:
+            vtool.util.show('Could not zero out rotateAxis on %s. This may cause rig errors.' % self.joint)
+        
         self.orient_values = self._get_values()
         
         if self.orient_values:
