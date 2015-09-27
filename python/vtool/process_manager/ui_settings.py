@@ -288,7 +288,7 @@ class ProjectList(QtGui.QTreeWidget):
         
         self.context_menu = QtGui.QMenu()
         
-        name_action = self.context_menu.addAction('Name')
+        name_action = self.context_menu.addAction('Rename')
         
         moveup_action = self.context_menu.addAction('Move Up')
         movedown_action = self.context_menu.addAction('Move Down')
@@ -309,12 +309,13 @@ class ProjectList(QtGui.QTreeWidget):
         
         new_name = qt_ui.get_new_name('Name Project', self, old_name)
         
-        item.setText(0, new_name)
+        if new_name:
+            item.setText(0, new_name)
         
-        if self.settings:
-            
-            self.settings.set('project_history', self.get_directories())
-            self.settings.set('project_directory', [new_name, project_directory])
+            if self.settings:
+                
+                self.settings.set('project_history', self.get_directories())
+                self.settings.set('project_directory', [new_name, project_directory])
         
     def move_current_item_up(self):
         

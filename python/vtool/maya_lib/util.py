@@ -9227,12 +9227,16 @@ def reset_tweak(tweak_node):
     """
     if not cmds.objExists('%s.vlist' % tweak_node):
         return
+    
     indices = get_indices('%s.vlist' % tweak_node)
     
     for index in indices:
-        cmds.setAttr('%s.vlist[%s].xVertex' % (tweak_node, index), 0.0)
-        cmds.setAttr('%s.vlist[%s].yVertex' % (tweak_node, index), 0.0)
-        cmds.setAttr('%s.vlist[%s].zVertex' % (tweak_node, index), 0.0)
+        try:
+            cmds.setAttr('%s.vlist[%s].xVertex' % (tweak_node, index), 0.0)
+            cmds.setAttr('%s.vlist[%s].yVertex' % (tweak_node, index), 0.0)
+            cmds.setAttr('%s.vlist[%s].zVertex' % (tweak_node, index), 0.0)
+        except:
+            pass
 
 #---attributes
 

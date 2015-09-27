@@ -2656,14 +2656,8 @@ class Highlighter(QtGui.QSyntaxHighlighter):
         if util.is_in_maya():
             self.multiLineCommentFormat.setForeground(QtGui.QColor(230, 230, 0))
         
-        self.commentTripleQuoteStart = QtCore.QRegExp('"""')
-        self.commentTripleQuoteEnd = QtCore.QRegExp('"""')
-        
-        self.commentTripleSingleQuoteStart = QtCore.QRegExp("'''")
-        self.commentTripleSingleQuoteEnd = QtCore.QRegExp("'''")
-        
-        #self.commentStartExpression2 = QtCore.QRegExp("'''")
-        #self.commentEndExpression2 = QtCore.QRegExp("'''")
+        self.quote = QtCore.QRegExp('"""')
+        self.single_quote = QtCore.QRegExp("'''")
         
     def highlightRules(self, text):
 
@@ -2675,40 +2669,63 @@ class Highlighter(QtGui.QSyntaxHighlighter):
                 self.setFormat(index, length, format)
                 index = expression.indexIn(text, index + length)
 
-        self.setCurrentBlockState(0)
         
-    def highlightTripleQuote(self, text):
+    
+    def highlightQuote(self, text):
+        
+        self.setCurrentBlockState(0)
         
         end_index = -1
         start_index = 0
         
         if self.previousBlockState() != 1:
-            start_index = self.commentTripleQuoteStart.indexIn(text)
-
-        while start_index >= 0:
-            end_index = self.commentTripleQuoteEnd.indexIn(text, start_index)
+            start_index = self.quote.indexIn(text)
+            exp = self.quote
             
-            if end_index == -1 or end_index == start_index:
+            if start_index == -1:
+                start_index = self.single_quote.indexIn(text)
+                exp = self.single_quote
+            
+            self.exp = exp
+                
+        if self.previousBlockState() == 1:
+            exp = self.exp
+                
+        while start_index >= 0:
+            
+            end_index = exp.indexIn(text, (start_index + exp.matchedLength() + 1))
+            
+            if end_index == -1:
                 
                 self.setCurrentBlockState(1)
-                commentLength = len(text) - start_index
-                
+                comment_length = len(text) - start_index
+            
             else:
+                
                 #This isn't working properly when the last quote has the same indent as the start
                 #it just passes over and doesn't get here
-                commentLength = end_index - start_index + self.commentTripleQuoteEnd.matchedLength()
-                
+                comment_length = end_index - start_index + exp.matchedLength()
+            
             self.setFormat(start_index, 
-                           commentLength,
+                           comment_length,
                            self.multiLineCommentFormat)
             
-            start_index = self.commentTripleQuoteStart.indexIn(text,
-                                                             start_index + commentLength);
+            start_index = exp.indexIn(text, start_index + comment_length)
+            
+            if start_index == -1:
+                if exp == self.quote:
+                    start_index = self.single_quote.indexIn(text, start_index + comment_length)
+                    exp = self.single_quote
+                if exp == self.single_quote:
+                    start_index = self.quote.indexIn(text, start_index + comment_length)
+                    exp = self.quote
         
     def highlightBlock(self, text):
         
         self.highlightRules(text)
-        self.highlightTripleQuote(text)
+        
+        self.highlightQuote(text)
+        #self.highlightQuote(text, self.single_quote)
         
 
 class CodeLineNumber(QtGui.QWidget):
