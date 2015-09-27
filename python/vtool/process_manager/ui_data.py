@@ -992,4 +992,5 @@ file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.shaders' : MayaShadersFileWidget,
                  'maya.attributes' : MayaAttributesFileWidget,
                  'maya.pose' : PoseFileWidget,
-                 'maya.animation': AnimationFileWidget}
+                 'maya.animation': AnimationFileWidget,
+                 'maya.control_animation': ControlAnimationFileWidget}

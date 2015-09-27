@@ -1203,12 +1203,16 @@ class OrientJoint(object):
         
         
         self._freeze()
-        
-        if self.joint == 'R_thumb_base_ctrl':
-            print 'run'
-        
+                
         self._get_relatives()
         self._pin()
+        
+        try:
+            cmds.setAttr('%s.rotateAxisX' % self.joint, 0)
+            cmds.setAttr('%s.rotateAxisY' % self.joint, 0)
+            cmds.setAttr('%s.rotateAxisZ' % self.joint, 0)
+        except:
+            vtool.util.show('Could not zero out rotateAxis on %s. This may cause rig errors.' % self.joint)
         
         self.orient_values = self._get_values()
         
@@ -4508,7 +4512,7 @@ class MayaWrap(object):
     
     def _create_wrap(self):
         
-        basename = get_basename(self.mesh)
+        basename = get_basename(self.mesh, True)
         
         self.wrap = cmds.deformer(self.mesh, type = 'wrap', n = 'wrap_%s' % basename)[0]
         cmds.setAttr('%s.exclusiveBind' % self.wrap, 1)
@@ -4776,7 +4780,7 @@ def get_node_types(nodes, return_shape_type = True):
         
     return found_type
      
-def get_basename(name, remove_namespace = False):
+def get_basename(name, remove_namespace = True):
     """
     Get the basename in a hierarchy name.
     If top|model|face is supplied, face will be returned.
@@ -4786,9 +4790,11 @@ def get_basename(name, remove_namespace = False):
     
     basename = split_name[-1]
     
-    split_basename = basename.split(':')
+    if remove_namespace:
+        split_basename = basename.split(':')
+        return split_basename[-1]
     
-    return split_basename[-1]
+    return split_name[-1]
 
 def get_visible_hud_displays():
     """
@@ -6343,8 +6349,11 @@ def duplicate_joint_section(joint, name = ''):
 def get_input_keyframes(node, node_only = True):
     
     inputs = get_inputs(node, node_only)
-    
+
     found = []
+    
+    if not inputs:
+        return found
     
     for input_value in inputs:
         if cmds.nodeType(input_value).startswith('animCurve'):
@@ -6357,6 +6366,9 @@ def get_output_keyframes(node):
     outputs = get_outputs(node)
     
     found = []
+    
+    if not outputs:
+        return found
     
     for output in outputs:
         
@@ -6637,46 +6649,7 @@ def get_face_centers(mesh):
     
     return face_iter.get_face_center_vectors()
     
-    """
-    faceCenter = []
-
-    selection = OpenMaya.MSelectionList()
-    OpenMaya.MGlobal.getActiveSelectionList(selection)
-    print ("Number of objects in selection: %s " % selection.length())
-
-    iter = OpenMaya.MItSelectionList (selection, OpenMaya.MFn.kMeshPolygonComponent)
-
-    while not iter.isDone():
-        status = OpenMaya.MStatus
-        dagPath = OpenMaya.MDagPath()
-        component = OpenMaya.MObject()
-
-        iter.getDagPath(dagPath, component)
-
-        polyIter = OpenMaya.MItMeshPolygon(dagPath, component)
-
-        while not polyIter.isDone():
-
-            i = 0
-            i = polyIter.index()
-            faceInfo = [0]
-            faceInfo[0] = ("The center point of face %s is:" %i)
-            faceCenter+=faceInfo
-
-            center = OpenMaya.MPoint
-            center = polyIter.center(OpenMaya.MSpace.kWorld)
-            point = [0.0,0.0,0.0]
-            point[0] = center.x
-            point[1] = center.y
-            point[2] = center.z
-            faceCenter += point
-            
-            polyIter.next()
-            
-        iter.next()
-     
-    return faceCenter     
-    """
+    
 def get_slots(attribute):
     
     slots = cmds.listAttr(attribute, multi = True)
@@ -8965,7 +8938,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
             cmds.setAttr('%s.envelope' % skin, 0)
         
         skin_shapes = get_shapes(skin_mesh)
-        skin_mesh_name = get_basename(skin_mesh)
+        skin_mesh_name = get_basename(skin_mesh, True)
         other_delta = create_shape_from_shape(skin_shapes[0], inc_name(skin_mesh_name))
         
         blendshapes = find_deformer_by_type(skin_mesh, 'blendShape', return_all = True)
@@ -8997,6 +8970,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
                 cmds.parent(offset, parent)
         
         envelopes.turn_on(respect_initial_state=True)
+        
                 
         return offset
 

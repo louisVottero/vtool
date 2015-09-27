@@ -186,6 +186,26 @@ class MeshFunction(MayaFunction):
         
         return u,v
     
+    def get_point_at_uv(self, u_value = 0, v_value = 0):
+        """
+            Not implemented
+        """
+        
+            
+        point = Point(0.0,0.0,0.0)
+        point = point.get_api_object()
+        
+        
+        util = OpenMaya.MScriptUtil()
+        util.createFromList([float(u_value), float(v_value)], 2)
+        uv = util.asFloat2Ptr()
+        
+        #point = None
+        #uv = None
+        # need to get the polygon id...
+        polygon_id = 0
+        self.api_object.getPointAtUV(polygon_id, point, uv, OpenMaya.MSpace.kWorld)
+    
     def get_closest_face(self, vector):
         
         pointA = OpenMaya.MPoint(vector[0], vector[1], vector[2])

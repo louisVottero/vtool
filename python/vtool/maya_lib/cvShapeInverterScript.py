@@ -127,6 +127,11 @@ def invert(base=None, corrective=None, name=None):
     cmds.setAttr('%s.activate' % deformer, True)
 
     cmds.undoInfo(closeChunk=True)
+    
+    split_name = invertedShape.split(':')
+    if len(split_name) > 1:
+        invertedShape = cmds.rename(invertedShape, split_name[-1])
+    
     return invertedShape
 
 
