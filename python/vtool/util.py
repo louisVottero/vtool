@@ -200,14 +200,18 @@ class Vector2D(object):
 class Vector(object):
     def __init__(self,x=1.0,y=1.0,z=1.0):
         
+        self.x = None
+        self.y = None
         self.z = None
         
-        if type(x) == list:
+        x_test = x
+                
+        if type(x_test) == list or type(x_test) == type(tuple):
             self.x = x[0]
             self.y = x[1]
             self.z = x[2]
             
-        if type(x) == float or type(x) == int:
+        if type(x_test) == float or type(x_test) == int:
             self.x = x
             self.y = y
             self.z = z

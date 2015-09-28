@@ -184,6 +184,7 @@ class PoseListWidget(qt_ui.BasicWidget):
 
     def _update_pose_widget(self):
        
+        
         current_pose = self.pose_list._current_pose()
         current_weight_attribute = '%s.weight' % current_pose
         
@@ -197,6 +198,11 @@ class PoseListWidget(qt_ui.BasicWidget):
             self.pose_widget.hide()
             
         self.pose_update.emit(current_pose)
+        
+        pose_type = cmds.getAttr('%s.type' % current_pose)
+        
+        if not pose_type == 'no reader':
+            return
         
         item_count = self.pose_list.topLevelItemCount()
         
@@ -1563,8 +1569,6 @@ class PoseConeWidget(PoseBaseWidget):
             self.set_parent_name(text)
     
     def _value_changed(self):
-        
-        
         
         if not self.value_update_enable:
             return
