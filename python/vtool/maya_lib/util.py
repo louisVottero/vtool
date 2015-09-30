@@ -6712,12 +6712,12 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     if not rotate_pivot: 
         position = get_center(transform)
     
-    if not face:
+    if face == None:
         
         face_fn = api.MeshFunction(shape)
         face_id = face_fn.get_closest_face(position)
         
-    if face:
+    if face != None:
         face_id = face
     
     face_iter = api.IteratePolygonFaces(shape)
@@ -7097,6 +7097,15 @@ def transforms_to_joint_chain(transforms, name = ''):
         joints.append(joint)
         
     return joints
+
+def transform_to_polygon_plane(transform):
+    plane = cmds.polyPlane( w = 1, h = 1, sx = 1, sy = 1, ax = [0, 1, 0], ch = 0)
+    
+    plane = cmds.rename(plane, inc_name('%s_plane' % transform))
+    
+    MatchSpace(transform, plane).translation_rotation()
+    
+    return plane
     
 def curve_to_nurb_surface(curve):
     pass
@@ -7522,7 +7531,8 @@ def get_vertex_normal(vert_name):
 def add_poly_smooth(mesh):
     
     return cmds.polySmooth(mesh, mth = 0, dv = 1, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
-    
+
+
 
 #---deformation
     
@@ -9267,12 +9277,16 @@ def reset_tweak(tweak_node):
     """
     if not cmds.objExists('%s.vlist' % tweak_node):
         return
+    
     indices = get_indices('%s.vlist' % tweak_node)
     
     for index in indices:
-        cmds.setAttr('%s.vlist[%s].xVertex' % (tweak_node, index), 0.0)
-        cmds.setAttr('%s.vlist[%s].yVertex' % (tweak_node, index), 0.0)
-        cmds.setAttr('%s.vlist[%s].zVertex' % (tweak_node, index), 0.0)
+        try:
+            cmds.setAttr('%s.vlist[%s].xVertex' % (tweak_node, index), 0.0)
+            cmds.setAttr('%s.vlist[%s].yVertex' % (tweak_node, index), 0.0)
+            cmds.setAttr('%s.vlist[%s].zVertex' % (tweak_node, index), 0.0)
+        except:
+            pass
 
 #---attributes
 
