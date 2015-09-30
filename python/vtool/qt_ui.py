@@ -2695,6 +2695,7 @@ class Highlighter(QtGui.QSyntaxHighlighter):
             
             end_index = exp.indexIn(text, (start_index + exp.matchedLength() + 1))
             
+            
             if end_index == -1:
                 
                 self.setCurrentBlockState(1)
@@ -2712,14 +2713,14 @@ class Highlighter(QtGui.QSyntaxHighlighter):
             
             start_index = exp.indexIn(text, start_index + comment_length)
             
-            if start_index == -1:
+            if start_index > -1:
                 if exp == self.quote:
                     start_index = self.single_quote.indexIn(text, start_index + comment_length)
                     exp = self.single_quote
                 if exp == self.single_quote:
                     start_index = self.quote.indexIn(text, start_index + comment_length)
                     exp = self.quote
-        
+                    
     def highlightBlock(self, text):
         
         self.highlightRules(text)
