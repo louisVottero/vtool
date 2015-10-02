@@ -467,6 +467,9 @@ class PoseTreeWidget(BaseTreeWidget):
         self.setDragEnabled(True)
         self.setAcceptDrops(True)  
         
+        self.setAutoScroll(True)
+        
+        
         self.setHeaderLabels(['pose', 'type'])
        
         self.header().setStretchLastSection(False)
@@ -508,26 +511,74 @@ class PoseTreeWidget(BaseTreeWidget):
         
         if model_index.column() == 0 and item:
             super(PoseTreeWidget, self).mousePressEvent(event)
-        
+    
     def dropEvent(self, event):
-
-
-
+        
         position = event.pos()
         entered_item = self.itemAt(position)
+        index = self.indexAt(position)
+        
+        is_dropped = True
+        
+        if event.source == self and event.dropAction() == QtCore.Qt.MoveAction or self.dragDropMode() == QtGui.QAbstractItemView.InternalMove:
+            topIndex = QtCore.QModelIndex()
+            col = -1
+            row = -1
+            l = [event, row, col, topIndex]
+
+            if self.drop_on(l):
+                event, row, col, topIndex = l
+                
+                print index.row(), row
+                
+                if row > -1:
+                    if row == index.row():
+                        is_dropped = False
+                if row == -1 or row == (index.row() + 1):
+                    is_dropped = True
         
         super(PoseTreeWidget, self).dropEvent(event)
 
+        print 'drop', is_dropped
+
+        if not is_dropped:
+            if entered_item:
+                
+                if entered_item.parent():
+                    parent_item = entered_item.parent()
+                    
+                if not entered_item.parent():
+                    parent_item = self.invisibleRootItem()
+                    
+                if not self.drag_parent is parent_item:
+                    
+                    index = entered_item.indexOfChild(self.dragged_item)
+                    child = entered_item.takeChild(index)
+                    parent_item.addChild(child)
+                    
+                    entered_item = parent_item
+        
+        if entered_item:
+            entered_item.setExpanded(True)
+        self.dragged_item.setDisabled(True)
+            
+        if entered_item is self.drag_parent:
+            self.dragged_item.setDisabled(False)
+            return
+            
         result = qt_ui.get_permission('Parent item %s?' % self.dragged_item.text(0), self)
         
         if not result:
             entered_item.removeChild(self.dragged_item)
             
-            self.drag_parent.addChild(self.dragged_item)
+            index = entered_item.indexOfChild(self.dragged_item)
+            child = entered_item.takeChild(index)
+            
+            self.drag_parent.addChild(child)
+            self.dragged_item.setDisabled(True)
             return      
         
         if result:
-            self.dragged_item.setDisabled(True)
             
             pose_parent = 'pose_gr'
             
@@ -535,8 +586,12 @@ class PoseTreeWidget(BaseTreeWidget):
             
             current_parent = cmds.listRelatives(pose, p = True)
             
+            #print entered_item.text(0)
+            
             if entered_item:
                 pose_parent = entered_item.text(0)
+            if entered_item is self.invisibleRootItem():
+                pose_parent = 'pose_gr'
             
             if current_parent:
                 
@@ -549,8 +604,6 @@ class PoseTreeWidget(BaseTreeWidget):
             self.dragged_item.setDisabled(False)
     
     def _item_menu(self, position):
-        
-        
                 
         item = self.itemAt(position)
         
@@ -569,8 +622,6 @@ class PoseTreeWidget(BaseTreeWidget):
                 item.setVisible(False)
         
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
-        
-        
         
     def _create_context_menu(self):
         
@@ -652,7 +703,7 @@ class PoseTreeWidget(BaseTreeWidget):
     def _add_item(self, pose, parent):
         
         item = QtGui.QTreeWidgetItem(parent)
-        item.setSizeHint(0, QtCore.QSize(100, 30))
+        item.setSizeHint(0, QtCore.QSize(100, 26))
         item.setText(0, pose)
         
         if cmds.objExists('%s.type' % pose):
@@ -678,6 +729,8 @@ class PoseTreeWidget(BaseTreeWidget):
         self.item_select = False
         
         for pose in poses:
+            
+            cmds.select(cl = True)
             
             pose_item = self._add_pose_item(pose)
         
@@ -1089,7 +1142,9 @@ class MeshWidget(qt_ui.BasicWidget):
                     sculpt_meshes.append(pass_mesh)
         
         if sculpt_meshes or not current_meshes:
-                    
+            
+            print 'sculpt meshes', sculpt_meshes, 'current', current_meshes
+            
             if sculpt_meshes:
                 
                 sculpt_meshes = vtool.util.convert_to_sequence(sculpt_meshes)
@@ -1390,8 +1445,6 @@ class PoseBaseWidget(qt_ui.BasicWidget):
 
     def set_pose(self, pose_name):
         
-        
-        
         if not pose_name:
             self.pose = None
             return
@@ -1421,7 +1474,6 @@ class PoseNoReaderWidget(PoseBaseWidget):
         
         return input_value
         
-    
     def _input_change(self):
         
         self.input_text.setStyleSheet('QLineEdit{background:red}')
@@ -1451,7 +1503,6 @@ class PoseNoReaderWidget(PoseBaseWidget):
         
         pose = corrective.PoseNoReader()
         pose.set_pose(self.pose)
-        
         
         pose.set_input(attribute)
         

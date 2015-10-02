@@ -213,7 +213,7 @@ class MeshFunction(MayaFunction):
         space = OpenMaya.MSpace.kWorld
          
         util = OpenMaya.MScriptUtil()
-        util.createFromInt(0)
+        #util.createFromInt(0)
         idPointer = util.asIntPtr()
          
         self.api_object.getClosestPoint(pointA, pointB, space, idPointer)  

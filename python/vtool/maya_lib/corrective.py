@@ -1309,7 +1309,6 @@ class PoseBase(object):
         
         mesh = self._get_current_mesh(mesh_index)
         
-        
         if not mesh:
             return
         
@@ -1362,6 +1361,8 @@ class PoseBase(object):
             
             for child in children:
                 
+                
+                
                 child_instance = manager.get_pose_instance(child)
                 
                 sub_mesh_index = self.get_target_mesh_index(mesh)
@@ -1369,7 +1370,6 @@ class PoseBase(object):
                 child_instance.create_blend(sub_mesh_index, goto_pose = True)
             
             mesh_index = self.get_target_mesh_index(mesh)
-            
             self.create_blend(mesh_index, True, False)
         
     def detach_sub_poses(self):
@@ -1649,7 +1649,10 @@ class PoseNoReader(PoseBase):
     def create_blend(self, mesh_index, goto_pose = True, sub_poses = True):
         
         mesh = self._get_current_mesh(mesh_index)
-        sub_pass_mesh = mesh
+        
+        target_mesh = self.get_target_mesh(mesh)
+        
+        sub_pass_mesh = target_mesh
         
         if not mesh:
             return
@@ -1666,7 +1669,6 @@ class PoseNoReader(PoseBase):
         if old_delta:
             cmds.delete(old_delta)
         
-            
         target_mesh = self.get_target_mesh(mesh)
                 
         if not target_mesh:
@@ -1714,7 +1716,7 @@ class PoseNoReader(PoseBase):
         self._multiply_weight(blend_attr)
         
         cmds.delete(offset)
-         
+        
         if sub_poses:
             self.create_sub_poses(sub_pass_mesh)
     

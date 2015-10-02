@@ -6707,8 +6707,12 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     
     if face == None:
         
-        face_fn = api.MeshFunction(shape)
-        face_id = face_fn.get_closest_face(position)
+        try:
+            face_fn = api.MeshFunction(shape)
+            face_id = face_fn.get_closest_face(position)
+        except:
+            face_fn = api.IteratePolygonFaces(shape)
+            face_id = face_fn.get_closest_face(position)
         
     if face != None:
         face_id = face

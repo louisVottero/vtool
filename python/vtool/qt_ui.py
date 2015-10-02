@@ -259,6 +259,133 @@ class TreeWidget(QtGui.QTreeWidget):
             palette.setColor(palette.Highlight, QtCore.Qt.gray)
             self.setPalette(palette)
     
+    
+        self.dropIndicatorRect = QtCore.QRect()
+
+    def paintEvent(self, event):
+        painter = QtGui.QPainter(self.viewport())
+        self.drawTree(painter, event.region())
+        # in original implementation, it calls an inline function paintDropIndicator here
+        self.paintDropIndicator(painter)
+    
+    def paintDropIndicator(self, painter):
+
+        if self.state() == QtGui.QAbstractItemView.DraggingState:
+            opt = QtGui.QStyleOption()
+            opt.initFrom(self)
+            opt.rect = self.dropIndicatorRect
+            rect = opt.rect
+
+            color = QtCore.Qt.black
+            
+            if util.is_in_maya():
+                color = QtCore.Qt.white
+            
+
+            brush = QtGui.QBrush(QtGui.QColor(color))
+
+            if rect.height() == 0:
+                pen = QtGui.QPen(brush, 2, QtCore.Qt.DotLine)
+                painter.setPen(pen)
+                painter.drawLine(rect.topLeft(), rect.topRight())
+            else:
+                pen = QtGui.QPen(brush, 2, QtCore.Qt.DotLine)
+                painter.setPen(pen)
+                painter.drawRect(rect)
+    
+    
+    def dragMoveEvent(self, event):
+        
+        
+        
+        pos = event.pos()
+        item = self.itemAt(pos)
+
+        if item:
+            index = self.indexFromItem(item)  # this always get the default 0 column index
+
+            rect = self.visualRect(index)
+            rect_left = self.visualRect(index.sibling(index.row(), 0))
+            rect_right = self.visualRect(index.sibling(index.row(), self.header().logicalIndex(self.columnCount() - 1)))  # in case section has been moved
+
+            self.dropIndicatorPosition = self.position(event.pos(), rect, index)
+            
+            if self.dropIndicatorPosition == self.AboveItem:
+                self.dropIndicatorRect = QtCore.QRect(rect_left.left(), rect_left.top(), rect_right.right() - rect_left.left(), 0)
+                event.accept()
+            elif self.dropIndicatorPosition == self.BelowItem:
+                self.dropIndicatorRect = QtCore.QRect(rect_left.left(), rect_left.bottom(), rect_right.right() - rect_left.left(), 0)
+                event.accept()
+            elif self.dropIndicatorPosition == self.OnItem:
+                self.dropIndicatorRect = QtCore.QRect(rect_left.left(), rect_left.top(), rect_right.right() - rect_left.left(), rect.height())
+                event.accept()
+            else:
+                self.dropIndicatorRect = QtCore.QRect()
+
+            self.model().setData(index, self.dropIndicatorPosition, QtCore.Qt.UserRole)
+        
+        self.viewport().update()
+        
+        super(TreeWidget, self).dragMoveEvent(event)
+        
+    def drop_on(self, l):
+
+        event, row, col, index = l
+
+        root = self.rootIndex()
+
+        if self.viewport().rect().contains(event.pos()):
+            index = self.indexAt(event.pos())
+            if not index.isValid() or not self.visualRect(index).contains(event.pos()):
+                index = root
+
+        if index != root:
+
+            dropIndicatorPosition = self.position(event.pos(), self.visualRect(index), index)
+            if self.dropIndicatorPosition == self.AboveItem:
+                #'dropon above'
+                row = index.row()
+                col = index.column()
+                index = index.parent()
+
+            elif self.dropIndicatorPosition == self.BelowItem:
+                #'dropon below'
+                row = index.row() + 1
+                col = index.column()
+                index = index.parent()
+
+            elif self.dropIndicatorPosition == self.OnItem:
+                #'dropon onItem'
+                pass
+            elif self.dropIndicatorPosition == self.OnViewport:
+                pass
+            else:
+                pass
+
+        else:
+            self.dropIndicatorPosition = self.OnViewport
+
+        l[0], l[1], l[2], l[3] = event, row, col, index
+
+        # if not self.droppingOnItself(event, index):
+        return True
+        
+    def position(self, pos, rect, index):
+        r = QtGui.QAbstractItemView.OnViewport
+        # margin*2 must be smaller than row height, or the drop onItem rect won't show
+        margin = 10
+        if pos.y() - rect.top() < margin:
+            r = QtGui.QAbstractItemView.AboveItem
+        elif rect.bottom() - pos.y() < margin:
+            r = QtGui.QAbstractItemView.BelowItem
+
+        # this rect is always the first column rect
+        # elif rect.contains(pos, True):
+        elif pos.y() - rect.top() > margin and rect.bottom() - pos.y() > margin:
+            r = QtGui.QAbstractItemView.OnItem
+
+        return r
+    
     def _define_item(self):
         return QtGui.QTreeWidgetItem()
     
@@ -578,16 +705,36 @@ class TreeWidget(QtGui.QTreeWidget):
         
         return path
     
+    def delete_empty_children(self, tree_item):
+        
+        count = tree_item.childCount()
+        
+        if count <= 0:
+            return
+        
+        for inc in range(0, count):
+            
+            item = tree_item.child(inc)
+            
+            if item and not item.text(0):
+                item = tree_item.takeChild(inc)
+                del(item)
+               
     def delete_tree_item_children(self, tree_item):
+        
+        print 'deleting children'
+        
         count = tree_item.childCount()
         
         if count <= 0:
             return
         
         children = tree_item.takeChildren()
-            
+
         for child in children:
             del(child)
+            
+        
             
     def get_tree_item_children(self, tree_item):
         count = tree_item.childCount()
@@ -690,6 +837,25 @@ class FileTreeWidget(TreeWidget):
 
     def _add_item(self, filename, parent = None):
         
+        path_name = filename
+        
+        found = False
+        
+        if parent:
+            parent_path = self.get_item_path_string(parent)
+            path_name = '%s/%s' % (parent_path, filename)
+            
+            for inc in range(0,parent.childCount()):
+                item = parent.child(inc)
+                if item.text(0) == filename:
+                    found = item
+        
+        if not parent:
+            for inc in range(0, self.topLevelItemCount()):
+                item = self.topLevelItem(inc)
+                if item.text(0) == filename:
+                    found = item
+                
         exclude = self._define_exclude_extensions()
         
         if exclude:
@@ -699,20 +865,17 @@ class FileTreeWidget(TreeWidget):
             if extension in exclude:
                 return
         
-        item = self._define_item()
+        if not found:
+            item = self._define_item()
+        if found:
+            item = found
         
         size = self._define_item_size()
         if size:
             size = QtCore.QSize(*size)
             
             item.setSizeHint(self.title_text_index, size)
-        path_name = filename
-        
-        if parent:
-            parent_path = self.get_item_path_string(parent)
-            path_name = '%s/%s' % (parent_path, filename)
             
-        
         path = util_file.join_path(self.directory, path_name)
         
         sub_files = util_file.get_files_and_folders(path)
@@ -728,6 +891,7 @@ class FileTreeWidget(TreeWidget):
         
         if sub_files:
             
+            self._delete_children(item)
             
             exclude_extensions = self._define_exclude_extensions()
             exclude_count = 0
@@ -740,8 +904,9 @@ class FileTreeWidget(TreeWidget):
                             break
             
             if exclude_count != len(sub_files):
+                
                 QtGui.QTreeWidgetItem(item)
-            
+        
         if not parent:
             self.addTopLevelItem(item)
         if parent:
@@ -751,6 +916,7 @@ class FileTreeWidget(TreeWidget):
         
     def _add_sub_items(self, item):
         
+        self.delete_empty_children(item)
         self._delete_children(item)
                 
         path_string = self.get_item_path_string(item)

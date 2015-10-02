@@ -159,7 +159,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.setDragDropMode(self.InternalMove)
         self.setDragEnabled(True)
-        self.setAcceptDrops(True)    
+        self.setAcceptDrops(True)   
+        self.setDropIndicatorShown(True) 
            
         self.setColumnWidth(0, 250)
         
@@ -177,36 +178,93 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 
         self.setSelectionBehavior(self.SelectItems)
         
-        self.drag_item = None
+        self.dragged_item = None
         
-
     def dropEvent(self, event):
-
+        
         position = event.pos()
-        entered_item = self.itemAt(position)
+        index = self.indexAt(position)
         
         directory = self.directory
         
+        is_dropped = False
+        
+        if event.source == self and event.dropAction() == QtCore.Qt.MoveAction or self.dragDropMode() == QtGui.QAbstractItemView.InternalMove:
+            topIndex = QtCore.QModelIndex()
+            col = -1
+            row = -1
+            l = [event, row, col, topIndex]
+
+            if self.drop_on(l):
+                event, row, col, topIndex = l
+                
+                if row > -1:
+                    if row == (index.row() - 1):
+                        is_dropped = False
+                if row == -1 or row == (index.row() + 1):
+                    is_dropped = True
+        
+        entered_item = self.itemAt(position)
+        entered_name = None
+        
         if entered_item:
-            entered_item.setExpanded(True)
+            
             directory = entered_item.directory
             entered_name = entered_item.get_name()
         
         if not entered_item:
             entered_item = self.invisibleRootItem()
             entered_name = None
-        
+            
         super(ProcessTreeWidget, self).dropEvent(event)
         
+        if not is_dropped:
+            if entered_item:
+                
+                if entered_item.parent():
+                    parent_item = entered_item.parent()
+                    
+                if not entered_item.parent():
+                    parent_item = self.invisibleRootItem()
+                    
+                if not self.drag_parent is parent_item:
+                    
+                    index = entered_item.indexOfChild(self.dragged_item)
+                    child = entered_item.takeChild(index)
+                    parent_item.addChild(child)
+                    
+                    entered_item = parent_item
+                    
+                    if parent_item is self.invisibleRootItem():
+                        entered_name = None
+                    if not parent_item is self.invisibleRootItem():
+                        entered_name = entered_item.get_name()
+                        
+        if entered_item:
+            entered_item.setExpanded(True)
+
+            entered_item.addChild(self.dragged_item)
+
         self.dragged_item.setDisabled(True)
         
-        move_result = qt_ui.get_permission('Move %s ?' % self.dragged_item.get_name(), self)
+        if entered_item is self.drag_parent:
+            self.dragged_item.setDisabled(False)
+            return
+        
+        if entered_name:
+            message = 'Parent %s under %s?' % (self.dragged_item.get_name(), entered_name)
+        if not entered_name:
+            message = 'Unparent %s?' % self.dragged_item.get_name()
+        
+        move_result = qt_ui.get_permission( message , self)
         
         if not move_result:
             entered_item.removeChild(self.dragged_item)
-            self.drag_parent.addChild(self.dragged_item)
-            return      
-
+            if self.drag_parent:
+                self.drag_parent.addChild(self.dragged_item)
+            self.dragged_item.setDisabled(False)
+            return
+            
         self.dragged_item.setDisabled(False)
         
         old_directory = self.dragged_item.directory
@@ -228,7 +286,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         new_path = util_file.join_path(directory, new_name)
         
         move_worked = util_file.move(old_path, new_path)
-        
+
         if not move_worked:
             self.dragged_item.set_name(old_name_full)
             old_name = util_file.get_basename(old_name_full)
@@ -236,7 +294,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.dragged_item.set_directory(old_directory)
             
             entered_item.removeChild(self.dragged_item)
-            self.drag_parent.addChild(self.dragged_item)
+            if self.drag_parent:
+                self.drag_parent.addChild(self.dragged_item)                
     
     def mouseDoubleClickEvent(self, event):
         self.doubleClicked.emit(0)
@@ -262,9 +321,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         parent = self.invisibleRootItem()
         
         if item:
-            parent = item.parent()
+            if item.parent():
+                parent = item.parent()
         
         self.drag_parent = parent
+        
         self.dragged_item = item
         
         super(ProcessTreeWidget, self).mousePressEvent(event)
@@ -584,6 +645,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 
         expand_to = False
         
+        
+        
         current_item = self.currentItem()
         
         if not parent_item and current_item:
@@ -606,6 +669,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         item = ProcessItem(self.directory, name)
         
+        
+        
         if create:
             item.create()
         
@@ -618,9 +683,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 self.expandItem(parent_item)
         
         if item.has_parts():
+            
             QtGui.QTreeWidgetItem(item)
-        
-       
         
         return item
 
@@ -682,8 +746,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.last_item = None
         
         self._goto_settings_process()
-        
-        
         
     def add_process(self, name):
         
@@ -776,7 +838,7 @@ class ProcessItem(QtGui.QTreeWidgetItem):
         
         self.detail = False
         
-        self.setSizeHint(0, QtCore.QSize(100,30))
+        self.setSizeHint(0, QtCore.QSize(100,26))
         
     def _add_process(self, directory, name):
         
