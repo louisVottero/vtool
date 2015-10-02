@@ -6342,6 +6342,13 @@ def duplicate_joint_section(joint, name = ''):
     if sub_duplicate:
         return duplicate, sub_duplicate   
     
+def get_axis_vector(transform, axis_vector):
+    
+    t_func = api.TransformFunction(transform)
+    new_vector = t_func.get_vector_matrix_product(axis_vector)
+    
+    return new_vector
+            
             
     
 #--- animation
@@ -7117,12 +7124,69 @@ def edges_to_curve(edges, description):
     
     return curve
     
+def get_intersection_on_mesh(mesh, ray_source_vector, ray_direction_vector ):
+    
+    mesh_fn = api.MeshFunction(mesh)
+    
+    intersection = mesh_fn.get_closest_intersection(ray_source_vector, ray_direction_vector)
+    
+    return intersection
+    
 def get_closest_uv_on_mesh(mesh, three_value_list):
     
     
     mesh = api.MeshFunction(mesh)
     found = mesh.get_uv_at_point(three_value_list)
     
+    return found
+    
+
+def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis = 'X', accuracy = 100, angle_range = 180):
+    
+    closest = None
+    found = None
+    
+    dup = cmds.duplicate(transform, po = True)[0]
+    
+    space1 = cmds.xform(dup, q = True, t = True)
+    
+    inc_value = (angle_range*1.0)/accuracy
+        
+    if rotate_axis == 'X':
+        rotate_value = [inc_value,0,0]
+    if rotate_axis == 'Y':
+        rotate_value = [0,inc_value,0]
+    if rotate_axis == 'Z':
+        rotate_value = [0,0,inc_value]
+
+    if opposite_axis == 'X':
+        axis_vector = [1,0,0]
+    if opposite_axis == 'Y':
+        axis_vector = [0,1,0]
+    if opposite_axis == 'Z':
+        axis_vector = [0,0,1]
+                
+    for inc in range(0, accuracy+1):
+        
+        space2 = get_axis_vector(dup, axis_vector)
+        
+        cmds.rotate(rotate_value[0], rotate_value[1], rotate_value[2], dup, r = True)
+        
+        mesh_api = api.MeshFunction(mesh)    
+        intersect = mesh_api.get_closest_intersection(space1, space2)
+        
+        distance = vtool.util.get_distance(space1, list(intersect))
+        
+        if closest == None:
+            closest = distance
+            found = intersect
+        
+        if distance < closest:
+            closest = distance
+            found = intersect
+        
+    cmds.delete(dup)
+            
     return found
     
 def get_closest_parameter_on_curve(curve, three_value_list):
@@ -7182,6 +7246,8 @@ def get_parameter_from_curve_length(curve, length_value):
 def get_point_from_curve_parameter(curve, parameter):
     
     return cmds.pointOnCurve(curve, pr = parameter, ch = False)
+
+
 
 @undo_chunk
 def create_oriented_joints_on_curve(curve, count = 20, description = None, rig = False):

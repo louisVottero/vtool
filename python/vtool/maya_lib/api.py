@@ -165,7 +165,35 @@ class SelectionList(ApiObject):
 class TransformFunction(MayaFunction):
     
     def _define_api_object(self, mobject):
-        return OpenMaya.MFnTransform
+        return OpenMaya.MFnTransform(mobject)
+    
+    def get_transformation_matrix(self):
+        
+        return self.api_object.transformation()
+    
+    def get_matrix(self):
+        
+        transform_matrix = self.get_transformation_matrix()
+        return transform_matrix.asMatrix()
+    
+    def get_vector_matrix_product(self, vector):
+        
+        
+        
+        vector_api = OpenMaya.MVector()
+        vector_api.x = vector[0]
+        vector_api.y = vector[1]
+        vector_api.z = vector[2]
+        
+        space = OpenMaya.MSpace.kWorld
+        orig_vector = self.api_object.getTranslation(space)
+        
+        vector_api *= self.get_matrix()
+        
+        
+        vector_api += orig_vector
+        
+        return vector_api.x, vector_api.y, vector_api.z
     
 class MeshFunction(MayaFunction):
     
@@ -218,8 +246,55 @@ class MeshFunction(MayaFunction):
          
         self.api_object.getClosestPoint(pointA, pointB, space, idPointer)  
         idx = OpenMaya.MScriptUtil(idPointer).asInt()
+               
         
         return idx
+    
+    def get_closest_intersection(self, source_vector, direction_vector):
+        
+        point_base = OpenMaya.MFloatPoint()
+        point_base.x = source_vector[0]
+        point_base.y = source_vector[1]
+        point_base.z = source_vector[2]
+        
+        float_base = OpenMaya.MFloatVector()
+        float_base.x = source_vector[0]
+        float_base.y = source_vector[1]
+        float_base.z = source_vector[2]
+        
+        point_direction = OpenMaya.MFloatVector()
+        point_direction.x = direction_vector[0]
+        point_direction.y = direction_vector[1]
+        point_direction.z = direction_vector[2]
+        
+        point_direction = point_direction - float_base
+        
+        accelerator = self.api_object.autoUniformGridParams()
+        space = OpenMaya.MSpace.kWorld
+        
+        
+        hit_point = OpenMaya.MFloatPoint()
+        
+        hit_double = OpenMaya.MScriptUtil()   
+        hit_param_ptr = hit_double.asFloatPtr()
+               
+        hit_face = OpenMaya.MScriptUtil()
+        hit_face_ptr = hit_face.asIntPtr()
+        
+        hit_triangle = OpenMaya.MScriptUtil()
+        hit_triangle_ptr = hit_triangle.asIntPtr()
+        
+        hit_bary1 = OpenMaya.MScriptUtil()   
+        hit_bary1_ptr = hit_bary1.asFloatPtr()
+        
+        hit_bary2 = OpenMaya.MScriptUtil()   
+        hit_bary2_ptr = hit_bary2.asFloatPtr()
+                        
+        self.api_object.closestIntersection(point_base, point_direction, None, None, False, space, 100000, False, accelerator, 
+                                            hit_point, hit_param_ptr, hit_face_ptr, hit_triangle_ptr,
+                                            hit_bary1_ptr, hit_bary2_ptr)
+        
+        return [hit_point.x, hit_point.y, hit_point.z]
    
 class NurbsSurfaceFunction(MayaFunction):
     def _define_api_object(self, mobject):
