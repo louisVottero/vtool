@@ -364,6 +364,12 @@ class PoseManager(object):
             pose.set_pose(pose_name)
             pose.create_all_blends()
             
+            pose_type = '%s.type' % pose.pose_control
+            pose_type = cmds.getAttr(pose_type)
+            
+            if pose_type == 'no reader':
+                pose.set_weight(0)
+            
             progress.inc()
             progress.status('adding pose %s' % pose_name)
             
@@ -1304,6 +1310,10 @@ class PoseBase(object):
                 pose = False
                 
             self.create_blend(inc, goto_pose = pose)
+            
+            
+            
+            
         
     def create_blend(self, mesh_index, goto_pose = True, sub_poses = True):
         
@@ -1833,6 +1843,26 @@ class PoseNoReader(PoseBase):
             inc += 1
         
         return other_pose_instance.pose_control
+    
+    def set_weight(self, value):
+        
+        input_attr = util.get_attribute_input('%s.weight' % self.pose_control)
+        if not input_attr:
+            try:
+                cmds.setAttr('%s.weight' % self.pose_control, value)
+            except:
+                pass
+        
+        manager = PoseManager()
+        manager.set_pose_group(self.pose_control)
+        children = manager.get_poses()
+        
+        if children:
+            
+            for child in children:
+                
+                child_instance = manager.get_pose_instance(child)
+                child_instance.set_weight(value)
     
 
 class PoseCone(PoseBase):
