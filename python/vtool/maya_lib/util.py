@@ -5521,6 +5521,25 @@ def get_hierarchy(node_name):
     if split_path:
         return split_path
         
+def has_parent(transform, parent):
+    
+    long_transform = cmds.ls(transform, l = True)
+    
+    if not long_transform:
+        return
+    
+    long_transform = long_transform[0]
+    
+    split_long = long_transform.split('|')
+    
+    get_basename(parent)
+    
+    if parent in split_long:
+        return True
+    
+    return False
+        
+        
 def transfer_relatives(source_node, target_node, reparent = False):
     """
         Reparent the children of source_node under target_node.
