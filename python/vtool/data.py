@@ -1415,7 +1415,7 @@ class PoseData(MayaCustomData):
         pose_manager.create_pose_blends(poses)
         
         pose_manager.set_pose_to_default()
-        
+                
         util.show('Imported %s data.' % self.name)
         
         cmds.dgdirty(a = True)

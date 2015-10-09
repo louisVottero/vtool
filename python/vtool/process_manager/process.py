@@ -222,8 +222,16 @@ class Process(object):
                 found_path.reverse()
                 new_path = found_path + split_relative_path
         
+        
+        
         process_name = string.join([new_path[-1]], '/')
         process_directory = string.join(new_path[:-1], '/')
+        
+        """
+        test_path = util_file.join_path(process_directory, process_name)
+        if not util_file.is_dir(test_path):
+            util.warning('%s is not a valid path.' % test_path)
+        """
         
         process = Process(process_name)
         process.set_directory(process_directory)

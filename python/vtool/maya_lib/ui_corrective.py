@@ -199,6 +199,9 @@ class PoseListWidget(qt_ui.BasicWidget):
             
         self.pose_update.emit(current_pose)
         
+        if not current_pose:
+            return
+        
         pose_type = cmds.getAttr('%s.type' % current_pose)
         
         if not pose_type == 'no reader':
@@ -382,6 +385,8 @@ class BaseTreeWidget(qt_ui.TreeWidget):
     def _item_renamed(self, item):    
         
         new_name = item.text(0)
+        
+        print self.old_name, new_name
         
         new_name = corrective.PoseManager().rename_pose(str(self.old_name), str(new_name))
         

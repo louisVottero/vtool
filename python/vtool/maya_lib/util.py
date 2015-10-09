@@ -6438,6 +6438,17 @@ def get_output_keyframes(node):
             
     return found
 
+def set_infiinity(keyframe, pre = False, post = False):
+    function = api.KeyframeFunction(keyframe)
+    
+    if post:
+        function.set_post_infinity(function.linear)    
+        
+    if pre:
+        function.set_pre_infinity(function.linear)
+        
+    return keyframe
+
 #--- geometry
 
 def is_a_shape(node):
@@ -7201,11 +7212,11 @@ def transforms_to_joint_chain(transforms, name = ''):
         
     return joints
 
-def transform_to_polygon_plane(transform):
+def transform_to_polygon_plane(transform, size = 1):
     """
         Create a single polygon face from the position and orientation of a transform.
     """
-    plane = cmds.polyPlane( w = 1, h = 1, sx = 1, sy = 1, ax = [0, 1, 0], ch = 0)
+    plane = cmds.polyPlane( w = size, h = size, sx = 1, sy = 1, ax = [0, 1, 0], ch = 0)
     
     plane = cmds.rename(plane, inc_name('%s_plane' % transform))
     
@@ -10770,6 +10781,8 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
     if infinite == 'pre_only':
             
         function.set_pre_infinity(function.linear)
+
+    return keyframe
 
 #--- Nucleus
 
