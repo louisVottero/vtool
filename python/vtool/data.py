@@ -586,7 +586,6 @@ class SkinWeightData(MayaCustomData):
             cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
             
             maya_lib.util.set_skin_weights_to_zero(skin_cluster)
-            cmds.refresh()
             
             influence_inc = 0
               
@@ -1230,7 +1229,7 @@ class PoseData(MayaCustomData):
         cmds.file(exportSelected = True, prompt = False, force = True, pr = True, ch = False, chn = True, exp = True, con = False, sh = False, stx = 'never', typ = self.maya_ascii)
         
     def _import_file(self, filepath):
-                
+        
         if util_file.is_file(filepath):
             cmds.file(filepath, f = True, i = True, iv = True, shd = 'shadingNetworks')
         
@@ -1387,9 +1386,7 @@ class PoseData(MayaCustomData):
         
         cmds.renderThumbnailUpdate( False )
         
-        
         for pose_file in pose_files:
-            
             
             pose_path = util_file.join_path(path, pose_file)
             
@@ -1423,6 +1420,7 @@ class PoseData(MayaCustomData):
         
         cmds.dgdirty(a = True)
         cmds.renderThumbnailUpdate( True )
+        
                 
         
 class MayaAttributeData(MayaCustomData):

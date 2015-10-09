@@ -7,6 +7,18 @@ import util
 import blendshape
 import vtool.util
 import time
+
+def get_pose_instance(pose_name):
+    if cmds.objExists('%s.type' % pose_name):
+        pose_type = cmds.getAttr('%s.type' % pose_name)
+        
+    if not cmds.objExists('%s.type' % pose_name):
+        pose_type = 'cone'
+
+    pose = corrective_type[pose_type]()
+    pose.set_pose(pose_name)
+    
+    return pose
     
 class PoseManager(object):
 
@@ -38,15 +50,7 @@ class PoseManager(object):
         
     def get_pose_instance(self, pose_name):
         
-        if cmds.objExists('%s.type' % pose_name):
-            pose_type = cmds.getAttr('%s.type' % pose_name)
-        
-        if not cmds.objExists('%s.type' % pose_name):
-            pose_type = 'cone'
-
-        pose = corrective_type[pose_type]()
-        
-        pose.set_pose(pose_name)
+        pose = get_pose_instance(pose_name)
         
         return pose
                         
@@ -212,6 +216,7 @@ class PoseManager(object):
         
         return pose_control
     
+    @util.undo_chunk
     def create_timeline_pose(self, name = None):
         
         current_time = str(cmds.currentTime(q = True))
@@ -337,8 +342,6 @@ class PoseManager(object):
             pose = self.get_pose_instance(pose_name)
             pose.attach(detached)
             
-        
-    
     def create_pose_blends(self, poses = None):
         
         if not poses:
@@ -352,12 +355,14 @@ class PoseManager(object):
         
         for inc in range(count):
             
-            time.sleep(1)
+            
             
             if progress.break_signaled():
                 break
             
             pose_name = poses[inc]
+            
+            progress.status('adding pose %s' % pose_name)
             
             pose = self.get_pose_instance(pose_name)
             
@@ -365,7 +370,7 @@ class PoseManager(object):
             pose.create_all_blends()
             
             progress.inc()
-            progress.status('adding pose %s' % pose_name)
+            
             
         progress.end()
     
@@ -375,7 +380,8 @@ class PoseManager(object):
         
         return mirror        
 
-class PoseBase(object):
+class PoseGroup(object):
+    
     def __init__(self, description = 'pose'):
         
         self.pose_control = None
@@ -384,9 +390,125 @@ class PoseBase(object):
             description = description.replace(' ', '_')
             
         self.description = description
+        
+        self.pose_gr = 'pose_gr'
+    
+    def _pose_type(self):
+        return 'group'    
 
+    def _create_top_group(self):
+        top_group = self.pose_gr
+                
+        if not cmds.objExists(top_group):
+            top_group = cmds.group(em = True, name = top_group)
+            
+
+        return top_group
+
+    def _set_description(self, description):    
+        cmds.setAttr('%s.description' % self.pose_control, description, type = 'string' )
+        self.description = description
+        
+    def _get_name(self):
+        return util.inc_name(self.description) 
+    
+    def _get_sub_poses(self):
+        manager = PoseManager()
+        manager.set_pose_group(self.pose_control)
+        children = manager.get_poses()
+        
+        return children
+    
+    #--- pose
+    def is_a_pose(self, node):
+        if cmds.objExists('%s.POSE' % node ):    
+            return True
+        
+        return False
+
+    def set_pose_group(self, pose_group_name):
+        self.pose_gr = pose_group_name
+    
+    def set_pose(self, pose_name):
+        
+        if not cmds.objExists('%s.description' % pose_name):
+            return
+        
+        self.description = cmds.getAttr('%s.description' % pose_name)
+        self.pose_control = pose_name
+        
+    def goto_pose(self):
+        
+        if self.pose_control:
+            store = util.StoreControlData(self.pose_control)
+            store.eval_data()
+            
+    def rename(self, description):
+        
+        description = vtool.util.clean_name_string(description)
+        description = util.inc_name(description)
+        self._set_description(description)
+            
+        self.pose_control = cmds.rename(self.pose_control, self._get_name())
+           
+        return self.pose_control
+            
+    def create(self):
+        top_group = self._create_top_group()
+        
+        pose_control = self._create_pose_control()
+        self.pose_control = pose_control
+        
+        cmds.parent(pose_control, top_group)
+        
+        store = util.StoreControlData(pose_control)
+        store.set_data()
+        
+        return pose_control
+    
+    def delete(self):
+        cmds.delete(self.pose_control)
+        
+    def select(self):
+        cmds.select(self.pose_control)
+        
+        store = util.StoreControlData(self.pose_control)
+        store.eval_data()
+        
+    def attach(self, outputs = None):        
+        self.attach_sub_poses()
+    
+    def detach(self):
+        self.detach_sub_poses()
+        
+    def detach_sub_poses(self):
+        children = self._get_sub_poses()
+        
+        if not children:
+            return
+        
+        for child in children:    
+            child_instance= get_pose_instance(child)
+            child_instance.detach()
+            
+    def attach_sub_poses(self):
+        children = self._get_sub_poses()
+        
+        if not children:
+            return
+        
+        for child in children:
+            child_instance= get_pose_instance(child)
+            child_instance.attach()
+        
+    def mirror(self):
+        pass
+    
+class PoseBase(PoseGroup):
+    def __init__(self, description = 'pose'):
+        super(PoseBase, self).__init__(description)
+        
         self.scale = 1
-        #self.mesh_index = 0
         
         self.blend_input = None
         
@@ -427,26 +549,8 @@ class PoseBase(object):
         
         if not cmds.objExists('%s.enable' % self.pose_control):
             
-            cmds.addAttr(self.pose_control, ln = 'enable', at = 'double', k = True, dv = 1, min = 0, max = 1)
-            
+            cmds.addAttr(self.pose_control, ln = 'enable', at = 'double', k = True, dv = 1, min = 0, max = 1)    
             self._multiply_weight()
-        
-    def _create_top_group(self):
-        top_group = self.pose_gr
-                
-        if not cmds.objExists(top_group):
-            top_group = cmds.group(em = True, name = top_group)
-            
-
-        return top_group
-
-    def _get_name(self):
-        return util.inc_name(self.description) 
-    
-    def _set_description(self, description):
-        
-        cmds.setAttr('%s.description' % self.pose_control, description, type = 'string' )
-        self.description = description
 
     def _rename_nodes(self):
         
@@ -507,9 +611,7 @@ class PoseBase(object):
         empty_index = self._get_empty_mesh_message_index()
         
         self._connect_node(mesh, 'mesh', empty_index)
-               
         
-
     def _multiply_weight(self):
         pass
 
@@ -699,13 +801,7 @@ class PoseBase(object):
         cmds.addAttr(control, ln = 'enable', at = 'double', k = True, dv = 1, min = 0, max = 1)
         cmds.addAttr(control, ln = 'weight', at = 'double', k = True, dv = 0)
         
-        #cmds.addAttr(control, ln = 'meshIndex', at = 'short', dv = self.mesh_index)
-        #cmds.setAttr('%s.meshIndex' % self.pose_control, l = True)
-        
     def _create_pose_control(self):
-        
-        #pose_control = cmds.group(em = True, n = self._get_name())
-        #util.hide_keyable_attributes(pose_control)
         
         control = util.Control(self._get_name())
         control.set_curve_type('cube')
@@ -918,101 +1014,40 @@ class PoseBase(object):
         return blend
     
     #--- pose
-
-    def is_a_pose(self, node):
-        
-        
-        
-        if cmds.objExists('%s.POSE' % node ):
-            
-            return True
-        
-        return False
-
-    def set_pose_group(self, pose_group_name):
-        
-        self.pose_gr = pose_group_name
     
-
     def set_pose(self, pose_name):
         
-        if not cmds.objExists('%s.description' % pose_name):
-            return
+        super(PoseBase, self).set_pose(pose_name)
         
-        self.description = cmds.getAttr('%s.description' % pose_name)
-        #self.mesh_index = cmds.getAttr('%s.meshIndex' % pose_name)
-        
-        self.pose_control = pose_name
-        
-        self._refresh_pose_control()
-        self._refresh_meshes()
-
-    def goto_pose(self):
-        
-        if self.pose_control:
-            store = util.StoreControlData(self.pose_control)
-            store.eval_data()
+        if self.pose_control == pose_name:
+            self._refresh_pose_control()
+            self._refresh_meshes()
     
-    def create(self):
-        top_group = self._create_top_group()
-        
-        pose_control = self._create_pose_control()
-        self.pose_control = pose_control
-        
-        cmds.parent(pose_control, top_group)
-        
-        store = util.StoreControlData(pose_control)
-        store.set_data()
-        
-        return pose_control
-        
     def rename(self, description):
         
-        description = vtool.util.clean_name_string(description)
+        old_description = vtool.util.clean_name_string( self.description )
         
-        description = util.inc_name(description)
+        super(PoseBase, self).rename(description)
         
         meshes = self.get_target_meshes()
-        
-        old_description = vtool.util.clean_name_string( self.description )
         
         for mesh in meshes:
             blendshape_node = self._get_blendshape(mesh)
             
             if blendshape_node:
-                blend = blendshape.BlendShape(blendshape_node)
-                
-                blend.rename_target(old_description, description)
-
-        
-        self._set_description(description)
+                blend = blendshape.BlendShape(blendshape_node)        
+                blend.rename_target(old_description, self.description)
         
         self._rename_nodes()
         
-        self.pose_control = cmds.rename(self.pose_control, self._get_name())
-           
         return self.pose_control
        
     def delete(self):
         
         self.delete_blend_input()
-        
         self._delete_connected_nodes()
-            
-        cmds.delete(self.pose_control)
-    
-    def select(self):
-        cmds.select(self.pose_control)
         
-        store = util.StoreControlData(self.pose_control)
-        store.eval_data()
-        
-    def attach(self, outputs = None):
-        
-        self.attach_sub_poses()
-    
-    def detach(self):
-        self.detach_sub_poses()
+        super(PoseBase, self).delete()
         
     #--- mesh
       
@@ -1163,8 +1198,6 @@ class PoseBase(object):
                     long_name = target_mesh
         
         return long_name
-        
-    
         
     def get_target_mesh_index(self, target_mesh):
         
@@ -1333,6 +1366,7 @@ class PoseBase(object):
         blend.set_weight(self.pose_control, 0)
         
         offset = util.chad_extract_shape(target_mesh, mesh)
+        
         blend.set_weight(self.pose_control, 1)
         
         if blend.is_target(self.pose_control):
@@ -1350,12 +1384,11 @@ class PoseBase(object):
         
         if sub_poses:
             self.create_sub_poses(sub_pass_mesh)
+        
             
     def create_sub_poses(self, mesh):
         
-        manager = PoseManager()
-        manager.set_pose_group(self.pose_control)
-        children = manager.get_poses()
+        children = self._get_sub_poses()
         
         if children:
             
@@ -1363,7 +1396,7 @@ class PoseBase(object):
                 
                 
                 
-                child_instance = manager.get_pose_instance(child)
+                child_instance = get_pose_instance(child)
                 
                 sub_mesh_index = self.get_target_mesh_index(mesh)
                 
@@ -1372,33 +1405,7 @@ class PoseBase(object):
             mesh_index = self.get_target_mesh_index(mesh)
             self.create_blend(mesh_index, True, False)
         
-    def detach_sub_poses(self):
-        
-        manager = PoseManager()
-        manager.set_pose_group(self.pose_control)
-        children = manager.get_poses()
-        
-        if not children:
-            return
-        
-        for child in children:
-        
-            child_instance= manager.get_pose_instance(child)
-            child_instance.detach()
-            
-    def attach_sub_poses(self):
-        
-        manager = PoseManager()
-        manager.set_pose_group(self.pose_control)
-        children = manager.get_poses()
-        
-        if not children:
-            return
-        
-        for child in children:
-            
-            child_instance= manager.get_pose_instance(child)
-            child_instance.attach()
+    
             
     def connect_blend(self, mesh_index = None):
         mesh = None
@@ -1614,9 +1621,7 @@ class PoseNoReader(PoseBase):
     def _create_attributes(self, control):
         
         super(PoseNoReader, self)._create_attributes(control)
-        
         pose_input = util.MayaStringVariable('weightInput')
-        
         pose_input.create(control)
     
     def _multiply_weight(self, destination):
@@ -1719,7 +1724,7 @@ class PoseNoReader(PoseBase):
         
         if sub_poses:
             self.create_sub_poses(sub_pass_mesh)
-    
+        
     def set_input(self, attribute):
         
         self.weight_input = attribute
@@ -1749,7 +1754,6 @@ class PoseNoReader(PoseBase):
         return cmds.getAttr('%s.weightInput' % self.pose_control)
 
     def attach(self, outputs = None):
-        
         super(PoseNoReader, self).attach(outputs)
         
         attribute = self.get_input()
@@ -1760,8 +1764,7 @@ class PoseNoReader(PoseBase):
             
         self._hide_meshes()
         
-    def detach(self):
-        
+    def detach(self):    
         super(PoseNoReader, self).detach()
         
         outputs = self.disconnect_weight_outputs()
@@ -1834,11 +1837,8 @@ class PoseNoReader(PoseBase):
         
         return other_pose_instance.pose_control
     
-
 class PoseCone(PoseBase):
-    def __init__(self, transform = None, description = 'pose'):
-      
-                  
+    def __init__(self, transform = None, description = 'pose'):          
         super(PoseCone, self).__init__(description)
         
         if transform:
@@ -2184,8 +2184,6 @@ class PoseCone(PoseBase):
         
         self._set_axis_vectors()
         
-    
-        
     def get_transform(self):
         matrix = self._get_named_message_attribute('multMatrix1')
         
@@ -2271,8 +2269,6 @@ class PoseCone(PoseBase):
         self._show_meshes()
         
         return outputs
-        
-        
         
     def attach(self, outputs = None):
         
@@ -2430,6 +2426,7 @@ class PoseTimeline(PoseNoReader):
         cmds.setKeyframe('%s.weight' % pose_control, t = (current_time+5), v = 0)
         
         return pose_control
+        
         
 corrective_type = { 'cone' : PoseCone,
                      'no reader' : PoseNoReader,

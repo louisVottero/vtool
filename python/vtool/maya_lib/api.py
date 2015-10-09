@@ -25,11 +25,21 @@ def nodename_to_mobject(object_name):
     
     return selection_list.get_at_index(0) 
 
+def create_mesh_from_mesh(mesh, target_transform):
+    
+    mesh_fn = OpenMaya.MFnMesh()
+    shape = nodename_to_mobject(mesh)
+
+    transform = nodename_to_mobject(target_transform)
+    mesh_fn.copy(shape.node(), transform.node())
+
+
 
 def duplicate(node):
     
     dag_node = DagNode(node)
-    dag_node.duplicate()
+    value = dag_node.duplicate()
+    print value
     
 class ApiObject(object):
     """
@@ -296,6 +306,17 @@ class MeshFunction(MayaFunction):
         
         return [hit_point.x, hit_point.y, hit_point.z]
    
+    def refresh_mesh(self):
+        
+        self.api_object.updateSurface()
+        
+    def copy(self, source_mesh, transform):
+        
+        mesh_object = nodename_to_mobject(source_mesh)
+        transform_object = nodename_to_mobject(transform)
+        
+        self.api_object.copy(mesh_object, transform)
+   
 class NurbsSurfaceFunction(MayaFunction):
     def _define_api_object(self, mobject):
         return OpenMaya.MFnNurbsSurface(mobject)
@@ -394,6 +415,22 @@ class NurbsCurveFunction(MayaFunction):
     def get_parameter_at_length(self, double):
         return self.api_object.findParamFromLength(double)
 
+class IterateGeometry(MayaIterator):
+    def _define_api_object(self, mobject):
+        return OpenMaya.MItGeometry(mobject)
+
+    def get_points(self):
+        
+        space = OpenMaya.MSpace.kObject
+        points = OpenMaya.MPointArray()
+        
+        self.api_object.allPositions(points, space)
+        return points 
+    
+    def set_points(self, points):
+        space = OpenMaya.MSpace.kObject
+        self.api_object.setAllPositions(points, space)
+        
         
 class IterateEdges(MayaIterator):
     def _define_api_object(self, mobject):
@@ -519,4 +556,10 @@ class DagNode(MayaFunction):
     def duplicate(self):
         
         self.api_object.duplicate()
+        
+    def get_name(self):
+        pass
+    
+    def get_long_name(self):
+        pass
         

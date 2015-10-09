@@ -78,6 +78,7 @@ def invert(base=None, corrective=None, name=None):
     base_shape = getShape(base)
     
     invertedShape = create_shape_from_shape(base_shape)
+    
     #invertedShape = cmds.duplicate(base, name = name)[0]
     
     # Delete the unnessary shapes
@@ -133,6 +134,7 @@ def invert(base=None, corrective=None, name=None):
         invertedShape = cmds.rename(invertedShape, split_name[-1])
     
     return invertedShape
+    
 
 
 def getShape(node):
@@ -233,21 +235,22 @@ def setMatrixCell(matrix, value, row, column):
 
 
 def create_shape_from_shape(shape):
+    
     parent = cmds.listRelatives(shape, p = True, f = True)
-            
-    new_shape = cmds.createNode('mesh')
     
-    mesh = cmds.listRelatives(new_shape, p = True, f = True)[0]
+    transform = cmds.group(em = True)
+    transform = cmds.ls(transform, l = True)[0]
     
-    add_to_isolate_select([mesh])
+    import api
+
+    api.create_mesh_from_mesh(shape, transform)
     
-    cmds.connectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
+    add_to_isolate_select([transform])
     
-    cmds.refresh()
-    
-    cmds.disconnectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
-    
+    mesh = transform
+
     if parent:
+        
         parent = parent[0]
         
         parent_name = parent.split('|')
@@ -261,8 +264,9 @@ def create_shape_from_shape(shape):
         
         cmds.xform(mesh, ws = True, t = translate)
         cmds.xform(mesh, ws = True, ro = rotate)
-            
+        
     return mesh
+    
     
 def add_to_isolate_select(nodes):
     """

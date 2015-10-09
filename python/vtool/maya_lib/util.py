@@ -4751,9 +4751,6 @@ def pad_number(name):
     
     return renamed
     
-
-
-
 def get_node_types(nodes, return_shape_type = True):
     """
         Get the maya node types for the nodes supplied.
@@ -4993,7 +4990,9 @@ def create_display_layer(name, nodes):
     cmds.setAttr( '%s.displayType' % layer, 2 )
 
 def delete_display_layers():
-    
+    """
+        Deletes all display layers.
+    """
     layers = cmds.ls('displayLayer')
     
     for layer in layers:
@@ -5023,7 +5022,9 @@ def add_to_isolate_select(nodes):
             #cmds.isolateSelect(panel, update = True)
             
 def get_model_panels():
-    
+    """
+       Good to use when editing viewports. 
+    """
     return cmds.getPanel(type = 'modelPanel')
     
 
@@ -5140,6 +5141,9 @@ def get_polevector(transform1, transform2, transform3, offset = 1):
     return finalPos
 
 def get_group_in_plane(transform1, transform2, transform3):
+    """
+        Create a group that sits in the triangle plane defined by the 3 transforms.
+    """
     #CBB
     
     pole_group = cmds.group(em=True)
@@ -5216,6 +5220,13 @@ def get_top_center(thing):
 
 
 def get_ordered_distance_and_transform(source_transform, transform_list):
+    """
+        Returns a list of distances based on how far each transform in transform list is from source_transform.
+        Returns a distance dictionary with each distacne key returning the corresponding transform.
+        Returns a list with the original distance order has fed in from transform_list.
+        
+    """
+    
     
     distance_list = []
     distance_dict = {}
@@ -5238,6 +5249,9 @@ def get_ordered_distance_and_transform(source_transform, transform_list):
     return distance_list, distance_dict, original_distance_order
 
 def get_transform_list_from_distance(source_transform, transform_list):
+    """
+        Return a list of distances that corresponds to the transform_list. Each transform's distance from source_transform. 
+    """
     
     distance_list, distance_dict, original = get_ordered_distance_and_transform(source_transform, transform_list)
     
@@ -5250,7 +5264,9 @@ def get_transform_list_from_distance(source_transform, transform_list):
 
 
 def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
-    
+    """
+        Create a multiply divide for each transform in drivers with a weight value based on the distance from source_guide.
+    """
     distance_list, distance_dict, original_distance_order = get_ordered_distance_and_transform(source_guide, drivers)
     
     multiplies = []
@@ -5566,7 +5582,10 @@ def get_top_dag_nodes(exclude_cameras = True):
     return top_transforms 
 
 def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_stretch_on_off = False, create_bulge = True, scale_axis = 'X'):
-    
+    """
+        Makes the joints stretch on the curve. 
+        Joints must be on a spline ik that is attached to the curve.
+    """
     scale_axis = scale_axis.capitalize()
     
     arclen_node = cmds.arclen(curve, ch = True, n = inc_name('curveInfo_%s' % curve))
@@ -5671,7 +5690,9 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
         percent += segment
 
 def create_simple_spline_ik_stretch(curve, joints):
-    
+    """
+        Stretch joints on curve. Joints must be attached to a spline ik.
+    """
     arclen_node = cmds.arclen(curve, ch = True, n = inc_name('curveInfo_%s' % curve))
     
     arclen_node = cmds.rename(arclen_node, inc_name('curveInfo_%s' % curve))
@@ -5703,7 +5724,9 @@ def create_simple_spline_ik_stretch(curve, joints):
         percent += segment
 
 def create_bulge_chain(joints, control, max_value = 15):
-    
+    """
+        Adds scaling to a joint chain that mimics a cartoony water bulge moving along a tube.
+    """
     
     control_and_attribute = '%s.bulge' % control
     
@@ -5719,7 +5742,6 @@ def create_bulge_chain(joints, control, max_value = 15):
     joint_count = len(joints)
     
     offset = 10.00/ joint_count
-    
     
     initial_driver_value = 0
     default_scale_value = 1
@@ -6001,6 +6023,9 @@ def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
     
 @undo_chunk
 def add_orient_attributes(transform):
+    """
+        Add orient attributes, used to automatically orient.
+    """
     if type(transform) != list:
         transform = [transform]
     
@@ -6010,6 +6035,10 @@ def add_orient_attributes(transform):
         orient.set_default_values()
     
 def orient_attributes(scope = None):
+    """
+        Orient all transforms with attributes added by add_orient_attributes.
+        If scope is provided, only orient transforms in the scope that have attributes.
+    """
     if not scope:
         scope = get_top_dag_nodes()
     
@@ -6068,6 +6097,10 @@ def find_transform_right_side(transform):
     return ''
 
 def mirror_xform(prefix = None, suffix = None, string_search = None):
+    """
+        Mirror the positions of all transforms that match the search strings.
+        If search strings left at None, search all transforms and joints. 
+    """
     
     scope_joints = []
     scope_transforms = []
@@ -6109,9 +6142,7 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
         
         other = ''
         other = find_transform_right_side(transform)
-       
         
-       
         if is_translate_rotate_connected(other):
             continue
        
@@ -6151,7 +6182,7 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
                     cmds.setAttr('%s.localPositionZ' % transform, local_position[2])
     
 def match_joint_xform(prefix, other_prefix):
-
+    
     scope = cmds.ls('%s*' % other_prefix, type = 'joint')
 
     for joint in scope:
@@ -6204,7 +6235,10 @@ def get_y_intersection(curve, vector):
     return parameter                
     
 def get_side(transform, center_tolerance):
-    
+    """
+        Get the side of a transform based on its position in world space.
+        Center tolerance is distance from the center to include as a center transform.
+    """
     if type(transform) == list or type(transform) == tuple:
         position = transform
     
@@ -6290,7 +6324,12 @@ def create_pole_chain(top_transform, btm_transform, name):
     return joint1, joint2, ik_pole
 
 def scale_constraint_to_local(scale_constraint):
-        
+    """
+        Scale constraint can work wrong when given the parent matrix.
+        Disconnect the parent matrix to remove this behavior.
+        Reconnect using scale_constraint_to_world if applying multiple constraints.
+    """
+    
     constraint_editor = ConstraintEditor()
         
     weight_count = constraint_editor.get_weight_count(scale_constraint)
@@ -6300,6 +6339,9 @@ def scale_constraint_to_local(scale_constraint):
         disconnect_attribute('%s.target[%s].targetParentMatrix' % (scale_constraint, inc))
 
 def scale_constraint_to_world(scale_constraint):
+    """
+        Works with scale_constraint_to_local.
+    """
     
     constraint_editor = ConstraintEditor()
     
@@ -6318,6 +6360,11 @@ def scale_constraint_to_world(scale_constraint):
         cmds.connectAttr('%s.parentInverseMatrix' % target, '%s.target[%s].targetParentMatrix' % (scale_constraint, inc) )
     
 def duplicate_joint_section(joint, name = ''):
+    """
+        Joint chains ususally have a parent and a child along the chain. 
+        This will duplicate one of those sections.  You need only supply the parent joint.
+    """
+    
     
     rels = cmds.listRelatives(joint, type = 'joint', f = True)
     
@@ -6343,18 +6390,22 @@ def duplicate_joint_section(joint, name = ''):
         return duplicate, sub_duplicate   
     
 def get_axis_vector(transform, axis_vector):
-    
+    """
+        If you give it a vector [1,0,0], it will return the transform's x point.
+        If you give it a vector [0,1,0], it will return the transform's y point.
+        If you give it a vector [0,0,1], it will return the transform's z point.
+    """
     t_func = api.TransformFunction(transform)
     new_vector = t_func.get_vector_matrix_product(axis_vector)
     
     return new_vector
-            
-            
     
 #--- animation
 
 def get_input_keyframes(node, node_only = True):
-    
+    """
+        Get all keyframes that input into the node.
+    """
     inputs = get_inputs(node, node_only)
 
     found = []
@@ -6369,7 +6420,10 @@ def get_input_keyframes(node, node_only = True):
     return found        
 
 def get_output_keyframes(node):
-        
+    """
+        Get all keyframes that output from the node.
+    """    
+    
     outputs = get_outputs(node)
     
     found = []
@@ -6464,27 +6518,21 @@ def create_shape_from_shape(shape, name = 'new_shape'):
     
     parent = cmds.listRelatives(shape, p = True, f = True)
     
-    shape_type = cmds.nodeType(shape)
+    transform = cmds.group(em = True)
+    transform = cmds.ls(transform, l = True)[0]
     
-    new_shape = cmds.createNode(shape_type)
-    
-    mesh = cmds.listRelatives(new_shape, p = True, f = True)[0]
+    api.create_mesh_from_mesh(shape, transform)
+    mesh = transform
     
     add_to_isolate_select([mesh])
     
-    cmds.connectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
-    
-    cmds.refresh()
-    
-    cmds.disconnectAttr('%s.outMesh' % shape, '%s.inMesh' % new_shape)
-    
     mesh = cmds.rename(mesh, inc_name(name))
-    
     
     if parent:
         MatchSpace(parent[0], mesh).translation_rotation()
-    
+        
     return mesh
+    
 
 def get_shapes(transform):
     if is_a_shape(transform):
@@ -6518,7 +6566,9 @@ def get_of_type_in_hierarchy(transform, node_type):
             
 
 def get_shapes_in_hierarchy(transform):
-    
+    """
+        Get all the shapes in the child hierarchy excluding intermediates.
+    """
     hierarchy = [transform]
     
     relatives = cmds.listRelatives(transform, ad = True, type = 'transform', f = True)
@@ -6549,6 +6599,10 @@ def get_shapes_in_hierarchy(transform):
     return shapes
 
 def rename_shapes(transform):
+    """
+        Rename the shapes under a transform. 
+        Renames them to match the name of the transform.
+    """
     
     shapes = get_shapes(transform)
     
@@ -6568,18 +6622,27 @@ def rename_shapes(transform):
         inc += 1
 
 def get_component_count(transform):
+    """
+        Get the number of components under a transform.
+    """
+    
     components = get_components(transform)
     
     return len( cmds.ls(components[0], flatten = True) )
 
 def get_components(transform):
+    """
+        Get the name of the components under a transform.
+    """
     
     shapes = get_shapes(transform)
     
     return get_components_from_shapes(shapes)
 
 def get_components_in_hierarchy(transform):
-    
+    """
+        Get the components in the hierarchy.
+    """
     shapes = get_shapes_in_hierarchy(transform)
     
     return get_components_from_shapes(shapes)
@@ -6607,13 +6670,19 @@ def get_components_from_shapes(shapes = None):
     return components
 
 def get_edge_path(edges = []):
+    """
+        Given a list of edges, return the edge path.
+    """
+    
     cmds.select(cl = True)
     cmds.polySelectSp(edges, loop = True )
     
     return cmds.ls(sl = True, l = True)
 
 def edge_to_vertex(edges):
-    
+    """
+        Return the vertices that are part of the edges.
+    """
     edges = cmds.ls(edges, flatten = True)
     
     verts = []
@@ -6639,7 +6708,9 @@ def edge_to_vertex(edges):
     return verts
 
 def get_face_center(mesh, face_id):
-
+    """
+        Get the center position of a face.
+    """
     mesh = get_mesh_shape(mesh)
 
     face_iter = api.IteratePolygonFaces(mesh)
@@ -6649,7 +6720,9 @@ def get_face_center(mesh, face_id):
     return center
     
 def get_face_centers(mesh):
-    
+    """
+        Return a list of face center positions, that correspond to the face index.
+    """
     mesh = get_mesh_shape(mesh)
     
     face_iter = api.IteratePolygonFaces(mesh)
@@ -6658,7 +6731,9 @@ def get_face_centers(mesh):
     
     
 def get_slots(attribute):
-    
+    """
+        Given a multi attribute, get all the slots currently made.
+    """
     slots = cmds.listAttr(attribute, multi = True)
         
     found_slots = []
@@ -6672,6 +6747,10 @@ def get_slots(attribute):
     return found_slots
 
 def get_slot_count(attribute):
+    """
+        Get the number of created slots in a multi attribute.
+    """
+    
     slots = get_slots(attribute)
     
     if not slots:
@@ -6680,7 +6759,9 @@ def get_slot_count(attribute):
     return len(slots)
 
 def get_available_slot(attribute):
-    
+    """
+        Find the next available slot in a multi attribute.
+    """
     slots = get_slots(attribute)
     
     if not slots:
@@ -6689,23 +6770,18 @@ def get_available_slot(attribute):
     return int( slots[-1] )+1
 
 def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None, point_constrain = False, auto_parent = False, hide_shape= False, inherit_transform = False, local = False, rotate_pivot = False, constrain = True):
-    
     """
     
         Be default this will attach the center point of the transform (including hierarchy and shapes) to the mesh.
         Important: If you need to attach to the rotate pivot of the transform make sure to set rotate_pivot = True
-    
+        This uses a rivet.
     """
-    
     
     parent = None
     if auto_parent:
         parent = cmds.listRelatives(transform, p = True)
     
     shape = get_mesh_shape(mesh)
-    #shape = cmds.listRelatives(mesh, shapes = True)[0]
-    
-    
     
     if rotate_pivot:
         position = cmds.xform(transform, q = True, rp = True, ws = True)
@@ -6783,6 +6859,9 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     return rivet
 
 def attach_to_curve(transform, curve, maintain_offset = False, parameter = None):
+    """
+        Attach the transform to the curve using a point on curve.
+    """
     
     position = cmds.xform(transform, q = True, ws = True, rp = True)
     
@@ -6829,6 +6908,9 @@ def attach_to_curve(transform, curve, maintain_offset = False, parameter = None)
     return curve_info_node
 
 def attach_to_surface(transform, surface, u = None, v = None):
+    """
+        Attach the transform to the surface using a rivet.
+    """
     
     position = cmds.xform(transform, q = True, ws = True, t = True)
 
@@ -6847,13 +6929,17 @@ def attach_to_surface(transform, surface, u = None, v = None):
     return rivet.rivet
 
 def attach_to_closest_transform(source_transform, target_transforms):
-    
+    """
+        Attach the source_transform to the closest transform in the list of target_transforms.
+    """
     closest_transform = get_closest_transform(source_transform, target_transforms)
     
     create_follow_group(closest_transform, source_transform)
 
 def follicle_to_mesh(transform, mesh, u = None, v = None):
-    
+    """
+        Use a follicle to attach the transform to the mesh.
+    """
     mesh = get_mesh_shape(mesh)
     
     position = cmds.xform(transform, q = True, ws = True, t = True)
@@ -6870,7 +6956,9 @@ def follicle_to_mesh(transform, mesh, u = None, v = None):
     return follicle
 
 def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
-    
+    """
+        Create joints on the given faces.
+    """
     mesh = get_mesh_shape(mesh)
     
     centers = []
@@ -6932,7 +7020,9 @@ def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
     
 
 def follicle_to_surface(transform, surface, u = None, v = None):
-    
+    """
+        Follicle the transform to a nurbs surface.
+    """
     position = cmds.xform(transform, q = True, ws = True, t = True)
 
     uv = u,v
@@ -6994,6 +7084,11 @@ def create_surface_follicle(surface, description = None, uv = [0,0]):
     return follicle
 
 def transforms_to_nurb_surface(transforms, description, spans = -1, offset_axis = 'Y', offset_amount = 1):
+    """
+        Create a nurbs surface from a list of joints.  
+        Good for creating a nurbs surface that follows a spine or a tail.
+    """
+    
     
     transform_positions_1 = []
     transform_positions_2 = []
@@ -7054,7 +7149,9 @@ def transforms_to_nurb_surface(transforms, description, spans = -1, offset_axis 
     return loft[0]
 
 def transforms_to_curve(transforms, spans, description):
-    
+    """
+        Create a curve from a list of transforms.  Good for create the curve for a spine joint chain or a tail joint chain.
+    """
     transform_positions = []
         
     for joint in transforms:
@@ -7084,7 +7181,9 @@ def transforms_to_curve(transforms, spans, description):
     return curve
     
 def transforms_to_joint_chain(transforms, name = ''):
-    
+    """
+        Given a list of transforms, create a joint chain.
+    """
     cmds.select(cl = True)
     
     joints = []
@@ -7103,6 +7202,9 @@ def transforms_to_joint_chain(transforms, name = ''):
     return joints
 
 def transform_to_polygon_plane(transform):
+    """
+        Create a single polygon face from the position and orientation of a transform.
+    """
     plane = cmds.polyPlane( w = 1, h = 1, sx = 1, sy = 1, ax = [0, 1, 0], ch = 0)
     
     plane = cmds.rename(plane, inc_name('%s_plane' % transform))
@@ -7115,7 +7217,9 @@ def curve_to_nurb_surface(curve):
     pass
     
 def edges_to_curve(edges, description):
-    
+    """
+        Given a list of edges create a curve.
+    """
     cmds.select(edges)
 
     curve =  cmds.polyToCurve(form = 2, degree = 3 )[0]
@@ -7125,7 +7229,9 @@ def edges_to_curve(edges, description):
     return curve
     
 def get_intersection_on_mesh(mesh, ray_source_vector, ray_direction_vector ):
-    
+    """
+        Given a ray vector with source and direction, find the closest intersection on a mesh.
+    """
     mesh_fn = api.MeshFunction(mesh)
     
     intersection = mesh_fn.get_closest_intersection(ray_source_vector, ray_direction_vector)
@@ -7133,7 +7239,9 @@ def get_intersection_on_mesh(mesh, ray_source_vector, ray_direction_vector ):
     return intersection
     
 def get_closest_uv_on_mesh(mesh, three_value_list):
-    
+    """
+        Find the closest uv on a mesh given a vector.
+    """
     
     mesh = api.MeshFunction(mesh)
     found = mesh.get_uv_at_point(three_value_list)
@@ -7142,7 +7250,9 @@ def get_closest_uv_on_mesh(mesh, three_value_list):
     
 
 def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis = 'X', accuracy = 100, angle_range = 180):
-    
+    """
+        This will find the closest intersection on a mesh by testing on a rotate axis.
+    """
     closest = None
     found = None
     
@@ -7190,7 +7300,9 @@ def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis
     return found
     
 def get_closest_parameter_on_curve(curve, three_value_list):
-    
+    """
+        Find the closest parameter value on the curve given a vector.
+    """
     curve_shapes = get_shapes(curve)
     
     if curve_shapes:
@@ -7203,6 +7315,10 @@ def get_closest_parameter_on_curve(curve, three_value_list):
     return curve.get_parameter_at_position(newPoint)
 
 def get_closest_parameter_on_surface(surface, vector):
+    """
+        Find the closest parameter value on the surface given a vector.
+        Returns a uv list.
+    """
     shapes = get_shapes(surface)
     
     if shapes:
@@ -7223,6 +7339,9 @@ def get_closest_parameter_on_surface(surface, vector):
     return uv
 
 def get_closest_position_on_curve(curve, three_value_list):
+    """
+        Given a vector, find the closest position on a curve.
+    """
     
     curve_shapes = get_shapes(curve)
     
@@ -7234,6 +7353,11 @@ def get_closest_position_on_curve(curve, three_value_list):
     return curve.get_closest_position( three_value_list )
 
 def get_parameter_from_curve_length(curve, length_value):
+    
+    """
+        Find the parameter value given the length section of a curve.
+    """
+    
     curve_shapes = get_shapes(curve)
     
     if curve_shapes:
@@ -7244,14 +7368,18 @@ def get_parameter_from_curve_length(curve, length_value):
     return curve.get_parameter_at_length(length_value)
 
 def get_point_from_curve_parameter(curve, parameter):
-    
+    """
+        Return the vector found at the parameter on the curve.
+    """
     return cmds.pointOnCurve(curve, pr = parameter, ch = False)
 
 
 
 @undo_chunk
 def create_oriented_joints_on_curve(curve, count = 20, description = None, rig = False):
-    
+    """
+        Create joints on curve that are oriented to aim at child.
+    """
     if not description:
         description = 'curve'
     
@@ -7312,7 +7440,9 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None, rig =
     
 @undo_chunk
 def create_joints_on_curve(curve, joint_count, description, attach = True, create_controls = False):
-    
+    """
+        Create joints on curve that do not aim at child.
+    """
     group = cmds.group(em = True, n = inc_name('joints_%s' % curve))
     control_group = None
     
@@ -7438,7 +7568,11 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
     return joints, group, control_group
 
 def create_ghost_chain(transforms):
-    
+    """
+        A ghost chain has the same hierarchy has the supplied transforms.
+        It connects into the an xform group above the transform.  
+        This allows for setups that follow a nurbs surface, and then work like an fk hierarchy after. 
+    """
     last_ghost = None
     
     ghosts = []
@@ -7467,7 +7601,10 @@ def create_ghost_chain(transforms):
         
 @undo_chunk
 def snap_joints_to_curve(joints, curve = None, count = 10):
-    
+    """
+        Snap the joints to a curve. 
+        If count is greater than the number of joints, than joints will be added along the curve.
+    """
     if not joints:
         return
     
@@ -7520,6 +7657,9 @@ def snap_joints_to_curve(joints, curve = None, count = 10):
         cmds.delete(delete_after)    
 
 def convert_indices_to_mesh_vertices(indices, mesh):
+    """
+        Return a list of properly named vertices out of a list of indices.
+    """
     verts = []
     
     for index in indices:
@@ -7528,12 +7668,17 @@ def convert_indices_to_mesh_vertices(indices, mesh):
     return verts
 
 def get_vertex_normal(vert_name):
+    """
+        Get the position of a normal of a vertex.
+    """
     normal = cmds.polyNormalPerVertex(vert_name, q = True, normalXYZ = True)
     normal = normal[:3]
     return vtool.util.Vector(normal)
 
 def add_poly_smooth(mesh):
-    
+    """
+        create a polySmooth node on the mesh. 
+    """
     return cmds.polySmooth(mesh, mth = 0, dv = 1, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
 
 
@@ -7545,6 +7690,11 @@ def add_poly_smooth(mesh):
     
     
 def cluster_curve(curve, description, join_ends = False, join_start_end = False, last_pivot_end = False):
+    """
+        Create clusters on the cvs of a curve.
+        joint_start_end, the cv at the start and end of the curve will be joined.
+        join_ends, the 2 start cvs will have one cluster, the 2 end cvs will have one cluster.
+    """
     
     clusters = []
     
@@ -7598,13 +7748,21 @@ def cluster_curve(curve, description, join_ends = False, join_start_end = False,
     return clusters
 
 def create_cluster(points, name):
-    
+    """
+        Create a cluster on a bunch of points.
+    """
     cluster, handle = cmds.cluster(points, n = inc_name('cluster_%s' % name))
     
     return cluster, handle
 
 def create_cluster_bindpre(cluster, handle):
-    
+    """
+        Create a bind pre matrix for the cluster.  
+        This is good if for treating a cluster like a lattice.  
+        Lattices have a base. If the base and the lattice move together the lattice has no effect.
+        Likewise if you move the bind pre transform and the cluster handle together the cluster does not deform the mesh.
+        Only when you move the cluster handle without the bind pre.
+    """
     #cluster_parent = cmds.listRelatives(handle, p = True)
     
     bindpre = cmds.duplicate(handle, n = 'bindPre_%s' % handle)[0]
@@ -7620,7 +7778,9 @@ def create_cluster_bindpre(cluster, handle):
     return bindpre
 
 def create_lattice(points, description, divisions = (3,3,3), falloff = (2,2,2)):
-    
+    """
+        Convenience for creating a lattice.
+    """
     
     
     ffd, lattice, base = cmds.lattice(points, 
@@ -7633,6 +7793,9 @@ def create_lattice(points, description, divisions = (3,3,3), falloff = (2,2,2)):
     
 
 def find_deformer_by_type(mesh, deformer_type, return_all = False):
+    """
+        Given a mesh find a deformer with deformer_type in the history.
+    """
     
     scope = cmds.listHistory(mesh, interestLevel = 1)
     
@@ -7655,6 +7818,9 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
     return found
 
 def get_influences_on_skin(skin_deformer):
+    """
+        Get the names of the skin influences in the skin cluster.
+    """
     indices = get_indices('%s.matrix' % skin_deformer)
        
     influences = []
@@ -7665,12 +7831,17 @@ def get_influences_on_skin(skin_deformer):
     return influences
 
 def get_non_zero_influences(skin_deformer):
-    
+    """
+        Get influences that have weight in the skin cluster.
+    """
     influences = cmds.skinCluster(skin_deformer, q = True, wi = True)
     
     return influences
     
 def get_index_at_skin_influence(influence, skin_deformer):
+    """
+        Given an influence name, find at what index it connects to the skin cluster.
+    """
     indices = get_indices('%s.matrix' % skin_deformer)
           
     for index in indices:
@@ -7680,6 +7851,9 @@ def get_index_at_skin_influence(influence, skin_deformer):
             return index
         
 def get_skin_influence_at_index(index, skin_deformer):
+    """
+        Find which influence connect to the skin cluster at the index.
+    """
     influence_slot = '%s.matrix[%s]' % (skin_deformer, index) 
     
     connection = get_attribute_input( influence_slot )
@@ -7689,9 +7863,18 @@ def get_skin_influence_at_index(index, skin_deformer):
         return connection[0]    
 
 def get_skin_influence_indices(skin_deformer):
+    """
+        Get the indices of the connected influences.
+    """
+    
     return get_indices('%s.matrix' % skin_deformer)
 
 def get_skin_influences(skin_deformer, return_dict = False):
+    """
+        Get the influences connected to the skin cluster.
+        Return a dictionary with the keys being the name of the influences.
+        The value at the key the index where the influence connects to the skin cluster.
+    """
     indices = get_skin_influence_indices(skin_deformer)
     
     if not return_dict:
@@ -7710,7 +7893,9 @@ def get_skin_influences(skin_deformer, return_dict = False):
     return found_influences
 
 def get_meshes_skinned_to_joint(joint):
-    
+    """
+        Get all meshses that are skinned to the specified joint.
+    """
     skins = cmds.ls(type = 'skinCluster')
     
     found = []
@@ -7729,6 +7914,11 @@ def get_meshes_skinned_to_joint(joint):
     
     
 def get_skin_weights(skin_deformer):
+    """
+        Get the skin weights for the skin cluster.
+        Return a dictionary where the key is the influence, 
+        and the value is the a list of weights at the influence.
+    """
     value_map = {}
     
     indices = get_indices('%s.weightList' % skin_deformer)
@@ -7758,7 +7948,9 @@ def get_skin_weights(skin_deformer):
     return value_map
 
 def get_skin_blend_weights(skin_deformer):
-    
+    """
+        Get the blendWeight values on the skin cluster.
+    """
     indices = get_indices('%s.weightList' % skin_deformer)
     
     blend_weights_attr = '%s.blendWeights' % skin_deformer
@@ -7786,7 +7978,9 @@ def get_skin_blend_weights(skin_deformer):
     return values
 
 def set_skin_blend_weights(skin_deformer, weights):
-    
+    """
+        Set the blendWeights on the skin cluster given a list of weights.
+    """
     indices = get_indices('%s.weightList' % skin_deformer)
     
     for inc in range(0, len(indices)):
@@ -7798,6 +7992,9 @@ def set_skin_blend_weights(skin_deformer, weights):
         
 
 def set_skin_weights_to_zero(skin_deformer):
+    """
+        Set all the weights on the mesh to zero.
+    """
     weights = cmds.ls('%s.weightList[*]' % skin_deformer)
         
     for weight in weights:
@@ -7859,10 +8056,7 @@ def get_intermediate_object(transform):
     shapes = cmds.listRelatives(transform, s = True, f = True)
     
     return shapes[-1]
-
-
     
-
 def invert_blendshape_weight(blendshape_deformer, index = -1):
     pass
 
@@ -8135,9 +8329,6 @@ def convert_joint_to_nub(start_joint, end_joint, count, prefix, name, side, mid_
     
     return rig.control_group, rig.setup_group
     
-
-
-
 def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, delete_wire = True, skin = True, falloff = 1, create_controls = True):
     
     vtool.util.show('converting %s' % wire_deformer)
@@ -8976,21 +9167,8 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         skin = find_deformer_by_type(skin_mesh, 'skinCluster')
         
-        """
-        if not skin:
-            cmds.warning('No skin found on %s.' % skin_mesh)
-            
-            offset = cmds.duplicate(corrective)[0]
-            other_delta = cmds.duplicate(skin_mesh)[0]
+        if not cmds.pluginInfo('cvShapeInverterDeformer.py', query=True, loaded=True):
         
-            orig = get_intermediate_object(skin_mesh)
-            orig = create_shape_from_shape(orig, 'home')
-            
-        if skin:
-        """
-        plugins = cmds.pluginInfo(q = True, ls = True)
-        
-        if not 'cvShapeInverterDeformer' in plugins:
             file_name = __file__
             file_name = file_name.replace('util.py', 'cvShapeInverterDeformer.py')
             file_name = file_name.replace('.pyc', '.py')
@@ -9003,12 +9181,14 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
-
+        
+        
         offset = correct.invert(skin_mesh, corrective)
         
         cmds.delete(offset, ch = True)
         
         orig = get_intermediate_object(skin_mesh)
+        
         orig = create_shape_from_shape(orig, 'home')
         
         envelopes.turn_on(respect_initial_state=True)
@@ -9051,9 +9231,9 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         envelopes.turn_on(respect_initial_state=True)
         
-                
+        
         return offset
-
+        
     except (RuntimeError):
         vtool.util.show( traceback.format_exc() )
         
