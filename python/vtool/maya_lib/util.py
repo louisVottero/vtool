@@ -4946,10 +4946,31 @@ def apply_shading_engine(shader_name, mesh):
     """
     Adds the named shading engine to the mesh.
     """
+    
+    
+    
     cmds.sets(mesh, e = True, forceElement = shader_name)
     
 def get_shading_engine_geo(shader_name):
     pass
+
+def get_shading_engines(shader_name):
+    outputs = get_outputs('%s.outColor' % shader_name, node_only = True)
+    
+    found = []
+    
+    for output in outputs:
+        if cmds.nodeType(output) == 'shadingEngine':
+            found.append(output)
+            
+    return found
+
+def apply_shader(shader_name, mesh):
+    
+    engines = get_shading_engines(shader_name)
+    
+    if engines:
+        cmds.sets( mesh, e = True, forceElement = engines[0])
     
 def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
     """
@@ -4979,6 +5000,25 @@ def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
     #shape = get_mesh_shape(mesh)
     
     return material
+
+
+
+def apply_transparent_lambert(mesh):
+    
+    
+    name = 'transparent_lambert'
+    
+    if not cmds.objExists(name):
+        lambert = apply_new_shader(mesh, 'lambert', name)
+        
+        cmds.setAttr('%s.transparencyR' % lambert, 1)
+        cmds.setAttr('%s.transparencyG' % lambert, 1)
+        cmds.setAttr('%s.transparencyB' % lambert, 1)
+        
+    if cmds.objExists(name):
+        apply_shader(name, mesh)
+        
+    
     
 
 def create_display_layer(name, nodes):

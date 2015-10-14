@@ -1149,6 +1149,9 @@ class PoseBase(PoseGroup):
         if not mesh_attributes:
             return
         
+        if index > (len(mesh_attributes)-1):
+            return
+            
         mesh = util.get_attribute_input('%s.%s' % (self.pose_control, mesh_attributes[index]), True)
         
         return mesh
