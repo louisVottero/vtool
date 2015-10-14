@@ -4619,7 +4619,10 @@ class EnvelopeHistory(object):
         
     def _get_history(self):
         
-        history = cmds.listHistory(self.transform)
+        history = get_history(self.transform)
+        
+        print 'history!!!!', history
+        
         return history
         
     def _get_envelope_history(self):
@@ -7862,6 +7865,23 @@ def create_lattice(points, description, divisions = (3,3,3), falloff = (2,2,2)):
     
     
 
+def get_history(geometry):
+    scope = cmds.listHistory(geometry, interestLevel = 1)
+    
+    found = []
+    
+    for thing in scope[1:]:
+        
+        found.append(thing)
+            
+        if cmds.objectType(thing, isa = "shape") and not cmds.nodeType(thing) == 'lattice':
+            return found
+        
+    if not found:
+        return None
+    
+    return found
+
 def find_deformer_by_type(mesh, deformer_type, return_all = False):
     """
         Given a mesh find a deformer with deformer_type in the history.
@@ -7871,19 +7891,17 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
     
     found = []
     
-    for thing in scope[1:]:
+    history = get_history(mesh)
+    
+    for thing in history:
         if cmds.nodeType(thing) == deformer_type:
             if not return_all:
                 return thing
             
             found.append(thing)
             
-        if cmds.objectType(thing, isa = "shape") and not cmds.nodeType(thing) == 'lattice':
-            return found
-        
     if not found:
         return None
-        
         
     return found
 
@@ -9251,8 +9269,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
-        
-        
+                
         offset = correct.invert(skin_mesh, corrective)
         
         cmds.delete(offset, ch = True)
