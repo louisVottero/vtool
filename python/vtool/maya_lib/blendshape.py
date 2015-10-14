@@ -27,6 +27,7 @@ class BlendShape(object):
     def _store_targets(self):
         
         if not self.blendshape:
+            
             return
         
         target_attrs = cmds.listAttr(self._get_input_target(0), multi = True)
@@ -57,7 +58,8 @@ class BlendShape(object):
         
         name = name.replace(' ', '_')
         
-        target_index = self.targets[name].index
+        if self.targets.has_key(name):
+            target_index = self.targets[name].index
         
         return '%s.weight[%s]' % (self.blendshape, target_index)
 
@@ -266,12 +268,11 @@ class BlendShape(object):
     def remove_target(self, name):
         
         target_group = self._get_input_target_group(name)
+        
         weight_attr = self._get_weight(name)
         
         cmds.removeMultiInstance(target_group, b = True)
         cmds.removeMultiInstance(weight_attr, b = True)
-        
-        
         
         self.weight_indices.remove( self.targets[name].index )
         self.targets.pop(name)

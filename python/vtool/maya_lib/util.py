@@ -4529,6 +4529,8 @@ class MayaWrap(object):
         
         base = cmds.duplicate(mesh, n = 'wrapBase_%s' % mesh)[0]
         
+        rename_shapes(base)
+        
         if self.base_parent:
             cmds.parent(base, self.base_parent)
         
@@ -4620,8 +4622,6 @@ class EnvelopeHistory(object):
     def _get_history(self):
         
         history = get_history(self.transform)
-        
-        print 'history!!!!', history
         
         return history
         
@@ -7893,12 +7893,14 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
     
     history = get_history(mesh)
     
-    for thing in history:
-        if cmds.nodeType(thing) == deformer_type:
-            if not return_all:
-                return thing
-            
-            found.append(thing)
+    if history:
+    
+        for thing in history:
+            if cmds.nodeType(thing) == deformer_type:
+                if not return_all:
+                    return thing
+                
+                found.append(thing)
             
     if not found:
         return None
