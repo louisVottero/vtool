@@ -686,8 +686,6 @@ class TreeWidget(QtGui.QTreeWidget):
         parents = self.get_tree_item_path(item)
         parent_names = self.get_tree_item_names(parents)
         
-        
-        
         names = []
         
         if not parent_names:

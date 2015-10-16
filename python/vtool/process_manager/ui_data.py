@@ -315,7 +315,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         for name in parent_names:
             names.append(name[0])
         
-        names.insert(1, '_data')
+        names.insert(1, '.data')
         
         names.reverse()
         import string

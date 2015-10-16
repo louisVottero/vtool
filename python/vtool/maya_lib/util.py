@@ -3302,8 +3302,10 @@ class StoreControlData(StoreData):
     
     def _set_control_data(self, control, data):
         for attribute in data:
-            attribute_name = '%s.%s' % (control, attribute)
             
+            attribute_name = control + '.' + attribute
+            
+            """ removed for speed
             if not cmds.objExists(attribute_name):
                 continue
             
@@ -3315,12 +3317,12 @@ class StoreControlData(StoreData):
             if connection:
                 if cmds.nodeType(connection).find('animCurve') == -1:
                     continue
-            
+            """
             try:
                 cmds.setAttr(attribute_name, data[attribute] )  
-                
             except:
-                cmds.warning('Could not set %s.' % attribute_name)     
+                pass
+                #cmds.warning('Could not set %s.' % attribute_name)     
         
     def _find_other_side(self, control):
         
@@ -3409,11 +3411,12 @@ class StoreControlData(StoreData):
         if not data:
             return
         
+        
         for control in data:
             
             if cmds.objExists('%s.POSE' % control):
                 continue
-                
+       
             attribute_data = data[control]
             self._set_control_data(control, attribute_data)
             

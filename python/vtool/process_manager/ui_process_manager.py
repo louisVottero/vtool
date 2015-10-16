@@ -107,9 +107,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         path = self.view_widget.tree_widget.directory
         path = util_file.join_path(path, process_name)
-        data_path = util_file.join_path(path, '_data/build')
+        data_path = util_file.join_path(path, '.data/build')
         
-        data_dir = util_file.join_path(path, '_data')
+        data_dir = util_file.join_path(path, '.data')
         
         if not util_file.is_dir(data_dir):
             return

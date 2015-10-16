@@ -75,8 +75,8 @@ def get_unused_process_name(directory = None, name = None):
 class Process(object):
     
     description = 'process'
-    data_folder_name = '_data'
-    code_folder_name = '_code'
+    data_folder_name = '.data'
+    code_folder_name = '.code'
     process_data_filename = 'manifest.data'
     
     def __init__(self, name = None):
@@ -92,6 +92,23 @@ class Process(object):
         
         self.process_name = new_name
             
+    def _handle_old_folders(self, path):
+        
+        #here temporarily until old paths are out of use... 
+        #could take a long time.
+        
+        old_data_name = self.data_folder_name.replace('.', '_')
+        old_code_name = self.code_folder_name.replace('.', '_')
+        
+        old_data_path = util_file.join_path(path, old_data_name)
+        old_code_path = util_file.join_path(path, old_code_name)
+        
+        if util_file.is_dir(old_data_path):
+            util_file.rename(old_data_path, self.data_folder_name)
+            
+        if util_file.is_dir(old_code_path):
+            util_file.rename(old_code_path, self.code_folder_name)
+                
     def _create_folder(self):
                 
         if not util_file.is_dir(self.directory):
@@ -101,7 +118,9 @@ class Process(object):
         path = util_file.create_dir(self.process_name, self.directory)
     
         if path and util_file.is_dir(path):
-        
+
+            self._handle_old_folders(path)
+            
             util_file.create_dir(self.data_folder_name, path)
             util_file.create_dir(self.code_folder_name, path)
             
@@ -145,6 +164,9 @@ class Process(object):
         self.external_code_paths = directory
         
     def is_process(self):
+        path = self.get_path()
+        self._handle_old_folders(path)
+        
         if not util_file.is_dir(self.get_code_path()):
             return False
         

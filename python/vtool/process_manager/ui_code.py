@@ -437,6 +437,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.setSelectionMode(self.ExtendedSelection)
         
         self.setDragDropMode(self.InternalMove)
+        self.setAcceptDrops(True)  
+        self.setAutoScroll(True)
+        
         self.setDefaultDropAction(QtCore.Qt.MoveAction)
         self.invisibleRootItem().setFlags(QtCore.Qt.ItemIsDropEnabled) 
         
@@ -877,11 +880,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         script_name = vtool.util_file.get_basename(directory)
         
-        
-        
         item = self._get_item_by_name(script_name)
-        
-        
         
         if not util_file.is_file(directory):
             
@@ -925,6 +924,12 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         items = self.selectedItems()
         
+        item_count = self.topLevelItemCount()
+        for inc in range(0, item_count):
+            top_item = self.topLevelItem(inc)
+            top_item.set_state(-1)
+        
+        
         if len(items) > 1:
             
             if vtool.util.is_in_maya():
@@ -933,12 +938,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 if value:
                     
                     import maya.cmds as cmds
-                    """
-                    if cmds.file(q = True, mf = True):
-                        result = qt_ui.get_permission('Changes not saved. Run process anyways?', self)
-                        if not result:
-                            return
-                    """ 
+                    
                     cmds.file(new = True, f = True)
     
                 if value == None:

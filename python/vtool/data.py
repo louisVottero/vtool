@@ -166,7 +166,6 @@ class DataFile(util_file.FileManager):
     
     def __init__(self, name, directory):
         
-        
         self.filepath = util_file.create_file(name, directory)
         
         self.name = util_file.get_basename(self.filepath)
@@ -250,8 +249,6 @@ class DataFile(util_file.FileManager):
         self.name = new_name
         self.directory = util_file.get_dirname(filepath)
         self.filepath = filepath
-        
-        
         
         return self.filepath
     

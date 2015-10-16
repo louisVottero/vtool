@@ -9,6 +9,7 @@ import vtool.util
 import time
 
 def get_pose_instance(pose_name):
+    
     if cmds.objExists('%s.type' % pose_name):
         pose_type = cmds.getAttr('%s.type' % pose_name)
         
@@ -124,7 +125,8 @@ class PoseManager(object):
                 
             input = util.get_attribute_input('%s.weight' % pose_name)
             if not input:
-                cmds.setAttr('%s.weight' % pose_name, 0)
+                if cmds.objExists('%s.weight' % pose_name):
+                    cmds.setAttr('%s.weight' % pose_name, 0)
     
     
     def set_default_pose(self):
@@ -175,6 +177,8 @@ class PoseManager(object):
             pose = self.create_no_reader_pose(name)
         if pose_type == 'timeline':
             pose = self.create_timeline_pose(name)
+        if pose_type == 'group':
+            pose = self.create_group_pose(name)
             
         return pose
             
@@ -238,6 +242,19 @@ class PoseManager(object):
         
         return pose_control
     
+    def create_group_pose(self, name = None):
+        
+        if not name:
+            name = util.inc_name('pose_group_1')
+        
+        pose = PoseGroup(name)
+        pose.set_pose_group(self.pose_group)
+        pose_control = pose.create()
+        
+        self.pose_control = pose_control
+        
+        return pose_control
+    
     @util.undo_chunk
     def reset_pose(self, pose_name):
         
@@ -290,6 +307,11 @@ class PoseManager(object):
     def visibility_off(self, pose_name):
         
         pose = self.get_pose_instance(pose_name)
+        
+        pose_type = cmds.getAttr('%s.type' % pose_name)
+        
+        if pose_type == 'group':
+            return
         
         count = pose.get_mesh_count()
         
@@ -354,8 +376,6 @@ class PoseManager(object):
         progress = util.ProgressBar('adding poses ... ', count)
         
         for inc in range(count):
-            
-            
             
             if progress.break_signaled():
                 break
@@ -425,6 +445,29 @@ class PoseGroup(object):
         
         return children
     
+    def _create_pose_control(self):
+        
+        pose_control = cmds.group(em = True, n = self._get_name())
+        util.hide_keyable_attributes(pose_control)
+        
+        self.pose_control = pose_control
+        
+        self._create_attributes(pose_control)
+        
+        return pose_control
+        
+    def _create_attributes(self, pose_control):
+        title = util.MayaEnumVariable('POSE')
+        title.create(pose_control)  
+        
+        pose_type = util.MayaStringVariable('type')
+        pose_type.set_value(self._pose_type())
+        pose_type.set_locked(True)
+        pose_type.create(pose_control)
+        
+        cmds.addAttr(pose_control, ln = 'description', dt = 'string')
+        cmds.setAttr('%s.description' % pose_control, self.description, type = 'string')
+    
     #--- pose
     def is_a_pose(self, node):
         if cmds.objExists('%s.POSE' % node ):    
@@ -446,6 +489,7 @@ class PoseGroup(object):
     def goto_pose(self):
         
         if self.pose_control:
+            
             store = util.StoreControlData(self.pose_control)
             store.eval_data()
             
@@ -471,6 +515,43 @@ class PoseGroup(object):
         store.set_data()
         
         return pose_control
+    
+    def create_all_blends(self):
+
+        self.create_sub_poses()
+        
+    def create_blend(self, mesh_index = None, goto_pose = True, sub_poses = True):
+        
+        if goto_pose:
+            self.goto_pose()
+        
+        if sub_poses:
+            self.create_sub_poses()
+            
+    def create_sub_poses(self, mesh = None):
+        
+        children = self._get_sub_poses()
+        
+        if children:
+            
+            for child in children:
+                
+                child_instance = get_pose_instance(child)
+                
+                if mesh:
+                    sub_mesh_index = self.get_target_mesh_index(mesh)
+                    child_instance.create_blend(sub_mesh_index, goto_pose = True)
+                    
+                if not mesh:
+                    
+                    sub_meshes = child_instance.get_target_meshes()
+                    for sub_mesh in sub_meshes:
+                        index = child_instance.get_target_mesh_index(sub_mesh)
+                        child_instance.create_blend(index, goto_pose = True)
+            
+                if mesh:
+                    mesh_index = child_instance.get_target_mesh_index(mesh)
+                    self.create_blend(mesh_index, True, False)
     
     def delete(self):
         cmds.delete(self.pose_control)
@@ -789,24 +870,6 @@ class PoseBase(PoseGroup):
         
         return other_pose_instance
 
-    def _create_attributes(self, control):
-        
-        cmds.addAttr(control, ln = 'description', dt = 'string')
-        cmds.setAttr('%s.description' % control, self.description, type = 'string')
-        
-        cmds.addAttr(control, ln = 'control_scale', at = 'float', dv = 1)
-        
-        title = util.MayaEnumVariable('POSE')
-        title.create(control)  
-        
-        pose_type = util.MayaStringVariable('type')
-        pose_type.set_value(self._pose_type())
-        pose_type.set_locked(True)
-        pose_type.create(control)
-        
-        cmds.addAttr(control, ln = 'enable', at = 'double', k = True, dv = 1, min = 0, max = 1)
-        cmds.addAttr(control, ln = 'weight', at = 'double', k = True, dv = 0)
-        
     def _create_pose_control(self):
         
         control = util.Control(self._get_name())
@@ -817,9 +880,16 @@ class PoseBase(PoseGroup):
         self.pose_control = pose_control
         
         self._create_attributes(pose_control)
+
+    def _create_attributes(self, control):
         
-        return pose_control
-    
+        super(PoseBase, self)._create_attributes(control)
+        
+        cmds.addAttr(control, ln = 'control_scale', at = 'float', dv = 1)
+        
+        cmds.addAttr(control, ln = 'enable', at = 'double', k = True, dv = 1, min = 0, max = 1)
+        cmds.addAttr(control, ln = 'weight', at = 'double', k = True, dv = 0)
+        
     def _create_mirror_mesh(self, target_mesh):
         
         other_mesh = target_mesh
@@ -1102,14 +1172,15 @@ class PoseBase(PoseGroup):
         
         self._connect_mesh(pose_mesh)
         
-        index = self._get_mesh_count()
+        
         
         string_var = util.MayaStringVariable('mesh_pose_source')
         string_var.create(pose_mesh)
         string_var.set_value(mesh)
         
         if toggle_vis:
-            self.toggle_vis(index-1)
+            index = self.get_target_mesh_index(mesh)
+            self.toggle_vis(index)
         
         return pose_mesh
     
@@ -1117,6 +1188,8 @@ class PoseBase(PoseGroup):
         
         index = self.get_target_mesh_index(mesh)
         mesh = self.get_mesh(index)
+        
+        self.visibility_off(mesh)
         
         if index == None:
             return
@@ -1137,6 +1210,8 @@ class PoseBase(PoseGroup):
         
         cmds.delete(mesh)
         util.disconnect_attribute(attribute)
+        
+        
     
     def get_mesh(self, index):
         
@@ -1343,11 +1418,7 @@ class PoseBase(PoseGroup):
                 pose = False
                 
             self.create_blend(inc, goto_pose = pose)
-            
-            
-            
-            
-        
+    
     def create_blend(self, mesh_index, goto_pose = True, sub_poses = True):
         
         mesh = self._get_current_mesh(mesh_index)
@@ -1396,24 +1467,7 @@ class PoseBase(PoseGroup):
             self.create_sub_poses(sub_pass_mesh)
         
             
-    def create_sub_poses(self, mesh):
-        
-        children = self._get_sub_poses()
-        
-        if children:
-            
-            for child in children:
-                
-                
-                
-                child_instance = get_pose_instance(child)
-                
-                sub_mesh_index = self.get_target_mesh_index(mesh)
-                
-                child_instance.create_blend(sub_mesh_index, goto_pose = True)
-            
-            mesh_index = self.get_target_mesh_index(mesh)
-            self.create_blend(mesh_index, True, False)
+
         
     def detach_sub_poses(self):
         
@@ -2486,4 +2540,5 @@ class PoseTimeline(PoseNoReader):
         
 corrective_type = { 'cone' : PoseCone,
                      'no reader' : PoseNoReader,
-                     'timeline' : PoseTimeline }
+                     'timeline' : PoseTimeline,
+                     'group' : PoseGroup }

@@ -43,6 +43,8 @@ class PoseManager(ui.MayaWindow):
         self.pose_set.pose_reset.connect(self.pose_list.pose_reset)
         self.sculpt.pose_mirror.connect(self.pose_list.mirror_pose)
         
+        self.sculpt.hide()
+        
         self.main_layout.addWidget(self.pose_set)
         self.main_layout.addWidget(self.pose_list)
         self.main_layout.addWidget(self.sculpt)
@@ -70,7 +72,14 @@ class PoseManager(ui.MayaWindow):
             return    
         
         pose_name = str(pose_name)
-        self.sculpt.set_pose(pose_name)
+        
+        pose_type = cmds.getAttr('%s.type' % pose_name)
+        
+        if pose_type != 'group':
+            self.sculpt.set_pose(pose_name)
+            self.sculpt.show()
+        if pose_type == 'group':
+            self.sculpt.hide()
         
         cmds.select(pose_name, r = True)
         
@@ -386,26 +395,10 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         
         new_name = item.text(0)
         
-        print self.old_name, new_name
-        
         new_name = corrective.PoseManager().rename_pose(str(self.old_name), str(new_name))
         
         item.setText(0, new_name)
     
-    def refresh(self):
-        self._populate_list()
-      
-    """  
-    def mesh_change(self, index):
-        
-        pose_name = self._current_pose()
-        
-        if not pose_name:
-            return
-        
-        pose = corrective.PoseCone()
-        pose.set_pose(pose_name)
-    """ 
     def _remove_current_item(self):
         
         item = self.currentItem()
@@ -420,6 +413,9 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         
         
         del(item)
+    
+    def refresh(self):
+        self._populate_list()
         
     def delete_pose(self):
         
@@ -540,8 +536,6 @@ class PoseTreeWidget(BaseTreeWidget):
             if self.drop_on(l):
                 event, row, col, topIndex = l
                 
-                print index.row(), row
-                
                 if row > -1:
                     if row == index.row():
                         is_dropped = False
@@ -549,9 +543,7 @@ class PoseTreeWidget(BaseTreeWidget):
                     is_dropped = True
         
         super(PoseTreeWidget, self).dropEvent(event)
-
-        print 'drop', is_dropped
-
+        
         if not is_dropped:
             if entered_item:
                 
@@ -577,7 +569,8 @@ class PoseTreeWidget(BaseTreeWidget):
             self.dragged_item.setDisabled(False)
             return
             
-        result = qt_ui.get_permission('Parent item %s?' % self.dragged_item.text(0), self)
+        #result = qt_ui.get_permission('Parent item %s?' % self.dragged_item.text(0), self)
+        result = True
         
         if not result:
             entered_item.removeChild(self.dragged_item)
@@ -596,8 +589,6 @@ class PoseTreeWidget(BaseTreeWidget):
             pose = self.dragged_item.text(0)
             
             current_parent = cmds.listRelatives(pose, p = True)
-            
-            #print entered_item.text(0)
             
             if entered_item:
                 pose_parent = entered_item.text(0)
@@ -639,6 +630,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self.context_menu = QtGui.QMenu()
         self.context_menu.setTearOffEnabled(True)
         
+        self.create_group = self.context_menu.addAction('New Group')
         self.create_cone = self.context_menu.addAction('New Cone')
         self.create_no_reader = self.context_menu.addAction('New No Reader')
         self.create_timeline = self.context_menu.addAction('New Timeline')
@@ -667,6 +659,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self.create_cone.triggered.connect(self.create_cone_pose)
         self.create_no_reader.triggered.connect(self.create_no_reader_pose)
         self.create_timeline.triggered.connect(self.create_timeline_pose)
+        self.create_group.triggered.connect(self.create_group_pose)
         
         self.rename_action.triggered.connect(self._rename_pose)
         self.delete_action.triggered.connect(self.delete_pose)
@@ -744,17 +737,6 @@ class PoseTreeWidget(BaseTreeWidget):
             cmds.select(cl = True)
             
             pose_item = self._add_pose_item(pose)
-        
-            sub_manager = corrective.PoseManager()
-            sub_manager.set_pose_group(pose)
-            
-            sub_poses = sub_manager.get_poses()
-            
-            if not sub_poses:
-                continue
-            
-            for sub_pose in sub_poses:
-                self._add_pose_item(sub_pose, pose_item)
                
         self.item_select = True
                
@@ -767,6 +749,16 @@ class PoseTreeWidget(BaseTreeWidget):
             pose_type = 'cone'
         
         new_item = self.create_pose(pose_type, pose_name, parent)
+        
+        sub_manager = corrective.PoseManager()
+        sub_manager.set_pose_group(pose_name)
+        
+        sub_poses = sub_manager.get_poses()
+        
+        if sub_poses:
+        
+            for sub_pose in sub_poses:
+                self._add_pose_item(sub_pose, new_item)
         
         return new_item 
                       
@@ -830,11 +822,11 @@ class PoseTreeWidget(BaseTreeWidget):
         if not pose:
             return
         
-        if selection:
-            
-            cmds.select(selection, r = True)
+        if not pose_type == 'group':
+            if selection:
                 
-            self.check_for_mesh.emit(pose)
+                cmds.select(selection, r = True)
+                self.check_for_mesh.emit(pose)
             
         item = self._add_item(pose, parent)
         
@@ -853,6 +845,9 @@ class PoseTreeWidget(BaseTreeWidget):
         
     def create_timeline_pose(self):
         self.create_pose('timeline', None, None)
+        
+    def create_group_pose(self):
+        self.create_pose('group', None, None)
     
     def mirror_pose(self):
         
@@ -872,20 +867,16 @@ class PoseTreeWidget(BaseTreeWidget):
             return
                 
         if pose_name:
-            for inc in range(0, self.topLevelItemCount()):
-                
-                if pose_name ==  str(self.topLevelItem(inc).text(0)):
-                    self.topLevelItem(inc).setSelected(True)
-                    
-                    auto_key_state = cmds.autoKeyframe(q = True, state = True)
-                    cmds.autoKeyframe(state = False)
-                    
-                    try:
-                        cmds.setAttr('%s.weight' % pose_name, 1)
-                    except:
-                        pass
-                    
-                    cmds.autoKeyframe(state = auto_key_state)
+            
+            auto_key_state = cmds.autoKeyframe(q = True, state = True)
+            cmds.autoKeyframe(state = False)
+            
+            try:
+                cmds.setAttr('%s.weight' % pose_name, 1)
+            except:
+                pass
+            
+            cmds.autoKeyframe(state = auto_key_state)
         
         items = self.selectedItems()
         
@@ -905,7 +896,7 @@ class PoseTreeWidget(BaseTreeWidget):
             if cmds.objExists(pose_names[0]):
                 
                 corrective.PoseManager().set_pose(pose_names[0])
-                
+        
         self.last_selection = pose_names
         
 class PoseWidget(qt_ui.BasicWidget):
@@ -946,14 +937,18 @@ class PoseWidget(qt_ui.BasicWidget):
             self.pose_control_widget = PoseNoReaderWidget()
             
         if pose_type == 'cone':
-            
             self.pose_control_widget = PoseConeWidget()
             
         if pose_type == 'timeline':
             self.pose_control_widget = PoseTimelineWidget()
+            
+        if pose_type == 'group':
+            self.pose_control_widget = PoseGroupWidget()
         
         self.pose_control_widget.set_pose(pose_name)
         
+        self.main_layout.setAlignment(QtCore.Qt.AlignLeft)
+        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.main_layout.addWidget(self.pose_control_widget)
         
     def set_pose_parent_name(self, parent_name):
@@ -1036,9 +1031,15 @@ class MeshWidget(qt_ui.BasicWidget):
         
         pose.set_pose(pose_name)
         
-        target_meshes =  pose.get_target_meshes()
+        pose_type = cmds.getAttr('%s.type' % pose_name)
         
-        self.update_meshes(target_meshes, meshes)
+        if not pose_type == 'group':
+            self.show()
+            target_meshes =  pose.get_target_meshes()            
+            self.update_meshes(target_meshes, meshes)
+            
+        if pose_type == 'group':
+            self.hide()
         
     def _is_in_mesh_list(self, mesh):
         
@@ -1094,10 +1095,38 @@ class MeshWidget(qt_ui.BasicWidget):
         permission = qt_ui.get_permission('Add %s:  %s  ?' % (mesh_info, sculpt_name), self)
         
         return permission        
+    
+    def _item_selected(self):
         
+        if not self.handle_selection_change:
+            return
+        
+        items = self.mesh_list.selectedItems()
+        
+        cmds.select(cl = True)
+        
+        for item in items:
+            if cmds.objExists(item.longname):
+                cmds.select(item.longname, add = True)
+        
+    def _warn_missing_meshes(self, meshes):
+        missing_meshes = ''
+        
+        for mesh in meshes:
+            if mesh: 
+                if not cmds.objExists(mesh):
+                    missing_meshes += '\n%s' % mesh
+                
+        if missing_meshes: 
+            qt_ui.warning('Cannot find: %s' % missing_meshes, self)
         
     @util.undo_chunk
     def add_mesh(self, selection = None):
+        
+        pose_name = self.pose_name
+        
+        if not pose_name:
+            return
         
         if not selection:
             selection = cmds.ls(sl = True, l = True)
@@ -1109,33 +1138,20 @@ class MeshWidget(qt_ui.BasicWidget):
         
         if not current_meshes:
             current_meshes = []
-        
-        missing_meshes = ''
-        
-        for current_mesh in current_meshes:
-            if not current_mesh or not cmds.objExists(current_mesh):
-                missing_meshes += '\n%s' % current_mesh
-                
-        if missing_meshes: 
-            qt_ui.warning('Cannot find: %s' % missing_meshes, self)
             
-        pose_name = self.pose_name
-        
-        if not pose_name:
-            return
+        self._warn_missing_meshes(current_meshes)
         
         sculpt_meshes = []
         list_meshes = []
-        added_meshes = []
         
         if selection:
             
             for selected in selection:
                 
+                selected = self._get_mesh_from_vertex(selected)
+                
                 if not util.has_shape_of_type(selected, 'mesh'):
                     continue
-                    
-                selected = self._get_mesh_from_vertex(selected)
                 
                 pass_mesh = selected
                 
@@ -1149,16 +1165,16 @@ class MeshWidget(qt_ui.BasicWidget):
                     pass_mesh = None
                     list_meshes.append(selected)
                     
-                if pass_mesh:   
-                    sculpt_meshes.append(pass_mesh)
+                if pass_mesh:
+                    sculpt_meshes.append(pass_mesh) 
+                    
+                         
         
         if sculpt_meshes or not current_meshes:
             
-            print 'sculpt meshes', sculpt_meshes, 'current', current_meshes
-            
             if sculpt_meshes:
                 
-                sculpt_meshes = vtool.util.convert_to_sequence(sculpt_meshes)
+                #sculpt_meshes = vtool.util.convert_to_sequence(sculpt_meshes)
                 
                 permission = self._get_sculpt_permission(sculpt_meshes)
                 
@@ -1167,11 +1183,31 @@ class MeshWidget(qt_ui.BasicWidget):
                 
                 corrective.PoseManager().add_mesh_to_pose(pose_name, sculpt_meshes)
         
-            update_meshes = current_meshes + sculpt_meshes + added_meshes  
+            #update_meshes = current_meshes + sculpt_meshes
+            update_meshes = sculpt_meshes
             self._update_meshes(pose_name, meshes = update_meshes)
+            
+            list_meshes = []
+            current_meshes = []
+            
+            self.mesh_list.clearSelection()
+            
+            items = []
+            
+            for mesh in sculpt_meshes:
+                index = corrective.PoseManager().get_mesh_index(pose_name, mesh)
+                if index != None:
+                    item = self.mesh_list.item(index)
+                    if item:
+                        item.setSelected(True)
+                        
+                    items.append(item)
+                    
+            if items:
+                self.mesh_list.scrollToItem(items[0])
+            
         
         selection = cmds.ls(sl = True, l = True)
-        
         
         if list_meshes:
             
@@ -1206,35 +1242,24 @@ class MeshWidget(qt_ui.BasicWidget):
                     index = index.row()
                 
                     corrective.PoseManager().toggle_visibility(index, pose_name)
-                    
+                
     def remove_mesh(self):
-        
-        meshes = self.get_current_meshes_in_list()
-        
-        if not meshes:
-            return
-        
-        self.pose_class.remove_mesh(meshes[0])
-        
-        indices = self.mesh_list.selectedIndexes()
-        
-        if indices:
-            index = indices[0].row()
-            self.mesh_list.takeItem(index)
-        
-    def _item_selected(self):
-        
-        if not self.handle_selection_change:
-            return
-        
         items = self.mesh_list.selectedItems()
         
-        cmds.select(cl = True)
+        if not items:
+            return
         
         for item in items:
-            if cmds.objExists(item.longname):
-                cmds.select(item.longname, add = True)
-        
+            mesh = str( item.longname )
+            
+            self.pose_class.remove_mesh(mesh)
+            
+            model_index = self.mesh_list.indexFromItem(item)
+            
+            index =  model_index.row()
+            item = self.mesh_list.takeItem(index)
+            del item
+            
     def update_meshes(self, meshes = [], added_meshes = []):
         self.mesh_list.clear()    
         
@@ -1404,6 +1429,9 @@ class SculptWidget(qt_ui.BasicWidget):
         
     def set_pose_enable(self):
         
+        if not cmds.objExists('%s.enable' % self.pose):
+            return
+        
         value = cmds.getAttr('%s.enable' % self.pose)
         
         value = value*100
@@ -1462,6 +1490,29 @@ class PoseBaseWidget(qt_ui.BasicWidget):
         
         self.pose = pose_name
 
+class PoseGroupWidget(PoseBaseWidget):
+    
+    def _build_widgets(self):
+        super(PoseGroupWidget, self)._build_widgets()
+        
+        layout = QtGui.QVBoxLayout()
+        build_all = QtGui.QPushButton('Build Sub Poses')
+        build_all.setMinimumSize(200,40)
+        
+        layout.addSpacing(10)
+        layout.addWidget(build_all, alignment = QtCore.Qt.AlignLeft)
+        layout.addSpacing(10)
+        build_all.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Minimum)
+        self.main_layout.setAlignment(QtCore.Qt.AlignLeft)
+        self.main_layout.addLayout(layout)
+        
+        build_all.clicked.connect(self._build_sub_poses)
+        
+    def _build_sub_poses(self):
+        
+        pose_instance = corrective.get_pose_instance(self.pose)
+        pose_instance.create_sub_poses()
+        
 class PoseNoReaderWidget(PoseBaseWidget):
     
     def _build_widgets(self):
