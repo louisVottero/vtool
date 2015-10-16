@@ -964,6 +964,7 @@ class PoseBase(PoseGroup):
     def _get_blendshape(self, mesh):
         
         return util.find_deformer_by_type(mesh, 'blendShape')
+        
 
     def _get_current_mesh(self, mesh_index):
         mesh = None
@@ -1078,6 +1079,9 @@ class PoseBase(PoseGroup):
             blend.create(target_mesh)
           
         if referenced:
+            
+            
+            
             skin_cluster = util.find_deformer_by_type(target_mesh, 'skinCluster')
             
             if skin_cluster:
@@ -1085,6 +1089,9 @@ class PoseBase(PoseGroup):
                     cmds.reorderDeformers(skin_cluster, blend.blendshape, target_mesh)
                 except:
                     pass
+                
+            if not skin_cluster:
+                cmds.reorderDeformers(blend.blendshape, blendshape_node, target_mesh)
             
             
         return blend
@@ -1202,7 +1209,6 @@ class PoseBase(PoseGroup):
             
             if blend_name:
                 blend = blendshape.BlendShape(blend_name)
-                
                 blend.remove_target(self.pose_control)
         
         attributes = self._get_mesh_message_attributes()
@@ -1224,6 +1230,9 @@ class PoseBase(PoseGroup):
         if not mesh_attributes:
             return
         
+        if index > (len(mesh_attributes)-1):
+            return
+            
         mesh = util.get_attribute_input('%s.%s' % (self.pose_control, mesh_attributes[index]), True)
         
         return mesh

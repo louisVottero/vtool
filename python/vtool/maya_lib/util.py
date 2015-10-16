@@ -4532,6 +4532,8 @@ class MayaWrap(object):
         
         base = cmds.duplicate(mesh, n = 'wrapBase_%s' % mesh)[0]
         
+        rename_shapes(base)
+        
         if self.base_parent:
             cmds.parent(base, self.base_parent)
         
@@ -4622,7 +4624,8 @@ class EnvelopeHistory(object):
         
     def _get_history(self):
         
-        history = cmds.listHistory(self.transform)
+        history = get_history(self.transform)
+        
         return history
         
     def _get_envelope_history(self):
@@ -4949,10 +4952,31 @@ def apply_shading_engine(shader_name, mesh):
     """
     Adds the named shading engine to the mesh.
     """
+    
+    
+    
     cmds.sets(mesh, e = True, forceElement = shader_name)
     
 def get_shading_engine_geo(shader_name):
     pass
+
+def get_shading_engines(shader_name):
+    outputs = get_outputs('%s.outColor' % shader_name, node_only = True)
+    
+    found = []
+    
+    for output in outputs:
+        if cmds.nodeType(output) == 'shadingEngine':
+            found.append(output)
+            
+    return found
+
+def apply_shader(shader_name, mesh):
+    
+    engines = get_shading_engines(shader_name)
+    
+    if engines:
+        cmds.sets( mesh, e = True, forceElement = engines[0])
     
 def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
     """
@@ -4982,6 +5006,25 @@ def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
     #shape = get_mesh_shape(mesh)
     
     return material
+
+
+
+def apply_transparent_lambert(mesh):
+    
+    
+    name = 'transparent_lambert'
+    
+    if not cmds.objExists(name):
+        lambert = apply_new_shader(mesh, 'lambert', name)
+        
+        cmds.setAttr('%s.transparencyR' % lambert, 1)
+        cmds.setAttr('%s.transparencyG' % lambert, 1)
+        cmds.setAttr('%s.transparencyB' % lambert, 1)
+        
+    if cmds.objExists(name):
+        apply_shader(name, mesh)
+        
+    
     
 
 def create_display_layer(name, nodes):
@@ -5523,6 +5566,25 @@ def get_hierarchy(node_name):
     
     if split_path:
         return split_path
+        
+def has_parent(transform, parent):
+    
+    long_transform = cmds.ls(transform, l = True)
+    
+    if not long_transform:
+        return
+    
+    long_transform = long_transform[0]
+    
+    split_long = long_transform.split('|')
+    
+    get_basename(parent)
+    
+    if parent in split_long:
+        return True
+    
+    return False
+        
         
 def transfer_relatives(source_node, target_node, reparent = False):
     """
@@ -7806,6 +7868,23 @@ def create_lattice(points, description, divisions = (3,3,3), falloff = (2,2,2)):
     
     
 
+def get_history(geometry):
+    scope = cmds.listHistory(geometry, interestLevel = 1)
+    
+    found = []
+    
+    for thing in scope[1:]:
+        
+        found.append(thing)
+            
+        if cmds.objectType(thing, isa = "shape") and not cmds.nodeType(thing) == 'lattice':
+            return found
+        
+    if not found:
+        return None
+    
+    return found
+
 def find_deformer_by_type(mesh, deformer_type, return_all = False):
     """
         Given a mesh find a deformer with deformer_type in the history.
@@ -7815,19 +7894,19 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
     
     found = []
     
-    for thing in scope[1:]:
-        if cmds.nodeType(thing) == deformer_type:
-            if not return_all:
-                return thing
+    history = get_history(mesh)
+    
+    if history:
+    
+        for thing in history:
+            if cmds.nodeType(thing) == deformer_type:
+                if not return_all:
+                    return thing
+                
+                found.append(thing)
             
-            found.append(thing)
-            
-        if cmds.objectType(thing, isa = "shape") and not cmds.nodeType(thing) == 'lattice':
-            return found
-        
     if not found:
         return None
-        
         
     return found
 
@@ -9195,8 +9274,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
-        
-        
+                
         offset = correct.invert(skin_mesh, corrective)
         
         cmds.delete(offset, ch = True)
