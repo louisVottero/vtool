@@ -3459,6 +3459,7 @@ class RollRig(JointRig):
         cmds.connectAttr('%s.%sPivot' % (attribute_control, description), '%s.rotateY' % group)
         
         if self.right_side_fix and self.side == 'R':
+            
             util.insert_multiply('%s.rotateY' % group, -1) 
         
         return group, xform_group
