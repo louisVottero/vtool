@@ -720,8 +720,6 @@ class TreeWidget(QtGui.QTreeWidget):
                
     def delete_tree_item_children(self, tree_item):
         
-        print 'deleting children'
-        
         count = tree_item.childCount()
         
         if count <= 0:
