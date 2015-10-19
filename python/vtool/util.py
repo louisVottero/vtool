@@ -57,6 +57,10 @@ def get_maya_version():
 
 
 class StopWatch(object):
+    """
+        Utility to check how long a command takes to run.
+    """
+    
     def __init__(self):
         self.time = None
     
@@ -70,7 +74,8 @@ class StopWatch(object):
         self.time = None
         
         show('end timer: %s seconds' % seconds)
-        
+    def temp(self):
+        pass  
 
 #--- math
 
