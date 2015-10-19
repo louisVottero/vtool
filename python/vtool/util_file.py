@@ -1357,4 +1357,3 @@ def run_ffmpeg():
     
     os.system('start \"ffmpeg\" \"%s\"' % path)
     
-    
