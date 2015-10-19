@@ -628,6 +628,9 @@ class PoseBase(PoseGroup):
                 
     def _refresh_pose_control(self):
         
+        if not self.pose_control:
+            return
+        
         if not cmds.objExists(self.pose_control):
             return
         
