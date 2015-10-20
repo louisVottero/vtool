@@ -156,6 +156,11 @@ class ParsePython(object):
         
         self._parse()
         
+    def _get_headers(self):
+        
+        
+        pass
+        
     def _parse(self):
         
         self.functions = []
