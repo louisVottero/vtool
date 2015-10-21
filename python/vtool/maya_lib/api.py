@@ -1,11 +1,14 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import maya.cmds as cmds
-
-import maya.OpenMaya as OpenMaya
-import maya.OpenMayaAnim as OpenMayaAnim
-
 import vtool.util
+
+if vtool.util.is_in_maya():
+    import maya.cmds as cmds
+    
+    import maya.OpenMaya as OpenMaya
+    import maya.OpenMayaAnim as OpenMayaAnim
+
+
 
 #--- old api
 

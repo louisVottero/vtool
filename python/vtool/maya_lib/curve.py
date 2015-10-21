@@ -7,8 +7,9 @@ import api
 import vtool.util_file
 import vtool.util
 
-import maya.cmds as cmds
-import maya.mel as mel
+if vtool.util.is_in_maya():
+    import maya.cmds as cmds
+    import maya.mel as mel
 
 current_path = os.path.split(__file__)[0]
 

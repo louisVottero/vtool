@@ -122,27 +122,36 @@ class CreatePythonModuleHtml(CreateHtml):
         if util_file.is_file(self.python_filepath):
             parse = ParsePython(self.python_filepath)
             
-            self.add_header('Classes', '1')
+            last_header_number = None
             
-            for class_object in parse.get_classes():
-                
-                header = self._get_header(class_object)
-                self.add_header(header, '2')
-                self.add_paragraph(class_object.get_doc_string())
-                
-                for sub_class_object in class_object.get_functions():
-                    header = self._get_header(sub_class_object)
-                    self.add_header(header, '4')
-                    self.add_paragraph(sub_class_object.get_doc_string())
-                
-            self.add_header('Functions', 1)
-                
-            for class_object in parse.get_functions():
-                
-                header = self._get_header(class_object)
-                self.add_header(header, '4')
-                self.add_paragraph(class_object.get_doc_string())
-                
+            for data_object in parse.get_data():
+                if isinstance(data_object, ObjectClassData):
+                    header = self._get_header(data_object)
+                    last_header_number = '2'
+                    self.add_header(header, last_header_number)
+                    self.add_paragraph(data_object.get_doc_string())
+                    
+                    for sub_class_object in data_object.get_functions():
+                        header = self._get_header(sub_class_object)
+                        self.add_header(header, '4')
+                        self.add_paragraph(sub_class_object.get_doc_string())
+                          
+                if isinstance(data_object, ObjectFunctionData):
+                    header = self._get_header(data_object)
+                    last_header_number = '4'
+                    self.add_header(header, last_header_number)
+                    self.add_paragraph(data_object.get_doc_string())
+                    
+                if type(data_object) == tuple:
+                    
+                    if data_object[2] == 0:
+                        header_space = 1
+                    if data_object[2] > 0:
+                        header_space = 4
+                    
+                    self.add_header(data_object[1], header_space)
+
+                    
         super(CreatePythonModuleHtml, self).create()
 
 class ParsePython(object):
@@ -158,13 +167,29 @@ class ParsePython(object):
         
     def _get_headers(self):
         
+        lines = util_file.get_file_lines(self.filename)
         
-        pass
+        found = []
+        
+        for inc in range(0, len(lines)):
+        
+            line = lines[inc].strip()
+            
+            if line.startswith('#---'):
+                
+                space = len(lines[inc]) - len(lines[inc].lstrip())
+                line = line.replace('#---', '')
+                
+                found.append( (inc, line, space) )
+        
+        return found
         
     def _parse(self):
         
         self.functions = []
         self.classes = []
+        self.data =[]
+        headers = self._get_headers()
                 
         open_file = open(self.filename, 'r')    
         lines = open_file.read()
@@ -172,7 +197,11 @@ class ParsePython(object):
         
         ast_tree = ast.parse(lines)
         
+        last_line_number = 0
+        
         for node in ast_tree.body:
+            
+            inst = None
             
             if isinstance(node, ast.FunctionDef):
                 inst = ObjectFunctionData(node)
@@ -182,18 +211,40 @@ class ParsePython(object):
             if isinstance(node, ast.ClassDef):
                 inst = ObjectClassData(node)
                 self.classes.append(inst)
+                
+            if inst:
+                line_number = inst.get_line_number()    
+                
+                for header in headers:
+                    if header[0] < line_number and header[0] > last_line_number:
+                        self.data.append(header)
+                
+                self.data.append(inst)
+                
+                last_line_number = line_number
                         
     def get_classes(self):
         return self.classes
     
     def get_functions(self):
         return self.functions
+        
+    def get_data(self):
+        return self.data
+
+
 
 class ObjectData(object):
     
     def __init__(self, object_inst):
         self.object_inst = object_inst
         self.functions = []
+    
+    def get_line_number(self):
+        return self.object_inst.lineno
+    
+    def get_column(self):
+        return self.object_inst.col_offset
     
     def get_name(self):
         

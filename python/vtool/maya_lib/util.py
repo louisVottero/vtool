@@ -6,15 +6,15 @@ import string
 import re
 import traceback
 
-
-import maya.cmds as cmds
-import maya.mel as mel
-
-import maya.OpenMaya as OpenMaya
-
 import vtool.util
 import api
 import curve
+
+if vtool.util.is_in_maya():
+    import maya.cmds as cmds
+    import maya.mel as mel
+    
+    import maya.OpenMaya as OpenMaya
 
 undo_chunk_active = False
 current_progress_bar = None
@@ -124,12 +124,7 @@ def undo_chunk(function):
                      
     return wrapper
 
-def is_batch():
-    """
-    Return True if Maya is in batch mode.
-    """
-    
-    return cmds.about(batch = True)
+#--- classes
 
 class ScriptEditorRead(object):
     
@@ -224,8 +219,6 @@ maya_data_mappings = {
                         'pointArray' : 'dataType'
                         }
 
-#--- classes
-
 class FindUniqueName(vtool.util.FindUniqueString):
     """
     This class is intended to find a name that doesn't clash with other names in the Maya scene.
@@ -300,10 +293,6 @@ class TrackNodes(object):
         return list(new_set)
         
         
-
-#--- api
-
-    
         
 #--- variables
 class MayaVariable(vtool.util.Variable):
@@ -4708,6 +4697,13 @@ class LockState(object):
         cmds.setAttr( self.attribute, l = self.lock_state)
    
 #--- definitions
+
+def is_batch():
+    """
+    Return True if Maya is in batch mode.
+    """
+    
+    return cmds.about(batch = True)
 
 def inc_name(name):
     """

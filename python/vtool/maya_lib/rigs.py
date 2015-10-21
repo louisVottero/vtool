@@ -6,7 +6,8 @@ import util
 import api
 import vtool.util
 
-import maya.cmds as cmds
+if vtool.util.is_in_maya():
+    import maya.cmds as cmds
 
 #--- Base
 

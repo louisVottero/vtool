@@ -26,6 +26,9 @@ def try_pass(function):
 #--- query
 
 def is_in_maya():
+    """
+        Check to see if scope is in Maya.
+    """
     try:
         import maya.cmds as cmds
         return True
@@ -33,6 +36,9 @@ def is_in_maya():
         return False
     
 def is_in_nuke():
+    """
+        Check to see if scope is in Nuke
+    """
     try:
         import nuke
         return True
@@ -40,6 +46,9 @@ def is_in_nuke():
         return False
 
 def get_maya_version():
+    """
+        Get the version of maya that the scope is running in.
+    """
     
     if is_in_maya():
         import maya.cmds as cmds

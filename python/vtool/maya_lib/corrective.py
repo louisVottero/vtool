@@ -883,6 +883,8 @@ class PoseBase(PoseGroup):
         self.pose_control = pose_control
         
         self._create_attributes(pose_control)
+        
+        return self.pose_control
 
     def _create_attributes(self, control):
         
@@ -2014,6 +2016,7 @@ class PoseCone(PoseBase):
             return [0,0,1]
         
     def _create_pose_control(self):
+        
         pose_control = super(PoseCone, self)._create_pose_control()
         
         self._position_control(pose_control)
@@ -2030,6 +2033,7 @@ class PoseCone(PoseBase):
         return pose_control
         
     def _position_control(self, control):
+        
         control = util.Control(control)
         
         control.set_curve_type('pin_point')
@@ -2410,6 +2414,7 @@ class PoseCone(PoseBase):
         self._hide_meshes()
         
     def create(self):
+        
         pose_control = super(PoseCone, self).create()
         
         self._create_pose_math(self.transform, pose_control)
