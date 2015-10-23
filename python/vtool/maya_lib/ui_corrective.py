@@ -1227,7 +1227,7 @@ class MeshWidget(qt_ui.BasicWidget):
                 if item:
                     item.setSelected(True)
                 
-                corrective.PoseManager().toggle_visibility(index, pose_name)
+                corrective.PoseManager().toggle_visibility(mesh, pose_name)
                 
             cmds.select(selection)
             return
@@ -1240,8 +1240,11 @@ class MeshWidget(qt_ui.BasicWidget):
                 for index in indices:
                     
                     index = index.row()
+                    
+                    mesh_item = self.mesh_list.item(index)
+                    mesh = mesh_item.longname
                 
-                    corrective.PoseManager().toggle_visibility(index, pose_name)
+                    corrective.PoseManager().toggle_visibility(mesh, pose_name)
                 
     def remove_mesh(self):
         items = self.mesh_list.selectedItems()

@@ -320,13 +320,20 @@ class PoseManager(object):
             pose.visibility_off(mesh, view_only = True)
         
         
-    def toggle_visibility(self, mesh_index, pose_name, view_only = False):
+    def toggle_visibility(self, target_mesh, pose_name, view_only = False):
         
-        if mesh_index == None:
+        
+        
+        if target_mesh == None:
             return
         
         pose = self.get_pose_instance(pose_name)
-        pose.toggle_vis(mesh_index, view_only)
+        
+        index = pose.get_target_mesh_index(target_mesh)
+        
+        
+        
+        pose.toggle_vis(index, view_only)
     
     @util.undo_chunk
     def delete_pose(self, name):
@@ -1192,6 +1199,7 @@ class PoseBase(PoseGroup):
         
         if toggle_vis:
             index = self.get_target_mesh_index(mesh)
+            
             self.toggle_vis(index)
         
         return pose_mesh
