@@ -5616,6 +5616,9 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
         
     if constraint_type == 'pointConstraint':
         constraint = cmds.pointConstraint(locators,  target_transform, mo = True)[0]
+        
+    if constraint_type == 'orientConstraint':
+        constraint = cmds.orientConstraint(locators,  target_transform, mo = True)[0]
     
     constraint_editor = ConstraintEditor()
     
