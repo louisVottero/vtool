@@ -475,7 +475,9 @@ class ControlCvData(MayaCustomData):
         util.show('Exported %s data.' % self.name)
           
 class SkinWeightData(MayaCustomData):
-
+    """
+        maya.skin_weights
+    """
     def _data_name(self):
         return 'skin_weights'
 
@@ -825,6 +827,11 @@ class DeformerWeightData(MayaCustomData):
             clusters = maya_lib.util.find_deformer_by_type(mesh, 'cluster', return_all = True)
             wires = maya_lib.util.find_deformer_by_type(mesh, 'wire', return_all = True)
             
+            if not clusters:
+                clusters = []
+            if not wires:
+                wires = []
+            
             deformers = clusters + wires
             
             if not deformers:
@@ -980,7 +987,9 @@ class MayaShadersData(CustomData):
         version.save(comment)    
         
 class AnimationData(MayaCustomData):
-    
+    """
+        maya.animation
+    """
     def _data_name(self):
         return 'animation'
     

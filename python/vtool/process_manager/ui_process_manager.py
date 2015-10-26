@@ -256,7 +256,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         import string
         folder = string.join(folder, '\\')
         
-        path = util_file.join_path(folder, 'documentation\documentation.html')
+        path = util_file.join_path(folder, 'documentation\html\index.html')
         path = util_file.set_windows_slashes(path)
         
         path = 'file:\\\\\\' + path

@@ -26,7 +26,8 @@ def undo_off(function):
     Maya sometimes has operations that generate a huge undo stack and use lots of memory.
     This is meant to handle turning off the undo temporarily for the duration of a function.
     
-    @function Pass in the instance of the function to wrap.
+    Arg
+        function: Pass in the instance of the fucntion to wrap.
     """
     
     def wrapper(*args, **kwargs):
@@ -70,7 +71,8 @@ def undo_chunk(function):
     Maya sometimes has operations that generate a huge undo stack and use lots of memory.
     This is meant to handle creating one undo chunk for a function that has many small operations.
     
-    @function Pass in the instance of the function to wrap.
+    Arg
+        function: Pass in the instance of the fucntion to wrap.
     """
     
     def wrapper(*args, **kwargs):
@@ -127,7 +129,9 @@ def undo_chunk(function):
 #--- classes
 
 class ScriptEditorRead(object):
-    
+    """
+    Not currently being used. This takes control of the script editor.  Led to Maya crashing frequently.
+    """
     
     def __init__(self):
         
@@ -158,8 +162,8 @@ script_editor_value = []
         
 def read_script(msg, msgType, filterOutput, clientData):
     '''
-    This is the callback function that gets called when Maya wants to print something.
-    It will take the msg and output it to the terminal rather than the Maya Script Editor
+    Not currently being used. This is the callback function that gets called when Maya wants to print something.
+    It will take the msg and output it to the terminal rather than the Maya Script Editor.
     '''
     
     OpenMaya.MScriptUtil.setBool(filterOutput, True)
@@ -269,6 +273,12 @@ class TrackNodes(object):
             node_type corresponds to the maya node type. 
             For example, you can give node_type the string "animCurve" to load only keyframes.
             When after running get_delta(), the delta will only contain keyframes.
+            
+        Args
+            node_type (str): Maya named type, ie animCurve, transform, joint, etc
+            
+        Return
+            None
         """
         self.node_type = node_type
         
@@ -279,8 +289,11 @@ class TrackNodes(object):
         
     def get_delta(self):
         """
-            Get the new nodes in the Maya scene created after load() was executed.
-            The load() node_type variable is stored in the class and used when getting the delta.
+        Get the new nodes in the Maya scene created after load() was executed.
+        The load() node_type variable is stored in the class and used when getting the delta.
+            
+        Return
+            (list) : list of new nodes.
         """
         if self.node_type:
             current_nodes = cmds.ls(type = self.node_type)
@@ -418,11 +431,22 @@ class MayaVariable(vtool.util.Variable):
         self._set_value()
 
     def exists(self):
+        """
+        Return
+            (bool):
+        """
         return cmds.objExists(self._get_node_and_variable())
 
     #--- set
     def set_name(self, name):
+        """
+        Set the name of the variable.
         
+        Args
+            name (str)
+            
+        Return None
+        """
         var_name = self._get_node_and_variable()
         
         if cmds.objExists(var_name):
@@ -433,35 +457,95 @@ class MayaVariable(vtool.util.Variable):
         var_name = self._get_node_and_variable()
     
     def set_value(self, value):
+        """
+        Set the value of the variable.
+        
+        Args
+            value
+            
+        Return
+            None
+        """
         super(MayaVariable, self).set_value(value)
         self._set_value()
         
     def set_locked(self, bool_value):
+        """
+        Set the lock state of the variable.
+        
+        Args
+            bool_value (bool)
+            
+        Return
+            None
+        """
         self.locked = bool_value
         self._set_lock_state()
         
     def set_keyable(self, bool_value):
+        """
+        Set the keyable state of the variable.
+        
+        Args
+            bool_value (bool)
+            
+        Return
+            None
+        """
+        
         self.keyable = bool_value
         self._set_keyable_state()
 
     def set_variable_type(self, name):
+        """
+        Set the variable type, check Maya documentation.
+        """
+        
         self.variable_type = name
 
     def set_node(self, name):
+        """
+        Set the node where the variable should live.
+        
+        Args
+            name (str)
+            
+        Return
+            None
+        """
         self.node = name
 
     #--- get
 
     def get_value(self):
+        """
+        Get the variables value.
+        
+        Return
+            value
+        """
         return self._get_value()
         
     def get_name(self, name_only = False):
+        """
+        Get the name of the variable.
+        
+        Args
+            name_only (bool): If True just the variable name is returned. If False the node and variable are returned: "node.variable".
+        """
+        
         if self.node and not name_only:
             return self._get_node_and_variable()
         if not self.node or name_only:
             return self.name
 
     def get_dict(self):
+        """
+        Get a dictionary that represents the state of the variable.
+        
+        Return
+            (dict)
+        """
         
         var_dict = {}
         
@@ -473,7 +557,15 @@ class MayaVariable(vtool.util.Variable):
         return var_dict
     
     def set_dict(self, var_dict):
+        """
+        Set a dictionary that describes the variable. See get_dict.
         
+        Args
+            var_dict (dict): A dictionary created from get_dict.
+            
+        Return
+            None
+        """
         value = var_dict['value']
         self.set_value(value)
         
@@ -487,7 +579,15 @@ class MayaVariable(vtool.util.Variable):
         self.set_locked(lock)
     
     def create(self, node = None):
+        """
+        Create the variable on the node.
         
+        Args
+            node (str): The node for the variable.  If not set, set_node should be set.
+            
+        Return
+            None
+        """
         if node:
             self.node = node
         
@@ -506,6 +606,15 @@ class MayaVariable(vtool.util.Variable):
             self.set_value( value )
         
     def delete(self, node = None):
+        """
+        Delete the variable on the node.
+        
+        Args
+            node (str): The node for the variable.  If not set, set_node should be set.
+            
+        Return
+            None
+        """
         if node:
             self.node = node
         
@@ -517,14 +626,37 @@ class MayaVariable(vtool.util.Variable):
         cmds.deleteAttr(self.node, at = self.name)
         
     def load(self):
+        """
+        Refresh the internal values.
+        
+        Return None
+        """
         self.value = self._get_value()
         self.locked = self._get_lock_state()
         self.keyable = self._get_keyable_state()
         
     def connect_in(self, attribute):
+        """
+        Connect the attribute into this variable.
+        
+        Args
+            attribute (str): 'node.attribute'
+        
+        Return
+            None
+        """
         cmds.connectAttr(attribute, self._get_node_and_variable())
         
     def connect_out(self, attribute):
+        """
+        Connect from the variable into the attribute.
+        
+        Args
+            attribute (str): 'node.attribute'
+        
+        Return
+            None
+        """
         cmds.connectAttr(self._get_node_and_variable(), attribute)
         
 class MayaNumberVariable(MayaVariable):
@@ -9109,6 +9241,12 @@ def create_wrap(source_mesh, target_mesh):
     wrap.create()
     
     return wrap.base_meshes
+    
+def wire_mesh(curve, mesh, falloff):
+    wire_deformer, wire_curve = cmds.wire(mesh,  gw = False, w = curve, n = 'wire_%s' % curve, dds = [0, falloff])
+    cmds.setAttr('%s.rotation' % wire_deformer, 0)
+    
+    return wire_deformer, wire_curve
     
 def wire_to_mesh(edges, geometry, description, auto_edge_path = True):
     """

@@ -2,9 +2,11 @@
 
 import string
 
-import maya.cmds as cmds
-import util
 import vtool.util
+
+if vtool.util.is_in_maya():
+    import maya.cmds as cmds
+import util
 
 class BlendShape(object):
     def __init__(self, blendshape_name = None):

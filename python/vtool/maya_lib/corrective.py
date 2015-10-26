@@ -2,10 +2,13 @@
 
 import traceback
 
-import maya.cmds as cmds
+import vtool.util
+
+if vtool.util.is_in_maya():
+    import maya.cmds as cmds
 import util
 import blendshape
-import vtool.util
+
 import time
 
 def get_pose_instance(pose_name):
