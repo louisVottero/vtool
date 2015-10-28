@@ -939,12 +939,11 @@ class FileTreeWidget(TreeWidget):
         if not current_item:
             path = self.directory
                 
-        folder = util_file.FolderEditor(path)
-        
         if not name:
             name = self._define_new_branch_name()
             
-        folder.create(name)
+        util_file.create_dir(name, path)
+        
         
         if current_item:
             self._add_sub_items(current_item)

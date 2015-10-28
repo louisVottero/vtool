@@ -254,9 +254,10 @@ class ScriptTreeWidget(qt_ui.FileTreeWidget):
         directory = util_file.get_dirname(filepath)
         new_filename = util_file.get_basename(filepath)
         
-        edit_file = util_file.FolderEditor(directory)
-        state = edit_file.rename(self.old_name, new_filename)
+        directory = util_file.join_path(directory, self.old_name)
         
+        state = util_file.rename(directory, new_filename)
+                
         return state
                 
     def create_script(self, extension = 'py'):

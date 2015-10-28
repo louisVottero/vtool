@@ -20,6 +20,7 @@ def find_processes(directory = None):
     Returns:
         list: The procceses in the directory.
     """
+    
     if not directory:
         directory = util_file.get_cwd()
     

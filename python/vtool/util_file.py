@@ -18,6 +18,9 @@ import util
 
 
 class WatchDirectoryThread(threading.Thread):
+    """
+    Not developed fully.
+    """
     
     def __init__(self):
         super(WatchDirectoryThread, self).__init__()
@@ -40,53 +43,14 @@ class WatchDirectoryThread(threading.Thread):
             
             before = after
 
-class FolderEditor(object):
-    
-    def __init__(self, directory):
-        
-        if not directory:
-            self.directory_path = get_cwd()
-        
-        if directory:
-            self.directory_path = directory
-        
-    def _create_folder(self, name):
-        
-        if not is_dir(self.directory_path):
-            
-            util.show('%s was not created.' % name)
-             
-            return
-        
-        path = create_dir(name, self.directory_path, True)        
-        
-        return path
-        
-    def list(self):
-        return get_folders(self.directory_path)
-        
-    def create(self, name):
-        return self._create_folder(name)
-    
-    def delete(self, name):
-        path = join_path(self.directory_path, name)
-        delete_dir(path)
-        
-    def rename(self, folder, name):
-        path = join_path(self.directory_path, folder)
-        
-        return rename(path, name)
-        
-    def go_to(self, folder):
-        path = join_path(self.directory_path, folder)
-        
-        self.directory_path = path
-        
-    def go_to_parent(self):
-        pass
-
 class FileManager(object):
+    """
+    Convenience to deal with file write/read.
     
+    Args
+        filepath (str): Path to the file to work on.
+        skip_warning (bool): Wether to print warnings out or not.
+    """
     def __init__(self, filepath, skip_warning = False):
         
         self.filepath = filepath
@@ -97,52 +61,91 @@ class FileManager(object):
         self.open_file = None       
 
     def read_file(self):
+        """
+        Start read the file.
+        """
         self.warning_if_invalid_file('file is invalid')
         
         self.open_file = open(self.filepath, 'r')
         
     def write_file(self):
+        """
+        Start write the file.
+        """
         self.warning_if_invalid_file('file is invalid')
         self.open_file = open(self.filepath, 'w')
         
     def append_file(self):
+        """
+        Start append file.
+        """
         self.warning_if_invalid_file('file is invalid')
         self.open_file = open(self.filepath, 'a')       
     
     def close_file(self):
+        """
+        Close file.
+        """
         if self.open_file:
             self.open_file.close()
         
     def get_open_file(self):
+        """
+        Get open file object.
+        """
         return self.open_file()
         
     def warning_if_invalid_folder(self, warning_text):
+        """
+        Check if folder is invalid and raise and error.
+        """
         if not is_dir(self.filepath):
             raise NameError(warning_text)
     
     def warning_if_invalid_file(self, warning_text):
+        """
+        Check if file is invalid and raise and error.
+        """
         if not is_file(self.filepath):
             raise NameError(warning_text)
         
     def warning_if_invlid_path(self, warning_text):
+        """
+        Check if path to file is invalid and raise error.
+        """
         dirname = get_dirname(self.filepath)
                 
         if not is_dir(dirname):
             raise UserWarning(warning_text)
 
 class ReadFile(FileManager):
+    """
+    Class to deal with reading a file.
+    """
     
     def __init__(self, filename):
         super(ReadFile, self).__init__(filename)        
         self.open_file = None
     
     def _get_lines(self):
-                
-        lines = self.open_file.read()
+        
+        try:
+            lines = self.open_file.read()
+        except:
+            return []
+        
         return get_text_lines(lines)
+        
+        
     
     def read(self ):
-
+        """
+        Read the file.
+        
+        Return
+            list: A list of file lines.
+        """
+        
         self.read_file()
         
         lines = self._get_lines()
@@ -161,6 +164,10 @@ class WriteFile(FileManager):
         self.append = False
         
     def write_file(self):
+        """
+        Write file. Basically creates the file if it doesn't exist.
+        If set_append is True than append any lines to the file instead of replacing.
+        """
         if self.append:
             self.append_file()
             
@@ -168,15 +175,34 @@ class WriteFile(FileManager):
             super(WriteFile, self).write_file()
         
     def set_append(self, bool_value):
+        """
+        Append new lines to end of document instead of replace.
+        
+        Args
+            bool_value (bool)
+        """
         self.append = bool_value
         
     def write_line(self, line):
+        """
+        Write a single line to the file.
+        
+        Args
+            line (str): The line to add to the file.
+        """
+        
         self.write_file()
         self.open_file.write('%s\n' % line)
         self.close_file()
                 
     def write(self, lines, last_line_empty = True):
+        """
+        Write the lines to the file.
         
+        Args
+            lines (list): A list of lines. Each entry is a new line in the file.
+            last_line_empty (bool): Wether or not to add a line after the last line.
+        """
         self.write_file()
         
         try:
@@ -196,6 +222,13 @@ class WriteFile(FileManager):
         self.close_file()
 
 class VersionFile(object):
+    """
+    Convenience to version a file or folder.
+    
+    Args
+        filepath (str): The path to the file to version.
+    """
+    
     def __init__(self, filepath):
         self.filepath = filepath
                 
@@ -240,7 +273,13 @@ class VersionFile(object):
         return filepath
             
     def save_comment(self, comment = None, version_file = None, ):
+        """
+        Save a comment to a log file.
         
+        Args
+            comment (str)
+            version_file (str): The corresponding version file.
+        """
          
         
         version = version_file.split('.')
@@ -262,7 +301,15 @@ class VersionFile(object):
         comment_file.close_file()
             
     def save(self, comment = None):
+        """
+        Save a version.
         
+        Args
+            comment (str): The comment to add to the version.
+        
+        Return
+            str: The new version file name
+        """
         self._create_version_folder()
         self._create_comment_file()
         
@@ -280,22 +327,67 @@ class VersionFile(object):
         return inc_file_name
     
     def set_version_folder(self, folder_path):
+        """
+        Set the folder where the version folder should be created.
+        
+        Args
+            folder_path (str): Full path to where the version folder should be created.
+        """
         self.path = folder_path
         
     def set_version_folder_name(self, name):
+        """
+        Set the name of the version folder.
+        
+        Args
+            name (str)
+        """
         self.version_folder_name = name
         
     def set_version_name(self, name):
+        """
+        Set the version name.
+        
+        Args
+            name (str): The name of the version.
+        """
         self.version_name = name
         
     def get_version_path(self, version_int):
+        """
+        Get the path to a version.
+        
+        Args
+            version_int (int): The version number.
+            
+        Return
+            str: The path to the version.
+        """
         return self._get_version_path(version_int)
         
     def get_version_comment(self, version_int):
+        """
+        Get the version comment.
+                
+        Args
+            version_int (int): The version number.
+            
+        Return
+            str: The version comment.
+        """
         comment, user = self.get_version_data(version_int)
         return comment
                 
     def get_version_data(self, version_int):
+        """
+        Get the version data.  Comment and user.
+                
+        Args
+            version_int (int): The version number.
+            
+        Return
+            tuple: (comment, user)
+        """
         filepath = self._get_comment_path()
 
         if not filepath:
@@ -332,7 +424,12 @@ class VersionFile(object):
         return None, None
                 
     def get_versions(self):
+        """
+        Get filepaths of all versions.
         
+        Return
+            list: List of version filepaths.
+        """
         version_folder = self._get_version_folder()
         
         files = get_files_and_folders(version_folder)
@@ -368,7 +465,12 @@ class VersionFile(object):
         return pass_files
     
     def get_latest_version(self):
+        """
+        Get the filepath to the latest version.
         
+        Return
+            str: Filepath to latest version.
+        """
         versions = self.get_versions()
         
         latest_version = versions[-1]
@@ -462,10 +564,6 @@ class SettingsFile(object):
         self._read()
         
         return self.filepath
-
-class FileInfo(FileManager):
-    
-    pass
 
 class FindUniquePath(util.FindUniqueString):
     
@@ -922,6 +1020,16 @@ def get_parent_path(directory):
     
 
 def rename(directory, name, make_unique = False):
+    """
+    Args
+        directory (str): Full path to the directory to rename.
+        name (str): The new name.
+        make_unique (bool): Wether to add a number to the name to make it unique, if needed.
+        
+    Retrun
+        str: The path of the renamed folder, or False if rename fails. 
+    """
+    
     
     basename = get_basename(directory)
     
