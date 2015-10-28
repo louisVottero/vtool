@@ -1,8 +1,0 @@
-vtool.maya_lib.corrective
--------------------------
-
-.. toctree::
-    :maxdepth: 1
-
-    vtool_maya_lib_corrective_classes
-    vtool_maya_lib_corrective_functions

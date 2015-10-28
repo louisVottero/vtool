@@ -1,8 +1,0 @@
-vtool.util
-----------
-
-.. toctree::
-    :maxdepth: 1
-
-    vtool_util_classes
-    vtool_util_functions

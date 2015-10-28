@@ -1,7 +1,0 @@
-vtool.data
-----------
-
-.. toctree::
-    :maxdepth: 1
-
-    vtool_data_classes
