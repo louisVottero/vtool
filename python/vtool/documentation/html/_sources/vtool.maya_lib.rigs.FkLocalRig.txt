@@ -1,0 +1,52 @@
+vtool.maya_lib.rigs.FkLocalRig
+==============================
+
+.. currentmodule:: vtool.maya_lib.rigs
+
+.. autoclass:: FkLocalRig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~FkLocalRig.__init__
+      ~FkLocalRig.create
+      ~FkLocalRig.get_control_entries
+      ~FkLocalRig.get_drivers
+      ~FkLocalRig.get_sub_control_entries
+      ~FkLocalRig.set_attach_joints
+      ~FkLocalRig.set_buffer
+      ~FkLocalRig.set_control_color
+      ~FkLocalRig.set_control_parent
+      ~FkLocalRig.set_control_scale
+      ~FkLocalRig.set_control_shape
+      ~FkLocalRig.set_control_size
+      ~FkLocalRig.set_create_sub_controls
+      ~FkLocalRig.set_joints
+      ~FkLocalRig.set_local_parent
+      ~FkLocalRig.set_match_to_rotation
+      ~FkLocalRig.set_parent
+      ~FkLocalRig.set_scalable
+      ~FkLocalRig.set_setup_parent
+      ~FkLocalRig.set_sub_control_color
+      ~FkLocalRig.set_sub_control_shape
+      ~FkLocalRig.set_sub_control_size
+      ~FkLocalRig.set_use_joint_controls
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~FkLocalRig.side_center
+      ~FkLocalRig.side_left
+      ~FkLocalRig.side_right
+   
+   

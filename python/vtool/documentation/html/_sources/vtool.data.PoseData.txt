@@ -1,0 +1,38 @@
+vtool.data.PoseData
+===================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: PoseData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PoseData.__init__
+      ~PoseData.create
+      ~PoseData.export_data
+      ~PoseData.get_file
+      ~PoseData.get_type
+      ~PoseData.import_data
+      ~PoseData.is_type_match
+      ~PoseData.rename
+      ~PoseData.set_directory
+      ~PoseData.set_name
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PoseData.maya_ascii
+      ~PoseData.maya_binary
+   
+   

@@ -1,0 +1,31 @@
+vtool.data.SkinWeightData
+=========================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: SkinWeightData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SkinWeightData.__init__
+      ~SkinWeightData.create
+      ~SkinWeightData.export_data
+      ~SkinWeightData.get_file
+      ~SkinWeightData.get_type
+      ~SkinWeightData.import_data
+      ~SkinWeightData.is_type_match
+      ~SkinWeightData.rename
+      ~SkinWeightData.set_directory
+      ~SkinWeightData.set_name
+   
+   
+
+   
+   
+   

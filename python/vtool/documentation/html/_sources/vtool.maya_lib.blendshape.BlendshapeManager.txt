@@ -1,0 +1,34 @@
+vtool.maya_lib.blendshape.BlendshapeManager
+===========================================
+
+.. currentmodule:: vtool.maya_lib.blendshape
+
+.. autoclass:: BlendshapeManager
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~BlendshapeManager.__init__
+      ~BlendshapeManager.add_combo
+      ~BlendshapeManager.add_shape
+      ~BlendshapeManager.find_possible_combos
+      ~BlendshapeManager.get_combos
+      ~BlendshapeManager.get_shape_and_combo_lists
+      ~BlendshapeManager.get_shapes
+      ~BlendshapeManager.get_shapes_in_combo
+      ~BlendshapeManager.remove_shape
+      ~BlendshapeManager.rename_shape
+      ~BlendshapeManager.set_shape_weight
+      ~BlendshapeManager.setup
+      ~BlendshapeManager.zero_out
+   
+   
+
+   
+   
+   

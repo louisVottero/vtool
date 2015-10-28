@@ -1,0 +1,39 @@
+vtool.data.ReadWeightFileThread
+===============================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: ReadWeightFileThread
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ReadWeightFileThread.__init__
+      ~ReadWeightFileThread.getName
+      ~ReadWeightFileThread.isAlive
+      ~ReadWeightFileThread.isDaemon
+      ~ReadWeightFileThread.is_alive
+      ~ReadWeightFileThread.join
+      ~ReadWeightFileThread.run
+      ~ReadWeightFileThread.setDaemon
+      ~ReadWeightFileThread.setName
+      ~ReadWeightFileThread.start
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ReadWeightFileThread.daemon
+      ~ReadWeightFileThread.ident
+      ~ReadWeightFileThread.name
+   
+   

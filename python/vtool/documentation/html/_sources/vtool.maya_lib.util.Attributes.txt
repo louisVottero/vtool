@@ -1,0 +1,35 @@
+vtool.maya_lib.util.Attributes
+==============================
+
+.. currentmodule:: vtool.maya_lib.util
+
+.. autoclass:: Attributes
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Attributes.__init__
+      ~Attributes.create
+      ~Attributes.create_all
+      ~Attributes.delete
+      ~Attributes.delete_all
+      ~Attributes.get_variable
+      ~Attributes.get_variables
+      ~Attributes.rename_variable
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Attributes.numeric_attributes
+   
+   

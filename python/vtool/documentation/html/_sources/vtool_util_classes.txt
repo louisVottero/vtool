@@ -1,0 +1,16 @@
+Class Summary
+=============
+
+.. currentmodule:: vtool.util
+
+.. autosummary::
+    :toctree:
+
+    StopWatch
+    VectorBase
+    Vector2D
+    Vector
+    BoundingBox
+    Variable
+    Part
+    FindUniqueString

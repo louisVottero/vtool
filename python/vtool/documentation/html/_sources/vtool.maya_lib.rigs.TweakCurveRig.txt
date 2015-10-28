@@ -1,0 +1,51 @@
+vtool.maya_lib.rigs.TweakCurveRig
+=================================
+
+.. currentmodule:: vtool.maya_lib.rigs
+
+.. autoclass:: TweakCurveRig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~TweakCurveRig.__init__
+      ~TweakCurveRig.create
+      ~TweakCurveRig.get_control_entries
+      ~TweakCurveRig.get_sub_control_entries
+      ~TweakCurveRig.set_attach_joints
+      ~TweakCurveRig.set_buffer
+      ~TweakCurveRig.set_control_color
+      ~TweakCurveRig.set_control_count
+      ~TweakCurveRig.set_control_parent
+      ~TweakCurveRig.set_control_shape
+      ~TweakCurveRig.set_control_size
+      ~TweakCurveRig.set_join_both_ends
+      ~TweakCurveRig.set_joints
+      ~TweakCurveRig.set_orient_controls_to_joints
+      ~TweakCurveRig.set_ribbon
+      ~TweakCurveRig.set_ribbon_offset
+      ~TweakCurveRig.set_ribbon_offset_axis
+      ~TweakCurveRig.set_setup_parent
+      ~TweakCurveRig.set_sub_control_color
+      ~TweakCurveRig.set_sub_control_shape
+      ~TweakCurveRig.set_sub_control_size
+      ~TweakCurveRig.set_use_ribbon
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TweakCurveRig.side_center
+      ~TweakCurveRig.side_left
+      ~TweakCurveRig.side_right
+   
+   

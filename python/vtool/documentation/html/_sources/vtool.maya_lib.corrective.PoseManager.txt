@@ -1,0 +1,52 @@
+vtool.maya_lib.corrective.PoseManager
+=====================================
+
+.. currentmodule:: vtool.maya_lib.corrective
+
+.. autoclass:: PoseManager
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PoseManager.__init__
+      ~PoseManager.add_mesh_to_pose
+      ~PoseManager.attach_poses
+      ~PoseManager.create_cone_pose
+      ~PoseManager.create_group_pose
+      ~PoseManager.create_no_reader_pose
+      ~PoseManager.create_pose
+      ~PoseManager.create_pose_blends
+      ~PoseManager.create_timeline_pose
+      ~PoseManager.delete_pose
+      ~PoseManager.detach_poses
+      ~PoseManager.get_all_pose_inbetween_target
+      ~PoseManager.get_mesh_index
+      ~PoseManager.get_pose_control
+      ~PoseManager.get_pose_instance
+      ~PoseManager.get_poses
+      ~PoseManager.get_transform
+      ~PoseManager.is_pose
+      ~PoseManager.mirror_pose
+      ~PoseManager.remove_mesh_from_pose
+      ~PoseManager.rename_pose
+      ~PoseManager.reset_pose
+      ~PoseManager.set_default_pose
+      ~PoseManager.set_pose
+      ~PoseManager.set_pose_data
+      ~PoseManager.set_pose_group
+      ~PoseManager.set_pose_to_default
+      ~PoseManager.set_poses
+      ~PoseManager.set_weights_to_zero
+      ~PoseManager.toggle_visibility
+      ~PoseManager.visibility_off
+   
+   
+
+   
+   
+   

@@ -1,0 +1,32 @@
+vtool.data.ScriptPythonData
+===========================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: ScriptPythonData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ScriptPythonData.__init__
+      ~ScriptPythonData.create
+      ~ScriptPythonData.get_file
+      ~ScriptPythonData.get_type
+      ~ScriptPythonData.is_type_match
+      ~ScriptPythonData.open
+      ~ScriptPythonData.rename
+      ~ScriptPythonData.save
+      ~ScriptPythonData.set_directory
+      ~ScriptPythonData.set_lines
+      ~ScriptPythonData.set_name
+   
+   
+
+   
+   
+   

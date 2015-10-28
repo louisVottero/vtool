@@ -1,0 +1,51 @@
+vtool.maya_lib.rigs.RollRig
+===========================
+
+.. currentmodule:: vtool.maya_lib.rigs
+
+.. autoclass:: RollRig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~RollRig.__init__
+      ~RollRig.create
+      ~RollRig.duplicate_joints
+      ~RollRig.get_control_entries
+      ~RollRig.get_sub_control_entries
+      ~RollRig.set_add_hik
+      ~RollRig.set_attach_joints
+      ~RollRig.set_attribute_control
+      ~RollRig.set_control_color
+      ~RollRig.set_control_parent
+      ~RollRig.set_control_shape
+      ~RollRig.set_control_size
+      ~RollRig.set_create_roll_controls
+      ~RollRig.set_forward_roll_axis
+      ~RollRig.set_joints
+      ~RollRig.set_right_side_fix
+      ~RollRig.set_setup_parent
+      ~RollRig.set_side_roll_axis
+      ~RollRig.set_sub_control_color
+      ~RollRig.set_sub_control_shape
+      ~RollRig.set_sub_control_size
+      ~RollRig.set_top_roll_axis
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~RollRig.side_center
+      ~RollRig.side_left
+      ~RollRig.side_right
+   
+   

@@ -1,0 +1,24 @@
+vtool.maya_lib.util.ScriptEditorRead
+====================================
+
+.. currentmodule:: vtool.maya_lib.util
+
+.. autoclass:: ScriptEditorRead
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ScriptEditorRead.__init__
+      ~ScriptEditorRead.end
+      ~ScriptEditorRead.start
+   
+   
+
+   
+   
+   

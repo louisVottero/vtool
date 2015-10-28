@@ -1,0 +1,24 @@
+vtool.util_file.FindUniquePath
+==============================
+
+.. currentmodule:: vtool.util_file
+
+.. autoclass:: FindUniquePath
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~FindUniquePath.__init__
+      ~FindUniquePath.get
+      ~FindUniquePath.set_padding
+   
+   
+
+   
+   
+   

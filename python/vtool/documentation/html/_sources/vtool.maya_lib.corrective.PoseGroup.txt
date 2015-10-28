@@ -1,0 +1,38 @@
+vtool.maya_lib.corrective.PoseGroup
+===================================
+
+.. currentmodule:: vtool.maya_lib.corrective
+
+.. autoclass:: PoseGroup
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PoseGroup.__init__
+      ~PoseGroup.attach
+      ~PoseGroup.attach_sub_poses
+      ~PoseGroup.create
+      ~PoseGroup.create_all_blends
+      ~PoseGroup.create_blend
+      ~PoseGroup.create_sub_poses
+      ~PoseGroup.delete
+      ~PoseGroup.detach
+      ~PoseGroup.detach_sub_poses
+      ~PoseGroup.goto_pose
+      ~PoseGroup.is_a_pose
+      ~PoseGroup.mirror
+      ~PoseGroup.rename
+      ~PoseGroup.select
+      ~PoseGroup.set_pose
+      ~PoseGroup.set_pose_group
+   
+   
+
+   
+   
+   

@@ -1,0 +1,64 @@
+vtool.maya_lib.corrective.PoseNoReader
+======================================
+
+.. currentmodule:: vtool.maya_lib.corrective
+
+.. autoclass:: PoseNoReader
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PoseNoReader.__init__
+      ~PoseNoReader.add_mesh
+      ~PoseNoReader.attach
+      ~PoseNoReader.attach_sub_poses
+      ~PoseNoReader.connect_blend
+      ~PoseNoReader.create
+      ~PoseNoReader.create_all_blends
+      ~PoseNoReader.create_blend
+      ~PoseNoReader.create_sub_poses
+      ~PoseNoReader.delete
+      ~PoseNoReader.delete_blend_input
+      ~PoseNoReader.detach
+      ~PoseNoReader.detach_sub_poses
+      ~PoseNoReader.disconnect_blend
+      ~PoseNoReader.disconnect_weight_outputs
+      ~PoseNoReader.get_blendshape
+      ~PoseNoReader.get_inbetween_weight
+      ~PoseNoReader.get_input
+      ~PoseNoReader.get_mesh
+      ~PoseNoReader.get_mesh_count
+      ~PoseNoReader.get_mesh_index
+      ~PoseNoReader.get_target_mesh
+      ~PoseNoReader.get_target_mesh_index
+      ~PoseNoReader.get_target_meshes
+      ~PoseNoReader.get_target_name
+      ~PoseNoReader.goto_pose
+      ~PoseNoReader.has_a_mesh
+      ~PoseNoReader.is_a_pose
+      ~PoseNoReader.mirror
+      ~PoseNoReader.reconnect_weight_outputs
+      ~PoseNoReader.remove_mesh
+      ~PoseNoReader.rename
+      ~PoseNoReader.reset_target_meshes
+      ~PoseNoReader.select
+      ~PoseNoReader.set_inbetween_weight
+      ~PoseNoReader.set_input
+      ~PoseNoReader.set_pose
+      ~PoseNoReader.set_pose_group
+      ~PoseNoReader.set_target_name
+      ~PoseNoReader.set_weight
+      ~PoseNoReader.toggle_vis
+      ~PoseNoReader.visibility_off
+      ~PoseNoReader.visibility_on
+   
+   
+
+   
+   
+   

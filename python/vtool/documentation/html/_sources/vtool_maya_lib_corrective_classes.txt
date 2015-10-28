@@ -1,0 +1,14 @@
+Class Summary
+=============
+
+.. currentmodule:: vtool.maya_lib.corrective
+
+.. autosummary::
+    :toctree:
+
+    PoseManager
+    PoseGroup
+    PoseBase
+    PoseNoReader
+    PoseCone
+    PoseTimeline

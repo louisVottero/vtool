@@ -1,0 +1,26 @@
+vtool.util.Vector2D
+===================
+
+.. currentmodule:: vtool.util
+
+.. autoclass:: Vector2D
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Vector2D.__init__
+      ~Vector2D.get_distance
+      ~Vector2D.get_magnitude
+      ~Vector2D.get_vector
+      ~Vector2D.normalize
+   
+   
+
+   
+   
+   

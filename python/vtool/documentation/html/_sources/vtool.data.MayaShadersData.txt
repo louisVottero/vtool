@@ -1,0 +1,37 @@
+vtool.data.MayaShadersData
+==========================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: MayaShadersData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MayaShadersData.__init__
+      ~MayaShadersData.create
+      ~MayaShadersData.export_data
+      ~MayaShadersData.get_file
+      ~MayaShadersData.get_type
+      ~MayaShadersData.import_data
+      ~MayaShadersData.is_type_match
+      ~MayaShadersData.rename
+      ~MayaShadersData.set_directory
+      ~MayaShadersData.set_name
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MayaShadersData.maya_ascii
+   
+   

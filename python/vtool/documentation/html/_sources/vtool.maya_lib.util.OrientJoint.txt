@@ -1,0 +1,29 @@
+vtool.maya_lib.util.OrientJoint
+===============================
+
+.. currentmodule:: vtool.maya_lib.util
+
+.. autoclass:: OrientJoint
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~OrientJoint.__init__
+      ~OrientJoint.run
+      ~OrientJoint.set_aim_at
+      ~OrientJoint.set_aim_up_at
+      ~OrientJoint.set_aim_up_at_object
+      ~OrientJoint.set_aim_vector
+      ~OrientJoint.set_up_vector
+      ~OrientJoint.set_world_up_vector
+   
+   
+
+   
+   
+   

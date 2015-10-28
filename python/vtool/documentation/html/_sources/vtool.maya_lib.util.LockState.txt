@@ -1,0 +1,25 @@
+vtool.maya_lib.util.LockState
+=============================
+
+.. currentmodule:: vtool.maya_lib.util
+
+.. autoclass:: LockState
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~LockState.__init__
+      ~LockState.lock
+      ~LockState.restore_initial
+      ~LockState.unlock
+   
+   
+
+   
+   
+   

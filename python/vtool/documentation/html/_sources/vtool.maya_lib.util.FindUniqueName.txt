@@ -1,0 +1,24 @@
+vtool.maya_lib.util.FindUniqueName
+==================================
+
+.. currentmodule:: vtool.maya_lib.util
+
+.. autoclass:: FindUniqueName
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~FindUniqueName.__init__
+      ~FindUniqueName.get
+      ~FindUniqueName.set_padding
+   
+   
+
+   
+   
+   

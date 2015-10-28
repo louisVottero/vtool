@@ -1,0 +1,28 @@
+vtool.util_file.PythonScope
+===========================
+
+.. currentmodule:: vtool.util_file
+
+.. autoclass:: PythonScope
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PythonScope.__init__
+      ~PythonScope.set_bracket
+      ~PythonScope.set_child
+      ~PythonScope.set_indent
+      ~PythonScope.set_parent
+      ~PythonScope.set_scope_lines
+      ~PythonScope.set_scope_type
+   
+   
+
+   
+   
+   

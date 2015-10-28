@@ -1,0 +1,7 @@
+vtool.maya_lib.blendshape
+-------------------------
+
+.. toctree::
+    :maxdepth: 1
+
+    vtool_maya_lib_blendshape_classes

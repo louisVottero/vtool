@@ -1,0 +1,31 @@
+vtool.data.DeformerWeightData
+=============================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: DeformerWeightData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DeformerWeightData.__init__
+      ~DeformerWeightData.create
+      ~DeformerWeightData.export_data
+      ~DeformerWeightData.get_file
+      ~DeformerWeightData.get_type
+      ~DeformerWeightData.import_data
+      ~DeformerWeightData.is_type_match
+      ~DeformerWeightData.rename
+      ~DeformerWeightData.set_directory
+      ~DeformerWeightData.set_name
+   
+   
+
+   
+   
+   

@@ -1,0 +1,11 @@
+Class Summary
+=============
+
+.. currentmodule:: vtool.maya_lib.blendshape
+
+.. autosummary::
+    :toctree:
+
+    BlendShape
+    BlendShapeTarget
+    BlendshapeManager

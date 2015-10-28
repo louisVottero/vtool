@@ -1,0 +1,31 @@
+vtool.data.MayaAttributeData
+============================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: MayaAttributeData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MayaAttributeData.__init__
+      ~MayaAttributeData.create
+      ~MayaAttributeData.export_data
+      ~MayaAttributeData.get_file
+      ~MayaAttributeData.get_type
+      ~MayaAttributeData.import_data
+      ~MayaAttributeData.is_type_match
+      ~MayaAttributeData.rename
+      ~MayaAttributeData.set_directory
+      ~MayaAttributeData.set_name
+   
+   
+
+   
+   
+   

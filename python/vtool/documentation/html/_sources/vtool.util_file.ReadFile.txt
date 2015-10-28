@@ -1,0 +1,31 @@
+vtool.util_file.ReadFile
+========================
+
+.. currentmodule:: vtool.util_file
+
+.. autoclass:: ReadFile
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ReadFile.__init__
+      ~ReadFile.append_file
+      ~ReadFile.close_file
+      ~ReadFile.get_open_file
+      ~ReadFile.read
+      ~ReadFile.read_file
+      ~ReadFile.warning_if_invalid_file
+      ~ReadFile.warning_if_invalid_folder
+      ~ReadFile.warning_if_invlid_path
+      ~ReadFile.write_file
+   
+   
+
+   
+   
+   

@@ -1,0 +1,31 @@
+vtool.data.MayaCustomData
+=========================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: MayaCustomData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MayaCustomData.__init__
+      ~MayaCustomData.create
+      ~MayaCustomData.export_data
+      ~MayaCustomData.get_file
+      ~MayaCustomData.get_type
+      ~MayaCustomData.import_data
+      ~MayaCustomData.is_type_match
+      ~MayaCustomData.rename
+      ~MayaCustomData.set_directory
+      ~MayaCustomData.set_name
+   
+   
+
+   
+   
+   

@@ -1,0 +1,46 @@
+vtool.maya_lib.rigs.SparseRig
+=============================
+
+.. currentmodule:: vtool.maya_lib.rigs
+
+.. autoclass:: SparseRig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SparseRig.__init__
+      ~SparseRig.create
+      ~SparseRig.get_control_entries
+      ~SparseRig.get_sub_control_entries
+      ~SparseRig.set_attach_joints
+      ~SparseRig.set_control_color
+      ~SparseRig.set_control_parent
+      ~SparseRig.set_control_shape
+      ~SparseRig.set_control_size
+      ~SparseRig.set_joints
+      ~SparseRig.set_match_scale
+      ~SparseRig.set_respect_side
+      ~SparseRig.set_scalable
+      ~SparseRig.set_setup_parent
+      ~SparseRig.set_sub_control_color
+      ~SparseRig.set_sub_control_shape
+      ~SparseRig.set_sub_control_size
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SparseRig.side_center
+      ~SparseRig.side_left
+      ~SparseRig.side_right
+   
+   

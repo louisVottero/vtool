@@ -1,0 +1,31 @@
+vtool.data.CustomData
+=====================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: CustomData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CustomData.__init__
+      ~CustomData.create
+      ~CustomData.export_data
+      ~CustomData.get_file
+      ~CustomData.get_type
+      ~CustomData.import_data
+      ~CustomData.is_type_match
+      ~CustomData.rename
+      ~CustomData.set_directory
+      ~CustomData.set_name
+   
+   
+
+   
+   
+   

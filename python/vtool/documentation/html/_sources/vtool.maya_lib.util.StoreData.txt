@@ -1,0 +1,25 @@
+vtool.maya_lib.util.StoreData
+=============================
+
+.. currentmodule:: vtool.maya_lib.util
+
+.. autoclass:: StoreData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~StoreData.__init__
+      ~StoreData.eval_data
+      ~StoreData.get_data
+      ~StoreData.set_data
+   
+   
+
+   
+   
+   

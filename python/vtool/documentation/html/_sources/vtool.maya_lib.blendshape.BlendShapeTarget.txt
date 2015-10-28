@@ -1,0 +1,22 @@
+vtool.maya_lib.blendshape.BlendShapeTarget
+==========================================
+
+.. currentmodule:: vtool.maya_lib.blendshape
+
+.. autoclass:: BlendShapeTarget
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~BlendShapeTarget.__init__
+   
+   
+
+   
+   
+   

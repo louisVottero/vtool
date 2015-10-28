@@ -1,0 +1,7 @@
+vtool.maya_lib.rigs
+-------------------
+
+.. toctree::
+    :maxdepth: 1
+
+    vtool_maya_lib_rigs_classes

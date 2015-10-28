@@ -1,0 +1,44 @@
+vtool.maya_lib.rigs.ControlRig
+==============================
+
+.. currentmodule:: vtool.maya_lib.rigs
+
+.. autoclass:: ControlRig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ControlRig.__init__
+      ~ControlRig.create
+      ~ControlRig.get_control_entries
+      ~ControlRig.get_sub_control_entries
+      ~ControlRig.set_control_color
+      ~ControlRig.set_control_count_per_transform
+      ~ControlRig.set_control_description
+      ~ControlRig.set_control_parent
+      ~ControlRig.set_control_shape
+      ~ControlRig.set_control_size
+      ~ControlRig.set_setup_parent
+      ~ControlRig.set_sub_control_color
+      ~ControlRig.set_sub_control_shape
+      ~ControlRig.set_sub_control_size
+      ~ControlRig.set_transforms
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ControlRig.side_center
+      ~ControlRig.side_left
+      ~ControlRig.side_right
+   
+   

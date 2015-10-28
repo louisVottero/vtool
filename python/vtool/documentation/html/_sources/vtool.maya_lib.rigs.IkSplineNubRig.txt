@@ -1,0 +1,49 @@
+vtool.maya_lib.rigs.IkSplineNubRig
+==================================
+
+.. currentmodule:: vtool.maya_lib.rigs
+
+.. autoclass:: IkSplineNubRig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~IkSplineNubRig.__init__
+      ~IkSplineNubRig.create
+      ~IkSplineNubRig.get_control_entries
+      ~IkSplineNubRig.get_sub_control_entries
+      ~IkSplineNubRig.set_attach_joints
+      ~IkSplineNubRig.set_buffer
+      ~IkSplineNubRig.set_control_color
+      ~IkSplineNubRig.set_control_orient
+      ~IkSplineNubRig.set_control_parent
+      ~IkSplineNubRig.set_control_shape
+      ~IkSplineNubRig.set_control_size
+      ~IkSplineNubRig.set_create_middle_control
+      ~IkSplineNubRig.set_end_with_locator
+      ~IkSplineNubRig.set_guide_top_btm
+      ~IkSplineNubRig.set_joints
+      ~IkSplineNubRig.set_right_side_fix
+      ~IkSplineNubRig.set_setup_parent
+      ~IkSplineNubRig.set_sub_control_color
+      ~IkSplineNubRig.set_sub_control_shape
+      ~IkSplineNubRig.set_sub_control_size
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~IkSplineNubRig.side_center
+      ~IkSplineNubRig.side_left
+      ~IkSplineNubRig.side_right
+   
+   

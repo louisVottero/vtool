@@ -1,0 +1,31 @@
+vtool.data.ControlAnimationData
+===============================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: ControlAnimationData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ControlAnimationData.__init__
+      ~ControlAnimationData.create
+      ~ControlAnimationData.export_data
+      ~ControlAnimationData.get_file
+      ~ControlAnimationData.get_type
+      ~ControlAnimationData.import_data
+      ~ControlAnimationData.is_type_match
+      ~ControlAnimationData.rename
+      ~ControlAnimationData.set_directory
+      ~ControlAnimationData.set_name
+   
+   
+
+   
+   
+   

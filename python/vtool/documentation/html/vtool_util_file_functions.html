@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Function Summary &mdash; Vetala 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootswatch-3.3.4/cosmo/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-3.3.4/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <link rel="top" title="Vetala 0.1.1 documentation" href="index.html" />
+    <link rel="up" title="vtool.util_file" href="vtool_util_file.html" />
+    <link rel="next" title="vtool.maya_lib.util" href="vtool_maya_lib_util.html" />
+    <link rel="prev" title="vtool.util_file.PythonScope" href="vtool.util_file.PythonScope.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body role="document">
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          Vetala</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.1.1</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Menu <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">Vetala API Documentation</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="vtool.util_file.PythonScope.html" title="Previous Chapter: vtool.util_file.PythonScope"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; vtool.util_fi...</span>
+    </a>
+  </li>
+  <li>
+    <a href="vtool_maya_lib_util.html" title="Next Chapter: vtool.maya_lib.util"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">vtool.maya_li... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      
+  <div class="section" id="function-summary">
+<h1>Function Summary<a class="headerlink" href="#function-summary" title="Permalink to this headline">¶</a></h1>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_basename" title="vtool.util_file.get_basename"><code class="xref py py-obj docutils literal"><span class="pre">get_basename</span></code></a>(directory)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.get_basename_no_extension" title="vtool.util_file.get_basename_no_extension"><code class="xref py py-obj docutils literal"><span class="pre">get_basename_no_extension</span></code></a>(filepath)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_dirname" title="vtool.util_file.get_dirname"><code class="xref py py-obj docutils literal"><span class="pre">get_dirname</span></code></a>(directory)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.get_user_dir" title="vtool.util_file.get_user_dir"><code class="xref py py-obj docutils literal"><span class="pre">get_user_dir</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_temp_dir" title="vtool.util_file.get_temp_dir"><code class="xref py py-obj docutils literal"><span class="pre">get_temp_dir</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.get_cwd" title="vtool.util_file.get_cwd"><code class="xref py py-obj docutils literal"><span class="pre">get_cwd</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_files" title="vtool.util_file.get_files"><code class="xref py py-obj docutils literal"><span class="pre">get_files</span></code></a>(directory)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.get_folders" title="vtool.util_file.get_folders"><code class="xref py py-obj docutils literal"><span class="pre">get_folders</span></code></a>(directory)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_files_and_folders" title="vtool.util_file.get_files_and_folders"><code class="xref py py-obj docutils literal"><span class="pre">get_files_and_folders</span></code></a>(directory)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.get_folders_date_sorted" title="vtool.util_file.get_folders_date_sorted"><code class="xref py py-obj docutils literal"><span class="pre">get_folders_date_sorted</span></code></a>(directory)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_files_date_sorted" title="vtool.util_file.get_files_date_sorted"><code class="xref py py-obj docutils literal"><span class="pre">get_files_date_sorted</span></code></a>(directory[,&nbsp;extension])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.get_files_with_extension" title="vtool.util_file.get_files_with_extension"><code class="xref py py-obj docutils literal"><span class="pre">get_files_with_extension</span></code></a>(extension,&nbsp;directory)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_filesize" title="vtool.util_file.get_filesize"><code class="xref py py-obj docutils literal"><span class="pre">get_filesize</span></code></a>(filepath)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.get_last_modified_date" title="vtool.util_file.get_last_modified_date"><code class="xref py py-obj docutils literal"><span class="pre">get_last_modified_date</span></code></a>(filepath)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_user" title="vtool.util_file.get_user"><code class="xref py py-obj docutils literal"><span class="pre">get_user</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.is_dir" title="vtool.util_file.is_dir"><code class="xref py py-obj docutils literal"><span class="pre">is_dir</span></code></a>(directory)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.is_file" title="vtool.util_file.is_file"><code class="xref py py-obj docutils literal"><span class="pre">is_file</span></code></a>(filepath)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.is_file_in_dir" title="vtool.util_file.is_file_in_dir"><code class="xref py py-obj docutils literal"><span class="pre">is_file_in_dir</span></code></a>(filename,&nbsp;directory)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.is_same_date" title="vtool.util_file.is_same_date"><code class="xref py py-obj docutils literal"><span class="pre">is_same_date</span></code></a>(file1,&nbsp;file2)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.inc_path_name" title="vtool.util_file.inc_path_name"><code class="xref py py-obj docutils literal"><span class="pre">inc_path_name</span></code></a>(directory[,&nbsp;padding])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_file_lines" title="vtool.util_file.get_file_lines"><code class="xref py py-obj docutils literal"><span class="pre">get_file_lines</span></code></a>(filepath)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.get_text_lines" title="vtool.util_file.get_text_lines"><code class="xref py py-obj docutils literal"><span class="pre">get_text_lines</span></code></a>(text)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.open_browser" title="vtool.util_file.open_browser"><code class="xref py py-obj docutils literal"><span class="pre">open_browser</span></code></a>(filepath)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.fix_slashes" title="vtool.util_file.fix_slashes"><code class="xref py py-obj docutils literal"><span class="pre">fix_slashes</span></code></a>(directory)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.set_windows_slashes" title="vtool.util_file.set_windows_slashes"><code class="xref py py-obj docutils literal"><span class="pre">set_windows_slashes</span></code></a>(directory)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.join_path" title="vtool.util_file.join_path"><code class="xref py py-obj docutils literal"><span class="pre">join_path</span></code></a>(directory1,&nbsp;directory2)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_parent_path" title="vtool.util_file.get_parent_path"><code class="xref py py-obj docutils literal"><span class="pre">get_parent_path</span></code></a>(directory)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.rename" title="vtool.util_file.rename"><code class="xref py py-obj docutils literal"><span class="pre">rename</span></code></a>(directory,&nbsp;name[,&nbsp;make_unique])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.move" title="vtool.util_file.move"><code class="xref py py-obj docutils literal"><span class="pre">move</span></code></a>(path1,&nbsp;path2)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.comment" title="vtool.util_file.comment"><code class="xref py py-obj docutils literal"><span class="pre">comment</span></code></a>(filepath,&nbsp;comment,&nbsp;comment_directory)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_comments" title="vtool.util_file.get_comments"><code class="xref py py-obj docutils literal"><span class="pre">get_comments</span></code></a>(comment_directory[,&nbsp;...])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.write_lines" title="vtool.util_file.write_lines"><code class="xref py py-obj docutils literal"><span class="pre">write_lines</span></code></a>(filepath,&nbsp;lines[,&nbsp;append])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.create_dir" title="vtool.util_file.create_dir"><code class="xref py py-obj docutils literal"><span class="pre">create_dir</span></code></a>(name,&nbsp;directory[,&nbsp;make_unique])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.delete_dir" title="vtool.util_file.delete_dir"><code class="xref py py-obj docutils literal"><span class="pre">delete_dir</span></code></a>(name,&nbsp;directory)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.refresh_dir" title="vtool.util_file.refresh_dir"><code class="xref py py-obj docutils literal"><span class="pre">refresh_dir</span></code></a>(directory)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.create_file" title="vtool.util_file.create_file"><code class="xref py py-obj docutils literal"><span class="pre">create_file</span></code></a>(name,&nbsp;directory[,&nbsp;make_unique])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.delete_file" title="vtool.util_file.delete_file"><code class="xref py py-obj docutils literal"><span class="pre">delete_file</span></code></a>(name,&nbsp;directory)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.copy_dir" title="vtool.util_file.copy_dir"><code class="xref py py-obj docutils literal"><span class="pre">copy_dir</span></code></a>(directory,&nbsp;directory_destination[,&nbsp;...])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.copy_file" title="vtool.util_file.copy_file"><code class="xref py py-obj docutils literal"><span class="pre">copy_file</span></code></a>(filepath,&nbsp;filepath_destination)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.import_python_module" title="vtool.util_file.import_python_module"><code class="xref py py-obj docutils literal"><span class="pre">import_python_module</span></code></a>(module_name,&nbsp;directory)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.source_python_module" title="vtool.util_file.source_python_module"><code class="xref py py-obj docutils literal"><span class="pre">source_python_module</span></code></a>(code_directory)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.load_python_module" title="vtool.util_file.load_python_module"><code class="xref py py-obj docutils literal"><span class="pre">load_python_module</span></code></a>(module_name,&nbsp;directory)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_package_path_from_name" title="vtool.util_file.get_package_path_from_name"><code class="xref py py-obj docutils literal"><span class="pre">get_package_path_from_name</span></code></a>(module_name[,&nbsp;...])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.get_line_imports" title="vtool.util_file.get_line_imports"><code class="xref py py-obj docutils literal"><span class="pre">get_line_imports</span></code></a>(lines)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.get_line_defined" title="vtool.util_file.get_line_defined"><code class="xref py py-obj docutils literal"><span class="pre">get_line_defined</span></code></a>(lines)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.launch_maya" title="vtool.util_file.launch_maya"><code class="xref py py-obj docutils literal"><span class="pre">launch_maya</span></code></a>(version[,&nbsp;script])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.util_file.launch_nuke" title="vtool.util_file.launch_nuke"><code class="xref py py-obj docutils literal"><span class="pre">launch_nuke</span></code></a>(version[,&nbsp;command])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.util_file.run_ffmpeg" title="vtool.util_file.run_ffmpeg"><code class="xref py py-obj docutils literal"><span class="pre">run_ffmpeg</span></code></a>()</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Functions:</p>
+<dl class="function">
+<dt id="vtool.util_file.get_basename">
+<code class="descname">get_basename</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_basename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_basename_no_extension">
+<code class="descname">get_basename_no_extension</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_basename_no_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_dirname">
+<code class="descname">get_dirname</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_dirname" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_user_dir">
+<code class="descname">get_user_dir</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_user_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_temp_dir">
+<code class="descname">get_temp_dir</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_temp_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_cwd">
+<code class="descname">get_cwd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_cwd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_files">
+<code class="descname">get_files</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_files" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_folders">
+<code class="descname">get_folders</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_folders" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_files_and_folders">
+<code class="descname">get_files_and_folders</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_files_and_folders" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_folders_date_sorted">
+<code class="descname">get_folders_date_sorted</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_folders_date_sorted" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_files_date_sorted">
+<code class="descname">get_files_date_sorted</code><span class="sig-paren">(</span><em>directory</em>, <em>extension=None</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_files_date_sorted" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_files_with_extension">
+<code class="descname">get_files_with_extension</code><span class="sig-paren">(</span><em>extension</em>, <em>directory</em>, <em>fullpath=False</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_files_with_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_filesize">
+<code class="descname">get_filesize</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_filesize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_last_modified_date">
+<code class="descname">get_last_modified_date</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_last_modified_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_user">
+<code class="descname">get_user</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_user" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.is_dir">
+<code class="descname">is_dir</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.is_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.is_file">
+<code class="descname">is_file</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.is_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.is_file_in_dir">
+<code class="descname">is_file_in_dir</code><span class="sig-paren">(</span><em>filename</em>, <em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.is_file_in_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.is_same_date">
+<code class="descname">is_same_date</code><span class="sig-paren">(</span><em>file1</em>, <em>file2</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.is_same_date" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.inc_path_name">
+<code class="descname">inc_path_name</code><span class="sig-paren">(</span><em>directory</em>, <em>padding=0</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.inc_path_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_file_lines">
+<code class="descname">get_file_lines</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_file_lines" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_text_lines">
+<code class="descname">get_text_lines</code><span class="sig-paren">(</span><em>text</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_text_lines" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.open_browser">
+<code class="descname">open_browser</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.open_browser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.fix_slashes">
+<code class="descname">fix_slashes</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.fix_slashes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.set_windows_slashes">
+<code class="descname">set_windows_slashes</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.set_windows_slashes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.join_path">
+<code class="descname">join_path</code><span class="sig-paren">(</span><em>directory1</em>, <em>directory2</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.join_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_parent_path">
+<code class="descname">get_parent_path</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_parent_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.rename">
+<code class="descname">rename</code><span class="sig-paren">(</span><em>directory</em>, <em>name</em>, <em>make_unique=False</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.rename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.move">
+<code class="descname">move</code><span class="sig-paren">(</span><em>path1</em>, <em>path2</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.move" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.comment">
+<code class="descname">comment</code><span class="sig-paren">(</span><em>filepath</em>, <em>comment</em>, <em>comment_directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.comment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_comments">
+<code class="descname">get_comments</code><span class="sig-paren">(</span><em>comment_directory</em>, <em>comment_filename=None</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_comments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.write_lines">
+<code class="descname">write_lines</code><span class="sig-paren">(</span><em>filepath</em>, <em>lines</em>, <em>append=False</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.write_lines" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.create_dir">
+<code class="descname">create_dir</code><span class="sig-paren">(</span><em>name</em>, <em>directory</em>, <em>make_unique=False</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.create_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.delete_dir">
+<code class="descname">delete_dir</code><span class="sig-paren">(</span><em>name</em>, <em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.delete_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.refresh_dir">
+<code class="descname">refresh_dir</code><span class="sig-paren">(</span><em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.refresh_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.create_file">
+<code class="descname">create_file</code><span class="sig-paren">(</span><em>name</em>, <em>directory</em>, <em>make_unique=False</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.create_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.delete_file">
+<code class="descname">delete_file</code><span class="sig-paren">(</span><em>name</em>, <em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.delete_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.copy_dir">
+<code class="descname">copy_dir</code><span class="sig-paren">(</span><em>directory</em>, <em>directory_destination</em>, <em>ignore_patterns=[]</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.copy_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.copy_file">
+<code class="descname">copy_file</code><span class="sig-paren">(</span><em>filepath</em>, <em>filepath_destination</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.copy_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.import_python_module">
+<code class="descname">import_python_module</code><span class="sig-paren">(</span><em>module_name</em>, <em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.import_python_module" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.source_python_module">
+<code class="descname">source_python_module</code><span class="sig-paren">(</span><em>code_directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.source_python_module" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.load_python_module">
+<code class="descname">load_python_module</code><span class="sig-paren">(</span><em>module_name</em>, <em>directory</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.load_python_module" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_package_path_from_name">
+<code class="descname">get_package_path_from_name</code><span class="sig-paren">(</span><em>module_name</em>, <em>return_module_paths=False</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_package_path_from_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_line_imports">
+<code class="descname">get_line_imports</code><span class="sig-paren">(</span><em>lines</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_line_imports" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.get_line_defined">
+<code class="descname">get_line_defined</code><span class="sig-paren">(</span><em>lines</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.get_line_defined" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.launch_maya">
+<code class="descname">launch_maya</code><span class="sig-paren">(</span><em>version</em>, <em>script=None</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.launch_maya" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.launch_nuke">
+<code class="descname">launch_nuke</code><span class="sig-paren">(</span><em>version</em>, <em>command=None</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.launch_nuke" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="vtool.util_file.run_ffmpeg">
+<code class="descname">run_ffmpeg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vtool.util_file.run_ffmpeg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/vtool_util_file_functions.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2015, Louis Vottero.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

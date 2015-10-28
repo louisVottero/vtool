@@ -2085,7 +2085,8 @@ class CodeEdit(BasicWidget):
         self.text_edit.textChanged.connect(self._text_changed)
         self.text_edit.file_set.connect(self._text_file_set)
         
-        self.text_edit.set_completer( PythonCompleter() )
+        #turning off completer for now.
+        #self.text_edit.set_completer( PythonCompleter() )
         
     def _build_menu_bar(self):
         
@@ -2232,14 +2233,15 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
             
     def keyPressEvent(self, event):
         
-        if self.completer.popup().isVisible():
-         
-            if event.key() == QtCore.Qt.Key_Enter:
-                event.ignore()
-                return
-            if event.key() == QtCore.Qt.Key_Return:
-                event.ignore()
-                return
+        if self.completer:
+            if self.completer.popup().isVisible():
+             
+                if event.key() == QtCore.Qt.Key_Enter:
+                    event.ignore()
+                    return
+                if event.key() == QtCore.Qt.Key_Return:
+                    event.ignore()
+                    return
 
         pass_on = True
     
@@ -2249,32 +2251,30 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
 
         if pass_on:
             super(CodeTextEdit, self).keyPressEvent(event)
-
-        text = self.completer.text_under_cursor()
         
-        #if not text:
-        #    self.completer.popup().hide()
-        
-        if text:
+        if self.completer:
+            text = self.completer.text_under_cursor()
             
-            result = self.completer.handle_text(text)
-            
-            if result == True:
-                rect = self.cursorRect()
-                rect.translate(0, 2)
+            if text:
                 
-                width = self.completer.popup().sizeHintForColumn(0) + self.completer.popup().verticalScrollBar().sizeHint().width()
-                if width > 350:
-                    width = 350
+                result = self.completer.handle_text(text)
                 
-                rect.setWidth(width)
+                if result == True:
+                    rect = self.cursorRect()
+                    rect.translate(0, 2)
+                    
+                    width = self.completer.popup().sizeHintForColumn(0) + self.completer.popup().verticalScrollBar().sizeHint().width()
+                    if width > 350:
+                        width = 350
+                    
+                    rect.setWidth(width)
+                    
+                    self.completer.complete(rect)
                 
-                self.completer.complete(rect)
-            
-            if result == False:
-                self.completer.popup().hide()
-                self.completer.clear_completer_list()
-                self.completer.refresh_completer = True
+                if result == False:
+                    self.completer.popup().hide()
+                    self.completer.clear_completer_list()
+                    self.completer.refresh_completer = True
 
     def _line_number_paint(self, event):
         
@@ -2603,7 +2603,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         self.last_modified = util_file.get_last_modified_date(self.filepath)
         
-        self.completer.set_filepath(filepath)
+        if self.completer:
+            self.completer.set_filepath(filepath)
         
         self.file_set.emit()
     

@@ -1,0 +1,25 @@
+vtool.maya_lib.util.RemapAttributesToAttribute
+==============================================
+
+.. currentmodule:: vtool.maya_lib.util
+
+.. autoclass:: RemapAttributesToAttribute
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~RemapAttributesToAttribute.__init__
+      ~RemapAttributesToAttribute.create
+      ~RemapAttributesToAttribute.create_attribute
+      ~RemapAttributesToAttribute.create_attributes
+   
+   
+
+   
+   
+   

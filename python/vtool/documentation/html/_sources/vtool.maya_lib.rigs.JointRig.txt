@@ -1,0 +1,43 @@
+vtool.maya_lib.rigs.JointRig
+============================
+
+.. currentmodule:: vtool.maya_lib.rigs
+
+.. autoclass:: JointRig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~JointRig.__init__
+      ~JointRig.create
+      ~JointRig.get_control_entries
+      ~JointRig.get_sub_control_entries
+      ~JointRig.set_attach_joints
+      ~JointRig.set_control_color
+      ~JointRig.set_control_parent
+      ~JointRig.set_control_shape
+      ~JointRig.set_control_size
+      ~JointRig.set_joints
+      ~JointRig.set_setup_parent
+      ~JointRig.set_sub_control_color
+      ~JointRig.set_sub_control_shape
+      ~JointRig.set_sub_control_size
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~JointRig.side_center
+      ~JointRig.side_left
+      ~JointRig.side_right
+   
+   

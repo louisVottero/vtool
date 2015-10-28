@@ -1,0 +1,64 @@
+vtool.maya_lib.corrective.PoseTimeline
+======================================
+
+.. currentmodule:: vtool.maya_lib.corrective
+
+.. autoclass:: PoseTimeline
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PoseTimeline.__init__
+      ~PoseTimeline.add_mesh
+      ~PoseTimeline.attach
+      ~PoseTimeline.attach_sub_poses
+      ~PoseTimeline.connect_blend
+      ~PoseTimeline.create
+      ~PoseTimeline.create_all_blends
+      ~PoseTimeline.create_blend
+      ~PoseTimeline.create_sub_poses
+      ~PoseTimeline.delete
+      ~PoseTimeline.delete_blend_input
+      ~PoseTimeline.detach
+      ~PoseTimeline.detach_sub_poses
+      ~PoseTimeline.disconnect_blend
+      ~PoseTimeline.disconnect_weight_outputs
+      ~PoseTimeline.get_blendshape
+      ~PoseTimeline.get_inbetween_weight
+      ~PoseTimeline.get_input
+      ~PoseTimeline.get_mesh
+      ~PoseTimeline.get_mesh_count
+      ~PoseTimeline.get_mesh_index
+      ~PoseTimeline.get_target_mesh
+      ~PoseTimeline.get_target_mesh_index
+      ~PoseTimeline.get_target_meshes
+      ~PoseTimeline.get_target_name
+      ~PoseTimeline.goto_pose
+      ~PoseTimeline.has_a_mesh
+      ~PoseTimeline.is_a_pose
+      ~PoseTimeline.mirror
+      ~PoseTimeline.reconnect_weight_outputs
+      ~PoseTimeline.remove_mesh
+      ~PoseTimeline.rename
+      ~PoseTimeline.reset_target_meshes
+      ~PoseTimeline.select
+      ~PoseTimeline.set_inbetween_weight
+      ~PoseTimeline.set_input
+      ~PoseTimeline.set_pose
+      ~PoseTimeline.set_pose_group
+      ~PoseTimeline.set_target_name
+      ~PoseTimeline.set_weight
+      ~PoseTimeline.toggle_vis
+      ~PoseTimeline.visibility_off
+      ~PoseTimeline.visibility_on
+   
+   
+
+   
+   
+   

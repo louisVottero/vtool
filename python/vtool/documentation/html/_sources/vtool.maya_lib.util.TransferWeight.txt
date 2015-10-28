@@ -1,0 +1,24 @@
+vtool.maya_lib.util.TransferWeight
+==================================
+
+.. currentmodule:: vtool.maya_lib.util
+
+.. autoclass:: TransferWeight
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~TransferWeight.__init__
+      ~TransferWeight.transfer_joint_to_joint
+      ~TransferWeight.transfer_joints_to_new_joints
+   
+   
+
+   
+   
+   

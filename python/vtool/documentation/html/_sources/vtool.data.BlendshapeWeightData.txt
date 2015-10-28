@@ -1,0 +1,16 @@
+vtool.data.BlendshapeWeightData
+===============================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: BlendshapeWeightData
+
+   
+   .. automethod:: __init__
+
+   
+   
+
+   
+   
+   

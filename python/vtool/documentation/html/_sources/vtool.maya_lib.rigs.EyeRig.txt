@@ -1,0 +1,47 @@
+vtool.maya_lib.rigs.EyeRig
+==========================
+
+.. currentmodule:: vtool.maya_lib.rigs
+
+.. autoclass:: EyeRig
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~EyeRig.__init__
+      ~EyeRig.create
+      ~EyeRig.get_control_entries
+      ~EyeRig.get_sub_control_entries
+      ~EyeRig.set_attach_joints
+      ~EyeRig.set_control_color
+      ~EyeRig.set_control_parent
+      ~EyeRig.set_control_shape
+      ~EyeRig.set_control_size
+      ~EyeRig.set_extra_control
+      ~EyeRig.set_joints
+      ~EyeRig.set_local_parent
+      ~EyeRig.set_parent
+      ~EyeRig.set_setup_parent
+      ~EyeRig.set_skip_ik_control
+      ~EyeRig.set_sub_control_color
+      ~EyeRig.set_sub_control_shape
+      ~EyeRig.set_sub_control_size
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~EyeRig.side_center
+      ~EyeRig.side_left
+      ~EyeRig.side_right
+   
+   

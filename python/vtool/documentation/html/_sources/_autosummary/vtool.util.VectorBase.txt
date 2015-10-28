@@ -1,0 +1,16 @@
+vtool.util.VectorBase
+=====================
+
+.. currentmodule:: vtool.util
+
+.. autoclass:: VectorBase
+
+   
+   .. automethod:: __init__
+
+   
+   
+
+   
+   
+   

@@ -1,0 +1,28 @@
+vtool.maya_lib.util.ClusterSurface
+==================================
+
+.. currentmodule:: vtool.maya_lib.util
+
+.. autoclass:: ClusterSurface
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ClusterSurface.__init__
+      ~ClusterSurface.create
+      ~ClusterSurface.get_cluster_handle_list
+      ~ClusterSurface.get_cluster_list
+      ~ClusterSurface.set_cluster_u
+      ~ClusterSurface.set_join_both_ends
+      ~ClusterSurface.set_join_ends
+   
+   
+
+   
+   
+   

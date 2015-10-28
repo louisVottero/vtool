@@ -628,8 +628,6 @@ class MayaVariable(vtool.util.Variable):
     def load(self):
         """
         Refresh the internal values.
-        
-        Return None
         """
         self.value = self._get_value()
         self.locked = self._get_lock_state()
@@ -660,6 +658,10 @@ class MayaVariable(vtool.util.Variable):
         cmds.connectAttr(self._get_node_and_variable(), attribute)
         
 class MayaNumberVariable(MayaVariable):
+    """
+    Convenience class for dealing with Maya numeric attributes.
+    """
+    
     
     def __init__(self, name):
         super(MayaNumberVariable, self).__init__(name)
@@ -720,21 +722,38 @@ class MayaNumberVariable(MayaVariable):
     
         
     def set_min_value(self, value):
+        """
+        Args
+            value (float): Minimum value constraint
+        
+        """
         self.min_value = value
         self._set_min_state()
     
     def set_max_value(self, value):
+        """
+        Args
+            value (float): Maximum value constraint
+        
+        """
+        
         self.max_value = value
         self._set_max_state()
         
     def load(self):
-        
+        """
+        Refresh the internal values.
+        """
         super(MayaNumberVariable, self).load()
         
         self._get_min_state()
         self._get_max_state()
         
 class MayaEnumVariable(MayaVariable):
+    """
+    Convenience class for dealing with Maya enum attributes.
+    """
+    
     def __init__(self, name):                
         super(MayaEnumVariable, self).__init__(name)
         
@@ -783,18 +802,29 @@ class MayaEnumVariable(MayaVariable):
         super(MayaEnumVariable, self)._set_value()
     
     def set_enum_names(self, name_list):
+        """
+        Args
+            name_list (list): List of strings to define the enum.
+        """
         self.enum_names = name_list
         
         self._set_enum_state()
 
 class MayaStringVariable(MayaVariable):
+    """
+    Convenience class for dealing with Maya string attributes.
+    """
+    
     def __init__(self, name):
         super(MayaStringVariable, self).__init__(name)
         self.variable_type = 'string'
         self.value = ''
     
 class Attributes(object):
-    
+    """
+    Still testing. Convenience class for dealing with groups of attributes.
+    Currently only works on bool, long, short, float, double
+    """
     numeric_attributes = ['bool', 'long', 'short', 'float', 'double']
     
     def __init__(self, node):
@@ -860,7 +890,9 @@ class Attributes(object):
         return variables    
     
     def delete_all(self, retrieve = False):
-        
+        """
+        Delete all loaded variables on a node.
+        """
         variables = []
         
         if retrieve or not self.variables:
@@ -973,7 +1005,9 @@ class BoundingBox(vtool.util.BoundingBox):
                                           [xmax, ymax, zmax])
           
 class OrientJointAttributes(object):
-    
+    """
+    Creates attributes on a node that can then be used with OrientAttributes
+    """
     def __init__(self, joint = None):
         self.joint = joint
         self.attributes = []
@@ -1065,12 +1099,23 @@ class OrientJointAttributes(object):
         self.attributes[7].set_value(3)
     
     def set_joint(self, joint):
+        """
+        Set a joint to create attributes on.
+        
+        Args
+            joint (str): The name of the joint.
+        """
         self.joint = joint
         
         self._create_attributes()
     
     def get_values(self):
+        """
+        Get the orient settings in a dictionary.
         
+        Return
+            (dict)
+        """
         value_dict = {}
         
         for attr in self.attributes:
@@ -1079,12 +1124,21 @@ class OrientJointAttributes(object):
         return value_dict
     
     def set_default_values(self):
+        """
+        Reset the attributes to default.
+        """
         self._set_default_values()
 
     def delete(self):
+        """
+        Delete the attributes off of the joint set with set_joint.
+        """
         self._delete_attributes()
           
 class OrientJoint(object):
+    """
+    This will orient the joint using the attributes created with OrientJointAttributes.
+    """
     
     def __init__(self, joint_name):
         
@@ -1300,18 +1354,57 @@ class OrientJoint(object):
         
       
     def set_aim_vector(self, vector_list):
+        """
+        Args
+            vector_list (list): [0,0,0] vector that defines what axis should aim.  
+            If joint should aim with X axis then vector should be [1,0,0].  If joint should aim with Y axis then [0,1,0], etc.
+            If up needs to be opposite of X axis then vector should be [-1,0,0].
+        """
         self.aim_vector = vector_list
         
     def set_up_vector(self, vector_list):
+        """
+        Args
+            vector_list (list): [0,0,0] vector that defines what axis should aim up.  
+            If joint should aim up with X axis then vector should be [1,0,0].  If joint should aim up with Y axis then [0,1,0], etc.
+            If up needs to be opposite of X axis then vector should be [-1,0,0].
+        """
         self.up_vector = vector_list
         
     def set_world_up_vector(self, vector_list):
+        """
+        Args
+            vector_list (list): [0,0,0] vector that defines what world up axis be.  
+            If world should aim up with X axis then vector should be [1,0,0].  If world should aim up with Y axis then [0,1,0], etc.
+            If up needs to be opposite of X axis then vector should be [-1,0,0].
+        """
         self.world_up_vector = vector_list
         
     def set_aim_at(self, int_value):
+        """
+        Set how the joint aims.
+        
+        Args
+            int_value (int): 0 aim at world X, 
+                                1 aim at world Y, 
+                                2 aim at world Z, 
+                                3 aim at immediate child. 
+                                4 aim at immediate parent. 
+                                5 aim at local parent, which is like aiming at the parent and then reversing direction.
+        """
         self.aim_at = self._get_aim_at(int_value)
         
     def set_aim_up_at(self, int_value):
+        """
+        Set how the joint aims up.
+        
+        Args
+            int_value (int):  0 world,
+                                1 parent rotate,
+                                2 child position,
+                                3 parent position,
+                                4 triangle plane, which need to be configured to see which joints in the hierarchy it calculates with.
+        """
         self.aim_up_at = self._get_aim_up_at(int_value)
         
     def set_aim_up_at_object(self, name):
@@ -1361,11 +1454,17 @@ class OrientJoint(object):
         self._freeze()
         
 class PinXform(object):
+    """
+    This allows you to pin a transform so that its parent and child are not affected by any edits.
+    """
     def __init__(self, xform_name):
         self.xform = xform_name
         self.delete_later = []
 
     def pin(self):
+        """
+        Create the pin constraints on parent and children.
+        """
         parent = cmds.listRelatives(self.xform, p = True, f = True)
         
         if parent:
@@ -1406,13 +1505,17 @@ class PinXform(object):
             self.delete_later.append(pin)
             
     def unpin(self):
-        
-        
-        
+        """
+        Remove the pin. This should be run after pin.
+        """
         if self.delete_later:
             cmds.delete(self.delete_later)
         
     def get_pin_nodes(self):
+        """
+        Return
+            (list): List of nodes involved in the pinning. Ususally includes constraints and empty groups.
+        """
         return self.delete_later
     
 class MayaNode(object):
@@ -3140,136 +3243,6 @@ class AttachJoints(object):
     def create(self):
         self._attach_joints(self.source_joints, self.target_joints)
 
-
-class Hierarchy(vtool.util.Hierarchy):
-    
-    def _get_hierarchy(self):
-        
-        top_node_long = cmds.ls(self.top_of_hierarchy, l = True)
-
-        generations = [[top_node_long[0]]]
-        
-        children = self._get_children(self.top_of_hierarchy)
-        
-        generations.append( children ) 
-        inc = 0
-        while children:
-            
-            new_generation = []
-            
-            for child in children:
-                sub_children = self._get_children(child)
-                
-                if sub_children:
-                    new_generation += sub_children
-                    
-            generations.append( new_generation )
-            children = new_generation
-            
-            inc += 1
-            if inc > 100:
-                break
-            
-        self._populate_branches_from_relatives(generations)
-        
-    def _get_children(self, node):
-        types = ['transform', 'joint']
-        
-        children = []
-        
-        for node_type in types:
-            found = cmds.listRelatives(node, type = node_type, fullPath = True)
-            
-            if found:
-                children += found
-            
-        return children
-            
-    def _populate_branches_from_relatives(self, generations):
-
-        
-        self.generations = []
-        
-        for inc in range(0, len(generations)):
-            branches = []
-            
-            for relative in generations[inc]:
-
-                split_relative = relative.split('|')
-                split_relative = split_relative[1:]
-
-                name = split_relative[-1]
-                
-                parent = None
-                
-                if len(split_relative) >=2:
-                    parent = split_relative[-2]
-    
-                branch = self.create_branch(name)
-                branch.set_long_name(relative)
-                
-                if self.generations:
-                    for last_branch in self.generations[-1]:
-                        if parent == last_branch.name:
-                            branch.set_parent(last_branch)
-                            last_branch.add_child(branch)
-                            break
-    
-                branches.append(branch)
-            
-            self.generations.append(branches)
-            
-    def create_branch(self, name, parent = None):
-        
-        branch = Branch(name)
-        self.branches.append(branch)
-        
-        if parent:
-            branch.set_parent(parent)
-        
-        return branch
-    
-    def prefix(self, prefix):
-        reverse_generation = list(self.generations)
-        reverse_generation.reverse()
-        
-        for generation in reverse_generation:
-            for branch in generation:
-                branch.prefix(prefix)
-                
-        self.top_of_hierarchy = self.generations[0][0].long_name
-            
-class Branch(vtool.util.Branch):      
-    def __init__(self, name):
-        super(Branch, self).__init__(name)
-        
-        self.long_name = ''
-
-    def _update_name(self, new_name):
-
-        split_name = self.long_name.split('|')
-        
-        split_name[-1] = new_name
-        
-        new_long_name = string.join(split_name, '|')
-        
-        self.long_name = new_long_name
-        self.name = new_name
-        
-        
-    def set_long_name(self, long_name):
-        self.long_name = long_name
-        
-    def rename(self, new_name):
-        new_name = cmds.rename(self.long_name, new_name)
-        self._update_name(new_name)
-        
-    def prefix(self, prefix):
-        new_name = prefix_name(self.long_name, prefix, self.name)
-        self._update_name(new_name)
-        
-    
-
 class StoreData(object):
     def __init__(self, node = None):
         self.node = node
@@ -4832,7 +4805,8 @@ class LockState(object):
 
 def is_batch():
     """
-    Return True if Maya is in batch mode.
+    Return 
+        (bool): True if Maya is in batch mode.
     """
     
     return cmds.about(batch = True)
@@ -4840,13 +4814,30 @@ def is_batch():
 def inc_name(name):
     """
     Finds a unique name by adding a number to the end.
+    
+    Args
+        name (str): Name to start from. 
+    
+    Return
+        (str): Modified name, number added if not unique..
     """
+    
     unique = FindUniqueName(name)
     return unique.get()
 
 def prefix_name(node, prefix, name, separator = '_'):
     """
-    Adds a prefix to a name
+    Convenience to quickly rename a Maya node.
+    
+    Args
+        node (str): Name of a node in maya to rename.
+        prefix (str)
+        name (str)
+        separator (str)
+        
+    Return
+        (str): prefix + separator + name
+    
     """
     new_name = cmds.rename(node, '%s%s%s' % (prefix,separator, name))
     
@@ -4855,16 +4846,29 @@ def prefix_name(node, prefix, name, separator = '_'):
 def prefix_hierarchy(top_group, prefix):
     """
     Prefix all the names in a hierarchy.
+    
+    Args
+        top_group (str): Name of the top node of a hierarchy.
+        prefix (str): Prefix to add in front of top_group and all children.
+        
+    Return
+        (list): The renamed hierarchy including top_group.
     """
     
     relatives = cmds.listRelatives(top_group, ad = True)
      
     relatives.append(top_group)
-     
+    
+    renamed = []
+    
     for relative in relatives:
 
-        cmds.rename(relative, '%s_%s' % (prefix, relative))
+        new_name = cmds.rename(relative, '%s_%s' % (prefix, relative))
+        renamed.append(new_name)
     
+    renamed.reverse()
+    
+    return renamed
     
 def pad_number(name):
     """
@@ -4887,8 +4891,10 @@ def pad_number(name):
     
 def get_node_types(nodes, return_shape_type = True):
     """
-        Get the maya node types for the nodes supplied.
-        Return = dict[node_type_name] = node list of matching nodes
+    Get the maya node types for the nodes supplied.
+    
+    Return
+        (dict[node_type_name]): node dict of matching nodes
     """
     
     found_type = {}
@@ -4930,6 +4936,9 @@ def get_basename(name, remove_namespace = True):
 def get_visible_hud_displays():
     """
     Get viewport hud displays.
+    
+    Return
+        (list):  List of names of heads up displays.
     """    
     
     found = []
@@ -4947,6 +4956,10 @@ def get_visible_hud_displays():
 def set_hud_visibility(bool_value, displays = None):
     """
     Set the viewport hud display visibility.
+    
+    Args
+        bool_value (bool): True turns visiliblity on, False turns it off.
+        displays (list): List of heads up displays by name.
     """
     
     if not displays:
@@ -4958,9 +4971,12 @@ def set_hud_visibility(bool_value, displays = None):
 def set_hud_lines(lines, name):
     """
     Set the viewport hud text for the named hud.
-    """
     
-    huds = []
+    Args
+        lines (list): Each entry in the list is a new text line in the display.
+        name (str): The name of the heads up display to work on.
+    
+    """
     
     inc = 0
     for line in lines:
@@ -4973,12 +4989,9 @@ def set_hud_lines(lines, name):
             
         cmds.headsUpDisplay( hud_name, section = 1, block = inc, blockSize = 'large', labelFontSize = "large", dataFontSize = 'large')
         cmds.headsUpDisplay( hud_name, edit = True, label = line)
-    
-        huds.append(hud_name)
         
         inc += 1
-    
-    return huds
+
     
 def show_channel_box():
     """
@@ -5005,6 +5018,9 @@ def show_channel_box():
 def playblast(filename):
     """
     Playblast the viewport to the given filename path.
+    
+    Args
+        filename (str): This should be the path to a quicktime .mov file.
     """
     
     min = cmds.playbackOptions(query = True, minTime = True)
@@ -5045,7 +5061,13 @@ def playblast(filename):
                    forceOverwrite = True)
 
 def is_referenced(node):
-    
+    """
+    Args
+        node (str): Name of a node in maya. Check to see if it is referenced.
+        
+    Return
+        (bool)
+    """
     if not cmds.objExists(node):
         return False
     
@@ -5056,6 +5078,9 @@ def is_referenced(node):
 def get_current_audio_node():
     """
     Get the current audio node. Important when getting sound in a playblast.
+    
+    Return
+        (str): Name of the audio node.
     """
     
     play_slider = mel.eval('global string $gPlayBackSlider; string $goo = $gPlayBackSlider')
@@ -5079,6 +5104,11 @@ def delete_unknown_nodes():
 def apply_shading_engine(shader_name, mesh):
     """
     Adds the named shading engine to the mesh.
+    
+    Args
+        shader_name (str): Name of an existing shader in maya.
+        mesh (str):  Name of a mesh to add the shader to.
+    
     """
     
     
@@ -5086,9 +5116,23 @@ def apply_shading_engine(shader_name, mesh):
     cmds.sets(mesh, e = True, forceElement = shader_name)
     
 def get_shading_engine_geo(shader_name):
+    """
+    Non implemented
+    """
     pass
 
 def get_shading_engines(shader_name):
+    """
+    Get the shading engines attached to a shader.  
+    Maya allows one shader to be attached to more than one engine. 
+    Most of the time it is probably just attached to one.
+    
+    Args
+        shader_name (str): The name of the shader.
+        
+    Return
+        (list): A list of attached shading engines by name.
+    """
     outputs = get_outputs('%s.outColor' % shader_name, node_only = True)
     
     found = []
@@ -5100,6 +5144,12 @@ def get_shading_engines(shader_name):
     return found
 
 def apply_shader(shader_name, mesh):
+    """
+    Args
+        shader_name (str): The name of a shader.
+        mesh (str): The name of the mesh to apply the shader to.
+        
+    """
     
     engines = get_shading_engines(shader_name)
     
@@ -5109,6 +5159,14 @@ def apply_shader(shader_name, mesh):
 def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
     """
     Create a new shader to be applied to the named mesh.
+    
+    Args
+        mesh (str): The name of the mesh to apply the shader to.
+        type_of_shader (str): This corresponds to Maya shader types.  Eg. blinn, lambert, etc.
+        name (str): The name to give the shader. If not name given a name will be made up using the type_of_shader.
+        
+    Return
+        (str): The name of the new shader.
     """
     
     
@@ -5138,6 +5196,12 @@ def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
 
 
 def apply_transparent_lambert(mesh):
+    """
+    Convenience to hide geo via shader.
+    
+    Args
+        mesh (str): Name of the mesh to apply the shader to.
+    """
     
     
     name = 'transparent_lambert'
@@ -5158,6 +5222,11 @@ def apply_transparent_lambert(mesh):
 def create_display_layer(name, nodes):
     """
     Create a display layer containing the supplied nodes.
+    
+    Args
+        name (str): The name to give the display layer.
+        nodes (str): The nodes that should be in the display layer.
+        
     """
     layer = cmds.createDisplayLayer( name = name )
     cmds.editDisplayLayerMembers( layer, nodes, noRecurse = True)
@@ -5165,7 +5234,9 @@ def create_display_layer(name, nodes):
 
 def delete_display_layers():
     """
-        Deletes all display layers.
+    Deletes all display layers.
+        
+    
     """
     layers = cmds.ls('displayLayer')
     
@@ -5176,9 +5247,12 @@ def delete_display_layers():
 
 def add_to_isolate_select(nodes):
     """
-        Add the specified nodes into every viewport's isolate select. 
-        This will only work on viewports that have isolate select turned on.
-        Use when nodes are not being evaluated because isolate select causes them to be invisible.
+    Add the specified nodes into every viewport's isolate select. 
+    This will only work on viewports that have isolate select turned on.
+    Use when nodes are not being evaluated because isolate select causes them to be invisible.
+    
+    Args
+        nodes (list): The nodes to add to isolate select.
     """
     
     if is_batch():
@@ -5197,7 +5271,7 @@ def add_to_isolate_select(nodes):
             
 def get_model_panels():
     """
-       Good to use when editing viewports. 
+    Good to use when editing viewports. 
     """
     return cmds.getPanel(type = 'modelPanel')
     
@@ -5205,6 +5279,15 @@ def get_model_panels():
 #--- space
 
 def is_transform(node):
+    """
+    Is the node a transform.
+    
+    Args
+        node (str): The name of the node to test.
+    
+    Return
+        (bool)
+    """
     
     if not cmds.objExists(node):
         return False
@@ -5218,6 +5301,13 @@ def is_transform(node):
 def get_closest_transform(source_transform, targets):
     """
     Given the list of target transforms, find the closest to the source transform.
+    
+    Args
+        source_transform (str): The name of the transform to test distance to.
+        targets (list): List of targets to test distance against.
+        
+    Return
+        (str): The name of the target in targets that is closest to source_transform.
     """
     
     least_distant = 1000000.0
@@ -5235,8 +5325,14 @@ def get_closest_transform(source_transform, targets):
 
 def get_distance(source, target):
     """
-        Get the distance between the source transform and the target transform.
-        Return float
+    Get the distance between the source transform and the target transform.
+    
+    Args
+        source (str): The name of a transform.
+        target (str): The name of a transform.
+    
+    Return 
+        (float): The distance between source and target transform.
     """
     #CBB
     
@@ -5264,8 +5360,14 @@ def get_distance(source, target):
 
 def get_midpoint( source, target):
     """
-        Get the midpoint between the source transform and the target transform.
-        Return = vector list
+    Get the midpoint between the source transform and the target transform.
+    
+    Args
+        source (str): The name of a transform.
+        target (str): The name of a transform.
+    
+    Return 
+        (vector list): The midpoint as [0,0,0] vector between source and target transform.
     """
     vector1 = cmds.xform(source, 
                          query = True, 
@@ -5282,7 +5384,14 @@ def get_midpoint( source, target):
 
 def get_distances(sources, target):
     """
-        Given a list of source transforms, return a list of distances to the target transform
+    Given a list of source transforms, return a list of distances to the target transform
+    
+    Args
+        sources (list): The names of a transforms.
+        target (str): The name of a transform.
+    
+    Return 
+        (list): The distances betweeen each source and the target.
     """
     
     distances = []
@@ -5290,7 +5399,6 @@ def get_distances(sources, target):
     for source in sources:
         
         distance = get_distance(source, target)
-        
         distances.append(distance)
     
     return distances
@@ -5298,9 +5406,17 @@ def get_distances(sources, target):
 def get_polevector(transform1, transform2, transform3, offset = 1):
     #CBB
     """
-        Given 3 transforms (arm, elbow, wrist)  return a vector of where the pole vector should be located.
-        Return vector list
+    Given 3 transforms eg. arm, elbow, wrist.  Return a vector of where the pole vector should be located.
+        
+    Args
+        transform1 (str): name of a transform in maya. eg. joint_arm.
+        transform2 (str): name of a transform in maya. eg. joint_elbow.
+        transform3 (str): name of a transform in maya. eg. joint_wrist.
+        
+    Return 
+        (vector list): The triangle plane vector eg. [0,0,0].  This is good for placing the pole vector.
     """
+    
     distance = get_distance(transform1, transform3)
     
     group = get_group_in_plane(transform1, 
@@ -5316,7 +5432,15 @@ def get_polevector(transform1, transform2, transform3, offset = 1):
 
 def get_group_in_plane(transform1, transform2, transform3):
     """
-        Create a group that sits in the triangle plane defined by the 3 transforms.
+    Create a group that sits in the triangle plane defined by the 3 transforms.
+    
+    Args
+        transform1 (str): name of a transform in maya. eg. joint_arm.
+        transform2 (str): name of a transform in maya. eg. joint_elbow.
+        transform3 (str): name of a transform in maya. eg. joint_wrist.
+        
+    Return 
+        (vector list): The triangle plane vector eg. [0,0,0].  This is good for placing the pole vector.
     """
     #CBB
     
@@ -5343,61 +5467,82 @@ def get_group_in_plane(transform1, transform2, transform3):
     
     return pole_group2
 
-def  get_center(thing):
+def  get_center(transform):
     """
-        Get the center of a selection. Selection can be component or transform.
-        Return vector list
+    Get the center of a selection. Selection can be component or transform.
+    
+    Args
+        transform (str): Name of a node in maya.
+    
+    Return 
+        (vector list):  The center vector, eg [0,0,0]
     """
     
     
-    components = get_components_in_hierarchy(thing)
+    components = get_components_in_hierarchy(transform)
     
     if components:
-        thing = components
+        transform = components
         
-    
-    
-    bounding_box = BoundingBox(thing)
+    bounding_box = BoundingBox(transform)
     return bounding_box.get_center()
 
-def get_btm_center(thing):
+def get_btm_center(transform):
     """
-        Get the bottom center of a selection. Selection can be component or transform.
-        Return vector list
+    Get the bottom center of a selection. Selection can be component or transform.
+    
+    Args
+        transform (str): Name of a node in maya.
+    
+    Return 
+        (vector list): The btrm center vector, eg [0,0,0]
     """
     
-    components = get_components_in_hierarchy(thing)
+    components = get_components_in_hierarchy(transform)
     
     if components:
-        thing = components
+        transform = components
         
     
     
-    bounding_box = BoundingBox(thing)
+    bounding_box = BoundingBox(transform)
     return bounding_box.get_ymin_center()
 
-def get_top_center(thing):
+def get_top_center(transform):
     """
-        Get the top center of a selection. Selection can be component or transform.
-        Return vector list
+    Get the top center of a selection. Selection can be component or transform.
+    
+    Args
+        transform (str): Name of a node in maya.
+    
+    Return 
+        (vector list): The top center vector, eg [0,0,0]
     """
     
-    components = get_components_in_hierarchy(thing)
+    components = get_components_in_hierarchy(transform)
     
     if components:
-        thing = components
+        transform = components
         
     
     
-    bounding_box = BoundingBox(thing)
+    bounding_box = BoundingBox(transform)
     return bounding_box.get_ymax_center()
 
 
 def get_ordered_distance_and_transform(source_transform, transform_list):
     """
-        Returns a list of distances based on how far each transform in transform list is from source_transform.
-        Returns a distance dictionary with each distacne key returning the corresponding transform.
-        Returns a list with the original distance order has fed in from transform_list.
+    Returns a list of distances based on how far each transform in transform list is from source_transform.
+    Returns a distance dictionary with each distacne key returning the corresponding transform.
+    Returns a list with the original distance order has fed in from transform_list.
+    
+    Args
+        source_transform (str)
+        
+        transform_list (list)
+        
+    Return
+        (dict)
         
     """
     
@@ -5424,7 +5569,7 @@ def get_ordered_distance_and_transform(source_transform, transform_list):
 
 def get_transform_list_from_distance(source_transform, transform_list):
     """
-        Return a list of distances that corresponds to the transform_list. Each transform's distance from source_transform. 
+    Return a list of distances that corresponds to the transform_list. Each transform's distance from source_transform. 
     """
     
     distance_list, distance_dict, original = get_ordered_distance_and_transform(source_transform, transform_list)
@@ -5439,7 +5584,16 @@ def get_transform_list_from_distance(source_transform, transform_list):
 
 def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
     """
-        Create a multiply divide for each transform in drivers with a weight value based on the distance from source_guide.
+    Create a multiply divide for each transform in drivers with a weight value based on the distance from source_guide.
+    
+    Args
+        source_guide (str): Name of a transform in maya to calculate distance.
+        drivers (list): List of drivers to apply fade to based on distance from source_guide.
+        skip_lower (float): The distance below which multiplyDivide fading stops.
+        
+    Return
+        (list) : The list of multiplyDivide nodes.
+    
     """
     distance_list, distance_dict, original_distance_order = get_ordered_distance_and_transform(source_guide, drivers)
     
@@ -5479,9 +5633,16 @@ def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
 
 def create_match_group(transform, prefix = 'match', use_duplicate = False):
     """
-        Create a group that matches a transform.
-        Naming = 'match_' + transform
-        Return name of the new group
+    Create a group that matches a transform.
+    Naming = 'match_' + transform
+    
+    Args
+        transform (str): The transform to match.
+        prefix (str): The prefix to add to the matching group.
+        use_duplicate (bool):  If True, matching happens by duplication instead of changing transform values.
+        
+    Return
+        (str):  The name of the new group.
     """
     parent = cmds.listRelatives(transform, p = True, f = True)
     
@@ -5505,11 +5666,17 @@ def create_match_group(transform, prefix = 'match', use_duplicate = False):
 
 def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
     """
-        Create a group above a transform that matches transformation of the transform. 
-        This is good for zeroing out the values of a transform.
-        Naming = 'xform_' + transform
-        Return name of the new group
+    Create a group above a transform that matches transformation of the transform. 
+    This is good for zeroing out the values of a transform.
+    Naming = 'xform_' + transform
+    
+    Args
+        transform (str): The transform to match.
+        prefix (str): The prefix to add to the matching group.
+        use_duplicate (bool):  If True, matching happens by duplication instead of changing transform values.
         
+    Return
+        (str):  The name of the new group.
     """
     
     parent = cmds.listRelatives(transform, p = True, f = True)
@@ -5536,8 +5703,18 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
 
 def create_follow_group(source_transform, target_transform, prefix = 'follow', follow_scale = False):
     """
-        Create a group above a target_transform that is constrained to the source_transform.
+    Create a group above a target_transform that is constrained to the source_transform.
+    
+    Args
+        source_transform (str): The transform to follow.
+        target_transform (str): The transform to make follow.
+        prefix (str): The prefix to add to the follow group.
+        follow_scale (bool): Wether to add a scale constraint or not.
+    
+    Return
+        (str):  The name of the new group.
     """
+    
     parent = cmds.listRelatives(target_transform, p = True)
     
     name = '%s_%s' % (prefix, target_transform)
@@ -5560,6 +5737,19 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
     return follow_group
 
 def create_local_follow_group(source_transform, target_transform, prefix = 'followLocal', orient_only = False):
+    """
+    Create a group above a target_transform that is local constrained to the source_transform.
+    This helps when setting up controls that need to be parented but only affect what they constrain when the actual control is moved.  
+    
+    Args
+        source_transform (str): The transform to follow.
+        target_transform (str): The transform to make follow.
+        prefix (str): The prefix to add to the follow group.
+        orient_only (bool): Wether the local constraint should just be an orient constraint.
+    
+    Return
+        (str):  The name of the new group.
+    """
     
     parent = cmds.listRelatives(target_transform, p = True)
     
@@ -5591,6 +5781,21 @@ def create_local_follow_group(source_transform, target_transform, prefix = 'foll
     return follow_group    
 
 def create_multi_follow_direct(source_list, target_transform, node, constraint_type = 'parentConstraint', attribute_name = 'follow', value = None):
+    """
+    Create a group above the target that is constrained to multiple transforms. A switch attribute switches their state on/off.
+    Direct in this case means the constraints will be added directly on the target_transform.
+    
+    Args
+        source_list (list): List of transforms that the target should be constrained by.
+        target_transform (str): The name of a transform that should follow the transforms in source list.
+        node (str): The name of the node to add the switch attribute to.
+        constraint_type (str): Corresponds to maya's constraint types. Currently supported: parentConstraint, pointConstraint, orientConstraint.
+        attribute_name (str): The name of the switch attribute to add to the node.
+        value (float): The value to give the switch attribute on the node.
+    
+    Return
+        (str):  The name of the new group.
+    """
     
     if attribute_name == 'follow':
         var = MayaEnumVariable('FOLLOW')
@@ -5632,11 +5837,19 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
 
 def create_multi_follow(source_list, target_transform, node = None, constraint_type = 'parentConstraint', attribute_name = 'follow', value = None):
     """
-        Create a group above a target_transform that is constrained between multiple source transforms.
-        node = The name of the node to add attributes to.
-        constraint_type = 'parentConstraint', 'pointConstraint', or 'orientConstraint'
-        attribute_name = the name of the attribute to be created on node.
-        value = the initial value of the attribute to be created on node.
+    Create a group above the target that is constrained to multiple transforms. A switch attribute switches their state on/off.
+    Direct in this case means the constraints will be added directly on the target_transform.
+    
+    Args
+        source_list (list): List of transforms that the target should be constrained by.
+        target_transform (str): The name of a transform that should follow the transforms in source list.
+        node (str): The name of the node to add the switch attribute to.
+        constraint_type (str): Corresponds to maya's constraint types. Currently supported: parentConstraint, pointConstraint, orientConstraint.
+        attribute_name (str): The name of the switch attribute to add to the node.
+        value (float): The value to give the switch attribute on the node.
+    
+    Return
+        (str):  The name of the new group.
     """
     if node == None:
         node = target_transform
@@ -5669,8 +5882,9 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     if constraint_type == 'parentConstraint':
         constraint = cmds.parentConstraint(locators,  follow_group, mo = True)[0]
     if constraint_type == 'orientConstraint':
-        constraint = cmds.orientConstraint(locators,  follow_group)[0]
-    
+        constraint = cmds.orientConstraint(locators,  follow_group, mo = True)[0]
+    if constraint_type == 'pointConstraint':
+        constraint = cmds.orientConstraint(locators,  follow_group, mo = True)[0]
     
     constraint_editor = ConstraintEditor()
     
@@ -5686,10 +5900,16 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
 
 def get_hierarchy(node_name):
     """
-        Return the path to the node.  
-        The node is not included in the path.
-        node_name = The name of the node.
+    Return the name of the node including the hierarchy in the name using "|".
+    This is the full path of the node.
+    
+    Args
+        node_name (str): A node name.
+        
+    Return
+        (str): The node name with hierarchy included. The full path to the node.
     """
+    
     parent_path = cmds.listRelatives(node_name, f = True)[0]
     
     if parent_path:
@@ -5699,6 +5919,16 @@ def get_hierarchy(node_name):
         return split_path
         
 def has_parent(transform, parent):
+    """
+    Check to see if the transform has parent in its parent hierarchy.
+    
+    Args
+        transform (str): The name of a transform.
+        parent (str): The name of a parent transform.
+        
+    Return
+        (bool)
+    """
     
     long_transform = cmds.ls(transform, l = True)
     
@@ -5719,8 +5949,13 @@ def has_parent(transform, parent):
         
 def transfer_relatives(source_node, target_node, reparent = False):
     """
-        Reparent the children of source_node under target_node.
-        If reparent, move the target_node under the parent of source_node. 
+    Reparent the children of source_node under target_node.
+    If reparent, move the target_node under the parent of the source_node.
+    
+    Args
+        source_node (str): The name of a transform to take relatives from.
+        target_node (str): The name of a transform to transfer relatives to.
+        reparent (bool): Wether to reparent target_node under source_node after transfering relatives.
     """
     
     parent = None
@@ -5740,9 +5975,11 @@ def transfer_relatives(source_node, target_node, reparent = False):
         cmds.parent(target_node, parent)
         
 def get_outliner_sets():
-    
     """
-        Get the sets found in the outliner.
+    Get the sets found in the outliner.
+    
+    Return
+        (list): List of sets in the outliner.
     """
     
     sets = cmds.ls(type = 'objectSet')
@@ -5762,9 +5999,11 @@ def get_outliner_sets():
     return top_sets
 
 def get_top_dag_nodes(exclude_cameras = True):
-    
     """
-        Get transforms that sit at the very top of the hierarchy.
+    Get transforms that sit at the very top of the hierarchy.
+    
+    Return
+        (list)
     """
     
     top_transforms = cmds.ls(assemblies = True)
@@ -5779,8 +6018,16 @@ def get_top_dag_nodes(exclude_cameras = True):
 
 def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_stretch_on_off = False, create_bulge = True, scale_axis = 'X'):
     """
-        Makes the joints stretch on the curve. 
-        Joints must be on a spline ik that is attached to the curve.
+    Makes the joints stretch on the curve. 
+    Joints must be on a spline ik that is attached to the curve.
+    
+    Args
+        curve (str): The name of the curve that joints are attached to via spline ik.
+        joints (list): List of joints attached to spline ik.
+        node_for_attribute (str): The name of the node to create the attributes on.
+        create_stretch_on_off (bool): Wether to create extra attributes to slide the stretch value on/off.
+        create_bulge (bool): Wether to add bulging to the other axis that are not the scale axis.
+        scale_axis (str): 'X', 'Y', or 'Z', the axis that the joints stretch on.
     """
     scale_axis = scale_axis.capitalize()
     
@@ -5887,7 +6134,11 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
 
 def create_simple_spline_ik_stretch(curve, joints):
     """
-        Stretch joints on curve. Joints must be attached to a spline ik.
+    Stretch joints on curve. Joints must be attached to a spline ik. This is a much simpler setup than create_spline_ik_stretch.
+    
+    Args
+        curve (str): The name of the curve that joints are attached to via spline ik.
+        joints (list): List of joints attached to spline ik.
     """
     arclen_node = cmds.arclen(curve, ch = True, n = inc_name('curveInfo_%s' % curve))
     
@@ -5921,7 +6172,12 @@ def create_simple_spline_ik_stretch(curve, joints):
 
 def create_bulge_chain(joints, control, max_value = 15):
     """
-        Adds scaling to a joint chain that mimics a cartoony water bulge moving along a tube.
+    Adds scaling to a joint chain that mimics a cartoony water bulge moving along a tube.
+    
+    Args
+        joints (list): List of joints that the bulge effect should move along.
+        control (str): Name of the control to put the bulge slider on.
+        max_value (float): The maximum value of the slider.
     """
     
     control_and_attribute = '%s.bulge' % control
@@ -5974,7 +6230,20 @@ def create_bulge_chain(joints, control, max_value = 15):
     
 
 def constrain_local(source_transform, target_transform, parent = False, scale_connect = False, constraint = 'parentConstraint'):
+    """
+    Constrain a target transform to a source transform in a way that allows for setups to remain local to the origin.
+    This is good when a control needs to move with the rig, but move something at the origin only when the actually control moves.
     
+    Args
+        source_transform (str): The name of a transform.
+        target_transform (str): The name of a transform.
+        parent (bool): The setup uses a local group to constrain the target_transform. If this is true it will parent the target_transform under the local group.
+        scale_connect (bool): Wether to also add a scale constraint.
+        constraint (str): The type of constraint to use. Currently supported: parentConstraint, pointConstraint, orientConstraint.
+        
+    Return
+        (str, str) : The local group that constrains the target_transform, and the xform group above the local group.
+    """
     local_group = cmds.group(em = True, n = inc_name('local_%s' % source_transform))
     
     xform_group = create_xform_group(local_group)
@@ -6005,6 +6274,8 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
             cmds.parentConstraint(local_group, target_transform, mo = True)
         if constraint == 'pointConstraint':
             cmds.pointConstraint(local_group, target_transform, mo = True)
+        if constraint == 'orientConstraint':
+            cmds.orientConstraint(local_group, target_transform, mo = True)
             
         if scale_connect:
             connect_scale(source_transform, target_transform)
@@ -6013,8 +6284,18 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
 
 def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', name = 'sub_1', duplicate = False):
     """
-        Add evenly spaced joints inbetween joint1 and joint2.
-        count = the number of inbetween joints to add.
+    Add evenly spaced joints inbetween joint1 and joint2.
+    
+    Args
+        joint1 (str): The first joint. If None given, the first selected joint.
+        joint2 (str): The second joint. If None given, the second selected joint.
+        count (int): The number of joints to add inbetween joint1 and joint2.
+        prefix (str): The prefix to add in front of the new joints.
+        name (str): The name to give the new joints after the prefix. Name = prefix + '_' + name
+        duplicate (bool): Wether to create a duplicate chain.
+        
+    Return
+        (list): List of the newly created joints.
         
     """
     if not joint1 and not joint2:
@@ -6099,7 +6380,9 @@ def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', n
     return joints
 
 def create_distance_falloff(source_transform, source_local_vector = [1,0,0], target_world_vector = [1,0,0], description = 'falloff'):
-    
+    """
+    Under development.
+    """
     
     distance_between = cmds.createNode('distanceBetween', 
                                         n = inc_name('distanceBetween_%s' % description) )
@@ -6160,7 +6443,18 @@ def create_distance_falloff(source_transform, source_local_vector = [1,0,0], tar
     return distance_between    
 
 def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
+    """
+    Create a stretch effect on a transform by changing the scale when the distance changes between xform1 and xform2.
     
+    Args
+        xform1 (str): The name of a transform.
+        xform2 (str): The name of a transform.
+        axis (str): "X", "Y", "Z" The axis to attach the stretch effect to.
+        offset (float): Add an offset to the value.
+        
+    Return
+        ([locator1, locator2]): The names of the two locators used to calculate distance.
+    """
     locator1 = cmds.spaceLocator(n = inc_name('locatorDistance_%s' % xform1))[0]
     
     MatchSpace(xform1, locator1).translation()
@@ -6177,31 +6471,6 @@ def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
     
     distance_value = cmds.getAttr('%s.distance' % distance)
     
-    """
-    if condition != None:
-    
-        distance_offset = distance_value
-        
-        if type(condition) == float:
-            distance_offset = distance_value * condition
-        
-        condition = cmds.createNode('condition', n = inc_name('condition_%s' % xform1))
-        
-        cmds.setAttr('%s.operation' % condition, 2)
-        
-        cmds.connectAttr('%s.distance' % distance, '%s.firstTerm' % condition)
-        cmds.setAttr('%s.secondTerm' % condition, distance_offset)
-        
-        cmds.connectAttr('%s.distance' % distance, '%s.colorIfFalseR' % condition)
-        cmds.setAttr('%s.colorIfTrueR' % condition, distance_offset)
-        
-        cmds.connectAttr('%s.outColorR' % condition, '%s.input1X' % multiply)
-    
-    
-    if condition == None:
-        
-    """
-    
     if offset != 1:
         quick_driven_key('%s.distance' %distance, '%s.input1X' % multiply, [distance_value, distance_value*2], [distance_value, distance_value*2*offset], infinite = True)
     
@@ -6215,12 +6484,13 @@ def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
         
     return locator1, locator2
     
-    
-    
 @undo_chunk
 def add_orient_attributes(transform):
     """
-        Add orient attributes, used to automatically orient.
+    Add orient attributes, used to automatically orient.
+    
+    Args
+        transform (str): The name of the transform.
     """
     if type(transform) != list:
         transform = [transform]
@@ -6232,8 +6502,11 @@ def add_orient_attributes(transform):
     
 def orient_attributes(scope = None):
     """
-        Orient all transforms with attributes added by add_orient_attributes.
-        If scope is provided, only orient transforms in the scope that have attributes.
+    Orient all transforms with attributes added by add_orient_attributes.
+    If scope is provided, only orient transforms in the scope that have attributes.
+    
+    Args
+        scope (list): List of transforms to orient.
     """
     if not scope:
         scope = get_top_dag_nodes()
@@ -6256,13 +6529,18 @@ def orient_attributes(scope = None):
 
 def find_transform_right_side(transform):
     """
-        Try to find the right side of a transform.
-        *_L will be converted to *_R 
-        if not 
-        l_* will be converted to R_*
-        if not 
-        *lf_* will be converted to *rt_*
-        Return the name of the right side transform if it exists.
+    Try to find the right side of a transform.
+    *_L will be converted to *_R 
+    if not 
+    l_* will be converted to R_*
+    if not 
+    *lf_* will be converted to *rt_*
+    
+    Args
+        transform (str): The name of a transform.
+        
+    Return 
+        (str): The name of the right side transform if it exists.
     """
     
     other = ''
@@ -6294,8 +6572,13 @@ def find_transform_right_side(transform):
 
 def mirror_xform(prefix = None, suffix = None, string_search = None):
     """
-        Mirror the positions of all transforms that match the search strings.
-        If search strings left at None, search all transforms and joints. 
+    Mirror the positions of all transforms that match the search strings.
+    If search strings left at None, search all transforms and joints. 
+    
+    Args
+        prefix (str): The prefix to search for.
+        suffix (str): The suffix to search for.
+        string_search (str): Search for a name containing string search.
     """
     
     scope_joints = []
@@ -6378,7 +6661,13 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
                     cmds.setAttr('%s.localPositionZ' % transform, local_position[2])
     
 def match_joint_xform(prefix, other_prefix):
-    
+    """
+    Match the positions of joints with similar names.
+    For example, skin_arm_L could be matched to joint_arm_L, if they exists and prefix = skin and other_prefix = joint.
+    Args 
+        prefix (str)
+        other_prefix (str) 
+    """
     scope = cmds.ls('%s*' % other_prefix, type = 'joint')
 
     for joint in scope:
@@ -6389,6 +6678,13 @@ def match_joint_xform(prefix, other_prefix):
             match.rotate_scale_pivot_to_translation()
 
 def match_orient(prefix, other_prefix):
+    """
+    Match the orientations of joints with similar names.
+    For example, skin_arm_L could be matched to joint_arm_L, if they exists and prefix = skin and other_prefix = joint.
+    Args 
+        prefix (str)
+        other_prefix (str) 
+    """
     scope = cmds.ls('%s*' % prefix, type = 'joint')
     
     for joint in scope:
@@ -6411,6 +6707,16 @@ def match_orient(prefix, other_prefix):
 
 
 def get_y_intersection(curve, vector):
+    """
+    Given a vector in space, find out the closest intersection on the y axis to the curve. This is usefull for eye blink setups.
+    
+    Args
+        curve (str): The name of a curve that could represent the btm eyelid.
+        vector (vector list): A list that looks like [0,0,0] that could represent a position on the top eyelid.
+        
+    Return
+        (float): The parameter position on the curve.
+    """
     
     duplicate_curve = cmds.duplicate(curve)
     curve_line = cmds.curve( p=[(vector[0], vector[1]-100000, vector[2]), 
@@ -6428,12 +6734,19 @@ def get_y_intersection(curve, vector):
         
     cmds.delete(duplicate_curve, curve_line)
     
-    return parameter                
+    return parameter
     
 def get_side(transform, center_tolerance):
     """
-        Get the side of a transform based on its position in world space.
-        Center tolerance is distance from the center to include as a center transform.
+    Get the side of a transform based on its position in world space.
+    Center tolerance is distance from the center to include as a center transform.
+    
+    Args
+        transform (str): The name of a transform.
+        center_tolerance (float): How close to the center the transform must be before it is considered in the center.
+        
+    Return
+        (str): The side that the transform is on, could be 'L','R' or 'C'.
     """
     if type(transform) == list or type(transform) == tuple:
         position = transform
@@ -6453,7 +6766,15 @@ def get_side(transform, center_tolerance):
     return side
 
 def create_no_twist_aim(source_transform, target_transform, parent):
-
+    """
+    Aim target transform at the source transform, trying to rotate only on one axis.
+    Constrains the target_transform.
+    
+    Args
+        source_transform (str): The name of a transform.
+        target_transform (str): The name of a transform.
+        parent (str): The parent for the setup.
+    """
     top_group = cmds.group(em = True, n = inc_name('no_twist_%s' % source_transform))
     cmds.parent(top_group, parent)
     cmds.pointConstraint(source_transform, top_group)
@@ -6498,7 +6819,18 @@ def create_no_twist_aim(source_transform, target_transform, parent):
     cmds.orientConstraint(pin_aim, target_transform, mo = True)
 
 def create_pole_chain(top_transform, btm_transform, name):
+    """
+    Create a two joint chain with an ik handle.
+    
+    Args
+        top_transform (str): The name of a transform.
+        btm_transform (str): The name of a transform.
+        name (str): The name to give the new joints.
         
+        Return
+            (joint1, joint2, ik_pole)
+    """
+    
     cmds.select(cl =True)
     
     joint1 = cmds.joint(n = inc_name( name ) )
@@ -9472,11 +9804,13 @@ def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = Tr
     Create a delta following the equation:
     delta = orig_mesh + corrective_mesh - source_meshes
     
-    @orig_mesh[in] The unchanged base mesh.
-    @source_meshes[in] Where the mesh has moved. Can be a list or a single target. 
-    @corrective_mesh[in] Where the mesh needs to move to.
+    Args
+        orig_mesh (str): The unchanged base mesh.
+        source_meshes (list): Name of the mesh that represents where the mesh has moved. Can be a list or a single target. 
+        corrective_mesh (str): Name of the mesh where the source mesh needs to move to.
     
-    Return new delta mesh
+    Return 
+        (str): name of new delta mesh
     """
     
     sources = vtool.util.convert_to_sequence(source_meshes)
@@ -11221,18 +11555,14 @@ def create_cloth_input_meshes(deform_mesh, cloth_mesh, parent, attribute):
     
     clothwrap = cmds.duplicate(deform_mesh)[0]
     
-    deform_hier = Hierarchy(deform_mesh)
-    deform_hier.prefix('deform')
+    deform_mesh_orig = deform_mesh
+    deform_mesh = prefix_hierarchy(deform_mesh, 'deform')[0]
     
     clothwrap = cmds.rename(clothwrap, deform_mesh)
-        
-    clothwrap_hier = Hierarchy(clothwrap)
-    clothwrap_hier.prefix('clothwrap')
-
-    final = cmds.rename(final, deform_mesh)
     
-    deform_mesh = deform_hier.top_of_hierarchy
-    clothwrap = clothwrap_hier.top_of_hierarchy
+    clothwrap = prefix_hierarchy(clothwrap, 'clothwrap')[0]    
+
+    final = cmds.rename(final, deform_mesh_orig)
 
     deform_mesh = deform_mesh.split('|')[-1]
     clothwrap = clothwrap.split('|')[-1]
@@ -11245,7 +11575,7 @@ def create_cloth_input_meshes(deform_mesh, cloth_mesh, parent, attribute):
     connect_equal_condition(attribute, '%s.%s' % (blend, deform_mesh), 0)
     connect_equal_condition(attribute, '%s.%s' % (blend, clothwrap), 1)
     
-    cmds.parent(deform_hier.top_of_hierarchy , clothwrap, parent )
+    cmds.parent(deform_mesh , clothwrap, parent )
     
     nodes = add_nCloth_to_mesh(cloth_mesh)
     

@@ -1,0 +1,30 @@
+vtool.util_file.FileInfo
+========================
+
+.. currentmodule:: vtool.util_file
+
+.. autoclass:: FileInfo
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~FileInfo.__init__
+      ~FileInfo.append_file
+      ~FileInfo.close_file
+      ~FileInfo.get_open_file
+      ~FileInfo.read_file
+      ~FileInfo.warning_if_invalid_file
+      ~FileInfo.warning_if_invalid_folder
+      ~FileInfo.warning_if_invlid_path
+      ~FileInfo.write_file
+   
+   
+
+   
+   
+   

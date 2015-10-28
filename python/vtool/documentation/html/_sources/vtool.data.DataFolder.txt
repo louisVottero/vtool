@@ -1,0 +1,35 @@
+vtool.data.DataFolder
+=====================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: DataFolder
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DataFolder.__init__
+      ~DataFolder.append_file
+      ~DataFolder.close_file
+      ~DataFolder.delete
+      ~DataFolder.get_data_type
+      ~DataFolder.get_folder_data_instance
+      ~DataFolder.get_open_file
+      ~DataFolder.read_file
+      ~DataFolder.rename
+      ~DataFolder.set_data_type
+      ~DataFolder.warning_if_invalid_file
+      ~DataFolder.warning_if_invalid_folder
+      ~DataFolder.warning_if_invlid_path
+      ~DataFolder.write_file
+   
+   
+
+   
+   
+   

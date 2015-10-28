@@ -1,0 +1,23 @@
+vtool.util_file.ParsePython
+===========================
+
+.. currentmodule:: vtool.util_file
+
+.. autoclass:: ParsePython
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ParsePython.__init__
+      ~ParsePython.find_scope_type
+   
+   
+
+   
+   
+   

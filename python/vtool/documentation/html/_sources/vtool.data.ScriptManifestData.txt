@@ -1,0 +1,31 @@
+vtool.data.ScriptManifestData
+=============================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: ScriptManifestData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ScriptManifestData.__init__
+      ~ScriptManifestData.create
+      ~ScriptManifestData.get_file
+      ~ScriptManifestData.get_type
+      ~ScriptManifestData.is_type_match
+      ~ScriptManifestData.rename
+      ~ScriptManifestData.save
+      ~ScriptManifestData.set_directory
+      ~ScriptManifestData.set_lines
+      ~ScriptManifestData.set_name
+   
+   
+
+   
+   
+   

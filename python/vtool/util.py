@@ -353,52 +353,6 @@ class Part(object):
     
     def delete(self):
         pass
-    
-    
-
-
-class Hierarchy(object):
-    
-    def __init__(self, top_of_hierarchy):
-        self.top_of_hierarchy = top_of_hierarchy
-        self.generations = []
-        self.branches = []
-        
-        self._get_hierarchy()
-    
-    def _get_hierarachy(self):
-        self.generations =[]
-        self.branches = []
-    
-    def create_branch(self, name):
-        
-        branch = Branch(name)
-        self.branches.append(branch)
-        
-        return branch
-    
-    def get_generation(self, inc):
-        pass
-    
-
-
-class Branch(object):
-    
-    def __init__(self, name):
-        self.name = name
-        self.parent = ''
-        self.children = []        
-        
-    def add_child(self, branch):
-        self.children.append(branch)
-    
-    def set_children(self, branch_list):
-        self.children = branch_list
-        
-    def set_parent(self, branch):
-        self.parent = branch
-
-               
 
 #def hard_light_two_percents(percent1, percent2):
 #    

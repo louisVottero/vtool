@@ -1,0 +1,39 @@
+vtool.maya_lib.blendshape.BlendShape
+====================================
+
+.. currentmodule:: vtool.maya_lib.blendshape
+
+.. autoclass:: BlendShape
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~BlendShape.__init__
+      ~BlendShape.create
+      ~BlendShape.create_target
+      ~BlendShape.disconnect_target
+      ~BlendShape.insert_target
+      ~BlendShape.is_target
+      ~BlendShape.recreate_all
+      ~BlendShape.recreate_target
+      ~BlendShape.remove_target
+      ~BlendShape.rename
+      ~BlendShape.rename_target
+      ~BlendShape.replace_target
+      ~BlendShape.set
+      ~BlendShape.set_envelope
+      ~BlendShape.set_invert_weights
+      ~BlendShape.set_targets_to_zero
+      ~BlendShape.set_weight
+      ~BlendShape.set_weights
+   
+   
+
+   
+   
+   

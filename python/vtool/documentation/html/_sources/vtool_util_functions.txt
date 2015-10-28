@@ -1,0 +1,84 @@
+Function Summary
+================
+
+.. currentmodule:: vtool.util
+
+.. autosummary::
+
+    try_pass
+    is_in_maya
+    is_in_nuke
+    get_maya_version
+    get_axis_vector
+    fade_sine
+    fade_sigmoid
+    get_distance
+    get_distance_2D
+    get_magnitude_2D
+    get_dot_product
+    get_dot_product_2D
+    get_average
+    get_midpoint
+    get_inbetween_vector
+    get_simple_center_vector
+    convert_to_sequence
+    line_side
+    closest_percent_on_line_2D
+    closest_point_to_line_2D
+    convert_number_to_month
+    get_current_time
+    get_current_date
+    regular_expression_search
+    get_end_number
+    search_last_number
+    replace_last_number
+    get_last_number
+    increment_last_number
+    find_special
+    replace_string
+    clean_file_string
+    clean_name_string
+    show_list_to_string
+    show
+    warning
+    find_possible_combos
+
+Functions:
+
+.. autofunction:: try_pass
+.. autofunction:: is_in_maya
+.. autofunction:: is_in_nuke
+.. autofunction:: get_maya_version
+.. autofunction:: get_axis_vector
+.. autofunction:: fade_sine
+.. autofunction:: fade_sigmoid
+.. autofunction:: get_distance
+.. autofunction:: get_distance_2D
+.. autofunction:: get_magnitude_2D
+.. autofunction:: get_dot_product
+.. autofunction:: get_dot_product_2D
+.. autofunction:: get_average
+.. autofunction:: get_midpoint
+.. autofunction:: get_inbetween_vector
+.. autofunction:: get_simple_center_vector
+.. autofunction:: convert_to_sequence
+.. autofunction:: line_side
+.. autofunction:: closest_percent_on_line_2D
+.. autofunction:: closest_point_to_line_2D
+.. autofunction:: convert_number_to_month
+.. autofunction:: get_current_time
+.. autofunction:: get_current_date
+.. autofunction:: regular_expression_search
+.. autofunction:: get_end_number
+.. autofunction:: search_last_number
+.. autofunction:: replace_last_number
+.. autofunction:: get_last_number
+.. autofunction:: increment_last_number
+.. autofunction:: find_special
+.. autofunction:: replace_string
+.. autofunction:: clean_file_string
+.. autofunction:: clean_name_string
+.. autofunction:: show_list_to_string
+.. autofunction:: show
+.. autofunction:: warning
+.. autofunction:: find_possible_combos

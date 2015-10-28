@@ -1,0 +1,32 @@
+vtool.util_file.VersionFile
+===========================
+
+.. currentmodule:: vtool.util_file
+
+.. autoclass:: VersionFile
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~VersionFile.__init__
+      ~VersionFile.get_latest_version
+      ~VersionFile.get_version_comment
+      ~VersionFile.get_version_data
+      ~VersionFile.get_version_path
+      ~VersionFile.get_versions
+      ~VersionFile.save
+      ~VersionFile.save_comment
+      ~VersionFile.set_version_folder
+      ~VersionFile.set_version_folder_name
+      ~VersionFile.set_version_name
+   
+   
+
+   
+   
+   

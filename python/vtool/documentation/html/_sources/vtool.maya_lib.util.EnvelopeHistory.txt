@@ -1,0 +1,25 @@
+vtool.maya_lib.util.EnvelopeHistory
+===================================
+
+.. currentmodule:: vtool.maya_lib.util
+
+.. autoclass:: EnvelopeHistory
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~EnvelopeHistory.__init__
+      ~EnvelopeHistory.turn_off
+      ~EnvelopeHistory.turn_off_referenced
+      ~EnvelopeHistory.turn_on
+   
+   
+
+   
+   
+   

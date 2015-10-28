@@ -1,0 +1,25 @@
+vtool.maya_lib.util.MoveConnectedNodes
+======================================
+
+.. currentmodule:: vtool.maya_lib.util
+
+.. autoclass:: MoveConnectedNodes
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MoveConnectedNodes.__init__
+      ~MoveConnectedNodes.move_inputs
+      ~MoveConnectedNodes.move_outputs
+      ~MoveConnectedNodes.set_type
+   
+   
+
+   
+   
+   

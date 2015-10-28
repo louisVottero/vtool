@@ -1,0 +1,27 @@
+vtool.maya_lib.util.DuplicateHierarchy
+======================================
+
+.. currentmodule:: vtool.maya_lib.util
+
+.. autoclass:: DuplicateHierarchy
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DuplicateHierarchy.__init__
+      ~DuplicateHierarchy.create
+      ~DuplicateHierarchy.only_these
+      ~DuplicateHierarchy.replace
+      ~DuplicateHierarchy.set_prefix
+      ~DuplicateHierarchy.stop_at
+   
+   
+
+   
+   
+   

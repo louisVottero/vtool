@@ -1,0 +1,10 @@
+Function Summary
+================
+
+.. currentmodule:: vtool.maya_lib.blendshape
+
+.. autosummary::
+
+
+Functions:
+

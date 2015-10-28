@@ -1,0 +1,61 @@
+vtool.maya_lib.corrective.PoseBase
+==================================
+
+.. currentmodule:: vtool.maya_lib.corrective
+
+.. autoclass:: PoseBase
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PoseBase.__init__
+      ~PoseBase.add_mesh
+      ~PoseBase.attach
+      ~PoseBase.attach_sub_poses
+      ~PoseBase.connect_blend
+      ~PoseBase.create
+      ~PoseBase.create_all_blends
+      ~PoseBase.create_blend
+      ~PoseBase.create_sub_poses
+      ~PoseBase.delete
+      ~PoseBase.delete_blend_input
+      ~PoseBase.detach
+      ~PoseBase.detach_sub_poses
+      ~PoseBase.disconnect_blend
+      ~PoseBase.disconnect_weight_outputs
+      ~PoseBase.get_blendshape
+      ~PoseBase.get_inbetween_weight
+      ~PoseBase.get_mesh
+      ~PoseBase.get_mesh_count
+      ~PoseBase.get_mesh_index
+      ~PoseBase.get_target_mesh
+      ~PoseBase.get_target_mesh_index
+      ~PoseBase.get_target_meshes
+      ~PoseBase.get_target_name
+      ~PoseBase.goto_pose
+      ~PoseBase.has_a_mesh
+      ~PoseBase.is_a_pose
+      ~PoseBase.mirror
+      ~PoseBase.reconnect_weight_outputs
+      ~PoseBase.remove_mesh
+      ~PoseBase.rename
+      ~PoseBase.reset_target_meshes
+      ~PoseBase.select
+      ~PoseBase.set_inbetween_weight
+      ~PoseBase.set_pose
+      ~PoseBase.set_pose_group
+      ~PoseBase.set_target_name
+      ~PoseBase.toggle_vis
+      ~PoseBase.visibility_off
+      ~PoseBase.visibility_on
+   
+   
+
+   
+   
+   

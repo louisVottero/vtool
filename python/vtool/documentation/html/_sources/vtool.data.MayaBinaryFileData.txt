@@ -1,0 +1,41 @@
+vtool.data.MayaBinaryFileData
+=============================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: MayaBinaryFileData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MayaBinaryFileData.__init__
+      ~MayaBinaryFileData.create
+      ~MayaBinaryFileData.export_data
+      ~MayaBinaryFileData.get_file
+      ~MayaBinaryFileData.get_type
+      ~MayaBinaryFileData.import_data
+      ~MayaBinaryFileData.is_type_match
+      ~MayaBinaryFileData.maya_reference_data
+      ~MayaBinaryFileData.open
+      ~MayaBinaryFileData.rename
+      ~MayaBinaryFileData.save
+      ~MayaBinaryFileData.set_directory
+      ~MayaBinaryFileData.set_name
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MayaBinaryFileData.maya_ascii
+      ~MayaBinaryFileData.maya_binary
+   
+   

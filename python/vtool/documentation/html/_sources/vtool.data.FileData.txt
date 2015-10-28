@@ -1,0 +1,29 @@
+vtool.data.FileData
+===================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: FileData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~FileData.__init__
+      ~FileData.create
+      ~FileData.get_file
+      ~FileData.get_type
+      ~FileData.is_type_match
+      ~FileData.rename
+      ~FileData.set_directory
+      ~FileData.set_name
+   
+   
+
+   
+   
+   

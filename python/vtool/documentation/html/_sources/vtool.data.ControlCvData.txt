@@ -1,0 +1,31 @@
+vtool.data.ControlCvData
+========================
+
+.. currentmodule:: vtool.data
+
+.. autoclass:: ControlCvData
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ControlCvData.__init__
+      ~ControlCvData.create
+      ~ControlCvData.export_data
+      ~ControlCvData.get_file
+      ~ControlCvData.get_type
+      ~ControlCvData.import_data
+      ~ControlCvData.is_type_match
+      ~ControlCvData.rename
+      ~ControlCvData.set_directory
+      ~ControlCvData.set_name
+   
+   
+
+   
+   
+   

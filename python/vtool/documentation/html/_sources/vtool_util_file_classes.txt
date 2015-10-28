@@ -1,0 +1,19 @@
+Class Summary
+=============
+
+.. currentmodule:: vtool.util_file
+
+.. autosummary::
+    :toctree:
+
+    WatchDirectoryThread
+    FolderEditor
+    FileManager
+    ReadFile
+    WriteFile
+    VersionFile
+    SettingsFile
+    FileInfo
+    FindUniquePath
+    ParsePython
+    PythonScope

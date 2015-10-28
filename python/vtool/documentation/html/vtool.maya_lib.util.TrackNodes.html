@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>vtool.maya_lib.util.TrackNodes &mdash; Vetala 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootswatch-3.3.4/cosmo/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="_static/bootstrap-sphinx.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/js/jquery-1.11.0.min.js"></script>
+    <script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-3.3.4/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+    <link rel="top" title="Vetala 0.1.1 documentation" href="index.html" />
+    <link rel="up" title="Class Summary" href="vtool_maya_lib_util_classes.html" />
+    <link rel="next" title="vtool.maya_lib.util.MayaVariable" href="vtool.maya_lib.util.MayaVariable.html" />
+    <link rel="prev" title="vtool.maya_lib.util.FindUniqueName" href="vtool.maya_lib.util.FindUniqueName.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+  </head>
+  <body role="document">
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          Vetala</a>
+        <span class="navbar-text navbar-version pull-left"><b>0.1.1</b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Menu <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">Vetala API Documentation</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+              
+                
+  <li>
+    <a href="vtool.maya_lib.util.FindUniqueName.html" title="Previous Chapter: vtool.maya_lib.util.FindUniqueName"><span class="glyphicon glyphicon-chevron-left visible-sm"></span><span class="hidden-sm hidden-tablet">&laquo; vtool.maya_li...</span>
+    </a>
+  </li>
+  <li>
+    <a href="vtool.maya_lib.util.MayaVariable.html" title="Next Chapter: vtool.maya_lib.util.MayaVariable"><span class="glyphicon glyphicon-chevron-right visible-sm"></span><span class="hidden-sm hidden-tablet">vtool.maya_li... &raquo;</span>
+    </a>
+  </li>
+              
+            
+            
+            
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      
+  <div class="section" id="vtool-maya-lib-util-tracknodes">
+<h1>vtool.maya_lib.util.TrackNodes<a class="headerlink" href="#vtool-maya-lib-util-tracknodes" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="vtool.maya_lib.util.TrackNodes">
+<em class="property">class </em><code class="descname">TrackNodes</code><a class="headerlink" href="#vtool.maya_lib.util.TrackNodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>This helps track new nodes that get added to a scene after a function runs.</p>
+<p>Usage:
+track_nodes = TrackNodes()
+track_nodes.load()
+my_function()
+new_nodes = track_nodes.get_delta()</p>
+<dl class="method">
+<dt id="vtool.maya_lib.util.TrackNodes.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vtool.maya_lib.util.TrackNodes.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.maya_lib.util.TrackNodes.__init__" title="vtool.maya_lib.util.TrackNodes.__init__"><code class="xref py py-obj docutils literal"><span class="pre">__init__</span></code></a>()</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#vtool.maya_lib.util.TrackNodes.get_delta" title="vtool.maya_lib.util.TrackNodes.get_delta"><code class="xref py py-obj docutils literal"><span class="pre">get_delta</span></code></a>()</td>
+<td>Get the new nodes in the Maya scene created after load() was executed.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#vtool.maya_lib.util.TrackNodes.load" title="vtool.maya_lib.util.TrackNodes.load"><code class="xref py py-obj docutils literal"><span class="pre">load</span></code></a>([node_type])</td>
+<td>node_type corresponds to the maya node type.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="vtool.maya_lib.util.TrackNodes.load">
+<code class="descname">load</code><span class="sig-paren">(</span><em>node_type=None</em><span class="sig-paren">)</span><a class="headerlink" href="#vtool.maya_lib.util.TrackNodes.load" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>node_type corresponds to the maya node type.
+For example, you can give node_type the string &#8220;animCurve&#8221; to load only keyframes.
+When after running get_delta(), the delta will only contain keyframes.</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>node_type</strong> (<em>str</em>) &#8211; Maya named type, ie animCurve, transform, joint, etc</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">None</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="vtool.maya_lib.util.TrackNodes.get_delta">
+<code class="descname">get_delta</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vtool.maya_lib.util.TrackNodes.get_delta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the new nodes in the Maya scene created after load() was executed.
+The load() node_type variable is stored in the class and used when getting the delta.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of new nodes.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">(list)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+        <br/>
+        
+<div id="sourcelink">
+  <a href="_sources/vtool.maya_lib.util.TrackNodes.txt"
+     rel="nofollow">Source</a>
+</div>
+      
+    </p>
+    <p>
+        &copy; Copyright 2015, Louis Vottero.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

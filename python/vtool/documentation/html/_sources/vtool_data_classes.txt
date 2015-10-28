@@ -1,0 +1,34 @@
+Class Summary
+=============
+
+.. currentmodule:: vtool.data
+
+.. autosummary::
+    :toctree:
+
+    DataManager
+    DataFolder
+    DataFile
+    Data
+    FileData
+    ScriptData
+    ScriptManifestData
+    ScriptPythonData
+    ScriptMelData
+    CustomData
+    MayaCustomData
+    ControlCvData
+    SkinWeightData
+    LoadWeightFileThread
+    ReadWeightFileThread
+    BlendshapeWeightData
+    DeformerWeightData
+    MayaShadersData
+    AnimationData
+    ControlAnimationData
+    AtomData
+    PoseData
+    MayaAttributeData
+    MayaFileData
+    MayaBinaryFileData
+    MayaAsciiFileData

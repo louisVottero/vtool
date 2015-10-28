@@ -1,0 +1,26 @@
+vtool.util_file.SettingsFile
+============================
+
+.. currentmodule:: vtool.util_file
+
+.. autoclass:: SettingsFile
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SettingsFile.__init__
+      ~SettingsFile.get
+      ~SettingsFile.has_setting
+      ~SettingsFile.set
+      ~SettingsFile.set_directory
+   
+   
+
+   
+   
+   
