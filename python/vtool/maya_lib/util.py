@@ -6853,9 +6853,12 @@ def create_pole_chain(top_transform, btm_transform, name):
 
 def scale_constraint_to_local(scale_constraint):
     """
-        Scale constraint can work wrong when given the parent matrix.
-        Disconnect the parent matrix to remove this behavior.
-        Reconnect using scale_constraint_to_world if applying multiple constraints.
+    Scale constraint can work wrong when given the parent matrix.
+    Disconnect the parent matrix to remove this behavior.
+    Reconnect using scale_constraint_to_world if applying multiple constraints.
+    
+    Args
+        scale_constraint (str): The name of the scale constraint to work on.
     """
     
     constraint_editor = ConstraintEditor()
@@ -6868,7 +6871,10 @@ def scale_constraint_to_local(scale_constraint):
 
 def scale_constraint_to_world(scale_constraint):
     """
-        Works with scale_constraint_to_local.
+    Works with scale_constraint_to_local.
+    
+    Args
+        scale_constraint (str): The name of the scale constraint affected by scale_constraint_to_local.
     """
     
     constraint_editor = ConstraintEditor()
@@ -6889,8 +6895,15 @@ def scale_constraint_to_world(scale_constraint):
     
 def duplicate_joint_section(joint, name = ''):
     """
-        Joint chains ususally have a parent and a child along the chain. 
-        This will duplicate one of those sections.  You need only supply the parent joint.
+    Joint chains ususally have a parent and a child along the chain. 
+    This will duplicate one of those sections.  You need only supply the parent joint.
+    
+    Args
+        joint (str): The name of the joint to duplicate.
+        name (str): The name to give the joint section.
+        
+    Return
+        list: [duplicate, sub duplicate]. If no sub duplicate, then [duplicate, None]
     """
     
     
@@ -6913,15 +6926,15 @@ def duplicate_joint_section(joint, name = ''):
         cmds.makeIdentity(sub_duplicate, jo = True, r = True, apply = True)
         
     if not sub_duplicate:
-        return duplicate
+        return duplicate, None
     if sub_duplicate:
         return duplicate, sub_duplicate   
     
 def get_axis_vector(transform, axis_vector):
     """
-        If you give it a vector [1,0,0], it will return the transform's x point.
-        If you give it a vector [0,1,0], it will return the transform's y point.
-        If you give it a vector [0,0,1], it will return the transform's z point.
+    If you give it a vector [1,0,0], it will return the transform's x point.
+    If you give it a vector [0,1,0], it will return the transform's y point.
+    If you give it a vector [0,0,1], it will return the transform's z point.
     """
     t_func = api.TransformFunction(transform)
     new_vector = t_func.get_vector_matrix_product(axis_vector)
@@ -9618,9 +9631,11 @@ def wire_to_mesh(edges, geometry, description, auto_edge_path = True):
 @undo_chunk
 def weight_hammer_verts(verts = None, print_info = True):
     """
-        Convenience to use Maya's weight hammer command on many verts individually.
-        verts = The names of verts to weigth hammer. 
-        If verts = None, currently selected verts will be hammered.
+    Convenience to use Maya's weight hammer command on many verts individually.
+    
+    Args
+        verts (list): The names of verts to weigth hammer. If verts = None, currently selected verts will be hammered. 
+        
     """
     if is_a_mesh(verts):
         verts = cmds.ls('%s.vtx[*]' % verts, flatten = True)
@@ -9661,9 +9676,13 @@ def exclusive_bind_wrap(source_mesh, target_mesh):
 
 def map_blend_target_alias_to_index(blendshape_node):
     """
-        For blendshape_node:
-        Given a blendshape weight alias, map the blendshape target index.
-        Return dict[alias] = target index
+    Get the aliases for blendshape weight targets and the index of the target.
+    
+    Args
+        blendshape_node (str): The name of the blendshape.
+    
+    Return 
+        dict: dict[alias] = target index
     """
     
     aliases = cmds.aliasAttr(blendshape_node, query = True)
@@ -9684,11 +9703,14 @@ def map_blend_target_alias_to_index(blendshape_node):
     return alias_map
 
 def map_blend_index_to_target_alias(blendshape_node):
-    
     """
-        For blendshape_node:
-        Given a blendshape target index, map the blendshape weight alias.
-        Return dict[target index] = weight alias
+    Get a map between the target index and its alias name on the blendshape.
+    
+    Args
+        blendshape_node (str): The name of the blendshape.
+    
+    Return 
+        dict: dict[target index] = weight alias
     """
     
     
@@ -9711,14 +9733,19 @@ def map_blend_index_to_target_alias(blendshape_node):
 
 def get_index_at_alias(alias, blendshape_node):
     """
-        Given a blendshape weight alias, map the blendshape target index.
-        Return target index
+    Given a blendshape weight alias, get the corresponding target index.
+    
+    Args
+        alias (str): The name of the weight alias.
+    
+    Return 
+        int: The corresponding target index to the alias.
     """
     
-    map = map_blend_index_to_target_alias(blendshape_node)
+    map_dict = map_blend_index_to_target_alias(blendshape_node)
     
-    if alias in map:
-        return map[alias]
+    if alias in map_dict:
+        return map_dict[alias]
 
 @undo_chunk
 def chad_extract_shape(skin_mesh, corrective, replace = False):
@@ -9902,10 +9929,17 @@ def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
     
 def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
     """
-        Create a blendshape. Add target source_mesh into the target_mesh.
-        If target_mesh already has a blendshape, add source_mesh into existing blendshape.
-        blendshape = The name of the blendshape to work with.
-        return The blendshape node.
+    Create a blendshape. Add target source_mesh into the target_mesh.
+    If target_mesh already has a blendshape, add source_mesh into existing blendshape.
+    
+    Args
+        blendshape (str): The name of the blendshape to work with.
+        target_mesh (str): The name of the target mesh to add into the blendshape.
+        weight (float): The value to set the weight of the target to.
+        blendshape (str): The name of the blendshape to edit. If None, it will be set to 'blendshape_%s' % target_mesh.
+        
+    Return
+        str: The name of the blendshape node.
     """
     blendshape_node = blendshape
     
