@@ -9723,6 +9723,8 @@ def get_index_at_alias(alias, blendshape_node):
 @undo_chunk
 def chad_extract_shape(skin_mesh, corrective, replace = False):
     
+    print skin_mesh, corrective, replace
+    
     try:
         
         envelopes = EnvelopeHistory(skin_mesh)
@@ -9764,8 +9766,9 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         blendshapes = find_deformer_by_type(skin_mesh, 'blendShape', return_all = True)
         
-        for blendshape in blendshapes[1:]:
-            cmds.setAttr('%s.envelope' % blendshape, 0)
+        if blendshapes:
+            for blendshape in blendshapes[1:]:
+                cmds.setAttr('%s.envelope' % blendshape, 0)
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
