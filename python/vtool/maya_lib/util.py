@@ -4190,12 +4190,12 @@ class SplitMeshTarget(object):
             if target_index == None:
                 vtool.util.warning('Joint %s is not in skinCluster %s' % (joint, skin_cluster))
                 cmds.delete(new_target, ch = True)
-                return
+                continue
                        
             if not skin_weights.has_key(target_index):
                 vtool.util.warning('Joint %s not in skinCluster %s.' % (joint, skin_cluster))
                 cmds.delete(new_target, ch = True)
-                return
+                continue
                 
             weights = skin_weights[target_index]
             
@@ -4217,7 +4217,7 @@ class SplitMeshTarget(object):
                     cmds.parent(new_target, parent)
                 
             targets.append(new_target)
-          
+        
         return targets
             
             
@@ -9722,8 +9722,18 @@ def get_index_at_alias(alias, blendshape_node):
 
 @undo_chunk
 def chad_extract_shape(skin_mesh, corrective, replace = False):
+    """
+    Get the delta of t he skin cluster and blendshape to the corrective.  
+    Requires a skin cluster or blendshape in the deformation stack.
     
-    print skin_mesh, corrective, replace
+    Args
+        skin_mesh (str): The name of the skinned mesh, or blendshaped mesh to extract a delta from.
+        corrective (str): The target shape for the skin mesh.  
+        replace (bool): Wether to replace the corrective with the delta.
+        
+    Return
+        str: The name of the delta. The delta can be applied to the blendshape before the skin cluster.
+    """
     
     try:
         
@@ -9795,7 +9805,6 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         envelopes.turn_on(respect_initial_state=True)
         
-        
         return offset
         
     except (RuntimeError):
@@ -9849,9 +9858,16 @@ def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = Tr
 
 def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
     """
-        Create evenly spaced joints on a surface.
-        uv_count = number of joints on u and v
-        offset = the offset from the border.
+    Create evenly spaced joints on a surface.
+    
+    Args
+        surface (str): the name of a nurbs surface.
+        name(str): = the name to give to nodes created.
+        uv_count(list): = number of joints on u and v, eg [10,4]
+        offset(float): = the offset from the border.
+        
+    Return
+        list: [top_group, joints] The top group is the group for the joints. The joints is a list of joints by name that were created.
     """
     
     section_u = (1.0-offset*2) / (uv_count[0]-1)
