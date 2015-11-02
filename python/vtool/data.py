@@ -840,7 +840,7 @@ class DeformerWeightData(MayaCustomData):
             
             for deformer in deformers:
                 
-                weights = maya_lib.util.get_deformer_weights(deformer, mesh)
+                weights = maya_lib.util.get_deformer_weights(deformer)
                 
                 filepath = util_file.create_file('%s.weights' % deformer, path)
                 
