@@ -3223,8 +3223,12 @@ class ConvertJointToNub(object):
                 
                 orient.set_aim_up_at_object(self.up_object)
                 orient.run()
+                
+            
             
             cmds.makeIdentity(joints[-1], r = True, jo = True, apply = True)
+            
+            
             
             self.joints = joints
             
@@ -3273,6 +3277,8 @@ class ConvertJointToNub(object):
         
         self.control_group = rig.control_group
         self.setup_group = rig.setup_group
+        
+
         
     def get_control_group(self):
         return self.control_group

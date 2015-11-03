@@ -496,7 +496,7 @@ class DataFileWidget(vtool.qt_ui.FileManagerWidget):
         
         super(DataFileWidget, self).set_directory(directory)
         
-        parent_path = vtool.util_file.get_parent_path(directory)
+        parent_path = vtool.util_file.get_dirname(directory)
         name = vtool.util_file.get_basename(directory)
         
         data_folder = vtool.data.DataFolder(name, parent_path)

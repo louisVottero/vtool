@@ -27,7 +27,10 @@ def try_pass(function):
 
 def is_in_maya():
     """
-        Check to see if scope is in Maya.
+    Check to see if scope is in Maya.
+    
+    Return
+        bool:
     """
     try:
         import maya.cmds as cmds
@@ -37,7 +40,10 @@ def is_in_maya():
     
 def is_in_nuke():
     """
-        Check to see if scope is in Nuke
+    Check to see if scope is in Nuke
+    
+    Return
+        bool:
     """
     try:
         import nuke
@@ -47,7 +53,10 @@ def is_in_nuke():
 
 def get_maya_version():
     """
-        Get the version of maya that the scope is running in.
+    Get the version of maya that the scope is running in.
+    
+    Return
+        int: The date of the Maya version.
     """
     
     if is_in_maya():
@@ -67,7 +76,7 @@ def get_maya_version():
 
 class StopWatch(object):
     """
-        Utility to check how long a command takes to run.
+    Utility to check how long a command takes to run.
     """
     
     def __init__(self):
@@ -295,6 +304,14 @@ class Vector(object):
         return [self.x,self.y,self.z]
     
 class BoundingBox(object):
+    """
+    Convenience for dealing with bounding boxes
+    
+    Args
+        btm_corner_vector (list): [0,0,0] vector of bounding box's btm corner.
+        top_corner_vector (list): [0,0,0] vector of bounding box's top corner.
+    """
+    
     def __init__(self, btm_corner_vector, top_corner_vector):
         
         self._load_bounding_box(btm_corner_vector, top_corner_vector)
@@ -307,15 +324,39 @@ class BoundingBox(object):
         self.opposite_max_vector = [btm_corner_vector[0], top_corner_vector[1], btm_corner_vector[2]]
         
     def get_center(self):
+        """
+        Get the center of the bounding box in a vector.
+        
+        Return
+            list: [0,0,0] vector
+        """
         return get_midpoint(self.min_vector, self.max_vector)
         
     def get_ymax_center(self):
+        """
+        Get the top center of the bounding box in a vector.
+        
+        Return
+            list: [0,0,0] vector
+        """
         return get_midpoint(self.max_vector, self.opposite_max_vector)
         
     def get_ymin_center(self):
+        """
+        Get the btm center of the bounding box in a vector.
+        
+        Return
+            list: [0,0,0] vector
+        """
         return get_midpoint(self.min_vector, self.opposite_min_vector)
 
 class Variable(object):
+    """
+    Simple base class for variables on a node.
+    
+    Args
+        name (str): The name of the variable.
+    """
     
     def __init__(self, name = 'empty' ):
         
@@ -324,12 +365,31 @@ class Variable(object):
         self.node = None
     
     def set_node(self, node_name):
+        """
+        Set the node to work on.
+        
+        Args
+            node_name (str)
+        """
         self.node = node_name
     
     def set_name(self, name):
+        """
+        Set the name of the variable.
+        
+        Args
+            name (str): The name to give the variable.
+        """
+        
         self.name = name
     
     def set_value(self, value):
+        """
+        Set the value that the variable holds.
+        
+        Args
+            value
+        """
         self.value = value
         
     def create(self, node):
@@ -360,7 +420,15 @@ class Part(object):
 #                 : 255 - ( ( 2 * ( 255 - percent2 ) * ( 255 - percent1 ) ) / 255
 
 def get_axis_vector(axis_name):
+    """
+    Convenience. Good for multiplying against a matrix.
     
+    Args
+        axis_name (str): 'X' or 'Y' or 'Z'
+        
+    Return
+        (list): vector eg. [1,0,0] for 'X', [0,1,0] for 'Y' and [0,0,1] for 'Z'
+    """
     if axis_name == 'X':
         return (1,0,0)
     
@@ -390,7 +458,16 @@ def fade_sigmoid(percent_value):
     
 
 def get_distance(vector1, vector2):
+    """
+    Get the distance between two vectors.
     
+    Args
+        vector1 (list): eg. [0,0,0] vector
+        vector2 (list): eg. [0,0,0] vector
+        
+    Return
+        float: The distance between the two vectors.
+    """
     vector1 = Vector(vector1)
     vector2 = Vector(vector2)
     
@@ -401,22 +478,64 @@ def get_distance(vector1, vector2):
     return math.sqrt( (dist[0] * dist[0]) + (dist[1] * dist[1]) + (dist[2] * dist[2]) )
 
 def get_distance_2D(vector1_2D, vector2_2D):
+    """
+    Get the distance between two 2D vectors.
     
+    Args
+        vector1_2D (list): eg. [0,0] vector
+        vector2_2D (list): eg. [0,0] vector
+        
+    Return
+        float: The distance between the two 2D vectors.
+    """
     dist = vector1_2D[0] - vector2_2D[0], vector1_2D[1] - vector2_2D[1]
 
     return get_magnitude_2D(dist)    
     
 def get_magnitude_2D(vector_2D):
+    """
+    Args
+        vector_2D (list): eg [0,0] vector
+        
+    Return
+        float: The magnitude of the vector.
+    """
     return math.sqrt( (vector_2D[0] * vector_2D[0]) + (vector_2D[1] * vector_2D[1]) )
 
 def get_dot_product(vector1, vector2):
+    """
+    Get the dot product of two vectors.  Good for calculating angles.
+    
+    Args
+        vector1 (list): eg. [0,0,0] vector
+        vector2 (list): eg. [0,0,0] vector
+        
+    Return
+        float: The dot product between the two vectors.
+    """
     return (vector1.x * vector2.x) + (vector1.y * vector2.y) + (vector1.z * vector2.z)
 
 def get_dot_product_2D(vector1_2D, vector2_2D):
+    """
+    Get the dot product of two 2D vectors.  Good for calculating angles.
     
+    Args
+        vector1_2D (list): eg. [0,0] vector
+        vector2_2D (list): eg. [0,0] vector
+        
+    Return
+        float: The dot product between the two 2D vectors.
+    """
     return (vector1_2D.x * vector2_2D.x) + (vector1_2D.y * vector2_2D.y)
     
 def get_average(numbers):
+    """
+    Args
+        numbers (list): A list of floats.
+        
+    Return
+        float: The average of the floats in numbers list.
+    """
     
     total = 0.0
     
@@ -427,7 +546,16 @@ def get_average(numbers):
 
 
 def get_midpoint(vector1, vector2):
+    """
+    Get the mid vector between two vectors.
     
+    Args
+        vector1 (list): eg. [0,0,0] vector
+        vector2 (list): eg. [0,0,0] vector
+        
+    Return
+        list: eg. [0,0,0] the midpoint vector between vector1 and vector2
+    """
     values = []
     
     for inc in range(0, 3):
@@ -436,6 +564,20 @@ def get_midpoint(vector1, vector2):
     return values
 
 def get_inbetween_vector(vector1, vector2, percent = 0.5):
+    """
+    Get a vector inbetween vector1 and vector2 at the percent
+    
+    Args
+        vector1 (list): eg. [0,0,0] vector
+        vector2 (list): eg. [0,0,0] vector
+        percent (float): The percent the vector should be between vector1 and vector2. 
+        0 percent will be exactly on vector1. 
+        1 percent will be exactly on vector2. 
+        0.5 percent will be exactly the midpoint between vector1 and vector2.
+        
+    Return
+        list: eg. [0,0,0] the vector that represents the vector at the percentage between vector1 and vector2
+    """
     vector1 = Vector(vector1)
     vector2 = Vector(vector2)
     percent = 1 - percent
@@ -462,6 +604,23 @@ def get_simple_center_vector(list_of_vectors):
     return simple_center_vector
 
 def convert_to_sequence(variable, sequence_type = list):
+    """
+    Easily convert to a sequence. 
+    If variable is already of sequence_type, pass it through.
+    If variable is a list and sequence_type is tuple, convert to tuple.
+    If variable is a tuple and sequence_type is list, convert to list.
+    If variable is not a list or tuple, than create a sequence of sequence type.
+    
+    Basically insures that a variable is a list or a tuple.
+    
+    Args
+    
+        variable: Any variable.
+        sequence_type: Can either be python list or python tuple. Needs to be the type ojbect, which means pass it list or tuple not as a string.
+        
+    Return
+        list, tuple: Returns list or tuple depending on the sequence_type.
+    """
     
     if type(variable) == list and sequence_type == tuple:
         
@@ -481,6 +640,18 @@ def convert_to_sequence(variable, sequence_type = list):
     return variable
 
 def line_side(start_vector, end_vector, position_vector):
+    """
+    Find out what side a position_vector is on given a line defined by start_vector and end_vector.
+    
+    Args
+        start_vector (list): eg. [0,0,0] vector\
+        end_vector (list): eg. [0,0,0] vector
+        position_vector (list): eg. [0,0,0] vector
+        
+    Return
+        float: If positive it's on one side of the line, if negative its on the other side.
+    """
+    
     return ((end_vector.x - start_vector.x)*(position_vector.y - start_vector.y) - (end_vector.y - start_vector.y)*(position_vector.x - start_vector.x)) > 0
 
 
@@ -669,15 +840,17 @@ class FindUniqueString(object):
     
     def get(self):
         return self._search()
-
-
-def regular_expression_search(expression_code, input_string):
-    
-    regular_expression = re.compile(expression_code)
-    return  regular_expression.search(input_string)
                 
 def get_end_number(input_string):
+    """
+    Get the number at the end of a string.
     
+    Args
+        input_string (str): The string to search for a number.
+    
+    Return
+        int: The number at the end of the string.
+    """
     number = re.findall('\d+', input_string)
     
     if number:
@@ -689,11 +862,31 @@ def get_end_number(input_string):
     return number
 
 def search_last_number(input_string):
+    """
+    Get the last number in a string.
     
-    return regular_expression_search('(\d+)(?=(\D+)?$)', input_string)
+    Args
+        input_string (str): The string to search for a number.
+    
+    Return
+        int: The last number in the string.
+    """
+    
+    expression = re.compile('(\d+)(?=(\D+)?$)')
+    return expression.search( input_string)
 
 def replace_last_number(input_string, replace_string):
-
+    """
+    Replace the last number with something.
+    
+    Args
+        input_string (str): A string to search for the last number.
+        replace_string (str): The string to replace the last number with.
+        
+    Return
+        str: The new string after replacing.
+    """
+    
     expression = re.compile('(\d+)(?=(\D+)?$)')
     search = expression.search(input_string)
 
@@ -726,7 +919,15 @@ def get_last_number(input_string):
     return number
 
 def increment_last_number(input_string):
+    """
+    Up the value of the last number by 1.
     
+    Args
+        input_string (str): The string to search for the last number.
+        
+    Return
+        str: The new string after the last number is incremented.
+    """
     search = search_last_number(input_string)
     
     new_string = '%s%s%s' % (
@@ -738,7 +939,15 @@ def increment_last_number(input_string):
     return new_string
 
 def find_special(pattern, string_value, position_string):
-    #position string = 'start','end','first','last','inside'
+    """
+    Args
+        pattern (str): A regular expression pattern to search for.
+        string_value (str): The string to search in.
+        position_string (str): 'start','end','first','last','inside' Where the pattern should search.
+        
+    Return
+        tuple: (start_int, end_int) The start and end index of the found pattern. Returns (None,None) if nothing found.
+    """
     
     char_count = len(string_value)
     

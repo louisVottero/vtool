@@ -445,7 +445,6 @@ class MayaVariable(vtool.util.Variable):
         Args
             name (str)
             
-        Return None
         """
         var_name = self._get_node_and_variable()
         
@@ -463,8 +462,6 @@ class MayaVariable(vtool.util.Variable):
         Args
             value
             
-        Return
-            None
         """
         super(MayaVariable, self).set_value(value)
         self._set_value()
@@ -476,8 +473,6 @@ class MayaVariable(vtool.util.Variable):
         Args
             bool_value (bool)
             
-        Return
-            None
         """
         self.locked = bool_value
         self._set_lock_state()
@@ -489,8 +484,6 @@ class MayaVariable(vtool.util.Variable):
         Args
             bool_value (bool)
             
-        Return
-            None
         """
         
         self.keyable = bool_value
@@ -510,8 +503,6 @@ class MayaVariable(vtool.util.Variable):
         Args
             name (str)
             
-        Return
-            None
         """
         self.node = name
 
@@ -563,8 +554,6 @@ class MayaVariable(vtool.util.Variable):
         Args
             var_dict (dict): A dictionary created from get_dict.
             
-        Return
-            None
         """
         value = var_dict['value']
         self.set_value(value)
@@ -585,8 +574,6 @@ class MayaVariable(vtool.util.Variable):
         Args
             node (str): The node for the variable.  If not set, set_node should be set.
             
-        Return
-            None
         """
         if node:
             self.node = node
@@ -612,8 +599,6 @@ class MayaVariable(vtool.util.Variable):
         Args
             node (str): The node for the variable.  If not set, set_node should be set.
             
-        Return
-            None
         """
         if node:
             self.node = node
@@ -640,8 +625,6 @@ class MayaVariable(vtool.util.Variable):
         Args
             attribute (str): 'node.attribute'
         
-        Return
-            None
         """
         cmds.connectAttr(attribute, self._get_node_and_variable())
         
@@ -652,8 +635,6 @@ class MayaVariable(vtool.util.Variable):
         Args
             attribute (str): 'node.attribute'
         
-        Return
-            None
         """
         cmds.connectAttr(self._get_node_and_variable(), attribute)
         
@@ -1597,6 +1578,19 @@ class MultiplyDivideNode(MayaNode):
         connect_plus('%s.outputZ' % self.node, attribute)
 
 class MatchSpace(object):
+    """
+    Used to match transformation between two transform node.
+    Can be used as follows:
+    MatchSpace('transform1', 'transform2').translation_rotation()
+    
+    Args
+        
+        source_transform (str): The name of a transform.
+        target_transform (str): The name of a transform.
+        
+    
+    """
+    
     def __init__(self, source_transform, target_transform):
         self.source_transform = source_transform
         self.target_transform = target_transform
@@ -1652,12 +1646,21 @@ class MatchSpace(object):
         cmds.xform(self.target_transform, rp = scale_pivot_vector, ws = True)
         
     def translation(self):
+        """
+        Match just the translation
+        """
         self._set_translation()
         
     def rotation(self):
+        """
+        Match just the rotation
+        """
         self._set_rotation()
         
     def translation_rotation(self):
+        """
+        Match translation and rotation.
+        """
                 
         self._set_scale_pivot()
         self._set_rotate_pivot()
@@ -1667,10 +1670,18 @@ class MatchSpace(object):
         self._set_rotation()
         
     def translation_to_rotate_pivot(self):
+        """
+        Match translation of target to the rotate_pivot of source.
+        """
+        
         translate_vector = self._get_rotate_pivot()
         self._set_translation(translate_vector)
         
     def rotate_scale_pivot_to_translation(self):
+        """
+        Match the rotate and scale pivot of target to the translation of source.
+        """
+        
         position = self._get_translation()
         
         cmds.move(position[0], 
@@ -1681,14 +1692,26 @@ class MatchSpace(object):
                   a = True)
         
     def pivots(self):
+        """
+        Match the pivots of target to the source.
+        """
         self._set_rotate_pivot()
         self._set_scale_pivot()
         
     def world_pivots(self):
+        """
+        Like pivots, but match in world space.
+        """
         self._set_world_rotate_pivot()
         self._set_world_scale_pivot()
 
 class Control(object):
+    """
+    Convenience for creating controls
+    
+    Args
+        name (str): The name of a control that exists or that should be created.
+    """
     
     def __init__(self, name):
         
@@ -1717,6 +1740,13 @@ class Control(object):
         return get_components_from_shapes(self.shapes)
         
     def set_curve_type(self, type_name):
+        """
+        Set the curve type. The type of shape the curve should have.
+        
+        Args
+        
+            type_name (str): eg. 'circle', 'square', 'cube', 'pin_round' 
+        """
         
         curve_data = curve.CurveDataInfo()
         curve_data.set_active_library('default_curves')
@@ -1725,7 +1755,12 @@ class Control(object):
         self.shapes = get_shapes(self.control)
     
     def set_to_joint(self, joint = None):
+        """
+        Set the control to have a joint as its main transform type.
         
+        Args
+            joint (str): The name of a joint to use. If none joint will be created automatically.
+        """
         cmds.setAttr('%s.radius' % joint, l = True, k = False, cb = False)
         
         cmds.select(cl = True)
@@ -1774,21 +1809,42 @@ class Control(object):
         
         
     def translate_shape(self, x,y,z):
+        """
+        Translate the shape curve cvs in object space.
         
+        Args
+            x (float)
+            y (float)
+            z (float)
+        """
         components = self._get_components()
         
         if components:
             cmds.move(x,y,z, components, relative = True, os = True)
         
     def rotate_shape(self, x,y,z):
+        """
+        Rotate the shape curve cvs in object space
         
+        Args
+            x (float)
+            y (float)
+            z (float)
+        """
         components = self._get_components()
         
         if components:
             cmds.rotate(x,y,z, components, relative = True)
             
     def scale_shape(self, x,y,z):
+        """
+        Scale the shape curve cvs relative to the current scale.
         
+        Args
+            x (float)
+            y (float)
+            z (float)
+        """
         components = self._get_components()
         
         pivot = cmds.xform( self.control, q = True, rp = True, ws = True)
@@ -1797,57 +1853,103 @@ class Control(object):
             cmds.scale(x,y,z, components, p = pivot, r = True)
 
     def color(self, value):
+        """
+        Set the color of the curve.
         
+        Args
+            value (int): This corresponds to Maya's color override value.
+        """
         shapes = get_shapes(self.control)
         
         set_color(shapes, value)
     
     def show_rotate_attributes(self):
-        
+        """
+        Unlock and set keyable the control's rotate attributes.
+        """
         cmds.setAttr('%s.rotateX' % self.control, l = False, k = True)
         cmds.setAttr('%s.rotateY' % self.control, l = False, k = True)
         cmds.setAttr('%s.rotateZ' % self.control, l = False, k = True)
         
     def show_scale_attributes(self):
-        
+        """
+        Unlock and set keyable the control's scale attributes.
+        """
         cmds.setAttr('%s.scaleX' % self.control, l = False, k = True)
         cmds.setAttr('%s.scaleY' % self.control, l = False, k = True)
         cmds.setAttr('%s.scaleZ' % self.control, l = False, k = True)
     
     def hide_attributes(self, attributes):
+        """
+        Lock and hide the given attributes on the control.
+        
+        Args
+            
+            attributes (list): List of attributes, eg. ['translateX', 'translateY']
+        """
         hide_attributes(self.control, attributes)
         
     def hide_translate_attributes(self):
+        """
+        Lock and hide the translate attributes on the control.
+        """
+        
         hide_attributes(self.control, ['translateX',
                                      'translateY',
                                      'translateZ'])
         
     def hide_rotate_attributes(self):
+        """
+        Lock and hide the rotate attributes on the control.
+        """
         hide_attributes(self.control, ['rotateX',
                                      'rotateY',
                                      'rotateZ'])
         
     def hide_scale_attributes(self):
+        """
+        Lock and hide the scale attributes on the control.
+        """
         hide_attributes(self.control, ['scaleX',
                                      'scaleY',
                                      'scaleZ'])
         
     def hide_visibility_attribute(self):
+        """
+        Lock and hide the visibility attribute on the control.
+        """
         hide_attributes(self.control, ['visibility'])
     
     def hide_scale_and_visibility_attributes(self):
+        """
+        Lock and hide the visibility and scale attributes on the control.
+        """
         self.hide_scale_attributes()
         self.hide_visibility_attribute()
     
     def hide_keyable_attributes(self):
+        """
+        Lock and hide all keyable attributes on the control.
+        """
         hide_keyable_attributes(self.control)
         
     def rotate_order(self, xyz_order_string):
-        
+        """
+        Set the rotate order on a control.
+        """
         cmds.setAttr('%s.rotateOrder' % self.node, xyz_order_string)
     
     def color_respect_side(self, sub = False, center_tolerance = 0.001):
+        """
+        Look at the position of a control, and color it according to its side on left, right or center.
         
+        Args
+            sub (bool): Wether to set the color to sub colors.
+            center_tolerance (float): The distance the control can be from the center before its considered left or right.
+            
+        Return
+            str: The side the control is on in a letter. Can be 'L','R' or 'C'
+        """
         position = cmds.xform(self.control, q = True, ws = True, t = True)
         
         if position[0] > 0:
@@ -1867,21 +1969,38 @@ class Control(object):
         return side
             
     def get(self):
+        """
+        Return
+            str: The name of the control.
+        """
         return self.control
     
     def create_xform(self):
+        """
+        Create an xform above the control.
         
+        Return
+            str: The name of the xform group.
+        """
         xform = create_xform_group(self.control)
         
         return xform
         
     def rename(self, new_name):
+        """
+        Give the control a new name.
         
+        Args
+            
+            name (str): The new name.
+        """
         new_name = cmds.rename(self.control, inc_name(new_name))
         self.control = new_name
 
     def delete_shapes(self):
-        
+        """
+        Delete the shapes beneath the control.
+        """
         self.shapes = get_shapes(self.control)
         
         cmds.delete(self.shapes)
@@ -5882,9 +6001,9 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     if constraint_type == 'parentConstraint':
         constraint = cmds.parentConstraint(locators,  follow_group, mo = True)[0]
     if constraint_type == 'orientConstraint':
-        constraint = cmds.orientConstraint(locators,  follow_group, mo = True)[0]
+        constraint = cmds.orientConstraint(locators,  follow_group)[0]
     if constraint_type == 'pointConstraint':
-        constraint = cmds.orientConstraint(locators,  follow_group, mo = True)[0]
+        constraint = cmds.pointConstraint(locators,  follow_group, mo = True)[0]
     
     constraint_editor = ConstraintEditor()
     

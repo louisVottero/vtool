@@ -578,7 +578,7 @@ class FindUniquePath(util.FindUniqueString):
         super(FindUniquePath, self).__init__(basename)
         
     def _get_parent_path(self, directory):
-        return get_parent_path(directory)
+        return get_dirname(directory)
     
     def _get_scope_list(self):
         return get_files_and_folders(self.parent_path)
@@ -589,7 +589,9 @@ class FindUniquePath(util.FindUniqueString):
         return join_path(self.parent_path, name)
 
 class ParsePython(object):
-    
+    """
+    This needs to be replaced by something that uses the AST instead.
+    """
     def __init__(self, filepath):
         
         self.filepath = filepath
@@ -754,9 +756,27 @@ class PythonScope(object):
 #---- get
 
 def get_basename(directory):
+    """
+    Get the last part of a directory name. If the name is C:/goo/foo, this will return foo.
+    
+    Args
+        directoroy(str): A directory path.
+        
+    Return
+        str: The last part of the directory path.
+    """
     return os.path.basename(directory)
 
 def get_basename_no_extension(filepath):
+    """
+    Get the last part of a directory name. If the name is C:/goo/foo.py, this will return foo.
+    
+    Args
+        directoroy(str): A directory path.
+        
+    Return
+        str: The last part of the directory path, without any extensions.
+    """
     
     basename = get_basename(filepath)
     dot_split = basename.split('.')
@@ -766,21 +786,58 @@ def get_basename_no_extension(filepath):
     return new_name
 
 def get_dirname(directory):
+    """
+    Given a directory path, this will return the path above the last thing in the path.
+    If C:/goo/foo is give, C:/goo will be returned.
+    
+    Args
+        directory (str): A directory path. 
+        
+    Return
+        str: The front portion of the path.
+    """
     try:
         return os.path.dirname(directory)
     except:
         return False
 
 def get_user_dir():
+    """
+    Get the path to the user directory.
+    
+    Return
+        str: The path to the user directory.
+    """
     return fix_slashes( os.path.expanduser('~') )
 
 def get_temp_dir():
+    """
+    Get path to the temp directory.
+    
+    Return
+        str: The path to the temp directory.
+    """
     return fix_slashes( tempfile.gettempdir() ) 
 
 def get_cwd():
+    """
+    Get the current working directory.
+    
+    Return
+        str: The path to the current working directory.
+    """
     return os.getcwd()
 
 def get_files(directory):
+    """
+    Get files found in the directory.
+    
+    Args
+        directory (str): A directory path.
+    
+    Return
+        list: A list of files in the directory.
+    """
     files = os.listdir(directory)
     
     found = []
@@ -794,7 +851,15 @@ def get_files(directory):
     return found
 
 def get_folders(directory):
+    """
+    Get folders found in the directory.
     
+    Args
+        directory (str): A directory path.
+    
+    Return
+        list: A list of folders in the directory.
+    """
     if not is_dir(directory):
         return
     
@@ -813,7 +878,16 @@ def get_folders(directory):
     return folders           
 
 def get_files_and_folders(directory):
+    """
+    Get files and folders found in the directory.
     
+    Args
+        directory (str): A directory path.
+    
+    Return
+        list: A list of files and folders in the directory.
+    """
+        
     if not is_dir(directory):
         return
         
@@ -822,13 +896,29 @@ def get_files_and_folders(directory):
     return files
 
 def get_folders_date_sorted(directory):
+    """
+    Get folders date sorted found in the directory.
     
+    Args
+        directory (str): A directory path.
+    
+    Return
+        list: A list of folders date sorted in the directory.
+    """
     mtime = lambda f: os.stat(os.path.join(directory, f)).st_mtime
 
     return list(sorted(os.listdir(directory), key = mtime))
 
 def get_files_date_sorted(directory, extension = None):
-        
+    """
+    Get files date sorted found in the directory.
+    
+    Args
+        directory (str): A directory path.
+    
+    Return
+        list: A list of files date sorted in the directory.
+    """    
     if not extension:
         files = get_files(directory)
         
@@ -841,6 +931,17 @@ def get_files_date_sorted(directory, extension = None):
         
 
 def get_files_with_extension(extension, directory, fullpath = False):
+    """
+    Get files that have the extensions.
+    
+    Args
+        extension (str): eg. .py, .data, etc.
+        directory (str): A directory path.
+        fullpath (bool): Wether to returh the filepath or just the file names.
+    
+    Return
+        list: A list of files with the extension.
+    """
     found = []
     
     
@@ -857,12 +958,32 @@ def get_files_with_extension(extension, directory, fullpath = False):
     return found
 
 def get_filesize(filepath):
+    """
+    Get the size of a file.
+    
+    Args
+        filepath (str)
+        
+    Retrun
+        float: The size of the file specified by filepath.
+    """
+    
     size = os.path.getsize(filepath)
     size_format = round( size * 0.000001, 2 )
 
     return size_format
 
 def get_last_modified_date(filepath):
+    """
+    Get the last data a file was modifief.
+    
+    Args
+        filepath (str)
+        
+    Return
+        str: A formatted date and time.
+    """
+    
     mtime = os.path.getmtime(filepath)
     
     date_value = datetime.datetime.fromtimestamp(mtime)
@@ -886,17 +1007,21 @@ def get_last_modified_date(filepath):
     return '%s-%s-%s  %s:%s:%s' % (year,month,day,hour,minute,second)
     
 def get_user():
+    """
+    Get the current user.
+    
+    Return
+        str: The name of the current user.
+    """
     return getpass.getuser()
     
 def is_dir(directory):
+    """
+    Return 
+        bool
+    """
     if not directory:
         return False
-    """
-    if os.path.isdir(directory):
-        return True
-    
-    return False
-    """
     
     try:
         mode = os.stat(directory)[stat.ST_MODE]
@@ -907,15 +1032,12 @@ def is_dir(directory):
     
     
 def is_file(filepath):
-    
+    """
+    Return 
+        bool
+    """
     if not filepath:
         return False
-    """
-    if os.path.isfile(filepath):
-            return True
-    
-    return False
-    """
     
     try:
         
@@ -929,12 +1051,30 @@ def is_file(filepath):
     
 
 def is_file_in_dir(filename, directory):
+    """
     
+    Args
+        filename (str): Filename including path.
+        directory (str): Directory name including path.
+    
+    Return
+        bool: Wether the file is in the directory.
+    """
     filepath = join_path(directory, filename)
     
     return os.path.isfile(filepath)
 
 def is_same_date(file1, file2):
+    """
+    Check if 2 files have the same data.
+    
+    Args
+        file1 (str): Filename including path.
+        file2 (str): Filename including path.
+        
+    Return 
+        bool
+    """
     date1 = os.path.getmtime(file1)
     date2 = os.path.getmtime(file2)
     
@@ -947,27 +1087,59 @@ def is_same_date(file1, file2):
     return False
 
 def inc_path_name(directory, padding = 0):
+    """
+    Add padding to a name if it is not unique.
     
+    Args
+        directory (str): Directory name including path.
+        padding (int): Where the padding should start.
+        
+    Return
+        str: The new directory with path.
+    """
     unique_path = FindUniquePath(directory)
     unique_path.set_padding(padding) 
     
     return unique_path.get()
 
 def get_file_lines(filepath):
+    """
+    Get the text from a file.
     
+    Args
+        filepath (str): The filename and path.
+    
+    Return
+        str
+    """
     read = ReadFile(filepath)
     
     return read.read()
 
 
 def get_text_lines(text):
+    """
+    Get the text from a file. Each line is stored as a different entry in a list.
     
+    Args
+        text (str): Text from get_file_lines
+        
+    Return
+        list
+    """
     text = text.replace('\r', '')
     lines = text.split('\n')
         
     return lines
 
 def open_browser(filepath):
+    """
+    Open the file browser to the path specified. Currently only works in windows.
+    
+    Args
+        filepath (str): Filename with path.
+        
+    """
     if sys.platform == 'win32':
         os.startfile(filepath)
         
@@ -978,20 +1150,37 @@ def open_browser(filepath):
 #---- edit
 
 def fix_slashes(directory):
-        
+    """
+    Fix slashes in a path so the are all /
+    
+    Return
+        str: The new directory path.
+    """
     directory = directory.replace('\\','/')
     directory = directory.replace('//', '/')
     
     return directory
 
 def set_windows_slashes(directory):
+    """
+    Set all the slashes in a name so they are all \
+    
+    Return
+        str: The new directory path.
+    """
+    
     directory = directory.replace('/', '\\')
     directory = directory.replace('//', '\\')
     
     return directory
     
 def join_path(directory1, directory2):
+    """
+    Append directory2 to the end of directory1
     
+    Return
+        str: The combined directory path.
+    """
     if not directory1 or not directory2:
         return
     
@@ -1004,19 +1193,6 @@ def join_path(directory1, directory2):
     
     return path
 
-def get_parent_path(directory):
-    
-    splitpath = os.path.split(directory)
-    
-    split_length = len(splitpath)
-    
-    if split_length > 2:
-        path = string.join(splitpath[0:-1], '/')
-    
-    if split_length <= 2:
-        path = splitpath[0]
-    
-    return path
     
 
 def rename(directory, name, make_unique = False):
@@ -1036,7 +1212,7 @@ def rename(directory, name, make_unique = False):
     if basename == name:
         return
     
-    parentpath = get_parent_path(directory)
+    parentpath = get_dirname(directory)
     
     renamepath = join_path(parentpath, name)
     
@@ -1054,7 +1230,16 @@ def rename(directory, name, make_unique = False):
     return renamepath
 
 def move(path1, path2):
+    """
+    Move the folder or file pointed to by path1 under the directory path2
     
+    Args
+        path1 (str): File or folder including path.
+        path2 (str): Path where path1 should move to.
+        
+    Return
+        bool: Wether the move was successful.
+    """
     try:
         shutil.move(path1, path2)
     except:
@@ -1064,7 +1249,14 @@ def move(path1, path2):
     return True
 
 def comment(filepath, comment, comment_directory):
+    """
+    Add a comment to comments.txt
     
+    Args
+        filepath (str): Filename and path of the file that is being commented about.
+        comment (str): The comment
+        comment_directoyr (str): Directory where the comments.txt file should be saved. 
+    """
     comment_file = create_file('comments.txt', comment_directory)
     
     version = get_basename(filepath)
@@ -1080,8 +1272,21 @@ def comment(filepath, comment, comment_directory):
     comment_file.close_file()
     
 def get_comments(comment_directory, comment_filename = None):
+    """
+    Get the comments from a comments.txt file.
     
-    comment_file = join_path(comment_directory, 'comments.txt')
+    Args
+        comment_directory (str): Directory where the comments.txt file lives.
+        comment_filename (str): The name of the comment file. By default comments.txt
+        
+    Return
+        dict: comment dict, keys are filename, and value is (comment, user) 
+    """
+    
+    if not comment_filename:
+        comment_file = join_path(comment_directory, 'comments.txt')
+    if comment_filename:
+        comment_file = join_path(comment_directory, comment_filename)
     
     if not comment_file:
         return
@@ -1109,6 +1314,15 @@ def get_comments(comment_directory, comment_filename = None):
     return comments
 
 def write_lines(filepath, lines, append = False):
+    """
+    Write a list of text lines to a file. Every entry in the list is a new line.
+    
+    Args
+        filepath (str): filename and path
+        lines (list): A list of text lines. Each entry is a new line.
+        append (bool): Wether to append the text or if not replace it.
+    
+    """
     write_file = WriteFile(filepath)
     write_file.set_append(append)
     write_file.write(lines)
@@ -1117,6 +1331,15 @@ def write_lines(filepath, lines, append = False):
 #---- create
 
 def create_dir(name, directory, make_unique = False):
+    """
+    Args
+        name (str): The name of the new directory.
+        make_unique (bool): Wether to pad the name with a number to make it unique. Only if the name is taken.
+        
+    Return
+        str: The folder name with path. False if create_dir failed.
+    """
+    
     if not name:
         full_path = directory
     
@@ -1137,6 +1360,16 @@ def create_dir(name, directory, make_unique = False):
     return full_path           
     
 def delete_dir(name, directory):
+    """
+    Delete the folder by name in the directory.
+    
+    Args
+        name (str): The name of the folder to delete.
+        directory (str): The dirpath where the folder lives.
+        
+    Return
+        str: The folder that was deleted with path.
+    """
     
     util.clean_file_string(name)
     
@@ -1153,6 +1386,9 @@ def delete_dir(name, directory):
     return full_path
 
 def refresh_dir(directory):
+    """
+    Delete everything in the directory.
+    """
     
     base_name = get_basename(directory)
     dir_name = get_dirname(directory)
@@ -1168,6 +1404,14 @@ def refresh_dir(directory):
         create_dir(base_name, dir_name)
 
 def create_file(name, directory, make_unique = False):
+    """
+    Args
+        name (str): The name of the new file. 
+        make_unique (bool): Wether to pad the name with a number to make it unique. Only if the name is taken.
+        
+    Return
+        str: The filename with path. False if create_dir failed.
+    """
     
     name = util.clean_file_string(name)
     
@@ -1190,6 +1434,17 @@ def create_file(name, directory, make_unique = False):
     return full_path
     
 def delete_file(name, directory):
+    """
+    Delete the file by name in the directory.
+    
+    Args
+        name (str): The name of the file to delete.
+        directory (str): The dirpath where the file lives.
+        
+    Return
+        str: The filepath that was deleted.
+    """
+    
     full_path = join_path(directory, name)
     
     if not is_file(full_path):
@@ -1203,7 +1458,18 @@ def delete_file(name, directory):
     return full_path
 
 def copy_dir(directory, directory_destination, ignore_patterns = []):
+    """
+    Copy the directory to a new directory.
     
+    Args
+        directory (str): The directory to copy with path.
+        directory_destination (str): The destination directory.
+        ignore_patterns (list): Add txt, py or extensions to ingore them from copying. 
+        Eg. if py is added to the ignore patterns list, all *.py files will be ignored from the copy.
+        
+    Return
+        str: The destination directory
+    """
     if not is_dir(directory):
         return        
     
@@ -1219,7 +1485,16 @@ def copy_dir(directory, directory_destination, ignore_patterns = []):
     return directory_destination
     
 def copy_file(filepath, filepath_destination):
+    """
+    Copy the file to a new directory.
     
+    Args
+        filepath (str): The file to copy with path.
+        filepath_destination (str): The destination directory. 
+        
+    Return
+        str: The destination directory
+    """
     shutil.copy2(filepath, filepath_destination)
     
     return filepath_destination
@@ -1271,7 +1546,18 @@ def source_python_module(code_directory):
         return None      
 
 def load_python_module(module_name, directory):
+    """
+    Load a module by name and return its instance.
+    
+    Args
+        module_name (str): The name of the module found in the directory.
+        directory (str): The directory path where the module lives.
         
+    Return
+        module instance: The module instance. 
+        With the module instance you can access programattically functions and attributes of the modules.
+        
+    """    
     if is_dir(directory):
         
         full_path = join_path(directory, module_name)
@@ -1340,7 +1626,9 @@ def get_package_path_from_name(module_name, return_module_paths = False):
     return path
     
 def get_line_imports(lines):
-    
+    """
+    This needs to be replaced by AST stuff.
+    """
     module_dict = {}
     
     for line in lines:
@@ -1373,7 +1661,9 @@ def get_line_imports(lines):
     return module_dict
                     
 def get_line_defined(lines):
-    
+    """
+    This needs to be replaced by AST stuff.
+    """
     defined = []
     
     for line in lines:
@@ -1433,6 +1723,9 @@ def get_line_defined(lines):
 
     
 def launch_maya(version, script = None):
+    """
+    Needs maya installed. If maya is installed in the default directory, will launch the version specified.
+    """
     if sys.platform == 'win32':
         path = 'C:\\Program Files\\Autodesk\\Maya%s\\bin\\maya.exe' % version
         
@@ -1442,6 +1735,9 @@ def launch_maya(version, script = None):
             os.system("start \"maya\" \"%s\"" % path)
             
 def launch_nuke(version, command = None):
+    """
+    Needs nuke installed. If nuke is installed in default path, it will launch the version specified.
+    """
     if sys.platform == 'win32':
         split_version = version.split('v')
         
@@ -1460,7 +1756,9 @@ def launch_nuke(version, command = None):
             os.system('start "nuke" "%s"' % path)
     
 def run_ffmpeg():
-    
+    """
+    Needs ffmpeg installed. 
+    """
     path = 'X:\\Tools\\ffmpeg\\bin\\ffmpeg.exe'
     
     os.system('start \"ffmpeg\" \"%s\"' % path)

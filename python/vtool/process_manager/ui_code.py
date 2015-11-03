@@ -262,7 +262,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
                         
             self.save_file.set_text_widget(widget)
             
-            folder_path = vtool.util_file.get_parent_path(widget.filepath)
+            folder_path = vtool.util_file.get_dirname(widget.filepath)
             
             self.save_file.set_directory(folder_path)
             self.save_file.save_widget._save(comment)
@@ -274,7 +274,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
             self.code_edit.hide()
             return
         
-        folder_path = vtool.util_file.get_parent_path(path)
+        folder_path = vtool.util_file.get_dirname(path)
         
         self.directory = path
         
