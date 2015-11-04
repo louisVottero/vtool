@@ -1,15 +1,23 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import traceback
+import time
 
 import vtool.util
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
-import util
-import blendshape
+    #import util
+    import core
+    import blendshape
+    import attr
+    import space
+    import geo
+    import deform
+    import shade
+    import rigs
 
-import time
+
 
 def get_pose_instance(pose_name):
     
@@ -39,7 +47,7 @@ class PoseManager(object):
             
             self.pose_group = cmds.group(em = True, n = self.pose_group)
         
-            data = util.StoreControlData(self.pose_group)
+            data = rigs.StoreControlData(self.pose_group)
             data.set_data()
             
             if selection:
@@ -126,7 +134,7 @@ class PoseManager(object):
         
         for pose_name in poses:
                 
-            input = util.get_attribute_input('%s.weight' % pose_name)
+            input = attr.get_attribute_input('%s.weight' % pose_name)
             if not input:
                 if cmds.objExists('%s.weight' % pose_name):
                     cmds.setAttr('%s.weight' % pose_name, 0)
@@ -136,14 +144,14 @@ class PoseManager(object):
         
         self._check_pose_group()
         
-        store = util.StoreControlData(self.pose_group)
+        store = rigs.StoreControlData(self.pose_group)
         store.set_data()
         
     def set_pose_to_default(self):
         
         self._check_pose_group()
         
-        store = util.StoreControlData(self.pose_group)
+        store = rigs.StoreControlData(self.pose_group)
         store.eval_data()
         
         self.set_weights_to_zero()
@@ -155,7 +163,7 @@ class PoseManager(object):
         pose_instance.goto_pose()
         
     def set_pose_data(self, pose):
-        store = util.StoreControlData(pose)
+        store = rigs.StoreControlData(pose)
         store.set_data()
         
     def set_poses(self, pose_list):
@@ -164,11 +172,11 @@ class PoseManager(object):
         
         for pose_name in pose_list:
             
-            store = util.StoreControlData(pose_name)
+            store = rigs.StoreControlData(pose_name)
 
             data_list.append( store.eval_data(True) )
             
-        store = util.StoreControlData().eval_multi_transform_data(data_list)
+        store = rigs.StoreControlData().eval_multi_transform_data(data_list)
     
     def create_pose(self, pose_type, name = None):
         
@@ -185,7 +193,7 @@ class PoseManager(object):
             
         return pose
             
-    @util.undo_chunk
+    @core.undo_chunk
     def create_cone_pose(self, name = None):
         selection = cmds.ls(sl = True, l = True)
         
@@ -209,11 +217,11 @@ class PoseManager(object):
         
         return pose_control
 
-    @util.undo_chunk
+    @core.undo_chunk
     def create_no_reader_pose(self, name = None):
         
         if not name:
-            name = util.inc_name('pose_no_reader_1')
+            name = core.inc_name('pose_no_reader_1')
         
         pose = PoseNoReader(name)
         pose.set_pose_group(self.pose_group)
@@ -223,7 +231,7 @@ class PoseManager(object):
         
         return pose_control
     
-    @util.undo_chunk
+    @core.undo_chunk
     def create_timeline_pose(self, name = None):
         
         current_time = str(cmds.currentTime(q = True))
@@ -235,7 +243,7 @@ class PoseManager(object):
         time_name = seconds_name.rjust(4, '0') + '_' + sub_seconds_name.rjust(2, '0')
         
         if not name:
-            name = util.inc_name('pose_timeline_%s_1' % time_name)
+            name = core.inc_name('pose_timeline_%s_1' % time_name)
         
         pose = PoseTimeline(name)
         pose.set_pose_group(self.pose_group)
@@ -248,7 +256,7 @@ class PoseManager(object):
     def create_group_pose(self, name = None):
         
         if not name:
-            name = util.inc_name('pose_group_1')
+            name = core.inc_name('pose_group_1')
         
         pose = PoseGroup(name)
         pose.set_pose_group(self.pose_group)
@@ -258,23 +266,23 @@ class PoseManager(object):
         
         return pose_control
     
-    @util.undo_chunk
+    @core.undo_chunk
     def reset_pose(self, pose_name):
         
         pose = self.get_pose_instance(pose_name)
         pose.reset_target_meshes()
     
-    @util.undo_chunk
+    @core.undo_chunk
     def rename_pose(self, pose_name, new_name):
         pose = self.get_pose_instance(pose_name)
         return pose.rename(new_name)
     
-    @util.undo_chunk
+    @core.undo_chunk
     def add_mesh_to_pose(self, pose_name, meshes = None):
         
         #bandaid fix. Seems like this should be more proceedural instead of just naming the group
         if cmds.objExists('pose_gr'):
-            util.add_to_isolate_select('pose_gr')
+            core.add_to_isolate_select('pose_gr')
         
         selection = None
 
@@ -290,7 +298,7 @@ class PoseManager(object):
         if selection:
             for sel in selection:
                 
-                shape = util.get_mesh_shape(sel)
+                shape = geo.get_mesh_shape(sel)
                 
                 if shape:
                     pose.add_mesh(sel)
@@ -302,7 +310,7 @@ class PoseManager(object):
         
         pose = self.get_pose_instance(pose_name)
         
-        shape = util.get_mesh_shape(mesh)
+        shape = geo.get_mesh_shape(mesh)
         
         if shape:
             pose.remove_mesh(mesh)
@@ -338,7 +346,7 @@ class PoseManager(object):
         
         pose.toggle_vis(index, view_only)
     
-    @util.undo_chunk
+    @core.undo_chunk
     def delete_pose(self, name):
         pose = self.get_pose_instance(name)
         pose.delete()
@@ -383,7 +391,7 @@ class PoseManager(object):
         
         count = len(poses)
 
-        progress = util.ProgressBar('adding poses ... ', count)
+        progress = core.ProgressBar('adding poses ... ', count)
         
         for inc in range(count):
             
@@ -446,7 +454,7 @@ class PoseGroup(object):
         self.description = description
         
     def _get_name(self):
-        return util.inc_name(self.description) 
+        return core.inc_name(self.description) 
     
     def _get_sub_poses(self):
         manager = PoseManager()
@@ -458,7 +466,7 @@ class PoseGroup(object):
     def _create_pose_control(self):
         
         pose_control = cmds.group(em = True, n = self._get_name())
-        util.hide_keyable_attributes(pose_control)
+        attr.hide_keyable_attributes(pose_control)
         
         self.pose_control = pose_control
         
@@ -467,10 +475,10 @@ class PoseGroup(object):
         return pose_control
         
     def _create_attributes(self, pose_control):
-        title = util.MayaEnumVariable('POSE')
+        title = attr.MayaEnumVariable('POSE')
         title.create(pose_control)  
         
-        pose_type = util.MayaStringVariable('type')
+        pose_type = attr.MayaStringVariable('type')
         pose_type.set_value(self._pose_type())
         pose_type.set_locked(True)
         pose_type.create(pose_control)
@@ -500,13 +508,13 @@ class PoseGroup(object):
         
         if self.pose_control:
             
-            store = util.StoreControlData(self.pose_control)
+            store = rigs.StoreControlData(self.pose_control)
             store.eval_data()
             
     def rename(self, description):
         
         description = vtool.util.clean_name_string(description)
-        description = util.inc_name(description)
+        description = core.inc_name(description)
         self._set_description(description)
             
         self.pose_control = cmds.rename(self.pose_control, self._get_name())
@@ -521,7 +529,7 @@ class PoseGroup(object):
         
         cmds.parent(pose_control, top_group)
         
-        store = util.StoreControlData(pose_control)
+        store = rigs.StoreControlData(pose_control)
         store.set_data()
         
         return pose_control
@@ -569,7 +577,7 @@ class PoseGroup(object):
     def select(self):
         cmds.select(self.pose_control)
         
-        store = util.StoreControlData(self.pose_control)
+        store = rigs.StoreControlData(self.pose_control)
         store.eval_data()
         
     def attach(self, outputs = None):        
@@ -630,7 +638,7 @@ class PoseBase(PoseGroup):
             if target_mesh:
                 
                 cmds.setAttr('%s.inheritsTransform' % mesh, 0)
-                util.unlock_attributes(mesh, only_keyable=True)
+                attr.unlock_attributes(mesh, only_keyable=True)
                 
                 const = cmds.parentConstraint(target_mesh, mesh)
             
@@ -661,20 +669,20 @@ class PoseBase(PoseGroup):
             node_type = cmds.nodeType(node)
             
             if node_type == 'transform':
-                shape = util.get_mesh_shape(node)
+                shape = geo.get_mesh_shape(node)
                 
                 if shape:
                     node_type = cmds.nodeType(shape)
             
-            cmds.rename(node, util.inc_name('%s_%s' % (node_type, self.description)))
+            cmds.rename(node, core.inc_name('%s_%s' % (node_type, self.description)))
 
     def _create_node(self, maya_node_type, description = None):
         
         if not description:
-            name = util.inc_name('%s_%s' % (maya_node_type, self.description))
+            name = core.inc_name('%s_%s' % (maya_node_type, self.description))
             
         if description:
-            name = util.inc_name('%s_%s_%s' % (maya_node_type, description, self.description))
+            name = core.inc_name('%s_%s_%s' % (maya_node_type, description, self.description))
         
         node = cmds.createNode(maya_node_type, n = name)
         
@@ -717,7 +725,7 @@ class PoseBase(PoseGroup):
 
     def _get_named_message_attribute(self, name):
         
-        node = util.get_attribute_input('%s.%s' % (self.pose_control, name), True)
+        node = attr.get_attribute_input('%s.%s' % (self.pose_control, name), True)
         
         return node
         
@@ -745,7 +753,7 @@ class PoseBase(PoseGroup):
         inc = 1
         for message in messages:
             
-            message_input = util.get_attribute_input('%s.%s' % (self.pose_control, message))
+            message_input = attr.get_attribute_input('%s.%s' % (self.pose_control, message))
             
             if not message_input:
                 break
@@ -802,7 +810,7 @@ class PoseBase(PoseGroup):
             return
         
         for child in children:
-            if util.is_a_mesh(child):
+            if geo.is_a_mesh(child):
                 self._set_visibility(child, False)
         
         
@@ -814,7 +822,7 @@ class PoseBase(PoseGroup):
             return
         
         for child in children:
-            if util.is_a_mesh(child):
+            if geo.is_a_mesh(child):
                 self._set_visibility(child, True)
         
     def _get_mesh_target(self, mesh):
@@ -824,7 +832,7 @@ class PoseBase(PoseGroup):
         target_mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
         
         if not cmds.objExists(target_mesh):
-            target = util.get_basename(target_mesh)
+            target = core.get_basename(target_mesh)
             
             if cmds.objExists(target):
                 target_mesh = target
@@ -852,7 +860,7 @@ class PoseBase(PoseGroup):
         nodes = []
         
         for attribute in attributes:
-            connected = util.get_attribute_input('%s.%s' % (self.pose_control, attribute), node_only = True)
+            connected = attr.get_attribute_input('%s.%s' % (self.pose_control, attribute), node_only = True)
             
             if connected:
                 nodes.append(connected)
@@ -885,7 +893,7 @@ class PoseBase(PoseGroup):
 
     def _create_pose_control(self):
         
-        control = util.Control(self._get_name())
+        control = rigs.Control(self._get_name())
         control.set_curve_type('cube')
         control.hide_scale_and_visibility_attributes()
         pose_control = control.get()
@@ -922,15 +930,15 @@ class PoseBase(PoseGroup):
                 vtool.util.warning('Could not find %s to mirror to!\nUsing %s as other mesh, which may cause errors!' % (other_target_mesh, target_mesh) )
             other_target_mesh = target_mesh
             
-        skin = util.find_deformer_by_type(target_mesh, 'skinCluster')
-        blendshape_node = util.find_deformer_by_type(target_mesh, 'blendShape')
+        skin = deform.find_deformer_by_type(target_mesh, 'skinCluster')
+        blendshape_node = deform.find_deformer_by_type(target_mesh, 'blendShape')
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 0)
         if blendshape_node:
             cmds.setAttr('%s.envelope' % blendshape_node, 0)
             
-        other_target_name = util.get_basename(other_target_mesh)
+        other_target_name = core.get_basename(other_target_mesh)
             
         other_target_mesh_duplicate = cmds.duplicate(other_target_mesh, n = other_target_name)[0]
         home = cmds.duplicate(target_mesh, n = 'home')[0]
@@ -940,10 +948,10 @@ class PoseBase(PoseGroup):
         if blendshape_node:
             cmds.setAttr('%s.envelope' % blendshape_node, 1)
             
-        mirror_group = cmds.group(em = True, n = util.inc_name('corretive_mirror_group'))
+        mirror_group = cmds.group(em = True, n = core.inc_name('corretive_mirror_group'))
         
-        util.unlock_attributes(home)
-        util.unlock_attributes(other_mesh_duplicate)
+        attr.unlock_attributes(home)
+        attr.unlock_attributes(other_mesh_duplicate)
         
         cmds.parent(home, mirror_group)
             
@@ -952,7 +960,7 @@ class PoseBase(PoseGroup):
         #may need to do z or y axis eventually
         cmds.setAttr('%s.scaleX' % mirror_group, -1)
         
-        util.create_wrap(home, other_target_mesh_duplicate)
+        deform.create_wrap(home, other_target_mesh_duplicate)
         
         cmds.blendShape(other_mesh_duplicate, home, foc = True, w = [0, 1])
         
@@ -970,7 +978,7 @@ class PoseBase(PoseGroup):
         
         shader_name = 'pose_blinn'
             
-        shader_name = util.apply_new_shader(mesh, type_of_shader = 'blinn', name = shader_name)
+        shader_name = shade.apply_new_shader(mesh, type_of_shader = 'blinn', name = shader_name)
             
         cmds.setAttr('%s.color' % shader_name, 0.4, 0.6, 0.4, type = 'double3' )
         cmds.setAttr('%s.specularColor' % shader_name, 0.3, 0.3, 0.3, type = 'double3' )
@@ -978,7 +986,7 @@ class PoseBase(PoseGroup):
 
     def _get_blendshape(self, mesh):
         
-        return util.find_deformer_by_type(mesh, 'blendShape')
+        return deform.find_deformer_by_type(mesh, 'blendShape')
         
 
     def _get_current_mesh(self, mesh_index):
@@ -1085,7 +1093,7 @@ class PoseBase(PoseGroup):
         referenced = False
         
         if blendshape_node:
-            referenced = util.is_referenced(blendshape_node)
+            referenced = core.is_referenced(blendshape_node)
                 
         if blendshape_node and not referenced:
             blend.set(blendshape_node)
@@ -1097,7 +1105,7 @@ class PoseBase(PoseGroup):
             
             
             
-            skin_cluster = util.find_deformer_by_type(target_mesh, 'skinCluster')
+            skin_cluster = deform.find_deformer_by_type(target_mesh, 'skinCluster')
             
             if skin_cluster:
                 try:
@@ -1168,7 +1176,7 @@ class PoseBase(PoseGroup):
         if mesh.find('.vtx'):
             mesh = mesh.split('.')[0]
             
-        if not util.get_mesh_shape(mesh):
+        if not geo.get_mesh_shape(mesh):
             return False
         
         if self._check_if_mesh_connected(mesh):
@@ -1184,11 +1192,11 @@ class PoseBase(PoseGroup):
             index = self.get_target_mesh_index(mesh)
             return self.get_mesh(index)
         
-        pose_mesh = cmds.duplicate(mesh, n = util.inc_name('mesh_%s_1' % self.pose_control))[0]
+        pose_mesh = cmds.duplicate(mesh, n = core.inc_name('mesh_%s_1' % self.pose_control))[0]
         
         self._create_shader(pose_mesh)
         
-        util.unlock_attributes(pose_mesh)
+        attr.unlock_attributes(pose_mesh)
         
         cmds.parent(pose_mesh, self.pose_control)
         
@@ -1196,7 +1204,7 @@ class PoseBase(PoseGroup):
         
         
         
-        string_var = util.MayaStringVariable('mesh_pose_source')
+        string_var = attr.MayaStringVariable('mesh_pose_source')
         string_var.create(pose_mesh)
         string_var.set_value(mesh)
         
@@ -1231,7 +1239,7 @@ class PoseBase(PoseGroup):
         attribute = attributes[index]
         
         cmds.delete(mesh)
-        util.disconnect_attribute(attribute)
+        attr.disconnect_attribute(attribute)
         
         
     
@@ -1249,7 +1257,7 @@ class PoseBase(PoseGroup):
         if index > (len(mesh_attributes)-1):
             return
             
-        mesh = util.get_attribute_input('%s.%s' % (self.pose_control, mesh_attributes[index]), True)
+        mesh = attr.get_attribute_input('%s.%s' % (self.pose_control, mesh_attributes[index]), True)
         
         return mesh
 
@@ -1292,7 +1300,7 @@ class PoseBase(PoseGroup):
             
             if not cmds.objExists(long_name):
                 
-                target_mesh = util.get_basename(long_name)
+                target_mesh = core.get_basename(long_name)
                 
                 if cmds.objExists(target_mesh):
                 
@@ -1337,7 +1345,7 @@ class PoseBase(PoseGroup):
             
             inc += 1
         
-    @util.undo_chunk
+    @core.undo_chunk
     def reset_target_meshes(self):
         
         count = self._get_mesh_count()
@@ -1361,7 +1369,7 @@ class PoseBase(PoseGroup):
             temp_dup = cmds.duplicate(original_mesh)[0]
             
             #using blendshape because of something that looks like a bug in Maya 2015
-            temp_blend = util.quick_blendshape(temp_dup, deformed_mesh)
+            temp_blend = deform.quick_blendshape(temp_dup, deformed_mesh)
             
             cmds.delete(temp_blend, ch = True)
             cmds.delete(temp_dup)
@@ -1402,8 +1410,8 @@ class PoseBase(PoseGroup):
             
             self._set_visibility(target_mesh, 0)
             
-            if not util.is_batch():
-                util.add_to_isolate_select(mesh)
+            if not core.is_batch():
+                core.add_to_isolate_select(mesh)
         
     def toggle_vis(self, mesh_index, view_only = False):
         
@@ -1471,7 +1479,7 @@ class PoseBase(PoseGroup):
         
         blend.set_weight(self.pose_control, 0)
         
-        offset = util.chad_extract_shape(target_mesh, mesh)
+        offset = deform.chad_extract_shape(target_mesh, mesh)
         
         blend.set_weight(self.pose_control, 1)
         
@@ -1575,17 +1583,17 @@ class PoseBase(PoseGroup):
         if not cmds.objExists(desired_attribute):
             return
         
-        input_value = util.get_attribute_input(desired_attribute)
+        input_value = attr.get_attribute_input(desired_attribute)
                 
         self.blend_input = input_value
                 
         if input_value:
             
-            util.disconnect_attribute(desired_attribute)   
+            attr.disconnect_attribute(desired_attribute)   
 
     def delete_blend_input(self):
         
-        outputs = util.get_attribute_outputs('%s.weight' % self.pose_control)
+        outputs = attr.get_attribute_outputs('%s.weight' % self.pose_control)
         
         removed_already = False
         
@@ -1606,7 +1614,7 @@ class PoseBase(PoseGroup):
                     
                     if found:
                         
-                        output_value = util.get_attribute_outputs('%s.outputX' % found)
+                        output_value = attr.get_attribute_outputs('%s.outputX' % found)
                         
                         if output_value and len(output_value) == 1:
                             output = output_value[0]
@@ -1689,7 +1697,7 @@ class PoseBase(PoseGroup):
         
         self.disconnected_attributes = None
         
-        outputs = util.get_attribute_outputs('%s.weight' % self.pose_control)
+        outputs = attr.get_attribute_outputs('%s.weight' % self.pose_control)
         
         if not outputs:
             return
@@ -1701,7 +1709,7 @@ class PoseBase(PoseGroup):
             if cmds.nodeType(node) == 'multiplyDivide' and cmds.isConnected('%s.enable' % self.pose_control, '%s.input2X' % node):
                 continue
             
-            util.disconnect_attribute(output)
+            attr.disconnect_attribute(output)
         
         return outputs
         
@@ -1712,7 +1720,7 @@ class PoseBase(PoseGroup):
         
         for attribute in outputs:
             
-            input_value = util.get_attribute_input(attribute)
+            input_value = attr.get_attribute_input(attribute)
             
             if not input_value:
                 cmds.connectAttr('%s.weight' % self.pose_control, attribute)
@@ -1725,7 +1733,7 @@ class PoseNoReader(PoseBase):
     def _create_pose_control(self):
         
         pose_control = cmds.group(em = True, n = self._get_name())
-        util.hide_keyable_attributes(pose_control)
+        attr.hide_keyable_attributes(pose_control)
         
         self.pose_control = pose_control
         
@@ -1736,7 +1744,7 @@ class PoseNoReader(PoseBase):
     def _create_attributes(self, control):
         
         super(PoseNoReader, self)._create_attributes(control)
-        pose_input = util.MayaStringVariable('weightInput')
+        pose_input = attr.MayaStringVariable('weightInput')
         pose_input.create(control)
     
     def _multiply_weight(self, destination):
@@ -1759,7 +1767,7 @@ class PoseNoReader(PoseBase):
         
         weight_attr = '%s.weight' % self.pose_control
         
-        input_attr = util.get_attribute_input(weight_attr)
+        input_attr = attr.get_attribute_input(weight_attr)
         
         if attribute == input_attr:
             return
@@ -1804,7 +1812,7 @@ class PoseNoReader(PoseBase):
         
         blend.set_weight(self.pose_control, 0)
         
-        offset = util.chad_extract_shape(target_mesh, mesh)
+        offset = deform.chad_extract_shape(target_mesh, mesh)
         
         blend.set_weight(self.pose_control, 1)
         
@@ -1818,10 +1826,10 @@ class PoseNoReader(PoseBase):
                 
         blend_attr = '%s.%s' % (blend.blendshape, self.pose_control)
         weight_attr = '%s.weight' % self.pose_control
-        input_attr = util.get_attribute_input(blend_attr)
+        input_attr = attr.get_attribute_input(blend_attr)
         
         if input_attr:
-            weight_input = util.get_attribute_input(weight_attr)
+            weight_input = attr.get_attribute_input(weight_attr)
             
             if not weight_input:
                 
@@ -1853,15 +1861,15 @@ class PoseNoReader(PoseBase):
         
         cmds.setAttr('%s.weightInput' % self.pose_control, attribute, type = 'string')
         
-        if not util.is_attribute_numeric(attribute):
-            util.disconnect_attribute('%s.weight' % self.pose_control)
+        if not attr.is_attribute_numeric(attribute):
+            attr.disconnect_attribute('%s.weight' % self.pose_control)
             return
         
         self._connect_weight_input(attribute)
         
     def get_input(self):
         
-        attribute = util.get_attribute_input('%s.weightInput' % self.pose_control, node_only = True)
+        attribute = attr.get_attribute_input('%s.weightInput' % self.pose_control, node_only = True)
         
         if attribute:
             return attribute
@@ -1954,7 +1962,7 @@ class PoseNoReader(PoseBase):
     
     def set_weight(self, value):
         
-        input_attr = util.get_attribute_input('%s.weight' % self.pose_control)
+        input_attr = attr.get_attribute_input('%s.weight' % self.pose_control)
         if not input_attr:
             try:
                 cmds.setAttr('%s.weight' % self.pose_control, value)
@@ -2032,7 +2040,7 @@ class PoseCone(PoseBase):
         
         self._position_control(pose_control)
             
-        match = util.MatchSpace(self.transform, pose_control)
+        match = space.MatchSpace(self.transform, pose_control)
         match.translation_rotation()
         
         parent = cmds.listRelatives(self.transform, p = True)
@@ -2045,7 +2053,7 @@ class PoseCone(PoseBase):
         
     def _position_control(self, control):
         
-        control = util.Control(control)
+        control = rigs.Control(control)
         
         control.set_curve_type('pin_point')
         
@@ -2092,7 +2100,7 @@ class PoseCone(PoseBase):
         cmds.addAttr(control, ln = 'maxAngle', at = 'double', k = True, dv = 90)
         cmds.addAttr(control, ln = 'maxTwist', at = 'double', k = True, dv = 90)
         
-        title = util.MayaEnumVariable('AXIS_ROTATE')
+        title = attr.MayaEnumVariable('AXIS_ROTATE')
         title.create(control)
         
         pose_axis = self._get_pose_axis()
@@ -2101,7 +2109,7 @@ class PoseCone(PoseBase):
         cmds.addAttr(control, ln = 'axisRotateY', at = 'double', k = True, dv = pose_axis[1])
         cmds.addAttr(control, ln = 'axisRotateZ', at = 'double', k = True, dv = pose_axis[2])
         
-        title = util.MayaEnumVariable('AXIS_TWIST')
+        title = attr.MayaEnumVariable('AXIS_TWIST')
         title.create(control)
         
         twist_axis = self._get_twist_axis()
@@ -2196,8 +2204,8 @@ class PoseCone(PoseBase):
     
     def _fix_remap_value_distance(self):
         
-        input_value = util.get_attribute_input('%s.translation' % self.pose_control, node_only = True)
-        key_input = util.get_attribute_input('%s.input' % input_value)
+        input_value = attr.get_attribute_input('%s.translation' % self.pose_control, node_only = True)
+        key_input = attr.get_attribute_input('%s.input' % input_value)
         
         if key_input:
             return
@@ -2207,7 +2215,7 @@ class PoseCone(PoseBase):
             
             remap = self._remap_value_distance(distance)
             
-            input_value = util.get_attribute_input('%s.translation' % self.pose_control, node_only = True)
+            input_value = attr.get_attribute_input('%s.translation' % self.pose_control, node_only = True)
             
             if input_value:
                 
@@ -2310,7 +2318,7 @@ class PoseCone(PoseBase):
         cmds.connectAttr('%s.outputX' % multiply_offset, '%s.weight' % self.pose_control)
 
     def _get_parent_constraint(self):
-        constraint = util.ConstraintEditor()
+        constraint = space.ConstraintEditor()
         constraint_node = constraint.get_constraint(self.pose_control, 'parentConstraint')
         
         return constraint_node 
@@ -2324,7 +2332,7 @@ class PoseCone(PoseBase):
     def get_transform(self):
         matrix = self._get_named_message_attribute('multMatrix1')
         
-        transform = util.get_attribute_input('%s.matrixIn[0]' % matrix, True)
+        transform = attr.get_attribute_input('%s.matrixIn[0]' % matrix, True)
         
         if not transform:
             transform = cmds.getAttr('%s.joint' % self.pose_control)
@@ -2340,7 +2348,7 @@ class PoseCone(PoseBase):
         parent = None
         
         if constraint_node:
-            constraint = util.ConstraintEditor()
+            constraint = space.ConstraintEditor()
             targets = constraint.get_targets(constraint_node)
             if targets:
                 parent = targets[0]
@@ -2442,7 +2450,7 @@ class PoseCone(PoseBase):
         transform = self.get_transform()
         
         try:
-            util.MatchSpace(self.pose_control, transform).translation_rotation()
+            space.MatchSpace(self.pose_control, transform).translation_rotation()
         except:
             pass
     
@@ -2512,7 +2520,7 @@ class PoseCone(PoseBase):
             
             fix_mesh = input_meshes[mesh]
             
-            input_mesh_name = util.get_basename(input_mesh)
+            input_mesh_name = core.get_basename(input_mesh)
             
             cmds.blendShape(fix_mesh, input_mesh, foc = True, w = [0,1], n = 'blendshape_%s' % input_mesh_name)
             
@@ -2537,7 +2545,7 @@ class PoseTimeline(PoseNoReader):
         
         super(PoseTimeline, self)._create_attributes(control)
         
-        pose_time = util.MayaNumberVariable('timePosition')
+        pose_time = attr.MayaNumberVariable('timePosition')
         
         pose_time.create(control)
         

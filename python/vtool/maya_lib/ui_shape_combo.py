@@ -2,15 +2,15 @@
 
 from vtool import qt_ui
 import vtool.util
-
 import ui
-import util
-import blendshape
 
+if vtool.util.is_in_maya():
 
-
-import maya.cmds as cmds
-import maya.mel as mel
+    import maya.cmds as cmds
+    import maya.mel as mel
+    import blendshape
+    import geo
+    import core
 
 if qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
@@ -142,7 +142,7 @@ class ComboManager(ui.MayaWindow):
     
     def _base_command(self):
         
-        meshes = util.get_selected_meshes()
+        meshes = geo.get_selected_meshes()
         
         mesh = None
         if meshes:
@@ -155,7 +155,7 @@ class ComboManager(ui.MayaWindow):
         
     def _add_command(self):
         
-        meshes = util.get_selected_meshes()
+        meshes = geo.get_selected_meshes()
         combo_items = self.combo_widget.tree.selectedItems()
         
         shapes, combos, inbetweens = self.manager.get_shape_and_combo_lists(meshes)

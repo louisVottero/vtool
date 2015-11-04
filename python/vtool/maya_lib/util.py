@@ -225,6 +225,7 @@ maya_data_mappings = {
 
 class FindUniqueName(vtool.util.FindUniqueString):
     """
+    core!!!
     This class is intended to find a name that doesn't clash with other names in the Maya scene.
     It will increment the last number in the name. 
     If no number is found it will append a 1 to the end of the name.
@@ -254,14 +255,14 @@ class FindUniqueName(vtool.util.FindUniqueString):
 
 class TrackNodes(object):
     """
-        This helps track new nodes that get added to a scene after a function runs.
-        
-        Usage:
-        track_nodes = TrackNodes()
-        track_nodes.load()
-        my_function()
-        new_nodes = track_nodes.get_delta()
-        
+    core!!!
+    This helps track new nodes that get added to a scene after a function runs.
+    
+    Usage:
+    track_nodes = TrackNodes()
+    track_nodes.load()
+    my_function()
+    new_nodes = track_nodes.get_delta()
     """
     def __init__(self):
         self.nodes = None
@@ -305,9 +306,80 @@ class TrackNodes(object):
         
         return list(new_set)
         
+class ProgressBar(object):
+    """
+    core!!!
+    Manipulate the maya progress bar.
+    
+    Args
+        title (str): The name of the progress bar.
+        count (int): The number of items to iterate in the progress bar.
+    """
+    
+    def __init__(self, title, count):
+        if is_batch():
+            return
         
+        gMainProgressBar = mel.eval('$tmp = $gMainProgressBar');
+    
+        self.progress_ui = cmds.progressBar( gMainProgressBar,
+                                        edit=True,
+                                        beginProgress=True,
+                                        isInterruptable=True,
+                                        status= title,
+                                        maxValue= count )
         
-#--- variables
+        global current_progress_bar 
+        current_progress_bar = self
+    
+    def inc(self, inc = 1):
+        """
+        Set the current increment.
+        """
+        if is_batch():
+            return
+        
+        cmds.progressBar(self.progress_ui, edit=True, step=inc)
+        
+            
+    def end(self):
+        """
+        End the progress bar.
+        """
+        if is_batch():
+            return
+        
+        cmds.progressBar(self.progress_ui, edit=True, ep = True)
+        
+    def status(self, status_string):
+        """
+        Set that status string of the progress bar.
+        """
+        if is_batch():
+            return
+        
+        cmds.progressBar(self.progress_ui, edit=True, status = status_string)
+        
+    def break_signaled(self):
+        """
+        break the progress bar loop so that it stops and disappears.
+        """
+        if is_batch():
+            return True
+        
+        break_progress = cmds.progressBar(self.progress_ui, query=True, isCancelled=True )
+
+        if break_progress:
+            self.end()
+            return True
+        
+        return False
+    
+
+
+        
+#--- variables attributes
+
 class MayaVariable(vtool.util.Variable):
     """
     Convenience class for dealing with Maya attributes.
@@ -976,6 +1048,9 @@ class Attributes(object):
 #--- rig
 
 class BoundingBox(vtool.util.BoundingBox):
+    """
+    space!!!
+    """
     def __init__(self, thing):
         
         self.thing = thing
@@ -987,6 +1062,7 @@ class BoundingBox(vtool.util.BoundingBox):
           
 class OrientJointAttributes(object):
     """
+    attr!!!
     Creates attributes on a node that can then be used with OrientAttributes
     """
     def __init__(self, joint = None):
@@ -1118,6 +1194,7 @@ class OrientJointAttributes(object):
           
 class OrientJoint(object):
     """
+    space!!!
     This will orient the joint using the attributes created with OrientJointAttributes.
     """
     
@@ -1436,6 +1513,7 @@ class OrientJoint(object):
         
 class PinXform(object):
     """
+    space!!!
     This allows you to pin a transform so that its parent and child are not affected by any edits.
     """
     def __init__(self, xform_name):
@@ -1500,7 +1578,9 @@ class PinXform(object):
         return self.delete_later
     
 class MayaNode(object):
-    
+    """
+    attr!!!
+    """
     def __init__(self, name = None):
         
         self.node = None
@@ -1511,6 +1591,9 @@ class MayaNode(object):
         pass
         
 class MultiplyDivideNode(MayaNode):
+    """
+    attr!!!
+    """
     
     def __init__(self, name = None):
         
@@ -1579,6 +1662,7 @@ class MultiplyDivideNode(MayaNode):
 
 class MatchSpace(object):
     """
+    space!!!
     Used to match transformation between two transform node.
     Can be used as follows:
     MatchSpace('transform1', 'transform2').translation_rotation()
@@ -1707,6 +1791,7 @@ class MatchSpace(object):
 
 class Control(object):
     """
+    space!!!
     Convenience for creating controls
     
     Args
@@ -2007,6 +2092,9 @@ class Control(object):
         self.shapes = []
         
 class IkHandle(object):
+    """
+    space!!!
+    """
     
     solver_rp = 'ikRPsolver'
     solver_sc = 'ikSCsolver'
@@ -2106,7 +2194,9 @@ class IkHandle(object):
         return self.ik_handle
 
 class ConstraintEditor():
-    
+    """
+    space!!!
+    """
     constraint_parent = 'parentConstraint'
     constraint_point = 'pointConstraint'
     constraint_orient = 'orientConstraint'
@@ -2209,7 +2299,9 @@ class ConstraintEditor():
         remap.create()
 
 class RemapAttributesToAttribute(object):
-    #CBB
+    """
+    attr!!!
+    """
     
     def __init__(self, node, attribute):
         
@@ -2398,7 +2490,9 @@ class DuplicateHierarchy(object):
  
     
 class StretchyChain:
-    
+    """
+    rigs
+    """
     def __init__(self):
         self.side = 'C'
         self.inputs = []
@@ -2803,6 +2897,9 @@ class StretchyChain:
   
 
 class RiggedLine(object):
+    """
+    rigs
+    """
     def __init__(self, top_transform, btm_transform, name):
         self.name = name
         self.top = top_transform
@@ -2892,6 +2989,9 @@ class RiggedLine(object):
         return self.top_group
 
 class ClusterObject(object):
+    """
+    deform!!!
+    """
     
     def __init__(self, geometry, name):
         self.geometry = geometry
@@ -2915,7 +3015,9 @@ class ClusterObject(object):
         self._create()
 
 class ClusterSurface(ClusterObject):
-    
+    """
+    deform!!!
+    """
     def __init__(self, geometry, name):
         super(ClusterSurface, self).__init__(geometry, name)
         
@@ -3093,7 +3195,9 @@ class ClusterSurface(ClusterObject):
     
 
 class ClusterCurve(ClusterSurface):
-        
+    """
+    deform!!!
+    """
     def _create_start_and_end_clusters(self):
         cluster, handle = self._create_cluster('%s.cv[0:1]' % self.geometry)
         
@@ -3144,6 +3248,10 @@ class ClusterCurve(ClusterSurface):
     
            
 class Rivet(object):
+    
+    """
+    geo!!!
+    """
     def __init__(self, name):
         self.surface = None
         self.edges = []
@@ -3316,7 +3424,9 @@ class Rivet(object):
         return self.rivet
     
 class AttachJoints(object):
-    
+    """
+    space
+    """
     def __init__(self, source_joints, target_joints):
         self.source_joints = source_joints
         self.target_joints = target_joints
@@ -3814,7 +3924,9 @@ class XformTransfer(object):
         self._cleanup()
 
 class Connections(object):
-    
+    """
+    attributes!!!
+    """
     def __init__(self, node):
         
         self.node = node
@@ -4184,7 +4296,9 @@ class StickyTransform(object):
 #--- deformation
 
 class SplitMeshTarget(object):
-    
+    """
+    deform!!!
+    """
     def __init__(self, target_mesh):
         self.target_mesh = target_mesh
         self.weighted_mesh = None
@@ -4341,6 +4455,9 @@ class SplitMeshTarget(object):
             
             
 class TransferWeight(object):
+    """
+    deform!!!
+    """
     def __init__(self, mesh):
         self.mesh = mesh
 
@@ -4711,7 +4828,9 @@ class TransferWeight(object):
         vtool.util.show('Done: %s transfer joints to new joints.' % self.mesh)
                 
 class MayaWrap(object):
-    
+    """
+    deform!!!
+    """
     def __init__(self, mesh):
         
         self.mesh = mesh
@@ -4823,7 +4942,9 @@ class MayaWrap(object):
 
  
 class EnvelopeHistory(object):
-    
+    """
+    deform!!!
+    """
     def __init__(self, transform):
         
         self.transform = transform
@@ -4904,7 +5025,9 @@ class EnvelopeHistory(object):
                 cmds.connectAttr(connection, '%s.envelope' % history)
    
 class LockState(object):
-    
+    """
+    attributes!!!
+    """
     def __init__(self, attribute):
         
         self.lock_state = cmds.getAttr(attribute, l = True)
@@ -4920,7 +5043,7 @@ class LockState(object):
         
         cmds.setAttr( self.attribute, l = self.lock_state)
    
-#--- definitions
+#--- definitions core
 
 def is_batch():
     """
@@ -4929,6 +5052,36 @@ def is_batch():
     """
     
     return cmds.about(batch = True)
+
+def is_referenced(node):
+    """
+    Args
+        node (str): Name of a node in maya. Check to see if it is referenced.
+        
+    Return
+        (bool)
+    """
+    if not cmds.objExists(node):
+        return False
+    
+    is_node_referenced = cmds.referenceQuery(node, isNodeReferenced = True)
+    
+    return is_node_referenced
+
+def is_a_shape(node):
+    """
+    Test wether the node is a shape.
+    
+    Args
+        node (str): The name of a node.
+        
+    Return
+        bool
+    """
+    if cmds.objectType(node, isAType = 'shape'):
+        return True
+    
+    return False
 
 def inc_name(name):
     """
@@ -5007,6 +5160,24 @@ def pad_number(name):
     renamed = cmds.rename(name, new_name)
     
     return renamed
+
+
+
+def get_shapes(transform):
+    """
+    Get all the shapes under a transform.
+    
+    Args
+        transform (str): The name of a transform.
+        
+    Return
+        list: The names of shapes under the transform
+    """
+    if is_a_shape(transform):
+        parent = cmds.listRelatives(transform, p = True, f = True)
+        return cmds.listRelatives(parent, s = True, f = True)
+    
+    return cmds.listRelatives(transform, s = True, f = True)
     
 def get_node_types(nodes, return_shape_type = True):
     """
@@ -5179,20 +5350,7 @@ def playblast(filename):
                    clearCache = True, 
                    forceOverwrite = True)
 
-def is_referenced(node):
-    """
-    Args
-        node (str): Name of a node in maya. Check to see if it is referenced.
-        
-    Return
-        (bool)
-    """
-    if not cmds.objExists(node):
-        return False
-    
-    is_node_referenced = cmds.referenceQuery(node, isNodeReferenced = True)
-    
-    return is_node_referenced
+
 
 def get_current_audio_node():
     """
@@ -5362,7 +5520,7 @@ def delete_display_layers():
     for layer in layers:
         cmds.delete(layer)
 
-#--- ui
+#--- ui core
 
 def add_to_isolate_select(nodes):
     """
@@ -7070,6 +7228,49 @@ def get_axis_vector(transform, axis_vector):
     
 #--- animation
 
+def quick_driven_key(source, target, source_values, target_values, infinite = False):
+    """
+    A convenience for create set driven key frames.
+    
+    Args
+        source (str): node.attribute to drive target.
+        target (str): node.attribute to be driven by source.
+        source_values (list): A list of values at the source.
+        target_values (list): A list of values at the target.
+        infinite (bool): The bool attribute. 
+        
+    """
+    track_nodes = TrackNodes()
+    track_nodes.load('animCurve')
+    
+    for inc in range(0, len(source_values)):
+          
+        cmds.setDrivenKeyframe(target,cd = source, driverValue = source_values[inc], value = target_values[inc], itt = 'spline', ott = 'spline')
+    
+    keys = track_nodes.get_delta()
+    
+    if not keys:
+        return
+    
+    keyframe = keys[0]
+    
+    function = api.KeyframeFunction(keyframe)
+    
+    if infinite:
+        
+        function.set_pre_infinity(function.linear)
+        function.set_post_infinity(function.linear)
+         
+    if infinite == 'post_only':
+        
+        function.set_post_infinity(function.linear)    
+        
+    if infinite == 'pre_only':
+            
+        function.set_pre_infinity(function.linear)
+
+    return keyframe
+
 def get_input_keyframes(node, node_only = True):
     """
     Get all keyframes that input into the node.
@@ -7144,20 +7345,7 @@ def set_infiinity(keyframe, pre = False, post = False):
 
 #--- geometry
 
-def is_a_shape(node):
-    """
-    Test wether the node is a shape.
-    
-    Args
-        node (str): The name of a node.
-        
-    Return
-        bool
-    """
-    if cmds.objectType(node, isAType = 'shape'):
-        return True
-    
-    return False
+
 
 def is_a_mesh(node):
     """
@@ -7287,21 +7475,7 @@ def create_shape_from_shape(shape, name = 'new_shape'):
     return mesh
     
 
-def get_shapes(transform):
-    """
-    Get all the shapes under a transform.
-    
-    Args
-        transform (str): The name of a transform.
-        
-    Return
-        list: The names of shapes under the transform
-    """
-    if is_a_shape(transform):
-        parent = cmds.listRelatives(transform, p = True, f = True)
-        return cmds.listRelatives(parent, s = True, f = True)
-    
-    return cmds.listRelatives(transform, s = True, f = True)
+
 
 def get_of_type_in_hierarchy(transform, node_type):
     """
@@ -7566,62 +7740,7 @@ def get_face_centers(mesh):
     return face_iter.get_face_center_vectors()
     
     
-def get_slots(attribute):
-    """
-    Given a multi attribute, get all the slots currently made.
-    
-    Args
-        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget 
-    
-    Return
-        list: The index of slots that are open.  Indices are returned as str(int)
-    """
-    slots = cmds.listAttr(attribute, multi = True)
-        
-    found_slots = []
-    
-    for slot in slots:
-        index = re.findall('\d+', slot)
-        
-        if index:
-            found_slots.append(index[-1])
-            
-    return found_slots
 
-def get_slot_count(attribute):
-    """
-    Get the number of created slots in a multi attribute.
-    
-    Args
-        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
-        
-    Return
-        int: The number of open slots in the multi attribute
-    """
-    
-    slots = get_slots(attribute)
-    
-    if not slots:
-        return 0
-    
-    return len(slots)
-
-def get_available_slot(attribute):
-    """
-    Find the next available slot in a multi attribute.
-    
-    Args
-        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
-        
-    Return
-        int: The next empty slot.
-    """
-    slots = get_slots(attribute)
-    
-    if not slots:
-        return 0
-    
-    return int( slots[-1] )+1
 
 def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None, point_constrain = False, auto_parent = False, hide_shape= True, inherit_transform = False, local = False, rotate_pivot = False, constrain = True):
     """
@@ -9961,7 +10080,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
     curve = cmds.listRelatives(curve, p = True)[0]
     
     
-    joints = create_oriented_joints_on_curve(curve, count = joint_count, rig = False)
+    joints = create_oriented_joints_on_curve(curve, count = joint_count)
     
     meshes = cmds.deformer(wire_deformer, q = True, geometry = True)
     if not meshes:
@@ -12056,7 +12175,18 @@ def connect_reverse(source_attribute, target_attribute):
     return reverse
 
 def connect_equal_condition(source_attribute, target_attribute, equal_value):
+    """
+    Connect source_attribute into target_attribute with a condition node inbetween.
     
+    Args
+        source_attribute (str): The node.attribute name of an attribute.
+        target_attribute (str): The node.attribute name of an attribute.
+        equal_value (float): The value the condition should be equal to, in order to pass 1. 0 otherwise.
+        Good when hooking up enums to visibility.
+        
+    Return
+        str: The name of the condition node
+    """
     condition = cmds.createNode('condition', n = 'condition_%s' % source_attribute)
     
     cmds.connectAttr(source_attribute, '%s.firstTerm' % condition)
@@ -12066,9 +12196,19 @@ def connect_equal_condition(source_attribute, target_attribute, equal_value):
     cmds.setAttr('%s.colorIfFalseR' % condition, 0)
     
     connect_plus('%s.outColorR' % condition, target_attribute)
+    
+    return condition
         
 def connect_message( input_node, destination_node, attribute ):
+    """
+    Connect the message attribute of input_node into a custom message attribute on destination_node
     
+    Args
+        input_node (str): The name of a node.
+        destination_node (str): The name of a node.
+        attribute (str): The name of the message attribute to create and connect into. If already exists than just connect. 
+        
+    """
     if not input_node or not cmds.objExists(input_node):
         vtool.util.warning('No input node to connect message.')
         return
@@ -12081,7 +12221,12 @@ def connect_message( input_node, destination_node, attribute ):
     
             
 def disconnect_attribute(attribute):
+    """
+    Disconnect an attribute.  Find its input automatically and disconnect it.
     
+    Args
+        attribute (str): The name of an attribute that has a connection.
+    """
     connection = get_attribute_input(attribute)
     
     if connection:
@@ -12089,6 +12234,15 @@ def disconnect_attribute(attribute):
         cmds.disconnectAttr(connection, attribute)
 
 def get_indices(attribute):
+    """
+    Get the index values of a multi attribute.
+    
+    Args
+        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
+        
+    Return
+        list: A list of integers that correspond to multi attribute indices.
+    """
     
     multi_attributes = cmds.listAttr(attribute, multi = True)
     
@@ -12109,123 +12263,65 @@ def get_indices(attribute):
         
     return indices
 
-def create_attribute_lag(source, attribute, targets):
+def get_slots(attribute):
+    """
+    attributes!!!
+    Given a multi attribute, get all the slots currently made.
     
-    var = MayaNumberVariable('lag')
-    var.set_value(0)
-    var.set_min_value(0)
-    var.set_max_value(1)
-    var.create(source)
+    Args
+        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget 
     
-    frame_cache = cmds.createNode('frameCache', n = 'frameCache_%s_%s' % (source, attribute) )
-    
-    cmds.connectAttr('%s.%s' % (source, attribute), '%s.stream' % frame_cache)
-    
-    target_count = len(targets)
-    
-    for inc in range(0, target_count):
+    Return
+        list: The index of slots that are open.  Indices are returned as str(int)
+    """
+    slots = cmds.listAttr(attribute, multi = True)
         
-        cmds.createNode('blendColors')
-        blend = connect_blend('%s.past[%s]' % (frame_cache, inc+1), 
-                              '%s.%s' % (source,attribute),
-                              '%s.%s' % (targets[inc], attribute))
+    found_slots = []
+    
+    for slot in slots:
+        index = re.findall('\d+', slot)
         
-        connect_plus('%s.lag' % source, '%s.blender' % blend)
-        
-def create_attribute_spread(control, transforms, name = 'spread', axis = 'Y', invert = False, create_driver = False):
+        if index:
+            found_slots.append(index[-1])
+            
+    return found_slots
 
-    variable = '%s.%s' % (control, name)
+def get_slot_count(attribute):
+    """
+    attributes!!!
+    Get the number of created slots in a multi attribute.
     
-    count = len(transforms)
+    Args
+        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
+        
+    Return
+        int: The number of open slots in the multi attribute
+    """
     
-    section = 2.00/(count-1)
+    slots = get_slots(attribute)
     
-    spread_offset = 1.00
+    if not slots:
+        return 0
     
-    if not cmds.objExists('%s.SPREAD' % control):
-        title = MayaEnumVariable('SPREAD')
-        title.create(control)
-        
-    if not cmds.objExists(variable):    
-        spread = MayaNumberVariable(name)
-        spread.create(control)
-        
+    return len(slots)
+
+def get_available_slot(attribute):
+    """
+    attributes!!!
+    Find the next available slot in a multi attribute.
     
-    for transform in transforms:
+    Args
+        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
         
-        if create_driver:
-            transform = create_xform_group(transform, 'spread')
-        
-        if invert:
-            spread_offset_value = -1 * spread_offset
-        if not invert:
-            spread_offset_value = spread_offset
-        
-        connect_multiply(variable, '%s.rotate%s' % (transform, axis), spread_offset_value)
-                
-        spread_offset -= section
-        
-        
-        
-def create_attribute_spread_translate(control, transforms, name = 'spread', axis = 'Z', invert = False):
-    variable = '%s.%s' % (control, name)
+    Return
+        int: The next empty slot.
+    """
+    slots = get_slots(attribute)
     
-    count = len(transforms)
+    if not slots:
+        return 0
     
-    section = 2.00/(count-1)
-    
-    spread_offset = 1.00
-    
-    if invert == True:
-        spread_offset = -1.00
-    
-    
-    if not cmds.objExists('%s.SPREAD' % control):
-        title = MayaEnumVariable('SPREAD')
-        title.create(control)
-        
-    if not cmds.objExists(variable):    
-        spread = MayaNumberVariable(name)
-        spread.create(control)
-        
-    
-    for transform in transforms:
-        connect_multiply(variable, '%s.translate%s' % (transform, axis), spread_offset)
-        
-        if invert == False:        
-            spread_offset -= section
-        if invert == True:
-            spread_offset += section    
-        
-def create_offset_sequence(attribute, target_transforms, target_attributes):
-    
-    #split = attribute.split('.')
-    
-    count = len(target_transforms)
-    inc = 0
-    section = 1.00/count
-    offset = 0
-    
-    anim_curve = cmds.createNode('animCurveTU', n = 'animCurveTU_%s' % attribute.replace('.','_'))
-    #cmds.connectAttr(attribute, '%s.input' % anim_curve)
-    
-    for transform in target_transforms:
-        frame_cache = cmds.createNode('frameCache', n = 'frameCache_%s' % transform)
-        
-        cmds.setAttr('%s.varyTime' % frame_cache, inc)
-        
-        
-        cmds.connectAttr('%s.output' % anim_curve, '%s.stream' % frame_cache)
-        
-        cmds.setKeyframe( frame_cache, attribute='stream', t= inc )
-        
-        for target_attribute in target_attributes:
-            cmds.connectAttr('%s.varying' % frame_cache, 
-                             '%s.%s' % (transform, target_attribute))
-        
-        
-        inc += 1
-        offset += section
+    return int( slots[-1] )+1
 
 def create_title(node, name):
     """
@@ -12271,8 +12367,179 @@ def zero_xform_channels(transform):
 
 #---Rig
 
-def get_controls():
+def create_attribute_lag(source, attribute, targets):
+    """
+    Add lag to the targets based on a source attribute. A lag attribute will also be added to source to turn the effect on and off. 
+    If you are animating the rotation of a control inputs are as follows:
     
+    create_attribute_lag( 'CNT_FIN_1_L', 'rotateY', ['driver_CNT_FIN_2_L, 'driver_CNT_FIN_3_L', 'driver_CNT_FIN_4_L'] )
+    
+    Args
+        source (str): The node where the attribute lives. Also a lag attribute will be created here.
+        attribute (str): The attribute to lag. Sometimes can be rotateX, rotateY or rotateZ.
+        targets (list): A list of targets to connect the lag into. The attribute arg will be used as the attribute to connect into on each target.
+    """
+    
+    var = MayaNumberVariable('lag')
+    var.set_value(0)
+    var.set_min_value(0)
+    var.set_max_value(1)
+    var.create(source)
+    
+    frame_cache = cmds.createNode('frameCache', n = 'frameCache_%s_%s' % (source, attribute) )
+    
+    cmds.connectAttr('%s.%s' % (source, attribute), '%s.stream' % frame_cache)
+    
+    target_count = len(targets)
+    
+    for inc in range(0, target_count):
+        
+        cmds.createNode('blendColors')
+        blend = connect_blend('%s.past[%s]' % (frame_cache, inc+1), 
+                              '%s.%s' % (source,attribute),
+                              '%s.%s' % (targets[inc], attribute))
+        
+        connect_plus('%s.lag' % source, '%s.blender' % blend)
+        
+def create_attribute_spread(control, transforms, name = 'spread', axis = 'Y', invert = False, create_driver = False):
+    """
+    Given a list of transforms, create a spread attribute which will cause them to rotate apart.
+    
+    Args
+        control (str): The name of a control where the spread attribute should be created.
+        transforms (list): A list of transforms that should spread apart by rotation.
+        name (str): The name of the attribute to create.
+        axis (str): Can be 'X','Y','Z'
+        invert (bool): Wether to invert the spread behavior so it can mirror.
+        create_driver (bool): Wether to create a driver group above the transform.
+    """
+    variable = '%s.%s' % (control, name)
+    
+    count = len(transforms)
+    
+    section = 2.00/(count-1)
+    
+    spread_offset = 1.00
+    
+    if not cmds.objExists('%s.SPREAD' % control):
+        title = MayaEnumVariable('SPREAD')
+        title.create(control)
+        
+    if not cmds.objExists(variable):    
+        spread = MayaNumberVariable(name)
+        spread.create(control)
+        
+    
+    for transform in transforms:
+        
+        if create_driver:
+            transform = create_xform_group(transform, 'spread')
+        
+        if invert:
+            spread_offset_value = -1 * spread_offset
+        if not invert:
+            spread_offset_value = spread_offset
+        
+        connect_multiply(variable, '%s.rotate%s' % (transform, axis), spread_offset_value)
+                
+        spread_offset -= section
+        
+        
+        
+def create_attribute_spread_translate(control, transforms, name = 'spread', axis = 'Z', invert = False):
+    """
+    Given a list of transforms, create a spread attribute which will cause them to translate apart.
+    This is good for fingers that are rigged with ik handles.
+    
+    Args
+        control (str): The name of a control where the spread attribute should be created.
+        transforms (list): A list of transforms that should spread apart by translation.
+        name (str): The name of the attribute to create.
+        axis (str): Can be 'X','Y','Z'
+        invert (bool): Wether to invert the spread behavior so it can mirror.
+    """
+    
+    variable = '%s.%s' % (control, name)
+    
+    count = len(transforms)
+    
+    section = 2.00/(count-1)
+    
+    spread_offset = 1.00
+    
+    if invert == True:
+        spread_offset = -1.00
+    
+    
+    if not cmds.objExists('%s.SPREAD' % control):
+        title = MayaEnumVariable('SPREAD')
+        title.create(control)
+        
+    if not cmds.objExists(variable):    
+        spread = MayaNumberVariable(name)
+        spread.create(control)
+        
+    
+    for transform in transforms:
+        connect_multiply(variable, '%s.translate%s' % (transform, axis), spread_offset)
+        
+        if invert == False:        
+            spread_offset -= section
+        if invert == True:
+            spread_offset += section    
+        
+def create_offset_sequence(attribute, target_transforms, target_attributes):
+    """
+    Create an offset where target_transforms lag behind the attribute.
+    """
+    #split = attribute.split('.')
+    
+    count = len(target_transforms)
+    inc = 0
+    section = 1.00/count
+    offset = 0
+    
+    anim_curve = cmds.createNode('animCurveTU', n = 'animCurveTU_%s' % attribute.replace('.','_'))
+    #cmds.connectAttr(attribute, '%s.input' % anim_curve)
+    
+    for transform in target_transforms:
+        frame_cache = cmds.createNode('frameCache', n = 'frameCache_%s' % transform)
+        
+        cmds.setAttr('%s.varyTime' % frame_cache, inc)
+        
+        
+        cmds.connectAttr('%s.output' % anim_curve, '%s.stream' % frame_cache)
+        
+        cmds.setKeyframe( frame_cache, attribute='stream', t= inc )
+        
+        for target_attribute in target_attributes:
+            cmds.connectAttr('%s.varying' % frame_cache, 
+                             '%s.%s' % (transform, target_attribute))
+        
+        
+        inc += 1
+        offset += section
+
+
+
+
+
+def get_controls():
+    """
+    Get the controls in a scene.
+    
+    It follows these rules
+    
+    First check if a transform starts with CNT_
+    Second check if a transform has a an attribute named control.
+    Third check if a transform has an attribute named tag and is a nurbsCurve, and that tag has a value.
+    Fourth check if a transform has an attribute called curveType.
+    
+    If it matches any of these conditions it is considered a control.
+    
+    Return
+        list: List of control names.
+    """
     transforms = cmds.ls(type = 'transform')
     joints = cmds.ls(type = 'joint')
     
@@ -12315,7 +12582,16 @@ def get_controls():
     
 @undo_chunk
 def mirror_control(control):
+    """
+    Find the right side control of a left side control, and mirror the control cvs.
     
+    It follows these rules:
+    It will only match if the corresponding right side name exists.
+    
+    Replace _L with _R at the end of a control name.
+    Replace L_ with R_ at the start of a control name.
+    Replace lf with rt inside the control name
+    """
     if not control:
         return
     
@@ -12387,7 +12663,10 @@ def mirror_control(control):
 
 @undo_chunk
 def mirror_controls():
-    
+    """
+    Mirror cv positions of all controls in the scene. 
+    See get_controls() and mirror_control() for rules. 
+    """
     selection = cmds.ls(sl = True)
     
     controls = get_controls()
@@ -12415,6 +12694,9 @@ def mirror_controls():
         
 
 def mirror_curve(prefix):
+    """
+    Mirror curves in a scene if the end in _L and _R
+    """
     
     curves = cmds.ls('%s*' % prefix, type = 'transform')
     
@@ -12469,7 +12751,13 @@ def mirror_curve(prefix):
                 cmds.xform(other_cvs[inc], ws = True, t = new_position)
     
 def process_joint_weight_to_parent(mesh):
+    """
+    Sometimes joints have a sub joint added to help hold weighting and help with heat weighting.
+    This will do it for all joints with name matching process_ at the beginning on the mesh arg that is skinned. 
     
+    Args
+        mesh (str): A mesh skinned to process joints.
+    """
     scope = cmds.ls('process_*', type = 'joint')
     
     
@@ -12490,7 +12778,9 @@ def process_joint_weight_to_parent(mesh):
 
 @undo_chunk
 def joint_axis_visibility(bool_value):
-    
+    """
+    Show/hide the axis orientation of each joint.
+    """
     joints = cmds.ls(type = 'joint')
     
     for joint in joints:
@@ -12498,7 +12788,15 @@ def joint_axis_visibility(bool_value):
         cmds.setAttr('%s.displayLocalAxis' % joint, bool_value)
 
 def hook_ik_fk(control, joint, groups, attribute = 'ikFk'): 
-      
+    """
+    Convenience for hooking up ik fk.
+    
+    Args
+        control (str): The name of the control where the attribute arg should be created.
+        joint (str): The joint with the switch attribute. When adding multiple rigs to one joint chain, the first joint will have a switch attribute added.
+        groups (list): The ik control group name and the fk control group name.
+        attribute (str): The name to give the attribute on the control. Usually 'ikFk'
+    """
     if not cmds.objExists('%s.%s' % (control, attribute)): 
         cmds.addAttr(control, ln = attribute, min = 0, max = 1, dv = 0, k = True) 
       
@@ -12512,7 +12810,18 @@ def hook_ik_fk(control, joint, groups, attribute = 'ikFk'):
             
        
 def fix_fade(target_curve, follow_fade_multiplies):
-
+    """
+    This fixes multiplyDivides so that they will multiply by a value that has them match the curve when they move.
+    
+    For example if eye_lid_locator is multiplyDivided in translate to move with CNT_EYELID. 
+    Pass its multiplyDivide node to this function with a curve that matches the btm eye lid.
+    The function will find the amount the multiplyDivide.input2X needs to move, 
+    so that when CNT_EYELID moves on Y it will match the curvature of target_curve.
+    
+    Args
+        target_curve (str): The name of the curve to match to.
+        follow_fade_multiplies (str): A list of a multiplyDivides.
+    """
     multiplies = follow_fade_multiplies
 
     mid_control = multiplies[0]['source']
@@ -12547,6 +12856,7 @@ def fix_fade(target_curve, follow_fade_multiplies):
         value = (driver_distance/total_distance)
     
         cmds.setAttr('%s.input2Y' % multi, value)
+ 
 
 def create_blend_attribute(source, target, min_value = 0, max_value = 10):
     if not cmds.objExists(source):
@@ -12556,44 +12866,22 @@ def create_blend_attribute(source, target, min_value = 0, max_value = 10):
     multi = connect_multiply(source, target, .1)
     
     return multi
-    
+  
 
-def quick_driven_key(source, target, source_values, target_values, infinite = False):
-    
-    track_nodes = TrackNodes()
-    track_nodes.load('animCurve')
-    
-    for inc in range(0, len(source_values)):
-          
-        cmds.setDrivenKeyframe(target,cd = source, driverValue = source_values[inc], value = target_values[inc], itt = 'spline', ott = 'spline')
-    
-    keys = track_nodes.get_delta()
-    
-    if not keys:
-        return
-    
-    keyframe = keys[0]
-    
-    function = api.KeyframeFunction(keyframe)
-    
-    if infinite:
-        
-        function.set_pre_infinity(function.linear)
-        function.set_post_infinity(function.linear)
-         
-    if infinite == 'post_only':
-        
-        function.set_post_infinity(function.linear)    
-        
-    if infinite == 'pre_only':
-            
-        function.set_pre_infinity(function.linear)
 
-    return keyframe
 
 #--- Nucleus
 
 def create_nucleus(name = None):
+    """
+    Create a nucleus node.
+    
+    Args
+        name (str): The description for the nucleus. Final name = 'nucleus_(name)'. If no name given, name = 'nucleus'.
+    
+    Return 
+        str: name of the nucleus.
+    """
     if name:
         name = 'nucleus_%s' % name
     if not name:
@@ -12610,7 +12898,16 @@ def create_nucleus(name = None):
 #--- Hair
 
 def create_hair_system(name = None, nucleus = None):
-
+    """
+    Create a hair system.  
+    
+    Args
+        name (str): The description for the hair system. Final name = 'hairSystem_(name)'. If no name given, name = 'hairSystem'.  
+        nucleus (str): The name of a nucleus node to attach to the hairSystem.
+        
+    Return
+        list: [hair system, hair system shape] 
+    """
     if name:
         name = 'hairSystem_%s' % name
     if not name:
@@ -12630,7 +12927,13 @@ def create_hair_system(name = None, nucleus = None):
     return hair_system, hair_system_shape
 
 def connect_hair_to_nucleus(hair_system, nucleus):
+    """
+    Connect a hair system to a nucleus.
     
+    Args
+        hair_system (str): The name of a hair system.
+        nucleus (str): The name of a nucleus node.
+    """
     hair_system_shape = cmds.listRelatives(hair_system, shapes = True)[0]
     
     cmds.connectAttr('%s.startFrame' % nucleus, '%s.startFrame' % hair_system_shape)
@@ -12653,6 +12956,16 @@ def connect_hair_to_nucleus(hair_system, nucleus):
     cmds.refresh()
 
 def create_follicle(name = None, hair_system = None):
+    """
+    Create a follicle.
+    
+    Args 
+        name (str): The description for the hair system. Final name = 'follicle_(name)'. If no name given, name = 'follicle'.
+        hair_system (str): The name of a hair system to connect to.
+        
+    Return
+        list: [follicle name, follicle shape name]
+    """
     
     if name:
         name = 'follicle_%s' % name
@@ -12675,6 +12988,14 @@ def create_follicle(name = None, hair_system = None):
     return follicle, follicle_shape    
         
 def connect_follicle_to_hair(follicle, hair_system):
+    """
+    Connect a follicle to a hair system
+    
+    Args
+        follicle (str): The name of a follicle.
+        hair_system (str): The name of a hair system.
+    """
+    
     
     indices = get_indices('%s.inputHair' % hair_system)
     
@@ -12692,7 +13013,20 @@ def connect_follicle_to_hair(follicle, hair_system):
     cmds.refresh()
     
 def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attribute_name = 'dynamic'):
+    """
+    Add a follicle to a curve. Good for attaching to a spline ik, to make it dynamic.
+    It will make a duplicate of the curve so that the dynamics of the follicle can be switched on/off.
     
+    Args
+        curve (str): The name of a curve.
+        hair_system(str): The name of a hair system, that the created follicle should attach to.
+        switch_control (str): The name of the control to add the switch attribute to.
+        attribute_name (str): The name of the attribute on switch_control.
+        
+    Return
+        str: The name of the follicle.
+        
+    """
     parent = cmds.listRelatives(curve, p = True)
     
     follicle, follicle_shape = create_follicle(curve, hair_system)
@@ -12758,6 +13092,15 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
 #--- Cloth
 
 def add_passive_collider_to_mesh(mesh):
+    """
+    Make mesh into a passive collider.
+    
+    Args
+        mesh (str)
+        
+    Return
+        list: List of nodes in the passive collider.
+    """
     cmds.select(mesh, r = True)
     nodes = mel.eval('makeCollideNCloth;')
     
@@ -12822,8 +13165,8 @@ def create_cloth_input_meshes(deform_mesh, cloth_mesh, parent, attribute):
     deform_mesh = deform_mesh.split('|')[-1]
     clothwrap = clothwrap.split('|')[-1]
     
-    exclusive_bind_wrap(deform_mesh, cloth_mesh)
-    exclusive_bind_wrap(cloth_mesh, clothwrap)
+    create_wrap(deform_mesh, cloth_mesh)
+    create_wrap(cloth_mesh, clothwrap)
     
     blend = cmds.blendShape(deform_mesh, clothwrap, final, w = [0,1], n = 'blendShape_nClothFinal')[0]
     
@@ -13036,53 +13379,3 @@ class CMuscle(object):
             
                 cmds.connectAttr('%s.%s' % (node, other_attribute), '%s.%s' % (control, attribute))
             
-class ProgressBar(object):
-    
-    def __init__(self, title, count):
-        if is_batch():
-            return
-        
-        gMainProgressBar = mel.eval('$tmp = $gMainProgressBar');
-    
-        self.progress_ui = cmds.progressBar( gMainProgressBar,
-                                        edit=True,
-                                        beginProgress=True,
-                                        isInterruptable=True,
-                                        status= title,
-                                        maxValue= count )
-        
-        global current_progress_bar 
-        current_progress_bar = self
-    
-    def inc(self, inc = 1):
-        if is_batch():
-            return
-        
-        cmds.progressBar(self.progress_ui, edit=True, step=inc)
-        
-            
-    def end(self):
-        if is_batch():
-            return
-        
-        cmds.progressBar(self.progress_ui, edit=True, ep = True)
-        
-    def status(self, status_string):
-        if is_batch():
-            return
-        
-        cmds.progressBar(self.progress_ui, edit=True, status = status_string)
-        
-    def break_signaled(self):
-        if is_batch():
-            return True
-        
-        break_progress = cmds.progressBar(self.progress_ui, query=True, isCancelled=True )
-
-        if break_progress:
-            self.end()
-            return True
-        
-        return False
-    
-

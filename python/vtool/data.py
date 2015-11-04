@@ -10,9 +10,14 @@ if util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
     
-    import maya_lib.util
+    #import maya_lib.util
+    import maya_lib.core
+    import maya_lib.attr
+    import maya_lib.deform
+    import maya_lib.anim
     import maya_lib.curve
     import maya_lib.corrective
+    import maya_lib.rigs
 
 class DataManager(object):
     
@@ -433,7 +438,7 @@ class ControlCvData(MayaCustomData):
             directory = util_file.get_dirname(filename)
             name = util_file.get_basename(filename)
         
-        controls = maya_lib.util.get_controls()
+        controls = maya_lib.rigs.get_controls()
         
         library = maya_lib.curve.CurveDataInfo()
         library.set_directory(directory)
@@ -444,7 +449,7 @@ class ControlCvData(MayaCustomData):
             
         for control in controls:
             
-            shapes = maya_lib.util.get_shapes(control)
+            shapes = maya_lib.core.get_shapes(control)
             
             if not shapes:
                 continue
@@ -458,7 +463,7 @@ class ControlCvData(MayaCustomData):
     def export_data(self, comment):
         
         library = maya_lib.curve.CurveDataInfo()
-        controls = maya_lib.util.get_controls()
+        controls = maya_lib.rigs.get_controls()
         
         library.set_directory(self.directory)
         library.set_active_library(self.name)
@@ -516,7 +521,7 @@ class SkinWeightData(MayaCustomData):
         
         for shape_type in shape_types:
             
-            if maya_lib.util.has_shape_of_type(mesh, shape_type):
+            if maya_lib.core.has_shape_of_type(mesh, shape_type):
                 
                 return True
         
@@ -558,7 +563,7 @@ class SkinWeightData(MayaCustomData):
                 cmds.warning('%s does not have a supported shape node. Currently supported nodes include: %s.' % (mesh, shape_types))
                 continue
             
-            skin_cluster = maya_lib.util.find_deformer_by_type(mesh, 'skinCluster')
+            skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
             
             folder_path = util_file.join_path(path, folder)
             
@@ -584,13 +589,13 @@ class SkinWeightData(MayaCustomData):
             
             cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
             
-            maya_lib.util.set_skin_weights_to_zero(skin_cluster)
+            maya_lib.deform.set_skin_weights_to_zero(skin_cluster)
             
             influence_inc = 0
               
-            influence_index_dict = maya_lib.util.get_skin_influences(skin_cluster, return_dict = True)
+            influence_index_dict = maya_lib.deform.get_skin_influences(skin_cluster, return_dict = True)
             
-            progress_ui = maya_lib.util.ProgressBar('import skin', len(influence_dict.keys()))
+            progress_ui = maya_lib.core.ProgressBar('import skin', len(influence_dict.keys()))
             
             for influence in influences:
                 
@@ -643,7 +648,7 @@ class SkinWeightData(MayaCustomData):
             
                     if attr_name == 'blendWeights':
                         
-                        maya_lib.util.set_skin_blend_weights(skin_cluster, value)
+                        maya_lib.deform.set_skin_blend_weights(skin_cluster, value)
                     
                     if attr_name == 'skinningMethod':
                         
@@ -676,10 +681,10 @@ class SkinWeightData(MayaCustomData):
             split_thing = thing.split('|')
             
             if len(split_thing) > 1:
-                util.warning('Skin export failed. There is more than one %s.' % maya_lib.util.get_basename(thing))
+                util.warning('Skin export failed. There is more than one %s.' % maya_lib.core.get_basename(thing))
                 continue
             
-            skin = maya_lib.util.find_deformer_by_type(thing, 'skinCluster')
+            skin = maya_lib.deform.find_deformer_by_type(thing, 'skinCluster')
             
             if not skin:
                 util.warning('Skin export failed. No skinCluster found on %s.' % thing)
@@ -693,7 +698,7 @@ class SkinWeightData(MayaCustomData):
                 
                 geo_path = util_file.create_dir(thing, path)
                 
-                weights = maya_lib.util.get_skin_weights(skin)
+                weights = maya_lib.deform.get_skin_weights(skin)
                                 
                 info_file = util_file.create_file( 'influence.info', geo_path )
                 
@@ -731,7 +736,7 @@ class SkinWeightData(MayaCustomData):
                 settings_lines = []
                 
                 if cmds.objExists(blend_weights_attr):
-                    blend_weights = maya_lib.util.get_skin_blend_weights(skin)
+                    blend_weights = maya_lib.deform.get_skin_blend_weights(skin)
                     
                     write = util_file.WriteFile(settings_file)
                     settings_lines.append("['blendWeights', %s]" % blend_weights)
@@ -758,7 +763,7 @@ class LoadWeightFileThread(threading.Thread):
         
     def run(self, influence_index, skin, weights, path):
         
-        influence_name = maya_lib.util.get_skin_influence_at_index(influence_index, skin)
+        influence_name = maya_lib.deform.get_skin_influence_at_index(influence_index, skin)
         
         if not influence_name or not cmds.objExists(influence_name):
             return
@@ -820,12 +825,12 @@ class DeformerWeightData(MayaCustomData):
         util_file.create_dir(self.name, self.directory)
         
         
-        meshes = maya_lib.util.get_selected_meshes()
+        meshes = maya_lib.geo.get_selected_meshes()
         
         for mesh in meshes:
             
-            clusters = maya_lib.util.find_deformer_by_type(mesh, 'cluster', return_all = True)
-            wires = maya_lib.util.find_deformer_by_type(mesh, 'wire', return_all = True)
+            clusters = maya_lib.deform.find_deformer_by_type(mesh, 'cluster', return_all = True)
+            wires = maya_lib.deform.find_deformer_by_type(mesh, 'wire', return_all = True)
             
             if not clusters:
                 clusters = []
@@ -840,7 +845,7 @@ class DeformerWeightData(MayaCustomData):
             
             for deformer in deformers:
                 
-                weights = maya_lib.util.get_deformer_weights(deformer)
+                weights = maya_lib.deform.get_deformer_weights(deformer)
                 
                 filepath = util_file.create_file('%s.weights' % deformer, path)
                 
@@ -876,7 +881,7 @@ class DeformerWeightData(MayaCustomData):
             deformer = filename.split('.')[0]
             
             if cmds.objExists(deformer):
-                maya_lib.util.set_deformer_weights(weights, deformer)
+                maya_lib.deform.set_deformer_weights(weights, deformer)
                 
             if not cmds.objExists(deformer):
                 util.warning('Import failed: Deformer %s does not exist.' % deformer)    
@@ -1037,16 +1042,16 @@ class AnimationData(MayaCustomData):
             inputs = []
             
             if not cmds.nodeType(keyframe) == 'blendWeighted':
-                inputs = maya_lib.util.get_attribute_input('%s.input' % keyframe)
+                inputs = maya_lib.attr.get_attribute_input('%s.input' % keyframe)
                 
-            outputs = maya_lib.util.get_attribute_outputs('%s.output' % keyframe)
+            outputs = maya_lib.attr.get_attribute_outputs('%s.output' % keyframe)
                         
             if not inputs and not outputs:
                 continue
                         
             cmds.select(keyframe, add = True)
             
-            connections = maya_lib.util.Connections(keyframe)
+            connections = maya_lib.attr.Connections(keyframe)
             connections.disconnect()
             
             all_connections.append(connections)
@@ -1154,13 +1159,14 @@ class ControlAnimationData(AnimationData):
     
     def _get_keyframes(self):
         
-        controls = maya_lib.util.get_controls()
+        controls = maya_lib.rigs.get_controls()
         
         keyframes = []
         
         
         for control in controls:
-            sub_keyframes = maya_lib.util.get_input_keyframes(control, node_only = True)
+            
+            sub_keyframes = maya_lib.anim.get_input_keyframes(control, node_only = True)
             if sub_keyframes:
                 keyframes += sub_keyframes
         
@@ -1261,8 +1267,8 @@ class PoseData(MayaCustomData):
         
         sub_inputs = self._get_sub_inputs(pose)
         
-        inputs = maya_lib.util.get_inputs(pose)
-        outputs = maya_lib.util.get_outputs(pose)
+        inputs = maya_lib.attr.get_inputs(pose)
+        outputs = maya_lib.attr.get_outputs(pose)
 
         if inputs:
             inputs.append(pose)
@@ -1314,7 +1320,7 @@ class PoseData(MayaCustomData):
                                     button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
         
             if value == 'Yes':
-                maya_lib.util.delete_unknown_nodes()
+                maya_lib.core.delete_unknown_nodes()
         
         dirpath = util_file.join_path(self.directory, self.name)
         
@@ -1534,8 +1540,8 @@ class MayaFileData(MayaCustomData):
         return self.maya_binary
     
     def _prep_scene_for_export(self):
-        outliner_sets = maya_lib.util.get_outliner_sets()
-        top_nodes = maya_lib.util.get_top_dag_nodes()
+        outliner_sets = maya_lib.core.get_outliner_sets()
+        top_nodes = maya_lib.core.get_top_dag_nodes()
         
         to_select = outliner_sets + top_nodes
         
@@ -1600,7 +1606,7 @@ class MayaFileData(MayaCustomData):
                                         button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
             
             if value == 'Yes':
-                maya_lib.util.delete_unknown_nodes()
+                maya_lib.core.delete_unknown_nodes()
             
             if value == 'No':
                 if self.maya_file_type == self.maya_binary:
@@ -1635,7 +1641,7 @@ class MayaFileData(MayaCustomData):
                                         button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
             
             if value == 'Yes':
-                maya_lib.util.delete_unknown_nodes()
+                maya_lib.core.delete_unknown_nodes()
             
             if value == 'No':
                 if self.maya_file_type == self.maya_binary:

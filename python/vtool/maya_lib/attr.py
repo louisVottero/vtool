@@ -1,0 +1,2434 @@
+# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+
+import re
+import string
+
+import vtool.util
+
+if vtool.util.is_in_maya():
+    import maya.cmds as cmds
+    import core
+    
+    #do not import anim module here.
+    
+class Connections(object):
+    
+    def __init__(self, node):
+        
+        self.node = node
+        
+        self.inputs = []
+        self.outputs = []
+        self.input_count = 0
+        self.output_count = 0
+        
+        self._store_connections()
+        
+    def _get_outputs(self):
+        outputs = cmds.listConnections(self.node, 
+                            connections = True, 
+                            destination = True, 
+                            source = False,
+                            plugs = True,
+                            skipConversionNodes = True)  
+        
+        if outputs: 
+            return outputs
+        
+        if not outputs:
+            return []
+    
+        
+    def _get_inputs(self):
+        inputs = cmds.listConnections(self.node,
+                             connections = True,
+                             destination = False,
+                             source = True,
+                             plugs = True,
+                             skipConversionNodes = True)
+        
+        if inputs:
+            inputs.reverse()
+            
+            return inputs
+        
+        if not inputs:
+            return []
+        
+    def _store_output_connections(self, outputs):
+        
+        output_values = []
+        
+        for inc in range(0, len(outputs), 2):
+            split = outputs[inc].split('.')
+            
+            output_attribute = string.join(split[1:], '.')
+            
+            split_input = outputs[inc+1].split('.')
+            
+            node = split_input[0]
+            node_attribute = string.join(split_input[1:], '.')
+            
+            output_values.append([output_attribute, node, node_attribute])
+            
+        self.outputs = output_values
+        
+    def _store_input_connections(self, inputs):
+        
+        #stores [source connection, destination_node, destination_node_attribute]
+        
+        input_values = []
+        
+        for inc in range(0, len(inputs), 2):
+            split = inputs[inc+1].split('.')
+            
+            input_attribute = string.join(split[1:], '.')
+            
+            split_input = inputs[inc].split('.')
+            
+            node = split_input[0]
+            node_attribute = string.join(split_input[1:], '.')
+            
+            input_values.append([input_attribute, node, node_attribute])
+            
+        self.inputs = input_values
+        
+    def _store_connections(self):
+        
+        self.inputs = []
+        self.outputs = []
+        
+        inputs = self._get_inputs()
+        outputs = self._get_outputs()
+        
+        if inputs:
+            self._store_input_connections(inputs)
+        if outputs:
+            self._store_output_connections(outputs)
+            
+        self.connections = inputs + outputs
+        
+        self.input_count = self._get_input_count()
+        self.output_count = self._get_output_count()
+        
+    def _get_in_source(self, inc):
+        return '%s.%s' % (self.node, self.inputs[inc][0])
+    
+    def _get_in_target(self, inc):
+        return '%s.%s' % (self.inputs[inc][1], self.inputs[inc][2])
+    
+    def _get_out_source(self, inc):
+        return '%s.%s' % (self.outputs[inc][1], self.outputs[inc][2])
+    
+    def _get_out_target(self, inc):
+        return'%s.%s' % (self.node, self.outputs[inc][0])
+    
+    def _get_input_count(self):
+        return len(self.inputs)
+    
+    def _get_output_count(self):
+        return len(self.outputs)
+            
+    def disconnect(self):
+        
+        for inc in range(0, len(self.connections), 2):
+            # needs to unlock the attribute first
+            
+            
+            
+            if cmds.isConnected(self.connections[inc], self.connections[inc+1], ignoreUnitConversion = True):
+                
+                lock_state = cmds.getAttr(self.connections[inc+1], l = True)
+            
+                if lock_state == True:
+                    cmds.setAttr(self.connections[inc+1], l = False)
+                
+                cmds.disconnectAttr(self.connections[inc], self.connections[inc+1])
+            
+                if lock_state == True:
+                    cmds.setAttr(self.connections[inc+1], l = True)    
+                
+            
+    
+    def connect(self):
+        for inc in range(0, len(self.connections), 2):
+            if not cmds.isConnected(self.connections[inc], self.connections[inc+1], ignoreUnitConversion = True):
+                
+                lock_state = cmds.getAttr(self.connections[inc+1], l = True)
+            
+                if lock_state == True:
+                    cmds.setAttr(self.connections[inc+1], l = False)
+                
+                cmds.connectAttr(self.connections[inc], self.connections[inc+1])
+                
+                if lock_state == True:
+                    cmds.setAttr(self.connections[inc+1], l = True)
+                
+    def refresh(self):
+        self._store_connections()
+                
+    def get(self):
+        return self.connections
+    
+    def get_input_at_inc(self, inc):
+        return self.inputs[inc]
+    
+    def get_output_at_inc(self, inc):
+        return self.outputs[inc]
+    
+    def get_connection_inputs(self, connected_node):
+        found = []
+        
+        for inc in range(0, len(self.inputs), 2):
+            test = self.inputs[inc+1]
+            
+            node = test.split('.')[0]
+            
+            if node == connected_node:
+                found.append(test)
+                
+        return found
+    
+    def get_connection_outputs(self, connected_node):
+        found = []
+        
+        for inc in range(0, len(self.outputs), 2):
+            
+            test = self.outputs[inc]
+            node = test.split('.')[0]
+            
+            if node == connected_node:
+                found.append(test)
+                
+        return found        
+    
+    def get_inputs_of_type(self, node_type):
+        found = []
+        
+        for inc in range(0, self.input_count):
+            node = self.inputs[inc][1]
+            
+            if cmds.nodeType(node).startswith(node_type):
+                found.append(node)
+                
+        return found
+        
+    def get_outputs_of_type(self, node_type):
+        found = []
+        
+        for inc in range(0, self.output_count):
+            node = self.outputs[inc][1]
+            
+            if cmds.nodeType(node).startswith(node_type):
+                found.append(node)
+                
+        return found
+    
+    def get_outputs(self):
+        return self._get_outputs()
+        
+    def get_inputs(self):
+        return self._get_inputs()
+    
+class LockState(object):
+    """
+    
+    """
+    def __init__(self, attribute):
+        
+        self.lock_state = cmds.getAttr(attribute, l = True)
+        self.attribute = attribute
+        
+    def unlock(self):
+        cmds.setAttr( self.attribute, l = False)
+        
+    def lock(self):
+        cmds.setAttr( self.attribute, l = True)
+        
+    def restore_initial(self):
+        cmds.setAttr( self.attribute, l = self.lock_state)
+
+class RemapAttributesToAttribute(object):
+    """
+    attr!!!
+    """
+    
+    def __init__(self, node, attribute):
+        
+        self.attribute = '%s.%s' % (node, attribute)
+        self.attributes = []
+          
+    def create_attributes(self, node, attributes):
+        for attribute in attributes:
+            self.create_attribute(node, attribute)
+          
+    def create_attribute(self, node, attribute):
+        self.attributes.append( [node, attribute] )
+                
+    def create(self):        
+        length = len(self.attributes)
+        
+        for inc in range(0,length):
+            
+            node = self.attributes[inc][0]
+            attribute = self.attributes[inc][1]
+            
+            input_min = inc - 1
+            input_max = inc + 1
+            
+            if input_min < 0:
+                input_min = 0
+                
+            if input_max > (length-1):
+                input_max = (length-1)
+            
+            input_node = get_attribute_input(attribute)
+                
+            if input_node:
+                if cmds.nodeType(input_node) == 'remapValue':
+                    split_name = input_node.split('.')
+                    
+                    remap = split_name[0]
+                    
+                if cmds.nodeType(input_node) != 'remapValue':
+                    input_node = None
+                                                
+            if not input_node: 
+                remap = cmds.createNode('remapValue', n = 'remapValue_%s' % attribute)
+            
+            cmds.setAttr('%s.inputMin' % remap, input_min)
+            cmds.setAttr('%s.inputMax' % remap, input_max)
+            
+            if inc == 0:
+                cmds.setAttr('%s.value[0].value_FloatValue' % remap, 1)
+                cmds.setAttr('%s.value[0].value_Position' % remap, 0)
+                cmds.setAttr('%s.value[0].value_Interp' % remap, 1)
+                cmds.setAttr('%s.value[1].value_FloatValue' % remap, 0)
+                cmds.setAttr('%s.value[1].value_Position' % remap, 1)
+                cmds.setAttr('%s.value[1].value_Interp' % remap, 1)
+            
+            if inc == (length-1):
+                cmds.setAttr('%s.value[0].value_FloatValue' % remap, 0)
+                cmds.setAttr('%s.value[0].value_Position' % remap, 0)
+                cmds.setAttr('%s.value[0].value_Interp' % remap, 1)
+                cmds.setAttr('%s.value[1].value_FloatValue' % remap, 1)
+                cmds.setAttr('%s.value[1].value_Position' % remap, 1)
+                cmds.setAttr('%s.value[1].value_Interp' % remap, 1)
+            
+            if inc != 0 and inc != (length-1):
+                for inc2 in range(0,3):
+                    if inc2 == 0:
+                        position = 0
+                        value = 0
+                    if inc2 == 1:
+                        position = 0.5
+                        value = 1
+                    if inc2 == 2:
+                        position = 1
+                        value = 0
+                        
+                    cmds.setAttr('%s.value[%s].value_FloatValue' % (remap,inc2), value)
+                    cmds.setAttr('%s.value[%s].value_Position' % (remap,inc2), position)
+                    cmds.setAttr('%s.value[%s].value_Interp' % (remap,inc2), 1)    
+                   
+            disconnect_attribute('%s.%s' % (node,attribute)) 
+            cmds.connectAttr('%s.outValue' % remap, '%s.%s' % (node,attribute))
+                                    
+            disconnect_attribute('%s.inputValue' % remap)
+            cmds.connectAttr(self.attribute,'%s.inputValue' % remap)
+
+class OrientJointAttributes(object):
+    """
+    attr!!!
+    Creates attributes on a node that can then be used with OrientAttributes
+    """
+    def __init__(self, joint = None):
+        self.joint = joint
+        self.attributes = []
+        self.title = None
+        
+        if joint:
+            self._create_attributes()
+    
+    def _create_attributes(self):
+        
+        self.title = MayaEnumVariable('Orient_Info'.upper())
+        self.title.create(self.joint)
+        
+        attr = self._create_axis_attribute('aimAxis')
+        self.attributes.append(attr)
+        
+        attr = self._create_axis_attribute('upAxis')
+        self.attributes.append(attr)
+        
+        attr = self._create_axis_attribute('worldUpAxis')
+        self.attributes.append(attr)
+    
+        enum = MayaEnumVariable('aimAt')
+        enum.set_enum_names(['world_X', 
+                             'world_Y', 
+                             'world_Z', 
+                             'child',
+                             'parent',
+                             'local_parent'])
+        enum.set_locked(False)
+        enum.create(self.joint)
+        
+        
+        self.attributes.append(enum)
+        
+        enum = MayaEnumVariable('aimUpAt')
+        enum.set_enum_names(['world',
+                             'parent_rotate',
+                             'child_position',
+                             'parent_position',
+                             'triangle_plane'])
+        
+        enum.set_locked(False)
+        enum.create(self.joint)
+        
+        self.attributes.append(enum)
+        
+        attr = self._create_triangle_attribute('triangleTop')
+        self.attributes.append(attr)
+        
+        attr = self._create_triangle_attribute('triangleMid')
+        self.attributes.append(attr)
+        
+        attr = self._create_triangle_attribute('triangleBtm')
+        self.attributes.append(attr)
+        
+
+    def _delete_attributes(self):
+        
+        if self.title:
+            self.title.delete()
+        
+        for attribute in self.attributes:
+            attribute.delete()
+    def _create_axis_attribute(self, name):
+        enum = MayaEnumVariable(name)
+        enum.set_enum_names(['X','Y','Z','-X','-Y','-Z','none'])
+        enum.set_locked(False)
+        enum.create(self.joint)
+        
+        return enum
+        
+    def _create_triangle_attribute(self, name):
+        enum = MayaEnumVariable(name)
+        enum.set_enum_names(['grand_parent', 'parent', 'self', 'child', 'grand_child'])
+        enum.set_locked(False)
+        enum.create(self.joint)
+        
+        return enum
+    
+    def _set_default_values(self):
+        self.attributes[0].set_value(0)
+        self.attributes[1].set_value(1)
+        self.attributes[2].set_value(1)
+        self.attributes[3].set_value(3)
+        self.attributes[4].set_value(0)
+        self.attributes[5].set_value(1)
+        self.attributes[6].set_value(2)
+        self.attributes[7].set_value(3)
+    
+    def set_joint(self, joint):
+        """
+        Set a joint to create attributes on.
+        
+        Args
+            joint (str): The name of the joint.
+        """
+        self.joint = joint
+        
+        self._create_attributes()
+    
+    def get_values(self):
+        """
+        Get the orient settings in a dictionary.
+        
+        Return
+            (dict)
+        """
+        value_dict = {}
+        
+        for attr in self.attributes:
+            value_dict[attr.get_name(True)] = attr.get_value()
+            
+        return value_dict
+    
+    def set_default_values(self):
+        """
+        Reset the attributes to default.
+        """
+        self._set_default_values()
+
+    def delete(self):
+        """
+        Delete the attributes off of the joint set with set_joint.
+        """
+        self._delete_attributes()
+
+#--- variables
+class MayaVariable(vtool.util.Variable):
+    """
+    Convenience class for dealing with Maya attributes.
+    """
+    
+    
+    TYPE_BOOL = 'bool'
+    TYPE_LONG = 'long'
+    TYPE_SHORT = 'short'
+    TYPE_ENUM = 'enum'
+    TYPE_FLOAT = 'float'
+    TYPE_DOUBLE = 'double'
+    TYPE_STRING = 'string'
+    TYPE_MESSAGE = 'message'
+    
+    def __init__(self, name ):
+        super(MayaVariable, self).__init__(name)
+        self.variable_type = 'short'
+        self.keyable = True
+        self.locked = False
+        
+    def _command_create_start(self):
+        return 'cmds.addAttr(self.node,'
+    
+    def _command_create_mid(self):
+        
+        flags = ['longName = self.name']
+        
+        return flags
+    
+    def _command_create_end(self):
+        data_type = self._get_variable_data_type()
+        return '%s = self.variable_type)' %  data_type
+
+    def _create_attribute(self):
+        
+        if cmds.objExists(self._get_node_and_variable()):
+            return
+        
+        start_command = self._command_create_start()
+        mid_command = string.join(self._command_create_mid(), ', ')
+        end_command = self._command_create_end()
+        
+        command = '%s %s, %s' % (start_command,
+                                mid_command,
+                                end_command)
+         
+        eval( command )
+    
+    #--- _set
+    
+    def _set_lock_state(self):
+        if not self.exists():
+            return
+        
+        cmds.setAttr(self._get_node_and_variable(), l = self.locked)
+    
+    def _set_keyable_state(self):
+
+        if not self.exists():
+            return
+
+        cmds.setAttr(self._get_node_and_variable(), k = self.keyable)       
+
+    def _set_value(self):
+        if not self.exists():
+            return
+        
+        locked_state = self._get_lock_state()
+        
+        self.set_locked(False)
+        
+        if self._get_variable_data_type() == 'attributeType':
+            if not self.variable_type == 'message':
+                
+                    cmds.setAttr(self._get_node_and_variable(), self.value )
+
+            if self.variable_type == 'message':
+                if self.value:
+                    connect_message(self.value, self.node, self.name)
+            
+        if self._get_variable_data_type() == 'dataType':    
+            cmds.setAttr(self._get_node_and_variable(), self.value, type = self.variable_type )
+        
+        self.set_locked(locked_state)
+    
+    #--- _get
+    
+    def _get_variable_data_type(self):
+        return core.maya_data_mappings[self.variable_type]
+    
+    def _get_node_and_variable(self):
+        return '%s.%s' % (self.node, self.name)
+    
+    def _get_lock_state(self):
+        if not self.exists():
+            return self.locked
+        
+        return cmds.getAttr(self._get_node_and_variable(), l = True)
+        
+    def _get_keyable_state(self):
+        if not self.exists():
+            return self.keyable
+        
+        return cmds.getAttr(self._get_node_and_variable(), k = True)
+
+    def _get_value(self):
+        if not self.exists():
+            return
+        
+        if self.variable_type == 'message':
+            return get_attribute_input(self._get_node_and_variable(), node_only = True)
+        
+        if not self.variable_type == 'message':
+            return cmds.getAttr(self._get_node_and_variable())
+
+    def _update_states(self):
+        
+        self._set_keyable_state()
+        self._set_lock_state()
+        self._set_value()
+
+    def exists(self):
+        """
+        Return
+            (bool):
+        """
+        return cmds.objExists(self._get_node_and_variable())
+
+    #--- set
+    def set_name(self, name):
+        """
+        Set the name of the variable.
+        
+        Args
+            name (str)
+            
+        """
+        var_name = self._get_node_and_variable()
+        
+        if cmds.objExists(var_name):
+            cmds.renameAttr(var_name, name)
+            
+        super(MayaVariable, self).set_name(name)
+        
+        var_name = self._get_node_and_variable()
+    
+    def set_value(self, value):
+        """
+        Set the value of the variable.
+        
+        Args
+            value
+            
+        """
+        super(MayaVariable, self).set_value(value)
+        self._set_value()
+        
+    def set_locked(self, bool_value):
+        """
+        Set the lock state of the variable.
+        
+        Args
+            bool_value (bool)
+            
+        """
+        self.locked = bool_value
+        self._set_lock_state()
+        
+    def set_keyable(self, bool_value):
+        """
+        Set the keyable state of the variable.
+        
+        Args
+            bool_value (bool)
+            
+        """
+        
+        self.keyable = bool_value
+        self._set_keyable_state()
+
+    def set_variable_type(self, name):
+        """
+        Set the variable type, check Maya documentation.
+        """
+        
+        self.variable_type = name
+
+    def set_node(self, name):
+        """
+        Set the node where the variable should live.
+        
+        Args
+            name (str)
+            
+        """
+        self.node = name
+
+    #--- get
+
+    def get_value(self):
+        """
+        Get the variables value.
+        
+        Return
+            value
+        """
+        return self._get_value()
+        
+    def get_name(self, name_only = False):
+        """
+        Get the name of the variable.
+        
+        Args
+            name_only (bool): If True just the variable name is returned. If False the node and variable are returned: "node.variable".
+        """
+        
+        if self.node and not name_only:
+            return self._get_node_and_variable()
+        if not self.node or name_only:
+            return self.name
+
+    def get_dict(self):
+        """
+        Get a dictionary that represents the state of the variable.
+        
+        Return
+            (dict)
+        """
+        
+        var_dict = {}
+        
+        var_dict['value'] = self._get_value()
+        var_dict['type'] = self.variable_type
+        var_dict['key'] = self._get_keyable_state()
+        var_dict['lock'] = self._get_lock_state()
+        
+        return var_dict
+    
+    def set_dict(self, var_dict):
+        """
+        Set a dictionary that describes the variable. See get_dict.
+        
+        Args
+            var_dict (dict): A dictionary created from get_dict.
+            
+        """
+        value = var_dict['value']
+        self.set_value(value)
+        
+        type_value = var_dict['type']
+        self.set_variable_type(type_value)
+        
+        keyable = var_dict['key']
+        self.set_keyable(keyable)
+        
+        lock = var_dict['lock']
+        self.set_locked(lock)
+    
+    def create(self, node = None):
+        """
+        Create the variable on the node.
+        
+        Args
+            node (str): The node for the variable.  If not set, set_node should be set.
+            
+        """
+        if node:
+            self.node = node
+        
+        value = self.value
+        exists = False
+        
+        if self.exists():
+            exists = True
+            if not value == None:
+                value = self.get_value()
+        
+        self._create_attribute()
+        self._update_states()
+        
+        if exists:            
+            self.set_value( value )
+        
+    def delete(self, node = None):
+        """
+        Delete the variable on the node.
+        
+        Args
+            node (str): The node for the variable.  If not set, set_node should be set.
+            
+        """
+        if node:
+            self.node = node
+        
+        #theses lines might cause bugs   
+        self.locked = False
+        self._set_lock_state()
+        #------
+            
+        cmds.deleteAttr(self.node, at = self.name)
+        
+    def load(self):
+        """
+        Refresh the internal values.
+        """
+        self.value = self._get_value()
+        self.locked = self._get_lock_state()
+        self.keyable = self._get_keyable_state()
+        
+    def connect_in(self, attribute):
+        """
+        Connect the attribute into this variable.
+        
+        Args
+            attribute (str): 'node.attribute'
+        
+        """
+        cmds.connectAttr(attribute, self._get_node_and_variable())
+        
+    def connect_out(self, attribute):
+        """
+        Connect from the variable into the attribute.
+        
+        Args
+            attribute (str): 'node.attribute'
+        
+        """
+        cmds.connectAttr(self._get_node_and_variable(), attribute)
+        
+class MayaNumberVariable(MayaVariable):
+    """
+    Convenience class for dealing with Maya numeric attributes.
+    """
+    
+    
+    def __init__(self, name):
+        super(MayaNumberVariable, self).__init__(name)
+        
+        self.min_value = None
+        self.max_value = None
+        
+        self.variable_type = 'double'
+        
+    def _update_states(self):
+        super(MayaNumberVariable, self)._update_states()
+        
+        self._set_min_state()
+        self._set_max_state()
+    
+    #--- _set
+    
+    def _set_min_state(self):
+        if not self.exists():
+            return
+        
+        if not self.min_value:
+            if cmds.attributeQuery(self.name, node = self.node, minExists = True ):
+                cmds.addAttr(self._get_node_and_variable(), edit = True, hasMinValue = False)
+            
+        
+        if self.min_value != None:
+            cmds.addAttr(self._get_node_and_variable(), edit = True, hasMinValue = True)
+            cmds.addAttr(self._get_node_and_variable(), edit = True, minValue = self.min_value)
+        
+    def _set_max_state(self):
+        if not self.exists():
+            return
+        
+        if not self.max_value:
+            if cmds.attributeQuery(self.name, node = self.node, maxExists = True ):
+                cmds.addAttr(self._get_node_and_variable(), edit = True, hasMaxValue = False)
+        
+        if self.max_value != None:
+            
+            cmds.addAttr(self._get_node_and_variable(), edit = True, hasMaxValue = True)
+            cmds.addAttr(self._get_node_and_variable(), edit = True, maxValue = self.max_value)
+        
+    #--- _get
+        
+    def _get_min_state(self):
+        if not self.exists():
+            return
+        
+        return cmds.attributeQuery(self.name, node = self.node, minimum = True)
+
+    def _get_max_state(self):
+        if not self.exists():
+            return
+        
+        return cmds.attributeQuery(self.name, node = self.node, maximum = True)
+        
+    
+        
+    def set_min_value(self, value):
+        """
+        Args
+            value (float): Minimum value constraint
+        
+        """
+        self.min_value = value
+        self._set_min_state()
+    
+    def set_max_value(self, value):
+        """
+        Args
+            value (float): Maximum value constraint
+        
+        """
+        
+        self.max_value = value
+        self._set_max_state()
+        
+    def load(self):
+        """
+        Refresh the internal values.
+        """
+        super(MayaNumberVariable, self).load()
+        
+        self._get_min_state()
+        self._get_max_state()
+        
+class MayaEnumVariable(MayaVariable):
+    """
+    Convenience class for dealing with Maya enum attributes.
+    """
+    
+    def __init__(self, name):                
+        super(MayaEnumVariable, self).__init__(name)
+        
+        self.variable_type = 'enum'
+        self.enum_names = ['----------']
+        self.set_locked(True)
+       
+    def _command_create_mid(self):
+        
+        enum_name = string.join(self.enum_names, '|')
+        
+        flags= super(MayaEnumVariable, self)._command_create_mid()
+        flags.append('enumName = "%s"' % enum_name)
+        
+        return flags
+
+    def _update_states(self):
+        super(MayaEnumVariable, self)._update_states()
+        
+        self._set_enum_state()
+
+    
+
+    def _set_enum_state(self, set_value = True):
+        
+        if not self.exists():
+            return
+        
+        enum_name = string.join(self.enum_names, ':')
+                
+        if not enum_name:
+            return
+        
+        value = self.get_value()
+        
+        cmds.addAttr(self._get_node_and_variable(), edit = True, enumName = enum_name)
+        
+        if set_value:
+            self.set_value(value)
+    
+    def _set_value(self):
+        if not self.enum_names:
+            return
+        
+        self._set_enum_state(set_value = False)
+        super(MayaEnumVariable, self)._set_value()
+    
+    def set_enum_names(self, name_list):
+        """
+        Args
+            name_list (list): List of strings to define the enum.
+        """
+        self.enum_names = name_list
+        
+        self._set_enum_state()
+
+class MayaStringVariable(MayaVariable):
+    """
+    Convenience class for dealing with Maya string attributes.
+    """
+    
+    def __init__(self, name):
+        super(MayaStringVariable, self).__init__(name)
+        self.variable_type = 'string'
+        self.value = ''
+    
+class Attributes(object):
+    """
+    Still testing. Convenience class for dealing with groups of attributes.
+    Currently only works on bool, long, short, float, double
+    """
+    numeric_attributes = ['bool', 'long', 'short', 'float', 'double']
+    
+    def __init__(self, node):
+        
+        self.node = node
+        
+        self.variables = []
+        self.attribute_dict = {}
+        
+        
+    def _get_variable_instance(self, name, var_type):
+                
+        var = MayaVariable(name)
+        
+        if var_type in self.numeric_attributes:
+            var = MayaNumberVariable(name)
+            
+        if var_type == 'enum':
+            var = MayaEnumVariable(name)
+            
+        if var_type == 'string':
+            var = MayaStringVariable(name)
+        
+        var.set_variable_type(var_type)
+        var.set_node(self.node)    
+        
+        return var
+        
+    def _retrieve_attribute(self, attribute_name):
+        
+        node_and_attribute = '%s.%s' % (self.node, attribute_name)
+        
+        if not cmds.objExists(node_and_attribute):
+            return
+        
+        var_type = cmds.getAttr(node_and_attribute, type = True)
+        
+        var = self._get_variable_instance(attribute_name, var_type)
+        var.set_node(self.node)
+        
+        return var
+        
+    def _store_attributes(self):
+        custom_attributes = cmds.listAttr(self.node, ud = True)
+        
+        self.variables = []
+        
+        for attribute in custom_attributes:
+            
+            var = self._retrieve_attribute(attribute)    
+        
+            var_dict = var.get_dict()    
+            
+            self.attribute_dict[attribute] = var_dict
+            
+            self.variables.append(var)
+            
+        return self.variables
+    
+    def _retrieve_attributes(self):
+        
+        variables = self._store_attributes()
+        return variables    
+    
+    def delete_all(self, retrieve = False):
+        """
+        Delete all loaded variables on a node.
+        """
+        variables = []
+        
+        if retrieve or not self.variables:
+            
+            variables = self._retrieve_attributes()
+        if not retrieve and self.variables:
+            variables = self.variables
+        
+        for var in variables:
+            
+            var.delete()
+        
+    def create_all(self):
+        
+        for var in self.variables:
+            
+            var.create()
+        
+    def delete(self, name):
+        
+        self.delete_all()
+        
+        variables = []
+        
+        for variable in self.variables:
+            
+            if variable.name == name:
+                continue
+        
+            variables.append(variable)        
+            variable.create()
+            
+        self.variables = variables
+            
+    def create(self, name, var_type, index = None):
+        
+        self.delete_all()
+        
+        var_count = len(self.variables)
+        
+        remove_var = None
+        
+        for var in self.variables:
+            if var.name == name:
+                remove_var = var
+                break
+                            
+        if remove_var:
+            remove_index = self.variables.index(remove_var)
+            self.variables.pop(remove_index)
+            
+        var = self._get_variable_instance(name, var_type)
+                
+        if index > var_count:
+            index = None
+        
+        if index != None:
+            self.variables.insert(index, var)
+        if index == None:
+            self.variables.append(var)
+                
+        self.create_all()
+    
+    def get_variables(self):
+        self._store_attributes()
+        
+        return self.variables
+    
+    def get_variable(self, attribute_name):
+        
+        self._store_attributes()
+        
+        return self._retrieve_attribute(attribute_name)
+    
+    def rename_variable(self, old_name, new_name):
+        
+        if not self.node:
+            return
+        
+        var = self.get_variable(old_name)
+        
+        if not var:
+            vtool.util.warning('Could not rename attribute, %s.%s.' % (self.node, old_name))
+            return
+        
+        var.set_name(new_name)
+        
+        
+        self._store_attributes()
+        
+        connections = Connections(self.node)
+        connections.disconnect()
+        
+        self.delete_all()
+        self.create_all()
+        
+        connections.connect()
+
+
+
+class MayaNode(object):
+    
+    def __init__(self, name = None):
+        
+        self.node = None
+        
+        self._create_node(name)
+        
+    def _create_node(self, name):
+        pass
+    
+class MultiplyDivideNode(MayaNode):
+
+    
+    def __init__(self, name = None):
+        
+        if not name.startswith('multiplyDivide'):
+            name = core.inc_name('multiplyDivide_%s' % name)
+        
+        super(MultiplyDivideNode, self).__init__(name)
+        
+    def _create_node(self, name):
+        self.node = cmds.createNode('multiplyDivide', name = name)
+        cmds.setAttr('%s.input2X' % self.node, 1)
+        cmds.setAttr('%s.input2Y' % self.node, 1)
+        cmds.setAttr('%s.input2Z' % self.node, 1)
+        
+    def set_operation(self, value):
+        cmds.setAttr('%s.operation' % self.node, value)
+    
+    def set_input1(self, valueX = None, valueY = None, valueZ = None):
+        
+        if valueX != None:
+            cmds.setAttr('%s.input1X' % self.node, valueX)
+            
+        if valueY != None:
+            cmds.setAttr('%s.input1Y' % self.node, valueY)
+            
+        if valueZ != None:
+            cmds.setAttr('%s.input1Z' % self.node, valueZ)
+        
+    def set_input2(self, valueX = None, valueY = None, valueZ = None):
+        
+        if valueX != None:
+            cmds.setAttr('%s.input2X' % self.node, valueX)
+            
+        if valueY != None:
+            cmds.setAttr('%s.input2Y' % self.node, valueY)
+            
+        if valueZ != None:
+            cmds.setAttr('%s.input2Z' % self.node, valueZ)
+            
+    def input1X_in(self, attribute):
+        cmds.connectAttr(attribute, '%s.input1X' % self.node)
+    
+    def input1Y_in(self, attribute):
+        cmds.connectAttr(attribute, '%s.input1Y' % self.node)
+        
+    def input1Z_in(self, attribute):
+        cmds.connectAttr(attribute, '%s.input1Z' % self.node)
+    
+    def input2X_in(self, attribute):
+        cmds.connectAttr(attribute, '%s.input2X' % self.node)
+    
+    def input2Y_in(self, attribute):
+        cmds.connectAttr(attribute, '%s.input2Y' % self.node)
+        
+    def input2Z_in(self, attribute):
+        cmds.connectAttr(attribute, '%s.input2Z' % self.node)
+        
+    def outputX_out(self, attribute):
+        connect_plus('%s.outputX' % self.node, attribute)
+    
+    def outputY_out(self, attribute):
+        connect_plus('%s.outputY' % self.node, attribute)
+        
+    def outputZ_out(self, attribute):
+        connect_plus('%s.outputZ' % self.node, attribute)
+
+
+def is_attribute(node_dot_attribute):
+    """
+    Check if what is passed is an attribute.
+    
+    Return
+        bool
+    """
+    if not cmds.objExists(node_dot_attribute):
+        return False
+    
+    split = node_dot_attribute.split('.')
+    
+    if len(split) == 1:
+        return False
+    
+    if len(split) > 1 and not split[1]:
+        return False
+    
+    return True
+        
+def is_attribute_numeric(node_dot_attribute):
+    """
+    Check if the attribute exists and is numeric.
+    
+    Return
+        bool
+    """
+    if not is_attribute(node_dot_attribute):
+        return False
+    
+    attr_type = cmds.getAttr(node_dot_attribute, type = True)
+    
+    numeric_types = ['bool',
+                     'float',
+                     'double',
+                     'long',
+                     'short',
+                     'doubleLinear',
+                     'doubleAngle',
+                     'enum']
+    
+    if attr_type in numeric_types:
+        return True
+    
+def is_translate_rotate_connected(transform):
+    """
+    Check if translate and rotate attributes are connected.
+    
+    Args
+        transform (str): The name of a transform.
+        
+    Return
+        bool
+    """
+    main_attr = ['translate', 'rotate']
+    sub_attr = ['X','Y','Z']
+    
+    for attr in main_attr:
+        
+        for sub in sub_attr:
+            
+            name = transform + '.' + attr + sub
+            
+            input_value = get_attribute_input(name)
+            
+            if input_value:
+                return True
+        
+    return False
+
+def get_inputs(node, node_only = True):
+    """
+    Get all the inputs into the specified node.
+    
+    Args
+        node (str): The name of a node.
+        node_only (str): Wether to return the node name or the node name + the attribute eg. 'node_name.attribute'
+    
+    Return
+        list: The inputs.
+    """
+    
+    if node_only:
+        plugs = False
+    if not node_only:
+        plugs = True
+
+    return cmds.listConnections(node,
+                         connections = False,
+                         destination = False,
+                         source = True,
+                         plugs = plugs,
+                         skipConversionNodes = True
+                         )
+
+    
+def get_outputs(node, node_only = True):
+    """
+    Get all the outputs from the specified node.
+        
+    Args
+        node (str): The name of a node.
+        node_only (str): Wether to return the node name or the node name + the attribute eg. 'node_name.attribute'
+    
+    Return
+        list: The outputs.
+    """    
+    
+    if node_only:
+        plugs = False
+    if not node_only:
+        plugs = True
+    
+    return cmds.listConnections(node, 
+                                connections = plugs, 
+                                destination = True, 
+                                source = False,
+                                plugs = plugs,
+                                skipConversionNodes = True)    
+
+def get_attribute_input(node_and_attribute, node_only = False):
+    """
+    Get the input into the specified attribute.
+    
+    Args
+        node_and_attribute (str): The node_name.attribute name to find an input into.
+        node_only (str): Wether to return the node name or the node name + the attribute eg. 'node_name.attribute'
+        
+    Return
+        str: The attribute that inputs into node_and_attribute
+    """
+    connections = []
+    
+    if cmds.objExists(node_and_attribute):
+        
+        connections = cmds.listConnections(node_and_attribute, 
+                                           plugs = True, 
+                                           connections = False, 
+                                           destination = False, 
+                                           source = True,
+                                           skipConversionNodes = True)
+        if connections:
+            if not node_only:
+                return connections[0]
+            if node_only:
+                return connections[0].split('.')[0]
+                
+        
+def get_attribute_outputs(node_and_attribute, node_only = False):
+    """
+    Get the outputs from the specified attribute.
+    
+    Args
+        node_and_attribute (str): The node_name.attribute name to find outputs.
+        node_only (str): Wether to return the node name or the node name + the attribute eg. 'node_name.attribute'
+        
+    Return
+        str: The nodes that node_and_attribute connect into.
+    """    
+    if cmds.objExists(node_and_attribute):
+        
+        plug = True
+        if node_only:
+            plug = False
+        
+        return cmds.listConnections(node_and_attribute, 
+                                    plugs = plug, 
+                                    connections = False, 
+                                    destination = True, 
+                                    source = False,
+                                    skipConversionNodes = True)
+
+def transfer_output_connections(source_node, target_node):
+    """
+    Transfer output connections from source_node to target_node.
+    
+    Args
+        source_node (str): The node to take output connections from.
+        target_node (str): The node to transfer output connections to.
+    """
+    outputs  = cmds.listConnections(source_node, 
+                         plugs = True,
+                         connections = True,
+                         destination = True,
+                         source = False)
+    
+    for inc in range(0, len(outputs), 2):
+        new_attr = outputs[inc].replace(source_node, target_node)
+        
+        cmds.disconnectAttr(outputs[inc], outputs[inc+1])
+        cmds.connectAttr(new_attr, outputs[inc+1], f = True)
+
+
+
+
+
+def hide_attributes(node, attributes):
+    """
+    Lock and hide the attributes specified in attributes.
+    
+    Args
+        node (str): The name of a node.
+        attributes (list): A list of attributes on node to lock and hide.
+    """
+    
+    for attribute in attributes:
+        
+        current_attribute = '%s.%s' % (node, attribute)
+        
+        cmds.setAttr(current_attribute, l = True, k = False)
+        
+def hide_keyable_attributes(node):
+    """
+    Lock and hide keyable attributes on node.
+    
+    Args
+        node (str) The name of a node.
+    """
+    
+    attributes = cmds.listAttr(node, k = True)
+        
+    hide_attributes(node, attributes)
+    
+def lock_attributes(node, bool_value = True, attributes = None, hide = False):
+    
+    if not attributes:
+        attributes = cmds.listAttr(node, k = True)
+    
+    if attributes:
+        attributes = vtool.util.convert_to_sequence(attributes)
+    
+    for attribute in attributes:
+        attribute_name = '%s.%s' % (node, attribute)
+        
+        inputs = get_inputs(attribute_name)
+        
+        if inputs:
+            continue
+        
+        cmds.setAttr(attribute_name, lock = bool_value)
+        
+        if hide:
+            cmds.setAttr(attribute_name, k = False)
+            cmds.setAttr(attribute_name, cb = False)
+        
+def unlock_attributes(node, attributes = [], only_keyable = False):
+    
+    attributes = vtool.util.convert_to_sequence(attributes)
+    
+    if not attributes:
+        if only_keyable == False:
+            attrs = cmds.listAttr(node, locked = True)
+            
+        if only_keyable == True:
+            attrs = cmds.listAttr(node, locked = True, k = True)
+    
+    if attributes:
+        attrs = attributes
+    
+    if attrs:
+        for attr in attrs:
+            cmds.setAttr('%s.%s' % (node, attr), l = False, k = True)
+
+def set_color(nodes, color):
+    """
+    Set the override color for the nodes in nodes.
+    
+    Args
+        nodes (list): A list of nodes to change the override color.
+        color (int): The color index to set override color to.
+    """
+    
+    vtool.util.convert_to_sequence(nodes)
+    
+    for node in nodes:
+        
+        overrideEnabled = '%s.overrideEnabled' % node
+        overrideColor = '%s.overrideColor' % node
+        
+        if cmds.objExists(overrideEnabled):
+            cmds.setAttr(overrideEnabled, 1)
+            cmds.setAttr(overrideColor, color)
+
+
+def get_color_of_side(side = 'C', sub_color = False):
+    """
+    Get the override color for the given side.
+    
+    Args
+        side (str): 'L','R', 'C'
+        sub_color (bool): Wether to return a sub color.
+        
+    Return
+        int: A color index for override color.
+    """
+    if not sub_color:
+        
+        if side == 'L':
+            return 6
+        
+        if side == 'R':
+            return 13
+        
+        if side == 'C':
+            return 17
+    
+    if sub_color:
+    
+        if side == 'L':
+            return 18
+        
+        if side == 'R':
+            return 20
+        
+        if side == 'C':
+            return 21
+
+def connect_vector_attribute(source_transform, target_transform, attribute, connect_type = 'plus'):
+    """
+    Connect an X,Y,Z attribute, eg translate, rotate, scale. 
+    
+    Args
+        source_transform (str): The name of a transform.
+        target_transform (str): The name of a transform.
+        attribute (str): eg, translate, rotate, scale.
+        connect_type (str): 'plus' or 'multiply'
+    
+    Return
+        list: The nodes created.
+    """
+    axis = ['X','Y','Z']
+    
+    node = None
+    nodes = []
+    
+    for letter in axis:
+        
+        source_attribute = '%s.%s%s' % (source_transform, attribute, letter)
+        target_attribute = '%s.%s%s' % (target_transform, attribute, letter)
+        
+        if connect_type == 'plus':
+            node = connect_plus(source_attribute,
+                                target_attribute)
+        
+            nodes.append(node)
+        
+        if connect_type == 'multiply':
+            
+            if node:
+                cmds.connectAttr(source_attribute, '%s.input1%s' % (node,letter))
+                cmds.connectAttr('%s.output%s' % (node, letter), target_attribute)
+            
+            if not node:
+                node = connect_multiply(source_attribute,
+                                            target_attribute)
+                
+    if not nodes:
+        nodes = node
+            
+    return nodes
+    
+
+def connect_translate(source_transform, target_transform):
+    """
+    Connect translate attributes
+    
+    Args
+        source_transform (str): The name of a transform.
+        target_transform (str): The name of a transform.
+    """
+    
+    connect_vector_attribute(source_transform, target_transform, 'translate')
+
+def connect_rotate(source_transform, target_transform):
+    """
+    Connect rotate attributes. This will automatically connect rotateOrder from source to target, if not already connected.
+    
+    Args
+        source_transform (str): The name of a transform.
+        target_transform (str): The name of a transform.
+    """
+    
+    connect_vector_attribute(source_transform, target_transform, 'rotate')
+    try:
+        cmds.connectAttr('%s.rotateOrder' % source_transform, '%s.rotateOrder' % target_transform)
+    except:
+        pass
+        #vtool.util.show('Could not connect %s.rotateOrder into %s.rotateOrder. This could cause issues if rotate order changed.' % (source_transform, target_transform))
+        
+    
+def connect_scale(source_transform, target_transform):
+    """
+    Connect scale attributes.
+    
+    Args
+        source_transform (str): The name of a transform.
+        target_transform (str): The name of a transform.
+    """
+    connect_vector_attribute(source_transform, target_transform, 'scale')
+
+def connect_translate_plus(source_transform, target_transform):
+    """
+    Connect translate attributes. If target_transform already has input connections, reconnect with plusMinusAverage to accomodate both.
+    
+    Args
+        source_transform (str): The name of a transform.
+        target_transform (str): The name of a transform.
+        
+    Return
+        str: the name of the plusMinusAverage node.
+    """
+    plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
+    
+    input_x = get_attribute_input('%s.translateX' % target_transform)
+    input_y = get_attribute_input('%s.translateY' % target_transform)
+    input_z = get_attribute_input('%s.translateZ' % target_transform)
+    
+    value_x = cmds.getAttr('%s.translateX' % source_transform)
+    value_y = cmds.getAttr('%s.translateY' % source_transform)
+    value_z = cmds.getAttr('%s.translateZ' % source_transform)
+    
+    current_value_x = cmds.getAttr('%s.translateX' % target_transform)
+    current_value_y = cmds.getAttr('%s.translateY' % target_transform)
+    current_value_z = cmds.getAttr('%s.translateZ' % target_transform)
+    
+    cmds.connectAttr('%s.translateX' % source_transform, '%s.input3D[0].input3Dx' % plus)
+    cmds.connectAttr('%s.translateY' % source_transform, '%s.input3D[0].input3Dy' % plus)
+    cmds.connectAttr('%s.translateZ' % source_transform, '%s.input3D[0].input3Dz' % plus)
+    
+    cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1*value_x)
+    cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
+    cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
+    
+    #cmds.setAttr('%s.input3D[2].input3Dx' % plus, -1*current_value_x)
+    #cmds.setAttr('%s.input3D[2].input3Dy' % plus, -1*current_value_y)
+    #cmds.setAttr('%s.input3D[2].input3Dz' % plus, -1*current_value_z)
+    
+    disconnect_attribute('%s.translateX' % target_transform)
+    disconnect_attribute('%s.translateY' % target_transform)
+    disconnect_attribute('%s.translateZ' % target_transform)
+    
+    cmds.connectAttr('%s.output3Dx' % plus, '%s.translateX' % target_transform)
+    cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % target_transform)
+    cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % target_transform)
+    
+    if input_x:
+        
+        cmds.connectAttr(input_x, '%s.input3D[3].input3Dx' % plus)
+    if input_y:
+        cmds.connectAttr(input_y, '%s.input3D[3].input3Dy' % plus)
+    if input_z:
+        cmds.connectAttr(input_z, '%s.input3D[3].input3Dz' % plus)
+    
+    return plus
+    
+def connect_translate_multiply(source_transform, target_transform, value = 1, respect_value = False):
+    """
+    Connect translate attributes with a multiplyDivide to multiply the effect.
+    
+    Args
+        source_transform (str): The name of a transform.
+        target_transform (str): The name of a transform.
+        value (float): The multiply value. Set to 0.5 to translate target half of what source translates.
+        repsect_value (bool): If respect value is True, then add a plus minus average to buffer the multiply divide.
+        
+    Return
+        str: the name of the multiplyDivide node. If respect value return [multiply, plus]
+    """
+    
+    target_transform_x = '%s.translateX' % target_transform
+    target_transform_y = '%s.translateY' % target_transform
+    target_transform_z = '%s.translateZ' % target_transform
+    
+    target_input_x = get_attribute_input(target_transform_x)
+    target_input_y = get_attribute_input(target_transform_y)
+    target_input_z = get_attribute_input(target_transform_z)
+    
+    if target_input_x:
+        
+        if cmds.nodeType(target_input_x) == 'plusMinusAverage':
+            plus = target_input_x.split('.')[0]
+            indices = get_indices('%s.input3D' % plus)
+            indices = indices[-1]
+            
+            target_transform_x = '%s.input3D[%s].input3Dx' % (plus, indices)
+            target_transform_y = '%s.input3D[%s].input3Dy' % (plus, indices)
+            target_transform_z = '%s.input3D[%s].input3Dz' % (plus, indices)
+            
+        if not cmds.nodeType(target_input_x) == 'plusMinusAverage':
+            
+            plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
+            
+            cmds.connectAttr(target_input_x, '%s.input3D[0].input3Dx' % plus)
+            cmds.connectAttr(target_input_y, '%s.input3D[0].input3Dy' % plus)
+            cmds.connectAttr(target_input_z, '%s.input3D[0].input3Dz' % plus)
+            
+            disconnect_attribute(target_transform_x)
+            disconnect_attribute(target_transform_y)
+            disconnect_attribute(target_transform_z)
+            
+            cmds.connectAttr('%s.output3Dx' % plus, target_transform_x)
+            cmds.connectAttr('%s.output3Dy' % plus, target_transform_y)
+            cmds.connectAttr('%s.output3Dz' % plus, target_transform_z)
+            
+            target_transform_x = '%s.input3D[1].input3Dx' % plus
+            target_transform_y = '%s.input3D[1].input3Dy' % plus
+            target_transform_z = '%s.input3D[1].input3Dz' % plus
+    
+    multiply = connect_multiply('%s.translateX' % source_transform, target_transform_x, value, plus = False)
+
+    if respect_value:
+            plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
+    
+            value_x = cmds.getAttr('%s.translateX' % source_transform)
+            value_y = cmds.getAttr('%s.translateY' % source_transform)
+            value_z = cmds.getAttr('%s.translateZ' % source_transform)
+    
+            cmds.connectAttr('%s.translateX' % source_transform, '%s.input3D[0].input3Dx' % plus)
+            cmds.connectAttr('%s.translateY' % source_transform, '%s.input3D[0].input3Dy' % plus)
+            cmds.connectAttr('%s.translateZ' % source_transform, '%s.input3D[0].input3Dz' % plus)
+    
+            cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1*value_x)
+            cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
+            cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
+
+            disconnect_attribute('%s.input1X' % multiply)
+    
+            cmds.connectAttr('%s.output3Dx' % plus, '%s.input1X' % multiply)
+            cmds.connectAttr('%s.output3Dy' % plus, '%s.input1Y' % multiply)
+            cmds.connectAttr('%s.output3Dz' % plus, '%s.input1Z' % multiply)
+    
+    if not respect_value:
+        cmds.connectAttr('%s.translateY' % source_transform, '%s.input1Y' % multiply)
+        cmds.connectAttr('%s.translateZ' % source_transform, '%s.input1Z' % multiply)
+                
+    cmds.connectAttr('%s.outputY' % multiply, target_transform_y)
+    cmds.connectAttr('%s.outputZ' % multiply, target_transform_z)
+    
+    try:
+        cmds.setAttr('%s.input2Y' % multiply, value)
+        cmds.setAttr('%s.input2Z' % multiply, value)
+    except:
+        pass
+    
+    if not respect_value:
+        return multiply
+    if respect_value:
+        return multiply, plus
+
+
+def connect_rotate_multiply(source_transform, target_transform, value = 1, respect_value = False):
+    """
+    Connect rotate attributes with a multiplyDivide to multiply the effect.
+    This is dangerous because rotate is not calculated in the same linear way as translate. 
+    Probably shouldn't be used because of Quaternion math. Would be better to use a double orient constraint.
+    
+    Args
+        source_transform (str): The name of a transform.
+        target_transform (str): The name of a transform.
+        value (float): The multiply value. Set to 0.5 to rotate target half of what source translates.
+        repsect_value (bool): If respect value is True, then add a plus minus average to buffer the multiply divide.
+        
+    Return
+        str: the name of the multiplyDivide node. If respect value return [multiply, plus]
+    """
+    
+    target_transform_x = '%s.rotateX' % target_transform
+    target_transform_y = '%s.rotateY' % target_transform
+    target_transform_z = '%s.rotateZ' % target_transform
+    
+    target_input_x = get_attribute_input(target_transform_x)
+    target_input_y = get_attribute_input(target_transform_y)
+    target_input_z = get_attribute_input(target_transform_z)
+    
+    if target_input_x:
+        
+        if cmds.nodeType(target_input_x) == 'plusMinusAverage':
+            plus = target_input_x.split('.')[0]
+            indices = get_indices('%s.input3D' % plus)
+            indices = indices[-1]
+            
+            target_transform_x = '%s.input3D[%s].input3Dx' % (plus, indices)
+            target_transform_y = '%s.input3D[%s].input3Dy' % (plus, indices)
+            target_transform_z = '%s.input3D[%s].input3Dz' % (plus, indices)
+            
+        if not cmds.nodeType(target_input_x) == 'plusMinusAverage':
+            
+            plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
+            
+            cmds.connectAttr(target_input_x, '%s.input3D[0].input3Dx' % plus)
+            cmds.connectAttr(target_input_y, '%s.input3D[0].input3Dy' % plus)
+            cmds.connectAttr(target_input_z, '%s.input3D[0].input3Dz' % plus)
+            
+            disconnect_attribute(target_transform_x)
+            disconnect_attribute(target_transform_y)
+            disconnect_attribute(target_transform_z)
+            
+            cmds.connectAttr('%s.output3Dx' % plus, target_transform_x)
+            cmds.connectAttr('%s.output3Dy' % plus, target_transform_y)
+            cmds.connectAttr('%s.output3Dz' % plus, target_transform_z)
+            
+            target_transform_x = '%s.input3D[1].input3Dx' % plus
+            target_transform_y = '%s.input3D[1].input3Dy' % plus
+            target_transform_z = '%s.input3D[1].input3Dz' % plus
+    
+    multiply = connect_multiply('%s.rotateX' % source_transform, target_transform_x, value, plus = False)
+
+    if respect_value:
+            plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
+    
+            value_x = cmds.getAttr('%s.rotateX' % source_transform)
+            value_y = cmds.getAttr('%s.rotateY' % source_transform)
+            value_z = cmds.getAttr('%s.rotateZ' % source_transform)
+    
+            cmds.connectAttr('%s.rotateX' % source_transform, '%s.input3D[0].input3Dx' % plus)
+            cmds.connectAttr('%s.rotateY' % source_transform, '%s.input3D[0].input3Dy' % plus)
+            cmds.connectAttr('%s.rotateZ' % source_transform, '%s.input3D[0].input3Dz' % plus)
+    
+            cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1*value_x)
+            cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
+            cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
+
+            disconnect_attribute('%s.input1X' % multiply)
+    
+            cmds.connectAttr('%s.output3Dx' % plus, '%s.input1X' % multiply)
+            cmds.connectAttr('%s.output3Dy' % plus, '%s.input1Y' % multiply)
+            cmds.connectAttr('%s.output3Dz' % plus, '%s.input1Z' % multiply)
+    
+    if not respect_value:
+        cmds.connectAttr('%s.rotateY' % source_transform, '%s.input1Y' % multiply)
+        cmds.connectAttr('%s.rotateZ' % source_transform, '%s.input1Z' % multiply)
+                
+    cmds.connectAttr('%s.outputY' % multiply, target_transform_y)
+    cmds.connectAttr('%s.outputZ' % multiply, target_transform_z)
+    
+    try:
+        cmds.setAttr('%s.input2Y' % multiply, value)
+        cmds.setAttr('%s.input2Z' % multiply, value)
+    except:
+        pass
+    
+    if not respect_value:
+        return multiply
+    if respect_value:
+        return multiply, plus
+    
+def connect_scale_multiply(source_transform, target_transform, value = 1, respect_value = False):
+    """
+    Never use. 
+    """
+    target_transform_x = '%s.scaleX' % target_transform
+    target_transform_y = '%s.scaleY' % target_transform
+    target_transform_z = '%s.scaleZ' % target_transform
+    
+    target_input_x = get_attribute_input(target_transform_x)
+    target_input_y = get_attribute_input(target_transform_y)
+    target_input_z = get_attribute_input(target_transform_z)
+    
+    if target_input_x:
+        
+        if cmds.nodeType(target_input_x) == 'plusMinusAverage':
+            plus = target_input_x.split('.')[0]
+            indices = get_indices('%s.input3D' % plus)
+            indices = indices[-1]
+            
+            target_transform_x = '%s.input3D[%s].input3Dx' % (plus, indices)
+            target_transform_y = '%s.input3D[%s].input3Dy' % (plus, indices)
+            target_transform_z = '%s.input3D[%s].input3Dz' % (plus, indices)
+            
+        if not cmds.nodeType(target_input_x) == 'plusMinusAverage':
+            
+            plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
+            
+            cmds.connectAttr(target_input_x, '%s.input3D[0].input3Dx' % plus)
+            cmds.connectAttr(target_input_y, '%s.input3D[0].input3Dy' % plus)
+            cmds.connectAttr(target_input_z, '%s.input3D[0].input3Dz' % plus)
+            
+            disconnect_attribute(target_transform_x)
+            disconnect_attribute(target_transform_y)
+            disconnect_attribute(target_transform_z)
+            
+            cmds.connectAttr('%s.output3Dx' % plus, target_transform_x)
+            cmds.connectAttr('%s.output3Dy' % plus, target_transform_y)
+            cmds.connectAttr('%s.output3Dz' % plus, target_transform_z)
+            
+            target_transform_x = '%s.input3D[1].input3Dx' % plus
+            target_transform_y = '%s.input3D[1].input3Dy' % plus
+            target_transform_z = '%s.input3D[1].input3Dz' % plus
+    
+    multiply = connect_multiply('%s.scaleX' % source_transform, target_transform_x, value, plus = False)
+
+    if respect_value:
+            plus = cmds.createNode('plusMinusAverage', n = 'plus_%s' % target_transform)
+    
+            value_x = cmds.getAttr('%s.scaleX' % source_transform)
+            value_y = cmds.getAttr('%s.scaleY' % source_transform)
+            value_z = cmds.getAttr('%s.scaleZ' % source_transform)
+    
+            cmds.connectAttr('%s.scaleX' % source_transform, '%s.input3D[0].input3Dx' % plus)
+            cmds.connectAttr('%s.scaleY' % source_transform, '%s.input3D[0].input3Dy' % plus)
+            cmds.connectAttr('%s.scaleZ' % source_transform, '%s.input3D[0].input3Dz' % plus)
+    
+            cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1*value_x)
+            cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
+            cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
+
+            disconnect_attribute('%s.input1X' % multiply)
+    
+            cmds.connectAttr('%s.output3Dx' % plus, '%s.input1X' % multiply)
+            cmds.connectAttr('%s.output3Dy' % plus, '%s.input1Y' % multiply)
+            cmds.connectAttr('%s.output3Dz' % plus, '%s.input1Z' % multiply)
+    
+    if not respect_value:
+        cmds.connectAttr('%s.scaleY' % source_transform, '%s.input1Y' % multiply)
+        cmds.connectAttr('%s.scaleZ' % source_transform, '%s.input1Z' % multiply)
+                
+    cmds.connectAttr('%s.outputY' % multiply, target_transform_y)
+    cmds.connectAttr('%s.outputZ' % multiply, target_transform_z)
+    
+    try:
+        cmds.setAttr('%s.input2Y' % multiply, value)
+        cmds.setAttr('%s.input2Z' % multiply, value)
+    except:
+        pass
+    
+    if not respect_value:
+        return multiply
+    if respect_value:
+        return multiply, plus
+    
+
+def connect_visibility(attribute_name, target_node, value = 1):
+    """
+    Connect the visibility into an attribute
+    
+    Args
+        attribute_name (str): The node.attribute name of an attribute. Does not have to exists. Will be created if doesn't exist.
+        target_node (str): The target node to connect attribute_name into.
+        value (bool): 0 or 1 wether you want the visibility on or off by default.
+    """
+    nodes = vtool.util.convert_to_sequence(target_node)
+    
+    if not cmds.objExists(attribute_name):
+        split_name = attribute_name.split('.')
+        cmds.addAttr(split_name[0], ln = split_name[1], at = 'bool', dv = value,k = True)
+        
+    for thing in nodes: 
+        
+        if not cmds.isConnected(attribute_name, '%s.visibility' % thing):
+            cmds.connectAttr(attribute_name, '%s.visibility' % thing)
+        if cmds.isConnected(attribute_name, '%s.visibility' % thing):
+            vtool.util.warning( attribute_name + ' and ' + thing + '.visibility are already connected')
+
+def connect_plus(source_attribute, target_attribute, respect_value = False):
+    """
+    Connect source_attribute into target_attribute with a plusMinusAverage inbetween.
+    
+    Args
+        source_attribute (str): The node.attribute name of an attribute.
+        target_attribute (str): The node.attribute name of an attribute.
+        respect_value (bool): Wether to edit the input1D list to accomodate for values in the target attribute.
+        
+    Return
+        str: The name of the plusMinusAverage node
+    """
+    
+    if cmds.isConnected(source_attribute, target_attribute):
+        return
+    
+    input_attribute = get_attribute_input( target_attribute )
+    
+    value = cmds.getAttr(target_attribute)
+    
+    if not input_attribute and not respect_value:
+        cmds.connectAttr(source_attribute, target_attribute)
+        return
+
+    if input_attribute:
+        if cmds.nodeType(input_attribute) == 'plusMinusAverage':
+            
+            plus = input_attribute.split('.')
+            plus = plus[0]
+            
+            if cmds.getAttr('%s.operation' % plus) == 1:
+                
+                slot = get_available_slot('%s.input1D' % plus)
+                
+                cmds.connectAttr(source_attribute, '%s.input1D[%s]' % (plus, slot) )                   
+                
+                return plus
+        
+
+    target_attribute_name = target_attribute.replace('.', '_')
+        
+    plus = cmds.createNode('plusMinusAverage', n = 'plusMinusAverage_%s' % target_attribute_name)
+    
+    cmds.connectAttr( source_attribute , '%s.input1D[1]' % plus)
+    
+    if input_attribute:
+        cmds.connectAttr( input_attribute, '%s.input1D[0]' % plus)
+        
+        new_value = cmds.getAttr(target_attribute) 
+        
+        if abs(new_value) - abs(value) > 0.01:
+            cmds.setAttr('%s.input1D[2]' % plus, value)
+        
+    if not input_attribute and respect_value:
+        cmds.setAttr('%s.input1D[0]' % plus, value)
+    
+    cmds.connectAttr('%s.output1D' % plus, target_attribute, f = True)
+    
+    return plus
+
+def connect_plus_new(source_attribute, target_attribute, respect_value = False):
+    """
+    Not in use. Connect source_attribute into target_attribute with a plusMinusAverage inbetween.
+    Tried to make it better, but isn't.
+    
+    Args
+        source_attribute (str): The node.attribute name of an attribute.
+        target_attribute (str): The node.attribute name of an attribute.
+        respect_value (bool): Wether to edit the input1D list to accomodate for values in the target attribute.
+        
+    Return
+        str: The name of the plusMinusAverage node
+    """
+    
+    if cmds.isConnected(source_attribute, target_attribute):
+        return
+    
+    output_value = 0
+    source_value = 0
+            
+    if respect_value:
+        output_value = cmds.getAttr(target_attribute)
+        source_value = cmds.getAttr(source_attribute)
+        
+    input_attribute = get_attribute_input( target_attribute )
+    
+    if not input_attribute and not respect_value:
+        cmds.connectAttr(source_attribute, target_attribute)
+        return
+
+    if input_attribute:
+        
+        if cmds.nodeType(input_attribute) == 'plusMinusAverage':
+            
+            plus = input_attribute.split('.')
+            plus = plus[0]
+            
+            if cmds.getAttr('%s.operation' % plus) == 1:
+                
+                slot = get_available_slot('%s.input1D' % plus)
+                
+                cmds.connectAttr(source_attribute, '%s.input1D[%s]' % (plus, slot) )                   
+                
+                source_value += cmds.getAttr('%s.input1D[0]' % plus)
+                
+                if respect_value:
+                    new_value = output_value - source_value
+                    cmds.setAttr('%s.input1D[0]', new_value)
+                
+                return plus
+        
+
+    target_attribute_name = target_attribute.replace('.', '_')
+        
+    plus = cmds.createNode('plusMinusAverage', n = 'plusMinusAverage_%s' % target_attribute_name)
+    
+    cmds.connectAttr( source_attribute , '%s.input1D[1]' % plus)
+    
+    if respect_value:
+        new_value = output_value - source_value
+        cmds.setAttr('%s.input1D[0]', new_value)
+    
+    """
+    if input_attribute:
+        
+        slot = get_available_slot('%s.input1D' % plus)
+            
+        cmds.connectAttr( input_attribute, '%s.input1D[%s]' % (plus, slot))
+        
+        new_value = cmds.getAttr(target_attribute) 
+        
+        if abs(new_value) - abs(value) > 0.01:
+            cmds.setAttr('%s.input1D[2]' % plus, value)
+        
+    if not input_attribute and respect_value:
+        cmds.setAttr('%s.input1D[0]' % plus, value)
+    """
+    
+    cmds.connectAttr('%s.output1D' % plus, target_attribute, f = True)
+    
+    return plus
+
+def connect_multiply(source_attribute, target_attribute, value = 0.1, skip_attach = False, plus= True):
+    """
+    Connect source_attribute into target_attribute with a multiplyDivide inbetween.
+    
+    Args
+        source_attribute (str): The node.attribute name of an attribute.
+        target_attribute (str): The node.attribute name of an attribute.
+        skip_attach (bool): Wether to attach the input into target_attribute (if there is one) into input2X of multiplyDivide.
+        plus (bool): Wether to fix input connections in target_attribute to plug into a plusMinusAverage. Therefore not losing their influence on the attribute while still multiplying by the source_attribute.
+        
+    Return
+        str: The name of the plusMinusAverage node
+    """
+    input_attribute = get_attribute_input( target_attribute  )
+
+    lock_state = LockState(target_attribute)
+    lock_state.unlock()
+
+    new_name = target_attribute.replace('.', '_')
+    new_name = new_name.replace('[', '_')
+    new_name = new_name.replace(']', '_')
+
+    multi = cmds.createNode('multiplyDivide', n = 'multiplyDivide_%s' % new_name)
+
+    cmds.connectAttr(source_attribute, '%s.input1X' % multi)
+    
+    cmds.setAttr('%s.input2X' % multi, value)
+
+    if input_attribute and not skip_attach:
+        cmds.connectAttr(input_attribute, '%s.input2X' % multi)
+
+    if plus:
+        connect_plus('%s.outputX' % multi, target_attribute)
+    if not plus:
+        if not cmds.isConnected('%s.outputX' % multi, target_attribute):
+            cmds.connectAttr('%s.outputX' % multi, target_attribute, f = True)
+    
+    lock_state.restore_initial()
+    
+    return multi
+
+def insert_multiply(target_attribute, value = 0.1):
+    """
+    Insert a multiply divide into the input attribute of target_attribute.
+    
+    Args
+        target_attribute (str): The node.attribute name of an attribute.
+        value (float): The float value to multiply the target_attribute by.
+        
+    Return
+        str: The new multiply divide.
+    """
+    
+    new_name = target_attribute.replace('.', '_')
+    new_name = new_name.replace('[', '_')
+    new_name = new_name.replace(']', '_')
+    
+    input_attr = get_attribute_input(target_attribute)
+    
+    multi = cmds.createNode('multiplyDivide', n = 'multiplyDivide_%s' % new_name) 
+    
+    if input_attr:
+        disconnect_attribute(target_attribute)
+        cmds.connectAttr(input_attr, '%s.input1X' % multi)
+        
+    cmds.connectAttr('%s.outputX' % multi, target_attribute)
+    
+    cmds.setAttr('%s.input2X' % multi, value)
+    
+    return multi
+
+def connect_blend(source_attribute1, source_attribute2, target_attribute, value = 0.5 ):
+    """
+    Connect source 1 and source 2 into the target_attribute with and blendColors node.
+    
+    Args
+        source_attribute1 (str): The node.attribute name of an attribute.
+        source_attribute2 (str): The node.attribute name of an attribute.
+        target_attribute (str): The node.attribute name of an attribute.
+        value (float): The amount to blend the 2 attributes.
+        
+    Return
+        str: The name of the blendColors node
+    """
+    blend = cmds.createNode('blendColors', n = 'blendColors_%s' % source_attribute1)
+    
+    cmds.connectAttr(source_attribute1, '%s.color1R' % blend)
+    cmds.connectAttr(source_attribute2, '%s.color2R' % blend)
+    
+    connect_plus('%s.outputR' % blend, target_attribute)
+    
+    cmds.setAttr('%s.blender' % blend, value)
+    
+    return blend
+
+def connect_reverse(source_attribute, target_attribute):
+    """
+    Connect source_attribute into target_attribute with a reverse node inbetween.
+    
+    Args
+        source_attribute (str): The node.attribute name of an attribute.
+        target_attribute (str): The node.attribute name of an attribute.
+        
+    Return
+        str: The name of the reverse node
+    """
+    reverse = cmds.createNode('reverse', n = 'reverse_%s' % source_attribute)
+    
+    cmds.connectAttr(source_attribute, '%s.inputX' % reverse)
+    connect_plus('%s.outputX' % reverse, target_attribute)
+    
+    return reverse
+
+def connect_equal_condition(source_attribute, target_attribute, equal_value):
+    """
+    Connect source_attribute into target_attribute with a condition node inbetween.
+    
+    Args
+        source_attribute (str): The node.attribute name of an attribute.
+        target_attribute (str): The node.attribute name of an attribute.
+        equal_value (float): The value the condition should be equal to, in order to pass 1. 0 otherwise.
+        Good when hooking up enums to visibility.
+        
+    Return
+        str: The name of the condition node
+    """
+    condition = cmds.createNode('condition', n = 'condition_%s' % source_attribute)
+    
+    cmds.connectAttr(source_attribute, '%s.firstTerm' % condition)
+    cmds.setAttr('%s.secondTerm' % condition, equal_value)
+    
+    cmds.setAttr('%s.colorIfTrueR' % condition, 1)
+    cmds.setAttr('%s.colorIfFalseR' % condition, 0)
+    
+    connect_plus('%s.outColorR' % condition, target_attribute)
+    
+    return condition
+        
+def create_blend_attribute(source, target, min_value = 0, max_value = 10):
+    """
+    Create an attribute to hook into a blendshape.
+    
+    Args
+        source (str): The node.attr name of an attribute to connect into a blendshape.
+        target (str): the blendshape.weight name to connect into.
+        
+    Return
+        str: multiplyDivide node.
+    """
+    if not cmds.objExists(source):
+        split_source = source.split('.')
+        cmds.addAttr(split_source[0], ln = split_source[1], min = min_value, max = max_value, k = True, dv = 0)
+        
+    multi = connect_multiply(source, target, .1)
+    
+    return multi
+        
+def connect_message( input_node, destination_node, attribute ):
+    """
+    Connect the message attribute of input_node into a custom message attribute on destination_node
+    
+    Args
+        input_node (str): The name of a node.
+        destination_node (str): The name of a node.
+        attribute (str): The name of the message attribute to create and connect into. If already exists than just connect. 
+        
+    """
+    if not input_node or not cmds.objExists(input_node):
+        vtool.util.warning('No input node to connect message.')
+        return
+        
+    if not cmds.objExists('%s.%s' % (destination_node, attribute)):  
+        cmds.addAttr(destination_node, ln = attribute, at = 'message' )
+        
+    if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, attribute)):
+        cmds.connectAttr('%s.message' % input_node, '%s.%s' % (destination_node, attribute))
+    
+            
+def disconnect_attribute(attribute):
+    """
+    Disconnect an attribute.  Find its input automatically and disconnect it.
+    
+    Args
+        attribute (str): The name of an attribute that has a connection.
+    """
+    connection = get_attribute_input(attribute)
+    
+    if connection:
+        
+        cmds.disconnectAttr(connection, attribute)
+
+def get_indices(attribute):
+    """
+    Get the index values of a multi attribute.
+    
+    Args
+        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
+        
+    Return
+        list: A list of integers that correspond to multi attribute indices.
+    """
+    
+    multi_attributes = cmds.listAttr(attribute, multi = True)
+    
+    if not multi_attributes:
+        return
+    
+    indices = {}
+    
+    for multi_attribute in multi_attributes:
+        index = re.findall('\d+', multi_attribute)
+        
+        if index:
+            index = int(index[-1])
+            indices[index] = None
+        
+    indices = indices.keys()
+    indices.sort()
+        
+    return indices
+
+def get_available_slot(attribute):
+    """
+    Find the next available slot in a multi attribute.
+    
+    Args
+        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
+        
+    Return
+        int: The next empty slot.
+    """
+    slots = get_slots(attribute)
+    
+    if not slots:
+        return 0
+    
+    return int( slots[-1] )+1
+
+def get_slots(attribute):
+    """
+    attributes!!!
+    Given a multi attribute, get all the slots currently made.
+    
+    Args
+        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget 
+    
+    Return
+        list: The index of slots that are open.  Indices are returned as str(int)
+    """
+    slots = cmds.listAttr(attribute, multi = True)
+        
+    found_slots = []
+    
+    for slot in slots:
+        index = re.findall('\d+', slot)
+        
+        if index:
+            found_slots.append(index[-1])
+            
+    return found_slots
+
+def get_slot_count(attribute):
+    """
+    attributes!!!
+    Get the number of created slots in a multi attribute.
+    
+    Args
+        attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
+        
+    Return
+        int: The number of open slots in the multi attribute
+    """
+    
+    slots = get_slots(attribute)
+    
+    if not slots:
+        return 0
+    
+    return len(slots)
+
+def create_title(node, name):
+    """
+    Create a enum title attribute on node
+    
+    Args
+        node (str): The name of a node
+        name (str): The title name.
+    """
+    title = MayaEnumVariable(name)
+    title.create(node)
+      
+def zero_xform_channels(transform):
+    """
+    Zero out the translate and rotate. Set scale to 1.
+    
+    Args
+        transform (str): The name of a transform node.
+    """
+    
+    channels = ['translate',
+                'rotate']
+    
+    other_channels = ['scale']
+    
+    all_axis = ['X','Y','Z']
+    
+    for channel in channels:
+        for axis in all_axis:
+            try:
+                cmds.setAttr(transform + '.' + channel + axis, 0)
+            except:
+                pass
+            
+    for channel in other_channels:
+        for axis in all_axis:
+            try:
+                cmds.setAttr(transform + '.' + channel + axis, 1)
+            except:
+                pass
+    
+    return

@@ -395,7 +395,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
     def _joints_on_curve(self, count):
         selection = cmds.ls(sl = True)
         
-        util.create_oriented_joints_on_curve(selection[0], count, False)
+        util.create_oriented_joints_on_curve(selection[0], count)
          
     def _snap_joints_to_curve(self, count):
         

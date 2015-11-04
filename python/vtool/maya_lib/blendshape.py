@@ -6,7 +6,12 @@ import vtool.util
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
-import util
+    
+    import core
+    import attr
+    import deform
+    
+#import util
 
 class BlendShape(object):
     def __init__(self, blendshape_name = None):
@@ -37,7 +42,7 @@ class BlendShape(object):
         if not target_attrs:
             return
 
-        alias_index_map = util.map_blend_target_alias_to_index(self.blendshape)
+        alias_index_map = deform.map_blend_target_alias_to_index(self.blendshape)
         
         if not alias_index_map:
             return 
@@ -68,7 +73,7 @@ class BlendShape(object):
     def _get_weights(self, target_name, mesh_index):
         mesh = self.meshes[mesh_index]
                         
-        vertex_count = util.get_component_count(mesh)
+        vertex_count = core.get_component_count(mesh)
         
         attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
         
@@ -152,7 +157,7 @@ class BlendShape(object):
     def _disconnect_target(self, name):
         target_attr = self._get_target_attr(name)
         
-        connection = util.get_attribute_input(target_attr)
+        connection = attr.get_attribute_input(target_attr)
         
         if not connection:
             return
@@ -189,10 +194,10 @@ class BlendShape(object):
         
         blendshape = cmds.deformer(mesh, type = 'blendShape', foc = True)[0]
         
-        mesh_name = util.get_basename(mesh)
+        mesh_name = core.get_basename(mesh)
         
         if not self.blendshape:
-            base_mesh_name = util.get_basename(mesh_name, remove_namespace = True)
+            base_mesh_name = core.get_basename(mesh_name, remove_namespace = True)
             new_name = 'blendshape_%s' % base_mesh_name
             self.blendshape = cmds.rename(blendshape, new_name)
         
@@ -217,7 +222,7 @@ class BlendShape(object):
         if name in self.targets:
             return True
         
-    @util.undo_chunk
+    @core.undo_chunk
     def create_target(self, name, mesh = None, inbetween = 1):
         
         name = name.replace(' ', '_')
@@ -284,7 +289,7 @@ class BlendShape(object):
     def disconnect_target(self, name, inbetween = 1):
         target = self._get_mesh_input_for_target(name, inbetween)
         
-        util.disconnect_attribute(target)
+        attr.disconnect_attribute(target)
        
     def rename_target(self, old_name, new_name):
         
@@ -312,7 +317,7 @@ class BlendShape(object):
         if not self.is_target(name):
             return
         
-        new_name = util.inc_name(name)
+        new_name = core.inc_name(name)
         
         self._disconnect_targets()
         self._zero_target_weights()
@@ -343,7 +348,7 @@ class BlendShape(object):
         meshes = []
         
         for target in self.targets:
-            new_name = util.inc_name(target)
+            new_name = core.inc_name(target)
             
             self.set_weight(target, 1)
                     
@@ -386,7 +391,7 @@ class BlendShape(object):
         
         mesh = self.meshes[mesh_index]
         
-        vertex_count  = util.get_component_count(mesh)
+        vertex_count  = core.get_component_count(mesh)
         
         weights = vtool.util.convert_to_sequence(weights)
         
@@ -454,7 +459,7 @@ class BlendshapeManager(object):
 
     def _get_mesh(self):
         
-        mesh = util.get_attribute_input( '%s.mesh' % self.setup_group, node_only = True )
+        mesh = attr.get_attribute_input( '%s.mesh' % self.setup_group, node_only = True )
         
         if not mesh:
             return
@@ -467,7 +472,7 @@ class BlendshapeManager(object):
         if not mesh:
             return
         
-        blendshape = util.find_deformer_by_type(mesh, 'blendShape')
+        blendshape = deform.find_deformer_by_type(mesh, 'blendShape')
         
         self.blendshape = BlendShape(blendshape)
         
@@ -483,7 +488,7 @@ class BlendshapeManager(object):
         if not mesh:
             return
         
-        found = util.find_deformer_by_type(mesh, 'blendShape')
+        found = deform.find_deformer_by_type(mesh, 'blendShape')
         
         if found:
             return
@@ -511,7 +516,7 @@ class BlendshapeManager(object):
         return '%s.%s' % (self.setup_group, target)
                     
     def _get_variable(self, target):
-        attributes = util.Attributes(self.setup_group)
+        attributes = attr.Attributes(self.setup_group)
         
         var = attributes.get_variable(target)
         
@@ -522,14 +527,14 @@ class BlendshapeManager(object):
         if not cmds.objExists(self.setup_group):
             self.setup_group = cmds.group(em = True, n = self.setup_group)
         
-            util.hide_keyable_attributes(self.setup_group)
+            attr.hide_keyable_attributes(self.setup_group)
         
         
-        test_home = util.get_attribute_input('%s.mesh' % self.setup_group, node_only = True)
+        test_home = attr.get_attribute_input('%s.mesh' % self.setup_group, node_only = True)
         
         if start_mesh and not test_home:
             self._create_home(start_mesh)
-            util.connect_message(start_mesh, self.setup_group, 'mesh')
+            attr.connect_message(start_mesh, self.setup_group, 'mesh')
             
         self._create_blendshape()
         
@@ -538,7 +543,7 @@ class BlendshapeManager(object):
         if not self.setup_group:
             return 
         
-        attributes = util.Attributes(self.setup_group)
+        attributes = attr.Attributes(self.setup_group)
         variables = attributes.get_variables()
         
         for variable in variables:
@@ -565,14 +570,14 @@ class BlendshapeManager(object):
         
         blendshape.create_target(mesh, mesh)
         
-        var = util.MayaNumberVariable(mesh)
+        var = attr.MayaNumberVariable(mesh)
         var.set_min_value(0)
         var.set_max_value(10)
         var.set_variable_type('float')
         var.create(self.setup_group)
                     
-        multiply = util.connect_multiply('%s.%s' % (self.setup_group, mesh), '%s.%s' % (blendshape.blendshape, mesh))
-        cmds.rename(multiply, util.inc_name('multiply_shape_combo_1'))
+        multiply = attr.connect_multiply('%s.%s' % (self.setup_group, mesh), '%s.%s' % (blendshape.blendshape, mesh))
+        cmds.rename(multiply, core.inc_name('multiply_shape_combo_1'))
         
     
     def set_shape_weight(self, name, value):
@@ -603,7 +608,7 @@ class BlendshapeManager(object):
         
         name = self.blendshape.rename_target(old_name, new_name)
         
-        attributes = util.Attributes(self.setup_group)
+        attributes = attr.Attributes(self.setup_group)
         attributes.rename_variable(old_name, new_name)
         
         return name
@@ -612,7 +617,7 @@ class BlendshapeManager(object):
         
         target = '%s.%s' % (self.blendshape.blendshape, name)
         
-        input_node = util.get_attribute_input(target, node_only=True)
+        input_node = attr.get_attribute_input(target, node_only=True)
         
         if input_node and input_node != self.setup_group:
             cmds.delete(input_node)
@@ -642,7 +647,7 @@ class BlendshapeManager(object):
         
         blendshape.create_target(mesh, mesh)
         
-        var = util.MayaNumberVariable(mesh)
+        var = attr.MayaNumberVariable(mesh)
         var.set_min_value(0)
         var.set_max_value(10)
         var.set_variable_type('float')

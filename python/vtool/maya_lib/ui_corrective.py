@@ -1,15 +1,17 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from vtool import qt_ui
-
 import ui
-import util
-import corrective
 import vtool.util
 
-import maya.cmds as cmds
-import maya.mel as mel
-
+if vtool.util.is_in_maya():
+    import maya.cmds as cmds
+    import maya.mel as mel
+    import core
+    import attr
+    import space
+    import corrective
+    
 if qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
 if qt_ui.is_pyside():
@@ -766,7 +768,7 @@ class PoseTreeWidget(BaseTreeWidget):
         name = self._current_pose()
         transform = corrective.PoseManager().get_transform(name)
         
-        util.show_channel_box()
+        core.show_channel_box()
         
         cmds.select(transform)
         
@@ -776,7 +778,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         control = corrective.PoseManager().get_pose_control(name)
         
-        util.show_channel_box()
+        core.show_channel_box()
         
         cmds.select(control)
 
@@ -803,7 +805,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         blend = pose_inst.get_blendshape()
         
-        util.show_channel_box()
+        core.show_channel_box()
            
         cmds.select(blend, r = True)
         
@@ -1075,7 +1077,7 @@ class MeshWidget(qt_ui.BasicWidget):
         inc = 0
         
         for sculpt in sculpt_meshes:
-            name = util.get_basename(sculpt)
+            name = core.get_basename(sculpt)
             
             if sculpt_count == 1:
                 sculpt_name = name
@@ -1120,7 +1122,7 @@ class MeshWidget(qt_ui.BasicWidget):
         if missing_meshes: 
             qt_ui.warning('Cannot find: %s' % missing_meshes, self)
         
-    @util.undo_chunk
+    @core.undo_chunk
     def add_mesh(self, selection = None):
         
         pose_name = self.pose_name
@@ -1150,7 +1152,7 @@ class MeshWidget(qt_ui.BasicWidget):
                 
                 selected = self._get_mesh_from_vertex(selected)
                 
-                if not util.has_shape_of_type(selected, 'mesh'):
+                if not core.has_shape_of_type(selected, 'mesh'):
                     continue
                 
                 pass_mesh = selected
@@ -1275,7 +1277,7 @@ class MeshWidget(qt_ui.BasicWidget):
             
             item = QtGui.QListWidgetItem()
             item.setSizeHint(QtCore.QSize(0,20))
-            basename = util.get_basename(mesh)
+            basename = core.get_basename(mesh)
             item.setText(basename)
             item.longname = mesh
             self.mesh_list.addItem(item)
@@ -1550,14 +1552,14 @@ class PoseNoReaderWidget(PoseBaseWidget):
             style = self.styleSheet()
             self.input_text.setStyleSheet(style)
         
-        if util.is_attribute_numeric(text):
+        if attr.is_attribute_numeric(text):
                         
             style = self.styleSheet()
             self.input_text.setStyleSheet(style)
             
             self.set_input(text)
             
-        if not util.is_attribute_numeric(text):
+        if not attr.is_attribute_numeric(text):
             
             self.set_input(text)
             
@@ -1670,8 +1672,8 @@ class PoseConeWidget(PoseBaseWidget):
             self.parent_text.setStyleSheet(style)
             
             return
-        
-        if cmds.objExists(text) and util.is_transform(text):
+            
+        if cmds.objExists(text) and core.is_transform(text):
             
             style = self.styleSheet()
             self.parent_text.setStyleSheet(style)
