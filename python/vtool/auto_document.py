@@ -191,7 +191,7 @@ class ParsePython(object):
         self.data =[]
         headers = self._get_headers()
                 
-        open_file = open(self.filename, 'r')    
+        open_file = open(self.filename, 'r')
         lines = open_file.read()
         open_file.close()
         

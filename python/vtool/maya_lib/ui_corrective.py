@@ -766,7 +766,8 @@ class PoseTreeWidget(BaseTreeWidget):
                       
     def _select_joint(self):
         name = self._current_pose()
-        transform = corrective.PoseManager().get_transform(name)
+        pose = corrective.get_pose_instance(name)
+        transform = pose.get_transform(name)
         
         core.show_channel_box()
         
@@ -1197,7 +1198,10 @@ class MeshWidget(qt_ui.BasicWidget):
             items = []
             
             for mesh in sculpt_meshes:
-                index = corrective.PoseManager().get_mesh_index(pose_name, mesh)
+                
+                pose = corrective.get_pose_instance(pose_name)
+                index = pose.get_mesh_index(mesh)
+                
                 if index != None:
                     item = self.mesh_list.item(index)
                     if item:
@@ -1220,7 +1224,8 @@ class MeshWidget(qt_ui.BasicWidget):
                 if not mesh:
                     continue
                 
-                index = corrective.PoseManager().get_mesh_index(pose_name, mesh)
+                pose = corrective.get_pose_instance(pose_name)
+                index = pose.get_mesh_index(mesh)
                 
                 if index == None:
                     continue

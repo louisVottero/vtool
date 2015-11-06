@@ -9,13 +9,13 @@ import vtool.util
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     
-    import core
-    import attr
-    import space
-    import anim
-    import curve
-    import geo
-    import deform
+import core
+import attr
+import space
+import anim
+import curve
+import geo
+import deform
     
 #--- base
 

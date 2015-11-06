@@ -6,8 +6,8 @@ import api
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     
-    import core
-    import attr
+import core
+import attr
 
 def playblast(filename):
     """

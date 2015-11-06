@@ -7,12 +7,18 @@ import vtool.util
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
-    import core
+    
+import core
     
     #do not import anim module here.
     
 class Connections(object):
+    """
+    Convenience for dealing with connections.  Connection mapping gets stored in the class.
     
+    Args
+        node (str): The name of the node with connections.
+    """
     def __init__(self, node):
         
         self.node = node
@@ -130,7 +136,9 @@ class Connections(object):
         return len(self.outputs)
             
     def disconnect(self):
-        
+        """
+        Disconnect all connections.
+        """
         for inc in range(0, len(self.connections), 2):
             # needs to unlock the attribute first
             
@@ -151,6 +159,9 @@ class Connections(object):
             
     
     def connect(self):
+        """
+        This is meant to be run after disconnect(). This will reconnect all the stored connections.
+        """
         for inc in range(0, len(self.connections), 2):
             if not cmds.isConnected(self.connections[inc], self.connections[inc+1], ignoreUnitConversion = True):
                 
@@ -165,18 +176,43 @@ class Connections(object):
                     cmds.setAttr(self.connections[inc+1], l = True)
                 
     def refresh(self):
+        """
+        Refresh the stored connections
+        """
         self._store_connections()
                 
     def get(self):
+        """
+        Get the stored connections.  Input and Output connections in a list.
+        List is orderd as [[output, intput], ...], the output is whatever connects in, wether it be the node output into something or something inputing into the node.
+        """
         return self.connections
     
     def get_input_at_inc(self, inc):
+        """
+        Get connection that the node inputs into at index.
+        
+        Args
+            inc (int): The index of the connection.
+        """
         return self.inputs[inc]
     
     def get_output_at_inc(self, inc):
+        """
+        Get connection that outputs into the node at index.
+        
+        Args
+            inc (int): The index of the connection.
+        """
         return self.outputs[inc]
     
     def get_connection_inputs(self, connected_node):
+        """
+        Get connections that the node inputs into. List is [[node_output, external_input], ...]
+        
+        Args
+            connected_node (str): The name of a connected node to filter with. Only inputs into the node will be returned.
+        """
         found = []
         
         for inc in range(0, len(self.inputs), 2):
@@ -190,6 +226,16 @@ class Connections(object):
         return found
     
     def get_connection_outputs(self, connected_node):
+        """
+        Get connections that output into the node. List is [[external_output, node_input], ...]
+        
+        Args
+            connected_node (str): The name of a connected node to filter with. Only inputs from that node will be returned.
+            
+        Retrun 
+            list: [[node_output, external_input], ...]
+        """
+        
         found = []
         
         for inc in range(0, len(self.outputs), 2):
@@ -203,6 +249,15 @@ class Connections(object):
         return found        
     
     def get_inputs_of_type(self, node_type):
+        """
+        Get nodes of node_type that the node connects into.
+        
+        Args
+            node_type (str): Maya node type.
+            
+        Return
+            list: The names of connected nodes matching node_type. 
+        """
         found = []
         
         for inc in range(0, self.input_count):
@@ -214,6 +269,15 @@ class Connections(object):
         return found
         
     def get_outputs_of_type(self, node_type):
+        """
+        Get nodes of node_type that output into the node. 
+        
+        Args
+            node_type (str): Maya node type.
+            
+        Return
+            list: The names of connected nodes matching node_type. 
+        """
         found = []
         
         for inc in range(0, self.output_count):
@@ -225,14 +289,29 @@ class Connections(object):
         return found
     
     def get_outputs(self):
+        """
+        Get all nodes that output into the node.
+        
+        Return
+            list: [[external_output, node_input], ... ]
+        """
         return self._get_outputs()
         
     def get_inputs(self):
+        """
+        get all nodes that the node inputs into.
+        
+        Return
+            list: [[node_output, external_input], ... ]
+        """
         return self._get_inputs()
     
 class LockState(object):
     """
+    This saves the lock state, so that an attribute lock state can be reset after editing.
     
+    Args
+        attribute (str): "node.attribute"
     """
     def __init__(self, attribute):
         
@@ -240,33 +319,99 @@ class LockState(object):
         self.attribute = attribute
         
     def unlock(self):
+        """
+        Unlock the attribute.
+        """
         cmds.setAttr( self.attribute, l = False)
         
     def lock(self):
+        """
+        Lock the attribute.
+        """
         cmds.setAttr( self.attribute, l = True)
         
     def restore_initial(self):
+        """
+        Restore the initial lock state.
+        """
         cmds.setAttr( self.attribute, l = self.lock_state)
 
 class RemapAttributesToAttribute(object):
     """
-    attr!!!
+    Create a slider switch between multiple attributes.
+    This is useful for setting up switches like ikFk.
+    This will create the switch attribute if it doesn't already exist.
+    
+    Args
+        node (str): The name of a node.
+        attribute (str): The attribute which should do the switching.
+        
     """
     
     def __init__(self, node, attribute):
         
-        self.attribute = '%s.%s' % (node, attribute)
+        self.node_attribute = '%s.%s' % (node, attribute)
+        self.node = node
+        self.attribute = attribute
         self.attributes = []
-          
+        
+        self.keyable = True
+        
+        
+    def _create_attribute(self):
+        
+        if cmds.objExists(self.node_attribute):
+            return
+        
+        attribute_count = len(self.attributes)
+        
+        if attribute_count <= 1:
+            return
+        
+        variable = MayaNumberVariable(self.attribute)
+        variable.set_variable_type(variable.TYPE_DOUBLE)
+        variable.set_node(self.node)
+        variable.set_min_value(0)
+        variable.set_max_value(attribute_count-1)
+        variable.set_keyable(self.keyable)
+        variable.create()
+
+    def set_keyable(self, bool):
+        """
+        Wether the switch attribute should be keyable. 
+        This only works if the attribute doesn't exist prior to create()
+        """
+        
+        self.keyable = bool
+      
     def create_attributes(self, node, attributes):
+        """
+        Add attributes to be mapped. Saved in a list for create()
+        
+        Args
+            node (str): The name of the node where the attributes live.
+            attributes (list): The names of attributes on the node to map to the switch.
+        """
         for attribute in attributes:
             self.create_attribute(node, attribute)
           
     def create_attribute(self, node, attribute):
+        """
+        Add an attribute to be mapped. Saved in a list for create()
+        
+        Args
+            node (str): The name of the node where the attributes live.
+            attributes (list): The name of an attribute on the node to map to the switch.
+        """
         self.attributes.append( [node, attribute] )
                 
-    def create(self):        
+    def create(self): 
+        """
+        Create the switch.
+        """       
         length = len(self.attributes)
+        
+        self._create_attribute()
         
         for inc in range(0,length):
             
@@ -335,11 +480,10 @@ class RemapAttributesToAttribute(object):
             cmds.connectAttr('%s.outValue' % remap, '%s.%s' % (node,attribute))
                                     
             disconnect_attribute('%s.inputValue' % remap)
-            cmds.connectAttr(self.attribute,'%s.inputValue' % remap)
+            cmds.connectAttr(self.node_attribute,'%s.inputValue' % remap)
 
 class OrientJointAttributes(object):
     """
-    attr!!!
     Creates attributes on a node that can then be used with OrientAttributes
     """
     def __init__(self, joint = None):
@@ -967,6 +1111,9 @@ class Attributes(object):
     """
     Still testing. Convenience class for dealing with groups of attributes.
     Currently only works on bool, long, short, float, double
+    
+    Args
+        node (str): The name of the node where the attributes live.
     """
     numeric_attributes = ['bool', 'long', 'short', 'float', 'double']
     
@@ -1049,13 +1196,20 @@ class Attributes(object):
             var.delete()
         
     def create_all(self):
-        
+        """
+        Meant to be used after delete_all to restore the attributes.
+        """
         for var in self.variables:
             
             var.create()
         
     def delete(self, name):
+        """
+        delete the attribute by name
         
+        Args
+            name (str): The name of an attribute on the node.
+        """
         self.delete_all()
         
         variables = []
@@ -1071,7 +1225,14 @@ class Attributes(object):
         self.variables = variables
             
     def create(self, name, var_type, index = None):
+        """
+        Create an attribute on the node. This refreshes all the attributes.
         
+        Args
+            name (str): The name of the attribute.
+            var_type (str): The type of variable.
+            index (int): The index where the attribute should be created. 0 would make it the first attribute.
+        """
         self.delete_all()
         
         var_count = len(self.variables)
@@ -1100,18 +1261,39 @@ class Attributes(object):
         self.create_all()
     
     def get_variables(self):
+        """
+        Get the variables initialized to the var class
+        
+        Return
+            list: A list of var classes initalized to work on variables on the node.
+        """
         self._store_attributes()
         
         return self.variables
     
     def get_variable(self, attribute_name):
+        """
+        Get a variable by name initialized to the var class.
         
+        Args
+            attribute_name (str): The name of a variable on the node.
+            
+        Return
+            object: An instance of the var class.
+        """
         self._store_attributes()
         
         return self._retrieve_attribute(attribute_name)
     
     def rename_variable(self, old_name, new_name):
+        """
+        Rename a variable. 
+        This will work in such a way that the variables are all reset.
         
+        Args
+            old_name (str): The old name of the variable.
+            new_name (str): The new name of the variable.
+        """
         if not self.node:
             return
         
@@ -1137,7 +1319,10 @@ class Attributes(object):
 
 
 class MayaNode(object):
-    
+    """
+    Not fully implemented. 
+    Meant to be a convenience class for dealing with maya nodes.
+    """
     def __init__(self, name = None):
         
         self.node = None
@@ -1148,7 +1333,12 @@ class MayaNode(object):
         pass
     
 class MultiplyDivideNode(MayaNode):
-
+    """
+    Convenience class for dealing with multiply divide nodes.
+    
+    Args
+        name (str): The description to give the node. Name = 'multiplyDivide_(name)'.
+     """
     
     def __init__(self, name = None):
         
@@ -1164,10 +1354,29 @@ class MultiplyDivideNode(MayaNode):
         cmds.setAttr('%s.input2Z' % self.node, 1)
         
     def set_operation(self, value):
+        """
+        Set the operation.
+        0 = no operation
+        1 = multiply
+        2 = divide
+        3 = power
+        
+        default = 1
+        
+        Args
+            value (int): The operation index.
+        """
         cmds.setAttr('%s.operation' % self.node, value)
     
     def set_input1(self, valueX = None, valueY = None, valueZ = None):
+        """
+        Set the intput1 values
         
+        Args
+            valueX (float)
+            valueY (float)
+            valueZ (float)
+        """
         if valueX != None:
             cmds.setAttr('%s.input1X' % self.node, valueX)
             
@@ -1178,7 +1387,14 @@ class MultiplyDivideNode(MayaNode):
             cmds.setAttr('%s.input1Z' % self.node, valueZ)
         
     def set_input2(self, valueX = None, valueY = None, valueZ = None):
+        """
+        Set the intput2 values
         
+        Args
+            valueX (float)
+            valueY (float)
+            valueZ (float)
+        """
         if valueX != None:
             cmds.setAttr('%s.input2X' % self.node, valueX)
             
@@ -1189,30 +1405,91 @@ class MultiplyDivideNode(MayaNode):
             cmds.setAttr('%s.input2Z' % self.node, valueZ)
             
     def input1X_in(self, attribute):
+        """
+        Connect into input1X.
+        
+        Args
+            attribute (str): The node.attribute to connect in.
+        """
         cmds.connectAttr(attribute, '%s.input1X' % self.node)
     
     def input1Y_in(self, attribute):
+        """
+        Connect into input1Y.
+        
+        Args
+            attribute (str): The node.attribute to connect in.
+        """
+        
         cmds.connectAttr(attribute, '%s.input1Y' % self.node)
         
     def input1Z_in(self, attribute):
+        """
+        Connect into input1Z.
+        
+        Args
+            attribute (str): The node.attribute to connect in.
+        """
+        
         cmds.connectAttr(attribute, '%s.input1Z' % self.node)
     
     def input2X_in(self, attribute):
+        """
+        Connect into input2X.
+        
+        Args
+            attribute (str): The node.attribute to connect in.
+        """
+        
         cmds.connectAttr(attribute, '%s.input2X' % self.node)
     
     def input2Y_in(self, attribute):
+        """
+        Connect into input2Y.
+        
+        Args
+            attribute (str): The node.attribute to connect in.
+        """
+        
         cmds.connectAttr(attribute, '%s.input2Y' % self.node)
         
     def input2Z_in(self, attribute):
+        """
+        Connect into input2Z.
+        
+        Args
+            attribute (str): The node.attribute to connect in.
+        """
+        
         cmds.connectAttr(attribute, '%s.input2Z' % self.node)
         
     def outputX_out(self, attribute):
+        """
+        Connect out from outputX.
+        
+        Args
+            attribute (str): The node.attribute to connect out into.
+        """
+        
         connect_plus('%s.outputX' % self.node, attribute)
     
     def outputY_out(self, attribute):
+        """
+        Connect out from outputY.
+        
+        Args
+            attribute (str): The node.attribute to connect out into.
+        """
         connect_plus('%s.outputY' % self.node, attribute)
         
     def outputZ_out(self, attribute):
+        """
+        Connect out from outputZ.
+        
+        Args
+            attribute (str): The node.attribute to connect out into.
+        """
+        
         connect_plus('%s.outputZ' % self.node, attribute)
 
 
@@ -1440,7 +1717,15 @@ def hide_keyable_attributes(node):
     hide_attributes(node, attributes)
     
 def lock_attributes(node, bool_value = True, attributes = None, hide = False):
+    """
+    lock attributes on a node.
     
+    Args
+        node (str): The name of the node.
+        bool_value (bool): Wether to lock the attributes.
+        attributes (list): A list of attributes to lock on node.
+        hide (bool): Wether to lock and hide the attributes.
+    """
     if not attributes:
         attributes = cmds.listAttr(node, k = True)
     
@@ -1462,6 +1747,14 @@ def lock_attributes(node, bool_value = True, attributes = None, hide = False):
             cmds.setAttr(attribute_name, cb = False)
         
 def unlock_attributes(node, attributes = [], only_keyable = False):
+    """
+    unlock attributes on a node.
+    
+    Args
+        node (str): The name of the node.
+        attributes (list): A list of attributes to lock on node.
+        only_keyable (bool): Wether to unlock only the keyable attributes.
+    """
     
     attributes = vtool.util.convert_to_sequence(attributes)
     

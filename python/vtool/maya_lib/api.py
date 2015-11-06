@@ -29,20 +29,25 @@ def nodename_to_mobject(object_name):
     return selection_list.get_at_index(0) 
 
 def create_mesh_from_mesh(mesh, target_transform):
+    """
+    Create a mesh from the shape node of another mesh, without duplicating.
     
+    Args
+        mesh (str): The name of a mesh.
+        target_transform (str): The transform where the newly created mesh should live.
+    """
     mesh_fn = OpenMaya.MFnMesh()
     shape = nodename_to_mobject(mesh)
 
     transform = nodename_to_mobject(target_transform)
     mesh_fn.copy(shape.node(), transform.node())
 
-
-
 def duplicate(node):
-    
+    """
+    Api duplicate. Faster than cmds.duplicate, but no undo in python script.
+    """
     dag_node = DagNode(node)
     value = dag_node.duplicate()
-    print value
     
 class ApiObject(object):
     """
@@ -87,7 +92,12 @@ class MayaObject(ApiObject):
         return mobject 
     
     def set_node_as_mobject(self, node_name):
+        """
+        set the MObject from a node name.
         
+        Args
+            node_name (str): The name of a node.
+        """
         mobject = nodename_to_mobject(node_name)
             
         self.api_object = self._define_api_object(mobject)

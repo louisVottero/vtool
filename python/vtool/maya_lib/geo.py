@@ -6,9 +6,9 @@ import api
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     
-    import core
-    import attr
-    import space
+import core
+import attr
+import space
     
 
 class Rivet(object):

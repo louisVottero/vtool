@@ -12,12 +12,13 @@ if util.is_in_maya():
     import maya.cmds as cmds
 
 def find_processes(directory = None):
-    """This will try to find the processes in the supplied directory. If no directory supplied, it will search the current working directory.
+    """
+    This will try to find the processes in the supplied directory. If no directory supplied, it will search the current working directory.
     
-    Args:
+    Args
         directory(str): The directory to search for processes.
         
-    Returns:
+    Returns
         list: The procceses in the directory.
     """
     
@@ -49,16 +50,17 @@ def find_processes(directory = None):
     return found
 
 def get_unused_process_name(directory = None, name = None):
-    """This will try to find a a process named process in the directory.
+    """
+    This will try to find a a process named process in the directory.
     
     It will increment the name to process1 and beyond until it finds a unique name. 
     If no directory supplied, it will search the current working directory.
     
-    Args:
+    Args
         directory (str): Direcotry to search for processes.
         name (str): name to give the process.
         
-    Returns:
+    Returns
         str: The unique process name.
     """
     if not directory:
@@ -806,10 +808,6 @@ class Process(object):
             scripts (list): List of scripts to add to the manifest.
             states (list): List that of states for that corresponds to the scripts list.
             append (bool): Wether to add the scripts to the end of the manifest or replace it.
-        
-        Return
-            None
-        
         """
         
         manifest_file = self.get_manifest_file()
@@ -849,12 +847,12 @@ class Process(object):
         manifest_file = self.get_manifest_file()
         
         if not util_file.is_file(manifest_file):
-            return
+            return None, None
         
         lines = util_file.get_file_lines(manifest_file)
         
         if not lines:
-            return
+            return None, None
         
         scripts = []
         states = []
@@ -882,12 +880,15 @@ class Process(object):
         return scripts, states
         
     def sync_manifest(self):
-                
+        """
+        Sync the manifest with whats on disk.
+        """
+        
         scripts, states = self.get_manifest()
         
         synced_scripts = []
         synced_states = []
-                
+         
         for inc in range(0, len(scripts)):
             
             current_script = scripts[inc]
@@ -1049,7 +1050,7 @@ class Process(object):
                 raise
             
             if not hard_error:
-                util.show(status)
+                #util.show(status)
                 return status
               
         try:
@@ -1111,7 +1112,7 @@ class Process(object):
                 raise
             
             if not hard_error:
-                util.show(status)
+                #util.show(status)
                 return status
         
         return status
@@ -1172,8 +1173,11 @@ class Process(object):
  
 def get_default_directory():
     """
-        Get a default directory to begin in.  
-        The directory is different if running from inside Maya.
+    Get a default directory to begin in.  
+    The directory is different if running from inside Maya.
+    
+    Return
+        str: Path to the default directory.
     """
     if util.is_in_maya():
         return util_file.join_path(util_file.get_user_dir(), 'process_manager')
@@ -1182,12 +1186,15 @@ def get_default_directory():
     
 def copy_process(source_process, target_process = None ):
     """
-        source process is an instance of a process that you want to copy 
-        target_process is the instance of a process you want to copy to. 
-        If no target_process is specified, the target process will be set to the directory where the source process is located automatically. 
-        If there is already a process named the same in the target process, the name will be incremented. 
-        If you need to give the copy a specific name, you should rename it after copy. 
-
+    source process is an instance of a process that you want to copy 
+    target_process is the instance of a process you want to copy to. 
+    If no target_process is specified, the target process will be set to the directory where the source process is located automatically. 
+    If there is already a process named the same in the target process, the name will be incremented. 
+    If you need to give the copy a specific name, you should rename it after copy. 
+    
+    Args
+        source_process (str): The instance of a process.
+        target_process (str): The instance of a process. If None give, duplicate the source_process.
     """
     source_name = source_process.get_name()
     source_name = source_name.split('/')[-1]
@@ -1234,6 +1241,12 @@ def copy_process_data(source_process, target_process, data_name, replace = False
     The instances should be set to the directory and process name desired to work with. 
     data_name specifies the name of the data folder to copy. 
     If replace the existing data with the same name will be deleted and replaced by the copy. 
+    
+    Args
+        source_process (str): The instance of a process.
+        target_process (str): The instance of a process.
+        data_name (str): The name of the data to copy.
+        replace (bool): Wether to replace the code in the target process or just version up.
     """
     
     data_type = source_process.get_data_type(data_name)
@@ -1287,10 +1300,16 @@ def copy_process_data(source_process, target_process, data_name, replace = False
             
 def copy_process_code(source_process, target_process, code_name, replace = False):
     """
-        source_process and target_process need to be instances of the Process class. 
-        The instances should be set to the directory and process name desired to work with. 
-        code_name specifies the name of the code folder to copy. 
-        If replace the existing code with the same name will be deleted and replaced by the copy. 
+    source_process and target_process need to be instances of the Process class. 
+    The instances should be set to the directory and process name desired to work with. 
+    code_name specifies the name of the code folder to copy. 
+    If replace the existing code with the same name will be deleted and replaced by the copy.
+    
+    Args
+        source_process (str): The instance of a process.
+        target_process (str): The instance of a process.
+        code_name (str): The name of the code to copy.
+        replace (bool): Wether to replace the code in the target process or just version up.
     """
     
     if code_name == None:

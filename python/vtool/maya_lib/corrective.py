@@ -8,18 +8,27 @@ import vtool.util
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     #import util
-    import core
-    import blendshape
-    import attr
-    import space
-    import geo
-    import deform
-    import shade
-    import rigs
+import core
+import blendshape
+import attr
+import space
+import geo
+import deform
+import shade
+import rigs
 
 
 
 def get_pose_instance(pose_name):
+    """
+    Get a pose instance from the pose name.
+    
+    Args
+        pose_name (str): The name of a pose.
+    
+    Return
+        object: The instance of the pose at the pose type.
+    """
     
     if cmds.objExists('%s.type' % pose_name):
         pose_type = cmds.getAttr('%s.type' % pose_name)
@@ -33,7 +42,9 @@ def get_pose_instance(pose_name):
     return pose
     
 class PoseManager(object):
-
+    """
+    Convenience for working with poses.
+    """
     def __init__(self):
         self.poses = []
         
@@ -54,20 +65,41 @@ class PoseManager(object):
                 cmds.select(selection)
     
     def is_pose(self, name):
+        """
+        Check if name matches the name of a pose.
         
+        Args
+            name (str): Check if the node at name is a pose.
+            
+        Return
+            bool
+        """
         if PoseBase().is_a_pose(name):
             return True
         
         return False
         
     def get_pose_instance(self, pose_name):
+        """
+        Get the instance of a pose. 
         
+        Args
+            pose_name (str): The name of a pose.
+            
+        Return
+            object: The instance of the pose at the pose type.
+        """
         pose = get_pose_instance(pose_name)
         
         return pose
                         
     def get_poses(self):
+        """
+        Get the poses under the pose_gr
         
+        Return
+            list: The names of poses.
+        """
         self._check_pose_group()
         
         relatives = cmds.listRelatives(self.pose_group)
@@ -82,50 +114,36 @@ class PoseManager(object):
                 poses.append(relative)
         
         return poses
-
-    def get_all_pose_inbetween_target(self):
-        
-        poses = self.get_poses()
-        
-        targets = [] 
-        
-        for pose in poses:
-            pose_instance = self.get_pose_instance(pose)
-            
-            target = pose_instance.get_target_name()
-    
-            targets.append(target)
-    
-        return targets
-    
-    def get_transform(self, name):
-        pose = self.get_pose_instance(name)
-        transform = pose.get_transform()
-        
-        return transform
         
     def get_pose_control(self, name):
+        """
+        Get the control of a pose.
         
+        Args
+            name (str): The name of a pose.
+            
+        Return
+            str: The name of the pose.
+        """
         pose = self.get_pose_instance(name)
         
         control = pose.pose_control
         
         return control
     
-    def get_mesh_index(self, name, mesh):
-        pose = self.get_pose_instance(name)
-        
-        mesh_index = pose.get_target_mesh_index(mesh)
-        
-        if mesh_index != None:
-            
-            return mesh_index
-    
     def set_pose_group(self, pose_gr_name):
-    
+        """
+        Set the pose group to work with.
+        
+        Args
+            pose_gr_name (str): The name of a pose group.
+        """
         self.pose_group = pose_gr_name
     
     def set_weights_to_zero(self):
+        """
+        Set all poses in the pose_gr to zero.
+        """
 
         poses = self.get_poses()
         
@@ -141,14 +159,19 @@ class PoseManager(object):
     
     
     def set_default_pose(self):
-        
+        """
+        Set the default control pose. This is the control pose the rig should revert to by default.
+        """
         self._check_pose_group()
         
         store = rigs.StoreControlData(self.pose_group)
         store.set_data()
         
     def set_pose_to_default(self):
-        
+        """
+        Set the control pose to the default pose.
+        This is handy for resetting control positions after going to a pose.
+        """
         self._check_pose_group()
         
         store = rigs.StoreControlData(self.pose_group)
@@ -158,16 +181,35 @@ class PoseManager(object):
         
     
     def set_pose(self, pose):
+        """
+        Set the control pose to the a pose.
+        This is handy for returning a character to the pose it was sculpted in.
         
+        Args
+            pose (str): The name of a pose.
+        """
         pose_instance = self.get_pose_instance(pose)
         pose_instance.goto_pose()
         
     def set_pose_data(self, pose):
+        """
+        Set the pose data from the control values. 
+        This is handy for making sure a character can get back into pose before sculpting it.
+        
+        Args
+            pose (str): The name of a pose.
+        """
         store = rigs.StoreControlData(pose)
         store.set_data()
         
     def set_poses(self, pose_list):
+        """
+        Not in use.  This was the beginning of a combo system.
+        It proved difficult to extrapulate a combo pose from multiple poses.
         
+        Args
+            pose_list (list): A list of pose names.
+        """
         data_list = []
         
         for pose_name in pose_list:
@@ -179,7 +221,16 @@ class PoseManager(object):
         store = rigs.StoreControlData().eval_multi_transform_data(data_list)
     
     def create_pose(self, pose_type, name = None):
+        """
+        Create a pose.
         
+        Args
+            pose_type (str): The name of a pose type.
+            name (str): The name for the pose.
+            
+        Return
+            str: The name of the new pose.
+        """
         pose = None
         
         if pose_type == 'cone':
@@ -195,6 +246,15 @@ class PoseManager(object):
             
     @core.undo_chunk
     def create_cone_pose(self, name = None):
+        """
+        Create a cone pose. 
+        
+        Args
+            name (str): The name for the pose.
+            
+        Return
+            str: The name of the pose.
+        """
         selection = cmds.ls(sl = True, l = True)
         
         if not selection:
@@ -219,7 +279,15 @@ class PoseManager(object):
 
     @core.undo_chunk
     def create_no_reader_pose(self, name = None):
+        """
+        Create a no reader pose. 
         
+        Args
+            name (str): The name for the pose.
+            
+        Return
+            str: The name of the pose.
+        """
         if not name:
             name = core.inc_name('pose_no_reader_1')
         
@@ -233,7 +301,15 @@ class PoseManager(object):
     
     @core.undo_chunk
     def create_timeline_pose(self, name = None):
+        """
+        Create a no timeline pose. 
         
+        Args
+            name (str): The name for the pose.
+            
+        Return
+            str: The name of the pose.
+        """
         current_time = str(cmds.currentTime(q = True))
         time_number_strings = current_time.split('.')
         
@@ -254,7 +330,15 @@ class PoseManager(object):
         return pose_control
     
     def create_group_pose(self, name = None):
+        """
+        Create a group pose. 
         
+        Args
+            name (str): The name for the pose.
+            
+        Return
+            str: The name of the pose.
+        """
         if not name:
             name = core.inc_name('pose_group_1')
         
@@ -306,17 +390,13 @@ class PoseManager(object):
                     
         return added_meshes
     
-    def remove_mesh_from_pose(self, pose_name, mesh):
-        
-        pose = self.get_pose_instance(pose_name)
-        
-        shape = geo.get_mesh_shape(mesh)
-        
-        if shape:
-            pose.remove_mesh(mesh)
-    
     def visibility_off(self, pose_name):
+        """
+        Change the visibility of the pose meshes.
         
+        Args
+            pose_name (str): The name of a pose.
+        """
         pose = self.get_pose_instance(pose_name)
         
         pose_type = cmds.getAttr('%s.type' % pose_name)
@@ -332,7 +412,14 @@ class PoseManager(object):
         
         
     def toggle_visibility(self, target_mesh, pose_name, view_only = False):
+        """
+        Toggle the visibility of the sculpt mesh.
         
+        Args
+            target_mesh (str): The name of a mesh affected by the pose.
+            pose_name (str): The name of a pose.
+            view_only (bool): Wether to calculate its delta when turning visibility off, or just turn visibility off.
+        """
         
         
         if target_mesh == None:
@@ -348,10 +435,20 @@ class PoseManager(object):
     
     @core.undo_chunk
     def delete_pose(self, name):
+        """
+        Delete a pose by name.
+        
+        Args
+            name (str): The name of a pose.
+        """
         pose = self.get_pose_instance(name)
         pose.delete()
         
     def detach_poses(self):
+        """
+        Detach poses from the pose_gr and the rig.
+        
+        """
         poses = self.get_poses()
         
         detached_attributes = {}
@@ -367,7 +464,9 @@ class PoseManager(object):
         self.detached_attributes = detached_attributes
         
     def attach_poses(self, poses = None):
-        
+        """
+        Attach poses to the pose_gr and the rig.
+        """
         if not poses:
             poses = self.get_poses()
         
@@ -383,7 +482,12 @@ class PoseManager(object):
             pose.attach(detached)
             
     def create_pose_blends(self, poses = None):
+        """
+        Refresh the deltas on poses. By default do it to all poses under the pose_gr.
         
+        Args
+            poses (args): The names of poses.
+        """
         if not poses:
             poses = self.get_poses()
         if poses:
@@ -419,6 +523,17 @@ class PoseManager(object):
         progress.end()
     
     def mirror_pose(self, name):
+        """
+        Mirror a pose to a corresponding R side pose.
+        
+        For example
+            If pose name = pose_arm_L, there must be a corresponding pose_arm_R.
+            The pose at pose_arm_R must be a mirrored pose of pose_arm_L.
+            
+        Args
+            name (str): The name of a left side pose.
+        
+        """
         pose = self.get_pose_instance(name)
         mirror = pose.mirror()
         
@@ -488,16 +603,34 @@ class PoseGroup(object):
     
     #--- pose
     def is_a_pose(self, node):
+        """
+        Check if the named node is a pose.
+        
+        Args
+            node (str): The name of a node.
+        """
         if cmds.objExists('%s.POSE' % node ):    
             return True
         
         return False
 
     def set_pose_group(self, pose_group_name):
+        """
+        Set the pose group to work with.
+        The pose group is pose_gr by default and is setu automatically.
+        
+        Args
+            pose_group_name (str): The name of a pose group.
+        """
         self.pose_gr = pose_group_name
     
     def set_pose(self, pose_name):
+        """
+        Set the pose that the instance should work on.
         
+        Args
+            pose_name (str): The name of a pose.
+        """
         if not cmds.objExists('%s.description' % pose_name):
             return
         
@@ -505,14 +638,25 @@ class PoseGroup(object):
         self.pose_control = pose_name
         
     def goto_pose(self):
-        
+        """
+        Goto the pose.  
+        This is important so the character can back into the same pose it was sculpted at.
+        """
         if self.pose_control:
             
             store = rigs.StoreControlData(self.pose_control)
             store.eval_data()
             
     def rename(self, description):
+        """
+        Rename the pose.
         
+        Args
+            description (str): The new name for the pose.
+            
+        Return
+            str: The new name.
+        """
         description = vtool.util.clean_name_string(description)
         description = core.inc_name(description)
         self._set_description(description)
@@ -522,6 +666,12 @@ class PoseGroup(object):
         return self.pose_control
             
     def create(self):
+        """
+        Create the pose.
+        
+        Return
+            str: The new name.
+        """
         top_group = self._create_top_group()
         
         pose_control = self._create_pose_control()
@@ -535,11 +685,21 @@ class PoseGroup(object):
         return pose_control
     
     def create_all_blends(self):
-
+        """
+        Create all the blends in a pose. 
+        This refreshes the deltas.
+        """
         self.create_sub_poses()
         
     def create_blend(self, mesh_index = None, goto_pose = True, sub_poses = True):
+        """
+        Create the blend. This will refresh the delta.
         
+        Args
+            mesh_index (int): Work with the mesh at the index. Pose needs to be affecting at least one mesh.
+            goto_pose (bool): Wether to go to the pose. 
+            sub_poses (bool): Wether to create blend for sub poses as well.
+        """
         if goto_pose:
             self.goto_pose()
         
@@ -547,7 +707,12 @@ class PoseGroup(object):
             self.create_sub_poses()
             
     def create_sub_poses(self, mesh = None):
+        """
+        Create the blends and refresh deltas for the sub poses in a pose.
         
+        Args
+            mesh (int): Work with the mesh at the index. Pose needs to be affecting at least one mesh.
+        """
         children = self._get_sub_poses()
         
         if children:
@@ -572,21 +737,42 @@ class PoseGroup(object):
                     self.create_blend(mesh_index, True, False)
     
     def delete(self):
+        """
+        Delete the pose.
+        """
         cmds.delete(self.pose_control)
         
     def select(self):
+        """
+        Select the pose.
+        """
         cmds.select(self.pose_control)
         
         store = rigs.StoreControlData(self.pose_control)
         store.eval_data()
         
-    def attach(self, outputs = None):        
+    def attach(self, outputs = None):
+        """
+        Attach the pose. 
+        Attaching and detaching help with export/import.
+        
+        Args
+            outputs (list) 
+        """        
         self.attach_sub_poses()
     
     def detach(self):
+        """
+        Detach the pose. 
+        Attaching and detaching help with export/import.
+        """
         self.detach_sub_poses()
         
     def detach_sub_poses(self):
+        """
+        Detach the sub poses.
+        Attaching and detaching help with export/import.
+        """
         children = self._get_sub_poses()
         
         if not children:
@@ -597,6 +783,10 @@ class PoseGroup(object):
             child_instance.detach()
             
     def attach_sub_poses(self):
+        """
+        Attach the sub poses.
+        Attaching and detaching help with export/import.
+        """
         children = self._get_sub_poses()
         
         if not children:
@@ -607,6 +797,9 @@ class PoseGroup(object):
             child_instance.attach()
         
     def mirror(self):
+        """
+        Mirror the pose.
+        """
         pass
     
 class PoseBase(PoseGroup):
@@ -1122,6 +1315,12 @@ class PoseBase(PoseGroup):
     #--- pose
     
     def set_pose(self, pose_name):
+        """
+        Set the pose that the instance should work on.
+        
+        Args
+            pose_name (str): The name of a pose.
+        """
         
         super(PoseBase, self).set_pose(pose_name)
         
@@ -1130,6 +1329,15 @@ class PoseBase(PoseGroup):
             self._refresh_meshes()
     
     def rename(self, description):
+        """
+        Rename the pose and the target on the blendshape.
+        
+        Args
+            description (str): The new name for the pose.
+            
+        Return
+            str: The new name.
+        """
         
         old_description = vtool.util.clean_name_string( self.description )
         
@@ -1149,7 +1357,9 @@ class PoseBase(PoseGroup):
         return self.pose_control
        
     def delete(self):
-        
+        """
+        Delete the pose and pose related nodes.
+        """
         self.delete_blend_input()
         self._delete_connected_nodes()
         
@@ -1158,13 +1368,28 @@ class PoseBase(PoseGroup):
     #--- mesh
       
     def has_a_mesh(self):
+        """
+        Check if the pose has a mesh.
+        
+        Return
+            bool: Wether the pose has a mesh or not.
+        """
         if self._get_mesh_message_attributes():
             return True
         
         return False
         
     def add_mesh(self, mesh, toggle_vis = True):
+        """
+        Add a mesh to the pose.
         
+        Args
+            mesh (str): The name of a mesh.
+            toggle_vis (bool): Wether to toggle the meshes visibility.
+            
+        Return
+            str: Return the name of the created pose mesh for sculpting. Return False if failed. 
+        """
         mesh = cmds.ls(mesh, l = True)
         
         if not mesh:
@@ -1202,8 +1427,6 @@ class PoseBase(PoseGroup):
         
         self._connect_mesh(pose_mesh)
         
-        
-        
         string_var = attr.MayaStringVariable('mesh_pose_source')
         string_var.create(pose_mesh)
         string_var.set_value(mesh)
@@ -1216,7 +1439,12 @@ class PoseBase(PoseGroup):
         return pose_mesh
     
     def remove_mesh(self, mesh):
+        """
+        Remove a mesh from the pose.
         
+        Args
+            mesh (str): The name of a mesh affected by the pose.
+        """
         index = self.get_target_mesh_index(mesh)
         mesh = self.get_mesh(index)
         
@@ -1244,7 +1472,15 @@ class PoseBase(PoseGroup):
         
     
     def get_mesh(self, index):
+        """
+        Get the sculpt mesh at the index. Sculpt mesh is the mesh used to generate the delta.
         
+        Args
+            index (int): The index of a sculpt mesh.
+            
+        Return
+            str: The name of the sculpt mesh at the index.
+        """
         if index == None:
             
             return
@@ -1262,7 +1498,12 @@ class PoseBase(PoseGroup):
         return mesh
 
     def get_mesh_count(self):
+        """
+        Get the number of meshes the pose affects.
         
+        Return
+            int
+        """
         attrs = self._get_mesh_message_attributes()
         
         if attrs:
@@ -1271,7 +1512,12 @@ class PoseBase(PoseGroup):
         return 0
     
     def get_target_meshes(self):
+        """
+        Get the meshes affected by the pose.
         
+        Return
+            list: A list of the names of meshes.
+        """
         meshes = []
         
         for inc in range(0, self._get_mesh_count()):
@@ -1284,7 +1530,15 @@ class PoseBase(PoseGroup):
         return meshes
         
     def get_target_mesh(self, mesh):
+        """
+        Get the sculpt mesh. The mesh used to generate a delta.
         
+        Args
+            mesh (str): The name of a mesh affected by the pose.
+            
+        Return
+            str: The name of the sculpt mesh that affects mesh.
+        """
         long_name = None
         
         if cmds.objExists('%s.mesh_pose_source' % mesh):
@@ -1314,6 +1568,15 @@ class PoseBase(PoseGroup):
         return long_name
         
     def get_target_mesh_index(self, target_mesh):
+        """
+        Get the index of a target mesh. Target meshes are the meshes that have the delta applied to them.
+        
+        Args
+            target_mesh (str): The name of a target mesh.
+            
+        Return
+            int: The index of the mesh. 
+        """
         
         target_meshes = self.get_target_meshes()
         
@@ -1332,7 +1595,12 @@ class PoseBase(PoseGroup):
             inc += 1
     
     def get_mesh_index(self, mesh):
+        """
+        Get the index of a sculpt mesh from a target mesh.
         
+        Args
+            mesh (str): The name of a target mesh.
+        """
         attributes = self._get_mesh_message_attributes()
         
         inc = 0
@@ -1347,7 +1615,9 @@ class PoseBase(PoseGroup):
         
     @core.undo_chunk
     def reset_target_meshes(self):
-        
+        """
+        Reset target meshes on a pose, so that they have no corrective delta.
+        """
         count = self._get_mesh_count()
         
         for inc in range(0, count):
@@ -1379,7 +1649,13 @@ class PoseBase(PoseGroup):
             self.create_blend(inc) 
         
     def visibility_off(self, mesh, view_only = False):
+        """
+        Turn the sculpt mesh visibility off.
         
+        Args
+            mesh (str): The name of the mesh afftected by the pose. Its corresponding sculpt mesh will have its visibility turned off.
+            vew_only (bool): Wether to just change the view, or recalculate the delta.
+        """
         if not mesh:
             return
         
@@ -1396,7 +1672,12 @@ class PoseBase(PoseGroup):
             self.create_blend(index)
         
     def visibility_on(self, mesh):
+        """
+        Turn sculpt visibility on.
         
+        Args
+            mesh (str): The name of a mesh affected by the pose. Its corresponding sculpt mesh will have its visibility turned on.
+        """
         if not mesh:
             return
         
@@ -1414,7 +1695,13 @@ class PoseBase(PoseGroup):
                 core.add_to_isolate_select(mesh)
         
     def toggle_vis(self, mesh_index, view_only = False):
+        """
+        Toggle the visibility of a sculpt mesh.
         
+        Args
+            mesh_index (int): The index of a sculpt mesh.
+            view_only (bool): Wether to just change visibility, or refresh the delta when visibility is turned off.
+        """
         if mesh_index == None:
             return
         
@@ -1440,7 +1727,10 @@ class PoseBase(PoseGroup):
     #--- blend
         
     def create_all_blends(self):
-        
+        """
+        Create all the blends in a pose. 
+        This refreshes the deltas.
+        """
         count = self._get_mesh_count()
         
         pose = True
@@ -1453,6 +1743,14 @@ class PoseBase(PoseGroup):
             self.create_blend(inc, goto_pose = pose)
     
     def create_blend(self, mesh_index, goto_pose = True, sub_poses = True):
+        """
+        Create the blend. This will refresh the delta.
+        
+        Args
+            mesh_index (int): Work with the mesh at the index. Pose needs to be affecting at least one mesh.
+            goto_pose (bool): Wether to go to the pose. 
+            sub_poses (bool): Wether to create blend for sub poses as well.
+        """
         
         mesh = self._get_current_mesh(mesh_index)
         
@@ -1503,7 +1801,10 @@ class PoseBase(PoseGroup):
 
         
     def detach_sub_poses(self):
-        
+        """
+        Detach the sub poses.
+        Attaching and detaching help with export/import.
+        """
         manager = PoseManager()
         manager.set_pose_group(self.pose_control)
         children = manager.get_poses()
@@ -1517,7 +1818,10 @@ class PoseBase(PoseGroup):
             child_instance.detach()
             
     def attach_sub_poses(self):
-        
+        """
+        Attach the sub poses.
+        Attaching and detaching help with export/import.
+        """
         manager = PoseManager()
         manager.set_pose_group(self.pose_control)
         children = manager.get_poses()
@@ -1531,6 +1835,12 @@ class PoseBase(PoseGroup):
             child_instance.attach()
             
     def connect_blend(self, mesh_index = None):
+        """
+        Connect pose to the blendshape.
+        
+        Args
+            mesh_index (int): Work with the mesh at the index. 
+        """
         mesh = None
         
         if mesh_index == None:
@@ -1557,6 +1867,12 @@ class PoseBase(PoseGroup):
             self.blend_input = None
  
     def disconnect_blend(self, mesh_index = None):
+        """
+        Disconnect pose to the blendshape.
+        
+        Args
+            mesh_index (int): Work with the mesh at the index. 
+        """
         
         mesh = None
         
@@ -1592,6 +1908,9 @@ class PoseBase(PoseGroup):
             attr.disconnect_attribute(desired_attribute)   
 
     def delete_blend_input(self):
+        """
+        Delete the connections going into the blendshape.
+        """
         
         outputs = attr.get_attribute_outputs('%s.weight' % self.pose_control)
         
@@ -1639,7 +1958,12 @@ class PoseBase(PoseGroup):
                     blend.remove_target(split_output[1])
         
     def get_blendshape(self, mesh_index = None):
+        """
+        Get the blendshape.
         
+        Args
+            mesh_index (int): Work with the mesh at the index. 
+        """
         mesh = None
         
         if mesh_index == None:
@@ -1658,42 +1982,11 @@ class PoseBase(PoseGroup):
         return blendshape_node
         
     #--- attributes
-        
-    def set_target_name(self, string_value):
-        
-        self.target_name = string_value
-        
-        if not cmds.objExists('%s.targetName' % self.pose_control):
-            cmds.addAttr(self.pose_control, ln = 'targetName', dt = 'string')
-        
-        if string_value == None:
-            return
-        
-        cmds.setAttr('%s.targetName' % self.pose_control, string_value, type = 'string')
-        
-    def get_target_name(self):
-        
-        target_name = cmds.getAttr('%s.targetName' % self.pose_control)
-        
-        return target_name
-        
-    def set_inbetween_weight(self, value):
-        
-        self.inbetween_weight = value
-        
-        if not cmds.objExists('%s.inbetweenWeight' % self.pose_control):
-            cmds.addAttr(self.pose_control, ln = 'inbetweenWeight', at = 'float', min = -1, max = 1)
-        
-        if value == None:
-            return
-        
-        cmds.setAttr('%s.inbetweenWeight' % self.pose_control, value)
-        
-    def get_inbetween_weight(self):
-        
-        return cmds.getAttr('%s.inbetweenWeight' % self.pose_control)
-
+    
     def disconnect_weight_outputs(self):
+        """
+        Disconnect outputs from the pose.weight attribute.
+        """
         
         self.disconnected_attributes = None
         
@@ -1714,7 +2007,9 @@ class PoseBase(PoseGroup):
         return outputs
         
     def reconnect_weight_outputs(self, outputs):
-        
+        """
+        Connect outputs from pose.weight attr.
+        """
         if not outputs:
             return
         

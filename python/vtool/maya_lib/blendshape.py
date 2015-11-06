@@ -7,13 +7,19 @@ import vtool.util
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     
-    import core
-    import attr
-    import deform
+import core
+import attr
+import deform
     
 #import util
 
 class BlendShape(object):
+    """
+    Convenience for working with blendshapes.
+    
+    Args
+        blendshape_name (str): The name of the blendshape to work on. 
+    """
     def __init__(self, blendshape_name = None):
         self.blendshape = blendshape_name
         
@@ -191,7 +197,12 @@ class BlendShape(object):
     #--- blendshape deformer
 
     def create(self, mesh):
+        """
+        Create an empty blendshape on the mesh.
         
+        Args
+            mesh (str): The name of the mesh.
+        """
         blendshape = cmds.deformer(mesh, type = 'blendShape', foc = True)[0]
         
         mesh_name = core.get_basename(mesh)
@@ -205,13 +216,32 @@ class BlendShape(object):
         self._store_meshes()
 
     def rename(self, name):
+        """
+        Rename the blendshape.
+        
+        Args
+            name (str): The ne name of the blendshape.
+        """
         self.blendshape = cmds.rename(self.blendshape, name)
         self.set(self.blendshape)
 
     def set_envelope(self, value):
+        """
+        Set the envelope value of the blendshape node.
+        
+        Args
+            value (float)
+        """
+        
         cmds.setAttr('%s.envelope' % self.blendshape, value)
     
     def set(self, blendshape_name):
+        """
+        Set the name of the blendshape to work on.
+        
+        Args
+            blendshape_name (str): The name of a blendshape.
+        """
         self.blendshape = blendshape_name
         self._store_targets()
         self._store_meshes()
@@ -219,12 +249,25 @@ class BlendShape(object):
     #--- target
 
     def is_target(self, name):
+        """
+        Check if name is a target on the blendshape.
+        
+        Args
+            name (str): The name of a target.
+        """
         if name in self.targets:
             return True
         
     @core.undo_chunk
     def create_target(self, name, mesh = None, inbetween = 1):
+        """
+        Add a target to the blendshape.
         
+        Args
+            name (str): The name for the new target.
+            mesh (str): The mesh to use as the target. If None, the target weight attribute will be created only.
+            inbetween (float): The inbetween value. 0.5 will have the target activate when the weight is set to 0.5.
+        """
         name = name.replace(' ', '_')
         
         if not self.is_target(name):
@@ -250,12 +293,20 @@ class BlendShape(object):
        
     
     def insert_target(self, name, mesh, index):
-        
+        """
+        Not implemented.
+        """
         pass
            
     
     def replace_target(self, name, mesh):
+        """
+        Replace the mesh at the target.
         
+        Args
+            name (str): The name of a target on the blendshape.
+            mesh (str): The mesh to connect to the target.
+        """
         if not mesh:
             return
         
@@ -273,6 +324,12 @@ class BlendShape(object):
             vtool.util.show('Could not replace target %s, it does not exist' % name)
         
     def remove_target(self, name):
+        """
+        Remove the named target.
+        
+        Args
+            name (str): The name of a target on the blendshape.
+        """
         
         target_group = self._get_input_target_group(name)
         
@@ -287,12 +344,25 @@ class BlendShape(object):
         cmds.aliasAttr('%s.%s' % (self.blendshape, name), rm = True)
        
     def disconnect_target(self, name, inbetween = 1):
+        """
+        Disconnect a target on the blendshape.
+        
+        Args
+            name (str): The name of a target on the blendshape.
+            inbetween (float): 0-1 value of an inbetween to disconnect.
+        """
         target = self._get_mesh_input_for_target(name, inbetween)
         
         attr.disconnect_attribute(target)
        
     def rename_target(self, old_name, new_name):
+        """
+        Rename a target on the blendshape.
         
+        Args
+            old_name (str): The current name of the target.
+            new_name (str): The new name to give the target.
+        """
         if not self.targets.has_key(old_name):
             return old_name
         
@@ -314,6 +384,19 @@ class BlendShape(object):
         return new_name
     
     def recreate_target(self, name, value = 1.0, mesh = None):
+        """
+        Recreate a target on a new mesh from a blendshape. 
+        If you wrap a mesh to the blendshaped mesh, you can specify it with the mesh arg.
+        The target will be recreated from the mesh specified.
+        
+        Args
+            name (str): The name of a target.
+            value (float):  The weight value to recreate the target it.
+            mesh (float): The mesh to duplicate. This can be a mesh that doesn't have the blendshape in its deformation stack.
+            
+        Return 
+            str: The name of the recreated target.
+        """
         if not self.is_target(name):
             return
         
@@ -341,6 +424,18 @@ class BlendShape(object):
         return new_mesh
         
     def recreate_all(self, mesh = None):
+        """
+        Recreate all the targets on new meshes from the blendshape.
+        
+        If you wrap a mesh to the blendshaped mesh, you can specify it with the mesh arg.
+        The target will be recreated from the mesh specified.
+        
+        Args
+            mesh (float): The mesh to duplicate. This can be a mesh that doesn't have the blendshape in its deformation stack.
+            
+        Return 
+            str: The name of the recreated target.
+        """
     
         self._disconnect_targets()
         self._zero_target_weights()
@@ -373,12 +468,23 @@ class BlendShape(object):
         return meshes
     
     def set_targets_to_zero(self):
+        """
+        Set all the target weights to zero.
+        
+        """
         self._zero_target_weights()
         
     
     #--- weights
         
     def set_weight(self, name, value):
+        """
+        Set the weight of a target.
+        
+        Args
+            name (str): The name of a target.
+            value (float): The value to set the target to.
+        """
         if self.is_target(name):
             
             attribute_name = self._get_target_attr(name)
@@ -388,6 +494,14 @@ class BlendShape(object):
                 cmds.setAttr(attribute_name, value)
     
     def set_weights(self, weights, target_name = None, mesh_index = 0):
+        """
+        Set the vertex weights on the blendshape. If no taget name is specified than the base weights are changed.
+        
+        Args
+            weights (list): A list of weight values. If a float is given, the float will be converted into a list of the same float with a count equal to the number of vertices.
+            target_name (str): The name of the target.
+            mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes. Usually index is 0.
+        """
         
         mesh = self.meshes[mesh_index]
         
@@ -417,6 +531,13 @@ class BlendShape(object):
                 inc += 1
         
     def set_invert_weights(self, target_name = None, mesh_index = 0):
+        """
+        Invert the blendshape weights at the target. If no target given, the base weights are inverted.
+        
+        Args
+            target_name (str): The name of a target.
+            mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes. Usually index is 0.
+        """
         
         weights = self._get_weights(target_name, mesh_index)
         
@@ -433,6 +554,9 @@ class BlendShape(object):
     
     
 class BlendShapeTarget(object):
+    """
+    Convenience for storing target information.
+    """
     def __init__(self, name, index):
         self.name = name
         self.index = index
@@ -441,7 +565,9 @@ class BlendShapeTarget(object):
         
         
 class BlendshapeManager(object):
-    
+    """
+    WIP. Convenience for editing blendshape combos. 
+    """
     def __init__(self):
         
         self.start_mesh = None

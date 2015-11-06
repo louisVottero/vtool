@@ -10,14 +10,13 @@ if util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
     
-    #import maya_lib.util
-    import maya_lib.core
-    import maya_lib.attr
-    import maya_lib.deform
-    import maya_lib.anim
-    import maya_lib.curve
-    import maya_lib.corrective
-    import maya_lib.rigs
+import maya_lib.core
+import maya_lib.attr
+import maya_lib.deform
+import maya_lib.anim
+import maya_lib.curve
+import maya_lib.corrective
+import maya_lib.rigs
 
 class DataManager(object):
     
@@ -1250,16 +1249,13 @@ class PoseData(MayaCustomData):
 
     def _filter_inputs(self, inputs):
         
-        found = []
-        
         for node in inputs:
+            if not cmds.objExists(node):
+                continue
+            
             if cmds.nodeType(node) == 'hyperLayout':
                 cmds.delete(node)
-            
-            found.append(node)
-        
-        return found
-
+                
     def _get_inputs(self, pose):
         
         if not pose:

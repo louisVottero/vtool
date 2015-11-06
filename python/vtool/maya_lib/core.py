@@ -137,7 +137,6 @@ class TrackNodes(object):
             
 class ProgressBar(object):
     """
-    core!!!
     Manipulate the maya progress bar.
     
     Args

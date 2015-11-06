@@ -13,6 +13,7 @@ import subprocess
 import tempfile
 import threading
 import stat
+import ast
 
 import util
 
@@ -1102,6 +1103,18 @@ def inc_path_name(directory, padding = 0):
     
     return unique_path.get()
 
+def get_file_text(filepath):
+    """
+    Get the text directly from a file. One long string, no parsing.
+    
+    """
+
+    open_file = open(filepath, 'r')    
+    lines = open_file.read()
+    open_file.close()
+    
+    return lines
+
 def get_file_lines(filepath):
     """
     Get the text from a file.
@@ -1536,6 +1549,9 @@ def source_python_module(code_directory):
             import md5
             return  imp.load_source(md5.new(code_directory).hexdigest(), code_directory, fin)
         
+        except:
+            return traceback.format_exc()
+        
         finally:
             
             try: fin.close()
@@ -1543,7 +1559,7 @@ def source_python_module(code_directory):
             
     except ImportError:
         traceback.print_exc(file = sys.stderr)
-        return None      
+        return None
 
 def load_python_module(module_name, directory):
     """
@@ -1576,6 +1592,7 @@ def load_python_module(module_name, directory):
                                          description)
                 
             except:
+                filepath.close()
                 return traceback.format_exc()
             
             finally:
@@ -1660,64 +1677,26 @@ def get_line_imports(lines):
     
     return module_dict
                     
-def get_line_defined(lines):
+def get_defined(module_path):
     """
-    This needs to be replaced by AST stuff.
+    Get classes and definitions from the text of a module.
     """
+    file_text = get_file_text(module_path)
+    
     defined = []
     
-    for line in lines:
-        
-        split_line = line.split()
-        split_line_count = len(split_line)
-        
-        indent = 0
-        indents = []
-        
-        indent = len(line) - len(line.lstrip())
-        indents.append(indent)
-        
-        last_line_def = False
-        last_line_class = False
-        
-        
-        
-        for inc in range(0, split_line_count):
-            
-            name = None
-            
-            if split_line[inc] == 'class':
-                
-                if inc < split_line_count - 1:
-                    
-                    name = split_line[inc+1]
-                    match = re.search('[_A-Za-z0-9]+', name )
-                    if match:
-                        name = match.group(0)
-                        
-                    last_line_class = True
-                    last_line_def = False
-                     
-            if split_line[inc] == 'def' and indent == 0:
-                
-                if inc < split_line_count - 1:
-                    
-                    match = re.search('[_A-Za-z0-9]+\((.*?)\)', line )
-                    
-                    if match:
-                        
-                        name = match.group(0)
-                    
-                    last_line_def = True
-                    last_line_class = False
-            
-                    
-            
-            if name:
+    ast_tree = ast.parse(file_text)
     
-                defined.append(name)
-    
-                    
+    for node in ast_tree.body:
+        
+        
+        if isinstance(node, ast.FunctionDef):
+            function_name = node.name + '()'
+            defined.append( function_name )
+            
+        if isinstance(node, ast.ClassDef):
+            defined.append(node.name)
+            
     return defined
     
 

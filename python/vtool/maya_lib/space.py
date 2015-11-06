@@ -6,8 +6,8 @@ import api
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     
-    import core
-    import attr
+import core
+import attr
     
     #do not import geo
     
@@ -16,7 +16,6 @@ if vtool.util.is_in_maya():
 
 class PinXform(object):
     """
-    space!!!
     This allows you to pin a transform so that its parent and child are not affected by any edits.
     """
     def __init__(self, xform_name):
@@ -209,7 +208,9 @@ class MatchSpace(object):
         self._set_world_scale_pivot()
 
 class ConstraintEditor():
-    
+    """
+    Convenience class for editing constraints.
+    """
     constraint_parent = 'parentConstraint'
     constraint_point = 'pointConstraint'
     constraint_orient = 'orientConstraint'
@@ -252,14 +253,40 @@ class ConstraintEditor():
         return eval('cmds.%s("%s", query = True, weightAliasList = True, )' % (constraint_type, constraint))
 
     def get_weight_count(self, constraint):
+        """
+        Get the number of inputs weights (transforms) feeding int the constraint.
+        
+        Args
+            constraint (str): The name of a constraint.
+        """
         return len(cmds.ls('%s.target[*]' % constraint))
     
     def get_constraint(self, transform, constraint_type):
+        """
+        Find a constraint on the transform.
+        
+        Args
+            transform (str): The name of a transform that is constrained.
+            constraint_type (str): The type of constraint to search for. Eg. parentConstraint, orientConstraint, pointConstraint, etc.
+            
+        Retrun 
+            str: The name of the constraint.
+        """
+        
         constraint = eval('cmds.%s("%s", query = True)' % (constraint_type, transform) )
         
         return constraint
     
     def get_transform(self, constraint):
+        """
+        Get the transform that the constraint is constraining.
+        
+        Args
+            constraint (str): The name of the constraint.
+        
+        Return
+            str: The name of the transform that is being constrained.
+        """
         transform = attr.get_attribute_input('%s.constraintParentInverseMatrix' % constraint)
         
         if not transform:
@@ -269,7 +296,15 @@ class ConstraintEditor():
         return new_thing[0]
     
     def get_targets(self, constraint):
+        """
+        Get the transforms influencing the constraint.
         
+        Args
+            constraint (str): The name of the constraint.
+            
+        Return
+            list: The names of the transforms affecting the constraint.
+        """
         transform = self.get_transform(constraint)
         constraint_type = self._get_constraint_type(constraint)
         
@@ -277,7 +312,15 @@ class ConstraintEditor():
                                                                         transform) )
         
     def remove_target(self, target, constraint):
+        """
+        Remove a target from a constraint. 
+        This only works if the constraint has all its original connections intact.
         
+        Args
+            target (str): The name of the transform target to remove.
+            constraint (str): The name of a constraint that has target affecting it.
+            
+        """
         transform = self.get_transform(constraint)
         constraint_type = self._get_constraint_type(constraint)
         
@@ -286,34 +329,39 @@ class ConstraintEditor():
                                                             transform) )
         
     def set_interpolation(self, int_value, constraint):
+        """
+        Set the interpolation type of the constraint.
+        
+        Args
+            int_value (int): index of the interpolation type.
+            constraint (str): The name of a constraint. Probably "parentConstraint" or "orientConstraint".
+        """
         
         cmds.setAttr('%s.interpType' % constraint, int_value)
         
     def create_switch(self, node, attribute, constraint):
+        """
+        Create a switch over all the target weights.
         
+        Args
+            node (str): The name of the node to add the switch attribute to.
+            attribute (str): The name to give the switch attribute.
+            constraint (str): The name of the constraint with multiple weight target transforms affecting it.
+        """
         
         attributes = self.get_weight_names(constraint)
         
-        attribute_count = len(attributes)
-        
-        if attribute_count <= 1:
-            return
-        
-        if not cmds.objExists('%s.%s' % (node, attribute)):
-            variable = attr.MayaNumberVariable(attribute)
-            variable.set_variable_type(variable.TYPE_DOUBLE)
-            variable.set_node(node)
-            variable.set_min_value(0)
-            variable.set_max_value(attribute_count-1)
-            variable.create()
-        
         remap = attr.RemapAttributesToAttribute(node, attribute)
+        #remap.set_keyable(False)
         remap.create_attributes(constraint, attributes)
         remap.create()
 
 class IkHandle(object):
     """
-    space!!!
+    Convenience for creating ik handles.
+    
+    Args
+        name (str): The description to give the node. Name = 'ikHandle_(name)'.
     """
     
     solver_rp = 'ikRPsolver'
@@ -380,26 +428,74 @@ class IkHandle(object):
 
         
     def set_start_joint(self, joint):
+        """
+        Set start joint for the ik handle.
+        
+        Args
+            joint (str): The name of the start joint.
+        """
         self.start_joint = joint
         
     def set_end_joint(self, joint):
+        """
+        Set end joint for the ik handle.
+        
+        Args
+            joint (str): The name of the end joint.
+        """
         self.end_joint = joint
         
     def set_joints(self, joints_list):
+        """
+        Set the joints for the ik handle.
+        start joint becomes the first entry.
+        end joint beomces the las entry.
+        
+        Args
+            joints_list (list): A list of joints.
+        """
         self.start_joint = joints_list[0]
         self.end_joint = joints_list[-1]
         self.joints = joints_list
         
     def set_curve(self, curve):
+        """
+        Set the curve for spline ik.
+        
+        Args
+            curve (str): The name of the curve.
+        """
         self.curve = curve
         
     def set_solver(self, type_name):
+        """
+        Set the solver type.
+        
+        solver types:
+        'ikRPsolver'
+        'ikSCsolver'
+        'ikSplineSolver'
+        'ikSpringSolver'
+        
+        Args
+            type_name (str): The name of the solver type.
+        """
         self.solver_type = type_name
     
     def set_full_name(self, fullname):
+        """
+        Set the full name for the ik handle, no prefixing or formatting added.
+        """
         self.name = fullname
     
     def create(self):
+        """
+        Create the ik handle.
+        
+        Return
+            str: The name of the ik handle.
+        """
+        
         
         if not self.start_joint or not self.end_joint:
             return
@@ -733,7 +829,10 @@ class OrientJoint(object):
 
 class BoundingBox(vtool.util.BoundingBox):
     """
-    space!!!
+    Convenience for dealing with bounding boxes.
+    
+    Args
+        thing (str): The name of a transform in maya. Bounding box info is automatically loaded from the transform.
     """
     def __init__(self, thing):
         
@@ -746,7 +845,8 @@ class BoundingBox(vtool.util.BoundingBox):
 
 class AttachJoints(object):
     """
-    space
+    Attach a chain of joints to a matching chain.
+    parentConstraint and scaleConstraint are used to make the attachment.
     """
     def __init__(self, source_joints, target_joints):
         self.source_joints = source_joints
@@ -787,13 +887,27 @@ class AttachJoints(object):
             self._attach_joint(source_chain[inc], target_chain[inc] )
             
     def set_source_and_target_joints(self, source_joints, target_joints):
+        """
+        Args
+            source_joints (list): A list of joint names that should move the target.
+            target_joints (list): A list of joints names that should be moved by the source.
+        """
         self.source_joints = source_joints
         self.target_joints = target_joints
     
     def create(self):
+        """
+        Create the attachments.
+        """
         self._attach_joints(self.source_joints, self.target_joints)
 
 class DuplicateHierarchy(object):
+    """
+    Duplicate the hierachy of a transform.
+    
+    Args
+        transform (str): The name of a transform with child hierarchy.
+    """
     def __init__(self, transform):
         
         self.top_transform = transform
@@ -808,7 +922,6 @@ class DuplicateHierarchy(object):
         
         self.only_these_transforms = None
         
-        self.prefix_name = None
             
     def _get_children(self, transform):
         return cmds.listRelatives(transform, children = True, type = 'transform')
@@ -868,25 +981,41 @@ class DuplicateHierarchy(object):
         return top_duplicate
     
     def only_these(self, list_of_transforms):
+        """
+        Only duplicate transforms in list_of_transforms.
+        
+        Args
+            list_of_transforms (list): Names of transforms in the hierarchy.
+        """
         self.only_these_transforms = list_of_transforms
         
     def stop_at(self, transform):
+        """
+        The transform at which to stop the duplication.
         
+        Args
+            transform (str): The name of the transform.
+        """
         relative = cmds.listRelatives(transform, type = 'transform')
         
         if relative:
             self.stop_at_transform = relative[0]
         
     def replace(self, old, new):
+        """
+        Replace the naming in the duplicate.
         
+        Args
+            old (str): String in the duplicate name to replace.
+            new (str): String in the duplicate to replace with.
+        """
         self.replace_old = old
         self.replace_new = new
         
-    def set_prefix(self, prefix):
-        self.prefix_name = prefix
-        
     def create(self):
-        
+        """
+        Create the duplicate hierarchy.
+        """
         cmds.refresh()
         
         self._duplicate_hierarchy(self.top_transform)

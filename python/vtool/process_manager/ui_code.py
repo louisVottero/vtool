@@ -18,6 +18,9 @@ if vtool.qt_ui.is_pyside():
     from PySide import QtCore, QtGui
     
 class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
+    """
+    The main widget for code editing.
+    """
     
     def __init__(self):
         super(CodeProcessWidget, self).__init__()

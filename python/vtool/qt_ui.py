@@ -2084,8 +2084,8 @@ class CodeEdit(BasicWidget):
         self.text_edit.textChanged.connect(self._text_changed)
         self.text_edit.file_set.connect(self._text_file_set)
         
-        #turning off completer for now.
-        #self.text_edit.set_completer( PythonCompleter() )
+        #completer on off... comment out to turn completer off.
+        self.text_edit.set_completer( PythonCompleter() )
         
     def _build_menu_bar(self):
         
@@ -2140,6 +2140,24 @@ class CodeEdit(BasicWidget):
             
         self.fullpath.setText('Fullpath: %s' % filepath)
         self.save_state.setText('No Changes')
+        
+class ListAndHelp(QtGui.QListView):
+    
+    def __init__(self):
+        super(ListAndHelp, self).__init__()
+        
+        layout = QtGui.QHBoxLayout()
+        
+        self.setLayout(layout)
+        
+        self.list = QtGui.QListView()
+        
+        button = QtGui.QTextEdit()
+        
+        layout.setContentsMargins(0,0,0,0)
+        
+        layout.addWidget(self.list)
+        layout.addWidget(button)
         
 class CodeTextEdit(QtGui.QPlainTextEdit):
     
@@ -2260,15 +2278,25 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                 
                 if result == True:
                     rect = self.cursorRect()
-                    rect.translate(0, 2)
+                    #rect.translate(2, 2)
                     
                     width = self.completer.popup().sizeHintForColumn(0) + self.completer.popup().verticalScrollBar().sizeHint().width()
+                    
                     if width > 350:
                         width = 350
                     
+                    width = 600
                     rect.setWidth(width)
                     
                     self.completer.complete(rect)
+                    
+                    
+                    
+                    
+                    #widget = self.completer.widget()
+                    #print widget.parentWidget()
+                    #layout = widget.layout()
+                    #layout.addWidget(QtGui.QTextEdit())
                 
                 if result == False:
                     self.completer.popup().hide()
@@ -2908,10 +2936,13 @@ class CodeLineNumber(QtGui.QWidget):
         
         self.code_editor._line_number_paint(event)
 
+
+
 class PythonCompleter(QtGui.QCompleter):
     
     def __init__(self):
         super(PythonCompleter, self).__init__()
+        
         
         self.model_strings = []
         
@@ -2919,7 +2950,12 @@ class PythonCompleter(QtGui.QCompleter):
         
         #model = QtGui.QStringListModel(['global','good','bad','better'], self)
         self.string_model =QtGui.QStringListModel(self.model_strings, self)
+        
         #model.setStringList(['global'])
+        
+        #lister = ListAndHelp()
+        #self.setPopup(lister)
+        #lister.list.setModel(self.string_model)
         
         self.setCompletionMode(self.PopupCompletion)
         self.setCaseSensitivity(QtCore.Qt.CaseSensitive)
@@ -2932,6 +2968,18 @@ class PythonCompleter(QtGui.QCompleter):
         
         self.refresh_completer = True
         self.sub_activated = False
+        
+        self.show_info_popup()
+        
+    def show_info_popup(self, info = None):
+        
+        
+        self.info = QtGui.QTextEdit()
+        self.info.setEnabled(False)
+        
+        
+        self.info.setWindowFlags(QtCore.Qt.Popup)
+        self.info.show()
         
     def _construct_model_string(self):
         pass
@@ -3038,24 +3086,12 @@ class PythonCompleter(QtGui.QCompleter):
         self.string_model.setStringList(imports)
     
     def load_sub_imports(self, path):
-        
-        lines = util_file.get_file_lines(path)
-        
-        defined = util_file.get_line_defined(lines)
-        
         """
-        parse = util_file.ParsePython(path)
-        
-        defined = []
-        
-        for child in parse.main_scope.children:
-            
-            if child.scope_type == 'def':
-                defined.append(child.name + child.bracket_string)
-            if child.scope_type == 'class':
-                defined.append(child.name + '()')
-            
+        get namespaces in a module.
         """
+        
+        defined = util_file.get_defined(path)
+        
         self.string_model.setStringList(defined)
         
     
@@ -3064,8 +3100,12 @@ class PythonCompleter(QtGui.QCompleter):
         self.string_model.setStringList([])
         
     def handle_text(self, text):
+        """
+        Parse a single line of text.
+        """
         
         if text:
+            
             cursor = self.widget().textCursor()
             column = cursor.columnNumber() - 1
             
@@ -3083,31 +3123,31 @@ class PythonCompleter(QtGui.QCompleter):
             current_word = cursor.selectedText()
             
             current_char = text[column]
-            current_char = current_char.strip()
+            #current_char = current_char.strip()
             
             split_line_count = len(split_line)
             
-            current_inc = split_line_count-1
+            current_split = split_line_count-1
             
             for inc in range(0, split_line_count):
                 if split_line[inc] == current_word:
-                    current_inc = inc
-    
-            if current_inc >= 0:
+                    current_split = inc
+            
+            if current_split >= 0:
+                
+                if current_char == ' ':
+                    return False
                 
                 if current_char == '.':
                     self.sub_activated = column
                 
-                #if self.sub_activated and self.sub_activated < column:
-                #    self.sub_activated = False
-                
-                if split_line[current_inc].find('.') > -1 and current_char and self.sub_activated:
+                if self.sub_activated:
                     
-                    split_part = split_line[current_inc]
+                    split_part = split_line[current_split]
                     sub_split = split_part.split('.')
                     sub_split_count = len(sub_split)
                 
-                    if split_line[current_inc-1] == 'import' or split_line[current_inc-1] == 'from':
+                    if split_line[current_split-1] == 'import' or split_line[current_split-1] == 'from':
                     
                         test_text = ''
                         
@@ -3125,26 +3165,22 @@ class PythonCompleter(QtGui.QCompleter):
                             return False
                         
                         self.setCompletionPrefix(test_text)
+                        
                         self.popup().setCurrentIndex(self.completionModel().index(0,0))
-    
                         return True
                         
                     text = self.widget().toPlainText()
-                    lines = util_file.get_text_lines(text)    
-                        
+                    lines = util_file.get_text_lines(text)
+                    
                     imports = util_file.get_line_imports(lines)
                     
                     if sub_split_count == 2:
-                        
+                    
                         if imports.has_key(sub_split[0]):
                             
                             path = imports[sub_split[0]]
                             
                             if util_file.is_file(path):
-                                #self.sub_thread = GetSubImportsThread(path)
-                                #self.sub_thread.search_text = sub_split[1]
-                                #self.sub_thread.finished.connect(self._load_text)
-                                #here need to setup _load_text
                                 self.load_sub_imports(path)
                             
                             if util_file.is_dir(path):
@@ -3160,7 +3196,7 @@ class PythonCompleter(QtGui.QCompleter):
                             self.popup().setCurrentIndex(self.completionModel().index(0,0))
     
                             return True
-                    
+            
             if split_line[0] == 'from':
                 
                 if split_line_count >= 3:
@@ -3191,6 +3227,7 @@ class PythonCompleter(QtGui.QCompleter):
                             return True
     
         self.sub_activated = False
+        
         return False
     
     def text_under_cursor(self):

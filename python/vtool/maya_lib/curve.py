@@ -14,6 +14,9 @@ if vtool.util.is_in_maya():
 current_path = os.path.split(__file__)[0]
 
 class CurveToData(object):
+    """
+    Convenience for dealing with curve data.
+    """
     
     def __init__(self, curve):
         
@@ -53,9 +56,27 @@ class CurveToData(object):
         return curve_shapes
     
     def get_degree(self, index = 0):
+        """
+        Get the degree of the curve.
+        
+        Args
+            index (int): The shape index. 0 for first shape, 1 for the second shape, etc...
+            
+        Return
+            int: The number of degrees.
+        """
         return self.curve_functions[index].get_degree()
         
     def get_knots(self, index = 0):
+        """
+        Get the degree of the curve.
+        
+        Args
+            index (int): The shape index. 0 for first shape, 1 for the second shape, etc...
+            
+        Return
+            int: The number of degrees.
+        """
         return self.curve_functions[index].get_knot_values()
         
     def get_cvs(self, index = 0):

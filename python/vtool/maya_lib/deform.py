@@ -11,14 +11,16 @@ if vtool.util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
     
-    import core
-    import attr
-    import space
-    import geo
+import core
+import attr
+import space
+import geo
     
 
 class ClusterObject(object):
-    
+    """
+    Convenience class for clustering objects.
+    """
     def __init__(self, geometry, name):
         self.geometry = geometry
         self.join_ends = False
@@ -32,16 +34,29 @@ class ClusterObject(object):
         return create_cluster(cvs, self.name)
         
     def get_cluster_list(self):
+        """
+        Return
+            list: The names of cluster deformers.
+        """
         return self.clusters
     
     def get_cluster_handle_list(self):
+        """
+        Return
+            list: The name of cluster handles.
+        """
         return  self.handles
         
     def create(self):
+        """
+        Create the clusters.
+        """
         self._create()
 
 class ClusterSurface(ClusterObject):
-    
+    """
+    Convenience for clustering a surface.
+    """
     def __init__(self, geometry, name):
         super(ClusterSurface, self).__init__(geometry, name)
         
@@ -208,18 +223,35 @@ class ClusterSurface(ClusterObject):
         return self.clusters
     
     def set_join_ends(self, bool_value):
+        """
+        Clusters on the ends of the surface take up 2 cvs.
         
+         Args
+            bool_value (bool): Wether 2 cvs at the start have one cluster, and 2 cvs on the end have one cluster.
+        """
         self.join_ends = bool_value
         
     def set_join_both_ends(self, bool_value):
+        """
+        Clusters on the ends of the surface are joined together.
+        
+        Args
+            bool_value (bool): Wether to join the ends of the surface.
+        """
         self.join_both_ends = bool_value
         
     def set_cluster_u(self, bool_value):
+        """
+        Args
+            bool_value (bool): Wether to cluster the u instead of the v spans.
+        """
         self.cluster_u = bool_value
     
 
 class ClusterCurve(ClusterSurface):
-        
+    """
+    Convenience for clustering a curve. 
+    """
     def _create_start_and_end_clusters(self):
         cluster, handle = self._create_cluster('%s.cv[0:1]' % self.geometry)
         
@@ -267,9 +299,33 @@ class ClusterCurve(ClusterSurface):
         
         return self.clusters
     
+    def set_cluster_u(self, bool_value):
+        """
+        Not available on curves.
+        """
+        
+        vtool.util.warning('Can not set cluster u, there is only one direction for spans on a curve. To many teenage girls there was only One Direction for their musical tastes.')
 
 class SplitMeshTarget(object):
+    """
+    Split a mesh target edits based on skin weighting.
+    The target will be reverted back to the base mesh based on weight of the defined joints on weight mesh.
+    Good for splitting blendshape targets.
     
+    Usage
+    
+        split = SplitMeshTarget('smile')
+        split.set_base_mesh('home_mesh')
+        split.set_weight_mesh('weight_mesh')
+        split.set_weight_joint( 'joint_weight_L', suffix = 'L')
+        split.set_weight_joint( 'joint_weight_R', suffix = 'R')
+        split.create()
+        
+        result = smileL and smileR meshes.
+        
+    Args
+        target_mesh (str): The name of a target mesh, eg. smile.
+    """
     def __init__(self, target_mesh):
         self.target_mesh = target_mesh
         self.weighted_mesh = None
@@ -277,23 +333,70 @@ class SplitMeshTarget(object):
         self.split_parts = []
     
     def set_weight_joint(self, joint, suffix = None, prefix = None, split_name = True):
+        """
+        Set the a joint to split the shape. Must be skinned to the weight mesh
+        
+        Args
+            joint (str): The name of the joint to take weighting from. Must be affecting weight mesh.
+            suffix (str): Add string to the end of the target mesh name.
+            prefix (str): Add string to the beginning of the target mesh name.
+            split_name (bool): Wether to split the name based on "_" and add the suffix and prefix at each part. 
+            eg. 'smile_cheekPuff' would become 'smileL_cheekPuffL' if suffix = 'L'
+        """
         self.split_parts.append([joint, None, suffix, prefix, None, split_name])
         
     def set_weight_insert_index(self, joint, insert_index, insert_name, split_name = True):
+        """
+        Insert a string for the new target shape name.
+        Needs to be tested!!
         
+        Args
+            joint (str): The name of the joint to take weighting from. Must be affecting weight mesh.
+            insert_index (int): The index on the string where the insert_name should be inserted.
+            insert_name (str): The string to insert at insert_index.
+            split_name (bool): Wether to split the name based on "_" and add the insert_name at  the insert_index.  
+        """
         self.split_parts.append([joint, None,None,None, [insert_index, insert_name], split_name])
     
     def set_weight_joint_replace_end(self, joint, replace, split_name = True):
+        """
+        Replace the string at the end of the target name when splitting.
+        Needs to be tested!!
+        
+        Args
+            joint (str): The name of the joint to take weighting from. Must be affecting weight mesh.
+            replace (str): The string to replace the end with.
+            split_name (bool): Wether to split the name based on "_"..  
+        """
+        
         self.split_parts.append([joint, replace, None, None, None, split_name])
     
     def set_weighted_mesh(self, weighted_mesh):
+        """
+        Set the weight mesh, the mesh that the weight joints are affecting through a skin cluster.
+        
+        Args
+            weighted_mesh (str): The name of a mesh with a skin cluster.
+        """
         self.weighted_mesh = weighted_mesh
     
     def set_base_mesh(self, base_mesh):
+        """
+        Set the base mesh. The target mesh will revert back to base mesh based on skin weighting.
+        This is the mesh with points at their default positions.
+        
+        Args
+            base_mesh (str): The name of a mesh.
+        """
         self.base_mesh = base_mesh
     
     def create(self):
+        """
+        Create the splits.
         
+        Return
+            list: The names of the new targets.
+        """
         if not self.weighted_mesh and self.base_mesh:
             return
         
@@ -426,6 +529,12 @@ class SplitMeshTarget(object):
             
             
 class TransferWeight(object):
+    """
+    Transfer weight has functions for dealing with moving weight from joints to other joints.
+    
+    Args
+        mesh (str): The name of the mesh that is skinned with joints.
+    """
     def __init__(self, mesh):
         self.mesh = mesh
 
@@ -466,7 +575,17 @@ class TransferWeight(object):
         
     @core.undo_off
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh = None, percent =1):
+        """
+        Transfer the weights from source_joints into the weighting of destination_joints. 
+        For example if I transfer joint_nose into joint_head, joint_head will lose its weights where joint_nose has overlapping weights. 
+        Source joints will take over the weighting of destination_joints.
         
+        Args
+            source_joints (list): Joint names.
+            destination_joints (list): Joint names.
+            source_mesh (str): The name of the mesh were source_joints are weighted.  If None, algorithms assumes weighting is coming from the main mesh.
+            percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
+        """
         #vtool.util.show('Start: %s transfer joint to joint.' % self.mesh)
         
         if not self.skin_cluster:
@@ -591,7 +710,18 @@ class TransferWeight(object):
          
     @core.undo_off  
     def transfer_joints_to_new_joints(self, joints, new_joints, falloff = 1, power = 4, weight_percent_change = 1):
+        """
+        Transfer the weights from joints onto new_joints which have no weighting.
+        For example, joint_arm could move its weights onto [joint_arm_tweak1, joint_arm_tweak2, joint_arm_tweak3]
+        Weighting is assigned based on distance.
         
+        Args
+            joints (list): Joint names to take weighting from.
+            destination_joints (list): Joint names to add weighting to.
+            falloff (float): The distance a vertex has to be from the joint before it has no priority.
+            power (int): The power to multiply the distance by. It amplifies the distnace, so that if something is closer it has a higher value, and if something is further it has a lower value exponentially.
+            weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
+        """
         #vtool.util.show('Start: %s transfer joints to new joints.' % self.mesh)
         
         if not self.skin_cluster:
@@ -796,7 +926,12 @@ class TransferWeight(object):
         vtool.util.show('Done: %s transfer joints to new joints.' % self.mesh)
                 
 class MayaWrap(object):
+    """
+    Convenience for making maya wraps.
     
+    Args
+        mesh (str): The name of a mesh that should get wrapped.
+    """
     def __init__(self, mesh):
         
         self.mesh = mesh
@@ -874,6 +1009,9 @@ class MayaWrap(object):
 
                 
     def set_driver_meshes(self, meshes = []):
+        """
+        Set the meshes to drive the wrap. If more than 1 exclusive bind won't work properly.
+        """
         if meshes:
             
             meshes = vtool.util.convert_to_sequence(meshes)
@@ -881,9 +1019,15 @@ class MayaWrap(object):
             self.driver_meshes = meshes
     
     def set_base_parent(self, name):
+        """
+        Set the parent for the base meshes created.
+        """
         self.base_parent = name
     
     def create(self):
+        """
+        Create the wrap.
+        """
         
         if not self.meshes:
             
@@ -908,7 +1052,12 @@ class MayaWrap(object):
 
  
 class EnvelopeHistory(object):
+    """
+    Convenience for turning on/off deformation history on a node.
     
+    Args
+        transform (str): The name of a transform.
+    """
     def __init__(self, transform):
         
         self.transform = transform
@@ -917,8 +1066,6 @@ class EnvelopeHistory(object):
         self.envelope_connection = {}
         
         self.history = self._get_envelope_history()
-        
-        
         
     def _get_history(self):
         
@@ -949,6 +1096,9 @@ class EnvelopeHistory(object):
         return found
     
     def turn_off(self):
+        """
+        Turn off all the history found.
+        """
         
         for history in self.history:
             
@@ -960,7 +1110,9 @@ class EnvelopeHistory(object):
             cmds.setAttr('%s.envelope' % history, 0)
  
     def turn_off_referenced(self):
-        
+        """
+        Turn off only history that is referenced. Not history that was created after referencing.
+        """
         for history in self.history:
             
             if not core.is_referenced(history):
@@ -975,6 +1127,9 @@ class EnvelopeHistory(object):
         
  
     def turn_on(self, respect_initial_state = False):
+        """
+        Turn on all the history found.
+        """
         for history in self.history:
             
             if respect_initial_state:
