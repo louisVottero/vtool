@@ -777,6 +777,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         code_folders = process_tool.get_code_folders()
         
+        
+        
         found_scripts = []
         found_states = []
         
@@ -790,6 +792,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             code_path = process_tool.get_code_file(name)
             
             if not code_path or not util_file.is_file(code_path):
+            
                 continue
             
             found_scripts.append(scripts[inc])
@@ -864,8 +867,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.scrollToItem(item)       
 
     def refresh(self, sync = False):
-        
-        
         
         if sync:
             self._sync_manifest()

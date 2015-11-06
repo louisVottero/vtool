@@ -241,7 +241,7 @@ class ConstraintEditor():
             weights = cmds.ls('%s.target[*]' % constraint)
             
             attributes = cmds.listAttr(constraint, k = True)
-            
+                        
             for attribute in attributes:
                 for inc in range(0, len(weights)):
                     if attribute.endswith('W%i' % inc):
@@ -350,6 +350,8 @@ class ConstraintEditor():
         """
         
         attributes = self.get_weight_names(constraint)
+        
+        print 'attributes!', attributes
         
         remap = attr.RemapAttributesToAttribute(node, attribute)
         #remap.set_keyable(False)

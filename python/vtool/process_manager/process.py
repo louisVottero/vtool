@@ -625,6 +625,12 @@ class Process(object):
         
         data_instance = data_folder.get_folder_data_instance()
         
+        data_folder = data.DataFolder(name, self.get_code_path())
+        data_type = data_folder.get_data_type()
+        
+        if data_type == 'None':
+            data_folder.set_data_type('script.python')
+        
         return_value = None
         
         if data_instance:
@@ -876,7 +882,7 @@ class Process(object):
                 state = eval(split_line[-1])
                 
                 states[-1] = state
-                                           
+                              
         return scripts, states
         
     def sync_manifest(self):

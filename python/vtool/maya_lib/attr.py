@@ -360,13 +360,22 @@ class RemapAttributesToAttribute(object):
         
     def _create_attribute(self):
         
+        print 'creating switch attr!'
+        
+        print self.node_attribute
+        
         if cmds.objExists(self.node_attribute):
             return
         
+        
         attribute_count = len(self.attributes)
+        
+        print 'attr count', attribute_count, self.attributes
         
         if attribute_count <= 1:
             return
+        
+        print 'here!'
         
         variable = MayaNumberVariable(self.attribute)
         variable.set_variable_type(variable.TYPE_DOUBLE)

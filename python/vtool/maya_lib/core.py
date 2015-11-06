@@ -8,6 +8,9 @@ if vtool.util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
     
+undo_chunk_active = False
+current_progress_bar = None
+    
 MAYA_BINARY = 'mayaBinary'
 MAYA_ASCII = 'mayaAscii'
 

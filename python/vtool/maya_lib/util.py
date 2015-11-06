@@ -9528,6 +9528,32 @@ def set_all_weights_on_wire(wire_deformer, weight, slot = 0):
     
     for inc in range(0, len(indices) ):
         cmds.setAttr('%s.weightList[%s].weights[%s]' % (wire_deformer, slot, inc), weight)
+        
+        
+def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence):
+    """
+    Set the wire weights from a skinned joint.
+    
+    Args
+        wire_deformer (str): The name of a wire deformer.
+        weighted_mesh (str): The name of a skinned mesh.
+        influence (str): The name of an influence.
+        
+    """
+    
+    skin_cluster = find_deformer_by_type(weighted_mesh, 'skinCluster')
+    index = get_index_at_skin_influence(influence, skin_cluster)
+    
+    if index == None:
+        vtool.util.show('No influence %s on skin %s.' % (influence, skin_cluster))
+        return
+    
+    weights = get_skin_weights(skin_cluster)
+    
+    weight = weights[index]
+    
+    set_wire_weights(weight, wire_deformer)
+    
 
 def prune_wire_weights(deformer, value = 0.0001):
     """
