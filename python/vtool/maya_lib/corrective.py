@@ -2190,7 +2190,7 @@ class PoseNoReader(PoseBase):
         Return
             str: node.attribute name
         """
-        attribute = attr.get_attribute_input('%s.weight' % self.pose_control, node_only = True)
+        attribute = attr.get_attribute_input('%s.weight' % self.pose_control)
         
         if attribute:
             return attribute
@@ -2211,7 +2211,13 @@ class PoseNoReader(PoseBase):
     def detach(self):    
         super(PoseNoReader, self).detach()
         
+        input_value = self.get_input()
+        
         outputs = self.disconnect_weight_outputs()
+        
+        attr.disconnect_attribute('%s.weight' % self.pose_control)
+        
+        cmds.setAttr('%s.weightInput' % self.pose_control, input_value, type = 'string')
         
         self._show_meshes()
         
