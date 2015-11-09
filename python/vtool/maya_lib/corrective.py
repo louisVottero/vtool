@@ -102,11 +102,7 @@ class PoseManager(object):
         """
         self._check_pose_group()
         
-        print self.pose_group
-        
         relatives = cmds.listRelatives(self.pose_group)
-        
-        print 'pose_gr rels', relatives
         
         poses = []
         
@@ -497,8 +493,6 @@ class PoseManager(object):
             poses = self.get_poses()
         if poses:
             vtool.util.convert_to_sequence(poses)
-        
-        print 'poses!', poses
         
         count = len(poses)
 

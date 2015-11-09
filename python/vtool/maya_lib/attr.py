@@ -309,8 +309,13 @@ class Connections(object):
     
 class TransferConnections():
     
-    def transfer_connections_to_node(self, source_node, target_node, only_keyable = True):
-                
+    def transfer_keyable(self, source_node, target_node, prefix = None):
+        """
+        Create the keyable attributes on the target node found on source_node.
+        
+        Args
+            prefix (str): The prefix to give. This is good when transfering more than once. This will help get rid of clashing attributes.
+        """    
         source_connections = Connections(source_node)
         
         outputs = source_connections.get_inputs()
@@ -320,14 +325,16 @@ class TransferConnections():
             output_attr = outputs[inc] 
             input_attr = outputs[inc+1]
 
-            if only_keyable:
-                if not cmds.getAttr(input_attr, k = True):
+            if not cmds.getAttr(input_attr, k = True):
                     continue
             
             if input_attr.find('[') > -1:
                 continue
             
-            new_var = get_variable_instance(input_attr)
+            if prefix:
+                create_title(target_node, prefix)
+                new_var = get_variable_instance(input_attr)
+                new_var.set_name('%s_%s' % (prefix, new_var.name))
             
             if not new_var:
                 continue 
@@ -821,8 +828,6 @@ class MayaVariable(vtool.util.Variable):
         Return
             (bool):
         """
-        
-        print 'exists!?', self._get_node_and_variable(), cmds.objExists(self._get_node_and_variable())
         
         return cmds.objExists(self._get_node_and_variable())
 
@@ -1663,8 +1668,6 @@ def get_node_and_attribute(attribute):
         return None, None
     
     node = split_attribute[0]
-    
-    print split_attribute
     
     attr = string.join(split_attribute[1:], '.')
     
