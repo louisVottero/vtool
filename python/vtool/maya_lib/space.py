@@ -351,8 +351,6 @@ class ConstraintEditor():
         
         attributes = self.get_weight_names(constraint)
         
-        print 'attributes!', attributes
-        
         remap = attr.RemapAttributesToAttribute(node, attribute)
         #remap.set_keyable(False)
         remap.create_attributes(constraint, attributes)

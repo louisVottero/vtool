@@ -2190,7 +2190,7 @@ class PoseNoReader(PoseBase):
         Return
             str: node.attribute name
         """
-        attribute = attr.get_attribute_input('%s.weightInput' % self.pose_control, node_only = True)
+        attribute = attr.get_attribute_input('%s.weight' % self.pose_control, node_only = True)
         
         if attribute:
             return attribute

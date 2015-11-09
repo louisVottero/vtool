@@ -3265,7 +3265,8 @@ class IkSplineNubRig(BufferRig):
         ik_handle = cmds.rename(ik_handle, core.inc_name('handle_spline_%s' % name))
         """
         
-        #here 
+        #here
+        
         ik_handle, effector, curve = cmds.ikHandle(sj = self.buffer_joints[0], 
                                                 ee = self.buffer_joints[-1], 
                                                 sol = 'ikSplineSolver', 
@@ -4417,8 +4418,7 @@ class ConvertJointToNub(object):
                                      self.count, self.prefix, 
                                      '%s_1_%s' % (self.name,self.side), True)
             
-            
-            
+                
             for joint in joints[:-1]:
                 orient = space.OrientJoint(joint)
                 
@@ -4427,12 +4427,8 @@ class ConvertJointToNub(object):
                 
                 orient.set_aim_up_at_object(self.up_object)
                 orient.run()
-                
-            
             
             cmds.makeIdentity(joints[-1], r = True, jo = True, apply = True)
-            
-            
             
             self.joints = joints
             
