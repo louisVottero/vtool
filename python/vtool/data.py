@@ -421,6 +421,13 @@ class MayaCustomData(CustomData):
             
       
 class ControlCvData(MayaCustomData):
+    """
+    maya.control_cvs
+    Exports/Imports cv positions on controls.
+    All control cvs will be exported regardless of selection.
+    All control cvs will be imported regardless of selection.
+    """
+    
     def _data_name(self):
         return 'control_cvs'
         
@@ -481,6 +488,8 @@ class ControlCvData(MayaCustomData):
 class SkinWeightData(MayaCustomData):
     """
         maya.skin_weights
+        Export skin cluster weights on selected geo.
+        Import available skin cluster weights for geo, or only the weights on selected geo.
     """
     def _data_name(self):
         return 'skin_weights'
@@ -797,6 +806,7 @@ class ReadWeightFileThread(threading.Thread):
         return influence_dict
     
 class BlendshapeWeightData():
+    
     def _data_name(self):
         return 'blendshape_weights'
 
@@ -807,6 +817,11 @@ class BlendshapeWeightData():
         return 'maya.blendshape_weights'
     
 class DeformerWeightData(MayaCustomData):
+    """
+    maya.deform_weights
+    Export/Import weights of clusters and wire deformers.
+    Will not work if cluster or wire deformer is affecting more than one piece of geo.
+    """
     def _data_name(self):
         return 'deform_weights'
 
@@ -888,7 +903,11 @@ class DeformerWeightData(MayaCustomData):
         util.show('Imported %s data' % self.name)
         
 class MayaShadersData(CustomData):
-    
+    """
+    maya.shaders
+    Export/Import shaders.
+    This only works for maya shaders. Eg. Blinn, Lambert, etc.
+    """
     maya_ascii = 'mayaAscii'
     
     def _data_type(self):
@@ -992,7 +1011,9 @@ class MayaShadersData(CustomData):
         
 class AnimationData(MayaCustomData):
     """
-        maya.animation
+    maya.animation
+    Export/Import all the keyframes in a scene with their connection info. 
+    Will export/import blendWeighted as well.
     """
     def _data_name(self):
         return 'animation'
@@ -1149,7 +1170,11 @@ class AnimationData(MayaCustomData):
 
     
 class ControlAnimationData(AnimationData):
-        
+    """
+    maya.control_animation
+    Only import/export keframes on controls.
+    Good for saving out poses. 
+    """
     def _data_name(self):
         return 'control_animation'
     
@@ -1176,7 +1201,9 @@ class ControlAnimationData(AnimationData):
         return None
         
 class AtomData(MayaCustomData):
-
+    """
+    Not in use.
+    """
     def _data_name(self):
         return 'animation'
 
@@ -1221,7 +1248,10 @@ class AtomData(MayaCustomData):
         self._center_view()      
         
 class PoseData(MayaCustomData):
-
+    """
+    maya.pose
+    Export/Import pose correctives.
+    """
     maya_binary = 'mayaBinary'
     maya_ascii = 'mayaAscii'
 
@@ -1432,6 +1462,11 @@ class PoseData(MayaCustomData):
                 
         
 class MayaAttributeData(MayaCustomData):
+    """
+    maya.attributes
+    Export attribute data on selected nodes.
+    Import attribute data on all nodes exported, unless something is selected.
+    """
     def _data_name(self):
         return 'attributes'
         

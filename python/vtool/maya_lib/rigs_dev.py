@@ -245,8 +245,6 @@ class PointingFkCurveRig(rigs.SimpleFkCurveRig):
                                    degree =3,
                                    name = name)[0]
             
-            
-            
             cmds.parent(self.curve, self.setup_group)
     
     def _create_clusters(self):

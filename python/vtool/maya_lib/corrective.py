@@ -547,7 +547,9 @@ class PoseManager(object):
         return mirror        
 
 class PoseGroup(object):
-    
+    """
+    This pose is a group to parent poses under.
+    """
     def __init__(self, description = 'pose'):
         
         self.pose_control = None
@@ -810,6 +812,9 @@ class PoseGroup(object):
         pass
     
 class PoseBase(PoseGroup):
+    """
+    Base class for poses that sculpt meshes.
+    """
     def __init__(self, description = 'pose'):
         super(PoseBase, self).__init__(description)
         
@@ -2028,7 +2033,9 @@ class PoseBase(PoseGroup):
                 cmds.connectAttr('%s.weight' % self.pose_control, attribute)
 
 class PoseNoReader(PoseBase):
-    
+    """
+    This type of pose does not read anything in a rig unless an input is specified.
+    """
     def _pose_type(self):
         return 'no reader'
    
@@ -2151,7 +2158,13 @@ class PoseNoReader(PoseBase):
             self.create_sub_poses(sub_pass_mesh)
         
     def set_input(self, attribute):
+        """
+        Set the input into the weightInput of the no reader.
+        No readers need to have a connection specified that tells the pose when to turn on.
         
+        Args
+            attribute (str): The node.attribute name of a connection to feed into the no reader.
+        """
         self.weight_input = attribute
         
         if not cmds.objExists('%s.weightInput' % self.pose_control):
@@ -2170,7 +2183,13 @@ class PoseNoReader(PoseBase):
         self._connect_weight_input(attribute)
         
     def get_input(self):
+        """
+        Get the connection into the weightInput attribute of a no reader.
+        No readers need to have a connection specified that tells the pose when to turn on.
         
+        Return
+            str: node.attribute name
+        """
         attribute = attr.get_attribute_input('%s.weightInput' % self.pose_control, node_only = True)
         
         if attribute:
@@ -2199,6 +2218,14 @@ class PoseNoReader(PoseBase):
         return outputs
         
     def mirror(self):
+        """
+        Mirror a pose to a corresponding R side pose.
+        
+        For example
+            If self.pose_control = pose_arm_L, there must be a corresponding pose_arm_R.
+            The pose at pose_arm_R must be a mirrored pose of pose_arm_L.
+        
+        """
         
         description = self.description
         
@@ -2263,7 +2290,14 @@ class PoseNoReader(PoseBase):
         return other_pose_instance.pose_control
     
     def set_weight(self, value):
+        """
+        Set the weight attribute of the no reader.
+        No readers have connections specified. 
+        If no connection is specified and connected, this can set the weight.
         
+        Args
+            value (float): The value to set the weight to.
+        """
         input_attr = attr.get_attribute_input('%s.weight' % self.pose_control)
         if not input_attr:
             try:
@@ -2283,6 +2317,9 @@ class PoseNoReader(PoseBase):
                 child_instance.set_weight(value)
     
 class PoseCone(PoseBase):
+    """
+    This type of pose reads from  a joint or transform, for the defined angle of influence. 
+    """
     def __init__(self, transform = None, description = 'pose'):          
         super(PoseCone, self).__init__(description)
         
@@ -2626,12 +2663,22 @@ class PoseCone(PoseBase):
         return constraint_node 
         
     def set_axis(self, axis_name):
+        """
+        Set the axis the cone reads from. 'X','Y','Z'.
+        """
         self.axis = axis_name
         self._position_control(self.pose_control)
         
         self._set_axis_vectors()
         
     def get_transform(self):
+        """
+        Get the connected/stored transform on a cone.
+        
+        Return
+            str: The name of the transform.
+        """
+        
         matrix = self._get_named_message_attribute('multMatrix1')
         
         transform = attr.get_attribute_input('%s.matrixIn[0]' % matrix, True)
@@ -2642,25 +2689,16 @@ class PoseCone(PoseBase):
         self.transform = transform
         
         return transform
-
-    def get_parent(self):
-        
-        constraint_node = self._get_parent_constraint()
-        
-        parent = None
-        
-        if constraint_node:
-            constraint = space.ConstraintEditor()
-            targets = constraint.get_targets(constraint_node)
-            if targets:
-                parent = targets[0]
-        
-        if not parent:
-            parent = cmds.getAttr('%s.parent' % self.pose_control)
-        
-        return parent 
     
     def set_transform(self, transform, set_string_only = False):
+        """
+        Cone poses need a transform. 
+        This helps them to know when to turn on.
+        
+        Args
+            transform (str): The name of a transform to move the cone.
+            set_string_only (bool): Wether to connect the transform into the pose or just set its attribute on the cone.
+        """
         
         if not cmds.objExists('%s.joint' % self.pose_control):
             cmds.addAttr(self.pose_control, ln = 'joint', dt = 'string')
@@ -2676,7 +2714,40 @@ class PoseCone(PoseBase):
             if not cmds.isConnected('%s.worldMatrix' % transform, '%s.inMatrix2' % distance):
                 cmds.connectAttr('%s.worldMatrix' % transform, '%s.inMatrix2' % distance)
                 
+
+    def get_parent(self):
+        """
+        Get the connected/stored parent on a cone.
+        
+        Return
+            str: The name of the parent.
+        """
+        
+        constraint_node = self._get_parent_constraint()
+        
+        parent = None
+        
+        if constraint_node:
+            constraint = space.ConstraintEditor()
+            targets = constraint.get_targets(constraint_node)
+            if targets:
+                parent = targets[0]
+        
+        if not parent:
+            parent = cmds.getAttr('%s.parent' % self.pose_control)
+        
+        return parent 
+
     def set_parent(self, parent, set_string_only = False):
+        """
+        Cone poses need a parent. 
+        This helps them to turn on only when their transform moves.
+        
+        Args
+            parent (str): The name of a transform above the cone.
+            set_string_only (bool): Wether to connect the parent into the pose or just set its attribute on the cone.
+        """
+        
         if not cmds.objExists('%s.parent' % self.pose_control):
             cmds.addAttr(self.pose_control, ln = 'parent', dt = 'string')
             
@@ -2757,7 +2828,14 @@ class PoseCone(PoseBase):
             pass
     
     def mirror(self):
+        """
+        Mirror a pose to a corresponding R side pose.
         
+        For example
+            If self.pose_control = pose_arm_L, there must be a corresponding pose_arm_R.
+            The pose at pose_arm_R must be a mirrored pose of pose_arm_L.
+        
+        """
         count = self.get_mesh_count()
         
         for inc in range(0, count):
@@ -2839,7 +2917,9 @@ class PoseCone(PoseBase):
         return other_pose_instance.pose_control
     
 class PoseTimeline(PoseNoReader):
-    
+    """
+    This type of pose reads a time on the timeline.
+    """
     def _pose_type(self):
         return 'timeline'
     
@@ -2852,7 +2932,9 @@ class PoseTimeline(PoseNoReader):
         pose_time.create(control)
         
     def goto_pose(self):
-        
+        """
+        Go to the time on the timeline where the pose was created.
+        """
         current_time = cmds.getAttr('%s.timePosition' % self.pose_control)
         cmds.currentTime(current_time)
         

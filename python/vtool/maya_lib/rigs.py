@@ -1482,7 +1482,10 @@ class JointRig(Rig):
     
     def set_joints(self, joints):
         """
-            Set the joints that the rig should work on.
+        Set the joints that the rig should work on.
+        
+        Args
+            joints (list): Joints by name.
         """
         
         
@@ -1499,7 +1502,10 @@ class JointRig(Rig):
 
     def set_attach_joints(self, bool_value):
         """
-            Turn off/on joint attaching.
+        Turn off/on joint attaching.
+        
+        Args
+            bool_value (bool): Wether to attach joints.
         """
         
         
@@ -1507,7 +1513,9 @@ class JointRig(Rig):
         
 class BufferRig(JointRig):
     """
-        Extends JointRig with ability to create buffer chains.
+    Extends JointRig with ability to create buffer chains.
+    The buffer chain creates a duplicate chain for attaching the setup to the main chain.
+    This allows multiple rigs to be attached to the main chain.
     """
     
     
@@ -1536,8 +1544,10 @@ class BufferRig(JointRig):
         
     def set_buffer(self, bool_value):
         """
-            Turn off/on the creation of a buffer chain.  
-            Used for switching between different rigs.
+        Turn off/on the creation of a buffer chain.  
+        
+        Args
+            bool_value (bool): Wehter to create the buffer chain.
         """
         
         self.create_buffer_joints = bool_value
@@ -1561,14 +1571,20 @@ class CurveRig(Rig):
         self.curves = None
     
     def set_curve(self, curve_list):
+        """
+        Set the curve to rig with.
         
+        Args
+            curve_list (str): The name of a curve.
+        """
         self.curves = vtool.util.convert_to_sequence(curve_list)
 
 #--- Rigs
 
 class SparseRig(JointRig):
     """
-        This class create controls on joints. The controls are not interconnected.
+    This class create controls on joints. The controls are not interconnected.
+    For example Fk rig, the controls have a parent/child hierarchy. Sparse rig does not have any hierarchy.
     
     """
     
@@ -1583,18 +1599,25 @@ class SparseRig(JointRig):
         
     def set_scalable(self, bool_value):
         """
-            Turn off/on the ability for controls to scale the joints.
+        Turn off/on the ability for controls to scale the joints.
+        
+        Args
+            bool_value (bool): Wether to open the scale attributes of the controls.
         """
         
         self.is_scalable = bool_value
         
     def set_respect_side(self, bool_value, tolerance = 0.001):
         """
-            Respecting side will change the color of controls based on their position along the X coordinate.
-            Less than x will be red. Greater than x will be blue.
-            Inside the center axis will be yellow.
-            This will also change the naming of the control. 
-            The end suffix letter will change to L, R or C depending on where it is in space. 
+        Respecting side will change the color of controls based on their position along the X coordinate.
+        Less than x will be red. Greater than x will be blue.
+        Inside the center axis will be yellow.
+        This will also change the naming of the control. 
+        The end suffix letter will change to L, R or C depending on where it is in space.
+        
+        Args
+            bool_value (bool): Wether to have the control respect side by changing name and color.
+            tolerance (float): The value a control needs to be away from the center before it has a side.
         """
         
         self.respect_side = bool_value
@@ -1602,7 +1625,10 @@ class SparseRig(JointRig):
     
     def set_match_scale(self, bool_value):
         """
-            Match the size of the control to the scale of the joint.
+        Match the size of the control to the scale of the joint.
+        
+        Args
+            bool_value (bool): Wether to match the control to the scale of the joint.
         """
         
         self.match_scale = bool_value
@@ -1662,7 +1688,11 @@ class SparseRig(JointRig):
     
 
 class SparseLocalRig(SparseRig):
-
+    """
+    A sparse rig that does that connects controls locally.
+    This is important for cases where the controls when parented need to move serparetly from the rig.
+    For example if the setup deformation blendshapes in before a skin cluster.
+    """
     def __init__(self, description, side):
         super(SparseLocalRig, self).__init__(description, side)
         
