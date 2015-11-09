@@ -2285,7 +2285,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                     if width > 350:
                         width = 350
                     
-                    width = 600
                     rect.setWidth(width)
                     
                     self.completer.complete(rect)
@@ -3243,21 +3242,7 @@ class PythonCompleter(QtGui.QCompleter):
             return
         
         self.filepath = filepath
-
-class GetSubImportsThread(QtCore.QThread):
-    
-    def __init__(self, path, parent = None):
-        
-        super(GetSubImportsThread, self).__init__(parent)
-        
-        self.path = path
-        
-    def run(self):
-        lines = util_file.get_file_lines(self.path)
-        
-        defined = util_file.get_line_defined(lines)
-        
-        self.string_model.setStringList(defined)        
+     
    
 #--- Custom Painted Widgets
 

@@ -190,7 +190,7 @@ class Connections(object):
     
     def get_input_at_inc(self, inc):
         """
-        Get connection that the node inputs into at index.
+        Get connection that inputs into the node at index.
         
         Args
             inc (int): The index of the connection.
@@ -199,7 +199,7 @@ class Connections(object):
     
     def get_output_at_inc(self, inc):
         """
-        Get connection that outputs into the node at index.
+        Get connection that the node outputs into at index.
         
         Args
             inc (int): The index of the connection.
@@ -208,7 +208,7 @@ class Connections(object):
     
     def get_connection_inputs(self, connected_node):
         """
-        Get connections that the node inputs into. List is [[node_output, external_input], ...]
+        Get connections that input into the node. List is [[external_output, node_input], ...]
         
         Args
             connected_node (str): The name of a connected node to filter with. Only inputs into the node will be returned.
@@ -227,7 +227,8 @@ class Connections(object):
     
     def get_connection_outputs(self, connected_node):
         """
-        Get connections that output into the node. List is [[external_output, node_input], ...]
+        Get connections that the node outputs into. List is [[node_output, external_input], ...]
+        
         
         Args
             connected_node (str): The name of a connected node to filter with. Only inputs from that node will be returned.
@@ -250,7 +251,7 @@ class Connections(object):
     
     def get_inputs_of_type(self, node_type):
         """
-        Get nodes of node_type that the node connects into.
+        Get nodes of node_type that connect into the node.
         
         Args
             node_type (str): Maya node type.
@@ -270,7 +271,7 @@ class Connections(object):
         
     def get_outputs_of_type(self, node_type):
         """
-        Get nodes of node_type that output into the node. 
+        Get all nodes of node_type that output from the node. 
         
         Args
             node_type (str): Maya node type.
@@ -290,22 +291,51 @@ class Connections(object):
     
     def get_outputs(self):
         """
-        Get all nodes that output into the node.
+        Get all the connections that output from the node
         
         Return
-            list: [[external_output, node_input], ... ]
+            list: [[node_output, external_input], ... ]
         """
         return self._get_outputs()
         
     def get_inputs(self):
         """
-        get all nodes that the node inputs into.
+        get all connections that input into the node.
         
         Return
-            list: [[node_output, external_input], ... ]
+            list: [[external_output, node_input], ... ]
         """
         return self._get_inputs()
     
+class TransferConnections():
+    
+    def transfer_connections_to_node(self, source_node, target_node, only_keyable = True):
+                
+        source_connections = Connections(source_node)
+        
+        outputs = source_connections.get_inputs()
+        
+        for inc in range(0, len(outputs), 2):
+            
+            output_attr = outputs[inc] 
+            input_attr = outputs[inc+1]
+
+            if only_keyable:
+                if not cmds.getAttr(input_attr, k = True):
+                    continue
+            
+            if input_attr.find('[') > -1:
+                continue
+            
+            new_var = get_variable_instance(input_attr)
+            
+            if not new_var:
+                continue 
+            
+            new_var.set_node(target_node)
+            new_var.create()
+            new_var.connect_in(output_attr)
+            
 class LockState(object):
     """
     This saves the lock state, so that an attribute lock state can be reset after editing.
@@ -360,22 +390,14 @@ class RemapAttributesToAttribute(object):
         
     def _create_attribute(self):
         
-        print 'creating switch attr!'
-        
-        print self.node_attribute
-        
         if cmds.objExists(self.node_attribute):
             return
         
         
         attribute_count = len(self.attributes)
         
-        print 'attr count', attribute_count, self.attributes
-        
         if attribute_count <= 1:
             return
-        
-        print 'here!'
         
         variable = MayaNumberVariable(self.attribute)
         variable.set_variable_type(variable.TYPE_DOUBLE)
@@ -622,6 +644,51 @@ class OrientJointAttributes(object):
         """
         self._delete_attributes()
 
+def get_variable_instance(attribute):
+    """
+    Get a variable instance for the attribute.
+    
+    Args
+        attribute (str): node.attribute name
+    
+    Return
+        object: The instance of a corresponding variable.
+    """
+    
+    node, attr = get_node_and_attribute(attribute)
+    
+    var_type = None
+    
+    try:
+        var_type = cmds.getAttr(attribute, type = True)
+    except:
+        return
+        
+    if not var_type:
+        return
+    
+    var = get_variable_instance_of_type(attr, var_type)
+    var.set_node( node )
+    
+    return var
+    
+def get_variable_instance_of_type(name, var_type):
+                
+    var = MayaVariable(name)
+    
+    if var_type in var.numeric_attributes:
+        var = MayaNumberVariable(name)
+        
+    if var_type == 'enum':
+        var = MayaEnumVariable(name)
+        
+    if var_type == 'string':
+        var = MayaStringVariable(name)
+    
+    var.set_variable_type(var_type)
+    
+    return var
+    
 #--- variables
 class MayaVariable(vtool.util.Variable):
     """
@@ -637,6 +704,8 @@ class MayaVariable(vtool.util.Variable):
     TYPE_DOUBLE = 'double'
     TYPE_STRING = 'string'
     TYPE_MESSAGE = 'message'
+    
+    numeric_attributes = ['bool', 'long', 'short', 'float', 'double']
     
     def __init__(self, name ):
         super(MayaVariable, self).__init__(name)
@@ -750,6 +819,9 @@ class MayaVariable(vtool.util.Variable):
         Return
             (bool):
         """
+        
+        print 'exists!?', self._get_node_and_variable(), cmds.objExists(self._get_node_and_variable())
+        
         return cmds.objExists(self._get_node_and_variable())
 
     #--- set
@@ -1571,6 +1643,30 @@ def is_translate_rotate_connected(transform):
                 return True
         
     return False
+
+def get_node_and_attribute(attribute):
+    """
+    Split a name between its node and its attribute.
+    
+    Args
+        attribute (str): attribute name, node.attribute.
+        
+    Return
+        list: [node_name, attribute]
+    """
+    
+    split_attribute = attribute.split('.')
+            
+    if not split_attribute:
+        return None, None
+    
+    node = split_attribute[0]
+    
+    print split_attribute
+    
+    attr = string.join(split_attribute[1:], '.')
+    
+    return node, attr
 
 def get_inputs(node, node_only = True):
     """

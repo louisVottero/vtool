@@ -1129,8 +1129,6 @@ class MeshWidget(qt_ui.BasicWidget):
     @core.undo_chunk
     def add_mesh(self, selection=None):
         
-        print 'add mesh!'
-        
         pose_name = self.pose_name
         
         if not pose_name:
@@ -1239,9 +1237,6 @@ class MeshWidget(qt_ui.BasicWidget):
                 if item:
                     item.setSelected(True)
                 
-                print 'toggling vis!!!!'
-                print mesh, pose_name
-                
                 corrective.PoseManager().toggle_visibility(mesh, pose_name)
                 
             cmds.select(selection)
@@ -1341,17 +1336,12 @@ class SculptWidget(qt_ui.BasicWidget):
     
     def _button_sculpt(self):
         
-        print 'button sculpt!'
-        
         try:
             
-            print 'here!'
             self.button_sculpt.setDisabled(True)
                        
             self.mesh_widget.add_mesh()
             self.sculpted_mesh.emit()
-            
-            print 'here2'
             
             self.button_sculpt.setEnabled(True)
             
@@ -1369,9 +1359,7 @@ class SculptWidget(qt_ui.BasicWidget):
             
                 cmds.select(self.pose)
             
-            print 'done!'
         except:
-            print 'except!'
             
             print traceback.format_exc()
             

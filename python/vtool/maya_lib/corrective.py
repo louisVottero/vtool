@@ -102,11 +102,7 @@ class PoseManager(object):
         """
         self._check_pose_group()
         
-        print self.pose_group
-        
         relatives = cmds.listRelatives(self.pose_group)
-        
-        print 'pose_gr rels', relatives
         
         poses = []
         
@@ -497,8 +493,6 @@ class PoseManager(object):
             poses = self.get_poses()
         if poses:
             vtool.util.convert_to_sequence(poses)
-        
-        print 'poses!', poses
         
         count = len(poses)
 
@@ -2171,7 +2165,7 @@ class PoseNoReader(PoseBase):
         
     def get_input(self):
         
-        attribute = attr.get_attribute_input('%s.weightInput' % self.pose_control, node_only = True)
+        attribute = attr.get_attribute_input('%s.weight' % self.pose_control)
         
         if attribute:
             return attribute
@@ -2190,9 +2184,16 @@ class PoseNoReader(PoseBase):
         self._hide_meshes()
         
     def detach(self):    
+        
         super(PoseNoReader, self).detach()
         
+        input_value = self.get_input()
+        
         outputs = self.disconnect_weight_outputs()
+        
+        attr.disconnect_attribute('%s.weight' % self.pose_control)
+        
+        cmds.setAttr('%s.weightInput' % self.pose_control, input_value, type = 'string')
         
         self._show_meshes()
         
