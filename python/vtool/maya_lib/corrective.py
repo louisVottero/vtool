@@ -15,7 +15,7 @@ import space
 import geo
 import deform
 import shade
-import rigs
+import rigs_util
 
 
 
@@ -58,7 +58,7 @@ class PoseManager(object):
             
             self.pose_group = cmds.group(em = True, n = self.pose_group)
         
-            data = rigs.StoreControlData(self.pose_group)
+            data = rigs_util.StoreControlData(self.pose_group)
             data.set_data()
             
             if selection:
@@ -165,7 +165,7 @@ class PoseManager(object):
         """
         self._check_pose_group()
         
-        store = rigs.StoreControlData(self.pose_group)
+        store = rigs_util.StoreControlData(self.pose_group)
         store.set_data()
         
     def set_pose_to_default(self):
@@ -175,7 +175,7 @@ class PoseManager(object):
         """
         self._check_pose_group()
         
-        store = rigs.StoreControlData(self.pose_group)
+        store = rigs_util.StoreControlData(self.pose_group)
         store.eval_data()
         
         self.set_weights_to_zero()
@@ -200,7 +200,7 @@ class PoseManager(object):
         Args
             pose (str): The name of a pose.
         """
-        store = rigs.StoreControlData(pose)
+        store = rigs_util.StoreControlData(pose)
         store.set_data()
         
     def set_poses(self, pose_list):
@@ -215,11 +215,11 @@ class PoseManager(object):
         
         for pose_name in pose_list:
             
-            store = rigs.StoreControlData(pose_name)
+            store = rigs_util.StoreControlData(pose_name)
 
             data_list.append( store.eval_data(True) )
             
-        store = rigs.StoreControlData().eval_multi_transform_data(data_list)
+        store = rigs_util.StoreControlData().eval_multi_transform_data(data_list)
     
     def create_pose(self, pose_type, name = None):
         """
@@ -647,7 +647,7 @@ class PoseGroup(object):
         """
         if self.pose_control:
             
-            store = rigs.StoreControlData(self.pose_control)
+            store = rigs_util.StoreControlData(self.pose_control)
             store.eval_data()
             
     def rename(self, description):
@@ -682,7 +682,7 @@ class PoseGroup(object):
         
         cmds.parent(pose_control, top_group)
         
-        store = rigs.StoreControlData(pose_control)
+        store = rigs_util.StoreControlData(pose_control)
         store.set_data()
         
         return pose_control
@@ -751,7 +751,7 @@ class PoseGroup(object):
         """
         cmds.select(self.pose_control)
         
-        store = rigs.StoreControlData(self.pose_control)
+        store = rigs_util.StoreControlData(self.pose_control)
         store.eval_data()
         
     def attach(self, outputs = None):
@@ -1092,7 +1092,7 @@ class PoseBase(PoseGroup):
 
     def _create_pose_control(self):
         
-        control = rigs.Control(self._get_name())
+        control = rigs_util.Control(self._get_name())
         control.set_curve_type('cube')
         control.hide_scale_and_visibility_attributes()
         pose_control = control.get()
@@ -2392,7 +2392,7 @@ class PoseCone(PoseBase):
         
     def _position_control(self, control):
         
-        control = rigs.Control(control)
+        control = rigs_util.Control(control)
         
         control.set_curve_type('pin_point')
         

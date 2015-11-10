@@ -1884,7 +1884,7 @@ def orient_attributes(scope = None):
         scope (list): List of transforms to orient.
     """
     if not scope:
-        scope = get_top_dag_nodes()
+        scope = core.get_top_dag_nodes()
     
     for transform in scope:
         relatives = cmds.listRelatives(transform, f = True)

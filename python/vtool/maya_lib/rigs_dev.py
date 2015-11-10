@@ -13,6 +13,7 @@ import curve
 import geo
 import deform
 import rigs
+import rigs_util
 
     
 class CurveTweakRig(rigs.CurveRig):
@@ -761,8 +762,8 @@ class StickyLipRig(StickyRig):
     
     def _create_curve_joints(self):
         
-        self.top_tweak_joints, self.top_joint_group, top_controls =  rigs.create_joints_on_curve(self.top_curve, len(self.top_joints), self.description)
-        self.btm_tweak_joints, self.btm_joint_group, btm_controls = rigs.create_joints_on_curve(self.btm_curve, len(self.btm_joints), self.description)
+        self.top_tweak_joints, self.top_joint_group, top_controls =  rigs_util.create_joints_on_curve(self.top_curve, len(self.top_joints), self.description)
+        self.btm_tweak_joints, self.btm_joint_group, btm_controls = rigs_util.create_joints_on_curve(self.btm_curve, len(self.btm_joints), self.description)
         
     def _connect_curve_joints(self):
         
@@ -890,7 +891,7 @@ class StickyLipRig(StickyRig):
         control = control.get()
         space.MatchSpace(cluster, control).translation_to_rotate_pivot()
         
-        control = rigs.Control(control)
+        control = rigs_util.Control(control)
         side = control.color_respect_side(False, self.center_tolerance)
         
         if side == 'C':
@@ -1225,7 +1226,7 @@ class FaceSquashRig(rigs.JointRig):
         
         self._attach_joints()
         
-        rigs.create_spline_ik_stretch(self.surface, self.joints, self.locators[0], create_bulge = False)
+        rigs_util.create_spline_ik_stretch(self.surface, self.joints, self.locators[0], create_bulge = False)
         
         self._create_controls()
         
@@ -1742,11 +1743,11 @@ class CustomCurveRig(rigs.BufferRig):
         
         
         if target_curve:
-            rigs.fix_fade(target_curve, multiplies)
+            rigs_util.fix_fade(target_curve, multiplies)
             
             if sub:
                 
-                rigs.fix_fade(target_curve, sub_multiplies)
+                rigs_util.fix_fade(target_curve, sub_multiplies)
                 
         return multiplies
     
@@ -1760,8 +1761,8 @@ class CustomCurveRig(rigs.BufferRig):
             sub_multiplies = space.create_follow_fade(sub_control, self.locators, -1)
         
         if target_curve:
-            rigs.fix_fade(target_curve, multiplies)
-            rigs.fix_fade(target_curve, sub_multiplies)
+            rigs_util.fix_fade(target_curve, multiplies)
+            rigs_util.fix_fade(target_curve, sub_multiplies)
            
     def insert_follows(self, joints, percent = 0.5, create_locator = True):
         
@@ -1877,7 +1878,7 @@ class CurveAndSurfaceRig(rigs.BufferRig):
         
     def _create_inc_sub_control(self, control, curve, inc):
         sub_control = self._create_inc_control(self.no_follow_curve, inc, sub = True)
-        sub_control = rigs.Control(sub_control[0])
+        sub_control = rigs_util.Control(sub_control[0])
             
         sub_control.scale_shape(.8,.8,.8)
         sub_control.hide_scale_attributes()
@@ -2465,7 +2466,7 @@ class MouthTweakers(rigs.Rig):
             child2 = cmds.listRelatives(child, type = 'joint')[0]
             child3 = cmds.listRelatives(child2, type = 'joint')[0]    
     
-            locator1,locator2 = rigs.create_distance_scale( joints1[inc], child3 )
+            locator1,locator2 = rigs_util.create_distance_scale( joints1[inc], child3 )
     
             cmds.connectAttr('%s.scaleX' % joints1[inc], '%s.scaleX' % child)
             cmds.connectAttr('%s.scaleX' % joints1[inc], '%s.scaleX' % child2)
@@ -2894,7 +2895,7 @@ class MouthTweakers(rigs.Rig):
                 
                 if side != 'C':
                     control_name = cmds.rename(control.get(), core.inc_name(control.get()[0:-1] + side))
-                    control = rigs.Control(control_name)
+                    control = rigs_util.Control(control_name)
             
             xform = space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
@@ -3784,7 +3785,7 @@ class WorldStickyLipRig(WorldStickyRig):
         control = control.get()
         space.MatchSpace(cluster, control).translation_to_rotate_pivot()
         
-        control = rigs.Control(control)
+        control = rigs_util.Control(control)
         side = control.color_respect_side(False, self.center_tolerance)
         
         if side == 'C':
@@ -4205,7 +4206,7 @@ class BackLeg(rigs.BufferRig):
         
         name = self._get_name()
         
-        rig_line = rigs.RiggedLine(pole_joints[1], control.get(), name).create()
+        rig_line = rigs_util.RiggedLine(pole_joints[1], control.get(), name).create()
         cmds.parent(rig_line, self.control_group)
         
         pole_vis.connect_out('%s.visibility' % xform_group)
@@ -4245,7 +4246,7 @@ class BackLeg(rigs.BufferRig):
 
         cmds.parent(xform_ik_handle, self.offset1Chain[-1])
          
-        stretch = rigs.StretchyChain()
+        stretch = rigs_util.StretchyChain()
         stretch.set_joints(self.ikGuideChain[0:4])
         stretch.set_node_for_attributes(self.btm_control)
         stretch.set_per_joint_stretch(False)
@@ -4542,7 +4543,7 @@ class FrontLeg(rigs.BufferRig):
         
         name = self._get_name()
         
-        rig_line = rigs.RiggedLine(pole_joints[1], control.get(), name).create()
+        rig_line = rigs_util.RiggedLine(pole_joints[1], control.get(), name).create()
         cmds.parent(rig_line, self.control_group)
         
         pole_vis.connect_out('%s.visibility' % xform_group)
@@ -4584,7 +4585,7 @@ class FrontLeg(rigs.BufferRig):
 
         cmds.parent(xform_ik_handle, self.offsetGuideChainBtm[1])
          
-        stretch = rigs.StretchyChain()
+        stretch = rigs_util.StretchyChain()
         stretch.set_joints(self.ikGuideChain[0:4])
         stretch.set_node_for_attributes(self.btm_control)
         stretch.set_per_joint_stretch(False)
@@ -4726,7 +4727,7 @@ class FinRig(rigs.JointRig):
             spread_offset -= section
             
         
-        rigs.create_attribute_lag(sub_controls[0], 'rotateY',  drivers[1:])
+        rigs_util.create_attribute_lag(sub_controls[0], 'rotateY',  drivers[1:])
     
     def create(self):
         super(FinRig, self).create()
@@ -4755,7 +4756,7 @@ class SuspensionRig(rigs.BufferRig):
         
         handle = ik.ik_handle
         
-        stretch = rigs.StretchyChain()
+        stretch = rigs_util.StretchyChain()
         stretch.set_simple(True)
         
         stretch.set_joints([top_joint, btm_joint])
@@ -4930,7 +4931,7 @@ class SimpleBackLeg(rigs.BufferRig):
         
         name = self._get_name()
         
-        rig_line = rigs.RiggedLine(pole_joints[1], control.get(), name).create()
+        rig_line = rigs_util.RiggedLine(pole_joints[1], control.get(), name).create()
         cmds.parent(rig_line, self.control_group)
         
         pole_vis.connect_out('%s.visibility' % xform_group)
@@ -5053,7 +5054,7 @@ class SimpleBackLeg(rigs.BufferRig):
         
     def _create_stretchy(self, top_transform, btm_transform, control):
         
-        stretchy = rigs.StretchyChain()
+        stretchy = rigs_util.StretchyChain()
         stretchy.set_joints(self.ik_chain)
         #dampen should be damp... dampen means wet, damp means diminish
         stretchy.set_add_dampen(True)
@@ -5353,7 +5354,7 @@ class BackLeg2(rigs.BufferRig):
         
         name = self._get_name()
         
-        rig_line = rigs.RiggedLine(pole_joints[1], control.get(), name).create()
+        rig_line = rigs_util.RiggedLine(pole_joints[1], control.get(), name).create()
         cmds.parent(rig_line, self.control_group)
         
         pole_vis.connect_out('%s.visibility' % xform_group)
@@ -5442,7 +5443,7 @@ class BackLeg2(rigs.BufferRig):
 
     def _setup_stretch(self):
         
-        stretch = rigs.StretchyChain()
+        stretch = rigs_util.StretchyChain()
         stretch.set_joints(self.ikGuideChain[0:4])
         stretch.set_node_for_attributes(self.btm_control)
         stretch.set_per_joint_stretch(False)
@@ -5603,7 +5604,7 @@ class IkFrontLegRig(rigs.IkAppendageRig):
         
         name = self._get_name()
         
-        rig_line = rigs.RiggedLine(pole_joints[1], control.get(), name).create()
+        rig_line = rigs_util.RiggedLine(pole_joints[1], control.get(), name).create()
         cmds.parent(rig_line, self.control_group)
         
         pole_vis.connect_out('%s.visibility' % xform_group)
@@ -5613,7 +5614,7 @@ class IkFrontLegRig(rigs.IkAppendageRig):
         
         
     def _create_stretchy(self, top_transform, btm_transform, control):
-        stretchy = rigs.StretchyChain()
+        stretchy = rigs_util.StretchyChain()
         stretchy.set_joints(self.ik_chain)
         #dampen should be damp... dampen means wet, damp means diminish
         stretchy.set_add_dampen(True, 'damp')
@@ -5879,7 +5880,7 @@ class IkScapulaRig(rigs.BufferRig):
         
         self._create_ik(control)
         
-        rig_line = rigs.RiggedLine(control, self.joints[-1], self._get_name()).create()
+        rig_line = rigs_util.RiggedLine(control, self.joints[-1], self._get_name()).create()
         cmds.parent(rig_line, self.control_group) 
 
 
@@ -5893,7 +5894,7 @@ class IkQuadSpineRig(rigs.FkCurveRig):
     
     def _create_sub_control(self):
         
-        sub_control = rigs.Control( self._get_control_name(sub = True) )
+        sub_control = rigs_util.Control( self._get_control_name(sub = True) )
         sub_control.color( attr.get_color_of_side( self.side , True)  )
         if self.control_shape:
             sub_control.set_curve_type(self.control_shape)
@@ -5904,7 +5905,7 @@ class IkQuadSpineRig(rigs.FkCurveRig):
             sub_control.set_curve_type(self.control_shape)
         
         if self.current_increment == 1:
-            other_sub_control = rigs.Control( self._get_control_name('reverse', sub = True))
+            other_sub_control = rigs_util.Control( self._get_control_name('reverse', sub = True))
             other_sub_control.color( attr.get_color_of_side( self.side, True ) )
         
             if self.control_shape:
@@ -7264,7 +7265,7 @@ def create_mouth_muscle(top_transform, btm_transform, description, joint_count =
     cmds.pointConstraint(btm_transform, ik.ik_handle)
     
     
-    locator1,locator2 = rigs.create_distance_scale( top_joint, btm_joint, offset = offset)
+    locator1,locator2 = rigs_util.create_distance_scale( top_joint, btm_joint, offset = offset)
     
     for joint in sub_joints:
         cmds.connectAttr('%s.scaleX' % top_joint, '%s.scaleX' % joint)
