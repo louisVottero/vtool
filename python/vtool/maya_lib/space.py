@@ -1857,23 +1857,6 @@ def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', n
             
     return joints
 
-
-    
-@core.undo_chunk
-def add_orient_attributes(transform):
-    """
-    Add orient attributes, used to automatically orient.
-    
-    Args
-        transform (str): The name of the transform.
-    """
-    if type(transform) != list:
-        transform = [transform]
-    
-    for thing in transform:
-        
-        orient = attr.OrientJointAttributes(thing)
-        orient.set_default_values()
     
 def orient_attributes(scope = None):
     """

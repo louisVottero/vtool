@@ -17,35 +17,308 @@ import curve
 import geo
 import deform
 
-class StoreData(object):
-    def __init__(self, node = None):
-        self.node = node
-        
-        if not node:
-            return
-        
-        self.data = attr.MayaStringVariable('DATA')
-        self.data.set_node(self.node)
-        
-        if not cmds.objExists('%s.DATA' % node):
-            self.data.create(node)
-        
-    def set_data(self, data):
-        str_value = str(data)
-        
-        self.data.set_value(str_value)
-        
-    def get_data(self):
-        
-        return self.data.get_value()
+class Control(object):
+    """
+    Convenience for creating controls
     
-    def eval_data(self):
-        data = self.get_data()
+    Args
+        name (str): The name of a control that exists or that should be created.
+    """
+    
+    def __init__(self, name):
         
-        if data:
-            return eval(data)
+        self.control = name
+        self.curve_type = None
         
-class StoreControlData(StoreData):
+        if not cmds.objExists(self.control):
+            self._create()
+            
+        self.shapes = core.get_shapes(self.control)
+        
+        if not self.shapes:
+            vtool.util.warning('%s has no shapes' % self.control)
+            
+    def _create(self):
+        
+        self.control = cmds.circle(ch = False, n = self.control, normal = [1,0,0])[0]
+        
+        if self.curve_type:
+            self.set_curve_type(self.curve_type)
+        
+    def _get_components(self):
+        
+        self.shapes = core.get_shapes(self.control)
+        
+        return core.get_components_from_shapes(self.shapes)
+        
+    def set_curve_type(self, type_name):
+        """
+        Set the curve type. The type of shape the curve should have.
+        
+        Args
+        
+            type_name (str): eg. 'circle', 'square', 'cube', 'pin_round' 
+        """
+        
+        curve_data = curve.CurveDataInfo()
+        curve_data.set_active_library('default_curves')
+        curve_data.set_shape_to_curve(self.control, type_name)
+        
+        self.shapes = core.get_shapes(self.control)
+    
+    def set_to_joint(self, joint = None):
+        """
+        Set the control to have a joint as its main transform type.
+        
+        Args
+            joint (str): The name of a joint to use. If none joint will be created automatically.
+        """
+        cmds.setAttr('%s.radius' % joint, l = True, k = False, cb = False)
+        
+        cmds.select(cl = True)
+        name = self.get()
+        
+        joint_given = True
+        
+        if not joint:
+            joint = cmds.joint()
+            space.MatchSpace(name, joint).translation_rotation()
+            joint_given = False
+        
+        shapes = self.shapes
+        
+        for shape in shapes:
+            cmds.parent(shape, joint, r = True, s = True)
+        
+        if not joint_given:
+            space.transfer_relatives(name, joint, reparent = True)
+            cmds.rename(joint, name)
+            
+        if joint_given:
+            space.transfer_relatives(name, joint, reparent = False)
+            
+            
+        
+        
+        cmds.setAttr('%s.drawStyle' % joint, 2)
+            
+        curve_type_value = ''
+            
+        if cmds.objExists('%s.curveType' % name):
+            curve_type_value = cmds.getAttr('%s.curveType' % name)    
+        
+        cmds.delete(name)
+        
+        self.control = joint
+        
+        if joint_given:
+            core.rename_shapes(self.control)
+            
+        var = attr.MayaStringVariable('curveType')
+        var.create(joint)
+        var.set_value(curve_type_value)
+        
+        
+        
+    def translate_shape(self, x,y,z):
+        """
+        Translate the shape curve cvs in object space.
+        
+        Args
+            x (float)
+            y (float)
+            z (float)
+        """
+        components = self._get_components()
+        
+        if components:
+            cmds.move(x,y,z, components, relative = True, os = True)
+        
+    def rotate_shape(self, x,y,z):
+        """
+        Rotate the shape curve cvs in object space
+        
+        Args
+            x (float)
+            y (float)
+            z (float)
+        """
+        components = self._get_components()
+        
+        if components:
+            cmds.rotate(x,y,z, components, relative = True)
+            
+    def scale_shape(self, x,y,z):
+        """
+        Scale the shape curve cvs relative to the current scale.
+        
+        Args
+            x (float)
+            y (float)
+            z (float)
+        """
+        components = self._get_components()
+        
+        pivot = cmds.xform( self.control, q = True, rp = True, ws = True)
+        
+        if components:
+            cmds.scale(x,y,z, components, p = pivot, r = True)
+
+    def color(self, value):
+        """
+        Set the color of the curve.
+        
+        Args
+            value (int): This corresponds to Maya's color override value.
+        """
+        shapes = core.get_shapes(self.control)
+        
+        attr.set_color(shapes, value)
+    
+    def show_rotate_attributes(self):
+        """
+        Unlock and set keyable the control's rotate attributes.
+        """
+        cmds.setAttr('%s.rotateX' % self.control, l = False, k = True)
+        cmds.setAttr('%s.rotateY' % self.control, l = False, k = True)
+        cmds.setAttr('%s.rotateZ' % self.control, l = False, k = True)
+        
+    def show_scale_attributes(self):
+        """
+        Unlock and set keyable the control's scale attributes.
+        """
+        cmds.setAttr('%s.scaleX' % self.control, l = False, k = True)
+        cmds.setAttr('%s.scaleY' % self.control, l = False, k = True)
+        cmds.setAttr('%s.scaleZ' % self.control, l = False, k = True)
+    
+    def hide_attributes(self, attributes):
+        """
+        Lock and hide the given attributes on the control.
+        
+        Args
+            
+            attributes (list): List of attributes, eg. ['translateX', 'translateY']
+        """
+        attr.hide_attributes(self.control, attributes)
+        
+    def hide_translate_attributes(self):
+        """
+        Lock and hide the translate attributes on the control.
+        """
+        
+        attr.hide_attributes(self.control, ['translateX',
+                                     'translateY',
+                                     'translateZ'])
+        
+    def hide_rotate_attributes(self):
+        """
+        Lock and hide the rotate attributes on the control.
+        """
+        attr.hide_attributes(self.control, ['rotateX',
+                                     'rotateY',
+                                     'rotateZ'])
+        
+    def hide_scale_attributes(self):
+        """
+        Lock and hide the scale attributes on the control.
+        """
+        attr.hide_attributes(self.control, ['scaleX',
+                                     'scaleY',
+                                     'scaleZ'])
+        
+    def hide_visibility_attribute(self):
+        """
+        Lock and hide the visibility attribute on the control.
+        """
+        attr.hide_attributes(self.control, ['visibility'])
+    
+    def hide_scale_and_visibility_attributes(self):
+        """
+        Lock and hide the visibility and scale attributes on the control.
+        """
+        self.hide_scale_attributes()
+        self.hide_visibility_attribute()
+    
+    def hide_keyable_attributes(self):
+        """
+        Lock and hide all keyable attributes on the control.
+        """
+        attr.hide_keyable_attributes(self.control)
+        
+    def rotate_order(self, xyz_order_string):
+        """
+        Set the rotate order on a control.
+        """
+        cmds.setAttr('%s.rotateOrder' % self.node, xyz_order_string)
+    
+    def color_respect_side(self, sub = False, center_tolerance = 0.001):
+        """
+        Look at the position of a control, and color it according to its side on left, right or center.
+        
+        Args
+            sub (bool): Wether to set the color to sub colors.
+            center_tolerance (float): The distance the control can be from the center before its considered left or right.
+            
+        Return
+            str: The side the control is on in a letter. Can be 'L','R' or 'C'
+        """
+        position = cmds.xform(self.control, q = True, ws = True, t = True)
+        
+        if position[0] > 0:
+            color_value = attr.get_color_of_side('L', sub)
+            side = 'L'
+
+        if position[0] < 0:
+            color_value = attr.get_color_of_side('R', sub)
+            side = 'R'
+            
+        if position[0] < center_tolerance and position[0] > center_tolerance*-1:
+            color_value = attr.get_color_of_side('C', sub)
+            side = 'C'
+            
+        self.color(color_value)
+        
+        return side
+            
+    def get(self):
+        """
+        Return
+            str: The name of the control.
+        """
+        return self.control
+    
+    def create_xform(self):
+        """
+        Create an xform above the control.
+        
+        Return
+            str: The name of the xform group.
+        """
+        xform = space.create_xform_group(self.control)
+        
+        return xform
+        
+    def rename(self, new_name):
+        """
+        Give the control a new name.
+        
+        Args
+            
+            name (str): The new name.
+        """
+        new_name = cmds.rename(self.control, core.inc_name(new_name))
+        self.control = new_name
+
+    def delete_shapes(self):
+        """
+        Delete the shapes beneath the control.
+        """
+        self.shapes = core.get_shapes(self.control)
+        
+        cmds.delete(self.shapes)
+        self.shapes = []
+        
+class StoreControlData(attr.StoreData):
     
     def __init__(self, node = None):
         super(StoreControlData, self).__init__(node)
@@ -389,306 +662,7 @@ class StoreControlData(StoreData):
                 
             cmds.delete(controls[control][0])
 
-class Control(object):
-    """
-    Convenience for creating controls
-    
-    Args
-        name (str): The name of a control that exists or that should be created.
-    """
-    
-    def __init__(self, name):
-        
-        self.control = name
-        self.curve_type = None
-        
-        if not cmds.objExists(self.control):
-            self._create()
-            
-        self.shapes = core.get_shapes(self.control)
-        
-        if not self.shapes:
-            vtool.util.warning('%s has no shapes' % self.control)
-            
-    def _create(self):
-        
-        self.control = cmds.circle(ch = False, n = self.control, normal = [1,0,0])[0]
-        
-        if self.curve_type:
-            self.set_curve_type(self.curve_type)
-        
-    def _get_components(self):
-        
-        self.shapes = core.get_shapes(self.control)
-        
-        return core.get_components_from_shapes(self.shapes)
-        
-    def set_curve_type(self, type_name):
-        """
-        Set the curve type. The type of shape the curve should have.
-        
-        Args
-        
-            type_name (str): eg. 'circle', 'square', 'cube', 'pin_round' 
-        """
-        
-        curve_data = curve.CurveDataInfo()
-        curve_data.set_active_library('default_curves')
-        curve_data.set_shape_to_curve(self.control, type_name)
-        
-        self.shapes = core.get_shapes(self.control)
-    
-    def set_to_joint(self, joint = None):
-        """
-        Set the control to have a joint as its main transform type.
-        
-        Args
-            joint (str): The name of a joint to use. If none joint will be created automatically.
-        """
-        cmds.setAttr('%s.radius' % joint, l = True, k = False, cb = False)
-        
-        cmds.select(cl = True)
-        name = self.get()
-        
-        joint_given = True
-        
-        if not joint:
-            joint = cmds.joint()
-            space.MatchSpace(name, joint).translation_rotation()
-            joint_given = False
-        
-        shapes = self.shapes
-        
-        for shape in shapes:
-            cmds.parent(shape, joint, r = True, s = True)
-        
-        if not joint_given:
-            space.transfer_relatives(name, joint, reparent = True)
-            cmds.rename(joint, name)
-            
-        if joint_given:
-            space.transfer_relatives(name, joint, reparent = False)
-            
-            
-        
-        
-        cmds.setAttr('%s.drawStyle' % joint, 2)
-            
-        curve_type_value = ''
-            
-        if cmds.objExists('%s.curveType' % name):
-            curve_type_value = cmds.getAttr('%s.curveType' % name)    
-        
-        cmds.delete(name)
-        
-        self.control = joint
-        
-        if joint_given:
-            core.rename_shapes(self.control)
-            
-        var = attr.MayaStringVariable('curveType')
-        var.create(joint)
-        var.set_value(curve_type_value)
-        
-        
-        
-    def translate_shape(self, x,y,z):
-        """
-        Translate the shape curve cvs in object space.
-        
-        Args
-            x (float)
-            y (float)
-            z (float)
-        """
-        components = self._get_components()
-        
-        if components:
-            cmds.move(x,y,z, components, relative = True, os = True)
-        
-    def rotate_shape(self, x,y,z):
-        """
-        Rotate the shape curve cvs in object space
-        
-        Args
-            x (float)
-            y (float)
-            z (float)
-        """
-        components = self._get_components()
-        
-        if components:
-            cmds.rotate(x,y,z, components, relative = True)
-            
-    def scale_shape(self, x,y,z):
-        """
-        Scale the shape curve cvs relative to the current scale.
-        
-        Args
-            x (float)
-            y (float)
-            z (float)
-        """
-        components = self._get_components()
-        
-        pivot = cmds.xform( self.control, q = True, rp = True, ws = True)
-        
-        if components:
-            cmds.scale(x,y,z, components, p = pivot, r = True)
 
-    def color(self, value):
-        """
-        Set the color of the curve.
-        
-        Args
-            value (int): This corresponds to Maya's color override value.
-        """
-        shapes = core.get_shapes(self.control)
-        
-        attr.set_color(shapes, value)
-    
-    def show_rotate_attributes(self):
-        """
-        Unlock and set keyable the control's rotate attributes.
-        """
-        cmds.setAttr('%s.rotateX' % self.control, l = False, k = True)
-        cmds.setAttr('%s.rotateY' % self.control, l = False, k = True)
-        cmds.setAttr('%s.rotateZ' % self.control, l = False, k = True)
-        
-    def show_scale_attributes(self):
-        """
-        Unlock and set keyable the control's scale attributes.
-        """
-        cmds.setAttr('%s.scaleX' % self.control, l = False, k = True)
-        cmds.setAttr('%s.scaleY' % self.control, l = False, k = True)
-        cmds.setAttr('%s.scaleZ' % self.control, l = False, k = True)
-    
-    def hide_attributes(self, attributes):
-        """
-        Lock and hide the given attributes on the control.
-        
-        Args
-            
-            attributes (list): List of attributes, eg. ['translateX', 'translateY']
-        """
-        attr.hide_attributes(self.control, attributes)
-        
-    def hide_translate_attributes(self):
-        """
-        Lock and hide the translate attributes on the control.
-        """
-        
-        attr.hide_attributes(self.control, ['translateX',
-                                     'translateY',
-                                     'translateZ'])
-        
-    def hide_rotate_attributes(self):
-        """
-        Lock and hide the rotate attributes on the control.
-        """
-        attr.hide_attributes(self.control, ['rotateX',
-                                     'rotateY',
-                                     'rotateZ'])
-        
-    def hide_scale_attributes(self):
-        """
-        Lock and hide the scale attributes on the control.
-        """
-        attr.hide_attributes(self.control, ['scaleX',
-                                     'scaleY',
-                                     'scaleZ'])
-        
-    def hide_visibility_attribute(self):
-        """
-        Lock and hide the visibility attribute on the control.
-        """
-        attr.hide_attributes(self.control, ['visibility'])
-    
-    def hide_scale_and_visibility_attributes(self):
-        """
-        Lock and hide the visibility and scale attributes on the control.
-        """
-        self.hide_scale_attributes()
-        self.hide_visibility_attribute()
-    
-    def hide_keyable_attributes(self):
-        """
-        Lock and hide all keyable attributes on the control.
-        """
-        attr.hide_keyable_attributes(self.control)
-        
-    def rotate_order(self, xyz_order_string):
-        """
-        Set the rotate order on a control.
-        """
-        cmds.setAttr('%s.rotateOrder' % self.node, xyz_order_string)
-    
-    def color_respect_side(self, sub = False, center_tolerance = 0.001):
-        """
-        Look at the position of a control, and color it according to its side on left, right or center.
-        
-        Args
-            sub (bool): Wether to set the color to sub colors.
-            center_tolerance (float): The distance the control can be from the center before its considered left or right.
-            
-        Return
-            str: The side the control is on in a letter. Can be 'L','R' or 'C'
-        """
-        position = cmds.xform(self.control, q = True, ws = True, t = True)
-        
-        if position[0] > 0:
-            color_value = attr.get_color_of_side('L', sub)
-            side = 'L'
-
-        if position[0] < 0:
-            color_value = attr.get_color_of_side('R', sub)
-            side = 'R'
-            
-        if position[0] < center_tolerance and position[0] > center_tolerance*-1:
-            color_value = attr.get_color_of_side('C', sub)
-            side = 'C'
-            
-        self.color(color_value)
-        
-        return side
-            
-    def get(self):
-        """
-        Return
-            str: The name of the control.
-        """
-        return self.control
-    
-    def create_xform(self):
-        """
-        Create an xform above the control.
-        
-        Return
-            str: The name of the xform group.
-        """
-        xform = space.create_xform_group(self.control)
-        
-        return xform
-        
-    def rename(self, new_name):
-        """
-        Give the control a new name.
-        
-        Args
-            
-            name (str): The new name.
-        """
-        new_name = cmds.rename(self.control, core.inc_name(new_name))
-        self.control = new_name
-
-    def delete_shapes(self):
-        """
-        Delete the shapes beneath the control.
-        """
-        self.shapes = core.get_shapes(self.control)
-        
-        cmds.delete(self.shapes)
-        self.shapes = []
 
 class StretchyChain:
     """

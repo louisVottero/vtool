@@ -184,42 +184,43 @@ class Rig(object):
             
     def set_control_shape(self, shape_name):
         """
-            Sets the look of the controls, based on predifined names.
+        Sets the look of the controls, based on predifined names.
         """
         
         self.control_shape = shape_name
         
     def set_sub_control_shape(self, shape_name):
         """
-            Sets the look of the curve for the sub controls.
+        Sets the look of the curve for the sub controls.
+        
         """
         
         self.sub_control_shape = shape_name
     
     def set_control_color(self, color):
         """
-            Set the color of the control based on an integer value. 
+        Set the color of the control based on an integer value. 
         """
         
         self.control_color = color
         
     def set_sub_control_color(self, color):
         """
-            Set the color of sub controls.
+        Set the color of sub controls.
         """
         
         self.sub_control_color = color
         
     def set_control_size(self, float_value):
         """
-            Sets the default size of the control curve.
+        Sets the default size of the control curve.
         """
         
         self.control_size = float_value
         
     def set_sub_control_size(self, float_value):
         """
-            Sets the default size of the sub control curve.
+        Sets the default size of the sub control curve.
         """
         
         self.sub_control_size = float_value
@@ -228,8 +229,8 @@ class Rig(object):
                 
     def set_control_parent(self, parent_transform):
         """
-            Not tested.
-            Sets the parent of the control group for this rig.
+        Not tested.
+        Sets the parent of the control group for this rig.
         """
         
         
@@ -239,8 +240,8 @@ class Rig(object):
         
     def set_setup_parent(self, parent_transform):
         """
-            Not tested.
-            Sets the parent of the setup group for this rig.
+        Not tested.
+        Sets the parent of the setup group for this rig.
         """
         
         
@@ -250,8 +251,8 @@ class Rig(object):
         
     def get_control_entries(self, title):
         """
-            Get entries for every control. 
-            For example, title could be "xform".  It would return all the xform nodes.
+        Get entries for every control. 
+        For example, title could be "xform".  It would return all the xform nodes.
         """
         
         entries = []
@@ -264,8 +265,8 @@ class Rig(object):
         
     def get_sub_control_entries(self, title):
         """
-            Get entries for every sub control. 
-            For example, title could be "xform".  It would return all the xform nodes.
+        Get entries for every sub control. 
+        For example, title could be "xform".  It would return all the xform nodes.
         """
         
         
@@ -279,15 +280,15 @@ class Rig(object):
         
     def create(self):
         """
-            Create the rig.  Set commands must be set before running this.
+        Create the rig.  Set commands must be set before running this.
         """
         
         self._parent_default_groups()
         
 class JointRig(Rig):
     """
-        Joint rig class adds attaching buffer chain functionality.
-        Also the ability to specify a joint chain for a rig.
+    Joint rig class adds attaching buffer chain functionality.
+    Also the ability to specify a joint chain for a rig.
     
     """
     
@@ -423,7 +424,7 @@ class SparseRig(JointRig):
     """
     This class create controls on joints. The controls are not interconnected.
     For example Fk rig, the controls have a parent/child hierarchy. Sparse rig does not have any hierarchy.
-    
+    This is good for a pile of leaves or tweakers on a body.
     """
     
     def __init__(self, description, side):
@@ -623,7 +624,9 @@ class SparseLocalRig(SparseRig):
         self.control_dict[control_name]['driver'] = driver
             
 class ControlRig(Rig):
-    
+    """
+    Convenience for creating controls to hold blendshape sliders.
+    """
     def __init__(self, name, side):
         super(ControlRig, self).__init__(name,side)
         
@@ -635,15 +638,29 @@ class ControlRig(Rig):
         self.control_descriptions = {}
     
     def set_transforms(self, transforms):
+        """
+        Set transforms where controls should be created.
+        """
         self.transforms = transforms
         
     def set_control_count_per_transform(self, int_value):
+        """
+        Set the number of controls per transform.
+        """
         self.control_count = int_value
     
     def set_control_shape(self, index, shape_name):
+        """
+        Set the control shape at the index. 
+        Corresponds to set_control_count_per_transform.
+        """
         self.control_shape_types[index] = shape_name
     
     def set_control_description(self, index, description):
+        """
+        Set the description of the control at the index.
+        Corresponds to set_control_count_per_transform.
+        """
         self.control_descriptions[index] = description
     
     def create(self):
@@ -667,7 +684,9 @@ class ControlRig(Rig):
                 cmds.parent(xform, self.control_group)                
                 
 class GroundRig(JointRig):
-    
+    """
+    Create a ground and sub controls
+    """
     def __init__(self, name, side):
         super(GroundRig, self).__init__(name, side)
         
@@ -727,7 +746,9 @@ class GroundRig(JointRig):
 #--- FK
 
 class FkRig(BufferRig):
-    #CBB
+    """
+    This is a great simple setup for appendages like fingers or arms.
+    """
     
     def __init__(self, name, side):
         super(FkRig, self).__init__(name, side)
@@ -942,20 +963,31 @@ class FkRig(BufferRig):
         self.parent = parent
         
     def set_match_to_rotation(self, bool_value):
+        """
+        Wether to match control to closest joint orientation or not. If not just match to translate. Control stays oriented to world.
+        Default is True.
+        """
         self.match_to_rotation = bool_value
     
     def get_drivers(self):
+        """
+        Get the driver groups above the controls.
+        """
         
         drivers = self.get_control_entries('driver')
             
         return drivers
     
     def set_use_joint_controls(self, bool_value):
-        
+        """
+        Wether to make the controls have a joint as their base transform node.
+        """
         self.use_joint_controls = bool_value
     
     def set_create_sub_controls(self, bool_value):
-        
+        """
+        Wether each fk control should have sub controls.
+        """
         self.create_sub_controls = bool_value
             
     def create(self):
@@ -973,7 +1005,10 @@ class FkRig(BufferRig):
         
 
 class FkLocalRig(FkRig):
-    
+    """
+    Same as FkRig but joints get connected in instead of constrained. 
+    This allows the controls as a group to move separately from the joints.
+    """
     def __init__(self, name, side):
         super(FkLocalRig, self).__init__(name, side)
         
@@ -1015,9 +1050,15 @@ class FkLocalRig(FkRig):
         return self.control
 
     def set_control_scale(self, bool_value):
+        """
+        Set the size of each control.
+        """
         self.rig_scale = bool_value
         
     def set_scalable(self, bool_value):
+        """
+        Set wether the fk setup should be scalable at each control.
+        """
         self.rig_scale = bool_value
 
     def set_local_parent(self, local_parent):
@@ -1030,7 +1071,9 @@ class FkLocalRig(FkRig):
             space.create_follow_group(self.main_local_parent, self.local_xform)
             
 class FkScaleRig(FkRig): 
-    #CBB 
+    """
+    This extends FkRig so that it can be scalable at each control.
+    """
       
     def __init__(self, name, side): 
         super(FkScaleRig, self).__init__(name, side) 
@@ -1134,6 +1177,9 @@ class FkScaleRig(FkRig):
             cmds.parent(buffer_joint, last_control)
             
 class FkCurlNoScaleRig(FkRig):
+    """
+    This extends FkRig with the ability to have a curl attribute. Good for fingers.
+    """
     def __init__(self, description, side):
         super(FkCurlNoScaleRig, self).__init__(description, side)
         
@@ -1208,15 +1254,41 @@ class FkCurlNoScaleRig(FkRig):
             attr.connect_rotate(driver, current_transform)
     
     def set_curl_axis(self, axis_letter):
+        """
+        Set the axis that the curl should rotate on.
+        
+        Args
+            axis_letter (str): 'X','Y','Z'
+        """
         self.curl_axis = axis_letter.capitalize()
     
     def set_attribute_control(self, control_name):
+        """
+        Set the control that the curl slider should live on.
+        
+        Args
+            control_name (str): The name of a control.
+        """
         self.attribute_control = control_name
         
     def set_attribute_name(self, attribute_name):
+        """
+        The attribute name for the curl slider.
+        
+        Args
+            attribute_name (str): The name of the curl slider attribute.
+        """
+        
         self.attribute_name = attribute_name
         
     def set_skip_increments(self, increments):
+        """
+        You can skip increments so they don't get affected by the curl.
+        Each increment corresponds to a joint set in set_joints
+        
+        Args
+            increments (list): Eg. [0], will not add curl to the control on the first joint.
+        """
         self.skip_increments = increments
         
 class FkCurlRig(FkScaleRig):
@@ -1276,19 +1348,56 @@ class FkCurlRig(FkScaleRig):
         curl_variable.connect_out('%s.rotate%s' % (driver, curl_axis))
         
     def set_curl_axis(self, axis_letter):
+        """
+        Set the axis that the curl should rotate on.
+        
+        Args
+            axis_letter (str): 'X','Y','Z'
+        """
         self.curl_axis = axis_letter.capitalize()
     
     def set_curl_description(self, description):
+        """
+        The attribute name for the curl slider.
+        
+        Args
+            attribute_name (str): The name of the curl slider attribute.
+        """
         self.curl_description = description
         
     def set_skip_increments(self, increments):
+        """
+        You can skip increments so they don't get affected by the curl.
+        Each increment corresponds to a joint set in set_joints
         
+        Args
+            increments (list): Eg. [0], will not add curl to the control on the first joint.
+        """        
         self.skip_increments = increments
     
     def set_attribute_control(self, control_name):
+        """
+        Set the control that the curl slider should live on.
+        
+        Args
+            control_name (str): The name of a control.
+        """
         self.attribute_control = control_name
-    
+        
+    def set_attribute_name(self, attribute_name):
+        """
+        The attribute name for the curl slider.
+        
+        Args
+            attribute_name (str): The name of the curl slider attribute.
+        """
+        
+        self.attribute_name = attribute_name
+        
 class SimpleFkCurveRig(FkCurlNoScaleRig):
+    """
+    This is usually used for spine setups.
+    """
     def __init__(self, name, side):
         super(SimpleFkCurveRig, self).__init__(name, side)
         self.controls = []
@@ -1361,15 +1470,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         
         cmds.parent(self.clusters, cluster_group)
         cmds.parent(cluster_group, self.setup_group)
-    
-    """
-    def _create_control(self, sub = False):
-        
-
-        control = super(SimpleFkCurveRig, self)._create_control(sub = sub)
-        
-        return control
-    """
     
     def _create_sub_control(self):
             
@@ -1659,18 +1759,49 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             var.connect_out('%s.twist' % handle)
     
     def set_control_xform(self, vector, inc):
+        """
+        This allows a control to be moved while its being created. 
+        This way all the clusters and everything are still functioning properly.
+        
+        Args
+            vector [list]: Eg [0,0,0], the amount to move the control, relative to its regular position.
+            inc [int]: The increment of the control. An increment of 0 would move the first control.
+        """
         self.control_xform[inc] = vector
     
     def set_orient_joint(self, joint):
+        """
+        Set a joint to match the orientation of the controls to.
+        
+        Args
+            joint (str): The name of a joint.
+        """
         self.orient_joint = joint
     
     def set_orient_controls_to_joints(self, bool_value):
+        """
+        Wether to match the control's orientation to the nearest joint.
+        """
         self.orient_controls_to_joints = bool_value
     
     def set_advanced_twist(self, bool_value):
+        """
+        Wether to use spline ik top btm advanced twist.
+        """
         self.advanced_twist = bool_value
     
     def set_control_count(self, int_value, span_count = None, wire_hires = False):
+        """
+        Set the number of controls.
+        Wire hires is good for having the joints follow a well defined curve while maintaining a small amount of controls.
+        
+        Args
+            int_value (int): The number of controls.
+            span_count (int): The number of spans on the curve.
+            wire_hires (bool): Wether to wire deform the hires to the control Curve. If span count doesn't match the control count.
+            
+        """
+        
         if int_value == 0 or int_value < 2:
             int_value = 2
             
@@ -1685,44 +1816,89 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
             
     
     def set_sub_control(self, bool_value):
+        """
+        Wether to create sub controls.
+        """
         
         self.sub_control_on = bool_value
     
     def set_stretchy(self, bool_value):
+        """
+        Wether the joints should stretch to match the spline ik.
+        """
         self.stretchy = bool_value
         
     def set_stretch_on_off(self, bool_value):
+        """
+        Wether to add a stretch on/off attribute. 
+        This allows the animator to turn the stretchy effect off over time.
+        """
         self.stretch_on_off = bool_value
     
     def set_stretch_axis(self, axis_letter):
+        """
+        Set the axis that the joints should stretch on.
+        """
         self.stretch_axis = axis_letter
     
     def set_curve(self, curve):
+        """
+        Set the curve that the controls should move and the joints should follow.
+        """
         self.curve = curve
         
     def set_ribbon(self, bool_value):
+        """
+        By default the whole setup uses a spline ik. This will cause the setup to use a nurbs surface.
+        If this is on, stretch options are ignored.
+        """
         self.ribbon = bool_value
         
     def set_ribbon_offset(self, float_value):
-        
+        """
+        Set the width of the ribbon.
+        """
         self.ribbon_offset = float_value
         
     def set_ribbon_offset_axis(self, axis_letter):
+        """
+        Set which axis the ribbon width is offset on.
+        
+        Args
+            axis_letter (str): 'X','Y' or 'Z' 
+        """
         self.ribbon_offset_axis = axis_letter
         
     def set_last_pivot_top(self, bool_value):
+        """
+        Set the last pivot on the curve to the top of the curve.
+        """
         self.last_pivot_top_value = bool_value
     
     def set_fix_x_axis(self, bool_value):
+        """
+        This will create a duplicate chain for the spline ik, that has the x axis pointing down the joint.
+        The new joint chain moves with the controls, and constrains the regular joint chain.
+        """
         self.fix_x_axis = bool_value
 
     def set_skip_first_control(self, bool_value):
+        """
+        This allows the setup to not have the first control.
+        """
         self.skip_first_control = bool_value
         
     def set_closest_y(self, bool_value):
+        """
+        Wether to turn on Maya's closest y option, which can solve flipping in some cases.
+        """
         self.closest_y = bool_value
         
     def set_create_follows(self, bool_value):
+        """
+        By default the first and last controls fade influence up the sub controls of the setup.
+        By setting this to False, the top and btm controls will no longer affect mid sub controls.
+        """
         self.create_follows = bool_value
         
     def create(self):
@@ -1759,7 +1935,9 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         cmds.delete(self.orig_curve) 
     
 class FkCurveRig(SimpleFkCurveRig):
-    
+    """
+    This extends SimpleFkCurveRig. This is usually used for spine setups.
+    """
     def __init__(self, name, side):
         super(FkCurveRig, self).__init__(name, side)
         
@@ -1799,6 +1977,9 @@ class FkCurveRig(SimpleFkCurveRig):
         cmds.parent(xform_aim1, xform_aim2, self.setup_group)
     
     def set_aim_end_vectors(self, bool_value):
+        """
+        Wether the first and last clusters should aim at the mid controls 
+        """
         self.aim_end_vectors = bool_value
         
     def create(self):
@@ -2002,6 +2183,10 @@ class FkCurveLocalRig(FkCurveRig):
 #---IK
 
 class IkSplineNubRig(BufferRig):
+    """
+    This is used for the tweaker setup.
+    """
+    
     
     def __init__(self, description, side):
         
@@ -2255,10 +2440,16 @@ class IkSplineNubRig(BufferRig):
         
         cmds.delete(spacer)
     
-    def set_end_with_locator(self, True):
+    def set_end_with_locator(self, bool_value):
+        """
+        Wether the end effector control should be a locator instead.
+        """
         self.end_with_locator = True
     
     def set_guide_top_btm(self, top_guide, btm_guide):
+        """
+        Set the parents for the top and btm guide controls.
+        """
         self.top_guide = top_guide
         self.btm_guide = btm_guide
     
@@ -2266,14 +2457,26 @@ class IkSplineNubRig(BufferRig):
         self.control_shape = name
     
     def set_create_middle_control(self, bool_value):
-        
+        """
+        Wether to create the elbow control.
+        """
         self.bool_create_middle_control = bool_value
     
     def set_right_side_fix(self, bool_value, axis):
+        """
+        Wether to compensate for the right side joint orientation.
+        """
         self.right_side_fix = bool_value
         self.right_side_fix_axis = axis
     
     def set_control_orient(self, transform):
+        """
+        Set the orientation of the top and btm control based on the transform.
+        
+        Args
+            transform (str): The name of a transform.
+        """
+        
         self.control_orient = transform
     
     def create(self):
@@ -2374,6 +2577,9 @@ class IkSplineNubRig(BufferRig):
 
 
 class IkAppendageRig(BufferRig):
+    """
+    This is usually used for arms or legs.
+    """
     
     def __init__(self, description, side):
         super(IkAppendageRig, self).__init__(description, side)
@@ -2557,8 +2763,8 @@ class IkAppendageRig(BufferRig):
     def _xform_btm_control(self, control):
         
         if self.match_btm_to_joint:
-            match = space.MatchSpace(self.ik_chain[-1], control)
-            match.translation_rotation()
+            space.MatchSpace(self.ik_chain[-1], control).translation_rotation()
+            
         if not self.match_btm_to_joint:
             space.MatchSpace(self.ik_chain[-1], control).translation()
         
@@ -2795,25 +3001,55 @@ class IkAppendageRig(BufferRig):
         pass
     
     def set_create_twist(self, bool_value):
-        
+        """
+        Wether to add an auto twist setup.
+        """
         self.create_twist = bool_value
     
     def set_create_stretchy(self, bool_value):
+        """
+        Wether to add a stretchy setup.
+        """
         self.create_stretchy = bool_value
     
     def set_stretch_axis(self, axis_letter):
+        """
+        What axis the stretch should scale on.
+        
+        Args
+            axis_letter (str): 'X','Y','Z'
+        """
         self.stretch_axis = axis_letter
     
     def set_pole_offset(self, value):
+        """
+        Get the amount that the polevector control should offset from the elbow.
+        
+        Args
+            value (float)
+        """
         self.pole_offset = value
     
     def set_pole_angle_joints(self, joints):
+        """
+        Set which joints the pole angle is calculated from.
+        
+        Args
+            joints (list): A list of of 3 joints that form a triangle. 
+        """
         self.pole_angle_joints = joints
     
     def set_right_side_fix(self, bool_value):
+        """
+        Wether to compensate for right side orientation.
+        """
         self.right_side_fix = bool_value
     
     def set_orient_constrain(self, bool_value):
+        """
+        Wether the end effector control should orient constrain the ik handle.
+        Default is True.
+        """
         self.orient_constrain = bool_value
         
     def set_curve_type(self, curve_name):
@@ -2823,19 +3059,38 @@ class IkAppendageRig(BufferRig):
         self.create_sub_control = bool_value
     
     def set_create_world_switch(self, bool_value):
+        """
+        Wether to create a world switch on the end effector control. 
+        This can be used to have the end effector control orient to world if the character is in a-pose.
+        """
         self.create_world_switch = bool_value
     
     def set_top_control_as_locator(self, bool_value):
+        """
+        Instead of a control curve for the top control, make it a locator.
+        """
         self.top_as_locator = bool_value
     
     def set_match_btm_to_joint(self, bool_value):
+        """
+        Wether to match orientation of the end effector control to the btm joint, or just translation.
+        Default is True.
+        """
         self.match_btm_to_joint = bool_value
         
     def set_create_top_control(self, bool_value):
+        """
+        Wether to create a top control.
+        """
         self.create_top_control = bool_value
     
     def set_pole_follow_transform(self, transform):
+        """
+        Set a transform for the pole to follow with a on/off switch on the pole control.
         
+        Args
+            transform (str): The name of a transform.s
+        """
         self.pole_follow_transform = transform
         
     
@@ -2871,6 +3126,10 @@ class IkAppendageRig(BufferRig):
         
             
 class TweakCurveRig(BufferRig):
+    """
+    TweakCurveRig is good for belts or straps that need to be riveted to a surface.
+    """
+    
     
     def __init__(self, name, side):
         super(TweakCurveRig, self).__init__(name, side)

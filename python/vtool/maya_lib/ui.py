@@ -11,12 +11,19 @@ import vtool.qt_ui
 
 from vtool.process_manager import ui_process_manager
 
-import util
+import core
+import attr
+import space
+import geo
+import deform
+import rigs_util
+#import util
 
 if vtool.qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
 if vtool.qt_ui.is_pyside():
     from PySide import QtCore, QtGui
+    
 
 #--- signals
 
@@ -305,8 +312,8 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         
     def _match_joints(self):
-        util.match_joint_xform('joint_', 'guideJoint_')
-        util.match_orient('joint_', 'guideJoint_')
+        space.match_joint_xform('joint_', 'guideJoint_')
+        space.match_orient('joint_', 'guideJoint_')
         
     def _create_control_widgets(self, parent):
         
@@ -352,29 +359,29 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         selection = cmds.ls(sl = True)
         
-        util.chad_extract_shape(selection[0], selection[1])
+        deform.chad_extract_shape(selection[0], selection[1])
     
     def _skin_mesh_from_mesh(self):
         selection = cmds.ls(sl = True)
-        util.skin_mesh_from_mesh(selection[0], selection[1])
+        deform.skin_mesh_from_mesh(selection[0], selection[1])
     
     def _subdivide_joint(self, number):
-        util.subdivide_joint(count = number)
+        space.subdivide_joint(count = number)
         
     def _add_orient(self):
         selection = cmds.ls(sl = True, type = 'joint')
         
-        util.add_orient_attributes(selection)
+        attr.add_orient_attributes(selection)
         
     def _orient(self):
-        util.orient_attributes()
+        space.orient_attributes()
         
-    @util.undo_chunk
+    @core.undo_chunk
     def _mirror(self, *args ):
         #*args is for probably python 2.6, which doesn't work unless you have a key argument.
         
-        util.mirror_curve('curve_')
-        util.mirror_xform()
+        rigs_util.mirror_curve('curve_')
+        space.mirror_xform()
         #util.mirror_xform('guideJoint_')
         #util.mirror_xform('process_')
         #util.mirror_xform(string_search = 'lf_')
@@ -385,17 +392,18 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
     def _mirror_control(self):
         
         selection = cmds.ls(sl = True)
-        util.mirror_control(selection[0])
+        rigs_util.mirror_control(selection[0])
         
     def _mirror_controls(self):
         
-        util.mirror_controls()
+        rigs_util.mirror_controls()
     
         
     def _joints_on_curve(self, count):
         selection = cmds.ls(sl = True)
         
-        util.create_oriented_joints_on_curve(selection[0], count)
+        
+        geo.create_oriented_joints_on_curve(selection[0], count)
          
     def _snap_joints_to_curve(self, count):
         
@@ -404,7 +412,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         if not scope:
             return
         
-        node_types = util.get_node_types(scope)
+        node_types = core.get_node_types(scope)
         
         joints = node_types['joint']
         
@@ -416,13 +424,13 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         if not joints:
             return
 
-        util.snap_joints_to_curve(joints, curve, count)
+        geo.snap_joints_to_curve(joints, curve, count)
         
     def _transfer_joints(self):
         
         scope = cmds.ls(sl = True)
         
-        node_types = util.get_node_types(scope)
+        node_types = core.get_node_types(scope)
         
         if not scope or len(scope) < 2:
             return
@@ -447,7 +455,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         if not joints:
             return
         
-        transfer = util.XformTransfer()
+        transfer = deform.XformTransfer()
         transfer.set_scope(joints)
         transfer.set_source_mesh(mesh_source)
         transfer.set_target_mesh(mesh_target)
@@ -461,7 +469,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         if not selection:
             return
         
-        node_types = util.get_node_types(selection)
+        node_types = core.get_node_types(selection)
         
         if not 'mesh' in node_types:
             return
@@ -470,14 +478,14 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         
         for mesh in meshes:
-            util.process_joint_weight_to_parent(mesh)
+            rigs_util.process_joint_weight_to_parent(mesh)
             
      
     def _set_joint_axis_visibility(self):
         
         bool_value = self.joint_axis_check.isChecked()
         
-        util.joint_axis_visibility(bool_value)
+        rigs_util.joint_axis_visibility(bool_value)
         
     def _reset_scale_slider(self):
         
@@ -488,9 +496,9 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
     def _get_components(self, thing):
         
-        shapes = util.get_shapes(thing)
+        shapes = core.get_shapes(thing)
         
-        return util.get_components_from_shapes(shapes)
+        return core.get_components_from_shapes(shapes)
         
     
     def _scale_control(self, value):

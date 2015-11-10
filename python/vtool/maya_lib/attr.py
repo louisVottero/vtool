@@ -12,6 +12,8 @@ import core
     
     #do not import anim module here.
     
+
+    
 class Connections(object):
     """
     Convenience for dealing with connections.  Connection mapping gets stored in the class.
@@ -1194,7 +1196,35 @@ class MayaStringVariable(MayaVariable):
         super(MayaStringVariable, self).__init__(name)
         self.variable_type = 'string'
         self.value = ''
+
+class StoreData(object):
+    def __init__(self, node = None):
+        self.node = node
+        
+        if not node:
+            return
+        
+        self.data = MayaStringVariable('DATA')
+        self.data.set_node(self.node)
+        
+        if not cmds.objExists('%s.DATA' % node):
+            self.data.create(node)
+        
+    def set_data(self, data):
+        str_value = str(data)
+        
+        self.data.set_value(str_value)
+        
+    def get_data(self):
+        
+        return self.data.get_value()
     
+    def eval_data(self):
+        data = self.get_data()
+        
+        if data:
+            return eval(data)
+
 class Attributes(object):
     """
     Still testing. Convenience class for dealing with groups of attributes.
@@ -2835,3 +2865,20 @@ def zero_xform_channels(transform):
                 pass
     
     return
+
+    
+@core.undo_chunk
+def add_orient_attributes(transform):
+    """
+    Add orient attributes, used to automatically orient.
+    
+    Args
+        transform (str): The name of the transform.
+    """
+    if type(transform) != list:
+        transform = [transform]
+    
+    for thing in transform:
+        
+        orient = OrientJointAttributes(thing)
+        orient.set_default_values()

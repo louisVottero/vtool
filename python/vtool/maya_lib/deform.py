@@ -17,6 +17,105 @@ import space
 import geo
     
 
+class XformTransfer(object):
+    """
+    Wrap deform joints from one mesh to another.
+    """
+    def __init__(self, ):
+        
+        self.source_mesh = None
+        self.target_mesh = None
+        self.particles = None
+        
+    def _match_particles(self, scope):        
+        
+        xforms = []
+        for transform in self.scope:
+            
+            position = cmds.xform(transform, q = True, ws = True, t = True)
+            
+            xforms.append(position)
+        
+        self.particles = cmds.particle(p = xforms)[0]
+            
+    def _wrap_particles(self):
+        if self.particles and self.source_mesh:
+            
+            cmds.select([self.particles,self.source_mesh],replace = True)
+            mel.eval('source performCreateWrap.mel; performCreateWrap 0;')
+            
+            wrap = find_deformer_by_type(self.particles, 'wrap')
+            
+            cmds.setAttr('%s.exclusiveBind' % wrap, 0)
+            cmds.setAttr('%s.autoWeightThreshold' % wrap, 0)
+            cmds.setAttr('%s.maxDistance' % wrap, 0)
+            cmds.setAttr('%s.falloffMode' % wrap, 0)
+    
+    def _blend_to_target(self):
+        cmds.blendShape(self.target_mesh, self.source_mesh, weight = [0,1], origin = 'world')        
+            
+    def _move_to_target(self):
+        for inc in range(0, len(self.scope)):
+            position = cmds.pointPosition('%s.pt[%s]' % (self.particles,inc))
+            transform = self.scope[inc]
+            
+            if cmds.nodeType(transform) == 'joint':
+                cmds.move(position[0], position[1],position[2], '%s.scalePivot' % transform, '%s.rotatePivot' % transform, a = True)
+                
+            if not cmds.nodeType(transform) == 'joint' and cmds.nodeType(transform) == 'transform':
+                cmds.move(position[0], position[1],position[2], transform, a = True)
+                        
+    def _cleanup(self):
+        cmds.delete([self.particles,self.source_mesh])
+            
+    def store_relative_scope(self, parent):    
+        """
+        Set all transforms under parent.
+        
+        Args
+            parent (str): The name of a parent transform.
+        """
+        self.scope = cmds.listRelatives(parent, allDescendents = True, type = 'transform')
+        self.scope.append(parent)
+        
+    def set_scope(self, scope):
+        """
+        Set the transforms to work on.
+        
+        Args
+            scope (list): Names of transforms.
+        """
+        self.scope = scope
+            
+    def set_source_mesh(self, name):
+        """
+        Source mesh must match point order of target mesh.
+        """
+        self.source_mesh = name
+        
+    def set_target_mesh(self, name):
+        """
+        Target mesh must match point order of source mesh.
+        """
+        self.target_mesh = name
+        
+    def run(self):
+        if not self.scope:
+            return
+        
+        if not cmds.objExists(self.source_mesh):
+            return
+    
+        if not cmds.objExists(self.target_mesh):
+            return
+            
+        self.source_mesh = cmds.duplicate(self.source_mesh)[0]
+        self._match_particles(self.scope)
+        self._wrap_particles()
+        self._blend_to_target()
+        self._move_to_target()
+        self._cleanup()
+
 class ClusterObject(object):
     """
     Convenience class for clustering objects.
