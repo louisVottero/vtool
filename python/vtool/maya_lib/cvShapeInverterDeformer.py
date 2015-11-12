@@ -107,6 +107,7 @@ def initialize():
     if API_VERSION < 201600:
         outputGeom = OpenMayaMPx.cvar.MPxDeformerNode_outputGeom
     else:
+        #MPxGeometryFilter is parent to MPXDeformerNode, was not exposed prior to maya 2016
         outputGeom = OpenMayaMPx.cvar.MPxGeometryFilter_outputGeom    
 
     cvShapeInverter.aActivate = nAttr.create('activate', 'activate', OpenMaya.MFnNumericData.kBoolean)
