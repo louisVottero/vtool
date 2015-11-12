@@ -1984,8 +1984,6 @@ def mirror_curve(prefix):
                 
                 new_position[0] = position[0] * -1
                 
-                
-                
                 cmds.xform(other_cvs[inc], ws = True, t = new_position)
     
 def process_joint_weight_to_parent(mesh):

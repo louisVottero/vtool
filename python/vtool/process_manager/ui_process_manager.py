@@ -253,15 +253,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         split_folder = folder.split('\\')
         folder = split_folder[:-1]
         
-        import string
-        folder = string.join(folder, '\\')
-        
-        path = util_file.join_path(folder, 'documentation\html\index.html')
-        path = util_file.set_windows_slashes(path)
-        
-        path = 'file:\\\\\\' + path
-        
-        webbrowser.open(path)
+        path = 'http://www.vetalarig.com/docs/html/index.html'
+        webbrowser.open(path, 0)
         
         
     def _tab_changed(self):

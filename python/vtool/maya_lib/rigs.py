@@ -1057,7 +1057,7 @@ class FkLocalRig(FkRig):
         
     def set_scalable(self, bool_value):
         """
-        Set wether the fk setup should be scalable at each control.
+        Set whether the fk setup should be scalable at each control.
         """
         self.rig_scale = bool_value
 

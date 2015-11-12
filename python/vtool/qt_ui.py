@@ -3122,7 +3122,6 @@ class PythonCompleter(QtGui.QCompleter):
             current_word = cursor.selectedText()
             
             current_char = text[column]
-            #current_char = current_char.strip()
             
             split_line_count = len(split_line)
             
@@ -3139,11 +3138,15 @@ class PythonCompleter(QtGui.QCompleter):
                 
                 if current_char == '.':
                     self.sub_activated = column
-                
+                    
                 if self.sub_activated:
                     
                     split_part = split_line[current_split]
                     sub_split = split_part.split('.')
+                    
+                    if sub_split[-1].find('(') > -1 or sub_split[-1].find(')') > -1:
+                        return False
+                    
                     sub_split_count = len(sub_split)
                 
                     if split_line[current_split-1] == 'import' or split_line[current_split-1] == 'from':

@@ -1396,6 +1396,7 @@ class PoseBase(PoseGroup):
         Return
             str: Return the name of the created pose mesh for sculpting. Return False if failed. 
         """
+        
         mesh = cmds.ls(mesh, l = True)
         
         if not mesh:
@@ -1537,13 +1538,13 @@ class PoseBase(PoseGroup):
         
     def get_target_mesh(self, mesh):
         """
-        Get the sculpt mesh. The mesh used to generate a delta.
+        Get the mesh that the sculpt mesh affects.
         
         Args
             mesh (str): The name of a mesh affected by the pose.
             
         Return
-            str: The name of the sculpt mesh that affects mesh.
+            str: The name of a mesh.
         """
         long_name = None
         
@@ -1602,22 +1603,25 @@ class PoseBase(PoseGroup):
     
     def get_mesh_index(self, mesh):
         """
-        Get the index of a sculpt mesh from a target mesh.
+        Get the index of a sculpt mesh.
         
         Args
-            mesh (str): The name of a target mesh.
+            mesh (str): The name of a sculpt mesh.
         """
+        
         attributes = self._get_mesh_message_attributes()
         
         inc = 0
         
         for attribute in attributes:
+        
             stored_mesh = self._get_named_message_attribute(attribute)
             
             if stored_mesh == mesh:
                 return inc
             
-            inc += 1
+            if stored_mesh:
+                inc += 1
         
     @core.undo_chunk
     def reset_target_meshes(self):
@@ -1662,6 +1666,7 @@ class PoseBase(PoseGroup):
             mesh (str): The name of the mesh afftected by the pose. Its corresponding sculpt mesh will have its visibility turned off.
             vew_only (bool): Wether to just change the view, or recalculate the delta.
         """
+        
         if not mesh:
             return
         
@@ -1690,7 +1695,7 @@ class PoseBase(PoseGroup):
         self._create_shader(mesh)
         
         self._set_visibility(mesh, 1)
-                
+        
         target_mesh = self.get_target_mesh(mesh) 
         
         if target_mesh and cmds.objExists(target_mesh):
@@ -1708,6 +1713,7 @@ class PoseBase(PoseGroup):
             mesh_index (int): The index of a sculpt mesh.
             view_only (bool): Wether to just change visibility, or refresh the delta when visibility is turned off.
         """
+        
         if mesh_index == None:
             return
         
@@ -2318,7 +2324,7 @@ class PoseNoReader(PoseBase):
     
 class PoseCone(PoseBase):
     """
-    This type of pose reads from  a joint or transform, for the defined angle of influence. 
+    This type of pose reads from a joint or transform, for the defined angle of influence. 
     """
     def __init__(self, transform = None, description = 'pose'):          
         super(PoseCone, self).__init__(description)

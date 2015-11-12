@@ -342,7 +342,7 @@ def is_transform(node):
 
 def is_a_shape(node):
     """
-    Test wether the node is a shape.
+    Test whether the node is a shape.
     
     Args
         node (str): The name of a node.
@@ -637,7 +637,7 @@ def get_shapes_in_hierarchy(transform):
 
 def has_shape_of_type(node, maya_type):
     """
-    Test wether the node has a shape of the supplied type.
+    Test whether the node has a shape of the supplied type.
     
     Args
         node (str): The name of a node.
@@ -655,10 +655,12 @@ def has_shape_of_type(node, maya_type):
         shapes = get_shapes(node)
         
         if shapes:
+            
             test = shapes[0]
         
     if test:
         if maya_type == cmds.nodeType(test):
+            
             return True
 
 def get_component_count(transform):

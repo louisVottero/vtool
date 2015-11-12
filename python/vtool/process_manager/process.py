@@ -1221,8 +1221,9 @@ def copy_process(source_process, target_process = None ):
     for data_folder in data_folders:
         copy_process_data(source_process, new_process, data_folder)
     
-    code_folders.remove('manifest')
-    code_folders.append('manifest')
+    if 'manifest' in code_folders:
+        code_folders.remove('manifest')
+        code_folders.append('manifest')
     
     for code_folder in code_folders:
         copy_process_code(source_process, new_process, code_folder)

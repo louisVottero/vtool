@@ -16,7 +16,7 @@ import maya_lib.deform
 import maya_lib.anim
 import maya_lib.curve
 import maya_lib.corrective
-import maya_lib.rigs
+import maya_lib.rigs_util
 
 class DataManager(object):
     
@@ -444,7 +444,7 @@ class ControlCvData(MayaCustomData):
             directory = util_file.get_dirname(filename)
             name = util_file.get_basename(filename)
         
-        controls = maya_lib.rigs.get_controls()
+        controls = maya_lib.rigs_util.get_controls()
         
         library = maya_lib.curve.CurveDataInfo()
         library.set_directory(directory)
@@ -469,7 +469,7 @@ class ControlCvData(MayaCustomData):
     def export_data(self, comment):
         
         library = maya_lib.curve.CurveDataInfo()
-        controls = maya_lib.rigs.get_controls()
+        controls = maya_lib.rigs_util.get_controls()
         
         library.set_directory(self.directory)
         library.set_active_library(self.name)
@@ -1183,7 +1183,7 @@ class ControlAnimationData(AnimationData):
     
     def _get_keyframes(self):
         
-        controls = maya_lib.rigs.get_controls()
+        controls = maya_lib.rigs_util.get_controls()
         
         keyframes = []
         
@@ -1543,6 +1543,7 @@ class MayaAttributeData(MayaCustomData):
             attributes = cmds.listAttr(thing, scalar = True, m = True)
             
             for attribute in attributes:
+                
                 attribute_name = '%s.%s' % (thing, attribute)
                 
                 value = cmds.getAttr(attribute_name)

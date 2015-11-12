@@ -1174,13 +1174,9 @@ class MeshWidget(qt_ui.BasicWidget):
                 if pass_mesh:
                     sculpt_meshes.append(pass_mesh) 
                     
-                         
-        
         if sculpt_meshes or not current_meshes:
             
             if sculpt_meshes:
-                
-                # sculpt_meshes = vtool.util.convert_to_sequence(sculpt_meshes)
                 
                 permission = self._get_sculpt_permission(sculpt_meshes)
                 
@@ -1188,8 +1184,7 @@ class MeshWidget(qt_ui.BasicWidget):
                     return
                 
                 corrective.PoseManager().add_mesh_to_pose(pose_name, sculpt_meshes)
-        
-            # update_meshes = current_meshes + sculpt_meshes
+            
             update_meshes = sculpt_meshes
             self._update_meshes(pose_name, meshes=update_meshes)
             
@@ -1215,7 +1210,6 @@ class MeshWidget(qt_ui.BasicWidget):
             if items:
                 self.mesh_list.scrollToItem(items[0])
             
-        
         selection = cmds.ls(sl=True, l=True)
         
         if list_meshes:
@@ -1228,7 +1222,8 @@ class MeshWidget(qt_ui.BasicWidget):
                     continue
                 
                 pose = corrective.get_pose_instance(pose_name)
-                index = pose.get_mesh_index(mesh)
+                
+                index = pose.get_target_mesh_index(mesh)
                 
                 if index == None:
                     continue
@@ -1240,6 +1235,7 @@ class MeshWidget(qt_ui.BasicWidget):
                 corrective.PoseManager().toggle_visibility(mesh, pose_name)
                 
             cmds.select(selection)
+            
             return
         
         if current_meshes:
@@ -1255,7 +1251,7 @@ class MeshWidget(qt_ui.BasicWidget):
                     mesh = mesh_item.longname
                 
                     corrective.PoseManager().toggle_visibility(mesh, pose_name)
-                
+    
     def remove_mesh(self):
         items = self.mesh_list.selectedItems()
         
@@ -1339,7 +1335,7 @@ class SculptWidget(qt_ui.BasicWidget):
         try:
             
             self.button_sculpt.setDisabled(True)
-                       
+            
             self.mesh_widget.add_mesh()
             self.sculpted_mesh.emit()
             
@@ -1349,7 +1345,7 @@ class SculptWidget(qt_ui.BasicWidget):
                 
                 auto_key_state = cmds.autoKeyframe(q=True, state=True)
                 cmds.autoKeyframe(state=False)
-    
+                
                 try:
                     cmds.setAttr('%s.weight' % self.pose, 1)
                 except:

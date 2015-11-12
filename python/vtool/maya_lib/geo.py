@@ -187,7 +187,7 @@ class Rivet(object):
 
 def is_a_mesh(node):
     """
-    Test wether the node is a mesh or has a shape that is a mesh.
+    Test whether the node is a mesh or has a shape that is a mesh.
     
     Args
         node (str): The name of a node.

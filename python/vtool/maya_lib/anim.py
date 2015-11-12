@@ -103,7 +103,7 @@ def get_input_keyframes(node, node_only = True):
     
     Args
         node (str): The name of a node to check for keyframes.
-        node_only (bool): Wether to return just the keyframe name, or also the keyframe.output attribute.
+        node_only (bool): Whether to return just the keyframe name, or also the keyframe.output attribute.
         
     Return
         list: All of the keyframes connected to the node.
@@ -152,8 +152,8 @@ def set_infiinity(keyframe, pre = False, post = False):
     
     Args
         keyframe (str): The name of a keyframe.
-        pre (bool): Wether to set pre inifinity to linear.
-        post (bool): Wether to set post infinity to linear.
+        pre (bool): Whether to set pre inifinity to linear.
+        post (bool): Whether to set post infinity to linear.
         
     Return
         str: The name of the keyframe.

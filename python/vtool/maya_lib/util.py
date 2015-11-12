@@ -5070,7 +5070,7 @@ def is_referenced(node):
 
 def is_a_shape(node):
     """
-    Test wether the node is a shape.
+    Test whether the node is a shape.
     
     Args
         node (str): The name of a node.
@@ -7349,7 +7349,7 @@ def set_infiinity(keyframe, pre = False, post = False):
 
 def is_a_mesh(node):
     """
-    Test wether the node is a mesh or has a shape that is a mesh.
+    Test whether the node is a mesh or has a shape that is a mesh.
     
     Args
         node (str): The name of a node.
@@ -7364,7 +7364,7 @@ def is_a_mesh(node):
 
 def has_shape_of_type(node, maya_type):
     """
-    Test wether the node has a shape of the supplied type.
+    Test whether the node has a shape of the supplied type.
     
     Args
         node (str): The name of a node.
@@ -11930,7 +11930,7 @@ def connect_visibility(attribute_name, target_node, value = 1):
     Args
         attribute_name (str): The node.attribute name of an attribute. Does not have to exists. Will be created if doesn't exist.
         target_node (str): The target node to connect attribute_name into.
-        value (bool): 0 or 1 wether you want the visibility on or off by default.
+        value (bool): 0 or 1 whether you want the visibility on or off by default.
     """
     nodes = vtool.util.convert_to_sequence(target_node)
     

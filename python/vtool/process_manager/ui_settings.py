@@ -213,13 +213,17 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
     def _send_directories(self, directory):
 
         self.directory_changed.emit(directory)
-        
         self.directory_label.setText(directory)
 
     
     def _browser(self):
         
-        filename = qt_ui.get_folder('C:/', self)
+        current_dir = self.directory_label.text()
+        
+        if not current_dir:
+            current_dir = 'C:/'
+        
+        filename = qt_ui.get_folder(current_dir, self)
         
         if not filename:
             return
@@ -241,6 +245,8 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
             self._text_changed(filename)
             
             self.project_list.refresh_project_list(filename, found)
+            
+            self.directory_changed.emit(filename)
             
     def set_directory(self, directory, history = None):
         
