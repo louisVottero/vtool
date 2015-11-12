@@ -893,3 +893,48 @@ def get_current_audio_node():
     return cmds.timeControl(play_slider, q = True, s = True)
 
 
+
+
+def delete_garbage():
+
+    straight_delete_type = ['hyperView', 
+                            'hyperLayout', 
+                            'ilrBakeLayer', 
+                            'ilrBakeLayerManager', 
+                            'ilrOptionsNode', 
+                            'ilrUIOptionsNode']
+
+    straight_delete_nodes = []
+
+    for delete_type in straight_delete_type:
+        nodes = cmds.ls(type = delete_type)
+        
+        straight_delete_nodes += nodes
+    
+    for node in straight_delete_nodes:
+        
+        if not cmds.objExists(node):
+            continue
+        
+        cmds.lockNode(node, lock = False)
+        cmds.delete(node)
+    
+    check_connection_node_type = ['shadingEngine']
+    
+    check_connection_nodes = []
+    
+    for check_type in check_connection_node_type:
+        nodes = cmds.ls(type = check_type)
+        
+        check_connection_nodes += nodes
+    
+    for node in check_connection_nodes:
+        if not cmds.objExists(node):
+            continue
+        
+        connections = cmds.listConnections(node)
+        
+        if not connections:
+            cmds.lockNode(node, lock = False)
+            cmds.delete(node)
+    

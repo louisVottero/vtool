@@ -1571,6 +1571,10 @@ class MayaFileData(MayaCustomData):
         
         return self.maya_binary
     
+    def _clean_scene(self):
+        
+        maya_lib.core.delete_garbage()
+
     def _prep_scene_for_export(self):
         outliner_sets = maya_lib.core.get_outliner_sets()
         top_nodes = maya_lib.core.get_top_dag_nodes()
@@ -1581,7 +1585,7 @@ class MayaFileData(MayaCustomData):
             to_select = ['persp','side','top','front']
         
         cmds.select(to_select, r = True )
-    
+            
     def import_data(self, filepath = None):
         
         if open == True:
@@ -1629,6 +1633,8 @@ class MayaFileData(MayaCustomData):
        
     def save(self, comment):
 
+        self._clean_scene()
+
         unknown = cmds.ls(type = 'unknown')
         
         if unknown:
@@ -1664,6 +1670,8 @@ class MayaFileData(MayaCustomData):
         version.save(comment)
         
     def export_data(self, comment):
+        
+        self._clean_scene()
         
         unknown = cmds.ls(type = 'unknown')
         
