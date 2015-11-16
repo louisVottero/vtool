@@ -877,9 +877,6 @@ class FkRig(BufferRig):
     
     def _all_increments(self, control, current_transform):
         
-                
-        xform = self.control_dict[control]['xform']
-        
         match = space.MatchSpace(current_transform, self.control_dict[control]['xform'])
         
         if self.match_to_rotation:
@@ -926,7 +923,6 @@ class FkRig(BufferRig):
             self.current_increment = inc
             
             control = self._create_control()
-            
             control = control.get()
             
             self._edit_at_increment(control, transforms)
@@ -940,12 +936,7 @@ class FkRig(BufferRig):
         
         if not self.use_joint_controls:
             cmds.parentConstraint(control, target_transform, mo = True)
-            
         
-        #if self.use_joint_controls:
-        #    self._insert_shape(control, target_transform)
-            
-            
     def _insert_shape(self, control, joint):
         
         parent = cmds.listRelatives(control, p = True)[0]
@@ -1033,9 +1024,6 @@ class FkRig(BufferRig):
         if self.use_joint_controls:
             self._convert_to_joints()
         
-            
-        
-
 class FkLocalRig(FkRig):
     """
     Same as FkRig but joints get connected in instead of constrained. 
@@ -1184,8 +1172,6 @@ class FkScaleRig(FkRig):
         if vtool.util.get_maya_version() <= 2014:
             cmds.pointConstraint(control, current_transform) 
             attr.connect_rotate(control, current_transform) 
-           
-        #drivers = self.get_control_entries('driver2')
         
         driver = self.control_dict[control]['driver']
         
@@ -1257,8 +1243,7 @@ class FkCurlNoScaleRig(FkRig):
 
         if self.current_increment in self.skip_increments:
             return
-
-
+        
         if not self.attribute_name:
             description = self.description
         if self.attribute_name:
@@ -3922,11 +3907,9 @@ class RollRig(JointRig):
         
         cmds.addAttr(attribute_control, ln = '%sPivot' % description, at = 'double', k = True)
         
-        
         cmds.connectAttr('%s.%sPivot' % (attribute_control, description), '%s.rotateY' % group)
         
         if self.right_side_fix and self.side == 'R':
-            
             attr.insert_multiply('%s.rotateY' % group, -1) 
         
         return group, xform_group
@@ -3981,8 +3964,6 @@ class RollRig(JointRig):
         
         match = space.MatchSpace( transform, xform_group )
         match.translation_rotation()
-
-        #cmds.parentConstraint(roll_control.get(), transform)
         
         cmds.parent(xform_group, self.control_group)
         
@@ -4035,9 +4016,7 @@ class RollRig(JointRig):
             
         ik_fk.create(self.roll_control.get())
         
-                    
     def set_create_roll_controls(self, bool_value):
-        
         self.create_roll_controls = bool_value
         
     def set_attribute_control(self, control_name):
@@ -4075,9 +4054,8 @@ class RollRig(JointRig):
         
         self._mix_joints(joint_chain1, joint_chain2)
         
-        
         attr.create_title(self._get_attribute_control(), 'FOOT_PIVOTS')
-                
+        
         if self.create_roll_controls:
             bool_var = attr.MayaNumberVariable('controlVisibility')
             bool_var.set_variable_type(bool_var.TYPE_BOOL)
@@ -4375,15 +4353,6 @@ class EyeRig(JointRig):
         self.ik_chain = duplicate_hierarchy.create()
         
         cmds.parent(self.ik_chain[0], self.setup_group)
-        """
-        if self.extra_control:
-            duplicate_hierarchy = util.DuplicateHierarchy( self.joints[0] )
-        
-            duplicate_hierarchy.stop_at(self.joints[-1])
-            duplicate_hierarchy.replace('joint', 'extra_ik')
-            self.extra_ik_chain = duplicate_hierarchy.create()
-            cmds.parent(self.extra_ik_chain[0], self.setup_group)
-        """
         
         if not self.skip_ik:
             ik = space.IkHandle(self.description)
@@ -4436,12 +4405,8 @@ class EyeRig(JointRig):
 
         if self.skip_ik:
             group1 = cmds.group(em = True, n = self._get_name('group', 'aim'))
-            #group2 = cmds.group(em = True, n = self._get_name('group', 'aim'))
             
-            #cmds.parent(group2, group1)
             cmds.parent(group1, self.setup_group)
-            
-            
             
             space.MatchSpace(self.joints[0], group1).translation_rotation()
             
@@ -4496,8 +4461,6 @@ class EyeRig(JointRig):
             cmds.parent(xform2, parent_group)
             cmds.parent(xform_parent_group, self.control_group)
             
-            
-            
             if axis == 'X':
                 cmds.transformLimits(control2,  tx =  (0, 0), etx = (1,1) )
             if axis == 'Y':
@@ -4522,7 +4485,6 @@ class EyeRig(JointRig):
     def set_skip_ik_control(self, bool_value):
         self.skip_ik = bool_value
         
-    
     def create(self):
         
         handle = None
@@ -4537,8 +4499,6 @@ class EyeRig(JointRig):
         
         locator = cmds.spaceLocator(n = 'locator_%s' % self._get_name())[0]
         
-        
-        
         match = space.MatchSpace(self.joints[0], locator)
         match.translation_rotation()
         
@@ -4546,7 +4506,6 @@ class EyeRig(JointRig):
         
         line = rigs_util.RiggedLine(locator, control, self._get_name())        
         cmds.parent( line.create(), self.control_group)
-        
         
         cmds.setAttr('%s.translateX' % locator, l = True)
         cmds.setAttr('%s.translateY' % locator, l = True)
@@ -4593,5 +4552,3 @@ class JawRig(FkLocalRig):
     def set_create_jaw_slide_attribute(self, bool_value):
         self.jaw_slide_attribute = bool_value
         
-
- 

@@ -3260,7 +3260,6 @@ class WorldStickyRig(rigs.JointRig):
     def set_btm_stick_values(self, float_list):
         self.btm_stick_values = float_list
     
-    
     def create(self):
         super(WorldStickyRig, self).create()
         
@@ -3277,7 +3276,6 @@ class WorldStickyRig(rigs.JointRig):
         
         if increment >= 0:
             locators = self.locators[increment]
-
             
         top_locator1 = locators[0][0][1]
         btm_locator1 = locators[0][1][1]
@@ -3335,7 +3333,6 @@ class WorldStickyRig(rigs.JointRig):
         cmds.setAttr('%s.stick' % right_top_control, lock = True)
         cmds.setAttr('%s.stick' % right_btm_control, lock = True)
         
-        
     def create_roll(self, control, increment, percent):
         
         control = vtool.util.convert_to_sequence(control)
@@ -3346,7 +3343,6 @@ class WorldStickyRig(rigs.JointRig):
         if len(control) > 1:
             top_center_control = control[0]
             btm_center_control = control[1]
-        
         
         attr.create_title(top_center_control, 'LIP')
         
@@ -3409,7 +3405,6 @@ class WorldStickyRig(rigs.JointRig):
             cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleX' % btm_right_driver)
             cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleY' % btm_right_driver)
             cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleZ' % btm_right_driver)
-            
             
 class WorldStickyFadeRig(WorldStickyRig):       
 
@@ -3600,8 +3595,6 @@ class WorldStickyFadeRig(WorldStickyRig):
         
             attr.connect_translate_multiply(corner_control, top_control_driver, value)
             attr.connect_translate_multiply(corner_control, btm_control_driver, value)
-        
-      
         
 class WorldStickyLipRig(WorldStickyRig):
 
