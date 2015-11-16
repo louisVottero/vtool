@@ -299,6 +299,7 @@ class JointRig(Rig):
         self.joints = []
         
         self.attach_joints = True
+        self.auto_control_visibility = False
         
     def _attach_joints(self, source_chain, target_chain):
         
@@ -312,7 +313,8 @@ class JointRig(Rig):
             weight_count = switch.get_weight_count()
             
             if weight_count > 0:
-                switch.add_groups_to_index((weight_count-1), self.control_group)
+                if self.auto_control_visibility:
+                    switch.add_groups_to_index((weight_count-1), self.control_group)
                 switch.create()
     
     def _check_joints(self, joints):
@@ -324,8 +326,7 @@ class JointRig(Rig):
             if cmds.nodeType(joint) == 'transform':
                 continue
             
-            vtool.util.show('%s is not a joint or transform. %s may not build properly.' % (joint, self.__class__.__name__))
-        
+            vtool.util.show('%s is not a joint or transform. %s may not build properly.' % (joint, self.__class__.__name__))        
     
     def set_joints(self, joints):
         """
@@ -357,6 +358,14 @@ class JointRig(Rig):
         
         
         self.attach_joints = bool_value
+        
+    def set_auto_switch_visibility(self, bool_value):
+        """
+        When attaching more than one joint chain. 
+        This will attach the control group visibility to the switch attribute on the first joint. 
+        """
+
+        self.auto_control_visibility = bool_value
         
 class BufferRig(JointRig):
     """
@@ -398,7 +407,7 @@ class BufferRig(JointRig):
         """
         
         self.create_buffer_joints = bool_value
-       
+    
     def create(self):
         super(BufferRig, self).create()
         

@@ -1553,7 +1553,6 @@ def source_python_module(code_directory):
             return traceback.format_exc()
         
         finally:
-            
             try: fin.close()
             except: pass
             

@@ -1058,7 +1058,7 @@ class Process(object):
             if not hard_error:
                 #util.show(status)
                 return status
-              
+            
         try:
             
             if util.is_in_maya():
@@ -1074,7 +1074,6 @@ class Process(object):
                 module.show = util.show
             
             if hasattr(module, 'main'):
-                        
                 
                 module.main()
                 status = 'Success'
