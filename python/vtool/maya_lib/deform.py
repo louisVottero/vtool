@@ -15,7 +15,6 @@ import core
 import attr
 import space
 import geo
-    
 
 class XformTransfer(object):
     """

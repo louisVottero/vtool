@@ -501,8 +501,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not util_file.is_dir(directory):
             util_file.create_dir(name = None, directory = directory)
         
-        
-        
     def set_project_directory(self, directory, sub_part = None):
         #history should not be there...
         
