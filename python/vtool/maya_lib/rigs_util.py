@@ -1153,6 +1153,115 @@ class RiggedLine(object):
         
         return self.top_group
 
+class RigSwitch(object):
+    """
+    Create a switch between different rigs on a buffer joint.
+    
+    Args
+        switch_joint (str): The name of a buffer joint with switch attribute.
+    """
+    def __init__(self, switch_joint):
+        
+        self.switch_joint = switch_joint
+        
+        if not cmds.objExists('%s.switch' % switch_joint):
+            vtool.util.warning('%s is most like not a buffer joint with switch attribute.' % switch_joint)
+
+        self.groups = {}
+        
+        weight_count = self.get_weight_count()
+        
+        if not weight_count:
+            vtool.util.warning('%s has no weights.' % weight_count)
+        
+        for inc in range(0, weight_count):
+            self.groups[inc] = None
+        
+        self.control_name = None
+        self.attribute_name = 'switch'
+
+    def get_weight_count(self):
+        
+        weight_count = 0
+        
+        edit_constraint = space.ConstraintEditor()
+        constraint = edit_constraint.get_constraint(self.switch_joint, 'parentConstraint')
+        
+        weight_count = edit_constraint.get_weight_count(constraint)
+        
+        return weight_count
+
+    def add_groups_to_index(self, index, groups):
+        """
+        A switch joint is meant to switch visibility between rigs.
+        By adding groups you define what their visibility is when the switch attribute changes.
+        An index of 0 means the groups will be visibile when the switch is at 0, but invisible when the switch is at 1.
+        
+        Args
+            index (int): The index on the switch. Needs to be an integer value even though switch is a float.
+            groups (list): The list of groups that should be have visibility attached to the index.
+        """
+        
+        groups = vtool.util.convert_to_sequence(groups)
+        
+        if not self.switch_joint or not cmds.objExists(self.switch_joint):
+            vtool.util.warning('Switch joint %s does not exist' % self.switch_joint)
+            return
+        
+        weight_count = self.get_weight_count()
+        
+        if weight_count < ( index + 1 ):
+            vtool.util.warning('Adding groups to index %s is undefined. %s.witch does not have that many inputs.' % (index, self.switch_joint))
+        
+        self.groups[index] = groups
+        
+    def set_attribute_control(self, transform):
+        """
+        Set where the switch attribute should live.
+        
+        Args
+            transform (str): The name of a transform
+        """
+        
+        self.control_name = transform
+        
+    def set_attribute_name(self, attribute_name):
+        """
+        Set the name of the switch attribute on the attribute_control.
+        
+        Args
+            attribute_name (str): The name for the attribute.
+        """
+        
+        self.attribute_name = attribute_name
+        
+    def create(self):
+        
+        if self.control_name and cmds.objExists(self.control_name):
+            weight_count = self.get_weight_count()
+            
+            var = attr.MayaNumberVariable(self.attribute_name)
+               
+            var.set_min_value(0)
+            var.set_max_value( (weight_count - 1) ) 
+            var.set_keyable(True) 
+            var.create(self.control_name)    
+            
+            attribute_name = var.get_name()
+            cmds.connectAttr(attribute_name, '%s.switch' % self.switch_joint) 
+                
+        if not self.control_name or not cmds.objExists(self.control_name):
+            attribute_name = '%s.switch' % self.switch_joint
+        
+        for key in self.groups.keys():
+            
+            groups = self.groups[key]
+            
+            if not groups:
+                continue
+            
+            for group in groups:
+                attr.connect_equal_condition(attribute_name, '%s.visibility' % group, key) 
 
 def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
     """
@@ -2022,6 +2131,8 @@ def joint_axis_visibility(bool_value):
     for joint in joints:
         
         cmds.setAttr('%s.displayLocalAxis' % joint, bool_value)
+
+
 
 def hook_ik_fk(control, joint, groups, attribute = 'ikFk'): 
     """

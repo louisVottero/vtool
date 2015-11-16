@@ -9,9 +9,6 @@ if vtool.util.is_in_maya():
 import core
 import attr
 import space
-    
-
-
 
 class Rivet(object):
     def __init__(self, name):

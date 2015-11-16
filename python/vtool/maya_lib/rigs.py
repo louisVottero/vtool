@@ -306,6 +306,14 @@ class JointRig(Rig):
             return
         
         space.AttachJoints(source_chain, target_chain).create()
+        
+        if cmds.objExists('%s.switch' % target_chain[0]):
+            switch = rigs_util.RigSwitch(target_chain[0])
+            weight_count = switch.get_weight_count()
+            
+            if weight_count > 0:
+                switch.add_groups_to_index((weight_count-1), self.control_group)
+                switch.create()
     
     def _check_joints(self, joints):
         
@@ -630,8 +638,6 @@ class ControlRig(Rig):
     def __init__(self, name, side):
         super(ControlRig, self).__init__(name,side)
         
-        
-        
         self.transforms = None
         self.control_count = 1
         self.control_shape_types = {}
@@ -665,6 +671,9 @@ class ControlRig(Rig):
     
     def create(self):
         
+        if not self.transforms:
+            self.transforms = [None]
+        
         for transform in self.transforms:
             for inc in range(0, self.control_count):
                 
@@ -674,8 +683,8 @@ class ControlRig(Rig):
                 
                 control = self._create_control(description)
                 
-                
-                space.MatchSpace(transform, control.get()).translation_rotation()
+                if transform:
+                    space.MatchSpace(transform, control.get()).translation_rotation()
                 
                 if inc in self.control_shape_types:
                     control.set_curve_type(self.control_shape_types[inc])
@@ -770,8 +779,11 @@ class FkRig(BufferRig):
         self.match_to_rotation = True
         
         self.create_sub_controls = False
+        self.nice_sub_naming = False
         self.use_joint_controls = False
         self.use_joints
+        
+        self.hide_sub_translates = True
 
         self.skip_increments = []
 
@@ -806,12 +818,17 @@ class FkRig(BufferRig):
                         sub_control.set_curve_type(self.sub_control_shape)    
                     sub_control.scale_shape(2,2,2)
                 if inc == 1:
-                    sub_control = super(FkRig, self)._create_control(description = 'sub', sub =  True)
+                    if not self.nice_sub_naming:
+                        sub_control = super(FkRig, self)._create_control(description = 'sub', sub =  True)
+                    if self.nice_sub_naming:
+                        sub_control = super(FkRig, self)._create_control( sub =  True)
                     sub_control.set_curve_type(self.control_shape)
                     if self.sub_control_shape:
                         sub_control.set_curve_type(self.sub_control_shape)
                 
-                sub_control.hide_translate_attributes()
+                if self.hide_sub_translates:
+                    sub_control.hide_translate_attributes()
+                    
                 sub_control.hide_scale_and_visibility_attributes()
                 
                 space.MatchSpace(self.control.get(), sub_control.get()).translation_rotation()
@@ -860,9 +877,6 @@ class FkRig(BufferRig):
     
     
     def _all_increments(self, control, current_transform):
-        
-                
-        xform = self.control_dict[control]['xform']
         
         match = space.MatchSpace(current_transform, self.control_dict[control]['xform'])
         
@@ -930,7 +944,6 @@ class FkRig(BufferRig):
             self.current_increment = inc
             
             control = self._create_control()
-            
             control = control.get()
             
             self._edit_at_increment(control, transforms)
@@ -944,12 +957,7 @@ class FkRig(BufferRig):
         
         if not self.use_joint_controls:
             cmds.parentConstraint(control, target_transform, mo = True)
-            
         
-        #if self.use_joint_controls:
-        #    self._insert_shape(control, target_transform)
-            
-            
     def _insert_shape(self, control, joint):
         
         parent = cmds.listRelatives(control, p = True)[0]
@@ -1022,6 +1030,21 @@ class FkRig(BufferRig):
         
         self.skip_increments = increment_list
             
+    def set_hide_sub_translates(self, bool_value):
+        
+        self.hide_sub_translates = bool_value
+            
+    def set_nice_sub_control_naming(self, bool_value):
+        """
+        Nice sub control naming just increments the number of the name of the next sub control.
+        So insteado of CNT_SUB_THING_1_C and CNT_SUB_THING_SUB_1_C as the names, names are:
+        CNT_SUB_THING_1_C and CNT_SUB_THING_2_C  
+        This may not be desirable in every case.
+        """
+        
+        self.nice_sub_naming = bool_value
+            
+            
     def create(self):
         super(FkRig, self).create()
         
@@ -1033,9 +1056,6 @@ class FkRig(BufferRig):
         if self.use_joint_controls:
             self._convert_to_joints()
         
-            
-        
-
 class FkLocalRig(FkRig):
     """
     Same as FkRig but joints get connected in instead of constrained. 
@@ -1184,8 +1204,6 @@ class FkScaleRig(FkRig):
         if vtool.util.get_maya_version() <= 2014:
             cmds.pointConstraint(control, current_transform) 
             attr.connect_rotate(control, current_transform) 
-           
-        #drivers = self.get_control_entries('driver2')
         
         driver = self.control_dict[control]['driver']
         
@@ -1427,12 +1445,353 @@ class FkCurlRig(FkScaleRig):
         
         self.attribute_name = attribute_name
         
-class SimpleFkCurveRig(FkCurlNoScaleRig):
-    """
-    This is usually used for spine setups.
-    """
+class SplineRibbonBaseRig(JointRig):
+    
+    def __init__(self, description, side):
+        
+        super(SplineRibbonBaseRig, self).__init__(description, side)
+        
+        self.orig_curve = None
+        self.curve = None
+        
+        self.control_count = 2
+        self.span_count = 2
+        self.stretchy = True
+        self.advanced_twist = True
+        self.stretch_on_off = False
+        self.ik_curve = None
+        self.wire_hires = False
+        self.last_pivot_top_value = False
+        self.fix_x_axis = False
+        self.ribbon = False
+        self.ribbon_offset = 1
+        self.ribbon_offset_axis = 'Y'
+        self.closest_y = False
+        self.stretch_axis = 'X'
+        
+    def _create_curve(self):
+        
+        if not self.curve:
+            
+            name = self._get_name()
+            
+            self.orig_curve = geo.transforms_to_curve(self.buffer_joints, self.span_count, name)
+            cmds.setAttr('%s.inheritsTransform' % self.orig_curve, 0)
+        
+            self.curve = cmds.duplicate(self.orig_curve)[0]
+        
+            cmds.rebuildCurve(self.curve, 
+                              spans = self.control_count - 1 ,
+                              rpo = True,  
+                              rt = 0, 
+                              end = 1, 
+                              kr = False, 
+                              kcp = False, 
+                              kep = True,  
+                              kt = False,
+                              d = 3)
+        
+            name = self.orig_curve
+            self.orig_curve = cmds.rename(self.orig_curve, core.inc_name('orig_curve'))
+            self.curve = cmds.rename(self.curve, name)
+            cmds.parent(self.orig_curve, self.setup_group)
+            
+            cmds.parent(self.curve, self.setup_group)
+            
+    def _create_surface(self):
+        
+        self.surface = geo.transforms_to_nurb_surface(self.buffer_joints, self._get_name(), spans = self.control_count-1, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis)
+        cmds.setAttr('%s.inheritsTransform' % self.surface, 0)
+        cmds.parent(self.surface, self.setup_group)
+    
+    def _create_clusters(self):
+        
+        if self.ribbon:
+            cluster_surface = deform.ClusterSurface(self.surface, self.description)
+        if not self.ribbon:
+            cluster_surface = deform.ClusterCurve(self.curve, self.description)
+        
+        if self.last_pivot_top_value:
+            last_pivot_end = True
+        if not self.last_pivot_top_value:
+            last_pivot_end = False
+        
+        cluster_surface.set_first_cluster_pivot_at_start(True)
+        cluster_surface.set_last_cluster_pivot_at_end(last_pivot_end)
+        cluster_surface.create()
+        
+        self.clusters = cluster_surface.handles
+        cluster_group = self._create_setup_group('clusters')
+        cmds.parent(self.clusters, cluster_group)
+        
+    def _create_geo(self):
+        
+        if self.ribbon:
+            self._create_surface()
+            
+        if not self.ribbon:
+            self._create_curve()
+    
+    def _attach_to_geo(self):
+        
+        if not self.attach_joints:
+            return
+        
+        if self.use_ribbon:
+            rivet_group = self._create_setup_group('rivets')
+        
+            for joint in self.buffer_joints:
+                rivet = geo.attach_to_surface(joint, self.surface)
+                cmds.setAttr('%s.inheritsTransform' % rivet, 0)
+                cmds.parent(rivet, rivet_group)
+        
+        if not self.use_ribbon:
+            self._create_spline_ik()
+        
+    def _wire_hires(self, curve):
+        
+        if self.span_count == self.control_count:
+            self.ik_curve = curve
+            return 
+        
+        if self.wire_hires:
+            
+            self.ik_curve = cmds.duplicate(self.orig_curve)[0]
+            cmds.setAttr('%s.inheritsTransform' % self.ik_curve, 1)
+            self.ik_curve = cmds.rename(self.ik_curve, 'ik_%s' % curve)
+            cmds.rebuildCurve(self.ik_curve, 
+                              ch = False, 
+                              spans = self.span_count,
+                              rpo = True,  
+                              rt = 0, 
+                              end = 1, 
+                              kr = False, 
+                              kcp = False, 
+                              kep = True,  
+                              kt = False,
+                              d = 3)
+            
+            wire, base_curve = cmds.wire( self.ik_curve, 
+                                          w = curve, 
+                                          dds=[(0, 1000000)], 
+                                          gw = False, 
+                                          n = 'wire_%s' % self.curve)
+            
+            cmds.setAttr('%sBaseWire.inheritsTransform' % base_curve, 1)
+            
+            return
+            
+        if not self.wire_hires:
+          
+            cmds.rebuildCurve(curve, 
+                              ch = True, 
+                              spans = self.span_count,
+                              rpo = True,  
+                              rt = 0, 
+                              end = 1, 
+                              kr = False, 
+                              kcp = False, 
+                              kep = True,  
+                              kt = False,
+                              d = 3)
+            
+            self.ik_curve = curve
+            return
+
+    def _setup_stretchy(self):
+        if not self.attach_joints:
+            return
+        
+        if self.stretchy:    
+            rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1], self.stretch_on_off, self.stretch_axis)
+    
+        
+                
+    def _create_spline_ik(self):
+        
+        self._wire_hires(self.curve)
+        
+        if self.buffer_joints:
+            joints = self.buffer_joints
+        if not self.buffer_joints:
+            joints = self.joints
+            
+        if self.fix_x_axis:
+            duplicate_hierarchy = space.DuplicateHierarchy( joints[0] )
+        
+            duplicate_hierarchy.stop_at(self.joints[-1])
+            
+            prefix = 'joint'
+            if self.create_buffer_joints:
+                prefix = 'buffer'
+            
+            duplicate_hierarchy.replace(prefix, 'xFix')
+            x_joints = duplicate_hierarchy.create()
+            cmds.parent(x_joints[0], self.setup_group)
+            
+            #working here to add auto fix to joint orientation.
+            
+            for inc in range(0, len(x_joints)):
+                #util.OrientJointAttributes(x_joints[inc])
+                
+                orient = attr.OrientJointAttributes(x_joints[inc])
+                orient.delete()
+                #orient._create_attributes()
+                         
+                orient = space.OrientJoint(x_joints[inc])
+                
+                aim = 3
+                if inc == len(x_joints)-1:
+                    aim = 5
+                orient.set_aim_at(aim)
+                
+                aim_up = 0
+                if inc > 0:
+                    aim_up = 1
+                orient.set_aim_up_at(aim_up)
+                
+                orient.run()
+            
+            self._attach_joints(x_joints, joints)
+            
+            joints = x_joints
+            self.buffer_joints = x_joints
+            
+        children = cmds.listRelatives(joints[-1])
+        
+        if children:
+            cmds.parent(children, w = True)
+        
+        handle = space.IkHandle(self._get_name())
+        handle.set_solver(handle.solver_spline)
+        handle.set_start_joint(joints[0])
+        handle.set_end_joint(joints[-1])
+        handle.set_curve(self.ik_curve)
+        handle = handle.create()
+
+        if self.closest_y:
+            cmds.setAttr('%s.dWorldUpAxis' % handle, 2)
+        
+        if children:
+            cmds.parent(children, joints[-1])
+            
+        cmds.parent(handle, self.setup_group)
+        
+        if self.advanced_twist:
+            start_locator = cmds.spaceLocator(n = self._get_name('locatorTwistStart'))[0]
+            end_locator = cmds.spaceLocator(n = self._get_name('locatorTwistEnd'))[0]
+            
+            self.start_locator = start_locator
+            self.end_locator = end_locator
+            
+            cmds.hide(start_locator, end_locator)
+            
+            match = space.MatchSpace(self.buffer_joints[0], start_locator)
+            match.translation_rotation()
+            
+            match = space.MatchSpace(self.buffer_joints[-1], end_locator)
+            match.translation_rotation()
+                        
+            cmds.setAttr('%s.dTwistControlEnable' % handle, 1)
+            cmds.setAttr('%s.dWorldUpType' % handle, 4)
+            cmds.connectAttr('%s.worldMatrix' % start_locator, '%s.dWorldUpMatrix' % handle)
+            cmds.connectAttr('%s.worldMatrix' % end_locator, '%s.dWorldUpMatrixEnd' % handle)
+            
+            if hasattr(self, 'top_sub_control'):
+                cmds.parent(start_locator, self.sub_controls[0])
+                
+            if not hasattr(self, 'top_sub_control'):
+                cmds.parent(start_locator, self.sub_controls[0])
+                
+            cmds.parent(end_locator, self.sub_controls[-1])
+            
+        if not self.advanced_twist and self.buffer_joints != self.joints:
+            
+            follow = space.create_follow_group(self.controls[0], self.buffer_joints[0])
+            cmds.parent(follow, self.setup_group)
+            
+        if not self.advanced_twist:
+            var = attr.MayaNumberVariable('twist')
+            var.set_variable_type(var.TYPE_DOUBLE)
+            var.create(self.controls[0])
+            var.connect_out('%s.twist' % handle)
+
+    def set_advanced_twist(self, bool_value):
+        """
+        Wether to use spline ik top btm advanced twist.
+        """
+        self.advanced_twist = bool_value
+
+    def set_stretchy(self, bool_value):
+        """
+        Wether the joints should stretch to match the spline ik.
+        """
+        self.stretchy = bool_value
+        
+    def set_stretch_on_off(self, bool_value):
+        """
+        Wether to add a stretch on/off attribute. 
+        This allows the animator to turn the stretchy effect off over time.
+        """
+        self.stretch_on_off = bool_value
+    
+    def set_stretch_axis(self, axis_letter):
+        """
+        Set the axis that the joints should stretch on.
+        """
+        self.stretch_axis = axis_letter
+    
+    def set_curve(self, curve):
+        """
+        Set the curve that the controls should move and the joints should follow.
+        """
+        self.curve = curve
+        
+    def set_ribbon(self, bool_value):
+        """
+        By default the whole setup uses a spline ik. This will cause the setup to use a nurbs surface.
+        If this is on, stretch options are ignored.
+        """
+        self.ribbon = bool_value
+        
+    def set_ribbon_offset(self, float_value):
+        """
+        Set the width of the ribbon.
+        """
+        self.ribbon_offset = float_value
+        
+    def set_ribbon_offset_axis(self, axis_letter):
+        """
+        Set which axis the ribbon width is offset on.
+        
+        Args
+            axis_letter (str): 'X','Y' or 'Z' 
+        """
+        self.ribbon_offset_axis = axis_letter
+        
+    def set_last_pivot_top(self, bool_value):
+        """
+        Set the last pivot on the curve to the top of the curve.
+        """
+        self.last_pivot_top_value = bool_value
+    
+    def set_fix_x_axis(self, bool_value):
+        """
+        This will create a duplicate chain for the spline ik, that has the x axis pointing down the joint.
+        The new joint chain moves with the controls, and constrains the regular joint chain.
+        """
+        self.fix_x_axis = bool_value
+        
+    def set_closest_y(self, bool_value):
+        """
+        Wether to turn on Maya's closest y option, which can solve flipping in some cases.
+        """
+        self.closest_y = bool_value
+
+class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
     def __init__(self, name, side):
         super(SimpleFkCurveRig, self).__init__(name, side)
+        
         self.controls = []
         self.orient_controls_to_joints = False
         self.sub_controls = []
@@ -1459,50 +1818,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         self.create_follows = True
         self.closest_y = False
         self.stretch_axis = 'X'
-
-    def _create_curve(self):
-        
-        if not self.curve:
-        
-            name = self._get_name()
-            
-            self.orig_curve = geo.transforms_to_curve(self.buffer_joints, self.span_count, name)
-            self.curve = cmds.duplicate(self.orig_curve)[0]
-            
-            cmds.rebuildCurve(self.curve, 
-                              spans = self.control_count - 1 ,
-                              rpo = True,  
-                              rt = 0, 
-                              end = 1, 
-                              kr = False, 
-                              kcp = False, 
-                              kep = True,  
-                              kt = False,
-                              d = 3)
-            
-            name = self.orig_curve
-            self.orig_curve = cmds.rename(self.orig_curve, core.inc_name('orig_curve'))
-            self.curve = cmds.rename(self.curve, name)
-            
-            cmds.parent(self.curve, self.setup_group)
-            cmds.parent(self.orig_curve, self.setup_group)
-    
-    def _create_clusters(self):
-        
-        name = self._get_name()
-        
-        if self.last_pivot_top_value:
-            last_pivot_end = True
-            
-        if not self.last_pivot_top_value:
-            last_pivot_end = False
-        
-        cluster_group = cmds.group(em = True, n = core.inc_name('clusters_%s' % name))
-        
-        self.clusters = deform.cluster_curve(self.curve, name, True, last_pivot_end = last_pivot_end)
-        
-        cmds.parent(self.clusters, cluster_group)
-        cmds.parent(cluster_group, self.setup_group)
     
     def _create_sub_control(self):
             
@@ -1612,184 +1927,15 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         
         current_cluster = self.clusters[self.current_increment]
         
-        return space.get_closest_transform(current_cluster, self.buffer_joints)            
-    
-    def _setup_stretchy(self):
-        if not self.attach_joints:
-            return
-        
-        if self.stretchy:    
-            rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1], self.stretch_on_off, self.stretch_axis)
+        return space.get_closest_transform(current_cluster, self.buffer_joints)
     
     def _loop(self, transforms):
                 
-        self._create_curve()
+        self._create_geo()
+        #self._create_curve()
         self._create_clusters()
         
         super(SimpleFkCurveRig, self)._loop(self.clusters)
-
-    def _create_ik_curve(self, curve):
-        
-        if self.span_count == self.control_count:
-            self.ik_curve = curve
-            return 
-        
-        if self.wire_hires:
-            
-            self.ik_curve = cmds.duplicate(self.orig_curve)[0]
-            cmds.setAttr('%s.inheritsTransform' % self.ik_curve, 1)
-            self.ik_curve = cmds.rename(self.ik_curve, 'ik_%s' % curve)
-            cmds.rebuildCurve(self.ik_curve, 
-                              ch = False, 
-                              spans = self.span_count,
-                              rpo = True,  
-                              rt = 0, 
-                              end = 1, 
-                              kr = False, 
-                              kcp = False, 
-                              kep = True,  
-                              kt = False,
-                              d = 3)
-            
-            wire, base_curve = cmds.wire( self.ik_curve, 
-                                          w = curve, 
-                                          dds=[(0, 1000000)], 
-                                          gw = False, 
-                                          n = 'wire_%s' % self.curve)
-            
-            cmds.setAttr('%sBaseWire.inheritsTransform' % base_curve, 1)
-            
-            return
-            
-        if not self.wire_hires:
-          
-            cmds.rebuildCurve(curve, 
-                              ch = True, 
-                              spans = self.span_count,
-                              rpo = True,  
-                              rt = 0, 
-                              end = 1, 
-                              kr = False, 
-                              kcp = False, 
-                              kep = True,  
-                              kt = False,
-                              d = 3)
-            
-            self.ik_curve = curve
-            return
-
-    def _create_ribbon(self):
-        pass
-        
-    def _create_spline_ik(self):
-        
-        self._create_ik_curve(self.curve)
-        
-        if self.buffer_joints:
-            joints = self.buffer_joints
-        if not self.buffer_joints:
-            joints = self.joints
-            
-
-        if self.fix_x_axis:
-            duplicate_hierarchy = space.DuplicateHierarchy( joints[0] )
-        
-            duplicate_hierarchy.stop_at(self.joints[-1])
-            
-            prefix = 'joint'
-            if self.create_buffer_joints:
-                prefix = 'buffer'
-            
-            duplicate_hierarchy.replace(prefix, 'xFix')
-            x_joints = duplicate_hierarchy.create()
-            cmds.parent(x_joints[0], self.setup_group)
-            
-            #working here to add auto fix to joint orientation.
-            
-            for inc in range(0, len(x_joints)):
-                #util.OrientJointAttributes(x_joints[inc])
-                
-                orient = attr.OrientJointAttributes(x_joints[inc])
-                orient.delete()
-                #orient._create_attributes()
-                         
-                orient = space.OrientJoint(x_joints[inc])
-                
-                aim = 3
-                if inc == len(x_joints)-1:
-                    aim = 5
-                orient.set_aim_at(aim)
-                
-                aim_up = 0
-                if inc > 0:
-                    aim_up = 1
-                orient.set_aim_up_at(aim_up)
-                
-                orient.run()
-            
-            self._attach_joints(x_joints, joints)
-            
-            joints = x_joints
-            self.buffer_joints = x_joints
-            
-        children = cmds.listRelatives(joints[-1])
-        
-        if children:
-            cmds.parent(children, w = True)
-        
-        handle = space.IkHandle(self._get_name())
-        handle.set_solver(handle.solver_spline)
-        handle.set_start_joint(joints[0])
-        handle.set_end_joint(joints[-1])
-        handle.set_curve(self.ik_curve)
-        handle = handle.create()
-
-        if self.closest_y:
-            cmds.setAttr('%s.dWorldUpAxis' % handle, 2)
-        
-        if children:
-            cmds.parent(children, joints[-1])
-            
-        cmds.parent(handle, self.setup_group)
-        
-        if self.advanced_twist:
-            start_locator = cmds.spaceLocator(n = self._get_name('locatorTwistStart'))[0]
-            end_locator = cmds.spaceLocator(n = self._get_name('locatorTwistEnd'))[0]
-            
-            self.start_locator = start_locator
-            self.end_locator = end_locator
-            
-            cmds.hide(start_locator, end_locator)
-            
-            match = space.MatchSpace(self.buffer_joints[0], start_locator)
-            match.translation_rotation()
-            
-            match = space.MatchSpace(self.buffer_joints[-1], end_locator)
-            match.translation_rotation()
-                        
-            cmds.setAttr('%s.dTwistControlEnable' % handle, 1)
-            cmds.setAttr('%s.dWorldUpType' % handle, 4)
-            cmds.connectAttr('%s.worldMatrix' % start_locator, '%s.dWorldUpMatrix' % handle)
-            cmds.connectAttr('%s.worldMatrix' % end_locator, '%s.dWorldUpMatrixEnd' % handle)
-            
-            if hasattr(self, 'top_sub_control'):
-                cmds.parent(start_locator, self.sub_controls[0])
-                
-            if not hasattr(self, 'top_sub_control'):
-                cmds.parent(start_locator, self.sub_controls[0])
-                
-            cmds.parent(end_locator, self.sub_controls[-1])
-            
-        if not self.advanced_twist and self.buffer_joints != self.joints:
-            
-            follow = space.create_follow_group(self.controls[0], self.buffer_joints[0])
-            cmds.parent(follow, self.setup_group)
-            
-        if not self.advanced_twist:
-            var = attr.MayaNumberVariable('twist')
-            var.set_variable_type(var.TYPE_DOUBLE)
-            var.create(self.controls[0])
-            var.connect_out('%s.twist' % handle)
     
     def set_control_xform(self, vector, inc):
         """
@@ -1816,12 +1962,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         Wether to match the control's orientation to the nearest joint.
         """
         self.orient_controls_to_joints = bool_value
-    
-    def set_advanced_twist(self, bool_value):
-        """
-        Wether to use spline ik top btm advanced twist.
-        """
-        self.advanced_twist = bool_value
     
     def set_control_count(self, int_value, span_count = None, wire_hires = False):
         """
@@ -1855,77 +1995,11 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
         
         self.sub_control_on = bool_value
     
-    def set_stretchy(self, bool_value):
-        """
-        Wether the joints should stretch to match the spline ik.
-        """
-        self.stretchy = bool_value
-        
-    def set_stretch_on_off(self, bool_value):
-        """
-        Wether to add a stretch on/off attribute. 
-        This allows the animator to turn the stretchy effect off over time.
-        """
-        self.stretch_on_off = bool_value
-    
-    def set_stretch_axis(self, axis_letter):
-        """
-        Set the axis that the joints should stretch on.
-        """
-        self.stretch_axis = axis_letter
-    
-    def set_curve(self, curve):
-        """
-        Set the curve that the controls should move and the joints should follow.
-        """
-        self.curve = curve
-        
-    def set_ribbon(self, bool_value):
-        """
-        By default the whole setup uses a spline ik. This will cause the setup to use a nurbs surface.
-        If this is on, stretch options are ignored.
-        """
-        self.ribbon = bool_value
-        
-    def set_ribbon_offset(self, float_value):
-        """
-        Set the width of the ribbon.
-        """
-        self.ribbon_offset = float_value
-        
-    def set_ribbon_offset_axis(self, axis_letter):
-        """
-        Set which axis the ribbon width is offset on.
-        
-        Args
-            axis_letter (str): 'X','Y' or 'Z' 
-        """
-        self.ribbon_offset_axis = axis_letter
-        
-    def set_last_pivot_top(self, bool_value):
-        """
-        Set the last pivot on the curve to the top of the curve.
-        """
-        self.last_pivot_top_value = bool_value
-    
-    def set_fix_x_axis(self, bool_value):
-        """
-        This will create a duplicate chain for the spline ik, that has the x axis pointing down the joint.
-        The new joint chain moves with the controls, and constrains the regular joint chain.
-        """
-        self.fix_x_axis = bool_value
-
     def set_skip_first_control(self, bool_value):
         """
         This allows the setup to not have the first control.
         """
         self.skip_first_control = bool_value
-        
-    def set_closest_y(self, bool_value):
-        """
-        Wether to turn on Maya's closest y option, which can solve flipping in some cases.
-        """
-        self.closest_y = bool_value
         
     def set_create_follows(self, bool_value):
         """
@@ -1937,33 +2011,14 @@ class SimpleFkCurveRig(FkCurlNoScaleRig):
     def create(self):
         super(SimpleFkCurveRig, self).create()
         
+        
+        
         if not self.ribbon:
             self._create_spline_ik()
             self._setup_stretchy()
             
         if self.ribbon:
-            surface = geo.transforms_to_nurb_surface(self.buffer_joints, self._get_name(), spans = self.control_count-1, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis)
-            
-            cmds.setAttr('%s.inheritsTransform' % surface, 0)
-            
-            cluster_surface = deform.ClusterSurface(surface, self._get_name())
-            cluster_surface.set_join_ends(True)
-            cluster_surface.create()
-            handles = cluster_surface.handles
-            
-            self.ribbon_clusters = handles
-            
-            for inc in range(0, len(handles)):
-                cmds.parentConstraint(self.sub_controls[inc], handles[inc], mo = True)
-                
-            cmds.parent(surface, self.setup_group)
-            cmds.parent(handles, self.setup_group)
-            
-            if self.attach_joints:
-                for joint in self.buffer_joints:
-                    rivet = geo.attach_to_surface(joint, surface)
-                    cmds.setAttr('%s.inheritsTransform' % rivet, 0)
-                    cmds.parent(rivet, self.setup_group)
+            self._create_ribbon()
         
         cmds.delete(self.orig_curve) 
     
