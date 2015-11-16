@@ -404,8 +404,11 @@ class RemapAttributesToAttribute(object):
         
         attribute_count = len(self.attributes)
         
-        if attribute_count <= 1:
-            return
+        if attribute_count == None:
+            attribute_count = 1
+        
+        if attribute_count == 1:
+            attribute_count + 1
         
         variable = MayaNumberVariable(self.attribute)
         variable.set_variable_type(variable.TYPE_DOUBLE)
@@ -448,12 +451,15 @@ class RemapAttributesToAttribute(object):
         """
         Create the switch.
         """       
+        
+        self._create_attribute()
+        
         length = len(self.attributes)
         
         if length <= 1:
             return
         
-        self._create_attribute()
+        
         
         for inc in range(0,length):
             

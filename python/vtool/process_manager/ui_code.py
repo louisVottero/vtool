@@ -894,7 +894,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
 
 
         item.set_state(state)
-        self.scrollToItem(item)
+        
+        if state > -1:
+            self.scrollToItem(item)
         
         
     def create_python_code(self):

@@ -161,6 +161,8 @@ class ClusterSurface(ClusterObject):
         
         self.join_ends = False
         self.join_both_ends = False
+        self.first_cluster_pivot_at_start = True
+        self.last_cluster_pivot_at_end = True
         
         self.maya_type = None
         
@@ -224,11 +226,13 @@ class ClusterSurface(ClusterObject):
         self.clusters.append(cluster)
         self.handles.append(handle)
         
-        cmds.xform(handle, ws = True, rp = start_position, sp = start_position)
+        if self.first_cluster_pivot_at_start:
+            cmds.xform(handle, ws = True, rp = start_position, sp = start_position)
         
         last_cluster, last_handle = self._create_cluster(end_cvs)
         
-        cmds.xform(last_handle, ws = True, rp = end_position, sp = end_position)
+        if self.last_cluster_pivot_at_end:
+            cmds.xform(last_handle, ws = True, rp = end_position, sp = end_position)
 
         
         return last_cluster, last_handle
@@ -254,7 +258,6 @@ class ClusterSurface(ClusterObject):
             
             start_cvs = '%s.cv%s' % (self.geometry, index1)
             end_cvs = '%s.cv%s' % (self.geometry, index2)
-            #end_cvs = '%s.cv[0:1][%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
         
         cmds.select([start_cvs, end_cvs])
         cvs = cmds.ls(sl = True)
@@ -263,8 +266,6 @@ class ClusterSurface(ClusterObject):
         self.clusters.append(cluster)
         self.handles.append(handle)
         
-                
-    
     def _create(self):
         
         self.cvs = cmds.ls('%s.cv[*]' % self.geometry, flatten = True)
@@ -314,10 +315,11 @@ class ClusterSurface(ClusterObject):
             
             self.clusters.append(cluster)
             self.handles.append(handle)
-    
+        
         if self.join_ends and not self.join_both_ends:
             self.clusters.append(last_cluster)
             self.handles.append(last_handle)
+        
         
         return self.clusters
     
@@ -338,6 +340,20 @@ class ClusterSurface(ClusterObject):
             bool_value (bool): Wether to join the ends of the surface.
         """
         self.join_both_ends = bool_value
+        
+    def set_last_cluster_pivot_at_end(self, bool_value):
+        """
+        Set the last cluster pivot to the end of the curve.
+        """
+        
+        self.last_cluster_pivot_at_end = bool_value
+
+    def set_first_cluster_pivot_at_start(self, bool_value):
+        """
+        Set the last cluster pivot to the end of the curve.
+        """
+        
+        self.first_cluster_pivot_at_start = bool_value
         
     def set_cluster_u(self, bool_value):
         """
@@ -366,8 +382,6 @@ class ClusterCurve(ClusterSurface):
         cmds.xform(last_handle, ws = True, rp = position, sp = position)
         
         return last_cluster, last_handle
-    
-    
         
     def _create(self):
         

@@ -342,9 +342,7 @@ class SimpleSplineIkRig(rigs.BufferRig):
                        sj = joints[0], 
                        ee = joints[-1], 
                        c = self.curve, n = 'splineIk_%s' % self._get_name())[0]
-        
-        
-        
+                       
         if children:
             cmds.parent(children, joints[-1])
             
