@@ -299,7 +299,7 @@ class JointRig(Rig):
         self.joints = []
         
         self.attach_joints = True
-        self.auto_control_visibility = False
+        self.auto_control_visibility = True
         
     def _attach_joints(self, source_chain, target_chain):
         
@@ -355,7 +355,6 @@ class JointRig(Rig):
         Args
             bool_value (bool): Wether to attach joints.
         """
-        
         
         self.attach_joints = bool_value
         
