@@ -545,7 +545,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if directory == None:
             directory = self.settings.get('code_directory')            
-                      
+        
         self.settings.set('code_directory', directory)
         self.code_widget.set_code_directory(directory)
         self.settings_widget.set_code_directory(directory)
@@ -557,5 +557,4 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if util_file.is_dir(directory):
                 if not directory in sys.path:
                     sys.path.append(directory)
-                    
-                    
+        

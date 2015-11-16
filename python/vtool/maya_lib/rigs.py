@@ -773,6 +773,8 @@ class FkRig(BufferRig):
         self.use_joint_controls = False
         self.use_joints
 
+        self.skip_increments = []
+
     def _create_control(self, sub = False):
         
         self.last_control = self.control
@@ -883,7 +885,9 @@ class FkRig(BufferRig):
         self._attach(control, current_transform)
         
         if not self.create_sub_controls:
-            cmds.parent(self.control_dict[control]['xform'], self.last_control.get())
+            
+            if self.last_control:
+                cmds.parent(self.control_dict[control]['xform'], self.last_control.get())
             
         if self.create_sub_controls:
             
@@ -903,7 +907,25 @@ class FkRig(BufferRig):
     def _loop(self, transforms):
         inc = 0
         
+        found = []
+        
+        if self.skip_increments:
+            for increment in self.skip_increments:
+                
+                found_transform = None
+                
+                try:
+                    found_transform = transforms[increment]
+                except:
+                    pass
+                
+                if found_transform:
+                    found.append(found_transform)
+        
         for inc in range(0, len(transforms)):
+        
+            if transforms[inc] in found:
+                continue
             
             self.current_increment = inc
             
@@ -989,6 +1011,16 @@ class FkRig(BufferRig):
         Wether each fk control should have sub controls.
         """
         self.create_sub_controls = bool_value
+        
+    def set_skip_increments(self, increment_list):
+        """
+        Set which increments are skipped. 
+        
+        Args
+            increment_list (list): A list of integers. [0] will skip the first increment, [0,1] will skip the first 2 increments. 
+        """
+        
+        self.skip_increments = increment_list
             
     def create(self):
         super(FkRig, self).create()
@@ -1138,8 +1170,8 @@ class FkScaleRig(FkRig):
         cmds.setAttr('%s.radius' % buffer_joint, 0) 
           
         if not self.create_sub_controls:
-            cmds.connectAttr('%s.scale' % self.last_control.get(), '%s.inverseScale' % buffer_joint)
-
+            if self.last_control:
+                cmds.connectAttr('%s.scale' % self.last_control.get(), '%s.inverseScale' % buffer_joint)
         
         match = space.MatchSpace(control, buffer_joint) 
         match.translation_rotation() 
@@ -1171,7 +1203,8 @@ class FkScaleRig(FkRig):
         cmds.parent(self.current_xform_group, buffer_joint) 
           
         if not self.create_sub_controls:
-            cmds.parent(buffer_joint, self.last_control.get())
+            if self.last_control:
+                cmds.parent(buffer_joint, self.last_control.get())
         if self.create_sub_controls: 
             last_control = self.control_dict[self.last_control.get()]['subs'][-1]
             cmds.parent(buffer_joint, last_control)
@@ -4164,6 +4197,10 @@ class FootRollRig(RollRig):
         return [ball_pivot, toe_fk_control_xform]
         
     def set_toe_rotate_as_locator(self, bool_value):
+        """
+        Whether the toe rotate should be a locator instead of a control.
+        An attribute will be created on the main control to rotate the toe.
+        """
         self.toe_rotate_as_locator = bool_value
           
     def set_mirror_yaw(self, bool_value):
@@ -4185,7 +4222,360 @@ class FootRollRig(RollRig):
         #cmds.connectAttr('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % toe_fk_control_xform)
         attr.connect_equal_condition('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % ball_pivot, 0)
         #connect_reverse('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % ball_pivot)
+              
+class BaseFootRig(BufferRig):
+    def __init__(self, description, side):
+        super(RollRig, self).__init__(description, side)
+        
+        self.create_roll_controls = True
+        self.attribute_control = None
+        
+        self.control_shape = 'circle'
+        
+        self.forward_roll_axis = 'X'
+        self.side_roll_axis = 'Z'
+        self.top_roll_axis = 'Y'
+        
+        self.locators = []
+            
+    def _get_attribute_control(self):
+        if not self.attribute_control:
+            return self.roll_control.get()
+            
+        if self.attribute_control:
+            return self.attribute_control        
+    
+    def _create_pivot_group(self, source_transform, description):
+        
+        name = self._get_name('pivot', description)
+        
+        group = cmds.group(em = True, n = name)
+        
+        match = space.MatchSpace(source_transform, group)
+        match.translation_rotation()
+        
+        xform_group = space.create_xform_group(group)
+        
+        attribute_control = self._get_attribute_control()
+        
+        cmds.addAttr(attribute_control, ln = '%sPivot' % description, at = 'double', k = True)
+        
+        cmds.connectAttr('%s.%sPivot' % (attribute_control, description), '%s.rotateY' % group)
+        
+        return group, xform_group
+    
+    def _create_pivot_control(self, source_transform, description, sub = False, no_control = False, scale = 1):
+        
+        if self.create_roll_controls:
+            control = self._create_control(description, sub)
+            
+            control_object = control
+            control.set_curve_type(self.control_shape)
+            if sub:
+                if self.sub_control_shape:
+                    control.set_curve_type(self.sub_control_shape)
+                            
+            control.scale_shape(scale, scale, scale)
+            control = control.get()
+        
+        if not self.create_roll_controls or no_control:
+            name = self._get_name('ctrl', description)
+            control = cmds.group(em = True, n = core.inc_name(name))
+        
+        xform_group = space.create_xform_group(control)
+        driver_group = space.create_xform_group(control, 'driver')
+        
+        match = space.MatchSpace(source_transform, xform_group)
+        match.translation_rotation()
+        
+        if self.create_roll_controls:
+            
+            control_object.hide_scale_attributes()
+            control_object.hide_translate_attributes()
+            control_object.hide_visibility_attribute()
+            
+        if self.create_roll_controls:
+            cmds.connectAttr('%s.controlVisibility' % self._get_attribute_control(), '%sShape.visibility' % control)
+        
+        return control, xform_group, driver_group
+    
+    def _create_roll_control(self, transform):
+        
+        roll_control = self._create_control('roll') 
+        roll_control.set_curve_type('square')
+        
+        self.roll_control = roll_control
+        
+        roll_control.scale_shape(.8,.8,.8)
+        
+        xform_group = space.create_xform_group(roll_control.get())
+        
+        roll_control.hide_keyable_attributes()
+        
+        match = space.MatchSpace( transform, xform_group )
+        match.translation_rotation()
+        
+        cmds.parent(xform_group, self.control_group)
+        
+        self.roll_control_xform = xform_group 
+        
+        return roll_control 
+    
+    def _create_ik_handle(self, name, start_joint, end_joint):
+        
+        name = self._get_name(name)
+        
+        ik_handle = space.IkHandle(name)
+        ik_handle.set_solver(ik_handle.solver_sc)
+        ik_handle.set_start_joint(start_joint)
+        ik_handle.set_end_joint(end_joint)
+        return ik_handle.create()  
+                    
+    def set_create_roll_controls(self, bool_value):
+        
+        self.create_roll_controls = bool_value
+        
+    def set_attribute_control(self, control_name):
+        self.attribute_control = control_name
+    
+    def set_control_shape(self, shape_name):
+        self.control_shape = shape_name
+    
+    def set_forward_roll_axis(self, axis_letter):
+        self.forward_roll_axis = axis_letter
+        
+    def set_side_roll_axis(self, axis_letter):
+        self.side_roll_axis = axis_letter
+        
+    def set_top_roll_axis(self, axis_letter):
+        self.top_roll_axis = axis_letter
+    
+    def create(self):
+        super(RollRig, self).create()
+        
+        self._create_roll_control(self.joints[0])
+        
+        attr.create_title(self._get_attribute_control(), 'FOOT_PIVOTS')
                 
+        if self.create_roll_controls:
+            bool_var = attr.MayaNumberVariable('controlVisibility')
+            bool_var.set_variable_type(bool_var.TYPE_BOOL)
+            bool_var.create(self._get_attribute_control())
+            
+class FootRig(BaseFootRig):
+    def __init__(self, description, side):
+        super(FootRollRig, self).__init__(description, side)
+        
+        self.toe_rotate_as_locator = False
+        self.mirror_yaw = False
+        self.main_control_follow = None
+
+    def _create_ik(self):
+    
+        self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.ball)
+        self.ball_handle = self._create_ik_handle( 'ball', self.ball, self.toe)
+        
+        cmds.parent( self.ankle_handle, self.setup_group )
+        cmds.parent( self.ball_handle, self.setup_group )
+        
+    def _create_toe_rotate_control(self):
+        if not self.toe_rotate_as_locator:
+            control = self._create_control( 'TOE_ROTATE', True)
+            control.hide_translate_attributes()
+            control.hide_scale_attributes()
+            control.hide_visibility_attribute()
+            control.set_curve_type('circle')
+            xform_group = control.create_xform()
+            control = control.get()
+        
+        if self.toe_rotate_as_locator:
+            control = cmds.spaceLocator(n = self._get_name('locator', 'toe_rotate'))[0]
+            xform_group = space.create_xform_group(control)
+            attribute_control = self._get_attribute_control()
+            
+            cmds.addAttr(attribute_control, ln = 'toeRotate', at = 'double', k = True)  
+            cmds.connectAttr('%s.toeRotate' % attribute_control, '%s.rotate%s' % (control, self.forward_roll_axis))  
+            
+        match = space.MatchSpace(self.ball, xform_group)
+        match.translation_rotation()
+        
+        cmds.parent(xform_group, self.control_group)
+        
+        return control, xform_group     
+    
+    def _create_roll_attributes(self):
+        
+        attribute_control = self._get_attribute_control()
+        
+        cmds.addAttr(attribute_control, ln = 'ballRoll', at = 'double', k = True)
+        cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
+        cmds.addAttr(attribute_control, ln = 'heelRoll', at = 'double', k = True)
+        cmds.addAttr(attribute_control, ln = 'yawRoll', at = 'double', k = True)
+    
+    def _create_yawout_roll(self, parent):
+        
+        control, xform, driver = self._create_pivot_control(self.yawOut, 'yawOut')
+
+        cmds.parent(xform, parent)
+        
+        attribute_control = self._get_attribute_control()
+        
+        final_value = 10
+        if self.mirror_yaw and self.side == 'R':
+            final_value = -10
+            
+        final_other_value = -45
+        if self.mirror_yaw and self.side == 'R':
+            final_other_value = 45
+        
+        
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
+        
+        if self.mirror_yaw and self.side == 'R':
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')
+        else:
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
+                
+        return control
+        
+    def _create_yawin_roll(self, parent):
+        
+        control, xform, driver = self._create_pivot_control(self.yawIn, 'yawIn')
+
+        cmds.parent(xform, parent)
+        
+        attribute_control = self._get_attribute_control()
+        
+        final_value = -10
+        if self.mirror_yaw and self.side == 'R':
+            final_value = 10
+
+        final_other_value = 45
+        if self.mirror_yaw and self.side == 'R':
+            final_other_value = -45
+        
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.side_roll_axis),cd = '%s.yawRoll' % attribute_control, driverValue = final_value, value = final_other_value, itt = 'spline', ott = 'spline')
+        
+        if self.mirror_yaw and self.side == 'R':
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), postInfinite = 'linear')
+        else:
+            cmds.setInfinity('%s.rotate%s' % (driver, self.side_roll_axis), preInfinite = 'linear')    
+        
+                
+        return control
+    
+    def _create_ball_roll(self, parent):
+        
+        control, xform, driver = self._create_pivot_control(self.ball, 'ball')
+        control = rigs_util.Control(control)
+        control.scale_shape(2,2,2)
+        control = control.get()
+        
+        cmds.parent(xform, parent)
+        
+        attribute_control = self._get_attribute_control()
+        
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')        
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        #cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 20, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        
+        return control
+    
+    def _create_toe_roll(self, parent):
+        
+        control, xform, driver = self._create_pivot_control(self.toe, 'toe')
+        
+        cmds.parent(xform, parent)
+        
+        attribute_control = self._get_attribute_control()
+        
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.toeRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.toeRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.toeRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        
+        return control
+    
+    def _create_heel_roll(self, parent):
+        control, xform, driver = self._create_pivot_control(self.heel, 'heel')
+        
+        cmds.parent(xform, parent)
+        
+        attribute_control = self._get_attribute_control()
+        
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
+        
+        return control
+    
+    def _create_pivot(self, name, transform, parent):
+        
+        pivot_group, pivot_xform = self._create_pivot_group(transform, name)
+        cmds.parent(pivot_xform, parent)
+        
+        return pivot_group
+        
+    def _create_pivot_groups(self):
+
+        toe_control, toe_control_xform = self._create_toe_rotate_control()
+        
+        ball_pivot = self._create_pivot('ball', self.ball, self.control_group)
+        toe_pivot = self._create_pivot('toe', self.toe, ball_pivot)
+        heel_pivot = self._create_pivot('heel', self.heel, toe_pivot)
+        
+        toe_roll = self._create_toe_roll(heel_pivot)
+        heel_roll = self._create_heel_roll(toe_roll)
+        yawout_roll = self._create_yawout_roll(heel_roll)
+        yawin_roll = self._create_yawin_roll(yawout_roll)
+        ball_roll = self._create_ball_roll(yawin_roll)
+        
+        self._create_ik()
+        
+        cmds.parent(toe_control_xform, yawin_roll)
+        
+        if not self.main_control_follow:
+            space.create_follow_group(ball_roll, self.roll_control_xform)
+        if self.main_control_follow:
+            space.create_follow_group(self.main_control_follow, self.roll_control_xform)
+        
+        cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
+        cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
+        
+        return ball_pivot
+        
+    def set_toe_rotate_as_locator(self, bool_value):
+        self.toe_rotate_as_locator = bool_value
+          
+    def set_mirror_yaw(self, bool_value):
+        self.mirror_yaw = bool_value
+        
+    def set_main_control_follow(self, transform):
+        self.main_control_follow = transform
+                    
+    def create(self):
+        super(FootRollRig,self).create()
+        
+        self._define_joints()
+        
+        self._create_roll_attributes()
+        
+        ball_pivot = self._create_pivot_groups()
+        
+        #attr.connect_equal_condition('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % toe_fk_control_xform, 1)
+        ##cmds.connectAttr('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % toe_fk_control_xform)
+        #attr.connect_equal_condition('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % ball_pivot, 0)
+        #connect_reverse('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % ball_pivot)
+        
 #---Face Rig
 
         
