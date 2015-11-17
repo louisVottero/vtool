@@ -892,32 +892,55 @@ def get_current_audio_node():
     
     return cmds.timeControl(play_slider, q = True, s = True)
 
+def delete_turtle_nodes():
 
+    plugin_list = cmds.pluginInfo(query = True, pluginsInUse = True)
+    
+    if plugin_list:
+        for plugin in plugin_list:
+            
+            if plugin[0] == 'Turtle':
+                
+                turtle_types = ['ilrBakeLayer', 
+                                'ilrBakeLayerManager', 
+                                'ilrOptionsNode', 
+                                'ilrUIOptionsNode']
+                
+                delete_nodes_of_type(turtle_types)
 
+def delete_nodes_of_type(node_type):
+    """
+    Delete all the nodes of type. 
+    Good for cleaning up scenes.
+    
+    Args
+        node_type (str): The name of a node type. Eg. hyperView, ilrBakeLayouerManger, etc
+        
+    """
+    
+    node_type = vtool.util.convert_to_sequence(node_type)
+    
+    for node_type_name in node_type:
+        
+        nodes = cmds.ls(type = node_type_name)
+        
+        for node in nodes:
+            
+            if node == 'hyperGraphLayout':
+                continue
+            
+            if not cmds.objExists(node):
+                continue
+            
+            cmds.lockNode(node, lock = False)
+            cmds.delete(node)
 
 def delete_garbage():
 
     straight_delete_type = ['hyperView', 
-                            'hyperLayout', 
-                            'ilrBakeLayer', 
-                            'ilrBakeLayerManager', 
-                            'ilrOptionsNode', 
-                            'ilrUIOptionsNode']
-
-    straight_delete_nodes = []
-
-    for delete_type in straight_delete_type:
-        nodes = cmds.ls(type = delete_type)
-        
-        straight_delete_nodes += nodes
+                            'hyperLayout']
     
-    for node in straight_delete_nodes:
-        
-        if not cmds.objExists(node):
-            continue
-        
-        cmds.lockNode(node, lock = False)
-        cmds.delete(node)
+    delete_nodes_of_type(straight_delete_type)
     
     check_connection_node_type = ['shadingEngine']
     

@@ -1573,6 +1573,7 @@ class MayaFileData(MayaCustomData):
     
     def _clean_scene(self):
         
+        maya_lib.core.delete_turtle_nodes()
         maya_lib.core.delete_garbage()
 
     def _prep_scene_for_export(self):

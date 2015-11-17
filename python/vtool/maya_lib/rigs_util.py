@@ -1182,8 +1182,6 @@ class RigSwitch(object):
 
     def get_weight_count(self):
         
-        weight_count = 0
-        
         edit_constraint = space.ConstraintEditor()
         constraint = edit_constraint.get_constraint(self.switch_joint, 'parentConstraint')
         
@@ -1238,7 +1236,9 @@ class RigSwitch(object):
     def create(self):
         
         if self.control_name and cmds.objExists(self.control_name):
+            
             weight_count = self.get_weight_count()
+            
             
             var = attr.MayaNumberVariable(self.attribute_name)
                
@@ -1249,7 +1249,9 @@ class RigSwitch(object):
             
             attribute_name = var.get_name()
             cmds.connectAttr(attribute_name, '%s.switch' % self.switch_joint) 
-                
+        
+        
+        
         if not self.control_name or not cmds.objExists(self.control_name):
             attribute_name = '%s.switch' % self.switch_joint
         

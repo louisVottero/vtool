@@ -399,9 +399,6 @@ class RemapAttributesToAttribute(object):
         
     def _create_attribute(self):
         
-        if cmds.objExists(self.node_attribute):
-            return
-        
         attribute_count = len(self.attributes)
         
         if attribute_count == None:
@@ -409,6 +406,14 @@ class RemapAttributesToAttribute(object):
         
         if attribute_count == 1:
             attribute_count + 1
+        
+        if cmds.objExists(self.node_attribute):
+            variable = MayaNumberVariable(self.attribute)
+            variable.set_node(self.node)
+            variable.set_min_value(0)
+            variable.set_max_value(attribute_count-1)
+            variable.create()
+            return
         
         variable = MayaNumberVariable(self.attribute)
         variable.set_variable_type(variable.TYPE_DOUBLE)
@@ -1076,6 +1081,7 @@ class MayaNumberVariable(MayaVariable):
             cmds.addAttr(self._get_node_and_variable(), edit = True, minValue = self.min_value)
         
     def _set_max_state(self):
+        
         if not self.exists():
             return
         

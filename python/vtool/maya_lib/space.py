@@ -8,11 +8,8 @@ if vtool.util.is_in_maya():
     
 import core
 import attr
-    
-    #do not import geo
-    
 
-
+#do not import geo
 
 class PinXform(object):
     """
@@ -921,10 +918,21 @@ class DuplicateHierarchy(object):
         self.stop_at_transform = None
         
         self.only_these_transforms = None
+        self.only_these_inc = 0
         
             
     def _get_children(self, transform):
-        return cmds.listRelatives(transform, children = True, type = 'transform')
+        children = cmds.listRelatives(transform, children = True, type = 'transform')
+        found = []
+        
+        if children:
+            for child in children:
+                if cmds.nodeType(child).find('Constraint') > -1:
+                    continue
+                
+                found.append(child)
+            
+        return found
         
     def _duplicate(self, transform):
         
@@ -953,14 +961,18 @@ class DuplicateHierarchy(object):
         
         children = self._get_children(transform)
         
+        if not children and self.only_these_transforms:
+            children = [self.only_these_transforms[self.only_these_inc]]
+            self.only_these_inc +=1
+        
+        print 'children!!!!!', children
+        print self.top_transform
+        
         if children:
             duplicate = None
             duplicates = []
             
             for child in children:
-
-                if self.only_these_transforms and not child in self.only_these_transforms:
-                    continue
                 
                 duplicate = self._duplicate_hierarchy(child)
                 
@@ -1021,6 +1033,24 @@ class DuplicateHierarchy(object):
         self._duplicate_hierarchy(self.top_transform)
         
         return self.duplicates
+
+class BuildHierarchy(object):
+    
+    def __init__(self):
+        self.transforms = []
+        self.replace_old = None
+        self.replace_new = None
+    
+    def _build_hierarchy(self):
+        pass
+    
+    def set_transforms(self, transform_list):
+        
+        self.transforms = transform_list
+        
+    def replace(self, old, new):
+        self.replace_old = old
+        self.replace_new = new
 
 def get_center(transform):
     """
