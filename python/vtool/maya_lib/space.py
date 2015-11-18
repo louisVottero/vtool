@@ -918,7 +918,6 @@ class DuplicateHierarchy(object):
         self.stop_at_transform = None
         
         self.only_these_transforms = None
-        self.only_these_inc = 0
         
             
     def _get_children(self, transform):
@@ -961,18 +960,14 @@ class DuplicateHierarchy(object):
         
         children = self._get_children(transform)
         
-        if not children and self.only_these_transforms:
-            children = [self.only_these_transforms[self.only_these_inc]]
-            self.only_these_inc +=1
-        
-        print 'children!!!!!', children
-        print self.top_transform
-        
         if children:
             duplicate = None
             duplicates = []
             
             for child in children:
+                
+                if self.only_these_transforms and not child in self.only_these_transforms:
+                    continue
                 
                 duplicate = self._duplicate_hierarchy(child)
                 
@@ -1042,15 +1037,44 @@ class BuildHierarchy(object):
         self.replace_new = None
     
     def _build_hierarchy(self):
-        pass
+        
+        new_joints = []
+        last_transform = None
+        
+        for transform in self.transforms:
+            cmds.select(cl = True)
+            joint = cmds.joint()
+            
+            name = transform
+            if self.replace_old and self.replace_new:
+                name = name.replace(self.replace_old, self.replace_new)
+            
+            joint = cmds.rename(joint, core.inc_name(name))
+            
+            MatchSpace(transform, joint).translation_rotation()
+            MatchSpace(transform, joint).world_pivots()
+            
+            new_joints.append(joint)
+            
+            if last_transform:
+                cmds.parent(joint, last_transform)
+                
+            last_transform = joint
+            
+        return new_joints
     
     def set_transforms(self, transform_list):
         
         self.transforms = transform_list
         
-    def replace(self, old, new):
+    def set_replace(self, old, new):
         self.replace_old = old
         self.replace_new = new
+        
+    def create(self):
+        new_joints = self._build_hierarchy()
+        return new_joints
+        
 
 def get_center(transform):
     """

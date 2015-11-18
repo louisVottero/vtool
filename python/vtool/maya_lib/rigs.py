@@ -394,7 +394,11 @@ class BufferRig(JointRig):
                 self.buffer_joints = duplicate_hierarchy.create()
                 
             if self.build_hierarchy:
-                pass
+                
+                build_hierarchy = space.BuildHierarchy()
+                build_hierarchy.set_transforms(self.joints)
+                build_hierarchy.set_replace('joint', 'buffer')
+                self.buffer_joints = build_hierarchy.create()
     
             cmds.parent(self.buffer_joints[0], self.setup_group)
 
@@ -811,6 +815,9 @@ class FkRig(BufferRig):
         
         self.control = super(FkRig, self)._create_control(sub = sub)
         
+        if len(self.controls) == 1:
+            cmds.parent(self.control.get(), self.control_group)
+        
         self._set_control_attributes(self.control)
                 
         xform = space.create_xform_group(self.control.get())
@@ -873,8 +880,6 @@ class FkRig(BufferRig):
         self.transform_list = transform_list
         current_transform = transform_list[self.current_increment]
         
-        1
-        
         self._all_increments(control, current_transform)
 
         if self.current_increment == 0:
@@ -891,7 +896,7 @@ class FkRig(BufferRig):
         
         if self.current_increment < (len(transform_list)) and self.current_increment > 0:
             self._incrment_after_start_before_end(control, current_transform)
-        6
+            
         if self.current_increment == (len(transform_list)-1) or self.current_increment == 0:
             self._increment_equal_to_start_end(control,current_transform)
         
@@ -908,7 +913,6 @@ class FkRig(BufferRig):
         
     def _first_increment(self, control, current_transform):
         
-        cmds.parent(self.control_dict[control]['xform'], self.control_group)
         self._attach(control, current_transform)
     
     def _last_increment(self, control, current_transform):
@@ -940,7 +944,7 @@ class FkRig(BufferRig):
     def _loop(self, transforms):
         inc = 0
         
-        found = []
+        found_to_skip = []
         
         if self.skip_increments:
             for increment in self.skip_increments:
@@ -953,25 +957,22 @@ class FkRig(BufferRig):
                     pass
                 
                 if found_transform:
-                    found.append(found_transform)
+                    found_to_skip.append(found_transform)
         
         for inc in range(0, len(transforms)):
         
-            if transforms[inc] in found:
+            if transforms[inc] in found_to_skip:
                 continue
             
             self.current_increment = inc
             
             control = self._create_control()
             control = control.get()
-
+            
             self._edit_at_increment(control, transforms)
-
-
+            
             inc += 1
             
-
-    
     def _attach(self, control, target_transform):
         
         if self.create_sub_controls:
@@ -1947,7 +1948,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             vector = self.control_xform[increment]
             cmds.move(vector[0], vector[1],vector[2], self.current_xform_group, r = True)
         
-        cmds.parent(self.current_xform_group, self.control_group)
+        #cmds.parent(self.current_xform_group, self.control_group)
         
     def _get_closest_joint(self):
         
@@ -4765,6 +4766,8 @@ class FootRig(BaseFootRig):
     def __init__(self, description, side):
         super(FootRig, self).__init__(description, side)
         
+        self.build_hierarchy = True
+        
         self.toe_rotate_as_locator = False
         self.mirror_yaw = False
         self.main_control_follow = None
@@ -4774,73 +4777,31 @@ class FootRig(BaseFootRig):
         self.heel = None
         self.yawIn = None
         self.yawOut = None
-        
+    
     def _duplicate_joints(self):
         
-        ankle = self.joints[0]
-        transform = False
-        orig_parent = None
-        
-        if cmds.nodeType(ankle) == 'transform':
-            transform = True
-        
-        if transform:
-            orig_parent = cmds.listRelatives(self.joints[1], p = True)
-            orig_joint = self.joints[1]
-            
-            try:
-                cmds.parent(self.joints[1], ankle)
-            except:
-                orig_parent = None
-            
         super(FootRig, self)._duplicate_joints()
         
-        if transform:
+        ankle = self.buffer_joints[0]
+        
+        ankle_base = core.get_basename(ankle)
+        ankle_name = ankle_base
+        
+        if self.create_buffer_joints:
+            ankle_name = ankle_base.replace('locator', 'buffer')
             
-            ankle = self.buffer_joints[0]
+        if not self.create_buffer_joints:
+            ankle_name = ankle_base.replace('locator', 'guide')
             
-            cmds.select(cl = True)
-            joint = cmds.joint()
-            space.MatchSpace(self.buffer_joints[0], joint).translation()
-            space.MatchSpace(self.buffer_joints[1], joint).rotation()
-            cmds.makeIdentity(joint, r = True, apply = True)
+        joint = cmds.rename(ankle, ankle_name)
+        
+        self.buffer_joints[0] = joint
             
-            if self.create_buffer_joints:
-                try:
-                    cmds.parent(joint, self.setup_group)
-                except:
-                    pass
-            if not self.create_buffer_joints:
-                try:
-                    cmds.parent(joint, orig_parent)
-                except:
-                    pass
-            
-            try:
-                cmds.parent(self.buffer_joints[1], joint)
-            except:
-                pass
-            
-            cmds.delete(ankle)
-            ankle_base = core.get_basename(ankle)
-            ankle_name = ankle_base
-            if self.create_buffer_joints:
-                ankle_name = ankle_base.replace('locator', 'buffer')
-            if not self.create_buffer_joints:
-                ankle_name = ankle_base.replace('locator', 'guide')
-            joint = cmds.rename(joint, core.inc_name(ankle_name))
-            
-            self.buffer_joints[0] = joint
-            
-            if not self.create_buffer_joints:
-                self.joints[0] = joint
-            
-            if self.create_buffer_joints:
-                if orig_parent:
-                    cmds.parent(orig_joint, orig_parent)
-                
+        if not self.create_buffer_joints:
+            self.joints[0] = joint
         
     def _create_ik_chain(self):
+        
         
         duplicate = space.DuplicateHierarchy(self.buffer_joints[0])
         duplicate.only_these(self.buffer_joints)
@@ -4849,9 +4810,7 @@ class FootRig(BaseFootRig):
             duplicate.replace('joint', 'guide')
         if self.create_buffer_joints:
             duplicate.replace('buffer', 'guide')
-            
         
-            
         joints = duplicate.create()
         
         try:
@@ -4877,7 +4836,7 @@ class FootRig(BaseFootRig):
         cmds.parent( self.ball_handle, self.setup_group )
         
         if self.ik_parent:
-            cmds.parentConstraint(self.ik_parent, self.ik_joints[0]) 
+            cmds.pointConstraint(self.ik_parent, self.ik_joints[0]) 
         
     def _create_toe_rotate_control(self):
         
@@ -5065,6 +5024,12 @@ class FootRig(BaseFootRig):
         
         return ball_pivot
     
+    def set_build_hierarchy(self, bool_value):
+        
+        if not bool_value:
+            vtool.util.warning('Foot Roll rig needs to build hierarchy. Setting it True.')
+        
+        self.build_hierarchy = True
 
     
     def set_toe_rotate_as_locator(self, bool_value):
@@ -5320,7 +5285,7 @@ class QuadFootRig(FootRig):
             cmds.parent(self.ball_handle, self.setup_group)
             
         if self.ik_parent:
-            cmds.parentConstraint(self.ik_parent, self.ik_joints[0]) 
+            cmds.pointConstraint(self.ik_parent, self.ik_joints[0]) 
         
     def _create_pivot_groups(self):
 
