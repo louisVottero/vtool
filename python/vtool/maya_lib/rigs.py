@@ -4651,8 +4651,8 @@ class BaseFootRig(BufferRig):
         
         group = cmds.group(em = True, n = name)
         
-        match = space.MatchSpace(source_transform, group)
-        match.translation_rotation()
+        space.MatchSpace(source_transform, group).translation()
+        space.MatchSpace(self.joints[-1], group).rotation()
         
         xform_group = space.create_xform_group(group)
         
@@ -4685,8 +4685,8 @@ class BaseFootRig(BufferRig):
         xform_group = space.create_xform_group(control)
         driver_group = space.create_xform_group(control, 'driver')
         
-        match = space.MatchSpace(source_transform, xform_group)
-        match.translation_rotation()
+        space.MatchSpace(source_transform, xform_group).translation()
+        space.MatchSpace(self.joints[-1], xform_group).rotation()
         
         if self.create_roll_controls:
             
@@ -5261,10 +5261,7 @@ class QuadFootRig(FootRig):
             
             cmds.addAttr(attribute_control, ln = 'bankIn', at = 'double', k = True)
             cmds.addAttr(attribute_control, ln = 'bankOut', at = 'double', k = True)
-        
-            #cmds.addAttr(attribute_control, ln = 'bankForward', at = 'double', k = True)
-            #cmds.addAttr(attribute_control, ln = 'bankBack', at = 'double', k = True)
-    
+            
     def _create_ik(self):
         if not self.extra_ball:
             
@@ -5290,8 +5287,7 @@ class QuadFootRig(FootRig):
     def _create_pivot_groups(self):
 
         toe_control, toe_control_xform = self._create_toe_rotate_control()
-        #toe_fk_control, toe_fk_control_xform = self._create_toe_fk_rotate_control()
-
+        
         attribute_control = self._get_attribute_control()
 
         self._create_ik() 

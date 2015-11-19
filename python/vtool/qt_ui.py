@@ -1624,7 +1624,49 @@ class GetIntNumberButton(GetNumberButton):
     def _define_spin_widget(self):
         spin_widget = QtGui.QSpinBox()
         return spin_widget
-       
+    
+class GetCheckBox(BasicWidget):
+    
+    check_changed = create_signal(object)
+    
+    def __init__(self, name, parent = None):
+        
+        self.name = name
+        
+        super(GetCheckBox, self).__init__(parent)
+        
+        
+        
+    def _define_main_layout(self):
+        return QtGui.QHBoxLayout()
+            
+    def _build_widgets(self):
+        
+        self.check_box = QtGui.QCheckBox()
+        self.check_box.setText(self.name)
+        self.main_layout.addWidget(self.check_box)
+        
+        self.check_box.stateChanged.connect(self._state_changed)
+        
+    def _state_changed(self, state):
+        
+        if state:
+            self.check_changed.emit(True)
+        if not state:
+            self.check_changed.emit(False)
+        
+    def get_state(self):
+        
+        if self.check_box.isChecked():
+            return True
+        if not self.check_box.isChecked():
+            return False
+        
+    def set_state(self, bool_value):
+        if bool_value:
+            self.check_box.setChecked(True)
+            
+
 class Slider(BasicWidget):
     
     value_changed = create_signal(object)
@@ -1676,8 +1718,7 @@ class Slider(BasicWidget):
         if not bool_value:
             self.slider.sliderReleased.disconnect(self._reset_slider)
         
-    
-        
+
        
 class ProgressBar(QtGui.QProgressBar):
     

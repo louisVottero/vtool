@@ -400,6 +400,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_button.setEnabled(True)
             return
         
+        stop_on_error = self.settings.get('stop_on_error')
+        
         script_count = len(scripts)
         
         util.show('\n\a\tRunning %s Scripts\t\a\n' % self.process.get_name())
@@ -427,6 +429,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
                 self.code_widget.set_process_script_state(scripts[inc], 0)
                 util.show(status)
+                
+                if stop_on_error:
+                    break
                 #util.show(status)
                 
             if status == 'Success':
@@ -436,7 +441,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         self.process_button.setEnabled(True)
         self.stop_button.hide()
-                    
+        
     def _browser(self):
         
         directory = self._get_current_path()

@@ -1475,8 +1475,12 @@ class MayaAttributeData(MayaCustomData):
 
     def _data_extension(self):
         return ''
-
+    
     def import_data(self):
+        """
+        This will import all nodes saved to the data folder.
+        You may need to delete folders of nodes you no longer want to import.
+        """
         
         path = util_file.join_path(self.directory, self.name)
         
@@ -1522,7 +1526,9 @@ class MayaAttributeData(MayaCustomData):
         self._center_view()
 
     def export_data(self, comment):
-        
+        """
+        This will export only the currently selected nodes.
+        """
         path = util_file.join_path(self.directory, self.name)
         
         if not util_file.is_dir(path):
@@ -1536,11 +1542,23 @@ class MayaAttributeData(MayaCustomData):
         
         for thing in selection:
             
+            util.show('Exporting attributes on %s' % thing)
+            
             filename = util_file.create_file('%s.data' % thing, path)
 
             lines = []
             
             attributes = cmds.listAttr(thing, scalar = True, m = True)
+            
+            shapes = maya_lib.core.get_shapes(thing)
+            if shapes:
+                shape = shapes[0]
+                shape_attributes = cmds.listAttr(shape, scalar = True, m = True)
+                
+                if shape_attributes:
+                    new_set = set(attributes).union(shape_attributes)
+
+                    attributes = list(new_set)
             
             for attribute in attributes:
                 
@@ -1550,8 +1568,8 @@ class MayaAttributeData(MayaCustomData):
                 
                 lines.append("[ '%s', %s ]" % (attribute, value))
             
-        write_file = util_file.WriteFile(filename)
-        write_file.write(lines)
+            write_file = util_file.WriteFile(filename)
+            write_file.write(lines)
 
         
 class MayaFileData(MayaCustomData):

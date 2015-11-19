@@ -10,7 +10,6 @@ if qt_ui.is_pyqt():
 if qt_ui.is_pyside():
     from PySide import QtCore, QtGui
     
-    
 class SettingsWidget(qt_ui.BasicWidget):
     
     project_directory_changed = qt_ui.create_signal(object)
@@ -30,6 +29,21 @@ class SettingsWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
+        self.tab_widget = QtGui.QTabWidget()
+        
+        self.dir_widget = qt_ui.BasicWidget()
+        self.options_widget = qt_ui.BasicWidget()
+        
+        self.tab_widget.addTab(self.dir_widget, 'Paths')
+        self.tab_widget.addTab(self.options_widget, 'Options')
+        
+        self._build_dir_widgets()
+        self._build_option_widgets()
+        
+        self.main_layout.addWidget(self.tab_widget)
+        
+    def _build_dir_widgets(self):
+        
         self.project_directory_widget = ProjectDirectoryWidget()
         self.project_directory_widget.set_label('Project Directory')
         self.project_directory_widget.directory_changed.connect(self._project_directory_changed)
@@ -42,28 +56,33 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.editor_directory_widget = ExternalEditorWidget()
         self.editor_directory_widget.set_label('External Editor')
 
-        self.main_layout.addWidget(self.project_directory_widget)
-        self.main_layout.addWidget(self.code_directory_widget)
-        self.main_layout.addWidget(self.editor_directory_widget)
-
+        self.dir_widget.main_layout.addWidget(self.project_directory_widget)
+        self.dir_widget.main_layout.addWidget(self.code_directory_widget)
+        self.dir_widget.main_layout.addWidget(self.editor_directory_widget)
+        
+    def _build_option_widgets(self):
+        
+        self.error_stop = qt_ui.GetCheckBox('Stop Process on error.')
+        self.error_stop.check_changed.connect(self._set_stop_on_error)
+        
+        self.options_widget.main_layout.addWidget(self.error_stop)
+        
+    def _set_stop_on_error(self):
+        self.settings.set('stop_on_error', self.error_stop.get_state())
+        
+    def _get_stop_on_error(self):
+        value = self.settings.get('stop_on_error')
+        
+        if value:
+            self.error_stop.set_state(True)
+            
+    
     def _project_directory_changed(self, project):
         
         self.project_directory_changed.emit(project)
         
     def _code_directory_changed(self, code_directory):
         self.code_directory_changed.emit(code_directory)
-      
-    """ 
-    def _history_item_selected(self):
-        
-        item = self.history_list.currentItem()
-        if not item:
-            return
-        
-        directory = item.text()
-        
-        self.set_project_directory(directory)
-    """
     
     def get_project_directory(self):
         return self.project_directory_widget.get_directory()
@@ -98,6 +117,8 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.settings = settings
         self.project_directory_widget.set_settings(settings)
         self.editor_directory_widget.set_settings(settings)
+        
+        self._get_stop_on_error()
         
 class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
     

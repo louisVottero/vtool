@@ -777,8 +777,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         code_folders = process_tool.get_code_folders()
         
-        
-        
         found_scripts = []
         found_states = []
         

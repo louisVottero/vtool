@@ -132,12 +132,8 @@ class TrackNodes(object):
             
         new_set = set(current_nodes).difference(self.nodes)
         
-        
         return list(new_set)
         
-        
-
-            
 class ProgressBar(object):
     """
     Manipulate the maya progress bar.
