@@ -1515,6 +1515,29 @@ def copy_file(filepath, filepath_destination):
     
 #---- python
 
+def delete_pyc(python_script):
+    """
+    Delete the .pyc file the corresponds to the .py file
+    """
+    
+    script_name = get_basename(python_script)
+    
+    if not python_script.endswith('.py'):
+        util.warning('Could not delete pyc file for %s. Be careful not to run this command on files that are not .py extension.' % script_name)
+        return
+    
+    compile_script = python_script + 'c'
+            
+    if is_file(compile_script):
+        
+        c_name = get_basename(compile_script)
+        c_dir_name = get_dirname(compile_script)
+        
+        if not c_name.endswith('.pyc'):
+            return
+        
+        delete_file( c_name, c_dir_name)
+            
 def import_python_module(module_name, directory):
     
     if not is_dir(directory):

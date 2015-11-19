@@ -1038,6 +1038,8 @@ class Process(object):
             
             util.show('\n\t\a\t%s\n\n' % name)
             
+            util_file.delete_pyc(script)
+            
             module = util_file.source_python_module(script)     
             
             if type(module) == str:
