@@ -788,8 +788,11 @@ class MayaVariable(vtool.util.Variable):
         
         if self._get_variable_data_type() == 'attributeType':
             if not self.variable_type == 'message':
-                
+                try:
                     cmds.setAttr(self._get_node_and_variable(), self.value )
+                except:
+                    #this was added in a case where the value was trying to set to one, but the max value was 0
+                    pass
 
             if self.variable_type == 'message':
                 if self.value:
@@ -986,13 +989,15 @@ class MayaVariable(vtool.util.Variable):
             self.node = node
         
         value = self.value
+        
         exists = False
         
         if self.exists():
             exists = True
             if not value == None:
+                
                 value = self.get_value()
-        
+
         self._create_attribute()
         self._update_states()
         
@@ -1060,10 +1065,12 @@ class MayaNumberVariable(MayaVariable):
         self.variable_type = 'double'
         
     def _update_states(self):
-        super(MayaNumberVariable, self)._update_states()
         
         self._set_min_state()
         self._set_max_state()
+        
+        super(MayaNumberVariable, self)._update_states()
+        
     
     #--- _set
     
