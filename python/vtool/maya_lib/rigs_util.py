@@ -442,6 +442,7 @@ class StoreControlData(attr.StoreData):
     
     
     def _set_control_data(self, control, data):
+        
         for attribute in data:
             
             attribute_name = control + '.' + attribute
