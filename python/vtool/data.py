@@ -1590,7 +1590,7 @@ class MayaFileData(MayaCustomData):
         return self.maya_binary
     
     def _clean_scene(self):
-        
+        pass
         maya_lib.core.delete_turtle_nodes()
         maya_lib.core.delete_garbage()
 

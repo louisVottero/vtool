@@ -933,10 +933,15 @@ def delete_nodes_of_type(node_type):
 
 def delete_garbage():
 
-    straight_delete_type = ['hyperView', 
-                            'hyperLayout']
+
+
+    straight_delete_types = []
+
+    if vtool.util.get_maya_version() > 2014:
+        #maya 2014 crashes when trying to delete hyperView or hyperLayout nodes in some files.
+        straight_delete_types += ['hyperLayout','hyperView']
     
-    delete_nodes_of_type(straight_delete_type)
+    delete_nodes_of_type(straight_delete_types)
     
     check_connection_node_type = ['shadingEngine']
     

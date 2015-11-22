@@ -2030,6 +2030,15 @@ def connect_vector_attribute(source_transform, target_transform, attribute, conn
     return nodes
     
 
+def connect_transforms(source_transform, target_transform):
+    """
+    Connect translate, rotate, scale from souce to target.
+    """
+    
+    connect_translate(source_transform, target_transform)
+    connect_rotate(source_transform, target_transform)
+    connect_scale(source_transform, target_transform)
+
 def connect_translate(source_transform, target_transform):
     """
     Connect translate attributes
