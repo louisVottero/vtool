@@ -1075,7 +1075,110 @@ class BuildHierarchy(object):
     def create(self):
         new_joints = self._build_hierarchy()
         return new_joints
+    
+class OverDriveTranslation(object):
+    
+    def __init__(self, transform, driver):
+        self.transform = transform
+        self.driver = driver
         
+        self.x_values = [1,1]
+        self.y_value = [1,1]
+        self.z_values = [1,1]
+    
+    def _create_nodes(self, description):
+        
+        clamp = cmds.createNode('clamp', n = core.inc_name('clamp_%s_%s' % (description, self.transform)))
+        multi = cmds.createNode('multiplyDivide', n = core.inc_name('multiplyDivide_%s_%s' % (description,self.transform)))
+        
+        cmds.connectAttr('%s.translateX' % self.transform, '%s.inputR' % clamp)
+        cmds.connectAttr('%s.translateY' % self.transform, '%s.inputG' % clamp)
+        cmds.connectAttr('%s.translateZ' % self.transform, '%s.inputB' % clamp)
+        cmds.connectAttr('%s.outputR' % clamp, '%s.input1X' % multi)
+        cmds.connectAttr('%s.outputG' % clamp, '%s.input1Y' % multi)
+        cmds.connectAttr('%s.outputB' % clamp, '%s.input1Z' % multi)
+        
+        return clamp, multi
+        
+    def _fix_value(self, value):
+        
+        value = abs(value) - 1.00
+        
+        return value
+        
+    def set_x(self, positive_x, negative_x):
+        
+        positive_x = self._fix_value(positive_x)
+        negative_x = self._fix_value(negative_x)
+        
+        self.x_values = [positive_x, negative_x]
+    
+    def set_y(self, positive_y, negative_y):
+        
+        positive_y = self._fix_value(positive_y)
+        negative_y = self._fix_value(negative_y)
+        
+        self.y_values = [positive_y, negative_y]
+    
+    def set_z(self, positive_z, negative_z):
+        
+        positive_z = self._fix_value(positive_z)
+        negative_z = self._fix_value(negative_z)
+        
+        self.z_values = [positive_z, negative_z]
+    
+    def create(self):
+        
+        clamp_pos, multi_pos = self._create_nodes('pos')
+        clamp_neg, multi_neg = self._create_nodes('neg')
+        
+        cmds.setAttr('%s.maxR' % clamp_pos, 10000)
+        cmds.setAttr('%s.maxG' % clamp_pos, 10000)
+        cmds.setAttr('%s.maxB' % clamp_pos, 10000)
+        
+        cmds.setAttr('%s.minR' % clamp_neg, -10000)
+        cmds.setAttr('%s.minG' % clamp_neg, -10000)
+        cmds.setAttr('%s.minB' % clamp_neg, -10000)
+        
+        cmds.setAttr('%s.input2X' % multi_pos, self.x_values[0])
+        cmds.setAttr('%s.input2Y' % multi_pos, self.y_values[0])
+        cmds.setAttr('%s.input2Z' % multi_pos, self.z_values[0])
+        
+        cmds.setAttr('%s.input2X' % multi_neg, self.x_values[1])
+        cmds.setAttr('%s.input2Y' % multi_neg, self.y_values[1])
+        cmds.setAttr('%s.input2Z' % multi_neg, self.z_values[1])
+        
+        """
+        condition = cmds.createNode('condition', 'condition_%s' % self.transform)
+        
+        cmds.setAttr('%s.operation' % condition, 2)
+        
+        cmds.connectAttr('%s.outputX' % multi_pos, '%s.colorIfTrueR' % condition)
+        cmds.connectAttr('%s.outputY' % multi_pos, '%s.colorIfTrueG' % condition)
+        cmds.connectAttr('%s.outputZ' % multi_pos, '%s.colorIfTrueB' % condition)
+        
+        cmds.connectAttr('%s.outputX' % multi_neg, '%s.colorIfFalseR' % condition)
+        cmds.connectAttr('%s.outputY' % multi_neg, '%s.colorIfFalseG' % condition)
+        cmds.connectAttr('%s.outputZ' % multi_neg, '%s.colorIfFalseB' % condition)
+        
+        cmds.connectAttr('%s.outputR' % condition, '%s.translateX' % self.driver)
+        cmds.connectAttr('%s.outputG' % condition, '%s.translateY' % self.driver)
+        cmds.connectAttr('%s.outputB' % condition, '%s.translateZ' % self.driver)
+        """
+        
+        plus = cmds.createNode('plusMinusAverage', n = core.inc_name('plusOverDrive_%s' % self.transform))
+        
+        cmds.connectAttr('%s.outputX' % multi_pos, '%s.input3D[0].input3Dx' % plus)
+        cmds.connectAttr('%s.outputY' % multi_pos, '%s.input3D[0].input3Dy' % plus)
+        cmds.connectAttr('%s.outputZ' % multi_pos, '%s.input3D[0].input3Dz' % plus)
+        
+        cmds.connectAttr('%s.outputX' % multi_neg, '%s.input3D[1].input3Dx' % plus)
+        cmds.connectAttr('%s.outputY' % multi_neg, '%s.input3D[1].input3Dy' % plus)
+        cmds.connectAttr('%s.outputZ' % multi_neg, '%s.input3D[1].input3Dz' % plus)      
+        
+        cmds.connectAttr('%s.output3Dx' % plus, '%s.translateX' % self.driver)
+        cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % self.driver)
+        cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % self.driver) 
 
 def get_center(transform):
     """

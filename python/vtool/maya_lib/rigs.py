@@ -1099,6 +1099,7 @@ class FkLocalRig(FkRig):
         self.main_local_parent = None
         self.local_xform = None
         self.rig_scale = False
+        self.connect_driver = False
         
     def _attach(self, source_transform, target_transform):
         
@@ -1114,6 +1115,13 @@ class FkLocalRig(FkRig):
         if self.local_parent:
             follow = space.create_follow_group(self.local_parent, local_xform)
             cmds.parent(follow, self.control_group)
+        
+        if self.connect_driver:
+            driver = space.create_xform_group(local_group, 'driver')
+            
+            orig_driver = self.control_dict[source_transform]['driver']
+            
+            attr.connect_transforms(orig_driver, driver)
         
         self.local_parent = local_group
             
@@ -1146,7 +1154,10 @@ class FkLocalRig(FkRig):
         Set whether the fk setup should be scalable at each control.
         """
         self.rig_scale = bool_value
-
+    
+    def set_connect_local_driver(self, bool_value):
+        self.connect_driver = bool_value
+    
     def set_local_parent(self, local_parent):
         self.main_local_parent = local_parent 
     
