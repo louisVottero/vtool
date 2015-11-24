@@ -761,6 +761,14 @@ def delete_display_layers():
     for layer in layers:
         cmds.delete(layer)
 
+#--- file
+
+def import_file(filepath):
+    """
+    Import a maya file in a generic vtool way.
+    """
+    cmds.file(filepath, f = True, i = True, iv = True)
+
 #--- ui
 
 def get_visible_hud_displays():

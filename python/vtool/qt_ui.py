@@ -2899,6 +2899,29 @@ class Highlighter(QtGui.QSyntaxHighlighter):
                 self.setFormat(index, length, format)
                 index = expression.indexIn(text, index + length)
 
+    '''
+    def highlightQuote(self, text):
+        print 'highlight!'
+        exp = None
+        
+        if self.previousBlockState() != 1:
+            start_index = self.quote.indexIn(text)
+            exp = self.quote
+            self.setCurrentBlockState(1)
+        
+        print text
+        
+        if self.previousBlockState() == 1:
+            print 'here!'
+            print self.quote.indexIn(text)
+            
+        
+        """
+        self.setFormat(start_index, 
+                       comment_length,
+                       self.multiLineCommentFormat)
+        """
+    ''' 
         
     
     def highlightQuote(self, text):
@@ -2932,9 +2955,7 @@ class Highlighter(QtGui.QSyntaxHighlighter):
                 comment_length = len(text) - start_index
             
             else:
-                
-                #This isn't working properly when the last quote has the same indent as the start
-                #it just passes over and doesn't get here
+
                 comment_length = end_index - start_index + exp.matchedLength()
             
             self.setFormat(start_index, 
