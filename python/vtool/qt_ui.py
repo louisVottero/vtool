@@ -2899,29 +2899,85 @@ class Highlighter(QtGui.QSyntaxHighlighter):
                 self.setFormat(index, length, format)
                 index = expression.indexIn(text, index + length)
 
-    '''
+        """
     def highlightQuote(self, text):
-        print 'highlight!'
+        
+        self.setCurrentBlockState(0)
+        
+        start_index = 0
+        
+        if not self.previousBlockState() == 1:
+            start_index = self.quote.indexIn(text)
+        
+        while start_index >= 0:
+            
+            end_index = self.quote.indexIn(text, start_index)
+            
+            comment_length = 0
+            
+            if end_index == -1:
+                self.setCurrentBlockState(1);
+                comment_length = len(text) - start_index
+                
+            if end_index > -1:
+                comment_length = end_index - start_index + self.quote.matchedLength()
+                
+                self.setFormat(start_index, comment_length, self.multiLineCommentFormat)
+                start_index = self.quote.indexIn(text, start_index + comment_length)
+                                 
+        
+        print text, self.currentBlockState(), self.previousBlockState()
+        """
+        """
         exp = None
         
-        if self.previousBlockState() != 1:
-            start_index = self.quote.indexIn(text)
-            exp = self.quote
-            self.setCurrentBlockState(1)
-        
-        print text
-        
-        if self.previousBlockState() == 1:
-            print 'here!'
-            print self.quote.indexIn(text)
+        if not self.currentBlockState() == 1:
             
+            
+            start_index = self.quote.indexIn(text)
+            if start_index > -1:
+                self.setCurrentBlockState(1)
+                
+                self.setFormat(start_index, 
+                               len(text) - start_index,
+                               self.multiLineCommentFormat)
+
         
+        if self.currentBlockState() == 1:
+            
+            if self.quote.indexIn(text) > -1:
+                self.setCurrentBlockState(0)
+            
+            if self.quote.indexIn(text) == -1:
+                self.setFormat(0, len(text), self.multiLineCommentFormat)
         """
-        self.setFormat(start_index, 
-                       comment_length,
-                       self.multiLineCommentFormat)
+            
         """
-    ''' 
+        setCurrentBlockState(0);
+
+        int startIndex = 0;
+        if (previousBlockState() != 1)
+            startIndex = text.indexOf(startExpression);
+        
+        while (startIndex >= 0) {
+           int endIndex = text.indexOf(endExpression, startIndex);
+           int commentLength;
+           if (endIndex == -1) {
+               setCurrentBlockState(1);
+               commentLength = text.length() - startIndex;
+           } else {
+               commentLength = endIndex - startIndex
+                               + endExpression.matchedLength();
+           }
+           setFormat(startIndex, commentLength, multiLineCommentFormat);
+           startIndex = text.indexOf(startExpression,
+                                     startIndex + commentLength);
+        }
+        """
+        
+        
+        
+    
         
     
     def highlightQuote(self, text):
@@ -2948,7 +3004,6 @@ class Highlighter(QtGui.QSyntaxHighlighter):
             
             end_index = exp.indexIn(text, (start_index + exp.matchedLength() + 1))
             
-            
             if end_index == -1:
                 
                 self.setCurrentBlockState(1)
@@ -2966,12 +3021,16 @@ class Highlighter(QtGui.QSyntaxHighlighter):
             
             if start_index > -1:
                 if exp == self.quote:
+                    
                     start_index = self.single_quote.indexIn(text, start_index + comment_length)
-                    exp = self.single_quote
+                    if start_index != -1:
+                        exp = self.single_quote
+                    continue
                 if exp == self.single_quote:
                     start_index = self.quote.indexIn(text, start_index + comment_length)
-                    exp = self.quote
-                    
+                    if start_index != -1:
+                        exp = self.quote
+                 
     def highlightBlock(self, text):
         
         self.highlightRules(text)
