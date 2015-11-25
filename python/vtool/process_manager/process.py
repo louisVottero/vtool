@@ -1177,6 +1177,9 @@ class Process(object):
             (list): keys in runtime value dictionary.
         """
         return self.runtime_values.keys()
+    
+    def set_runtime_dict(self, dict_value):
+        self.runtime_values = dict_value
  
 def get_default_directory():
     """

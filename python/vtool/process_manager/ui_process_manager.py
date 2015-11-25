@@ -36,6 +36,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.kill_process = False
         self.build_widget = None
         self.last_item = None
+        self.runtime_values = {}
         
         super(ProcessManagerWindow, self).__init__(parent) 
         
@@ -313,8 +314,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _update_process(self, name):
         
-
-        
         self.code_widget.code_widget.code_edit.save_tabs(self.last_process)
         self.code_widget.code_widget.code_edit.clear()
         self.code_widget.script_widget.code_manifest_tree.clearSelection()
@@ -327,7 +326,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
         if name:
             
-            self.process.load(name)        
+            self.process.load(name)  
+            
+            if self.runtime_values:
+                self.process.set_runtime_dict(self.runtime_values)      
             
             self._set_title(title)
 
