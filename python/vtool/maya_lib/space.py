@@ -204,7 +204,7 @@ class MatchSpace(object):
         self._set_world_rotate_pivot()
         self._set_world_scale_pivot()
 
-class ConstraintEditor():
+class ConstraintEditor(object):
     """
     Convenience class for editing constraints.
     """
@@ -1269,6 +1269,33 @@ def get_closest_transform(source_transform, targets):
             closest_target = target
             
     return closest_target 
+
+def get_middle_transform(transform_list):
+    """
+    Given a list of transforms, find the middle index. If the list is even, then find the midpoint between the middle two indices.
+    
+    Args
+        transform_list (list): A list of transforms in order. Transforms should make a hierarchy or a sequence, where the order of the list matches the order in space.
+    
+    Return 
+        list: [x,y,z] the midpoint.
+    """
+    
+    
+    count = len(transform_list)
+    division = count/2
+    
+    if count == 0:
+        return
+    
+    if (division + division) == count:
+        midpoint = get_midpoint(transform_list[division-1], transform_list[division])
+    
+    if (division + division) != count:
+        midpoint = cmds.xform(transform_list[division], q = True, t = True, ws = True)
+    
+    return midpoint
+    
 
 def get_distance(source, target):
     """

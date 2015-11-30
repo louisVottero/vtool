@@ -1308,6 +1308,52 @@ def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
         
     return locator1, locator2
 
+def create_sparse_joints_on_curve(curve, joint_count, description):
+    """
+    Create joints on a curve that are evenly spaced and not in hierarchy.
+    """
+    
+    cmds.select(cl = True)
+    
+    total_length = cmds.arclen(curve)
+    
+    part_length = total_length/(joint_count-1)
+    current_length = 0
+    
+    joints = []
+    
+    
+    
+    percent = 0
+    
+    segment = 1.00/joint_count
+    
+    for inc in range(0, joint_count):
+        
+        param = geo.get_parameter_from_curve_length(curve, current_length)
+        
+        position = geo.get_point_from_curve_parameter(curve, param)
+        
+        cmds.select(cl = True)  
+        joint = cmds.joint(p = position, n = core.inc_name('joint_%s' % description) )
+        
+        cmds.addAttr(joint, ln = 'param', at = 'double', dv = param)
+        
+        if joints:
+            cmds.joint(joints[-1], 
+                       e = True, 
+                       zso = True, 
+                       oj = "xyz", 
+                       sao = "yup")
+        
+        
+        current_length += part_length
+            
+        joints.append(joint)
+    
+        percent += segment
+
+    return joints
 @core.undo_chunk
 def create_joints_on_curve(curve, joint_count, description, attach = True, create_controls = False):
     """
@@ -2054,13 +2100,16 @@ def mirror_curve(prefix):
         return
     
     for curve in curves:
+        if curve.endswith('_R'):
+            continue
+        
         other_curve = None
         
         if curve.endswith('_L'):
             other_curve = curve[:-1] + 'R'
         
         cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
-            
+        
         if not other_curve:
             
             cv_count = len(cvs)
@@ -2082,7 +2131,14 @@ def mirror_curve(prefix):
                     break
         
         if other_curve:
-        
+            
+            transform_pos = cmds.xform(curve, q = True, ws = True, t = True)
+            
+            new_pos = transform_pos
+            new_pos[0] = (new_pos[0] * -1)
+            
+            cmds.xform(other_curve, ws = True, t = new_pos)
+            
             other_cvs = cmds.ls('%s.cv[*]' % other_curve, flatten = True)
             
             if len(cvs) != len(other_cvs):
@@ -2093,8 +2149,7 @@ def mirror_curve(prefix):
                 position = cmds.xform(cvs[inc], q = True, ws = True, t = True)
                 
                 new_position = list(position)
-                
-                new_position[0] = position[0] * -1
+                new_position[0] = (position[0] * -1)
                 
                 cmds.xform(other_cvs[inc], ws = True, t = new_position)
     

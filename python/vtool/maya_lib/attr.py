@@ -309,7 +309,7 @@ class Connections(object):
         """
         return self._get_inputs()
     
-class TransferConnections():
+class TransferConnections(object):
     
     def transfer_keyable(self, source_node, target_node, prefix = None):
         """
@@ -1939,6 +1939,8 @@ def set_color(nodes, color):
         nodes (list): A list of nodes to change the override color.
         color (int): The color index to set override color to.
     """
+    
+    print nodes, color
     
     vtool.util.convert_to_sequence(nodes)
     

@@ -1,6 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import traceback
+from functools import wraps
 
 import vtool.util
 
@@ -204,14 +205,7 @@ class ProgressBar(object):
     
 
 def undo_off(function):
-    """
-    Maya sometimes has operations that generate a huge undo stack and use lots of memory.
-    This is meant to handle turning off the undo temporarily for the duration of a function.
-    
-    Arg
-        function: Pass in the instance of the fucntion to wrap.
-    """
-    
+    @wraps(function)
     def wrapper(*args, **kwargs):
         
         global current_progress_bar
@@ -249,14 +243,7 @@ def undo_off(function):
     return wrapper
 
 def undo_chunk(function):
-    """
-    Maya sometimes has operations that generate a huge undo stack and use lots of memory.
-    This is meant to handle creating one undo chunk for a function that has many small operations.
-    
-    Arg
-        function: Pass in the instance of the fucntion to wrap.
-    """
-    
+    @wraps(function)
     def wrapper(*args, **kwargs):
         
         global undo_chunk_active

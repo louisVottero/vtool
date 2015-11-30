@@ -805,7 +805,7 @@ class ReadWeightFileThread(threading.Thread):
         
         return influence_dict
     
-class BlendshapeWeightData():
+class BlendshapeWeightData(MayaCustomData):
     
     def _data_name(self):
         return 'blendshape_weights'

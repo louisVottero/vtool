@@ -722,6 +722,8 @@ class TransferWeight(object):
         joint_map = {}
         destination_joint_map = {}
         
+        self._add_joints_to_skin(destination_joints)
+        
         for joint in source_joints:
             if not cmds.objExists(joint):
                 vtool.util.warning('%s does not exist.' % joint)
@@ -736,6 +738,9 @@ class TransferWeight(object):
                 continue
             
             index = get_index_at_skin_influence(joint,self.skin_cluster)
+            
+            print joint, index
+            
             destination_joint_map[index] = joint
         
         verts = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)

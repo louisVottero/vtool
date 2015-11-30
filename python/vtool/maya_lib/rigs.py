@@ -148,7 +148,8 @@ class Rig(object):
             control.color( self.control_color )
             
         if self.sub_control_color >= 0 and sub:
-            control.color( self.control_color )
+            
+            control.color( self.sub_control_color )
             
         control.hide_visibility_attribute()
         
@@ -5410,7 +5411,477 @@ class QuadFootRig(FootRig):
         
 #---Face Rig
 
+class EyeLidCurveRig(JointRig):
+    """
+    Very slow.
+    """
+    
+    def __init__(self, description, side):
+        
+        super(EyeLidCurveRig, self).__init__(description, side)
+        
+        self.surface = None
+        
+        self.offset_group = None
+        
+        self.main_joint_dict = {}
+        self.row_joint_dict = {}
+        self.main_controls = []
+        
+        self.orient_transform = None
+        self.orient_aim = False
+        self.orient_aim_axis = 'Z'
+        
+        self.invert_y = False
+        
+        self.follow_multiply = 1
+        
+        self.control_offset = 0
+        self.sub_control_size = 0.5
+        
+    def _create_curve(self):
+        
+        self.curve = geo.transforms_to_curve(self.joints, 4, self.description)
+        
+        self.sub_curve = geo.transforms_to_curve(self.joints, 4, 'sub_' + self.description)
+        
+        cmds.parent(self.curve, self.setup_group)        
+        cmds.parent(self.sub_curve, self.setup_group)
+        
+    def _cluster_curve(self):
+        
+        self.clusters = deform.cluster_curve(self.curve, self.description)
+        
+        self.sub_cluster = deform.cluster_curve(self.sub_curve, 'sub_' + self.description)
+        
+        cmds.parent(self.clusters, self.setup_group)
+        cmds.parent(self.sub_cluster, self.setup_group)
+        
+    def _aim_constraint(self, center_transform, transform_to_aim):
+        
+        axis = [1,0,0]
+        up_vector = [0,1,0]
+        
+        if self.orient_aim_axis == 'X':
+            axis = [-1,0,0]
+            up_vector = [0,1,0]
+        if self.orient_aim_axis == 'Y':
+            axis = [0,1,0]
+            up_vector = [0,0,-1]
+        if self.orient_aim_axis == 'Z':
+            axis = [0,0,-1]
+            up_vector = [0,1,0]
+        
+        cmds.aimConstraint(center_transform, transform_to_aim, aimVector = axis, upVector = up_vector, 
+                           wut = 'objectrotation', 
+                           wuo = center_transform)
+        
+    def _create_controls(self):
+        
+        inc = 0
+        
+        for cluster in self.clusters:
+            
+            if self.orient_aim:
+                
+                parent = cmds.listRelatives(cluster, p = True)
+                
+                offset = cmds.group(em = True, n = 'offset_%s' % cluster)
+                
+                if parent:
+                    cmds.parent(offset, parent[0])
+                
+                space.MatchSpace(cluster, offset).translation_to_rotate_pivot()
+                space.MatchSpace(self.orient_transform, offset).rotation()
+                
+                cluster_group = cmds.group(em = True, n = 'buffer_%s' % cluster)
+                space.MatchSpace(offset, cluster_group).translation_rotation()
+                space.MatchSpace(self.orient_transform, cluster_group).rotation()
+                
+                cmds.parent(cluster_group, offset)
+                cmds.parent(cluster, cluster_group)
+                
+                cmds.setAttr('%s.inheritsTransform' % offset, 0)
+            
+            if not self.orient_aim:
+                
+                cmds.setAttr('%s.inheritsTransform' % cluster, 0)
+            
+            control = self._create_control()
+            control.hide_scale_attributes()
+            control.rotate_shape(90, 0, 0)
+            
+            control.scale_shape(self.control_size, self.control_size, self.control_size)
+            control.translate_shape(0, 0, self.control_offset)
+            
+            self.main_controls.append(control.get())
+            
+            if self.surface:
+                sub_control = self._create_control(sub = True)
+                sub_control.hide_scale_attributes()
+                
+                sub_size = self.sub_control_size * self.control_size
+                
+                sub_control.scale_shape(sub_size, sub_size, sub_size)
+                sub_control.rotate_shape(90, 0, 0)
+                sub_control.translate_shape(0, 0, self.control_offset)
+            
+                cmds.parent(sub_control.get(), control.get())
+                
+                space.create_xform_group(sub_control.get())
+                sub_driver = space.create_xform_group(sub_control.get(), 'driver')
+                
+                attr.connect_translate(sub_control.get(), self.sub_cluster[inc])
+                attr.connect_translate(sub_driver, self.sub_cluster[inc])
+                
+                cmds.setAttr('%s.inheritsTransform' % self.sub_cluster[inc], 0)
+                    
+            
+            space.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
+            
+            if self.orient_transform:
+                space.MatchSpace(self.orient_transform, control.get()).rotation()
+            
+            xform = space.create_xform_group(control.get())
+            driver = space.create_xform_group(control.get(), 'driver')
+            
+            if not self.orient_aim:
+                attr.connect_translate(control.get(), cluster)
+                attr.connect_translate(driver, cluster)
+                
+            if self.orient_aim:
+                attr.connect_translate(control.get(), cluster_group)
+                attr.connect_translate(driver, cluster_group)
+            
+            cmds.parent(xform, self.control_group)
+            
+            inc += 1
+                
+    def _attach_joints_to_curve(self):
+        
+        for joint in self.joints:
+            
+            parent = cmds.listRelatives(joint, p = True)[0]
+            
+            xform = cmds.group(em = True, n = 'xform_%s' % joint)
+            space.MatchSpace(joint, xform).translation()
+            cmds.parent(xform, parent)
+            
+            offset = space.create_xform_group(joint, 'offset')
+            driver = space.create_xform_group(joint, 'driver')
+            
+            if self.orient_aim:
+                self._aim_constraint(self.orient_transform, joint)
+            
+            if not joint in self.main_joint_dict:
+                self.main_joint_dict[joint] = {}
+                        
+            self.main_joint_dict[joint]['xform'] = xform
+            self.main_joint_dict[joint]['driver'] = driver
+            
+            geo.attach_to_curve(xform, self.curve)
+            
+            if self.surface:
+                cmds.geometryConstraint(self.surface, xform)
+                
+            geo.attach_to_curve(driver, self.sub_curve)
+            
+            plus = cmds.createNode('plusMinusAverage', n = 'subtract_%s' % driver)
+            
+            input_x = attr.get_attribute_input('%s.translateX' % driver)
+            input_y = attr.get_attribute_input('%s.translateY' % driver)
+            input_z = attr.get_attribute_input('%s.translateZ' % driver)
+            
+            value_x = cmds.getAttr('%s.translateX' % driver)
+            value_y = cmds.getAttr('%s.translateY' % driver)
+            value_z = cmds.getAttr('%s.translateZ' % driver)
+            
+            cmds.connectAttr(input_x, '%s.input3D[0].input3Dx' % plus)
+            cmds.connectAttr(input_y, '%s.input3D[0].input3Dy' % plus)
+            cmds.connectAttr(input_z, '%s.input3D[0].input3Dz' % plus)
+            
+            cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1*value_x)
+            cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
+            cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
+            
+            attr.disconnect_attribute( '%s.translateX' % driver)
+            attr.disconnect_attribute( '%s.translateY' % driver)
+            attr.disconnect_attribute( '%s.translateZ' % driver)
+            
+            cmds.connectAttr('%s.output3Dx' % plus, '%s.translateX' % driver)
+            cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % driver)
+            cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % driver)
 
+            cmds.parent(offset, xform)
+            
+
+                
+    def set_control_offset(self, value):
+        
+        self.control_offset = value
+            
+    def set_surface(self, surface_name):
+        self.surface = surface_name  
+        
+    def set_orient(self, transform):
+        
+        self.orient_transform = transform
+        
+    def set_orient_aim(self, bool_value, axis = 'Z'):
+        
+        self.orient_aim_axis = axis
+        self.orient_aim = bool_value
+        
+    def set_follow_multiply(self, value):
+        self.follow_multiply = value
+        
+    def set_invert_y_value(self, bool_value):
+        
+        self.invert_y = bool_value
+        
+        
+    def create(self):
+        super(EyeLidCurveRig, self).create()
+        
+        if self.orient_transform:
+            self.orient_transform = cmds.duplicate(self.orient_transform, n = core.inc_name(self._get_name('orient')), po = True)[0]
+            
+        
+        self._create_curve()
+        
+        self._cluster_curve()
+        
+        self._create_controls()
+        
+        self._attach_joints_to_curve()
+            
+    def create_fade_row(self, joints, weight, ignore_surface = False):
+        
+        if len(joints) != len(self.joints):
+            cmds.warning('Row joint count and rig joint count do not match.')
+  
+        for inc in range(0, len(self.joints)):
+            """
+            groups_created = False
+            if self.row_joint_dict.has_key(joints[inc]):
+                
+                xform = self.row_joint_dict[joints[inc]]['xform']
+                offset = self.row_joint_dict[joints[inc]]['offset']
+                driver = self.row_joint_dict[joints[inc]]['driver']
+            
+            if not self.row_joint_dict.has_key(joints[inc]):
+
+                xform = space.create_xform_group(joints[inc])
+                offset = space.create_xform_group(joints[inc], 'offset')
+                driver = space.create_xform_group(joints[inc], 'driver')
+                
+                self.row_joint_dict[joints[inc]] = {}
+                self.row_joint_dict[joints[inc]]['xform'] = xform
+                self.row_joint_dict[joints[inc]]['offset'] = offset
+                self.row_joint_dict[joints[inc]]['driver'] = driver
+                groups_created = True
+            """
+            
+            driver = cmds.listRelatives(joints[inc], p = True)[0]
+            offset = cmds.listRelatives(driver, p = True)
+            xform = cmds.listRelatives(offset, p = True)
+            
+            
+            if driver:
+                driver = driver[0]
+            if offset:
+                offset = offset[0]
+            if xform:
+                xform = xform[0]
+            
+            if not xform == 'xform_%s' % joints[inc]:
+                parent = cmds.listRelatives(joints[inc], parent = True)
+                
+                xform = cmds.group(em = True, n = 'xform_%s' % joints[inc])
+                #xform = space.create_xform_group(joints[inc])
+                
+                space.MatchSpace(joints[inc], xform).translation()
+            
+                if parent:
+                    cmds.parent(xform, parent[0])
+                    
+                cmds.parent(joints[inc], xform)
+            
+            if not offset == 'offset_%s' % joints[inc]:
+                offset = space.create_xform_group(joints[inc], 'offset')
+                
+            if not driver == 'driver_%s' % joints[inc]:
+                driver = space.create_xform_group(joints[inc], 'driver')
+                
+                if self.orient_aim:
+                    self._aim_constraint(self.orient_transform, driver)
+            
+            cmds.parent(driver, w = True)
+            
+            main_xform = self.main_joint_dict[self.joints[inc]]['xform']
+            main_driver = self.main_joint_dict[self.joints[inc]]['driver']
+            
+            if not ignore_surface:
+                attr.connect_translate_multiply(main_xform, offset, weight, respect_value = True)
+                attr.connect_translate_multiply(main_driver, joints[inc], weight, respect_value = True)
+                
+            if ignore_surface:
+                attr.connect_translate_multiply(main_xform, joints[inc], weight, respect_value = True)
+            
+            if self.surface:
+                connection = attr.get_attribute_input('%s.geometry' % offset, node_only = True)
+                
+                if not cmds.nodeType(connection) == 'geometryConstraint':
+                    cmds.geometryConstraint(self.surface, offset)
+                
+            cmds.parent(driver, offset)
+            
+            
+    def create_control_follow(self, control, increment, weight):
+        
+        
+        main_control = self.main_controls[increment]
+        parent = cmds.listRelatives(main_control, p = True)[0]
+        
+        value = self.follow_multiply * weight
+        
+        multiply = attr.connect_translate_multiply(control, parent, value)
+        
+        if self.invert_y:
+            value = cmds.getAttr('%s.input2Y' % multiply)
+            value = value * -1
+            cmds.setAttr('%s.input2Y' % multiply, value)
+            
+            control_parent = cmds.listRelatives(control, p = True)
+            
+            if control_parent:
+                if control_parent[0] == 'driver_%s' % control:
+                    cmds.setAttr('%s.scaleY' % control_parent[0], -1)
+                    
+class EyeLidAimRig(JointRig):
+    
+    def __init__(self, description, side):
+        super(EyeLidAimRig, self).__init__(description, side)
+        
+        self.orient_aim_axis = 'Z'
+        self.center_locator = None
+        self.control_offset = 0
+        self.follow_multiply = 1
+    
+    def _aim_constraint(self, transform_to_aim, aim_target):
+        
+        axis = [1,0,0]
+        up_vector = [0,1,0]
+        
+        if self.orient_aim_axis == 'X':
+            axis = [-1,0,0]
+            up_vector = [0,1,0]
+        if self.orient_aim_axis == 'Y':
+            axis = [0,1,0]
+            up_vector = [0,0,-1]
+        if self.orient_aim_axis == 'Z':
+            axis = [0,0,-1]
+            up_vector = [0,1,0]
+        
+        cmds.aimConstraint(aim_target, transform_to_aim, aimVector = axis, upVector = up_vector, 
+                           wut = 'objectrotation', 
+                           wuo = self.center_locator)
+    
+    def _create_curve(self):
+        
+        self.curve = geo.transforms_to_curve(self.joints, 4, self.description)
+        
+        cmds.parent(self.curve, self.setup_group)
+    
+    def _attach_to_curve(self, transforms):
+        
+        for transform in transforms:
+            geo.attach_to_curve(transform, self.curve)
+    
+    def _cluster_curve(self):
+        
+        self.clusters = deform.cluster_curve(self.curve, self.description)
+        cmds.parent(self.clusters, self.setup_group)
+    
+    def _create_controls(self):
+        
+        inc = 0
+        
+        for cluster in self.clusters:
+            
+            control = self._create_control()
+            control.hide_scale_attributes()
+            control.rotate_shape(90, 0, 0)
+            
+            control.scale_shape(self.control_size, self.control_size, self.control_size)
+            control.translate_shape(0, 0, self.control_offset)
+            
+            space.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
+            
+            if self.center_locator:
+                space.MatchSpace(self.center_locator, control.get()).rotation()
+            
+            xform = space.create_xform_group(control.get())
+            driver = space.create_xform_group(control.get(), 'driver')
+            
+            attr.connect_translate(control.get(), cluster)
+            attr.connect_translate(driver, cluster)
+            
+            cmds.parent(xform, self.control_group)
+            
+            inc += 1
+    
+    def set_control_offset(self, value):
+        self.control_offset = value
+    
+    def set_center_locator(self, locator):
+        self.center_locator = locator
+    
+    def set_follow_multiply(self, value):
+        self.follow_multiply = value
+    
+    def create(self):
+        super(EyeLidAimRig, self).create()
+        
+        if not self.center_locator:
+            vtool.util.warning('Please provide a center locator.')
+            return
+        
+        targets = []
+        
+        for joint in self.joints:
+            locator_aim = cmds.spaceLocator(n = core.inc_name('locator_%s' % core.inc_name(self._get_name('aim'))))[0]
+            cmds.parent(locator_aim, self.setup_group)
+            
+            locator_target = cmds.spaceLocator(n = core.inc_name('locator_%s' % self._get_name('target')))[0]
+            targets.append(locator_target)
+            cmds.parent(locator_target, self.setup_group)
+            
+            space.MatchSpace(self.center_locator, locator_aim).translation_rotation()
+            space.MatchSpace(joint, locator_target).translation()
+            space.MatchSpace(self.center_locator, locator_target).rotation()
+            
+            self._aim_constraint(locator_aim, locator_target)
+            
+            cmds.parentConstraint(locator_aim, joint, mo = True)
+            
+        self._create_curve()
+        self._attach_to_curve(targets)
+        self._cluster_curve()
+        self._create_controls()
+        
+    def create_control_follow(self, main_control, increment, weight):
+        
+        
+        control = self.controls[increment]
+        parent = cmds.listRelatives(control, p = True)[0]
+        
+        value = self.follow_multiply * weight
+        
+        attr.connect_translate_multiply(main_control, parent, value)
+        
+            
+                    
 class StickyRig(JointRig):
     
     def __init__(self, description, side):
@@ -5543,6 +6014,9 @@ class StickyRig(JointRig):
         cmds.parent(self.mid_btm_locator[1], self.mid_locator_group)
         cmds.parent(self.btm_locator[1], self.btm_locator_group)   
 
+        space.MatchSpace(self.top_locator[0], self.mid_top_locator[0]).translation()
+        space.MatchSpace(self.btm_locator[0], self.mid_btm_locator[0]).translation()
+
         self._create_follow([self.top_locator[0], self.mid_top_locator[0]], control_top[1], top_joint)
         
         cmds.addAttr(control_top[0], ln = 'stick', min = 0, max = 1, k = True)
@@ -5557,8 +6031,7 @@ class StickyRig(JointRig):
         cmds.setAttr('%s.stick' % self.mid_top_locator[0], 0.5)
         cmds.setAttr('%s.stick' % self.mid_btm_locator[0], 0.5)
         
-        space.MatchSpace(self.top_locator[0], self.mid_top_locator[0]).translation()
-        space.MatchSpace(self.btm_locator[0], self.mid_btm_locator[0]).translation()
+        
         
         
     def _create_follow(self, source_list, target, target_control ):

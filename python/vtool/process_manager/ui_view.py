@@ -942,7 +942,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.data_list.setSortingEnabled(True)
         self.data_list.setSelectionMode(self.data_list.ExtendedSelection)
-        self.code_list.setSortingEnabled(True)
+        #self.code_list.setSortingEnabled(True)
         self.code_list.setSelectionMode(self.code_list.ExtendedSelection)
         
         self.tabs.addTab(self.data_list, 'Data')
@@ -980,9 +980,20 @@ class CopyWidget(qt_ui.BasicWidget):
             self.data_list.addItem(folder)
         
         code_folders = self.process.get_code_folders()
+        print code_folders
         
-        for folder in code_folders:
-            self.code_list.addItem(folder)
+        codes, states = self.process.get_manifest()
+        
+        for code in codes:
+            
+            code_name = code.split('.')
+            
+            if len(code_name) > 1 and code_name[1] == 'py':
+            
+                self.code_list.addItem(code_name[0])
+        
+        #for folder in code_folders:
+        #    self.code_list.addItem(folder)
             
     def _paste(self):
         
