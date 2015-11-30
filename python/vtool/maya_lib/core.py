@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import os
+
 import traceback
 from functools import wraps
 
@@ -755,6 +757,23 @@ def import_file(filepath):
     Import a maya file in a generic vtool way.
     """
     cmds.file(filepath, f = True, i = True, iv = True)
+
+def reference_file(filepath, namespace = None):
+    
+    if not namespace:
+        namespace = os.path.basename(filepath)
+        split_name = namespace.split('.')
+        if split_name:
+            namespace = split_name[0]
+    
+    cmds.file( filepath,
+           reference = True, 
+           gl = True, 
+           mergeNamespacesOnClash = False, 
+           namespace = namespace, 
+           options = "v=0;")
+
+    
 
 #--- ui
 

@@ -1041,6 +1041,182 @@ class TransferWeight(object):
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         bar.end()
         vtool.util.show('Done: %s transfer joints to new joints.' % self.mesh)
+         
+class AutoWeight2D(object):
+    
+    def __init__(self, mesh):
+        self.mesh = mesh
+        self.joints = []
+        self.verts = []
+        self.joint_vectors_2D = []
+        self.vertex_vectors_2D = []
+        
+        self._store_verts()
+        self.multiplier_weights = []
+        self.zero_weights = True
+        
+    def _store_verts(self):
+        self.verts = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
+    
+    def _get_joint_index(self, joint):
+        for inc in range(0, len(self.joints)):
+            if self.joints[inc] == joint:
+                return inc
+            
+    def _store_vertex_vectors(self):
+        self.vertex_vectors_2D = []
+        
+        for vert in self.verts:
+            position = cmds.xform(vert, q = True, ws = True, t = True)
+            position_vector_2D = vtool.util.Vector2D(position[0], position[2])
+            
+            self.vertex_vectors_2D.append(position_vector_2D)
+                
+    def _store_joint_vectors(self):
+        
+        self.joint_vectors_2D = []
+        
+        for joint in self.joints:
+            position = cmds.xform(joint, q = True, ws = True, t = True)
+            
+            #position = (position[0], position[2])
+            position = (position[0], 0.0)
+            
+            self.joint_vectors_2D.append(position)
+    
+    def _get_adjacent(self, joint):
+        
+        joint_index = self._get_joint_index(joint)
+        
+        joint_count = len(self.joints)
+        
+        if joint_index == 0:
+            return [1]
+        
+        if joint_index == joint_count-1:
+            return [joint_index-1]
+        
+        return [joint_index+1, joint_index-1]
+
+    def _skin(self):
+        
+        skin = find_deformer_by_type(self.mesh, 'skinCluster')
+        
+        joints = self.joints
+        
+        if not skin:
+            skin = cmds.skinCluster(self.mesh, self.joints[0], tsb = True)[0]
+            joints = joints[1:]
+        
+        if self.zero_weights:
+            set_skin_weights_to_zero(skin)
+        
+        for joint in joints:
+            cmds.skinCluster(skin, e = True, ai = joint, wt = 0.0)
+            
+        return skin
+        
+    def _weight_verts(self, skin):
+        
+        vert_count = len(self.verts)
+        
+        progress = core.ProgressBar('weighting %s:' % self.mesh, vert_count)
+        
+        for inc in range(0, vert_count):
+            
+            
+            joint_weights = self._get_vert_weight(inc)
+
+            if joint_weights:
+                cmds.skinPercent(skin, self.verts[inc], r = False, transformValue = joint_weights)
+            
+            progress.inc()
+            progress.status('weighting %s: vert %s' % (self.mesh, inc))
+            if progress.break_signaled():
+                progress.end()
+                break
+        
+        progress.end()
+            
+    def _get_vert_weight(self, vert_index):
+        
+        if not self.multiplier_weights:
+            multiplier = 1
+            
+        if self.multiplier_weights:
+            multiplier = self.multiplier_weights[vert_index]
+            
+            if multiplier == 0 or multiplier < 0.0001:
+                return
+        
+        vertex_vector = self.vertex_vectors_2D[vert_index]
+                
+        joint_weights = []
+        joint_count = len(self.joints)
+        weight_total = 0
+        
+        for inc in range(0, joint_count):
+            
+            if inc == joint_count-1:
+                break
+            
+            start_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc] )
+                        
+            joint = self.joints[inc]
+            next_joint = self.joints[inc+1]
+            
+            end_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc+1])
+            
+            percent = vtool.util.closest_percent_on_line_2D(start_vector, end_vector, vertex_vector, False)
+            
+            if percent <= 0:
+                weight_total+=1.0
+                if not weight_total > 1:
+                    joint_weights.append([joint, (1.0*multiplier)])
+                continue
+                    
+            if percent >= 1 and inc == joint_count-2:
+                weight_total += 1.0
+                if not weight_total > 1:
+                    joint_weights.append([next_joint, (1.0*multiplier)])
+                continue
+            
+            if percent > 1 or percent < 0:
+                continue
+            
+            weight_total += 1.0-percent
+            if not weight_total > 1:
+                joint_weights.append([joint, ((1.0-percent)*multiplier)])
+                
+            weight_total += percent
+            if not weight_total > 1:
+                joint_weights.append([next_joint, percent*multiplier])
+                
+        return joint_weights
+                
+    def set_joints(self, joints):
+        self.joints = joints
+    
+    def set_mesh(self, mesh):
+        self.mesh = mesh
+        
+    def set_multiplier_weights(self, weights):
+        self.multiplier_weights = weights
+        
+    def set_weights_to_zero(self, bool_value):
+        self.zero_weights = bool_value
+        
+        
+    def run(self):
+        if not self.joints:
+            return
+        
+        self._store_vertex_vectors()
+        self._store_joint_vectors()
+        skin = self._skin()
+        
+        self._weight_verts(skin)
+
                 
 class MayaWrap(object):
     """

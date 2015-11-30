@@ -148,6 +148,9 @@ class MatchSpace(object):
         """
         Match just the translation
         """
+        self._set_scale_pivot()
+        self._set_rotate_pivot()
+        
         self._set_translation()
         
     def rotation(self):

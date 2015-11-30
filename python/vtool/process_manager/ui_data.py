@@ -895,11 +895,18 @@ class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
     def _build_widgets(self):
         
         super(MayaHistoryFileWidget, self)._build_widgets()
+        
         import_button = QtGui.QPushButton('Import')
         import_button.setMaximumWidth(100)
         self.button_layout.addWidget(import_button)
         
         import_button.clicked.connect(self._import_version)
+        
+        reference_button = QtGui.QPushButton('Reference')
+        reference_button.setMaximumWidth(100)
+        self.button_layout.addWidget(reference_button)
+        
+        reference_button.clicked.connect(self._reference_version)
         
     def _open_version(self):
         
@@ -922,7 +929,19 @@ class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         version_file = version_tool.get_version_path(version)
         
         maya_file = vtool.data.MayaFileData()
-        maya_file.import_data(version_file)  
+        maya_file.import_data(version_file)
+        
+    def _reference_version(self):
+        
+        item = self.version_list.currentItem()
+        
+        version = int(item.text(0))
+        
+        version_tool = vtool.util_file.VersionFile(self.directory)
+        version_file = version_tool.get_version_path(version)
+        
+        maya_file = vtool.data.MayaFileData()
+        maya_file.maya_reference_data(version_file)
 
 class ProcessBuildDataWidget(MayaFileWidget):
     

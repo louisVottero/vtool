@@ -1724,14 +1724,17 @@ class MayaFileData(MayaCustomData):
         version = util_file.VersionFile(self.filepath)
         version.save(comment)
 
-    def maya_reference_data(self):
+    def maya_reference_data(self, filepath = None):
+        
+        if not filepath:
+            filepath = self.filepath
         
         #cmds.file(rename = self.filepath)
-        self._prep_scene_for_export()
+        #self._prep_scene_for_export()
         
-        basename = util_file.get_basename(self.filepath)
+        basename = util_file.get_basename(filepath)
         
-        cmds.file( self.filepath,
+        cmds.file( filepath,
                    reference = True, 
                    gl = True, 
                    mergeNamespacesOnClash = False, 
