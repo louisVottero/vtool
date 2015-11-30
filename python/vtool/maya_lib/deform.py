@@ -1111,14 +1111,15 @@ class MayaWrap(object):
                         
     def _set_mesh_to_wrap(self, mesh, geo_type = 'mesh'):
         
-        shapes = cmds.listRelatives(mesh, s = True)
+        shapes = cmds.listRelatives(mesh, s = True, f = True)
         
         if shapes and cmds.nodeType(shapes[0]) == geo_type:
             self.meshes.append(mesh)
                 
-        relatives = cmds.listRelatives(mesh, ad = True)
+        relatives = cmds.listRelatives(mesh, ad = True, f = True)
                     
         for relative in relatives:
+            
             shapes = cmds.listRelatives(relative, s = True, f = True)
             
             if shapes and cmds.nodeType(shapes[0]) == geo_type:
