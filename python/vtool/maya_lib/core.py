@@ -1,6 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import os
+import string
 
 import traceback
 from functools import wraps
@@ -759,12 +760,20 @@ def import_file(filepath):
     cmds.file(filepath, f = True, i = True, iv = True)
 
 def reference_file(filepath, namespace = None):
+    """
+    Reference a maya file in a generic vtool way.
     
+    Args
+        filepath (str): The full path and filename.
+        namespace (str): The namespace to add to the nodes in maya.  Default is the name of the file. 
+    """
     if not namespace:
         namespace = os.path.basename(filepath)
         split_name = namespace.split('.')
+        
         if split_name:
-            namespace = split_name[0]
+            namespace = string.join(split_name[:-1], '_')
+        
     
     cmds.file( filepath,
            reference = True, 
@@ -772,9 +781,7 @@ def reference_file(filepath, namespace = None):
            mergeNamespacesOnClash = False, 
            namespace = namespace, 
            options = "v=0;")
-
     
-
 #--- ui
 
 def get_visible_hud_displays():

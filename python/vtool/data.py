@@ -1621,7 +1621,8 @@ class MayaFileData(MayaCustomData):
             
             import_file = self.filepath
         
-        cmds.file(import_file, f = True, i = True, iv = True)
+        maya_lib.core.import_file(import_file)
+        #cmds.file(import_file, f = True, i = True, iv = True)
         
         self._center_view()
         
@@ -1729,18 +1730,8 @@ class MayaFileData(MayaCustomData):
         if not filepath:
             filepath = self.filepath
         
-        #cmds.file(rename = self.filepath)
-        #self._prep_scene_for_export()
+        maya_lib.core.reference_file(filepath)
         
-        basename = util_file.get_basename(filepath)
-        
-        cmds.file( filepath,
-                   reference = True, 
-                   gl = True, 
-                   mergeNamespacesOnClash = False, 
-                   namespace = basename, 
-                   options = "v=0;")
-
     def set_directory(self, directory):
         super(MayaFileData, self).set_directory(directory)
         

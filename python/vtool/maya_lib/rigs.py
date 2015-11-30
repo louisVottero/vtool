@@ -5801,6 +5801,10 @@ class EyeLidAimRig(JointRig):
     def _cluster_curve(self):
         
         self.clusters = deform.cluster_curve(self.curve, self.description)
+        
+        for cluster in self.clusters:
+            cmds.setAttr('%s.inheritsTransform' % cluster, 0)
+        
         cmds.parent(self.clusters, self.setup_group)
     
     def _create_controls(self):

@@ -1161,11 +1161,10 @@ class AutoWeight2D(object):
                 break
             
             start_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc] )
+            end_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc+1])
                         
             joint = self.joints[inc]
             next_joint = self.joints[inc+1]
-            
-            end_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc+1])
             
             percent = vtool.util.closest_percent_on_line_2D(start_vector, end_vector, vertex_vector, False)
             
@@ -1205,6 +1204,11 @@ class AutoWeight2D(object):
         
     def set_weights_to_zero(self, bool_value):
         self.zero_weights = bool_value
+        
+    def set_orientation_transform(self):
+        """
+        Transform to use to define the orientation of joints.
+        """
         
         
     def run(self):

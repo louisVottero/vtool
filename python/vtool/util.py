@@ -655,15 +655,47 @@ def line_side(start_vector, end_vector, position_vector):
     return ((end_vector.x - start_vector.x)*(position_vector.y - start_vector.y) - (end_vector.y - start_vector.y)*(position_vector.x - start_vector.x)) > 0
 
 
-def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp = True):
+def closest_percent_on_line_3D(start_vector, end_vector, position_vector, clamp = True):
+    """
+    Get how far a vector is on a line.  
+    If the vector is on start_vector, return 0. 
+    If vector is on end vector, return 1. 
+    If vector is half way between start and end return 0.5. 
+    """
     
     start_to_position = position_vector - start_vector
     start_to_end = end_vector - start_vector
     
-    start_to_end_value = start_to_end.x*start_to_end.x + start_to_end.y*start_to_end.y
-    other_value = start_to_position.x*start_to_end.x + start_to_position.y*start_to_end.y
+    start_to_end_value = start_to_end.x*start_to_end.x + start_to_end.y*start_to_end.y + start_to_end.z*start_to_end.z
+    start_to_position_value = start_to_position.x*start_to_end.x + start_to_position.y*start_to_end.y + start_to_position.z*start_to_end.z
     
-    percent = float(other_value)/float(start_to_end_value)
+    percent = float(start_to_position_value)/float(start_to_end_value)
+
+    
+
+    if clamp:
+        
+        if percent < 0.0:
+            percent = 0.0
+        if percent > 1:
+            percent = 1.0
+            
+    return percent
+
+def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp = True):
+    """
+    Get how far a vector is on a line.  
+    If the vector is on start_vector, return 0. 
+    If vector is on end vector, return 1. 
+    If vector is half way between start and end return 0.5. 
+    """
+    start_to_position = position_vector - start_vector
+    start_to_end = end_vector - start_vector
+    
+    start_to_end_value = start_to_end.x*start_to_end.x + start_to_end.y*start_to_end.y
+    start_to_position_value = start_to_position.x*start_to_end.x + start_to_position.y*start_to_end.y
+    
+    percent = float(start_to_position_value)/float(start_to_end_value)
 
     if clamp:
         
