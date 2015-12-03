@@ -521,7 +521,12 @@ class SkinWeightData(MayaCustomData):
                 continue
             
             read_thread = ReadWeightFileThread() 
-            influence_dict = read_thread.run(influence_dict, folder_path, influence)
+            
+            try:
+                influence_dict = read_thread.run(influence_dict, folder_path, influence)
+            except:
+                util.show(traceback.format_exc())
+                util.show('Errors with %s weight file.' % influence)
                     
         return influence_dict
     
