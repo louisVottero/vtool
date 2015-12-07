@@ -425,7 +425,7 @@ class MayaCustomData(CustomData):
         camera_pos = cmds.xform('persp', q = True, ws = True, t = True)
         
         distance = util.get_distance([0,0,0], camera_pos)
-        distance = distance*100
+        distance = (distance*2)
         
         cmds.setAttr('persp.farClipPlane', distance)
         

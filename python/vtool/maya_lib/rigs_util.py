@@ -95,7 +95,6 @@ class Control(object):
         if not joint_given:
             space.transfer_relatives(name, joint, reparent = True)
             
-            
             if scale_compensate:
                 parent = cmds.listRelatives(joint, p = True)
                 if parent:
@@ -104,7 +103,9 @@ class Control(object):
         if joint_given:
             space.transfer_relatives(name, joint, reparent = False)
         
-        #attr.transfer_output_connections(name, joint)
+        transfer = attr.TransferVariables()
+        transfer.transfer_control(name, joint)
+        attr.transfer_output_connections(name, joint)
         
         cmds.setAttr('%s.radius' % joint, l = True, k = False, cb = False)
         cmds.setAttr('%s.drawStyle' % joint, 2)
@@ -364,11 +365,7 @@ class StoreControlData(attr.StoreData):
             
             value = cmds.getAttr(attribute_name)
             attribute_data[attribute] = value 
-        
-            if attribute_name == 'L_legOrient_ctrl.IkFk':
-                print attribute_name, value
-                
-        
+                    
         return attribute_data
 
     
