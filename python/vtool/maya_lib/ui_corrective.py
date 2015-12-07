@@ -196,30 +196,7 @@ class PoseListWidget(qt_ui.BasicWidget):
                 except:
                     pass
 
-    def _update_pose_widget(self):
-       
-        
-        current_pose = self.pose_list._current_pose()
-        current_weight_attribute = '%s.weight' % current_pose
-        
-        items = self.pose_list.selectedItems()
-        
-        if items:
-            self.pose_widget.show()
-            self.pose_widget.set_pose(current_pose)
-            
-        if not items:
-            self.pose_widget.hide()
-            
-        self.pose_update.emit(current_pose)
-        
-        if not current_pose:
-            return
-        
-        pose_type = cmds.getAttr('%s.type' % current_pose)
-        
-        if not pose_type == 'no reader':
-            return
+    def _update_pose_no_reader(self, current_pose, current_weight_attribute):
         
         item_count = self.pose_list.topLevelItemCount()
         
@@ -254,6 +231,31 @@ class PoseListWidget(qt_ui.BasicWidget):
                     # vtool.util.warning('Could not set %s to 0.' % current_weight_attribute )
 
         cmds.autoKeyframe(state=auto_key_state)
+        
+
+    def _update_pose_widget(self):
+        
+        current_pose = self.pose_list._current_pose()
+        current_weight_attribute = '%s.weight' % current_pose
+        
+        items = self.pose_list.selectedItems()
+        
+        if items:
+            self.pose_widget.show()
+            self.pose_widget.set_pose(current_pose)
+            
+        if not items:
+            self.pose_widget.hide()
+            
+        self.pose_update.emit(current_pose)
+        
+        if not current_pose:
+            return
+        
+        pose_type = cmds.getAttr('%s.type' % current_pose)
+        
+        if pose_type == 'no reader':
+            self._update_pose_no_reader(current_pose, current_weight_attribute)
         
         
                 

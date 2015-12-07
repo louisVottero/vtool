@@ -227,7 +227,14 @@ class ConstraintEditor(object):
     def _get_constraint_type(self, constraint):
         return cmds.nodeType(constraint)
         
+    def has_constraint(self, transform):
         
+        for constraint in self.editable_constraints:
+            const = self.get_constraint(transform, constraint)
+            if const:
+                return True
+            
+        return False
         
     def get_weight_names(self, constraint):
         #CBB

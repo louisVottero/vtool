@@ -336,7 +336,7 @@ class StoreControlData(attr.StoreData):
         self.controls = []
         
         self.side_replace = ['_L', '_R', 'end']
-    
+        
     def _get_single_control_data(self, control):
         
         if not control:
@@ -364,6 +364,10 @@ class StoreControlData(attr.StoreData):
             
             value = cmds.getAttr(attribute_name)
             attribute_data[attribute] = value 
+        
+            if attribute_name == 'L_legOrient_ctrl.IkFk':
+                print attribute_name, value
+                
         
         return attribute_data
 
@@ -456,25 +460,12 @@ class StoreControlData(attr.StoreData):
         for attribute in data:
             
             attribute_name = control + '.' + attribute
-            
-            """ removed for speed
-            if not cmds.objExists(attribute_name):
-                continue
-            
-            if cmds.getAttr(attribute_name, lock = True):
-                continue
-            
-            connection = get_attribute_input(attribute_name)
-            
-            if connection:
-                if cmds.nodeType(connection).find('animCurve') == -1:
-                    continue
-            """
+                        
             try:
-                cmds.setAttr(attribute_name, data[attribute] )  
+                cmds.setAttr(attribute_name, data[attribute] )
             except:
                 pass
-                #cmds.warning('Could not set %s.' % attribute_name)     
+            
         
     def _find_other_side(self, control):
         

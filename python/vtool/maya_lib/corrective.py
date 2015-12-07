@@ -190,6 +190,7 @@ class PoseManager(object):
             pose (str): The name of a pose.
         """
         pose_instance = self.get_pose_instance(pose)
+        
         pose_instance.goto_pose()
         
     def set_pose_data(self, pose):
@@ -649,6 +650,7 @@ class PoseGroup(object):
             
             store = rigs_util.StoreControlData(self.pose_control)
             store.eval_data()
+            
             
     def rename(self, description):
         """
@@ -2829,7 +2831,11 @@ class PoseCone(PoseBase):
         transform = self.get_transform()
         
         try:
-            space.MatchSpace(self.pose_control, transform).translation_rotation()
+            constraint = space.ConstraintEditor()
+            
+            if not constraint.has_constraint(transform):
+                space.MatchSpace(self.pose_control, transform).translation_rotation()
+                
         except:
             pass
     
@@ -2921,6 +2927,10 @@ class PoseCone(PoseBase):
             inc += 1
         
         return other_pose_instance.pose_control
+    
+class PoseRBF(PoseBase):
+    def _pose_type(self):
+        return 'rbf'
     
 class PoseTimeline(PoseNoReader):
     """
