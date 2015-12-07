@@ -1041,6 +1041,7 @@ class TransferWeight(object):
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         bar.end()
         vtool.util.show('Done: %s transfer joints to new joints.' % self.mesh)
+        
          
 class AutoWeight2D(object):
     
@@ -1051,11 +1052,48 @@ class AutoWeight2D(object):
         self.joint_vectors_2D = []
         self.vertex_vectors_2D = []
         
-        self._store_verts()
         self.multiplier_weights = []
         self.zero_weights = True
         
+        self.orientation_transform = None
+        
+        self.orig_mesh = None
+        self.orig_joints = None
+        self.offset_group = None
+        
+    def _create_offset_group(self):
+        
+        duplicate_mesh = cmds.duplicate(self.mesh)[0]
+        
+        attr.unlock_attributes(duplicate_mesh)
+        
+        self.offset_group = cmds.group(em = True, n = core.inc_name('offset_%s' % self.mesh))
+            
+        space.MatchSpace(self.orientation_transform, self.offset_group).translation_rotation()
+        
+        cmds.parent(duplicate_mesh, self.offset_group)
+        
+        duplicate_joints = []
+        
+        for joint in self.joints:
+            dup_joint = cmds.duplicate(joint)[0]
+            cmds.parent(dup_joint, self.offset_group)
+            duplicate_joints.append(dup_joint)
+            
+        cmds.setAttr('%s.rotateX' % self.offset_group, 0)
+        cmds.setAttr('%s.rotateY' % self.offset_group, 0)
+        cmds.setAttr('%s.rotateZ' % self.offset_group, 0)
+        
+        self.orig_mesh = self.mesh
+        self.orig_joints = self.joints
+        self.orig_verts = []
+        
+        self.mesh = duplicate_mesh
+        self.joints = duplicate_joints
+        
     def _store_verts(self):
+        
+        self.orig_verts = cmds.ls('%s.vtx[*]' % self.orig_mesh, flatten = True)   
         self.verts = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
     
     def _get_joint_index(self, joint):
@@ -1077,6 +1115,7 @@ class AutoWeight2D(object):
         self.joint_vectors_2D = []
         
         for joint in self.joints:
+            print 'storing joint vector', joint
             position = cmds.xform(joint, q = True, ws = True, t = True)
             
             #position = (position[0], position[2])
@@ -1100,27 +1139,35 @@ class AutoWeight2D(object):
 
     def _skin(self):
         
-        skin = find_deformer_by_type(self.mesh, 'skinCluster')
+        joints = self.orig_joints
+        mesh = self.orig_mesh
         
-        joints = self.joints
+        skin = find_deformer_by_type(mesh, 'skinCluster')
+        
         
         if not skin:
-            skin = cmds.skinCluster(self.mesh, self.joints[0], tsb = True)[0]
+            skin = cmds.skinCluster(mesh, joints[0], tsb = True)[0]
             joints = joints[1:]
         
         if self.zero_weights:
             set_skin_weights_to_zero(skin)
         
         for joint in joints:
-            cmds.skinCluster(skin, e = True, ai = joint, wt = 0.0)
+            
+            try:
+                cmds.skinCluster(skin, e = True, ai = joint, wt = 0.0)
+            except:
+                pass
             
         return skin
         
     def _weight_verts(self, skin):
         
+        mesh = self.orig_mesh
+        
         vert_count = len(self.verts)
         
-        progress = core.ProgressBar('weighting %s:' % self.mesh, vert_count)
+        progress = core.ProgressBar('weighting %s:' % mesh, vert_count)
         
         for inc in range(0, vert_count):
             
@@ -1128,10 +1175,10 @@ class AutoWeight2D(object):
             joint_weights = self._get_vert_weight(inc)
 
             if joint_weights:
-                cmds.skinPercent(skin, self.verts[inc], r = False, transformValue = joint_weights)
+                cmds.skinPercent(skin, self.orig_verts[inc], r = False, transformValue = joint_weights)
             
             progress.inc()
-            progress.status('weighting %s: vert %s' % (self.mesh, inc))
+            progress.status('weighting %s: vert %s' % (mesh, inc))
             if progress.break_signaled():
                 progress.end()
                 break
@@ -1162,11 +1209,11 @@ class AutoWeight2D(object):
             
             start_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc] )
             end_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc+1])
-                        
-            joint = self.joints[inc]
-            next_joint = self.joints[inc+1]
             
             percent = vtool.util.closest_percent_on_line_2D(start_vector, end_vector, vertex_vector, False)
+            
+            joint = self.orig_joints[inc]
+            next_joint = self.orig_joints[inc+1]
             
             if percent <= 0:
                 weight_total+=1.0
@@ -1205,21 +1252,33 @@ class AutoWeight2D(object):
     def set_weights_to_zero(self, bool_value):
         self.zero_weights = bool_value
         
-    def set_orientation_transform(self):
+    def set_orientation_transform(self, transform):
         """
         Transform to use to define the orientation of joints.
         """
-        
+        self.orientation_transform = transform
         
     def run(self):
         if not self.joints:
             return
+        
+        self.orig_mesh = self.mesh
+        self.orig_joints = self.joints
+        
+        if self.orientation_transform:
+            self._create_offset_group()
+            
+        self._store_verts()
         
         self._store_vertex_vectors()
         self._store_joint_vectors()
         skin = self._skin()
         
         self._weight_verts(skin)
+        
+        
+        #cmds.hide(self.offset_group)
+        cmds.delete(self.offset_group)
 
                 
 class MayaWrap(object):
@@ -1637,6 +1696,8 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
         
     return found
 
+#--- skin
+
 def get_influences_on_skin(skin_deformer):
     """
     Get the names of the skin influences in the skin cluster.
@@ -1795,7 +1856,7 @@ def get_skin_weights(skin_deformer):
         skin_deformer (str): The name of a skin deformer.
         
     Return
-        dict: dict[influence] = weight values corresponding to point order.
+        dict: dict[influence_index] = weight values corresponding to point order.
     """
     value_map = {}
     
@@ -1895,6 +1956,8 @@ def set_skin_weights_to_zero(skin_deformer):
             
         for weight_attribute in weight_attributes:
             cmds.setAttr('%s.%s' % (skin_deformer, weight_attribute), 0)
+
+#--- deformers
 
 def set_vert_weights_to_zero(vert_index, skin_deformer, joint = None):
     """

@@ -6506,6 +6506,9 @@ class StickyFadeRig(StickyRig):
                 
             attr.connect_translate_multiply(corner_control, top_control_driver, value)
             attr.connect_translate_multiply(corner_control, btm_control_driver, value)
+            
+    def set_tweaker_space_scale(self, value):
+        pass
         
         
 class EyeRig(JointRig):

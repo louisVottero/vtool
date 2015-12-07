@@ -1601,6 +1601,9 @@ class GetNumber(BasicWidget):
     def set_value(self, value):
         self.spin_widget.setValue(value)
         
+    def get_value(self):
+        return self.spin_widget.value()
+        
     def set_label(self, label):
         self.label.setText(label)
              

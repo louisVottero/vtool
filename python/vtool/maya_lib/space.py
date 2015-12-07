@@ -1182,7 +1182,8 @@ class OverDriveTranslation(object):
         cmds.connectAttr('%s.output3Dx' % plus, '%s.translateX' % self.driver)
         cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % self.driver)
         cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % self.driver) 
-
+        
+    
 def get_center(transform):
     """
     Get the center of a selection. Selection can be component or transform.

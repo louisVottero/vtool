@@ -416,10 +416,25 @@ class MayaCustomData(CustomData):
         try:
             cmds.select(cl = True)
             cmds.viewFit(an = True)
+            self._fix_camera()
         except:
             util.show('Could not center view')
             
-      
+    def _fix_camera(self):
+        
+        camera_pos = cmds.xform('persp', q = True, ws = True, t = True)
+        
+        distance = util.get_distance([0,0,0], camera_pos)
+        distance = distance*100
+        
+        cmds.setAttr('persp.farClipPlane', distance)
+        
+        if distance > 10000:
+            cmds.setAttr('persp.nearClipPlane', distance/50,000)
+        
+        if distance > 1000000:
+            cmds.setAttr('persp.nearClipPlane', 100)
+            
 class ControlCvData(MayaCustomData):
     """
     maya.control_cvs
@@ -1590,7 +1605,7 @@ class MayaFileData(MayaCustomData):
         return self.maya_binary
     
     def _clean_scene(self):
-        pass
+        
         maya_lib.core.delete_turtle_nodes()
         maya_lib.core.delete_garbage()
 

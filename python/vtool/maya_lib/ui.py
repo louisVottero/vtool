@@ -330,9 +330,16 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         size_slider.set_auto_recenter(True)
         size_slider.slider.sliderReleased.connect(self._reset_scale_slider)
         
+        number_button = vtool.qt_ui.GetNumberButton('Global Size Controls')
+        number_button.set_value(2)
+        number_button.clicked.connect(self._size_controls)
+        self.scale_control_button = number_button
+        
+        parent.main_layout.addWidget(number_button)
         
         parent.main_layout.addWidget(mirror_control)
         parent.main_layout.addWidget(mirror_controls)
+        
         parent.main_layout.addWidget(size_slider)
         
     def _create_deformation_widgets(self, parent):
@@ -500,6 +507,10 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         return core.get_components_from_shapes(shapes)
         
+    def _size_controls(self):
+        
+        value = self.scale_control_button.get_value()
+        rigs_util.scale_controls(value)
     
     def _scale_control(self, value):
         
@@ -516,16 +527,12 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         if value < self.last_scale_value:
             pass_value = .99
             
+        #things = rigs_util.get_controls()
         things = cmds.ls(sl = True)
         
         if not things:
             return
-            """
-            if not self.scale_controls:
-                self.scale_controls = util.get_controls()
-            if self.scale_controls:
-                things = self.scale_controls
-            """
+            
         if things:
             for thing in things:
                 

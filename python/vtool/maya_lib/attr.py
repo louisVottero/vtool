@@ -333,9 +333,11 @@ class TransferConnections(object):
             if input_attr.find('[') > -1:
                 continue
             
+            new_var = get_variable_instance(input_attr)
+            
             if prefix:
                 create_title(target_node, prefix)
-                new_var = get_variable_instance(input_attr)
+                
                 new_var.set_name('%s_%s' % (prefix, new_var.name))
             
             if not new_var:
@@ -691,6 +693,7 @@ def get_variable_instance(attribute):
     
     var = get_variable_instance_of_type(attr, var_type)
     var.set_node( node )
+    var.load()
     
     return var
     
@@ -701,6 +704,9 @@ def get_variable_instance_of_type(name, var_type):
     if var_type in var.numeric_attributes:
         var = MayaNumberVariable(name)
         
+    if var_type == 'bool':
+        var = MayaVariable(name)
+        
     if var_type == 'enum':
         var = MayaEnumVariable(name)
         
@@ -708,6 +714,7 @@ def get_variable_instance_of_type(name, var_type):
         var = MayaStringVariable(name)
     
     var.set_variable_type(var_type)
+    
     
     return var
     
@@ -784,6 +791,8 @@ class MayaVariable(vtool.util.Variable):
         
         locked_state = self._get_lock_state()
         
+        print self.name, locked_state
+        
         self.set_locked(False)
         
         if self._get_variable_data_type() == 'attributeType':
@@ -798,8 +807,9 @@ class MayaVariable(vtool.util.Variable):
                 if self.value:
                     connect_message(self.value, self.node, self.name)
             
-        if self._get_variable_data_type() == 'dataType':    
-            cmds.setAttr(self._get_node_and_variable(), self.value, type = self.variable_type )
+        if self._get_variable_data_type() == 'dataType':
+            if self.value != None:
+                cmds.setAttr(self._get_node_and_variable(), self.value, type = self.variable_type )
         
         self.set_locked(locked_state)
     
@@ -1107,13 +1117,21 @@ class MayaNumberVariable(MayaVariable):
         if not self.exists():
             return
         
-        return cmds.attributeQuery(self.name, node = self.node, minimum = True)
+        #this is like this because of scale attribute.  Not sure how to query if a double has ability for min and max.
+        try:
+            return cmds.attributeQuery(self.name, node = self.node, minimum = True)
+        except:
+            return
 
     def _get_max_state(self):
         if not self.exists():
             return
         
-        return cmds.attributeQuery(self.name, node = self.node, maximum = True)
+        #this is like this because of scale attribute.  Not sure how to query if a double has ability for min and max.
+        try:
+            return cmds.attributeQuery(self.name, node = self.node, maximum = True)
+        except:
+            return
         
     
         
@@ -1453,7 +1471,39 @@ class Attributes(object):
         
         connections.connect()
 
-
+class TransferVariables():
+    def __init__(self):
+        pass
+    
+    def transfer_control(self, source, target):
+        
+        attrs = []
+        
+        transform_names = ['translate', 'rotate','scale']
+        
+        for transform_name in transform_names:
+            for axis in ['X','Y','Z']:
+                attr_name = transform_name + axis
+                attrs.append(attr_name)
+        
+        attrs.append('visibility')
+        
+        ud_attrs = cmds.listAttr(source, ud = True)
+        
+        if ud_attrs:
+            attrs = attrs + ud_attrs
+        
+        for attr in attrs:
+            
+            var_name = source + '.' + attr 
+        
+            new_var = get_variable_instance(var_name)
+            
+            if not new_var:
+                continue 
+            
+            new_var.set_node(target)
+            new_var.create()
 
 class MayaNode(object):
     """
@@ -1824,6 +1874,9 @@ def get_attribute_outputs(node_and_attribute, node_only = False):
                                     source = False,
                                     skipConversionNodes = True)
 
+def transfer_variables():
+    pass
+
 def transfer_output_connections(source_node, target_node):
     """
     Transfer output connections from source_node to target_node.
@@ -1911,7 +1964,7 @@ def unlock_attributes(node, attributes = [], only_keyable = False):
     
     Args
         node (str): The name of the node.
-        attributes (list): A list of attributes to lock on node.
+        attributes (list): A list of attributes to lock on node. If none given, unlock any that are locked.
         only_keyable (bool): Whether to unlock only the keyable attributes.
     """
     

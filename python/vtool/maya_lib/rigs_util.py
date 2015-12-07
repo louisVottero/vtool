@@ -66,14 +66,16 @@ class Control(object):
         
         self.shapes = core.get_shapes(self.control)
     
-    def set_to_joint(self, joint = None):
+    def set_to_joint(self, joint = None, scale_compensate = False):
         """
         Set the control to have a joint as its main transform type.
         
         Args
             joint (str): The name of a joint to use. If none joint will be created automatically.
+            scale_compensate (bool): Whether to connect scale of parent to inverseScale of joint. 
+            This causes the group above the joint to be able to change scale value without affecting the control's look. 
         """
-        cmds.setAttr('%s.radius' % joint, l = True, k = False, cb = False)
+        
         
         cmds.select(cl = True)
         name = self.get()
@@ -92,14 +94,19 @@ class Control(object):
         
         if not joint_given:
             space.transfer_relatives(name, joint, reparent = True)
-            cmds.rename(joint, name)
+            
+            
+            if scale_compensate:
+                parent = cmds.listRelatives(joint, p = True)
+                if parent:
+                    cmds.connectAttr('%s.scale' % parent[0], '%s.inverseScale' % joint)
             
         if joint_given:
             space.transfer_relatives(name, joint, reparent = False)
-            
-            
         
+        #attr.transfer_output_connections(name, joint)
         
+        cmds.setAttr('%s.radius' % joint, l = True, k = False, cb = False)
         cmds.setAttr('%s.drawStyle' % joint, 2)
             
         curve_type_value = ''
@@ -108,6 +115,9 @@ class Control(object):
             curve_type_value = cmds.getAttr('%s.curveType' % name)    
         
         cmds.delete(name)
+        
+        if not joint_given:
+            joint = cmds.rename(joint, name)
         
         self.control = joint
         
@@ -2261,3 +2271,22 @@ def fix_fade(target_curve, follow_fade_multiplies):
         value = (driver_distance/total_distance)
     
         cmds.setAttr('%s.input2Y' % multi, value)
+
+def scale_controls(value):
+    things = get_controls()
+
+    if not things:
+        return
+    
+    
+    if things:
+        for thing in things:
+    
+            shapes = core.get_shapes(thing)
+        
+            components = core.get_components_from_shapes(shapes)
+            
+            pivot = cmds.xform( thing, q = True, rp = True, ws = True)
+    
+            if components:
+                cmds.scale(value, value, value, components, p = pivot, r = True)
