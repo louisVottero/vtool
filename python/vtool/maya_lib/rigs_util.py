@@ -84,7 +84,10 @@ class Control(object):
         
         if not joint:
             joint = cmds.joint()
-            space.MatchSpace(name, joint).translation_rotation()
+            
+            cmds.delete(cmds.parentConstraint(name, joint))
+            cmds.delete(cmds.scaleConstraint(name, joint))
+            #space.MatchSpace(name, joint).translation_rotation()
             joint_given = False
         
         shapes = self.shapes
@@ -93,7 +96,14 @@ class Control(object):
             cmds.parent(shape, joint, r = True, s = True)
         
         if not joint_given:
-            space.transfer_relatives(name, joint, reparent = True)
+            
+            parent = cmds.listRelatives(name, p = True)
+            
+            if parent:
+                cmds.parent(joint, parent)
+                cmds.makeIdentity(joint, r = True, s = True, apply = True)
+                
+            space.transfer_relatives(name, joint)
             
             if scale_compensate:
                 parent = cmds.listRelatives(joint, p = True)
@@ -297,6 +307,17 @@ class Control(object):
             str: The name of the control.
         """
         return self.control
+    
+    def get_xform_group(self, name):
+        """
+        This returns an xform group above the control.
+        
+        Args
+            name (str): The prefix name supplied when creating the xform group.  Usually xform or driver.
+            
+        """
+        
+        return space.get_xform_group(self.control, name)
     
     def create_xform(self):
         """

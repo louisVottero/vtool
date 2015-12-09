@@ -791,8 +791,6 @@ class MayaVariable(vtool.util.Variable):
         
         locked_state = self._get_lock_state()
         
-        print self.name, locked_state
-        
         self.set_locked(False)
         
         if self._get_variable_data_type() == 'attributeType':
@@ -1094,6 +1092,7 @@ class MayaNumberVariable(MayaVariable):
             
         
         if self.min_value != None:
+            
             cmds.addAttr(self._get_node_and_variable(), edit = True, hasMinValue = True)
             cmds.addAttr(self._get_node_and_variable(), edit = True, minValue = self.min_value)
         
@@ -1837,6 +1836,7 @@ def get_attribute_input(node_and_attribute, node_only = False):
     
     if cmds.objExists(node_and_attribute):
         
+        
         connections = cmds.listConnections(node_and_attribute, 
                                            plugs = True, 
                                            connections = False, 
@@ -1890,6 +1890,9 @@ def transfer_output_connections(source_node, target_node):
                          connections = True,
                          destination = True,
                          source = False)
+    
+    if not outputs:
+        return
     
     for inc in range(0, len(outputs), 2):
         new_attr = outputs[inc].replace(source_node, target_node)
@@ -1992,8 +1995,6 @@ def set_color(nodes, color):
         nodes (list): A list of nodes to change the override color.
         color (int): The color index to set override color to.
     """
-    
-    print nodes, color
     
     vtool.util.convert_to_sequence(nodes)
     
@@ -2797,12 +2798,33 @@ def connect_message( input_node, destination_node, attribute ):
     if not input_node or not cmds.objExists(input_node):
         vtool.util.warning('No input node to connect message.')
         return
+    
+    attribute_name = attribute
+    
+    if not attribute.startswith('group_'):
+        attribute_name = 'group_' + attribute
         
-    if not cmds.objExists('%s.%s' % (destination_node, attribute)):  
-        cmds.addAttr(destination_node, ln = attribute, at = 'message' )
+    current_inc = 2
+    
+    while cmds.objExists('%s.%s' % (destination_node, attribute_name)):
         
-    if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, attribute)):
-        cmds.connectAttr('%s.message' % input_node, '%s.%s' % (destination_node, attribute))
+        input_value = get_attribute_input('%s.%s' % (destination_node, attribute_name))
+        
+        if not input_value:
+            break
+        
+        attribute_name = 'group_' + attribute + str(current_inc)
+        
+        current_inc += 1
+        
+        if current_inc == 1000:
+            raise
+        
+    if not cmds.objExists('%s.%s' % (destination_node, attribute_name)):
+        cmds.addAttr(destination_node, ln = attribute_name, at = 'message' )
+        
+    if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, attribute_name)):
+        cmds.connectAttr('%s.message' % input_node, '%s.%s' % (destination_node, attribute_name))
     
             
 def disconnect_attribute(attribute):

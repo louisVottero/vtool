@@ -1557,6 +1557,8 @@ def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
         
     return multiplies
 
+#--- space groups
+
 def create_match_group(transform, prefix = 'match', use_duplicate = False):
     """
     Create a group that matches a transform.
@@ -1609,6 +1611,9 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
     
     basename = core.get_basename(transform)
     
+    if not prefix:
+        prefix = 'xform'
+    
     name = '%s_%s' % (prefix, basename)
     
     if not use_duplicate:    
@@ -1624,6 +1629,8 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
         xform_group = cmds.rename(xform_group, core.inc_name(name))
     
     cmds.parent(transform, xform_group)
+    
+    attr.connect_message(xform_group, transform, prefix)
 
     return xform_group
 
@@ -1823,6 +1830,25 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     
     return follow_group
 
+def get_xform_group(transform, xform_group_prefix):
+    """
+    This returns an xform group above the control.
+    
+    Args
+        name (str): The prefix name supplied when creating the xform group.  Usually xform or driver.
+        
+    """
+    
+    attribute_name = 'group_%s' % xform_group_prefix
+    
+    node_and_attr = '%s.%s' % (transform,attribute_name)
+    
+    if not cmds.objExists(node_and_attr):
+        return
+        
+    input_node = attr.get_attribute_input(node_and_attr, node_only=True)
+        
+    return input_node
 
 def get_hierarchy(node_name):
     """

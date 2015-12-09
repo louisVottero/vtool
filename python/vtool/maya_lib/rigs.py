@@ -467,6 +467,21 @@ class SparseRig(JointRig):
         self.respect_side_tolerance = 0.001
         self.match_scale = False
         
+        self.use_joint_controls = False
+        self.use_joint_controls_scale_compensate = False
+        
+        self.xform_rotate = None
+        self.xform_scale = None
+        
+    def _convert_to_joints(self):
+        
+        for inc in range(0, len(self.controls)):
+            
+            control = self.controls[inc]
+            
+            control = rigs_util.Control(control)
+            control.set_to_joint(scale_compensate= self.use_joint_controls_scale_compensate)
+        
     def set_scalable(self, bool_value):
         """
         Turn off/on the ability for controls to scale the joints.
@@ -502,6 +517,19 @@ class SparseRig(JointRig):
         """
         
         self.match_scale = bool_value
+
+    def set_use_joint_controls(self, bool_value, scale_compensate = False):
+        
+        self.use_joint_controls = bool_value
+        self.use_joint_controls_scale_compensate = scale_compensate
+        
+    def set_xform_values(self, rotate = [0,180, 0], scale = [1,1,-1]):
+        """
+        This is good for mirroring control behavior
+        """
+        
+        self.xform_rotate = rotate
+        self.xform_scale = scale
         
     def create(self):
         
@@ -536,11 +564,11 @@ class SparseRig(JointRig):
               
             xform = space.create_xform_group(control.get())
             
+            driver = space.create_xform_group(control.get(), 'driver')
+            
             if self.match_scale:
                 const = cmds.scaleConstraint(joint, xform)
                 cmds.delete(const)
-            
-            driver = space.create_xform_group(control.get(), 'driver')
             
             cmds.parentConstraint(control_name, joint)
 
@@ -555,6 +583,8 @@ class SparseRig(JointRig):
             self.control_dict[control_name]['xform'] = xform
             self.control_dict[control_name]['driver'] = driver
             
+        if self.use_joint_controls:
+            self._convert_to_joints()
     
 
 class SparseLocalRig(SparseRig):
@@ -615,7 +645,9 @@ class SparseLocalRig(SparseRig):
                     control = rigs_util.Control(control_name)
             
             xform = space.create_xform_group(control.get())
+            
             driver = space.create_xform_group(control.get(), 'driver')
+            
             
             if not self.local_constraint:
                 xform_joint = space.create_xform_group(joint)
@@ -641,6 +673,8 @@ class SparseLocalRig(SparseRig):
                 attr.connect_rotate(driver, local_driver)
                 attr.connect_scale(driver, local_driver)
                 
+                attr.connect_transforms(xform, local_xform)
+                
                 if not self.local_xform:
                     cmds.parent(local_xform, self.setup_group)
                 
@@ -653,6 +687,9 @@ class SparseLocalRig(SparseRig):
             
         self.control_dict[control_name]['xform'] = xform
         self.control_dict[control_name]['driver'] = driver
+        
+        if self.use_joint_controls:
+            self._convert_to_joints()
             
 class ControlRig(Rig):
     """
@@ -794,8 +831,6 @@ class FkRig(BufferRig):
         self.drivers = []
         self.current_increment = None
         
-        self.use_joints = False
-        
         self.parent = None
         
         self.connect_to_driver = None
@@ -804,7 +839,7 @@ class FkRig(BufferRig):
         self.create_sub_controls = False
         self.nice_sub_naming = False
         self.use_joint_controls = False
-        self.use_joints
+        self.use_joint_controls_scale_compensate = False
         
         self.hide_sub_translates = True
 
@@ -964,14 +999,11 @@ class FkRig(BufferRig):
         
         for inc in range(0, len(transforms)):
             
-            print 'increment!', inc
-            
             if transforms[inc] in found_to_skip:
                 self.current_increment += 1
                 continue
             
             self.current_increment = inc
-            print 'current', inc
             
             control = self._create_control()
             control = control.get()
@@ -983,37 +1015,18 @@ class FkRig(BufferRig):
         
         if self.create_sub_controls:
             control = self.control_dict[control]['subs'][-1]
-        if not self.use_joint_controls:
-            cmds.parentConstraint(control, target_transform, mo = True)
         
-    def _insert_shape(self, control, joint):
+        cmds.parentConstraint(control, target_transform, mo = True)
         
-        parent = cmds.listRelatives(control, p = True)[0]
-        
-        cmds.parent(joint, parent)
-        
-        name = control
-        
-        control = rigs_util.Control(control)
-        control.set_to_joint(joint)
-        control.hide_visibility_attribute()
-        
-        self._set_control_attributes(control)
-        
-        cmds.rename(joint, name)
+
         
     def _convert_to_joints(self):
         for inc in range(0, len(self.controls)):
             
             control = self.controls[inc]
-            joint = self.buffer_joints[inc]
             
-            constraint = space.ConstraintEditor()
-            
-            const = constraint.get_constraint(joint, 'parentConstraint')
-            cmds.delete(const)
-            
-            self._insert_shape(control, joint)
+            control = rigs_util.Control(control)
+            control.set_to_joint(scale_compensate= self.use_joint_controls_scale_compensate)
                 
     def set_parent(self, parent):
         #CBB this needs to be replaced with self.set_control_parent
@@ -1036,11 +1049,12 @@ class FkRig(BufferRig):
             
         return drivers
     
-    def set_use_joint_controls(self, bool_value):
+    def set_use_joint_controls(self, bool_value, scale_compensate = False):
         """
         Wether to make the controls have a joint as their base transform node.
         """
         self.use_joint_controls = bool_value
+        self.use_joint_controls_scale_compensate = scale_compensate
     
     def set_create_sub_controls(self, bool_value):
         """
@@ -1104,9 +1118,6 @@ class FkLocalRig(FkRig):
         
     def _attach(self, source_transform, target_transform):
         
-        print 'local attach!'
-        print source_transform, target_transform
-        
         local_group, local_xform = space.constrain_local(source_transform, target_transform, scale_connect = self.rig_scale)
         
         if not self.local_parent:
@@ -1121,8 +1132,11 @@ class FkLocalRig(FkRig):
             driver = space.create_xform_group(local_group, 'driver')
             
             orig_driver = self.control_dict[source_transform]['driver']
+            orig_xform = self.control_dict[source_transform]['xform']
             
             attr.connect_transforms(orig_driver, driver)
+            attr.connect_transforms(orig_xform, local_xform)
+        
         
         self.local_parent = local_group
             
@@ -5767,6 +5781,8 @@ class EyeLidAimRig(JointRig):
         self.center_locator = None
         self.control_offset = 0
         self.follow_multiply = 1
+        
+        self.scale_space = 1
     
     def _aim_constraint(self, transform_to_aim, aim_target):
         
@@ -5811,9 +5827,13 @@ class EyeLidAimRig(JointRig):
         
         inc = 0
         
+        local_group = self._create_setup_group('local')
+        cmds.setAttr('%s.inheritsTransform' % local_group, 0)
+        
         for cluster in self.clusters:
             
             control = self._create_control()
+            control.set_to_joint()
             control.hide_scale_attributes()
             control.rotate_shape(90, 0, 0)
             
@@ -5828,15 +5848,29 @@ class EyeLidAimRig(JointRig):
             xform = space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
             
-            attr.connect_translate(control.get(), cluster)
-            attr.connect_translate(driver, cluster)
+            cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
+            
+            local, local_xform = space.constrain_local(control.get(), cluster)
+            local_driver = space.create_xform_group(local, 'driver')
+            
+            attr.connect_scale(xform, local_xform)
+            
+            if self.scale_space < 1 or self.scale_space > 1:
+                cmds.scale(self.scale_space, self.scale_space, self.scale_space, xform)
+            
+            attr.connect_translate(driver, local_driver)
+            #attr.connect_translate(driver, cluster)
             
             cmds.parent(xform, self.control_group)
+            cmds.parent(local_xform, local_group)
             
             inc += 1
     
     def set_control_offset(self, value):
         self.control_offset = value
+    
+    def set_scale_space(self, value):
+        self.scale_space = value
     
     def set_center_locator(self, locator):
         self.center_locator = locator
@@ -5915,7 +5949,7 @@ class StickyRig(JointRig):
         
         self.sticky_control_group = self._create_control_group('sticky')
         
-        
+        self.tweaker_space = 1
             
         #self.sticky_control_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'sticky_controls')))
         #cmds.parent(self.sticky_control_group, self.control_group)
@@ -6075,7 +6109,7 @@ class StickyRig(JointRig):
         control = self._create_control(description)
         control.rotate_shape(90,0,0)
         control.scale_shape(.5, .5, .5)
-
+        control.set_to_joint()
         control_name = control.get()
         
         space.MatchSpace(transform, control_name).translation_rotation()
@@ -6105,6 +6139,29 @@ class StickyRig(JointRig):
             cmds.parentConstraint(locator, transform)
             
             cmds.parent(local_xform, self.sticky_setup_group)
+            
+        if self.tweaker_space < 1 or self.tweaker_space > 1:
+                
+                
+                
+            cmds.connectAttr('%s.scale' % scale, '%s.inverseScale' % control)
+            
+            scale_x = cmds.getAttr('%s.scaleX' % xform)
+            scale_y = cmds.getAttr('%s.scaleY' % xform)
+            scale_z = cmds.getAttr('%s.scaleZ' % xform)
+                
+            print self.tweaker_space
+            print scale_x
+            print scale_y
+            print scale_z
+                
+            scale_x = self.tweaker_space * (abs(scale_x)/scale_x)
+            scale_y = self.tweaker_space * (abs(scale_y)/scale_y)
+            scale_z = self.tweaker_space * (abs(scale_z)/scale_z)
+            
+            cmds.setAttr('%s.scaleX' % scale, scale_x)
+            cmds.setAttr('%s.scaleY' % scale, scale_y)
+            cmds.setAttr('%s.scaleZ' % scale, scale_z)
         
         return control, xform, driver
     
@@ -6171,6 +6228,10 @@ class StickyRig(JointRig):
     def set_local(self, bool_value):
         
         self.local = bool_value
+    
+    def set_tweaker_space(self, value):
+        
+        self.tweaker_space = value
     
     def create(self):
         super(StickyRig, self).create()
@@ -6331,6 +6392,39 @@ class StickyFadeRig(StickyRig):
         self.corner_match = []
         self.corner_xforms = []
         self.corner_controls = []
+        
+        self.corner_x_space = []
+        self.corner_y_space = []
+        self.corner_z_space = []
+        
+        
+
+    def _set_corner_space(self, source, target):
+        
+        if self.corner_x_space:
+            
+            current_value = cmds.getAttr('%s.scaleX' % target)
+            negate = current_value/abs(current_value)
+            
+            condition = attr.connect_equal_condition('%s.translateX' % source, '%s.scaleX' % target, 0)
+            cmds.setAttr('%s.operation' % condition, 3)
+            
+            cmds.setAttr('%s.colorIfTrueR' % condition, self.corner_x_space[0] * negate)
+            cmds.setAttr('%s.colorIfFalseR' % condition, self.corner_x_space[1] * negate)
+            
+        if self.corner_y_space:
+            condition = attr.connect_equal_condition('%s.translateY' % source, '%s.scaleY' % target, 0)
+            cmds.setAttr('%s.operation' % condition, 3)
+            
+            cmds.setAttr('%s.colorIfTrueR' % condition, self.corner_y_space[0] * negate)
+            cmds.setAttr('%s.colorIfFalseR' % condition, self.corner_y_space[1] * negate)      
+        
+        if self.corner_z_space:
+            condition = attr.connect_equal_condition('%s.translateZ' % source, '%s.scaleZ' % target, 0)
+            cmds.setAttr('%s.operation' % condition, 3)
+            
+            cmds.setAttr('%s.colorIfTrueR' % condition, self.corner_z_space[0] * negate)
+            cmds.setAttr('%s.colorIfFalseR' % condition, self.corner_z_space[1] * negate)    
 
     def _create_corner_fades(self):
                
@@ -6357,6 +6451,8 @@ class StickyFadeRig(StickyRig):
             control.hide_rotate_attributes()
             control.hide_scale_attributes()
             
+            control.set_to_joint()
+            
             sub_control = self._create_control('corner', sub = True)
             sub_control.set_curve_type(self.corner_control_shape)
             sub_control.rotate_shape(90,0,0)
@@ -6364,10 +6460,17 @@ class StickyFadeRig(StickyRig):
             sub_control.hide_rotate_attributes()
             sub_control.hide_scale_attributes()
             
+            sub_control.set_to_joint()
+            
             cmds.parent(sub_control.get(), control.get())
                 
             xform = space.create_xform_group(control.get())
+            
+            
+            
             driver = space.create_xform_group(control.get(), 'driver')
+            
+            cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
             
             self.corner_xforms.append(xform)
             self.corner_controls.append(control.get())
@@ -6389,19 +6492,24 @@ class StickyFadeRig(StickyRig):
             
             cmds.parent(xform, self.control_group)
             
-            
             self.corner_offsets.append(corner_offset)
             self.sub_corner_offsets.append(sub_corner_offset)
             
-            #const = cmds.pointConstraint(control.get(), corner_offset_xform)
-            #cmds.delete(const)
+            
             cmds.pointConstraint(control.get(), corner_offset)
             cmds.pointConstraint(sub_control.get(), sub_corner_offset)
             
             corner_offset_xform = space.create_xform_group(corner_offset)
-            cmds.parent(corner_offset_xform, xform)
+            cmds.pointConstraint(xform, corner_offset_xform)
+            
+            #cmds.parent(corner_offset_xform, xform)
+            cmds.parent(corner_offset_xform, self.setup_group)
+            
+            
             cmds.parent(sub_corner_offset, corner_offset_xform)
             
+            self._set_corner_space(control.control, xform)  
+                      
         self.side =orig_side
 
     def _rename_followers(self, follow, description):
@@ -6421,6 +6529,17 @@ class StickyFadeRig(StickyRig):
 
     def set_corner_control_shape(self, shape_name):
         self.corner_control_shape = shape_name
+
+    def set_corner_x_space(self, positive, negative):
+        self.corner_x_space = [positive, negative]
+    
+    def set_corner_y_space(self, positive, negative):
+        self.corner_y_space = [positive, negative]
+    
+    def set_corner_z_space(self, positive, negative):
+        self.corner_z_space = [positive, negative]
+
+
 
     def create(self):
         super(StickyFadeRig, self).create()
@@ -6466,9 +6585,6 @@ class StickyFadeRig(StickyRig):
 
     def create_corner_falloff(self, inc, value):
 
-        top_control_count = len(self.top_controls)
-        btm_control_count = len(self.btm_controls)
-
         for side in ['L','R']:
             
             self.side = side
@@ -6507,9 +6623,10 @@ class StickyFadeRig(StickyRig):
             attr.connect_translate_multiply(corner_control, top_control_driver, value)
             attr.connect_translate_multiply(corner_control, btm_control_driver, value)
             
-    def set_tweaker_space_scale(self, value):
-        pass
+
         
+
+    
         
 class EyeRig(JointRig):
     def __init__(self, description, side):
