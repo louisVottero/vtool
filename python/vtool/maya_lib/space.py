@@ -1191,6 +1191,11 @@ class OverDriveTranslation(object):
         cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % self.driver) 
         
     
+def has_constraint(transform):
+    
+    editor = ConstraintEditor()
+    return editor.has_constraint(transform)
+    
 def get_center(transform):
     """
     Get the center of a selection. Selection can be component or transform.

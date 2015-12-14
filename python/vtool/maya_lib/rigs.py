@@ -5310,9 +5310,10 @@ class QuadFootRig(FootRig):
             self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.ball) 
             cmds.parent( self.ankle_handle, self.setup_group )
             
-            if not self.add_bank:
-                self.ball_handle = self._create_ik_handle( 'ball', self.ball, self.toe)
-                cmds.parent( self.ball_handle, self.setup_group )
+            self.ball_handle = self._create_ik_handle( 'ball', self.ball, self.toe)
+            cmds.parent( self.ball_handle, self.setup_group )
+            
+                
                 
         if self.extra_ball:
             self.ankle_handle = self._create_ik_handle( 'ankle', self.ankle, self.extra_ball)
@@ -5379,13 +5380,22 @@ class QuadFootRig(FootRig):
         
         if not self.extra_ball:
             
+            cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
+            
             if not self.add_bank:
                 cmds.parentConstraint(ball_roll, self.ankle_handle, mo = True)
-                cmds.parentConstraint(toe_control, self.ball_handle, mo = True)
+                
                 cmds.parent(self.ik_leg, ball_roll)
             if self.add_bank:
                 cmds.parentConstraint(bankout_roll, self.ankle_handle, mo = True)
                 cmds.parent(self.ik_leg, bankout_roll)
+                
+                space.create_follow_group(yawout_roll, toe_control_xform)
+                #cmds.parent(toe_control_xform, self.yawOut)
+                
+                #xform_ball = space.get_xform_group(ball_pivot, 'xform')
+                #print toe_control, xform_ball
+                #cmds.parentConstraint(toe_control, xform_ball, mo = True)
         
         cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
             
