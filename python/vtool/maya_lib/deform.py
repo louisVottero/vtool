@@ -1714,6 +1714,9 @@ def set_envelopes(mesh, value, exclude_type = []):
     
     history = get_history(mesh)
     
+    if not history:
+        return
+    
     for node in history:
         
         skip_current = False
