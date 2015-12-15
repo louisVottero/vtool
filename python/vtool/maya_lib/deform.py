@@ -1791,6 +1791,9 @@ def get_history(geometry):
     
     found = []
     
+    if not scope:
+        return
+    
     for thing in scope:
         
         inherited = cmds.nodeType(thing, inherited = True )
