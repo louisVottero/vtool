@@ -979,8 +979,6 @@ class CopyWidget(qt_ui.BasicWidget):
         for folder in data_folders:
             self.data_list.addItem(folder)
         
-        code_folders = self.process.get_code_folders()
-        print code_folders
         
         codes, states = self.process.get_manifest()
         

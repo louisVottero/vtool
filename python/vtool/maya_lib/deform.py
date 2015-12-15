@@ -740,8 +740,6 @@ class TransferWeight(object):
             
             index = get_index_at_skin_influence(joint,self.skin_cluster)
             
-            print joint, index
-            
             destination_joint_map[index] = joint
         
         verts = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)
@@ -1121,7 +1119,7 @@ class AutoWeight2D(object):
         self.joint_vectors_2D = []
         
         for joint in self.joints:
-            print 'storing joint vector', joint
+            
             position = cmds.xform(joint, q = True, ws = True, t = True)
             
             #position = (position[0], position[2])
@@ -1327,15 +1325,13 @@ class MultiJointShape(object):
             if not cmds.objExists('%s.group_blend_locator' % joint): 
                 
                 locator = cmds.spaceLocator(n = 'locator_%s' % joint)[0]
-                print locator, joint
+                
                 attr.connect_message(locator, joint, 'blend_locator')
                 
                 cmds.pointConstraint(joint, locator)
                 
                 xform = space.create_xform_group(locator)
-                #cmds.parent(xform, group)
                 
-            print locator
             locators.append(locator)
         self.locators = locators
         
@@ -1400,9 +1396,9 @@ class MultiJointShape(object):
      
         inc = 0
         for split in splits:
-            print inc
+            
             value = joint_values[self.locators[inc]]
-            print value
+            
             quick_blendshape(split, self.base_mesh)
      
             anim.quick_driven_key('%s.translateY' % self.locators[inc],

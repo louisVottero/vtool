@@ -1320,8 +1320,6 @@ class PoseBase(PoseGroup):
             
             skin_cluster = deform.find_deformer_by_type(target_mesh, 'skinCluster')
             
-            print skin_cluster
-            
             if skin_cluster:
                 try:
                     cmds.reorderDeformers(skin_cluster, blend.blendshape, target_mesh)

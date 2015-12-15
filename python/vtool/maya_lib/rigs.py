@@ -1594,7 +1594,7 @@ class SplineRibbonBaseRig(JointRig):
             self._create_curve()
     
     def _attach_to_geo(self):
-        print 'attach geo!!!!!!!'
+        
         if not self.attach_joints:
             return
         
@@ -1920,7 +1920,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
                 self.sub_controls[0] = self.top_sub_control
     
     def _increment_greater_than_zero(self, control, current_transform):
-        print self.current_xform_group, self.controls, self.current_increment
+        
         cmds.parent(self.current_xform_group, self.controls[-2])    
 
     def _last_increment(self, control, current_transform):

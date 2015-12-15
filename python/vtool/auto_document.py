@@ -324,18 +324,12 @@ def get_arg_defaults(object_inst):
     
     for default in defaults:
         
-        print default        
-        
         if isinstance(default, ast.Str):
             found_defaults.append("'%s'" % default.s)
         if isinstance(default, ast.Name):
             found_defaults.append(default.id)
         if isinstance(default, ast.Num):
             found_defaults.append(default.n)
-        
-            
-    print 'default end'
-        #found_defaults.append(default.id)
         
     return found_defaults
         
