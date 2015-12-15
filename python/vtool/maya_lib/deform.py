@@ -1616,8 +1616,13 @@ class EnvelopeHistory(object):
                 cmds.disconnectAttr(connection, '%s.envelope' % history)
                 
             cmds.setAttr('%s.envelope' % history, 0)
+            
+    def turn_off_exclude(self, deformer_types):
+        """
+        Turn off all but the deformer types specified.
+        """
+        set_envelopes(self.transform, 0, deformer_types)
         
- 
     def turn_on(self, respect_initial_state = False):
         """
         Turn on all the history found.
@@ -1782,16 +1787,25 @@ def get_history(geometry):
     Return
         list: A list of deformers in the deformation history.
     """
-    scope = cmds.listHistory(geometry, interestLevel = 1)
+    
+    #scope = cmds.listHistory(geometry, interestLevel = 1)
+    scope = cmds.listHistory(geometry, pdo = True)
     
     found = []
     
-    for thing in scope[1:]:
+    for thing in scope:
         
-        found.append(thing)
+        inherited = cmds.nodeType(thing, inherited = True )
+        
+        if 'geometryFilter' in inherited:
+            found.append(thing)
+            
+        #found.append(thing)
             
         if cmds.objectType(thing, isa = "shape") and not cmds.nodeType(thing) == 'lattice':
+            
             return found
+            
         
     if not found:
         return None
@@ -1830,6 +1844,30 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
         return None
         
     return found
+
+def set_envelopes(mesh, value, exclude_type = []):
+    
+    history = get_history(mesh)
+    
+    if not history:
+        return
+    
+    for node in history:
+        
+        skip_current = False
+        
+        for skip in exclude_type:
+            if skip == cmds.nodeType(node):
+                skip_current = True
+                break
+            
+        if skip_current:
+            continue
+        
+        try:
+            cmds.setAttr('%s.envelope' % node, value)
+        except:
+            pass
 
 #--- skin
 
@@ -3617,6 +3655,8 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         envelopes.turn_on(respect_initial_state=True)
         envelopes.turn_off_referenced()
+        envelopes.turn_off_exclude(['skinCluster', 'blendShape'])
+        
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 0)

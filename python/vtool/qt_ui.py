@@ -833,6 +833,8 @@ class FileTreeWidget(TreeWidget):
 
     def _add_item(self, filename, parent = None):
         
+        self.clearSelection()
+        
         path_name = filename
         
         found = False
@@ -907,6 +909,8 @@ class FileTreeWidget(TreeWidget):
             self.addTopLevelItem(item)
         if parent:
             parent.addChild(item)
+            
+        self.setCurrentItem(item)
             
         return item
         

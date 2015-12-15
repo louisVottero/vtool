@@ -1318,13 +1318,14 @@ class PoseBase(PoseGroup):
           
         if referenced:
             
-            
-            
             skin_cluster = deform.find_deformer_by_type(target_mesh, 'skinCluster')
+            
+            print skin_cluster
             
             if skin_cluster:
                 try:
                     cmds.reorderDeformers(skin_cluster, blend.blendshape, target_mesh)
+                    
                 except:
                     pass
                 
@@ -1401,6 +1402,8 @@ class PoseBase(PoseGroup):
         
         return False
         
+    
+        
     def add_mesh(self, mesh, toggle_vis = True):
         """
         Add a mesh to the pose.
@@ -1440,7 +1443,11 @@ class PoseBase(PoseGroup):
             index = self.get_target_mesh_index(mesh)
             return self.get_mesh(index)
         
+        deform.set_envelopes(mesh, 0, ['skinCluster', 'blendShape'])
+        
         pose_mesh = cmds.duplicate(mesh, n = core.inc_name('mesh_%s_1' % self.pose_control))[0]
+        
+        deform.set_envelopes(mesh, 1)
         
         self._create_shader(pose_mesh)
         
@@ -1672,7 +1679,10 @@ class PoseBase(PoseGroup):
             
             blend.set_envelope(1)  
             
-            self.create_blend(inc) 
+            self.create_blend(inc)
+            
+    def update_targets(self):
+        pass 
         
     def visibility_off(self, mesh, view_only = False):
         """
@@ -1824,9 +1834,6 @@ class PoseBase(PoseGroup):
         
         if sub_poses:
             self.create_sub_poses(sub_pass_mesh)
-        
-            
-
         
     def detach_sub_poses(self):
         """
