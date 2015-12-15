@@ -1313,7 +1313,7 @@ class MultiJointShape(object):
     
     def _create_locators(self):
         
-        #group = cmds.group(em = True, n = 'group_brow_locators_%s' % side)
+        group = cmds.group(em = True, n = 'locaotors_%s' % self.shape)
         
         locators = []
      
@@ -1331,6 +1331,8 @@ class MultiJointShape(object):
                 cmds.pointConstraint(joint, locator)
                 
                 xform = space.create_xform_group(locator)
+                
+                cmds.parent(xform, group)
                 
             locators.append(locator)
         self.locators = locators
