@@ -40,7 +40,7 @@ class PoseManager(ui.MayaWindow):
         self.pose_list.set_pose_widget(self.sculpt)
         
         self.sculpt.sculpted_mesh.connect(self.pose_list.update_current_pose)
-        self.pose_list.pose_list_refresh.connect(self.sculpt.mesh_widget.update_meshes)
+        self.pose_list.pose_list_refresh.connect(self._list_refreshed)
         self.pose_list.pose_list.itemSelectionChanged.connect(self.select_pose)
         self.pose_list.pose_renamed.connect(self._pose_renamed)
         self.pose_list.pose_deleted.connect(self._pose_deleted)
@@ -63,6 +63,10 @@ class PoseManager(ui.MayaWindow):
     def _pose_deleted(self):
         
         self.sculpt.set_pose(None)
+        
+    def _list_refreshed(self):
+        self.sculpt.mesh_widget.update_meshes
+        self.pose_list.set_filter_names()
         
     def select_pose(self):
         
@@ -168,16 +172,13 @@ class PoseListWidget(qt_ui.BasicWidget):
         self.filter_names = QtGui.QLineEdit()
         self.filter_names.setPlaceholderText('filter names')
 
-        self.filter_names.textChanged.connect(self._filter_names)
+        self.filter_names.textChanged.connect(self.set_filter_names)
         
         self.main_layout.addWidget(self.pose_list)
         self.main_layout.addWidget(self.filter_names)
         self.main_layout.addWidget(self.pose_widget)
     
-    def _filter_names(self, text):
-        
-        self.pose_list.filter_names(text)
-        self.skip_name_filter = False
+
 
     def _set_sub_pose_weight(self, pose, weight_value):
         
@@ -312,6 +313,14 @@ class PoseListWidget(qt_ui.BasicWidget):
         
     def pose_enable_changed(self, value):
         self.pose_list.pose_enable_changed(value)
+        
+    def set_filter_names(self, text = None):
+        
+        if not text:
+            text = str(self.filter_names.text())
+        
+        self.pose_list.filter_names(text)
+        self.skip_name_filter = False
     
 class BaseTreeWidget(qt_ui.TreeWidget):
 
@@ -464,6 +473,8 @@ class BaseTreeWidget(qt_ui.TreeWidget):
             return
         
         cmds.setAttr('%s.enable' % pose_name, value)
+        
+
         
 class PoseTreeWidget(BaseTreeWidget):
     
@@ -727,7 +738,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
     def _populate_list(self):
         
-        super(PoseTreeWidget, self)._populate_list()   
+        self.clear()
         
         if not cmds.objExists('pose_gr'):
             return
@@ -746,6 +757,8 @@ class PoseTreeWidget(BaseTreeWidget):
             pose_item = self._add_pose_item(pose)
                
         self.item_select = True
+        
+        self.list_refresh.emit()
                
     def _add_pose_item(self, pose_name, parent=None):
          
@@ -839,8 +852,12 @@ class PoseTreeWidget(BaseTreeWidget):
         item = self._add_item(pose, parent)
         
         self.update_select = False
+        
+        self.clearSelection()
+        
         if self.item_select:
             item.setSelected(True)
+            self.scrollToItem(item)
         self.update_select = True
         
         return item
@@ -865,12 +882,12 @@ class PoseTreeWidget(BaseTreeWidget):
             return
         
         mirror = corrective.PoseManager().mirror_pose(pose)
-        self.refresh()
+        #self.refresh()
         
         self.select_pose(mirror)
         
     def select_pose(self, pose_name=None):
-                
+        
         if not self.update_select:
             return
                 
@@ -896,16 +913,36 @@ class PoseTreeWidget(BaseTreeWidget):
                 corrective.PoseManager().visibility_off(self.last_selection[0])
 
         pose_names = self._get_selected_items(get_names=True)
+        items = self._get_selected_items(get_names = False)
         
-        if pose_names:
+        if pose_names and not pose_name:
             if not cmds.objExists(pose_names[0]):
                 self._remove_current_item()
             
-            if cmds.objExists(pose_names[0]):
+            corrective.PoseManager().set_pose(pose_names[0])
+        
+        if pose_name and cmds.objExists(pose_name):
+        
+            if pose_names:
+                if cmds.objExists(pose_names[0]):
+                    items[0].setSelected(False)
+        
+            iterator = QtGui.QTreeWidgetItemIterator(self)
+            
+            while iterator.value():
                 
-                corrective.PoseManager().set_pose(pose_names[0])
+                item = iterator.value()
+                
+                if str(item.text(0)) == pose_name:
+                    
+                    item.setSelected(True)
+                    self.scrollToItem(item)
+                    corrective.PoseManager().set_pose(pose_name)
+                    
+                iterator += 1
         
         self.last_selection = pose_names
+        
         
 class PoseWidget(qt_ui.BasicWidget):
 

@@ -1285,6 +1285,8 @@ class RigSwitch(object):
             for group in groups:
                 attr.connect_equal_condition(attribute_name, '%s.visibility' % group, key) 
 
+
+
 def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
     """
     Create a stretch effect on a transform by changing the scale when the distance changes between xform1 and xform2.
@@ -1945,7 +1947,7 @@ def get_controls():
     
     It follows these rules
     
-    First check if a transform starts with CNT_
+    First check if a transform starts with "CNT_"
     Second check if a transform has a an attribute named control.
     Third check if a transform has an attribute named tag and is a nurbsCurve, and that tag has a value.
     Fourth check if a transform has an attribute called curveType.

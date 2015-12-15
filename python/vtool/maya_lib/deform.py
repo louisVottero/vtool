@@ -15,6 +15,7 @@ import core
 import attr
 import space
 import geo
+import anim
 
 class XformTransfer(object):
     """
@@ -1061,6 +1062,11 @@ class AutoWeight2D(object):
         self.orig_joints = None
         self.offset_group = None
         
+        self.fade_cosine = False
+        self.fade_smoothstep = False
+        
+        self.min_max = None
+        
     def _create_offset_group(self):
         
         duplicate_mesh = cmds.duplicate(self.mesh)[0]
@@ -1230,6 +1236,12 @@ class AutoWeight2D(object):
             if percent > 1 or percent < 0:
                 continue
             
+            if self.fade_cosine:
+                percent = vtool.util.fade_cosine(percent)
+            if self.fade_smoothstep:
+                percent = vtool.util.fade_smoothstep(percent)
+            
+            
             weight_total += 1.0-percent
             if not weight_total > 1:
                 joint_weights.append([joint, ((1.0-percent)*multiplier)])
@@ -1258,6 +1270,15 @@ class AutoWeight2D(object):
         """
         self.orientation_transform = transform
         
+    def set_fade_cosine(self, bool_value):
+        self.fade_smoothstep = False
+        self.fade_cosine = bool_value
+        
+    def set_fade_smoothstep(self, bool_value):
+        
+        self.fade_cosine = False
+        self.fade_smoothstep = bool_value
+        
     def run(self):
         if not self.joints:
             return
@@ -1280,7 +1301,121 @@ class AutoWeight2D(object):
         #cmds.hide(self.offset_group)
         cmds.delete(self.offset_group)
 
+class MultiJointShape(object):
+    
+    def __init__(self, shape):
+        
+        self.shape = shape
+        self.joints = []
+        
+        self.control_values = []
+        
+        self.base_mesh = None
+        self.skinned_mesh = None
+    
+    def _create_locators(self):
+        
+        #group = cmds.group(em = True, n = 'group_brow_locators_%s' % side)
+        
+        locators = []
+     
+        for joint in self.joints:
+            
+            if cmds.objExists('%s.group_blend_locator' % joint):
+                locator = attr.get_attribute_input('%s.group_blend_locator' % joint, node_only = True)
+            
+            if not cmds.objExists('%s.group_blend_locator' % joint): 
                 
+                locator = cmds.spaceLocator(n = 'locator_%s' % joint)[0]
+                print locator, joint
+                attr.connect_message(locator, joint, 'blend_locator')
+                
+                cmds.pointConstraint(joint, locator)
+                
+                xform = space.create_xform_group(locator)
+                #cmds.parent(xform, group)
+                
+            print locator
+            locators.append(locator)
+        self.locators = locators
+        
+    
+    def _turn_controls_on(self):
+        
+        for control_group in self.control_values:
+            cmds.setAttr( control_group[0], control_group[1] )
+            
+    
+    def _turn_controls_off(self):
+        
+        for control_group in self.control_values:
+            cmds.setAttr( control_group[0], 0 )
+    
+    def set_joints(self, joints):
+        
+        self.joints = joints
+        
+    def set_target_mesh(self, base_mesh):
+        self.base_mesh = base_mesh
+        
+    def set_skin_mesh(self, skinned_mesh):
+        self.skinned_mesh = skinned_mesh
+        
+    def add_control_value(self, control_attribute, value):
+        
+        self.control_values.append([control_attribute, value])
+    
+        
+    def create(self):
+        
+        self._create_locators()
+        
+        self._turn_controls_on() 
+        
+        new_brow_geo = chad_extract_shape(self.base_mesh, self.shape)
+        cmds.delete(self.shape)
+        new_brow_geo = cmds.rename(new_brow_geo, self.shape)
+     
+        joint_values = {}    
+     
+        for locator in self.locators:
+            value = cmds.getAttr('%s.translateY' % locator)
+            joint_values[locator] = value
+        
+        self._turn_controls_off()
+        
+        
+        split = SplitMeshTarget(new_brow_geo)
+        split.set_weighted_mesh(self.skinned_mesh)
+     
+        inc = 1
+     
+        for joint in self.joints:
+                 
+            split.set_weight_joint( joint, str(inc))
+            inc += 1
+     
+        split.set_base_mesh(self.base_mesh)
+        splits = split.create()
+     
+        inc = 0
+        for split in splits:
+            print inc
+            value = joint_values[self.locators[inc]]
+            print value
+            quick_blendshape(split, self.base_mesh)
+     
+            anim.quick_driven_key('%s.translateY' % self.locators[inc],
+                                    'blendshape_%s.%s' % (self.base_mesh, split),
+                                    [0, value], 
+                                    [0, 1])        
+     
+            inc+=1
+     
+        cmds.delete(splits)
+        cmds.delete(new_brow_geo)
+
+                    
 class MayaWrap(object):
     """
     Convenience for making maya wraps.

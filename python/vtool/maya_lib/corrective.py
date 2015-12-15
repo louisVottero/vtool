@@ -1232,16 +1232,23 @@ class PoseBase(PoseGroup):
             other = ''
             
             if left_right:
-            
+                
                 start, end = vtool.util.find_special('lf_', value, 'first')
                 
                 if start != None:
                     other = vtool.util.replace_string(value, 'rt_', start, end)
                     
-                start, end = vtool.util.find_special('L', value, 'last')
-                
-                if start != None:
-                    other = vtool.util.replace_string(value, 'R', start, end)
+                if not other:
+                    start, end = vtool.util.find_special('_L_', value, 'last')
+                    
+                    if start != None:
+                        other = vtool.util.replace_string(value, '_R_', start, end)
+                    
+                if not other:
+                    start, end = vtool.util.find_special('L', value, 'end')
+                    
+                    if start != None:
+                        other = vtool.util.replace_string(value, 'R', start, end)
                     
             if not left_right:
                 
@@ -1249,11 +1256,18 @@ class PoseBase(PoseGroup):
                 
                 if start != None:
                     other = vtool.util.replace_string(value, 'lf_', start, end)
-                    
-                start, end = vtool.util.find_special('_R', value, 'last')
                 
-                if start != None:
-                    other = vtool.util.replace_string(value, '_L', start, end)
+                if not other:
+                    start, end = vtool.util.find_special('_R_', value, 'last')
+                    
+                    if start != None:
+                        other = vtool.util.replace_string(value, '_L_', start, end)
+                
+                if not other:
+                    start, end = vtool.util.find_special('R', value, 'end')
+                    
+                    if start != None:
+                        other = vtool.util.replace_string(value, 'L', start, end)
                 
             fixed.append(other)
             

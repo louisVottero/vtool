@@ -224,6 +224,9 @@ class ConstraintEditor(object):
                             'aimConstraint'
                             ]
     
+    def __init__(self):
+        pass
+    
     def _get_constraint_type(self, constraint):
         return cmds.nodeType(constraint)
         

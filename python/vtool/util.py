@@ -444,6 +444,20 @@ def fade_sine(percent_value):
     
     return math.sin(input)
 
+def fade_cosine(percent_value):
+    
+    percent_value = math.pi * percent_value
+    
+    percent_value = (1 - math.cos(percent_value)) * 0.5
+    
+    return percent_value
+
+def fade_smoothstep(percent_value):
+    
+    percent_value = percent_value * percent_value * (3 - 2 * percent_value)
+    
+    return percent_value
+
 def fade_sigmoid(percent_value):
     
     if percent_value == 0:
@@ -456,6 +470,14 @@ def fade_sigmoid(percent_value):
     
     return ( 2 / (1 + (math.e**(-0.70258*input)) ) ) -1 
     
+def set_percent_range(percent_value, new_min, new_max):
+
+    min = 0
+    max = 1
+
+    value = ( (new_max-new_min) * (percent_value-min) / (max-min) ) + new_min
+    
+    return value
 
 def get_distance(vector1, vector2):
     """

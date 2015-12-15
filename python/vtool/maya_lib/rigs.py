@@ -5835,6 +5835,7 @@ class EyeLidAimRig(JointRig):
             control = self._create_control()
             control.set_to_joint()
             control.hide_scale_attributes()
+            
             control.rotate_shape(90, 0, 0)
             
             control.scale_shape(self.control_size, self.control_size, self.control_size)
@@ -5863,6 +5864,8 @@ class EyeLidAimRig(JointRig):
             
             cmds.parent(xform, self.control_group)
             cmds.parent(local_xform, local_group)
+            
+            
             
             inc += 1
     
@@ -6110,6 +6113,7 @@ class StickyRig(JointRig):
         control.rotate_shape(90,0,0)
         control.scale_shape(.5, .5, .5)
         control.set_to_joint()
+        
         control_name = control.get()
         
         space.MatchSpace(transform, control_name).translation_rotation()
@@ -6150,11 +6154,6 @@ class StickyRig(JointRig):
             scale_y = cmds.getAttr('%s.scaleY' % xform)
             scale_z = cmds.getAttr('%s.scaleZ' % xform)
                 
-            print self.tweaker_space
-            print scale_x
-            print scale_y
-            print scale_z
-                
             scale_x = self.tweaker_space * (abs(scale_x)/scale_x)
             scale_y = self.tweaker_space * (abs(scale_y)/scale_y)
             scale_z = self.tweaker_space * (abs(scale_z)/scale_z)
@@ -6162,6 +6161,8 @@ class StickyRig(JointRig):
             cmds.setAttr('%s.scaleX' % scale, scale_x)
             cmds.setAttr('%s.scaleY' % scale, scale_y)
             cmds.setAttr('%s.scaleZ' % scale, scale_z)
+        
+        
         
         return control, xform, driver
     
