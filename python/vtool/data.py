@@ -429,11 +429,20 @@ class MayaCustomData(CustomData):
         
         cmds.setAttr('persp.farClipPlane', distance)
         
+        if distance > 1000:
+            near = 0.01
+        
         if distance > 10000:
-            cmds.setAttr('persp.nearClipPlane', distance/50,000)
+            near = 0.1
+
+        if distance > 100000:
+            near = 1
         
         if distance > 1000000:
-            cmds.setAttr('persp.nearClipPlane', 100)
+            near = 10
+            
+        
+        cmds.setAttr('persp.nearClipPlane', near)
             
 class ControlCvData(MayaCustomData):
     """
@@ -532,6 +541,9 @@ class SkinWeightData(MayaCustomData):
             influence_dict.update(line_dict)
         
         for influence in files:
+            if not influence.endswith('.weights'):
+                continue
+            
             if influence == 'influence.info':
                 continue
             

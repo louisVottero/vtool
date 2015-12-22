@@ -81,13 +81,27 @@ class Control(object):
         name = self.get()
         
         joint_given = True
+        temp_parent = None
         
         if not joint:
             joint = cmds.joint()
             
             cmds.delete(cmds.parentConstraint(name, joint))
             cmds.delete(cmds.scaleConstraint(name, joint))
-            #space.MatchSpace(name, joint).translation_rotation()
+            #space.MatchSpace(name, joint).translation_rotation() 
+            
+            buffer_group = cmds.group(em = True, n = core.inc_name('temp_%s' % joint ))
+            
+            cmds.parent(buffer_group, self.control)
+            cmds.parent(joint, buffer_group)
+            cmds.makeIdentity(buffer_group, t = True, r = True, s = True, jo = True, apply = True)
+            
+            cmds.parent(joint, w = True)
+            
+            temp_parent = cmds.listRelatives(joint, p = True)
+            
+            cmds.delete(buffer_group)
+                
             joint_given = False
         
         shapes = self.shapes
@@ -101,6 +115,8 @@ class Control(object):
             
             if parent:
                 cmds.parent(joint, parent)
+                if temp_parent:
+                    cmds.delete(temp_parent)
                 cmds.makeIdentity(joint, r = True, s = True, apply = True)
                 
             space.transfer_relatives(name, joint)

@@ -324,15 +324,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _update_process(self, name):
         
         self.code_widget.code_widget.code_edit.save_tabs(self.last_process)
-        self.code_widget.code_widget.code_edit.clear()
+        self.code_widget.code_widget.code_edit.close_tabs()
         self.code_widget.script_widget.code_manifest_tree.clearSelection()
+        self.code_widget.code_widget.code_edit.clear()
         
         items = self.view_widget.tree_widget.selectedItems()
         if items:
             title = items[0].get_name()
         if not items:
             title = '-'
-                
+        
         if name:
             
             self.process.load(name)  
@@ -346,7 +347,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.tab_widget.setTabEnabled(3, True)
             
             self.process_button.setEnabled(True)
-            
+        
         if not name:
             
             self._set_title('-')
@@ -357,7 +358,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_button.setDisabled(True)
             
         self.last_process = name
-                                
+        
     def _get_current_path(self):
         items = self.view_widget.tree_widget.selectedItems()
         

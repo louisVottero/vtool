@@ -386,6 +386,43 @@ class TreeWidget(QtGui.QTreeWidget):
 
         return r
     
+    def is_item_dropped(self, event, strict = False):
+        """
+        
+        Args
+            strict: False is good for lists that are ordered alphabetically. True is good for lists that are not alphabetical and can be reordered.
+        """
+        position = event.pos()
+        index = self.indexAt(position)
+
+        is_dropped = False
+
+        if event.source == self and event.dropAction() == QtCore.Qt.MoveAction or self.dragDropMode() == QtGui.QAbstractItemView.InternalMove:
+            
+            topIndex = QtCore.QModelIndex()
+            col = -1
+            row = -1
+            l = [event, row, col, topIndex]
+
+            if self.drop_on(l):
+                event, row, col, topIndex = l
+                
+                if row > -1:
+                    if row == (index.row() - 1):
+                        is_dropped = False
+                if row == -1:
+                    is_dropped = True
+                    
+                
+                if row == (index.row() + 1):
+                    if strict:
+                        is_dropped = False
+                    if not strict:
+                        is_dropped = True
+                    
+                    
+        return is_dropped
+    
     def _define_item(self):
         return QtGui.QTreeWidgetItem()
     
@@ -913,7 +950,7 @@ class FileTreeWidget(TreeWidget):
         self.setCurrentItem(item)
             
         return item
-        
+    
     def _add_sub_items(self, item):
         
         self.delete_empty_children(item)
@@ -1840,7 +1877,8 @@ class CodeEditTabs(BasicWidget):
         
         self.tabs.removeTab(index)
                 
-        self.code_tab_map.pop(str(title))
+        if self.code_tab_map.has_key(str(title)):
+            self.code_tab_map.pop(str(title))
         
         if self.tabs.count() == 0:
             self.no_tabs.emit()
@@ -2053,6 +2091,13 @@ class CodeEditTabs(BasicWidget):
                 window_parent.deleteLater()
                 
                 self.code_floater_map.pop(name)
+                
+    def close_tabs(self):
+        
+        tab_count = self.tabs.count()
+        
+        for inc in range(0, tab_count):
+            self._close_tab(inc)
                 
     def show_window(self, filepath):
         

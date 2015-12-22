@@ -543,22 +543,7 @@ class PoseTreeWidget(BaseTreeWidget):
         entered_item = self.itemAt(position)
         index = self.indexAt(position)
         
-        is_dropped = True
-        
-        if event.source == self and event.dropAction() == QtCore.Qt.MoveAction or self.dragDropMode() == QtGui.QAbstractItemView.InternalMove:
-            topIndex = QtCore.QModelIndex()
-            col = -1
-            row = -1
-            l = [event, row, col, topIndex]
-
-            if self.drop_on(l):
-                event, row, col, topIndex = l
-                
-                if row > -1:
-                    if row == index.row():
-                        is_dropped = False
-                if row == -1 or row == (index.row() + 1):
-                    is_dropped = True
+        is_dropped = self.is_item_dropped(event)
         
         super(PoseTreeWidget, self).dropEvent(event)
         

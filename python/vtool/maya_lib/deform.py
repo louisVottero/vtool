@@ -419,6 +419,8 @@ class ClusterCurve(ClusterSurface):
         
         vtool.util.warning('Can not set cluster u, there is only one direction for spans on a curve. To many teenage girls there was only One Direction for their musical tastes.')
 
+
+
 class SplitMeshTarget(object):
     """
     Split a mesh target edits based on skin weighting.
@@ -444,6 +446,55 @@ class SplitMeshTarget(object):
         self.weighted_mesh = None
         self.base_mesh = None
         self.split_parts = []
+        
+    def _get_center_fade_weights(self, mesh, fade_distance, positive):
+        
+        verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
+        
+        values = []
+        
+        fade_distance = fade_distance/2.0
+        inc = 0
+        for vert in verts:
+            
+            if fade_distance == 0:
+                value = 1
+            
+            if fade_distance != 0:
+                vert_position = cmds.xform(vert, q = True, ws = True, t = True)
+                
+                fade_distance = float(fade_distance)
+                
+                value = vert_position[0]/fade_distance
+                
+                if value > 1:
+                    value = 1
+                if value < -1:
+                    value = -1
+                
+                if positive:
+                    
+                    if value >= 0:
+                        value = vtool.util.set_percent_range(value, 0.5, 1)
+                    
+                    if value < 0:
+                        value = abs(value)
+                        value = vtool.util.set_percent_range(value, 0.5, 0)
+                        
+                if not positive:
+
+                    if value >= 0:
+                        value = vtool.util.set_percent_range(value, 0.5, 0)
+                    
+                    if value < 0:
+                        value = abs(value)
+                        value = vtool.util.set_percent_range(value, 0.5, 1)
+                        
+            inc += 1
+            
+            values.append(value)
+            
+        return values
     
     def set_weight_joint(self, joint, suffix = None, prefix = None, split_name = True):
         """
@@ -456,7 +507,8 @@ class SplitMeshTarget(object):
             split_name (bool): Wether to split the name based on "_" and add the suffix and prefix at each part. 
             eg. 'smile_cheekPuff' would become 'smileL_cheekPuffL' if suffix = 'L'
         """
-        self.split_parts.append([joint, None, suffix, prefix, None, split_name])
+        
+        self.split_parts.append([joint, None, suffix, prefix, None, split_name, [None,None]])
         
     def set_weight_insert_index(self, joint, insert_index, insert_name, split_name = True):
         """
@@ -469,7 +521,7 @@ class SplitMeshTarget(object):
             insert_name (str): The string to insert at insert_index.
             split_name (bool): Wether to split the name based on "_" and add the insert_name at  the insert_index.  
         """
-        self.split_parts.append([joint, None,None,None, [insert_index, insert_name], split_name])
+        self.split_parts.append([joint, None,None,None, [insert_index, insert_name], split_name, [None,None]])
     
     def set_weight_joint_replace_end(self, joint, replace, split_name = True):
         """
@@ -482,7 +534,11 @@ class SplitMeshTarget(object):
             split_name (bool): Wether to split the name based on "_"..  
         """
         
-        self.split_parts.append([joint, replace, None, None, None, split_name])
+        self.split_parts.append([joint, replace, None, None, None, split_name, [None,None]])
+
+    def set_center_fade(self, fade_distance, positive,  suffix = None, prefix = None, split_name = True):
+        
+        self.split_parts.append([None, None, suffix, prefix, None, split_name, [fade_distance, positive]])
     
     def set_weighted_mesh(self, weighted_mesh):
         """
@@ -492,6 +548,8 @@ class SplitMeshTarget(object):
             weighted_mesh (str): The name of a mesh with a skin cluster.
         """
         self.weighted_mesh = weighted_mesh
+        
+
     
     def set_base_mesh(self, base_mesh):
         """
@@ -510,15 +568,8 @@ class SplitMeshTarget(object):
         Return
             list: The names of the new targets.
         """
-        if not self.weighted_mesh and self.base_mesh:
+        if not self.base_mesh:
             return
-        
-        skin_cluster = find_deformer_by_type(self.weighted_mesh, 'skinCluster')
-        
-        if not skin_cluster:
-            return
-        
-        skin_weights = get_skin_weights(skin_cluster)
 
         parent = cmds.listRelatives( self.target_mesh, p = True )
         if parent:
@@ -527,16 +578,23 @@ class SplitMeshTarget(object):
         targets = []
         
         for part in self.split_parts:
+            
             joint = part[0]
             replace = part[1]
             suffix = part[2]
             prefix = part[3]
             split_index = part[4]
+            split_name_option = part[5]
+            center_fade, positive_negative = part[6]
+            
+            if center_fade == None and not self.weighted_mesh:
+                vtool.util.warning('Splitting with joints specified, but no weighted mesh specified.')
+                continue
             
             if not split_index:
                 split_index = [0,'']
             
-            split_name_option = part[5]
+            
             
             new_target = cmds.duplicate(self.base_mesh)[0]
             
@@ -603,29 +661,37 @@ class SplitMeshTarget(object):
             
             blendshape_node = cmds.blendShape(self.target_mesh, new_target, w = [0,1])[0]
             
-            
-            
-            target_index = get_index_at_skin_influence(joint, skin_cluster)
-            
-            if target_index == None:
-                vtool.util.warning('Joint %s is not in skinCluster %s' % (joint, skin_cluster))
-                cmds.delete(new_target, ch = True)
-                continue
-                       
-            if not skin_weights.has_key(target_index):
-                vtool.util.warning('Joint %s not in skinCluster %s.' % (joint, skin_cluster))
-                cmds.delete(new_target, ch = True)
-                continue
+            if center_fade != None:
                 
-            weights = skin_weights[target_index]
+                weights = self._get_center_fade_weights(self.base_mesh, center_fade, positive_negative)
             
+            if center_fade == None:
+                skin_cluster = find_deformer_by_type(self.weighted_mesh, 'skinCluster')
+        
+                if not skin_cluster:
+                    return
+        
+                skin_weights = get_skin_weights(skin_cluster)
+                
+                target_index = get_index_at_skin_influence(joint, skin_cluster)
+                
+                if target_index == None and cmds.objExists(target_index):
+                    vtool.util.warning('Joint %s is not in skinCluster %s' % (joint, skin_cluster))
+                    cmds.delete(new_target, ch = True)
+                    continue
+                           
+                if not skin_weights.has_key(target_index):
+                    vtool.util.warning('Joint %s not in skinCluster %s.' % (joint, skin_cluster))
+                    cmds.delete(new_target, ch = True)
+                    continue
+                    
+                weights = skin_weights[target_index]
+                
             import blendshape
             blend = blendshape.BlendShape(blendshape_node)
             blend.set_weights(weights, self.target_mesh)
             
             cmds.delete(new_target, ch = True)
-            
-            
             
             current_parent = cmds.listRelatives(new_target, p = True)
             
@@ -1299,6 +1365,65 @@ class AutoWeight2D(object):
         #cmds.hide(self.offset_group)
         cmds.delete(self.offset_group)
 
+class ComboControlShape(object):
+
+    def __init__(self, shape):
+        
+        self.shape = shape
+        self.targets = []
+        self.control_positions = []
+        self.base_mesh = None
+        self.blendshape = None
+        
+    def add_target(self, target_name):
+        self.targets.append(target_name)
+
+    def add_control_position(self, control_attribute, value):
+        self.control_positions.append([control_attribute, value])
+
+    def set_blendshape(self, blendshape):
+        self.blendshape = blendshape
+        
+    def set_base_mesh(self, base_mesh):
+        self.base_mesh = base_mesh
+
+    def create(self):
+        
+        for position in self.control_positions:
+            cmds.setAttr(position[0],position[1])
+        
+        chad_extract_shape(self.base_mesh, self.shape, replace = True)
+        
+        if not self.blendshape:
+            self.blendshape = find_deformer_by_type(self.base_mesh, 'blendShape', return_all = False)
+        
+        quick_blendshape(self.shape, self.base_mesh, blendshape=self.blendshape)
+        
+        inc = 0
+        
+        last_multiply = None
+        
+        for target in self.targets:
+            
+            if not last_multiply:
+                multiply = attr.connect_multiply('%s.%s' % (self.blendshape, target), '%s.%s' % (self.blendshape, self.shape))
+            
+            if inc == 1:
+                if last_multiply:
+                    cmds.connectAttr('%s.%s' % (self.blendshape, target), '%s.input2X' % last_multiply)
+                    
+            if inc > 1:
+                if last_multiply:
+                    
+                    last_multiply = attr.connect_multiply('%s.%s' % (self.blendshape, target), '%s.input2X' % last_multiply)
+                
+            last_multiply = multiply
+            
+            inc += 1
+            
+        for position in self.control_positions:
+            cmds.setAttr(position[0],0)
+    
 class MultiJointShape(object):
     
     def __init__(self, shape):
@@ -1310,12 +1435,18 @@ class MultiJointShape(object):
         
         self.base_mesh = None
         self.skinned_mesh = None
+        
+        self.locators = []
     
     def _create_locators(self):
         
-        group = cmds.group(em = True, n = 'locaotors_%s' % self.shape)
+        
         
         locators = []
+     
+        parent = cmds.listRelatives(self.joints[0], p = True)
+        if parent:
+            parent = parent[0]
      
         for joint in self.joints:
             
@@ -1332,7 +1463,7 @@ class MultiJointShape(object):
                 
                 xform = space.create_xform_group(locator)
                 
-                cmds.parent(xform, group)
+                cmds.parent(xform, parent)
                 
             locators.append(locator)
         self.locators = locators
@@ -1638,6 +1769,7 @@ class EnvelopeHistory(object):
             if connection:
                 cmds.connectAttr(connection, '%s.envelope' % history)
    
+
 
 def cluster_curve(curve, description, join_ends = False, join_start_end = False, last_pivot_end = False):
     """

@@ -17,6 +17,7 @@ import space
 import geo
 import deform
 import rigs_util
+
 #import util
 
 if vtool.qt_ui.is_pyqt():
@@ -119,6 +120,9 @@ def shape_combo():
     create_window(ui_shape_combo.ComboManager())
     
 def tool_manager(name = None, directory = None):
+    
+    
+    
     tool_manager = ToolManager(name)
     tool_manager.set_directory(directory)
     
@@ -126,6 +130,8 @@ def tool_manager(name = None, directory = None):
     
     import maya.utils
     maya.utils.executeDeferred(funct)
+    
+    
     
     return tool_manager
 
@@ -275,7 +281,9 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         transfer_process = QtGui.QPushButton('transfer process weights to parent')
         
         self.joint_axis_check = QtGui.QCheckBox('joint axis visibility')
-    
+        
+        mirror_invert = QtGui.QPushButton('Mirror Invert')
+        mirror_invert.clicked.connect(self._mirror_invert)
         
         
         add_orient.clicked.connect(self._add_orient)
@@ -298,6 +306,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         #main_layout.addWidget(add_orient)
         main_layout.addWidget(mirror)
         main_layout.addLayout(orient_layout)
+        main_layout.addWidget(mirror_invert)
         main_layout.addSpacing(20)
         main_layout.addWidget(self.joint_axis_check)
         
@@ -309,6 +318,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         main_layout.addWidget(snap_to_curve)
         main_layout.addWidget(transfer_joints)
         main_layout.addWidget(transfer_process)
+        
         
         
     def _match_joints(self):
@@ -395,6 +405,16 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         #not sure when this was implemented... but couldn't find it, needs to be reimplemented.
         #util.mirror_curve(suffix = '_wire')
+        
+    @core.undo_chunk
+    def _mirror_invert(self):
+        
+        selection = cmds.ls(sl = True)
+        
+        for thing in selection:
+            space.mirror_invert(thing)
+        
+        
         
     def _mirror_control(self):
         

@@ -473,6 +473,8 @@ class SparseRig(JointRig):
         self.xform_rotate = None
         self.xform_scale = None
         
+        self.control_to_pivot = False
+        
     def _convert_to_joints(self):
         
         for inc in range(0, len(self.controls)):
@@ -531,6 +533,9 @@ class SparseRig(JointRig):
         self.xform_rotate = rotate
         self.xform_scale = scale
         
+    def set_control_to_pivot(self, bool_value):
+        self.control_to_pivot = bool_value
+        
     def create(self):
         
         super(SparseRig, self).create()
@@ -541,8 +546,18 @@ class SparseRig(JointRig):
         
             control_name = control.get()
         
-            match = space.MatchSpace(joint, control_name)
-            match.translation_rotation()
+            
+            xform = space.create_xform_group(control.get())
+            driver = space.create_xform_group(control.get(), 'driver')
+            
+            match = space.MatchSpace(joint, xform)
+                
+            if not self.control_to_pivot:    
+                match.translation_rotation()
+            if self.control_to_pivot:    
+                match.translation_to_rotate_pivot()
+            
+            match.scale()
             
             if self.respect_side:
                 side = control.color_respect_side(True, self.respect_side_tolerance)
@@ -559,12 +574,7 @@ class SparseRig(JointRig):
                     
                     self.control_dict[control_name] = control_data
                     
-                    
-                    
-              
-            xform = space.create_xform_group(control.get())
             
-            driver = space.create_xform_group(control.get(), 'driver')
             
             if self.match_scale:
                 const = cmds.scaleConstraint(joint, xform)
@@ -597,18 +607,19 @@ class SparseLocalRig(SparseRig):
         super(SparseLocalRig, self).__init__(description, side)
         
         self.local_constraint = True
-        self.control_to_pivot = False
         self.local_parent = None
         self.local_xform = None
+        self.connect_xform = False
 
     def set_local_constraint(self, bool_value):
         self.local_constraint = bool_value
-
-    def set_control_to_pivot(self, bool_value):
-        self.control_to_pivot = bool_value
-
+        
     def set_local_parent(self, local_parent):
         self.local_parent = local_parent
+        
+    def set_connect_local_xform(self, bool_value):
+        
+        self.connect_xform = bool_value
 
     def create(self):
         
@@ -624,11 +635,18 @@ class SparseLocalRig(SparseRig):
             
             control_name = control.get()
             
+            xform = space.create_xform_group(control.get())
+            driver = space.create_xform_group(control.get(), 'driver')
+            
+            match = space.MatchSpace(joint, xform)
+            
             if not self.control_to_pivot:
-                match = space.MatchSpace(joint, control_name)
+                
                 match.translation_rotation()
             if self.control_to_pivot:    
-                space.MatchSpace(joint, control_name).translation_to_rotate_pivot()
+                match.translation_to_rotate_pivot()
+            
+            match.scale()
             
             if self.respect_side:
                 side = control.color_respect_side(True, self.respect_side_tolerance)
@@ -643,12 +661,7 @@ class SparseLocalRig(SparseRig):
                     self.control_dict[control_name] = control_data
                     
                     control = rigs_util.Control(control_name)
-            
-            xform = space.create_xform_group(control.get())
-            
-            driver = space.create_xform_group(control.get(), 'driver')
-            
-            
+                    
             if not self.local_constraint:
                 xform_joint = space.create_xform_group(joint)
                 
@@ -673,7 +686,9 @@ class SparseLocalRig(SparseRig):
                 attr.connect_rotate(driver, local_driver)
                 attr.connect_scale(driver, local_driver)
                 
-                attr.connect_transforms(xform, local_xform)
+                
+                if self.connect_xform:
+                    attr.connect_transforms(xform, local_xform)
                 
                 if not self.local_xform:
                     cmds.parent(local_xform, self.setup_group)
@@ -946,7 +961,10 @@ class FkRig(BufferRig):
             
         if not self.match_to_rotation:
             match.translation()
+            
+        match.scale()
         
+            
     def _first_increment(self, control, current_transform):
         
         self._attach(control, current_transform)
@@ -1115,6 +1133,7 @@ class FkLocalRig(FkRig):
         self.local_xform = None
         self.rig_scale = False
         self.connect_driver = False
+        self.connect_xform = False
         
     def _attach(self, source_transform, target_transform):
         
@@ -1132,14 +1151,15 @@ class FkLocalRig(FkRig):
             driver = space.create_xform_group(local_group, 'driver')
             
             orig_driver = self.control_dict[source_transform]['driver']
-            orig_xform = self.control_dict[source_transform]['xform']
-            
             attr.connect_transforms(orig_driver, driver)
+            
+        if self.connect_xform:
+            orig_xform = self.control_dict[source_transform]['xform']
             attr.connect_transforms(orig_xform, local_xform)
         
         
         self.local_parent = local_group
-            
+        
         return local_group, local_xform
 
     def _create_control(self, sub = False):
@@ -1172,6 +1192,10 @@ class FkLocalRig(FkRig):
     
     def set_connect_local_driver(self, bool_value):
         self.connect_driver = bool_value
+        
+    def set_connect_local_xform(self, bool_value):
+        
+        self.connect_xform = bool_value
     
     def set_local_parent(self, local_parent):
         self.main_local_parent = local_parent 
@@ -6114,6 +6138,7 @@ class StickyRig(JointRig):
         if self.side == 'R':
             cmds.setAttr('%s.rotateY' % scale, 180)
             cmds.setAttr('%s.scaleZ' % scale, -1)
+            
         
         return xform, driver, scale
     
@@ -6157,16 +6182,17 @@ class StickyRig(JointRig):
         if self.tweaker_space < 1 or self.tweaker_space > 1:
                 
                 
-                
-            cmds.connectAttr('%s.scale' % scale, '%s.inverseScale' % control)
+            space.connect_inverse_scale(scale, control)
             
-            scale_x = cmds.getAttr('%s.scaleX' % xform)
-            scale_y = cmds.getAttr('%s.scaleY' % xform)
-            scale_z = cmds.getAttr('%s.scaleZ' % xform)
-                
+            scale_x = cmds.getAttr('%s.scaleX' % scale)
+            scale_y = cmds.getAttr('%s.scaleY' % scale)
+            scale_z = cmds.getAttr('%s.scaleZ' % scale)
+            
             scale_x = self.tweaker_space * (abs(scale_x)/scale_x)
             scale_y = self.tweaker_space * (abs(scale_y)/scale_y)
             scale_z = self.tweaker_space * (abs(scale_z)/scale_z)
+            
+
             
             cmds.setAttr('%s.scaleX' % scale, scale_x)
             cmds.setAttr('%s.scaleY' % scale, scale_y)
@@ -6412,30 +6438,22 @@ class StickyFadeRig(StickyRig):
 
     def _set_corner_space(self, source, target):
         
-        if self.corner_x_space:
-            
-            current_value = cmds.getAttr('%s.scaleX' % target)
-            negate = current_value/abs(current_value)
-            
-            condition = attr.connect_equal_condition('%s.translateX' % source, '%s.scaleX' % target, 0)
-            cmds.setAttr('%s.operation' % condition, 3)
-            
-            cmds.setAttr('%s.colorIfTrueR' % condition, self.corner_x_space[0] * negate)
-            cmds.setAttr('%s.colorIfFalseR' % condition, self.corner_x_space[1] * negate)
-            
-        if self.corner_y_space:
-            condition = attr.connect_equal_condition('%s.translateY' % source, '%s.scaleY' % target, 0)
-            cmds.setAttr('%s.operation' % condition, 3)
-            
-            cmds.setAttr('%s.colorIfTrueR' % condition, self.corner_y_space[0] * negate)
-            cmds.setAttr('%s.colorIfFalseR' % condition, self.corner_y_space[1] * negate)      
+        space_scale = space.TranslateSpaceScale()
         
-        if self.corner_z_space:
-            condition = attr.connect_equal_condition('%s.translateZ' % source, '%s.scaleZ' % target, 0)
-            cmds.setAttr('%s.operation' % condition, 3)
+        space_scale.set_source_translate(source)
+        space_scale.set_target_scale(target)
+        
+        if self.corner_x_space:
+            space_scale.set_x_space(self.corner_x_space[0], self.corner_x_space[1])
+        
+        if self.corner_y_space:
+            space_scale.set_y_space(self.corner_y_space[0], self.corner_y_space[1])
             
-            cmds.setAttr('%s.colorIfTrueR' % condition, self.corner_z_space[0] * negate)
-            cmds.setAttr('%s.colorIfFalseR' % condition, self.corner_z_space[1] * negate)    
+        if self.corner_z_space:
+            space_scale.set_z_space(self.corner_z_space[0], self.corner_z_space[1])
+            
+        space_scale.create()
+   
 
     def _create_corner_fades(self):
                
@@ -6479,9 +6497,10 @@ class StickyFadeRig(StickyRig):
             
             
             
-            driver = space.create_xform_group(control.get(), 'driver')
+            space.create_xform_group(control.get(), 'driver')
             
-            cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
+            
+            
             
             self.corner_xforms.append(xform)
             self.corner_controls.append(control.get())
@@ -6496,10 +6515,14 @@ class StickyFadeRig(StickyRig):
                 if side == 'R':
                     corner_match = self.corner_match[1]
                     
-                space.MatchSpace(corner_match, xform).translation_rotation()
+                match = space.MatchSpace(corner_match, xform)
+                match.translation_rotation()
+                
                 
                 const = cmds.scaleConstraint( corner_match, xform)
                 cmds.delete(const)
+            
+            space.connect_inverse_scale(xform, control.control)
             
             cmds.parent(xform, self.control_group)
             
@@ -6878,5 +6901,6 @@ class JawRig(FkLocalRig):
         
     def set_create_jaw_slide_attribute(self, bool_value):
         self.jaw_slide_attribute = bool_value
+        
         
  

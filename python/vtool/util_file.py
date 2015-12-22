@@ -1390,9 +1390,13 @@ def delete_dir(name, directory):
     
     if not is_dir(full_path):
         
-        util.show('%s was not deleted.' % full_path)
+        util.show('%s was not deleted. It is not a folder.' % full_path)
         
         return full_path
+    
+    #read-only error fix
+    if not os.access(full_path, os.W_OK):
+        os.chmod(full_path, stat.S_IWUSR)
     
     shutil.rmtree(full_path)  
     

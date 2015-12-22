@@ -6,6 +6,8 @@ import vtool.qt_ui
 import vtool.util_file
 import vtool.util
 
+#vtool.util.activate_profiler()
+
 import ui_data
 import process
 
@@ -251,16 +253,20 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         self.save_file.save_widget._save()
         
+    
+        
     def _multi_save(self, widgets, note):
         
         if not widgets:
             return
             
-        comment = vtool.qt_ui.get_comment(self, '- %s -\nScripts not saved.\nSave scripts?' % note)
+        #comment = vtool.qt_ui.get_comment(self, '- %s -\nScripts not saved.\nSave scripts?' % note)
         
-        if comment == None:
-            return
-            
+        #if comment == None:
+        #    print 'no comment!!!!'
+            #return
+        comment = 'auto save'
+        
         for widget in widgets:
                         
             self.save_file.set_text_widget(widget)
@@ -269,7 +275,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
             
             self.save_file.set_directory(folder_path)
             self.save_file.save_widget._save(comment)
-                        
+                    
     def set_code_path(self, path, open_in_window = False):
         
         if not path:
@@ -426,7 +432,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     script_open_external = vtool.qt_ui.create_signal()
     script_focus = vtool.qt_ui.create_signal(object)
     item_removed = vtool.qt_ui.create_signal(object)
-    
+
     def __init__(self):
         
         super(CodeManifestTree, self).__init__()
@@ -435,12 +441,14 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.setSortingEnabled(False)
         
-        self.setIndentation(False)
+        #self.setIndentation(False)
         
         self.setSelectionMode(self.ExtendedSelection)
         
         self.setDragDropMode(self.InternalMove)
+        self.setDragEnabled(True)
         self.setAcceptDrops(True)  
+        self.setDropIndicatorShown(True) 
         self.setAutoScroll(True)
         
         self.setDefaultDropAction(QtCore.Qt.MoveAction)
@@ -466,6 +474,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.update_checkbox = True
         
+        self.hierarchy = False
+        #new
+        self.dragged_item = None
+        #new
+        
     def resizeEvent(self, event = None):
         super(CodeManifestTree, self).resizeEvent(event)
         
@@ -482,34 +495,168 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     
 
     def mousePressEvent(self, event):
-        super(CodeManifestTree, self).mousePressEvent(event)
+        
         
         self.handle_selection_change = True
         
-        item = self.currentItem()
+        #new
+        item = self.itemAt(event.pos())
         
+        parent = self.invisibleRootItem()
+        
+        if item:
+            if item.parent():
+                parent = item.parent()
+        
+        self.drag_parent = parent
+        
+        self.dragged_item = item
+        
+        super(CodeManifestTree, self).mousePressEvent(event)
+        #new
         #self.script_focus.emit( str(item.text(0)) )
-    
+    """
     def dragMoveEvent(self, event):
         super(CodeManifestTree, self).dragMoveEvent(event)
         
         self.handle_selection_change = False
         
         self.dragged_item = self.currentItem()
-        
+    """ 
+    
     def dropEvent(self, event):
         
-        super(CodeManifestTree, self).dropEvent(event)
+        #new
+        position = event.pos()
+        index = self.indexAt(position)
         
-        self.clearSelection()
+        entered_item = self.itemAt(position)
+        entered_name = None
         
-        self.setItemSelected(self.dragged_item, True)
+        if entered_item:
+            
+            entered_name = entered_item.get_text()
         
-        self.dragged_item = None
-        self.handle_selection_change = True
+        if not entered_item:
+            entered_item = self.invisibleRootItem()
+            entered_name = None
         
-        self._update_manifest()
+        is_dropped = self.is_item_dropped(event, strict = True)
+        #new
         
+        #super(CodeManifestTree, self).dropEvent(event)
+        
+        #removing this lines triggers the new behavior that is still being developed
+        if not self.hierarchy:
+            is_dropped = False
+        
+        if not is_dropped:
+            
+            self.clearSelection()
+            
+            self.setItemSelected(self.dragged_item, True)
+            
+            fromList    = event.source()
+            insertRow   = index.row()
+            
+            if self.dropIndicatorPosition == self.BelowItem:
+                insertRow += 1
+            
+            for item in fromList.selectedItems():
+                
+                entered_item.removeChild(self.dragged_item)
+                
+                filename = self.dragged_item.get_text()
+                state = self.dragged_item.get_state()
+                
+                item = self._create_item(filename, state)
+
+                self.insertTopLevelItem(insertRow, item)
+ 
+                insertRow += 1
+                
+            self.dragged_item = None
+            self.handle_selection_change = True
+            self._update_manifest()
+            
+        #new
+        if is_dropped:
+            
+            entered_name
+            
+            if entered_item:
+                
+                
+                
+                if entered_item.parent():
+                    parent_item = entered_item.parent()
+                    
+                if not entered_item.parent():
+                    parent_item = self.invisibleRootItem()
+                    
+                if not self.drag_parent is parent_item:
+                    
+                    index = entered_item.indexOfChild(self.dragged_item)
+                    child = entered_item.takeChild(index)
+                    
+                    #item = QtGui.QTreeWidgetItem()
+                    #item.setText(0, 'foobar.py')
+                    
+                    name = self.dragged_item.get_text()
+                    state = self.dragged_item.get_state()
+                
+                    item = self._create_item(name, state)
+                    
+                    parent_item.addChild(item)
+                    
+                    entered_item = parent_item
+                    
+                    if parent_item is self.invisibleRootItem():
+                        entered_name = None
+                    if not parent_item is self.invisibleRootItem():
+                        entered_name = entered_item.get_text()
+                
+                entered_item.removeChild(self.dragged_item)    
+                entered_item.setExpanded(True)
+                
+                name = self.dragged_item.get_text()
+                state = self.dragged_item.get_state()
+                
+                item = self._create_item(name, state)
+                
+                entered_item.addChild(item)
+                entered_item.setExpanded(True)
+                
+            self.dragged_item.setDisabled(True)
+            
+            if entered_item is self.drag_parent:
+                self.dragged_item.setDisabled(False)
+                return
+            
+            if entered_name:
+                message = 'Parent %s under %s?' % (self.dragged_item.get_text(), entered_name)
+            if not entered_name:
+                message = 'Unparent %s?' % self.dragged_item.get_text()
+                
+            move_result = qt_ui.get_permission( message , self)
+            
+            if not move_result:
+                
+                if self.drag_parent:
+                    self.drag_parent.addChild(self.dragged_item)
+                self.dragged_item.setDisabled(False)
+                return
+            
+            self.dragged_item.setDisabled(False)
+        
+        event.accept()    
+        
+    def _item_expanded(self, item):
+        return
+        #self._add_sub_items(item) 
+        
+        #self.resizeColumnToContents(self.title_text_index)
+                
     def _set_all_checked(self, int):
         
         if not self.update_checkbox:
@@ -605,8 +752,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.old_name = str(item.get_text())
         
         new_name = qt_ui.get_new_name('New Name', self, self.old_name)
-        
-        #new_name = qt_ui.get_comment(self, 'New name:', 'Rename %s' % self.old_name)
         
         if not new_name:
             return
@@ -730,21 +875,45 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     def _define_item(self):
         return ManifestItem()
         
-    def _add_item(self, filename, state):
-        item = super(CodeManifestTree,self)._add_item(filename)
+    def _setup_item(self, item, state):
         
         if not state:
             item.setCheckState(0, QtCore.Qt.Unchecked)
         if state:
             item.setCheckState(0, QtCore.Qt.Checked)
         
-        item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsUserCheckable)
+        if not self.hierarchy:
+            #dont remove this comment.  You can make an item not be drop enabled by giving it every flag except drop enabled.
+            item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsUserCheckable)
+        
+        if self.hierarchy:
+            #this allows for dropping
+            item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsUserCheckable|QtCore.Qt.ItemIsDropEnabled)
+            #item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsUserCheckable|QtCore.Qt.ItemIsDropEnabled)
         
         item.tree = self
         
+        
+    def _create_item(self, filename, state = False):
+        
+        item = self._define_item()
+        
+        item.set_text(filename)
+        
+        self._setup_item(item, state)
+        
+        return item
+        
+    def _add_item(self, filename, state):
+        
+        
+        item = super(CodeManifestTree,self)._add_item(filename)
+        
+        self._setup_item(item, state)
+        
         return item
     
-    def _add_items(self, files):
+    def _add_items(self, files, item = None):
         
         scripts, states = files
         
@@ -768,7 +937,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
         self.update_checkbox = True
     
-    def _get_files(self):
+    def _get_files(self, path = None):
         
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
@@ -1038,7 +1207,6 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         
         self.setIcon(0, icon)
         
-        
     def setData(self, column, role, value):
         super(ManifestItem, self).setData(column, role, value)
         
@@ -1074,6 +1242,10 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
                 self._square_fill_icon(0.6, 0.6, 0.6)
             if state == 2:
                 self._square_fill_icon(1.0, 1.0, 0.0)
+    
+    def get_state(self):
+        return self.checkState(0)
+        
     
     def set_text(self, text):
         text = '   ' + text
