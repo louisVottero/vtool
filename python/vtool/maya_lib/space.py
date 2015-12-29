@@ -359,6 +359,33 @@ class ConstraintEditor(object):
         """
         
         cmds.setAttr('%s.interpType' % constraint, int_value)
+
+    def create_title(self, node, constraint, title_name = 'FOLLOW'):
+        
+        
+        targets = self.get_targets(constraint)
+        
+        inc = 0
+        
+        names = []
+        
+        for target in targets:
+            name = target
+            print 'target!', target
+            if target.startswith('follower_'):
+                parent = cmds.listRelatives(target, p = True)
+                if parent:
+                    parent = parent[0]
+                    if parent.startswith('CNT_'):
+                        name = parent
+        
+            name = '%s %s' % (inc, name)
+            
+            names.append(name)
+            inc += 1
+        
+        attr.create_title(node, title_name, names)
+        
         
     def create_switch(self, node, attribute, constraint):
         """
@@ -1883,9 +1910,8 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     
     follow_group = create_xform_group(target_transform, 'follow')
     
-    if attribute_name == 'follow':
-        var = attr.MayaEnumVariable('FOLLOW')
-        var.create(node)    
+    title_name = attribute_name.upper()
+    
 
     for source in source_list:
         
@@ -1908,7 +1934,7 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
         constraint = cmds.pointConstraint(locators,  follow_group, mo = True)[0]
     
     constraint_editor = ConstraintEditor()
-    
+    constraint_editor.create_title(node, constraint, title_name)
     constraint_editor.create_switch(node, attribute_name, constraint)
     
     if value == None:

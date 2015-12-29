@@ -2929,7 +2929,7 @@ def get_slot_count(attribute):
     
     return len(slots)
 
-def create_title(node, name):
+def create_title(node, name, name_list = []):
     """
     Create a enum title attribute on node
     
@@ -2938,7 +2938,13 @@ def create_title(node, name):
         name (str): The title name.
     """
     title = MayaEnumVariable(name)
+    
+    if name_list:
+        title.set_enum_names(name_list)
+        
     title.create(node)
+    
+    
       
 def zero_xform_channels(transform):
     """

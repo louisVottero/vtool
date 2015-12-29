@@ -1895,6 +1895,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         self.curl_axis = None
         self.orient_joint = None
         self.control_xform = {}
+        self.control_xform_relative = True
         self.last_pivot_top_value = False
         self.fix_x_axis = False
         self.skip_first_control = False
@@ -1989,7 +1990,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             xform_sub_control = space.create_xform_group(sub_control)
             self.sub_drivers.append( space.create_xform_group(sub_control, 'driver') )
             
-            cmds.parentConstraint(sub_control, self.clusters[self.current_increment], mo = True)
+            
             
             cmds.parent(xform_sub_control, self.control.get())
             
@@ -2002,14 +2003,19 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
                 
             sub_control_object.hide_scale_and_visibility_attributes()
             
-        if not self.sub_control_on:
-            cmds.parentConstraint(control, self.clusters[self.current_increment], mo = True)
+
         
         increment = self.current_increment+1
         
         if increment in self.control_xform:
             vector = self.control_xform[increment]
-            cmds.move(vector[0], vector[1],vector[2], self.current_xform_group, r = True)
+            cmds.move(vector[0], vector[1],vector[2], self.current_xform_group, r = self.control_xform_relative)
+        
+        if self.sub_control_on:
+            cmds.parentConstraint(sub_control, self.clusters[self.current_increment], mo = True)
+        
+        if not self.sub_control_on:
+            cmds.parentConstraint(control, self.clusters[self.current_increment], mo = True)
         
         #cmds.parent(self.current_xform_group, self.control_group)
         
@@ -2027,16 +2033,17 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         
         super(SimpleFkCurveRig, self)._loop(self.clusters)
     
-    def set_control_xform(self, vector, inc):
+    def set_control_xform(self, vector, inc, relative = True):
         """
         This allows a control to be moved while its being created. 
         This way all the clusters and everything are still functioning properly.
         
         Args
             vector [list]: Eg [0,0,0], the amount to move the control, relative to its regular position.
-            inc [int]: The increment of the control. An increment of 0 would move the first control.
+            inc [int]: The increment of the control. An increment of 1 would move the first control.
         """
         self.control_xform[inc] = vector
+        self.control_xform_relative = relative
     
     def set_orient_joint(self, joint):
         """
@@ -3118,16 +3125,24 @@ class IkAppendageRig(BufferRig):
         
         if self.create_twist:
             
-            if not self.pole_follow_transform:
-                follow_group = space.create_follow_group(self.top_control, xform_group)
-            if self.pole_follow_transform:
-                follow_group = space.create_follow_group(self.pole_follow_transform, xform_group)
-                
-            constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo = True)[0]
+            vtool.util.convert_to_sequence(self.pole_follow_transform)
             
+            pole_locator = cmds.spaceLocator(n = self._get_name('locator', 'pole'))[0]
+            
+            space.MatchSpace(self.poleControl, pole_locator).translation_rotation()
+            cmds.parent(pole_locator, self.setup_group)
+            
+            self.pole_follow_transform.append(self.top_control)
+            
+            space.create_multi_follow(self.pole_follow_transform, pole_locator, self.poleControl, value = 0)
+            
+            follow_group = space.create_follow_group(pole_locator, xform_group)
+            
+            constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo = True)[0]
             constraint_editor = space.ConstraintEditor()
             constraint_editor.create_switch(self.btm_control, 'autoTwist', constraint)
             cmds.setAttr('%s.autoTwist' % self.btm_control, 0)
+            
         
         if not self.create_twist:
             if self.pole_follow_transform:
