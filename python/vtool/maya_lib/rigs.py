@@ -2786,7 +2786,7 @@ class IkAppendageRig(BufferRig):
         self.match_btm_to_joint = True
         self.create_world_switch = True
         self.create_top_control = True
-        self.pole_follow_transform = None
+        self.pole_follow_transform = []
         self.pole_angle_joints = []
         self.top_control_right_side_fix = True
         self.stretch_axis = 'X'
