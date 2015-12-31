@@ -469,8 +469,8 @@ class StickyRig(rigs.JointRig):
         old_top_joint = top_joint
         old_btm_joint = btm_joint
         
-        top_joint = cmds.duplicate(top_joint, n = core.inc_name(self._get_name('inputJoint', 'top')))[0]
-        btm_joint = cmds.duplicate(btm_joint, n = core.inc_name(self._get_name('inputJoint', 'btm')))[0]
+        top_joint = cmds.duplicate(top_joint, po = True, n = core.inc_name(self._get_name('inputJoint', 'top')))[0]
+        btm_joint = cmds.duplicate(btm_joint, po = True, n = core.inc_name(self._get_name('inputJoint', 'btm')))[0]
         
         cmds.parentConstraint(top_joint, old_top_joint)
         cmds.scaleConstraint(top_joint, old_top_joint)
@@ -557,9 +557,7 @@ class StickyRig(rigs.JointRig):
         cmds.setAttr('%s.interpType' % constraint, 2)
         constraint_editor = space.ConstraintEditor()    
         constraint_editor.create_switch(target_control, 'stick', constraint)
-         
         
-         
     def _create_sticky_control(self, transform, description):
 
         control = self._create_control(description)
@@ -3157,7 +3155,7 @@ class WorldStickyRig(rigs.JointRig):
         cmds.parent(self.mid_top_locator[1], self.mid_locator_group)
         cmds.parent(self.mid_btm_locator[1], self.mid_locator_group)
         cmds.parent(self.btm_locator[1], self.btm_locator_group)   
-
+        
         self._create_follow([self.top_locator[0], self.mid_top_locator[0]], control_top[1], top_joint)
         
         cmds.addAttr(control_top[0], ln = 'stick', min = 0, max = 1, k = True)
@@ -3198,7 +3196,6 @@ class WorldStickyRig(rigs.JointRig):
         driver = space.create_xform_group(control, 'driver')
         scale = space.create_xform_group(control, 'scale')
         
-
         if self.side == 'R':
             cmds.setAttr('%s.rotateY' % scale, 180)
             cmds.setAttr('%s.scaleZ' % scale, -1)
