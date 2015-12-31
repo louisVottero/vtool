@@ -63,6 +63,8 @@ class BlendShape(object):
         
         self.targets[name] = target
         self.weight_indices.append(index)
+        
+        self.weight_indices.sort()
 
     def _get_target_attr(self, name):
         return '%s.%s' % (self.blendshape, name)
@@ -151,8 +153,9 @@ class BlendShape(object):
         return attribute
         
     def _get_next_index(self):
+        
         if self.weight_indices:
-            return self.weight_indices[-1] + 1
+            return ( self.weight_indices[-1] + 1 )
         if not self.weight_indices:
             return 0
 
@@ -281,9 +284,10 @@ class BlendShape(object):
             if mesh and cmds.objExists(mesh):
                 cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
             
-            cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 1)
-            cmds.aliasAttr(name, '%s.weight[%s]' % (self.blendshape, current_index))
-            cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 0)
+            if not cmds.objExists('%s.%s' % (self.blendshape, name)):
+                cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 1)
+                cmds.aliasAttr(name, '%s.weight[%s]' % (self.blendshape, current_index))
+                cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 0)
             
             attr = '%s.%s' % (self.blendshape, name)
             return attr
@@ -342,6 +346,8 @@ class BlendShape(object):
         self.targets.pop(name)
         
         cmds.aliasAttr('%s.%s' % (self.blendshape, name), rm = True)
+        
+        self.weight_indices.sort()
        
     def disconnect_target(self, name, inbetween = 1):
         """

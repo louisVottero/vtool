@@ -386,6 +386,43 @@ class TreeWidget(QtGui.QTreeWidget):
 
         return r
     
+    def is_item_dropped(self, event, strict = False):
+        """
+        
+        Args
+            strict: False is good for lists that are ordered alphabetically. True is good for lists that are not alphabetical and can be reordered.
+        """
+        position = event.pos()
+        index = self.indexAt(position)
+
+        is_dropped = False
+
+        if event.source == self and event.dropAction() == QtCore.Qt.MoveAction or self.dragDropMode() == QtGui.QAbstractItemView.InternalMove:
+            
+            topIndex = QtCore.QModelIndex()
+            col = -1
+            row = -1
+            l = [event, row, col, topIndex]
+
+            if self.drop_on(l):
+                event, row, col, topIndex = l
+                
+                if row > -1:
+                    if row == (index.row() - 1):
+                        is_dropped = False
+                if row == -1:
+                    is_dropped = True
+                    
+                
+                if row == (index.row() + 1):
+                    if strict:
+                        is_dropped = False
+                    if not strict:
+                        is_dropped = True
+                    
+                    
+        return is_dropped
+    
     def _define_item(self):
         return QtGui.QTreeWidgetItem()
     
@@ -833,6 +870,8 @@ class FileTreeWidget(TreeWidget):
 
     def _add_item(self, filename, parent = None):
         
+        self.clearSelection()
+        
         path_name = filename
         
         found = False
@@ -908,8 +947,10 @@ class FileTreeWidget(TreeWidget):
         if parent:
             parent.addChild(item)
             
+        self.setCurrentItem(item)
+            
         return item
-        
+    
     def _add_sub_items(self, item):
         
         self.delete_empty_children(item)
@@ -1601,6 +1642,9 @@ class GetNumber(BasicWidget):
     def set_value(self, value):
         self.spin_widget.setValue(value)
         
+    def get_value(self):
+        return self.spin_widget.value()
+        
     def set_label(self, label):
         self.label.setText(label)
              
@@ -1833,7 +1877,8 @@ class CodeEditTabs(BasicWidget):
         
         self.tabs.removeTab(index)
                 
-        self.code_tab_map.pop(str(title))
+        if self.code_tab_map.has_key(str(title)):
+            self.code_tab_map.pop(str(title))
         
         if self.tabs.count() == 0:
             self.no_tabs.emit()
@@ -2046,6 +2091,13 @@ class CodeEditTabs(BasicWidget):
                 window_parent.deleteLater()
                 
                 self.code_floater_map.pop(name)
+                
+    def close_tabs(self):
+        
+        tab_count = self.tabs.count()
+        
+        for inc in range(0, tab_count):
+            self._close_tab(inc)
                 
     def show_window(self, filepath):
         
@@ -2899,6 +2951,85 @@ class Highlighter(QtGui.QSyntaxHighlighter):
                 self.setFormat(index, length, format)
                 index = expression.indexIn(text, index + length)
 
+        """
+    def highlightQuote(self, text):
+        
+        self.setCurrentBlockState(0)
+        
+        start_index = 0
+        
+        if not self.previousBlockState() == 1:
+            start_index = self.quote.indexIn(text)
+        
+        while start_index >= 0:
+            
+            end_index = self.quote.indexIn(text, start_index)
+            
+            comment_length = 0
+            
+            if end_index == -1:
+                self.setCurrentBlockState(1);
+                comment_length = len(text) - start_index
+                
+            if end_index > -1:
+                comment_length = end_index - start_index + self.quote.matchedLength()
+                
+                self.setFormat(start_index, comment_length, self.multiLineCommentFormat)
+                start_index = self.quote.indexIn(text, start_index + comment_length)
+                                 
+        
+        print text, self.currentBlockState(), self.previousBlockState()
+        """
+        """
+        exp = None
+        
+        if not self.currentBlockState() == 1:
+            
+            
+            start_index = self.quote.indexIn(text)
+            if start_index > -1:
+                self.setCurrentBlockState(1)
+                
+                self.setFormat(start_index, 
+                               len(text) - start_index,
+                               self.multiLineCommentFormat)
+
+        
+        if self.currentBlockState() == 1:
+            
+            if self.quote.indexIn(text) > -1:
+                self.setCurrentBlockState(0)
+            
+            if self.quote.indexIn(text) == -1:
+                self.setFormat(0, len(text), self.multiLineCommentFormat)
+        """
+            
+        """
+        setCurrentBlockState(0);
+
+        int startIndex = 0;
+        if (previousBlockState() != 1)
+            startIndex = text.indexOf(startExpression);
+        
+        while (startIndex >= 0) {
+           int endIndex = text.indexOf(endExpression, startIndex);
+           int commentLength;
+           if (endIndex == -1) {
+               setCurrentBlockState(1);
+               commentLength = text.length() - startIndex;
+           } else {
+               commentLength = endIndex - startIndex
+                               + endExpression.matchedLength();
+           }
+           setFormat(startIndex, commentLength, multiLineCommentFormat);
+           startIndex = text.indexOf(startExpression,
+                                     startIndex + commentLength);
+        }
+        """
+        
+        
+        
+    
         
     
     def highlightQuote(self, text):
@@ -2925,16 +3056,13 @@ class Highlighter(QtGui.QSyntaxHighlighter):
             
             end_index = exp.indexIn(text, (start_index + exp.matchedLength() + 1))
             
-            
             if end_index == -1:
                 
                 self.setCurrentBlockState(1)
                 comment_length = len(text) - start_index
             
             else:
-                
-                #This isn't working properly when the last quote has the same indent as the start
-                #it just passes over and doesn't get here
+
                 comment_length = end_index - start_index + exp.matchedLength()
             
             self.setFormat(start_index, 
@@ -2945,12 +3073,16 @@ class Highlighter(QtGui.QSyntaxHighlighter):
             
             if start_index > -1:
                 if exp == self.quote:
+                    
                     start_index = self.single_quote.indexIn(text, start_index + comment_length)
-                    exp = self.single_quote
+                    if start_index != -1:
+                        exp = self.single_quote
+                    continue
                 if exp == self.single_quote:
                     start_index = self.quote.indexIn(text, start_index + comment_length)
-                    exp = self.quote
-                    
+                    if start_index != -1:
+                        exp = self.quote
+                 
     def highlightBlock(self, text):
         
         self.highlightRules(text)

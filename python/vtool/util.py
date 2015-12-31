@@ -1,11 +1,28 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
-
+import sys
 import re
 import math
 import time
 import string
 import datetime
 import traceback
+
+
+def profiler_event(frame, event, arg, indent = [0]):
+    
+    if event == "call":
+        indent[0] += 2
+        print "-" * indent[0] + "> call function", frame.f_code.co_name
+    elif event == "return":
+        print "<" + "-" * indent[0], "exit function", frame.f_code.co_name
+        indent[0] -= 2
+    
+    return profiler_event
+    
+
+def activate_profiler():
+    
+    sys.setprofile(profiler_event)
 
 #decorators
 
@@ -444,6 +461,20 @@ def fade_sine(percent_value):
     
     return math.sin(input)
 
+def fade_cosine(percent_value):
+    
+    percent_value = math.pi * percent_value
+    
+    percent_value = (1 - math.cos(percent_value)) * 0.5
+    
+    return percent_value
+
+def fade_smoothstep(percent_value):
+    
+    percent_value = percent_value * percent_value * (3 - 2 * percent_value)
+    
+    return percent_value
+
 def fade_sigmoid(percent_value):
     
     if percent_value == 0:
@@ -456,6 +487,14 @@ def fade_sigmoid(percent_value):
     
     return ( 2 / (1 + (math.e**(-0.70258*input)) ) ) -1 
     
+def set_percent_range(percent_value, new_min, new_max):
+
+    min = 0
+    max = 1
+
+    value = ( (new_max-new_min) * (percent_value-min) / (max-min) ) + new_min
+    
+    return value
 
 def get_distance(vector1, vector2):
     """
@@ -655,15 +694,47 @@ def line_side(start_vector, end_vector, position_vector):
     return ((end_vector.x - start_vector.x)*(position_vector.y - start_vector.y) - (end_vector.y - start_vector.y)*(position_vector.x - start_vector.x)) > 0
 
 
-def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp = True):
+def closest_percent_on_line_3D(start_vector, end_vector, position_vector, clamp = True):
+    """
+    Get how far a vector is on a line.  
+    If the vector is on start_vector, return 0. 
+    If vector is on end vector, return 1. 
+    If vector is half way between start and end return 0.5. 
+    """
     
     start_to_position = position_vector - start_vector
     start_to_end = end_vector - start_vector
     
-    start_to_end_value = start_to_end.x*start_to_end.x + start_to_end.y*start_to_end.y
-    other_value = start_to_position.x*start_to_end.x + start_to_position.y*start_to_end.y
+    start_to_end_value = start_to_end.x*start_to_end.x + start_to_end.y*start_to_end.y + start_to_end.z*start_to_end.z
+    start_to_position_value = start_to_position.x*start_to_end.x + start_to_position.y*start_to_end.y + start_to_position.z*start_to_end.z
     
-    percent = float(other_value)/float(start_to_end_value)
+    percent = float(start_to_position_value)/float(start_to_end_value)
+
+    
+
+    if clamp:
+        
+        if percent < 0.0:
+            percent = 0.0
+        if percent > 1:
+            percent = 1.0
+            
+    return percent
+
+def closest_percent_on_line_2D(start_vector, end_vector, position_vector, clamp = True):
+    """
+    Get how far a vector is on a line.  
+    If the vector is on start_vector, return 0. 
+    If vector is on end vector, return 1. 
+    If vector is half way between start and end return 0.5. 
+    """
+    start_to_position = position_vector - start_vector
+    start_to_end = end_vector - start_vector
+    
+    start_to_end_value = start_to_end.x*start_to_end.x + start_to_end.y*start_to_end.y
+    start_to_position_value = start_to_position.x*start_to_end.x + start_to_position.y*start_to_end.y
+    
+    percent = float(start_to_position_value)/float(start_to_end_value)
 
     if clamp:
         

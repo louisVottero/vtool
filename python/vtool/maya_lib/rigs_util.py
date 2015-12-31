@@ -66,23 +66,42 @@ class Control(object):
         
         self.shapes = core.get_shapes(self.control)
     
-    def set_to_joint(self, joint = None):
+    def set_to_joint(self, joint = None, scale_compensate = False):
         """
         Set the control to have a joint as its main transform type.
         
         Args
             joint (str): The name of a joint to use. If none joint will be created automatically.
+            scale_compensate (bool): Whether to connect scale of parent to inverseScale of joint. 
+            This causes the group above the joint to be able to change scale value without affecting the control's look. 
         """
-        cmds.setAttr('%s.radius' % joint, l = True, k = False, cb = False)
+        
         
         cmds.select(cl = True)
         name = self.get()
         
         joint_given = True
+        temp_parent = None
         
         if not joint:
             joint = cmds.joint()
-            space.MatchSpace(name, joint).translation_rotation()
+            
+            cmds.delete(cmds.parentConstraint(name, joint))
+            cmds.delete(cmds.scaleConstraint(name, joint))
+            #space.MatchSpace(name, joint).translation_rotation() 
+            
+            buffer_group = cmds.group(em = True, n = core.inc_name('temp_%s' % joint ))
+            
+            cmds.parent(buffer_group, self.control)
+            cmds.parent(joint, buffer_group)
+            cmds.makeIdentity(buffer_group, t = True, r = True, s = True, jo = True, apply = True)
+            
+            cmds.parent(joint, w = True)
+            
+            temp_parent = cmds.listRelatives(joint, p = True)
+            
+            cmds.delete(buffer_group)
+                
             joint_given = False
         
         shapes = self.shapes
@@ -91,15 +110,30 @@ class Control(object):
             cmds.parent(shape, joint, r = True, s = True)
         
         if not joint_given:
-            space.transfer_relatives(name, joint, reparent = True)
-            cmds.rename(joint, name)
+            
+            parent = cmds.listRelatives(name, p = True)
+            
+            if parent:
+                cmds.parent(joint, parent)
+                if temp_parent:
+                    cmds.delete(temp_parent)
+                cmds.makeIdentity(joint, r = True, s = True, apply = True)
+                
+            space.transfer_relatives(name, joint)
+            
+            if scale_compensate:
+                parent = cmds.listRelatives(joint, p = True)
+                if parent:
+                    cmds.connectAttr('%s.scale' % parent[0], '%s.inverseScale' % joint)
             
         if joint_given:
             space.transfer_relatives(name, joint, reparent = False)
-            
-            
         
+        transfer = attr.TransferVariables()
+        transfer.transfer_control(name, joint)
+        attr.transfer_output_connections(name, joint)
         
+        cmds.setAttr('%s.radius' % joint, l = True, k = False, cb = False)
         cmds.setAttr('%s.drawStyle' % joint, 2)
             
         curve_type_value = ''
@@ -108,6 +142,9 @@ class Control(object):
             curve_type_value = cmds.getAttr('%s.curveType' % name)    
         
         cmds.delete(name)
+        
+        if not joint_given:
+            joint = cmds.rename(joint, name)
         
         self.control = joint
         
@@ -287,6 +324,17 @@ class Control(object):
         """
         return self.control
     
+    def get_xform_group(self, name):
+        """
+        This returns an xform group above the control.
+        
+        Args
+            name (str): The prefix name supplied when creating the xform group.  Usually xform or driver.
+            
+        """
+        
+        return space.get_xform_group(self.control, name)
+    
     def create_xform(self):
         """
         Create an xform above the control.
@@ -326,7 +374,7 @@ class StoreControlData(attr.StoreData):
         self.controls = []
         
         self.side_replace = ['_L', '_R', 'end']
-    
+        
     def _get_single_control_data(self, control):
         
         if not control:
@@ -354,7 +402,7 @@ class StoreControlData(attr.StoreData):
             
             value = cmds.getAttr(attribute_name)
             attribute_data[attribute] = value 
-        
+                    
         return attribute_data
 
     
@@ -442,28 +490,16 @@ class StoreControlData(attr.StoreData):
     
     
     def _set_control_data(self, control, data):
+        
         for attribute in data:
             
             attribute_name = control + '.' + attribute
-            
-            """ removed for speed
-            if not cmds.objExists(attribute_name):
-                continue
-            
-            if cmds.getAttr(attribute_name, lock = True):
-                continue
-            
-            connection = get_attribute_input(attribute_name)
-            
-            if connection:
-                if cmds.nodeType(connection).find('animCurve') == -1:
-                    continue
-            """
+                        
             try:
-                cmds.setAttr(attribute_name, data[attribute] )  
+                cmds.setAttr(attribute_name, data[attribute] )
             except:
                 pass
-                #cmds.warning('Could not set %s.' % attribute_name)     
+            
         
     def _find_other_side(self, control):
         
@@ -1265,6 +1301,8 @@ class RigSwitch(object):
             for group in groups:
                 attr.connect_equal_condition(attribute_name, '%s.visibility' % group, key) 
 
+
+
 def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
     """
     Create a stretch effect on a transform by changing the scale when the distance changes between xform1 and xform2.
@@ -1307,6 +1345,52 @@ def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
         
     return locator1, locator2
 
+def create_sparse_joints_on_curve(curve, joint_count, description):
+    """
+    Create joints on a curve that are evenly spaced and not in hierarchy.
+    """
+    
+    cmds.select(cl = True)
+    
+    total_length = cmds.arclen(curve)
+    
+    part_length = total_length/(joint_count-1)
+    current_length = 0
+    
+    joints = []
+    
+    
+    
+    percent = 0
+    
+    segment = 1.00/joint_count
+    
+    for inc in range(0, joint_count):
+        
+        param = geo.get_parameter_from_curve_length(curve, current_length)
+        
+        position = geo.get_point_from_curve_parameter(curve, param)
+        
+        cmds.select(cl = True)  
+        joint = cmds.joint(p = position, n = core.inc_name('joint_%s' % description) )
+        
+        cmds.addAttr(joint, ln = 'param', at = 'double', dv = param)
+        
+        if joints:
+            cmds.joint(joints[-1], 
+                       e = True, 
+                       zso = True, 
+                       oj = "xyz", 
+                       sao = "yup")
+        
+        
+        current_length += part_length
+            
+        joints.append(joint)
+    
+        percent += segment
+
+    return joints
 @core.undo_chunk
 def create_joints_on_curve(curve, joint_count, description, attach = True, create_controls = False):
     """
@@ -1879,7 +1963,7 @@ def get_controls():
     
     It follows these rules
     
-    First check if a transform starts with CNT_
+    First check if a transform starts with "CNT_"
     Second check if a transform has a an attribute named control.
     Third check if a transform has an attribute named tag and is a nurbsCurve, and that tag has a value.
     Fourth check if a transform has an attribute called curveType.
@@ -2053,13 +2137,16 @@ def mirror_curve(prefix):
         return
     
     for curve in curves:
+        if curve.endswith('_R'):
+            continue
+        
         other_curve = None
         
         if curve.endswith('_L'):
             other_curve = curve[:-1] + 'R'
         
         cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
-            
+        
         if not other_curve:
             
             cv_count = len(cvs)
@@ -2081,7 +2168,14 @@ def mirror_curve(prefix):
                     break
         
         if other_curve:
-        
+            
+            transform_pos = cmds.xform(curve, q = True, ws = True, t = True)
+            
+            new_pos = transform_pos
+            new_pos[0] = (new_pos[0] * -1)
+            
+            cmds.xform(other_curve, ws = True, t = new_pos)
+            
             other_cvs = cmds.ls('%s.cv[*]' % other_curve, flatten = True)
             
             if len(cvs) != len(other_cvs):
@@ -2092,8 +2186,7 @@ def mirror_curve(prefix):
                 position = cmds.xform(cvs[inc], q = True, ws = True, t = True)
                 
                 new_position = list(position)
-                
-                new_position[0] = position[0] * -1
+                new_position[0] = (position[0] * -1)
                 
                 cmds.xform(other_cvs[inc], ws = True, t = new_position)
     
@@ -2205,3 +2298,22 @@ def fix_fade(target_curve, follow_fade_multiplies):
         value = (driver_distance/total_distance)
     
         cmds.setAttr('%s.input2Y' % multi, value)
+
+def scale_controls(value):
+    things = get_controls()
+
+    if not things:
+        return
+    
+    
+    if things:
+        for thing in things:
+    
+            shapes = core.get_shapes(thing)
+        
+            components = core.get_components_from_shapes(shapes)
+            
+            pivot = cmds.xform( thing, q = True, rp = True, ws = True)
+    
+            if components:
+                cmds.scale(value, value, value, components, p = pivot, r = True)

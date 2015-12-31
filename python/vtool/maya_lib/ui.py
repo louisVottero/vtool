@@ -17,6 +17,7 @@ import space
 import geo
 import deform
 import rigs_util
+
 #import util
 
 if vtool.qt_ui.is_pyqt():
@@ -98,7 +99,7 @@ def create_window(ui, dock_area = 'right'):
     allowedAreas = ['right', 'left']
     
     #do not remove
-    print 'Creating dock window.', ui_name, ui
+    print 'Creating dock window.', ui_name, ui, ui.layout
     
     try:
         cmds.dockControl(dock_name,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name, w=350, fl = False, visible = True)
@@ -119,6 +120,9 @@ def shape_combo():
     create_window(ui_shape_combo.ComboManager())
     
 def tool_manager(name = None, directory = None):
+    
+    
+    
     tool_manager = ToolManager(name)
     tool_manager.set_directory(directory)
     
@@ -126,6 +130,8 @@ def tool_manager(name = None, directory = None):
     
     import maya.utils
     maya.utils.executeDeferred(funct)
+    
+    
     
     return tool_manager
 
@@ -275,7 +281,9 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         transfer_process = QtGui.QPushButton('transfer process weights to parent')
         
         self.joint_axis_check = QtGui.QCheckBox('joint axis visibility')
-    
+        
+        mirror_invert = QtGui.QPushButton('Mirror Invert')
+        mirror_invert.clicked.connect(self._mirror_invert)
         
         
         add_orient.clicked.connect(self._add_orient)
@@ -298,6 +306,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         #main_layout.addWidget(add_orient)
         main_layout.addWidget(mirror)
         main_layout.addLayout(orient_layout)
+        main_layout.addWidget(mirror_invert)
         main_layout.addSpacing(20)
         main_layout.addWidget(self.joint_axis_check)
         
@@ -309,6 +318,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         main_layout.addWidget(snap_to_curve)
         main_layout.addWidget(transfer_joints)
         main_layout.addWidget(transfer_process)
+        
         
         
     def _match_joints(self):
@@ -330,9 +340,16 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         size_slider.set_auto_recenter(True)
         size_slider.slider.sliderReleased.connect(self._reset_scale_slider)
         
+        number_button = vtool.qt_ui.GetNumberButton('Global Size Controls')
+        number_button.set_value(2)
+        number_button.clicked.connect(self._size_controls)
+        self.scale_control_button = number_button
+        
+        parent.main_layout.addWidget(number_button)
         
         parent.main_layout.addWidget(mirror_control)
         parent.main_layout.addWidget(mirror_controls)
+        
         parent.main_layout.addWidget(size_slider)
         
     def _create_deformation_widgets(self, parent):
@@ -388,6 +405,16 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         #not sure when this was implemented... but couldn't find it, needs to be reimplemented.
         #util.mirror_curve(suffix = '_wire')
+        
+    @core.undo_chunk
+    def _mirror_invert(self):
+        
+        selection = cmds.ls(sl = True)
+        
+        for thing in selection:
+            space.mirror_invert(thing)
+        
+        
         
     def _mirror_control(self):
         
@@ -500,6 +527,10 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         return core.get_components_from_shapes(shapes)
         
+    def _size_controls(self):
+        
+        value = self.scale_control_button.get_value()
+        rigs_util.scale_controls(value)
     
     def _scale_control(self, value):
         
@@ -516,16 +547,12 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         if value < self.last_scale_value:
             pass_value = .99
             
+        #things = rigs_util.get_controls()
         things = cmds.ls(sl = True)
         
         if not things:
             return
-            """
-            if not self.scale_controls:
-                self.scale_controls = util.get_controls()
-            if self.scale_controls:
-                things = self.scale_controls
-            """
+            
         if things:
             for thing in things:
                 

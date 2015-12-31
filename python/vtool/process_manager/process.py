@@ -1038,6 +1038,8 @@ class Process(object):
             
             util.show('\n\t\a\t%s\n\n' % name)
             
+            util_file.delete_pyc(script)
+            
             module = util_file.source_python_module(script)     
             
             if type(module) == str:
@@ -1175,6 +1177,9 @@ class Process(object):
             (list): keys in runtime value dictionary.
         """
         return self.runtime_values.keys()
+    
+    def set_runtime_dict(self, dict_value):
+        self.runtime_values = dict_value
  
 def get_default_directory():
     """

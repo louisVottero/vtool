@@ -1,6 +1,10 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import os
+import string
+
 import traceback
+from functools import wraps
 
 import vtool.util
 
@@ -204,14 +208,7 @@ class ProgressBar(object):
     
 
 def undo_off(function):
-    """
-    Maya sometimes has operations that generate a huge undo stack and use lots of memory.
-    This is meant to handle turning off the undo temporarily for the duration of a function.
-    
-    Arg
-        function: Pass in the instance of the fucntion to wrap.
-    """
-    
+    @wraps(function)
     def wrapper(*args, **kwargs):
         
         global current_progress_bar
@@ -249,14 +246,7 @@ def undo_off(function):
     return wrapper
 
 def undo_chunk(function):
-    """
-    Maya sometimes has operations that generate a huge undo stack and use lots of memory.
-    This is meant to handle creating one undo chunk for a function that has many small operations.
-    
-    Arg
-        function: Pass in the instance of the fucntion to wrap.
-    """
-    
+    @wraps(function)
     def wrapper(*args, **kwargs):
         
         global undo_chunk_active
@@ -761,6 +751,37 @@ def delete_display_layers():
     for layer in layers:
         cmds.delete(layer)
 
+#--- file
+
+def import_file(filepath):
+    """
+    Import a maya file in a generic vtool way.
+    """
+    cmds.file(filepath, f = True, i = True, iv = True)
+
+def reference_file(filepath, namespace = None):
+    """
+    Reference a maya file in a generic vtool way.
+    
+    Args
+        filepath (str): The full path and filename.
+        namespace (str): The namespace to add to the nodes in maya.  Default is the name of the file. 
+    """
+    if not namespace:
+        namespace = os.path.basename(filepath)
+        split_name = namespace.split('.')
+        
+        if split_name:
+            namespace = string.join(split_name[:-1], '_')
+        
+    
+    cmds.file( filepath,
+           reference = True, 
+           gl = True, 
+           mergeNamespacesOnClash = False, 
+           namespace = namespace, 
+           options = "v=0;")
+    
 #--- ui
 
 def get_visible_hud_displays():
@@ -933,10 +954,15 @@ def delete_nodes_of_type(node_type):
 
 def delete_garbage():
 
-    straight_delete_type = ['hyperView', 
-                            'hyperLayout']
+
+
+    straight_delete_types = []
+
+    if vtool.util.get_maya_version() > 2014:
+        #maya 2014 crashes when trying to delete hyperView or hyperLayout nodes in some files.
+        straight_delete_types += ['hyperLayout','hyperView']
     
-    delete_nodes_of_type(straight_delete_type)
+    delete_nodes_of_type(straight_delete_types)
     
     check_connection_node_type = ['shadingEngine']
     

@@ -36,6 +36,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.kill_process = False
         self.build_widget = None
         self.last_item = None
+        self.runtime_values = {}
         
         super(ProcessManagerWindow, self).__init__(parent) 
         
@@ -167,10 +168,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.main_layout.addSpacing(4)
         self.main_layout.addWidget( self.tab_widget )
         
+        #self.process_layout = QtGui.QVBoxLayout()
+        
         self.process_button = QtGui.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
         self.process_button.setMinimumWidth(150)
         self.process_button.setMinimumHeight(40)
+        
+        #self.process_select_button = QtGui.QPushButton('Process Selection')
+        
+        #self.process_layout.addWidget(self.process_button)
+        #self.process_layout.addWidget(self.process_select_button)
         
         self.stop_button = QtGui.QPushButton('STOP!')
         self.stop_button.setMaximumWidth(50)
@@ -186,6 +194,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         button_layout = QtGui.QHBoxLayout()
         
         button_layout.addWidget(self.process_button, alignment = QtCore.Qt.AlignLeft)
+        #button_layout.addLayout(self.process_layout)
+        #button_layout.addWidget(self.process_select_button, alignment = QtCore.Qt.AlignLeft)
         button_layout.addWidget(self.stop_button, alignment = QtCore.Qt.AlignLeft)
         
                 
@@ -313,21 +323,23 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _update_process(self, name):
         
-
-        
         self.code_widget.code_widget.code_edit.save_tabs(self.last_process)
-        self.code_widget.code_widget.code_edit.clear()
+        self.code_widget.code_widget.code_edit.close_tabs()
         self.code_widget.script_widget.code_manifest_tree.clearSelection()
+        self.code_widget.code_widget.code_edit.clear()
         
         items = self.view_widget.tree_widget.selectedItems()
         if items:
             title = items[0].get_name()
         if not items:
             title = '-'
-                
+        
         if name:
             
-            self.process.load(name)        
+            self.process.load(name)  
+            
+            if self.runtime_values:
+                self.process.set_runtime_dict(self.runtime_values)      
             
             self._set_title(title)
 
@@ -335,7 +347,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.tab_widget.setTabEnabled(3, True)
             
             self.process_button.setEnabled(True)
-            
+        
         if not name:
             
             self._set_title('-')
@@ -346,7 +358,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_button.setDisabled(True)
             
         self.last_process = name
-                                
+        
     def _get_current_path(self):
         items = self.view_widget.tree_widget.selectedItems()
         

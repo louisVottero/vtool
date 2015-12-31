@@ -148,6 +148,9 @@ class MatchSpace(object):
         """
         Match just the translation
         """
+        self._set_scale_pivot()
+        self._set_rotate_pivot()
+        
         self._set_translation()
         
     def rotation(self):
@@ -203,8 +206,19 @@ class MatchSpace(object):
         """
         self._set_world_rotate_pivot()
         self._set_world_scale_pivot()
+        
+    def scale(self):
+        
+        
+        scale_x = cmds.getAttr('%s.scaleX' % self.source_transform)
+        scale_y = cmds.getAttr('%s.scaleY' % self.source_transform)
+        scale_z = cmds.getAttr('%s.scaleZ' % self.source_transform)
+        
+        cmds.setAttr('%s.scaleX' % self.target_transform, scale_x)
+        cmds.setAttr('%s.scaleY' % self.target_transform, scale_y)
+        cmds.setAttr('%s.scaleZ' % self.target_transform, scale_z)
 
-class ConstraintEditor():
+class ConstraintEditor(object):
     """
     Convenience class for editing constraints.
     """
@@ -221,10 +235,20 @@ class ConstraintEditor():
                             'aimConstraint'
                             ]
     
+    def __init__(self):
+        pass
+    
     def _get_constraint_type(self, constraint):
         return cmds.nodeType(constraint)
         
+    def has_constraint(self, transform):
         
+        for constraint in self.editable_constraints:
+            const = self.get_constraint(transform, constraint)
+            if const:
+                return True
+            
+        return False
         
     def get_weight_names(self, constraint):
         #CBB
@@ -335,6 +359,33 @@ class ConstraintEditor():
         """
         
         cmds.setAttr('%s.interpType' % constraint, int_value)
+
+    def create_title(self, node, constraint, title_name = 'FOLLOW'):
+        
+        
+        targets = self.get_targets(constraint)
+        
+        inc = 0
+        
+        names = []
+        
+        for target in targets:
+            name = target
+            print 'target!', target
+            if target.startswith('follower_'):
+                parent = cmds.listRelatives(target, p = True)
+                if parent:
+                    parent = parent[0]
+                    if parent.startswith('CNT_'):
+                        name = parent
+        
+            name = '%s %s' % (inc, name)
+            
+            names.append(name)
+            inc += 1
+        
+        attr.create_title(node, title_name, names)
+        
         
     def create_switch(self, node, attribute, constraint):
         """
@@ -349,7 +400,6 @@ class ConstraintEditor():
         attributes = self.get_weight_names(constraint)
         
         remap = attr.RemapAttributesToAttribute(node, attribute)
-        #remap.set_keyable(False)
         remap.create_attributes(constraint, attributes)
         remap.create()
 
@@ -1076,8 +1126,183 @@ class BuildHierarchy(object):
     def create(self):
         new_joints = self._build_hierarchy()
         return new_joints
+    
+class OverDriveTranslation(object):
+    
+    def __init__(self, transform, driver):
+        self.transform = transform
+        self.driver = driver
         
-
+        self.x_values = [1,1]
+        self.y_value = [1,1]
+        self.z_values = [1,1]
+    
+    def _create_nodes(self, description):
+        
+        clamp = cmds.createNode('clamp', n = core.inc_name('clamp_%s_%s' % (description, self.transform)))
+        multi = cmds.createNode('multiplyDivide', n = core.inc_name('multiplyDivide_%s_%s' % (description,self.transform)))
+        
+        cmds.connectAttr('%s.translateX' % self.transform, '%s.inputR' % clamp)
+        cmds.connectAttr('%s.translateY' % self.transform, '%s.inputG' % clamp)
+        cmds.connectAttr('%s.translateZ' % self.transform, '%s.inputB' % clamp)
+        cmds.connectAttr('%s.outputR' % clamp, '%s.input1X' % multi)
+        cmds.connectAttr('%s.outputG' % clamp, '%s.input1Y' % multi)
+        cmds.connectAttr('%s.outputB' % clamp, '%s.input1Z' % multi)
+        
+        return clamp, multi
+        
+    def _fix_value(self, value):
+        
+        value = abs(value) - 1.00
+        
+        return value
+        
+    def set_x(self, positive_x, negative_x):
+        
+        positive_x = self._fix_value(positive_x)
+        negative_x = self._fix_value(negative_x)
+        
+        self.x_values = [positive_x, negative_x]
+    
+    def set_y(self, positive_y, negative_y):
+        
+        positive_y = self._fix_value(positive_y)
+        negative_y = self._fix_value(negative_y)
+        
+        self.y_values = [positive_y, negative_y]
+    
+    def set_z(self, positive_z, negative_z):
+        
+        positive_z = self._fix_value(positive_z)
+        negative_z = self._fix_value(negative_z)
+        
+        self.z_values = [positive_z, negative_z]
+    
+    def create(self):
+        
+        clamp_pos, multi_pos = self._create_nodes('pos')
+        clamp_neg, multi_neg = self._create_nodes('neg')
+        
+        cmds.setAttr('%s.maxR' % clamp_pos, 10000)
+        cmds.setAttr('%s.maxG' % clamp_pos, 10000)
+        cmds.setAttr('%s.maxB' % clamp_pos, 10000)
+        
+        cmds.setAttr('%s.minR' % clamp_neg, -10000)
+        cmds.setAttr('%s.minG' % clamp_neg, -10000)
+        cmds.setAttr('%s.minB' % clamp_neg, -10000)
+        
+        cmds.setAttr('%s.input2X' % multi_pos, self.x_values[0])
+        cmds.setAttr('%s.input2Y' % multi_pos, self.y_values[0])
+        cmds.setAttr('%s.input2Z' % multi_pos, self.z_values[0])
+        
+        cmds.setAttr('%s.input2X' % multi_neg, self.x_values[1])
+        cmds.setAttr('%s.input2Y' % multi_neg, self.y_values[1])
+        cmds.setAttr('%s.input2Z' % multi_neg, self.z_values[1])
+        
+        """
+        condition = cmds.createNode('condition', 'condition_%s' % self.transform)
+        
+        cmds.setAttr('%s.operation' % condition, 2)
+        
+        cmds.connectAttr('%s.outputX' % multi_pos, '%s.colorIfTrueR' % condition)
+        cmds.connectAttr('%s.outputY' % multi_pos, '%s.colorIfTrueG' % condition)
+        cmds.connectAttr('%s.outputZ' % multi_pos, '%s.colorIfTrueB' % condition)
+        
+        cmds.connectAttr('%s.outputX' % multi_neg, '%s.colorIfFalseR' % condition)
+        cmds.connectAttr('%s.outputY' % multi_neg, '%s.colorIfFalseG' % condition)
+        cmds.connectAttr('%s.outputZ' % multi_neg, '%s.colorIfFalseB' % condition)
+        
+        cmds.connectAttr('%s.outputR' % condition, '%s.translateX' % self.driver)
+        cmds.connectAttr('%s.outputG' % condition, '%s.translateY' % self.driver)
+        cmds.connectAttr('%s.outputB' % condition, '%s.translateZ' % self.driver)
+        """
+        
+        plus = cmds.createNode('plusMinusAverage', n = core.inc_name('plusOverDrive_%s' % self.transform))
+        
+        cmds.connectAttr('%s.outputX' % multi_pos, '%s.input3D[0].input3Dx' % plus)
+        cmds.connectAttr('%s.outputY' % multi_pos, '%s.input3D[0].input3Dy' % plus)
+        cmds.connectAttr('%s.outputZ' % multi_pos, '%s.input3D[0].input3Dz' % plus)
+        
+        cmds.connectAttr('%s.outputX' % multi_neg, '%s.input3D[1].input3Dx' % plus)
+        cmds.connectAttr('%s.outputY' % multi_neg, '%s.input3D[1].input3Dy' % plus)
+        cmds.connectAttr('%s.outputZ' % multi_neg, '%s.input3D[1].input3Dz' % plus)      
+        
+        cmds.connectAttr('%s.output3Dx' % plus, '%s.translateX' % self.driver)
+        cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % self.driver)
+        cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % self.driver) 
+        
+class TranslateSpaceScale(object):
+    
+    def __init__(self):
+        
+        self.x_space = []
+        self.y_space = []
+        self.z_space = []
+        
+        self.source = None
+        self.target = None
+        
+    def set_x_space(self, positive_distance, negative_distance):
+        
+        self.x_space = [positive_distance, negative_distance]
+        
+    def set_y_space(self, positive_distance, negative_distance):
+        
+        self.y_space = [positive_distance, negative_distance]
+        
+    def set_z_space(self, positive_distance, negative_distance):
+        
+        self.z_space = [positive_distance, negative_distance]
+        
+    def set_source_translate(self, source):
+        self.source = source
+        
+    def set_target_scale(self, target):
+        self.target = target
+        
+    def create(self):
+        
+        if not self.source or not self.target:
+            return
+        
+        if self.x_space:
+        
+            current_value = cmds.getAttr('%s.scaleX' % self.target)
+            negate = current_value/abs(current_value)
+            
+            condition = attr.connect_equal_condition('%s.translateX' % self.source, '%s.scaleX' % self.target, 0)
+            cmds.setAttr('%s.operation' % condition, 3)
+            
+            cmds.setAttr('%s.colorIfTrueR' % condition, self.x_space[0] * negate)
+            cmds.setAttr('%s.colorIfFalseR' % condition, self.x_space[1] * negate)
+            
+        if self.y_space:
+            
+            current_value = cmds.getAttr('%s.scaleY' % self.target)
+            negate = current_value/abs(current_value)
+            
+            condition = attr.connect_equal_condition('%s.translateY' % self.source, '%s.scaleY' % self.target, 0)
+            cmds.setAttr('%s.operation' % condition, 3)
+            
+            cmds.setAttr('%s.colorIfTrueR' % condition, self.y_space[0] * negate)
+            cmds.setAttr('%s.colorIfFalseR' % condition, self.y_space[1] * negate)
+        
+        if self.z_space:
+            
+            current_value = cmds.getAttr('%s.scaleZ' % self.target)
+            negate = current_value/abs(current_value)
+            
+            condition = attr.connect_equal_condition('%s.translateZ' % self.source, '%s.scaleZ' % self.target, 0)
+            cmds.setAttr('%s.operation' % condition, 3)
+            
+            cmds.setAttr('%s.colorIfTrueR' % condition, self.z_space[0] * negate)
+            cmds.setAttr('%s.colorIfFalseR' % condition, self.z_space[1] * negate) 
+    
+def has_constraint(transform):
+    
+    editor = ConstraintEditor()
+    return editor.has_constraint(transform)
+    
 def get_center(transform):
     """
     Get the center of a selection. Selection can be component or transform.
@@ -1167,6 +1392,33 @@ def get_closest_transform(source_transform, targets):
             closest_target = target
             
     return closest_target 
+
+def get_middle_transform(transform_list):
+    """
+    Given a list of transforms, find the middle index. If the list is even, then find the midpoint between the middle two indices.
+    
+    Args
+        transform_list (list): A list of transforms in order. Transforms should make a hierarchy or a sequence, where the order of the list matches the order in space.
+    
+    Return 
+        list: [x,y,z] the midpoint.
+    """
+    
+    
+    count = len(transform_list)
+    division = count/2
+    
+    if count == 0:
+        return
+    
+    if (division + division) == count:
+        midpoint = get_midpoint(transform_list[division-1], transform_list[division])
+    
+    if (division + division) != count:
+        midpoint = cmds.xform(transform_list[division], q = True, t = True, ws = True)
+    
+    return midpoint
+    
 
 def get_distance(source, target):
     """
@@ -1417,6 +1669,8 @@ def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
         
     return multiplies
 
+#--- space groups
+
 def create_match_group(transform, prefix = 'match', use_duplicate = False):
     """
     Create a group that matches a transform.
@@ -1469,6 +1723,9 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
     
     basename = core.get_basename(transform)
     
+    if not prefix:
+        prefix = 'xform'
+    
     name = '%s_%s' % (prefix, basename)
     
     if not use_duplicate:    
@@ -1484,6 +1741,8 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
         xform_group = cmds.rename(xform_group, core.inc_name(name))
     
     cmds.parent(transform, xform_group)
+    
+    attr.connect_message(xform_group, transform, prefix)
 
     return xform_group
 
@@ -1522,7 +1781,7 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
         
     return follow_group
 
-def create_local_follow_group(source_transform, target_transform, prefix = 'followLocal', orient_only = False):
+def create_local_follow_group(source_transform, target_transform, prefix = 'followLocal', orient_only = False, connect_scale = False):
     """
     Create a group above a target_transform that is local constrained to the source_transform.
     This helps when setting up controls that need to be parented but only affect what they constrain when the actual control is moved.  
@@ -1553,8 +1812,11 @@ def create_local_follow_group(source_transform, target_transform, prefix = 'foll
     if not orient_only:
         attr.connect_translate(source_transform, follow_group)
     
-    if orient_only:
+    if orient_only or not orient_only:
         attr.connect_rotate(source_transform, follow_group)
+    
+    if connect_scale:
+        attr.connect_scale(source_transform, follow_group)
     
     #value = cmds.getAttr('%s.rotateOrder' % source_transform)
     #cmds.setAttr('%s.rotateOrder' % follow_group, value)
@@ -1648,9 +1910,8 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     
     follow_group = create_xform_group(target_transform, 'follow')
     
-    if attribute_name == 'follow':
-        var = attr.MayaEnumVariable('FOLLOW')
-        var.create(node)    
+    title_name = attribute_name.upper()
+    
 
     for source in source_list:
         
@@ -1673,7 +1934,7 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
         constraint = cmds.pointConstraint(locators,  follow_group, mo = True)[0]
     
     constraint_editor = ConstraintEditor()
-    
+    constraint_editor.create_title(node, constraint, title_name)
     constraint_editor.create_switch(node, attribute_name, constraint)
     
     if value == None:
@@ -1683,6 +1944,25 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     
     return follow_group
 
+def get_xform_group(transform, xform_group_prefix = 'xform'):
+    """
+    This returns an xform group above the control.
+    
+    Args
+        name (str): The prefix name supplied when creating the xform group.  Usually xform or driver.
+        
+    """
+    
+    attribute_name = 'group_%s' % xform_group_prefix
+    
+    node_and_attr = '%s.%s' % (transform,attribute_name)
+    
+    if not cmds.objExists(node_and_attr):
+        return
+        
+    input_node = attr.get_attribute_input(node_and_attr, node_only=True)
+        
+    return input_node
 
 def get_hierarchy(node_name):
     """
@@ -1763,7 +2043,7 @@ def transfer_relatives(source_node, target_node, reparent = False):
 
     
 
-def constrain_local(source_transform, target_transform, parent = False, scale_connect = False, constraint = 'parentConstraint'):
+def constrain_local(source_transform, target_transform, parent = False, scale_connect = False, constraint = 'parentConstraint', connect_xform = False):
     """
     Constrain a target transform to a source transform in a way that allows for setups to remain local to the origin.
     This is good when a control needs to move with the rig, but move something at the origin only when the actually control moves.
@@ -1778,6 +2058,7 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
     Return
         (str, str) : The local group that constrains the target_transform, and the xform group above the local group.
     """
+    
     local_group = cmds.group(em = True, n = core.inc_name('local_%s' % source_transform))
     
     xform_group = create_xform_group(local_group)
@@ -1789,6 +2070,10 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
         
         match = MatchSpace(parent_world, xform_group)
         match.translation_rotation()
+        
+    if target_transform.endswith('R'):
+        match = MatchSpace(target_transform, xform_group).scale()
+        
             
     match = MatchSpace(source_transform, local_group)
     
@@ -2073,7 +2358,59 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
                     cmds.setAttr('%s.localPositionX' % transform, (local_position[0] * -1))
                     cmds.setAttr('%s.localPositionY' % transform, local_position[1])
                     cmds.setAttr('%s.localPositionZ' % transform, local_position[2])
+                    
+def mirror_invert(transform, other = None):
     
+    node_type = cmds.nodeType(transform)
+    
+    if not other:
+        other = find_transform_right_side(transform)
+    
+    if not other:
+        return
+    
+    if not node_type == 'joint':
+        dup = cmds.duplicate(transform, po = True)[0]
+    if node_type == 'joint':
+        dup = cmds.group(em = True)
+    
+    match = MatchSpace(transform, dup)
+    match.translation_rotation()
+    match.scale()
+    
+    group = cmds.group(em = True)
+    
+    cmds.parent(dup, group)
+    
+    cmds.setAttr('%s.rotateY' % group, 180)
+    cmds.setAttr('%s.scaleZ' % group, -1)
+    
+    parent = cmds.listRelatives(other, p = True)
+    
+    if parent:
+        cmds.parent(dup, parent)
+    
+    if not parent:
+        cmds.parent(dup, w = True)
+    
+    match_all_transform_values(dup, other)
+    
+    if cmds.nodeType(other) == 'joint':
+        cmds.makeIdentity(other, r = True, apply = True)
+    
+
+def match_all_transform_values(source_transform, target_transform):
+    
+    attributes = ['translate','rotate','scale']
+    axis = ['X','Y','Z']
+    
+    for attribute in attributes:
+        
+        for ax in axis:
+            
+            value = cmds.getAttr('%s.%s%s' % (source_transform, attribute, ax))
+            cmds.setAttr('%s.%s%s' % (target_transform, attribute, ax), value)
+            
 def match_joint_xform(prefix, other_prefix):
     """
     Match the positions of joints with similar names.
@@ -2376,6 +2713,44 @@ def attach_to_closest_transform(source_transform, target_transforms):
     
     create_follow_group(closest_transform, source_transform)
 
+def create_ghost_follow_chain(transforms):
+    
+    last_ghost = None
+    
+    ghosts = []
+    
+    parent = cmds.listRelatives(transforms[0], parent = True)
+    if parent:
+        parent = cmds.duplicate(parent[0], po = True, n = 'ghost_%s' % parent[0])
+        cmds.parent(parent, w = True)
+        
+        last_ghost = parent
+    
+    for transform in transforms:
+        
+        ghost = cmds.duplicate(transform, po = True, n = 'ghost_%s' % transform)[0]
+        
+        cmds.parent(ghost, w = True)
+        
+        MatchSpace(transform, ghost).translation_rotation()
+        
+        #xform = create_xform_group(ghost)
+        
+        #create_xform_group(transform)
+        
+        attr.connect_translate(transform, ghost)
+        attr.connect_rotate(transform, ghost)
+        attr.connect_scale(transform, ghost)
+        
+        if last_ghost:
+            cmds.parent(ghost, last_ghost )
+        
+        last_ghost = ghost
+        
+        ghosts.append(ghost)
+
+    return ghosts, parent[0]
+
 
 def create_ghost_chain(transforms):
     """
@@ -2415,7 +2790,41 @@ def create_ghost_chain(transforms):
 
     return ghosts
 
+def set_space_scale(scale_x,scale_y,scale_z, transform):
+    
+    orig_scale_x = cmds.getAttr('%s.scaleX' % transform)
+    orig_scale_y = cmds.getAttr('%s.scaleY' % transform)
+    orig_scale_z = cmds.getAttr('%s.scaleZ' % transform)
+    
+    invert_x = abs(orig_scale_x)/orig_scale_x
+    invert_y = abs(orig_scale_y)/orig_scale_y
+    invert_z = abs(orig_scale_z)/orig_scale_z
+    
+    scale_x = scale_x * invert_x
+    scale_y = scale_y * invert_y
+    scale_z = scale_z * invert_z
+    
+    cmds.setAttr('%s.scaleX' % transform, scale_x)
+    cmds.setAttr('%s.scaleY' % transform, scale_y)
+    cmds.setAttr('%s.scaleZ' % transform, scale_z)
 
-
-
-        
+def connect_inverse_scale(transform, joint):
+    
+    orig_scale_x = cmds.getAttr('%s.scaleX' % transform)
+    orig_scale_y = cmds.getAttr('%s.scaleY' % transform)
+    orig_scale_z = cmds.getAttr('%s.scaleZ' % transform)
+    
+    invert_x = abs(orig_scale_x)/orig_scale_x
+    invert_y = abs(orig_scale_y)/orig_scale_y
+    invert_z = abs(orig_scale_z)/orig_scale_z
+    
+    multiply = cmds.createNode('multiplyDivide', n = 'multiply_inverseScale_%s' % joint)
+    
+    cmds.connectAttr('%s.scale' % transform, '%s.input1' % multiply)
+    cmds.connectAttr('%s.output' % multiply, '%s.inverseScale' % joint)
+    
+    cmds.setAttr('%s.input2X' % multiply, invert_x)
+    cmds.setAttr('%s.input2Y' % multiply, invert_y)
+    cmds.setAttr('%s.input2Z' % multiply, invert_z)
+    
+  

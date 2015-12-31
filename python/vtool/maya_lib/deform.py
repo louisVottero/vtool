@@ -15,6 +15,7 @@ import core
 import attr
 import space
 import geo
+import anim
 
 class XformTransfer(object):
     """
@@ -418,6 +419,8 @@ class ClusterCurve(ClusterSurface):
         
         vtool.util.warning('Can not set cluster u, there is only one direction for spans on a curve. To many teenage girls there was only One Direction for their musical tastes.')
 
+
+
 class SplitMeshTarget(object):
     """
     Split a mesh target edits based on skin weighting.
@@ -443,6 +446,55 @@ class SplitMeshTarget(object):
         self.weighted_mesh = None
         self.base_mesh = None
         self.split_parts = []
+        
+    def _get_center_fade_weights(self, mesh, fade_distance, positive):
+        
+        verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
+        
+        values = []
+        
+        fade_distance = fade_distance/2.0
+        inc = 0
+        for vert in verts:
+            
+            if fade_distance == 0:
+                value = 1
+            
+            if fade_distance != 0:
+                vert_position = cmds.xform(vert, q = True, ws = True, t = True)
+                
+                fade_distance = float(fade_distance)
+                
+                value = vert_position[0]/fade_distance
+                
+                if value > 1:
+                    value = 1
+                if value < -1:
+                    value = -1
+                
+                if positive:
+                    
+                    if value >= 0:
+                        value = vtool.util.set_percent_range(value, 0.5, 1)
+                    
+                    if value < 0:
+                        value = abs(value)
+                        value = vtool.util.set_percent_range(value, 0.5, 0)
+                        
+                if not positive:
+
+                    if value >= 0:
+                        value = vtool.util.set_percent_range(value, 0.5, 0)
+                    
+                    if value < 0:
+                        value = abs(value)
+                        value = vtool.util.set_percent_range(value, 0.5, 1)
+                        
+            inc += 1
+            
+            values.append(value)
+            
+        return values
     
     def set_weight_joint(self, joint, suffix = None, prefix = None, split_name = True):
         """
@@ -455,7 +507,8 @@ class SplitMeshTarget(object):
             split_name (bool): Wether to split the name based on "_" and add the suffix and prefix at each part. 
             eg. 'smile_cheekPuff' would become 'smileL_cheekPuffL' if suffix = 'L'
         """
-        self.split_parts.append([joint, None, suffix, prefix, None, split_name])
+        
+        self.split_parts.append([joint, None, suffix, prefix, None, split_name, [None,None]])
         
     def set_weight_insert_index(self, joint, insert_index, insert_name, split_name = True):
         """
@@ -468,7 +521,7 @@ class SplitMeshTarget(object):
             insert_name (str): The string to insert at insert_index.
             split_name (bool): Wether to split the name based on "_" and add the insert_name at  the insert_index.  
         """
-        self.split_parts.append([joint, None,None,None, [insert_index, insert_name], split_name])
+        self.split_parts.append([joint, None,None,None, [insert_index, insert_name], split_name, [None,None]])
     
     def set_weight_joint_replace_end(self, joint, replace, split_name = True):
         """
@@ -481,7 +534,11 @@ class SplitMeshTarget(object):
             split_name (bool): Wether to split the name based on "_"..  
         """
         
-        self.split_parts.append([joint, replace, None, None, None, split_name])
+        self.split_parts.append([joint, replace, None, None, None, split_name, [None,None]])
+
+    def set_center_fade(self, fade_distance, positive,  suffix = None, prefix = None, split_name = True):
+        
+        self.split_parts.append([None, None, suffix, prefix, None, split_name, [fade_distance, positive]])
     
     def set_weighted_mesh(self, weighted_mesh):
         """
@@ -491,6 +548,8 @@ class SplitMeshTarget(object):
             weighted_mesh (str): The name of a mesh with a skin cluster.
         """
         self.weighted_mesh = weighted_mesh
+        
+
     
     def set_base_mesh(self, base_mesh):
         """
@@ -509,15 +568,8 @@ class SplitMeshTarget(object):
         Return
             list: The names of the new targets.
         """
-        if not self.weighted_mesh and self.base_mesh:
+        if not self.base_mesh:
             return
-        
-        skin_cluster = find_deformer_by_type(self.weighted_mesh, 'skinCluster')
-        
-        if not skin_cluster:
-            return
-        
-        skin_weights = get_skin_weights(skin_cluster)
 
         parent = cmds.listRelatives( self.target_mesh, p = True )
         if parent:
@@ -526,16 +578,23 @@ class SplitMeshTarget(object):
         targets = []
         
         for part in self.split_parts:
+            
             joint = part[0]
             replace = part[1]
             suffix = part[2]
             prefix = part[3]
             split_index = part[4]
+            split_name_option = part[5]
+            center_fade, positive_negative = part[6]
+            
+            if center_fade == None and not self.weighted_mesh:
+                vtool.util.warning('Splitting with joints specified, but no weighted mesh specified.')
+                continue
             
             if not split_index:
                 split_index = [0,'']
             
-            split_name_option = part[5]
+            
             
             new_target = cmds.duplicate(self.base_mesh)[0]
             
@@ -602,29 +661,37 @@ class SplitMeshTarget(object):
             
             blendshape_node = cmds.blendShape(self.target_mesh, new_target, w = [0,1])[0]
             
-            
-            
-            target_index = get_index_at_skin_influence(joint, skin_cluster)
-            
-            if target_index == None:
-                vtool.util.warning('Joint %s is not in skinCluster %s' % (joint, skin_cluster))
-                cmds.delete(new_target, ch = True)
-                continue
-                       
-            if not skin_weights.has_key(target_index):
-                vtool.util.warning('Joint %s not in skinCluster %s.' % (joint, skin_cluster))
-                cmds.delete(new_target, ch = True)
-                continue
+            if center_fade != None:
                 
-            weights = skin_weights[target_index]
+                weights = self._get_center_fade_weights(self.base_mesh, center_fade, positive_negative)
             
+            if center_fade == None:
+                skin_cluster = find_deformer_by_type(self.weighted_mesh, 'skinCluster')
+        
+                if not skin_cluster:
+                    return
+        
+                skin_weights = get_skin_weights(skin_cluster)
+                
+                target_index = get_index_at_skin_influence(joint, skin_cluster)
+                
+                if target_index == None and cmds.objExists(target_index):
+                    vtool.util.warning('Joint %s is not in skinCluster %s' % (joint, skin_cluster))
+                    cmds.delete(new_target, ch = True)
+                    continue
+                           
+                if not skin_weights.has_key(target_index):
+                    vtool.util.warning('Joint %s not in skinCluster %s.' % (joint, skin_cluster))
+                    cmds.delete(new_target, ch = True)
+                    continue
+                    
+                weights = skin_weights[target_index]
+                
             import blendshape
             blend = blendshape.BlendShape(blendshape_node)
             blend.set_weights(weights, self.target_mesh)
             
             cmds.delete(new_target, ch = True)
-            
-            
             
             current_parent = cmds.listRelatives(new_target, p = True)
             
@@ -722,6 +789,8 @@ class TransferWeight(object):
         joint_map = {}
         destination_joint_map = {}
         
+        self._add_joints_to_skin(destination_joints)
+        
         for joint in source_joints:
             if not cmds.objExists(joint):
                 vtool.util.warning('%s does not exist.' % joint)
@@ -736,6 +805,7 @@ class TransferWeight(object):
                 continue
             
             index = get_index_at_skin_influence(joint,self.skin_cluster)
+            
             destination_joint_map[index] = joint
         
         verts = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)
@@ -1036,7 +1106,445 @@ class TransferWeight(object):
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         bar.end()
         vtool.util.show('Done: %s transfer joints to new joints.' % self.mesh)
+        
+         
+class AutoWeight2D(object):
+    
+    def __init__(self, mesh):
+        self.mesh = mesh
+        self.joints = []
+        self.verts = []
+        self.joint_vectors_2D = []
+        self.vertex_vectors_2D = []
+        
+        self.multiplier_weights = []
+        self.zero_weights = True
+        
+        self.orientation_transform = None
+        
+        self.orig_mesh = None
+        self.orig_joints = None
+        self.offset_group = None
+        
+        self.fade_cosine = False
+        self.fade_smoothstep = False
+        
+        self.min_max = None
+        
+    def _create_offset_group(self):
+        
+        duplicate_mesh = cmds.duplicate(self.mesh)[0]
+        
+        attr.unlock_attributes(duplicate_mesh)
+        
+        self.offset_group = cmds.group(em = True, n = core.inc_name('offset_%s' % self.mesh))
+            
+        space.MatchSpace(self.orientation_transform, self.offset_group).translation_rotation()
+        
+        cmds.parent(duplicate_mesh, self.offset_group)
+        
+        duplicate_joints = []
+        
+        for joint in self.joints:
+            dup_joint = cmds.duplicate(joint)[0]
+            cmds.parent(dup_joint, self.offset_group)
+            duplicate_joints.append(dup_joint)
+            
+        cmds.setAttr('%s.rotateX' % self.offset_group, 0)
+        cmds.setAttr('%s.rotateY' % self.offset_group, 0)
+        cmds.setAttr('%s.rotateZ' % self.offset_group, 0)
+        
+        self.orig_mesh = self.mesh
+        self.orig_joints = self.joints
+        self.orig_verts = []
+        
+        self.mesh = duplicate_mesh
+        self.joints = duplicate_joints
+        
+    def _store_verts(self):
+        
+        self.orig_verts = cmds.ls('%s.vtx[*]' % self.orig_mesh, flatten = True)   
+        self.verts = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
+    
+    def _get_joint_index(self, joint):
+        for inc in range(0, len(self.joints)):
+            if self.joints[inc] == joint:
+                return inc
+            
+    def _store_vertex_vectors(self):
+        self.vertex_vectors_2D = []
+        
+        for vert in self.verts:
+            position = cmds.xform(vert, q = True, ws = True, t = True)
+            position_vector_2D = vtool.util.Vector2D(position[0], position[2])
+            
+            self.vertex_vectors_2D.append(position_vector_2D)
                 
+    def _store_joint_vectors(self):
+        
+        self.joint_vectors_2D = []
+        
+        for joint in self.joints:
+            
+            position = cmds.xform(joint, q = True, ws = True, t = True)
+            
+            #position = (position[0], position[2])
+            position = (position[0], 0.0)
+            
+            self.joint_vectors_2D.append(position)
+    
+    def _get_adjacent(self, joint):
+        
+        joint_index = self._get_joint_index(joint)
+        
+        joint_count = len(self.joints)
+        
+        if joint_index == 0:
+            return [1]
+        
+        if joint_index == joint_count-1:
+            return [joint_index-1]
+        
+        return [joint_index+1, joint_index-1]
+
+    def _skin(self):
+        
+        joints = self.orig_joints
+        mesh = self.orig_mesh
+        
+        skin = find_deformer_by_type(mesh, 'skinCluster')
+        
+        
+        if not skin:
+            skin = cmds.skinCluster(mesh, joints[0], tsb = True)[0]
+            joints = joints[1:]
+        
+        if self.zero_weights:
+            set_skin_weights_to_zero(skin)
+        
+        for joint in joints:
+            
+            try:
+                cmds.skinCluster(skin, e = True, ai = joint, wt = 0.0)
+            except:
+                pass
+            
+        return skin
+        
+    def _weight_verts(self, skin):
+        
+        mesh = self.orig_mesh
+        
+        vert_count = len(self.verts)
+        
+        progress = core.ProgressBar('weighting %s:' % mesh, vert_count)
+        
+        for inc in range(0, vert_count):
+            
+            
+            joint_weights = self._get_vert_weight(inc)
+
+            if joint_weights:
+                cmds.skinPercent(skin, self.orig_verts[inc], r = False, transformValue = joint_weights)
+            
+            progress.inc()
+            progress.status('weighting %s: vert %s' % (mesh, inc))
+            if progress.break_signaled():
+                progress.end()
+                break
+        
+        progress.end()
+            
+    def _get_vert_weight(self, vert_index):
+        
+        if not self.multiplier_weights:
+            multiplier = 1
+            
+        if self.multiplier_weights:
+            multiplier = self.multiplier_weights[vert_index]
+            
+            if multiplier == 0 or multiplier < 0.0001:
+                return
+        
+        vertex_vector = self.vertex_vectors_2D[vert_index]
+                
+        joint_weights = []
+        joint_count = len(self.joints)
+        weight_total = 0
+        
+        for inc in range(0, joint_count):
+            
+            if inc == joint_count-1:
+                break
+            
+            start_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc] )
+            end_vector = vtool.util.Vector2D( self.joint_vectors_2D[inc+1])
+            
+            percent = vtool.util.closest_percent_on_line_2D(start_vector, end_vector, vertex_vector, False)
+            
+            joint = self.orig_joints[inc]
+            next_joint = self.orig_joints[inc+1]
+            
+            if percent <= 0:
+                weight_total+=1.0
+                if not weight_total > 1:
+                    joint_weights.append([joint, (1.0*multiplier)])
+                continue
+                    
+            if percent >= 1 and inc == joint_count-2:
+                weight_total += 1.0
+                if not weight_total > 1:
+                    joint_weights.append([next_joint, (1.0*multiplier)])
+                continue
+            
+            if percent > 1 or percent < 0:
+                continue
+            
+            if self.fade_cosine:
+                percent = vtool.util.fade_cosine(percent)
+            if self.fade_smoothstep:
+                percent = vtool.util.fade_smoothstep(percent)
+            
+            
+            weight_total += 1.0-percent
+            if not weight_total > 1:
+                joint_weights.append([joint, ((1.0-percent)*multiplier)])
+                
+            weight_total += percent
+            if not weight_total > 1:
+                joint_weights.append([next_joint, percent*multiplier])
+                
+        return joint_weights
+                
+    def set_joints(self, joints):
+        self.joints = joints
+    
+    def set_mesh(self, mesh):
+        self.mesh = mesh
+        
+    def set_multiplier_weights(self, weights):
+        self.multiplier_weights = weights
+        
+    def set_weights_to_zero(self, bool_value):
+        self.zero_weights = bool_value
+        
+    def set_orientation_transform(self, transform):
+        """
+        Transform to use to define the orientation of joints.
+        """
+        self.orientation_transform = transform
+        
+    def set_fade_cosine(self, bool_value):
+        self.fade_smoothstep = False
+        self.fade_cosine = bool_value
+        
+    def set_fade_smoothstep(self, bool_value):
+        
+        self.fade_cosine = False
+        self.fade_smoothstep = bool_value
+        
+    def run(self):
+        if not self.joints:
+            return
+        
+        self.orig_mesh = self.mesh
+        self.orig_joints = self.joints
+        
+        if self.orientation_transform:
+            self._create_offset_group()
+            
+        self._store_verts()
+        
+        self._store_vertex_vectors()
+        self._store_joint_vectors()
+        skin = self._skin()
+        
+        self._weight_verts(skin)
+        
+        
+        #cmds.hide(self.offset_group)
+        cmds.delete(self.offset_group)
+
+class ComboControlShape(object):
+
+    def __init__(self, shape):
+        
+        self.shape = shape
+        self.targets = []
+        self.control_positions = []
+        self.base_mesh = None
+        self.blendshape = None
+        
+    def add_target(self, target_name):
+        self.targets.append(target_name)
+
+    def add_control_position(self, control_attribute, value):
+        self.control_positions.append([control_attribute, value])
+
+    def set_blendshape(self, blendshape):
+        self.blendshape = blendshape
+        
+    def set_base_mesh(self, base_mesh):
+        self.base_mesh = base_mesh
+
+    def create(self):
+        
+        for position in self.control_positions:
+            cmds.setAttr(position[0],position[1])
+        
+        chad_extract_shape(self.base_mesh, self.shape, replace = True)
+        
+        if not self.blendshape:
+            self.blendshape = find_deformer_by_type(self.base_mesh, 'blendShape', return_all = False)
+        
+        quick_blendshape(self.shape, self.base_mesh, blendshape=self.blendshape)
+        
+        inc = 0
+        
+        last_multiply = None
+        
+        for target in self.targets:
+            
+            if not last_multiply:
+                multiply = attr.connect_multiply('%s.%s' % (self.blendshape, target), '%s.%s' % (self.blendshape, self.shape))
+            
+            if inc == 1:
+                if last_multiply:
+                    cmds.connectAttr('%s.%s' % (self.blendshape, target), '%s.input2X' % last_multiply)
+                    
+            if inc > 1:
+                if last_multiply:
+                    
+                    last_multiply = attr.connect_multiply('%s.%s' % (self.blendshape, target), '%s.input2X' % last_multiply)
+                
+            last_multiply = multiply
+            
+            inc += 1
+            
+        for position in self.control_positions:
+            cmds.setAttr(position[0],0)
+    
+class MultiJointShape(object):
+    
+    def __init__(self, shape):
+        
+        self.shape = shape
+        self.joints = []
+        
+        self.control_values = []
+        
+        self.base_mesh = None
+        self.skinned_mesh = None
+        
+        self.locators = []
+    
+    def _create_locators(self):
+        
+        
+        
+        locators = []
+     
+        parent = cmds.listRelatives(self.joints[0], p = True)
+        if parent:
+            parent = parent[0]
+     
+        for joint in self.joints:
+            
+            if cmds.objExists('%s.group_blend_locator' % joint):
+                locator = attr.get_attribute_input('%s.group_blend_locator' % joint, node_only = True)
+            
+            if not cmds.objExists('%s.group_blend_locator' % joint): 
+                
+                locator = cmds.spaceLocator(n = 'locator_%s' % joint)[0]
+                
+                attr.connect_message(locator, joint, 'blend_locator')
+                
+                cmds.pointConstraint(joint, locator)
+                
+                xform = space.create_xform_group(locator)
+                
+                cmds.parent(xform, parent)
+                
+            locators.append(locator)
+        self.locators = locators
+        
+    
+    def _turn_controls_on(self):
+        
+        for control_group in self.control_values:
+            cmds.setAttr( control_group[0], control_group[1] )
+            
+    
+    def _turn_controls_off(self):
+        
+        for control_group in self.control_values:
+            cmds.setAttr( control_group[0], 0 )
+    
+    def set_joints(self, joints):
+        
+        self.joints = joints
+        
+    def set_target_mesh(self, base_mesh):
+        self.base_mesh = base_mesh
+        
+    def set_skin_mesh(self, skinned_mesh):
+        self.skinned_mesh = skinned_mesh
+        
+    def add_control_value(self, control_attribute, value):
+        
+        self.control_values.append([control_attribute, value])
+    
+        
+    def create(self):
+        
+        self._create_locators()
+        
+        self._turn_controls_on() 
+        
+        new_brow_geo = chad_extract_shape(self.base_mesh, self.shape)
+        cmds.delete(self.shape)
+        new_brow_geo = cmds.rename(new_brow_geo, self.shape)
+     
+        joint_values = {}    
+     
+        for locator in self.locators:
+            value = cmds.getAttr('%s.translateY' % locator)
+            joint_values[locator] = value
+        
+        self._turn_controls_off()
+        
+        
+        split = SplitMeshTarget(new_brow_geo)
+        split.set_weighted_mesh(self.skinned_mesh)
+     
+        inc = 1
+     
+        for joint in self.joints:
+                 
+            split.set_weight_joint( joint, str(inc))
+            inc += 1
+     
+        split.set_base_mesh(self.base_mesh)
+        splits = split.create()
+     
+        inc = 0
+        for split in splits:
+            
+            value = joint_values[self.locators[inc]]
+            
+            quick_blendshape(split, self.base_mesh)
+     
+            anim.quick_driven_key('%s.translateY' % self.locators[inc],
+                                    'blendshape_%s.%s' % (self.base_mesh, split),
+                                    [0, value], 
+                                    [0, 1])        
+     
+            inc+=1
+     
+        cmds.delete(splits)
+        cmds.delete(new_brow_geo)
+
+                    
 class MayaWrap(object):
     """
     Convenience for making maya wraps.
@@ -1106,14 +1614,15 @@ class MayaWrap(object):
                         
     def _set_mesh_to_wrap(self, mesh, geo_type = 'mesh'):
         
-        shapes = cmds.listRelatives(mesh, s = True)
+        shapes = cmds.listRelatives(mesh, s = True, f = True)
         
         if shapes and cmds.nodeType(shapes[0]) == geo_type:
             self.meshes.append(mesh)
                 
-        relatives = cmds.listRelatives(mesh, ad = True)
+        relatives = cmds.listRelatives(mesh, ad = True, f = True)
                     
         for relative in relatives:
+            
             shapes = cmds.listRelatives(relative, s = True, f = True)
             
             if shapes and cmds.nodeType(shapes[0]) == geo_type:
@@ -1236,8 +1745,13 @@ class EnvelopeHistory(object):
                 cmds.disconnectAttr(connection, '%s.envelope' % history)
                 
             cmds.setAttr('%s.envelope' % history, 0)
+            
+    def turn_off_exclude(self, deformer_types):
+        """
+        Turn off all but the deformer types specified.
+        """
+        set_envelopes(self.transform, 0, deformer_types)
         
- 
     def turn_on(self, respect_initial_state = False):
         """
         Turn on all the history found.
@@ -1255,6 +1769,7 @@ class EnvelopeHistory(object):
             if connection:
                 cmds.connectAttr(connection, '%s.envelope' % history)
    
+
 
 def cluster_curve(curve, description, join_ends = False, join_start_end = False, last_pivot_end = False):
     """
@@ -1402,16 +1917,28 @@ def get_history(geometry):
     Return
         list: A list of deformers in the deformation history.
     """
-    scope = cmds.listHistory(geometry, interestLevel = 1)
+    
+    #scope = cmds.listHistory(geometry, interestLevel = 1)
+    scope = cmds.listHistory(geometry, pdo = True)
     
     found = []
     
-    for thing in scope[1:]:
+    if not scope:
+        return
+    
+    for thing in scope:
         
-        found.append(thing)
+        inherited = cmds.nodeType(thing, inherited = True )
+        
+        if 'geometryFilter' in inherited:
+            found.append(thing)
+            
+        #found.append(thing)
             
         if cmds.objectType(thing, isa = "shape") and not cmds.nodeType(thing) == 'lattice':
+            
             return found
+            
         
     if not found:
         return None
@@ -1450,6 +1977,32 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
         return None
         
     return found
+
+def set_envelopes(mesh, value, exclude_type = []):
+    
+    history = get_history(mesh)
+    
+    if not history:
+        return
+    
+    for node in history:
+        
+        skip_current = False
+        
+        for skip in exclude_type:
+            if skip == cmds.nodeType(node):
+                skip_current = True
+                break
+            
+        if skip_current:
+            continue
+        
+        try:
+            cmds.setAttr('%s.envelope' % node, value)
+        except:
+            pass
+
+#--- skin
 
 def get_influences_on_skin(skin_deformer):
     """
@@ -1609,7 +2162,7 @@ def get_skin_weights(skin_deformer):
         skin_deformer (str): The name of a skin deformer.
         
     Return
-        dict: dict[influence] = weight values corresponding to point order.
+        dict: dict[influence_index] = weight values corresponding to point order.
     """
     value_map = {}
     
@@ -1709,6 +2262,8 @@ def set_skin_weights_to_zero(skin_deformer):
             
         for weight_attribute in weight_attributes:
             cmds.setAttr('%s.%s' % (skin_deformer, weight_attribute), 0)
+
+#--- deformers
 
 def set_vert_weights_to_zero(vert_index, skin_deformer, joint = None):
     """
@@ -3233,6 +3788,8 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         envelopes.turn_on(respect_initial_state=True)
         envelopes.turn_off_referenced()
+        envelopes.turn_off_exclude(['skinCluster', 'blendShape'])
+        
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 0)

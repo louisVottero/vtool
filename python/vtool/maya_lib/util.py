@@ -2193,7 +2193,7 @@ class IkHandle(object):
         
         return self.ik_handle
 
-class ConstraintEditor():
+class ConstraintEditor(object):
     """
     space!!!
     """

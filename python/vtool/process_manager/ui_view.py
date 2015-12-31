@@ -7,6 +7,8 @@ from vtool import qt_ui
 
 import process
 
+
+
 if qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
 if qt_ui.is_pyside():
@@ -182,27 +184,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
     def dropEvent(self, event):
         
-        position = event.pos()
-        index = self.indexAt(position)
-        
         directory = self.directory
         
-        is_dropped = False
-        
-        if event.source == self and event.dropAction() == QtCore.Qt.MoveAction or self.dragDropMode() == QtGui.QAbstractItemView.InternalMove:
-            topIndex = QtCore.QModelIndex()
-            col = -1
-            row = -1
-            l = [event, row, col, topIndex]
-
-            if self.drop_on(l):
-                event, row, col, topIndex = l
-                
-                if row > -1:
-                    if row == (index.row() - 1):
-                        is_dropped = False
-                if row == -1 or row == (index.row() + 1):
-                    is_dropped = True
+        position = event.pos()
+        index = self.indexAt(position)
         
         entered_item = self.itemAt(position)
         entered_name = None
@@ -215,6 +200,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if not entered_item:
             entered_item = self.invisibleRootItem()
             entered_name = None
+        
+        is_dropped = self.is_item_dropped(event)
             
         super(ProcessTreeWidget, self).dropEvent(event)
         
@@ -942,7 +929,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.data_list.setSortingEnabled(True)
         self.data_list.setSelectionMode(self.data_list.ExtendedSelection)
-        self.code_list.setSortingEnabled(True)
+        #self.code_list.setSortingEnabled(True)
         self.code_list.setSelectionMode(self.code_list.ExtendedSelection)
         
         self.tabs.addTab(self.data_list, 'Data')
@@ -979,10 +966,19 @@ class CopyWidget(qt_ui.BasicWidget):
         for folder in data_folders:
             self.data_list.addItem(folder)
         
-        code_folders = self.process.get_code_folders()
         
-        for folder in code_folders:
-            self.code_list.addItem(folder)
+        codes, states = self.process.get_manifest()
+        
+        for code in codes:
+            
+            code_name = code.split('.')
+            
+            if len(code_name) > 1 and code_name[1] == 'py':
+            
+                self.code_list.addItem(code_name[0])
+        
+        #for folder in code_folders:
+        #    self.code_list.addItem(folder)
             
     def _paste(self):
         

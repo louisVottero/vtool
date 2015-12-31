@@ -1632,8 +1632,15 @@ class EyeLidRig(rigs.JointRig):
             """
             
             driver = cmds.listRelatives(joints[inc], p = True)[0]
-            offset = cmds.listRelatives(driver, p = True)[0]
-            xform = cmds.listRelatives(offset, p = True)[0]
+            offset = cmds.listRelatives(driver, p = True)
+            xform = cmds.listRelatives(offset, p = True)
+            
+            if driver:
+                driver = driver[0]
+            if offset:
+                offset = offset[0]
+            if xform:
+                xform = xform[0]
             
             if not xform == 'xform_%s' % joints[inc]:
                 xform = space.create_xform_group(joints[inc])

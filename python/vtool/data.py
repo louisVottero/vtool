@@ -416,10 +416,34 @@ class MayaCustomData(CustomData):
         try:
             cmds.select(cl = True)
             cmds.viewFit(an = True)
+            self._fix_camera()
         except:
             util.show('Could not center view')
             
-      
+    def _fix_camera(self):
+        
+        camera_pos = cmds.xform('persp', q = True, ws = True, t = True)
+        
+        distance = util.get_distance([0,0,0], camera_pos)
+        distance = (distance*10)
+        
+        cmds.setAttr('persp.farClipPlane', distance)
+        
+        if distance > 1000:
+            near = 0.01
+        
+        if distance > 10000:
+            near = 0.1
+
+        if distance > 100000:
+            near = 1
+        
+        if distance > 1000000:
+            near = 10
+            
+        
+        cmds.setAttr('persp.nearClipPlane', near)
+            
 class ControlCvData(MayaCustomData):
     """
     maya.control_cvs
@@ -517,11 +541,19 @@ class SkinWeightData(MayaCustomData):
             influence_dict.update(line_dict)
         
         for influence in files:
+            if not influence.endswith('.weights'):
+                continue
+            
             if influence == 'influence.info':
                 continue
             
             read_thread = ReadWeightFileThread() 
-            influence_dict = read_thread.run(influence_dict, folder_path, influence)
+            
+            try:
+                influence_dict = read_thread.run(influence_dict, folder_path, influence)
+            except:
+                util.show(traceback.format_exc())
+                util.show('Errors with %s weight file.' % influence)
                     
         return influence_dict
     
@@ -805,7 +837,7 @@ class ReadWeightFileThread(threading.Thread):
         
         return influence_dict
     
-class BlendshapeWeightData():
+class BlendshapeWeightData(MayaCustomData):
     
     def _data_name(self):
         return 'blendshape_weights'
@@ -1621,7 +1653,8 @@ class MayaFileData(MayaCustomData):
             
             import_file = self.filepath
         
-        cmds.file(import_file, f = True, i = True, iv = True)
+        maya_lib.core.import_file(import_file)
+        #cmds.file(import_file, f = True, i = True, iv = True)
         
         self._center_view()
         
@@ -1724,20 +1757,13 @@ class MayaFileData(MayaCustomData):
         version = util_file.VersionFile(self.filepath)
         version.save(comment)
 
-    def maya_reference_data(self):
+    def maya_reference_data(self, filepath = None):
         
-        #cmds.file(rename = self.filepath)
-        self._prep_scene_for_export()
+        if not filepath:
+            filepath = self.filepath
         
-        basename = util_file.get_basename(self.filepath)
+        maya_lib.core.reference_file(filepath)
         
-        cmds.file( self.filepath,
-                   reference = True, 
-                   gl = True, 
-                   mergeNamespacesOnClash = False, 
-                   namespace = basename, 
-                   options = "v=0;")
-
     def set_directory(self, directory):
         super(MayaFileData, self).set_directory(directory)
         
