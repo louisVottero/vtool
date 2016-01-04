@@ -443,6 +443,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         #self.setIndentation(False)
         
+        self.setBackgroundRole(QtGui.QPalette.Light)
+        
         self.setSelectionMode(self.ExtendedSelection)
         
         self.setDragDropMode(self.InternalMove)
@@ -474,10 +476,19 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.update_checkbox = True
         
-        self.hierarchy = False
+        self.hierarchy = True
         #new
         self.dragged_item = None
         #new
+        
+        if vtool.util.is_in_maya():
+        
+            self.setStyleSheet("QTreeView::indicator:unchecked { background:black; }"
+                                "QTreeView::indicator:checked { background:white; }")
+        
+        
+        #self.setStyleSheet("QTreeView::indicator:unchecked {image: url(icons/check_off.png);}"
+        #                   "QTreeView::indicator:checked {image: url(icons/check_on.png);}")
         
     def resizeEvent(self, event = None):
         super(CodeManifestTree, self).resizeEvent(event)
@@ -491,9 +502,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             item = items[0]
         
             self.script_open.emit(item, False)
-
     
-
     def mousePressEvent(self, event):
         
         
@@ -515,16 +524,24 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         super(CodeManifestTree, self).mousePressEvent(event)
         #new
         #self.script_focus.emit( str(item.text(0)) )
+    
     """
     def dragMoveEvent(self, event):
-        super(CodeManifestTree, self).dragMoveEvent(event)
+        super(CodeManifestTree, self).dragMoveEvent(event)    
         
         self.handle_selection_change = False
         
         self.dragged_item = self.currentItem()
-    """ 
+    """
     
     def dropEvent(self, event):
+        print 'drop!!-------------------------------------------------------------------------------'
+        if self.dropIndicatorPosition == self.BelowItem:
+            print 'below item'
+        if self.dropIndicatorPosition == self.AboveItem:
+            print 'above item'
+        if self.dropIndicatorPosition == self.OnItem:
+            print 'on item' 
         
         #new
         position = event.pos()
@@ -551,42 +568,51 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             is_dropped = False
         
         if not is_dropped:
+            print 'is not dropped'
             
-            self.clearSelection()
+            from_list = event.source()
             
-            self.setItemSelected(self.dragged_item, True)
+            insert_inc = 0
             
-            fromList    = event.source()
-            insertRow   = index.row()
-            
-            if self.dropIndicatorPosition == self.BelowItem:
-                insertRow += 1
-            
-            for item in fromList.selectedItems():
+            for item in from_list.selectedItems():
                 
-                entered_item.removeChild(self.dragged_item)
+                filename = item.get_text()
+                state = item.get_state()
+                new_item = self._create_item(filename, state)
                 
-                filename = self.dragged_item.get_text()
-                state = self.dragged_item.get_state()
+                parent = item.parent()
                 
-                item = self._create_item(filename, state)
-
-                self.insertTopLevelItem(insertRow, item)
- 
-                insertRow += 1
+                if not parent:
+                    parent = self.invisibleRootItem()
+                
+                parent.removeChild(item)
+                                
+                insert_row = self.indexFromItem(entered_item, column=0).row()
+                
+                if self.dropIndicatorPosition == self.BelowItem:
+                    insert_row += 1
+                    insert_row = insert_row + insert_inc
+                
+                entered_parent = entered_item.parent()
+                
+                if not entered_parent:
+                    self.insertTopLevelItem(insert_row, new_item)
+                    
+                if entered_parent:
+                    entered_parent.insertChild(insert_row, new_item)
+                
+                insert_inc += 1
                 
             self.dragged_item = None
             self.handle_selection_change = True
-            self._update_manifest()
+            
             
         #new
         if is_dropped:
-            
+            print 'is dropped'
             entered_name
             
             if entered_item:
-                
-                
                 
                 if entered_item.parent():
                     parent_item = entered_item.parent()
@@ -631,25 +657,34 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             if entered_item is self.drag_parent:
                 self.dragged_item.setDisabled(False)
+                
+                self._update_manifest()
                 return
             
+            """
             if entered_name:
                 message = 'Parent %s under %s?' % (self.dragged_item.get_text(), entered_name)
             if not entered_name:
                 message = 'Unparent %s?' % self.dragged_item.get_text()
-                
-            move_result = qt_ui.get_permission( message , self)
+            
+            #move_result = qt_ui.get_permission( message , self)
             
             if not move_result:
                 
                 if self.drag_parent:
                     self.drag_parent.addChild(self.dragged_item)
                 self.dragged_item.setDisabled(False)
+                
+                self._update_manifest()
                 return
+            """
             
             self.dragged_item.setDisabled(False)
         
-        event.accept()    
+        
+        self._update_manifest()
+        event.accept()
+            
         
     def _item_expanded(self, item):
         return
@@ -1164,6 +1199,10 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         
         self.setSizeHint(0, QtCore.QSize(10, 30))
         
+        #if vtool.util.is_in_maya():
+        #    brush = QtGui.QBrush(QtGui.QColor(100,100,100))
+        #    self.setBackground(0, brush)
+        
         maya_version = vtool.util.get_maya_version()
         
         if maya_version > 2015 or maya_version == 0:
@@ -1173,6 +1212,7 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
             self.status_icon = self._radial_fill_icon(0.6, 0.6, 0.6)
         
         self.setCheckState(0, QtCore.Qt.Unchecked)
+        
     
     def _square_fill_icon(self, r,g,b):
         

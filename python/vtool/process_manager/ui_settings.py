@@ -331,10 +331,11 @@ class ProjectList(QtGui.QTreeWidget):
         
         item = self.currentItem()
         
-        old_name = item.text(0)
-        project_directory = item.text(1)
+        old_name = str(item.text(0))
+        project_directory = str(item.text(1))
         
         new_name = qt_ui.get_new_name('Name Project', self, old_name)
+        
         
         if new_name:
             item.setText(0, new_name)
@@ -461,8 +462,8 @@ class ProjectList(QtGui.QTreeWidget):
                 item = self.topLevelItem(inc)
                 if item:
                     
-                    name = item.text(0)
-                    directory = item.text(1)
+                    name = str(item.text(0))
+                    directory = str(item.text(1))
                     
                     found.append([name, directory])
             
