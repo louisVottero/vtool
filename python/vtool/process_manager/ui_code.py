@@ -476,7 +476,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.update_checkbox = True
         
-        self.hierarchy = True
+        self.hierarchy = False
         #new
         self.dragged_item = None
         #new
@@ -535,13 +535,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     """
     
     def dropEvent(self, event):
-        print 'drop!!-------------------------------------------------------------------------------'
-        if self.dropIndicatorPosition == self.BelowItem:
-            print 'below item'
-        if self.dropIndicatorPosition == self.AboveItem:
-            print 'above item'
-        if self.dropIndicatorPosition == self.OnItem:
-            print 'on item' 
         
         #new
         position = event.pos()
@@ -559,16 +552,12 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             entered_name = None
         
         is_dropped = self.is_item_dropped(event, strict = True)
-        #new
-        
-        #super(CodeManifestTree, self).dropEvent(event)
         
         #removing this lines triggers the new behavior that is still being developed
         if not self.hierarchy:
             is_dropped = False
         
         if not is_dropped:
-            print 'is not dropped'
             
             from_list = event.source()
             
@@ -596,10 +585,17 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 entered_parent = entered_item.parent()
                 
                 if not entered_parent:
+                    
+                    
+                    if insert_row == -1:
+                        insert_row = self.topLevelItemCount()
+                    
                     self.insertTopLevelItem(insert_row, new_item)
                     
                 if entered_parent:
+                    
                     entered_parent.insertChild(insert_row, new_item)
+                    
                 
                 insert_inc += 1
                 
@@ -609,7 +605,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
         #new
         if is_dropped:
-            print 'is dropped'
+            
             entered_name
             
             if entered_item:

@@ -1899,6 +1899,7 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     Return
         (str):  The name of the new group.
     """
+    
     if node == None:
         node = target_transform
     
