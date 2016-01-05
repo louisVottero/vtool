@@ -3134,7 +3134,12 @@ class IkAppendageRig(BufferRig):
             
             self.pole_follow_transform.append(self.top_control)
             
-            space.create_multi_follow(self.pole_follow_transform, pole_locator, self.poleControl, value = 0)
+            print 'follows', self.pole_follow_transform
+            
+            if len(self.pole_follow_transform) == 1:
+                space.create_follow_group(self.pole_follow_transform[0], pole_locator)
+            if len(self.pole_follow_transform) > 1:
+                space.create_multi_follow(self.pole_follow_transform, pole_locator, self.poleControl, value = 0)
             
             follow_group = space.create_follow_group(pole_locator, xform_group)
             
