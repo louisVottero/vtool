@@ -3591,7 +3591,7 @@ def get_new_name(message, parent = None, old_name = None):
     comment = comment.replace('\\', '_')  
     
     if ok:
-        return comment
+        return str(comment)
     
 def critical(message, parent = None):
     

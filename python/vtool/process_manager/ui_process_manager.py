@@ -246,7 +246,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
         
         if self.project_directory:
-            self.settings.set('process', [name, self.project_directory[1]])
+            self.settings.set('process', [name, str(self.project_directory[1])])
         
         name = name.replace('/', '  /  ')
         
@@ -460,7 +460,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if not directory:
             
-            directory = self.project_directory[1]
+            directory = str(self.project_directory[1])
 
         if directory and self.tab_widget.currentIndex() == 0:
             util_file.open_browser(self.directory)
@@ -534,21 +534,30 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not sub_part:
             
             if self.project_directory:
-                previous_project = self.project_directory[1]
+                previous_project = str(self.project_directory[1])
             if not self.project_directory:
                 previous_project = None
             
-            if not util_file.is_dir(directory[1]):
-                util_file.create_dir(None, directory[1])
+            if not util_file.is_dir(str(directory[1])):
+                util_file.create_dir(None, str(directory[1]))
         
             self.project_directory = directory
-            self.settings.set('project_directory', self.project_directory)
+            
+            clean_list = []
+            
+            #needed for PyQt
+            for project in self.project_directory:
+                clean_list.append( str(project) )
+            
+            self.settings.set('project_directory', clean_list)
+            
+            
             
             self._set_project_history(directory, previous_project)
             
             self.view_widget.clear_sub_path_filter()
         
-            directory = directory[1]
+            directory = str(directory[1])
         
         if sub_part:
             directory = sub_part
