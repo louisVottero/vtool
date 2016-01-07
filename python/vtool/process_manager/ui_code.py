@@ -366,7 +366,14 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         if not item:
             return
         
-        return item.text(0)
+        name = item.text(0)
+        
+        path = self.code_manifest_tree._get_item_path(item)
+        
+        if path:
+            name = util_file.join_path(path, name)
+        
+        return name
         
     def _run_code(self):
         
@@ -476,19 +483,32 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.update_checkbox = True
         
-        self.hierarchy = False
+        self.hierarchy = True
         #new
         self.dragged_item = None
         #new
         
-        if vtool.util.is_in_maya():
+        #if vtool.util.is_in_maya():
         
-            self.setStyleSheet("QTreeView::indicator:unchecked { background:black; }"
-                                "QTreeView::indicator:checked { background:white; }")
+        #    self.setStyleSheet("QTreeView::indicator:unchecked { background:black; }"
+        #                        "QTreeView::indicator:checked { background:white; }")
         
         
         #self.setStyleSheet("QTreeView::indicator:unchecked {image: url(icons/check_off.png);}"
         #                   "QTreeView::indicator:checked {image: url(icons/check_on.png);}")
+        
+        #self.setAutoFillBackground(False)
+        #self.setAlternatingRowColors(False)
+        
+        self.allow_manifest_update = True
+        
+        if vtool.util.is_in_maya():
+            palette = self.palette()
+            
+            palette.setColor(QtGui.QPalette.Base, QtGui.QColor(60,60,60,255) )
+            palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(70,70,70,255) )
+        
+            self.setPalette(palette)
         
     def resizeEvent(self, event = None):
         super(CodeManifestTree, self).resizeEvent(event)
@@ -534,23 +554,193 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.dragged_item = self.currentItem()
     """
     
-    def dropEvent(self, event):
+    def _get_entered_item(self, event):
         
-        #new
         position = event.pos()
-        index = self.indexAt(position)
-        
         entered_item = self.itemAt(position)
-        entered_name = None
-        
-        if entered_item:
-            
-            entered_name = entered_item.get_text()
         
         if not entered_item:
             entered_item = self.invisibleRootItem()
-            entered_name = None
+            
+        return entered_item
         
+    
+    def _insert_drop(self, event):
+        print 'insert!'
+        entered_item = self._get_entered_item(event)
+        entered_parent = entered_item.parent()
+        
+        from_list = event.source()
+            
+        insert_inc = 0
+        
+        remove_items = []
+        
+        for item in from_list.selectedItems():
+            
+            
+            
+            children = item.takeChildren()
+            
+            filename = item.get_text()
+            state = item.get_state()
+            new_item = self._create_item(filename, state)
+            
+            for child in children:
+                new_item.addChild(child)
+            
+            parent = item.parent()
+            
+            if not parent:
+                parent = self.invisibleRootItem()
+            
+            remove_items.append([item, parent])
+            
+            insert_row = self.indexFromItem(entered_item, column=0).row()
+            
+            if self.dropIndicatorPosition == self.BelowItem:
+                insert_row += 1
+                insert_row = insert_row + insert_inc
+                
+            if not entered_parent:
+                
+                if insert_row == -1:
+                    insert_row = self.topLevelItemCount()
+                
+                self.insertTopLevelItem(insert_row, new_item)
+                
+            if entered_parent:
+                
+                entered_parent.insertChild(insert_row, new_item)
+                
+            insert_inc += 1
+            
+        for item in remove_items:
+            
+            item[1].removeChild(item[0])
+            
+    def _add_drop(self, event):
+        print 'add!'
+        entered_item = self._get_entered_item(event)
+        entered_parent = entered_item.parent()
+        
+        if not entered_parent:
+            entered_parent = self.invisibleRootItem()
+                
+        from_list = event.source()
+        
+        remove_items = []
+        
+        for item in from_list.selectedItems():
+            parent = item.parent()
+            
+            if not parent:
+                parent = self.invisibleRootItem()
+                
+            remove_items.append([item, parent])
+                
+            children = item.takeChildren()
+            
+            old_path = self._get_item_path(item)
+            
+            
+            name = item.get_text()
+            
+            state = item.get_state()
+            
+            entered_item.setExpanded(True)
+            
+            item = self._create_item(name, state)
+            
+            for child in children:
+                item.addChild(child)
+            
+            entered_item.addChild(item)
+            entered_item.setExpanded(True)
+            
+            
+            
+            name = name.split('.')[0]
+            
+            new_name = self._get_new_drop_name(item)
+            
+            print '##', new_name, name
+            
+            if new_name != name:
+                
+                basename = util_file.get_basename(new_name)
+                item.set_text(basename + '.py')
+            
+            old_name = name
+            
+            if old_path:
+                old_name = util_file.join_path(old_path, name)
+            
+            self._handle_item_reparent(old_name, new_name)
+            
+        for item in remove_items:
+            
+            item[1].removeChild(item[0])
+            
+    def _get_new_drop_name(self, item):
+        
+        name = item.get_text()
+        name = name.split('.')[0]
+        
+        new_path = self._get_item_path(item)
+        
+        new_name = name
+        
+        if new_path:
+            new_name = util_file.join_path(new_path, name)
+        
+        inc = vtool.util.get_last_number(new_name)
+        
+        while self._name_clash(new_name):
+            
+            inc += 1
+            
+            new_name = vtool.util.replace_last_number(new_name, str(inc)) 
+            
+            if inc >= 1000:
+                return
+            
+        return new_name
+            
+    def _handle_item_reparent(self, old_name, new_name):
+        
+        if old_name == new_name:
+            return
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        process_tool.rename_code(old_name, new_name)
+        
+    def _get_item_path(self, item):
+        
+        parent = item.parent()
+        parent_path = ''
+        
+        while parent:
+            
+            parent_name = parent.text(0)
+            
+            split_name = parent_name.split('.')
+            parent_name = split_name[0]
+            
+            if parent_path:
+                parent_path = util_file.join_path(parent_name, parent_path)
+                
+            if not parent_path:
+                parent_path = parent_name
+                
+            parent = parent.parent()
+        
+        return parent_path
+            
+    def dropEvent(self, event):
+        print 'drop', '---------------------------------------'
         is_dropped = self.is_item_dropped(event, strict = True)
         
         #removing this lines triggers the new behavior that is still being developed
@@ -559,128 +749,14 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         if not is_dropped:
             
-            from_list = event.source()
-            
-            insert_inc = 0
-            
-            for item in from_list.selectedItems():
-                
-                filename = item.get_text()
-                state = item.get_state()
-                new_item = self._create_item(filename, state)
-                
-                parent = item.parent()
-                
-                if not parent:
-                    parent = self.invisibleRootItem()
-                
-                parent.removeChild(item)
-                                
-                insert_row = self.indexFromItem(entered_item, column=0).row()
-                
-                if self.dropIndicatorPosition == self.BelowItem:
-                    insert_row += 1
-                    insert_row = insert_row + insert_inc
-                
-                entered_parent = entered_item.parent()
-                
-                if not entered_parent:
-                    
-                    
-                    if insert_row == -1:
-                        insert_row = self.topLevelItemCount()
-                    
-                    self.insertTopLevelItem(insert_row, new_item)
-                    
-                if entered_parent:
-                    
-                    entered_parent.insertChild(insert_row, new_item)
-                    
-                
-                insert_inc += 1
-                
-            self.dragged_item = None
-            self.handle_selection_change = True
-            
-            
+            self._insert_drop(event)
         #new
         if is_dropped:
             
-            entered_name
-            
-            if entered_item:
-                
-                if entered_item.parent():
-                    parent_item = entered_item.parent()
-                    
-                if not entered_item.parent():
-                    parent_item = self.invisibleRootItem()
-                    
-                if not self.drag_parent is parent_item:
-                    
-                    index = entered_item.indexOfChild(self.dragged_item)
-                    child = entered_item.takeChild(index)
-                    
-                    #item = QtGui.QTreeWidgetItem()
-                    #item.setText(0, 'foobar.py')
-                    
-                    name = self.dragged_item.get_text()
-                    state = self.dragged_item.get_state()
-                
-                    item = self._create_item(name, state)
-                    
-                    parent_item.addChild(item)
-                    
-                    entered_item = parent_item
-                    
-                    if parent_item is self.invisibleRootItem():
-                        entered_name = None
-                    if not parent_item is self.invisibleRootItem():
-                        entered_name = entered_item.get_text()
-                
-                entered_item.removeChild(self.dragged_item)    
-                entered_item.setExpanded(True)
-                
-                name = self.dragged_item.get_text()
-                state = self.dragged_item.get_state()
-                
-                item = self._create_item(name, state)
-                
-                entered_item.addChild(item)
-                entered_item.setExpanded(True)
-                
-            self.dragged_item.setDisabled(True)
-            
-            if entered_item is self.drag_parent:
-                self.dragged_item.setDisabled(False)
-                
-                self._update_manifest()
-                return
-            
-            """
-            if entered_name:
-                message = 'Parent %s under %s?' % (self.dragged_item.get_text(), entered_name)
-            if not entered_name:
-                message = 'Unparent %s?' % self.dragged_item.get_text()
-            
-            #move_result = qt_ui.get_permission( message , self)
-            
-            if not move_result:
-                
-                if self.drag_parent:
-                    self.drag_parent.addChild(self.dragged_item)
-                self.dragged_item.setDisabled(False)
-                
-                self._update_manifest()
-                return
-            """
-            
-            self.dragged_item.setDisabled(False)
+            self._add_drop(event)
         
-        
+        event.accept()    
         self._update_manifest()
-        event.accept()
-            
         
     def _item_expanded(self, item):
         return
@@ -846,6 +922,22 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self._rename_item(item, name)
         
     def _name_clash(self, name):
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        folders = process_tool.get_code_folders()
+        
+        for folder in folders:
+            
+            other_name = folder
+            
+            if name == other_name:
+                return True
+            
+        return False
+        
+        """
         for inc in range(0, self.topLevelItemCount()):    
             
             other_name = self.topLevelItem(inc).get_text()
@@ -859,26 +951,39 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 return True
             
         return False
-        
+        """
     def _rename_item(self, item, new_name):
         
+        print 'rename item', new_name
+        
         new_name = str(new_name)
+        
+        path = self._get_item_path(item)
         
         if new_name.find('.'):
             new_name = new_name.split('.')
             new_name = new_name[0]
+            
+            if path:
+                new_name = util_file.join_path(path, new_name)
         
         if self.old_name.find('.'):
             split_old_name = self.old_name.split('.')
             old_name = split_old_name[0]
         
-        inc = 1
+            if path:
+                old_name = util_file.join_path(path, old_name)
+
+        #pre_new_name = new_name
+        inc = vtool.util.get_last_number(new_name)
         
-        pre_new_name = new_name
+        print 'last number!', inc
         
         while self._name_clash(new_name):
-            new_name = pre_new_name + str(inc)
+            
             inc += 1
+            
+            new_name = vtool.util.replace_last_number(new_name, str(inc))
             
             if inc >= 1000:
                 return
@@ -890,14 +995,16 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         process_tool.set_directory(self.directory)
         
         old_filepath = process_tool.get_code_file(old_name)
-
+        print 'renaming item!!!',  old_name, new_name
         file_name = process_tool.rename_code(old_name, new_name)
                 
         new_file_name = file_name.split('.')[0]
         
+        print 'after rename!', file_name
+        
         filepath = process_tool.get_code_file(new_file_name)
         
-        item.set_text(file_name)
+        item.set_text(util_file.get_basename(file_name))
         
         self.item_renamed.emit(old_filepath, filepath)
         
@@ -922,7 +1029,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsUserCheckable|QtCore.Qt.ItemIsDropEnabled)
             #item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsUserCheckable|QtCore.Qt.ItemIsDropEnabled)
         
-        item.tree = self
+        #setData in the item is an issue. If this isn't happening then the manifest will update every time the check state changes by the program.
+        #this avoids it updating while it is being set by the program.
+        if hasattr(item, 'handle_manifest'):
+            item.handle_manifest = True
+        #item.tree = self
         
         
     def _create_item(self, filename, state = False):
@@ -937,8 +1048,13 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def _add_item(self, filename, state):
         
-        
-        item = super(CodeManifestTree,self)._add_item(filename)
+        if filename.count('/') > 0:
+            basename = util_file.get_basename(filename)
+            
+            item = super(CodeManifestTree, self)._add_item(basename, parent = False)
+            
+        if filename.count('/') == 0:
+            item = super(CodeManifestTree,self)._add_item(filename)
         
         self._setup_item(item, state)
         
@@ -946,15 +1062,32 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     
     def _add_items(self, files, item = None):
         
-        scripts, states = files
+        scripts, states, parents = files
         
         script_count = len(scripts)
         
         found_false = False
         
+        built_parents = {}
+        
         for inc in range(0, script_count):
             
-            self._add_item(scripts[inc], states[inc])
+            script_name = scripts[inc].split('.')[0]
+            
+            
+            
+            item = self._add_item(scripts[inc], states[inc])
+            
+            if parents.has_key(script_name):
+                built_parents[script_name] = item
+            
+            dirname = util_file.get_dirname(scripts[inc])
+            
+            if parents.has_key(dirname) and built_parents.has_key(dirname):
+                
+                current_parent = built_parents[dirname]
+                
+                current_parent.addChild(item)
             
             if not states[inc]:
                 found_false = True
@@ -967,6 +1100,16 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             self.checkbox.setChecked(False)
             
         self.update_checkbox = True
+        
+    def _add_sub_items(self, item):
+        
+        item_path = self._get_item_path(item)
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        
+        
     
     def _get_files(self, path = None):
         
@@ -979,6 +1122,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         found_scripts = []
         found_states = []
+        parents = {}
         
         for inc in range(0, len(scripts)):
             
@@ -990,13 +1134,16 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             code_path = process_tool.get_code_file(name)
             
             if not code_path or not util_file.is_file(code_path):
-            
                 continue
+            
+            if name.count('/') > 0:
+                dirname = util_file.get_dirname(name)
+                parents[dirname] = scripts[inc]
             
             found_scripts.append(scripts[inc])
             found_states.append(states[inc])
                    
-        return [found_scripts, found_states]
+        return [found_scripts, found_states, parents]
 
     def _get_item_by_name(self, name):
         item_count = self.topLevelItemCount()
@@ -1008,28 +1155,80 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             if item.get_text() == name:
                 return item
 
+    def _get_all_items(self):
+        
+        item_count = self.topLevelItemCount()    
+        items = []
+        
+        for inc in range(0, item_count):
+            
+            item = self.topLevelItem(inc)
+            
+            ancestors = self._get_ancestors(item)
+            
+            items.append(item)
+            
+            if ancestors:
+                items += ancestors
+                
+        return items
+                
+    def _get_ancestors(self, item):
+        
+        child_count = item.childCount()
+        
+        items = []
+        
+        for inc in range(0, child_count):
+            
+            child = item.child(inc)
+            
+            children = self._get_ancestors(child)
+            
+            items.append(child)
+            if children:
+                items += children
+        
+        return items
+
     def _update_manifest(self):
         
+        if not self.allow_manifest_update:
+            return
+        
+        print 'update manifest -----------------------------------------------'
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
-        
-        count = self.topLevelItemCount()
         
         scripts = []
         states = []
         
-        for inc in range(0, count):
-            
-            item = self.topLevelItem(inc)
+        #Could not user item iterator because it updates setData which updates the manifest, 
+        #which causes the manifest to be updated too much.
+        #it = QtGui.QTreeWidgetItemIterator(self)
+        #while it:
+            #item = it.value()
+            #items.append(item)
+        
+
+        items = self._get_all_items()
+        
+        for item in items:
             
             name = item.get_text()
-            state = item.checkState(0)
+            path = self._get_item_path(item)
             
+            if path:
+                name = util_file.join_path(path, name)
+            
+            state = item.checkState(0)
             if state == 0:
                 state = False
             
             if state == 2:
                 state = True
+            
+            print name,state
                 
             scripts.append(name)
             states.append(state)
@@ -1037,7 +1236,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         process_tool.set_manifest(scripts, states)
         
     def _sync_manifest(self):
-        
+        print 'sync manifest ------------------------------'
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         
@@ -1050,6 +1249,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         name = item.get_text()
         name = name.split('.')
         name = name[0]
+        
+        path = self._get_item_path(item)
+        
+        if path:
+            name = util_file.join_path(path, name)
         
         code_file = process_tool.get_code_file(name)
         
@@ -1069,7 +1273,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if sync:
             self._sync_manifest()
         
+        self.allow_manifest_update = False
         super(CodeManifestTree, self).refresh()
+        self.allow_manifest_update = True
 
     def reset_process_script_state(self):
         item_count = self.topLevelItemCount()
@@ -1126,13 +1332,19 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def run_current_item(self, external_code_library = None):
         
+        print 'run current'
+        
         items = self.selectedItems()
         
+        for item in items:
+            print item.text(0)
+        
+        """
         item_count = self.topLevelItemCount()
         for inc in range(0, item_count):
             top_item = self.topLevelItem(inc)
             top_item.set_state(-1)
-        
+        """
         
         if len(items) > 1:
             
@@ -1168,6 +1380,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         name = name.split('.')
         name = name[0]
         
+        path = self._get_item_path(item)
+        
+        if path:
+            name = util_file.join_path(path, name)
+        
         delete_state = vtool.qt_ui.get_permission('Delete %s?' % name)
         
         process_tool = process.Process()
@@ -1179,7 +1396,12 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
             index = self.indexFromItem(item)
             
-            self.takeTopLevelItem(index.row())
+            parent = item.parent()
+            
+            if parent:
+                parent.removeChild(item)
+            if not parent:
+                self.takeTopLevelItem(index.row())
             
             process_tool.delete_code(name)
             
@@ -1189,7 +1411,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
 class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     
+    
+    
     def __init__(self):
+        
+        self.handle_manifest = False
         
         super(ManifestItem, self).__init__()
         
@@ -1208,6 +1434,8 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
             self.status_icon = self._radial_fill_icon(0.6, 0.6, 0.6)
         
         self.setCheckState(0, QtCore.Qt.Unchecked)
+        
+        
         
     
     def _square_fill_icon(self, r,g,b):
@@ -1248,9 +1476,14 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         
         if role == QtCore.Qt.CheckStateRole:
             
-            if hasattr(self, 'tree'):
-                self.tree._update_manifest()
-                        
+            if self.handle_manifest:
+                tree = self.treeWidget()
+            
+                tree._update_manifest()
+            
+            #if hasattr(self, 'tree'):
+            #    self.tree._update_manifest()
+                     
     def set_state(self, state):
         
         

@@ -851,7 +851,7 @@ def get_files(directory):
     
     return found
 
-def get_folders(directory):
+def get_folders(directory, recursive = False):
     """
     Get folders found in the directory.
     
@@ -864,19 +864,27 @@ def get_folders(directory):
     if not is_dir(directory):
         return
     
-    files = os.listdir(directory)
     
-    folders = []
+    found_folders = []
     
-    
-    for filepath in files:
-        path = join_path(directory, filepath)
+    for root, dirs, files in os.walk(directory):
         
-        if is_dir(path):
+        del(files)
+        
+        for folder in dirs:
             
-            folders.append(filepath)
+            folder_name = join_path(root, folder)
             
-    return folders           
+            folder_name = os.path.relpath(folder_name,directory)
+            folder_name = fix_slashes(folder_name)
+            
+            found_folders.append(folder_name)
+        
+        if not recursive:
+            break
+        
+    
+    return found_folders           
 
 def get_files_and_folders(directory):
     """
@@ -1219,7 +1227,6 @@ def rename(directory, name, make_unique = False):
         str: The path of the renamed folder, or False if rename fails. 
     """
     
-    
     basename = get_basename(directory)
     
     if basename == name:
@@ -1233,6 +1240,7 @@ def rename(directory, name, make_unique = False):
         renamepath = inc_path_name(renamepath)
 
     try:
+        print directory, renamepath
         os.rename(directory, renamepath)
     except:
         
@@ -1395,12 +1403,21 @@ def delete_dir(name, directory):
         return full_path
     
     #read-only error fix
-    if not os.access(full_path, os.W_OK):
-        os.chmod(full_path, stat.S_IWUSR)
+    #if not os.access(full_path, os.W_OK):
+    #    os.chmod(full_path, stat.S_IWUSR)
     
-    shutil.rmtree(full_path)  
+    shutil.rmtree(full_path, onerror = delete_read_only_error)  
     
     return full_path
+
+def delete_read_only_error(action, name, exc):
+    """
+    Helper to delete read only files.
+    """
+    
+    os.chmod(name, stat.S_IWRITE)
+    action(name)
+    
 
 def refresh_dir(directory):
     """
@@ -1470,6 +1487,7 @@ def delete_file(name, directory):
         
         return full_path
         
+    os.chmod(full_path, stat.S_IWRITE)
     os.remove(full_path) 
     
     return full_path

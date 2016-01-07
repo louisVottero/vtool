@@ -56,11 +56,13 @@ class DataFolder(util_file.FileManager):
     def __init__(self, name, filepath):
         super(DataFolder, self).__init__(filepath)
         
-        self.name = name
-        self.data_type = None
-        self.filepath = filepath
+        new_path = util_file.join_path(filepath, name)
+        self.filepath = util_file.get_dirname(new_path)
+        self.name = util_file.get_basename(new_path)
         
-        test_path = util_file.join_path(filepath, name)
+        self.data_type = None
+        
+        test_path = util_file.join_path(self.filepath, self.name)
         
         is_folder = util_file.is_dir(test_path)
         
@@ -145,8 +147,15 @@ class DataFolder(util_file.FileManager):
     
     def rename(self, new_name):
         
+        basename = util_file.get_basename(new_name)
+        
         instance = self.get_folder_data_instance()
-        instance.rename(new_name)
+        
+        print 'new base name', basename
+        
+        instance.rename(basename)
+        
+        print 'folder path', self.folder_path, new_name
         
         folder = util_file.rename(self.folder_path, new_name)
         
@@ -155,7 +164,7 @@ class DataFolder(util_file.FileManager):
         
         self.folder_path = folder
         self._set_settings_path(folder)
-        self._set_name(new_name)
+        self._set_name(basename)
         
         return self.folder_path
     
@@ -302,6 +311,8 @@ class FileData(Data):
         
     def _get_file_name(self):
         
+        name = self.name
+        
         if self.data_extension:
             return '%s.%s' % (self.name, self.data_extension)
         if not self.data_extension:
@@ -314,6 +325,8 @@ class FileData(Data):
         
     def create(self):
         name = self.name
+        
+        
         
         self.file = util_file.create_file('%s.%s' % (name, self.data_extension), self.directory)    
     
@@ -331,6 +344,9 @@ class FileData(Data):
         
         old_name = self.name
         
+        if old_name == new_name:
+            return
+        
         old_filepath = util_file.join_path(self.directory, '%s.%s' % (old_name, self.data_extension))
         
         self.set_name(new_name)
@@ -345,9 +361,7 @@ class FileData(Data):
             found = True
     
         if found:
-        
             util_file.rename(old_filepath, self._get_file_name())
-        
             return self._get_file_name()
     
 class ScriptData(FileData):
@@ -1303,7 +1317,10 @@ class PoseData(MayaCustomData):
         
     def _import_file(self, filepath):
         
+        
+        
         if util_file.is_file(filepath):
+            print filepath
             cmds.file(filepath, f = True, i = True, iv = True, shd = 'shadingNetworks')
         
         if not util_file.is_file(filepath):
@@ -1457,6 +1474,9 @@ class PoseData(MayaCustomData):
         cmds.renderThumbnailUpdate( False )
         
         for pose_file in pose_files:
+            
+            if not pose_file.endswith('.ma') and not pose_file.endswith('.mb'):
+                continue
             
             pose_path = util_file.join_path(path, pose_file)
             

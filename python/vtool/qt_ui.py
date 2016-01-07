@@ -944,12 +944,14 @@ class FileTreeWidget(TreeWidget):
                 
                 QtGui.QTreeWidgetItem(item)
         
-        if not parent:
-            self.addTopLevelItem(item)
-        if parent:
-            parent.addChild(item)
+        if not parent == False:
             
-        self.setCurrentItem(item)
+            if not parent:
+                self.addTopLevelItem(item)
+            if parent:
+                parent.addChild(item)
+            
+            self.setCurrentItem(item)
             
         return item
     
