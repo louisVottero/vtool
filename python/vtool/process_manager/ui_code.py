@@ -664,8 +664,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             new_name = self._get_new_drop_name(item)
             
-            print '##', new_name, name
-            
             if new_name != name:
                 
                 basename = util_file.get_basename(new_name)
@@ -715,7 +713,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         
-        process_tool.rename_code(old_name, new_name)
+        process_tool.move_code(old_name, new_name)
         
     def _get_item_path(self, item):
         
@@ -977,8 +975,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         #pre_new_name = new_name
         inc = vtool.util.get_last_number(new_name)
         
-        print 'last number!', inc
-        
         while self._name_clash(new_name):
             
             inc += 1
@@ -995,16 +991,18 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         process_tool.set_directory(self.directory)
         
         old_filepath = process_tool.get_code_file(old_name)
-        print 'renaming item!!!',  old_name, new_name
+        
         file_name = process_tool.rename_code(old_name, new_name)
                 
         new_file_name = file_name.split('.')[0]
         
-        print 'after rename!', file_name
+        print 'new file name', new_file_name
         
         filepath = process_tool.get_code_file(new_file_name)
         
-        item.set_text(util_file.get_basename(file_name))
+        basename = util_file.get_basename(filepath)
+        
+        item.set_text(util_file.get_basename(basename))
         
         self.item_renamed.emit(old_filepath, filepath)
         

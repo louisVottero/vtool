@@ -556,8 +556,6 @@ class Process(object):
         
         folder = util_file.join_path(self.get_code_path(), name)
         
-        print 'folder!', folder
-        
         if util_file.is_dir(folder):
             return folder
 
@@ -708,6 +706,19 @@ class Process(object):
         
         return filename 
         
+    def move_code(self, old_name, new_name):
+        
+        code_path = self.get_code_path()
+        
+        old_path = util_file.join_path(code_path, old_name)
+        new_path = util_file.join_path(code_path, new_name)
+        
+        util_file.move(old_path, new_path)
+        
+        file_name = new_path
+            
+        return file_name
+    
     def rename_code(self, old_name, new_name):
         """
         Renames the code folder specified with old_name to the new_name.
@@ -722,48 +733,34 @@ class Process(object):
         
         new_name = util.clean_file_string(new_name)
         
+        print 'rename code', old_name, new_name
+        
+        #code1/code2 code1/code
+        #code2/code2 code1/code2
+        #code2/code2 code2
+        #code code2/code2
+        
         old_len = old_name.count('/')
         new_len = new_name.count('/')
         
-        file_name = ''
+        if old_len != new_len:
+            util.warning('Rename works on code folders in the same folder. Try move instead.')
+            return
         
-        print 'rename code!', old_name, new_name 
+        sub_new_name = util_file.remove_common_path(old_name, new_name)
         
-        print 'lengths', old_len, new_len
+        #sub_new_name = new_name[len(common):]
         
-        if new_len == old_len:
+        print 'sub new name', sub_new_name
         
-            import os
-            common = os.path.commonprefix([old_name, new_name])
-            
-            sub_new_name = new_name[len(common):]
+        code_folder = data.DataFolder(old_name, self.get_code_path())
+        code_folder.rename(sub_new_name)
         
-            print 'first length option'
-        
-            code_folder = data.DataFolder(old_name, self.get_code_path())
-            code_folder.rename(sub_new_name)
-            
-            instance = code_folder.get_folder_data_instance()
-                    
-            file_name = instance.get_file()
-            file_name = util_file.get_basename(file_name)
-        
-        if new_len != old_len:
-        
-            print 'second length option'
-            
-            #code_folder = data.DataFolder(old_name, self.get_code_path())
-            #code_folder.rename(new_name)
-            
-            code_path = self.get_code_path()
-            
-            old_path = util_file.join_path(code_path, old_name)
-            new_path = util_file.join_path(code_path, new_name)
-            
-            util_file.move(old_path, new_path)
-            
-            file_name = new_path
+        instance = code_folder.get_folder_data_instance()
                 
+        file_name = instance.get_file()
+        file_name = util_file.get_basename(file_name)
+            
         return file_name
         
     def delete_code(self, name):
@@ -937,9 +934,8 @@ class Process(object):
         
         scripts, states = self.get_manifest()
         
-        #temp
-        for inc in range(0, len(scripts)):
-            print scripts[inc], states[inc]
+        print scripts
+        print states
         
         synced_scripts = []
         synced_states = []
@@ -951,13 +947,8 @@ class Process(object):
             
             name = current_script.split('.')
             
-            print 'name!', name
-            
             if len(name) == 2:
                 name = name[0]
-            
-            print name
-            
             
             code_file = self.get_code_file(name)
             
@@ -969,8 +960,6 @@ class Process(object):
             
         code_folders = self.get_code_folders()
         
-        print 'code folders!!!!!!!!!!!', code_folders
-        
         for code_folder in code_folders:
             
             if code_folder == 'manifest':
@@ -981,9 +970,7 @@ class Process(object):
             if not code_file_basename in synced_scripts:
                 synced_scripts.append(code_file_basename)
                 synced_states.append(False)
-            
-        print 'sink', synced_scripts
-            
+        
         self.set_manifest(synced_scripts, synced_states)
                 
     #--- run

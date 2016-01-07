@@ -1168,6 +1168,43 @@ def open_browser(filepath):
         opener ="open" if sys.platform == "darwin" else "xdg-open"
         subprocess.call([opener, filepath])  
 
+def remove_common_path(path1, path2):
+    """
+    Given path1 = pathA/pathB
+    and path2 = pathA/pathC
+    
+    or path1 = pathA
+    and path2 = pathA/pathC
+    
+    return pathC
+    """
+
+    path1 = fix_slashes(path1)
+    path2 = fix_slashes(path2)
+    
+    split_path1 = path1.split('/')
+    split_path2 = path2.split('/')
+    
+    skip = True
+    new_path = []
+    
+    for inc in range(0, len(split_path2)):
+        
+        if skip:
+            if len(split_path1) > inc:
+                if split_path1[inc] != split_path2[inc]:
+                    skip = False
+                    
+            if (len(split_path1)-1) < inc:
+                skip = False
+                
+        if not skip:
+            new_path.append(split_path2[inc])
+
+    new_path = string.join(new_path, '/')
+    
+    return new_path
+    
 #---- edit
 
 def fix_slashes(directory):
