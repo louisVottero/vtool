@@ -595,9 +595,13 @@ class Process(object):
         """
         directory = self.get_code_path()
         
-        folders = util_file.get_folders(directory)
+        #folders = util_file.get_folders(directory)
         
         files = []
+        
+        folders = self.get_code_folders()
+        
+        
         
         for folder in folders:
             
@@ -631,7 +635,6 @@ class Process(object):
             return
         
         data_folder = data.DataFolder(name, self.get_code_path())
-        
         
         data_instance = data_folder.get_folder_data_instance()
         
@@ -713,10 +716,36 @@ class Process(object):
         old_path = util_file.join_path(code_path, old_name)
         new_path = util_file.join_path(code_path, new_name)
         
-        util_file.move(old_path, new_path)
+        basename = util_file.get_basename(new_name)
+        dirname = util_file.get_dirname(new_name)
         
-        file_name = new_path
+        test_path = new_path
+        
+        while util_file.is_dir(test_path):
+        
+            last_number = util.get_last_number(basename)
+            last_number += 1
             
+            basename = util.replace_last_number(basename, last_number)
+            
+            new_name = basename
+            
+            if dirname:
+                new_name = util_file.join_path(dirname, basename)
+            
+            test_path = util_file.join_path(code_path, new_name) 
+                        
+        util_file.move(old_path, test_path)
+        
+        file_name = new_name
+        
+        old_basename = util_file.get_basename(old_name)
+        new_basename = util_file.get_basename(new_name)
+        
+        update_path = util_file.join_path(test_path, old_basename + '.py')
+        
+        util_file.rename(update_path, new_basename + '.py')
+        
         return file_name
     
     def rename_code(self, old_name, new_name):
@@ -733,8 +762,6 @@ class Process(object):
         
         new_name = util.clean_file_string(new_name)
         
-        print 'rename code', old_name, new_name
-        
         #code1/code2 code1/code
         #code2/code2 code1/code2
         #code2/code2 code2
@@ -749,10 +776,6 @@ class Process(object):
         
         sub_new_name = util_file.remove_common_path(old_name, new_name)
         
-        #sub_new_name = new_name[len(common):]
-        
-        print 'sub new name', sub_new_name
-        
         code_folder = data.DataFolder(old_name, self.get_code_path())
         code_folder.rename(sub_new_name)
         
@@ -761,7 +784,9 @@ class Process(object):
         file_name = instance.get_file()
         file_name = util_file.get_basename(file_name)
             
-        return file_name
+        name = new_name + '.py'
+            
+        return name
         
     def delete_code(self, name):
         """
@@ -826,6 +851,10 @@ class Process(object):
         files = self.get_code_files(False)
         
         scripts, states = self.get_manifest()
+        
+        print 'get manifest'
+        print files
+        print scripts
         
         if basename:
             return scripts
@@ -934,43 +963,42 @@ class Process(object):
         
         scripts, states = self.get_manifest()
         
-        print scripts
-        print states
-        
         synced_scripts = []
         synced_states = []
-         
-        for inc in range(0, len(scripts)):
-            
-            current_script = scripts[inc]
-            current_state = states[inc]
-            
-            name = current_script.split('.')
-            
-            if len(name) == 2:
-                name = name[0]
-            
-            code_file = self.get_code_file(name)
-            
-            if not util_file.is_file( code_file ):
-                continue
-                        
-            synced_scripts.append(current_script)
-            synced_states.append(current_state)
-            
-        code_folders = self.get_code_folders()
         
+        code_folders = self.get_code_folders()
+         
+        for inc in range(0,len(scripts)):
+            
+            script_name = scripts[inc].split('.')
+            if len(script_name) == 2:
+                name = script_name[0]
+                
+            filepath = self.get_code_file(name)
+            
+            if not util_file.is_file(filepath):
+                continue
+            
+            synced_scripts.append(scripts[inc])
+            synced_states.append(states[inc])
+            
+            remove_inc = None
+            
+            for inc in range(0, len(code_folders)):
+                
+                if code_folders[inc] == name:
+                    remove_inc = inc
+            
+            if not remove_inc == None:
+                code_folders.pop(remove_inc)
+            
         for code_folder in code_folders:
             
-            if code_folder == 'manifest':
-                continue
+            code_script = code_folder + '.py'
             
-            code_file_basename = code_folder + '.py'
+            synced_scripts.append(code_script)
+            synced_states.append(False)
             
-            if not code_file_basename in synced_scripts:
-                synced_scripts.append(code_file_basename)
-                synced_states.append(False)
-        
         self.set_manifest(synced_scripts, synced_states)
                 
     #--- run
@@ -1062,8 +1090,6 @@ class Process(object):
         Return
             (str): The status from running the script. This includes error messages.
         """
-        
-        print 'run script', script
         
         if util.is_in_maya():
             import maya.cmds as cmds

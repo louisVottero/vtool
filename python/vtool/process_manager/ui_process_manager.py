@@ -408,6 +408,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         scripts = self.process.get_manifest_scripts(False)
         
+        print 'manifest scripts', scripts
+        
         if not scripts:
             self.process_button.setEnabled(True)
             return
@@ -434,6 +436,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     continue
             
             self.code_widget.set_process_script_state(scripts[inc], 2)
+            
+            print 'run script!!!!!', scripts[inc]
             
             status = self.process.run_script(scripts[inc], False)
             
