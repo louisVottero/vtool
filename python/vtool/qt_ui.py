@@ -1939,6 +1939,7 @@ class CodeEditTabs(BasicWidget):
             return
         
         code_edit_widget = CodeEdit()
+        
         code_edit_widget.filepath = filepath
         code_edit_widget.add_menu_bar()
         code_edit_widget.set_file(filepath)
@@ -1962,9 +1963,10 @@ class CodeEditTabs(BasicWidget):
         window.setFocus()
         
         
-    def add_tab(self, filepath):
+    def add_tab(self, filepath, name):
         
-        basename = util_file.get_basename(filepath)
+        basename = name
+        #basename = util_file.get_basename(filepath)
         
         if self.code_tab_map.has_key(basename):
             self.goto_tab(basename)
@@ -1973,17 +1975,22 @@ class CodeEditTabs(BasicWidget):
         code_edit_widget = CodeEdit()
         code_edit_widget.filepath = filepath
         
+        self.tabs.addTab(code_edit_widget, basename)
+        
+        
+        
         code_widget = code_edit_widget.text_edit
         code_widget.set_file(filepath)
         code_widget.titlename = basename
+        
         
         code_widget.save.connect(self._save)
         
         self.code_tab_map[basename] = code_edit_widget
         
-        self.tabs.addTab(code_edit_widget, basename)
-        
         self.goto_tab(basename)
+        
+        
       
     def save_tabs(self, note):
         
@@ -2184,6 +2191,8 @@ class CodeEdit(BasicWidget):
         #completer on off... comment out to turn completer off.
         self.text_edit.set_completer( PythonCompleter() )
         
+    
+        
     def _build_menu_bar(self):
         
         self.menu_bar = QtGui.QMenuBar()
@@ -2224,6 +2233,7 @@ class CodeEdit(BasicWidget):
     
     def _text_file_set(self):
         self.save_state.setText('No Changes')
+    
     
     def add_menu_bar(self):
         
@@ -3145,8 +3155,6 @@ class PythonCompleter(QtGui.QCompleter):
         self.refresh_completer = True
         self.sub_activated = False
         
-        self.show_info_popup()
-        
     def show_info_popup(self, info = None):
         
         
@@ -3242,11 +3250,6 @@ class PythonCompleter(QtGui.QCompleter):
         cursor.insertText( completion_string[-extra:] )
         
         widget.setTextCursor(cursor)
-
-    def _get_top_level_list(self):
-        
-        pass
-    
     
     def setWidget(self, widget):
         

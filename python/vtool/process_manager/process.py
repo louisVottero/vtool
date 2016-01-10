@@ -132,6 +132,26 @@ class Process(object):
             
         if util_file.is_dir(old_code_path):
             util_file.rename(old_code_path, self.code_folder_name)
+            
+        code_folders = self.get_code_folders()
+        data_folders = self.get_data_folders()
+        
+        if code_folders:
+            for folder in code_folders:
+                
+                path = util_file.join_path(self.get_code_path(), folder)
+                
+                util_file.VersionFile(path)
+                
+                
+        if data_folders:
+            for folder in data_folders:
+                
+                path = util_file.join_path(self.get_data_path(), folder)
+                
+                util_file.VersionFile(path)
+                
+            #util_file.VersionFile()
                 
     def _create_folder(self):
                 
@@ -342,6 +362,25 @@ class Process(object):
         part_process.set_directory(self.get_path())  
         
         return part_process    
+        
+    def get_parent_process(self):
+        
+        process_path = self.get_path()
+        
+        dir_name = util_file.get_dirname(process_path)
+        
+        process = Process()
+        process.set_directory(dir_name)
+        
+        if process.is_process():
+        
+            basename = util_file.get_basename(dir_name)
+            path = util_file.get_dirname(dir_name)
+            
+            parent_process = Process(basename)
+            parent_process.set_directory(path)
+        
+            return parent_process
         
     #--- data
         
@@ -569,7 +608,7 @@ class Process(object):
         if code_name:
             directory = util_file.join_path(directory, code_name)
         
-        return util_file.get_folders(directory, recursive = True)  
+        return util_file.get_folders_without_prefix_dot(directory, recursive = True)  
 
     def get_code_type(self, name):
         """
@@ -761,11 +800,7 @@ class Process(object):
         """
         
         new_name = util.clean_file_string(new_name)
-        
-        #code1/code2 code1/code
-        #code2/code2 code1/code2
-        #code2/code2 code2
-        #code code2/code2
+        new_name = new_name.replace('.', '_')
         
         old_len = old_name.count('/')
         new_len = new_name.count('/')
@@ -852,10 +887,6 @@ class Process(object):
         
         scripts, states = self.get_manifest()
         
-        print 'get manifest'
-        print files
-        print scripts
-        
         if basename:
             return scripts
         
@@ -864,6 +895,19 @@ class Process(object):
             found = []
             
             for script in scripts:
+                
+                
+                if script.count('/') > 0:
+                    
+                    dirname = util_file.get_dirname(script)
+                    basename = util_file.get_basename(script)
+                    
+                    sub_basename = util_file.get_basename_no_extension(basename)
+                    
+                    script = util_file.join_path(dirname, sub_basename)
+                    script = util_file.join_path(script, basename)
+                
+                    
                 
                 for filename in files:
                     
@@ -946,6 +990,8 @@ class Process(object):
                 
                 script_name = string.join(split_line[:-1])
                 
+                
+                
                 scripts.append(script_name)
                 
             if len(split_line) >= 2:
@@ -967,14 +1013,12 @@ class Process(object):
         synced_states = []
         
         code_folders = self.get_code_folders()
-         
+        
         for inc in range(0,len(scripts)):
             
-            script_name = scripts[inc].split('.')
-            if len(script_name) == 2:
-                name = script_name[0]
-                
-            filepath = self.get_code_file(name)
+            script_name = util_file.remove_extension(scripts[inc])
+            
+            filepath = self.get_code_file(script_name)
             
             if not util_file.is_file(filepath):
                 continue
@@ -986,8 +1030,26 @@ class Process(object):
             
             for inc in range(0, len(code_folders)):
                 
-                if code_folders[inc] == name:
+                if code_folders[inc] == script_name:
                     remove_inc = inc
+                    
+                if code_folders[inc] in synced_scripts:
+                    
+                    if not code_folders[inc].count('/'):
+                        continue
+                        
+                    common_path = util_file.get_common_path(code_folders[inc], script_name)
+                    
+                    if common_path:
+                        common_path_name = common_path + '.py'
+                        if common_path_name in synced_scripts:
+                            
+                            code_script = code_folders[inc] + '.py'
+            
+                            synced_scripts.append(code_script)
+                            synced_states.append(False)
+                            
+                            remove_inc = inc
             
             if not remove_inc == None:
                 code_folders.pop(remove_inc)
@@ -1000,6 +1062,7 @@ class Process(object):
             synced_states.append(False)
             
         self.set_manifest(synced_scripts, synced_states)
+                
                 
     #--- run
     
@@ -1099,7 +1162,16 @@ class Process(object):
         #read = None
             
         try:
-                 
+            
+            if not script.find(':') > -1:
+                
+                script = util_file.remove_extension(script)
+                
+                script = self.get_code_file(script)
+                
+            if not util_file.is_file(script):
+                return
+            
             self._center_view()
             name = util_file.get_basename(script)
             #path = util_file.get_parent_path(script)
@@ -1279,12 +1351,23 @@ def copy_process(source_process, target_process = None ):
         source_process (str): The instance of a process.
         target_process (str): The instance of a process. If None give, duplicate the source_process.
     """
+    
+    sub_folders = source_process.get_sub_processes()
+    
     source_name = source_process.get_name()
     source_name = source_name.split('/')[-1]
     
     if not target_process:
         target_process = Process()
         target_process.set_directory(source_process.directory)
+    
+    if source_process.process_name == target_process.process_name and source_process.directory == target_process.directory:
+        
+        parent_process = target_process.get_parent_process()
+        
+        if parent_process:
+            target_process = parent_process
+        
     
     path = target_process.get_path()
     
@@ -1304,14 +1387,10 @@ def copy_process(source_process, target_process = None ):
     
     for code_folder in code_folders:
         copy_process_code(source_process, new_process, code_folder)
-    
-    sub_folders = source_process.get_sub_processes()
-    
-    sub_target_process = new_process
-    
+        
     for sub_folder in sub_folders:
         
-        sub_process = sub_target_process.get_sub_process(sub_folder)
+        sub_process = new_process.get_sub_process(sub_folder)
         source_sub_process = source_process.get_sub_process(sub_folder)
         
         if not sub_process.is_process():

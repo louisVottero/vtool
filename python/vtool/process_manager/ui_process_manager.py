@@ -406,9 +406,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if util.is_in_maya():
             cmds.file(new = True, f = True)
         
-        scripts = self.process.get_manifest_scripts(False)
-        
-        print 'manifest scripts', scripts
+        scripts, states = self.process.get_manifest()
         
         if not scripts:
             self.process_button.setEnabled(True)
@@ -421,15 +419,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         util.show('\n\a\tRunning %s Scripts\t\a\n' % self.process.get_name())
         
         for inc in range(0, script_count):
-        
+            
             if self.kill_process:
                 self.kill_process = False
                 break
-                
-            current_scripts, current_states = self.process.get_manifest()
             
-            if current_states:
-                state = current_states[inc]
+            if states:
+                state = states[inc]
                 
                 if not state:
                     self.code_widget.set_process_script_state(scripts[inc], -1)
@@ -437,9 +433,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.code_widget.set_process_script_state(scripts[inc], 2)
             
-            print 'run script!!!!!', scripts[inc]
-            
-            status = self.process.run_script(scripts[inc], False)
+            script_name = util_file.remove_extension(scripts[inc])
+            status = self.process.run_script(script_name, False)
             
             if not status == 'Success':
                 
@@ -454,6 +449,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.code_widget.set_process_script_state(scripts[inc], 1)
                 
                 util.show('\tSuccess')
+            
             
         self.process_button.setEnabled(True)
         self.stop_button.hide()

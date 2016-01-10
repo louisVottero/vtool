@@ -485,18 +485,26 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             target_item = items[0]
             target_process = target_item.get_process()            
         if not items:
-            target_item = self
+            target_item = None
         
+        if not target_process:
+            target_process = process.Process()
+            target_process.set_directory(self.directory)
+            target_item = None 
         
         new_process = process.copy_process(source_process, target_process)
+        
+        if not new_process:
+            return
         
         self.paste_item = None
         
         new_item = self._add_process_item(new_process.get_name(), target_item)
         
         if target_process:
-            self.collapseItem(target_item)
-            self.expandItem(target_item)
+            if target_item:
+                self.collapseItem(target_item)
+                self.expandItem(target_item)
             
         if not target_process:
             self.scrollToItem(new_item)
@@ -629,10 +637,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         
     def _add_process_item(self, name, parent_item = None, create = False):
-                
+        
         expand_to = False
-        
-        
         
         current_item = self.currentItem()
         
@@ -656,12 +662,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         item = ProcessItem(self.directory, name)
         
-        
-        
         if create:
             item.create()
         
         if not parent_item:
+            
             self.addTopLevelItem(item)
             
         if parent_item:

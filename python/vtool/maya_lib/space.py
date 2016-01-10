@@ -371,7 +371,7 @@ class ConstraintEditor(object):
         
         for target in targets:
             name = target
-            print 'target!', target
+            
             if target.startswith('follower_'):
                 parent = cmds.listRelatives(target, p = True)
                 if parent:

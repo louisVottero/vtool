@@ -151,11 +151,7 @@ class DataFolder(util_file.FileManager):
         
         instance = self.get_folder_data_instance()
         
-        print 'new base name', basename
-        
         instance.rename(basename)
-        
-        print 'folder path', self.folder_path, new_name
         
         folder = util_file.rename(self.folder_path, new_name)
         
@@ -1320,7 +1316,7 @@ class PoseData(MayaCustomData):
         
         
         if util_file.is_file(filepath):
-            print filepath
+            
             cmds.file(filepath, f = True, i = True, iv = True, shd = 'shadingNetworks')
         
         if not util_file.is_file(filepath):

@@ -236,9 +236,42 @@ class VersionFile(object):
         self.filename = get_basename(self.filepath)
         self.path = get_dirname(filepath)
         
-        self.version_folder_name = 'version'
+        self.version_folder_name = '.version'
         self.version_name = 'version'
         self.version_folder = None
+        
+        self._handle_old_version()
+        
+    def _handle_old_version(self):
+        
+        version_folder = self._get_version_folder()
+        
+        dir_name = get_dirname(version_folder)
+        old_dir_name = join_path(dir_name, 'version')
+        
+        if is_dir(old_dir_name):
+            
+            files = get_files(old_dir_name)
+            
+            found = False
+            
+            for filename in files:
+                if filename.startswith(self.version_name):
+                    found = True
+                    break
+            
+            if found:
+                rename(old_dir_name, self.version_folder_name)
+
+        new_folder = join_path(dir_name, self.version_folder_name)
+        if is_dir(old_dir_name) and is_dir(new_folder):
+            rename(old_dir_name, 'version.old')
+        
+        #this was to fix a bug, probably not needed in a week's time.
+        #version_old = join_path(dir_name, 'version.old')
+        #if is_dir(version_old) and not is_dir(new_folder):
+        #    rename(version_old, self.version_folder_name)
+        
         
     def _create_version_folder(self):
         
@@ -256,10 +289,14 @@ class VersionFile(object):
     def _get_version_path(self, version_int):
         path = join_path(self._get_version_folder(), self.version_name + '.' + str(version_int))
         
+        
         return path
         
     def _get_version_folder(self):
         path = join_path(self.filepath, self.version_folder_name)
+        
+        
+        
         
         return path
     
@@ -780,9 +817,8 @@ def get_basename_no_extension(filepath):
     """
     
     basename = get_basename(filepath)
-    dot_split = basename.split('.')
     
-    new_name = string.join(dot_split[:-1], '.')
+    new_name = remove_extension(basename)
     
     return new_name
 
@@ -850,6 +886,35 @@ def get_files(directory):
             found.append(filepath)
     
     return found
+
+def get_folders_without_prefix_dot(directory, recursive = False):
+    
+    if not is_dir(directory):
+        return
+    
+    found_folders = []
+    
+    for root, dirs, files in os.walk(directory):
+        
+        del(files)
+        
+        for folder in dirs:
+            
+            if folder.startswith('.'):
+                continue
+            
+            folder_name = join_path(root, folder)
+            
+            folder_name = os.path.relpath(folder_name,directory)
+            folder_name = fix_slashes(folder_name)
+            
+            found_folders.append(folder_name)
+        
+        if not recursive:
+            break
+        
+    
+    return found_folders
 
 def get_folders(directory, recursive = False):
     """
@@ -1024,6 +1089,48 @@ def get_user():
     """
     return getpass.getuser()
     
+def get_file_text(filepath):
+    """
+    Get the text directly from a file. One long string, no parsing.
+    
+    """
+
+    open_file = open(filepath, 'r')    
+    lines = open_file.read()
+    open_file.close()
+    
+    return lines
+
+def get_file_lines(filepath):
+    """
+    Get the text from a file.
+    
+    Args
+        filepath (str): The filename and path.
+    
+    Return
+        str
+    """
+    read = ReadFile(filepath)
+    
+    return read.read()
+
+
+def get_text_lines(text):
+    """
+    Get the text from a file. Each line is stored as a different entry in a list.
+    
+    Args
+        text (str): Text from get_file_lines
+        
+    Return
+        list
+    """
+    text = text.replace('\r', '')
+    lines = text.split('\n')
+        
+    return lines
+    
 def is_dir(directory):
     """
     Return 
@@ -1111,48 +1218,6 @@ def inc_path_name(directory, padding = 0):
     
     return unique_path.get()
 
-def get_file_text(filepath):
-    """
-    Get the text directly from a file. One long string, no parsing.
-    
-    """
-
-    open_file = open(filepath, 'r')    
-    lines = open_file.read()
-    open_file.close()
-    
-    return lines
-
-def get_file_lines(filepath):
-    """
-    Get the text from a file.
-    
-    Args
-        filepath (str): The filename and path.
-    
-    Return
-        str
-    """
-    read = ReadFile(filepath)
-    
-    return read.read()
-
-
-def get_text_lines(text):
-    """
-    Get the text from a file. Each line is stored as a different entry in a list.
-    
-    Args
-        text (str): Text from get_file_lines
-        
-    Return
-        list
-    """
-    text = text.replace('\r', '')
-    lines = text.split('\n')
-        
-    return lines
-
 def open_browser(filepath):
     """
     Open the file browser to the path specified. Currently only works in windows.
@@ -1167,6 +1232,50 @@ def open_browser(filepath):
     else:
         opener ="open" if sys.platform == "darwin" else "xdg-open"
         subprocess.call([opener, filepath])  
+
+def remove_extension(path):
+    
+    dot_split = path.split('.')
+    
+    new_name = path
+    
+    if len(dot_split) > 1:
+        new_name = string.join(dot_split[:-1], '.')
+    
+    return new_name
+
+def get_common_path(path1, path2):
+    
+    path1 = fix_slashes(path1)
+    path2 = fix_slashes(path2)
+    
+    split_path1 = path1.split('/')
+    split_path2 = path2.split('/')
+    
+    first_list = []
+    second_list = []
+    
+    if len(split_path1) > split_path2:
+        first_list = split_path1
+        second_list = split_path2
+        
+    if len(split_path2) > split_path1:
+        first_list = split_path2
+        second_list = split_path1
+        
+    found = []
+        
+    for inc in range(0, len(first_list)):
+        
+        if first_list[inc] == second_list[inc]:
+            found.append(first_list[inc])
+            
+        if first_list[inc] != second_list[inc]:
+            break
+        
+    found = string.join(found, '/')
+    
+    return found
 
 def remove_common_path(path1, path2):
     """
@@ -1277,7 +1386,7 @@ def rename(directory, name, make_unique = False):
         renamepath = inc_path_name(renamepath)
 
     try:
-        print directory, renamepath
+        
         os.rename(directory, renamepath)
     except:
         
