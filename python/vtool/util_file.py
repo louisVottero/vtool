@@ -261,11 +261,13 @@ class VersionFile(object):
                     break
             
             if found:
+                
+                print 'renaming ', old_dir_name, 'to', self.version_folder_name
                 rename(old_dir_name, self.version_folder_name)
 
-        new_folder = join_path(dir_name, self.version_folder_name)
-        if is_dir(old_dir_name) and is_dir(new_folder):
-            rename(old_dir_name, 'version.old')
+        #new_folder = join_path(dir_name, self.version_folder_name)
+        #if is_dir(old_dir_name) and is_dir(new_folder):
+        #    rename(old_dir_name, 'version.old')
         
         #this was to fix a bug, probably not needed in a week's time.
         #version_old = join_path(dir_name, 'version.old')

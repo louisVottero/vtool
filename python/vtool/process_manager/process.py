@@ -132,7 +132,7 @@ class Process(object):
             
         if util_file.is_dir(old_code_path):
             util_file.rename(old_code_path, self.code_folder_name)
-            
+        """    
         code_folders = self.get_code_folders()
         data_folders = self.get_data_folders()
         
@@ -152,7 +152,7 @@ class Process(object):
                 util_file.VersionFile(path)
                 
             #util_file.VersionFile()
-                
+        """     
     def _create_folder(self):
                 
         if not util_file.is_dir(self.directory):

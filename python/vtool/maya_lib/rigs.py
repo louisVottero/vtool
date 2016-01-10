@@ -3125,7 +3125,7 @@ class IkAppendageRig(BufferRig):
         
         if self.create_twist:
             
-            vtool.util.convert_to_sequence(self.pole_follow_transform)
+            self.pole_follow_transform = vtool.util.convert_to_sequence(self.pole_follow_transform)
             
             pole_locator = cmds.spaceLocator(n = self._get_name('locator', 'pole'))[0]
             
