@@ -260,6 +260,14 @@ class VersionFile(object):
                     found = True
                     break
             
+            if not found:
+                folders = get_folders(old_dir_name)
+                
+                for folder in folders:
+                    if folder.startswith(self.version_name):
+                        found = True
+                        break
+            
             if found:
                 
                 print 'renaming ', old_dir_name, 'to', self.version_folder_name
@@ -350,12 +358,17 @@ class VersionFile(object):
         Return
             str: The new version file name
         """
+        
+        print 'saving version'
+        
         self._create_version_folder()
         self._create_comment_file()
         
         inc_file_name = self._increment_version_file_name()
         
         #copy_file(self.filepath, inc_file_name)
+        
+        
         
         if is_dir(self.filepath):
             copy_dir(self.filepath, inc_file_name)

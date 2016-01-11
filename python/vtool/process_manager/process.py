@@ -1462,12 +1462,15 @@ def copy_process_data(source_process, target_process, data_name, replace = False
     
         if util_file.is_file(filepath):
             copied_path = util_file.copy_file(filepath, destination_directory)
-        if util_file.is_dir(filepath):
             
+        if util_file.is_dir(filepath):
             basename = util_file.get_basename(destination_directory)
             dirname = util_file.get_dirname(destination_directory)
             
-            util_file.delete_dir(basename, dirname)
+            
+            if util_file.is_dir( util_file.join_path(dirname, basename) ):
+                util_file.delete_dir(basename, dirname)
+            
             copied_path = util_file.copy_dir(filepath, destination_directory)
           
         version = util_file.VersionFile(copied_path)
