@@ -2192,6 +2192,8 @@ def get_skin_weights(skin_deformer):
                 
     return value_map
 
+    
+
 def get_skin_blend_weights(skin_deformer):
     """
     Get the blendWeight values on the skin cluster.

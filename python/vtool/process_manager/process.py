@@ -35,19 +35,33 @@ def find_processes(directory = None):
     for file_name in files:
         
         full_path = util_file.join_path(directory, file_name)
-        
-        if not util_file.is_dir(full_path):
-            continue
-        
-        process = Process(file_name)
-        process.set_directory(directory)
-        
-        if process.is_process():
+                
+        if is_process(full_path):
             found.append(file_name)
-            
+        
     found.sort()
                
     return found
+
+def is_process(directory):
+    
+    if not directory:
+        return False
+    
+    if not util_file.is_dir(directory):
+        return False
+    
+    code_path = util_file.join_path(directory, '.code')
+    
+    if not util_file.is_dir(code_path):
+        return False
+    
+    data_path = util_file.join_path(directory, '.data')
+    
+    if not util_file.is_dir(data_path):
+        return False
+    
+    return True
 
 def get_unused_process_name(directory = None, name = None):
     """
