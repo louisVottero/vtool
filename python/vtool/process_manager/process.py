@@ -710,6 +710,35 @@ class Process(object):
         
         return return_value
 
+    def get_code_name_from_path(self, code_path):
+        
+        print code_path, self.code_folder_name
+        
+        split_path = code_path.split('%s/' % self.code_folder_name)
+        
+        print split_path
+        
+        if len(split_path) == 2:
+            parts = split_path[1].split('/')
+            
+            print parts
+            
+            if len(parts) > 2:
+                last_part = util_file.remove_extension(parts[-1])
+                
+                if last_part == parts[-2]:
+                    
+                    if len(parts) > 2:
+                        return string.join([parts[-3], parts[-2]], '/')
+
+                if last_part != parts[-2]:
+                    return string.join([parts[-2], parts[-1]], '/')
+                    
+            if len(parts) == 2:
+                return parts[0]
+                
+
+            
         
     def create_code(self, name, data_type = 'script.python', inc_name = False, import_data = None):
         """

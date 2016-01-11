@@ -142,11 +142,19 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         if not external_editor:
             util_file.open_browser(code_file)
              
-    def _script_rename(self, old_filepath, filepath):
+    def _script_rename(self, old_name, new_name):
         
-        self.code_widget.code_edit.rename_tab(old_filepath, filepath)
+        self.code_widget.code_edit.rename_tab(old_name, new_name)
         
-        self.code_widget.set_code_path(filepath)
+        process_data = process.Process()
+        process_data.set_directory(self.directory)
+        code_folder = process_data.get_code_path()
+        
+        print 'rename!!!!!!!!!!!!!!!!', self.directory
+        
+        new_path = util_file.join_path(code_folder, new_name)
+        
+        self.code_widget.set_code_path(new_path)
         
     def _script_remove(self, filepath):
         
@@ -232,6 +240,12 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.collapse.emit()
         
     def _load_file_text(self, path, open_in_window, name):
+        
+        process_data = process.Process()
+        process_data.set_directory(path)
+        name = process_data.get_code_name_from_path(path)
+        
+        print 'name!', name
         
         if not open_in_window:
             self.code_edit.add_tab(path, name)
@@ -406,9 +420,9 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         self.script_remove.emit(filepath)
         
-    def _rename(self, old_filepath, filepath):
+    def _rename(self, old_name, new_name):
         
-        self.script_rename.emit(old_filepath, filepath)
+        self.script_rename.emit(old_name, new_name)
         
         
     def set_directory(self, directory, sync_code = False):
@@ -1045,7 +1059,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         item.set_text(util_file.get_basename(basename))
         
-        self.item_renamed.emit(old_filepath, filepath)
+        print 'old/new', old_name, new_name
+        
+        self.item_renamed.emit(old_name, new_name)
         
         self._update_manifest()
     

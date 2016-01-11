@@ -1975,6 +1975,9 @@ class CodeEditTabs(BasicWidget):
         code_edit_widget = CodeEdit()
         code_edit_widget.filepath = filepath
         
+        print code_edit_widget, basename
+        
+        
         self.tabs.addTab(code_edit_widget, basename)
         
         
