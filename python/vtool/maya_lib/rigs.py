@@ -560,7 +560,7 @@ class SparseRig(JointRig):
             match.scale()
             
             if self.respect_side:
-                side = control.color_respect_side(True, self.respect_side_tolerance)
+                side = control.color_respect_side(center_tolerance = self.respect_side_tolerance)
             
                 if side != 'C':
                     old_control_name = control_name

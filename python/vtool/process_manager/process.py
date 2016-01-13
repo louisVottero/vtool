@@ -748,6 +748,7 @@ class Process(object):
         Return
             (str): Filename
         """
+        
         path = self.get_code_path()
         
         if not path:
@@ -797,20 +798,23 @@ class Process(object):
         
         test_path = new_path
         
-        while util_file.is_dir(test_path):
+        if util_file.is_dir(test_path):
+            
+            last_number = 1
         
-            last_number = util.get_last_number(basename)
-            last_number += 1
-            
-            basename = util.replace_last_number(basename, last_number)
-            
-            new_name = basename
-            
-            if dirname:
-                new_name = util_file.join_path(dirname, basename)
-            
-            test_path = util_file.join_path(code_path, new_name) 
-            
+            while util_file.is_dir(test_path):
+                
+                basename = util.replace_last_number(basename, last_number)
+                
+                new_name = basename
+                
+                if dirname:
+                    new_name = util_file.join_path(dirname, basename)
+                
+                test_path = util_file.join_path(code_path, new_name) 
+                
+                last_number += 1
+                
         util_file.move(old_path, test_path)
         
         file_name = new_name
@@ -1060,6 +1064,9 @@ class Process(object):
             if not util_file.is_file(filepath):
                 continue
             
+            if scripts[inc] in synced_scripts:
+                continue
+            
             synced_scripts.append(scripts[inc])
             synced_states.append(states[inc])
             
@@ -1068,9 +1075,12 @@ class Process(object):
             for inc in range(0, len(code_folders)):
                 
                 if code_folders[inc] == script_name:
+            
                     remove_inc = inc
                     
-                if code_folders[inc] in synced_scripts:
+                #code_folders_py = code_folders[inc] + '.py'
+                    
+                if code_folders in synced_scripts:
                     
                     if not code_folders[inc].count('/'):
                         continue

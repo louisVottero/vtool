@@ -952,7 +952,24 @@ def transform_to_polygon_plane(transform, size = 1):
     space.MatchSpace(transform, plane).translation_rotation()
     
     return plane
+
+def transforms_to_polygon(transforms, name, size = 1, merge = True):
     
+    meshes = []
+    
+    for transform in transforms:
+        mesh = transform_to_polygon_plane(transform, size)
+        meshes.append(mesh)
+        
+    new_mesh = None
+        
+    if merge:
+        new_mesh = cmds.polyUnite(meshes, ch = False, mergeUVSets = True, name = name)
+        
+    if new_mesh:
+        return new_mesh[0]
+    
+
 def curve_to_nurb_surface(curve):
     pass
     
