@@ -418,7 +418,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         util.show('\n\a\tRunning %s Scripts\t\a\n' % self.process.get_name())
         
+        skip_scripts = []
+        
         for inc in range(0, script_count):
+            
+            script = scripts[inc]
+            script_name = util_file.remove_extension(script)
             
             if self.kill_process:
                 self.kill_process = False
@@ -429,11 +434,21 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
                 if not state:
                     self.code_widget.set_process_script_state(scripts[inc], -1)
+                    skip_scripts.append(script_name)
                     continue
             
-            self.code_widget.set_process_script_state(scripts[inc], 2)
+            skip = False
             
-            script_name = util_file.remove_extension(scripts[inc])
+            for skip_script in skip_scripts:
+                common_path = util_file.get_common_path(script, skip_script)
+                if common_path == skip_script:
+                    if script.startswith(skip_script):
+                        skip = True
+            
+            if skip:
+                continue
+            
+            self.code_widget.set_process_script_state(scripts[inc], 2)
             status = self.process.run_script(script_name, False)
             
             if not status == 'Success':

@@ -359,8 +359,6 @@ class VersionFile(object):
             str: The new version file name
         """
         
-        print 'saving version'
-        
         self._create_version_folder()
         self._create_comment_file()
         
@@ -1267,9 +1265,10 @@ def get_common_path(path1, path2):
     split_path1 = path1.split('/')
     split_path2 = path2.split('/')
     
-    first_list = []
-    second_list = []
+    first_list = split_path1
+    second_list = split_path2
     
+    """
     if len(split_path1) > split_path2:
         first_list = split_path1
         second_list = split_path2
@@ -1277,10 +1276,14 @@ def get_common_path(path1, path2):
     if len(split_path2) > split_path1:
         first_list = split_path2
         second_list = split_path1
-        
+    """
+    
     found = []
         
     for inc in range(0, len(first_list)):
+        
+        if len(second_list) <= inc:
+            break
         
         if first_list[inc] == second_list[inc]:
             found.append(first_list[inc])

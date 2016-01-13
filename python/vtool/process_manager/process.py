@@ -712,16 +712,10 @@ class Process(object):
 
     def get_code_name_from_path(self, code_path):
         
-        print code_path, self.code_folder_name
-        
         split_path = code_path.split('%s/' % self.code_folder_name)
-        
-        print split_path
         
         if len(split_path) == 2:
             parts = split_path[1].split('/')
-            
-            print parts
             
             if len(parts) > 2:
                 last_part = util_file.remove_extension(parts[-1])
@@ -729,10 +723,10 @@ class Process(object):
                 if last_part == parts[-2]:
                     
                     if len(parts) > 2:
-                        return string.join([parts[-3], parts[-2]], '/')
+                        return string.join(parts[:-1], '/')
 
                 if last_part != parts[-2]:
-                    return string.join([parts[-2], parts[-1]], '/')
+                    return string.join(parts, '/')
                     
             if len(parts) == 2:
                 return parts[0]
@@ -816,7 +810,7 @@ class Process(object):
                 new_name = util_file.join_path(dirname, basename)
             
             test_path = util_file.join_path(code_path, new_name) 
-                        
+            
         util_file.move(old_path, test_path)
         
         file_name = new_name

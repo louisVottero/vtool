@@ -127,6 +127,7 @@ class DataFolder(util_file.FileManager):
             self._load_folder()
         
         if not self.name:
+            
             return
         
         data_type = self.settings.get('data_type')
@@ -134,6 +135,7 @@ class DataFolder(util_file.FileManager):
             data_type = self.data_type
         
         if not data_type:
+        
             return
         
         data_manager = DataManager()

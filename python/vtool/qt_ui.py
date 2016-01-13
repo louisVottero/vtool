@@ -1923,9 +1923,11 @@ class CodeEditTabs(BasicWidget):
                 
             self.tabs.setCurrentWidget(widget)
         
-    def add_floating_tab(self, filepath):
+    def add_floating_tab(self, filepath, name):
         
-        basename = util_file.get_basename(filepath)
+        
+        #basename = util_file.get_basename(filepath)
+        basename = name
         
         if self.code_tab_map.has_key(basename):
             code_widget = self.code_tab_map[basename]
@@ -1951,12 +1953,12 @@ class CodeEditTabs(BasicWidget):
         
         window = BasicWindow()
         window.resize(600, 800)
-        basename = util_file.get_basename(filepath)
+        #basename = util_file.get_basename(filepath)
         
         window.setWindowTitle(basename)
         window.main_layout.addWidget(code_edit_widget)
         
-        self.code_floater_map[filepath] = code_edit_widget
+        self.code_floater_map[basename] = code_edit_widget
         self.code_window_map[filepath] = window
         
         window.show()
@@ -1970,13 +1972,11 @@ class CodeEditTabs(BasicWidget):
         
         if self.code_tab_map.has_key(basename):
             self.goto_tab(basename)
+            
             return
                 
         code_edit_widget = CodeEdit()
         code_edit_widget.filepath = filepath
-        
-        print code_edit_widget, basename
-        
         
         self.tabs.addTab(code_edit_widget, basename)
         
@@ -2024,6 +2024,33 @@ class CodeEditTabs(BasicWidget):
         if self.code_tab_map.has_key(name):
             return True
     
+    def get_widgets(self, name = None):
+        
+        widgets = []
+        
+        for key in self.code_tab_map:
+            
+            if name != None:
+                if key != name:
+                    continue
+            
+            widget = self.code_tab_map[key]
+            if widget:
+                widgets.append(widget)
+    
+        for key in self.code_floater_map:
+            
+            if name != None:
+                if key != name:
+                    
+                    continue
+            
+            widget = self.code_floater_map[key]
+            if widget:
+                widgets.append(widget)
+                
+        return widgets
+    
     def get_widgets_from_filepath(self, filepath):
         
         widgets = []
@@ -2031,6 +2058,7 @@ class CodeEditTabs(BasicWidget):
         for key in self.code_tab_map:
             
             widget = self.code_tab_map[key]
+            
             if widget.text_edit.filepath == filepath:
                 widgets.append(widget)
                 
@@ -2045,15 +2073,17 @@ class CodeEditTabs(BasicWidget):
         
         self.tabs.setTabText(index, name)
         
-    def rename_tab(self, old_path, new_path):
+    def rename_tab(self, old_path, new_path, old_name, new_name):
         
-        widgets = self.get_widgets_from_filepath(old_path)
+        #widgets = self.get_widgets_from_filepath(old_path)
+        widgets = self.get_widgets(old_name)
+        
         
         if not widgets:
             return
         
-        name = util_file.get_basename(new_path)
-        old_name = util_file.get_basename(old_path)
+        #name = util_file.get_basename(new_path)
+        #old_name = util_file.get_basename(old_path)
         
         for widget in widgets:
             
@@ -2061,21 +2091,24 @@ class CodeEditTabs(BasicWidget):
             
             if index > -1:
                 
-                self.set_tab_title(index, name)
+                self.set_tab_title(index, new_name)
                 
-                self.code_tab_map[name] = widget
-                self.code_tab_map.pop(old_name)
+                self.code_tab_map[new_name] = widget
+                if self.code_tab_map.has_key(old_name):
+                    self.code_tab_map.pop(old_name)
                 widget.text_edit.filepath = new_path
+                #widget.set_file(new_path)
                 
             if index == -1 or index == None:
                 
                 parent = widget.parent()
                 window_parent = parent.parent()
 
-                window_parent.setWindowTitle(name)
+                window_parent.setWindowTitle(new_name)
                 
-                self.code_floater_map[name] = widget
-                self.code_floater_map.pop(old_name)
+                self.code_floater_map[new_name] = widget
+                if self.code_floater_map.has_key(old_name):
+                    self.code_floater_map.pop(old_name)
                 widget.text_edit.filepath = new_path
                 widget.set_file(new_path)
               
@@ -2086,13 +2119,21 @@ class CodeEditTabs(BasicWidget):
         
         name = util_file.get_basename(filepath)
         
-        widgets = self.get_widgets_from_filepath(filepath)
+        widgets = self.get_widgets()
+        #widgets = self.get_widgets_from_filepath(filepath)
         
         for widget in widgets:
+            
+            if not widget.filepath == filepath:
+                continue
             
             index = self.tabs.indexOf(widget)
               
             if index > -1:
+                
+                
+                
+                name = self.tabs.tabText(index)
                 
                 self.tabs.removeTab(index)
                 self.code_tab_map.pop(name)
@@ -2103,6 +2144,8 @@ class CodeEditTabs(BasicWidget):
                 window_parent = parent.parent()
                 window_parent.close()
                 window_parent.deleteLater()
+                
+                name = widget.text_edit.titlename
                 
                 self.code_floater_map.pop(name)
                 
