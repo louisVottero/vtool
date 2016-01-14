@@ -268,7 +268,7 @@ def add_nCloth_to_mesh(mesh):
     
     return [parent]
 
-def nConstrain_to_mesh(verts, mesh, force_passive = False):
+def nConstrain_to_mesh(verts, mesh, name = None, force_passive = False,):
     """
     
     Constrain an ncloth to a passive collider.
@@ -289,6 +289,12 @@ def nConstrain_to_mesh(verts, mesh, force_passive = False):
     
     cmds.select(verts, mesh)
     nodes = mel.eval('createNConstraint pointToSurface 0;')
+    
+    if name:
+        print nodes
+        parent = cmds.listRelatives(nodes[0], p = True)[0]
+        nodes = cmds.rename(parent, 'dynamicConstraint_%s' % name)
+        nodes = vtool.util.convert_to_sequence(nodes)
     
     return nodes + nodes1
 

@@ -2112,26 +2112,25 @@ class CodeEditTabs(BasicWidget):
                 widget.text_edit.filepath = new_path
                 widget.set_file(new_path)
               
-    def close_tab(self, filepath):
+    def close_tab(self, name):
         
-        if not filepath:
+        if not name:
             return
         
-        name = util_file.get_basename(filepath)
+        
+        #name = util_file.get_basename(filepath)
         
         widgets = self.get_widgets()
         #widgets = self.get_widgets_from_filepath(filepath)
         
         for widget in widgets:
             
-            if not widget.filepath == filepath:
-                continue
+            #if not widget.filepath == filepath:
+            #    continue
             
             index = self.tabs.indexOf(widget)
               
             if index > -1:
-                
-                
                 
                 name = self.tabs.tabText(index)
                 

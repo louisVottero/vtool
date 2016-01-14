@@ -159,7 +159,14 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
     def _script_remove(self, filepath):
         
-        self.code_widget.code_edit.close_tab(filepath)
+        process_instance = process.Process()
+        process_instance.set_directory(self.directory)
+        code_name = process_instance.get_code_name_from_path(filepath)
+        
+        
+        code_name = code_name + '.py'
+        
+        self.code_widget.code_edit.close_tab(code_name)
         
         if not self.code_widget.code_edit.has_tabs():
             self._close_splitter()
@@ -1130,6 +1137,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self._setup_item(item, state)
         
+        self._update_manifest()
+        
         return item
     
     def _add_items(self, files, item = None):
@@ -1323,6 +1332,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
         self.scrollToItem(item)
         self.setItemSelected(item, True)
+        self.setCurrentItem(item)
         #self._update_manifest()
         
     def create_import_code(self):
@@ -1353,6 +1363,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.scrollToItem(item)
         self.setItemSelected(item, True)
+        self.setCurrentItem(item)
 
     def run_current_item(self, external_code_library = None):
         
@@ -1441,14 +1452,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         items = self.selectedItems()
         item = items[0]
         
-        name = item.get_text()
-        name = name.split('.')
-        name = name[0]
-        
-        path = self._get_item_path(item)
-        
-        if path:
-            name = util_file.join_path(path, name)
+        name = self._get_item_path_name(item)
         
         delete_state = vtool.qt_ui.get_permission('Delete %s?' % name)
         
