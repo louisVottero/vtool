@@ -1207,7 +1207,7 @@ class Process(object):
             
         status = None
         #read = None
-            
+        
         try:
             
             if not script.find(':') > -1:
