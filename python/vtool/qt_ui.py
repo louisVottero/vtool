@@ -2117,40 +2117,32 @@ class CodeEditTabs(BasicWidget):
         if not name:
             return
         
-        #name = util_file.get_basename(filepath)
-        
         widgets = self.get_widgets()
-        #widgets = self.get_widgets_from_filepath(filepath)
         
         for widget in widgets:
             
-            if not widget.text_edit.titlename == name:
-                    continue
+            titlename = widget.text_edit.titlename
             
-            #if not widget.filepath == filepath:
-            #    continue
+            test_name = util_file.remove_extension(name)
+            
+            if not titlename.startswith(test_name):
+                continue
             
             index = self.tabs.indexOf(widget)
               
             if index > -1:
                 
-                #name = self.tabs.tabText(index)
-                
                 self.tabs.removeTab(index)
-                self.code_tab_map.pop(name)
+                self.code_tab_map.pop(titlename)
             
             if index == -1 or index == None:
-                
-                
                 
                 parent = widget.parent()
                 window_parent = parent.parent()
                 window_parent.close()
                 window_parent.deleteLater()
                 
-                #name = widget.text_edit.titlename
-                
-                self.code_floater_map.pop(name)
+                self.code_floater_map.pop(titlename)
                 
     def close_tabs(self):
         

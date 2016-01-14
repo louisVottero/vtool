@@ -163,10 +163,11 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         process_instance.set_directory(self.directory)
         code_name = process_instance.get_code_name_from_path(filepath)
         
-        
         code_name = code_name + '.py'
         
         self.code_widget.code_edit.close_tab(code_name)
+        
+        
         
         if not self.code_widget.code_edit.has_tabs():
             self._close_splitter()
@@ -241,8 +242,13 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         if widget.filepath:
             filepath = vtool.util_file.get_dirname(widget.filepath)
             
-            self.save_file.set_directory(filepath)
-            self.save_file.set_text_widget(widget.text_edit)
+            if util_file.is_dir(filepath):
+                self.save_file.set_directory(filepath)
+                self.save_file.set_text_widget(widget.text_edit)
+            
+            if not util_file.is_dir(filepath):
+                self.save_file.hide()
+
     
     def _collapse(self):
         self.collapse.emit()
