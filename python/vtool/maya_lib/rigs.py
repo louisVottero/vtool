@@ -574,6 +574,8 @@ class SparseRig(JointRig):
                     
                     self.control_dict[control_name] = control_data
                     
+                    self.controls[-1] = control_name
+                    
             
             
             if self.match_scale:
@@ -649,7 +651,7 @@ class SparseLocalRig(SparseRig):
             match.scale()
             
             if self.respect_side:
-                side = control.color_respect_side(True, self.respect_side_tolerance)
+                side = control.color_respect_side(center_tolerance = self.respect_side_tolerance)
             
                 if side != 'C':
                     
@@ -661,6 +663,8 @@ class SparseLocalRig(SparseRig):
                     self.control_dict[control_name] = control_data
                     
                     control = rigs_util.Control(control_name)
+                    
+                    self.controls[-1] = control_name
                     
             if not self.local_constraint:
                 xform_joint = space.create_xform_group(joint)
@@ -2900,7 +2904,6 @@ class IkAppendageRig(BufferRig):
         control = self._create_control(description = 'btm')
         control.hide_scale_and_visibility_attributes()
         
-            
         control.scale_shape(2, 2, 2)
         
         self.btm_control = control.get()
@@ -5147,6 +5150,7 @@ class FootRig(BaseFootRig):
         self.ik_parent = parent_name
         
     def set_ik_leg(self, ik_group_name):
+        
         self.ik_leg =  ik_group_name
                     
     def create(self):

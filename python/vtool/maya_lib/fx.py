@@ -32,7 +32,7 @@ def create_nucleus(name = None):
         name = 'nucleus'
         
     nucleus = cmds.createNode('nucleus', name = name)
-    
+    mel.eval('global string $gActiveNucleusNode;$gActiveNucleusNode = "%s";' % nucleus)
     cmds.connectAttr('time1.outTime', '%s.currentTime' % nucleus)
     
     cmds.setAttr('%s.spaceScale' % nucleus, 0.01)
@@ -291,7 +291,7 @@ def nConstrain_to_mesh(verts, mesh, name = None, force_passive = False,):
     nodes = mel.eval('createNConstraint pointToSurface 0;')
     
     if name:
-        print nodes
+        
         parent = cmds.listRelatives(nodes[0], p = True)[0]
         nodes = cmds.rename(parent, 'dynamicConstraint_%s' % name)
         nodes = vtool.util.convert_to_sequence(nodes)

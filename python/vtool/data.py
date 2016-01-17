@@ -541,6 +541,10 @@ class SkinWeightData(MayaCustomData):
         files = util_file.get_files(folder_path)
         
         info_file = util_file.join_path(folder_path, 'influence.info')
+        
+        if not util_file.is_file(info_file):
+            return
+        
         info_lines = util_file.get_file_lines(info_file)
         
         influence_dict = {}
@@ -623,6 +627,9 @@ class SkinWeightData(MayaCustomData):
                 continue
             
             influence_dict = self._get_influences(folder_path)
+
+            if not influence_dict:
+                continue
 
             influences = influence_dict.keys()
             

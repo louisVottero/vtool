@@ -153,29 +153,49 @@ class ComboManager(ui.MayaWindow):
         self.shape_widget.tree.clearSelection()
         #self.manager.zero_out()
         
-    def _add_command(self):
-        
-        meshes = geo.get_selected_meshes()
+    def _add_mesh(self, mesh):
         combo_items = self.combo_widget.tree.selectedItems()
+        shape_items = self.combo_widget.tree.selectedItems()
         
+        if combo_items and len(combo_items) == 1:
+            combo_name = str(combo_items[0].text(0))
+            self.manager.add_combo( combo_name, mesh)
+                    
+        if not combo_items and len(shape_items) == 1:
+            shape_name = str(shape_items[0].text(0))
+            self.manager.add_shape(shape_name, mesh)
+            
+        if not combo_items and not shape_items:
+            self._add_meshes([mesh])
+        
+    def _add_meshes(self, meshes):
         shapes, combos, inbetweens = self.manager.get_shape_and_combo_lists(meshes)
         
         for shape in shapes:
             self.manager.add_shape(shape)    
         
         for combo in combos:
-            self.manager.add_combo(combo)
+            for mesh in meshes:
+                if mesh == combo:
+                    self.manager.add_combo(mesh)
+    
+    def _add_command(self):
         
-        for combo_item in combo_items:
-            self.manager.add_combo(str(combo_item.text(0)))
+        meshes = geo.get_selected_meshes()
+        mesh_count = len(meshes)
         
-        mesh = None
+        if mesh_count == 1:
+            self._add_mesh(meshes[0])
         
+        if mesh_count > 1:
+            self._add_meshes(meshes)
+            
         if meshes:
             mesh = meshes[-1]
             self.shape_widget.tree.load(mesh)
+            self.combo_widget.tree.load()            
             
-            self.combo_widget.tree.load()
+
         
 class ShapeWidget(qt_ui.BasicWidget):
     

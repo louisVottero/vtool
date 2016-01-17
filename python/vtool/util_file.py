@@ -192,6 +192,7 @@ class WriteFile(FileManager):
             line (str): The line to add to the file.
         """
         
+
         self.write_file()
         self.open_file.write('%s\n' % line)
         self.close_file()
@@ -218,7 +219,7 @@ class WriteFile(FileManager):
                 
                 inc+= 1
         except:
-            print 'Could not write to file %s.' % self.filepath
+            print 'Could not write to file %s' % self.filepath
             
         self.close_file()
 
@@ -1404,7 +1405,7 @@ def rename(directory, name, make_unique = False):
         renamepath = inc_path_name(renamepath)
 
     try:
-        
+        os.chmod(directory, stat.S_IWRITE)
         os.rename(directory, renamepath)
     except:
         
@@ -1426,6 +1427,7 @@ def move(path1, path2):
         bool: Wether the move was successful.
     """
     try:
+        
         shutil.move(path1, path2)
     except:
         util.warning('Failed to move %s to %s' % (path1, path2))

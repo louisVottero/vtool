@@ -207,7 +207,7 @@ class BlendShape(object):
             mesh (str): The name of the mesh.
         """
         blendshape = cmds.deformer(mesh, type = 'blendShape', foc = True)[0]
-        
+        print 'blendshape created!', blendshape
         mesh_name = core.get_basename(mesh)
         
         if not self.blendshape:
@@ -424,8 +424,9 @@ class BlendShape(object):
             cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
             cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
 
-        self._restore_connections()
         self._restore_target_weights()
+        self._restore_connections()
+        
         
         return new_mesh
         
@@ -591,7 +592,18 @@ class BlendshapeManager(object):
 
     def _get_mesh(self):
         
-        mesh = attr.get_attribute_input( '%s.mesh' % self.setup_group, node_only = True )
+        mesh = attr.get_attribute_input( '%s.group_mesh' % self.setup_group, node_only = True )
+        
+        if not mesh:
+            return
+        
+        return mesh
+    
+    def _get_home_mesh(self):
+        if not cmds.objExists('%s.group_home' % self.setup_group):
+            return
+        
+        mesh = attr.get_attribute_input( '%s.group_home' % self.setup_group, node_only = True )
         
         if not mesh:
             return
@@ -614,16 +626,22 @@ class BlendshapeManager(object):
         return self.blendshape
     
     def _create_blendshape(self):
-        
+        print 'create blendshape!'
         mesh = self._get_mesh()
+        
+        print 'mesh', mesh
         
         if not mesh:
             return
         
         found = deform.find_deformer_by_type(mesh, 'blendShape')
         
+        print 'found', found
+        
         if found:
             return
+        
+        print 'about to create blendshape'
         
         blendshape = BlendShape()
         blendshape.create(mesh)
@@ -631,15 +649,17 @@ class BlendshapeManager(object):
         blendshape.rename('blendshape_%s' % mesh)
         
     def _create_home(self, mesh):
-        rels = cmds.listRelatives(self.setup_group)
+        home = self._get_home_mesh()
         
-        if rels:
-            if self.home in rels:
-                return
+        print 'create home', home
+        
+        if home:
+            return
         
         if not cmds.objExists(self.home):
             self.home = cmds.duplicate(mesh, n = 'home')[0]
             cmds.parent(self.home, self.setup_group)
+            attr.connect_message(self.home, self.setup_group, 'home')
             
             cmds.hide(self.home)
             
@@ -653,18 +673,37 @@ class BlendshapeManager(object):
         var = attributes.get_variable(target)
         
         return var
+    
+    def _get_combo_delta(self, corrective_mesh, shapes, home):
+        
+        temp_targets = []
+        
+        for shape in shapes:
+            new_shape = self.blendshape.recreate_target(shape)
+            temp_targets.append(new_shape)
+        
+        print home, temp_targets, corrective_mesh
+        
+        delta = deform.get_blendshape_delta(home, temp_targets, corrective_mesh, replace = False)
+        
+        cmds.delete(temp_targets)
+        
+        return delta
+        
                         
     def setup(self, start_mesh = None):
-                        
+        print 'setup'
         if not cmds.objExists(self.setup_group):
             self.setup_group = cmds.group(em = True, n = self.setup_group)
         
             attr.hide_keyable_attributes(self.setup_group)
         
+        test_home = attr.get_attribute_input('%s.group_mesh' % self.setup_group, node_only = True)
         
-        test_home = attr.get_attribute_input('%s.mesh' % self.setup_group, node_only = True)
+        print 'test home', test_home
         
         if start_mesh and not test_home:
+            print 'here in setup'
             self._create_home(start_mesh)
             attr.connect_message(start_mesh, self.setup_group, 'mesh')
             
@@ -683,7 +722,10 @@ class BlendshapeManager(object):
     
     #--- shapes
       
-    def add_shape(self, mesh):
+    def add_shape(self, name, mesh = None):
+        
+        if not mesh:
+            mesh = name
         
         home = self._get_mesh()
         
@@ -696,19 +738,19 @@ class BlendshapeManager(object):
             vtool.util.warning('No blendshape.')
             return
         
-        if blendshape.is_target(mesh):
-            blendshape.replace_target(mesh, mesh)
+        if blendshape.is_target(name):
+            blendshape.replace_target(name, mesh)
             return
         
-        blendshape.create_target(mesh, mesh)
+        blendshape.create_target(name, mesh)
         
-        var = attr.MayaNumberVariable(mesh)
+        var = attr.MayaNumberVariable(name)
         var.set_min_value(0)
         var.set_max_value(10)
         var.set_variable_type('float')
         var.create(self.setup_group)
                     
-        multiply = attr.connect_multiply('%s.%s' % (self.setup_group, mesh), '%s.%s' % (blendshape.blendshape, mesh))
+        multiply = attr.connect_multiply('%s.%s' % (self.setup_group, name), '%s.%s' % (blendshape.blendshape, name))
         cmds.rename(multiply, core.inc_name('multiply_shape_combo_1'))
         
     
@@ -757,33 +799,60 @@ class BlendshapeManager(object):
         self.blendshape.remove_target(name)
         
         cmds.deleteAttr( '%s.%s' % (self.setup_group,name) )
+        
+    
     
     #---  combos
     
-    def add_combo(self, mesh):
+    def add_combo(self, name, mesh = None):
+        print 'add combo!!!', name, mesh
+        if not mesh:
+            mesh = name
           
         home = self._get_mesh()
         
         if home == mesh:
+            print 'home is mesh'
             return
         
         blendshape = self._get_blendshape()
         
         if not blendshape:
             vtool.util.warning('No blendshape.')
+            print 'no blendshape!'
             return
         
-        if blendshape.is_target(mesh):
-            blendshape.replace_target(mesh, mesh)
-            return
+        home = self._get_home_mesh()
         
-        blendshape.create_target(mesh, mesh)
+        shapes = self.get_shapes_in_combo(name)
+        delta = self._get_combo_delta(mesh, shapes, home)
         
-        var = attr.MayaNumberVariable(mesh)
-        var.set_min_value(0)
-        var.set_max_value(10)
-        var.set_variable_type('float')
-        var.create(self.setup_group)
+        if blendshape.is_target(name):
+            blendshape.replace_target(name, delta)
+        
+        if not blendshape.is_target(name):
+            blendshape.create_target(name, delta)
+        
+        print 'delta', delta
+        
+        cmds.delete(delta)
+        
+        if not attr.get_attribute_input('%s.%s' % (blendshape.blendshape, name)):
+            
+            last_multiply = None
+            
+            for shape in shapes:
+                
+                if not last_multiply:
+                    multiply = attr.connect_multiply('%s.%s' % (blendshape.blendshape, shape), '%s.%s' % (blendshape.blendshape, name), 1)
+                    
+                if last_multiply:
+                    multiply = attr.connect_multiply('%s.%s' % (blendshape.blendshape, shape), '%s.input2X' % last_multiply, 1)
+                
+                multiply = cmds.rename(multiply, core.inc_name('multiply_shape_combo_1'))
+                
+                last_multiply = multiply
+        
     
     def get_combos(self):
         
