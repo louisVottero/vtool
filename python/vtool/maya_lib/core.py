@@ -85,6 +85,9 @@ class FindUniqueName(vtool.util.FindUniqueString):
     def _get_number(self):
         number = vtool.util.get_last_number(self.test_string)
         
+        if number == None:
+            return 0
+        
         return number
 
 class TrackNodes(object):
@@ -421,6 +424,9 @@ def pad_number(name):
     """
     
     number = vtool.util.get_last_number(name)
+    
+    if number == None:
+        number = 0
     
     number_string = str(number)
     

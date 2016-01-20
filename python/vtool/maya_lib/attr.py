@@ -2785,6 +2785,8 @@ def create_blend_attribute(source, target, min_value = 0, max_value = 10):
     
     return multi
         
+
+        
 def connect_message( input_node, destination_node, attribute ):
     """
     Connect the message attribute of input_node into a custom message attribute on destination_node
@@ -2799,33 +2801,41 @@ def connect_message( input_node, destination_node, attribute ):
         vtool.util.warning('No input node to connect message.')
         return
     
-    attribute_name = attribute
     
-    if not attribute.startswith('group_'):
-        attribute_name = 'group_' + attribute
-        
-    current_inc = 2
+    current_inc = vtool.util.get_last_number(attribute)
     
-    while cmds.objExists('%s.%s' % (destination_node, attribute_name)):
+    if current_inc == None:
+        current_inc = 2
+    
+    test_attribute = attribute
+    
+    while cmds.objExists('%s.%s' % (destination_node, test_attribute)):
         
-        input_value = get_attribute_input('%s.%s' % (destination_node, attribute_name))
+        input_value = get_attribute_input('%s.%s' % (destination_node, test_attribute))
         
         if not input_value:
             break
         
-        attribute_name = 'group_' + attribute + str(current_inc)
+        test_attribute = attribute + str(current_inc)
         
         current_inc += 1
         
         if current_inc == 1000:
             raise
         
-    if not cmds.objExists('%s.%s' % (destination_node, attribute_name)):
-        cmds.addAttr(destination_node, ln = attribute_name, at = 'message' )
+    if not cmds.objExists('%s.%s' % (destination_node, test_attribute)):
+        cmds.addAttr(destination_node, ln = test_attribute, at = 'message' )
         
-    if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, attribute_name)):
-        cmds.connectAttr('%s.message' % input_node, '%s.%s' % (destination_node, attribute_name))
+    if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute)):
+        cmds.connectAttr('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute))
     
+def connect_group_with_message( input_node, destination_node, attribute ):
+    
+    if not attribute.startswith('group_'):
+    
+        attribute_name = 'group_' + attribute
+    
+    connect_message(input_node, destination_node, attribute_name)
             
 def disconnect_attribute(attribute):
     """
