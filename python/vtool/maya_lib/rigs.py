@@ -1693,6 +1693,8 @@ class SplineRibbonBaseRig(JointRig):
             return
         
         if self.stretchy:    
+            
+            print self.ik_curve, self.buffer_joints[:-1], self.controls[-1]
             rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1], self.stretch_on_off, self.stretch_axis)
     
         
@@ -2270,7 +2272,8 @@ class FkCurveLocalRig(FkCurveRig):
     
     def _create_spline_ik(self):
         
-        self._create_ik_curve(self.curve)
+        self._wire_hires(self.curve)
+        #self._create_ik_curve(self.curve)
         
         children = cmds.listRelatives(self.buffer_joints[-1], c = True)
         

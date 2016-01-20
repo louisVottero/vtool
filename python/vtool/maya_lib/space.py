@@ -2489,7 +2489,7 @@ def get_side(transform, center_tolerance):
             
     return side
 
-def create_no_twist_aim(source_transform, target_transform, parent):
+def create_no_twist_aim(source_transform, target_transform, parent, move_vector = [0,0,1]):
     """
     Aim target transform at the source transform, trying to rotate only on one axis.
     Constrains the target_transform.
@@ -2499,6 +2499,8 @@ def create_no_twist_aim(source_transform, target_transform, parent):
         target_transform (str): The name of a transform.
         parent (str): The parent for the setup.
     """
+    
+    
     top_group = cmds.group(em = True, n = core.inc_name('no_twist_%s' % source_transform))
     cmds.parent(top_group, parent)
     cmds.pointConstraint(source_transform, top_group)
@@ -2528,7 +2530,7 @@ def create_no_twist_aim(source_transform, target_transform, parent):
     MatchSpace(source_transform, pin_target).translation_rotation()
     
     xform_pin_target = create_xform_group(pin_target)
-    cmds.move(0,0,1, pin_target, r = True)
+    cmds.move(move_vector[0], move_vector[1], move_vector[2], pin_target, r = True)
     
     cmds.aimConstraint(pin_target, pin_aim, wuo = aim, wut = 'objectrotation')
     
@@ -2542,7 +2544,7 @@ def create_no_twist_aim(source_transform, target_transform, parent):
     
     cmds.orientConstraint(pin_aim, target_transform, mo = True)
 
-def create_pole_chain(top_transform, btm_transform, name):
+def create_pole_chain(top_transform, btm_transform, name, solver = IkHandle.solver_sc):
     """
     Create a two joint chain with an ik handle.
     
@@ -2570,8 +2572,13 @@ def create_pole_chain(top_transform, btm_transform, name):
     
     ik_handle.set_start_joint( joint1 )
     ik_handle.set_end_joint( joint2 )
-    ik_handle.set_solver(ik_handle.solver_sc)
+    ik_handle.set_solver(solver)
     ik_pole = ik_handle.create()
+    
+    if solver == IkHandle.solver_rp:
+        cmds.setAttr('%s.poleVectorX' % ik_pole, 0)
+        cmds.setAttr('%s.poleVectorY' % ik_pole, 0)
+        cmds.setAttr('%s.poleVectorZ' % ik_pole, 0)
 
     return joint1, joint2, ik_pole
 
