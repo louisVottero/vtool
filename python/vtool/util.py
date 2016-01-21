@@ -981,11 +981,11 @@ def get_last_number(input_string):
     search = search_last_number(input_string)
     
     if not search:
-        return 0
+        return None
     
     found_string = search.group()
     
-    number = 0
+    number = None
     
     if found_string:
         number = int(found_string)

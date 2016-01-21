@@ -1742,7 +1742,7 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
     
     cmds.parent(transform, xform_group)
     
-    attr.connect_message(xform_group, transform, prefix)
+    attr.connect_group_with_message(xform_group, transform, prefix)
 
     return xform_group
 

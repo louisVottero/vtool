@@ -1069,6 +1069,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
         inc = vtool.util.get_last_number(new_name)
         
+        if inc == None:
+            inc = 0
+        
         while self._name_clash(new_name):
             
             inc += 1

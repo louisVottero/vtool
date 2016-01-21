@@ -154,19 +154,26 @@ class ComboManager(ui.MayaWindow):
         #self.manager.zero_out()
         
     def _add_mesh(self, mesh):
+        
         combo_items = self.combo_widget.tree.selectedItems()
-        shape_items = self.combo_widget.tree.selectedItems()
+        shape_items = self.shape_widget.tree.selectedItems()
         
         if combo_items and len(combo_items) == 1:
             combo_name = str(combo_items[0].text(0))
             self.manager.add_combo( combo_name, mesh)
+            
+            #self.combo_widget.tree.load()   
                     
-        if not combo_items and len(shape_items) == 1:
+        if shape_items and not combo_items and len(shape_items) == 1:
+
             shape_name = str(shape_items[0].text(0))
             self.manager.add_shape(shape_name, mesh)
             
+            self.shape_widget.tree.select_shape(shape_name)
+            
         if not combo_items and not shape_items:
             self._add_meshes([mesh])
+            
         
     def _add_meshes(self, meshes):
         shapes, combos, inbetweens = self.manager.get_shape_and_combo_lists(meshes)
@@ -178,6 +185,9 @@ class ComboManager(ui.MayaWindow):
             for mesh in meshes:
                 if mesh == combo:
                     self.manager.add_combo(mesh)
+                    
+        self.shape_widget.tree.load(meshes[-1])
+        self.combo_widget.tree.load()   
     
     def _add_command(self):
         
@@ -189,12 +199,7 @@ class ComboManager(ui.MayaWindow):
         
         if mesh_count > 1:
             self._add_meshes(meshes)
-            
-        if meshes:
-            mesh = meshes[-1]
-            self.shape_widget.tree.load(mesh)
-            self.combo_widget.tree.load()            
-            
+        
 
         
 class ShapeWidget(qt_ui.BasicWidget):
@@ -288,6 +293,16 @@ class ShapeTree(qt_ui.TreeWidget):
             index = self.indexFromItem(item)
         
             self.takeTopLevelItem(index.row())
+        
+    def select_shape(self, shape):
+        
+        for inc in range(0, self.topLevelItemCount()):
+            item = self.topLevelItem(inc)
+            
+            item_name = str(item.text(0))
+            
+            if item_name == shape:
+                item.setSelected(True)
         
     def select_shapes(self, shapes):
         self.clearSelection()
