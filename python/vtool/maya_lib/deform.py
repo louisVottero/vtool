@@ -701,12 +701,12 @@ class SplitMeshTarget(object):
                 
                 watch.start()
                 weights = self._get_center_fade_weights(self.base_mesh, self.target_mesh, center_fade, positive_negative)
-                print 'done center fade'
+                
                 watch.end()
             if center_fade == None:
                 watch.start()
                 weights = self._get_joint_weights(joint)
-                print 'done joint fade'
+                
                 watch.end()
             if not weights:
                 continue
@@ -2246,8 +2246,7 @@ def get_skin_influence_weights(influence_name, skin_deformer):
     """
     
     watch = vtool.util.StopWatch()
-
-    print 'get skin at influence'
+    
     watch.start()
     influence_index = get_index_at_skin_influence(influence_name, skin_deformer)
     watch.end()

@@ -768,6 +768,8 @@ class ControlRig(Rig):
                 if inc in self.control_shape_types:
                     control.set_curve_type(self.control_shape_types[inc])
                 
+                control.scale_shape(self.control_size, self.control_size, self.control_size)
+                
                 xform = space.create_xform_group(control.get())    
                 cmds.parent(xform, self.control_group)                
                 
@@ -1694,7 +1696,6 @@ class SplineRibbonBaseRig(JointRig):
         
         if self.stretchy:    
             
-            print self.ik_curve, self.buffer_joints[:-1], self.controls[-1]
             rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1], self.stretch_on_off, self.stretch_axis)
     
         
@@ -5034,7 +5035,7 @@ class FootRig(BaseFootRig):
         cmds.parent(xform, parent)
         
         if self.ik_leg:
-            cmds.parent(self.ik_leg, control.get)
+            cmds.parent(self.ik_leg, control)
         
         attribute_control = self._get_attribute_control()
         

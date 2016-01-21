@@ -855,10 +855,11 @@ class Process(object):
         code_folder = data.DataFolder(old_name, self.get_code_path())
         code_folder.rename(sub_new_name)
         
-        instance = code_folder.get_folder_data_instance()
+        #instance = code_folder.get_folder_data_instance()
                 
-        file_name = instance.get_file()
-        file_name = util_file.get_basename(file_name)
+        #file_name = instance.get_file()
+        #if file_name:
+        #    file_name = util_file.get_basename(file_name)
             
         name = new_name + '.py'
             

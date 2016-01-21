@@ -273,8 +273,6 @@ def create_shape_from_shape(shape, name = 'new_shape'):
     transform = cmds.group(em = True)
     transform = cmds.ls(transform, l = True)[0]
     
-    print 'create shape from shape', shape, transform
-    
     api.create_mesh_from_mesh(shape, transform)
     mesh = transform
     

@@ -207,7 +207,7 @@ class BlendShape(object):
             mesh (str): The name of the mesh.
         """
         blendshape = cmds.deformer(mesh, type = 'blendShape', foc = True)[0]
-        print 'blendshape created!', blendshape
+        
         mesh_name = core.get_basename(mesh)
         
         if not self.blendshape:
@@ -626,22 +626,16 @@ class BlendshapeManager(object):
         return self.blendshape
     
     def _create_blendshape(self):
-        print 'create blendshape!'
-        mesh = self._get_mesh()
         
-        print 'mesh', mesh
+        mesh = self._get_mesh()
         
         if not mesh:
             return
         
         found = deform.find_deformer_by_type(mesh, 'blendShape')
         
-        print 'found', found
-        
         if found:
             return
-        
-        print 'about to create blendshape'
         
         blendshape = BlendShape()
         blendshape.create(mesh)
@@ -650,8 +644,6 @@ class BlendshapeManager(object):
         
     def _create_home(self, mesh):
         home = self._get_home_mesh()
-        
-        print 'create home', home
         
         if home:
             return
@@ -682,8 +674,6 @@ class BlendshapeManager(object):
             new_shape = self.blendshape.recreate_target(shape)
             temp_targets.append(new_shape)
         
-        print home, temp_targets, corrective_mesh
-        
         delta = deform.get_blendshape_delta(home, temp_targets, corrective_mesh, replace = False)
         
         cmds.delete(temp_targets)
@@ -692,7 +682,7 @@ class BlendshapeManager(object):
         
                         
     def setup(self, start_mesh = None):
-        print 'setup'
+        
         if not cmds.objExists(self.setup_group):
             self.setup_group = cmds.group(em = True, n = self.setup_group)
         
@@ -700,10 +690,8 @@ class BlendshapeManager(object):
         
         test_home = attr.get_attribute_input('%s.group_mesh' % self.setup_group, node_only = True)
         
-        print 'test home', test_home
-        
         if start_mesh and not test_home:
-            print 'here in setup'
+        
             self._create_home(start_mesh)
             attr.connect_message(start_mesh, self.setup_group, 'mesh')
             
@@ -805,21 +793,19 @@ class BlendshapeManager(object):
     #---  combos
     
     def add_combo(self, name, mesh = None):
-        print 'add combo!!!', name, mesh
+        
         if not mesh:
             mesh = name
           
         home = self._get_mesh()
         
         if home == mesh:
-            print 'home is mesh'
             return
         
         blendshape = self._get_blendshape()
         
         if not blendshape:
             vtool.util.warning('No blendshape.')
-            print 'no blendshape!'
             return
         
         home = self._get_home_mesh()
@@ -832,8 +818,6 @@ class BlendshapeManager(object):
         
         if not blendshape.is_target(name):
             blendshape.create_target(name, delta)
-        
-        print 'delta', delta
         
         cmds.delete(delta)
         

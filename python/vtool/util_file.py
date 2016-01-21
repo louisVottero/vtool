@@ -271,7 +271,6 @@ class VersionFile(object):
             
             if found:
                 
-                print 'renaming ', old_dir_name, 'to', self.version_folder_name
                 rename(old_dir_name, self.version_folder_name)
 
         #new_folder = join_path(dir_name, self.version_folder_name)
