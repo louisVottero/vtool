@@ -40,7 +40,7 @@ def find_processes(directory = None):
             found.append(file_name)
         
     found.sort()
-               
+
     return found
 
 def is_process(directory):
@@ -458,7 +458,7 @@ class Process(object):
         """
         directory = self.get_data_path()
         
-        return util_file.get_folders(directory)      
+        return util_file.get_folders(directory)  
      
     def get_data_instance(self, name):
         """
@@ -623,6 +623,20 @@ class Process(object):
             directory = util_file.join_path(directory, code_name)
         
         return util_file.get_folders_without_prefix_dot(directory, recursive = True)  
+    
+    def get_top_level_code_folders(self):
+        
+        folders = self.get_code_folders()
+        
+        found = []
+        
+        for folder in folders:
+            if folder.count('/') > 1:
+                continue
+            
+            found.append(folder)
+            
+        return found
 
     def get_code_type(self, name):
         """
@@ -1346,6 +1360,7 @@ class Process(object):
         Return
             None
         """
+        util.show('Created runtime variable %s with value %s.' % (name, value))
         self.runtime_values[name] = value
         
     def get_runtime_value(self, name):

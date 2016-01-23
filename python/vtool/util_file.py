@@ -1402,6 +1402,9 @@ def rename(directory, name, make_unique = False):
     
     if make_unique:
         renamepath = inc_path_name(renamepath)
+        
+    if is_dir(renamepath) or is_file(renamepath):
+        return False
 
     try:
         os.chmod(directory, stat.S_IWRITE)

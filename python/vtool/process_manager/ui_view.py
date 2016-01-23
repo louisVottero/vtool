@@ -976,6 +976,9 @@ class CopyWidget(qt_ui.BasicWidget):
         
         for code in codes:
             
+            #if code.count('/') > 0:
+            #    continue
+            
             code_name = code.split('.')
             
             if len(code_name) > 1 and code_name[1] == 'py':

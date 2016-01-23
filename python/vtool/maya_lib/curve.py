@@ -405,7 +405,10 @@ class CurveDataInfo():
         
         lines = []
         
-        for curve in current_library:
+        curves = current_library.keys()
+        curves.sort()
+        
+        for curve in curves:
             
             curve_data_lines, curve_type = current_library[curve]
             

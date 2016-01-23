@@ -695,19 +695,15 @@ class SplitMeshTarget(object):
             new_target = cmds.rename(new_target, new_name)    
             
             weights = []
-            watch = vtool.util.StopWatch()
             
             if center_fade != None:
                 
-                watch.start()
                 weights = self._get_center_fade_weights(self.base_mesh, self.target_mesh, center_fade, positive_negative)
                 
-                watch.end()
             if center_fade == None:
-                watch.start()
+                
                 weights = self._get_joint_weights(joint)
                 
-                watch.end()
             if not weights:
                 continue
                 
@@ -1479,10 +1475,10 @@ class MultiJointShape(object):
      
         for joint in self.joints:
             
-            if cmds.objExists('%s.group_blend_locator' % joint):
-                locator = attr.get_attribute_input('%s.group_blend_locator' % joint, node_only = True)
+            if cmds.objExists('%s.blend_locator' % joint):
+                locator = attr.get_attribute_input('%s.blend_locator' % joint, node_only = True)
             
-            if not cmds.objExists('%s.group_blend_locator' % joint): 
+            if not cmds.objExists('%s.blend_locator' % joint): 
                 
                 locator = cmds.spaceLocator(n = 'locator_%s' % joint)[0]
                 
@@ -2245,13 +2241,8 @@ def get_skin_influence_weights(influence_name, skin_deformer):
     If you need to query many influences than use get_skin_weights.
     """
     
-    watch = vtool.util.StopWatch()
-    
-    watch.start()
     influence_index = get_index_at_skin_influence(influence_name, skin_deformer)
-    watch.end()
     
-    watch.start()
     if influence_index == None:
         return
     
@@ -2274,8 +2265,7 @@ def get_skin_influence_weights(influence_name, skin_deformer):
             continue
                 
         weights[inc] = value
-            
-    watch.end()
+    
     return weights
 
 def get_skin_blend_weights(skin_deformer):
