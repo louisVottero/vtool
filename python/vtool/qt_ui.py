@@ -1910,7 +1910,7 @@ class CodeEditTabs(BasicWidget):
         code_widget = self.code_tab_map[title]
         filepath = code_widget.text_edit.filepath        
         
-        self.add_floating_tab(filepath)
+        self.add_floating_tab(filepath, title)
         
     def set_group(self, group):
         self.group = group

@@ -303,7 +303,7 @@ class BlendShape(object):
         pass
            
     
-    def replace_target(self, name, mesh):
+    def replace_target(self, name, mesh, leave_connected = False):
         """
         Replace the mesh at the target.
         
@@ -327,7 +327,9 @@ class BlendShape(object):
                     attr.disconnect_attribute(mesh_input)
                 
                 cmds.connectAttr('%s.outMesh' % mesh, mesh_input)
-                cmds.disconnectAttr('%s.outMesh' % mesh, mesh_input)
+                
+                if not leave_connected:
+                    cmds.disconnectAttr('%s.outMesh' % mesh, mesh_input)
                 
                 
         if not self.is_target(name):

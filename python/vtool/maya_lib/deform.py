@@ -819,15 +819,16 @@ class TransferWeight(object):
                 continue
                         
             index = get_index_at_skin_influence(joint,source_skin_cluster)
-            joint_map[index] = joint
             
+            joint_map[index] = joint
+                        
         for joint in destination_joints:
             if not cmds.objExists(joint):
                 vtool.util.warning('%s does not exist.' % joint)
                 continue
             
             index = get_index_at_skin_influence(joint,self.skin_cluster)
-            
+                        
             destination_joint_map[index] = joint
         
         verts = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)
@@ -874,7 +875,11 @@ class TransferWeight(object):
                 
                 if influence_index == None:
                     continue
-                destination_value += destination_value_map[influence_index][vert_index]
+                
+                if destination_value_map.has_key(influence_index):
+                    destination_value += destination_value_map[influence_index][vert_index]
+                if not destination_value_map.has_key(influence_index):
+                    destination_value += 0.0
             
             segments = []
             
@@ -3368,6 +3373,8 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     '''
     
     vtool.util.show('skinning %s' % target_mesh)
+    
+    
     
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
     

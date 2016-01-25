@@ -202,9 +202,11 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     if parent:
         cmds.parent(follicle, parent)
     
+    blendshape_node = cmds.blendShape(curve, new_curve, blend_curve, w = [0,1],n = 'blendShape_%s' % follicle)[0]
+    
     if switch_control:
         
-        blendshape_node = cmds.blendShape(curve, new_curve, blend_curve, w = [0,1],n = 'blendShape_%s' % follicle)[0]
+        
         
         remap = attr.RemapAttributesToAttribute(switch_control, attribute_name)
         remap.create_attributes(blendshape_node, [curve, new_curve])

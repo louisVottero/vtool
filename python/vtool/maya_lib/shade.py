@@ -124,6 +124,9 @@ def apply_transparent_lambert(mesh):
     if cmds.objExists(name):
         apply_shader(name, mesh)
         
+def create_ramp_texture_node(name):
     
-    
+    ramp = cmds.createNode('ramp', n = name)
+
+    return ramp
 

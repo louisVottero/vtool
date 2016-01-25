@@ -1615,6 +1615,8 @@ class SplineRibbonBaseRig(JointRig):
         cluster_group = self._create_setup_group('clusters')
         cmds.parent(self.clusters, cluster_group)
         
+        return self.clusters
+        
     def _create_geo(self):
         
         if self.ribbon:
@@ -3436,8 +3438,8 @@ class TweakCurveRig(BufferRig):
         super(TweakCurveRig, self).create()
         
         self._create_ik_guide()
-        
         clusters = self._cluster(self.description)
+        
         
         cmds.parent(clusters, self.setup_group)
         
