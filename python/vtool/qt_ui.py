@@ -1020,6 +1020,7 @@ class FileTreeWidget(TreeWidget):
             self.takeTopLevelItem(index)
 
     def refresh(self):
+        
         files = self._get_files()
         
         if not files:
@@ -1027,6 +1028,7 @@ class FileTreeWidget(TreeWidget):
             return
         
         self._load_files(files)
+        
         self.refreshed.emit()
 
     def get_item_directory(self, item):

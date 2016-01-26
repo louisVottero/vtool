@@ -673,6 +673,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         scripts, states = process_tool.get_manifest()
         
+        #this is slow 
         code_folders = process_tool.get_code_folders()
         
         found_scripts = []
@@ -680,6 +681,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         parents = {}
         
         for inc in range(0, len(scripts)):
+            #and each increment is slow
             
             name = util_file.remove_extension( scripts[inc] )
             
@@ -697,7 +699,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             found_scripts.append(scripts[inc])
             found_states.append(states[inc])
-                   
+                               
         return [found_scripts, found_states, parents]
         
     def _insert_drop(self, event):

@@ -909,8 +909,6 @@ def get_folders_without_prefix_dot(directory, recursive = False):
     
     for root, dirs, files in os.walk(directory):
         
-        del(files)
-        
         for folder in dirs:
             
             if folder.startswith('.'):
@@ -946,8 +944,6 @@ def get_folders(directory, recursive = False):
     found_folders = []
     
     for root, dirs, files in os.walk(directory):
-        
-        del(files)
         
         for folder in dirs:
             
@@ -1149,6 +1145,7 @@ def is_dir(directory):
     Return 
         bool
     """
+    
     if not directory:
         return False
     
@@ -1165,11 +1162,11 @@ def is_file(filepath):
     Return 
         bool
     """
+    
     if not filepath:
         return False
     
     try:
-        
         mode = os.stat(filepath)[stat.ST_MODE]
         if stat.S_ISREG(mode):
             return True
