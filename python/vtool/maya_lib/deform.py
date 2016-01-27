@@ -3224,15 +3224,11 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
         target_joint (str): The name of a joint to transfer weights to.
         mesh (str): The mesh to work with.
     """
-    print 'transfer joint wieght'
-    print source_joint
     
     if mesh:
         meshes = vtool.util.convert_to_sequence(mesh)
     if not mesh:
         meshes = get_meshes_skinned_to_joint(source_joint)
-    
-    print meshes
     
     if not meshes:
         return
@@ -3241,7 +3237,6 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
     
     for mesh in meshes:
     
-        print 'working on ', mesh
         skin_deformer = find_deformer_by_type(mesh, 'skinCluster')
         
         influences = get_influences_on_skin(skin_deformer)
