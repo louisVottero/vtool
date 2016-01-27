@@ -966,16 +966,33 @@ def replace_last_number(input_string, replace_string):
     if not search:
         return input_string + replace_string
     
+    #count = len(search.group())
+    
+    #replace_count = len(replace_string)
+    
+    #if replace_count == 1:
+    #    replace_string *= count
+    
+    #if replace_count:
+    return input_string[:search.start()] + replace_string + input_string[search.end():]
+    
+"""
+def replace_last_number(input_string, replace_string):
+
+    expression = re.compile('(\d+)(?=(\D+)?$)')
+    search = expression.search(input_string)
+
+    if not search:
+        return
+    
     count = len(search.group())
     
     replace_count = len(replace_string)
     
     if replace_count == 1:
         replace_string *= count
-    
-    if replace_count:
-        return input_string[:search.start()] + replace_string + input_string[search.end():]
-    
+"""
+
 def get_last_number(input_string):
     
     search = search_last_number(input_string)
