@@ -365,6 +365,8 @@ class CMuscle(object):
         deformer = None
         nurbs = None
         
+def convert_to_bone():
+    pass
         for shape in shapes:
             if cmds.nodeType(shape) == 'cMuscleObject':
                 deformer = shape

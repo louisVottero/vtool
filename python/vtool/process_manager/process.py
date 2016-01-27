@@ -396,6 +396,12 @@ class Process(object):
         
             return parent_process
         
+    def get_empty_process(self, path = None):
+        
+        process = Process()
+        process.set_directory(path)
+        return process
+        
     #--- data
         
     def is_data_folder(self, name):

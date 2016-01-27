@@ -3215,7 +3215,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
     
     return convert_group
         
-def transfer_joint_weight_to_joint(source_joint, target_joint, mesh):
+def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
     """
     Transfer the weight from one joint to another.  Does it for all vertices affected by source_joint in mesh.
     
@@ -3224,8 +3224,24 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh):
         target_joint (str): The name of a joint to transfer weights to.
         mesh (str): The mesh to work with.
     """
+    print 'transfer joint wieght'
+    print source_joint
+    
     if mesh:
-        
+        meshes = vtool.util.convert_to_sequence(mesh)
+    if not mesh:
+        meshes = get_meshes_skinned_to_joint(source_joint)
+    
+    print meshes
+    
+    if not meshes:
+        return
+    
+    
+    
+    for mesh in meshes:
+    
+        print 'working on ', mesh
         skin_deformer = find_deformer_by_type(mesh, 'skinCluster')
         
         influences = get_influences_on_skin(skin_deformer)
@@ -3385,7 +3401,9 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     other_skin = find_deformer_by_type(target_mesh, 'skinCluster')
     
     if other_skin:
-        cmds.warning('%s already has a skin cluster.' % target_mesh)
+        cmds.warning('%s already has a skin cluster. Deleteing existing.' % target_mesh)
+        cmds.delete(other_skin)
+        other_skin = None
     
     
     influences = get_non_zero_influences(skin)
@@ -3405,7 +3423,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     if not other_skin:  
         skin_name = core.get_basename(target_mesh)
         other_skin = cmds.skinCluster(influences, target_mesh, tsb=True, n = core.inc_name('skin_%s' % skin_name))[0]
-        
+      
     if other_skin:
         if not uv_space:
             cmds.copySkinWeights(ss = skin, 
@@ -3424,8 +3442,10 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                                  uvSpace = ['map1','map1'], 
                                  normalize = True)
             
+    
+    
+    """
     other_influences = cmds.skinCluster(other_skin, query = True, wi = True)
-        
     for influence in influences:
         
         if not influence in other_influences:
@@ -3433,6 +3453,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                 cmds.skinCluster(other_skin, edit = True, ri = influence)
             except:
                 cmds.warning('Could not remove influence %s on mesh %s' % (influence, target_mesh))
+    """
                 
     #cmds.undoInfo(state = True)
     
@@ -4030,6 +4051,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
     Return
         str: The name of the blendshape node.
     """
+    
     blendshape_node = blendshape
     
     source_mesh_name = source_mesh.split('|')[-1]
