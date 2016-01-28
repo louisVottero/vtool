@@ -13,6 +13,7 @@ import core
 import attr
 import deform
 import geo
+import space
 
 #--- Nucleus
 
@@ -541,10 +542,72 @@ def add_muscle_to_mesh(mesh):
     if not mesh_shape:
         return
     
-    print mesh_shape
     mesh_shape_name = core.get_basename(mesh_shape)
     shape = cmds.createNode('cMuscleObject', n = 'cMuscleObject_%s' % mesh_shape_name, p = mesh)
     
     cmds.connectAttr('%s.worldMatrix' % mesh_shape, '%s.worldMatrixStart' % mesh)
     cmds.connectAttr('%s.worldMesh' % mesh_shape, '%s.meshIn' % shape)
+    
+    cmds.setAttr('%s.draw' % shape, 0)
+    
+    cmds.setAttr('%s.localPositionX' % shape, k = False, cb = False)
+    cmds.setAttr('%s.localPositionY' % shape, k = False, cb = False)
+    cmds.setAttr('%s.localPositionZ' % shape, k = False, cb = False)
+    cmds.setAttr('%s.localScaleX' % shape, k = False, cb = False)
+    cmds.setAttr('%s.localScaleY' % shape, k = False, cb = False)
+    cmds.setAttr('%s.localScaleZ' % shape, k = False, cb = False)
+    cmds.setAttr('%s.type' % shape, k = False)
+    cmds.setAttr('%s.radius' % shape, k = False)
+    cmds.setAttr('%s.length' % shape, k = False)
+    cmds.setAttr('%s.capsuleAxis' % shape, k = False)
+    cmds.setAttr('%s.userScaleX' % shape, k = False)
+    cmds.setAttr('%s.userScaleY' % shape, k = False)
+    cmds.setAttr('%s.userScaleZ' % shape, k = False)
+    cmds.setAttr('%s.nSeg' % shape, k = False)
+    cmds.setAttr('%s.nSides' % shape, k = False)
+    
+    return shape
+
+def add_mesh_to_keep_out(mesh, keep_out):
+    
+    shapes = core.get_shapes(mesh, 'cMuscleObject')
+    
+    if shapes:
+        shape = shapes[0]
+        
+    if not shapes:
+        shape = add_muscle_to_mesh(mesh)
+    
+    cmds.connectAttr('%s.muscleData' % shape, '%s.muscleData[0]' % keep_out)
+    
+def create_keep_out(match_to_transform = None, collide_mesh = None, name = None):
+    
+    if not name:
+        keep_out = cmds.group(em = True, n = core.inc_name('cMuscleKeepOut_1'))
+    if name:
+        keep_out = cmds.group(em = True, n = core.inc_name(name))
+        
+    keep_out_shape = cmds.createNode('cMuscleKeepOut', p = keep_out, n = '%sShape' % keep_out)
+    
+    cmds.connectAttr('%s.worldMatrix' % keep_out, '%s.worldMatrixAim' % keep_out_shape)
+    
+    locator = cmds.spaceLocator(n = '%s_driven' % keep_out)[0]
+    cmds.connectAttr('%s.outTranslateLocal' % keep_out, '%s.translate' % locator)
+    
+    cmds.parent(locator, keep_out)
+    
+    
+    if match_to_transform and cmds.objExists(match_to_transform):
+        
+        space.MatchSpace(match_to_transform, keep_out).translation_rotation()
+        space.MatchSpace(match_to_transform, keep_out).translation_to_rotate_pivot()
+    
+    if collide_mesh and cmds.objExists(collide_mesh):
+        add_mesh_to_keep_out(collide_mesh, keep_out)
+    
+    return keep_out, locator
+    
+
+    
+    
     

@@ -2899,7 +2899,6 @@ def get_available_slot(attribute):
 
 def get_slots(attribute):
     """
-    attributes!!!
     Given a multi attribute, get all the slots currently made.
     
     Args
@@ -2922,7 +2921,6 @@ def get_slots(attribute):
 
 def get_slot_count(attribute):
     """
-    attributes!!!
     Get the number of created slots in a multi attribute.
     
     Args

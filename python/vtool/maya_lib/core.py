@@ -489,7 +489,7 @@ def get_top_dag_nodes(exclude_cameras = True):
     return top_transforms 
 
     
-def get_shapes(transform):
+def get_shapes(transform, shape_type = None):
     """
     Get all the shapes under a transform.
     
@@ -503,7 +503,11 @@ def get_shapes(transform):
         parent = cmds.listRelatives(transform, p = True, f = True)
         return cmds.listRelatives(parent, s = True, f = True)
     
-    return cmds.listRelatives(transform, s = True, f = True)
+    
+    if shape_type:
+        return cmds.listRelatives(transform, s = True, f = True, type = shape_type)
+    if not shape_type:
+        return cmds.listRelatives(transform, s = True, f = True)
     
 def get_node_types(nodes, return_shape_type = True):
     """
@@ -626,6 +630,7 @@ def get_shapes_in_hierarchy(transform):
             shapes += sifted_shapes
     
     return shapes
+
 
 def has_shape_of_type(node, maya_type):
     """

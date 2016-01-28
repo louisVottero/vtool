@@ -6557,20 +6557,41 @@ class StickyFadeRig(StickyRig):
             self.corner_offsets.append(corner_offset)
             self.sub_corner_offsets.append(sub_corner_offset)
             
-            
-            cmds.pointConstraint(control.get(), corner_offset)
-            cmds.pointConstraint(sub_control.get(), sub_corner_offset)
-            
             corner_offset_xform = space.create_xform_group(corner_offset)
-            cmds.pointConstraint(xform, corner_offset_xform)
+            
+            if not self.local:
+                cmds.pointConstraint(control.get(), corner_offset)
+                cmds.pointConstraint(sub_control.get(), sub_corner_offset)
+                
+                cmds.pointConstraint(xform, corner_offset_xform)
+                
+            if self.local:
+                space.MatchSpace(control.get(), corner_offset_xform).translation()
+                space.MatchSpace(sub_control.get(), sub_corner_offset).translation()
+                
+                local, local_xform = space.constrain_local(control.get(), corner_offset)
+                attr.connect_scale(xform, local_xform)
+                #parent_local, parent_local_xform = space.constrain_local(xform, corner_offset_xform)
+                
+                sub_local, sub_local_xform = space.constrain_local(sub_control.get(), sub_corner_offset)
+                
+                cmds.parent(sub_local_xform, local)
+                #cmds.parent(local_xform, parent_local) 
+                
+                #cmds.parent(parent_local_xform, self.setup_group)
+                cmds.parent(local_xform, self.setup_group)
+                cmds.parent(sub_local_xform, self.setup_group)
+                
+                cmds.parentConstraint(local, sub_local_xform, mo = True)
             
             #cmds.parent(corner_offset_xform, xform)
             cmds.parent(corner_offset_xform, self.setup_group)
-            
-            
             cmds.parent(sub_corner_offset, corner_offset_xform)
             
+            
+        
             self._set_corner_space(control.control, xform)  
+            
                       
         self.side =orig_side
 
