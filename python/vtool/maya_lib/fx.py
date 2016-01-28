@@ -12,6 +12,7 @@ if vtool.util.is_in_maya():
 import core
 import attr
 import deform
+import geo
 
 #--- Nucleus
 
@@ -533,3 +534,17 @@ class CMuscle(object):
             
                 cmds.connectAttr('%s.%s' % (node, other_attribute), '%s.%s' % (control, attribute))
             
+def add_muscle_to_mesh(mesh):
+     
+    mesh_shape = geo.get_mesh_shape(mesh, 0)
+    
+    if not mesh_shape:
+        return
+    
+    print mesh_shape
+    mesh_shape_name = core.get_basename(mesh_shape)
+    shape = cmds.createNode('cMuscleObject', n = 'cMuscleObject_%s' % mesh_shape_name, p = mesh)
+    
+    cmds.connectAttr('%s.worldMatrix' % mesh_shape, '%s.worldMatrixStart' % mesh)
+    cmds.connectAttr('%s.worldMesh' % mesh_shape, '%s.meshIn' % shape)
+    

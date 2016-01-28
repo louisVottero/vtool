@@ -1423,7 +1423,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             if set_end_states:
                 
                 item = self._get_item_by_name(scripts[inc])
-                item.set_state(-1)
+                if item:
+                    item.set_state(-1)
             
             for item in items:
                 

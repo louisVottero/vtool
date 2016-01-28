@@ -298,6 +298,7 @@ class CurveDataInfo():
             for inc in range(current_index, len(data_list)):
                 
                 curve_shape = cmds.createNode('nurbsCurve')
+                #maybe curve_shape = cmds.createNode('nurbsCurve', parent = curve, n = '%sShape' % curve)
                 
                 if shape_color != None:
                     cmds.setAttr('%s.overrideEnabled' % curve_shape, 1)
