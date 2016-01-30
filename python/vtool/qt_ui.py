@@ -2135,7 +2135,8 @@ class CodeEditTabs(BasicWidget):
             if index > -1:
                 
                 self.tabs.removeTab(index)
-                self.code_tab_map.pop(titlename)
+                if self.code_tab_map.has_key(titlename):
+                    self.code_tab_map.pop(titlename)
             
             if index == -1 or index == None:
                 

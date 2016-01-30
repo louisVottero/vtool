@@ -157,6 +157,8 @@ class DataFolder(util_file.FileManager):
         
         folder = util_file.rename(self.folder_path, new_name)
         
+        
+        
         if not folder:
             return
         

@@ -3325,11 +3325,11 @@ class IkAppendageRig(BufferRig):
         
         self._create_pole_vector()
         
-        
-        if self.sub_control:
-            self._create_stretchy(top_control, self.sub_control, btm_control)
-        if not self.sub_control:
-            self._create_stretchy(top_control, self.btm_control, btm_control)
+        if self.create_stretchy:
+            if self.sub_control:
+                self._create_stretchy(top_control, self.sub_control, btm_control)
+            if not self.sub_control:
+                self._create_stretchy(top_control, self.btm_control, btm_control)
         
         
             

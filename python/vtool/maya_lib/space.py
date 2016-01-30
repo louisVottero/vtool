@@ -1760,7 +1760,7 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
         (str):  The name of the new group.
     """
     
-    parent = cmds.listRelatives(target_transform, p = True)
+    parent = cmds.listRelatives(target_transform, p = True, f = True)
     
     name = '%s_%s' % (prefix, target_transform)
     

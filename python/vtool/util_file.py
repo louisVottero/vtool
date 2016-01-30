@@ -1404,7 +1404,11 @@ def rename(directory, name, make_unique = False):
         return False
 
     try:
-        os.chmod(directory, stat.S_IWRITE)
+        
+        #os.chmod(directory, stat.S_IWRITE)
+        #os.chmod(directory, stat.S_IWUSR)
+        os.chmod(directory, stat.S_IRWXU| stat.S_IRWXG| stat.S_IRWXO | stat.S_IWRITE | stat.S_IWUSR)
+        
         os.rename(directory, renamepath)
     except:
         

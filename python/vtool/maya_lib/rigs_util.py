@@ -2317,3 +2317,4 @@ def scale_controls(value):
     
             if components:
                 cmds.scale(value, value, value, components, p = pivot, r = True)
+                
