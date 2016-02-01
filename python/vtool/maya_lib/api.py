@@ -405,7 +405,7 @@ class NurbsCurveFunction(MayaFunction):
                        three_value_list[1],
                        three_value_list[2] )
         
-        point = self.api_object.closestPoint(point.get_api_object())
+        point = self.api_object.closestPoint(point.get_api_object(), None, 0.0000001, OpenMaya.MSpace.kWorld)
                 
         return [point.x,point.y,point.z]
     

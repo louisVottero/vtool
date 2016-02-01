@@ -1874,6 +1874,12 @@ def get_attribute_outputs(node_and_attribute, node_only = False):
                                     source = False,
                                     skipConversionNodes = True)
 
+def get_message_input(node, message):
+    
+    input_value = get_attribute_input('%s.%s' % (node, message), node_only = True)
+    
+    return input_value
+
 def transfer_variables():
     pass
 

@@ -2100,6 +2100,8 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
         if scale_connect:
             attr.connect_scale(source_transform, target_transform)
     
+    attr.connect_message(local_group, source_transform, 'out_local')
+    
     return local_group, xform_group
 
 def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', name = 'sub_1', duplicate = False):
