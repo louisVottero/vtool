@@ -2783,7 +2783,7 @@ class IkAppendageRig(BufferRig):
         super(IkAppendageRig, self).__init__(description, side)
         
         self.create_twist = True
-        self.create_stretchy = False
+        self.create_stretchy = True
         self.btm_control = None
         self.offset_pole_locator = None
         self.pole_offset = 3
