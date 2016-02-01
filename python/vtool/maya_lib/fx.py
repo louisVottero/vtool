@@ -580,7 +580,20 @@ def add_mesh_to_keep_out(mesh, keep_out):
     
     cmds.connectAttr('%s.muscleData' % shape, '%s.muscleData[0]' % keep_out)
     
-def create_keep_out(match_to_transform = None, collide_mesh = None, name = None):
+def create_keep_out(collide_transform = None, collide_mesh = None, name = None):
+    """
+    Collide a transform with a mesh.
+    It will generate a locator that can be used to drive an aim or an ik, or a set driven key
+    
+    Args 
+        collide_transform (str): The transform that should collide with the mesh.  This needs to be a point in space, generally at the edge of the object that needs to collide. 
+        collide_mesh (str): The mesh that should collide with collide_transform.
+        name (str):  the description to give the nodes generated.
+
+    Return
+        list: [keep_out_node, keep_out_driven_locator]
+    """
+    
     
     if not name:
         keep_out = cmds.group(em = True, n = core.inc_name('cMuscleKeepOut_1'))
@@ -597,10 +610,10 @@ def create_keep_out(match_to_transform = None, collide_mesh = None, name = None)
     cmds.parent(locator, keep_out)
     
     
-    if match_to_transform and cmds.objExists(match_to_transform):
+    if collide_transform and cmds.objExists(collide_transform):
         
-        space.MatchSpace(match_to_transform, keep_out).translation_rotation()
-        space.MatchSpace(match_to_transform, keep_out).translation_to_rotate_pivot()
+        space.MatchSpace(collide_transform, keep_out).translation_rotation()
+        space.MatchSpace(collide_transform, keep_out).translation_to_rotate_pivot()
     
     if collide_mesh and cmds.objExists(collide_mesh):
         add_mesh_to_keep_out(collide_mesh, keep_out)
