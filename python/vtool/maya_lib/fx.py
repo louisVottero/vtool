@@ -544,6 +544,7 @@ def add_muscle_to_mesh(mesh):
     
     mesh_shape_name = core.get_basename(mesh_shape)
     shape = cmds.createNode('cMuscleObject', n = 'cMuscleObject_%s' % mesh_shape_name, p = mesh)
+    cmds.hide(shape)
     
     cmds.connectAttr('%s.worldMatrix' % mesh_shape, '%s.worldMatrixStart' % mesh)
     cmds.connectAttr('%s.worldMesh' % mesh_shape, '%s.meshIn' % shape)
