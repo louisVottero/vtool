@@ -1902,9 +1902,59 @@ def get_defined(module_path):
     
     for node in ast_tree.body:
         
-        
+        #if node:
+            #yield( node.lineno, node.col_offset, 'goobers', 'goo')
+        found_args_name = ''
         if isinstance(node, ast.FunctionDef):
-            function_name = node.name + '()'
+            
+            
+            if node.args:
+                found_args =[]
+                
+                defaults = node.args.defaults
+                
+                args = node.args.args
+                
+                args.reverse()
+                inc = 0
+                for arg in args:
+                    
+                    name = arg.id
+                    
+                    default_value = None
+                    
+                    if inc < len(defaults):
+                        default_value = defaults[inc]
+                    
+                    if default_value:
+                        
+                        value = None
+                        
+                        if isinstance(default_value, ast.Str):
+                            value = "'%s'" % default_value.s
+                        if isinstance(default_value, ast.Name):
+                            value = default_value.id
+                        if isinstance(default_value, ast.Num):
+                            value = default_value.n
+                        
+                        if value:
+                            found_args.append('%s=%s' % (name, value))
+                        if not value:
+                            found_args.append(name)
+                    if not default_value:
+                        found_args.append(name)
+                        
+                    inc += 1
+                        
+                found_args.reverse()
+                
+                found_args_name = string.join(found_args, ',')
+
+            
+            
+            
+            
+            function_name = node.name + '(%s)' % found_args_name
             defined.append( function_name )
             
         if isinstance(node, ast.ClassDef):
