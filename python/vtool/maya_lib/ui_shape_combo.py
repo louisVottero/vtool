@@ -28,6 +28,8 @@ class ComboManager(ui.MayaWindow):
         self.refresh_combo_list = True
         
         self.shape_widget.tree.manager = self.manager
+        
+        self._refresh()
     
     def _define_main_layout(self):
         layout = QtGui.QVBoxLayout()
@@ -79,6 +81,13 @@ class ComboManager(ui.MayaWindow):
         
         self.shape_widget.tree.load()
         self.combo_widget.tree.load()
+
+    def _refresh(self):
+        
+        shapes = self.manager.get_shapes()
+        
+        if shapes:
+            self._add_meshes(shapes)
 
     def _get_selected_shapes(self):
         
@@ -199,9 +208,7 @@ class ComboManager(ui.MayaWindow):
         
         if mesh_count > 1:
             self._add_meshes(meshes)
-        
-
-        
+            
 class ShapeWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):

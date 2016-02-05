@@ -1886,6 +1886,9 @@ class CodeEditTabs(BasicWidget):
         if self.code_tab_map.has_key(str(title)):
             self.code_tab_map.pop(str(title))
         
+        if self.code_floater_map.has_key(str(title)):
+            self.code_floater_map.pop(str(title))
+        
         if self.tabs.count() == 0:
             self.no_tabs.emit()
     
@@ -1981,8 +1984,6 @@ class CodeEditTabs(BasicWidget):
         code_edit_widget.filepath = filepath
         
         self.tabs.addTab(code_edit_widget, basename)
-        
-        
         
         code_widget = code_edit_widget.text_edit
         code_widget.set_file(filepath)
