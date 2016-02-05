@@ -1652,6 +1652,8 @@ class MayaFileData(MayaCustomData):
         
         maya_lib.core.delete_turtle_nodes()
         maya_lib.core.delete_garbage()
+        
+        
 
     def _prep_scene_for_export(self):
         outliner_sets = maya_lib.core.get_outliner_sets()

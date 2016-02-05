@@ -9,6 +9,13 @@ if vtool.util.is_in_maya():
 import core
 import attr
 
+def get_min_max_time():
+    
+    min = cmds.playbackOptions(query = True, minTime = True)
+    max = cmds.playbackOptions(query = True, maxTime = True)    
+    
+    return min,max
+
 def playblast(filename):
     """
     Playblast the viewport to the given filename path.
@@ -17,8 +24,9 @@ def playblast(filename):
         filename (str): This should be the path to a quicktime .mov file.
     """
     
-    min = cmds.playbackOptions(query = True, minTime = True)
-    max = cmds.playbackOptions(query = True, maxTime = True)
+    min, max = get_min_max_time()
+    #min = cmds.playbackOptions(query = True, minTime = True)
+    #max = cmds.playbackOptions(query = True, maxTime = True)
     
     sound = core.get_current_audio_node()
     

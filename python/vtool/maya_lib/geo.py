@@ -1408,3 +1408,7 @@ def add_poly_smooth(mesh):
         str: The name of the poly smooth node.
     """
     return cmds.polySmooth(mesh, mth = 0, dv = 1, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
+
+def smooth_preview(mesh, bool_value):
+    
+    cmds.setAttr('%s.displaySmoothMesh' % mesh, bool_value)
