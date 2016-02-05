@@ -499,7 +499,7 @@ class StoreControlData(attr.StoreData):
                 cmds.setAttr(attribute_name, data[attribute] )
             except:
                 pass
-            
+          
         
     def _find_other_side(self, control):
         
@@ -588,14 +588,20 @@ class StoreControlData(attr.StoreData):
         if not data:
             return
         
+        missing_controls = []
         
         for control in data:
             
             if cmds.objExists('%s.POSE' % control):
                 continue
+            if not cmds.objExists(control):
+                missing_controls.append(control)
        
             attribute_data = data[control]
             self._set_control_data(control, attribute_data)
+        
+        if missing_controls:
+            vtool.util.warning('%s is trying to set values on the following controls which are absent from the scene.\n %s' % (self.node, missing_controls)) 
             
         return data
             
