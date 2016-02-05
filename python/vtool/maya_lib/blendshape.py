@@ -827,7 +827,7 @@ class BlendshapeManager(object):
         
         home = self._get_home_mesh()
         
-        shapes = self.get_shapes_in_combo(name)
+        shapes = self.get_shapes_in_combo(name, include_combos=True)
         
         delta = self._get_combo_delta(mesh, shapes, home)
         
@@ -881,7 +881,7 @@ class BlendshapeManager(object):
         
         return vtool.util.find_possible_combos(shapes)
     
-    def get_shapes_in_combo(self, combo_name):
+    def get_shapes_in_combo(self, combo_name, include_combos = False):
         
         shapes = combo_name.split('_')
         
