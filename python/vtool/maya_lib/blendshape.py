@@ -679,8 +679,9 @@ class BlendshapeManager(object):
         temp_targets = []
         
         for shape in shapes:
-            new_shape = self.blendshape.recreate_target(shape)
-            temp_targets.append(new_shape)
+            if self.blendshape.is_target(shape):
+                new_shape = self.blendshape.recreate_target(shape)
+                temp_targets.append(new_shape)
         
         delta = deform.get_blendshape_delta(home, temp_targets, corrective_mesh, replace = False)
         
@@ -776,7 +777,7 @@ class BlendshapeManager(object):
             
             if split_target and len(split_target) == 1:
                 found.append(target)
-            
+        
         return found
     
     def rename_shape(self, old_name, new_name):
@@ -827,6 +828,7 @@ class BlendshapeManager(object):
         home = self._get_home_mesh()
         
         shapes = self.get_shapes_in_combo(name)
+        
         delta = self._get_combo_delta(mesh, shapes, home)
         
         if blendshape.is_target(name):
@@ -882,7 +884,13 @@ class BlendshapeManager(object):
     def get_shapes_in_combo(self, combo_name):
         
         shapes = combo_name.split('_')
-        return shapes
+        
+        combos = self.find_possible_combos(shapes)
+        combos.remove(combo_name)
+        
+        possible = shapes + combos
+        
+        return possible
     
     def get_associated_combos(self, shapes):
         
