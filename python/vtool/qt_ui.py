@@ -1558,7 +1558,10 @@ class HistoryFileWidget(DirectoryWidget):
         
         super(HistoryFileWidget, self).set_directory(directory)
         
-        self.version_list.set_directory(directory, refresh = False)    
+        if self.isVisible():
+            self.version_list.set_directory(directory, refresh = True)
+        if not self.isVisible():    
+            self.version_list.set_directory(directory, refresh = False)    
 
 class OptionFileWidget(DirectoryWidget):
     
