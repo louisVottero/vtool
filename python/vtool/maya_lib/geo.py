@@ -1409,6 +1409,21 @@ def add_poly_smooth(mesh):
     """
     return cmds.polySmooth(mesh, mth = 0, dv = 1, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
 
-def smooth_preview(mesh, bool_value):
+def smooth_preview(mesh, bool_value = True):
     
-    cmds.setAttr('%s.displaySmoothMesh' % mesh, bool_value)
+    if bool_value == True:
+        cmds.setAttr('%s.displaySmoothMesh' % mesh, 2)
+        
+    if bool_value == False:
+        cmds.setAttr('%s.displaySmoothMesh' % mesh, 0)
+        
+def smooth_preview_all(bool_value = True):
+    
+    meshes = cmds.ls(type = 'mesh')
+    
+    for mesh in meshes:
+        
+        intermediate = cmds.getAttr('%s.intermediateObject' % mesh)
+         
+        if intermediate == 0:
+            smooth_preview(mesh, bool_value)

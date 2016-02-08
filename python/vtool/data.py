@@ -1653,8 +1653,11 @@ class MayaFileData(MayaCustomData):
         maya_lib.core.delete_turtle_nodes()
         maya_lib.core.delete_garbage()
         
+    def _after_open(self):
         
-
+        maya_lib.geo.smooth_preview_all(False)
+        self._center_view()
+        
     def _prep_scene_for_export(self):
         outliner_sets = maya_lib.core.get_outliner_sets()
         top_nodes = maya_lib.core.get_top_dag_nodes()
@@ -1683,12 +1686,11 @@ class MayaFileData(MayaCustomData):
             import_file = self.filepath
         
         maya_lib.core.import_file(import_file)
-        #cmds.file(import_file, f = True, i = True, iv = True)
         
-        self._center_view()
+        self._after_open()
         
     def open(self, filepath = None):
-        
+                
         open_file = None
         
         if filepath:
@@ -1710,7 +1712,8 @@ class MayaFileData(MayaCustomData):
             
             util.show(traceback.format_exc())
             
-        self._center_view()
+        self._after_open()
+        
        
     def save(self, comment):
 
@@ -1733,8 +1736,6 @@ class MayaFileData(MayaCustomData):
                 
 
         cmds.file(rename = self.filepath)
-        
-        #self._prep_scene_for_export()
         
         cmds.file(save = True,
                   prompt = False, 
