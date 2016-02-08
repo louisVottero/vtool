@@ -512,6 +512,32 @@ class CurveDataInfo():
                
         if library_name:
             self.library_curves[library_name][transform] = [mel_data_list, curve_type]
+            
+    def remove_curve(self, curve, library_name = None):
+        if not curve:
+            
+            return
+        
+        if not library_name:
+            
+            library_name = self.active_library
+            
+            if not self.active_library:
+                vtool.util.warning('Must set active library before running this function.')
+                return
+            
+        mel_data_list = self._get_mel_data_list(curve)
+                    
+        transform = self._get_curve_parent(curve)
+        
+        if self.library_curves.has_key(library_name):
+            
+            if self.library_curves[library_name].has_key(transform):
+            
+                self.library_curves[library_name].pop(transform)
+                
+                return True
+            
         
     def create_curve(self, curve_name):
         if not self.active_library:

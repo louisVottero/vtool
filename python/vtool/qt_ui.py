@@ -1037,10 +1037,11 @@ class FileTreeWidget(TreeWidget):
         
         return util_file.join_path(self.directory, path_string)
 
-    def set_directory(self, directory):
+    def set_directory(self, directory, refresh = True):
         
         self.directory = directory
-        self.refresh()
+        if refresh:
+            self.refresh()
         
 class EditFileTreeWidget(DirectoryWidget):
     
@@ -1221,8 +1222,11 @@ class FileManagerWidget(DirectoryWidget):
         super(FileManagerWidget, self).__init__(parent)
         
         self.data_class = self._define_data_class()
-        self.save_widget.set_data_class(self.data_class)
-        self.history_widget.set_data_class(self.data_class)
+        #self.save_widget.set_data_class(self.data_class)
+        #self.history_widget.set_data_class(self.data_class)
+        
+        #if self.option_widget:
+        #    self.option_widget.set_data_class(self.data_class)
         
         self.history_attached = False
         
@@ -1248,8 +1252,10 @@ class FileManagerWidget(DirectoryWidget):
                 
         self.tab_widget.addTab(self.save_widget, self.main_tab_name)
         self._add_history_widget()
-        self.tab_widget.currentChanged.connect(self._tab_changed)
-                
+        
+        self._add_option_widget()
+            
+        self.tab_widget.currentChanged.connect(self._tab_changed)    
         self.main_layout.addWidget(self.tab_widget)
         
         self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
@@ -1265,28 +1271,68 @@ class FileManagerWidget(DirectoryWidget):
         
         self.history_widget.hide()
         
+    def _add_option_widget(self):
+        
+        self.option_widget = self._define_option_widget()
+        
+        if not self.option_widget:
+            return
+        
+        self.option_buffer_widget = BasicWidget()
+        
+        self.tab_widget.addTab(self.option_buffer_widget, 'Options')
+        
     def _define_save_widget(self):
         return SaveFileWidget()
         
     def _define_history_widget(self):
         return HistoryFileWidget()
         
+    def _define_option_widget(self):
+        return
+        
+    def _hide_history(self):
+        
+        self.history_widget.hide()
+        
+        if self.history_attached:
+            self.history_buffer_widget.main_layout.removeWidget(self.history_widget)
+                
+        self.history_attached = False
+    
+    def _show_history(self):
+        self.update_history()
+    
+    def _hide_options(self):
+        if self.option_widget:
+            self.option_buffer_widget.main_layout.removeWidget(self.option_widget)
+    
+    def _show_options(self):
+        if self.option_widget:
+            self.option_buffer_widget.main_layout.addWidget(self.option_widget)
+            self.option_widget.set_directory(self.directory)
+            self.option_widget.data_class = self.data_class
+            
+        self.option_widget.tab_update()
+        
     def _tab_changed(self):
                                 
         if self.tab_widget.currentIndex() == 0:
             
-            self.history_widget.hide()
-            self.history_widget.refresh()
-            
             self.save_widget.set_directory(self.directory)
             
-            if self.history_attached:
-                self.history_buffer_widget.main_layout.removeWidget(self.history_widget)
+            self._hide_history()
+            self._hide_options()
             
-            self.history_attached = False
-                
         if self.tab_widget.currentIndex() == 1:
-            self.update_history()
+            
+            self._hide_options()
+            self._show_history()
+                
+        if self.tab_widget.currentIndex() == 2:
+            
+            self._show_options()
+            self._hide_history()
                         
     def _file_changed(self):
         
@@ -1300,13 +1346,17 @@ class FileManagerWidget(DirectoryWidget):
         if not self.directory:
             return
         
-        version_tool = util_file.VersionFile(self.directory)    
-        files = version_tool.get_versions()
+        version_tool = util_file.VersionFile(self.directory)   
+         
+        has_versions = version_tool.has_versions()
         
-        if files:
+        if has_versions:
             self.tab_widget.setTabEnabled(1, True)
-        if not files:
+        if not has_versions:
             self.tab_widget.setTabEnabled(1, False) 
+        
+    def add_option_widget(self):
+        self._add_option_widget()
         
     def update_history(self):
         self.history_buffer_widget.main_layout.addWidget(self.history_widget)
@@ -1321,14 +1371,22 @@ class FileManagerWidget(DirectoryWidget):
     def set_directory(self, directory):
         super(FileManagerWidget, self).set_directory(directory)
         
+        if self.data_class:
+            self.data_class.set_directory(directory)
+        
         if self.tab_widget.currentIndex() == 0:
             self.save_widget.set_directory(directory)
+            self.save_widget.data_class = self.data_class
         
         if self.tab_widget.currentIndex() == 1:
             self.history_widget.set_directory(directory)
+            self.history_widget.data_class = self.data_class
+            
+        if self.tab_widget.currentIndex() == 2:
+            self.option_widget.set_directory(directory)
+            self.option_widget.data_class = self.data_class
         
-        if self.data_class:
-            self.data_class.set_directory(directory)
+        
             
         self._file_changed()
         
@@ -1348,12 +1406,20 @@ class SaveFileWidget(DirectoryWidget):
     def _build_widgets(self):
         
         self.save_button = QtGui.QPushButton('Save')
-        load_button = QtGui.QPushButton('Open')
+        self.load_button = QtGui.QPushButton('Open')
+        
+        self.save_button.setMaximumWidth(100)
+        self.load_button.setMaximumWidth(100)
+        self.save_button.setMinimumWidth(70)
+        self.load_button.setMinimumWidth(70)
+        
+        self.save_button.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
+        self.load_button.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         
         self.save_button.clicked.connect(self._save)
-        load_button.clicked.connect(self._open)
+        self.load_button.clicked.connect(self._open)
         
-        self.main_layout.addWidget(load_button)
+        self.main_layout.addWidget(self.load_button)
         self.main_layout.addWidget(self.save_button)
         
         
@@ -1492,8 +1558,31 @@ class HistoryFileWidget(DirectoryWidget):
         
         super(HistoryFileWidget, self).set_directory(directory)
         
-        self.version_list.set_directory(directory)    
+        self.version_list.set_directory(directory, refresh = False)    
 
+class OptionFileWidget(DirectoryWidget):
+    
+    def __init__(self, parent = None):
+        super(OptionFileWidget, self).__init__(parent)
+        
+        self.data_class = None
+        
+    def set_data_class(self, data_class_instance):
+        self.data_class = data_class_instance
+        
+        if self.directory:
+            self.data_class.set_directory(self.directory)
+    
+    def set_directory(self, directory):
+        super(OptionFileWidget, self).set_directory(directory)
+        
+        if self.data_class:
+            self.data_class.set_directory(self.directory)
+            
+    def tab_update(self):
+        print 'tab update!'
+        return
+            
 class GetString(BasicWidget):
     
     text_changed = create_signal(object)
@@ -1664,6 +1753,7 @@ class GetNumberButton(GetNumber):
         self.button = QtGui.QPushButton('run')
         self.button.clicked.connect(self._clicked)
         self.button.setMaximumWidth(60)
+        
         
         self.main_layout.addWidget(self.button)
         

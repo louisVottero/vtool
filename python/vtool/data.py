@@ -472,8 +472,7 @@ class ControlCvData(MayaCustomData):
     def _data_type(self):
         return 'maya.control_cvs'
     
-    def import_data(self, filename = None):
-        
+    def _initialize_library(self, filename = None):
         if not filename:
             directory = self.directory
             name = self.name
@@ -482,14 +481,22 @@ class ControlCvData(MayaCustomData):
             directory = util_file.get_dirname(filename)
             name = util_file.get_basename(filename)
         
-        controls = maya_lib.rigs_util.get_controls()
+        
         
         library = maya_lib.curve.CurveDataInfo()
         library.set_directory(directory)
+        
         if filename:
             library.set_active_library(name, skip_extension= True)
         if not filename:
             library.set_active_library(name)
+            
+        return library
+    
+    def import_data(self, filename = None):
+        
+        library = self._initialize_library(filename)
+        controls = maya_lib.rigs_util.get_controls()
             
         for control in controls:
             
@@ -506,7 +513,8 @@ class ControlCvData(MayaCustomData):
     
     def export_data(self, comment):
         
-        library = maya_lib.curve.CurveDataInfo()
+        library = self._initialize_library()
+        
         controls = maya_lib.rigs_util.get_controls()
         
         library.set_directory(self.directory)
@@ -522,6 +530,28 @@ class ControlCvData(MayaCustomData):
         version.save(comment)
         
         util.show('Exported %s data.' % self.name)
+        
+    def get_curves(self, filename = None):
+        
+        library = self._initialize_library(filename)
+        curves = library.get_curve_names()
+        
+        return curves
+        
+    def remove_curve(self, curve_name, filename = None):
+        
+        curve_list = util.convert_to_sequence(curve_name)
+        
+        library = self._initialize_library(filename)
+        
+        for curve in curve_list:
+            library.remove_curve(curve)
+            
+        library.write_data_to_file()
+        
+        return True
+        
+        
           
 class SkinWeightData(MayaCustomData):
     """
@@ -816,6 +846,28 @@ class SkinWeightData(MayaCustomData):
         
         version = util_file.VersionFile(path)
         version.save(comment)
+        
+    def get_skin_meshes(self):
+        
+        path = util_file.join_path(self.directory, self.name)
+        
+        meshes = util_file.get_folders(path)
+        
+        return meshes
+    
+    def remove_mesh(self, mesh):
+        
+        path = util_file.join_path(self.directory, self.name)
+        
+        util_file.delete_dir(mesh, path)
+        
+        test_path = util_file.join_path(path, mesh)
+        
+        if not util_file.is_dir(test_path):
+            return True
+        
+        return False
+        
         
              
 class LoadWeightFileThread(threading.Thread):

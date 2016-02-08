@@ -655,15 +655,137 @@ class ControlCvFileWidget(MayaDataFileWidget):
     def _define_data_class(self):
         return vtool.data.ControlCvData()
     
+    def _define_option_widget(self):
+        return ControlCvOptionFileWidget()
+    
     def _define_main_tab_name(self):
         return 'Control Cvs'
+    
+class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
+    
+    def _build_widgets(self):
+        super(ControlCvOptionFileWidget, self)._build_widgets()
+        
+        data_options_layout = QtGui.QVBoxLayout()
+                
+        list_widget = QtGui.QListWidget()
+        list_widget.setSizePolicy(QtGui.QSizePolicy.Minimum,QtGui.QSizePolicy.Minimum)
+        list_widget.setMaximumHeight(100)
+        list_widget.setSelectionMode(list_widget.ExtendedSelection)
+        list_widget.setSortingEnabled(True)
+        
+        remove_button = QtGui.QPushButton('Delete Curve Cv Data')
+        remove_button.clicked.connect(self._remove_curves)
+                
+        self.curve_list = list_widget
+        
+        data_options_layout.addWidget(list_widget)
+        data_options_layout.addWidget(remove_button)
+    
+        self.main_layout.addSpacing(20)
+        self.main_layout.addLayout(data_options_layout)
+   
+    def _remove_curves(self):
+        
+        items = self.curve_list.selectedItems()
+        
+        if not items:
+            return
+        
+        for item in items:
+            curve = str(item.text())
+            
+            removed = self.data_class.remove_curve(curve)
+            
+            if removed:
+                index = self.curve_list.indexFromItem(item)
+                
+                remove_item = self.curve_list.takeItem(index.row())
+                del(remove_item)
+                
+        
+                
+    
+    def tab_update(self):
+        
+        self.curve_list.clear()
+        
+        curves = self.data_class.get_curves()
+        
+        
+        if not curves:
+            return
+        
+        for curve in curves:
+            item = QtGui.QListWidgetItem(curve)
+            self.curve_list.addItem(item)
         
 class SkinWeightFileWidget(MayaDataFileWidget):
+    
+    def _define_option_widget(self):
+        return SkinWeightOptionFileWidget()
+        
     def _define_data_class(self):
         return vtool.data.SkinWeightData()
     
     def _define_main_tab_name(self):
-        return 'Skin Weights' 
+        return 'Skin Weights'
+    
+class SkinWeightOptionFileWidget(vtool.qt_ui.OptionFileWidget):
+    
+    def _build_widgets(self):
+        super(SkinWeightOptionFileWidget, self)._build_widgets()
+        
+        data_options_layout = QtGui.QVBoxLayout()
+                
+        list_widget = QtGui.QListWidget()
+        list_widget.setSizePolicy(QtGui.QSizePolicy.Minimum,QtGui.QSizePolicy.Minimum)
+        list_widget.setMaximumHeight(100)
+        list_widget.setSelectionMode(list_widget.ExtendedSelection)
+        list_widget.setSortingEnabled(True)
+        
+        remove_button = QtGui.QPushButton('Delete Mesh Skin Weights')
+        remove_button.clicked.connect(self._remove_meshes)
+                
+        self.mesh_list = list_widget
+        
+        data_options_layout.addWidget(list_widget)
+        data_options_layout.addWidget(remove_button)
+    
+        self.main_layout.addSpacing(20)
+        self.main_layout.addLayout(data_options_layout)
+        
+    def _remove_meshes(self):
+        
+        items = self.mesh_list.selectedItems()
+        
+        if not items:
+            return
+        
+        for item in items:
+            folder = str(item.text())
+            
+            removed = self.data_class.remove_mesh(folder)
+            
+            if removed:
+                index = self.mesh_list.indexFromItem(item)
+                
+                remove_item = self.mesh_list.takeItem(index.row())
+                del(remove_item)
+        
+        
+    def tab_update(self):
+        
+        self.mesh_list.clear()
+        
+        meshes = self.data_class.get_skin_meshes()
+        
+        if not meshes:
+            return
+        
+        for mesh in meshes:
+            item = QtGui.QListWidgetItem(mesh)
+            self.mesh_list.addItem(item)
       
 class DeformerWeightFileWidget(MayaDataFileWidget):
     def _define_data_class(self):

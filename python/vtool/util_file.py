@@ -377,6 +377,22 @@ class VersionFile(object):
         
         return inc_file_name
     
+    def has_versions(self):
+        version_folder = self._get_version_folder()
+        
+        if is_dir(version_folder):
+            return True
+        
+        """
+        files = get_files_and_folders(version_folder)
+        
+        if not files:
+            return
+            
+        for filepath in files: 
+            if filepath.startswith(self.version_name):
+                return True
+        """
     def set_version_folder(self, folder_path):
         """
         Set the folder where the version folder should be created.
