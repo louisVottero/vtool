@@ -347,13 +347,20 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         self.clear()
         self.list_refresh.emit()
         
-    def _current_pose(self):
+    def _current_item(self):
+        
         selected = self.selectedItems()
         
         item = None
         
         if selected:
             item = selected[0]
+            
+        return item
+        
+    def _current_pose(self):
+        
+        item = self._current_item()
             
         if item:
             return str(item.text(0))
@@ -417,7 +424,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
     
     def _remove_current_item(self):
         
-        item = self.currentItem()
+        item = self._current_item()
         
         parent_item = item.parent()
         
@@ -435,14 +442,14 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         
     def delete_pose(self):
         
-        permission = qt_ui.get_permission('Delete Pose?', self)
-        
-        if not permission:
-            return
-        
         pose = self._current_pose()
         
         if not pose:
+            return
+        
+        permission = qt_ui.get_permission('Delete Pose: %s?' % pose, self)
+        
+        if not permission:
             return
         
         corrective.PoseManager().delete_pose(pose)
