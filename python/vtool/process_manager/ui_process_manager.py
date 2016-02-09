@@ -314,6 +314,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.code_widget.set_external_code_library(code_directory)
                 
                 self.code_widget.set_settings(self.settings)
+                self.code_widget.set_current_process(self.process.get_name())
                 
                 self.last_tab = 3
                 
@@ -323,7 +324,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _update_process(self, name):
         
-        self.code_widget.code_widget.code_edit.save_tabs(self.last_process)
         self.code_widget.code_widget.code_edit.close_tabs()
         self.code_widget.script_widget.code_manifest_tree.clearSelection()
         self.code_widget.code_widget.code_edit.clear()

@@ -1583,7 +1583,6 @@ class OptionFileWidget(DirectoryWidget):
             self.data_class.set_directory(self.directory)
             
     def tab_update(self):
-        print 'tab update!'
         return
             
 class GetString(BasicWidget):
@@ -1948,6 +1947,9 @@ class CodeEditTabs(BasicWidget):
         
         self.previous_widget = None
         
+        self.suppress_tab_close_save = False
+        self.current_process = None
+        
             
     def _tab_changed(self):
           
@@ -2001,6 +2003,7 @@ class CodeEditTabs(BasicWidget):
         self.main_layout.addWidget(self.tabs)
         
         self.tabs.double_click.connect(self._tab_double_click)
+        self.tabs.tabCloseRequested.connect(self._tab_close_requested)
 
     def _tab_double_click(self, index):
         
@@ -2009,6 +2012,20 @@ class CodeEditTabs(BasicWidget):
         filepath = code_widget.text_edit.filepath        
         
         self.add_floating_tab(filepath, title)
+        
+    def _tab_close_requested(self, index):
+        
+        if self.suppress_tab_close_save:
+            return
+        
+        widget = self.tabs.widget(index)
+        
+        if widget.text_edit.document().isModified():
+            permission = get_permission('Unsaved changes. Save?', self)
+            if not permission:
+                return
+            self.multi_save.emit(widget.text_edit, None)
+        
         
     def set_group(self, group):
         self.group = group
@@ -2041,7 +2058,12 @@ class CodeEditTabs(BasicWidget):
         code_edit_widget = CodeEdit()
         
         code_edit_widget.filepath = filepath
+
         code_edit_widget.add_menu_bar()
+        
+        if self.current_process:
+            code_edit_widget.add_process_title(self.current_process)
+            
         code_edit_widget.set_file(filepath)
         
         code_widget = code_edit_widget.text_edit
@@ -2091,7 +2113,7 @@ class CodeEditTabs(BasicWidget):
         
         
       
-    def save_tabs(self, note):
+    def save_tabs(self, note = None):
         
         found = []
         
@@ -2243,10 +2265,14 @@ class CodeEditTabs(BasicWidget):
                 
     def close_tabs(self):
         
+        self.save_tabs()
+        
         tab_count = self.tabs.count()
         
         for inc in range(0, tab_count):
             self._close_tab(inc)
+            
+        
                 
     def show_window(self, filepath):
         
@@ -2335,14 +2361,25 @@ class CodeEdit(BasicWidget):
         
         self.menu_bar = QtGui.QMenuBar()
         
+        
+        
+        
         self.main_layout.insertWidget(0, self.menu_bar)
         
+        
         file_menu = self.menu_bar.addMenu('File')
+        
+        
         save_action = file_menu.addAction('Save')
         browse_action = file_menu.addAction('Browse')
         
         save_action.triggered.connect(self.text_edit._save)
         browse_action.triggered.connect(self._open_browser)
+        
+    def _build_process_title(self, title):
+        
+        process_title = QtGui.QLabel('Process: %s' % title)
+        self.main_layout.insertWidget(0, process_title)
         
     def _open_browser(self):
         
@@ -2372,7 +2409,9 @@ class CodeEdit(BasicWidget):
     def _text_file_set(self):
         self.save_state.setText('No Changes')
     
-    
+    def add_process_title(self, title):
+        self._build_process_title(title)
+        
     def add_menu_bar(self):
         
         self._build_menu_bar()
@@ -2383,7 +2422,7 @@ class CodeEdit(BasicWidget):
             self.fullpath = QtGui.QLabel()
             self.status_layout.addWidget(self.fullpath)
             
-        self.fullpath.setText('Fullpath: %s' % filepath)
+        self.fullpath.setText('Fullpath:  %s' % filepath)
         self.save_state.setText('No Changes')
         
 class ListAndHelp(QtGui.QListView):

@@ -678,14 +678,17 @@ class SplitMeshTarget(object):
                         
                         if name.endswith('N'):
                             sub_new_name += 'N'
+                        
+                        if split_index[1] and split_index[0] == inc:
                             
-                        if split_index and split_index[0] == inc:
                             new_names.append(split_index[1])
                             
+                        print 'appending', sub_new_name
                         new_names.append(sub_new_name)
                         
                         inc += 1
                         
+                    print new_names
                     new_name = string.join(new_names, '_')
             
             if not split_name_option:

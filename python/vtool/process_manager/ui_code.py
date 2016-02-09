@@ -13,6 +13,7 @@ import process
 
 from vtool import qt_ui
 from vtool import util_file
+from multiprocessing.dummy import current_process
 
 if vtool.qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
@@ -55,6 +56,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.splitter.splitterMoved.connect(self._splitter_moved)
         self.settings = None
+        self.current_process = None
                 
     def _splitter_moved(self, pos, index):
         
@@ -179,6 +181,10 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self._close_splitter()
         
+    def set_current_process(self, process_name):
+        self.current_process = process_name
+        self.code_widget.set_current_process(process_name)
+        
     def set_code_directory(self, directory):
         self.code_directory = directory
         
@@ -214,6 +220,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.setSizePolicy(policy)
                
         self.directory = None
+        self.current_process = None
         
         
     def _build_widgets(self):
@@ -282,7 +289,9 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
     
         
-    def _multi_save(self, widgets, note):
+    def _multi_save(self, widgets, note = None):
+        
+        widgets = vtool.util.convert_to_sequence(widgets)
         
         if not widgets:
             return
@@ -322,6 +331,11 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         if path:
             self.save_file.show()
             self.code_edit.show()
+        
+    def set_current_process(self, process_name):
+        self.current_process = process_name
+        
+        self.code_edit.current_process = process_name
         
             
         
