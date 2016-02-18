@@ -174,8 +174,6 @@ class ComboManager(ui.MayaWindow):
         
         shapes = self._get_selected_shapes()
         
-        print 'shapes!', shapes
-        
         if self.refresh_combo_list:
             self._update_combo_selection(shapes)
             
@@ -431,8 +429,6 @@ class ShapeTree(qt_ui.TreeWidget):
         
         shape = str(item.text(0))
         
-        print 'create children for', shape
-        
         if not inbetweens:
             inbetweens = self.manager.get_inbetweens(shape)
         
@@ -576,19 +572,13 @@ class ShapeTree(qt_ui.TreeWidget):
         
     def select_shapes(self, shapes):
         
-        print 'select', shapes
-        
         self.clearSelection()
         
-        
-        
         for inc in range(0, self.topLevelItemCount()):
-            print inc
+            
             item = self.topLevelItem(inc)
             
             item_name = str(item.text(0))
-            
-            print item_name
             
             if item_name in shapes:
                 item.setSelected(True)

@@ -228,8 +228,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _update_process(self, name):
         
-        print 'update process!', name
-        
         self.code_widget.code_widget.code_edit.close_tabs()
         self.code_widget.script_widget.code_manifest_tree.clearSelection()
         self.code_widget.code_widget.code_edit.clear()
@@ -241,8 +239,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if items and name != None:
             title = items[0].get_name()
-        
-        print title
         
         if name:
             
@@ -268,8 +264,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_button.setDisabled(True)
             
         self.last_process = name
-        
-        print 'done!!!!!!!!!!!!'
         
     def _set_default_directory(self):
         default_directory = process.get_default_directory()

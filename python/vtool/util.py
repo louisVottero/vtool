@@ -876,7 +876,6 @@ class FindUniqueString(object):
         return get_end_number(self.test_string)
     
     def _search(self):
-        print 'search!!!'
         
         number = self._get_number()
         
@@ -885,17 +884,16 @@ class FindUniqueString(object):
         unique = False
         
         while not unique:
-            print 'not unique!!!'
             
             scope = self._get_scope_list()
             
             if not self.increment_string in scope:
                 unique = True
-                print 'here!!!!!!!, unique!!!'
                 continue
+            
             import maya.cmds as cmds
             if self.increment_string in scope:
-                print 'already existed!', self.increment_string, cmds.objExists(self.increment_string)
+                
                 if not number:
                     number = 0
                 

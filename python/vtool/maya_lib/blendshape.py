@@ -1004,9 +1004,6 @@ class ShapeComboManager(object):
     def rename_shape(self, old_name, new_name):
         
         inbetweens = self.get_inbetweens(old_name)
-
-        print 'rename shape'
-        print inbetweens
         
         for inbetween in inbetweens:
             
@@ -1019,10 +1016,6 @@ class ShapeComboManager(object):
         
         attributes = attr.Attributes(self.setup_group)
         attributes.rename_variable(old_name, new_name)
-        
-        
-        
-
         
         return name
         

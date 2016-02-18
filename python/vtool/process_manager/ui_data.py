@@ -968,9 +968,6 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
     def _save_file(self):
         
-        print 'save file', self.directory
-        
-        
         if self._skip_mismatch_file():
             return
         
@@ -999,8 +996,6 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.file_changed.emit()
         
     def _open_file(self):
-        
-        print 'open file', self.directory
         
         if vtool.util.is_in_maya():
             import maya.cmds as cmds
@@ -1093,8 +1088,6 @@ class ProcessBuildDataWidget(MayaFileWidget):
         return ProcessSaveFileWidget()
     
     def update_data(self, data_directory):
-        
-        print 'update build data', data_directory
         
         data_folder = vtool.data.DataFolder('build', data_directory)
         
