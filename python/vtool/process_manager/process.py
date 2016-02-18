@@ -1230,6 +1230,9 @@ class Process(object):
         status = None
         #read = None
         
+        if util.is_in_maya():
+            cmds.undoInfo(openChunk = True)
+        
         try:
             
             if not script.find(':') > -1:
@@ -1274,6 +1277,8 @@ class Process(object):
             
         try:
             
+            
+            
             if util.is_in_maya():
                 
                 import maya.cmds as cmds
@@ -1283,13 +1288,7 @@ class Process(object):
             
             if hasattr(module, 'main'):
                 
-                if util.is_in_maya():
-                    cmds.undoInfo(openChunk = True)
-                
                 module.main()
-                
-                if util.is_in_maya():
-                    cmds.undoInfo(closeChunk = True)
                 
                 status = 'Success'
 
@@ -1301,11 +1300,10 @@ class Process(object):
                 util.warning('main() not found in %s.' % script)
                                 
             del module
-                                
+            
         except Exception:
             
             status = traceback.format_exc()
-
             
             if hard_error:
                 raise
@@ -1313,6 +1311,9 @@ class Process(object):
             if not hard_error:
                 return status
         
+        if util.is_in_maya():
+            cmds.undoInfo(closeChunk = True)        
+    
         return status
                
     def run(self):
