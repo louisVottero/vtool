@@ -1295,14 +1295,16 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         status = process_tool.run_script(code_file, False)
         
+        
         if status == 'Success':
             item.set_state(1)
         if not status == 'Success':
             item.set_state(0)
             
             vtool.util.show(status) 
-            
-        self.scrollToItem(item)       
+         
+        self.scrollToItem(item) 
+              
 
     def refresh(self, sync = False):
         
@@ -1443,13 +1445,16 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             for item in items:
                 
                 name = item.text(0)
+                
                 path = self._get_item_path(item)
+                
                 if path:
                     name = util_file.join_path(path, name)
                 
                 if name == scripts[inc]:
                     
                     self._run_item(item, process_tool)
+                    
                     
                     if not item.isExpanded():
                         child_count = item.childCount()
@@ -1465,7 +1470,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                                 child_item = item.child(inc)
                                 
                                 self._run_item(child_item, process_tool)
-                                    
+
                             item.setExpanded(False)
                     
                     

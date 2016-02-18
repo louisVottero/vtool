@@ -1223,6 +1223,7 @@ class Process(object):
         """
         
         if util.is_in_maya():
+            
             import maya.cmds as cmds
             cmds.refresh()
             
@@ -1242,7 +1243,6 @@ class Process(object):
             
             self._center_view()
             name = util_file.get_basename(script)
-            #path = util_file.get_parent_path(script)
             
             for external_code_path in self.external_code_paths:
                 if util_file.is_dir(external_code_path):
@@ -1263,7 +1263,6 @@ class Process(object):
             
             module.process = self
             
-            
         except Exception:
             status = traceback.format_exc()
             
@@ -1271,39 +1270,29 @@ class Process(object):
                 raise
             
             if not hard_error:
-                #util.show(status)
                 return status
             
         try:
             
             if util.is_in_maya():
-                import vtool.maya_lib.util as maya_util
-                
-                # read
-                #read = maya_util.ScriptEditorRead()
-                #read.start()
-                # read
                 
                 import maya.cmds as cmds
+                
                 module.cmds = cmds
                 module.show = util.show
             
             if hasattr(module, 'main'):
                 
-                module.main()
-                status = 'Success'
+                if util.is_in_maya():
+                    cmds.undoInfo(openChunk = True)
                 
-                # read
-                #if read:
-                #    value = maya_util.script_editor_value
-                #    read.end()
-                    
-                #    for line in value:
-                #        util.show('\t%s' % line)
-                    
-                #    if value:
-                #        util.show('\n')
-                #read
+                module.main()
+                
+                if util.is_in_maya():
+                    cmds.undoInfo(closeChunk = True)
+                
+                status = 'Success'
+
                 
             if not hasattr(module, 'main'):
                 
@@ -1317,22 +1306,11 @@ class Process(object):
             
             status = traceback.format_exc()
 
-            #read
-            #if read:
-            #    value = maya_util.script_editor_value
-            #    read.end()
-                
-            #    for line in value:
-            #        util.show('\t' + line)
-            #read
-            
-            
             
             if hard_error:
                 raise
             
             if not hard_error:
-                #util.show(status)
                 return status
         
         return status

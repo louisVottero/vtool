@@ -74,6 +74,7 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
         infinite (bool): The bool attribute. 
         
     """
+    
     track_nodes = core.TrackNodes()
     track_nodes.load('animCurve')
     
@@ -102,7 +103,7 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
     if infinite == 'pre_only':
             
         function.set_pre_infinity(function.linear)
-
+    
     return keyframe
 
 def get_input_keyframes(node, node_only = True):

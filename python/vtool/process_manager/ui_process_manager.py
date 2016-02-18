@@ -449,6 +449,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 continue
             
             self.code_widget.set_process_script_state(scripts[inc], 2)
+            
             status = self.process.run_script(script_name, False)
             
             if not status == 'Success':
@@ -464,6 +465,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.code_widget.set_process_script_state(scripts[inc], 1)
                 
                 util.show('\tSuccess')
+            
             
             
         self.process_button.setEnabled(True)
