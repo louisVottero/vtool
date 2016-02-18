@@ -37,6 +37,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget = None
         self.last_item = None
         self.runtime_values = {}
+        self.handle_selection_change = True
         
         super(ProcessManagerWindow, self).__init__(parent) 
         
@@ -81,6 +82,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._set_title(name)
         
     def _item_selection_changed(self):
+        
+        if not self.handle_selection_change:
+            return
         
         items = self.view_widget.tree_widget.selectedItems()
         
@@ -222,6 +226,51 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         #self.main_layout.addWidget( self.build_widget, alignment = QtCore.Qt.AlignBottom )
         
+    def _update_process(self, name):
+        
+        print 'update process!', name
+        
+        self.code_widget.code_widget.code_edit.close_tabs()
+        self.code_widget.script_widget.code_manifest_tree.clearSelection()
+        self.code_widget.code_widget.code_edit.clear()
+        
+        
+        items = self.view_widget.tree_widget.selectedItems()
+        
+        title = '-'
+        
+        if items and name != None:
+            title = items[0].get_name()
+        
+        print title
+        
+        if name:
+            
+            self.process.load(name)  
+            
+            if self.runtime_values:
+                self.process.set_runtime_dict(self.runtime_values)      
+            
+            self._set_title(title)
+
+            self.tab_widget.setTabEnabled(2, True)
+            self.tab_widget.setTabEnabled(3, True)
+            
+            self.process_button.setEnabled(True)
+        
+        if not name:
+            
+            self._set_title('-')
+
+            self.tab_widget.setTabEnabled(2, False)
+            self.tab_widget.setTabEnabled(3, False)
+            
+            self.process_button.setDisabled(True)
+            
+        self.last_process = name
+        
+        print 'done!!!!!!!!!!!!'
+        
     def _set_default_directory(self):
         default_directory = process.get_default_directory()
         
@@ -322,42 +371,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.last_tab = 1
         
-    def _update_process(self, name):
-        
-        self.code_widget.code_widget.code_edit.close_tabs()
-        self.code_widget.script_widget.code_manifest_tree.clearSelection()
-        self.code_widget.code_widget.code_edit.clear()
-        
-        items = self.view_widget.tree_widget.selectedItems()
-        if items:
-            title = items[0].get_name()
-        if not items:
-            title = '-'
-        
-        if name:
-            
-            self.process.load(name)  
-            
-            if self.runtime_values:
-                self.process.set_runtime_dict(self.runtime_values)      
-            
-            self._set_title(title)
 
-            self.tab_widget.setTabEnabled(2, True)
-            self.tab_widget.setTabEnabled(3, True)
-            
-            self.process_button.setEnabled(True)
-        
-        if not name:
-            
-            self._set_title('-')
-
-            self.tab_widget.setTabEnabled(2, False)
-            self.tab_widget.setTabEnabled(3, False)
-            
-            self.process_button.setDisabled(True)
-            
-        self.last_process = name
         
     def _get_current_path(self):
         items = self.view_widget.tree_widget.selectedItems()
@@ -536,6 +550,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def set_project_directory(self, directory, sub_part = None):
         #history should not be there...
         
+        #handle selection change should use a decorator...
+        self.handle_selection_change = False
+        
         if type(directory) != list:
             directory = ['', directory]
         
@@ -544,6 +561,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not directory:
             self.process.set_directory(None)
             self.view_widget.set_directory(None)
+            self.handle_selection_change = True
             return
 
         if not sub_part:
@@ -566,8 +584,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.settings.set('project_directory', clean_list)
             
-            
-            
             self._set_project_history(directory, previous_project)
             
             self.view_widget.clear_sub_path_filter()
@@ -579,6 +595,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         self.process.set_directory(directory)
         self.view_widget.set_directory(directory)
+        
+        self.handle_selection_change = True
         
     def set_code_directory(self, directory):
         

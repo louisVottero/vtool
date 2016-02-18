@@ -786,6 +786,7 @@ class MayaVariable(vtool.util.Variable):
         cmds.setAttr(self._get_node_and_variable(), k = self.keyable)       
 
     def _set_value(self):
+        
         if not self.exists():
             return
         
@@ -854,6 +855,13 @@ class MayaVariable(vtool.util.Variable):
         """
         
         return cmds.objExists(self._get_node_and_variable())
+    
+    def is_numeric(self):
+        
+        if self.variable_type in self.numeric_attributes:
+            return True
+        
+        return False 
 
     #--- set
     def set_name(self, name):
@@ -881,6 +889,7 @@ class MayaVariable(vtool.util.Variable):
             value
             
         """
+        
         super(MayaVariable, self).set_value(value)
         self._set_value()
         
@@ -1118,7 +1127,7 @@ class MayaNumberVariable(MayaVariable):
         
         #this is like this because of scale attribute.  Not sure how to query if a double has ability for min and max.
         try:
-            return cmds.attributeQuery(self.name, node = self.node, minimum = True)
+            return cmds.attributeQuery(self.name, node = self.node, minimum = True)[0]
         except:
             return
 
@@ -1128,7 +1137,7 @@ class MayaNumberVariable(MayaVariable):
         
         #this is like this because of scale attribute.  Not sure how to query if a double has ability for min and max.
         try:
-            return cmds.attributeQuery(self.name, node = self.node, maximum = True)
+            return cmds.attributeQuery(self.name, node = self.node, maximum = True)[0]
         except:
             return
         
@@ -1159,8 +1168,8 @@ class MayaNumberVariable(MayaVariable):
         """
         super(MayaNumberVariable, self).load()
         
-        self._get_min_state()
-        self._get_max_state()
+        self.min_value = self._get_min_state()
+        self.max_value = self._get_max_state()
         
 class MayaEnumVariable(MayaVariable):
     """
@@ -1308,6 +1317,7 @@ class Attributes(object):
         
         var = self._get_variable_instance(attribute_name, var_type)
         var.set_node(self.node)
+        var.load()
         
         return var
         
@@ -1458,7 +1468,6 @@ class Attributes(object):
             return
         
         var.set_name(new_name)
-        
         
         self._store_attributes()
         
@@ -2958,7 +2967,56 @@ def create_title(node, name, name_list = []):
         
     title.create(node)
     
+def create_vetala_type(node, value):
+    """
+    Convenience to tag nodes that are vital to the auto rig.
+    """
     
+    string_var = MayaStringVariable('vetalaType')
+    string_var.set_value(value)
+    string_var.set_locked(True)
+    string_var.create(node)
+    
+    return string_var.get_name()
+
+def get_vetala_type(node):
+    """
+    Get the vetala type of a node.
+    """
+    string_var = MayaStringVariable('vetalaType')
+    string_var.set_node(node)
+    value = string_var.get_value()
+    
+    return value
+    
+def get_vetala_nodes(vetala_type = None):
+    """
+    Get vetala nodes in the scene.
+    """
+    found = []
+    
+    list_type = None
+    
+    if vetala_type == 'ShapeComboManager':
+        list_type = 'transform'
+    
+    if not list_type:
+        nodes = cmds.ls()
+    if list_type:
+        nodes = cmds.ls(type = list_type)
+    
+    for node in nodes:
+        found_vetala_type = get_vetala_type(node)
+        
+        if found_vetala_type:
+            if vetala_type:
+                if found_vetala_type == vetala_type:
+                    found.append(node)
+            if not vetala_type:
+                found.append(node)
+            
+    return found
+        
       
 def zero_xform_channels(transform):
     """

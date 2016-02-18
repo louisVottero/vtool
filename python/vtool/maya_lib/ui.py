@@ -177,7 +177,6 @@ class ToolManager(MayaDirectoryWindow):
         self.tab_widget = QtGui.QTabWidget()
         self.tab_widget.setTabPosition(self.tab_widget.West)
         
-        
         self.modeling_widget = ModelManager()
         self.rigging_widget = RigManager()
         self.shot_widget = QtGui.QWidget()
@@ -223,9 +222,9 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         pose_button.clicked.connect(self._pose_manager)
         manager_layout.addWidget(pose_button)
         
-        #shape_combo_button = QtGui.QPushButton('Shape Combos')
-        #shape_combo_button.clicked.connect(self._shape_combo)
-        #manager_layout.addWidget(shape_combo_button)
+        shape_combo_button = QtGui.QPushButton('Shape Combos')
+        shape_combo_button.clicked.connect(self._shape_combo)
+        manager_layout.addWidget(shape_combo_button)
         
         tool_group = QtGui.QGroupBox('Tools')
         tool_layout = QtGui.QVBoxLayout()

@@ -24,12 +24,12 @@ class ComboManager(ui.MayaWindow):
     def __init__(self):
         super(ComboManager, self).__init__()
         
-        self.manager = blendshape.BlendshapeManager()
+        self.manager = blendshape.ShapeComboManager()
         self.refresh_combo_list = True
         
         self.shape_widget.tree.manager = self.manager
-        
-        self._refresh()
+        self.update_on_select = True
+        #self._refresh()
     
     def _define_main_layout(self):
         layout = QtGui.QVBoxLayout()
@@ -42,25 +42,50 @@ class ComboManager(ui.MayaWindow):
         header_layout = QtGui.QHBoxLayout()
         header_layout.setAlignment(QtCore.Qt.AlignLeft)
         
-        button_layout = QtGui.QVBoxLayout()
+        layout_1 = QtGui.QHBoxLayout()
+        base = QtGui.QPushButton('Set')
+        #base.setMinimumWidth(100)
+        base.setMaximumWidth(100)
+        base.setMinimumHeight(25)
+        
+        base.clicked.connect(self._set_base)
+        
+        self.current_base = QtGui.QLabel('-')
+        
+        layout_1.addWidget(base)
+        layout_1.addSpacing(10)
+        layout_1.addWidget(self.current_base)
+        
+        
+        layout_2 = QtGui.QHBoxLayout()
+        layout_2.setAlignment(QtCore.Qt.AlignLeft)
+        
         self.add = QtGui.QPushButton('Shape')
         self.add.setMinimumWidth(100)
+        self.add.setMaximumWidth(200)
         self.add.setMinimumHeight(50)
         
         self.add.clicked.connect(self._add_command)
         
-        base = QtGui.QPushButton('Home')
-        base.setMinimumWidth(100)
-        base.setMinimumHeight(25)
+        layout_2.addWidget(self.add)
         
-        base.clicked.connect(self._base_command)
-        
+        button_layout = QtGui.QVBoxLayout()
         button_layout.addSpacing(10)
-        button_layout.addWidget(base)
+        button_layout.addLayout(layout_1)
         button_layout.addSpacing(10)
-        button_layout.addWidget(self.add)
+        button_layout.addLayout(layout_2)
                 
         header_layout.addLayout(button_layout)
+        
+        self.slider = WeightSlider()
+        self.slider.value_change.connect(self._update_value)
+        
+        button_layout.addSpacing(10)
+        button_layout.addWidget(self.slider)
+        
+        
+        #header_layout.addWidget(slider)
+        
         
         self.shape_widget = ShapeWidget()
         
@@ -79,9 +104,6 @@ class ComboManager(ui.MayaWindow):
         self.main_layout.addSpacing(10)
         self.main_layout.addWidget(splitter)
         
-        self.shape_widget.tree.load()
-        self.combo_widget.tree.load()
-
     def _refresh(self):
         
         shapes = self.manager.get_shapes()
@@ -100,26 +122,65 @@ class ComboManager(ui.MayaWindow):
         
         for item in shape_items:
             name = str(item.text(0))
-        
+            
             shapes.append(name)
             
         return shapes
+    
+    def _update_slider_for_shapes(self, shapes):
+        
+        if not shapes:
+            self.slider.setDisabled(True)
+            return
+        
+        if shapes:
+            self.slider.setEnabled(True)
+            
+            value = 1
+            
+            """
+            if len(shapes) == 1:
+                if self.manager.is_inbetween(shapes[0]):
+                    inbetween_value = self.manager.get_inbetween_value(shapes[0])
+                    
+                    if inbetween_value != None:
+                        value = (inbetween_value * .01)
+            """
+            #for shape in shapes:
+                #self.manager.turn_on_shape(shape)
+                
+            self.slider.set_value(value)
         
     def _shape_selection_changed(self):
         
+        if not self.update_on_select:
+            return
+        
         self.manager.zero_out()
         
+        shape_items = self.shape_widget.tree.selectedItems()
+        
+        for item in shape_items:
+            parent = item.parent()
+            
+            if parent:
+                for inc in range(0, parent.childCount()):
+                    parent.child(inc).setSelected(False)
+                    parent.setSelected(False)
+                    
+                self.update_on_select = False
+                self.shape_widget.tree.setCurrentItem(item)
+                self.update_on_select = True
+        
         shapes = self._get_selected_shapes()
+        
+        print 'shapes!', shapes
         
         if self.refresh_combo_list:
             self._update_combo_selection(shapes)
             
-        if not shapes:
-            return
-            
-        for shape in shapes:
-            self.manager.set_shape_weight(shape, 1)
-               
+        self._update_slider_for_shapes(shapes)
+        
     def _combo_selection_changed(self):
         
         combo_items = self.combo_widget.tree.selectedItems()
@@ -131,12 +192,16 @@ class ComboManager(ui.MayaWindow):
         
         shapes = self.manager.get_shapes_in_combo(combo_name)
         
-        if self.manager.blendshape.is_target(combo_name):
-            self.manager.set_shape_weight(combo_name, 1)
+        #if self.manager.blendshape.is_target(combo_name):
+            
+            #self.manager.set_shape_weight(combo_name, 1)
             
         self.refresh_combo_list = False
+        self.update_on_select = False
         self.shape_widget.tree.select_shapes(shapes)
+        self._update_slider_for_shapes(shapes)
         self.refresh_combo_list = True
+        self.update_on_select = True
         
     def _update_combo_selection(self, shapes):
         
@@ -149,53 +214,111 @@ class ComboManager(ui.MayaWindow):
         
         self.combo_widget.tree.load(combos, possible_combos)
     
-    def _base_command(self):
+    def _set_base(self):
+        
+        self.shape_widget.tree.clear()
+        self.combo_widget.tree.clear()
         
         meshes = geo.get_selected_meshes()
         
-        mesh = None
+        if not meshes:
+            selected = cmds.ls(sl = True, type = 'transform')
+            
+            if selected:
+                if self.manager.is_shape_combo_manager(selected[0]):
+                    self.manager.load(selected[0])
+                    mesh = self.manager.get_mesh()
+                    self.current_base.setText(mesh)
+                
+                if not self.manager.setup_group:
+                    self.current_base.setText('-')
+        
         if meshes:
-            mesh = meshes[0]
+            mesh = None
+            if meshes:
+                mesh = meshes[0]
+            
+            self.manager.create(mesh)
+            
+            self.current_base.setText(mesh)
+
+        self.shape_widget.tree.set_manager(self.manager)
+        self.combo_widget.tree.set_manager(self.manager)
+            
+        self._refresh()
         
-        self.manager.setup(mesh)
-        
-        self.shape_widget.tree.clearSelection()
-        #self.manager.zero_out()
-        
-    def _add_mesh(self, mesh):
+    def _get_selected_items(self):
         
         combo_items = self.combo_widget.tree.selectedItems()
         shape_items = self.shape_widget.tree.selectedItems()
         
+        shapes = []
+        incrementals = []
+        
+        for shape_item in shape_items:
+            if shape_item.parent():
+                incrementals.append(shape_item)
+               
+            if not shape_item.parent():
+                shapes.append(shape_item) 
+        
+        return shapes, combo_items, incrementals
+    
+    def _add_mesh(self, mesh):
+        
+        shape_items, combo_items, incremental_items = self._get_selected_items()
+        
         if combo_items and len(combo_items) == 1:
             combo_name = str(combo_items[0].text(0))
-            self.manager.add_combo( combo_name, mesh)
+            self.manager.add_combo( combo_name, mesh )
+            self.combo_widget.tree.highlight_item(combo_items[0])
             
             #self.combo_widget.tree.load()   
                     
-        if shape_items and not combo_items and len(shape_items) == 1:
+        if shape_items and not combo_items and not incremental_items and len(shape_items) == 1:
 
             shape_name = str(shape_items[0].text(0))
             self.manager.add_shape(shape_name, mesh)
             
             self.shape_widget.tree.select_shape(shape_name)
+        
+        if incremental_items and not combo_items and not shape_items and len(incremental_items) == 1:
+            item = incremental_items[0]
+            name = incremental_items[0].text(0)
+            self.manager.add_shape(name, mesh)
             
-        if not combo_items and not shape_items:
+            brush = QtGui.QBrush()
+            color = QtGui.QColor()
+            color.setRgb(200,200,200)
+            brush.setColor(color)
+            item.setForeground(0, brush)
+            
+        if not combo_items and not shape_items and not incremental_items:
             self._add_meshes([mesh])
             
         
     def _add_meshes(self, meshes):
+        
         shapes, combos, inbetweens = self.manager.get_shape_and_combo_lists(meshes)
         
         for shape in shapes:
             self.manager.add_shape(shape)    
         
+        for inbetween in inbetweens:
+            
+            last_number = vtool.util.get_last_number(inbetween)
+            
+            if not len(str(last_number)) >= 2:
+                continue
+            
+            self.manager.add_shape(inbetween)
+            
         for combo in combos:
             for mesh in meshes:
                 if mesh == combo:
                     self.manager.add_combo(mesh)
-                    
-        self.shape_widget.tree.load(meshes[-1])
+        
+        self.shape_widget.tree.load(inbetweens = inbetweens)
         self.combo_widget.tree.load()   
     
     def _add_command(self):
@@ -208,6 +331,25 @@ class ComboManager(ui.MayaWindow):
         
         if mesh_count > 1:
             self._add_meshes(meshes)
+            
+    def _update_value(self, value):
+        
+        self.manager.zero_out()
+        
+        shapes = self._get_selected_shapes()
+        
+        if not shapes:
+            return
+        
+        for shape in shapes:
+            #parent = self.manager.get_inbetween_parent(shape)
+            
+            #if parent:
+            #    shape = parent
+            
+            self.manager.turn_on_shape(shape, value)
+            
+
             
 class ShapeWidget(qt_ui.BasicWidget):
     
@@ -238,6 +380,8 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self.setSelectionMode(self.ExtendedSelection)
         
+        self.setSortingEnabled(False)
+        
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
@@ -247,7 +391,7 @@ class ShapeTree(qt_ui.TreeWidget):
         
     def _item_menu(self, position):
                 
-        item = self.itemAt(position)
+        #item = self.itemAt(position)
         
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
         
@@ -255,13 +399,123 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self.context_menu = QtGui.QMenu()
         
+        self.recreate_action = self.context_menu.addAction('Recreate')
+        
         self.rename_action = self.context_menu.addAction('Rename')
         
         self.remove_action = self.context_menu.addAction('Remove')
         self.context_menu.addSeparator()
         
+        self.recreate_action.triggered.connect(self.recreate)
         self.rename_action.triggered.connect(self.rename)
         self.remove_action.triggered.connect(self.remove)
+        
+    def _create_item(self, shape, inbetweens = None):
+        
+        item = QtGui.QTreeWidgetItem()
+        item.setSizeHint(0, QtCore.QSize(100, 20))
+        
+        item.setText(0, shape)
+        
+        self.addTopLevelItem(item)
+        
+        self._create_children(item, inbetweens)
+        
+        return item
+        
+    def _create_children(self, item, inbetweens = None):
+        
+        for inc in range(item.childCount(), 0, -1):
+            child_item = item.child(inc)
+            item.removeChild(child_item)
+        
+        shape = str(item.text(0))
+        
+        print 'create children for', shape
+        
+        if not inbetweens:
+            inbetweens = self.manager.get_inbetweens(shape)
+        
+        default_inbetweens = ['75','50','25']
+        
+        existing = []
+        
+        child_dict = {}
+        children = []
+        
+        for inbetween in default_inbetweens:
+            
+            name = '%s%s' % (shape, inbetween)
+            
+            child_item = self._create_child_item(name)
+            
+            if not self.manager.blendshape.is_target(name):
+                self._highlight_child(child_item, False)
+                
+            if self.manager.blendshape.is_target(name):
+                self._highlight_child(child_item, True)
+                existing.append(name)
+                
+            child_dict[name] = child_item
+            children.append(name)
+                
+        for inbetween in inbetweens:
+            
+            if not inbetween in existing:
+                child_item = self._create_child_item(inbetween)
+                
+                self._highlight_child(child_item, True)
+                
+                child_dict[inbetween] = child_item
+                children.append(inbetween)
+            
+        children.sort()
+        children.reverse()
+                
+        for child in children:
+            child_item = child_dict[child]
+            item.addChild(child_item)
+        
+    def _create_child_item(self, name, parent = None):
+        
+        child_item = QtGui.QTreeWidgetItem(parent)
+        child_item.setSizeHint(0, QtCore.QSize(100, 20))
+        child_item.setText(0, name)
+        
+        return child_item
+        
+    def _highlight_child(self, item, bool_value = True):
+        
+        if bool_value:
+            font = item.font(0)
+            font.setBold(True)
+            item.setFont(0, font)
+            
+            brush = QtGui.QBrush()
+            color = QtGui.QColor()
+            color.setRgb(200,200,200)
+            brush.setColor(color)
+            item.setForeground(0, brush)
+        
+        if not bool_value:
+            brush = QtGui.QBrush()
+            color = QtGui.QColor()
+            color.setRgb(100,100,100)
+            brush.setColor(color)
+            
+            item.setForeground(0, brush)
+    
+    def recreate(self):
+        
+        items = self.selectedItems()
+        
+        if not items:
+            return
+        
+        for item in items:
+            name = item.text(0)
+            self.manager.recreate_shape(name)
+            
         
     def rename(self):
         
@@ -286,6 +540,8 @@ class ShapeTree(qt_ui.TreeWidget):
         item.setText(0, new_name)
         self.manager.set_shape_weight(new_name, 1)
         
+        self._create_children(item)
+        
     def remove(self):
         
         items = self.selectedItems()
@@ -295,11 +551,18 @@ class ShapeTree(qt_ui.TreeWidget):
         
         for item in items:
         
-            self.manager.remove_shape(item.text(0))
-        
-            index = self.indexFromItem(item)
-        
-            self.takeTopLevelItem(index.row())
+            name = item.text(0)
+            
+            self.manager.remove_shape(name)
+            
+            if self.manager.is_inbetween(name):
+                self._highlight_child(item, False)
+            
+            if not self.manager.is_inbetween(name):
+                
+                
+                index = self.indexFromItem(item)
+                self.takeTopLevelItem(index.row())
         
     def select_shape(self, shape):
         
@@ -312,34 +575,58 @@ class ShapeTree(qt_ui.TreeWidget):
                 item.setSelected(True)
         
     def select_shapes(self, shapes):
+        
+        print 'select', shapes
+        
         self.clearSelection()
         
+        
+        
         for inc in range(0, self.topLevelItemCount()):
-            
+            print inc
             item = self.topLevelItem(inc)
             
             item_name = str(item.text(0))
             
+            print item_name
+            
             if item_name in shapes:
                 item.setSelected(True)
+                
+            if not item_name in shapes:
+                for inc in range(0, item.childCount()):
+                    child_item = item.child(inc)
+                    child_name = str(child_item.text(0))
+                    
+                    if child_name in shapes:
+                        child_item.setSelected(True)
+                        self.expandItem(item)
+                        
+                        
         
-    def load(self, mesh = None):
+    def load(self, mesh = None, inbetweens = None):
         
         self.clear()
         
-        manager = blendshape.BlendshapeManager()
-        shapes = manager.get_shapes()
+        shapes = self.manager.get_shapes()
         
         select_item = None
         
         for shape in shapes:
             
-            item = QtGui.QTreeWidgetItem()
-            item.setSizeHint(0, QtCore.QSize(100, 25))
-            
-            item.setText(0, shape)
-            
-            self.addTopLevelItem(item)
+            if self.manager.is_inbetween(shape):
+                continue
+
+            shape_betweens = []
+
+            for inbetween in inbetweens:
+                
+                front_part = inbetween[:-2]
+                
+                if front_part == shape:
+                    shape_betweens.append(inbetween)
+
+            item = self._create_item(shape, shape_betweens)
             
             if shape == mesh:
                 select_item = item
@@ -347,6 +634,9 @@ class ShapeTree(qt_ui.TreeWidget):
         if select_item:
             self.setItemSelected(select_item, True)
             self.scrollToItem(select_item)
+            
+    def set_manager(self, manager):
+        self.manager = manager
 
 class ComboWidget(qt_ui.BasicWidget):
     
@@ -367,29 +657,96 @@ class ComboWidget(qt_ui.BasicWidget):
         
         self.main_layout.addLayout(header_layout)
         self.main_layout.addWidget(self.tree)
-
+        
 class ComboTree(qt_ui.TreeWidget):
     
     def __init__(self):
         super(ComboTree, self).__init__()
         
         self.setSortingEnabled(False)
+        
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._item_menu)
+        
+        self._create_context_menu()
+        
+    def _item_menu(self, position):
+        
+        self.context_menu.exec_(self.viewport().mapToGlobal(position))
+        
+    def _create_context_menu(self):
+        
+        self.context_menu = QtGui.QMenu()
+        
+        self.recreate_action = self.context_menu.addAction('Recreate')
+        self.remove_action = self.context_menu.addAction('Remove')
+        
+        self.recreate_action.triggered.connect(self.recreate)
+        self.remove_action.triggered.connect(self.remove)
+        
+    def highlight_item(self, item, bool_value = True):
+        
+        brush = None
+        font = item.font(0)
+        
+        if bool_value:
+            font = item.font(0)
+            font.setBold(True)
+            
+            brush = QtGui.QBrush()
+            color = QtGui.QColor()
+            color.setRgb(200,200,200)
+            brush.setColor(color)
+        
+        if not bool_value:
+            
+            font.setBold(False)
+            brush = QtGui.QBrush()
+            color = QtGui.QColor()
+            color.setRgb(100,100,100)
+            brush.setColor(color)
+        
+        item.setForeground(0, brush)
+        item.setFont(0, font)
+        
+    def recreate(self):
+        
+        items = self.selectedItems()
+        
+        if not items:
+            return
+        
+        name = str(items[0].text(0))
+        
+        self.manager.recreate_combo(name)
+        
+            
+    
+    def remove(self):
+
+        items = self.selectedItems()
+        
+        if not items:
+            return
+        
+        name = str(items[0].text(0))
+        
+        self.manager.remove_combo(name)
+        
+        self.highlight_item(items[0], False)
     
     def load(self, combos = None, possible_combos = None):
         
         if not combos:
-            manager = blendshape.BlendshapeManager()
-            combos = manager.get_combos()
+            combos = self.manager.get_combos()
         
         self.clear()
         
         for combo in combos:
             item = QtGui.QTreeWidgetItem()
-            item.setSizeHint(0, QtCore.QSize(100, 25))
+            item.setSizeHint(0, QtCore.QSize(100, 20))
             item.setText(0, combo)
-            font = item.font(0)
-            font.setBold(True)
-            item.setFont(0, font)
+            self.highlight_item(item)
             
             self.addTopLevelItem(item)
             
@@ -406,5 +763,96 @@ class ComboTree(qt_ui.TreeWidget):
                 item.setSizeHint(0, QtCore.QSize(100, 25))
                 item.setText(0, combo)
                 
+                self.highlight_item(item, False)
+                
+                
                 self.addTopLevelItem(item)
-                   
+    
+    def set_manager(self, manager):
+        self.manager = manager
+        
+        
+class WeightSlider(qt_ui.BasicWidget):
+    
+    value_change = qt_ui.create_signal(object)
+    
+    def __init__(self):
+        super(WeightSlider, self).__init__()
+        
+    def _define_main_layout(self):
+        return QtGui.QHBoxLayout()
+
+    def _build_widgets(self):
+        
+        self.value = QtGui.QDoubleSpinBox()
+        self.value.setMinimum(0)
+        self.value.setMaximum(1)
+        self.value.setSingleStep(.05)
+        
+        self.value.setMinimumWidth(60)
+        self.value.setButtonSymbols(self.value.NoButtons)
+        
+        self.slider = QtGui.QSlider()
+        self.slider.setMinimum(0)
+        self.slider.setMaximum(100)
+        self.slider.setTickPosition(self.slider.TicksBelow)
+        self.slider.setSingleStep(5)
+        
+        
+        self.slider.setOrientation(QtCore.Qt.Horizontal)
+        self.slider.setMinimumWidth(80)
+        #self.slider.setMaximumWidth(120)
+        
+        #self.main_layout.setSpacing(1)
+        #self.main_layout.addSpacing(5)
+        self.main_layout.addWidget(self.value)
+        self.main_layout.addSpacing(10)
+        self.main_layout.addWidget(self.slider)
+        self.main_layout.addSpacing(10)
+        
+        self.slider.valueChanged.connect(self._slider_value_change)
+        self.value.valueChanged.connect(self._value_change)
+        
+        self.update_value = True
+        self.update_slider = True
+        
+        self.setDisabled(True)
+        
+    def _slider_value_change(self):
+        
+        if not self.update_slider:
+            return
+        
+        self.update_value = False
+        value = self.slider.value()
+        self.value.setValue(value*0.01)
+        self.update_value = True
+        
+        self.value_change.emit(value*0.01)
+        
+    def _value_change(self):
+        
+        if not self.update_value:
+            return
+        
+        self.update_slider = False
+        value = self.value.value()
+        self.slider.setValue(value*100)
+        self.update_slider = True
+        
+        self.value_change.emit(value)
+        
+    def set_min_max(self, min_value, max_value):
+        
+        self.value.setMinimum(min_value)
+        self.value.setMaximum(max_value)
+        
+        self.slider.setMinimum(min_value*100)
+        self.slider.setMaximum(max_value*100)
+        
+    def set_value(self, value):
+        
+        self.slider.setValue(value*100)
+        
+        self.value_change.emit( value )
+        

@@ -721,6 +721,7 @@ class ControlRig(Rig):
         self.control_count = 1
         self.control_shape_types = {}
         self.control_descriptions = {}
+        self.only_translate = False
     
     def set_transforms(self, transforms):
         """
@@ -748,10 +749,15 @@ class ControlRig(Rig):
         """
         self.control_descriptions[index] = description
     
+    def set_only_translate_channels(self, bool_value):
+        self.only_translate = bool_value
+    
     def create(self):
         
         if not self.transforms:
             self.transforms = [None]
+        
+        self.transforms = vtool.util.convert_to_sequence(self.transforms)
         
         for transform in self.transforms:
             for inc in range(0, self.control_count):
@@ -771,7 +777,11 @@ class ControlRig(Rig):
                 control.scale_shape(self.control_size, self.control_size, self.control_size)
                 
                 xform = space.create_xform_group(control.get())    
-                cmds.parent(xform, self.control_group)                
+                cmds.parent(xform, self.control_group)     
+                
+                if self.only_translate:
+                    control.hide_scale_attributes()
+                    control.hide_rotate_attributes()           
                 
 class GroundRig(JointRig):
     """

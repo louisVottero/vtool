@@ -302,6 +302,7 @@ def undo_chunk(function):
     return wrapper
 
 
+
 def is_batch():
     """
     Return 
@@ -369,6 +370,9 @@ def inc_name(name):
     Return
         (str): Modified name, number added if not unique..
     """
+    
+    if not cmds.objExists(name):
+        return name
     
     unique = FindUniqueName(name)
     return unique.get()

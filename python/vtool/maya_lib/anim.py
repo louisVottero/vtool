@@ -62,7 +62,7 @@ def playblast(filename):
                    clearCache = True, 
                    forceOverwrite = True)
 
-def quick_driven_key(source, target, source_values, target_values, infinite = False):
+def quick_driven_key(source, target, source_values, target_values, infinite = False, tangent_type = 'spline'):
     """
     A convenience for create set driven key frames.
     
@@ -79,7 +79,7 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
     
     for inc in range(0, len(source_values)):
           
-        cmds.setDrivenKeyframe(target,cd = source, driverValue = source_values[inc], value = target_values[inc], itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe(target,cd = source, driverValue = source_values[inc], value = target_values[inc], itt = tangent_type, ott = tangent_type)
     
     keys = track_nodes.get_delta()
     
@@ -105,6 +105,17 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
 
     return keyframe
 
+def get_keyframe(node_and_attribute):
+    
+    connection = attr.get_attribute_input(node_and_attribute, True)
+    
+    if connection:
+        
+        node_type = cmds.nodeType(connection)
+    
+        if node_type.find('animCurve') > -1:
+            return connection
+    
 def get_input_keyframes(node, node_only = True):
     """
     Get all keyframes that input into the node.

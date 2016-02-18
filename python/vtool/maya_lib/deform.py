@@ -2727,80 +2727,6 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
     
     if constrain:
         return group
-
-"""   
-#@undo_chunk
-def transfer_weight(source_joint, target_joints, mesh):
-"""
-    #This is now depricated.  Use TransferWeight class.
-    #Transfer weight from the source joint to the target joints.
-    
-    
-    #Args
-    #    source_joint (str): The name of the joint to transfer from.
-    #    target_joints (list): A list of joints to transfer to. 
-    #    mesh (str): The name of the mesh to work on.
-"""
-    if not mesh:
-        return
-    
-    skin_deformer = find_deformer_by_type(mesh, 'skinCluster')
-    
-    if not skin_deformer:
-        return
-    
-    #cmds.undoInfo(state = False)
-    
-    index = get_index_at_skin_influence(source_joint, skin_deformer)
-    
-    weights = get_skin_weights(skin_deformer)
-    
-    indices = get_indices('%s.matrix' % skin_deformer)
-    last_index = indices[-1]
-    
-    weights = weights[index]
-    weighted_verts = []
-    vert_weights = {}
-    
-    for inc in range(0, len(weights)):
-        if weights[inc] > 0:
-            
-            vert = '%s.vtx[%s]' % (mesh, inc)
-            weighted_verts.append( vert )
-            vert_weights[vert] = weights[inc]
-    
-    joint_vert_map = get_closest_verts_to_joints(target_joints, weighted_verts)
-    
-    influences = get_influences_on_skin(skin_deformer)
-    
-    for influence in influences:
-        if influence != source_joint:
-            cmds.skinCluster(skin_deformer, e = True, inf = influence, lw = True)
-        if influence == source_joint:
-            cmds.skinCluster(skin_deformer, e = True, inf = influence, lw = False)
-    
-    for joint in target_joints:
-        
-        if not joint in joint_vert_map:
-            continue
-        
-        cmds.skinCluster(skin_deformer, e = True, ai = joint, wt = 0.0, nw = 1)
-        
-        verts = joint_vert_map[joint]
-        
-        inc = 0
-        
-        for vert in verts:
-            
-            cmds.skinPercent(skin_deformer, vert, r = True, transformValue = [joint, vert_weights[vert]])
-            inc += 1
-        
-        cmds.skinCluster(skin_deformer,e=True,inf=joint,lw = True)
-        
-        last_index += 1
-        
-    #cmds.undoInfo(state = True)
-"""
  
 def add_joint_bindpre(skin, joint, description = None):
     """
@@ -2832,24 +2758,6 @@ def add_joint_bindpre(skin, joint, description = None):
     cmds.connectAttr('%s.worldInverseMatrix' % bindPre_locator, '%s.bindPreMatrix[%s]' % (skin, index))
     
     return bindPre_locator
-
-"""
-def convert_joint_to_nub(start_joint, end_joint, count, prefix, name, side, mid_control = True):
-    #joints = subdivide_joint(start_joint, end_joint, count, prefix, name, True)
-    joints = subdivide_joint(start_joint, end_joint, count, prefix, '%s_1_%s' % (name,side), True)
-    
-    
-    rig = IkSplineNubRig(name, side)
-    rig.set_joints(joints)
-    rig.set_end_with_locator(True)
-    rig.set_create_middle_control(mid_control)
-    #rig.set_guide_top_btm(start_joint, end_joint)
-    rig.create()
-    
-    cmds.parent(joints[0], rig.setup_group)
-    
-    return rig.control_group, rig.setup_group
-"""
     
 def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, delete_wire = True, skin = True, falloff = 1, create_controls = True):
     """
@@ -3386,8 +3294,6 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     
     vtool.util.show('skinning %s' % target_mesh)
     
-    
-    
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
     
     if not skin:
@@ -3400,7 +3306,6 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
         cmds.warning('%s already has a skin cluster. Deleteing existing.' % target_mesh)
         cmds.delete(other_skin)
         other_skin = None
-    
     
     influences = get_non_zero_influences(skin)
     
@@ -3437,6 +3342,8 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                                  influenceAssociation = ['name'],
                                  uvSpace = ['map1','map1'], 
                                  normalize = True)
+            
+    
             
     
     

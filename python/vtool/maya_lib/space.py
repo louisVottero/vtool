@@ -361,7 +361,16 @@ class ConstraintEditor(object):
         cmds.setAttr('%s.interpType' % constraint, int_value)
 
     def create_title(self, node, constraint, title_name = 'FOLLOW'):
+        """
+        This will create a title enum attribute based on the targets feeding into a constraint.
+        The enum will have the name of the transforms affecting the constraint.
         
+        Args
+            node (str): The name of the node to add the title to.
+            constraint (str): The name of a constraint. Should be affected by multipe transforms.
+            title_name (str): The name to give the title attribute.
+        
+        """
         
         targets = self.get_targets(constraint)
         
@@ -1199,24 +1208,6 @@ class OverDriveTranslation(object):
         cmds.setAttr('%s.input2Y' % multi_neg, self.y_values[1])
         cmds.setAttr('%s.input2Z' % multi_neg, self.z_values[1])
         
-        """
-        condition = cmds.createNode('condition', 'condition_%s' % self.transform)
-        
-        cmds.setAttr('%s.operation' % condition, 2)
-        
-        cmds.connectAttr('%s.outputX' % multi_pos, '%s.colorIfTrueR' % condition)
-        cmds.connectAttr('%s.outputY' % multi_pos, '%s.colorIfTrueG' % condition)
-        cmds.connectAttr('%s.outputZ' % multi_pos, '%s.colorIfTrueB' % condition)
-        
-        cmds.connectAttr('%s.outputX' % multi_neg, '%s.colorIfFalseR' % condition)
-        cmds.connectAttr('%s.outputY' % multi_neg, '%s.colorIfFalseG' % condition)
-        cmds.connectAttr('%s.outputZ' % multi_neg, '%s.colorIfFalseB' % condition)
-        
-        cmds.connectAttr('%s.outputR' % condition, '%s.translateX' % self.driver)
-        cmds.connectAttr('%s.outputG' % condition, '%s.translateY' % self.driver)
-        cmds.connectAttr('%s.outputB' % condition, '%s.translateZ' % self.driver)
-        """
-        
         plus = cmds.createNode('plusMinusAverage', n = core.inc_name('plusOverDrive_%s' % self.transform))
         
         cmds.connectAttr('%s.outputX' % multi_pos, '%s.input3D[0].input3Dx' % plus)
@@ -1299,7 +1290,12 @@ class TranslateSpaceScale(object):
             cmds.setAttr('%s.colorIfFalseR' % condition, self.z_space[1] * negate) 
     
 def has_constraint(transform):
+    """
+    Find out if a constraint is affecting the transform.
     
+    Args
+        transform (str): The name of a transform.
+    """
     editor = ConstraintEditor()
     return editor.has_constraint(transform)
     
@@ -1563,9 +1559,6 @@ def get_group_in_plane(transform1, transform2, transform3):
     cmds.delete(pole_group)
     
     return pole_group2
-
-
-
 
 def get_ordered_distance_and_transform(source_transform, transform_list):
     """
@@ -2363,6 +2356,10 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
                     cmds.setAttr('%s.localPositionZ' % transform, local_position[2])
                     
 def mirror_invert(transform, other = None):
+    """
+    If transform is joint_lip_L and there is a corresponding joint_lip_R, this will change joint_lip_R to have space that mirrors joint_lip_L.
+    """
+    
     
     node_type = cmds.nodeType(transform)
     
@@ -2401,8 +2398,13 @@ def mirror_invert(transform, other = None):
     if cmds.nodeType(other) == 'joint':
         cmds.makeIdentity(other, r = True, apply = True)
     
+    cmds.delete(group)
+    cmds.delete(dup)
 
 def match_all_transform_values(source_transform, target_transform):
+    """
+    Match transform values from source to target.
+    """
     
     attributes = ['translate','rotate','scale']
     axis = ['X','Y','Z']
@@ -2743,10 +2745,6 @@ def create_ghost_follow_chain(transforms):
         cmds.parent(ghost, w = True)
         
         MatchSpace(transform, ghost).translation_rotation()
-        
-        #xform = create_xform_group(ghost)
-        
-        #create_xform_group(transform)
         
         attr.connect_translate(transform, ghost)
         attr.connect_rotate(transform, ghost)

@@ -1,8 +1,10 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import string
+import re
 
 import vtool.util
+from vtool.util import get_inbetween_vector
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
@@ -10,6 +12,7 @@ if vtool.util.is_in_maya():
 import core
 import attr
 import deform
+import anim
     
 #import util
 
@@ -261,6 +264,18 @@ class BlendShape(object):
         if name in self.targets:
             return True
         
+    def is_target_connected(self, name):
+        
+        attribute = self._get_target_attr(name)
+        
+        input_value = attr.get_attribute_input(attribute)
+        
+        if input_value:
+            return True
+        
+        if not input_value:
+            return False
+        
     @core.undo_chunk
     def create_target(self, name, mesh = None, inbetween = 1):
         """
@@ -311,6 +326,10 @@ class BlendShape(object):
             name (str): The name of a target on the blendshape.
             mesh (str): The mesh to connect to the target.
         """
+        
+        if not cmds.objExists(mesh):
+            return
+        
         if not mesh:
             return
         
@@ -416,10 +435,10 @@ class BlendShape(object):
         
         new_name = core.inc_name(name)
         
-        self._disconnect_targets()
-        self._zero_target_weights()
-        
-        self.set_weight(name, value)
+        if not value == -1:
+            self._disconnect_targets()
+            self._zero_target_weights()
+            self.set_weight(name, value)
         
         output_attribute = '%s.outputGeometry[0]' % self.blendshape
         
@@ -431,9 +450,10 @@ class BlendShape(object):
             
             cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
             cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
-
-        self._restore_target_weights()
-        self._restore_connections()
+            
+        if not value == -1:
+            self._restore_target_weights()
+            self._restore_connections()
         
         
         return new_mesh
@@ -566,7 +586,11 @@ class BlendShape(object):
                     
         self.set_weights(new_weights, target_name, mesh_index)
     
+    def disconnect_inputs(self):
+        self._disconnect_targets()
     
+    def reconnect_inputs(self):
+        self._restore_connections()
     
 class BlendShapeTarget(object):
     """
@@ -579,24 +603,23 @@ class BlendShapeTarget(object):
         self.value = 0
         
         
-class BlendshapeManager(object):
+class ShapeComboManager(object):
     """
     WIP. Convenience for editing blendshape combos. 
     """
     def __init__(self):
         
-        self.start_mesh = None
-        self.setup_group = 'shape_combo'
+        
+        self.setup_group = None
+        self.setup_prefix = 'shapeCombo'
+        self.vetala_type = 'ShapeComboManager'
         self.home = 'home'
         self.blendshape = None
         
-        if cmds.objExists(self.setup_group):
-            self.start_mesh = self._get_mesh()
-            self._get_blendshape()
+
             
-        if self.start_mesh:
-            self.setup(self.start_mesh)
-            
+        
+    
 
     def _get_mesh(self):
         
@@ -619,6 +642,7 @@ class BlendshapeManager(object):
         return mesh
          
     def _get_blendshape(self):
+        
         mesh = self._get_mesh()
         
         if not mesh:
@@ -654,15 +678,20 @@ class BlendshapeManager(object):
         home = self._get_home_mesh()
         
         if home:
-            return
+            cmds.delete(home)
+            
+        self.home = cmds.duplicate(mesh, n = 'home_%s' % mesh)[0]
+        cmds.parent(self.home, self.setup_group)
+        attr.connect_message(self.home, self.setup_group, 'home')
         
-        if not cmds.objExists(self.home):
-            self.home = cmds.duplicate(mesh, n = 'home')[0]
-            cmds.parent(self.home, self.setup_group)
-            attr.connect_message(self.home, self.setup_group, 'home')
-            
-            cmds.hide(self.home)
-            
+        cmds.hide(self.home)
+    
+    def _is_variable(self, target):
+        if cmds.objExists('%s.%s' % (self.setup_group, target)):
+            return True
+        
+        return False
+    
     def _get_variable_name(self, target):
         
         return '%s.%s' % (self.setup_group, target)
@@ -688,25 +717,123 @@ class BlendshapeManager(object):
         cmds.delete(temp_targets)
         
         return delta
+                
+    def _find_manager_for_mesh(self, mesh):
         
-                        
-    def setup(self, start_mesh = None):
+        managers = attr.get_vetala_nodes('ShapeComboManager')
         
-        if not cmds.objExists(self.setup_group):
-            self.setup_group = cmds.group(em = True, n = self.setup_group)
-        
-            attr.hide_keyable_attributes(self.setup_group)
-        
-
-        test_home = attr.get_attribute_input('%s.mesh' % self.setup_group, node_only = True)
-        
-
-        if start_mesh and not test_home:
+        for manager in managers:
             
-            self._create_home(start_mesh)
-            attr.connect_message(start_mesh, self.setup_group, 'mesh')
+            found_mesh = attr.get_attribute_input('%s.mesh' % manager, node_only = True)
             
+            if found_mesh == mesh:
+                return manager
+            
+    def _remove_target_keyframe(self, shape_name):
+        
+        attribute = '%s.%s' % (self.blendshape.blendshape, shape_name)
+        
+        keyframe = anim.get_keyframe(attribute)
+        
+        if keyframe:
+            cmds.delete(keyframe)
+            
+    def _setup_shape_connections(self, name, negative_shape = None):
+        
+        blendshape = self.blendshape
+        
+        setup_attr = '%s.%s' % (self.setup_group, name)
+        blend_attr = '%s.%s' % (blendshape.blendshape, name)
+        
+        negative_value = 1
+        
+        if negative_shape:
+            blend_attr = '%s.%s' % (blendshape.blendshape, negative_shape)
+            name = negative_shape
+            
+            if negative_shape:
+                negative_value = -1
+            
+        inbetween_parent = self.get_inbetween_parent(name)
+        
+        if inbetween_parent:
+            name = inbetween_parent
+            setup_attr = '%s.%s' % (self.setup_group, name)
+                
+        inbetweens = self.get_inbetweens(name)
+        
+        self._remove_target_keyframe(name)
+        
+        if not inbetweens:
+            
+            value = 1
+            value = value*negative_value
+            anim.quick_driven_key(setup_attr, blend_attr, [0,value], [0,1], tangent_type = 'linear')
+            
+        if inbetweens:
+            
+            values, value_dict = self.get_inbetween_values(name, inbetweens)
+            
+            last_control_value = 0
+            
+            value_count = len(values)
+            
+            for inc in range(0, value_count):
+                
+                inbetween = value_dict[values[inc]]
+                
+                blend_attr = '%s.%s' % (blendshape.blendshape, inbetween)
+                
+                self._remove_target_keyframe(inbetween)
+                
+                control_value = values[inc] *.01 * negative_value
+                
+                anim.quick_driven_key(setup_attr, blend_attr, [last_control_value, control_value], [0, 1], tangent_type='linear')
+                    
+                if value_count > inc+1:
+
+                    future_control_value = values[inc+1] *.01                        
+                    anim.quick_driven_key(setup_attr, blend_attr, [control_value, future_control_value], [1, 0], tangent_type='linear')
+
+                last_control_value = control_value
+                
+            anim.quick_driven_key(setup_attr, blend_attr, [control_value, 1*negative_value], [1, 0], tangent_type='linear')
+            
+            blend_attr = '%s.%s' % (blendshape.blendshape, name)                        
+            anim.quick_driven_key(setup_attr, blend_attr, [control_value, 1*negative_value], [0, 1], tangent_type='linear')
+            
+    def is_shape_combo_manager(self, group):
+        
+        if attr.get_vetala_type(group) == self.vetala_type:
+            return True
+                    
+    def create(self, start_mesh):
+        
+        manager = self._find_manager_for_mesh(start_mesh)
+        
+        if manager:
+            self.load(manager)
+            return
+        
+        name = self.setup_prefix + '_' + start_mesh
+
+        self.setup_group = cmds.group(em = True, n = core.inc_name(name))
+        
+        attr.hide_keyable_attributes(self.setup_group)
+        attr.create_vetala_type(self.setup_group, self.vetala_type)
+        
+        self._create_home(start_mesh)
+        attr.disconnect_attribute('%s.mesh' % self.setup_group)
+        attr.connect_message(start_mesh, self.setup_group, 'mesh')
+        
         self._create_blendshape()
+        
+    def load(self, manager_group):
+        
+        if self.is_shape_combo_manager(manager_group):
+            self.setup_group = manager_group
+            
+        self._get_blendshape()
         
     def zero_out(self):
         
@@ -716,15 +843,39 @@ class BlendshapeManager(object):
         attributes = attr.Attributes(self.setup_group)
         variables = attributes.get_variables()
         
+        
+        
         for variable in variables:
+            
+            if not variable.is_numeric():
+                continue
+
             variable.set_value(0)
     
     #--- shapes
       
     def add_shape(self, name, mesh = None):
+
+        shape = name
+        negative_shape = None
+
+        negative_parent = self.get_negative_parent(name)
         
+        if negative_parent:
+            shape = negative_parent
+            negative_shape = name
+
         if not mesh:
             mesh = name
+        
+        if not cmds.objExists(name):
+            new_mesh = cmds.duplicate(self._get_mesh())[0]
+            new_name = cmds.rename(new_mesh, core.inc_name(name))
+            
+            name = new_name
+            
+            if mesh == self._get_mesh():
+                mesh = name
         
         home = self._get_mesh()
         
@@ -737,30 +888,76 @@ class BlendshapeManager(object):
             vtool.util.warning('No blendshape.')
             return
         
-        if blendshape.is_target(name):
+        is_target = blendshape.is_target(name)
+        
+        if is_target:
             blendshape.replace_target(name, mesh)
-            return
         
-        blendshape.create_target(name, mesh)
+        if not is_target:
+            blendshape.create_target(name, mesh)
         
-        var = attr.MayaNumberVariable(name)
+        if self.is_inbetween(name):
+            name = self.get_inbetween_parent(name)
+            shape = name
+        
+        var = attr.MayaNumberVariable(shape)
         var.set_min_value(0)
-        var.set_max_value(10)
+        var.set_max_value(1)
+        
+        if negative_shape or self.has_negative(shape):
+            var.set_min_value(-1)
+        
         var.set_variable_type('float')
         var.create(self.setup_group)
-                    
-        multiply = attr.connect_multiply('%s.%s' % (self.setup_group, name), '%s.%s' % (blendshape.blendshape, name))
-        cmds.rename(multiply, core.inc_name('multiply_shape_combo_1'))
-        
     
+        self._setup_shape_connections(shape, negative_shape)
+            
+                    
+    def turn_on_shape(self, name, value = 1):
+        
+        last_number = vtool.util.get_last_number(name)
+        
+        if last_number:
+            last_number_str = str(last_number)
+            
+            if len(last_number_str) >= 2:
+                first_part = name[:-2]
+
+                if self.blendshape.is_target(first_part):
+                    
+                    last_number_str = last_number_str[-2:]
+                    last_number = int(last_number_str)
+                    value = last_number * .01 * value
+                    
+                    self.set_shape_weight(first_part, value)
+                    
+                    name = first_part
+                        
+        if not last_number:
+            self.set_shape_weight(name, 1 * value)
+            
+        return name
+            
     def set_shape_weight(self, name, value):
+        
+        value = value
+        
+        if not self.blendshape.is_target(name):
+            return
         
         if name.count('_') > 0:
             return
         
-        value = value * 10
+        negative_parent = self.get_negative_parent(name)
+        
+        if negative_parent:
+            value *= -1
+            name = negative_parent
         
         cmds.setAttr('%s.%s' % (self.setup_group, name), value)
+    
+    def get_mesh(self):
+        return self._get_mesh()
     
     def get_shapes(self):
         
@@ -778,14 +975,54 @@ class BlendshapeManager(object):
             if split_target and len(split_target) == 1:
                 found.append(target)
         
+        found.sort()
+        
         return found
     
+    def recreate_shape(self, name):
+
+        target = self.turn_on_shape(name)
+        
+        if self.blendshape.is_target(target):
+            target = self.blendshape.recreate_target(target, -1)
+            
+        if not cmds.objExists(target):
+            target = cmds.duplicate(self._get_mesh())[0]
+            
+        if target != name:
+
+            target = cmds.rename(target, core.inc_name( name ) )
+
+        
+        parent = cmds.listRelatives(target, p = True)
+        if parent:
+            cmds.parent(target, w = True)
+
+            
+        return target
+            
     def rename_shape(self, old_name, new_name):
+        
+        inbetweens = self.get_inbetweens(old_name)
+
+        print 'rename shape'
+        print inbetweens
+        
+        for inbetween in inbetweens:
+            
+            value = self.get_inbetween_value(inbetween)
+            
+            if value:
+                self.blendshape.rename_target(inbetween, new_name + str(value))        
         
         name = self.blendshape.rename_target(old_name, new_name)
         
         attributes = attr.Attributes(self.setup_group)
         attributes.rename_variable(old_name, new_name)
+        
+        
+        
+
         
         return name
         
@@ -800,7 +1037,13 @@ class BlendshapeManager(object):
         
         self.blendshape.remove_target(name)
         
-        cmds.deleteAttr( '%s.%s' % (self.setup_group,name) )
+        if not self.is_inbetween(name):
+            cmds.deleteAttr( '%s.%s' % (self.setup_group,name) )
+            
+        if self.is_inbetween(name):
+            name = self.get_inbetween_parent(name)
+        
+        self._setup_shape_connections(name)
         
         combos = self.get_associated_combos(name)
         
@@ -843,6 +1086,7 @@ class BlendshapeManager(object):
             
             last_multiply = None
             
+            
             for shape in shapes:
                 
                 if not last_multiply:
@@ -851,10 +1095,17 @@ class BlendshapeManager(object):
                 if last_multiply:
                     multiply = attr.connect_multiply('%s.%s' % (blendshape.blendshape, shape), '%s.input2X' % last_multiply, 1)
                 
-                multiply = cmds.rename(multiply, core.inc_name('multiply_shape_combo_1'))
+                multiply = cmds.rename(multiply, core.inc_name('multiply_combo_%s_1' % name))
                 
                 last_multiply = multiply
                 
+    def recreate_combo(self, name):
+    
+        shape = self.recreate_shape(name)
+        
+        return shape
+        
+            
     def remove_combo(self, name):
         
         self.blendshape.remove_target(name)
@@ -920,13 +1171,155 @@ class BlendshapeManager(object):
             
             split_shape = mesh.split('_')
             
-            if len(split_shape) == 1:
-                shapes.append(mesh)
+            if mesh.count('_') == 0:
+                
+                number = vtool.util.get_last_number(mesh)
+                
+                if number:
+                    last_number_str = str(number)
+                    
+                    if len(last_number_str) >= 2:
+                        
+                        first_part = mesh[:-2]
+
+                        if first_part in meshes:
+                            inbetweens.append(mesh)
+                        if not self.blendshape.is_target(first_part):
+                            shapes.append(mesh)
+                            
+                if not number:
+                    shapes.append(mesh)
                 
             if len(split_shape) > 1:
                 combos.append(mesh)
-                
+
         return shapes, combos, inbetweens
     
+    def is_negative(self, shape, parent_shape = None):
+        
+        inbetween_parent = self.get_inbetween_parent(shape)
+        if inbetween_parent:
+            shape = inbetween_parent
+        
+        if parent_shape:
+            if not shape[:-1] == parent_shape:
+                return False
+        
+        if not shape.endswith('N'):
+            return False
+        
+        if shape.endswith('N'):
+            return True
+        
+    def get_negative_parent(self, shape):
+        
+        parent = None
+        
+        inbetween_parent = self.get_inbetween_parent(shape)
+        
+        if inbetween_parent:
+            shape = inbetween_parent
+            
+        if shape.endswith('N'):
+            parent = shape[:-1]
+            
+        return parent
     
+    def has_negative(self, shape):
+        
+        if self.blendshape.is_target( (shape + 'N') ):
+            return True
+        
+        return False
+    
+    def is_inbetween(self, shape, parent_shape = None):
+        
+        last_number = vtool.util.get_last_number(shape)
+        
+        if not last_number:
+            return False
+        
+        last_number_str = str(last_number)
+        
+        if not len(last_number_str) >= 2:
+            return False
+        
+        first_part = shape[:-2]
+        
+        if self.blendshape.is_target(first_part):
+            
+            if parent_shape:
+                if parent_shape == first_part:
+                    return True 
+                if not parent_shape == first_part:
+                    return False
+            
+            return True
+
+    def get_inbetweens(self, shape):
+        
+        targets = self.get_shapes()
+        
+        found = []
+        
+        for target in targets:
+            
+            if target.count('_') > 0:
+                continue
+            
+            if self.is_inbetween(target, shape):
+                found.append(target)
+        
+        return found
+
+    def get_inbetween_parent(self, inbetween):
+        
+        last_number = vtool.util.get_last_number(inbetween)
+        
+        if not last_number:
+            return
+        
+        last_number_str = str(last_number)
+        
+        if not len(last_number_str) >= 2:
+            return
+        
+        first_part = inbetween[:-2]
+        
+        if self.blendshape.is_target(first_part):
+            return first_part
+        
+    def get_inbetween_value(self, shape):
+        
+        number = vtool.util.get_last_number(shape)
+            
+        if not number:
+            return
+        
+        number_str = str(number)
+        if not len(number_str) >= 2:
+            return
+            
+        value = int(number_str[-2:])
+        
+        return value
+        
+        
+    def get_inbetween_values(self, parent_shape, inbetweens):
+        
+        values = []
+        value_dict = {}
+        
+        for inbetween in inbetweens:
+            
+            value = self.get_inbetween_value(inbetween)
+            
+            value_dict[value] = inbetween
+            values.append(value)
+            
+        values.sort()
+        
+        return values, value_dict
+            
+            
         
