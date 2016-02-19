@@ -99,6 +99,7 @@ class ComboManager(ui.MayaWindow):
         splitter.addWidget(self.shape_widget)
         splitter.addWidget(self.combo_widget)
         splitter.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
+        splitter.setSizes([120,200])
         
         self.main_layout.addLayout(header_layout)
         self.main_layout.addSpacing(10)
@@ -329,24 +330,7 @@ class ComboManager(ui.MayaWindow):
         
     def _add_meshes(self, meshes):
         
-        shapes, combos, inbetweens = self.manager.get_shape_and_combo_lists(meshes)
-        
-        for shape in shapes:
-            self.manager.add_shape(shape)    
-        
-        for inbetween in inbetweens:
-            
-            last_number = vtool.util.get_last_number(inbetween)
-            
-            if not len(str(last_number)) >= 2:
-                continue
-            
-            self.manager.add_shape(inbetween)
-            
-        for combo in combos:
-            for mesh in meshes:
-                if mesh == combo:
-                    self.manager.add_combo(mesh)
+        shapes, combos, inbetweens = self.manager.add_meshes(meshes)
         
         self.shape_widget.tree.load(inbetweens = inbetweens)
         self.combo_widget.tree.load()   
@@ -360,13 +344,6 @@ class ComboManager(ui.MayaWindow):
             
             self._add_mesh(meshes[0])
             
-            #if not self.manager.blendshape.is_target(meshes[0]):
-                #self._add_mesh(meshes[0])
-                
-            #if self.manager.blendshape.is_target(meshes[0]):
-            #    self._add_meshes([meshes[0]])
-            
-        
         if mesh_count > 1:
             self._add_meshes(meshes)
             
@@ -449,7 +426,7 @@ class ShapeTree(qt_ui.TreeWidget):
     def _create_item(self, shape, inbetweens = None):
         
         item = QtGui.QTreeWidgetItem()
-        item.setSizeHint(0, QtCore.QSize(100, 20))
+        item.setSizeHint(0, QtCore.QSize(100, 18))
         
         
         
@@ -515,7 +492,7 @@ class ShapeTree(qt_ui.TreeWidget):
     def _create_child_item(self, name, parent = None):
         
         child_item = QtGui.QTreeWidgetItem(parent)
-        child_item.setSizeHint(0, QtCore.QSize(100, 20))
+        child_item.setSizeHint(0, QtCore.QSize(100, 15))
         child_item.setText(0, name)
         
         return child_item
@@ -858,7 +835,7 @@ class ComboTree(qt_ui.TreeWidget):
             for combo in possible_combos:
                 
                 item = QtGui.QTreeWidgetItem()
-                item.setSizeHint(0, QtCore.QSize(100, 25))
+                item.setSizeHint(0, QtCore.QSize(100, 18))
                 item.setText(0, combo)
                 
                 self.highlight_item(item, False)
@@ -885,17 +862,17 @@ class WeightSlider(qt_ui.BasicWidget):
         self.value = QtGui.QDoubleSpinBox()
         self.value.setMinimum(0)
         self.value.setMaximum(1)
-        self.value.setSingleStep(.05)
+        self.value.setDecimals(3)
         
         self.value.setMinimumWidth(60)
         self.value.setButtonSymbols(self.value.NoButtons)
         
         self.slider = QtGui.QSlider()
         self.slider.setMinimum(0)
-        self.slider.setMaximum(100)
+        self.slider.setMaximum(1000)
         self.slider.setTickPosition(self.slider.TicksBelow)
-        self.slider.setSingleStep(5)
         
+        self.slider.setSingleStep(5)
         
         self.slider.setOrientation(QtCore.Qt.Horizontal)
         self.slider.setMinimumWidth(80)
@@ -923,10 +900,10 @@ class WeightSlider(qt_ui.BasicWidget):
         
         self.update_value = False
         value = self.slider.value()
-        self.value.setValue(value*0.01)
+        self.value.setValue(value*0.001)
         self.update_value = True
         
-        self.value_change.emit(value*0.01)
+        self.value_change.emit(value*0.001)
         
     def _value_change(self):
         
@@ -935,7 +912,7 @@ class WeightSlider(qt_ui.BasicWidget):
         
         self.update_slider = False
         value = self.value.value()
-        self.slider.setValue(value*100)
+        self.slider.setValue(value*1000)
         self.update_slider = True
         
         self.value_change.emit(value)
@@ -945,12 +922,12 @@ class WeightSlider(qt_ui.BasicWidget):
         self.value.setMinimum(min_value)
         self.value.setMaximum(max_value)
         
-        self.slider.setMinimum(min_value*100)
-        self.slider.setMaximum(max_value*100)
+        self.slider.setMinimum(min_value*1000)
+        self.slider.setMaximum(max_value*1000)
         
     def set_value(self, value):
         
-        self.slider.setValue(value*100)
+        self.slider.setValue(value*1000)
         
         self.value_change.emit( value )
         

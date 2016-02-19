@@ -224,13 +224,17 @@ class Connections(object):
         """
         found = []
         
-        for inc in range(0, len(self.inputs), 2):
-            test = self.inputs[inc+1]
+        for inc in range(0, len(self.inputs)):
             
-            node = test.split('.')[0]
+            test = self.inputs[inc]
+            
+            node = test[1]
             
             if node == connected_node:
-                found.append(test)
+                
+                input_value = '%s.%s' % (self.node, test[0])
+                output_value = '%s.%s' % (node, test[2])
+                found.append([output_value, input_value])
                 
         return found
     
@@ -248,13 +252,17 @@ class Connections(object):
         
         found = []
         
-        for inc in range(0, len(self.outputs), 2):
+        for inc in range(0, len(self.outputs)):
             
             test = self.outputs[inc]
-            node = test.split('.')[0]
             
+            node = test[1]
+
             if node == connected_node:
-                found.append(test)
+                
+                output_value = '%s.%s' % (self.node, test[0])
+                input_value = '%s.%s' % (node, test[2])
+                found.append([output_value, input_value])
                 
         return found        
     

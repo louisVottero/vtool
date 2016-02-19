@@ -889,6 +889,28 @@ class ShapeComboManager(object):
 
             variable.set_value(0)
     
+    def add_meshes(self, meshes):
+        
+        shapes, combos, inbetweens = self.get_shape_and_combo_lists(meshes)
+        
+        for shape in shapes:
+                self.add_shape(shape)    
+            
+        for inbetween in inbetweens:
+            
+            last_number = vtool.util.get_last_number(inbetween)
+            
+            if not len(str(last_number)) >= 2:
+                continue
+            
+            self.add_shape(inbetween)
+            
+        for combo in combos:
+            for mesh in meshes:
+                if mesh == combo:
+                    self.add_combo(mesh)
+                    
+        return shapes, combos, inbetweens
     #--- shapes
       
     def add_shape(self, name, mesh = None):
