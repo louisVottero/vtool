@@ -136,6 +136,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     def __init__(self):     
         super(DataTreeWidget, self).__init__()
         
+        self.text_edit = False
+        
         self.directory = None
         
         policy = self.sizePolicy()

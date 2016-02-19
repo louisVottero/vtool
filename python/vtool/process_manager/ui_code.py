@@ -488,6 +488,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         super(CodeManifestTree, self).__init__()
         
+        
         self.title_text_index = 0
         
         self.setSortingEnabled(False)

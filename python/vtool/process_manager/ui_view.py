@@ -159,6 +159,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         super(ProcessTreeWidget, self).__init__()
         
+        self.text_edit = False
+        
         self.setDragDropMode(self.InternalMove)
         self.setDragEnabled(True)
         self.setAcceptDrops(True)   
@@ -421,24 +423,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self._inc_name(item, new_name)
         
-        """
-        parent = item.parent()
-        if not parent:
-            parent = self.invisibleRootItem()
-        
-        siblingCount = parent.childCount()
-        
-        name_inc = 1
-        pre_inc_name = new_name
-        
-        for inc in range(0, siblingCount):
-            
-            child_item = parent.child(inc)
-            
-            if child_item.text(0) == new_name:
-                new_name = pre_inc_name + str(name_inc)
-                name_inc += 1
-        """     
         item.setText(0, new_name)
         
         if not self._item_rename_valid(old_name, item):
@@ -453,6 +437,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if rename_worked:
             self.item_renamed.emit(item)
+            
+        
         
     def _copy_process(self):
         

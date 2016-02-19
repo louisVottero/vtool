@@ -19,7 +19,7 @@ if qt_ui.is_pyside():
 
 class ComboManager(ui.MayaWindow):
     
-    title = 'Shape Combo'
+    title = 'Shape Combo -Alpha-'
     
     def __init__(self):
         super(ComboManager, self).__init__()
@@ -160,11 +160,42 @@ class ComboManager(ui.MayaWindow):
         
         shape_items = self.shape_widget.tree.selectedItems()
         
+        if len(shape_items) > 1:
+            
+            test_item = shape_items[-1]
+            test_name = test_item.text(0)
+            
+            previous_item = shape_items[-2]
+            previous_name = previous_item.text(0)
+            
+            inbetween_parent = self.manager.get_inbetween_parent(test_name)
+            if inbetween_parent:
+                test_name = inbetween_parent
+
+            negative_parent = self.manager.get_negative_parent(test_name)
+            if negative_parent:
+                test_name = negative_parent
+            
+            inbetween_parent = self.manager.get_inbetween_parent(previous_name)
+            if inbetween_parent:
+                previous_name = inbetween_parent
+            
+            negative_parent = self.manager.get_negative_parent(previous_name)
+            if negative_parent:
+                previous_name = negative_parent
+                
+            if previous_name == test_name:
+                previous_item.setSelected(False)
+            
+        shape_items = self.shape_widget.tree.selectedItems()
+            
+        
         for item in shape_items:
             parent = item.parent()
-            
+
             if parent:
                 for inc in range(0, parent.childCount()):
+                    
                     parent.child(inc).setSelected(False)
                     parent.setSelected(False)
                     
@@ -203,9 +234,9 @@ class ComboManager(ui.MayaWindow):
         
     def _update_combo_selection(self, shapes):
         
-        if not shapes:
-            self.combo_widget.tree.clear()
-            return
+        #if not shapes:
+        #    self.combo_widget.tree.clear()
+        #    return
                 
         combos = self.manager.get_combos()
         possible_combos = self.manager.find_possible_combos(shapes)
@@ -251,20 +282,21 @@ class ComboManager(ui.MayaWindow):
         shape_items = self.shape_widget.tree.selectedItems()
         
         shapes = []
-        incrementals = []
+        inbetweens = []
         
         for shape_item in shape_items:
+            
             if shape_item.parent():
-                incrementals.append(shape_item)
+                inbetweens.append(shape_item)
                
             if not shape_item.parent():
                 shapes.append(shape_item) 
         
-        return shapes, combo_items, incrementals
+        return shapes, combo_items, inbetweens
     
     def _add_mesh(self, mesh):
         
-        shape_items, combo_items, incremental_items = self._get_selected_items()
+        shape_items, combo_items, inbetween_items = self._get_selected_items()
         
         if combo_items and len(combo_items) == 1:
             combo_name = str(combo_items[0].text(0))
@@ -273,16 +305,16 @@ class ComboManager(ui.MayaWindow):
             
             #self.combo_widget.tree.load()   
                     
-        if shape_items and not combo_items and not incremental_items and len(shape_items) == 1:
+        if shape_items and not combo_items and not inbetween_items and len(shape_items) == 1:
 
             shape_name = str(shape_items[0].text(0))
             self.manager.add_shape(shape_name, mesh)
             
             self.shape_widget.tree.select_shape(shape_name)
         
-        if incremental_items and not combo_items and not shape_items and len(incremental_items) == 1:
-            item = incremental_items[0]
-            name = incremental_items[0].text(0)
+        if inbetween_items and not combo_items and not shape_items and len(inbetween_items) == 1:
+            item = inbetween_items[0]
+            name = inbetween_items[0].text(0)
             self.manager.add_shape(name, mesh)
             
             brush = QtGui.QBrush()
@@ -291,7 +323,7 @@ class ComboManager(ui.MayaWindow):
             brush.setColor(color)
             item.setForeground(0, brush)
             
-        if not combo_items and not shape_items and not incremental_items:
+        if not combo_items and not shape_items and not inbetween_items:
             self._add_meshes([mesh])
             
         
@@ -325,7 +357,15 @@ class ComboManager(ui.MayaWindow):
         mesh_count = len(meshes)
         
         if mesh_count == 1:
+            
             self._add_mesh(meshes[0])
+            
+            #if not self.manager.blendshape.is_target(meshes[0]):
+                #self._add_mesh(meshes[0])
+                
+            #if self.manager.blendshape.is_target(meshes[0]):
+            #    self._add_meshes([meshes[0]])
+            
         
         if mesh_count > 1:
             self._add_meshes(meshes)
@@ -340,14 +380,8 @@ class ComboManager(ui.MayaWindow):
             return
         
         for shape in shapes:
-            #parent = self.manager.get_inbetween_parent(shape)
-            
-            #if parent:
-            #    shape = parent
             
             self.manager.turn_on_shape(shape, value)
-            
-
             
 class ShapeWidget(qt_ui.BasicWidget):
     
@@ -376,6 +410,8 @@ class ShapeTree(qt_ui.TreeWidget):
         
         super(ShapeTree, self).__init__()
         
+        self.text_edit = False
+        
         self.setSelectionMode(self.ExtendedSelection)
         
         self.setSortingEnabled(False)
@@ -386,6 +422,8 @@ class ShapeTree(qt_ui.TreeWidget):
         self._create_context_menu()
         
         self.manager = None
+        
+        self.ctrl_active = False
         
     def _item_menu(self, position):
                 
@@ -413,6 +451,8 @@ class ShapeTree(qt_ui.TreeWidget):
         item = QtGui.QTreeWidgetItem()
         item.setSizeHint(0, QtCore.QSize(100, 20))
         
+        
+        
         item.setText(0, shape)
         
         self.addTopLevelItem(item)
@@ -423,7 +463,7 @@ class ShapeTree(qt_ui.TreeWidget):
         
     def _create_children(self, item, inbetweens = None):
         
-        for inc in range(item.childCount(), 0, -1):
+        for inc in range(item.childCount(), -1, -1):
             child_item = item.child(inc)
             item.removeChild(child_item)
         
@@ -501,6 +541,54 @@ class ShapeTree(qt_ui.TreeWidget):
             
             item.setForeground(0, brush)
     
+    def _get_item(self, name):
+        
+        for inc in range(0, self.topLevelItemCount()):
+            
+            item = self.topLevelItem(inc)
+            if item.text(0) == name:
+                return item
+            
+    def keyPressEvent(self, event):
+        ctrl_key = QtCore.Qt.Key_Control
+        shift_key = QtCore.Qt.Key_Shift
+        
+        if event.key() == ctrl_key or event.key() == shift_key:
+            self.ctrl_active = True
+            
+        if event.key() != ctrl_key and event.key() != shift_key:
+            self.ctrl_active = False
+        
+        super(ShapeTree, self).keyPressEvent(event)
+        
+    def keyReleaseEvent(self, event):
+        ctrl_key = QtCore.Qt.Key_Control
+        shift_key = QtCore.Qt.Key_Shift
+        
+        if event.key() == ctrl_key or event.key() == shift_key:
+            self.ctrl_active = False
+        
+        super(ShapeTree, self).keyReleaseEvent(event)
+
+    def selectionCommand(self, index, event):
+        
+        item = None
+        
+        if not self.ctrl_active:
+            self.clearSelection()
+        
+        parent_index = index.parent().row()
+        
+        if parent_index > -1:
+            parent_item = self.topLevelItem(parent_index)
+            item = parent_item.child(index.row())
+            
+        if parent_index == -1:
+            item = self.topLevelItem(index.row())
+        
+        if item:
+            self.setItemSelected(item, True)
+    
     def recreate(self):
         
         items = self.selectedItems()
@@ -538,6 +626,24 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self._create_children(item)
         
+        negative = self.manager.get_negative_name(old_name)
+        negative_item = self._get_item(negative)
+        
+        new_negative = self.manager.get_negative_name(new_name)
+        new_negative_item = self._get_item(new_negative)
+        
+        if new_negative_item:
+            if negative_item:
+                index = self.indexFromItem(negative_item)
+                self.takeTopLevelItem(index.row())
+            
+        if not new_negative_item:
+            if negative_item:
+                negative_item.setText(0, new_negative) 
+                self._create_children(negative_item)
+            
+            
+        
     def remove(self):
         
         items = self.selectedItems()
@@ -553,13 +659,12 @@ class ShapeTree(qt_ui.TreeWidget):
             
             if self.manager.is_inbetween(name):
                 self._highlight_child(item, False)
+                self.setItemSelected(item, False)
             
             if not self.manager.is_inbetween(name):
-                
-                
                 index = self.indexFromItem(item)
                 self.takeTopLevelItem(index.row())
-        
+                
     def select_shape(self, shape):
         
         for inc in range(0, self.topLevelItemCount()):
@@ -653,6 +758,8 @@ class ComboTree(qt_ui.TreeWidget):
     def __init__(self):
         super(ComboTree, self).__init__()
         
+        self.text_edit = False
+        
         self.setSortingEnabled(False)
         
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -724,6 +831,7 @@ class ComboTree(qt_ui.TreeWidget):
         self.manager.remove_combo(name)
         
         self.highlight_item(items[0], False)
+        self.setItemSelected(items[0], False)
     
     def load(self, combos = None, possible_combos = None):
         

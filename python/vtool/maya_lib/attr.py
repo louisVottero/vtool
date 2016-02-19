@@ -165,6 +165,13 @@ class Connections(object):
         This is meant to be run after disconnect(). This will reconnect all the stored connections.
         """
         for inc in range(0, len(self.connections), 2):
+            
+            if not cmds.objExists(self.connections[inc]):
+                continue
+            
+            if not cmds.objExists(self.connections[inc+1]):
+                continue
+            
             if not cmds.isConnected(self.connections[inc], self.connections[inc+1], ignoreUnitConversion = True):
                 
                 lock_state = cmds.getAttr(self.connections[inc+1], l = True)
@@ -1374,6 +1381,10 @@ class Attributes(object):
         Args
             name (str): The name of an attribute on the node.
         """
+        connections = Connections(self.node)
+        connections.disconnect()
+        
+        
         self.delete_all()
         
         variables = []
@@ -1387,6 +1398,8 @@ class Attributes(object):
             variable.create()
             
         self.variables = variables
+        
+        connections.connect()
             
     def create(self, name, var_type, index = None):
         """
@@ -1397,6 +1410,9 @@ class Attributes(object):
             var_type (str): The type of variable.
             index (int): The index where the attribute should be created. 0 would make it the first attribute.
         """
+        connections = Connections(self.node)
+        connections.disconnect()
+        
         self.delete_all()
         
         var_count = len(self.variables)
@@ -1423,6 +1439,8 @@ class Attributes(object):
             self.variables.append(var)
                 
         self.create_all()
+        
+        connections.connect()
     
     def get_variables(self):
         """

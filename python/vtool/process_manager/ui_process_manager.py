@@ -81,6 +81,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._set_title(name)
         
+        self._update_build_widget(name)
+        
     def _item_selection_changed(self):
         
         if not self.handle_selection_change:

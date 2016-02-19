@@ -1785,8 +1785,7 @@ class MayaFileData(MayaCustomData):
             if value == 'No':
                 if self.maya_file_type == self.maya_binary:
                     cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
-                
-
+        
         cmds.file(rename = self.filepath)
         
         cmds.file(save = True,

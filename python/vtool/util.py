@@ -1189,6 +1189,9 @@ def warning(*args):
 
 def find_possible_combos(names, sort = True, one_increment = False):
         
+        if not names:
+            return []
+        
         if sort:
             names.sort() 
         
