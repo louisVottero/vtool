@@ -670,10 +670,30 @@ class SkinWeightData(MayaCustomData):
             
             influences.sort()
             
+            add_joints = []
+            remove_entries = []
+            
             for influence in influences:
+                
+                joints = cmds.ls(influence, l = True)
+                
+                if type(joints) == list and len(joints) > 1:
+                    add_joints.append(joints[0])
+                    
+                    conflicting_count = len(joints)
+                    
+                    util.warning('Found %s joints with name %s. Using only the first one. %s' % (conflicting_count, influence, joints[0]))
+                    remove_entries.append( influence )
+                    influence = joints[0]
+                
                 if not cmds.objExists(influence):
                     cmds.select(cl = True)
                     cmds.joint( n = influence, p = influence_dict[influence]['position'] )
+                    
+            for entry in remove_entries:
+                influences.remove(entry)
+                
+            influences += add_joints
             
             if not skin_cluster:
                 skin_cluster = cmds.skinCluster(influences, mesh,  tsb = True, n = 'skin_%s' % mesh)[0]
@@ -689,6 +709,12 @@ class SkinWeightData(MayaCustomData):
             progress_ui = maya_lib.core.ProgressBar('import skin', len(influence_dict.keys()))
             
             for influence in influences:
+                
+                if influence.count('|') > 1:
+                    split_influence = influence.split('|')
+                    
+                    if len(split_influence) > 1:
+                        influence = split_influence[-1]
                 
                 progress_ui.status('importing skin mesh: %s,  influence: %s' % (mesh, influence))
                     
