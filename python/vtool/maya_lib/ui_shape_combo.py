@@ -39,26 +39,9 @@ class ComboManager(ui.MayaWindow):
         
     def _build_widgets(self):
         
-        header_layout = QtGui.QHBoxLayout()
+        header_layout = QtGui.QVBoxLayout()
         header_layout.setAlignment(QtCore.Qt.AlignLeft)
         
-        layout_1 = QtGui.QHBoxLayout()
-        base = QtGui.QPushButton('Set')
-        #base.setMinimumWidth(100)
-        base.setMaximumWidth(100)
-        base.setMinimumHeight(25)
-        
-        base.clicked.connect(self._set_base)
-        
-        self.current_base = QtGui.QLabel('-')
-        
-        layout_1.addWidget(base)
-        layout_1.addSpacing(10)
-        layout_1.addWidget(self.current_base)
-        
-        
-        layout_2 = QtGui.QHBoxLayout()
-        layout_2.setAlignment(QtCore.Qt.AlignLeft)
         
         self.add = QtGui.QPushButton('Shape')
         self.add.setMinimumWidth(100)
@@ -67,25 +50,44 @@ class ComboManager(ui.MayaWindow):
         
         self.add.clicked.connect(self._add_command)
         
-        layout_2.addWidget(self.add)
+        layout_1 = QtGui.QVBoxLayout()
         
-        button_layout = QtGui.QVBoxLayout()
+        base = QtGui.QPushButton('Set')
+        
+        #base.setMinimumWidth(100)
+        base.setMaximumWidth(100)
+        base.setMinimumHeight(25)
+        
+        base.clicked.connect(self._set_base)
+        
+        self.current_base = QtGui.QLabel('    Base: -')
+        self.current_base.setMaximumWidth(300)
+        
+        layout_1.addWidget(base)
+        
+        header_layout.addSpacing(5)
+        header_layout.addWidget(self.current_base)
+        header_layout.addSpacing(10)
+        
+        recreate_all = QtGui.QPushButton('Recreate All')
+        recreate_all.setMaximumWidth(100)
+        recreate_all.clicked.connect(self._recreate_all)
+        
+        layout_1.addWidget(recreate_all)
+
+        button_layout = QtGui.QHBoxLayout()
+        button_layout.setAlignment(QtCore.Qt.AlignLeft)
+        button_layout.addWidget(self.add)
         button_layout.addSpacing(10)
         button_layout.addLayout(layout_1)
-        button_layout.addSpacing(10)
-        button_layout.addLayout(layout_2)
                 
         header_layout.addLayout(button_layout)
         
         self.slider = WeightSlider()
         self.slider.value_change.connect(self._update_value)
         
-        button_layout.addSpacing(10)
-        button_layout.addWidget(self.slider)
-        
-        
-        #header_layout.addWidget(slider)
-        
+        header_layout.addSpacing(10)
+        header_layout.addWidget(self.slider)
         
         self.shape_widget = ShapeWidget()
         
@@ -258,10 +260,10 @@ class ComboManager(ui.MayaWindow):
                 if self.manager.is_shape_combo_manager(selected[0]):
                     self.manager.load(selected[0])
                     mesh = self.manager.get_mesh()
-                    self.current_base.setText(mesh)
+                    self.current_base.setText('    Base: ' + mesh)
                 
                 if not self.manager.setup_group:
-                    self.current_base.setText('-')
+                    self.current_base.setText('    Base: -')
         
         if meshes:
             mesh = None
@@ -270,7 +272,7 @@ class ComboManager(ui.MayaWindow):
             
             self.manager.create(mesh)
             
-            self.current_base.setText(mesh)
+            self.current_base.setText('    Base: ' + mesh)
 
         self.shape_widget.tree.set_manager(self.manager)
         self.combo_widget.tree.set_manager(self.manager)
@@ -346,6 +348,10 @@ class ComboManager(ui.MayaWindow):
             
         if mesh_count > 1:
             self._add_meshes(meshes)
+            
+    def _recreate_all(self):
+        
+        self.manager.recreate_all()
             
     def _update_value(self, value):
         

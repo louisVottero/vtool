@@ -911,6 +911,66 @@ class ShapeComboManager(object):
                     self.add_combo(mesh)
                     
         return shapes, combos, inbetweens
+    
+    def recreate_all(self):
+        
+        self.zero_out()
+        
+        targets_gr = cmds.group(em = True, n = core.inc_name('targets_gr'))
+        
+        shapes = self.get_shapes()
+        
+        combos = self.get_combos()
+        
+        inbetweens = []
+        
+        for shape in shapes:
+            new_shape = self.blendshape.recreate_target(shape)
+            
+            shape_inbetweens = self.get_inbetweens(shape)
+            inbetweens += shape_inbetweens
+            
+            new_inbetweens = []
+            shape_gr = new_shape
+            
+            for inbetween in shape_inbetweens:
+                sub_shape = self.blendshape.recreate_target(inbetween)
+                new_inbetweens.append(sub_shape)
+            
+            if new_inbetweens:
+                shape_gr = cmds.group(em = True, n = '%s_gr' % new_shape)
+                cmds.parent(new_inbetweens, shape_gr)
+                cmds.parent(new_shape, shape_gr)
+            
+            cmds.parent(shape_gr, targets_gr)
+            
+        combos_gr = cmds.group(em = True, n = 'combos_gr')
+        cmds.parent(combos_gr, targets_gr)
+            
+        for combo in combos:
+            
+            sub_shapes = self.get_shapes_in_combo(combo, include_combos = True)
+            sub_shapes.append(combo)
+            
+            new_combo = cmds.duplicate(self._get_home_mesh())[0]
+            new_shapes = []
+            
+            for shape in sub_shapes:
+                new_shape = self.blendshape.recreate_target(shape)
+                deform.quick_blendshape(new_shape, new_combo)
+                new_shapes.append(new_shape)
+                
+            cmds.delete(new_combo, ch = True)
+            cmds.delete(new_shapes)
+            
+            cmds.parent(new_combo, combos_gr)
+            
+            new_combo = cmds.rename(new_combo, combo)
+            
+            cmds.showHidden(new_combo)
+    
+        return shapes, inbetweens, combos
+    
     #--- shapes
       
     def add_shape(self, name, mesh = None):
@@ -1032,20 +1092,23 @@ class ShapeComboManager(object):
         return found
     
     def recreate_shape(self, name):
-
+        
         target = self.turn_on_shape(name)
         
-        if self.blendshape.is_target(target):
-            target = self.blendshape.recreate_target(target, -1)
+        if name.count('_') < 1:
             
-        if not cmds.objExists(target):
+            if self.blendshape.is_target(target):
+                target = self.blendshape.recreate_target(target, -1)
+                
+            if not cmds.objExists(target):
+                target = cmds.duplicate(self._get_mesh())[0]
+                
+        if name.count('_') > 0:
             target = cmds.duplicate(self._get_mesh())[0]
             
         if target != name:
-
-            target = cmds.rename(target, core.inc_name( name ) )
-
-        
+                target = cmds.rename(target, core.inc_name( name ) )
+            
         parent = cmds.listRelatives(target, p = True)
         if parent:
             cmds.parent(target, w = True)
@@ -1377,7 +1440,7 @@ class ShapeComboManager(object):
             
             return True
 
-    def get_inbetweens(self, shape):
+    def get_inbetweens(self, shape = None):
         
         targets = self.get_shapes()
         

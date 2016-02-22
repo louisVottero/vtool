@@ -1,5 +1,6 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import platform
 import sys
 import os
 import shutil
@@ -1252,12 +1253,19 @@ def open_browser(filepath):
         filepath (str): Filename with path.
         
     """
-    if sys.platform == 'win32':
+    
+    
+    if platform.system() == 'Windows':
         os.startfile(filepath)
         
-    else:
-        opener ="open" if sys.platform == "darwin" else "xdg-open"
-        subprocess.call([opener, filepath])  
+    if platform.system() == 'Linux':
+        
+        try:
+            opener ="open" if sys.platform == "darwin" else "xdg-open"
+            subprocess.call([opener, filepath])  
+
+        except:
+            os.system("gnome-terminal --working-directory=%s" % filepath)
 
 def remove_extension(path):
     
