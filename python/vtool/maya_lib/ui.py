@@ -85,7 +85,22 @@ def get_maya_window():
         maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
         return wrapInstance(long(maya_window_ptr), QtGui.QWidget)
     
+def defer_execute(function):
+        
+    def wrapper(*args, **kwargs):
+        
+        funct = lambda : function(*args, **kwargs)
+    
+        import maya.utils
+        maya.utils.executeDeferred(funct)
+               
+    return wrapper
+    
+@defer_execute
 def create_window(ui, dock_area = 'right'): 
+    
+    #this was needed to have the ui predictably load. 
+    mel.eval('updateRendererUI;')
     
     ui_name = str(ui.objectName())
     dock_name = '%sDock' % ui_name
@@ -94,12 +109,14 @@ def create_window(ui, dock_area = 'right'):
     path = 'MayaWindow|%s' % dock_name
     
     if cmds.dockControl(path,ex = True):    
+        print 'Refresh %s' %  dock_name
         cmds.deleteUI(dock_name, control = True)
         
     allowedAreas = ['right', 'left']
     
     #do not remove
-    print 'Creating dock window.', ui_name, ui, ui.layout
+    
+    print 'Creating dock window.', ui_name, ui, ui.layout()
     
     try:
         cmds.dockControl(dock_name,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name, w=350, fl = False, visible = True)
@@ -110,14 +127,19 @@ def create_window(ui, dock_area = 'right'):
         print traceback.format_exc()
         print ui.layout()
         vtool.util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
+        
+  
     
 def pose_manager():
     import ui_corrective
     create_window(ui_corrective.PoseManager())
 
 def shape_combo():
+    
     import ui_shape_combo
     create_window(ui_shape_combo.ComboManager())
+    
+    
     
 def tool_manager(name = None, directory = None):
     
@@ -131,11 +153,12 @@ def tool_manager(name = None, directory = None):
     import maya.utils
     maya.utils.executeDeferred(funct)
     
-    
-    
     return tool_manager
 
 def process_manager(directory = None):
+    
+    
+    
     window = ProcessMayaWindow()
     
     funct = lambda : create_window(window)
@@ -158,6 +181,7 @@ class MayaWindow(vtool.qt_ui.BasicWindow):
 class MayaDirectoryWindow(vtool.qt_ui.DirectoryWindow):
     def __init__(self):
         super(MayaDirectoryWindow, self).__init__( get_maya_window() )
+        
         
 class ProcessMayaWindow(ui_process_manager.ProcessManagerWindow):
     
@@ -211,19 +235,25 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         manager_layout = QtGui.QVBoxLayout()
         manager_layout.setContentsMargins(2,2,2,2)
         manager_layout.setSpacing(2)
+        manager_layout.setAlignment(QtCore.Qt.AlignCenter)
         
         manager_group.setLayout(manager_layout)
         
+        button_width = 200        
+        
         process_button = QtGui.QPushButton('VETALA')
         process_button.clicked.connect(self._process_manager)
+        process_button.setMinimumWidth(button_width)
         manager_layout.addWidget(process_button)
         
         pose_button = QtGui.QPushButton('Correctives')
         pose_button.clicked.connect(self._pose_manager)
+        pose_button.setMinimumWidth(button_width)
         manager_layout.addWidget(pose_button)
         
         shape_combo_button = QtGui.QPushButton('Shape Combos -Alpha-')
         shape_combo_button.clicked.connect(self._shape_combo)
+        shape_combo_button.setMinimumWidth(button_width)
         manager_layout.addWidget(shape_combo_button)
         
         tool_group = QtGui.QGroupBox('Tools')

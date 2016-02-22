@@ -287,6 +287,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         self.save_file.save_widget._save()
         
+        
     
         
     def _multi_save(self, widgets, note = None):
@@ -311,6 +312,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
             
             self.save_file.set_directory(folder_path)
             self.save_file.save_widget._save(comment)
+            
                     
     def set_code_path(self, path, open_in_window = False, name = None, load_file = True):
         
@@ -714,7 +716,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             found_scripts.append(scripts[inc])
             found_states.append(states[inc])
-                               
+        
         return [found_scripts, found_states, parents]
         
     def _insert_drop(self, event):
