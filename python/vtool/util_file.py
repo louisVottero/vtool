@@ -273,16 +273,6 @@ class VersionFile(object):
             if found:
                 
                 rename(old_dir_name, self.version_folder_name)
-
-        #new_folder = join_path(dir_name, self.version_folder_name)
-        #if is_dir(old_dir_name) and is_dir(new_folder):
-        #    rename(old_dir_name, 'version.old')
-        
-        #this was to fix a bug, probably not needed in a week's time.
-        #version_old = join_path(dir_name, 'version.old')
-        #if is_dir(version_old) and not is_dir(new_folder):
-        #    rename(version_old, self.version_folder_name)
-        
         
     def _create_version_folder(self):
         
