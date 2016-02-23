@@ -924,7 +924,13 @@ class ShapeComboManager(object):
         
         inbetweens = []
         
+        print shapes
+        
         for shape in shapes:
+            
+            if self.is_inbetween(shape):
+                continue
+            
             new_shape = self.blendshape.recreate_target(shape)
             
             shape_inbetweens = self.get_inbetweens(shape)
@@ -946,7 +952,7 @@ class ShapeComboManager(object):
             
         combos_gr = cmds.group(em = True, n = 'combos_gr')
         cmds.parent(combos_gr, targets_gr)
-            
+        
         for combo in combos:
             
             sub_shapes = self.get_shapes_in_combo(combo, include_combos = True)
@@ -968,12 +974,14 @@ class ShapeComboManager(object):
             new_combo = cmds.rename(new_combo, combo)
             
             cmds.showHidden(new_combo)
-    
+        
         return shapes, inbetweens, combos
     
     #--- shapes
       
     def add_shape(self, name, mesh = None):
+
+        print 'add shape'
 
         shape = name
         negative_shape = None
@@ -1012,6 +1020,8 @@ class ShapeComboManager(object):
         if self.is_inbetween(name):
             name = self.get_inbetween_parent(name)
             shape = name
+    
+        print shape
     
         self._add_variable(shape)
     
@@ -1112,6 +1122,8 @@ class ShapeComboManager(object):
         parent = cmds.listRelatives(target, p = True)
         if parent:
             cmds.parent(target, w = True)
+            
+        
 
             
         return target
@@ -1470,8 +1482,10 @@ class ShapeComboManager(object):
         
         first_part = inbetween[:-2]
         
-        if self.blendshape.is_target(first_part):
-            return first_part
+        return first_part
+    
+        #if self.blendshape.is_target(first_part):
+            #return first_part
         
     def get_inbetween_value(self, shape):
         

@@ -99,16 +99,16 @@ class StopWatch(object):
     def __init__(self):
         self.time = None
     
-    def start(self):
+    def start(self, description = ''):
         
-        show('started timer')
+        show('started timer', description)
         self.time = time.time()
     
     def end(self):
         seconds = time.time()-self.time
         self.time = None
         
-        show('end timer: %s seconds' % seconds)
+        show('\tend timer: %s seconds' % seconds)
     def temp(self):
         pass  
 
@@ -891,7 +891,6 @@ class FindUniqueString(object):
                 unique = True
                 continue
             
-            import maya.cmds as cmds
             if self.increment_string in scope:
                 
                 if not number:

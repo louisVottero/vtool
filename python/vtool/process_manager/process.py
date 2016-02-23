@@ -707,6 +707,18 @@ class Process(object):
         if not util_file.is_dir(path):
             return
         
+        print path
+        code_name = util_file.get_basename(path)
+        code_name = code_name + '.py'
+        
+        if basename:
+            return_value = code_name
+        if not basename:
+            
+            return_value = util_file.join_path(path, code_name)
+            
+        
+        """
         data_folder = data.DataFolder(name, self.get_code_path())
         
         data_instance = data_folder.get_folder_data_instance()
@@ -727,7 +739,7 @@ class Process(object):
             
             if not basename:
                 return_value = filepath
-        
+        """
         return return_value
 
     def get_code_name_from_path(self, code_path):
@@ -1069,6 +1081,7 @@ class Process(object):
         Sync the manifest with whats on disk.
         """
         
+        
         scripts, states = self.get_manifest()
         
         synced_scripts = []
@@ -1130,8 +1143,7 @@ class Process(object):
             synced_states.append(False)
             
         self.set_manifest(synced_scripts, synced_states)
-                
-                
+                        
     #--- run
     
     def load(self, name):

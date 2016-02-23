@@ -1030,6 +1030,7 @@ class FileTreeWidget(TreeWidget):
         self._load_files(files)
         
         self.refreshed.emit()
+        
 
     def get_item_directory(self, item):
         
@@ -1991,7 +1992,7 @@ class CodeEditTabs(BasicWidget):
         
         if hasattr(current_widget, 'text_edit'):
             current_widget = current_widget.text_edit
-           
+        
         current_widget.document().setModified(False)
         
         self.save.emit(current_widget)
