@@ -924,8 +924,6 @@ class ShapeComboManager(object):
         
         inbetweens = []
         
-        print shapes
-        
         for shape in shapes:
             
             if self.is_inbetween(shape):
@@ -980,9 +978,7 @@ class ShapeComboManager(object):
     #--- shapes
       
     def add_shape(self, name, mesh = None):
-
-        print 'add shape'
-
+        
         shape = name
         negative_shape = None
 
@@ -1020,9 +1016,7 @@ class ShapeComboManager(object):
         if self.is_inbetween(name):
             name = self.get_inbetween_parent(name)
             shape = name
-    
-        print shape
-    
+            
         self._add_variable(shape)
     
         self._setup_shape_connections(shape, negative_shape)

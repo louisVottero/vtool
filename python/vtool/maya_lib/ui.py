@@ -105,17 +105,17 @@ def create_window(ui, dock_area = 'right'):
     ui_name = str(ui.objectName())
     dock_name = '%sDock' % ui_name
     dock_name = dock_name.replace(' ', '_')
+    dock_name = dock_name.replace('-', '_')
     
     path = 'MayaWindow|%s' % dock_name
     
-    if cmds.dockControl(path,ex = True):    
-        print 'Refresh %s' %  dock_name
+    if cmds.dockControl(path,ex = True):
         cmds.deleteUI(dock_name, control = True)
+        ui.close()
         
     allowedAreas = ['right', 'left']
     
     #do not remove
-    
     print 'Creating dock window.', ui_name, ui, ui.layout()
     
     try:
@@ -124,11 +124,7 @@ def create_window(ui, dock_area = 'right'):
     
     except:
         #do not remove
-        print traceback.format_exc()
-        print ui.layout()
         vtool.util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
-        
-  
     
 def pose_manager():
     import ui_corrective

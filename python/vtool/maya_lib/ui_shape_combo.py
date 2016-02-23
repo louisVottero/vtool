@@ -587,7 +587,6 @@ class ShapeTree(qt_ui.TreeWidget):
         
         if event.button() == QtCore.Qt.LeftButton:
             if not self.left_press:
-                print 'left button!!!'
                 self.left_press = True
                 
                 item = None
@@ -605,48 +604,16 @@ class ShapeTree(qt_ui.TreeWidget):
                     item = self.topLevelItem(index.row())
                 
                 if item:
-                    self.setItemSelected(item, True)
-                
-                
-                return
+                    if not item.isSelected():
+                        self.setItemSelected(item, True)
+                        return
+                    if item.isSelected():
+                        self.setItemSelected(item, False)
+                        return
             
             if self.left_press:
                 self.left_press = False
                 return
-            
-            
-        
-        """
-        item = None
-        
-        if not self.ctrl_active:
-            self.clearSelection()
-        
-        parent_index = index.parent().row()
-        
-        if parent_index > -1:
-            parent_item = self.topLevelItem(parent_index)
-            item = parent_item.child(index.row())
-            
-        if parent_index == -1:
-            item = self.topLevelItem(index.row())
-        
-        if item:
-            self.setItemSelected(item, True)
-        """             
-        """
-        if item.isSelected():
-            self.update_select = False
-            self.setItemSelected(item, False)
-            self.update_select = True
-            return
-        
-        if not item.isSelected():
-            self.update_select = False
-            self.setItemSelected(item, True)
-            self.update_select = True
-            return
-        """
     
     def recreate(self):
         
