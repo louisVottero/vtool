@@ -707,9 +707,12 @@ class Process(object):
         if not util_file.is_dir(path):
             return
         
-        print path
         code_name = util_file.get_basename(path)
-        code_name = code_name + '.py'
+        
+        if not code_name == 'manifest':
+            code_name = code_name + '.py'
+        if code_name == 'manifest':
+            code_name = code_name + '.data'
         
         if basename:
             return_value = code_name
@@ -717,7 +720,6 @@ class Process(object):
             
             return_value = util_file.join_path(path, code_name)
             
-        
         """
         data_folder = data.DataFolder(name, self.get_code_path())
         
@@ -1441,9 +1443,12 @@ def copy_process(source_process, target_process = None ):
     for data_folder in data_folders:
         copy_process_data(source_process, new_process, data_folder)
     
+    manifest_found = False
+    
     if 'manifest' in code_folders:
         code_folders.remove('manifest')
-        code_folders.append('manifest')
+        manifest_found = True
+        #code_folders.append('manifest')
     
     for code_folder in code_folders:
         copy_process_code(source_process, new_process, code_folder)
@@ -1455,6 +1460,9 @@ def copy_process(source_process, target_process = None ):
         
         if not sub_process.is_process():
             copy_process(source_sub_process, new_process)
+            
+    if manifest_found:
+        copy_process_code(source_process, new_process, 'manifest')
     
     return new_process
     

@@ -1041,6 +1041,7 @@ class FileTreeWidget(TreeWidget):
     def set_directory(self, directory, refresh = True):
         
         self.directory = directory
+        
         if refresh:
             self.refresh()
         

@@ -123,6 +123,7 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         
     def _copy_done(self):
         self.copy_widget.hide()
+        self.sync_code.emit()
         
     def get_current_process(self):
         
@@ -143,12 +144,14 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.tree_widget.new_process.connect(self._add_branch)
         self.tree_widget.new_top_process.connect(self._add_top_branch)
         self.tree_widget.copy_special_process.connect(self._copy)
+        self.tree_widget.copy_process.connect(self._copy_done)
         
         
 class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
     new_process = qt_ui.create_signal()
     new_top_process = qt_ui.create_signal()    
+    copy_process = qt_ui.create_signal()
     copy_special_process = qt_ui.create_signal()
     delete_process = qt_ui.create_signal()
     item_renamed = qt_ui.create_signal(object)
@@ -494,6 +497,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
         if not target_process:
             self.scrollToItem(new_item)
+            
+        self.copy_process.emit()
     
     def _copy_special_process(self):
         self.copy_special_process.emit()

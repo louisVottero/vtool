@@ -175,6 +175,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
             self._close_splitter()
          
     def set_directory(self, directory, sync_code = False):
+        
         super(CodeProcessWidget, self).set_directory(directory)
         
         self.script_widget.set_directory(directory, sync_code)
@@ -460,6 +461,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         
     def set_directory(self, directory, sync_code = False):
+        
         super(ScriptWidget, self).set_directory(directory)
         
         if not sync_code:
@@ -1204,6 +1206,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 
                 self.addTopLevelItem(item)
                 
+                
                 item.set_text(basename)
             
             if not states[inc]:
@@ -1307,8 +1310,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             vtool.util.show(status) 
          
         self.scrollToItem(item) 
-              
-
+        
     def refresh(self, sync = False):
         
         if sync:

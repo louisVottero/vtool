@@ -209,20 +209,24 @@ class ComboManager(ui.MayaWindow):
                 previous_name = negative_parent
                 
             if previous_name == test_name:
+                self.update_on_select = False
                 previous_item.setSelected(False)
+                self.update_on_select = True
             
         shape_items = self.shape_widget.tree.selectedItems()
-            
+        
         
         for item in shape_items:
             parent = item.parent()
 
             if parent:
+                
                 for inc in range(0, parent.childCount()):
-                    
-                    parent.child(inc).setSelected(False)
+                    self.update_on_select = False
+                    #parent.child(inc).setSelected(False)
                     parent.setSelected(False)
-                    
+                    self.update_on_select = True
+                
                 self.update_on_select = False
                 self.shape_widget.tree.setCurrentItem(item)
                 self.update_on_select = True
@@ -605,11 +609,13 @@ class ShapeTree(qt_ui.TreeWidget):
                 
                 if item:
                     if not item.isSelected():
+                        
                         self.setItemSelected(item, True)
-                        return
+                        return QtGui.QItemSelectionModel.Current | QtGui.QItemSelectionModel.Select
                     if item.isSelected():
+                        
                         self.setItemSelected(item, False)
-                        return
+                        return QtGui.QItemSelectionModel.Current | QtGui.QItemSelectionModel.Deselect
             
             if self.left_press:
                 self.left_press = False
