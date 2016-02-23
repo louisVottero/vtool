@@ -707,7 +707,6 @@ class Process(object):
         if not util_file.is_dir(path):
             return
         
-        print path
         code_name = util_file.get_basename(path)
         code_name = code_name + '.py'
         
