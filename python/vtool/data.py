@@ -443,19 +443,11 @@ class MayaCustomData(CustomData):
         
         cmds.setAttr('persp.farClipPlane', distance)
         
-        if distance > 1000:
-            near = 0.01
+        near = 0.1
         
         if distance > 10000:
-            near = 0.1
+            near = (distance/10000) * near
 
-        if distance > 100000:
-            near = 1
-        
-        if distance > 1000000:
-            near = 10
-            
-        
         cmds.setAttr('persp.nearClipPlane', near)
             
 class ControlCvData(MayaCustomData):

@@ -1252,6 +1252,8 @@ class ShapeComboManager(object):
         
         cmds.delete(delta)
         
+        
+        
         if not attr.get_attribute_input('%s.%s' % (blendshape.blendshape, name)):
             
             last_multiply = None
@@ -1259,14 +1261,20 @@ class ShapeComboManager(object):
             
             for shape in shapes:
                 
+                attribute = '%s.%s' % (blendshape.blendshape, shape)
+        
+                #inbetween_parent = self.get_inbetween_parent(name)
+                #if inbetween_parent:
+                #    attribute = '%s.%s' % (self.setup_group, inbetween_parent)
+                
                 if not self.blendshape.is_target(shape):
                     continue
                 
                 if not last_multiply:
-                    multiply = attr.connect_multiply('%s.%s' % (blendshape.blendshape, shape), '%s.%s' % (blendshape.blendshape, name), 1)
+                    multiply = attr.connect_multiply(attribute, '%s.%s' % (blendshape.blendshape, name), 1)
                     
                 if last_multiply:
-                    multiply = attr.connect_multiply('%s.%s' % (blendshape.blendshape, shape), '%s.input2X' % last_multiply, 1)
+                    multiply = attr.connect_multiply(attribute, '%s.input2X' % last_multiply, 1)
                 
                 multiply = cmds.rename(multiply, core.inc_name('multiply_combo_%s_1' % name))
                 
