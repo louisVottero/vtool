@@ -671,6 +671,11 @@ class OrientJointAttributes(object):
             
         return value_dict
     
+    def set_values(self, value_dict):
+        
+        for attr in self.attributes:
+            attr.set_value(value_dict[attr.get_name(True)])
+    
     def set_default_values(self):
         """
         Reset the attributes to default.

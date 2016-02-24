@@ -375,6 +375,9 @@ class ComboManager(ui.MayaWindow):
         #    self._add_meshes(meshes)
         
         self._add_meshes(meshes)
+        
+        
+        
             
     def _recreate_all(self):
         
@@ -612,8 +615,8 @@ class ShapeTree(qt_ui.TreeWidget):
                         
                         self.setItemSelected(item, True)
                         return QtGui.QItemSelectionModel.Current | QtGui.QItemSelectionModel.Select
-                    if item.isSelected():
-                        
+                    
+                    if item.isSelected():    
                         self.setItemSelected(item, False)
                         return QtGui.QItemSelectionModel.Current | QtGui.QItemSelectionModel.Deselect
             
