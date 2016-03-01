@@ -198,18 +198,11 @@ def is_a_mesh(node):
     return False
 
 
-
-
-def get_selected_meshes():
-    """
-    Return
-        list: Any meshes in the selection list.
-    """
-    selection = cmds.ls(sl = True)
+def get_meshes_in_list(list_of_things):
     
     found = []
     
-    for thing in selection:
+    for thing in list_of_things:
         if cmds.nodeType(thing) == 'mesh':
             found_mesh = cmds.listRelatives(thing, p = True)
             found.append(found_mesh)
@@ -221,6 +214,16 @@ def get_selected_meshes():
                 found.append(thing)
                 
     return found        
+
+def get_selected_meshes():
+    """
+    Return
+        list: Any meshes in the selection list.
+    """
+    selection = cmds.ls(sl = True)
+    
+    get_meshes_in_list(selection)
+    
 
 def get_mesh_shape(mesh, shape_index = 0):
     """

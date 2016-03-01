@@ -13,6 +13,7 @@ import core
 import attr
 import deform
 import anim
+import geo
     
 #import util
 
@@ -299,12 +300,15 @@ class BlendShape(object):
             if mesh and cmds.objExists(mesh):
                 cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
             
+            attr_name = core.get_basename(name)
+            
             if not cmds.objExists('%s.%s' % (self.blendshape, name)):
                 cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 1)
-                cmds.aliasAttr(name, '%s.weight[%s]' % (self.blendshape, current_index))
+                
+                cmds.aliasAttr(attr_name, '%s.weight[%s]' % (self.blendshape, current_index))
                 cmds.setAttr('%s.weight[%s]' % (self.blendshape, current_index), 0)
             
-            attr = '%s.%s' % (self.blendshape, name)
+            attr = '%s.%s' % (self.blendshape, attr_name)
             return attr
             
         if self.is_target(name):            
@@ -347,8 +351,8 @@ class BlendShape(object):
                 
                 cmds.connectAttr('%s.outMesh' % mesh, mesh_input)
                 
-                if not leave_connected:
-                    cmds.disconnectAttr('%s.outMesh' % mesh, mesh_input)
+            if not leave_connected and cmds.isConnected('%s.outMesh' % mesh, mesh_input):
+                cmds.disconnectAttr('%s.outMesh' % mesh, mesh_input)
                 
                 
         if not self.is_target(name):
@@ -750,30 +754,33 @@ class ShapeComboManager(object):
         if keyframe:
             cmds.delete(keyframe)
             
-    def _setup_shape_connections(self, name, negative_shape = None):
+    def _setup_shape_connections(self, name):
         
         blendshape = self.blendshape
         
-        setup_attr = '%s.%s' % (self.setup_group, name)
         blend_attr = '%s.%s' % (blendshape.blendshape, name)
-        
-        negative_value = 1
-        
-        if negative_shape:
-            blend_attr = '%s.%s' % (blendshape.blendshape, negative_shape)
-            name = negative_shape
-            
-            if negative_shape:
-                negative_value = -1
-            
+
         inbetween_parent = self.get_inbetween_parent(name)
         
         if inbetween_parent:
             name = inbetween_parent
-            setup_attr = '%s.%s' % (self.setup_group, name)
-                
+        
+        setup_name = name
+        
         inbetweens = self.get_inbetweens(name)
         
+        negative_value = 1
+        
+        negative_parent = self.get_negative_parent(name)
+        if negative_parent:
+            
+            setup_name = negative_parent
+            
+            if negative_parent:
+                negative_value = -1
+                
+        setup_attr = '%s.%s' % (self.setup_group, setup_name)
+                
         self._remove_target_keyframe(name)
         
         if not inbetweens:
@@ -804,19 +811,17 @@ class ShapeComboManager(object):
                     
                 if value_count > inc+1:
 
-                    future_control_value = values[inc+1] *.01                        
+                    future_control_value = values[inc+1] *.01 * negative_value
                     anim.quick_driven_key(setup_attr, blend_attr, [control_value, future_control_value], [1, 0], tangent_type='linear')
 
                 last_control_value = control_value
                 
-            anim.quick_driven_key(setup_attr, blend_attr, [control_value, 1*negative_value], [1, 0], tangent_type='linear')
+            anim.quick_driven_key(setup_attr, blend_attr, [control_value, (1*negative_value)], [1, 0], tangent_type='linear')
             
             blend_attr = '%s.%s' % (blendshape.blendshape, name)                        
-            anim.quick_driven_key(setup_attr, blend_attr, [control_value, 1*negative_value], [0, 1], tangent_type='linear')
+            anim.quick_driven_key(setup_attr, blend_attr, [control_value, (1*negative_value)], [0, 1], tangent_type='linear')
             
     def _setup_combo_connections(self, combo, skip_update_others = False):
-        
-        print 'setup combo connect!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', combo
         
         inbetween_combo_parent = self.get_inbetween_combo_parent(combo)
         
@@ -828,8 +833,6 @@ class ShapeComboManager(object):
         if not inbetween_combo_parent:
             values = self._get_inbetween_combo_value_dict(combo)
         
-        print 'values!!!!', values
-        
         self._remove_combo_multiplies(combo)
         
         shapes = self.get_shapes_in_combo(combo, include_combos=True)
@@ -839,6 +842,8 @@ class ShapeComboManager(object):
         last_multiply = None
         
         for shape in shapes:
+            
+            negative_offset = 1
             
             if not self.blendshape.is_target(shape):
                 continue
@@ -850,10 +855,14 @@ class ShapeComboManager(object):
             if inbetween_parent:
                 shape = inbetween_parent
                 
+            setup_shape = shape
+                
+            negative_parent = self.get_negative_parent(shape)
+            if negative_parent:
+                negative_offset = -1
+                setup_shape = negative_parent
             
-            print 'working on shape', shape
-            
-            source = '%s.%s' % (self.setup_group, shape)
+            source = '%s.%s' % (self.setup_group, setup_shape)
             
             if not last_multiply:
                 multiply = attr.connect_multiply(source, target_combo, 1)
@@ -863,8 +872,6 @@ class ShapeComboManager(object):
             
             multiply = cmds.rename(multiply, core.inc_name('multiply_combo_%s_1' % combo))
             
-            print 'values!!!', values
-            
             value_list = []
                
             if shape in values:
@@ -872,20 +879,15 @@ class ShapeComboManager(object):
             
             if values:
                 
-                
-                
                 value = None
                 
                 if orig_shape:
                     value = self.get_inbetween_value(orig_shape)
                 
-                print value, value_list
-                
                 before_value = 0
-                after_value = 1
+                after_value = 1 * negative_offset
                 
                 if value:
-                    
                     
                     if value in value_list:
                         
@@ -893,40 +895,42 @@ class ShapeComboManager(object):
                             index = value_list.index(value)
                             
                             if index > 0:
-                                before_value = (value_list[index-1] * 0.01)
+                                before_value = (value_list[index-1] * 0.01 * negative_offset)
                             
                             if index < len(value_list)-1:
-                                after_value = (value_list[index+1] * 0.01)
-                        
-                    print before_value, after_value
-                        
-                    value *= 0.01
+                                after_value = (value_list[index+1] * 0.01 * negative_offset)
+                    
+                    value *= 0.01 * negative_offset
                     attr.disconnect_attribute('%s.input1X' % multiply)
+                    
                     anim.quick_driven_key(source, '%s.input1X' % multiply, [before_value,value,after_value], [0,1,0], tangent_type = 'linear')    
                                 
-                if not value and value_list:
+                if not value:
                     
                     before_value = 0
                     
-                    before_value = value_list[-1] * 0.01
+                    if value_list:
+                        before_value = value_list[-1] * 0.01 * negative_offset
                     
-                    print value_list, before_value
                     attr.disconnect_attribute('%s.input1X' % multiply)
-                    anim.quick_driven_key(source, '%s.input1X' % multiply, [before_value, 1], [0,1], tangent_type = 'linear')
+                    anim.quick_driven_key(source, '%s.input1X' % multiply, [before_value, (1 * negative_offset)], [0,1], tangent_type = 'linear')
             
             last_multiply = multiply
             
-        
-        
+            if not values:
+                attr.disconnect_attribute('%s.input1X' % multiply)
+                anim.quick_driven_key(source, '%s.input1X' % multiply, [0, 1], [0,1], tangent_type = 'linear')
+                
+                if negative_parent:
+                    attr.disconnect_attribute('%s.input1X' % multiply)
+                    anim.quick_driven_key(source, '%s.input1X' % multiply, [0, -1], [0,1], tangent_type = 'linear')
         
         if inbetween_combo_parent:
             
             if self.blendshape.is_target(inbetween_combo_parent):
-                print 'updating parent'
+        
                 self._setup_combo_connections(inbetween_combo_parent, True)
         
-                print 'skip update others', skip_update_others
-                
                 if skip_update_others:
                     return
                 
@@ -936,17 +940,13 @@ class ShapeComboManager(object):
                     for inbetween in inbetweens:
                         if inbetween == combo:
                             continue
-                        print 'updating inbetweeen1!!!', inbetween
+                        
                         self._setup_combo_connections(inbetween, True)
-            
-        print 'done', combo
         
     def _remove_combo_multiplies(self, combo):
         
-        print 'remove combo!'
-        
         input_node = attr.get_attribute_input('%s.%s' % (self.blendshape.blendshape, combo), node_only = True)
-        print input_node
+        
         if not input_node:
             return
         
@@ -994,6 +994,42 @@ class ShapeComboManager(object):
             if value:
                 self.blendshape.rename_target(inbetween, new_name + str(value)) 
                 
+    def _rename_shape_combos(self, old_name, new_name):
+        
+        combos = self.get_combos()
+        
+        for combo in combos:
+            
+            combo_name = []
+            
+            shapes = combo.split('_')
+            
+            for shape in shapes:
+                
+                test_name = shape
+                
+                inbetween_parent = self.get_inbetween_parent(shape)
+                
+                if inbetween_parent:
+                    test_name = inbetween_parent
+                
+                negative_parent = self.get_negative_parent(test_name)
+                
+                if negative_parent:
+                    test_name = negative_parent
+                
+                if test_name == old_name:
+                    
+                    name = shape.replace(old_name, new_name)
+                    combo_name.append(name)
+                
+                if test_name != old_name:
+                    combo_name.append(shape)
+                    
+            new_combo_name = string.join(combo_name, '_')
+            
+            self.blendshape.rename_target(combo, new_combo_name)
+                
     def _get_inbetween_combo_value_dict(self, combo):
         
         inbetween_combo_parent = self.get_inbetween_combo_parent(combo)
@@ -1019,14 +1055,18 @@ class ShapeComboManager(object):
                         value_dict[inbetween_parent] = []
                     
                     if inbetween_parent:
+                        
                         value = self.get_inbetween_value(shape)
-                        value_dict[inbetween_parent].append(value)
+                        
+                        if not value in value_dict[inbetween_parent]:
+                            value_dict[inbetween_parent].append(value)
         
         for key in value_dict:
             value_dict[key].sort()
                         
         return value_dict
-                            
+    
+    @core.undo_chunk
     def create(self, start_mesh):
         
         manager = self._find_manager_for_mesh(start_mesh)
@@ -1055,29 +1095,27 @@ class ShapeComboManager(object):
             
         self._get_blendshape()
         
+    @core.undo_chunk
     def zero_out(self):
         
         if not self.setup_group:
             return 
         
-        attributes = attr.Attributes(self.setup_group)
-        variables = attributes.get_variables()
+        attrs = cmds.listAttr(self.setup_group, ud = True, k = True)
         
-        
-        
-        for variable in variables:
-            
-            if not variable.is_numeric():
-                continue
-
-            variable.set_value(0)
+        for attr in attrs:
+            try:
+                cmds.setAttr('%s.%s' % (self.setup_group, attr), 0)
+            except:
+                pass
     
-    def add_meshes(self, meshes):
+    @core.undo_chunk
+    def add_meshes(self, meshes, preserve):
         
         shapes, combos, inbetweens = self.get_shape_and_combo_lists(meshes)
         
         for shape in shapes:
-                self.add_shape(shape)    
+                self.add_shape(shape, preserve_combos = preserve)    
             
         for inbetween in inbetweens:
             
@@ -1095,19 +1133,24 @@ class ShapeComboManager(object):
                     
         return shapes, combos, inbetweens
     
+    @core.undo_chunk
     def recreate_all(self):
         
         self.zero_out()
         
-        targets_gr = cmds.group(em = True, n = core.inc_name('targets_gr'))
+        mesh = self._get_mesh()
+        
+        targets_gr = cmds.group(em = True, n = core.inc_name('targets_%s_gr' % mesh))
         
         shapes = self.get_shapes()
-        
         combos = self.get_combos()
         
         inbetweens = []
         
         for shape in shapes:
+            
+            if self.is_negative(shape):
+                continue
             
             if self.is_inbetween(shape):
                 continue
@@ -1117,6 +1160,10 @@ class ShapeComboManager(object):
             shape_inbetweens = self.get_inbetweens(shape)
             inbetweens += shape_inbetweens
             
+            negative = self.get_negative_name(shape)
+            if self.is_negative(negative):
+                shape_inbetweens.append(negative)
+            
             new_inbetweens = []
             shape_gr = new_shape
             
@@ -1125,51 +1172,102 @@ class ShapeComboManager(object):
                 new_inbetweens.append(sub_shape)
             
             if new_inbetweens:
-                shape_gr = cmds.group(em = True, n = '%s_gr' % new_shape)
-                cmds.parent(new_inbetweens, shape_gr)
-                cmds.parent(new_shape, shape_gr)
-            
-            cmds.parent(shape_gr, targets_gr)
-            
-        combos_gr = cmds.group(em = True, n = 'combos_gr')
-        cmds.parent(combos_gr, targets_gr)
-        
-        for combo in combos:
-            
-            sub_shapes = self.get_shapes_in_combo(combo, include_combos = True)
-            sub_shapes.append(combo)
-            
-            new_combo = cmds.duplicate(self._get_home_mesh())[0]
-            new_shapes = []
-            
-            for shape in sub_shapes:
-                new_shape = self.blendshape.recreate_target(shape)
-                deform.quick_blendshape(new_shape, new_combo)
-                new_shapes.append(new_shape)
                 
-            cmds.delete(new_combo, ch = True)
-            cmds.delete(new_shapes)
+                shape_gr = cmds.group(em = True, n = '%s_gr' % shape)
+                
+                for inc in range(0, len(shape_inbetweens)):
+                    
+                    new_inbetween = new_inbetweens[inc]
+                    
+                    new_names = cmds.parent(new_inbetween, shape_gr)
+                    if new_names:
+                        cmds.rename(new_names[0], shape_inbetweens[inc])
+                
+                new_names = cmds.parent(new_shape, shape_gr)
+                
+                if new_names:
+                    cmds.rename(new_names[0], shape)
             
-            cmds.parent(new_combo, combos_gr)
+            new_names = cmds.parent(shape_gr, targets_gr)
             
-            new_combo = cmds.rename(new_combo, combo)
-            
-            cmds.showHidden(new_combo)
+            if not new_inbetweens:
+                if new_names:
+                    cmds.rename(new_names[0], shape)
         
-        return shapes, inbetweens, combos
+        if combos:
+            combos_gr = cmds.group(em = True, n = 'combos_gr')
+            
+            for combo in combos:
+                
+                sub_shapes = self.get_shapes_in_combo(combo, include_combos = True)
+                sub_shapes.append(combo)
+                
+                new_combo = cmds.duplicate(self._get_home_mesh())[0]
+                new_shapes = []
+                
+                for shape in sub_shapes:
+                    
+                    if not self.blendshape.is_target(shape):
+                        continue
+                    
+                    new_shape = self.blendshape.recreate_target(shape)
+                    
+                    deform.quick_blendshape(new_shape, new_combo)
+                    new_shapes.append(new_shape)
+                    
+                cmds.delete(new_combo, ch = True)
+                cmds.delete(new_shapes)
+                
+                cmds.parent(new_combo, combos_gr)
+                
+                new_combo = cmds.rename(new_combo, combo)
+                
+                cmds.showHidden(new_combo)
+                
+            cmds.parent(combos_gr, targets_gr)
+            
+        return targets_gr
+    
+    def get_shapes_in_group(self, group_name):
+        
+        relatives = cmds.listRelatives(group_name)
+        
+        meshes = geo.get_meshes_in_list(relatives)
+        
+        shapes, combos, inbetweens = []
+        
+        for mesh in meshes:
+            if self.is_inbetween(mesh):
+                inbetweens.append(mesh)
+                continue
+                
+            if self.is_combo(mesh):
+                combos.append(mesh)
+                continue
+            
+            shapes.append(mesh)
+            
+        return shapes, combos, inbetweens
     
     #--- shapes
       
-    def add_shape(self, name, mesh = None):
+    def add_shape(self, name, mesh = None, preserve_combos = False):
+        
+        if preserve_combos:
+            combos = self.get_associated_combos(name)
+            
+            preserve_these = {}
+            
+            for combo in combos:
+                new_combo = self.recreate_combo(combo)
+                preserve_these[combo] = new_combo
         
         shape = name
-        negative_shape = None
 
         negative_parent = self.get_negative_parent(name)
         
         if negative_parent:
             shape = negative_parent
-            negative_shape = name
 
         if not mesh:
             mesh = name
@@ -1195,14 +1293,29 @@ class ShapeComboManager(object):
         
         if not is_target:
             blendshape.create_target(name, mesh)
+            blendshape.disconnect_target(name)
         
         if self.is_inbetween(name):
-            name = self.get_inbetween_parent(name)
-            shape = name
+            inbetween_parent = self.get_inbetween_parent(name)
+            shape = inbetween_parent
+            
+            negative_parent = self.get_negative_parent(shape)
+            
+            if negative_parent:
+                shape = negative_parent
             
         self._add_variable(shape)
     
-        self._setup_shape_connections(shape, negative_shape)
+        self._setup_shape_connections(name)
+        
+        if preserve_combos:
+            
+            if not combos:
+                return
+            
+            for combo in combos:
+                self.add_combo(combo, preserve_these[combo])
+                cmds.delete(preserve_these[combo])
             
                     
     def turn_on_shape(self, name, value = 1):
@@ -1300,15 +1413,16 @@ class ShapeComboManager(object):
         if parent:
             cmds.parent(target, w = True)
             
-        
-
-            
         return target
             
     def rename_shape(self, old_name, new_name):
         
+        if self.blendshape.is_target(new_name):
+            return
+        
         self._rename_shape_inbetweens(old_name, new_name)
         self._rename_shape_negative(old_name, new_name)
+        self._rename_shape_combos(old_name, new_name)
         
         name = self.blendshape.rename_target(old_name, new_name)
         
@@ -1331,7 +1445,9 @@ class ShapeComboManager(object):
             
             parent_name = self.get_negative_parent(new_name)
             self.set_shape_weight(parent_name, 0)
-            self._setup_shape_connections(parent_name, new_name)
+            self._setup_shape_connections(name)
+        
+        
         
         return name
         
@@ -1386,9 +1502,14 @@ class ShapeComboManager(object):
         for combo in combos:
             self.remove_combo(combo)
         
-        #self._setup_shape_connections(name)
-        
     #---  combos
+    
+    def is_combo(self, name):
+        
+        if name.count('_') > 1:
+            return True
+        
+        return False
     
     def is_combo_valid(self, name):
         
@@ -1411,7 +1532,6 @@ class ShapeComboManager(object):
                 return True
             
         return False
-        
     
     def add_combo(self, name, mesh = None):
         
@@ -1456,7 +1576,6 @@ class ShapeComboManager(object):
         
         return shape
         
-            
     def remove_combo(self, name):
         
         inbetween_combo_parent = self.get_inbetween_combo_parent(name)
@@ -1553,8 +1672,7 @@ class ShapeComboManager(object):
                 found.append(other_combo)
             
         return found
-                
-            
+        
     def get_inbetween_combo_parent(self, combo):
         
         split_combo = combo.split('_')
@@ -1576,10 +1694,7 @@ class ShapeComboManager(object):
         
         if passed:
             return parent
-    
-    
         
-    
     def get_shape_and_combo_lists(self, meshes):
         
         shapes = []
@@ -1718,9 +1833,6 @@ class ShapeComboManager(object):
         first_part = inbetween[:-2]
         
         return first_part
-    
-        #if self.blendshape.is_target(first_part):
-            #return first_part
         
     def get_inbetween_value(self, shape):
         
@@ -1737,7 +1849,6 @@ class ShapeComboManager(object):
         
         return value
         
-        
     def get_inbetween_values(self, parent_shape, inbetweens):
         
         values = []
@@ -1753,6 +1864,4 @@ class ShapeComboManager(object):
         values.sort()
         
         return values, value_dict
-            
-            
         

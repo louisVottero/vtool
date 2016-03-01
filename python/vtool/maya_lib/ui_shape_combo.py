@@ -29,6 +29,7 @@ class ComboManager(ui.MayaWindow):
         
         self.shape_widget.tree.manager = self.manager
         self.update_on_select = True
+        self.shape_widget.tree.shape_renamed.connect(self._shape_renamed)
         #self._refresh()
     
     def _define_main_layout(self):
@@ -52,12 +53,6 @@ class ComboManager(ui.MayaWindow):
         
         layout_1 = QtGui.QVBoxLayout()
         
-        
-        
-        
-        
-        
-        
         self.slider = WeightSlider()
         self.slider.value_change.connect(self._update_value)
         
@@ -65,14 +60,14 @@ class ComboManager(ui.MayaWindow):
         header_layout.addWidget(self.slider)
         header_layout.addSpacing(5)
         
-        
-        
+        self.preserve_check = QtGui.QCheckBox('Preserve Combos')
         
         recreate_all = QtGui.QPushButton('Recreate All')
         recreate_all.setMaximumWidth(100)
         recreate_all.clicked.connect(self._recreate_all)
         
         layout_1.addWidget(recreate_all)
+        layout_1.addWidget(self.preserve_check)
 
         button_layout = QtGui.QHBoxLayout()
         button_layout.setAlignment(QtCore.Qt.AlignLeft)
@@ -105,11 +100,6 @@ class ComboManager(ui.MayaWindow):
         header_layout.addLayout(layout_base)
         header_layout.addSpacing(5)
         
-        
-        
-        
-        
-        
         self.shape_widget = ShapeWidget()
         
         self.combo_widget = ComboWidget()
@@ -132,8 +122,14 @@ class ComboManager(ui.MayaWindow):
         
         shapes = self.manager.get_shapes()
         
+        state = self.preserve_check.checkState()
+        
+        preserve = False
+        if state > 0:
+            preserve = True
+        
         if shapes:
-            self._add_meshes(shapes)
+            self._add_meshes(shapes, preserve, ui_only = True)
 
     def _get_selected_shapes(self):
         
@@ -215,7 +211,6 @@ class ComboManager(ui.MayaWindow):
             
         shape_items = self.shape_widget.tree.selectedItems()
         
-        
         for item in shape_items:
             parent = item.parent()
 
@@ -223,7 +218,6 @@ class ComboManager(ui.MayaWindow):
                 
                 for inc in range(0, parent.childCount()):
                     self.update_on_select = False
-                    #parent.child(inc).setSelected(False)
                     parent.setSelected(False)
                     self.update_on_select = True
                 
@@ -331,8 +325,6 @@ class ComboManager(ui.MayaWindow):
             self.manager.add_combo( combo_name, mesh )
             self.combo_widget.tree.highlight_item(combo_items[0])
             
-            #self.combo_widget.tree.load()   
-                    
         if shape_items and not combo_items and not inbetween_items and len(shape_items) == 1:
 
             shape_name = str(shape_items[0].text(0))
@@ -354,10 +346,11 @@ class ComboManager(ui.MayaWindow):
         if not combo_items and not shape_items and not inbetween_items:
             self._add_meshes([mesh])
             
-        
-    def _add_meshes(self, meshes):
-        
-        shapes, combos, inbetweens = self.manager.add_meshes(meshes)
+    def _add_meshes(self, meshes, preserve, ui_only = False):
+        if ui_only:
+            inbetweens = self.manager.get_inbetweens()
+        if not ui_only:
+            shapes, combos, inbetweens = self.manager.add_meshes(meshes, preserve)
         
         self.shape_widget.tree.load(inbetweens = inbetweens)
         self.combo_widget.tree.load()   
@@ -365,6 +358,7 @@ class ComboManager(ui.MayaWindow):
     def _add_command(self):
         
         meshes = geo.get_selected_meshes()
+        
         #mesh_count = len(meshes)
         
         #if mesh_count == 1:
@@ -374,11 +368,18 @@ class ComboManager(ui.MayaWindow):
         #if mesh_count > 1:
         #    self._add_meshes(meshes)
         
-        self._add_meshes(meshes)
+        state = self.preserve_check.checkState()
         
-        
-        
+        preserve = False
+        if state > 0:
+            preserve = True
             
+        self._add_meshes(meshes, preserve)
+        
+    def _shape_renamed(self, shape):
+        
+        self.combo_widget.tree.load()
+        
     def _recreate_all(self):
         
         self.manager.recreate_all()
@@ -417,6 +418,9 @@ class ShapeWidget(qt_ui.BasicWidget):
         self.main_layout.addWidget(self.tree)
 
 class ShapeTree(qt_ui.TreeWidget):
+    
+    shape_renamed = qt_ui.create_signal(object)
+    
     def __init__(self):
         
         self.text_edit = False
@@ -425,7 +429,7 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self.text_edit = False
         
-        self.setSelectionMode(self.ExtendedSelection)
+        #self.setSelectionMode(self.ExtendedSelection)
         
         self.setSortingEnabled(False)
         
@@ -444,7 +448,20 @@ class ShapeTree(qt_ui.TreeWidget):
         
     def _item_menu(self, position):
                 
-        #item = self.itemAt(position)
+        item = self.itemAt(position)
+        
+        parent = item.parent()
+        
+        if parent:
+            self.rename_action.setVisible(False)
+            
+        if not parent:
+            self.rename_action.setVisible(True)
+            
+        name = item.text(0)
+        
+        if self.manager.is_negative(name):
+            self.rename_action.setVisible(False)
         
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
         
@@ -590,7 +607,7 @@ class ShapeTree(qt_ui.TreeWidget):
     def selectionCommand(self, index, event):
         
         if not event:
-            return
+            return QtGui.QItemSelectionModel.NoUpdate
         
         if event.button() == QtCore.Qt.LeftButton:
             if not self.left_press:
@@ -614,15 +631,15 @@ class ShapeTree(qt_ui.TreeWidget):
                     if not item.isSelected():
                         
                         self.setItemSelected(item, True)
-                        return QtGui.QItemSelectionModel.Current | QtGui.QItemSelectionModel.Select
+                        return QtGui.QItemSelectionModel.Select
                     
                     if item.isSelected():    
                         self.setItemSelected(item, False)
-                        return QtGui.QItemSelectionModel.Current | QtGui.QItemSelectionModel.Deselect
+                        return QtGui.QItemSelectionModel.Deselect
             
             if self.left_press:
                 self.left_press = False
-                return
+                return QtGui.QItemSelectionModel.NoUpdate
     
     def recreate(self):
         
@@ -639,10 +656,23 @@ class ShapeTree(qt_ui.TreeWidget):
             
             if not cmds.objExists(name):
                 new_shape = self.manager.recreate_shape(name)
-                
-            self.manager.add_shape(name, new_shape)
             
-            cmds.select(new_shape)
+            new_shape_list = cmds.ls(new_shape)
+            match_count = len(new_shape_list)
+            
+            if match_count == 1:
+                self.manager.add_shape(name, new_shape)
+            
+            if match_count > 1:
+                vtool.util.warning('Shape not updated. More than one object matches %s. Selecting all.' % new_shape)
+                
+            cmds.select(new_shape_list)
+            
+            
+            
+            parent = item.parent()
+            if parent:
+                self._highlight_child(item, True)
         
     def rename(self):
         
@@ -659,9 +689,12 @@ class ShapeTree(qt_ui.TreeWidget):
         
         new_name = vtool.util.clean_name_string(new_name)
         
+        if new_name == old_name:
+            return
+        
         new_name = self.manager.rename_shape(old_name, new_name)
         
-        if new_name == old_name:
+        if not new_name:
             return
         
         item.setText(0, new_name)
@@ -685,7 +718,8 @@ class ShapeTree(qt_ui.TreeWidget):
                 negative_item.setText(0, new_negative) 
                 self._create_children(negative_item)
             
-            
+        
+        self.shape_renamed.emit(new_name)
         
     def remove(self):
         
@@ -741,6 +775,24 @@ class ShapeTree(qt_ui.TreeWidget):
                         self.expandItem(item)
                         
                         
+        count = self.topLevelItemCount()
+        
+        for inc in range(0, count):
+            
+            collapse = True
+            
+            item = self.topLevelItem(inc)
+            
+            child_count = item.childCount()
+            
+            if child_count:
+                for inc2 in range(0, child_count):
+                    if item.child(inc2).isSelected():
+                        collapse = False
+                        break
+            
+            if collapse:
+                item.setExpanded(False)
         
     def load(self, mesh = None, inbetweens = None):
         
@@ -865,12 +917,21 @@ class ComboTree(qt_ui.TreeWidget):
         if not cmds.objExists(name):
             new_combo = self.manager.recreate_combo(name)
             
-        self.manager.add_combo(name, new_combo)
         
-        cmds.select(new_combo)
         
+        self.highlight_item(items[0], True)
+        
+        new_combo_list = cmds.ls(new_combo)
+        match_count = len(new_combo_list)
+        
+        if match_count == 1:
+            self.manager.add_combo(name, new_combo)
+        
+        if match_count > 1:
+            vtool.util.warning('Shape not updated. More than one object matches %s. Selecting all.' % new_combo)
             
-    
+        cmds.select(new_combo_list)
+        
     def remove(self):
 
         items = self.selectedItems()
@@ -917,6 +978,8 @@ class ComboTree(qt_ui.TreeWidget):
                 
                 
                 self.addTopLevelItem(item)
+                
+        
     
     def set_manager(self, manager):
         self.manager = manager
@@ -952,10 +1015,7 @@ class WeightSlider(qt_ui.BasicWidget):
         
         self.slider.setOrientation(QtCore.Qt.Horizontal)
         self.slider.setMinimumWidth(80)
-        #self.slider.setMaximumWidth(120)
         
-        #self.main_layout.setSpacing(1)
-        #self.main_layout.addSpacing(5)
         self.main_layout.addWidget(self.value)
         self.main_layout.addSpacing(10)
         self.main_layout.addWidget(self.slider)
