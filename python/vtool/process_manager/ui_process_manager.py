@@ -181,11 +181,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_button.setMinimumWidth(150)
         self.process_button.setMinimumHeight(40)
         
-        #self.process_select_button = QtGui.QPushButton('Process Selection')
-        
-        #self.process_layout.addWidget(self.process_button)
-        #self.process_layout.addWidget(self.process_select_button)
-        
         self.stop_button = QtGui.QPushButton('STOP!')
         self.stop_button.setMaximumWidth(50)
         self.stop_button.hide()
@@ -198,11 +193,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         btm_layout = QtGui.QVBoxLayout()
         
         button_layout = QtGui.QHBoxLayout()
-        
-        button_layout.addWidget(self.process_button, alignment = QtCore.Qt.AlignLeft)
+        button_layout.setAlignment(QtCore.Qt.AlignLeft)
+        button_layout.addWidget(self.process_button)
         #button_layout.addLayout(self.process_layout)
         #button_layout.addWidget(self.process_select_button, alignment = QtCore.Qt.AlignLeft)
-        button_layout.addWidget(self.stop_button, alignment = QtCore.Qt.AlignLeft)
+        button_layout.addWidget(self.stop_button)
         
                 
         button_layout.addWidget(self.browser_button)
