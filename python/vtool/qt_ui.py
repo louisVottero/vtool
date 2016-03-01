@@ -1957,6 +1957,8 @@ class CodeEditTabs(BasicWidget):
           
         current_widget = self.tabs.currentWidget()
         
+        print 'current widget', current_widget
+        
         if not current_widget:
             
             if self.previous_widget:
@@ -1968,13 +1970,27 @@ class CodeEditTabs(BasicWidget):
         if self.previous_widget:
             if self.previous_widget.find_widget:
                 current_widget.find_widget = self.previous_widget.find_widget    
-                self.previous_widget.set_find_widget(current_widget)
+                current_widget.text_edit.set_find_widget(self.previous_widget)
+                #self.previous_widget.set_find_widget(current_widget.text_edit)
         
         self.previous_widget = current_widget.text_edit
         
         self.tabChanged.emit(current_widget)
     
     def _close_tab(self, index):
+        
+        if not self.suppress_tab_close_save:
+                    
+            widget = self.tabs.widget(index)
+            
+            #there would be no widget if changing processes
+            if widget:
+                if widget.text_edit.document().isModified():
+                    permission = get_permission('Unsaved changes. Save?', self)
+                    if permission == True:
+                        self.multi_save.emit(widget.text_edit, None)
+                    if permission == None:
+                        return
         
         title = self.tabs.tabText(index)
         
@@ -2005,29 +2021,21 @@ class CodeEditTabs(BasicWidget):
         self.main_layout.addWidget(self.tabs)
         
         self.tabs.double_click.connect(self._tab_double_click)
-        self.tabs.tabCloseRequested.connect(self._tab_close_requested)
-
+        
     def _tab_double_click(self, index):
         
         title = str(self.tabs.tabText(index))
         code_widget = self.code_tab_map[title]
         filepath = code_widget.text_edit.filepath        
         
-        self.add_floating_tab(filepath, title)
+        document = code_widget.get_document()
         
-    def _tab_close_requested(self, index):
+        floating_tab = self.add_floating_tab(filepath, title)
+        floating_tab.set_document(document)
         
-        if self.suppress_tab_close_save:
-            return
+    def _window_close_requested(self, widget):
         
-        widget = self.tabs.widget(index)
-        
-        if widget.text_edit.document().isModified():
-            permission = get_permission('Unsaved changes. Save?', self)
-            if not permission:
-                return
-            self.multi_save.emit(widget.text_edit, None)
-        
+        self.multi_save.emit(widget.code_edit.text_edit, None)
         
     def set_group(self, group):
         self.group = group
@@ -2073,18 +2081,21 @@ class CodeEditTabs(BasicWidget):
         code_widget.set_file(filepath)
         code_widget.save.connect(self._save)
         
-        window = BasicWindow()
+        window = CodeTabWindow()
         window.resize(600, 800)
         #basename = util_file.get_basename(filepath)
         
         window.setWindowTitle(basename)
-        window.main_layout.addWidget(code_edit_widget)
+        window.set_code_edit(code_edit_widget)
+        window.closed_save.connect(self._window_close_requested)
         
         self.code_floater_map[basename] = code_edit_widget
         self.code_window_map[filepath] = window
         
         window.show()
         window.setFocus()
+        
+        return code_edit_widget
         
         
     def add_tab(self, filepath, name):
@@ -2198,12 +2209,13 @@ class CodeEditTabs(BasicWidget):
         #widgets = self.get_widgets_from_filepath(old_path)
         widgets = self.get_widgets(old_name)
         
-        
         if not widgets:
             return
         
         #name = util_file.get_basename(new_path)
         #old_name = util_file.get_basename(old_path)
+        
+        removed_old_tab = False
         
         for widget in widgets:
             
@@ -2216,6 +2228,7 @@ class CodeEditTabs(BasicWidget):
                 self.code_tab_map[new_name] = widget
                 if self.code_tab_map.has_key(old_name):
                     self.code_tab_map.pop(old_name)
+                    removed_old_tab = True
                 widget.text_edit.filepath = new_path
                 #widget.set_file(new_path)
                 
@@ -2229,8 +2242,12 @@ class CodeEditTabs(BasicWidget):
                 self.code_floater_map[new_name] = widget
                 if self.code_floater_map.has_key(old_name):
                     self.code_floater_map.pop(old_name)
+                    removed_old_tab = True
                 widget.text_edit.filepath = new_path
                 widget.set_file(new_path)
+                
+        if not removed_old_tab:
+            util.warning('Failed to remove old code widget entry: %s' % old_name)
               
     def close_tab(self, name):
         
@@ -2238,6 +2255,8 @@ class CodeEditTabs(BasicWidget):
             return
         
         widgets = self.get_widgets()
+        
+        removed_widget_entry = False
         
         for widget in widgets:
             
@@ -2249,12 +2268,13 @@ class CodeEditTabs(BasicWidget):
                 continue
             
             index = self.tabs.indexOf(widget)
-              
+            
             if index > -1:
                 
                 self.tabs.removeTab(index)
                 if self.code_tab_map.has_key(titlename):
                     self.code_tab_map.pop(titlename)
+                    removed_widget_entry = True
             
             if index == -1 or index == None:
                 
@@ -2264,6 +2284,11 @@ class CodeEditTabs(BasicWidget):
                 window_parent.deleteLater()
                 
                 self.code_floater_map.pop(titlename)
+                
+                removed_widget_entry = True
+                
+        if not removed_widget_entry:
+            util.warning('%s code entry was not removed from widget list on close.' % name)
                 
     def close_tabs(self):
         
@@ -2326,6 +2351,41 @@ class CodeTabBar(QtGui.QTabBar):
         
         self.double_click.emit(index)
         
+class CodeTabWindow(BasicWindow):
+    
+    closed_save = create_signal(object)
+    
+    def __init__(self):
+        super(CodeTabWindow, self).__init__()
+        
+        self.code_edit = None
+    
+    def closeEvent(self, event):
+        
+        print self.code_edit
+        
+        if self.code_edit:
+            
+            if self.code_edit.text_edit.document().isModified():
+                permission = get_permission('Unsaved changes. Save?', self)
+                
+                if permission == None:
+                    event.ignore()
+                    return
+                
+        
+        event.accept()
+        if permission == True:
+            self.closed_save.emit(self)
+        #super(CodeTabWindow, self).closeEvent(event)
+        
+        #closed.emit()
+        
+    def set_code_edit(self, code_edit_widget):
+        
+        self.main_layout.addWidget(code_edit_widget)
+        self.code_edit = code_edit_widget
+        
         
 class CodeEdit(BasicWidget):
     
@@ -2357,20 +2417,13 @@ class CodeEdit(BasicWidget):
         #completer on off... comment out to turn completer off.
         self.text_edit.set_completer( PythonCompleter() )
         
-    
-        
     def _build_menu_bar(self):
         
         self.menu_bar = QtGui.QMenuBar()
         
-        
-        
-        
         self.main_layout.insertWidget(0, self.menu_bar)
         
-        
         file_menu = self.menu_bar.addMenu('File')
-        
         
         save_action = file_menu.addAction('Save')
         browse_action = file_menu.addAction('Browse')
@@ -2426,6 +2479,13 @@ class CodeEdit(BasicWidget):
             
         self.fullpath.setText('Fullpath:  %s' % filepath)
         self.save_state.setText('No Changes')
+        
+    def get_document(self):
+        return self.text_edit.document()
+    
+    def set_document(self, document):
+        self.text_edit.setDocument(document)
+        
         
 class ListAndHelp(QtGui.QListView):
     

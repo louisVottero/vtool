@@ -290,7 +290,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 self.drag_parent.addChild(self.dragged_item)                
     
     def mouseDoubleClickEvent(self, event):
-        self.doubleClicked.emit(0)
+        
+        position = event.pos()
+        index = self.indexAt(position)
+        
+        self.doubleClicked.emit(index)
     
     def mouseMoveEvent(self, event):
         model_index =  self.indexAt(event.pos())

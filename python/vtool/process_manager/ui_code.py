@@ -106,9 +106,6 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
                 
                 self.splitter.setSizes([section, section])
             
-        if not code:
-            return
-            
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         
@@ -140,6 +137,8 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
             util_file.open_browser(code_file)
              
     def _script_rename(self, old_name, new_name):
+        
+        print 'rename script!', old_name, new_name
         
         process_data = process.Process()
         process_data.set_directory(self.directory)
@@ -317,6 +316,8 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
                     
     def set_code_path(self, path, open_in_window = False, name = None, load_file = True):
         
+        print 'set code path', path, open_in_window, name, load_file
+        
         if not path:
             self.save_file.hide()
             self.code_edit.hide()
@@ -339,8 +340,6 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.current_process = process_name
         
         self.code_edit.current_process = process_name
-        
-            
         
 class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     
@@ -386,7 +385,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         if self.code_manifest_tree.handle_selection_change:
         
-            code_folder = self._get_current_code()
+            code_folder = self._get_current_code(item)
             self.script_open.emit(code_folder, open_in_window)
             
     def _script_open_external(self):
