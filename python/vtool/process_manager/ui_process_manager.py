@@ -195,8 +195,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         button_layout = QtGui.QHBoxLayout()
         button_layout.setAlignment(QtCore.Qt.AlignLeft)
         button_layout.addWidget(self.process_button)
-        #button_layout.addLayout(self.process_layout)
-        #button_layout.addWidget(self.process_select_button, alignment = QtCore.Qt.AlignLeft)
         button_layout.addWidget(self.stop_button)
         
                 
@@ -217,11 +215,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         help_button.clicked.connect(self._open_help)
         self.stop_button.clicked.connect(self._set_kill_process)
         
-        #self.main_layout.addLayout( button_layout )
         self.main_layout.addLayout(btm_layout)
         
         self.build_widget.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
-        #self.main_layout.addWidget( self.build_widget, alignment = QtCore.Qt.AlignBottom )
         
     def _update_process(self, name):
         
