@@ -8,6 +8,7 @@ from vtool import util
 
 import process
 import ui_view
+import ui_options
 import ui_data
 import ui_code
 import ui_settings
@@ -151,6 +152,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.tab_widget.currentChanged.connect(self._tab_changed)
                 
         self.view_widget = ui_view.ViewProcessWidget()
+        #splitter stuff
+        #self.option_widget = ui_options.ProcessOptionsWidget()
         
         self.data_widget = ui_data.DataProcessWidget()
         
@@ -159,7 +162,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.project_directory_changed.connect(self.set_project_directory)
         self.settings_widget.code_directory_changed.connect(self.set_code_directory)
         
+        #splitter stuff
+        #self.process_splitter = QtGui.QSplitter()
+        #self.process_splitter.addWidget(self.view_widget)
+        #self.process_splitter.addWidget(self.option_widget)
+        #self.process_splitter.setSizes([1,1])
+        
         self.tab_widget.addTab(self.settings_widget, 'Settings')       
+        #self.tab_widget.addTab(self.process_splitter, 'View')
         self.tab_widget.addTab(self.view_widget, 'View')
         self.tab_widget.addTab(self.data_widget, 'Data')
         self.tab_widget.addTab(self.code_widget, 'Code')
@@ -174,7 +184,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.main_layout.addSpacing(4)
         self.main_layout.addWidget( self.tab_widget )
         
-        #self.process_layout = QtGui.QVBoxLayout()
+        left_button_layout = QtGui.QHBoxLayout()
+        right_button_layout = QtGui.QHBoxLayout()
         
         self.process_button = QtGui.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
@@ -182,46 +193,46 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_button.setMinimumHeight(40)
         
         self.stop_button = QtGui.QPushButton('STOP!')
-        self.stop_button.setMaximumWidth(50)
+        self.stop_button.setMaximumWidth(60)
+        self.stop_button.setMinimumHeight(30)
         self.stop_button.hide()
         
         self.browser_button = QtGui.QPushButton('Browse')
-        self.browser_button.setMaximumWidth(100)
-        help_button = QtGui.QPushButton('?')
-        help_button.setMaximumWidth(60)       
+        self.browser_button.setMaximumWidth(120)
+        help_button = QtGui.QPushButton('Help')
+        help_button.setMaximumWidth(100)       
         
         btm_layout = QtGui.QVBoxLayout()
         
         button_layout = QtGui.QHBoxLayout()
-        button_layout.setAlignment(QtCore.Qt.AlignLeft)
-        button_layout.addWidget(self.process_button)
-        #button_layout.addLayout(self.process_layout)
-        #button_layout.addWidget(self.process_select_button, alignment = QtCore.Qt.AlignLeft)
-        button_layout.addWidget(self.stop_button)
         
-                
-        button_layout.addWidget(self.browser_button)
-        button_layout.addWidget(help_button)
+        left_button_layout.setAlignment(QtCore.Qt.AlignLeft)
+        left_button_layout.addWidget(self.process_button)
+        left_button_layout.addSpacing(10)
+        left_button_layout.addWidget(self.stop_button)
+        
+        right_button_layout.setAlignment(QtCore.Qt.AlignRight)
+        right_button_layout.addWidget(self.browser_button)
+        right_button_layout.addWidget(help_button)
+        
+        button_layout.addLayout(left_button_layout)
+        button_layout.addLayout(right_button_layout)
         
         self.build_widget = ui_data.ProcessBuildDataWidget()
         self.build_widget.hide()
-        
         
         btm_layout.addLayout(button_layout)
         btm_layout.addSpacing(10)
         btm_layout.addWidget(self.build_widget, alignment = QtCore.Qt.AlignBottom)
         
-                
         self.browser_button.clicked.connect(self._browser)
         self.process_button.clicked.connect(self._process)
         help_button.clicked.connect(self._open_help)
         self.stop_button.clicked.connect(self._set_kill_process)
         
-        #self.main_layout.addLayout( button_layout )
         self.main_layout.addLayout(btm_layout)
         
         self.build_widget.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
-        #self.main_layout.addWidget( self.build_widget, alignment = QtCore.Qt.AlignBottom )
         
     def _update_process(self, name):
         

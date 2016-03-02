@@ -469,17 +469,18 @@ class PoseManager(object):
         """
         Attach poses to the pose_gr and the rig.
         """
+        
         if not poses:
             poses = self.get_poses()
         
         for pose_name in poses:
-            
+        
             detached = None
             
             if self.detached_attributes:
                 if self.detached_attributes.has_key(pose_name):
                     detached = self.detached_attributes[pose_name]
-            
+                    
             pose = self.get_pose_instance(pose_name)
             pose.attach(detached)
             
@@ -763,15 +764,20 @@ class PoseGroup(object):
         
         Args
             outputs (list) 
-        """        
-        self.attach_sub_poses()
+        """
+        
+        
+        
+        self.attach_sub_poses(outputs)
     
     def detach(self):
         """
         Detach the pose. 
         Attaching and detaching help with export/import.
         """
-        self.detach_sub_poses()
+        detach_dict = self.detach_sub_poses()
+        
+        return detach_dict
         
     def detach_sub_poses(self):
         """
@@ -783,11 +789,17 @@ class PoseGroup(object):
         if not children:
             return
         
+        detach_dict = {}
+        
         for child in children:    
             child_instance= get_pose_instance(child)
-            child_instance.detach()
+            detached = child_instance.detach()
             
-    def attach_sub_poses(self):
+            detach_dict[child_instance.pose_control] = detached
+            
+        return detach_dict
+    
+    def attach_sub_poses(self, outputs):
         """
         Attach the sub poses.
         Attaching and detaching help with export/import.
@@ -798,8 +810,15 @@ class PoseGroup(object):
             return
         
         for child in children:
+            
+            detached = None
+            
+            if type(outputs) == dict:
+                if outputs.has_key(child):
+                    detached = outputs[child]
+            
             child_instance= get_pose_instance(child)
-            child_instance.attach()
+            child_instance.attach(detached)
         
     def mirror(self):
         """
@@ -1845,12 +1864,16 @@ class PoseBase(PoseGroup):
         if not children:
             return
         
+        detached_attributes = {}
+        
         for child in children:
         
             child_instance= manager.get_pose_instance(child)
-            child_instance.detach()
+            detached = child_instance.detach()
             
-    def attach_sub_poses(self):
+            detached_attributes[child] = detached
+            
+    def attach_sub_poses(self, outputs):
         """
         Attach the sub poses.
         Attaching and detaching help with export/import.
@@ -1864,8 +1887,14 @@ class PoseBase(PoseGroup):
         
         for child in children:
             
+            detached = None
+            
+            if type(outputs) == dict:
+                if outputs.has_key(child):
+                    detached = outputs[child]
+            
             child_instance= manager.get_pose_instance(child)
-            child_instance.attach()
+            child_instance.attach(detached)
             
     def connect_blend(self, mesh_index = None):
         """

@@ -6,6 +6,8 @@ import vtool.qt_ui
 import vtool.util_file
 import vtool.util
 
+#vtool.util.activate_profiler()
+
 import ui_data
 import process
 

@@ -226,19 +226,19 @@ class TreeWidget(QtGui.QTreeWidget):
         super(TreeWidget, self).__init__()
 
         self.title_text_index = 0
-
         self.itemExpanded.connect(self._item_expanded)
         self.itemCollapsed.connect(self._item_collapsed)
-
+        self.setIndentation(15)
         self.setExpandsOnDoubleClick(False)
         
         version = util.get_maya_version()
         if version < 2016:
             self.setAlternatingRowColors(True)
+        if util.is_in_nuke():
+            self.setAlternatingRowColors(False)
             
         self.setSortingEnabled(True)
-        
-        self.sortByColumn(self.title_text_index, QtCore.Qt.AscendingOrder)
+        self.sortByColumn(0, QtCore.Qt.AscendingOrder)
         
         self.itemActivated.connect(self._item_activated)
         self.itemChanged.connect(self._item_changed)
@@ -253,8 +253,7 @@ class TreeWidget(QtGui.QTreeWidget):
         self.current_item = None
         self.current_name = None
         
-        if util.is_in_nuke():
-            self.setAlternatingRowColors(False)
+
                 
         if not util.is_in_maya() and not util.is_in_nuke():
             palette = QtGui.QPalette()
@@ -491,6 +490,8 @@ class TreeWidget(QtGui.QTreeWidget):
         
     def _item_activated(self, item):
         
+        print 'item activated!', item
+        
         if not self.edit_state:
             
             if self.text_edit:
@@ -610,8 +611,6 @@ class TreeWidget(QtGui.QTreeWidget):
                 
             
         return False
-    
-    
     
     def _item_renamed(self, item):
         return False
@@ -2362,7 +2361,7 @@ class CodeTabWindow(BasicWindow):
     
     def closeEvent(self, event):
         
-        print self.code_edit
+        permission = False
         
         if self.code_edit:
             
@@ -2372,11 +2371,11 @@ class CodeTabWindow(BasicWindow):
                 if permission == None:
                     event.ignore()
                     return
-                
         
         event.accept()
         if permission == True:
             self.closed_save.emit(self)
+            
         #super(CodeTabWindow, self).closeEvent(event)
         
         #closed.emit()

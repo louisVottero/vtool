@@ -485,8 +485,6 @@ class ShapeTree(qt_ui.TreeWidget):
         item = QtGui.QTreeWidgetItem()
         item.setSizeHint(0, QtCore.QSize(100, 18))
         
-        
-        
         item.setText(0, shape)
         
         self.addTopLevelItem(item)

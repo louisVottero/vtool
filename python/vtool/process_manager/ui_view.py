@@ -24,8 +24,16 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         self.settings = None
         
-        
         super(ViewProcessWidget, self).__init__()
+        
+        policy = self.sizePolicy()
+        
+        policy.setHorizontalPolicy(policy.Maximum)
+        policy.setHorizontalStretch(0)
+        self.setSizePolicy(policy)
+        
+        self.setMinimumWidth(200)
+
         
     def _define_tree_widget(self):
         return ProcessTreeWidget()

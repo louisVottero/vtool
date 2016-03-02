@@ -351,8 +351,8 @@ class BlendShape(object):
                 
                 cmds.connectAttr('%s.outMesh' % mesh, mesh_input)
                 
-            if not leave_connected and cmds.isConnected('%s.outMesh' % mesh, mesh_input):
-                cmds.disconnectAttr('%s.outMesh' % mesh, mesh_input)
+                if not leave_connected:
+                    cmds.disconnectAttr('%s.outMesh' % mesh, mesh_input)
                 
                 
         if not self.is_target(name):
