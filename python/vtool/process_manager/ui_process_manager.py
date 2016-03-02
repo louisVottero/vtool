@@ -205,6 +205,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         btm_layout = QtGui.QVBoxLayout()
         
         button_layout = QtGui.QHBoxLayout()
+<<<<<<< HEAD
+=======
+        button_layout.setAlignment(QtCore.Qt.AlignLeft)
+        button_layout.addWidget(self.process_button)
+        button_layout.addWidget(self.stop_button)
+>>>>>>> branch 'master' of https://github.com/louisVottero/vtool.git
         
         left_button_layout.setAlignment(QtCore.Qt.AlignLeft)
         left_button_layout.addWidget(self.process_button)
