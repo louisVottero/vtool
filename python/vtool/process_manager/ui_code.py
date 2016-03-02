@@ -136,8 +136,6 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
              
     def _script_rename(self, old_name, new_name):
         
-        print 'rename script!', old_name, new_name
-        
         process_data = process.Process()
         process_data.set_directory(self.directory)
         
@@ -244,6 +242,9 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
     def _tab_changed(self, widget):
         
+        if not widget:
+            return
+        
         if widget.filepath:
             filepath = vtool.util_file.get_dirname(widget.filepath)
             
@@ -313,8 +314,6 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
             
                     
     def set_code_path(self, path, open_in_window = False, name = None, load_file = True):
-        
-        print 'set code path', path, open_in_window, name, load_file
         
         if not path:
             self.save_file.hide()

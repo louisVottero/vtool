@@ -1952,11 +1952,29 @@ class CodeEditTabs(BasicWidget):
         self.suppress_tab_close_save = False
         self.current_process = None
         
+        self.find_widget = None
+        
+    def _find(self, text_edit):
+        
+        find_widget = FindTextWidget(text_edit)
+        find_widget.show()
+        
+        self.find_widget = find_widget
             
     def _tab_changed(self):
-          
+        
         current_widget = self.tabs.currentWidget()
         
+        if not current_widget:
+            if self.find_widget:
+                self.find_widget.close()
+                self.find_widget = None
+                
+        if self.find_widget:
+            self.find_widget.set_widget(current_widget.text_edit)
+        
+        
+        """
         if not current_widget:
             
             if self.previous_widget:
@@ -1966,16 +1984,25 @@ class CodeEditTabs(BasicWidget):
             
             return
         
+        
+        
+        print current_widget, self.previous_widget
+        
         #it keeps passing the previous widget from one tab to another.
         if self.previous_widget:
+            
+            print 'find widget?', self.previous_widget.find_widget, self.previous_widget.filepath
+            
             if self.previous_widget.find_widget:
                 
+                print 'here setting widget!', current_widget.fullpath
+                print current_widget.text_edit.toPlainText()
+                
                 self.previous_widget.set_find_widget(current_widget.text_edit)
+                current_widget.find_widget = self.previous_widget.find_widget
         
-        if not self.previous_widget:
-            self.previous_widget = current_widget.text_edit
-        
-        
+        self.previous_widget = current_widget.text_edit
+        """
         self.tabChanged.emit(current_widget)
     
     def _close_tab(self, index):
@@ -2120,6 +2147,7 @@ class CodeEditTabs(BasicWidget):
         
         
         code_widget.save.connect(self._save)
+        code_widget.find_opened.connect(self._find)
         
         self.code_tab_map[basename] = code_edit_widget
         
@@ -2363,6 +2391,8 @@ class CodeTabWindow(BasicWindow):
     
     def closeEvent(self, event):
         
+        permission = False
+        
         if self.code_edit:
             
             if self.code_edit.text_edit.document().isModified():
@@ -2459,6 +2489,13 @@ class CodeEdit(BasicWidget):
         
         if bool_value:
             self.save_state.setText('No Changes')
+            
+    def _find(self, text_edit):
+        
+        self.find = FindTextWidget(text_edit)
+        self.find.show()
+        
+        
     
     def _text_file_set(self):
         self.save_state.setText('No Changes')
@@ -2509,6 +2546,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     save = create_signal(object)
     save_done = create_signal(object)
     file_set = create_signal()
+    find_opened = create_signal(object)
     
     def __init__(self):
         
@@ -2750,10 +2788,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     
     def _find(self):
         
-        find_widget = FindTextWidget(self)
-        find_widget.show()
-        
-        self.find_widget = find_widget
+        self.find_opened.emit(self)
+
     
     def _goto_line(self):
         
@@ -2990,13 +3026,10 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
 
     
     def set_find_widget(self, widget):
-        #current_widget.text_edit.find_widget = self.previous_widget.find_widget
-        
-        #self.find_widget = widget.find_widget
-        #if not self.find_widget:
-        #    self._find()
         
         self.find_widget.set_widget(widget)
+        
+        
     
     def load_modification_date(self):
         
