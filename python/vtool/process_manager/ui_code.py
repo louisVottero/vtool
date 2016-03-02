@@ -288,9 +288,6 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         self.save_file.save_widget._save()
         
-        
-    
-        
     def _multi_save(self, widgets, note = None):
         
         widgets = vtool.util.convert_to_sequence(widgets)

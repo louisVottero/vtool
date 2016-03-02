@@ -1971,11 +1971,6 @@ class CodeEditTabs(BasicWidget):
         find_widget.show()
         
         self.find_widget = find_widget
-        
-    def _find_window(self, text_edit):
-        
-        find_widget = FindTextWidget(text_edit)
-        find_widget.show()
             
     def _set_tab_find_widget(self, current_widget):
 
@@ -2033,22 +2028,36 @@ class CodeEditTabs(BasicWidget):
         self.tabs.removeTab(index)
                 
         if self.code_tab_map.has_key(str(title)):
+            #widget = self.code_tab_map[str(title)]
+            #self.documents.pop(str(widget.filepath))
+            
             self.code_tab_map.pop(str(title))
-        
+            
         if self.code_floater_map.has_key(str(title)):
+            #widget = self.code_tab_map[str(title)]
+            #self.documents.pop(str(widget.filepath))
+            
             self.code_floater_map.pop(str(title))
-        
+            
         if self.tabs.count() == 0:
             self.no_tabs.emit()
     
     def _save(self, current_widget):
         
+        title = current_widget.titlename
+        
         if hasattr(current_widget, 'text_edit'):
             current_widget = current_widget.text_edit
         
-        current_widget.document().setModified(False)
-        
         self.save.emit(current_widget)
+        
+        if self.code_floater_map.has_key(title):
+            floater_widget = self.code_floater_map[title]
+            floater_widget.set_no_changes()
+            
+        if self.code_tab_map.has_key(title):
+            tab_widget = self.code_tab_map[title]
+            tab_widget.set_no_changes()
     
     def _build_widgets(self):
         
@@ -2074,8 +2083,10 @@ class CodeEditTabs(BasicWidget):
         
         self.multi_save.emit(widget.code_edit.text_edit, None)
         
-    def set_group(self, group):
-        self.group = group
+    def clear(self):
+        self.tabs.clear()
+        
+        self.code_tab_map = {}
         
     def goto_tab(self, name):
         
@@ -2087,8 +2098,6 @@ class CodeEditTabs(BasicWidget):
         
     def add_floating_tab(self, filepath, name):
         
-        
-        #basename = util_file.get_basename(filepath)
         basename = name
         
         if self.code_tab_map.has_key(basename):
@@ -2131,25 +2140,27 @@ class CodeEditTabs(BasicWidget):
         
         window.activated.connect(self._code_window_activated)
         
-        
         self.code_floater_map[basename] = code_edit_widget
         self.code_window_map[filepath] = window
         
         window.show()
         window.setFocus()
         
-        
+        if self.code_tab_map.has_key(basename):
+            tab_widget = self.code_tab_map[basename]
+            
+            if tab_widget:
+                code_widget.setDocument(tab_widget.text_edit.document())
+            
         return code_edit_widget
         
         
     def add_tab(self, filepath, name):
         
         basename = name
-        #basename = util_file.get_basename(filepath)
         
         if self.code_tab_map.has_key(basename):
             self.goto_tab(basename)
-            
             return
                 
         code_edit_widget = CodeEdit()
@@ -2161,7 +2172,6 @@ class CodeEditTabs(BasicWidget):
         code_widget.set_file(filepath)
         code_widget.titlename = basename
         
-        
         code_widget.save.connect(self._save)
         code_widget.find_opened.connect(self._find)
         
@@ -2169,8 +2179,14 @@ class CodeEditTabs(BasicWidget):
         
         self.goto_tab(basename)
         
-        
-      
+        if self.code_floater_map.has_key(basename):
+            float_widget = self.code_floater_map[basename]
+            
+            if float_widget:
+                code_widget.setDocument(float_widget.text_edit.document())
+            
+        return code_edit_widget
+            
     def save_tabs(self, note = None):
         
         found = []
@@ -2182,11 +2198,6 @@ class CodeEditTabs(BasicWidget):
                 found.append(widget.text_edit)
         
         self.multi_save.emit(found, note)
-        
-    def clear(self):
-        self.tabs.clear()
-        
-        self.code_tab_map = {}
       
     def has_tabs(self):
         
@@ -2194,11 +2205,6 @@ class CodeEditTabs(BasicWidget):
             return True
         
         return False
-    
-    def has_tab(self, name):
-        
-        if self.code_tab_map.has_key(name):
-            return True
     
     def get_widgets(self, name = None):
         
@@ -2226,24 +2232,6 @@ class CodeEditTabs(BasicWidget):
                 widgets.append(widget)
                 
         return widgets
-    
-    def get_widgets_from_filepath(self, filepath):
-        
-        widgets = []
-        
-        for key in self.code_tab_map:
-            
-            widget = self.code_tab_map[key]
-            
-            if widget.text_edit.filepath == filepath:
-                widgets.append(widget)
-                
-        for key in self.code_floater_map:
-            
-            if key == filepath:
-                widgets.append(widget)
-        
-        return widgets
             
     def set_tab_title(self, index, name):
         
@@ -2251,14 +2239,10 @@ class CodeEditTabs(BasicWidget):
         
     def rename_tab(self, old_path, new_path, old_name, new_name):
         
-        #widgets = self.get_widgets_from_filepath(old_path)
         widgets = self.get_widgets(old_name)
         
         if not widgets:
             return
-        
-        #name = util_file.get_basename(new_path)
-        #old_name = util_file.get_basename(old_path)
         
         removed_old_tab = False
         
@@ -2328,9 +2312,9 @@ class CodeEditTabs(BasicWidget):
                 window_parent.close()
                 window_parent.deleteLater()
                 
-                self.code_floater_map.pop(titlename)
-                
-                removed_widget_entry = True
+                if self.code_floater_map.has_key(titlename):
+                    self.code_floater_map.pop(titlename)
+                    removed_widget_entry = True
                 
         if not removed_widget_entry:
             util.warning('%s code entry was not removed from widget list on close.' % name)
@@ -2420,6 +2404,9 @@ class CodeTabWindow(BasicWindow):
         
         self.code_edit = None
         
+        self.setMinimumWidth(400)
+        self.setMinimumHeight(400)
+        
     
     def closeEvent(self, event):
         
@@ -2438,18 +2425,14 @@ class CodeTabWindow(BasicWindow):
         if permission == True:
             self.closed_save.emit(self)
             
-        #super(CodeTabWindow, self).closeEvent(event)
-        
-        #closed.emit()
-        
     def set_code_edit(self, code_edit_widget):
         
         self.main_layout.addWidget(code_edit_widget)
         self.code_edit = code_edit_widget
-
-        
         
 class CodeEdit(BasicWidget):
+    
+    save_done = create_signal(object)
     
     def __init__(self):
         super(CodeEdit, self).__init__()
@@ -2472,7 +2455,7 @@ class CodeEdit(BasicWidget):
         self.main_layout.addWidget(self.text_edit)
         self.main_layout.addLayout(self.status_layout)
         
-        self.text_edit.save_done.connect(self._save)
+        self.text_edit.save_done.connect(self._save_done)
         self.text_edit.textChanged.connect(self._text_changed)
         self.text_edit.file_set.connect(self._text_file_set)
         
@@ -2488,6 +2471,7 @@ class CodeEdit(BasicWidget):
         file_menu = self.menu_bar.addMenu('File')
         
         save_action = file_menu.addAction('Save')
+        
         browse_action = file_menu.addAction('Browse')
         
         save_action.triggered.connect(self.text_edit._save)
@@ -2518,17 +2502,16 @@ class CodeEdit(BasicWidget):
         
         self.save_state.setText('Unsaved Changes')
     
-    def _save(self, bool_value):
+    def _save_done(self, bool_value):
         
         if bool_value:
             self.save_state.setText('No Changes')
+            self.save_done.emit(self)
             
     def _find(self, text_edit):
         
         self.find = FindTextWidget(text_edit)
         self.find.show()
-        
-        
     
     def _text_file_set(self):
         self.save_state.setText('No Changes')
@@ -2542,12 +2525,13 @@ class CodeEdit(BasicWidget):
         
     def set_file(self, filepath):
         
-        if not self.fullpath:
-            self.fullpath = QtGui.QLabel()
-            self.status_layout.addWidget(self.fullpath)
-            
-        self.fullpath.setText('Fullpath:  %s' % filepath)
         self.save_state.setText('No Changes')
+        
+    def set_no_changes(self):
+        
+        self.save_state.setText('No Changes')
+        if self.text_edit:
+            self.text_edit.document().setModified(False)
         
     def get_document(self):
         return self.text_edit.document()
@@ -2799,6 +2783,10 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
     def _save(self):
         
+        if not self.document().isModified():
+            util.warning('No changes to save in %s.' % self.filepath)
+            return
+        
         old_last_modified = self.last_modified
         
         try:
@@ -2813,6 +2801,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
             
         if old_last_modified != new_last_modified:
             self.save_done.emit(True)
+            self.document().setModified(False)
             self.last_modified = new_last_modified
     
     def _find(self):
@@ -3345,11 +3334,6 @@ class Highlighter(QtGui.QSyntaxHighlighter):
         }
         """
         
-        
-        
-    
-        
-    
     def highlightQuote(self, text):
         
         self.setCurrentBlockState(0)
