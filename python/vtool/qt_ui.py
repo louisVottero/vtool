@@ -486,11 +486,9 @@ class TreeWidget(QtGui.QTreeWidget):
     def _item_changed(self, current_item, previous_item):
         
         if self.edit_state:
-            self._edit_finish(previous_item)                      
+            self._edit_finish(previous_item)
         
     def _item_activated(self, item):
-        
-        print 'item activated!', item
         
         if not self.edit_state:
             
@@ -1926,12 +1924,24 @@ class LoginWidget( BasicWidget ):
      
 #--- Code Editor
         
+class CodeEditTabs_ActiveFilter(QtCore.QObject):
+    def eventFilter(self, obj, event):
+        
+        if event.type() == QtCore.QEvent.WindowActivate:
+            obj._tabs_activated()
+            return True
+            
+        else:
+            # standard event processing
+            return QtCore.QObject.eventFilter(self, obj, event)
+        
 class CodeEditTabs(BasicWidget):
     
     save = create_signal(object)
     tabChanged = create_signal(object)
     no_tabs = create_signal()
     multi_save = create_signal(object, object)
+    
     
     def __init__(self):
         super(CodeEditTabs, self).__init__()
@@ -1953,17 +1963,22 @@ class CodeEditTabs(BasicWidget):
         
         self.find_widget = None
         
+        self.installEventFilter(CodeEditTabs_ActiveFilter(self))
+        
     def _find(self, text_edit):
         
         find_widget = FindTextWidget(text_edit)
         find_widget.show()
         
         self.find_widget = find_widget
+        
+    def _find_window(self, text_edit):
+        
+        find_widget = FindTextWidget(text_edit)
+        find_widget.show()
             
-    def _tab_changed(self):
-        
-        current_widget = self.tabs.currentWidget()
-        
+    def _set_tab_find_widget(self, current_widget):
+
         if not current_widget:
             if self.find_widget:
                 self.find_widget.close()
@@ -1971,38 +1986,32 @@ class CodeEditTabs(BasicWidget):
                 
         if self.find_widget:
             self.find_widget.set_widget(current_widget.text_edit)
-        
-        
-        """
-        if not current_widget:
             
-            if self.previous_widget:
-                if self.previous_widget.find_widget:
-                    self.previous_widget.find_widget.close()
-                    self.previous_widget = None
-            
-            return
+    def _tab_changed(self):
         
+        current_widget = self.tabs.currentWidget()
         
+        self._set_tab_find_widget(current_widget)
         
-        print current_widget, self.previous_widget
-        
-        #it keeps passing the previous widget from one tab to another.
-        if self.previous_widget:
-            
-            print 'find widget?', self.previous_widget.find_widget, self.previous_widget.filepath
-            
-            if self.previous_widget.find_widget:
-                
-                print 'here setting widget!', current_widget.fullpath
-                print current_widget.text_edit.toPlainText()
-                
-                self.previous_widget.set_find_widget(current_widget.text_edit)
-                current_widget.find_widget = self.previous_widget.find_widget
-        
-        self.previous_widget = current_widget.text_edit
-        """
         self.tabChanged.emit(current_widget)
+
+    def _code_window_activated(self, widget):
+        
+        if self.find_widget:
+            self.find_widget.set_widget(widget.code_edit.text_edit)
+            
+    def _tabs_activated(self):
+        
+        current_tab = self.tabs.currentWidget()
+        
+        self._set_tab_find_widget(current_tab)
+        
+    def _code_window_deactivated(self):
+        
+        current_widget = self.tabs.currentWidget()
+
+        self._set_tab_find_widget(current_widget)
+        
     
     def _close_tab(self, index):
         
@@ -2107,6 +2116,7 @@ class CodeEditTabs(BasicWidget):
         code_widget.titlename = basename
         code_widget.set_file(filepath)
         code_widget.save.connect(self._save)
+        code_widget.find_opened.connect(self._find)
         
         window = CodeTabWindow()
         window.resize(600, 800)
@@ -2116,11 +2126,15 @@ class CodeEditTabs(BasicWidget):
         window.set_code_edit(code_edit_widget)
         window.closed_save.connect(self._window_close_requested)
         
+        window.activated.connect(self._code_window_activated)
+        
+        
         self.code_floater_map[basename] = code_edit_widget
         self.code_window_map[filepath] = window
         
         window.show()
         window.setFocus()
+        
         
         return code_edit_widget
         
@@ -2379,14 +2393,30 @@ class CodeTabBar(QtGui.QTabBar):
         
         self.double_click.emit(index)
         
+class CodeTabWindow_ActiveFilter(QtCore.QObject):
+    def eventFilter(self, obj, event):
+        
+        if event.type() == QtCore.QEvent.WindowActivate:
+            
+            obj.activated.emit(obj)
+            return True
+        
+        else:
+            # standard event processing
+            return QtCore.QObject.eventFilter(self, obj, event)
+        
 class CodeTabWindow(BasicWindow):
     
     closed_save = create_signal(object)
+    activated = create_signal(object)
     
     def __init__(self):
         super(CodeTabWindow, self).__init__()
         
+        self.installEventFilter(CodeTabWindow_ActiveFilter(self))
+        
         self.code_edit = None
+        
     
     def closeEvent(self, event):
         
@@ -2413,6 +2443,7 @@ class CodeTabWindow(BasicWindow):
         
         self.main_layout.addWidget(code_edit_widget)
         self.code_edit = code_edit_widget
+
         
         
 class CodeEdit(BasicWidget):
@@ -2422,7 +2453,7 @@ class CodeEdit(BasicWidget):
         
         self.text_edit.cursorPositionChanged.connect(self._cursor_changed)
         self.fullpath = None
-    
+        
     def _build_widgets(self):
         
         self.text_edit = CodeTextEdit()
@@ -2788,7 +2819,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     def _find(self):
         
         self.find_opened.emit(self)
-
     
     def _goto_line(self):
         
