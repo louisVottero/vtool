@@ -1957,23 +1957,24 @@ class CodeEditTabs(BasicWidget):
           
         current_widget = self.tabs.currentWidget()
         
-        print 'current widget', current_widget
-        
         if not current_widget:
             
             if self.previous_widget:
                 if self.previous_widget.find_widget:
                     self.previous_widget.find_widget.close()
+                    self.previous_widget = None
             
             return
         
+        #it keeps passing the previous widget from one tab to another.
         if self.previous_widget:
             if self.previous_widget.find_widget:
-                current_widget.find_widget = self.previous_widget.find_widget    
-                current_widget.text_edit.set_find_widget(self.previous_widget)
-                #self.previous_widget.set_find_widget(current_widget.text_edit)
+                
+                self.previous_widget.set_find_widget(current_widget.text_edit)
         
-        self.previous_widget = current_widget.text_edit
+        if not self.previous_widget:
+            self.previous_widget = current_widget.text_edit
+        
         
         self.tabChanged.emit(current_widget)
     
@@ -2361,8 +2362,6 @@ class CodeTabWindow(BasicWindow):
         self.code_edit = None
     
     def closeEvent(self, event):
-        
-        print self.code_edit
         
         if self.code_edit:
             
@@ -2991,6 +2990,11 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
 
     
     def set_find_widget(self, widget):
+        #current_widget.text_edit.find_widget = self.previous_widget.find_widget
+        
+        #self.find_widget = widget.find_widget
+        #if not self.find_widget:
+        #    self._find()
         
         self.find_widget.set_widget(widget)
     
