@@ -2060,6 +2060,7 @@ class CodeEditTabs(BasicWidget):
         
     def _tab_double_click(self, index):
         
+        
         title = str(self.tabs.tabText(index))
         code_widget = self.code_tab_map[title]
         filepath = code_widget.text_edit.filepath        
@@ -2095,7 +2096,9 @@ class CodeEditTabs(BasicWidget):
             index = self.tabs.indexOf(code_widget)
         
             if index > -1:
+                self.suppress_tab_close_save = True
                 self._close_tab(index)
+                self.suppress_tab_close_save = False
         
         if self.code_tab_map.has_key(basename):
             #do something
@@ -2550,8 +2553,12 @@ class CodeEdit(BasicWidget):
         return self.text_edit.document()
     
     def set_document(self, document):
+        modified = document.isModified()
+        
         self.text_edit.setDocument(document)
         
+        if not modified:
+            self.save_state.setText('No Changes')
         
 class ListAndHelp(QtGui.QListView):
     
@@ -2701,14 +2708,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                     rect.setWidth(width)
                     
                     self.completer.complete(rect)
-                    
-                    
-                    
-                    
-                    #widget = self.completer.widget()
-                    #print widget.parentWidget()
-                    #layout = widget.layout()
-                    #layout.addWidget(QtGui.QTextEdit())
                 
                 if result == False:
                     self.completer.popup().hide()
