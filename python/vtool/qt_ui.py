@@ -1597,15 +1597,19 @@ class GetString(BasicWidget):
             
     def _build_widgets(self):
         
+        self.main_layout.setContentsMargins(0,0,0,0)
+        self.main_layout.setSpacing(0)
+        
         self.text_entry = QtGui.QLineEdit()
         #self.text_entry.setMaximumWidth(100)
         
         self.label = QtGui.QLabel(self.name)
         self.label.setAlignment(QtCore.Qt.AlignRight)
-        self.label.setMinimumWidth(70)
+        self.label.setMinimumWidth(50)
         self._setup_text_widget()
         
         self.main_layout.addWidget(self.label)
+        self.main_layout.addSpacing(5)
         self.main_layout.addWidget(self.text_entry)
         
     def _setup_text_widget(self):
@@ -1622,6 +1626,9 @@ class GetString(BasicWidget):
         
     def set_label(self, label):
         self.label.setText(label)  
+        
+    def get_label(self):
+        return self.label.text()
         
     def set_password_mode(self, bool_value):
         
@@ -1708,6 +1715,10 @@ class GetNumber(BasicWidget):
         return QtGui.QDoubleSpinBox()
     
     def _build_widgets(self):
+        
+        self.main_layout.setContentsMargins(0,0,0,0)
+        self.main_layout.setSpacing(0)
+        
         self.spin_widget = self._define_spin_widget()
         self.spin_widget.setMaximumWidth(100)
         
@@ -1717,6 +1728,7 @@ class GetNumber(BasicWidget):
         self._setup_spin_widget()
         
         self.main_layout.addWidget(self.label)
+        self.main_layout.addSpacing(5)
         self.main_layout.addWidget(self.spin_widget)
         
     def _setup_spin_widget(self):
@@ -1743,6 +1755,9 @@ class GetNumber(BasicWidget):
         
     def set_label(self, label):
         self.label.setText(label)
+        
+    def get_label(self):
+        self.label.text()
              
 class GetNumberButton(GetNumber):
     

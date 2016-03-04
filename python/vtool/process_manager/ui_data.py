@@ -11,6 +11,7 @@ if vtool.qt_ui.is_pyqt():
 if vtool.qt_ui.is_pyside():
     from PySide import QtCore, QtGui
 
+
 class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
     
     data_created = vtool.qt_ui.create_signal(object)
@@ -21,11 +22,17 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.last_directory = None
         
         super(DataProcessWidget, self).__init__()
+        
+        
+        self.setMouseTracking(True)
+        self.data_widget.setMouseTracking(True)
           
     def _define_main_layout(self):
         return QtGui.QVBoxLayout()
                 
     def _build_widgets(self):
+        
+        
         
         splitter = QtGui.QSplitter()
         
@@ -42,7 +49,8 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         splitter.addWidget(self.data_widget)
         splitter.addWidget(self.datatype_widget)
         
-        splitter.setSizes([100, 135])
+        splitter.setSizes([1,1])
+        self.splitter = splitter
         
         self.label = QtGui.QLabel('-')
         
@@ -51,6 +59,23 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.main_layout.addWidget(self.label, alignment = QtCore.Qt.AlignCenter)
         self.main_layout.addWidget(self.file_widget)
+        
+        
+        
+    def mouse_move(self, event):
+        
+        cursor = self.cursor()
+        point = cursor.pos()
+        width = self.width()
+        
+        x_value = point.x()
+        
+        print x_value, width
+        
+        if x_value >= width * .8:
+            self.splitter.setSizes([1,1])
+        if x_value < width * .8:
+            self.splitter.setSizes([1,1])
         
     def _refresh_data(self, data_name):
         self.data_widget._load_data(new_data = data_name)
@@ -354,6 +379,8 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         policy.setHorizontalStretch(0)
         
         self.setSizePolicy(policy)
+        self.setMinimumWidth(140)
+        self.setMaximumWidth(140)
         
     def sizeHint(self):
         
@@ -376,13 +403,15 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         
         self.data_type_tree_widget.itemSelectionChanged.connect(self._enable_add)
         
+        self.data_type_tree_widget.doubleClicked.connect(self._add)
+        
     def _enable_add(self):
         
         items = self.data_type_tree_widget.selectedItems()
         
         if items:
             
-            if items[0].text(0) == 'maya':
+            if items[0].text(0) == 'Maya':
                 self.add_button.setDisabled(True)
                 return
             
@@ -405,13 +434,14 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
             
             item = self.data_type_tree_widget.topLevelItem(inc)
             
-            if str(item.text(0)) == 'maya' and vtool.util.is_in_maya():
+            if str(item.text(0)) == 'Maya' and vtool.util.is_in_maya():
                 item.setExpanded(True)
             
     def _add(self):
                 
         data_type = self.data_type_tree_widget.get_data_type()
         data_group = self.data_type_tree_widget.get_data_group()
+        data_group = data_group.lower()
         
         if not data_type or not data_group:
             return
@@ -439,6 +469,7 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
         super(DataTypeTreeWidget, self).__init__()
         self.setHeaderHidden(True)
         self.setHeaderLabels(['Data Type'])
+        self.setIndentation(10)
         
     def _find_group(self, groupname):
         for inc in range(0, self.topLevelItemCount() ):
@@ -452,9 +483,11 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
 
     def _add_data_item(self, data_type, parent):
         
+        
+        
         item = QtGui.QTreeWidgetItem(parent)
         item.setText(0, data_type)
-        
+        item.setSizeHint(0, QtCore.QSize(100, 20))
         #self.addTopLevelItem(item)
         
         return item
@@ -463,14 +496,18 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
         
         split_type = data_type.split('.')
         
+        group_type = split_type[0].capitalize()
+        
+        
         if split_type[0].startswith('script'):
             return
         
-        group_item = self._find_group(split_type[0])
+        group_item = self._find_group(group_type)
         
         if not group_item:
             item = QtGui.QTreeWidgetItem()
-            item.setText(0, split_type[0])
+            item.setText(0, group_type)
+            item.setSizeHint(0, QtCore.QSize(100, 25))
             self.addTopLevelItem(item)    
             group_item = item
         
