@@ -1229,7 +1229,7 @@ class MeshWidget(qt_ui.BasicWidget):
             for mesh in sculpt_meshes:
                 
                 pose = corrective.get_pose_instance(pose_name)
-                index = pose.get_mesh_index(mesh)
+                index = pose.get_target_mesh_index(mesh)
                 
                 if index != None:
                     item = self.mesh_list.item(index)
