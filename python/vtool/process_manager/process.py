@@ -126,6 +126,15 @@ class Process(object):
         self.external_code_paths = []
         self.runtime_values = {}
         
+    def _setup_settings(self):
+        
+        if not self.settings:
+            settings = util_file.SettingsFile()
+            settings.set_directory(self.get_path())
+        
+            self.settings = settings
+            
+        
     def _set_name(self, new_name):
         
         self.process_name = new_name
@@ -193,7 +202,9 @@ class Process(object):
                     break
             
             if not found:
-                self.create_code('manifest', 'script.manifest')        
+                self.create_code('manifest', 'script.manifest')   
+                
+        self._setup_settings()     
         
         return path
             
@@ -911,7 +922,39 @@ class Process(object):
         """
         util_file.delete_dir(name, self.get_code_path())
         
+    #--- setting
+    
+    def add_option(self, name, value, group = None):
         
+        self._setup_settings()
+        
+        if group:
+            name = 'option.%s.%s' % (group,name)
+        if not group:
+            name = 'option.%s' % name
+        
+        self.settings.set(name, value)
+        
+    def get_option(self, name, group = None):
+        
+        if group:
+            name = 'option.%s.%s' % (group, name)
+        if not group:
+            name = 'option.%s' % name
+            
+        self.settings.get(name)
+        
+    def get_runtime_option(self, name, group = None):
+        
+        for key in self.runtime_values:
+            if key.startswith('option.'):
+                split_option = key.split('.')
+                
+                if len(split_option) == 2 and split_option[1] == name and not group:
+                    return self.runtime_values[key]
+                
+                if len(split_option)== 3 and split_option[1] == name and split_option[2] == group:
+                    return self.runtime_values[key]
         
     #--- manifest
         
@@ -1235,6 +1278,14 @@ class Process(object):
         Return
             (str): The status from running the script. This includes error messages.
         """
+        
+        if self.settings:
+            
+            settings_dict = self.settings.settings_dict
+            
+            for key in settings_dict:
+                if key.startswith('option.'):
+                    self.set_runtime_value(key, settings_dict[key])
         
         if util.is_in_maya():
             

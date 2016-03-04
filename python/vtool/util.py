@@ -1020,11 +1020,15 @@ def increment_last_number(input_string):
     """
     search = search_last_number(input_string)
     
-    new_string = '%s%s%s' % (
-                             input_string[ 0 : search.start()], 
-                             int(search.group()) + 1,
-                             input_string[ search.end():]
-                             )
+    if search:
+        new_string = '%s%s%s' % (
+                                 input_string[ 0 : search.start()], 
+                                 int(search.group()) + 1,
+                                 input_string[ search.end():]
+                                 )
+    
+    if not search:
+        new_string = input_string + '1'
     
     return new_string
 

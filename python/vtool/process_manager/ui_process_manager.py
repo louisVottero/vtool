@@ -153,7 +153,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
         self.view_widget = ui_view.ViewProcessWidget()
         #splitter stuff
-        #self.option_widget = ui_options.ProcessOptionsWidget()
+        self.option_scroll = QtGui.QScrollArea()
+        self.option_scroll.setWidgetResizable(True)
+        self.option_scroll.setMinimumWidth(200)
+        self.option_widget = ui_options.ProcessOptionsWidget()
+        self.option_scroll.setWidget(self.option_widget)
         
         self.data_widget = ui_data.DataProcessWidget()
         
@@ -163,14 +167,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.code_directory_changed.connect(self.set_code_directory)
         
         #splitter stuff
-        #self.process_splitter = QtGui.QSplitter()
-        #self.process_splitter.addWidget(self.view_widget)
-        #self.process_splitter.addWidget(self.option_widget)
-        #self.process_splitter.setSizes([1,1])
+        self.process_splitter = QtGui.QSplitter()
+        self.process_splitter.addWidget(self.view_widget)
+        self.process_splitter.addWidget(self.option_scroll)
+        self.process_splitter.setSizes([1,1])
         
         self.tab_widget.addTab(self.settings_widget, 'Settings')       
-        #self.tab_widget.addTab(self.process_splitter, 'View')
-        self.tab_widget.addTab(self.view_widget, 'View')
+        self.tab_widget.addTab(self.process_splitter, 'View')
+        #self.tab_widget.addTab(self.view_widget, 'View')
         self.tab_widget.addTab(self.data_widget, 'Data')
         self.tab_widget.addTab(self.code_widget, 'Code')
         
