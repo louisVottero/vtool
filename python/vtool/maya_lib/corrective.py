@@ -857,11 +857,10 @@ class PoseBase(PoseGroup):
             
             if target_mesh:
                 
-                cmds.setAttr('%s.inheritsTransform' % mesh, 0)
+                cmds.setAttr('%s.inheritsTransform' % mesh, 1)
                 attr.unlock_attributes(mesh, only_keyable=True)
                 
                 const = cmds.parentConstraint(target_mesh, mesh)
-            
                 cmds.delete(const)
                 
     def _refresh_pose_control(self):
@@ -1735,7 +1734,7 @@ class PoseBase(PoseGroup):
         if not mesh:
             return
         
-        self._create_shader(mesh)
+        #self._create_shader(mesh)
         
         self._set_visibility(mesh, 1)
         
