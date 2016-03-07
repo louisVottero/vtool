@@ -835,7 +835,7 @@ class ShapeComboManager(object):
         
         self._remove_combo_multiplies(combo)
         
-        shapes = self.get_shapes_in_combo(combo, include_combos=True)
+        shapes = self.get_shapes_in_combo(combo, include_combos=False)
         
         target_combo = '%s.%s' % (self.blendshape.blendshape, combo)
         

@@ -93,7 +93,7 @@ class PoseManager(object):
         
         return pose
                         
-    def get_poses(self):
+    def get_poses(self, all_descendents = False):
         """
         Get the poses under the pose_gr
         
@@ -102,7 +102,8 @@ class PoseManager(object):
         """
         self._check_pose_group()
         
-        relatives = cmds.listRelatives(self.pose_group)
+        
+        relatives = cmds.listRelatives(self.pose_group, ad = all_descendents)
         
         poses = []
         

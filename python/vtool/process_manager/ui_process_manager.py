@@ -84,6 +84,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._update_build_widget(name)
         
+        self.option_widget.set_directory(item.get_path())
+        
     def _item_selection_changed(self):
         
         if not self.handle_selection_change:
@@ -110,6 +112,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._set_title(name)
         self._update_process(name)
         self.last_item = item
+        
+        self.option_widget.set_directory(item.get_path())
         
     def _update_build_widget(self, process_name):
         
@@ -170,7 +174,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter = QtGui.QSplitter()
         self.process_splitter.addWidget(self.view_widget)
         self.process_splitter.addWidget(self.option_scroll)
-        self.process_splitter.setSizes([1,1])
+        self.process_splitter.setSizes([1,0])
         
         self.tab_widget.addTab(self.settings_widget, 'Settings')       
         self.tab_widget.addTab(self.process_splitter, 'View')
@@ -569,6 +573,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not directory:
             self.process.set_directory(None)
             self.view_widget.set_directory(None)
+            self.option_widget.set_directory(None)
             self.handle_selection_change = True
             return
 
@@ -603,6 +608,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         self.process.set_directory(directory)
         self.view_widget.set_directory(directory)
+        self.option_widget.set_directory(directory)
         
         self.handle_selection_change = True
         

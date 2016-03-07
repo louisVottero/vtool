@@ -212,7 +212,7 @@ def get_meshes_in_list(list_of_things):
             shapes = get_mesh_shape(thing)
             if shapes:
                 found.append(thing)
-                
+     
     return found        
 
 def get_selected_meshes():
@@ -222,7 +222,8 @@ def get_selected_meshes():
     """
     selection = cmds.ls(sl = True)
     
-    get_meshes_in_list(selection)
+    found = get_meshes_in_list(selection)
+    return found
     
 
 def get_mesh_shape(mesh, shape_index = 0):

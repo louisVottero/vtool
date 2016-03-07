@@ -543,6 +543,7 @@ class SettingsFile(object):
         self.filepath = None
         
         self.settings_dict = {}
+        self.settings_order = []
         self.write = None 
     
     def _read(self):
@@ -556,6 +557,7 @@ class SettingsFile(object):
             return
         
         self.settings_dict = {}
+        self.settings_order = []
         
         for line in lines:
             if not line:
@@ -574,16 +576,13 @@ class SettingsFile(object):
             value = eval( str(value) )
             
             self.settings_dict[name] = value
+            self.settings_order.append(name)
             
     def _write(self):
-                
-        keys = self.settings_dict.keys()
-        
-        keys.sort()
         
         lines = []
         
-        for key in keys:
+        for key in self.settings_order:
             value = self.settings_dict[key]
             
             if type(value) == str or type(value) == unicode:
@@ -600,6 +599,15 @@ class SettingsFile(object):
     def set(self, name, value):
         
         self.settings_dict[name] = value
+        
+        if name in self.settings_order:
+            pass
+            #index_value = self.settings_order.index(name)
+            #self.settings_order.pop(index_value)
+        
+        if not name in self.settings_order:
+            self.settings_order.append(name)
+        
         self._write()
     
     def get(self, name): 
@@ -613,6 +621,23 @@ class SettingsFile(object):
             return False
         
         return True
+    
+    def get_settings(self):
+        
+        found = []
+        
+        for setting in self.settings_order:
+            
+            found.append( [setting, self.settings_dict[setting]] )
+            
+        return found
+    
+    def clear(self):
+        
+        self.settings_dict = {}
+        self.settings_order = []
+        
+        self._write()
     
     def set_directory(self, directory, filename = 'settings.txt'):
         self.directory = directory

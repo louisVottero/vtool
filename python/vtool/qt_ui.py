@@ -1605,7 +1605,7 @@ class GetString(BasicWidget):
         
         self.label = QtGui.QLabel(self.name)
         self.label.setAlignment(QtCore.Qt.AlignRight)
-        self.label.setMinimumWidth(50)
+        self.label.setMinimumWidth(35)
         self._setup_text_widget()
         
         self.main_layout.addWidget(self.label)
@@ -1757,7 +1757,7 @@ class GetNumber(BasicWidget):
         self.label.setText(label)
         
     def get_label(self):
-        self.label.text()
+        return self.label.text()
              
 class GetNumberButton(GetNumber):
     

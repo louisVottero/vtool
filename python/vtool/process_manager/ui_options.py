@@ -3,6 +3,8 @@
 from vtool import qt_ui
 from vtool import util
 
+from vtool.process_manager import process
+
 if qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
 if qt_ui.is_pyside():
@@ -18,34 +20,21 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         policy.setVerticalPolicy(policy.Expanding)
         
         self.setSizePolicy(policy)
-                
         
-    
+        self.directory = None        
+        
     def _build_widgets(self):
         
-        
-        
-        title = QtGui.QLabel('Variables')
+        title = QtGui.QLabel('  Options')
         
         self.option_palette = ProcessOptionPalette()
-        
-        """
-        arm_group = self.option_palette.add_group('Arm Rig')
-        self.option_palette.add_title('Left', arm_group)
-        self.option_palette.add_string_option('Arm_L', 'joint_arm_L', arm_group)
-        self.option_palette.add_string_option('Elbow_L', 'joint_elbow_L', arm_group)
-        self.option_palette.add_string_option('Wrist_L', 'joint_wrist_L', arm_group)
-        self.option_palette.add_number_option('testing_L', 100, arm_group)
-        #self.tree = ProcessOptionTree()
-        """
-        
-        tree = ProcessOptionTree()
         
         self.main_layout.addWidget(title)
         self.main_layout.addWidget(self.option_palette)
         
-
-
+    def set_directory(self, directory):
+        
+        self.option_palette.set_directory(directory)
         
 class ProcessOptionPalette(qt_ui.BasicWidget):
     
@@ -59,11 +48,16 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
         self.create_right_click()
         
+        self.directory = None
+        self.process_inst = None
+        
+        self.supress_update = False
+        
     def _build_widgets(self):
         self.child_layout = QtGui.QVBoxLayout()
         
         self.main_layout.addLayout(self.child_layout)
-        self.main_layout.addSpacing(10)
+        self.main_layout.addSpacing(30)
         
     def _get_widget_names(self):
         
@@ -85,39 +79,124 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             name = util.increment_last_number(name)
             
         return name
+    
+    def _save_setting(self):
+        
+        self._update_settings()
+        
+    def _get_parent_path(self, widget):
+        
+        parent = widget.get_parent()
+        
+        if parent:
+            parent_path = ''
+            
+            while parent:
+            
+                name = parent.get_name()
+                parent_path += '%s.' % name  
+                
+                parent = parent.get_parent()
+        
+        if not parent:
+            if hasattr(widget, 'child_layout'):
+                parent_path = '.'
+        
+        return parent_path
+        
+    def _update_settings(self, clear = True):
+        
+        if self.supress_update:
+            return
+        
+        if clear:
+            self.process_inst.clear_options()
+        
+        item_count = self.child_layout.count()
+        
+        for inc in range(0, item_count):
+            
+            item = self.child_layout.itemAt(inc)
+            widget = item.widget()
+            
+            parent_path = self._get_parent_path(widget)
+            
+            name = widget.get_name()
+            
+            if parent_path:
+                name = parent_path + name
+            
+            value = widget.get_value()
+            
+            self.process_inst.add_option(name, value, None)
         
     def create_right_click(self, ):
         
         self.add_string = QtGui.QAction(self)
         self.add_string.setText('Add String')
         self.add_string.triggered.connect(self.add_string_option)
-        self.addAction(self.add_string)
         
         add_number = QtGui.QAction(self)
         add_number.setText('Add Number')
         add_number.triggered.connect(self.add_number_option)
-        self.addAction(add_number)
         
         self.add_group_action = QtGui.QAction(self)
         self.add_group_action.setText('Add Group')
         self.add_group_action.triggered.connect(self.add_group)
+        
+        self.add_title_action = QtGui.QAction(self)
+        self.add_title_action.setText('Add Title')
+        self.add_title_action.triggered.connect(self.add_title)
+        
+        self.addAction(self.add_string)
+        self.addAction(add_number)
         self.addAction(self.add_group_action)
+        self.addAction(self.add_title_action)
+        
+    def clear_widgets(self):
+        
+        item_count = self.child_layout.count()
+        
+        for inc in range(item_count, -1, -1):
+            
+            item = self.child_layout.itemAt(inc)
+            
+            if item:
+                widget = item.widget()
+                self.child_layout.removeWidget(widget)
+                widget.deleteLater()
+            
         
     def add_group(self, name = 'group'):
+        
+        if type(name) == bool:
+            name = 'group'
         
         name = self._get_unique_name(name)
         
         group = ProcessOptionGroup(name)
         self.child_layout.addWidget(group)
         
-    def add_title(self, name, group = None):
+        group.process_inst = self.process_inst
+        self._update_settings(True)
+        
+        
+    def add_title(self, name = 'title', group = None):
+        
+        if type(name) == bool:
+            name = 'title'
         
         name = self._get_unique_name(name)
         
-        title = QtGui.QLabel(name)
+        title = ProcessTitle(name)
         self.child_layout.addWidget(title)
         
+        self._update_settings(False)
+        
     def add_number_option(self, name = 'number', value = 0, group = None):
+        
+        if type(name) == bool:
+            name = 'number'
         
         name = self._get_unique_name(name)
         
@@ -125,7 +204,14 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         number_option.set_value(value)
         self.child_layout.addWidget(number_option)
         
+        number_option.update_values.connect(self._update_settings)
+        
+        self._update_settings(False)
+        
     def add_string_option(self, name = 'string', value = '', group = None):
+        
+        if type(name) == bool:
+            name = 'string'
         
         name = self._get_unique_name(name)
         
@@ -133,6 +219,59 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         string_option.set_value(value)
         
         self.child_layout.addWidget(string_option)
+        
+        string_option.update_values.connect(self._update_settings)
+        
+        self._update_settings(False)
+        
+    def set_directory(self, directory):
+        
+        if not directory:
+            self.directory = None
+            self.process_inst = None
+            
+        
+        if directory:
+            
+            process_inst = process.Process()
+            process_inst.set_directory(directory)
+            
+            self.process_inst = process_inst
+                        
+            options = process_inst.get_options()
+            
+            self.clear_widgets()
+            
+            if not options:
+                return
+            
+            self.setHidden(True)
+            self.setUpdatesEnabled(False)
+            
+            self.supress_update = True
+            
+            for option in options:
+                
+                period_count = option[0].count('.')
+                
+                if period_count >= 1:
+                    sub_name = option[0].split('.')
+                    self.add_group(sub_name[-1])
+                    
+                
+                if type(option[1]) == str:
+                    self.add_string_option(option[0], option[1], None)
+                    
+                if type(option[1]) == float:
+                    self.add_number_option(option[0], option[1], None)
+                    
+                
+                    
+            
+            self.setVisible(True)    
+            self.setUpdatesEnabled(True)
+            
+            self.supress_update = False
         
 class ProcessOptionGroup(ProcessOptionPalette):
     
@@ -144,20 +283,17 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum))
         self.main_layout.setContentsMargins(0,0,0,5)
         
-        self.add_group_action.setVisible(False)
-        
     def _get_widget_names(self):
         
-        parent = self.parent()
-        item_count = parent.child_layout.count()
+        item_count = self.child_layout.count()
         found = []
         for inc in range(0, item_count):
             
-            item = parent.child_layout.itemAt(inc)
+            item = self.child_layout.itemAt(inc)
             widget = item.widget()
             label = widget.get_name()
             found.append(label)
-            
+           
         return found
         
     def create_right_click(self):
@@ -174,10 +310,19 @@ class ProcessOptionGroup(ProcessOptionPalette):
         rename = QtGui.QAction(self)
         rename.setText('Rename')
         rename.triggered.connect(self.rename)
+
+        remove = QtGui.QAction(self)
+        remove.setText('Remove')
+        remove.triggered.connect(self.remove)
+        
+        separator = QtGui.QAction(self)
+        separator.setSeparator(True)
         
         self.insertAction(self.add_string, move_up)
         self.insertAction(self.add_string, move_dn)
         self.insertAction(self.add_string, rename)
+        self.insertAction(self.add_string, remove)
+        self.insertAction(self.add_string, separator)
         
     def _build_widgets(self):
         main_group_layout = QtGui.QVBoxLayout()
@@ -185,7 +330,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
         main_group_layout.setContentsMargins(0,0,0,0)
         
         self.child_layout = QtGui.QVBoxLayout()
-        self.child_layout.setContentsMargins(0,5,5,10)
+        self.child_layout.setContentsMargins(5,10,5,10)
         
         self.child_layout.setSpacing(0)
         
@@ -198,6 +343,10 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self.group.child_layout = self.child_layout
         
         self.main_layout.addWidget(self.group)
+        
+    def get_parent(self):
+        
+        return self.group.parent()
         
     def move_up(self):
         
@@ -230,7 +379,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
     def rename(self):
         
         found = self._get_widget_names()
-        print 'widget names', found
+        
         title = self.group.title()
         
         new_name =  qt_ui.get_new_name('Rename group', self, title)
@@ -246,15 +395,25 @@ class ProcessOptionGroup(ProcessOptionPalette):
             
         self.group.setTitle(new_name)
         
+    def remove(self):
+        parent = self.parent()
+        
+        parent.child_layout.removeWidget(self)
+        self.deleteLater()
+        
     def get_name(self):
         return self.group.title()
     
     def set_name(self, name):
         
         self.group.setTitle(name)
-
+        
+    def get_value(self):
+        return None
         
 class ProcessOption(qt_ui.BasicWidget):
+    
+    update_values = qt_ui.create_signal(object)
     
     def __init__(self, name):
         super(ProcessOption, self).__init__()
@@ -269,6 +428,18 @@ class ProcessOption(qt_ui.BasicWidget):
         self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
         self.create_right_click()
         
+        self._setup_value_change()
+        
+    def _setup_value_change(self):
+        return
+        
+    def _value_change(self, value):
+        
+        self.update_values.emit(False)
+        
+    def _define_option_widget(self):
+        return
+        
     def _get_widget_names(self):
         
         parent = self.parent()
@@ -282,6 +453,31 @@ class ProcessOption(qt_ui.BasicWidget):
             found.append(label)
             
         return found
+
+    def _rename(self):
+        
+        title = self.get_name() 
+        
+        new_name =  qt_ui.get_new_name('Rename Group', self, title)
+        
+        found = self._get_widget_names()
+        
+        if new_name == title:
+            return
+        
+        if new_name == None:
+            return
+        
+        while new_name in found:
+            new_name = util.increment_last_number(new_name)
+        
+        self.set_name(new_name)
+        
+        self.update_values.emit(True)
+        
+    def get_parent(self):
+        
+        self.parent()
         
     def create_right_click(self):
         
@@ -308,10 +504,10 @@ class ProcessOption(qt_ui.BasicWidget):
     def remove(self):
         parent = self.parent()
         
-        print parent
-        
         parent.child_layout.removeWidget(self)
         self.deleteLater()
+        
+        self.update_values.emit(True)
         
     def move_up(self):
         
@@ -327,6 +523,8 @@ class ProcessOption(qt_ui.BasicWidget):
         parent.child_layout.removeWidget(self)
         layout.insertWidget(index, self)
         
+        self.update_values.emit(True)
+        
     def move_down(self):
         
         parent = self.parent()
@@ -341,27 +539,7 @@ class ProcessOption(qt_ui.BasicWidget):
         parent.child_layout.removeWidget(self)
         layout.insertWidget(index, self)
         
-    def _rename(self):
-        
-        title = self.get_name() 
-        
-        new_name =  qt_ui.get_new_name('Rename group', self, title)
-        
-        found = self._get_widget_names()
-        
-        if new_name == title:
-            return
-        
-        if new_name == None:
-            return
-        
-        while new_name in found:
-            new_name = util.increment_last_number(new_name)
-        
-        self.set_name(new_name)
-        
-    def _define_option_widget(self):
-        return
+        self.update_values.emit(True)
     
     def get_name(self):
         
@@ -373,133 +551,51 @@ class ProcessOption(qt_ui.BasicWidget):
         
         self.option_widget.set_label(name)
         
+    def set_value(self, value):
+        pass
+    
+    def get_value(self):
+        pass
         
 class ProcessTitle(ProcessOption):
     
-    pass
-
-
+    def _define_option_widget(self):
+        return QtGui.QLabel(self.name)
     
+    def get_name(self):
+        
+        name = self.option_widget.text()
+        return name
+    
+    def set_name(self, name):
+        
+        self.option_widget.setText(name)
+        
 class ProcessOptionText(ProcessOption):
     
     def _define_option_widget(self):
         return qt_ui.GetString(self.name)
         
+    def _setup_value_change(self):
+        
+        self.option_widget.text_changed.connect(self._value_change)
+        
     def set_value(self, value):
         self.option_widget.set_text(value)
+        
+    def get_value(self):
+        
+        return str(self.option_widget.get_text())
         
 class ProcessOptionNumber(ProcessOption):
     def _define_option_widget(self):
         return qt_ui.GetNumber(self.name)
+
+    def _setup_value_change(self):
+        self.option_widget.valueChanged.connect(self._value_change)
     
     def set_value(self, value):
         self.option_widget.set_value(value)
         
-        
-        
-class WidgetDelegate (QtGui.QStyledItemDelegate):
-    
-    def paint(self,painter, option, index):
-        if index.column() == 1:
-            progress = index.data().toInt()
-
-            progressBarOption = QtGui.QStyleOptionProgressBar()
-            progressBarOption.rect = option.rect
-            progressBarOption.minimum = 0
-            progressBarOption.maximum = 100
-            progressBarOption.progress = progress
-            
-            progressBarOption.text = "%s%" % progress
-            progressBarOption.textVisible = True
-
-            
-            QtGui.QApplication.style().drawControl(QtGui.QStyle.CE_ProgressBar, progressBarOption, painter)
-        else:
-            QtGui.QStyledItemDelegate.paint(self, painter, option, index)
-        
-    
-class ProcessOptionTree(qt_ui.TreeWidget):
-    
-    def __init__(self):
-        
-        
-        
-        super(ProcessOptionTree, self).__init__()
-        
-        self.title_text_index = 0
-        self.setColumnCount(2)
-        self.setHeaderLabels(['name', 'value'])
-        self.setSortingEnabled(False)
-        self.setColumnWidth(0, 150)
-        self.setIndentation(15)
-        self.setAllColumnsShowFocus(False)
-        
-        self.setItemDelegate(WidgetDelegate())
-        
-        self._create_item_group('joints')
-        """
-        self._add_child_item('joints', 'arm_joints_L', "joint_arm_L, joint_elbow_L, joint_wrist_L")
-        self._add_child_item('joints', 'arm_joints_R', "joint_arm_R, joint_elbow_R, joint_wrist_R")
-        self._add_child_item('joints', 'leg_joints_L', "joint_leg_L, joint_knee_L, joint_ankle_L")
-        self._add_child_item('joints', 'leg_joints_R', "joint_leg_R, joint_knee_R, joint_ankle_R")
-        self._create_item_group('arm_L')
-        self._create_item_group('arm_R')
-        self._add_child_item('arm_L', 'arm joint', 'joint_arm_L')
-        self._add_child_item('arm_L', 'elbow joint', 'joint_elbow_L')
-        self._add_child_item('arm_L', 'wrist joint', 'joint_wrist_L')
-        self._add_child_item('arm_R', 'arm joint', 'joint_arm_R')
-        self._add_child_item('arm_R', 'elbow joint', 'joint_elbow_R')
-        self._add_child_item('arm_R', 'wrist joint', 'joint_wrist_R')
-        """
-
-    def _create_item_group(self, name):
-        
-        item = QtGui.QTreeWidgetItem()
-        item.setText(0, name)
-        
-        item.setSizeHint(0, QtCore.QSize(75, 25))
-        
-        self.addTopLevelItem(item)
-        
-    def _add_child_item(self, group, name, value):
-        
-        count = self.topLevelItemCount()
-        
-        for inc in range(0, count):
-            
-            if self.topLevelItem(inc).text(0) == group:
-                parent = self.topLevelItem(inc)
-                break
-        
-        if not parent:
-            return
-        
-        item = QtGui.QTreeWidgetItem()
-        item.setText(0, name)
-        #item.setText(1, str(value))
-        
-        text_line = QtGui.QLineEdit()
-        text_line.setText(str(value))
-        text_line.setAutoFillBackground(True)
-        
-        
-        item.setSizeHint(0, QtCore.QSize(100, 25))
-        
-        parent.addChild(item)
-
-        self.setItemWidget(item, 1, text_line)
-
-    def _edit_start(self, item):
-        
-        self.old_name = str(item.text(1))
-        
-        #close is needed
-        self.closePersistentEditor(item, 1)
-        self.openPersistentEditor(item, 1)
-        
-        self.edit_state = item
-        
-        return
-
-    def load(self):
-        pass
+    def get_value(self):
+        return self.option_widget.get_value()

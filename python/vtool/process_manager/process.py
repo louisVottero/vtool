@@ -124,15 +124,18 @@ class Process(object):
         self.process_name = name
         self.parts = []
         self.external_code_paths = []
+        self.option_values = {}
         self.runtime_values = {}
+        self.options = None
         
-    def _setup_settings(self):
+    def _setup_options(self):
         
-        if not self.settings:
-            settings = util_file.SettingsFile()
-            settings.set_directory(self.get_path())
+        if not self.options:
+            
+            options = util_file.SettingsFile()
+            options.set_directory(self.get_path(), 'options.txt')
         
-            self.settings = settings
+            self.options = options
             
         
     def _set_name(self, new_name):
@@ -204,7 +207,7 @@ class Process(object):
             if not found:
                 self.create_code('manifest', 'script.manifest')   
                 
-        self._setup_settings()     
+        self._setup_options()     
         
         return path
             
@@ -229,6 +232,7 @@ class Process(object):
             directory (str): Directory path to the process that should be created or where an existing process lives.
         """ 
         self.directory = directory
+        self._setup_options()
         
     def set_external_code_library(self, directory):
         """
@@ -926,35 +930,42 @@ class Process(object):
     
     def add_option(self, name, value, group = None):
         
-        self._setup_settings()
+        self._setup_options()
         
         if group:
-            name = 'option.%s.%s' % (group,name)
+            name = '%s.%s' % (group,name)
         if not group:
-            name = 'option.%s' % name
+            name = '%s' % name
+                
+        self.options.set(name, value)
         
-        self.settings.set(name, value)
+    def set_option(self, name, value):
+        
+        if self.options.has_setting(name):
+            self.options.set(name, value)
         
     def get_option(self, name, group = None):
         
         if group:
-            name = 'option.%s.%s' % (group, name)
+            name = '%s.%s' % (group, name)
         if not group:
-            name = 'option.%s' % name
+            name = '%s' % name
             
-        self.settings.get(name)
+        self.options.get(name)
         
-    def get_runtime_option(self, name, group = None):
+    def get_options(self):
         
-        for key in self.runtime_values:
-            if key.startswith('option.'):
-                split_option = key.split('.')
-                
-                if len(split_option) == 2 and split_option[1] == name and not group:
-                    return self.runtime_values[key]
-                
-                if len(split_option)== 3 and split_option[1] == name and split_option[2] == group:
-                    return self.runtime_values[key]
+        options = []
+        
+        if self.options:
+            options = self.options.get_settings()
+            
+        return options
+        
+    def clear_options(self):
+        
+        if self.options:
+            self.options.clear()
         
     #--- manifest
         
@@ -1203,6 +1214,7 @@ class Process(object):
             
         """
         self._set_name(name)
+        self._setup_options()
         
     def add_part(self, name):
         """
@@ -1244,7 +1256,15 @@ class Process(object):
         Return
             None
         """
-        util_file.delete_dir(self.process_name, self.directory)
+        
+        if self.process_name:
+            util_file.delete_dir(self.process_name, self.directory)
+        if not self.process_name:
+            
+            basename = util_file.get_basename(self.directory)
+            dirname = util_file.get_dirname(self.directory)
+            
+            util_file.delete_dir(basename, dirname)
     
     def rename(self, new_name):
         """
@@ -1261,8 +1281,7 @@ class Process(object):
         
         if util_file.rename( self.get_path(), split_name[-1]):
             
-            self._set_name(new_name)
-            
+            self.load(new_name)            
             return True
             
         return False
@@ -1278,14 +1297,6 @@ class Process(object):
         Return
             (str): The status from running the script. This includes error messages.
         """
-        
-        if self.settings:
-            
-            settings_dict = self.settings.settings_dict
-            
-            for key in settings_dict:
-                if key.startswith('option.'):
-                    self.set_runtime_value(key, settings_dict[key])
         
         if util.is_in_maya():
             
