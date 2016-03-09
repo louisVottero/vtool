@@ -1018,18 +1018,13 @@ class FileTreeWidget(TreeWidget):
 
     def refresh(self):
         
-        watch = util.StopWatch()
-        watch.start('getting files')
         files = self._get_files()
-        watch.end()
         
         if not files:
             self.clear()
             return
         
-        watch.start('loading files')
         self._load_files(files)
-        watch.end()
         
         self.refreshed.emit()
         

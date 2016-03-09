@@ -2,6 +2,7 @@
 
 import string
 
+from vtool import util
 from vtool import util_file
 from vtool import qt_ui
 
@@ -732,10 +733,15 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     def refresh(self):
         
         self.clearSelection()
-                
-        process_paths = self._get_process_paths()
         
+        watch = util.StopWatch()
+        watch.start('getting paths')
+        process_paths = self._get_process_paths()
+        watch.end()
+        
+        watch.start('loading processes')
         self._load_processes(process_paths)
+        watch.end()
                 
         self.current_item = None
         self.last_item = None
