@@ -611,7 +611,7 @@ class SettingsFile(object):
         self._write()
     
     def get(self, name): 
-           
+        
         if name in self.settings_dict:
             return self.settings_dict[name]
     
@@ -621,6 +621,13 @@ class SettingsFile(object):
             return False
         
         return True
+    
+    def has_settings(self):
+        
+        if self.settings_order:
+            return True
+        
+        return False
     
     def get_settings(self):
         

@@ -131,12 +131,11 @@ class Process(object):
     def _setup_options(self):
         
         if not self.options:
-            
             options = util_file.SettingsFile()
-            options.set_directory(self.get_path(), 'options.txt')
-        
             self.options = options
             
+        self.options.set_directory(self.get_path(), 'options.txt')
+        
         
     def _set_name(self, new_name):
         
@@ -158,27 +157,7 @@ class Process(object):
             
         if util_file.is_dir(old_code_path):
             util_file.rename(old_code_path, self.code_folder_name)
-        """    
-        code_folders = self.get_code_folders()
-        data_folders = self.get_data_folders()
         
-        if code_folders:
-            for folder in code_folders:
-                
-                path = util_file.join_path(self.get_code_path(), folder)
-                
-                util_file.VersionFile(path)
-                
-                
-        if data_folders:
-            for folder in data_folders:
-                
-                path = util_file.join_path(self.get_data_path(), folder)
-                
-                util_file.VersionFile(path)
-                
-            #util_file.VersionFile()
-        """     
     def _create_folder(self):
                 
         if not util_file.is_dir(self.directory):
@@ -735,28 +714,7 @@ class Process(object):
             
             return_value = util_file.join_path(path, code_name)
             
-        """
-        data_folder = data.DataFolder(name, self.get_code_path())
         
-        data_instance = data_folder.get_folder_data_instance()
-        
-        data_folder = data.DataFolder(name, self.get_code_path())
-        data_type = data_folder.get_data_type()
-        
-        if data_type == 'None':
-            data_folder.set_data_type('script.python')
-        
-        return_value = None
-        
-        if data_instance:
-            filepath = data_instance.get_file()
-            
-            if basename:
-                return_value = util_file.get_basename(filepath)
-            
-            if not basename:
-                return_value = filepath
-        """
         return return_value
 
     def get_code_name_from_path(self, code_path):
@@ -928,6 +886,11 @@ class Process(object):
         
     #--- setting
     
+    def has_options(self):
+        self._setup_options()
+        
+        return self.options.has_settings()
+    
     def add_option(self, name, value, group = None):
         
         self._setup_options()
@@ -940,18 +903,20 @@ class Process(object):
         self.options.set(name, value)
         
     def set_option(self, name, value):
+        self._setup_options()
         
         if self.options.has_setting(name):
             self.options.set(name, value)
         
     def get_option(self, name, group = None):
+        self._setup_options()
         
         if group:
             name = '%s.%s' % (group, name)
         if not group:
             name = '%s' % name
-            
-        self.options.get(name)
+        
+        return self.options.get(name)
         
     def get_options(self):
         
@@ -1352,8 +1317,6 @@ class Process(object):
                 return status
             
         try:
-            
-            
             
             if util.is_in_maya():
                 

@@ -1,5 +1,7 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import string
+
 from vtool import qt_ui
 from vtool import util
 
@@ -33,8 +35,17 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         self.main_layout.addWidget(self.option_palette)
         
     def set_directory(self, directory):
-        
+        self.directory = directory
         self.option_palette.set_directory(directory)
+        
+    def has_options(self):
+        
+        if not self.directory:
+        
+            return False
+        
+        return self.option_palette.has_options()
+        
         
 class ProcessOptionPalette(qt_ui.BasicWidget):
     
@@ -52,6 +63,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.process_inst = None
         
         self.supress_update = False
+        self.central_palette = self
         
     def _build_widgets(self):
         self.child_layout = QtGui.QVBoxLayout()
@@ -59,76 +71,243 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.main_layout.addLayout(self.child_layout)
         self.main_layout.addSpacing(30)
         
-    def _get_widget_names(self):
+    def _get_widget_names(self, parent = None):
         
-        item_count = self.child_layout.count()
+        if not parent:
+            scope = self
+            
+        if parent:
+            scope = parent
+        
+        item_count = scope.child_layout.count()
         found = []
         for inc in range(0, item_count):
             
-            item = self.child_layout.itemAt(inc)
+            item = scope.child_layout.itemAt(inc)
             widget = item.widget()
             label = widget.get_name()
             found.append(label)
             
         return found
+    
+    def _find_group_widget(self, name):
         
-    def _get_unique_name(self, name):
+        item_count = self.child_layout.count()
+        found = []
         
-        found = self._get_widget_names()
+        split_name = name.split('.')
+        
+        sub_widget = None
+        
+        for name in split_name:
+            
+            if not sub_widget:
+                sub_widget = self
+            
+            found = False
+            
+            item_count = sub_widget.child_layout.count()
+            
+            for inc in range(0, item_count):
+                
+                item = sub_widget.child_layout.itemAt(inc)
+                
+                if item:
+                    
+                    widget = item.widget()
+                    label = widget.get_name()
+                    
+                    if label == name:
+                        sub_widget = widget
+                        found = True
+                        break
+                    
+                if not item:
+                    break
+                
+            if not found:
+                return
+            
+        return sub_widget
+                
+        
+    def _get_unique_name(self, name, parent):
+        
+        found = self._get_widget_names(parent)
         while name in found:
             name = util.increment_last_number(name)
             
         return name
-    
-    def _save_setting(self):
         
-        self._update_settings()
-        
-    def _get_parent_path(self, widget):
+    def _get_path(self, widget):
         
         parent = widget.get_parent()
         
+        path = ''
+        
+        parents = []
+        
         if parent:
-            parent_path = ''
             
-            while parent:
+            sub_parent = parent
             
-                name = parent.get_name()
-                parent_path += '%s.' % name  
+            while sub_parent:
                 
-                parent = parent.get_parent()
+                if sub_parent.__class__ == ProcessOptionPalette:
+                    break
+                
+                name = sub_parent.get_name()
+                  
+                parents.append(name)
+                sub_parent = sub_parent.get_parent()
+        
+        parents.reverse()
+        
+        for sub_parent in parents:
+            path += '%s.' % sub_parent
+        
+        if hasattr(widget, 'child_layout'):
+            path = path + widget.get_name() + '.'
+        if not hasattr(widget, 'child_layout'):
+            path = path + widget.get_name()
+        
+        return path
+        
+    def _find_palette(self, widget):
+        
+        if widget.__class__ == ProcessOptionPalette:
+            return widget
+        
+        parent = widget.get_parent()
         
         if not parent:
-            if hasattr(widget, 'child_layout'):
-                parent_path = '.'
+            return
         
-        return parent_path
+        while parent.__class__ != ProcessOptionPalette:
+            
+            parent = parent.get_parent()
         
-    def _update_settings(self, clear = True):
+        return parent
+        
+    def _write_widget_options(self, widget):
+        
+        if not widget:
+            return
+        
+        item_count = widget.child_layout.count()
+        
+        for inc in range(0, item_count):
+            
+            item = widget.child_layout.itemAt(inc)
+            
+            if item:
+                sub_widget = item.widget()
+                
+                name = self._get_path(sub_widget)
+                
+                value = sub_widget.get_value()
+                
+                self.process_inst.add_option(name, value, None)
+                
+                if hasattr(sub_widget, 'child_layout'):
+                    self._write_widget_options(sub_widget)
+        
+    def _write_options(self, clear = True):
         
         if self.supress_update:
             return
         
-        if clear:
-            self.process_inst.clear_options()
+        if clear == True:
+            self._write_all()
+            
+        if clear == False:
+            
+            item_count = self.child_layout.count()
+            
+            for inc in range(0, item_count):
+                
+                item = self.child_layout.itemAt(inc)
+                widget = item.widget()
+                
+                name = self._get_path(widget)
+                
+                value = widget.get_value()
+                
+                self.process_inst.add_option(name, value, None)
+            
+    def _write_all(self):
         
-        item_count = self.child_layout.count()
+        self.process_inst.clear_options()
+        palette = self._find_palette(self)
         
-        for inc in range(0, item_count):
+        self._write_widget_options(palette)
+        
+    def _load_widgets(self, options):
+        
+        self.clear_widgets()
+        
+        if not options:
+            return
+        
+        self.setHidden(True)
+        self.setUpdatesEnabled(False)
+        self.supress_update = True
+        
+        for option in options:
             
-            item = self.child_layout.itemAt(inc)
-            widget = item.widget()
+            split_name = option[0].split('.')
             
-            parent_path = self._get_parent_path(widget)
+            name = option[0]
             
-            name = widget.get_name()
+            if split_name[-1] == '':
+                search_group = string.join(split_name[:-2], '.')
+                name = split_name[-2]
+            if not split_name[-1] == '':
+                search_group = string.join(split_name[:-1], '.')
+                name = split_name[-1]
+                
+            widget = self._find_group_widget(search_group)
             
-            if parent_path:
-                name = parent_path + name
+            if not widget:
+                widget = self
             
-            value = widget.get_value()
+            is_group = False
             
-            self.process_inst.add_option(name, value, None)
+            if split_name[-1] == '':
+                is_group = True
+                self.add_group(name, widget)
+            
+            if type(option[1]) == str:
+                
+                self.add_string_option(name, option[1], widget)
+                
+            if type(option[1]) == float:
+                self.add_number_option(name, option[1], widget)
+                
+            if type(option[1]) == int:
+                self.add_integer_option(name, option[1], widget)
+                
+            if type(option[1]) == bool:
+                self.add_boolean_option(name, option[1], widget)
+                
+            if option[1] == None and not is_group:
+                self.add_title(name, widget)
+                
+        
+        self.setVisible(True)    
+        self.setUpdatesEnabled(True)
+        self.supress_update = False
+        
+    def _handle_parenting(self, widget, parent):
+        
+        if not parent:
+            self.child_layout.addWidget(widget)
+            if hasattr(widget, 'update_values'):
+                widget.update_values.connect(self._write_options)
+        if parent:
+            parent.child_layout.addWidget(widget)
+            if hasattr(widget, 'update_values'):
+                widget.update_values.connect(parent._write_options)
         
     def create_right_click(self, ):
         
@@ -140,6 +319,15 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         add_number.setText('Add Number')
         add_number.triggered.connect(self.add_number_option)
         
+        add_integer = QtGui.QAction(self)
+        add_integer.setText('Add Integer')
+        add_integer.triggered.connect(self.add_integer_option)
+        
+        add_boolean = QtGui.QAction(self)
+        add_boolean.setText('Add Boolean')
+        add_boolean.triggered.connect(self.add_boolean_option)
+        
+        
         self.add_group_action = QtGui.QAction(self)
         self.add_group_action.setText('Add Group')
         self.add_group_action.triggered.connect(self.add_group)
@@ -150,8 +338,17 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self.addAction(self.add_string)
         self.addAction(add_number)
+        self.addAction(add_integer)
+        self.addAction(add_boolean)
         self.addAction(self.add_group_action)
         self.addAction(self.add_title_action)
+        
+    def has_options(self):
+        if not self.directory:
+            
+            return False
+        
+        return self.process_inst.has_options()
         
     def clear_widgets(self):
         
@@ -166,63 +363,89 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 self.child_layout.removeWidget(widget)
                 widget.deleteLater()
             
-        
-    def add_group(self, name = 'group'):
+    def add_group(self, name = 'group', parent = None):
         
         if type(name) == bool:
             name = 'group'
         
-        name = self._get_unique_name(name)
+        name = self._get_unique_name(name, parent)
         
         group = ProcessOptionGroup(name)
-        self.child_layout.addWidget(group)
+        
+        self._handle_parenting(group, parent)
         
         group.process_inst = self.process_inst
-        self._update_settings(True)
+        self._write_options(False)
         
-        
-    def add_title(self, name = 'title', group = None):
+    def add_title(self, name = 'title', parent = None):
         
         if type(name) == bool:
             name = 'title'
         
-        name = self._get_unique_name(name)
+        name = self._get_unique_name(name, parent)
         
         title = ProcessTitle(name)
-        self.child_layout.addWidget(title)
         
-        self._update_settings(False)
+        self._handle_parenting(title, parent)
         
-    def add_number_option(self, name = 'number', value = 0, group = None):
+        self._write_options(False)
+        
+    def add_number_option(self, name = 'number', value = 0, parent = None):
         
         if type(name) == bool:
             name = 'number'
         
-        name = self._get_unique_name(name)
+        name = self._get_unique_name(name, parent)
         
         number_option = ProcessOptionNumber(name)
         number_option.set_value(value)
-        self.child_layout.addWidget(number_option)
         
-        number_option.update_values.connect(self._update_settings)
+        self._handle_parenting(number_option, parent)
         
-        self._update_settings(False)
+        self._write_options(False)
         
-    def add_string_option(self, name = 'string', value = '', group = None):
+    def add_integer_option(self, name = 'integer', value = 0, parent = None):
+        
+        if type(name)== bool:
+            name = 'integer'
+            
+        name = self._get_unique_name(name, parent)
+        
+        option = ProcessOptionInteger(name)
+        option.set_value(value)
+        
+        self._handle_parenting(option, parent)
+        
+        self._write_options(False)
+        
+    def add_boolean_option(self, name = 'boolean', value = False, parent = None):
+        
+        if type(name)== bool:
+            name = 'boolean'
+            
+        name = self._get_unique_name(name, parent)
+        
+        option = ProcessOptionBoolean(name)
+        
+        option.set_value(value)
+        
+        self._handle_parenting(option, parent)
+        
+        self._write_options(False)
+        
+    def add_string_option(self, name = 'string', value = '', parent = None):
         
         if type(name) == bool:
             name = 'string'
         
-        name = self._get_unique_name(name)
+        name = self._get_unique_name(name, parent)
         
         string_option = ProcessOptionText(name)
         string_option.set_value(value)
         
-        self.child_layout.addWidget(string_option)
+        self._handle_parenting(string_option, parent)
         
-        string_option.update_values.connect(self._update_settings)
-        
-        self._update_settings(False)
+        self._write_options(False)
         
     def set_directory(self, directory):
         
@@ -233,6 +456,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         if directory:
             
+            self.directory = directory
+            
             process_inst = process.Process()
             process_inst.set_directory(directory)
             
@@ -240,39 +465,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                         
             options = process_inst.get_options()
             
-            self.clear_widgets()
+            self._load_widgets(options)
             
-            if not options:
-                return
             
-            self.setHidden(True)
-            self.setUpdatesEnabled(False)
-            
-            self.supress_update = True
-            
-            for option in options:
-                
-                period_count = option[0].count('.')
-                
-                if period_count >= 1:
-                    sub_name = option[0].split('.')
-                    self.add_group(sub_name[-1])
-                    
-                
-                if type(option[1]) == str:
-                    self.add_string_option(option[0], option[1], None)
-                    
-                if type(option[1]) == float:
-                    self.add_number_option(option[0], option[1], None)
-                    
-                
-                    
-            
-            self.setVisible(True)    
-            self.setUpdatesEnabled(True)
-            
-            self.supress_update = False
-        
 class ProcessOptionGroup(ProcessOptionPalette):
     
     def __init__(self, name):
@@ -283,13 +478,19 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum))
         self.main_layout.setContentsMargins(0,0,0,5)
         
-    def _get_widget_names(self):
+    def _get_widget_names(self, parent = None):
         
-        item_count = self.child_layout.count()
+        if parent:
+            scope = parent
+            
+        if not parent:
+            scope = self
+        
+        item_count = scope.child_layout.count()
         found = []
         for inc in range(0, item_count):
             
-            item = self.child_layout.itemAt(inc)
+            item = scope.child_layout.itemAt(inc)
             widget = item.widget()
             label = widget.get_name()
             found.append(label)
@@ -346,7 +547,20 @@ class ProcessOptionGroup(ProcessOptionPalette):
         
     def get_parent(self):
         
-        return self.group.parent()
+        parent = self.parent()
+        
+        grand_parent = parent.parent()
+        
+        if hasattr(grand_parent, 'group'):
+            parent = grand_parent
+            
+        if not hasattr(parent, 'child_layout'):
+            return
+        
+        if parent.__class__ == ProcessOptionPalette:
+            return parent
+        
+        return parent
         
     def move_up(self):
         
@@ -362,6 +576,8 @@ class ProcessOptionGroup(ProcessOptionPalette):
         parent.child_layout.removeWidget(self)
         layout.insertWidget(index, self)
         
+        self._write_all()
+        
     def move_down(self):
         
         parent = self.parent()
@@ -375,6 +591,8 @@ class ProcessOptionGroup(ProcessOptionPalette):
         
         parent.child_layout.removeWidget(self)
         layout.insertWidget(index, self)
+        
+        self._write_all()
         
     def rename(self):
         
@@ -394,12 +612,14 @@ class ProcessOptionGroup(ProcessOptionPalette):
             new_name = util.increment_last_number(new_name)
             
         self.group.setTitle(new_name)
+        self._write_all()
         
     def remove(self):
         parent = self.parent()
         
         parent.child_layout.removeWidget(self)
         self.deleteLater()
+        self._write_all()
         
     def get_name(self):
         return self.group.title()
@@ -477,7 +697,20 @@ class ProcessOption(qt_ui.BasicWidget):
         
     def get_parent(self):
         
-        self.parent()
+        parent = self.parent()
+        
+        grand_parent = parent.parent()
+        
+        if hasattr(grand_parent, 'group'):
+            parent = grand_parent
+        
+        if not hasattr(parent, 'child_layout'):
+            return
+        
+        if parent.__class__ == ProcessOptionPalette:
+            return
+        
+        return parent
         
     def create_right_click(self):
         
@@ -559,6 +792,11 @@ class ProcessOption(qt_ui.BasicWidget):
         
 class ProcessTitle(ProcessOption):
     
+    def __init__(self, name):
+        super(ProcessTitle, self).__init__(name)
+
+        self.main_layout.setContentsMargins(0,5,0,10)
+    
     def _define_option_widget(self):
         return QtGui.QLabel(self.name)
     
@@ -589,6 +827,7 @@ class ProcessOptionText(ProcessOption):
         
 class ProcessOptionNumber(ProcessOption):
     def _define_option_widget(self):
+        
         return qt_ui.GetNumber(self.name)
 
     def _setup_value_change(self):
@@ -598,4 +837,22 @@ class ProcessOptionNumber(ProcessOption):
         self.option_widget.set_value(value)
         
     def get_value(self):
+
+        
         return self.option_widget.get_value()
+    
+class ProcessOptionInteger(ProcessOptionNumber):
+    def _define_option_widget(self):
+        
+        return qt_ui.GetInteger(self.name)
+    
+class ProcessOptionBoolean(ProcessOptionNumber):
+    
+    def __init__(self, name):
+        super(ProcessOptionBoolean, self).__init__(name)
+
+        self.main_layout.setContentsMargins(0,5,0,5)
+    
+    def _define_option_widget(self):
+        return qt_ui.GetBoolean(self.name)
+    
