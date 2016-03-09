@@ -1700,64 +1700,115 @@ class GetDirectoryWidget(DirectoryWidget):
     def get_directory(self):
         return self.directory_edit.text()
      
-class GetNumber(BasicWidget):
+class GetNumberBase(BasicWidget):
     
     valueChanged = create_signal(object)
     
     def __init__(self, name, parent = None):
         self.name = name
-        super(GetNumber, self).__init__(parent)
+        super(GetNumberBase, self).__init__(parent)
     
     def _define_main_layout(self):
         return QtGui.QHBoxLayout()
     
-    def _define_spin_widget(self):
-        return QtGui.QDoubleSpinBox()
+    def _define_number_widget(self):
+        return
     
     def _build_widgets(self):
         
         self.main_layout.setContentsMargins(0,0,0,0)
         self.main_layout.setSpacing(0)
         
-        self.spin_widget = self._define_spin_widget()
-        self.spin_widget.setMaximumWidth(100)
+        self.number_widget = self._define_number_widget()
+        self.number_widget.setMaximumWidth(100)
         
         self.label = QtGui.QLabel(self.name)
         self.label.setAlignment(QtCore.Qt.AlignRight)
-
-        self._setup_spin_widget()
         
         self.main_layout.addWidget(self.label)
         self.main_layout.addSpacing(5)
-        self.main_layout.addWidget(self.spin_widget)
-        
-    def _setup_spin_widget(self):
-        
-        if hasattr(self.spin_widget, 'CorrectToNearestValue'):
-            self.spin_widget.setCorrectionMode(self.spin_widget.CorrectToNearestValue)
-            
-        if hasattr(self.spin_widget, 'setWrapping'):
-            self.spin_widget.setWrapping(False)
-            
-        self.spin_widget.setMaximum(100000000)
-        self.spin_widget.setButtonSymbols(self.spin_widget.NoButtons)
-        
-        self.spin_widget.valueChanged.connect(self._value_changed)
+        self.main_layout.addWidget(self.number_widget)
                     
     def _value_changed(self):
-        self.valueChanged.emit(self.spin_widget.value())
+        self.valueChanged.emit(self.get_value())
         
     def set_value(self, value):
-        self.spin_widget.setValue(value)
+        self.number_widget.setValue(value)
         
     def get_value(self):
-        return self.spin_widget.value()
+        return self.number_widget.value()
         
     def set_label(self, label):
         self.label.setText(label)
         
     def get_label(self):
+        
         return self.label.text()
+    
+class GetNumber(GetNumberBase):
+    
+    valueChanged = create_signal(object)
+    
+    def __init__(self, name, parent = None):
+        super(GetNumber, self).__init__(name, parent)
+        
+        self._setup_spin_widget()
+    
+    def _define_main_layout(self):
+        return QtGui.QHBoxLayout()
+    
+    def _define_number_widget(self):
+        return QtGui.QDoubleSpinBox()
+        
+    def _setup_spin_widget(self):
+        
+        if hasattr(self.number_widget, 'CorrectToNearestValue'):
+            self.number_widget.setCorrectionMode(self.number_widget.CorrectToNearestValue)
+            
+        if hasattr(self.number_widget, 'setWrapping'):
+            self.number_widget.setWrapping(False)
+            
+        self.number_widget.setMaximum(100000000)
+        self.number_widget.setButtonSymbols(self.number_widget.NoButtons)
+        
+        self.number_widget.valueChanged.connect(self._value_changed)
+    
+class GetInteger(GetNumber):
+    
+    def _define_number_widget(self):
+        return QtGui.QSpinBox()
+    
+class GetBoolean(GetNumberBase):
+    
+    def __init__(self, name, parent = None):
+        super(GetBoolean, self).__init__(name, parent)
+        
+        self.number_widget.stateChanged.connect(self._value_changed)
+    
+    def _value_changed(self):
+        self.valueChanged.emit(self.get_value())
+        
+    
+    def _define_number_widget(self):
+        return QtGui.QCheckBox()
+    
+    def set_value(self, value):
+        
+        if value:
+            state = QtCore.Qt.CheckState.Checked
+        if not value:
+            state = QtCore.Qt.CheckState.Unchecked
+        self.number_widget.setCheckState(state)
+        
+        
+    def get_value(self):
+        
+        value = self.number_widget.isChecked()
+        
+        if value == None:
+            value = False
+        
+        return value
              
 class GetNumberButton(GetNumber):
     
@@ -1770,16 +1821,15 @@ class GetNumberButton(GetNumber):
         self.button.clicked.connect(self._clicked)
         self.button.setMaximumWidth(60)
         
-        
         self.main_layout.addWidget(self.button)
         
     def _clicked(self):
-        self.clicked.emit(self.spin_widget.value())
+        self.clicked.emit(self.number_widget.value())
         
 class GetIntNumberButton(GetNumberButton):
-    def _define_spin_widget(self):
-        spin_widget = QtGui.QSpinBox()
-        return spin_widget
+    def _define_number_widget(self):
+        number_widget = QtGui.QSpinBox()
+        return number_widget
     
 class GetCheckBox(BasicWidget):
     

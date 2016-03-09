@@ -84,7 +84,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._update_build_widget(name)
         
-        self.option_widget.set_directory(item.get_path())
+        self._load_options(item.get_path())
         
     def _item_selection_changed(self):
         
@@ -113,8 +113,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._update_process(name)
         self.last_item = item
         
-        self.option_widget.set_directory(item.get_path())
+        self._load_options(item.get_path())
         
+    def _load_options(self, directory):
+        
+        self.option_widget.set_directory(directory)
+        
+        if self.option_widget.has_options():
+            self.process_splitter.setSizes([1,1])
+        if not self.option_widget.has_options():
+            self.process_splitter.setSizes([1,0])
+            
     def _update_build_widget(self, process_name):
         
         path = self.view_widget.tree_widget.directory
@@ -573,7 +582,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not directory:
             self.process.set_directory(None)
             self.view_widget.set_directory(None)
-            self.option_widget.set_directory(None)
+            #self._load_options(None)
             self.handle_selection_change = True
             return
 
@@ -608,7 +617,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         self.process.set_directory(directory)
         self.view_widget.set_directory(directory)
-        self.option_widget.set_directory(directory)
+        #self._load_options(directory)
         
         self.handle_selection_change = True
         
