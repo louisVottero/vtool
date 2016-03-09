@@ -45,7 +45,7 @@ class CurveToData(object):
         for curve in curves:
                 
             if not cmds.nodeType(curve) == 'nurbsCurve':
-                shapes = cmds.listRelatives(curve, s = True)
+                shapes = cmds.listRelatives(curve, s = True, f  = True)
                 
                 if shapes:
                     
