@@ -19,7 +19,7 @@ if qt_ui.is_pyside():
 
 class ComboManager(ui.MayaWindow):
     
-    title = 'Shape Combo -Alpha-'
+    title = 'Shape Combo'
     
     def __init__(self):
         super(ComboManager, self).__init__()
