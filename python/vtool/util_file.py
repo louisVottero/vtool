@@ -586,7 +586,7 @@ class SettingsFile(object):
             value = self.settings_dict[key]
             
             if type(value) == str or type(value) == unicode:
-                value = "'%s'" % value
+                value = '"%s"' % value
             
             line = '%s = %s' % (key, str(value))
             

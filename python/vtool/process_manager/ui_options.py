@@ -650,6 +650,9 @@ class ProcessOption(qt_ui.BasicWidget):
         
         self._setup_value_change()
         
+    def _define_main_layout(self):
+        return QtGui.QHBoxLayout()
+        
     def _setup_value_change(self):
         return
         
@@ -796,7 +799,7 @@ class ProcessTitle(ProcessOption):
         super(ProcessTitle, self).__init__(name)
 
         self.main_layout.setContentsMargins(0,5,0,10)
-    
+        
     def _define_option_widget(self):
         return QtGui.QLabel(self.name)
     
@@ -811,19 +814,75 @@ class ProcessTitle(ProcessOption):
         
 class ProcessOptionText(ProcessOption):
     
+    def __init__(self, name):
+        super(ProcessOptionText, self).__init__(name)
+    
+        insert_button = QtGui.QPushButton('<')
+        insert_button.setMaximumWidth(20)
+        insert_button.clicked.connect(self._insert)
+        self.main_layout.addWidget(insert_button)
+        
     def _define_option_widget(self):
         return qt_ui.GetString(self.name)
+        
+    def _insert(self):
+        
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            
+            selection = cmds.ls(sl = True)
+            
+            if len(selection) > 1:
+                selection = self._remove_unicode(selection)
+                selection = str(selection)
+            
+            if len(selection) == 1:
+                selection = str(selection[0])
+                
+            self.set_value(selection)
+            
         
     def _setup_value_change(self):
         
         self.option_widget.text_changed.connect(self._value_change)
         
+    def _remove_unicode(self, list_or_tuple):
+            new_list = []
+            for sub in list_or_tuple:
+                new_list.append(str(sub))
+                
+            return new_list
+        
     def set_value(self, value):
+        value = str(value)
         self.option_widget.set_text(value)
         
     def get_value(self):
         
-        return str(self.option_widget.get_text())
+        value = self.option_widget.get_text()
+        
+        pass_value = None
+        
+        new_value = None
+        
+        try:
+            new_value = eval(value)
+        except:
+            pass
+        
+        if new_value:
+            value = new_value
+        
+        if type(value) == list or type(value) == tuple:
+            pass_value = self._remove_unicode(value)
+        elif type(value) == dict:
+            pass_value = value
+        else:
+            pass_value = str(value)    
+        
+        print pass_value, type(pass_value)
+        
+        return pass_value 
         
 class ProcessOptionNumber(ProcessOption):
     def _define_option_widget(self):
