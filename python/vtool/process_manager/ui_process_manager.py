@@ -582,7 +582,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not directory:
             self.process.set_directory(None)
             self.view_widget.set_directory(None)
-            self._load_options(None)
+            #self._load_options(None)
             self.handle_selection_change = True
             return
 
@@ -617,7 +617,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         self.process.set_directory(directory)
         self.view_widget.set_directory(directory)
-        self._load_options(directory)
+        #self._load_options(directory)
         
         self.handle_selection_change = True
         
