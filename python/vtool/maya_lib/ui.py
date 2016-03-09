@@ -247,7 +247,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         pose_button.setMinimumWidth(button_width)
         manager_layout.addWidget(pose_button)
         
-        shape_combo_button = QtGui.QPushButton('Shape Combos -Alpha-')
+        shape_combo_button = QtGui.QPushButton('Shape Combos')
         shape_combo_button.clicked.connect(self._shape_combo)
         shape_combo_button.setMinimumWidth(button_width)
         manager_layout.addWidget(shape_combo_button)
