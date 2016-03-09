@@ -279,7 +279,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             if type(option[1]) == str:
                 
-                self.add_string_option(name, option[1], widget)
+                self.add_string_option(name, str(option[1]), widget)
                 
             if type(option[1]) == float:
                 self.add_number_option(name, option[1], widget)
@@ -336,12 +336,35 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.add_title_action.setText('Add Title')
         self.add_title_action.triggered.connect(self.add_title)
         
+        separator = QtGui.QAction(self)
+        separator.setSeparator(True)
+        
+        self.clear_action = QtGui.QAction(self)
+        self.clear_action.setText('Clear')
+        self.clear_action.triggered.connect(self._clear_action)
+        
         self.addAction(self.add_string)
         self.addAction(add_number)
         self.addAction(add_integer)
         self.addAction(add_boolean)
         self.addAction(self.add_group_action)
         self.addAction(self.add_title_action)
+        self.addAction(separator)
+        self.addAction(self.clear_action)
+        
+    def _clear_action(self):
+        
+        if self.__class__ == ProcessOptionPalette:
+            name = 'the palette?'
+        if not self.__class__ == ProcessOptionPalette:
+            
+            name = 'group: %s?' % self.get_name()
+        
+        permission = qt_ui.get_permission('Clear all the widgets in %s' % name, self)
+        
+        if permission == True:
+            self.clear_widgets()
+            self._write_options(clear = True)
         
     def has_options(self):
         if not self.directory:
@@ -524,6 +547,8 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self.insertAction(self.add_string, rename)
         self.insertAction(self.add_string, remove)
         self.insertAction(self.add_string, separator)
+        
+        self.clear_action.setText('Clear Group')
         
     def _build_widgets(self):
         main_group_layout = QtGui.QVBoxLayout()
@@ -861,28 +886,7 @@ class ProcessOptionText(ProcessOption):
         
         value = self.option_widget.get_text()
         
-        pass_value = None
-        
-        new_value = None
-        
-        try:
-            new_value = eval(value)
-        except:
-            pass
-        
-        if new_value:
-            value = new_value
-        
-        if type(value) == list or type(value) == tuple:
-            pass_value = self._remove_unicode(value)
-        elif type(value) == dict:
-            pass_value = value
-        else:
-            pass_value = str(value)    
-        
-        print pass_value, type(pass_value)
-        
-        return pass_value 
+        return value
         
 class ProcessOptionNumber(ProcessOption):
     def _define_option_widget(self):

@@ -908,7 +908,7 @@ class Process(object):
         if self.options.has_setting(name):
             self.options.set(name, value)
         
-    def get_option(self, name, group = None):
+    def get_unformatted_option(self, name, group):
         self._setup_options()
         
         if group:
@@ -916,7 +916,27 @@ class Process(object):
         if not group:
             name = '%s' % name
         
-        return self.options.get(name)
+        value = self.options.get(name)
+        
+        return value
+        
+    def get_option(self, name, group = None):
+        self._setup_options()
+        
+        value = self.get_unformatted_option(name, group)
+        
+        new_value = None
+        
+        try:
+            new_value = eval(value)
+            
+        except:
+            pass
+        
+        if type(new_value) == list or type(new_value) == tuple or type(new_value) == dict:
+            value = new_value
+        
+        return value
         
     def get_options(self):
         
