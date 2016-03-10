@@ -627,20 +627,24 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     def _add_process_items(self, item, path):
         
         parts = process.find_processes(path)
-
-        pass_item = None
-                
+        
+        
+        self.directory
+        sub_path = util_file.remove_common_path_simple(self.directory, path)
+        
+        self.setUpdatesEnabled(False)
         for part in parts:
-            last_item = self._add_process_item(part, item)
-            if last_item:
-                pass_item = last_item
-            
-        #if pass_item:
-        #    self.scrollToItem(pass_item,hint = QtGui.QAbstractItemView.PositionAtCenter)
+            if sub_path:
+                part = util_file.join_path(sub_path, part)
+                self._add_process_item(part, item, find_parent_path = False)
+            if not sub_path:
+                self._add_process_item(part, item)
+        self.setUpdatesEnabled(True)
+        
             
         
         
-    def _add_process_item(self, name, parent_item = None, create = False):
+    def _add_process_item(self, name, parent_item = None, create = False, find_parent_path = True):
         
         expand_to = False
         
@@ -650,19 +654,19 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             parent_item = current_item
             expand_to = True
         
-        if parent_item:
-            
-            item_path = self.get_item_path_string(parent_item)
-            
-            if item_path:            
-                name = string.join([item_path, name], '/')
-            
-                if self._child_exists(name, parent_item):
-                    return
+        if find_parent_path:
+            if parent_item:
                 
-            if not item_path:
-                parent_item = None
-        
+                item_path = self.get_item_path_string(parent_item)
+                
+                if item_path:            
+                    name = string.join([item_path, name], '/')
+                
+                    if self._child_exists(name, parent_item):
+                        return
+                    
+                if not item_path:
+                    parent_item = None
         
         item = ProcessItem(self.directory, name)
         
@@ -679,7 +683,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 self.expandItem(parent_item)
         
         if item.has_parts():
-            
             QtGui.QTreeWidgetItem(item)
         
         return item
@@ -734,19 +737,17 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.clearSelection()
         
-        watch = util.StopWatch()
-        watch.start('getting paths')
         process_paths = self._get_process_paths()
-        watch.end()
         
-        watch.start('loading processes')
+        
+        #this can be slow when there are many processes at the top level
         self._load_processes(process_paths)
-        watch.end()
                 
         self.current_item = None
         self.last_item = None
         
         self._goto_settings_process()
+
         
     def add_process(self, name):
         

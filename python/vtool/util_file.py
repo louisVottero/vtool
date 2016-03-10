@@ -1349,6 +1349,7 @@ def remove_common_path(path1, path2):
     return pathC
     """
 
+    
     path1 = fix_slashes(path1)
     path2 = fix_slashes(path2)
     
@@ -1374,6 +1375,25 @@ def remove_common_path(path1, path2):
     new_path = string.join(new_path, '/')
     
     return new_path
+
+def remove_common_path_simple(path1, path2):
+    """
+    This just subtracts a string that is the same at the beginning.
+    path1 gets subtracted from path2
+    """
+    
+    value = path2.find(path1)
+    sub_part = None
+    
+    if value > -1 and value == 0:
+        sub_part = path2[len(path1):]
+        
+    if sub_part:
+        if sub_part.startswith('/'):
+            sub_part = sub_part[1:]
+        
+    return sub_part
+        
     
 #---- edit
 

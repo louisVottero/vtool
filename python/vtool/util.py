@@ -96,19 +96,31 @@ class StopWatch(object):
     Utility to check how long a command takes to run.
     """
     
+    running = 0
+    
     def __init__(self):
         self.time = None
     
     def start(self, description = ''):
         
-        show('started timer', description)
+        tabs = '\t' * self.running
+        
+        show('%sstarted timer' % tabs, description)
         self.time = time.time()
+        
+        
+        
+        
+        self.__class__.running += 1
     
     def end(self):
         seconds = time.time()-self.time
         self.time = None
         
-        show('\tend timer: %s seconds' % seconds)
+        tabs = '\t' * self.running
+        
+        show('%send timer: %s seconds' % (tabs,seconds))
+        self.__class__.running -= 1
     def temp(self):
         pass  
 

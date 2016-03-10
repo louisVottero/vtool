@@ -56,10 +56,11 @@ def is_process(directory):
     if not util_file.is_dir(code_path):
         return False
     
-    data_path = util_file.join_path(directory, '.data')
+    #removing to increase speed
+    #data_path = util_file.join_path(directory, '.data')
     
-    if not util_file.is_dir(data_path):
-        return False
+    #if not util_file.is_dir(data_path):
+    #    return False
     
     return True
 
