@@ -2322,6 +2322,8 @@ class FkCurveLocalRig(FkCurveRig):
         handle.set_end_joint(self.buffer_joints[-1])
         handle = handle.create()
         
+        self.ik_handle = handle
+        
         """
         handle = cmds.ikHandle( sol = 'ikSplineSolver', 
                        ccv = False, 
@@ -2357,19 +2359,27 @@ class FkCurveLocalRig(FkCurveRig):
             cmds.connectAttr('%s.worldMatrix' % start_locator, '%s.dWorldUpMatrix' % handle)
             cmds.connectAttr('%s.worldMatrix' % end_locator, '%s.dWorldUpMatrixEnd' % handle)
             
+    def _attach_ik_spline_to_controls(self):
+        
+        if self.advanced_twist:
             if hasattr(self, 'top_sub_control'):
-                cmds.parent(start_locator, self.sub_local_controls[0])
+                cmds.parent(self.start_locator, self.sub_local_controls[0])
                 
             if not hasattr(self, 'top_sub_control'):
-                cmds.parent(start_locator, self.sub_local_controls[0])
+                cmds.parent(self.start_locator, self.sub_local_controls[0])
                 
             
-            cmds.parent(end_locator, self.sub_local_controls[-1])
+            cmds.parent(self.end_locator, self.sub_local_controls[-1])
             
         if not self.advanced_twist:
             
             space.create_local_follow_group(self.controls[0], self.buffer_joints[0])
             #util.constrain_local(self.controls[0], self.buffer_joints[0])
+            
+            var = attr.MayaNumberVariable('twist')
+            var.set_variable_type(var.TYPE_DOUBLE)
+            var.create(self.controls[0])
+            var.connect_out('%s.twist' % self.ik_handle)
             
     def set_local_parent(self, parent):
         self.local_parent = parent
