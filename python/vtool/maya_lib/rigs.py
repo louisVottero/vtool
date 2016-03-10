@@ -408,6 +408,9 @@ class BufferRig(JointRig):
         
         return self.buffer_joints
     
+    def _create_before_attach_joints(self):
+        return
+    
     def set_build_hierarchy(self, bool_value):
         
         self.build_hierarchy = bool_value
@@ -426,6 +429,8 @@ class BufferRig(JointRig):
         super(BufferRig, self).create()
         
         self._duplicate_joints()
+        
+        self._create_before_attach_joints()
         
         if self.create_buffer_joints:
             self._attach_joints(self.buffer_joints, self.joints)
@@ -1119,11 +1124,8 @@ class FkRig(BufferRig):
         """
         
         self.nice_sub_naming = bool_value
-            
-            
-    def create(self):
         
-
+    def create(self):
         
         super(FkRig, self).create()
         
@@ -1134,7 +1136,6 @@ class FkRig(BufferRig):
             
         if self.use_joint_controls:
             self._convert_to_joints()
-        
         
 class FkLocalRig(FkRig):
     """
@@ -1575,7 +1576,7 @@ class SplineRibbonBaseRig(JointRig):
             
             name = self._get_name()
             
-            self.orig_curve = geo.transforms_to_curve(self.buffer_joints, self.span_count, name)
+            self.orig_curve = geo.transforms_to_curve(self.joints, self.span_count, name)
             cmds.setAttr('%s.inheritsTransform' % self.orig_curve, 0)
         
             self.curve = cmds.duplicate(self.orig_curve)[0]
@@ -1600,7 +1601,7 @@ class SplineRibbonBaseRig(JointRig):
             
     def _create_surface(self):
         
-        self.surface = geo.transforms_to_nurb_surface(self.buffer_joints, self._get_name(), spans = self.control_count-1, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis)
+        self.surface = geo.transforms_to_nurb_surface(self.joints, self._get_name(), spans = self.control_count-1, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis)
         cmds.setAttr('%s.inheritsTransform' % self.surface, 0)
         cmds.parent(self.surface, self.setup_group)
     
@@ -1636,7 +1637,6 @@ class SplineRibbonBaseRig(JointRig):
             self._create_curve()
     
     def _attach_to_geo(self):
-        
         if not self.attach_joints:
             return
         
@@ -1650,7 +1650,6 @@ class SplineRibbonBaseRig(JointRig):
         
         if not self.ribbon:
             self._create_spline_ik()
-            self._setup_stretchy()
         
     def _wire_hires(self, curve):
         
@@ -1700,9 +1699,11 @@ class SplineRibbonBaseRig(JointRig):
                               d = 3)
             
             self.ik_curve = curve
+            
             return
 
     def _setup_stretchy(self):
+        
         if not self.attach_joints:
             return
         
@@ -1773,6 +1774,8 @@ class SplineRibbonBaseRig(JointRig):
         handle.set_end_joint(joints[-1])
         handle.set_curve(self.ik_curve)
         handle = handle.create()
+        
+        self.ik_handle = handle
 
         if self.closest_y:
             cmds.setAttr('%s.dWorldUpAxis' % handle, 2)
@@ -1783,6 +1786,7 @@ class SplineRibbonBaseRig(JointRig):
         cmds.parent(handle, self.setup_group)
         
         if self.advanced_twist:
+            
             start_locator = cmds.spaceLocator(n = self._get_name('locatorTwistStart'))[0]
             end_locator = cmds.spaceLocator(n = self._get_name('locatorTwistEnd'))[0]
             
@@ -1797,18 +1801,25 @@ class SplineRibbonBaseRig(JointRig):
             match = space.MatchSpace(self.buffer_joints[-1], end_locator)
             match.translation_rotation()
                         
-            cmds.setAttr('%s.dTwistControlEnable' % handle, 1)
-            cmds.setAttr('%s.dWorldUpType' % handle, 4)
-            cmds.connectAttr('%s.worldMatrix' % start_locator, '%s.dWorldUpMatrix' % handle)
-            cmds.connectAttr('%s.worldMatrix' % end_locator, '%s.dWorldUpMatrixEnd' % handle)
+            cmds.setAttr('%s.dTwistControlEnable' % self.ik_handle, 1)
+            cmds.setAttr('%s.dWorldUpType' % self.ik_handle, 4)
+            cmds.connectAttr('%s.worldMatrix' % start_locator, '%s.dWorldUpMatrix' % self.ik_handle)
+            cmds.connectAttr('%s.worldMatrix' % end_locator, '%s.dWorldUpMatrixEnd' % self.ik_handle)
             
+
+            
+
+
+    def _attach_ik_spline_to_controls(self):
+        
+        if self.advanced_twist:
             if hasattr(self, 'top_sub_control'):
-                cmds.parent(start_locator, self.sub_controls[0])
+                cmds.parent(self.start_locator, self.sub_controls[0])
                 
             if not hasattr(self, 'top_sub_control'):
-                cmds.parent(start_locator, self.sub_controls[0])
+                cmds.parent(self.start_locator, self.sub_controls[0])
                 
-            cmds.parent(end_locator, self.sub_controls[-1])
+            cmds.parent(self.end_locator, self.sub_controls[-1])
             
         if not self.advanced_twist and self.buffer_joints != self.joints:
             
@@ -1819,7 +1830,9 @@ class SplineRibbonBaseRig(JointRig):
             var = attr.MayaNumberVariable('twist')
             var.set_variable_type(var.TYPE_DOUBLE)
             var.create(self.controls[0])
-            var.connect_out('%s.twist' % handle)
+            var.connect_out('%s.twist' % self.ik_handle)
+            
+            
 
     def set_advanced_twist(self, bool_value):
         """
@@ -2045,12 +2058,13 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         return space.get_closest_transform(current_cluster, self.buffer_joints)
     
     def _loop(self, transforms):
-                
-        self._create_geo()
-        #self._create_curve()
-        self._create_clusters()
         
         super(SimpleFkCurveRig, self)._loop(self.clusters)
+        
+    def _create_before_attach_joints(self):
+        super(SimpleFkCurveRig, self)._create_before_attach_joints()
+        
+        self._attach_to_geo()
     
     def set_control_xform(self, vector, inc, relative = True):
         """
@@ -2125,10 +2139,18 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         self.create_follows = bool_value
         
     def create(self):
+        
+        self._create_geo()
+        #self._create_curve()
+        self._create_clusters()
+        
         super(SimpleFkCurveRig, self).create()
         
+        #self._attach_to_geo()
         
-        self._attach_to_geo()
+        if not self.ribbon:
+            self._setup_stretchy()
+            self._attach_ik_spline_to_controls()
         """
         if not self.ribbon:
             self._create_spline_ik()
