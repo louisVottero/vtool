@@ -1550,8 +1550,6 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
     """
     scale_axis = scale_axis.capitalize()
     
-    print 'curve', curve
-    
     arclen_node = cmds.arclen(curve, ch = True, n = core.inc_name('curveInfo_%s' % curve))
     
     arclen_node = cmds.rename(arclen_node, core.inc_name('curveInfo_%s' % curve))
