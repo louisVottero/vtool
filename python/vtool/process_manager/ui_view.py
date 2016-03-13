@@ -164,6 +164,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     copy_special_process = qt_ui.create_signal()
     delete_process = qt_ui.create_signal()
     item_renamed = qt_ui.create_signal(object)
+    show_options = qt_ui.create_signal()
         
     def __init__(self):
         
@@ -346,6 +347,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.copy_action.setVisible(True)
             self.copy_special_action.setVisible(True)
             self.remove_action.setVisible(True)
+            self.show_options_action.setVisible(True)
         
         if not item:
             self.new_top_level_action.setVisible(True)
@@ -354,6 +356,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.copy_action.setVisible(False)
             self.copy_special_action.setVisible(False)
             self.remove_action.setVisible(False)
+            self.show_options_action.setVisible(False)
         
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
         
@@ -375,9 +378,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.paste_action.setVisible(False)
         self.copy_special_action = self.context_menu.addAction('Copy Special')
         self.remove_action = self.context_menu.addAction('Delete')
+        self.show_options_action = self.context_menu.addAction('Show Options')
         self.context_menu.addSeparator()
         browse_action = self.context_menu.addAction('Browse')
         refresh_action = self.context_menu.addAction('Refresh')
+        
         
         self.new_top_level_action.triggered.connect(self._new_top_process)
         self.new_process_action.triggered.connect(self._new_process)
@@ -389,6 +394,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.paste_action.triggered.connect(self._paste_process)
         self.copy_special_action.triggered.connect(self._copy_special_process)
         self.remove_action.triggered.connect(self._remove_current_item)
+        self.show_options_action.triggered.connect(self._show_options)
+        
+    def _show_options(self):
+        self.show_options.emit()
         
     def _new_process(self):
         self.new_process.emit()
@@ -714,8 +723,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if self._has_item_parent(current_item, item):
             self.setCurrentItem(item)
-        
-
+            
     def _add_sub_items(self, item):
         
         self._delete_children(item)
@@ -739,7 +747,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         process_paths = self._get_process_paths()
         
-        
         #this can be slow when there are many processes at the top level
         self._load_processes(process_paths)
                 
@@ -747,7 +754,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.last_item = None
         
         self._goto_settings_process()
-
         
     def add_process(self, name):
         

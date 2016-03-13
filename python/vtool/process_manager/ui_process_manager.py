@@ -61,9 +61,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
         self.view_widget.sync_code.connect(self._sync_code)
         self.view_widget.tree_widget.itemDoubleClicked.connect(self._item_double_clicked)
+        self.view_widget.tree_widget.show_options.connect(self._show_options)
            
         self.view_widget.set_settings( self.settings )
         self.settings_widget.set_settings(self.settings)
+        
+    def _show_options(self):
+        
+        self.process_splitter.setSizes([1,1])
         
     def _sync_code(self):
         self.sync_code = True
