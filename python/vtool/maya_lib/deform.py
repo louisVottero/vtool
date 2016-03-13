@@ -756,6 +756,7 @@ class TransferWeight(object):
         
         if skin_deformer:
             self.skin_cluster = skin_deformer
+            
         
     def _get_skin_cluster(self, mesh):
         
@@ -780,7 +781,7 @@ class TransferWeight(object):
         """
         Transfer the weights from source_joints into the weighting of destination_joints. 
         For example if I transfer joint_nose into joint_head, joint_head will lose its weights where joint_nose has overlapping weights. 
-        Source joints will take over the weighting of destination_joints.
+        Source joints will take over the weighting of destination_joints.  Source mesh must match the mesh TransferWeight(mesh).
         
         Args
             source_joints (list): Joint names.
@@ -789,6 +790,8 @@ class TransferWeight(object):
             percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
         #vtool.util.show('Start: %s transfer joint to joint.' % self.mesh)
+        
+        
         
         if not self.skin_cluster:
             vtool.util.show('No skinCluster found on %s. Could not transfer.' % self.mesh)
@@ -804,6 +807,14 @@ class TransferWeight(object):
         
         if not source_mesh:
             source_mesh = self.mesh
+            
+        if source_mesh:
+            verts_mesh = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
+            verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)
+            
+            if len(verts_mesh) != len(verts_source_mesh):
+                vtool.util.warning('%s and %s have different vert counts. Can not transfer weights.' % (self.mesh, source_mesh))
+                return
         
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         source_value_map = get_skin_weights(source_skin_cluster)
@@ -1220,9 +1231,46 @@ class AutoWeight2D(object):
             position = cmds.xform(joint, q = True, ws = True, t = True)
             
             #position = (position[0], position[2])
-            position = (position[0], 0.0)
+            position = [position[0], 0.0]
             
             self.joint_vectors_2D.append(position)
+            
+        other_list = list(self.joint_vectors_2D)
+        other_list.reverse()
+        
+        last_position = None
+        change = False
+        
+        for inc in range(0, len(other_list)):
+            
+            
+            
+            if not last_position:
+                last_position = other_list[inc]
+                continue
+            
+            if last_position:
+                value1 = other_list[inc][0]
+                value2 = last_position[0]
+                
+                if value1 > 0 and value1 > value2:
+                    change = True
+                    other_list[inc][0] = last_position[0] - 0.001
+                    
+                
+                if value1 < 0 and value1 < value2:
+                    change = True
+                    other_list[inc][0] = last_position[0] + 0.001
+                    
+            
+            last_position = other_list[inc]
+        
+        
+        
+        if change:
+            
+            other_list.reverse()
+            self.joint_vectors_2D = other_list
     
     def _get_adjacent(self, joint):
         
@@ -1272,9 +1320,8 @@ class AutoWeight2D(object):
         
         for inc in range(0, vert_count):
             
-            
             joint_weights = self._get_vert_weight(inc)
-
+            
             if joint_weights:
                 cmds.skinPercent(skin, self.orig_verts[inc], r = False, transformValue = joint_weights)
             
@@ -1392,9 +1439,7 @@ class AutoWeight2D(object):
         
         self._weight_verts(skin)
         
-        
-        #cmds.hide(self.offset_group)
-        cmds.delete(self.offset_group)
+        #cmds.delete(self.offset_group)
 
 class ComboControlShape(object):
 
