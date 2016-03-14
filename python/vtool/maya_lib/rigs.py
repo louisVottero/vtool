@@ -1570,7 +1570,7 @@ class SplineRibbonBaseRig(JointRig):
         self.closest_y = False
         self.stretch_axis = 'X'
         
-    def _create_curve(self):
+    def _create_curve(self, span_count):
         
         if not self.curve:
             
@@ -1582,7 +1582,7 @@ class SplineRibbonBaseRig(JointRig):
             self.curve = cmds.duplicate(self.orig_curve)[0]
         
             cmds.rebuildCurve(self.curve, 
-                              spans = self.control_count - 1 ,
+                              spans = span_count ,
                               rpo = True,  
                               rt = 0, 
                               end = 1, 
@@ -1599,9 +1599,9 @@ class SplineRibbonBaseRig(JointRig):
             
             cmds.parent(self.curve, self.setup_group)
             
-    def _create_surface(self):
+    def _create_surface(self, span_count):
         
-        self.surface = geo.transforms_to_nurb_surface(self.joints, self._get_name(), spans = self.control_count-1, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis)
+        self.surface = geo.transforms_to_nurb_surface(self.joints, self._get_name(), spans = span_count, offset_amount = self.ribbon_offset, offset_axis = self.ribbon_offset_axis)
         cmds.setAttr('%s.inheritsTransform' % self.surface, 0)
         cmds.parent(self.surface, self.setup_group)
     
@@ -1628,13 +1628,13 @@ class SplineRibbonBaseRig(JointRig):
         
         return self.clusters
         
-    def _create_geo(self):
+    def _create_geo(self, span_count):
         
         if self.ribbon:
-            self._create_surface()
+            self._create_surface(span_count)
             
         if not self.ribbon:
-            self._create_curve()
+            self._create_curve(span_count)
     
     def _attach_to_geo(self):
         if not self.attach_joints:
@@ -1702,14 +1702,14 @@ class SplineRibbonBaseRig(JointRig):
             
             return
 
-    def _setup_stretchy(self):
+    def _setup_stretchy(self, control):
         
         if not self.attach_joints:
             return
         
         if self.stretchy:    
             
-            rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], self.controls[-1], self.stretch_on_off, self.stretch_axis)
+            rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], control, self.stretch_on_off, self.stretch_axis)
     
         
                 
@@ -1738,12 +1738,10 @@ class SplineRibbonBaseRig(JointRig):
             #working here to add auto fix to joint orientation.
             
             for inc in range(0, len(x_joints)):
-                #util.OrientJointAttributes(x_joints[inc])
                 
                 orient = attr.OrientJointAttributes(x_joints[inc])
                 orient.delete()
-                #orient._create_attributes()
-                         
+                
                 orient = space.OrientJoint(x_joints[inc])
                 
                 aim = 3
@@ -1808,32 +1806,6 @@ class SplineRibbonBaseRig(JointRig):
             
 
             
-
-
-    def _attach_ik_spline_to_controls(self):
-        
-        if self.advanced_twist:
-            if hasattr(self, 'top_sub_control'):
-                cmds.parent(self.start_locator, self.sub_controls[0])
-                
-            if not hasattr(self, 'top_sub_control'):
-                cmds.parent(self.start_locator, self.sub_controls[0])
-                
-            cmds.parent(self.end_locator, self.sub_controls[-1])
-            
-        if not self.advanced_twist and self.buffer_joints != self.joints:
-            
-            follow = space.create_follow_group(self.controls[0], self.buffer_joints[0])
-            cmds.parent(follow, self.setup_group)
-            
-        if not self.advanced_twist:
-            var = attr.MayaNumberVariable('twist')
-            var.set_variable_type(var.TYPE_DOUBLE)
-            var.create(self.controls[0])
-            var.connect_out('%s.twist' % self.ik_handle)
-            
-            
-
     def set_advanced_twist(self, bool_value):
         """
         Wether to use spline ik top btm advanced twist.
@@ -1935,6 +1907,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         self.ribbon_offset = 1
         self.ribbon_offset_axis = 'Y'
         self.create_follows = True
+        self.create_btm_follow = False
         self.closest_y = False
         self.stretch_axis = 'X'
     
@@ -1994,7 +1967,11 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         if self.create_follows:
             if not type(top_driver) == list:
                 space.create_follow_fade(self.drivers[-1], self.sub_drivers[:-1])
-
+                
+        if self.create_follows:
+            if self.create_btm_follow:
+                space.create_follow_fade(self.controls[0], self.sub_drivers[1:])
+            
     def _all_increments(self, control, current_transform):
         
         match = space.MatchSpace(self.clusters[self.current_increment], self.current_xform_group)
@@ -2030,6 +2007,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             
             sub_vis = attr.MayaNumberVariable('subVisibility')
             sub_vis.set_variable_type(sub_vis.TYPE_BOOL)
+            sub_vis.set_value(1)
             sub_vis.create(control)
             sub_vis.connect_out('%sShape.visibility' % sub_control)
                 
@@ -2065,6 +2043,28 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         super(SimpleFkCurveRig, self)._create_before_attach_joints()
         
         self._attach_to_geo()
+        
+    def _attach_ik_spline_to_controls(self):
+        
+        if self.advanced_twist:
+            if hasattr(self, 'top_sub_control'):
+                cmds.parent(self.start_locator, self.sub_controls[0])
+                
+            if not hasattr(self, 'top_sub_control'):
+                cmds.parent(self.start_locator, self.sub_controls[0])
+                
+            cmds.parent(self.end_locator, self.sub_controls[-1])
+            
+        if not self.advanced_twist and self.buffer_joints != self.joints:
+            
+            follow = space.create_follow_group(self.controls[0], self.buffer_joints[0])
+            cmds.parent(follow, self.setup_group)
+            
+        if not self.advanced_twist:
+            var = attr.MayaNumberVariable('twist')
+            var.set_variable_type(var.TYPE_DOUBLE)
+            var.create(self.controls[0])
+            var.connect_out('%s.twist' % self.ik_handle)
     
     def set_control_xform(self, vector, inc, relative = True):
         """
@@ -2138,10 +2138,17 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         """
         self.create_follows = bool_value
         
+    def set_create_bottom_follow(self, bool_value):
+        """
+        This will cause the last control in the spine to have a follow fade on sub controls up the length of the spine.
+        If set_create_follows is set to False this will be ignored.
+        """
+        
+        self.create_btm_follow = bool_value
+        
     def create(self):
         
-        self._create_geo()
-        #self._create_curve()
+        self._create_geo( self.control_count - 1 )
         self._create_clusters()
         
         super(SimpleFkCurveRig, self).create()
@@ -2149,7 +2156,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         #self._attach_to_geo()
         
         if not self.ribbon:
-            self._setup_stretchy()
+            self._setup_stretchy(self.controls[-1])
             self._attach_ik_spline_to_controls()
         """
         if not self.ribbon:
@@ -3843,6 +3850,74 @@ class ConvertJointToNub(object):
                           
 #---Body Rig
 
+class SpineRig(BufferRig, SplineRibbonBaseRig):
+    
+    def __init__(self, description, side):
+        
+        self.span_count = 3
+        
+        super(SpineRig, self).__init__(description, side)
+        
+        
+        
+    def _attach_to_geo(self):
+        if not self.attach_joints:
+            return
+        
+        if self.ribbon:
+            rivet_group = self._create_setup_group('rivets')
+        
+            for joint in self.buffer_joints:
+                rivet = geo.attach_to_surface(joint, self.surface)
+                cmds.setAttr('%s.inheritsTransform' % rivet, 0)
+                cmds.parent(rivet, rivet_group)
+        
+        if not self.ribbon:
+            self._create_spline_ik()
+            
+    def _create_top_btm_joints(self):
+        
+        cmds.select(cl = True)
+        top_joint = cmds.joint(n = self._get_name('guide', 'top'))
+        self.top_joint = top_joint
+        
+        cmds.select(cl = True)
+        btm_joint = cmds.joint(n = self._get_name('guide', 'btm'))
+        self.btm_joint = btm_joint
+        
+        space.MatchSpace(self.joints[0], btm_joint).translation_rotation()
+        space.MatchSpace(self.joints[-1], top_joint).translation_rotation()
+        
+        cmds.parent(top_joint, btm_joint, self.setup_group)
+        
+        return top_joint, btm_joint
+    
+    def _create_btm_control(self):
+        pass
+    
+    def set_span_count(self, span_count):
+        self.span_count = span_count
+    
+    def create(self):
+        super(SpineRig, self).create()
+        self._create_geo(self.span_count)
+        
+        top_joint, btm_joint = self._create_top_btm_joints()
+        
+        if self.ribbon:
+            geo = self.surface
+        if not self.ribbon:
+            geo = self.curve
+            
+        cmds.skinCluster(top_joint, btm_joint, geo)
+        
+        self._attach_to_geo()
+        
+        cmds.parent(self.start_locator, self.top_joint)
+        cmds.parent(self.end_locator, self.btm_joint)
+        
+        self._setup_stretchy(self.top_joint)
+        
 class NeckRig(FkCurveRig):
     def _first_increment(self, control, current_transform):
         self.first_control = control
@@ -5228,6 +5303,119 @@ class FootRig(BaseFootRig):
         
         #ball_pivot = self._create_pivot_groups()
         self._create_pivot_groups()
+        
+class QuadSpineRig(BufferRig):
+    
+    def _create_surface(self):
+        
+        surface = geo.transforms_to_nurb_surface(self.joints, self.description, 2, 'Z', 1)
+        self.surface = surface
+        cmds.parent(surface, self.setup_group)
+        
+    def _create_clusters(self):
+
+        cluster_surface = deform.ClusterSurface(self.surface, self.description)
+        cluster_surface.create()
+        
+        self.clusters = cluster_surface.handles
+        
+        cluster_group = self._create_setup_group('clusters')
+        
+        cmds.parent(self.clusters, cluster_group)
+    
+    def _attach_to_surface(self):
+        
+        rivet_group = self._create_setup_group('rivets')
+        
+        for joint in self.buffer_joints:
+            rivet = geo.attach_to_surface(joint, self.surface)
+            cmds.parent(rivet, rivet_group)
+    
+    def _create_btm_control(self):
+        
+        btm_control = self._create_control('btm')
+        btm_control.hide_scale_attributes()
+        sub_control = self._create_control('btm', sub = True)
+        sub_control.hide_scale_attributes()
+        
+        btm_control = btm_control.get()
+        sub_control = sub_control.get()
+        
+        space.MatchSpace(self.clusters[0], btm_control).translation_to_rotate_pivot()
+        xform = space.create_xform_group(btm_control)
+        
+        space.create_follow_group(btm_control, self.clusters[0])
+        cmds.parent(xform, self.control_group)
+        
+        space.MatchSpace(self.clusters[1], sub_control).translation_to_rotate_pivot()
+        xform = space.create_xform_group(sub_control)
+        
+        space.create_follow_group(sub_control, self.clusters[1])
+        cmds.parent(xform, btm_control)
+        
+        self.btm_control = btm_control
+
+    def _create_top_control(self):
+        
+        top_control = self._create_control('top')
+        top_control.hide_scale_attributes()
+        sub_control = self._create_control('top', sub = True)
+        sub_control.hide_scale_attributes()
+        
+        top_control = top_control.get()
+        sub_control = sub_control.get()
+        
+        space.MatchSpace(self.clusters[-1], top_control).translation_to_rotate_pivot()
+        xform = space.create_xform_group(top_control)
+        
+        space.create_follow_group(top_control, self.clusters[-1])
+        cmds.parent(xform, self.control_group)
+        
+        space.MatchSpace(self.clusters[-2], sub_control).translation_to_rotate_pivot()
+        xform = space.create_xform_group(sub_control)
+        
+        space.create_follow_group(sub_control, self.clusters[-2])
+        cmds.parent(xform, top_control)  
+        
+        self.top_control = top_control      
+        
+    def _create_mid_control(self):
+
+        mid_control = self._create_control('mid', True)
+        mid_control.hide_scale_attributes()
+        
+        mid_control = mid_control.get()
+        
+        space.MatchSpace(self.clusters[2], mid_control).translation_to_rotate_pivot()
+        xform = space.create_xform_group(mid_control)
+        
+        space.create_follow_group(mid_control, self.clusters[2])
+        cmds.parent(xform, self.control_group)
+        
+        space.create_multi_follow([self.top_control, self.btm_control], xform, mid_control, value = .5)
+    
+    def _create_controls(self):
+        
+        cluster_count = len(self.clusters)
+        
+        for inc in range(0, cluster_count):
+            
+            if inc == 0:
+                self._create_top_control()
+                
+            if inc == cluster_count-1:
+                self._create_btm_control()
+        
+        self._create_mid_control()
+    
+    def create(self):
+        super(QuadSpineRig, self).create()
+        
+        self._create_surface()
+        self._create_clusters()
+        self._attach_to_surface()
+
+        self._create_controls()
         
 class QuadFootRig(FootRig):
     

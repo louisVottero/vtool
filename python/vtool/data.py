@@ -127,7 +127,6 @@ class DataFolder(util_file.FileManager):
             self._load_folder()
         
         if not self.name:
-            
             return
         
         data_type = self.settings.get('data_type')
@@ -1138,12 +1137,16 @@ class AnimationData(MayaCustomData):
     Export/Import all the keyframes in a scene with their connection info. 
     Will export/import blendWeighted as well.
     """
+    
     def _data_name(self):
         return 'animation'
     
     def _data_type(self):
         return 'maya.animation'
     
+    def _data_extension(self):
+        return ''
+        
     def _get_keyframes(self):
         keyframes = cmds.ls(type = 'animCurve')
         return keyframes
@@ -1152,6 +1155,15 @@ class AnimationData(MayaCustomData):
         blend_weighted = cmds.ls(type = 'blendWeighted')
         return blend_weighted
     
+    def get_file(self):
+        
+        test_dir = util_file.join_path(self.directory, 'keyframes')
+        
+        if util_file.is_dir(test_dir):
+            util_file.rename(test_dir, self._get_file_name())
+        
+        return super(AnimationData, self).get_file()
+            
     def export_data(self, comment):
         
         keyframes = self._get_keyframes()
@@ -1163,7 +1175,8 @@ class AnimationData(MayaCustomData):
         if blend_weighted:
             keyframes = keyframes + blend_weighted
         
-        path = util_file.join_path(self.directory, 'keyframes')
+        #this could be replaced with self.get_file()
+        path = util_file.join_path(self.directory, self.name)
         
         util_file.refresh_dir(path)
         
@@ -1218,7 +1231,13 @@ class AnimationData(MayaCustomData):
         
     def import_data(self):
         
-        path = util_file.join_path(self.directory, 'keyframes')
+        test_path = util_file.join_path(self.directory, self.name)
+        
+        if util_file.is_dir(test_path):
+            util_file.rename(test_path, self.name)
+        
+        #this could be replaced with self.get_file()
+        path = util_file.join_path(self.directory, self.name)
         
         if not util_file.is_dir(path):
             return
@@ -1241,6 +1260,7 @@ class AnimationData(MayaCustomData):
         info_dict = {}
         
         for line in info_lines:
+            
             if not line:
                 continue
             
