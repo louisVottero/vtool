@@ -687,12 +687,17 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         scripts, states = process_tool.get_manifest()
         
+        if not scripts:
+            return
+        
         #this is slow 
         code_folders = process_tool.get_code_folders()
         
         found_scripts = []
         found_states = []
         parents = {}
+        
+        
         
         for inc in range(0, len(scripts)):
             #and each increment is slow
