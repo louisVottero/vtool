@@ -62,6 +62,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.sync_code.connect(self._sync_code)
         self.view_widget.tree_widget.itemDoubleClicked.connect(self._item_double_clicked)
         self.view_widget.tree_widget.show_options.connect(self._show_options)
+        self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
            
         self.view_widget.set_settings( self.settings )
         self.settings_widget.set_settings(self.settings)
@@ -69,6 +70,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _show_options(self):
         
         self.process_splitter.setSizes([1,1])
+        
+    def _process_deleted(self):
+        #if not self.view_widget.tree_widget.childCount():
+        self.code_widget.code_widget.code_edit.clear()
         
     def _sync_code(self):
         self.sync_code = True
@@ -622,7 +627,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         self.process.set_directory(directory)
         self.view_widget.set_directory(directory)
-        self._load_options(directory)
+        
+        self.option_widget.set_directory(None)
+        self.process_splitter.setSizes([1,0])
         
         self.handle_selection_change = True
         

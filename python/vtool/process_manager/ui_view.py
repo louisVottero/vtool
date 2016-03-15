@@ -162,7 +162,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     new_top_process = qt_ui.create_signal()    
     copy_process = qt_ui.create_signal()
     copy_special_process = qt_ui.create_signal()
-    delete_process = qt_ui.create_signal()
+    process_deleted = qt_ui.create_signal()
     item_renamed = qt_ui.create_signal(object)
     show_options = qt_ui.create_signal()
         
@@ -527,6 +527,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
     def _remove_current_item(self):
         self.delete_process()
+        self.process_deleted.emit()
         
     def _define_header(self):
         return ['name']  

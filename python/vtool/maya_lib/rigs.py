@@ -6135,11 +6135,13 @@ class EyeLidAimRig(JointRig):
             
             space.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
             
-            if self.center_locator:
-                space.MatchSpace(self.center_locator, control.get()).rotation()
             
             xform = space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
+            
+            if self.center_locator:
+                space.MatchSpace(self.center_locator, xform).rotation()
+            
             
             cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
             

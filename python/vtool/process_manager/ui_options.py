@@ -476,7 +476,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             self.directory = None
             self.process_inst = None
             
-        
+            self.clear_widgets()
+            
         if directory:
             
             self.directory = directory
