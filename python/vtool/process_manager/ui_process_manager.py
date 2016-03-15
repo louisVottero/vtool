@@ -72,7 +72,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter.setSizes([1,1])
         
     def _process_deleted(self):
-        self._clear_code()
+        self._clear_code(close_windows=True)
         
     def _sync_code(self):
         self.sync_code = True
@@ -260,14 +260,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.build_widget.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         
-    def _clear_code(self):
+    def _clear_code(self, close_windows = False):
         
         self.code_widget.code_widget.code_edit.close_tabs()
         self.code_widget.script_widget.code_manifest_tree.clearSelection()
         self.code_widget.code_widget.code_edit.clear()
         self.code_widget.set_directory(None, sync_code = False)
         #self.code_widget
-        
+        if close_windows:
+            self.code_widget.code_widget.code_edit.close_windows()
         
     def _update_process(self, name):
         

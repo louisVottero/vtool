@@ -2393,6 +2393,13 @@ class CodeEditTabs(BasicWidget):
         for inc in range(0, tab_count):
             self._close_tab(inc)
             
+    def close_windows(self):
+        
+        for key in self.code_floater_map:
+            widget = self.code_floater_map[key]
+            parent = widget.parent()
+            window = parent.parent()
+            window.close()
         
                 
     def show_window(self, filepath):
