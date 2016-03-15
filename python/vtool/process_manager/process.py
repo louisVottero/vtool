@@ -1570,7 +1570,7 @@ def copy_process_data(source_process, target_process, data_name, replace = False
             
             if util_file.is_dir( util_file.join_path(dirname, basename) ):
                 util_file.delete_dir(basename, dirname)
-            
+                
             copied_path = util_file.copy_dir(filepath, destination_directory)
           
         version = util_file.VersionFile(copied_path)
