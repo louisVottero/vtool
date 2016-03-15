@@ -1439,7 +1439,7 @@ class AutoWeight2D(object):
         
         self._weight_verts(skin)
         
-        #cmds.delete(self.offset_group)
+        cmds.delete(self.offset_group)
 
 class ComboControlShape(object):
 
