@@ -129,7 +129,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not self.option_widget.has_options():
             self.process_splitter.setSizes([1,0])
         
-        
     def _update_build_widget(self, process_name):
         
         path = self.view_widget.tree_widget.directory
@@ -623,7 +622,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         self.process.set_directory(directory)
         self.view_widget.set_directory(directory)
-        #self._load_options(directory)
+        self._load_options(directory)
         
         self.handle_selection_change = True
         
