@@ -234,15 +234,16 @@ class VersionFile(object):
     
     def __init__(self, filepath):
         self.filepath = filepath
-                
-        self.filename = get_basename(self.filepath)
-        self.path = get_dirname(filepath)
         
-        self.version_folder_name = '.version'
-        self.version_name = 'version'
-        self.version_folder = None
-        
-        self._handle_old_version()
+        if filepath:
+            self.filename = get_basename(self.filepath)
+            self.path = get_dirname(filepath)
+            
+            self.version_folder_name = '.version'
+            self.version_name = 'version'
+            self.version_folder = None
+            
+            self._handle_old_version()
         
     def _handle_old_version(self):
         
@@ -271,8 +272,11 @@ class VersionFile(object):
                         break
             
             if found:
-                
-                rename(old_dir_name, self.version_folder_name)
+                if is_dir(version_folder):
+                    rename(old_dir_name, '.old.version')
+                if not is_dir(version_folder):
+                    rename(old_dir_name, self.version_folder_name)
+            
         
     def _create_version_folder(self):
         
@@ -939,6 +943,43 @@ def get_files(directory):
     
     return found
 
+def get_folders_handle_excluding_version():
+    if not is_dir(directory):
+        return
+    
+    found_folders = []
+    
+    for root, dirs, files in os.walk(directory):
+        
+        for folder in dirs:
+            
+            if folder == 'version':
+            
+                VersionFile(root)
+                
+                version_folder = join_path(root, folder)
+                
+                if not is_dir(version_folder):
+                    continue
+            
+            if folder.startswith('.'):
+                continue
+            
+            folder_name = join_path(root, folder)
+            
+            if folder == 'version' and not is_dir(folder_name):
+                continue
+            
+            folder_name = os.path.relpath(folder_name,directory)
+            folder_name = fix_slashes(folder_name)
+            
+            found_folders.append(folder_name)
+        
+        if not recursive:
+            break
+        
+    return found_folders
+
 def get_folders_without_prefix_dot(directory, recursive = False):
     
     if not is_dir(directory):
@@ -949,6 +990,15 @@ def get_folders_without_prefix_dot(directory, recursive = False):
     for root, dirs, files in os.walk(directory):
         
         for folder in dirs:
+            
+            if folder == 'version':
+            
+                VersionFile(root)
+                
+                version_folder = join_path(root, folder)
+                
+                if not is_dir(version_folder):
+                    continue
             
             if folder.startswith('.'):
                 continue
@@ -963,7 +1013,6 @@ def get_folders_without_prefix_dot(directory, recursive = False):
         if not recursive:
             break
         
-    
     return found_folders
 
 def get_folders(directory, recursive = False):
