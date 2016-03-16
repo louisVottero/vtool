@@ -1294,11 +1294,12 @@ class AutoWeight2D(object):
         skin = find_deformer_by_type(mesh, 'skinCluster')
         
         
+        if skin and self.zero_weights:
+            set_skin_weights_to_zero(skin)
+        
         if not skin:
             skin = cmds.skinCluster(mesh, joints[0], tsb = True)[0]
             joints = joints[1:]
-        
-        if self.zero_weights:
             set_skin_weights_to_zero(skin)
         
         for joint in joints:
@@ -1323,8 +1324,13 @@ class AutoWeight2D(object):
             joint_weights = self._get_vert_weight(inc)
             
             if joint_weights:
-                cmds.skinPercent(skin, self.orig_verts[inc], r = False, transformValue = joint_weights)
-            
+                
+                cmds.skinPercent(skin, self.orig_verts[inc], r = False, 
+                                                                transformValue = joint_weights, 
+                                                                normalize = False, 
+                                                                zeroRemainingInfluences = True)
+                cmds.refresh()
+                
             progress.inc()
             progress.status('weighting %s: vert %s' % (mesh, inc))
             if progress.break_signaled():
@@ -1349,6 +1355,9 @@ class AutoWeight2D(object):
         joint_weights = []
         joint_count = len(self.joints)
         weight_total = 0
+        
+        old_multiplier = multiplier
+        multiplier = 1
         
         for inc in range(0, joint_count):
             
@@ -1383,7 +1392,6 @@ class AutoWeight2D(object):
             if self.fade_smoothstep:
                 percent = vtool.util.fade_smoothstep(percent)
             
-            
             weight_total += 1.0-percent
             if not weight_total > 1:
                 joint_weights.append([joint, ((1.0-percent)*multiplier)])
@@ -1391,7 +1399,19 @@ class AutoWeight2D(object):
             weight_total += percent
             if not weight_total > 1:
                 joint_weights.append([next_joint, percent*multiplier])
+        
+        if self.multiplier_weights:
+            new_weights = []
+            
+            for joint in joint_weights:
+                weight = joint[1]
                 
+                value = weight * old_multiplier
+                
+                new_weights.append( [joint[0], value] )
+            
+            joint_weights = new_weights
+            
         return joint_weights
                 
     def set_joints(self, joints):
