@@ -17,8 +17,6 @@ import deform
 import shade
 import rigs_util
 
-
-
 def get_pose_instance(pose_name):
     """
     Get a pose instance from the pose name.
@@ -1197,7 +1195,12 @@ class PoseBase(PoseGroup):
     def _create_shader(self, mesh):
         
         shader_name = 'pose_blinn'
-            
+        
+        has_engine = shade.has_shading_engine(mesh)
+        
+        if has_engine:
+            return
+        
         shader_name = shade.apply_new_shader(mesh, type_of_shader = 'blinn', name = shader_name)
             
         cmds.setAttr('%s.color' % shader_name, 0.4, 0.6, 0.4, type = 'double3' )
@@ -1735,7 +1738,7 @@ class PoseBase(PoseGroup):
         if not mesh:
             return
         
-        #self._create_shader(mesh)
+        self._create_shader(mesh)
         
         self._set_visibility(mesh, 1)
         

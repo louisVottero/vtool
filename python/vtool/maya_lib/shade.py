@@ -19,8 +19,6 @@ def apply_shading_engine(shader_name, mesh):
     
     """
     
-    
-    
     cmds.sets(mesh, e = True, forceElement = shader_name)
     
 def get_shading_engine_geo(shader_name):
@@ -28,6 +26,7 @@ def get_shading_engine_geo(shader_name):
     Non implemented
     """
     pass
+
 
 def get_shading_engines(shader_name):
     """
@@ -50,6 +49,31 @@ def get_shading_engines(shader_name):
             found.append(output)
             
     return found
+
+def get_shading_engines_by_geo(geo):
+    
+    
+    shapes = cmds.listRelatives(children = True, shapes = True)
+    
+    engines = []
+    
+    for shape in shapes:
+        sub_engines = cmds.listConnections(shape, type = 'shadingEngine') 
+        
+        if sub_engines:
+            engines += sub_engines
+            
+    return engines
+    
+def has_shading_engine(geo):
+    
+    engines = get_shading_engines_by_geo(geo)
+    
+    if engines:
+        return True
+    
+    if not engines:
+        return False
 
 def apply_shader(shader_name, mesh):
     """
