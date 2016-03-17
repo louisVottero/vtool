@@ -945,17 +945,20 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.data_list = QtGui.QListWidget()
         self.code_list = QtGui.QListWidget()
+        self.settings_list = QtGui.QListWidget()
         
         self.data_list.setMaximumHeight(300)
         self.code_list.setMaximumHeight(300)
+        self.settings_list.setMaximumHeight(300)
         
         self.data_list.setSortingEnabled(True)
         self.data_list.setSelectionMode(self.data_list.ExtendedSelection)
-        #self.code_list.setSortingEnabled(True)
         self.code_list.setSelectionMode(self.code_list.ExtendedSelection)
+        self.settings_list.setSelectionMode(self.settings_list.ExtendedSelection)
         
         self.tabs.addTab(self.data_list, 'Data')
         self.tabs.addTab(self.code_list, 'Code')
+        self.tabs.addTab(self.settings_list, 'Settings')
         
         h_layout = QtGui.QHBoxLayout()
         
@@ -982,34 +985,37 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.data_list.clear()
         self.code_list.clear()
+        self.settings_list.clear()
         
         data_folders = self.process.get_data_folders()
         
         for folder in data_folders:
             self.data_list.addItem(folder)
         
-        
         codes, states = self.process.get_manifest()
         
         for code in codes:
-            
-            #if code.count('/') > 0:
-            #    continue
             
             code_name = code.split('.')
             
             if len(code_name) > 1 and code_name[1] == 'py':
             
                 self.code_list.addItem(code_name[0])
+                
+        setting_names = self.process.get_setting_names()
         
-        #for folder in code_folders:
-        #    self.code_list.addItem(folder)
+        for setting in setting_names:
+            self.settings_list.addItem(setting)
+                
             
+        
     def _paste(self):
         
         self._paste_data()
         
         self._paste_code()
+        
+        self._paste_settings()
         
     def _paste_data(self):
         
@@ -1019,7 +1025,7 @@ class CopyWidget(qt_ui.BasicWidget):
             return
         
         for item in data_items:
-            name = item.text()
+            name = str(item.text())
             
             process.copy_process_data( self.process, self.other_process, name)
             
@@ -1035,7 +1041,7 @@ class CopyWidget(qt_ui.BasicWidget):
         manifest = ''
     
         for item in code_items:
-            name = item.text()
+            name = str(item.text())
             
             if not name:
                 continue
@@ -1051,6 +1057,18 @@ class CopyWidget(qt_ui.BasicWidget):
         
         for name in found:
             process.copy_process_code( self.process, self.other_process, name)
+            
+    def _paste_settings(self):
+        
+        setting_items = self.settings_list.selectedItems()
+        
+        if not setting_items:
+            return
+        
+        for item in setting_items:
+            name = str(item.text())
+            
+            process.copy_process_setting(self.process, self.other_process, name)
     
     def set_process(self, process_name, process_directory):
         
@@ -1080,7 +1098,4 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.paste_to.setText('Paste to:  %s' % process_name)  
         self.paste_button.setEnabled(True)
-        
-        
-        
         

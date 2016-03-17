@@ -887,6 +887,18 @@ class Process(object):
         
     #--- setting
     
+    def get_setting_names(self):
+        
+        option_file = self.get_option_file()
+        option_name = util_file.get_basename_no_extension(option_file)
+        
+        return [option_name]
+    
+    def get_setting_file(self, name):
+        
+        if name == 'options':
+            return self.get_option_file()
+    
     def has_options(self):
         self._setup_options()
         
@@ -947,6 +959,11 @@ class Process(object):
             options = self.options.get_settings()
             
         return options
+        
+    def get_option_file(self):
+        
+        self._setup_options()
+        return self.options.get_file()
         
     def clear_options(self):
         
@@ -1485,6 +1502,7 @@ def copy_process(source_process, target_process = None ):
     
     data_folders = source_process.get_data_folders()
     code_folders = source_process.get_code_folders()
+    settings = source_process.get_setting_names()
     
     for data_folder in data_folders:
         copy_process_data(source_process, new_process, data_folder)
@@ -1494,7 +1512,6 @@ def copy_process(source_process, target_process = None ):
     if 'manifest' in code_folders:
         code_folders.remove('manifest')
         manifest_found = True
-        #code_folders.append('manifest')
     
     for code_folder in code_folders:
         copy_process_code(source_process, new_process, code_folder)
@@ -1509,6 +1526,9 @@ def copy_process(source_process, target_process = None ):
             
     if manifest_found:
         copy_process_code(source_process, new_process, 'manifest')
+    
+    for setting in settings:
+        copy_process_setting(source_process, new_process, setting)
     
     return new_process
     
@@ -1650,3 +1670,26 @@ def copy_process_code(source_process, target_process, code_name, replace = False
         version.save('Copied from %s' % filepath)
         
     util.show('Finished copying code from %s' % filepath)
+    
+def copy_process_setting(source_process, target_process, setting_name):
+    
+    filepath = source_process.get_setting_file(setting_name)
+    
+    if not filepath:
+        return
+    
+    destination_path = target_process.get_path()
+    destination_filepath = target_process.get_setting_file(setting_name)
+    
+    if util_file.is_file(destination_filepath):
+        
+        name = util_file.get_basename(destination_filepath)
+        directory = util_file.get_dirname(destination_filepath)
+        
+        util_file.delete_file(name, directory)
+    
+    util_file.copy_file(filepath, destination_path)
+        
+    source_path = source_process.get_path()
+    
+    util.show('Finished copying options from %s' % source_path)

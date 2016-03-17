@@ -643,6 +643,9 @@ class SettingsFile(object):
             
         return found
     
+    def get_file(self):
+        return self.filepath
+    
     def clear(self):
         
         self.settings_dict = {}
