@@ -19,7 +19,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
     description = 'Process'
     
-    sync_code = qt_ui.create_signal()
+    copy_done = qt_ui.create_signal()
     
     def __init__(self):
         
@@ -43,12 +43,12 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         tree_manager = ManageProcessTreeWidget()
         
-        tree_manager.sync_code.connect(self._sync_code)
+        tree_manager.copy_done.connect(self._copy_done)
         
         return tree_manager
     
-    def _sync_code(self):
-        self.sync_code.emit()
+    def _copy_done(self):
+        self.copy_done.emit()
     
     def _item_selection_changed(self):
         
@@ -77,7 +77,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
          
 class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
     
-    sync_code = qt_ui.create_signal()
+    copy_done = qt_ui.create_signal()
     
     def __init__(self):
         super(ManageProcessTreeWidget, self).__init__()
@@ -128,11 +128,12 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         
         self.tree_widget.scrollToItem(items[0])
         
-        self.sync_code.emit()
+        self.copy_done.emit()
         
     def _copy_done(self):
         self.copy_widget.hide()
-        self.sync_code.emit()
+        self.copy_done.emit()
+        
         
     def get_current_process(self):
         
@@ -1012,10 +1013,9 @@ class CopyWidget(qt_ui.BasicWidget):
     def _paste(self):
         
         self._paste_data()
-        
         self._paste_code()
-        
         self._paste_settings()
+        
         
     def _paste_data(self):
         
