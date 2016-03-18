@@ -657,7 +657,10 @@ class PoseTreeWidget(BaseTreeWidget):
         # self._create_pose_options_context()
         self.context_menu.addSeparator()
         self.set_pose_action = self.context_menu.addAction('Update Pose')
+        #self.update_sculpts_action = self.context_menu.addAction('Update Sculpt')
+        #self.update_selected_verts_action = self.context_menu.addAction('Update Selected Verts')
         self.reset_sculpts_action = self.context_menu.addAction('Reset Sculpt')
+        
         self.context_menu.addSeparator()
         self.refresh_action = self.context_menu.addAction('Refresh')
         
@@ -675,6 +678,8 @@ class PoseTreeWidget(BaseTreeWidget):
         self.delete_action.triggered.connect(self.delete_pose)
         self.set_pose_action.triggered.connect(self._set_pose_data)
         self.reset_sculpts_action.triggered.connect(self._reset_sculpts)
+        #self.update_sculpts_action.triggered.connect(self._update_sculpts)
+        #self.update_selected_verts_action.triggered.connect(self._update_selected_verts)
         
         self.refresh_action.triggered.connect(self._populate_list)
 
@@ -795,10 +800,28 @@ class PoseTreeWidget(BaseTreeWidget):
 
     def _set_pose_data(self):
         
+        
+        
         name = self._current_pose()
-        control = corrective.PoseManager().get_pose_control(name)
-        corrective.PoseManager().set_pose_data(control)
-
+        
+        pose_instance = corrective.PoseManager().get_pose_instance(name)
+        pose_instance.update_target_meshes()
+        
+        corrective.PoseManager().update_pose(name)
+        
+        
+        
+        
+    def _update_sculpts(self):
+        
+        name = self._current_pose()
+        corrective.PoseManager().update_pose_mesh(name)
+        
+    def _update_selected_verts(self):
+        
+        name = self._current_pose()
+        corrective.PoseManager().update_pose_vertex(name)
+        
     def _reset_sculpts(self):
         
         name = self._current_pose()

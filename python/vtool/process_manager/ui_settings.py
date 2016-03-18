@@ -438,7 +438,7 @@ class ProjectList(QtGui.QTreeWidget):
             item = QtGui.QTreeWidgetItem()
             item.setText(0, history[0])
             item.setText(1, history[1])
-            item.setSizeHint(0, QtCore.QSize(30, 40))
+            item.setSizeHint(0, QtCore.QSize(30, 30))
             
             if current[1] == history[1]:
                 select_item = item
@@ -481,6 +481,8 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.label = 'directory'
         
         super(CodeDirectoryWidget, self).__init__(parent)
+        
+        self.setMaximumHeight(200)
     
     def _define_main_layout(self):
         return QtGui.QVBoxLayout()

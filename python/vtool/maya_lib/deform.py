@@ -1864,8 +1864,6 @@ class EnvelopeHistory(object):
             connection = self.envelope_connection[history]
             if connection:
                 cmds.connectAttr(connection, '%s.envelope' % history)
-   
-
 
 def cluster_curve(curve, description, join_ends = False, join_start_end = False, last_pivot_end = False):
     """
@@ -3860,22 +3858,21 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         envelopes.turn_on(respect_initial_state=True)
         envelopes.turn_off_referenced()
-        envelopes.turn_off_exclude(['skinCluster', 'blendShape'])
+        envelopes.turn_off_exclude(['blendShape'])
         
-        
-        if skin:
-            cmds.setAttr('%s.envelope' % skin, 0)
+        #if skin:
+        #    cmds.setAttr('%s.envelope' % skin, 0)
         
         skin_shapes = core.get_shapes(skin_mesh)
         skin_mesh_name = core.get_basename(skin_mesh, True)
         other_delta = geo.create_shape_from_shape(skin_shapes[0], core.inc_name(skin_mesh_name))
-        
+        """
         blendshapes = find_deformer_by_type(skin_mesh, 'blendShape', return_all = True)
         
         if blendshapes:
             for blendshape in blendshapes[1:]:
                 cmds.setAttr('%s.envelope' % blendshape, 0)
-        
+        """
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
         

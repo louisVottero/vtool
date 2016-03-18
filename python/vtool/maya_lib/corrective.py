@@ -356,6 +356,28 @@ class PoseManager(object):
         
         pose = self.get_pose_instance(pose_name)
         pose.reset_target_meshes()
+        
+    @core.undo_chunk
+    def update_pose_mesh(self, pose_name):
+        
+        pose = self.get_pose_instance(pose_name)
+        pose.update_target_meshes()
+        
+    @core.undo_chunk
+    def update_pose(self, pose_name):
+        
+        control = self.get_pose_control(pose_name)
+        self.set_pose_data(control)
+        
+        instance = self.get_pose_instance(pose_name)
+        
+        if hasattr(instance, 'rematch_cone_to_joint'):
+            instance.rematch_cone_to_joint()
+            
+    def update_pose_vertex(self, pose_name):
+        
+        instance = self.get_pose_instance(pose_name)
+        instance.update_selected_verts()
     
     @core.undo_chunk
     def rename_pose(self, pose_name, new_name):
@@ -1196,10 +1218,11 @@ class PoseBase(PoseGroup):
         
         shader_name = 'pose_blinn'
         
-        has_engine = shade.has_shading_engine(mesh)
+        engines = shade.get_shading_engines_by_geo(mesh)
         
-        if has_engine:
-            return
+        if engines:
+            if len(engines) >=1 and engines[0] != 'initialShadingGroup':
+                return
         
         shader_name = shade.apply_new_shader(mesh, type_of_shader = 'blinn', name = shader_name)
             
@@ -1697,13 +1720,51 @@ class PoseBase(PoseGroup):
             cmds.delete(temp_blend, ch = True)
             cmds.delete(temp_dup)
             
-            blend.set_envelope(1)  
+            blend.set_envelope(1)
             
             self.create_blend(inc)
             
-    def update_targets(self):
-        pass 
+    def update_target_meshes(self):
+        count = self._get_mesh_count()
         
+        for inc in range(0, count):
+            
+            deformed_mesh = self.get_mesh(inc)
+            original_mesh = self.get_target_mesh(deformed_mesh)
+            
+            cmds.delete(deformed_mesh, ch = True)
+            
+            deform.quick_blendshape(original_mesh, deformed_mesh)
+            
+            cmds.delete(deformed_mesh, ch = True)
+            
+            index = self.get_mesh_index(deformed_mesh)
+            self.create_blend(index, goto_pose = False, sub_poses = True)
+            
+    def update_selected_verts(self):
+        
+        print 'update selected verts!'
+        
+        selection = cmds.ls(sl = True, flatten = True)
+        
+        for thing in selection:
+            
+            if thing.find('.vtx') > -1:
+                
+                mesh = thing.split('.')[0]
+                
+                target_mesh =  self.get_target_mesh(mesh)
+                sculpt_index = self.get_mesh_index(mesh)
+                
+                if target_mesh:
+                    print 'target!!!'
+                    print target_mesh
+                    
+                if sculpt_index:
+                    print 'sculpt!!!'
+                    print sculpt_index
+                
+    
     def visibility_off(self, mesh, view_only = False):
         """
         Turn the sculpt mesh visibility off.
@@ -2824,6 +2885,25 @@ class PoseCone(PoseBase):
             
             if parent:
                 cmds.parentConstraint(parent, self.pose_control, mo = True)
+    
+    def rematch_cone_to_joint(self):
+        
+        constraint = self._get_parent_constraint()
+        parent = None
+        
+        if constraint:
+            
+            const_editor = space.ConstraintEditor()
+            parent = const_editor.get_targets(constraint)
+            
+            cmds.delete(constraint)
+            
+        transform = self.get_transform()
+            
+        space.MatchSpace(transform, self.pose_control).translation_rotation()
+        
+        if parent:
+            cmds.parentConstraint(parent, self.pose_control, mo = True)
     
     def detach(self):
         
