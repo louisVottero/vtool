@@ -1781,12 +1781,14 @@ class PoseBase(PoseGroup):
                 if not sculpt_index in sculpts:
                     sculpts.append(sculpt_index)
                 
-        for key in envelopes:
-            envelope = envelopes[key]
-            envelope.turn_on(respect_initial_state = True) 
-                
-        for after_sculpt in sculpts:
-            self.create_blend(after_sculpt, False, sub_poses = True)
+        if envelopes:
+            for key in envelopes:
+                envelope = envelopes[key]
+                envelope.turn_on(respect_initial_state = True) 
+                    
+        if sculpts:
+            for after_sculpt in sculpts:
+                self.create_blend(after_sculpt, False, sub_poses = True)
     
     def visibility_off(self, mesh, view_only = False):
         """
