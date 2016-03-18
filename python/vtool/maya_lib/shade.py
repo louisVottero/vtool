@@ -52,7 +52,6 @@ def get_shading_engines(shader_name):
 
 def get_shading_engines_by_geo(geo):
     
-    print 'get engines!'
     shapes = cmds.listRelatives(geo, children = True, shapes = True)
     
     engines = []
@@ -63,7 +62,7 @@ def get_shading_engines_by_geo(geo):
     for shape in shapes:
         
         sub_engines = cmds.listConnections(shape, type = 'shadingEngine') 
-        print 'shape', shape, sub_engines
+        
         if sub_engines:
             engines += sub_engines
             

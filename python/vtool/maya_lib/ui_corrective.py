@@ -658,7 +658,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self.context_menu.addSeparator()
         self.set_pose_action = self.context_menu.addAction('Update Pose')
         #self.update_sculpts_action = self.context_menu.addAction('Update Sculpt')
-        #self.update_selected_verts_action = self.context_menu.addAction('Update Selected Verts')
+        self.update_selected_verts_action = self.context_menu.addAction('Update Selected Verts')
         self.reset_sculpts_action = self.context_menu.addAction('Reset Sculpt')
         
         self.context_menu.addSeparator()
@@ -679,7 +679,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self.set_pose_action.triggered.connect(self._set_pose_data)
         self.reset_sculpts_action.triggered.connect(self._reset_sculpts)
         #self.update_sculpts_action.triggered.connect(self._update_sculpts)
-        #self.update_selected_verts_action.triggered.connect(self._update_selected_verts)
+        self.update_selected_verts_action.triggered.connect(self._update_selected_verts)
         
         self.refresh_action.triggered.connect(self._populate_list)
 
@@ -1204,11 +1204,18 @@ class MeshWidget(qt_ui.BasicWidget):
         sculpt_meshes = []
         list_meshes = []
         
+        vert_checked = []
+        
         if selection:
             
             for selected in selection:
                 
                 selected = self._get_mesh_from_vertex(selected)
+                
+                if selected in vert_checked:
+                    continue
+                
+                vert_checked.append(selected)
                 
                 if not core.has_shape_of_type(selected, 'mesh'):
                     continue
@@ -1414,8 +1421,7 @@ class SculptWidget(qt_ui.BasicWidget):
             print traceback.format_exc()
             
             self.button_sculpt.setEnabled(True)
-
-
+            
     def _button_mirror(self):
         try:
             self.button_mirror.setDisabled(True)

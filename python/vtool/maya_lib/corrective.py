@@ -1743,9 +1743,10 @@ class PoseBase(PoseGroup):
             
     def update_selected_verts(self):
         
-        print 'update selected verts!'
+        selection = cmds.ls(sl = True, flatten = True, l = True)
         
-        selection = cmds.ls(sl = True, flatten = True)
+        envelopes = {}
+        sculpts = []
         
         for thing in selection:
             
@@ -1754,16 +1755,38 @@ class PoseBase(PoseGroup):
                 mesh = thing.split('.')[0]
                 
                 target_mesh =  self.get_target_mesh(mesh)
-                sculpt_index = self.get_mesh_index(mesh)
+                sculpt_index = self.get_target_mesh_index(mesh)
                 
                 if target_mesh:
-                    print 'target!!!'
-                    print target_mesh
                     
-                if sculpt_index:
-                    print 'sculpt!!!'
-                    print sculpt_index
+                    #should arrive here if a sculpt mesh is selected
+                    sculpt_index = self.get_target_mesh_index(target_mesh)
+                    sculpt_mesh = self.get_mesh(sculpt_index)
+                    
+                if not target_mesh and sculpt_index != None:
+                    #should arrive here if a target mesh is selected
+                    sculpt_mesh = self.get_mesh(sculpt_index)
+                    target_mesh = self.get_target_mesh(sculpt_mesh)
+                    
+                vtx_index = vtool.util.get_last_number(thing)
                 
+                if not envelopes.has_key(target_mesh):
+                    envelope = deform.EnvelopeHistory(target_mesh)
+                    envelope.turn_off_exclude(['skinCluster'])
+                    envelopes[target_mesh] = envelope
+                
+                pos = cmds.xform('%s.vtx[%s]' % (target_mesh, vtx_index), q = True, ws = True, t = True)
+                cmds.xform('%s.vtx[%s]' % (sculpt_mesh, vtx_index), ws = True, t = pos)
+                
+                if not sculpt_index in sculpts:
+                    sculpts.append(sculpt_index)
+                
+        for key in envelopes:
+            envelope = envelopes[key]
+            envelope.turn_on(respect_initial_state = True) 
+                
+        for after_sculpt in sculpts:
+            self.create_blend(after_sculpt, False, sub_poses = True)
     
     def visibility_off(self, mesh, view_only = False):
         """
