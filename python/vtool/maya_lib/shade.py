@@ -57,6 +57,9 @@ def get_shading_engines_by_geo(geo):
     
     engines = []
     
+    if not shapes:
+        return engines
+    
     for shape in shapes:
         sub_engines = cmds.listConnections(shape, type = 'shadingEngine') 
         
