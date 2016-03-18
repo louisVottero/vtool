@@ -1173,6 +1173,8 @@ class AutoWeight2D(object):
         
         self.min_max = None
         
+        self.prune_weights = []
+        
     def _create_offset_group(self):
         
         duplicate_mesh = cmds.duplicate(self.mesh)[0]
@@ -1293,7 +1295,6 @@ class AutoWeight2D(object):
         
         skin = find_deformer_by_type(mesh, 'skinCluster')
         
-        
         if skin and self.zero_weights:
             set_skin_weights_to_zero(skin)
         
@@ -1301,6 +1302,7 @@ class AutoWeight2D(object):
             skin = cmds.skinCluster(mesh, joints[0], tsb = True)[0]
             joints = joints[1:]
             set_skin_weights_to_zero(skin)
+            self.zero_weights = True
         
         for joint in joints:
             
@@ -1328,8 +1330,7 @@ class AutoWeight2D(object):
                 cmds.skinPercent(skin, self.orig_verts[inc], r = False, 
                                                                 transformValue = joint_weights, 
                                                                 normalize = False, 
-                                                                zeroRemainingInfluences = True)
-                cmds.refresh()
+                                                                zeroRemainingInfluences = self.zero_weights)
                 
             progress.inc()
             progress.status('weighting %s: vert %s' % (mesh, inc))
@@ -1340,6 +1341,10 @@ class AutoWeight2D(object):
         progress.end()
             
     def _get_vert_weight(self, vert_index):
+        
+        if self.prune_weights:
+            if self.prune_weights[vert_index] <= 0.0:
+                return
         
         if not self.multiplier_weights:
             multiplier = 1
@@ -1422,6 +1427,9 @@ class AutoWeight2D(object):
         
     def set_multiplier_weights(self, weights):
         self.multiplier_weights = weights
+        
+    def set_skip_zero_weights(self, weights):
+        self.prune_weights = weights
         
     def set_weights_to_zero(self, bool_value):
         self.zero_weights = bool_value
