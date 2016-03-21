@@ -530,10 +530,15 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.copy_process.emit()
         
     def _paste_into_process(self):
+        
         self.paste_action.setVisible(False)
         
         if not self.paste_item:
             return
+        
+        paste_item_text = self.paste_item.text(0)
+        
+        qt_ui.get_permission('Are you sure you want to Add In %s?' % paste_item_text)
         
         source_process = self.paste_item.get_process()
         
@@ -550,6 +555,15 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             return 
         
         process.copy_process_into(source_process, target_process)
+        
+        if target_item:
+            
+            target_item.setExpanded(False)
+            
+            if source_process.get_sub_processes():
+                
+                temp_item = QtGui.QTreeWidgetItem()
+                target_item.addChild(temp_item)
         
         self.copy_process.emit()
         

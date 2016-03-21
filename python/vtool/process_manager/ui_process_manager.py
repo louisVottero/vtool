@@ -77,7 +77,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _copy_done(self):
         self.sync_code = True
         
-        
         self._load_options(self.process.get_path())
           
     def _item_double_clicked(self):
