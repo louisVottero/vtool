@@ -1274,10 +1274,32 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None):
     
 
     
+def evenly_position_curve_cvs(curve):
+        
+    cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
+        
+    count = len(cvs)
+        
+    total_length = cmds.arclen(curve)
     
-
-
-
+    part_length = total_length/(count-1)
+    current_length = 0.0
+    
+    if count-1 == 0:
+        part_length = 0
+    
+    temp_curve = cmds.duplicate(curve)[0]
+    
+    for inc in range(0, count):
+        param = get_parameter_from_curve_length(temp_curve, current_length)
+        position = get_point_from_curve_parameter(temp_curve, param)
+        
+        cmds.xform(cvs[inc], ws = True, t = position)
+        
+        current_length += part_length  
+    
+    cmds.delete(temp_curve)
+        
 @core.undo_chunk
 def snap_joints_to_curve(joints, curve = None, count = 10):
     """

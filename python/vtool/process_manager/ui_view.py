@@ -376,7 +376,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.rename_action = self.context_menu.addAction('Rename')
         self.copy_action = self.context_menu.addAction('Copy')
         self.paste_action = self.context_menu.addAction('Paste')
+        self.paste_into_action = self.context_menu.addAction('Add In')
         self.paste_action.setVisible(False)
+        self.paste_into_action.setVisible(False)
         self.copy_special_action = self.context_menu.addAction('Copy Special')
         self.remove_action = self.context_menu.addAction('Delete')
         self.show_options_action = self.context_menu.addAction('Show Options')
@@ -393,6 +395,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.rename_action.triggered.connect(self._rename_process)
         self.copy_action.triggered.connect(self._copy_process)
         self.paste_action.triggered.connect(self._paste_process)
+        self.paste_into_action.triggered.connect(self._paste_into_process)
         self.copy_special_action.triggered.connect(self._copy_special_process)
         self.remove_action.triggered.connect(self._remove_current_item)
         self.show_options_action.triggered.connect(self._show_options)
@@ -475,11 +478,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         item = items[0]
         
         self.paste_action.setVisible(True)
+        self.paste_into_action.setVisible(True)
+        
         self.paste_item = item
         
         path = self._get_parent_path(item)
         
-        self.paste_action.setText('Paste process: %s' % path)
+        self.paste_action.setText('Paste: %s' % path)
+        self.paste_into_action.setText('Add In: %s' % path)
         
     def _paste_process(self):
         
@@ -522,7 +528,31 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.scrollToItem(new_item)
             
         self.copy_process.emit()
-    
+        
+    def _paste_into_process(self):
+        self.paste_action.setVisible(False)
+        
+        if not self.paste_item:
+            return
+        
+        source_process = self.paste_item.get_process()
+        
+        target_process = None
+        
+        items = self.selectedItems()
+        if items:
+            target_item = items[0]
+            target_process = target_item.get_process()            
+        if not items:
+            target_item = None
+        
+        if not target_process:
+            return 
+        
+        process.copy_process_into(source_process, target_process)
+        
+        self.copy_process.emit()
+        
     def _copy_special_process(self):
         self.copy_special_process.emit()
         

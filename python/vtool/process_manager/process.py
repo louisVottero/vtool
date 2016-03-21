@@ -366,8 +366,9 @@ class Process(object):
         Return
             A sub process if there is one that matches part_name.
         """
-        part_process = Process(part_name)
         
+        
+        part_process = Process(part_name)
         part_process.set_directory(self.get_path())  
         
         return part_process    
@@ -434,6 +435,10 @@ class Process(object):
         """
         
         folders = self.get_data_folders()
+        
+        if not folders:
+            return
+        
         for folder in folders:
             if folder == name:
                 return util_file.join_path(self.get_data_path(), name)
@@ -1464,6 +1469,9 @@ def get_default_directory():
     if not util.is_in_maya():
         return util_file.join_path(util_file.get_user_dir(), 'documents/process_manager')
     
+    
+
+    
 def copy_process(source_process, target_process = None ):
     """
     source process is an instance of a process that you want to copy 
@@ -1531,6 +1539,57 @@ def copy_process(source_process, target_process = None ):
         copy_process_setting(source_process, new_process, setting)
     
     return new_process
+
+def copy_process_into(source_process, target_process):
+    
+    sub_folders = source_process.get_sub_processes()
+        
+    source_name = source_process.get_name()
+    source_name = source_name.split('/')[-1]
+    
+    if not target_process:
+        return
+    
+    if source_process.process_name == target_process.process_name and source_process.directory == target_process.directory:
+        return
+    
+    data_folders = source_process.get_data_folders()
+    code_folders = source_process.get_code_folders()
+    settings = source_process.get_setting_names()
+    
+    for data_folder in data_folders:
+        copy_process_data(source_process, target_process, data_folder)
+    
+    manifest_found = False
+    
+    if 'manifest' in code_folders:
+        code_folders.remove('manifest')
+        manifest_found = True
+    
+    for code_folder in code_folders:
+        copy_process_code(source_process, target_process, code_folder)
+        
+    if sub_folders:
+                
+        for sub_folder in sub_folders:
+        
+            sub_target = target_process.get_sub_process(sub_folder)
+            
+            if sub_target:
+            
+                if not sub_target.is_process():
+                    sub_target.create()
+            
+                sub_process = source_process.get_sub_process(sub_folder)
+                                
+                copy_process_into(sub_process, sub_target)
+                
+    if manifest_found:
+        copy_process_code(source_process, target_process, 'manifest')
+    
+    for setting in settings:
+        copy_process_setting(source_process, target_process, setting)
+    
     
 def copy_process_data(source_process, target_process, data_name, replace = False):
     """

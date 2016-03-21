@@ -441,6 +441,7 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
                 
         data_type = self.data_type_tree_widget.get_data_type()
         data_group = self.data_type_tree_widget.get_data_group()
+        
         data_group = data_group.lower()
         
         if not data_type or not data_group:
@@ -525,7 +526,7 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
         item = self.currentItem()
         parent = item.parent()
         if parent:
-            return parent.text(0)
+            return str(parent.text(0))
 
 #--- data widgets
 

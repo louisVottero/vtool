@@ -3860,7 +3860,31 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         super(SpineRig, self).__init__(description, side)
     
     def _position_spans(self):
-        pass
+        if self.curve:
+            geo.evenly_position_curve_cvs(self.curve)
+        
+    def _create_clusters(self):
+        
+        if self.ribbon:
+            cluster_surface = deform.ClusterSurface(self.surface, self.description)
+        if not self.ribbon:
+            cluster_surface = deform.ClusterCurve(self.curve, self.description)
+        
+        if self.last_pivot_top_value:
+            last_pivot_end = True
+        if not self.last_pivot_top_value:
+            last_pivot_end = False
+        
+        cluster_surface.set_first_cluster_pivot_at_start(True)
+        cluster_surface.set_last_cluster_pivot_at_end(last_pivot_end)
+        cluster_surface.set_join_ends(True)
+        cluster_surface.create()
+        
+        self.clusters = cluster_surface.handles
+        cluster_group = self._create_setup_group('clusters')
+        cmds.parent(self.clusters, cluster_group)
+        
+        return self.clusters
         
     def _attach_to_geo(self):
         if not self.attach_joints:
@@ -3914,7 +3938,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             geo = self.curve
         
         self._create_clusters()
-            
+        self._position_spans()
         #cmds.skinCluster(top_joint, btm_joint, geo)
         
         self._attach_to_geo()
