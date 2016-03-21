@@ -577,7 +577,12 @@ class SettingsFile(object):
             
             value = fix_slashes(value)
             
-            value = eval( str(value) )
+            print value
+            
+            try:
+                value = eval( str(value) )
+            except:
+                value = str(value)
             
             self.settings_dict[name] = value
             self.settings_order.append(name)
@@ -946,7 +951,7 @@ def get_files(directory):
     
     return found
 
-def get_folders_handle_excluding_version():
+def get_folders_handle_excluding_version(directory):
     if not is_dir(directory):
         return
     
@@ -1980,6 +1985,8 @@ def get_line_imports(lines):
     module_dict = {}
     
     for line in lines:
+        
+        line = str(line)
         
         split_line = line.split()
         split_line_count = len(split_line)
