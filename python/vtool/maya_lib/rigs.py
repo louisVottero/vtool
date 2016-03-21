@@ -3857,8 +3857,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self.span_count = 3
         
         super(SpineRig, self).__init__(description, side)
-        
-        
+    
+    def _position_spans(self):
+        pass
         
     def _attach_to_geo(self):
         if not self.attach_joints:
@@ -3892,6 +3893,8 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         return top_joint, btm_joint
     
+    
+    
     def _create_btm_control(self):
         pass
     
@@ -3908,8 +3911,10 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             geo = self.surface
         if not self.ribbon:
             geo = self.curve
+        
+        self._create_clusters()
             
-        cmds.skinCluster(top_joint, btm_joint, geo)
+        #cmds.skinCluster(top_joint, btm_joint, geo)
         
         self._attach_to_geo()
         
