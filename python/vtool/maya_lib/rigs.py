@@ -796,11 +796,12 @@ class GroundRig(JointRig):
         super(GroundRig, self).__init__(name, side)
         
         self.control_shape = 'square_point'
+        self.control_size = 1
     
     def create(self):
         super(GroundRig, self).create()
         
-        scale = 1
+        scale = self.control_size
         last_control = None
         
         controls = []
