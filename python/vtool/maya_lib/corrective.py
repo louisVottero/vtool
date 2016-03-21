@@ -374,10 +374,11 @@ class PoseManager(object):
         if hasattr(instance, 'rematch_cone_to_joint'):
             instance.rematch_cone_to_joint()
             
-    def update_pose_vertex(self, pose_name):
+    @core.undo_chunk
+    def revert_pose_vertex(self, pose_name):
         
         instance = self.get_pose_instance(pose_name)
-        instance.update_selected_verts()
+        instance.revert_selected_verts()
     
     @core.undo_chunk
     def rename_pose(self, pose_name, new_name):
@@ -1741,7 +1742,7 @@ class PoseBase(PoseGroup):
             index = self.get_mesh_index(deformed_mesh)
             self.create_blend(index, goto_pose = False, sub_poses = True)
             
-    def update_selected_verts(self):
+    def revert_selected_verts(self):
         
         selection = cmds.ls(sl = True, flatten = True, l = True)
         
@@ -1758,7 +1759,6 @@ class PoseBase(PoseGroup):
                 sculpt_index = self.get_target_mesh_index(mesh)
                 
                 if target_mesh:
-                    
                     #should arrive here if a sculpt mesh is selected
                     sculpt_index = self.get_target_mesh_index(target_mesh)
                     sculpt_mesh = self.get_mesh(sculpt_index)
@@ -1767,13 +1767,13 @@ class PoseBase(PoseGroup):
                     #should arrive here if a target mesh is selected
                     sculpt_mesh = self.get_mesh(sculpt_index)
                     target_mesh = self.get_target_mesh(sculpt_mesh)
-                    
-                vtx_index = vtool.util.get_last_number(thing)
                 
                 if not envelopes.has_key(target_mesh):
                     envelope = deform.EnvelopeHistory(target_mesh)
                     envelope.turn_off_exclude(['skinCluster'])
                     envelopes[target_mesh] = envelope
+                
+                vtx_index = vtool.util.get_last_number(thing)
                 
                 pos = cmds.xform('%s.vtx[%s]' % (target_mesh, vtx_index), q = True, ws = True, t = True)
                 cmds.xform('%s.vtx[%s]' % (sculpt_mesh, vtx_index), ws = True, t = pos)

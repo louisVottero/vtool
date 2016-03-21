@@ -658,7 +658,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self.context_menu.addSeparator()
         self.set_pose_action = self.context_menu.addAction('Update Pose')
         #self.update_sculpts_action = self.context_menu.addAction('Update Sculpt')
-        self.update_selected_verts_action = self.context_menu.addAction('Update Selected Verts')
+        self.revert_vertex_action = self.context_menu.addAction('Revert Vertex')
         self.reset_sculpts_action = self.context_menu.addAction('Reset Sculpt')
         
         self.context_menu.addSeparator()
@@ -679,7 +679,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self.set_pose_action.triggered.connect(self._set_pose_data)
         self.reset_sculpts_action.triggered.connect(self._reset_sculpts)
         #self.update_sculpts_action.triggered.connect(self._update_sculpts)
-        self.update_selected_verts_action.triggered.connect(self._update_selected_verts)
+        self.revert_vertex_action.triggered.connect(self._revert_vertex)
         
         self.refresh_action.triggered.connect(self._populate_list)
 
@@ -817,10 +817,10 @@ class PoseTreeWidget(BaseTreeWidget):
         name = self._current_pose()
         corrective.PoseManager().update_pose_mesh(name)
         
-    def _update_selected_verts(self):
+    def _revert_vertex(self):
         
         name = self._current_pose()
-        corrective.PoseManager().update_pose_vertex(name)
+        corrective.PoseManager().revert_pose_vertex(name)
         
     def _reset_sculpts(self):
         
