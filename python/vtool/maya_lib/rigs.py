@@ -3855,13 +3855,47 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
     
     def __init__(self, description, side):
         
-        self.span_count = 3
+        self.span_count = 2
         
         super(SpineRig, self).__init__(description, side)
-    
-    def _position_spans(self):
-        if self.curve:
+            
+    def _create_curve(self, span_count):
+        
+        if not self.curve:
+            
+            name = self._get_name()
+            
+            self.orig_curve = geo.transforms_to_curve(self.joints, self.span_count, name)
+            cmds.setAttr('%s.inheritsTransform' % self.orig_curve, 0)
+        
+            self.curve = cmds.duplicate(self.orig_curve)[0]
+        
+            degree = 3
+            if self.span_count == 1:
+                degree = 2
+        
+            cmds.rebuildCurve(self.curve, 
+                              spans = span_count ,
+                              rpo = True,  
+                              rt = 0, 
+                              end = 1, 
+                              kr = False, 
+                              kcp = False, 
+                              kep = True,  
+                              kt = False,
+                              d = degree)
+        
+            cmds.delete('%s.cv[1]' % self.curve)
+        
             geo.evenly_position_curve_cvs(self.curve)
+            
+            name = self.orig_curve
+            
+            self.orig_curve = cmds.rename(self.orig_curve, core.inc_name('orig_curve'))
+            self.curve = cmds.rename(self.curve, name)
+            cmds.parent(self.orig_curve, self.setup_group)
+            
+            cmds.parent(self.curve, self.setup_group)         
         
     def _create_clusters(self):
         
@@ -3877,7 +3911,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         cluster_surface.set_first_cluster_pivot_at_start(True)
         cluster_surface.set_last_cluster_pivot_at_end(last_pivot_end)
-        cluster_surface.set_join_ends(True)
+        cluster_surface.set_join_ends(False)
         cluster_surface.create()
         
         self.clusters = cluster_surface.handles
@@ -3900,37 +3934,48 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         if not self.ribbon:
             self._create_spline_ik()
-            
-    def _create_top_btm_joints(self):
-        
-        cmds.select(cl = True)
-        top_joint = cmds.joint(n = self._get_name('guide', 'top'))
-        self.top_joint = top_joint
-        
-        cmds.select(cl = True)
-        btm_joint = cmds.joint(n = self._get_name('guide', 'btm'))
-        self.btm_joint = btm_joint
-        
-        space.MatchSpace(self.joints[0], btm_joint).translation_rotation()
-        space.MatchSpace(self.joints[-1], top_joint).translation_rotation()
-        
-        cmds.parent(top_joint, btm_joint, self.setup_group)
-        
-        return top_joint, btm_joint
-    
-    
     
     def _create_btm_control(self):
-        pass
+        
+        control = self._create_control()
+        control = control.control
+        
+        xform = space.create_xform_group(control)
+        space.MatchSpace(self.joints[0], xform).translation_rotation()
+        
+        self.btm_control = control
+        
+    def _create_top_control(self):
+        
+        control = self._create_control()
+        control = control.control
+        
+        xform = space.create_xform_group(control)
+        space.MatchSpace(self.joints[-1], xform).translation_rotation()
+        
+        self.top_control = control
+        
+    def _create_sub_controls(self):
+        
+        for cluster in self.clusters:
+            
+            control = self._create_control(sub = True)
+            
+            control = control.control
+            
+            xform = space.create_xform_group(control)
+            space.MatchSpace(cluster, xform).translation_to_rotate_pivot()
+            
+            cmds.parent(cluster, control)
     
-    def set_span_count(self, span_count):
-        self.span_count = span_count
+    def set_control_count(self, control_count):
+        if control_count < 1:
+            control_count = 1
+        self.span_count = control_count
     
     def create(self):
         super(SpineRig, self).create()
         self._create_geo(self.span_count)
-        
-        top_joint, btm_joint = self._create_top_btm_joints()
         
         if self.ribbon:
             geo = self.surface
@@ -3938,15 +3983,22 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             geo = self.curve
         
         self._create_clusters()
-        self._position_spans()
-        #cmds.skinCluster(top_joint, btm_joint, geo)
         
         self._attach_to_geo()
         
-        cmds.parent(self.start_locator, self.top_joint)
-        cmds.parent(self.end_locator, self.btm_joint)
+        self._create_btm_control()
+        self._create_top_control()
         
-        self._setup_stretchy(self.top_joint)
+        self._create_sub_controls()
+        
+        cmds.parent(self.start_locator, self.top_control)
+        cmds.parent(self.end_locator, self.btm_control)
+        
+        self._setup_stretchy(self.top_control)
+        
+        
+        
+        
         
 class NeckRig(FkCurveRig):
     def _first_increment(self, control, current_transform):

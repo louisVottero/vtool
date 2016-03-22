@@ -147,12 +147,13 @@ class ReadFile(FileManager):
         Return
             list: A list of file lines.
         """
-        
-        self.read_file()
-        
-        lines = self._get_lines()
-        
-        self.close_file()
+        lines = []
+        try:
+            self.read_file()
+            lines = self._get_lines()
+            self.close_file()
+        except:
+            util.show('Could not get file lines. %s' % self.filepath)
         
         return lines
 
@@ -193,10 +194,12 @@ class WriteFile(FileManager):
             line (str): The line to add to the file.
         """
         
-
-        self.write_file()
-        self.open_file.write('%s\n' % line)
-        self.close_file()
+        try:
+            self.write_file()
+            self.open_file.write('%s\n' % line)
+            self.close_file()
+        except:
+            print 'Could not write to file %s' % self.filepath
                 
     def write(self, lines, last_line_empty = True):
         """
@@ -206,9 +209,10 @@ class WriteFile(FileManager):
             lines (list): A list of lines. Each entry is a new line in the file.
             last_line_empty (bool): Wether or not to add a line after the last line.
         """
-        self.write_file()
+        
         
         try:
+            self.write_file()
             inc = 0
             for line in lines:
     
@@ -455,10 +459,11 @@ class VersionFile(object):
         if not filepath:
             return None, None
         
-        if is_file(filepath):
-            read = ReadFile(filepath)
-            lines = read.read()
-            
+        
+        read = ReadFile(filepath)
+        lines = read.read()
+        
+        if lines:    
             version = None
             comment = None
             user = None
@@ -723,10 +728,7 @@ class ParsePython(object):
         
     def _parse(self):
         
-        lines = []
-        
-        if is_file(self.filepath):
-            lines = get_file_lines(self.filepath)
+        lines = get_file_lines(self.filepath)
         
         for line in lines:
 
@@ -939,21 +941,15 @@ def get_files(directory):
     Return
         list: A list of files in the directory.
     """
-    files = os.listdir(directory)
     
-    found = []
+    found = [os.path.join(directory,fn) for fn in next(os.walk(directory))[2]]
     
-    for filepath in files:
-        path = join_path(directory, filepath)
-        
-        if is_file(path):
-            found.append(filepath)
+    if not found:
+        found = []
     
     return found
 
-def get_folders_handle_excluding_version(directory):
-    if not is_dir(directory):
-        return
+def get_folders_handle_excluding_version(directory, recursive = True):
     
     found_folders = []
     
@@ -1033,26 +1029,26 @@ def get_folders(directory, recursive = False):
     Return
         list: A list of folders in the directory.
     """
-    if not is_dir(directory):
-        return
     
     
     found_folders = []
     
-    for root, dirs, files in os.walk(directory):
-        
-        for folder in dirs:
+    try:
+        for root, dirs, files in os.walk(directory):
             
-            folder_name = join_path(root, folder)
+            for folder in dirs:
+                
+                folder_name = join_path(root, folder)
+                
+                folder_name = os.path.relpath(folder_name,directory)
+                folder_name = fix_slashes(folder_name)
+                
+                found_folders.append(folder_name)
             
-            folder_name = os.path.relpath(folder_name,directory)
-            folder_name = fix_slashes(folder_name)
-            
-            found_folders.append(folder_name)
-        
-        if not recursive:
-            break
-        
+            if not recursive:
+                break
+    except:
+        util.show('Could not walk %s' % directory)
     
     return found_folders           
 
@@ -1147,8 +1143,16 @@ def get_filesize(filepath):
         float: The size of the file specified by filepath.
     """
     
-    size = os.path.getsize(filepath)
-    size_format = round( size * 0.000001, 2 )
+    size = None
+    size_format = None
+    
+    try:
+        size = os.path.getsize(filepath)
+    except:
+        util.show('Could not get size of file %s' % filepath)
+    
+    if size:    
+        size_format = round( size * 0.000001, 2 )
 
     return size_format
 
@@ -1163,7 +1167,12 @@ def get_last_modified_date(filepath):
         str: A formatted date and time.
     """
     
-    mtime = os.path.getmtime(filepath)
+    mtime = None
+    
+    try:
+        mtime = os.path.getmtime(filepath)
+    except:
+        return
     
     date_value = datetime.datetime.fromtimestamp(mtime)
     year = date_value.year
@@ -1199,11 +1208,14 @@ def get_file_text(filepath):
     Get the text directly from a file. One long string, no parsing.
     
     """
-
-    open_file = open(filepath, 'r')    
-    lines = open_file.read()
-    open_file.close()
-    
+    lines = []
+    try:
+        open_file = open(filepath, 'r')    
+        lines = open_file.read()
+        open_file.close()
+    except:
+        util.show('Could not get file text. %s' % filepath)
+        
     return lines
 
 def get_file_lines(filepath):
@@ -1606,10 +1618,10 @@ def get_comments(comment_directory, comment_filename = None):
     
     comments = {}
     
-    if is_file(comment_file):
-        read = ReadFile(comment_file)
-        lines = read.read()
-        
+    read = ReadFile(comment_file)
+    lines = read.read()
+    
+    if lines:    
         filename = None
         comment = None
         user = None
@@ -1636,9 +1648,12 @@ def write_lines(filepath, lines, append = False):
         append (bool): Wether to append the text or if not replace it.
     
     """
-    write_file = WriteFile(filepath)
-    write_file.set_append(append)
-    write_file.write(lines)
+    try:
+        write_file = WriteFile(filepath)
+        write_file.set_append(append)
+        write_file.write(lines)
+    except:
+        util.show('Could not write lines to file. %s' % filepath)
     
 
 #---- create
@@ -1660,15 +1675,12 @@ def create_dir(name, directory, make_unique = False):
         full_path = join_path(directory, name)
          
         if make_unique:
-            full_path = inc_path_name(full_path)   
-    
-    if is_dir(full_path):
-        return full_path
+            full_path = inc_path_name(full_path)
        
     try:
         os.makedirs(full_path)
     except:
-        return False
+        return full_path
     
     return full_path           
     
@@ -1688,17 +1700,10 @@ def delete_dir(name, directory):
     
     full_path = join_path(directory, name)
     
-    if not is_dir(full_path):
-        
-        util.show('%s was not deleted. It is not a folder.' % full_path)
-        
-        return full_path
-    
-    #read-only error fix
-    #if not os.access(full_path, os.W_OK):
-    #    os.chmod(full_path, stat.S_IWUSR)
-    
-    shutil.rmtree(full_path, onerror = delete_read_only_error)  
+    try:    
+        shutil.rmtree(full_path, onerror = delete_read_only_error)
+    except:
+        util.show('%s was not deleted.' % full_path)  
     
     return full_path
 
@@ -1742,9 +1747,6 @@ def create_file(name, directory, make_unique = False):
     name = util.clean_file_string(name)
     
     full_path = join_path(directory, name)
-        
-    if is_file(full_path) and not make_unique:
-        return full_path
     
     if make_unique:
         full_path = inc_path_name(full_path)
@@ -1755,7 +1757,7 @@ def create_file(name, directory, make_unique = False):
         open_file = open(full_path, 'w')
         open_file.close()
     except:
-        return False
+        return full_path
     
     return full_path
     
@@ -1773,14 +1775,11 @@ def delete_file(name, directory):
     
     full_path = join_path(directory, name)
     
-    if not is_file(full_path):
-        
-        util.show('%s was not deleted.' % full_path)
-        
-        return full_path
-        
-    os.chmod(full_path, stat.S_IWRITE)
-    os.remove(full_path) 
+    try:    
+        os.chmod(full_path, stat.S_IWRITE)
+        os.remove(full_path)
+    except:
+        pass
     
     return full_path
 
@@ -1841,16 +1840,15 @@ def delete_pyc(python_script):
         return
     
     compile_script = python_script + 'c'
-            
-    if is_file(compile_script):
         
-        c_name = get_basename(compile_script)
-        c_dir_name = get_dirname(compile_script)
-        
-        if not c_name.endswith('.pyc'):
-            return
-        
-        delete_file( c_name, c_dir_name)
+    c_name = get_basename(compile_script)
+    
+    if not c_name.endswith('.pyc'):
+        return
+    
+    c_dir_name = get_dirname(compile_script)
+    
+    delete_file( c_name, c_dir_name)
             
 def import_python_module(module_name, directory):
     
@@ -2021,6 +2019,9 @@ def get_defined(module_path):
     """
     file_text = get_file_text(module_path)
     
+    if not file_text:
+        return
+    
     defined = []
     
     ast_tree = ast.parse(file_text)
@@ -2031,7 +2032,6 @@ def get_defined(module_path):
             #yield( node.lineno, node.col_offset, 'goobers', 'goo')
         found_args_name = ''
         if isinstance(node, ast.FunctionDef):
-            
             
             if node.args:
                 found_args =[]
@@ -2074,11 +2074,7 @@ def get_defined(module_path):
                 found_args.reverse()
                 
                 found_args_name = string.join(found_args, ',')
-
-            
-            
-            
-            
+                
             function_name = node.name + '(%s)' % found_args_name
             defined.append( function_name )
             

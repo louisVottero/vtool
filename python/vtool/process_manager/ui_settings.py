@@ -139,8 +139,6 @@ class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
             self.directory_changed.emit(filename)
             self.settings.set('external_editor', str(filename))
     
-    
-    
     def set_settings(self, settings):
         
         self.settings = settings

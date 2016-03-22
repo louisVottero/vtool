@@ -916,11 +916,12 @@ class FileTreeWidget(TreeWidget):
                 
         item.setText(self.title_text_index, filename)
         
-        if util_file.is_file(path):
-            size = util_file.get_filesize(path)
-            date = util_file.get_last_modified_date(path)
+        size = util_file.get_filesize(path)
+        date = util_file.get_last_modified_date(path)
             
+        if size:
             item.setText(self.title_text_index+1, str(size))
+        if date:
             item.setText(self.title_text_index+2, str(date))
         
         if sub_files:
@@ -985,7 +986,6 @@ class FileTreeWidget(TreeWidget):
             name = self._define_new_branch_name()
             
         util_file.create_dir(name, path)
-        
         
         if current_item:
             self._add_sub_items(current_item)
@@ -2929,8 +2929,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     def _has_changed(self):
         
         if self.filepath:
-            if util_file.is_file(self.filepath):
-                
+            
                 last_modified = util_file.get_last_modified_date(self.filepath)
                 
                 if last_modified != self.last_modified:
@@ -3550,13 +3549,10 @@ class PythonCompleter(QtGui.QCompleter):
             
             fix_path = util_file.fix_slashes(path)
             
-            #if fix_path in visited_paths:
-            #    continue
-            
-            if not util_file.is_dir(fix_path):
-                continue
-            
             folders = util_file.get_folders(fix_path)
+            
+            if not folders:
+                continue
             
             for folder in folders:
                 
@@ -3631,7 +3627,8 @@ class PythonCompleter(QtGui.QCompleter):
         
         defined = util_file.get_defined(path)
         
-        self.string_model.setStringList(defined)
+        if defined:
+            self.string_model.setStringList(defined)
         
     
     def clear_completer_list(self):

@@ -618,11 +618,13 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         self.clear()
         
+        watch = util.StopWatch()
+        watch.start('start loading')
+        
         for process_path in process_paths:
             self._add_process_item(process_path)
             
-            
-            
+        watch.end()
             
     def _get_parent_path(self, item):
         
