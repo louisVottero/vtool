@@ -772,10 +772,7 @@ def import_file(filepath):
     """
     Import a maya file in a generic vtool way.
     """
-    try:
-        cmds.file(filepath, f = True, i = True, iv = True)
-    except:
-        print 'Failed to import %s.' % filepath
+    cmds.file(filepath, f = True, i = True, iv = True)
 
 def reference_file(filepath, namespace = None):
     """
