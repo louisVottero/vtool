@@ -48,6 +48,9 @@ def is_process(directory):
     if not directory:
         return False
     
+    if not util_file.is_dir(directory):
+        return False
+    
     code_path = util_file.join_path(directory, '.code')
     
     if not util_file.is_dir(code_path):
@@ -150,8 +153,11 @@ class Process(object):
         old_data_path = util_file.join_path(path, old_data_name)
         old_code_path = util_file.join_path(path, old_code_name)
         
-        util_file.rename(old_data_path, self.data_folder_name)
-        util_file.rename(old_code_path, self.code_folder_name)
+        if util_file.is_dir(old_data_path):
+            util_file.rename(old_data_path, self.data_folder_name)
+            
+        if util_file.is_dir(old_code_path):
+            util_file.rename(old_code_path, self.code_folder_name)
         
     def _create_folder(self):
                 
@@ -160,20 +166,14 @@ class Process(object):
             return
         
         path = util_file.create_dir(self.process_name, self.directory)
-        
-        if util_file.is_dir(path):
+    
+        if path and util_file.is_dir(path):
 
             self._handle_old_folders(path)
             
             util_file.create_dir(self.data_folder_name, path)
-            code_folder = util_file.create_dir(self.code_folder_name, path)
+            util_file.create_dir(self.code_folder_name, path)
             
-            
-            manifest_path = util_file.join_path(code_folder, 'manifest')
-            
-            if not util_file.is_dir(manifest_path):
-                self.create_code('manifest', 'script.manifest')
-        """    
             code_files = self.get_code_files()
             
             found = False
@@ -185,8 +185,8 @@ class Process(object):
                     break
             
             if not found:
-        """
-        
+                self.create_code('manifest', 'script.manifest')   
+                
         self._setup_options()     
         
         return path
@@ -229,14 +229,14 @@ class Process(object):
             bool: Check to see if the initialized process is valid.
         """
         
+        path = self.get_path()
+        self._handle_old_folders(path)
         
         if not util_file.is_dir(self.get_code_path()):
-            
-            #these 3 lines need to be removed in the future.
-            path = self.get_path()
-            self._handle_old_folders(path)
-            if not util_file.is_dir(self.get_code_path()):
-                return False
+            return False
+        
+        if not util_file.is_dir(self.get_data_path()):
+            return False
         
         return True
         
@@ -335,6 +335,12 @@ class Process(object):
         
         process_name = string.join([new_path[-1]], '/')
         process_directory = string.join(new_path[:-1], '/')
+        
+        """
+        test_path = util_file.join_path(process_directory, process_name)
+        if not util_file.is_dir(test_path):
+            util.warning('%s is not a valid path.' % test_path)
+        """
         
         process = Process(process_name)
         process.set_directory(process_directory)
@@ -667,6 +673,8 @@ class Process(object):
         files = []
         
         folders = self.get_code_folders()
+        
+        
         
         for folder in folders:
             
