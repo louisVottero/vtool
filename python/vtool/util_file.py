@@ -1035,13 +1035,12 @@ def get_folders(directory, recursive = False):
         for filename in files:
             
             folder_name = join_path(directory, filename)
-            folder_name = os.path.relpath(folder_name,directory)
-            folder_name = fix_slashes(folder_name)
-            
             if is_dir(folder_name):
+                folder_name = os.path.relpath(folder_name,directory)
+                folder_name = fix_slashes(folder_name)
+            
                 found_folders.append(folder_name)
-
-        
+    
     if recursive:
         for root, dirs, files in os.walk(directory):
             

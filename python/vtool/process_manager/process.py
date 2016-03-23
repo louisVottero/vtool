@@ -1148,7 +1148,6 @@ class Process(object):
         Sync the manifest with whats on disk.
         """
         
-        
         scripts, states = self.get_manifest()
         
         synced_scripts = []
