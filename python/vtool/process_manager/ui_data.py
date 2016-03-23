@@ -70,8 +70,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         x_value = point.x()
         
-        print x_value, width
-        
         if x_value >= width * .8:
             self.splitter.setSizes([1,1])
         if x_value < width * .8:
