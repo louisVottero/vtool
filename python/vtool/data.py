@@ -204,14 +204,9 @@ class DataFile(util_file.FileManager):
         
         dirpath = self._get_folder()
         
-        
-        if not util_file.is_dir(dirpath):
-            return
-        
         new_name = util_file.get_basename_no_extension(new_name)
         
-        if util_file.is_dir(dirpath):
-            util_file.rename(dirpath, new_name)
+        util_file.rename(dirpath, new_name)
         
     def _create_version_folder(self):
         
@@ -246,8 +241,8 @@ class DataFile(util_file.FileManager):
         if folder:
             util_file.delete_dir(self.name, self.directory)
             
-        if util_file.is_file(self.filepath):
-            util_file.delete_file(self.name, self.directory)
+        
+        util_file.delete_file(self.name, self.directory)
     
     def rename(self, new_name):
         
@@ -333,11 +328,7 @@ class FileData(Data):
         
         filepath = util_file.join_path(self.directory, self._get_file_name())
         
-        if util_file.is_file(filepath):
-            return filepath
-        
-        if util_file.is_dir(filepath):
-            return filepath
+        return filepath
         
     def rename(self, new_name):
         
@@ -565,10 +556,10 @@ class SkinWeightData(MayaCustomData):
         
         info_file = util_file.join_path(folder_path, 'influence.info')
         
-        if not util_file.is_file(info_file):
-            return
-        
         info_lines = util_file.get_file_lines(info_file)
+        
+        if not info_lines:
+            return
         
         influence_dict = {}
         
@@ -739,28 +730,31 @@ class SkinWeightData(MayaCustomData):
         
             file_path = util_file.join_path(folder_path, 'settings.info')
             
-            if util_file.is_file(file_path):
+            lines = util_file.get_file_lines(file_path)
             
-                lines = util_file.get_file_lines(file_path)
-                for line in lines:
-                    
-                    test_line = line.strip()
-                    
-                    if not test_line:
-                        continue
-                    
-                    line_list = eval(line)
+            if not lines:
+                util.warning('Found no weights in %s' % filepath)
+                return
             
-                    attr_name = line_list[0]
-                    value = line_list[1]
-            
-                    if attr_name == 'blendWeights':
-                        
-                        maya_lib.deform.set_skin_blend_weights(skin_cluster, value)
+            for line in lines:
+                
+                test_line = line.strip()
+                
+                if not test_line:
+                    continue
+                
+                line_list = eval(line)
+        
+                attr_name = line_list[0]
+                value = line_list[1]
+        
+                if attr_name == 'blendWeights':
                     
-                    if attr_name == 'skinningMethod':
-                        
-                        cmds.setAttr('%s.skinningMethod' % skin_cluster, value)
+                    maya_lib.deform.set_skin_blend_weights(skin_cluster, value)
+                
+                if attr_name == 'skinningMethod':
+                    
+                    cmds.setAttr('%s.skinningMethod' % skin_cluster, value)
 
         util.show('Imported %s data' % self.name)
                 
@@ -846,7 +840,6 @@ class SkinWeightData(MayaCustomData):
                 if cmds.objExists(blend_weights_attr):
                     blend_weights = maya_lib.deform.get_skin_blend_weights(skin)
                     
-                    write = util_file.WriteFile(settings_file)
                     settings_lines.append("['blendWeights', %s]" % blend_weights)
                     
                 
@@ -899,10 +892,6 @@ class LoadWeightFileThread(threading.Thread):
             return
         
         filepath = util_file.create_file('%s.weights' % influence_name, path)
-        
-        if not util_file.is_file(filepath):
-            util.show('%s is not a valid path.' % filepath)
-            return
         
         write = util_file.WriteFile(filepath)
         write.write_line(weights)     
@@ -984,9 +973,6 @@ class DeformerWeightData(MayaCustomData):
                 weights = maya_lib.deform.get_deformer_weights(deformer)
                 
                 filepath = util_file.create_file('%s.weights' % deformer, path)
-                
-                if not filepath:
-                    return
                 
                 write_info = util_file.WriteFile(filepath)
                 
@@ -1110,8 +1096,10 @@ class MayaShadersData(CustomData):
             
             filepath = util_file.join_path(path, '%s.ma' % shader)
         
-            if util_file.is_file(filepath):
+            try:
                 util_file.delete_file(util_file.get_basename(filepath), path)
+            except:
+                util.show('Could not delete shader maya file on export.')
         
             cmds.file(rename = filepath)
             
@@ -1233,24 +1221,22 @@ class AnimationData(MayaCustomData):
         
         test_path = util_file.join_path(self.directory, self.name)
         
-        if util_file.is_dir(test_path):
+        try:
             util_file.rename(test_path, self.name)
+        except:
+            pass
         
         #this could be replaced with self.get_file()
         path = util_file.join_path(self.directory, self.name)
         
-        if not util_file.is_dir(path):
-            return
-        
         filepath = util_file.join_path(path, 'keyframes.ma')
         
-        if not util_file.is_file(filepath):
-            return
+        try:
+            cmds.file(filepath, f = True, i = True, iv = True)
+        except:
+            util.show('Could not set filepath, import animation aborted. %s' % filepath)
             
         info_file = util_file.join_path(path, 'animation.info')
-        
-        if not util_file.is_file(info_file):
-            return
         
         info_lines = util_file.get_file_lines(info_file)
         
@@ -1270,12 +1256,9 @@ class AnimationData(MayaCustomData):
                 
                 if cmds.objExists(key):
                     cmds.delete(key)
-                    
                 
                 info_dict[key] = keyframe_dict[key]
-        
-        cmds.file(filepath, f = True, i = True, iv = True)
-        
+                
         for key in info_dict:
             keyframes = info_dict[key]
             
@@ -1408,20 +1391,22 @@ class PoseData(MayaCustomData):
         return 'maya.pose' 
 
     def _save_file(self, filepath):
-        cmds.file(rename = filepath)
-        #ch     chn     con     exp     sh
-        cmds.file(exportSelected = True, prompt = False, force = True, pr = True, ch = False, chn = True, exp = True, con = False, sh = False, stx = 'never', typ = self.maya_ascii)
+        
+        try:
+            cmds.file(rename = filepath)
+            #ch     chn     con     exp     sh
+            cmds.file(exportSelected = True, prompt = False, force = True, pr = True, ch = False, chn = True, exp = True, con = False, sh = False, stx = 'never', typ = self.maya_ascii)
+        except:
+            util.show('Could not save file. %s' % filepath)
         
     def _import_file(self, filepath):
         
-        
-        
-        if util_file.is_file(filepath):
-            
+        try:    
             cmds.file(filepath, f = True, i = True, iv = True, shd = 'shadingNetworks')
+        except:
+            mel.eval('warning "File does not exist: %s"' % filepath)
         
-        if not util_file.is_file(filepath):
-            mel.eval('warning "File does not exist"')
+            
 
     def _filter_inputs(self, inputs):
         
@@ -1577,20 +1562,19 @@ class PoseData(MayaCustomData):
             
             pose_path = util_file.join_path(path, pose_file)
             
-            if util_file.is_file(pose_path):
-                split_name = pose_file.split('.')
+            split_name = pose_file.split('.')
+            
+            pose = split_name[0]
+            
+            if cmds.objExists(pose):
+                cmds.delete(pose)
+            
+            if not cmds.objExists(pose):
+    
+                if pose != 'pose_gr':
+                    poses.append(pose)
                 
-                pose = split_name[0]
-                
-                if cmds.objExists(pose):
-                    cmds.delete(pose)
-                
-                if not cmds.objExists(pose):
-        
-                    if pose != 'pose_gr':
-                        poses.append(pose)
-        
-                    self._import_file(pose_path)
+                self._import_file(pose_path)
         
         if cmds.objExists('pose_gr') and poses:
             cmds.parent(poses, 'pose_gr')
@@ -1648,7 +1632,8 @@ class MayaAttributeData(MayaCustomData):
                 
             filepath = util_file.join_path(path, filename)
 
-            if not util_file.is_file(filepath):
+            lines = util_file.get_file_lines(filepath)
+            if not lines:
                 continue
             
             node_name = filename.split('.')[0]
@@ -1657,8 +1642,6 @@ class MayaAttributeData(MayaCustomData):
                 
                 util.warning( 'Skipping attribute import for %s. It does not exist.' % node_name ) 
                 continue
-            
-            lines = util_file.get_file_lines(filepath)
             
             for line in lines:
                 
@@ -1680,8 +1663,7 @@ class MayaAttributeData(MayaCustomData):
         """
         path = util_file.join_path(self.directory, self.name)
         
-        if not util_file.is_dir(path):
-            util_file.create_dir(self.name, self.directory)
+        util_file.create_dir(self.name, self.directory)
         
         selection = cmds.ls(sl = True)
         
@@ -1770,9 +1752,6 @@ class MayaFileData(MayaCustomData):
             import_file = filepath
             
         if not import_file:
-            if not util_file.is_file(self.filepath):
-                return
-            
             import_file = self.filepath
         
         maya_lib.core.import_file(import_file)
@@ -1787,9 +1766,6 @@ class MayaFileData(MayaCustomData):
             open_file = filepath
             
         if not open_file:
-            if not util_file.is_file(self.filepath):
-                return
-            
             open_file = self.filepath
         
         try:
@@ -1799,7 +1775,6 @@ class MayaFileData(MayaCustomData):
                       iv = True)
             
         except:
-            
             util.show(traceback.format_exc())
             
         self._after_open()
