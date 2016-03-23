@@ -937,10 +937,17 @@ def get_files(directory):
     Return
         list: A list of files in the directory.
     """
-    found = [os.path.join(directory,fn) for fn in next(os.walk(directory))[2]]
     
-    if not found:
-        found = []
+    files = os.listdir(directory)
+    
+    found = []
+    
+    for filename in files:
+        
+        file_path = join_path(directory, filename)
+    
+        if is_file(file_path):
+            found.append(filename)
     
     return found
 
