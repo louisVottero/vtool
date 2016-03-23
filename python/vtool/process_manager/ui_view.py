@@ -946,23 +946,9 @@ class ProcessItem(QtGui.QTreeWidgetItem):
     
     def has_parts(self):
         
-        
-        
         process_path = util_file.join_path(self.directory, self.name)
-        
-        it = QtCore.QDirIterator(process_path, QtCore.QDirIterator.Subdirectories)
-        
-        while it.hasNext():
-            folder_path = util_file.join_path(process_path, it.next())
-            
-            if process.is_process(folder_path):
-                return True
-            
-        return False 
-        
-        """
+
         import os
-        
         files = os.listdir(process_path)
         
         for filename in files:
@@ -973,7 +959,6 @@ class ProcessItem(QtGui.QTreeWidgetItem):
                 return True
             
         return False
-        """
             
     def matches(self, item):
         
