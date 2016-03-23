@@ -621,9 +621,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         for process_path in process_paths:
             self._add_process_item(process_path)
             
-            
-            
-            
     def _get_parent_path(self, item):
         
         parents = self.get_tree_item_path(item)
@@ -683,7 +680,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         parts = process.find_processes(path)
         
-        
         self.directory
         sub_path = util_file.remove_common_path_simple(self.directory, path)
         
@@ -700,7 +696,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         
     def _add_process_item(self, name, parent_item = None, create = False, find_parent_path = True):
-        
+
         expand_to = False
         
         current_item = self.currentItem()
@@ -729,14 +725,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             item.create()
         
         if not parent_item:
-            
             self.addTopLevelItem(item)
-            
+        
         if parent_item:
             parent_item.addChild(item)
             if expand_to:
                 self.expandItem(parent_item)
         
+        #has parts takes time because it needs to check children folders
         if item.has_parts():
             QtGui.QTreeWidgetItem(item)
         
@@ -790,12 +786,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     def refresh(self):
         
         self.clearSelection()
-        
         process_paths = self._get_process_paths()
         
-        #this can be slow when there are many processes at the top level
+        #this can be slow when there are many processes at the top level, and it checks if each process has sub process.
         self._load_processes(process_paths)
-                
+        
         self.current_item = None
         self.last_item = None
         
@@ -911,7 +906,9 @@ class ProcessItem(QtGui.QTreeWidgetItem):
     def create(self):
         
         process_instance = self._get_process()
-        process_instance.create()    
+        
+        if not process_instance.is_process():
+            process_instance.create()    
         
     def rename(self, name):
         
@@ -949,13 +946,22 @@ class ProcessItem(QtGui.QTreeWidgetItem):
     
     def has_parts(self):
         
-        process_instance = self._get_process()
+        process_path = util_file.join_path(self.directory, self.name)
         
-        if process_instance.get_sub_processes():
-            return True
+        import os
         
+        files = os.listdir(process_path)
+        
+        for filename in files:
+            
+            folder_path = util_file.join_path(process_path, filename)
+            
+            if process.is_process(folder_path):
+                return True
+            
         return False
-    
+
+            
     def matches(self, item):
         
         if not item:

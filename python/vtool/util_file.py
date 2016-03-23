@@ -577,8 +577,6 @@ class SettingsFile(object):
             
             value = fix_slashes(value)
             
-            print value
-            
             try:
                 value = eval( str(value) )
             except:
@@ -939,15 +937,10 @@ def get_files(directory):
     Return
         list: A list of files in the directory.
     """
-    files = os.listdir(directory)
+    found = [os.path.join(directory,fn) for fn in next(os.walk(directory))[2]]
     
-    found = []
-    
-    for filepath in files:
-        path = join_path(directory, filepath)
-        
-        if is_file(path):
-            found.append(filepath)
+    if not found:
+        found = []
     
     return found
 
@@ -1033,26 +1026,34 @@ def get_folders(directory, recursive = False):
     Return
         list: A list of folders in the directory.
     """
-    if not is_dir(directory):
-        return
-    
     
     found_folders = []
-    
-    for root, dirs, files in os.walk(directory):
+
+    if not recursive:    
+        files = os.listdir(directory)
         
-        for folder in dirs:
+        for filename in files:
             
-            folder_name = join_path(root, folder)
-            
+            folder_name = join_path(directory, filename)
             folder_name = os.path.relpath(folder_name,directory)
             folder_name = fix_slashes(folder_name)
             
-            found_folders.append(folder_name)
+            if is_dir(folder_name):
+                found_folders.append(folder_name)
+
         
-        if not recursive:
-            break
-        
+    if recursive:
+        for root, dirs, files in os.walk(directory):
+            
+            for folder in dirs:
+                
+                folder_name = join_path(root, folder)
+                
+                folder_name = os.path.relpath(folder_name,directory)
+                folder_name = fix_slashes(folder_name)
+                
+                found_folders.append(folder_name)
+    
     
     return found_folders           
 
@@ -1740,19 +1741,16 @@ def create_file(name, directory, make_unique = False):
     """
     
     name = util.clean_file_string(name)
-    
     full_path = join_path(directory, name)
         
-    if is_file(full_path) and not make_unique:
-        return full_path
+    #if is_file(full_path) and not make_unique:
+    #    return full_path
     
     if make_unique:
         full_path = inc_path_name(full_path)
-       
-    
         
     try:
-        open_file = open(full_path, 'w')
+        open_file = open(full_path, 'a')
         open_file.close()
     except:
         return False

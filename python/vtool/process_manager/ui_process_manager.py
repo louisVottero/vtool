@@ -130,9 +130,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.option_widget.set_directory(directory)
         
-        if self.option_widget.has_options():
+        has_options = self.option_widget.has_options()
+        
+        if has_options:
             self.process_splitter.setSizes([1,1])
-        if not self.option_widget.has_options():
+        if not has_options:
             self.process_splitter.setSizes([1,0])
         
     def _update_build_widget(self, process_name):

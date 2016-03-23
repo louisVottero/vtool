@@ -1,5 +1,6 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import os
 import sys
 import traceback
 import string
@@ -25,20 +26,18 @@ def find_processes(directory = None):
     if not directory:
         directory = util_file.get_cwd()
     
-    files = util_file.get_folders(directory)
-    
     found = []
     
-    if not files:
-        return found
-    
-    for file_name in files:
+    for root, dirs, files in os.walk(directory):
         
-        full_path = util_file.join_path(directory, file_name)
+        for folder in dirs:
+            full_path = util_file.join_path(root, folder)
+            
+            if is_process(full_path):
+                found.append(folder)
                 
-        if is_process(full_path):
-            found.append(file_name)
-        
+        break
+                
     found.sort()
 
     return found
@@ -46,9 +45,6 @@ def find_processes(directory = None):
 def is_process(directory):
     
     if not directory:
-        return False
-    
-    if not util_file.is_dir(directory):
         return False
     
     code_path = util_file.join_path(directory, '.code')
@@ -160,10 +156,6 @@ class Process(object):
             util_file.rename(old_code_path, self.code_folder_name)
         
     def _create_folder(self):
-                
-        if not util_file.is_dir(self.directory):
-            util.show('%s was not created.' %  self.process_name)
-            return
         
         path = util_file.create_dir(self.process_name, self.directory)
     
@@ -172,22 +164,11 @@ class Process(object):
             self._handle_old_folders(path)
             
             util_file.create_dir(self.data_folder_name, path)
-            util_file.create_dir(self.code_folder_name, path)
+            code_folder = util_file.create_dir(self.code_folder_name, path)
             
-            code_files = self.get_code_files()
-            
-            found = False
-            
-            for code_file in code_files:
-                basename = util_file.get_basename(code_file)
-                if basename == self.process_data_filename:
-                    found = True
-                    break
-            
-            if not found:
-                self.create_code('manifest', 'script.manifest')   
-                
-        self._setup_options()     
+            manifest_folder = util_file.join_path(code_folder, 'manifest')
+            if not util_file.is_dir(manifest_folder):
+                self.create_code('manifest', 'script.manifest')
         
         return path
             
@@ -212,7 +193,6 @@ class Process(object):
             directory (str): Directory path to the process that should be created or where an existing process lives.
         """ 
         self.directory = directory
-        self._setup_options()
         
     def set_external_code_library(self, directory):
         """
@@ -229,16 +209,37 @@ class Process(object):
             bool: Check to see if the initialized process is valid.
         """
         
-        path = self.get_path()
-        self._handle_old_folders(path)
-        
         if not util_file.is_dir(self.get_code_path()):
-            return False
-        
-        if not util_file.is_dir(self.get_data_path()):
-            return False
+            
+            path = self.get_path()
+            self._handle_old_folders(path)
+            if not util_file.is_dir(self.get_code_path()):
+                return False
         
         return True
+    
+    def has_sub_parts(self):
+        
+        process_path = self.get_path()
+        
+        if not process_path:
+            return False
+        
+        files = util_file.get_folders(process_path)
+        
+        if not files:
+            return False
+        
+        
+        for filename in files:
+            
+            file_path = util_file.join_path(process_path, filename)
+            
+            if is_process(file_path):
+                return True
+            
+        return False
+        
         
     def get_path(self):
         """
@@ -957,6 +958,8 @@ class Process(object):
         return value
         
     def get_options(self):
+        
+        self._setup_options()
         
         options = []
         
