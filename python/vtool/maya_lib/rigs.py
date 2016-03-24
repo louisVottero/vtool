@@ -3961,7 +3961,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             
             control = self._create_control(sub = True)
             
-            control = control.control()
+            control = control.control
             
             xform = space.create_xform_group(control)
             space.MatchSpace(cluster, xform).translation_to_rotate_pivot()
