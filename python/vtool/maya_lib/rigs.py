@@ -3941,7 +3941,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         control = control.control
         
         xform = space.create_xform_group(control)
-        space.MatchSpace(self.joints[0], xform).translation_rotation()
+        space.MatchSpace(self.joints[0], xform).translation()
         
         self.btm_control = control
         
@@ -3951,11 +3951,18 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         control = control.control
         
         xform = space.create_xform_group(control)
-        space.MatchSpace(self.joints[-1], xform).translation_rotation()
+        space.MatchSpace(self.joints[-1], xform).translation()
         
         self.top_control = control
         
     def _create_sub_controls(self):
+        
+        follow = 0
+        
+        sub_follow = 1.0/(len(self.clusters) - 1)
+        
+        #follow = sub_follow
+        
         
         for cluster in self.clusters:
             
@@ -3967,6 +3974,33 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             space.MatchSpace(cluster, xform).translation_to_rotate_pivot()
             
             cmds.parent(cluster, control)
+            
+            space.create_multi_follow([self.btm_control, self.top_control], xform, control, attribute_name = 'follow', value = follow)
+            
+            follow += sub_follow
+            
+    def _create_mid_controls(self):
+        
+        last_control = None
+        
+        for cluster in self.clusters[1:-1]:
+            
+            control = self._create_control(description = 'mid')
+            
+            control = control.control
+            
+            xform = space.create_xform_group(control)
+            space.MatchSpace(cluster, xform).translation_to_rotate_pivot()
+            
+            if last_control:
+                cmds.parent(xform, last_control)
+            
+            last_control = control
+            
+        top_xform = space.get_xform_group(self.top_control)
+        
+        cmds.parent(top_xform, last_control)
+                        
     
     def set_control_count(self, control_count):
         if control_count < 1:
@@ -3990,15 +4024,14 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self._create_top_control()
         
         self._create_sub_controls()
+        self._create_mid_controls()
+        
         
         cmds.parent(self.start_locator, self.top_control)
         cmds.parent(self.end_locator, self.btm_control)
         
         self._setup_stretchy(self.top_control)
-        
-        
-        
-        
+
         
 class NeckRig(FkCurveRig):
     def _first_increment(self, control, current_transform):
