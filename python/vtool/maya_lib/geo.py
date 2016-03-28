@@ -1277,8 +1277,11 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None):
 def evenly_position_curve_cvs(curve):
         
     cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
+    snap_transforms_to_curve(cvs, curve)
         
-    count = len(cvs)
+def snap_transforms_to_curve(transforms, curve):
+    
+    count = len(transforms)
         
     total_length = cmds.arclen(curve)
     
@@ -1291,10 +1294,19 @@ def evenly_position_curve_cvs(curve):
     temp_curve = cmds.duplicate(curve)[0]
     
     for inc in range(0, count):
+        
         param = get_parameter_from_curve_length(temp_curve, current_length)
         position = get_point_from_curve_parameter(temp_curve, param)
         
-        cmds.xform(cvs[inc], ws = True, t = position)
+        transform = transforms[inc]
+        
+        if cmds.nodeType(transform) == 'joint':
+            
+            cmds.move(position[0], position[1], position[2], '%s.scalePivot' % transform, 
+                                                            '%s.rotatePivot' % transform, a = True)            
+        
+        if not cmds.nodeType(transform) == 'joint':
+            cmds.xform(transform, ws = True, t = position)
         
         current_length += part_length  
     

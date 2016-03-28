@@ -3855,23 +3855,59 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
     
     def __init__(self, description, side):
         
-        self.span_count = 2
+        self.tweak_control_count = 2
         
         super(SpineRig, self).__init__(description, side)
+        
+        self.control_count = 2
+        self.forward_fk = True
+        self.btm_pivot = None
+        self.top_pivot = None
+        self.fk_pivots = []
+        
+        self.top_hold_locator = None
+        self.btm_hold_locator = None
+
+    def _attach_joints(self, source_chain, target_chain):
+        
+        if not self.attach_joints:
+            return
+        
+        self.top_hold_locator = cmds.spaceLocator(n = self._get_name('locator', 'holdTop'))[0]
+        self.btm_hold_locator = cmds.spaceLocator(n = self._get_name('locator', 'holdBtm'))[0]
+        
+        space.MatchSpace(source_chain[0], self.btm_hold_locator).translation_rotation()
+        space.MatchSpace(source_chain[-1], self.top_hold_locator).translation_rotation()
+        
+        temp_source = list(source_chain)
+        temp_source[-1] = self.top_hold_locator
+        temp_source[0] = self.btm_hold_locator
+        
+        space.AttachJoints(temp_source, target_chain).create()
+        
+        if cmds.objExists('%s.switch' % target_chain[0]):
+            switch = rigs_util.RigSwitch(target_chain[0])
             
+            weight_count = switch.get_weight_count()
+            
+            if weight_count > 0:
+                if self.auto_control_visibility:
+                    switch.add_groups_to_index((weight_count-1), self.control_group)
+                switch.create()
+
     def _create_curve(self, span_count):
         
         if not self.curve:
             
             name = self._get_name()
             
-            self.orig_curve = geo.transforms_to_curve(self.joints, self.span_count, name)
+            self.orig_curve = geo.transforms_to_curve(self.joints, span_count, name)
             cmds.setAttr('%s.inheritsTransform' % self.orig_curve, 0)
         
             self.curve = cmds.duplicate(self.orig_curve)[0]
         
             degree = 3
-            if self.span_count == 1:
+            if span_count == 1:
                 degree = 2
         
             cmds.rebuildCurve(self.curve, 
@@ -3943,6 +3979,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         xform = space.create_xform_group(control)
         space.MatchSpace(self.joints[0], xform).translation()
         
+        if self.btm_pivot:
+            self._set_pivot_vector(xform, self.btm_pivot)
+        
         self.btm_control = control
         
     def _create_top_control(self):
@@ -3951,18 +3990,19 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         control = control.control
         
         xform = space.create_xform_group(control)
+        
         space.MatchSpace(self.joints[-1], xform).translation()
+        
+        if self.top_pivot:
+            self._set_pivot_vector(xform, self.top_pivot)
         
         self.top_control = control
         
-    def _create_sub_controls(self):
+    def _create_tweak_controls(self):
         
         follow = 0
         
         sub_follow = 1.0/(len(self.clusters) - 1)
-        
-        #follow = sub_follow
-        
         
         for cluster in self.clusters:
             
@@ -3979,37 +4019,159 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             
             follow += sub_follow
             
-    def _create_mid_controls(self):
+    def _create_fk_controls(self):
         
-        last_control = None
+        if not self.control_count:
+            return
         
-        for cluster in self.clusters[1:-1]:
+        xforms = []
+        controls = []
+        
+        for inc in range(0, self.control_count):
             
             control = self._create_control(description = 'mid')
-            
             control = control.control
             
             xform = space.create_xform_group(control)
-            space.MatchSpace(cluster, xform).translation_to_rotate_pivot()
+            
+            xforms.append(xform)
+            controls.append(control)
+            
+        self._snap_transforms_to_curve(xforms, self.curve)
+        
+        pivot_count = len(self.fk_pivots)
+        xform_count = len(xforms)
+        
+        for inc in range(0, pivot_count):
+            
+            if inc > xform_count - 1:
+                break
+            
+            transform = xforms[inc]
+            
+            self._set_pivot_vector(transform, self.fk_pivots[inc])
+
+        if self.forward_fk == False:
+            xforms.reverse()
+            controls.reverse()
+        
+        last_control = None
+        
+        
+        for inc in range(0, len(controls)):
+            
+            xform = xforms[inc]
+            control = controls[inc]
             
             if last_control:
                 cmds.parent(xform, last_control)
             
             last_control = control
-            
-        top_xform = space.get_xform_group(self.top_control)
         
+        if self.forward_fk == True:
+            top_xform = space.get_xform_group(self.top_control)
+        if self.forward_fk == False:
+            top_xform = space.get_xform_group(self.btm_control)
+            
         cmds.parent(top_xform, last_control)
-                        
+        
+        if self.control_count == 1:
+            
+            if self.forward_fk == False:
+                value1 = 0
+                value2 = 1
+            if self.forward_fk == True:
+                value1 = 1
+                value2 = 0
+            
+            space.create_multi_follow([self.control_group, controls[-1]], space.get_xform_group(self.top_control), self.top_control, value = value1 )
+            space.create_multi_follow([self.control_group, controls[0]], space.get_xform_group(self.btm_control), self.btm_control, value = value2 )
+        
+    def _snap_transforms_to_curve(self, transforms, curve):
+        
+        count = len(transforms) + 2
+            
+        total_length = cmds.arclen(curve)
+        
+        part_length = total_length/(count-1)
+        
+        if count-1 == 0:
+            part_length = 0
+            
+        current_length = part_length
+        
+        temp_curve = cmds.duplicate(curve)[0]
+        
+        for inc in range(0, count-2):
+            
+            param = geo.get_parameter_from_curve_length(temp_curve, current_length)
+            position = geo.get_point_from_curve_parameter(temp_curve, param)
+            
+            transform = transforms[inc]
+            
+            if cmds.nodeType(transform) == 'joint':
+                
+                cmds.move(position[0], position[1], position[2], '%s.scalePivot' % transform, 
+                                                                '%s.rotatePivot' % transform, a = True)            
+            
+            if not cmds.nodeType(transform) == 'joint':
+                cmds.xform(transform, ws = True, t = position)
+            
+            current_length += part_length  
+        
+        cmds.delete(temp_curve)
+        
+    def _set_pivot_vector(self, transform, value):
+        list_value = vtool.util.convert_to_sequence(value)
+        
+        if len(list_value) == 3:
+            vector_value = list_value
+            cmds.xform(transform, os = True, t = vector_value, r = True)
     
-    def set_control_count(self, control_count):
+        if len(list_value) == 1:
+            if cmds.nodeType(list_value[0]) == 'transform' or cmds.nodeType(list_value[0]) == 'joint':
+                vector_value = cmds.xform(list_value[0], q = True, t = True, ws = True)
+                cmds.xform(transform, ws = True, t = vector_value)
+    
+    def set_fk_control_count(self, control_count):
+        """
+        Set the number of fk controls.
+        """
+        if control_count < 0:
+            control_count = 0
+        
+        self.control_count = control_count
+    
+    def set_tweak_control_count(self, control_count):
+        """
+        Set the number of sub controls
+        """
+        
         if control_count < 1:
             control_count = 1
-        self.span_count = control_count
+            
+        self.tweak_control_count = control_count
+    
+    def set_forward_fk(self, bool_value):
+        self.forward_fk = bool_value
+        
+    def set_bottom_pivot(self, value):
+
+        self.btm_pivot = value
+    
+    def set_top_pivot(self, value):
+        
+        self.top_pivot = value        
+        
+    def set_fk_pivots(self, values):
+        
+        list_values = vtool.util.convert_to_sequence(values)
+            
+        self.fk_pivots = list_values
     
     def create(self):
         super(SpineRig, self).create()
-        self._create_geo(self.span_count)
+        self._create_geo(self.tweak_control_count)
         
         if self.ribbon:
             geo = self.surface
@@ -4023,16 +4185,28 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self._create_btm_control()
         self._create_top_control()
         
-        self._create_sub_controls()
-        self._create_mid_controls()
+        self._create_tweak_controls()
+        self._create_fk_controls()
         
-        
-        cmds.parent(self.start_locator, self.top_control)
-        cmds.parent(self.end_locator, self.btm_control)
+        cmds.parent(self.end_locator, self.top_control)
+        cmds.parent(self.start_locator, self.btm_control)
         
         self._setup_stretchy(self.top_control)
-
         
+        if self.top_hold_locator:
+            cmds.parent(self.top_hold_locator, self.top_control)
+            
+            if self.stretch_on_off:
+                space.create_multi_follow([self.buffer_joints[-1], self.top_control], self.top_hold_locator)
+                cmds.connectAttr('%s.stretchOnOff' % self.top_control, '%s.follow' % self.top_hold_locator)
+            
+        if self.btm_hold_locator:
+            cmds.parent(self.btm_hold_locator, self.btm_control)
+            
+            if self.stretch_on_off:
+                space.create_multi_follow([self.buffer_joints[0], self.btm_control], self.btm_hold_locator)
+                cmds.connectAttr('%s.stretchOnOff' % self.top_control, '%s.follow' % self.btm_hold_locator)
+            
 class NeckRig(FkCurveRig):
     def _first_increment(self, control, current_transform):
         self.first_control = control
