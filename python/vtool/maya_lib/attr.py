@@ -1719,6 +1719,23 @@ class MultiplyDivideNode(MayaNode):
         connect_plus('%s.outputZ' % self.node, attribute)
 
 
+def get_message_attributes(node, user_defined = True):
+    
+    attrs = cmds.listAttr(node, ud = user_defined)
+    
+    found = []
+    
+    if attrs:
+    
+        for attr in attrs:
+            
+            attr_path = '%s.%s' % (node, attr)
+            
+            if cmds.getAttr(attr_path, type = True) == 'message':
+                found.append(attr)
+            
+    return found
+            
 def is_attribute(node_dot_attribute):
     """
     Check if what is passed is an attribute.
@@ -1921,6 +1938,9 @@ def get_message_input(node, message):
     return input_value
 
 def transfer_variables():
+    """
+    Not done
+    """
     pass
 
 def transfer_output_connections(source_node, target_node):

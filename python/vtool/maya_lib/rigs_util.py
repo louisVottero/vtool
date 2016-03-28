@@ -354,9 +354,22 @@ class Control(object):
             
             name (str): The new name.
         """
-        new_name = cmds.rename(self.control, core.inc_name(new_name))
+        
+        new_name = core.inc_name(new_name)
+        
+        rename_message_groups(self.control, new_name)
+        
+        new_name = cmds.rename(self.control, new_name)
+        
+        constraints = cmds.listRelatives( new_name, type = 'constraint')
+        
+        if constraints:
+            for constraint in constraints:
+                new_constraint = constraint.replace(self.control, new_name)
+                cmds.rename(constraint, new_constraint)
+        
         self.control = new_name
-
+        
     def delete_shapes(self):
         """
         Delete the shapes beneath the control.
@@ -1307,8 +1320,36 @@ class RigSwitch(object):
             for group in groups:
                 attr.connect_equal_condition(attribute_name, '%s.visibility' % group, key) 
 
+def rename_message_groups(search_name, replace_name):
+    
+    message_attrs = attr.get_message_attributes(search_name)
+    
+    if message_attrs:
+    
+        for attr_name in message_attrs:
 
+            attr_node = '%s.%s' % (search_name, attr_name)
+            
+            if attr_name.startswith('group'):
+                
+                node = attr.get_attribute_input(attr_node, True)
+                
+                if node.find(search_name) > -1:
+                    new_node = node.replace(search_name, replace_name)
+                    
+                    rename_message_groups(node, new_node)
 
+                    constraints = cmds.listRelatives( node, type = 'constraint')
+                    
+                    if constraints:
+                        
+                        for constraint in constraints:
+                            new_constraint = constraint.replace(node, new_node)
+                            
+                            cmds.rename(constraint, new_constraint)
+                    
+                    cmds.rename(node, new_node) 
+                    
 def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
     """
     Create a stretch effect on a transform by changing the scale when the distance changes between xform1 and xform2.
