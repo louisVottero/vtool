@@ -4101,9 +4101,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             if cluster != self.clusters[0] and cluster != self.clusters[-1]:
                 space.create_multi_follow([self.btm_control, self.top_control], xform, control, attribute_name = 'follow', value = follow)
                 
-            if cluster == self.cluster[0]:
+            if cluster == self.clusters[0]:
                 cmds.parent(xform, self.btm_control)
-            if cluster == self.cluster[1]:
+            if cluster == self.clusters[1]:
                 cmds.parent(xform, self.top_control)
                 
             
