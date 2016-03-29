@@ -1320,6 +1320,10 @@ class RigSwitch(object):
             for group in groups:
                 attr.connect_equal_condition(attribute_name, '%s.visibility' % group, key) 
 
+def rename_control(old_name, new_name):
+    
+    Control(old_name).rename(new_name)
+
 def rename_message_groups(search_name, replace_name):
     
     message_attrs = attr.get_message_attributes(search_name)

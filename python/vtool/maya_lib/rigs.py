@@ -36,8 +36,8 @@ class Rig(object):
         self.description = description
         self.side = side
         
-        self.control_parent = 'controls'
-        self.setup_parent = 'setup'
+        self.control_parent = None
+        self.setup_parent = None
         
         self._create_default_groups()
         
@@ -53,7 +53,14 @@ class Rig(object):
         self.controls = []
         self.sub_controls = []
         self.control_dict = {}
-    
+        
+    def __del__(self):
+        
+        if cmds.objExists(self.setup_group):
+        
+            if core.is_empty(self.setup_group):
+                cmds.delete(self.setup_group)
+
     def _create_group(self,  prefix = None, description = None):
         
         rig_group_name = self._get_name(prefix, description)
@@ -78,19 +85,16 @@ class Rig(object):
                 
     def _parent_custom_default_group(self, group, custom_parent):
         
+        if not group or not custom_parent:
+            return
+        
         if not cmds.objExists(group) or not cmds.objExists(custom_parent):
             return
-            
-        parent = cmds.listRelatives(group, p = True)
         
-        if parent:
-            parent = parent[0]
-            
-        if not parent:
-            return
-            
-        if parent != custom_parent:
+        try:    
             cmds.parent(group, custom_parent)
+        except:
+            pass
         
     def _create_setup_group(self, description):
         
@@ -233,7 +237,6 @@ class Rig(object):
         Not tested.
         Sets the parent of the control group for this rig.
         """
-        
         
         self.control_parent = parent_transform
         
@@ -1057,8 +1060,6 @@ class FkRig(BufferRig):
             control = self.control_dict[control]['subs'][-1]
         
         cmds.parentConstraint(control, target_transform, mo = True)
-        
-
         
     def _convert_to_joints(self):
         for inc in range(0, len(self.controls)):
@@ -3853,11 +3854,12 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
     
     def __init__(self, description, side):
         
-        self.tweak_control_count = 2
+        
         
         super(SpineRig, self).__init__(description, side)
         
-        self.control_count = 2
+        self.tweak_control_count = 2
+        self.control_count = 1
         self.forward_fk = True
         self.btm_pivot = None
         self.top_pivot = None
@@ -3878,6 +3880,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self.tweak_curve_type = None
 
         self.orient_controls_to_joints = False
+        
+        self.create_buffer_joints = True
+        self.stretch_on_off = True
 
 
     def _attach_joints(self, source_chain, target_chain):
@@ -3895,6 +3900,8 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         if parent:
             cmds.parent(target_chain[-1], parent)
+            space.create_xform_group(target_chain[-1])
+            space.create_xform_group(target_chain[-1], 'buffer')
         
         temp_source = list(source_chain)
         temp_source[-1] = self.top_hold_locator
@@ -3995,6 +4002,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
     
     def _orient_to_closest_joint(self, xform):
         
+        if not self.orient_controls_to_joints:
+            return
+        
         orient_joint = space.get_closest_transform(xform, self.buffer_joints)
         space.MatchSpace(orient_joint, xform).rotation()
     
@@ -4081,8 +4091,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             
             self._orient_to_closest_joint(xform)
             
-            cmds.parent(cluster, control)
-            cmds.hide(cluster)
+            cmds.parentConstraint(control, cluster)
                         
             if follow > 1:
                 follow = 1
@@ -4263,7 +4272,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self.btm_pivot = value
     
     def set_bottom_control_shape(self, curve_type):
-        self.bottom_curve_type = curve_type
+        self.btm_curve_type = curve_type
         
     def set_bottom_control_color(self, color_value):
         self.bottom_color = color_value
@@ -4310,8 +4319,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
     def create(self):
         super(SpineRig, self).create()
         
-        print 'tweak count', self.tweak_control_count
-        
         self._create_geo(self.tweak_control_count)
         
         if self.ribbon:
@@ -4331,10 +4338,13 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         self._create_mid_follow()
         
-        cmds.parent(self.end_locator, self.top_control)
-        cmds.parent(self.start_locator, self.btm_control)
+        cmds.parent(self.end_locator, self.tweak_controls[-1])
+        cmds.parent(self.start_locator, self.tweak_controls[0])
         
         self._setup_stretchy(self.top_control)
+        
+        if self.stretch_on_off:
+            cmds.setAttr('%s.stretchOnOff' % self.top_control, 1)
         
         if self.top_hold_locator:
             cmds.parent(self.top_hold_locator, self.top_control)

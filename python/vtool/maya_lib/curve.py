@@ -159,8 +159,13 @@ def set_nurbs_data_mel(curve, mel_curve_data):
     
     for inc in range(0, data_count):
         
+        attribute = '%s.cc' % shapes[inc]
+        
+        if not cmds.objExists(attribute):
+            continue
+        
         if inc < data_count:
-            mel.eval('setAttr "%s.cc" -type "nurbsCurve" %s' % (shapes[inc], mel_curve_data[inc]))
+            mel.eval('setAttr "%s" -type "nurbsCurve" %s' % (attribute, mel_curve_data[inc]))
         if inc > data_count:
             break
     

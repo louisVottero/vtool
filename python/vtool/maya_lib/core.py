@@ -360,6 +360,26 @@ def is_referenced(node):
     
     return is_node_referenced
 
+def is_empty(node):
+
+    if is_transform(node):
+        relatives = cmds.listRelatives(node)
+        
+        if relatives:
+            return False
+    
+    connections = cmds.listConnections(node)
+    
+    if connections:
+        return False
+    
+    attrs = cmds.listAttr(node, ud = True)
+    
+    if attrs:
+        return False
+    
+    return True
+
 def inc_name(name):
     """
     Finds a unique name by adding a number to the end.
@@ -741,6 +761,23 @@ def get_components_from_shapes(shapes = None):
                 components.append( found_components )
             
     return components
+
+def create_group(name, parent = None):
+    print 'group', name, parent
+    if not name:
+        return
+    
+    sequence = vtool.util.convert_to_sequence(name)
+    
+    for sub_name in sequence:
+    
+        if not cmds.objExists(sub_name):
+            print 'creating group', sub_name
+            sub_name = cmds.group(em = True, n = sub_name)
+            
+        if parent and cmds.objExists(parent):
+            print 'parenting under', parent
+            cmds.parent(sub_name, parent)
 
 def create_display_layer(name, nodes):
     """
