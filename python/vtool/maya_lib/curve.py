@@ -150,24 +150,17 @@ def set_nurbs_data_mel(curve, mel_curve_data):
     
     data_count = len(mel_curve_data)
     
-    history = cmds.listHistory(curve)
-    
     create_input = get_attribute_input('%s.create' % curve)
     
     if create_input:
         vtool.util.warning('%s has history.  Importing cv data may fail to change the shape.' % curve)
     
     for inc in range(0, data_count):
-        
+            
         attribute = '%s.cc' % shapes[inc]
-        
-        if not cmds.objExists(attribute):
-            continue
         
         if inc < data_count:
             mel.eval('setAttr "%s" -type "nurbsCurve" %s' % (attribute, mel_curve_data[inc]))
-        if inc > data_count:
-            break
     
 class CurveDataInfo():
     
@@ -571,9 +564,9 @@ class CurveDataInfo():
 def get_shapes(transform):
     if is_a_shape(transform):
         parent = cmds.listRelatives(transform, p = True, f = True)
-        return cmds.listRelatives(parent, s = True, f = True)
+        return cmds.listRelatives(parent, s = True, f = True, ni = True)
     
-    return cmds.listRelatives(transform, s = True, f = True)  
+    return cmds.listRelatives(transform, s = True, f = True, ni = True)  
 
 def is_a_shape(node):
     if cmds.objectType(node, isAType = 'shape'):
