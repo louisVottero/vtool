@@ -1816,6 +1816,7 @@ class PoseBase(PoseGroup):
         Args
             mesh (str): The name of a mesh affected by the pose. Its corresponding sculpt mesh will have its visibility turned on.
         """
+        
         if not mesh:
             return
         
@@ -1848,11 +1849,12 @@ class PoseBase(PoseGroup):
         target_mesh = self.get_target_mesh(mesh)
         
         if target_mesh and mesh:
-            if cmds.getAttr('%s.lodVisibility' % target_mesh) == 1:
-                if cmds.getAttr('%s.lodVisibility' % mesh) == 1:
-                    self._set_visibility(target_mesh, 0)
-            
-                    return    
+            if cmds.objExists(target_mesh):
+                if cmds.getAttr('%s.lodVisibility' % target_mesh) == 1:
+                    if cmds.getAttr('%s.lodVisibility' % mesh) == 1:
+                        self._set_visibility(target_mesh, 0)
+                
+                        return    
             
         if mesh:
             if cmds.getAttr('%s.lodVisibility' % mesh) == 1:
