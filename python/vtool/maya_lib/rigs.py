@@ -4103,7 +4103,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
                 
             if cluster == self.clusters[0]:
                 cmds.parent(xform, self.btm_control)
-            if cluster == self.clusters[1]:
+            if cluster == self.clusters[-1]:
                 cmds.parent(xform, self.top_control)
                 
             

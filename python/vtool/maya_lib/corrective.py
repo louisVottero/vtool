@@ -1162,6 +1162,9 @@ class PoseBase(PoseGroup):
         if not other_mesh:
             return None, None
         
+        if not cmds.objExists(other_mesh):
+            return None, None
+        
         other_mesh_duplicate = cmds.duplicate(other_mesh, n = 'duplicate_corrective_temp_%s' % split_name[-1])[0]
         
         other_target_mesh = self._replace_side(split_name[-1], self.left_right)
@@ -1170,32 +1173,24 @@ class PoseBase(PoseGroup):
             if other_target_mesh:    
                 vtool.util.warning('Could not find %s to mirror to!\nUsing %s as other mesh, which may cause errors!' % (other_target_mesh, target_mesh) )
             other_target_mesh = target_mesh
-            
-        skin = deform.find_deformer_by_type(target_mesh, 'skinCluster')
-        blendshape_node = deform.find_deformer_by_type(target_mesh, 'blendShape')
         
-        if skin:
-            cmds.setAttr('%s.envelope' % skin, 0)
-        if blendshape_node:
-            cmds.setAttr('%s.envelope' % blendshape_node, 0)
-            
+        deform.set_envelopes(target_mesh, 0)
+        deform.set_envelopes(other_target_mesh, 0)
+        
         other_target_name = core.get_basename(other_target_mesh)
             
         other_target_mesh_duplicate = cmds.duplicate(other_target_mesh, n = other_target_name)[0]
         home = cmds.duplicate(target_mesh, n = 'home')[0]
         
-        if skin:
-            cmds.setAttr('%s.envelope' % skin, 1)
-        if blendshape_node:
-            cmds.setAttr('%s.envelope' % blendshape_node, 1)
-            
+        deform.set_envelopes(target_mesh, 1)
+        deform.set_envelopes(other_target_mesh, 1)
+        
         mirror_group = cmds.group(em = True, n = core.inc_name('corretive_mirror_group'))
         
         attr.unlock_attributes(home)
         attr.unlock_attributes(other_mesh_duplicate)
         
         cmds.parent(home, mirror_group)
-            
         cmds.parent(other_mesh_duplicate, mirror_group)
         
         #may need to do z or y axis eventually
@@ -1656,11 +1651,11 @@ class PoseBase(PoseGroup):
         
         inc = 0
         
-        target_mesh = cmds.ls(target_mesh, l = True)
+        long_target_mesh = cmds.ls(target_mesh, l = True)
         
-        if target_mesh: 
-            target_mesh = target_mesh[0]
-                
+        if long_target_mesh: 
+            target_mesh = long_target_mesh[0]
+        
         for target_mesh_test in target_meshes:
             
             if target_mesh == target_mesh_test:
@@ -1687,8 +1682,7 @@ class PoseBase(PoseGroup):
             if stored_mesh == mesh:
                 return inc
             
-            if stored_mesh:
-                inc += 1
+            inc += 1
         
     @core.undo_chunk
     def reset_target_meshes(self):
@@ -1809,9 +1803,10 @@ class PoseBase(PoseGroup):
         if target_mesh and cmds.objExists(target_mesh):
             self._set_visibility(target_mesh, 1)
             
-        if not view_only:
+        if not view_only and cmds.objExists(target_mesh):
             
             index = self.get_mesh_index(mesh)
+            
             self.create_blend(index)
         
     def visibility_on(self, mesh):
@@ -2040,6 +2035,9 @@ class PoseBase(PoseGroup):
         
         target_mesh = self.get_target_mesh(mesh)
         
+        if not cmds.objExists(target_mesh):
+            return
+        
         blendshape_node = self._get_blendshape(target_mesh)
         
         if blendshape_node:
@@ -2127,6 +2125,9 @@ class PoseBase(PoseGroup):
             return
         
         target_mesh = self.get_target_mesh(mesh)
+        
+        if not target_mesh or not cmds.objExists(target_mesh):
+            return
         
         blendshape_node = self._get_blendshape(target_mesh)
         
@@ -3037,6 +3038,9 @@ class PoseCone(PoseBase):
             
             other_target_mesh, other_target_mesh_duplicate = self._create_mirror_mesh(target_mesh)
             
+            if not other_target_mesh:
+                continue
+            
             index = other_pose_instance.get_target_mesh_index(other_target_mesh)
             
             if index == None:
@@ -3066,6 +3070,9 @@ class PoseCone(PoseBase):
             
             input_mesh = other_pose_instance.get_mesh(index)
             
+            if not input_mesh:
+                continue
+            
             fix_mesh = input_meshes[mesh]
             
             input_mesh_name = core.get_basename(input_mesh)
@@ -3078,7 +3085,6 @@ class PoseCone(PoseBase):
             cmds.setAttr('%s.inheritsTransform' % input_mesh, 1)
             
             cmds.delete(input_mesh, ch = True)
-            
             cmds.delete(fix_mesh)
             inc += 1
         
