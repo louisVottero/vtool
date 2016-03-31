@@ -1293,7 +1293,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def _run_item(self, item, process_tool):
         
+        self.scrollToItem(item)
+        
         item.set_state(2)
+        
+        item.setExpanded(True)
         
         name = self._get_item_path_name(item)
         
@@ -1307,8 +1311,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             item.set_state(0)
             
             vtool.util.show(status) 
-         
-        self.scrollToItem(item) 
         
     def refresh(self, sync = False):
         
@@ -1332,16 +1334,13 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         item = self._get_item_by_name(script_name)
 
+        if state > -1:
+            self.scrollToItem(item)
+
         if not item:
             return
         
         item.set_state(state)
-        
-        item.setExpanded(True)
-        
-        if state > -1:
-            self.scrollToItem(item)
-        
         
     def create_python_code(self):
         
@@ -1481,7 +1480,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                     if name == last_name:
                         set_end_states = True
 
-        
     def remove_current_item(self):
         
         items = self.selectedItems()
@@ -1523,7 +1521,7 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         
         super(ManifestItem, self).__init__()
         
-        self.setSizeHint(0, QtCore.QSize(10, 30))
+        self.setSizeHint(0, QtCore.QSize(10, 28))
         
         #if vtool.util.is_in_maya():
         #    brush = QtGui.QBrush(QtGui.QColor(100,100,100))

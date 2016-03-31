@@ -49,18 +49,24 @@ class Rig(object):
         
         self.control_size = 1
         self.sub_control_size = 0.8
+        self.control_offset_axis = None
         
         self.controls = []
         self.sub_controls = []
         self.control_dict = {}
         
+    """    
     def __del__(self):
         
         if cmds.objExists(self.setup_group):
         
             if core.is_empty(self.setup_group):
-                cmds.delete(self.setup_group)
-
+                parent = cmds.listRelatives(self.setup_group, p = True)
+                
+                if not parent:
+                    cmds.delete(self.setup_group)
+    """
+    
     def _create_group(self,  prefix = None, description = None):
         
         rig_group_name = self._get_name(prefix, description)
@@ -142,9 +148,12 @@ class Rig(object):
         
         return control_name
         
-    def _create_control(self, description = None, sub = False):
+    def _create_control(self, description = None, sub = False, curve_type = None):
         
         control = rigs_util.Control( self._get_control_name(description, sub) )
+        
+        if curve_type:
+            control.set_curve_type(curve_type)
         
         control.color( attr.get_color_of_side( self.side , sub)  )
         
@@ -157,7 +166,7 @@ class Rig(object):
             
         control.hide_visibility_attribute()
         
-        if self.control_shape:
+        if self.control_shape and not curve_type:
             
             control.set_curve_type(self.control_shape)
             
@@ -172,9 +181,11 @@ class Rig(object):
                                 self.control_size)
         if sub:
             
-            control.scale_shape(self.sub_control_size, 
-                                self.sub_control_size, 
-                                self.sub_control_size)
+            size = self.control_size * self.sub_control_size
+            
+            control.scale_shape(size, 
+                                size, 
+                                size)
         
         if not sub:
             self.controls.append(control.get())
@@ -182,6 +193,17 @@ class Rig(object):
         if sub:
             self.sub_controls.append(control.get())
         
+        print self.control_offset_axis
+        
+        if self.control_offset_axis:
+            if self.control_offset_axis == 'x':
+                control.rotate_shape(90, 0, 0)
+                
+            if self.control_offset_axis == 'y':
+                control.rotate_shape(0, 90, 0)
+                
+            if self.control_offset_axis == 'z':
+                control.rotate_shape(0, 0, 90)
         
         self.control_dict[control.get()] = {}
         
@@ -282,12 +304,29 @@ class Rig(object):
         
         return entries
         
+    def set_control_offset_axis(self, axis_letter):
+        self.control_offset_axis = axis_letter.lower()
+        
     def create(self):
         """
         Create the rig.  Set commands must be set before running this.
         """
         
         self._parent_default_groups()
+        
+    def delete_setup(self):
+
+        if cmds.objExists(self.setup_group):
+        
+            if core.is_empty(self.setup_group):
+                parent = cmds.listRelatives(self.setup_group, p = True)
+                
+                if not parent:
+                    cmds.delete(self.setup_group)
+                    return
+                
+        vtool.util.warning('Could not delete setup group. rig: %s %s of class %s' % (self.description, self.side, self.__class__.__name__ ))
+        
         
 class JointRig(Rig):
     """
@@ -866,6 +905,7 @@ class FkRig(BufferRig):
         
         self.current_xform_group = ''
         self.control_size = 3
+        self.sub_control_size = .8
         
         self.transform_list = []
         self.drivers = []
@@ -910,22 +950,29 @@ class FkRig(BufferRig):
             
             subs = []
             
+            #size = self.control_size * self.sub_control_size
+            
             for inc in range(0,2):
 
                 if inc == 0:
-                    sub_control = super(FkRig, self)._create_control(sub =  True)
-                    sub_control.set_curve_type(self.control_shape)
-                    if self.sub_control_shape:
-                        sub_control.set_curve_type(self.sub_control_shape)    
-                    sub_control.scale_shape(2,2,2)
+                    sub_control = super(FkRig, self)._create_control(sub =  True, curve_type = self.sub_control_shape)
+                    #sub_control.set_curve_type(self.control_shape)
+                    
+                    #if self.sub_control_shape:
+                    #    sub_control.set_curve_type(self.sub_control_shape)
+                        
+                    #sub_control.scale_shape(size,size,size)
+                    
                 if inc == 1:
                     if not self.nice_sub_naming:
-                        sub_control = super(FkRig, self)._create_control(description = 'sub', sub =  True)
+                        sub_control = super(FkRig, self)._create_control(description = 'sub', sub =  True, curve_type = self.sub_control_shape)
                     if self.nice_sub_naming:
                         sub_control = super(FkRig, self)._create_control( sub =  True)
-                    sub_control.set_curve_type(self.control_shape)
-                    if self.sub_control_shape:
-                        sub_control.set_curve_type(self.sub_control_shape)
+                        
+                    #sub_control.scale_shape(self.sub_control_size, self.sub_control_size, self.sub_control_size)
+                    #sub_control.set_curve_type(self.control_shape)
+                    #if self.sub_control_shape:
+                    #    sub_control.set_curve_type(self.sub_control_shape)
                 
                 if self.hide_sub_translates:
                     sub_control.hide_translate_attributes()
@@ -2849,6 +2896,7 @@ class IkAppendageRig(BufferRig):
         self.pole_angle_joints = []
         self.top_control_right_side_fix = True
         self.stretch_axis = 'X'
+        self.control_offset_axis = None
         
     
     def _attach_ik_joints(self, source_chain, target_chain):
@@ -2926,15 +2974,8 @@ class IkAppendageRig(BufferRig):
         if not self.top_as_locator:
             control = self._create_control(description = 'top')
             control.hide_scale_and_visibility_attributes()
-        
-            if self.curve_type:
-                control.set_curve_type(self.curve_type)
-            
-                control.scale_shape(2, 2, 2)
-        
+
             self.top_control = control.get()
-            
-            
             
         if self.top_as_locator:
             self.top_control = cmds.spaceLocator(n = 'locator_%s' % self._get_name())[0]
@@ -2958,9 +2999,7 @@ class IkAppendageRig(BufferRig):
         
         control = self._create_control(description = 'btm')
         control.hide_scale_and_visibility_attributes()
-        
-        control.scale_shape(2, 2, 2)
-        
+
         self.btm_control = control.get()
         
         self._fix_right_side_orient( control.get() )
@@ -3150,9 +3189,8 @@ class IkAppendageRig(BufferRig):
         
     def _create_pole_vector(self):
         
-        control = self._create_control('POLE')
+        control = self._create_control('POLE', curve_type = 'cube')
         control.hide_scale_and_visibility_attributes()
-        control.set_curve_type('cube')
         self.poleControl = control.get()
         
         attr.create_title(self.btm_control, 'POLE_VECTOR')
@@ -3350,6 +3388,12 @@ class IkAppendageRig(BufferRig):
         """
         self.pole_follow_transform = transform
         
+    def set_control_offset_axis(self, axis):
+        """
+        This will rotate the control shape cvs 90 on the axis, helping it to align better with different joint orientations.
+        """
+        axis = axis.lower()
+        self.control_offset_axis = axis
     
     def create(self):
         super(IkAppendageRig, self).create()
@@ -3854,8 +3898,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
     
     def __init__(self, description, side):
         
-        
-        
         super(SpineRig, self).__init__(description, side)
         
         self.tweak_control_count = 2
@@ -3864,6 +3906,8 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self.btm_pivot = None
         self.top_pivot = None
         self.fk_pivots = []
+        self.control_size = 1
+        self.sub_control_size = .9
         
         self.top_hold_locator = None
         self.btm_hold_locator = None
@@ -4011,13 +4055,12 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
     
     def _create_btm_control(self):
         
-        control = self._create_control()
+        control = self._create_control(curve_type = self.btm_curve_type)
         control.hide_scale_attributes()
+        control.scale_shape(1.4,1.4,1.4)
         
         if self.btm_color != None:
             control.color(self.btm_color)
-        if self.btm_curve_type:
-            control.set_curve_type(self.btm_curve_type)
         
         control = control.control
         
@@ -4035,13 +4078,12 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
     def _create_top_control(self):
         
-        control = self._create_control()
+        control = self._create_control(curve_type = self.top_curve_type)
         control.hide_scale_attributes()
+        control.scale_shape(1.4,1.4,1.4)
         
         if self.top_color != None:
             control.color(self.top_color)
-        if self.top_curve_type:
-            control.set_curve_type(self.top_curve_type)
         
         control = control.control
         
@@ -4076,13 +4118,12 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         for cluster in self.clusters:
             
-            control = self._create_control(sub = True)
+            control = self._create_control(sub = True, curve_type = self.tweak_curve_type)
             
             control.hide_scale_attributes()
+            
             if self.tweak_color != None:
                 control.color(self.tweak_color)
-            if self.tweak_curve_type:
-                control.set_curve_type(self.tweak_curve_type)
             
             control = control.control
             
@@ -4130,13 +4171,11 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         for inc in range(0, self.control_count):
             
-            control = self._create_control(description = 'mid')
+            control = self._create_control(description = 'mid', curve_type = self.fk_curve_type)
             control.hide_scale_attributes()
             
             if self.fk_color != None:
-                control.color(self.fk_color)
-            if self.fk_curve_type:
-                control.set_curve_type(self.fk_curve_type)            
+                control.color(self.fk_color)          
             
             control = control.control
             
@@ -4174,7 +4213,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         last_control = None
         
-        
         for inc in range(0, len(controls)):
             
             xform = xforms[inc]
@@ -4193,8 +4231,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         cmds.parent(top_xform, last_control)
         
         self.fk_controls = controls
-        
-        
         
     def _create_mid_follow(self):
         
@@ -4379,7 +4415,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
                 
             if not self.stretch_on_off:
                 cmds.parentConstraint(self.tweak_controls[0], self.btm_hold_locator, mo = True)
-            
+        
     def get_tweak_controls(self):
         
         return self.tweak_controls
@@ -4439,9 +4475,8 @@ class IkLegRig(IkAppendageRig):
             
     def _create_pole_vector(self):
         
-        control = self._create_control('POLE')
+        control = self._create_control('POLE', curve_type = 'cube')
         control.hide_scale_and_visibility_attributes()
-        control.set_curve_type('cube')
         self.poleControl = control.get()
         
         attr.create_title(self.btm_control, 'POLE_VECTOR')
@@ -5354,7 +5389,7 @@ class BaseFootRig(BufferRig):
             control = self._create_control(description, sub)
             
             control_object = control
-            control.set_curve_type(self.control_shape)
+            
             if sub:
                 if self.sub_control_shape:
                     control.set_curve_type(self.sub_control_shape)
@@ -5385,8 +5420,7 @@ class BaseFootRig(BufferRig):
     
     def _create_roll_control(self, transform):
         
-        roll_control = self._create_control('roll') 
-        roll_control.set_curve_type('square')
+        roll_control = self._create_control('roll', curve_type = 'square') 
         
         self.roll_control = roll_control
         
@@ -5530,11 +5564,11 @@ class FootRig(BaseFootRig):
         
         if not self.toe_rotate_as_locator:
             
-            control = self._create_control( 'TOE_ROTATE', True)
+            control = self._create_control( 'TOE_ROTATE', True, curve_type = 'circle')
             control.hide_translate_attributes()
             control.hide_scale_attributes()
             control.hide_visibility_attribute()
-            control.set_curve_type('circle')
+            control.rotate_shape(90,0,0)
             xform_group = control.create_xform()
             driver = space.create_xform_group(control.get(), 'driver')
             control = control.get()

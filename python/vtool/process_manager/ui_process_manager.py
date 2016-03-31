@@ -155,7 +155,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.show()
         
     def sizeHint(self):
-        return QtCore.QSize(400,800)
+        return QtCore.QSize(600,800)
         
     def _setup_settings_file(self):
         
@@ -181,7 +181,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #splitter stuff
         self.option_scroll = QtGui.QScrollArea()
         self.option_scroll.setWidgetResizable(True)
-        self.option_scroll.setMinimumWidth(200)
+        self.option_scroll.setMinimumWidth(300)
         self.option_widget = ui_options.ProcessOptionsWidget()
         self.option_scroll.setWidget(self.option_widget)
         
@@ -519,8 +519,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.code_widget.set_process_script_state(scripts[inc], 1)
                 
                 util.show('\tSuccess')
-            
-            
             
         self.process_button.setEnabled(True)
         self.stop_button.hide()

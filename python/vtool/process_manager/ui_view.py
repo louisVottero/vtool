@@ -198,6 +198,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.dragged_item = None
         
+        self.setMinimumWidth(300)
+        
     def dropEvent(self, event):
         
         directory = self.directory

@@ -955,8 +955,6 @@ class Process(object):
         if type(new_value) == list or type(new_value) == tuple or type(new_value) == dict:
             value = new_value
             
-        print 'value!', value
-            
         if type(value) == str or type(value) == unicode:
             if value.find(',') > -1:
                 value = value.split(',')

@@ -763,7 +763,7 @@ def get_components_from_shapes(shapes = None):
     return components
 
 def create_group(name, parent = None):
-    print 'group', name, parent
+    
     if not name:
         return
     
@@ -772,11 +772,11 @@ def create_group(name, parent = None):
     for sub_name in sequence:
     
         if not cmds.objExists(sub_name):
-            print 'creating group', sub_name
+            
             sub_name = cmds.group(em = True, n = sub_name)
             
         if parent and cmds.objExists(parent):
-            print 'parenting under', parent
+            
             cmds.parent(sub_name, parent)
 
 def create_display_layer(name, nodes):

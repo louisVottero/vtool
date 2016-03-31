@@ -168,12 +168,14 @@ def process_manager(directory = None):
     if directory:
         window.set_code_directory(directory)
      
+    
+     
     return window
 
 class MayaWindow(vtool.qt_ui.BasicWindow):
     def __init__(self):
         super(MayaWindow, self).__init__( get_maya_window() )
-        
+                
 class MayaDirectoryWindow(vtool.qt_ui.DirectoryWindow):
     def __init__(self):
         super(MayaDirectoryWindow, self).__init__( get_maya_window() )
