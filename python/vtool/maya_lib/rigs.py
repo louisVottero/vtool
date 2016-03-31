@@ -3906,6 +3906,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         self.create_buffer_joints = True
         self.stretch_on_off = True
+        self.create_single_fk_follows = True
 
 
     def _attach_joints(self, source_chain, target_chain):
@@ -4220,6 +4221,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
     def _create_mid_follow(self):
         
+        if not self.create_single_fk_follows:
+            return
+        
         if self.control_count == 1:
             
             if self.forward_fk == False:
@@ -4339,6 +4343,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
     def set_fk_control_color(self, color_value):
         self.fk_color = color_value
+    
+    def set_fk_single_control_follow(self, bool_value):
+        self.create_single_fk_follows = bool_value
     
     def set_orient_controls_to_joints(self, bool_value):
         
