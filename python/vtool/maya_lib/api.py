@@ -201,8 +201,6 @@ class TransformFunction(MayaFunction):
     
     def get_vector_matrix_product(self, vector):
         
-        
-        
         vector_api = OpenMaya.MVector()
         vector_api.x = vector[0]
         vector_api.y = vector[1]

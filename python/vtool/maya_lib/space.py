@@ -2668,6 +2668,9 @@ def duplicate_joint_section(joint, name = ''):
     
 def get_axis_vector(transform, axis_vector):
     """
+    This currently only works on transforms that have not been frozen.
+    It does not work on joints. 
+    
     Get the vector matrix product.
     If you give it a vector [1,0,0], it will return the transform's x point.
     If you give it a vector [0,1,0], it will return the transform's y point.
