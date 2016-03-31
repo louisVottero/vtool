@@ -1342,6 +1342,8 @@ class FkCurlNoScaleRig(FkRig):
         self.curl_axis = 'Z'
         self.skip_increments = []
         
+        self.title_description = None
+        
         
     def _create_control(self, sub = False):
         
@@ -1354,8 +1356,12 @@ class FkCurlNoScaleRig(FkRig):
         if not self.attribute_control:
             self.attribute_control = control.get()
             
-        if not cmds.objExists('%s.CURL' % self.attribute_control):
-            title = attr.MayaEnumVariable('CURL')
+        title = 'CURL'
+        if self.title_description:
+            title = 'CURL_%s' % self.title_description
+            
+        if not cmds.objExists('%s.%s' % (self.attribute_control, title)):
+            title = attr.MayaEnumVariable(title)
             title.create(self.attribute_control)
         
         driver = space.create_xform_group(control.get(), 'driver2')
@@ -1416,6 +1422,15 @@ class FkCurlNoScaleRig(FkRig):
         """
         self.curl_axis = axis_letter.capitalize()
     
+    def set_curl_description(self, description):
+        """
+        The attribute name for the curl slider.
+        
+        Args
+            attribute_name (str): The name of the curl slider attribute.
+        """
+        self.curl_description = description
+    
     def set_attribute_control(self, control_name):
         """
         Set the control that the curl slider should live on.
@@ -1434,6 +1449,10 @@ class FkCurlNoScaleRig(FkRig):
         """
         
         self.attribute_name = attribute_name
+        
+    def set_title_description(self, description):
+        
+        self.title_description = description
         
     def set_skip_increments(self, increments):
         """
@@ -1912,20 +1931,24 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         self.create_btm_follow = False
         self.closest_y = False
         self.stretch_axis = 'X'
+        self.sub_control_size = 1
     
     def _create_sub_control(self):
             
         sub_control = rigs_util.Control( self._get_control_name(sub = True) )
         sub_control.color( attr.get_color_of_side( self.side , True)  )
         
+        if self.sub_control_color:
+            sub_control.color( self.sub_control_color )    
+        
         if self.control_shape:
             
             sub_control.set_curve_type(self.control_shape)
         
-        sub_control.scale_shape(self.control_size * .9, 
-                                self.control_size * .9,
-                                self.control_size * .9)
-        
+        sub_control.scale_shape(self.control_size * .9 * self.sub_control_size, 
+                                self.control_size * .9 * self.sub_control_size,
+                                self.control_size * .9 * self.sub_control_size)
+    
         return sub_control
 
     def _first_increment(self, control, current_transform):

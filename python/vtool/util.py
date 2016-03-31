@@ -258,7 +258,8 @@ class Vector(object):
         
         x_test = x
                 
-        if type(x_test) == list or type(x_test) == type(tuple):
+        if type(x_test) == list or type(x_test) == tuple:
+            
             self.x = x[0]
             self.y = x[1]
             self.z = x[2]
@@ -283,7 +284,7 @@ class Vector(object):
             return Vector(self.x - value, self.y - value, self.z - value)
         
         if type(self) == type(value):
-            return Vector(self.x-value.x, self.y-value.y, self.z-value.z)
+            return Vector(self.x - value.x, self.y - value.y, self.z - value.z)
         
         if type(value) == list:
             return Vector(self.x - value[0],self.y - value[1],self.z - value[2])
@@ -331,6 +332,9 @@ class Vector(object):
     
     def get_vector(self):
         return [self.x,self.y,self.z]
+    
+    def list(self):
+        return self.get_vector()
     
 class BoundingBox(object):
     """

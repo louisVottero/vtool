@@ -1272,7 +1272,19 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None):
     #    space.create_spline_ik_stretch(curve, new_joint, curve, create_stretch_on_off = False)    
     #    return new_joint, ik_handle
     
-
+def rebuild_curve(curve, spans):
+    
+    cmds.rebuildCurve( curve, ch = False,
+                       rpo = 1,
+                       rt = 0,
+                       end = 1,
+                       kr = 0, 
+                       kcp = 0,
+                       kep = 1, 
+                       kt = 0,
+                       s = spans,
+                       d = 3,
+                       tol = 0.01)
     
 def evenly_position_curve_cvs(curve):
         
