@@ -8,6 +8,7 @@ import string
 from vtool import util
 from vtool import util_file
 from vtool import data
+import __builtin__
 
 if util.is_in_maya():
     import maya.cmds as cmds
@@ -1311,6 +1312,19 @@ class Process(object):
         Return
             (str): The status from running the script. This includes error messages.
         """
+
+        builtins = dir(__builtin__)
+        
+        old_process = None
+        old_cmds = None
+        old_show = None
+        
+        if 'process' in builtins:
+            old_process = builtins.process
+        if 'cmds' in builtins:
+            old_cmds = builtins.cmds
+        if 'show' in builtins:
+            old_show = builtins.show
         
         if util.is_in_maya():
             
@@ -1346,6 +1360,15 @@ class Process(object):
             
             util_file.delete_pyc(script)
             
+            __builtin__.process = self
+            
+            if util.is_in_maya():
+                
+                import maya.cmds as cmds
+                
+                __builtin__.cmds = cmds
+                __builtin__.show = util.show
+                
             module = util_file.source_python_module(script)     
             
             if type(module) == str:
@@ -1367,20 +1390,12 @@ class Process(object):
             
         try:
             
-            if util.is_in_maya():
-                
-                import maya.cmds as cmds
-                
-                module.cmds = cmds
-                module.show = util.show
-            
             if hasattr(module, 'main'):
                 
                 module.main()
                 
                 status = 'Success'
-
-                
+    
             if not hasattr(module, 'main'):
                 
                 util_file.get_basename(script)
@@ -1401,7 +1416,20 @@ class Process(object):
         
         if util.is_in_maya():
             cmds.undoInfo(closeChunk = True)        
-    
+
+        if old_process:
+            __builtin__.process = old_process
+        else:
+            del(__builtin__.process)
+        if old_cmds:
+            __builtin__.cmds = old_cmds
+        else:
+            del(__builtin__.cmds)
+        if old_show:
+            __builtin__.show = old_show
+        else:
+            del(__builtin__.show)
+            
         return status
                
     def run(self):

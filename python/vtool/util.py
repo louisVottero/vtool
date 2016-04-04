@@ -7,7 +7,6 @@ import string
 import datetime
 import traceback
 
-
 def profiler_event(frame, event, arg, indent = [0]):
     
     if event == "call":

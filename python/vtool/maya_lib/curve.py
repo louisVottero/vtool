@@ -51,7 +51,8 @@ class CurveToData(object):
                     
                     for shape in shapes:
                         if cmds.nodeType(shape) == 'nurbsCurve':
-                            curve_shapes.append( shape )
+                            if not cmds.getAttr('%s.intermediateObject' % shape):
+                                curve_shapes.append( shape )
         
         return curve_shapes
     

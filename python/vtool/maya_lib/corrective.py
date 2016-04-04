@@ -578,6 +578,7 @@ class PoseGroup(object):
         self.description = description
         
         self.pose_gr = 'pose_gr'
+        self.create_blends_went_to_pose = False
     
     def _pose_type(self):
         return 'group'    
@@ -669,10 +670,13 @@ class PoseGroup(object):
         Goto the pose.  
         This is important so the character can back into the same pose it was sculpted at.
         """
+        
         if self.pose_control:
-            
+        
             store = rigs_util.StoreControlData(self.pose_control)
             store.eval_data()
+            
+            self.create_blends_went_to_pose = True
             
             
     def rename(self, description):
@@ -1872,16 +1876,19 @@ class PoseBase(PoseGroup):
         Create all the blends in a pose. 
         This refreshes the deltas.
         """
+        
         count = self._get_mesh_count()
         
         pose = True
         
         for inc in range(0, count):
             
-            if inc > 0:
+            if self.create_blends_went_to_pose:
                 pose = False
                 
             self.create_blend(inc, goto_pose = pose)
+                
+        self.create_blends_went_to_pose = False
     
     def create_blend(self, mesh_index, goto_pose = True, sub_poses = True):
         """

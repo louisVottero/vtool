@@ -193,8 +193,6 @@ class Rig(object):
         if sub:
             self.sub_controls.append(control.get())
         
-        print self.control_offset_axis
-        
         if self.control_offset_axis:
             if self.control_offset_axis == 'x':
                 control.rotate_shape(90, 0, 0)
