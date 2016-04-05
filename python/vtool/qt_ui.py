@@ -253,14 +253,11 @@ class TreeWidget(QtGui.QTreeWidget):
         self.current_item = None
         self.current_name = None
         
-
-                
         if not util.is_in_maya() and not util.is_in_nuke():
             palette = QtGui.QPalette()
             palette.setColor(palette.Highlight, QtCore.Qt.gray)
             self.setPalette(palette)
-    
-    
+            
         self.dropIndicatorRect = QtCore.QRect()
 
     def paintEvent(self, event):
@@ -2304,6 +2301,9 @@ class CodeEditTabs(BasicWidget):
         
     def rename_tab(self, old_path, new_path, old_name, new_name):
         
+        if old_path == new_path:
+            return
+        
         widgets = self.get_widgets(old_name)
         
         if not widgets:
@@ -2324,7 +2324,6 @@ class CodeEditTabs(BasicWidget):
                     self.code_tab_map.pop(old_name)
                     removed_old_tab = True
                 widget.text_edit.filepath = new_path
-                #widget.set_file(new_path)
                 
             if index == -1 or index == None:
                 

@@ -6,6 +6,7 @@ import time
 import string
 import datetime
 import traceback
+import __builtin__
 
 def profiler_event(frame, event, arg, indent = [0]):
     
