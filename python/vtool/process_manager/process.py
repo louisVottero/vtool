@@ -187,6 +187,21 @@ class Process(object):
             except:
                 util.show('Could not center view')
                 
+    def _reset_builtin(self, old_process, old_cmds, old_show):
+        
+        if old_process:
+            __builtin__.process = old_process
+        else:
+            del(__builtin__.process)
+        if old_cmds:
+            __builtin__.cmds = old_cmds
+        else:
+            del(__builtin__.cmds)
+        if old_show:
+            __builtin__.show = old_show
+        else:
+            del(__builtin__.show)
+                
             
     def set_directory(self, directory):
         """
@@ -1320,11 +1335,11 @@ class Process(object):
         old_show = None
         
         if 'process' in builtins:
-            old_process = builtins.process
+            old_process = __builtin__.process
         if 'cmds' in builtins:
-            old_cmds = builtins.cmds
+            old_cmds = __builtin__.cmds
         if 'show' in builtins:
-            old_show = builtins.show
+            old_show = __builtin__.show
         
         if util.is_in_maya():
             
@@ -1346,6 +1361,7 @@ class Process(object):
                 script = self.get_code_file(script)
                 
             if not util_file.is_file(script):
+                self._reset_builtin(old_process, old_cmds, old_show)
                 return
             
             self._center_view()
@@ -1372,15 +1388,19 @@ class Process(object):
             module = util_file.source_python_module(script)     
             
             if type(module) == str:
+                self._reset_builtin(old_process, old_cmds, old_show)
                 return module
             
             if not module:
+                self._reset_builtin(old_process, old_cmds, old_show)
                 return
             
             module.process = self
             
         except Exception:
             status = traceback.format_exc()
+            
+            self._reset_builtin(old_process, old_cmds, old_show)
             
             if hard_error:
                 raise
@@ -1408,6 +1428,8 @@ class Process(object):
             
             status = traceback.format_exc()
             
+            self._reset_builtin(old_process, old_cmds, old_show)
+            
             if hard_error:
                 raise
             
@@ -1417,18 +1439,8 @@ class Process(object):
         if util.is_in_maya():
             cmds.undoInfo(closeChunk = True)        
 
-        if old_process:
-            __builtin__.process = old_process
-        else:
-            del(__builtin__.process)
-        if old_cmds:
-            __builtin__.cmds = old_cmds
-        else:
-            del(__builtin__.cmds)
-        if old_show:
-            __builtin__.show = old_show
-        else:
-            del(__builtin__.show)
+        
+        self._reset_builtin(old_process, old_cmds, old_show)
             
         return status
                

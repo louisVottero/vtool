@@ -569,10 +569,10 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
             return
         
         if value > self.last_scale_value:
-            pass_value = 1.5
+            pass_value = 1.2
         
         if value < self.last_scale_value:
-            pass_value = .5
+            pass_value = 0.8
             
         #things = rigs_util.get_controls()
         things = cmds.ls(sl = True)
