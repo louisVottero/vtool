@@ -2343,8 +2343,7 @@ class CodeEditTabs(BasicWidget):
                 widget.text_edit.titlename = new_name
                 widget.set_file(new_path)
                 widget.filepath = new_path
-                
-            
+                            
             current_widget = self.tabs.currentWidget()
             current_titlename = current_widget.text_edit.titlename
             
