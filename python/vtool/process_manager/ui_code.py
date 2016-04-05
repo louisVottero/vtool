@@ -153,8 +153,8 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.code_widget.code_edit.rename_tab(old_path, new_path, old_file_name, new_file_name)
         
-        self.code_widget.set_code_path(new_path, name = new_file_name, load_file = False)
-        
+        #print 'set code path in rename'
+        #self.code_widget.set_code_path(new_path, name = new_file_name, load_file = False)
         
     def _script_remove(self, filepath):
         
@@ -165,8 +165,6 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         code_name = code_name + '.py'
         
         self.code_widget.code_edit.close_tab(code_name)
-        
-        
         
         if not self.code_widget.code_edit.has_tabs():
             self._close_splitter()
@@ -257,7 +255,6 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
             if not util_file.is_dir(filepath):
                 self.save_file.hide()
 
-    
     def _collapse(self):
         self.collapse.emit()
         

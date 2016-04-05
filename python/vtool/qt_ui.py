@@ -2324,6 +2324,9 @@ class CodeEditTabs(BasicWidget):
                     self.code_tab_map.pop(old_name)
                     removed_old_tab = True
                 widget.text_edit.filepath = new_path
+                widget.text_edit.titlename = new_name
+                widget.filepath = new_path
+                
                 
             if index == -1 or index == None:
                 
@@ -2337,7 +2340,17 @@ class CodeEditTabs(BasicWidget):
                     self.code_floater_map.pop(old_name)
                     removed_old_tab = True
                 widget.text_edit.filepath = new_path
+                widget.text_edit.titlename = new_name
                 widget.set_file(new_path)
+                widget.filepath = new_path
+                
+            
+            current_widget = self.tabs.currentWidget()
+            current_titlename = current_widget.text_edit.titlename
+            
+            if new_name == current_titlename:
+                self.tabChanged.emit(widget)
+                
                 
         if not removed_old_tab:
             util.warning('Failed to remove old code widget entry: %s' % old_name)
@@ -2347,27 +2360,17 @@ class CodeEditTabs(BasicWidget):
         if not name:
             return
         
-        widgets = self.get_widgets()
-        
-        removed_widget_entry = False
+        widgets = self.get_widgets(name)
         
         for widget in widgets:
-            
-            titlename = widget.text_edit.titlename
-            
-            test_name = util_file.remove_extension(name)
-            
-            if not titlename.startswith(test_name):
-                continue
-            
+                        
             index = self.tabs.indexOf(widget)
             
             if index > -1:
                 
                 self.tabs.removeTab(index)
-                if self.code_tab_map.has_key(titlename):
-                    self.code_tab_map.pop(titlename)
-                    removed_widget_entry = True
+                if self.code_tab_map.has_key(name):
+                    self.code_tab_map.pop(name)
             
             if index == -1 or index == None:
                 
@@ -2376,12 +2379,8 @@ class CodeEditTabs(BasicWidget):
                 window_parent.close()
                 window_parent.deleteLater()
                 
-                if self.code_floater_map.has_key(titlename):
-                    self.code_floater_map.pop(titlename)
-                    removed_widget_entry = True
-                
-        if not removed_widget_entry:
-            util.warning('%s code entry was not removed from widget list on close.' % name)
+                if self.code_floater_map.has_key(name):
+                    self.code_floater_map.pop(name)                            
                 
     def close_tabs(self):
         
@@ -2477,7 +2476,6 @@ class CodeTabWindow(BasicWindow):
         
         self.setMinimumWidth(400)
         self.setMinimumHeight(400)
-        
     
     def closeEvent(self, event):
         
