@@ -584,10 +584,16 @@ def delete_unknown_nodes():
     
     unknown = cmds.ls(type = 'unknown')
 
+    deleted = []
+
     for node in unknown:
         if cmds.objExists(node):
             cmds.lockNode(node, lock = False)
             cmds.delete(node)
+            
+            deleted.append(node)
+            
+    vtool.util.show('Deleted unknowns: %s' % deleted)
 
 def rename_shapes(transform):
     """
@@ -961,9 +967,33 @@ def get_current_audio_node():
     
     return cmds.timeControl(play_slider, q = True, s = True)
 
+def remove_unused_plugins():
+    
+    list_cmds = dir(cmds)
+    
+    if not 'unknownPlugin' in list_cmds:
+        return
+    
+    unknown = cmds.ls(type = 'unknown')
+    
+    if unknown:
+        return
+        
+    unused = []
+    unknown_plugins = cmds.unknownPlugin(query = True, list = True)
+
+    for unknown_plugin in unknown_plugins:
+        cmds.unknownPlugin(unknown_plugin, remove = True)
+        unused.append(unknown_plugin)
+        
+    vtool.util.show('Removed unused plugins: %s' % unused)
+    
+
 def delete_turtle_nodes():
 
     plugin_list = cmds.pluginInfo(query = True, pluginsInUse = True)
+    
+    nodes = []
     
     if plugin_list:
         for plugin in plugin_list:
@@ -975,7 +1005,12 @@ def delete_turtle_nodes():
                                 'ilrOptionsNode', 
                                 'ilrUIOptionsNode']
                 
-                delete_nodes_of_type(turtle_types)
+                nodes = delete_nodes_of_type(turtle_types)
+                
+                break
+        
+    
+    vtool.util.show('Removed Turtle nodes: %s' % nodes )
 
 def delete_nodes_of_type(node_type):
     """
@@ -988,6 +1023,8 @@ def delete_nodes_of_type(node_type):
     """
     
     node_type = vtool.util.convert_to_sequence(node_type)
+    
+    deleted = []
     
     for node_type_name in node_type:
         
@@ -1003,18 +1040,19 @@ def delete_nodes_of_type(node_type):
             
             cmds.lockNode(node, lock = False)
             cmds.delete(node)
+            deleted.append(node)
+    
+    return deleted
 
 def delete_garbage():
-
-
-
+    
     straight_delete_types = []
 
     if vtool.util.get_maya_version() > 2014:
         #maya 2014 crashes when trying to delete hyperView or hyperLayout nodes in some files.
         straight_delete_types += ['hyperLayout','hyperView']
     
-    delete_nodes_of_type(straight_delete_types)
+    deleted_nodes = delete_nodes_of_type(straight_delete_types)
     
     check_connection_node_type = ['shadingEngine']
     
@@ -1025,6 +1063,11 @@ def delete_garbage():
         
         check_connection_nodes += nodes
     
+    garbage_nodes = []
+    
+    if deleted_nodes:
+        garbage_nodes = deleted_nodes
+    
     for node in check_connection_nodes:
         if not cmds.objExists(node):
             continue
@@ -1034,4 +1077,7 @@ def delete_garbage():
         if not connections:
             cmds.lockNode(node, lock = False)
             cmds.delete(node)
+            
+            garbage_nodes.append(node)
     
+    vtool.util.show('Deleted Garbage nodes: %s' % garbage_nodes)

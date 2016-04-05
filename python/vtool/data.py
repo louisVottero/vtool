@@ -1740,8 +1740,11 @@ class MayaFileData(MayaCustomData):
     
     def _clean_scene(self):
         
+        util.show('Vetala: Clean Scene')
+        
         maya_lib.core.delete_turtle_nodes()
         maya_lib.core.delete_garbage()
+        maya_lib.core.remove_unused_plugins()
         
     def _after_open(self):
         
@@ -1758,6 +1761,23 @@ class MayaFileData(MayaCustomData):
             to_select = ['persp','side','top','front']
         
         cmds.select(to_select, r = True )
+        
+    def _handle_unknowns(self):
+
+        unknown = cmds.ls(type = 'unknown')
+        
+        if unknown:
+            
+            value = cmds.confirmDialog( title='Unknown Nodes!', 
+                                        message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
+                                        button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
+            
+            if value == 'Yes':
+                maya_lib.core.delete_unknown_nodes()
+            
+            if value == 'No':
+                if self.maya_file_type == self.maya_binary:
+                    cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
             
     def import_data(self, filepath = None):
         
@@ -1806,23 +1826,10 @@ class MayaFileData(MayaCustomData):
         
        
     def save(self, comment):
-
-        self._clean_scene()
-
-        unknown = cmds.ls(type = 'unknown')
         
-        if unknown:
-            
-            value = cmds.confirmDialog( title='Unknown Nodes!', 
-                                        message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
-                                        button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
-            
-            if value == 'Yes':
-                maya_lib.core.delete_unknown_nodes()
-            
-            if value == 'No':
-                if self.maya_file_type == self.maya_binary:
-                    cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
+        self._handle_unknowns()
+        
+        self._clean_scene()
         
         cmds.file(rename = self.filepath)
         
@@ -1840,24 +1847,14 @@ class MayaFileData(MayaCustomData):
         version = util_file.VersionFile(self.filepath)
         version.save(comment)
         
+        util.show('Vetala: Scene Saved')
+        
     def export_data(self, comment):
+                
+        self._handle_unknowns()
         
         self._clean_scene()
-        
-        unknown = cmds.ls(type = 'unknown')
-        
-        if unknown:
-            value = cmds.confirmDialog( title='Unknown Nodes!', 
-                                        message= 'Unknown nodes usually happen when a plugin that was being used is not loaded.\nLoad the missing plugin, and the unknown nodes could become valid.\n\nDelete unknown nodes?\n', 
-                                        button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
-            
-            if value == 'Yes':
-                maya_lib.core.delete_unknown_nodes()
-            
-            if value == 'No':
-                if self.maya_file_type == self.maya_binary:
-                    cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
-        
+                
         cmds.file(rename = self.filepath)
         
         self._prep_scene_for_export()
