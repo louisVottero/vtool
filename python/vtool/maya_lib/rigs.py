@@ -862,10 +862,7 @@ class GroundRig(JointRig):
                 
             if inc > 0:
                 control = self._create_control(sub =  True)
-                control.set_curve_type(self.control_shape)
-                
                 attr.connect_visibility('%s.subVisibility' % first_control, '%sShape' % control.get(), 1)
-                
                 
             controls.append(control.get())
                 
