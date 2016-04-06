@@ -175,10 +175,11 @@ class Rig(object):
             
         
         if not sub:
-                        
+            
             control.scale_shape(self.control_size, 
                                 self.control_size, 
                                 self.control_size)
+            
         if sub:
             
             size = self.control_size * self.sub_control_size
@@ -837,11 +838,12 @@ class GroundRig(JointRig):
         
         self.control_shape = 'square_point'
         self.control_size = 1
+        self.sub_control_size = .9
     
     def create(self):
         super(GroundRig, self).create()
         
-        scale = self.control_size
+        scale = self.sub_control_size
         last_control = None
         
         controls = []
@@ -850,11 +852,8 @@ class GroundRig(JointRig):
         
         for inc in range(0, 3):
             
-            
             if inc == 0:
                 control = self._create_control()
-                
-                control.set_curve_type(self.control_shape)
                 
                 cmds.parent(control.get(), self.control_group)
                 
@@ -865,14 +864,16 @@ class GroundRig(JointRig):
                 attr.connect_visibility('%s.subVisibility' % first_control, '%sShape' % control.get(), 1)
                 
             controls.append(control.get())
-                
-            control.scale_shape(40*scale, 40*scale, 40*scale)
+            
+            if inc > 1:
+                control.scale_shape(scale, scale, scale)
+                scale*=0.9   
             
             if last_control:
                 cmds.parent(control.get(), last_control)
             
             last_control = control.get()
-            scale*=.9
+            
             
             control.hide_scale_and_visibility_attributes()
         
@@ -885,6 +886,9 @@ class GroundRig(JointRig):
         
     def set_joints(self, joints = None):
         super(GroundRig, self).set_joints(joints)
+        
+    def set_control_size(self, float_value):
+        super(GroundRig, self).set_control_size(float_value * 40)
 
 #--- FK
 
@@ -900,7 +904,7 @@ class FkRig(BufferRig):
         
         self.current_xform_group = ''
         self.control_size = 3
-        self.sub_control_size = .8
+        self.sub_control_size = .9
         
         self.transform_list = []
         self.drivers = []
@@ -963,6 +967,8 @@ class FkRig(BufferRig):
                         sub_control = super(FkRig, self)._create_control(description = 'sub', sub =  True, curve_type = self.sub_control_shape)
                     if self.nice_sub_naming:
                         sub_control = super(FkRig, self)._create_control( sub =  True)
+                        
+                    sub_control.scale_shape(0.9, 0.9, 0.9)
                         
                     #sub_control.scale_shape(self.sub_control_size, self.sub_control_size, self.sub_control_size)
                     #sub_control.set_curve_type(self.control_shape)

@@ -981,11 +981,12 @@ def remove_unused_plugins():
         
     unused = []
     unknown_plugins = cmds.unknownPlugin(query = True, list = True)
-
-    for unknown_plugin in unknown_plugins:
-        cmds.unknownPlugin(unknown_plugin, remove = True)
-        unused.append(unknown_plugin)
-        
+    
+    if unknown_plugins:
+        for unknown_plugin in unknown_plugins:
+            cmds.unknownPlugin(unknown_plugin, remove = True)
+            unused.append(unknown_plugin)
+            
     vtool.util.show('Removed unused plugins: %s' % unused)
     
 
@@ -1069,7 +1070,7 @@ def delete_garbage():
         garbage_nodes = deleted_nodes
     
     for node in check_connection_nodes:
-        if not cmds.objExists(node):
+        if not node or not cmds.objExists(node):
             continue
         
         connections = cmds.listConnections(node)
