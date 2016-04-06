@@ -32,10 +32,11 @@ class PinXform(object):
             
             pin = cmds.duplicate(parent, po = True, n = core.inc_name('pin1'))[0]
             
-            try:
+            pin_parent = cmds.listRelatives(pin, p = True)
+            
+            if pin_parent:
                 cmds.parent(pin, w = True)
-            except:
-                pass
+
             
             #pin = cmds.group(em = True, n = 'pin1')    
             #MatchSpace(parent, pin).translation_rotation()

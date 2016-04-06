@@ -2547,10 +2547,12 @@ def connect_visibility(attribute_name, target_node, value = 1):
         
     for thing in nodes: 
         
-        if not cmds.isConnected(attribute_name, '%s.visibility' % thing):
-            cmds.connectAttr(attribute_name, '%s.visibility' % thing)
         if cmds.isConnected(attribute_name, '%s.visibility' % thing):
             vtool.util.warning( attribute_name + ' and ' + thing + '.visibility are already connected')
+        
+        if not cmds.isConnected(attribute_name, '%s.visibility' % thing):
+            cmds.connectAttr(attribute_name, '%s.visibility' % thing)
+        
 
 def connect_plus(source_attribute, target_attribute, respect_value = False):
     """
@@ -2820,7 +2822,8 @@ def connect_equal_condition(source_attribute, target_attribute, equal_value):
     Return
         str: The name of the condition node
     """
-    condition = cmds.createNode('condition', n = 'condition_%s' % source_attribute)
+    source_attribute_name = source_attribute.replace('.', '_')
+    condition = cmds.createNode('condition', n = 'condition_%s' % source_attribute_name)
     
     cmds.connectAttr(source_attribute, '%s.firstTerm' % condition)
     cmds.setAttr('%s.secondTerm' % condition, equal_value)

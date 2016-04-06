@@ -171,7 +171,8 @@ class Rig(object):
             control.set_curve_type(self.control_shape)
             
             if sub:
-                control.set_curve_type(self.sub_control_shape)
+                if self.sub_control_shape:
+                    control.set_curve_type(self.sub_control_shape)
             
         
         if not sub:
@@ -311,6 +312,8 @@ class Rig(object):
         Create the rig.  Set commands must be set before running this.
         """
         
+        vtool.util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
+        
         self._parent_default_groups()
         
     def delete_setup(self):
@@ -333,7 +336,6 @@ class JointRig(Rig):
     Also the ability to specify a joint chain for a rig.
     
     """
-    
     
     def __init__(self, description, side):
         super(JointRig, self).__init__(description, side)
@@ -359,6 +361,9 @@ class JointRig(Rig):
                 if self.auto_control_visibility:
                     switch.add_groups_to_index((weight_count-1), self.control_group)
                 switch.create()
+                
+        
+        
     
     def _check_joints(self, joints):
         
@@ -475,6 +480,8 @@ class BufferRig(JointRig):
         
         if self.create_buffer_joints:
             self._attach_joints(self.buffer_joints, self.joints)
+        
+        
 
 class CurveRig(Rig):
     """
@@ -839,6 +846,12 @@ class GroundRig(JointRig):
         self.control_shape = 'square_point'
         self.control_size = 1
         self.sub_control_size = .9
+
+    def set_joints(self, joints = None):
+        super(GroundRig, self).set_joints(joints)
+        
+    def set_control_size(self, float_value):
+        super(GroundRig, self).set_control_size(float_value * 40)
     
     def create(self):
         super(GroundRig, self).create()
@@ -884,11 +897,7 @@ class GroundRig(JointRig):
         if self.joints:   
             cmds.parentConstraint(control.get(), self.joints[0])
         
-    def set_joints(self, joints = None):
-        super(GroundRig, self).set_joints(joints)
-        
-    def set_control_size(self, float_value):
-        super(GroundRig, self).set_control_size(float_value * 40)
+
 
 #--- FK
 
@@ -3987,7 +3996,8 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
                 if self.auto_control_visibility:
                     switch.add_groups_to_index((weight_count-1), self.control_group)
                 switch.create()
-
+        
+        
     def _create_curve(self, span_count):
         
         if not self.curve:
@@ -5555,10 +5565,11 @@ class FootRig(BaseFootRig):
         
         joints = duplicate.create()
         
-        try:
-            cmds.parent(joints[0], self.setup_group)
-        except:
-            pass
+        parent = cmds.listRelatives(joints[0], p = True)
+        
+        if parent:
+            if parent[0] != self.setup_group:
+                cmds.parent(joints[0], self.setup_group)
         
         self.ik_joints = joints
         

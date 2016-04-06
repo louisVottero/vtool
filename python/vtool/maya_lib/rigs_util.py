@@ -1319,6 +1319,7 @@ class RigSwitch(object):
             
             for group in groups:
                 attr.connect_equal_condition(attribute_name, '%s.visibility' % group, key) 
+        
 
 def rename_control(old_name, new_name):
     

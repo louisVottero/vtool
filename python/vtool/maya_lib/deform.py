@@ -789,9 +789,6 @@ class TransferWeight(object):
             source_mesh (str): The name of the mesh were source_joints are weighted.  If None, algorithms assumes weighting is coming from the main mesh.
             percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
-        #vtool.util.show('Start: %s transfer joint to joint.' % self.mesh)
-        
-        
         
         if not self.skin_cluster:
             vtool.util.show('No skinCluster found on %s. Could not transfer.' % self.mesh)

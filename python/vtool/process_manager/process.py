@@ -9,6 +9,7 @@ from vtool import util
 from vtool import util_file
 from vtool import data
 import __builtin__
+import os
 
 if util.is_in_maya():
     import maya.cmds as cmds
@@ -187,21 +188,40 @@ class Process(object):
             except:
                 util.show('Could not center view')
                 
-    def _reset_builtin(self, old_process, old_cmds, old_show):
+    def _reset_builtin(self, old_process, old_cmds, old_show, old_warning):
         
-        if old_process:
-            __builtin__.process = old_process
-        else:
-            del(__builtin__.process)
-        if old_cmds:
-            __builtin__.cmds = old_cmds
-        else:
-            del(__builtin__.cmds)
-        if old_show:
-            __builtin__.show = old_show
-        else:
-            del(__builtin__.show)
-                
+        try:
+            builtins = __builtin__.dir()
+            
+            if old_process:
+                __builtin__.process = old_process
+            else:
+                if 'process' in builtins:
+                    del(__builtin__.process)
+                    
+            if old_cmds:
+                __builtin__.cmds = old_cmds
+            else:
+                if 'cmds' in builtins:
+                    del(__builtin__.cmds)
+                    
+            if old_show:
+                __builtin__.show = old_show
+            else:
+                if 'show' in builtins:
+                    del(__builtin__.show)
+                    
+            if old_warning:
+                __builtin__.warning = old_warning
+            else:
+                if 'warning' in builtins:
+                    del(__builtin__.warning)
+                    
+        except Exception:
+            status = traceback.format_exc()
+            util.show(status)
+            
+        
             
     def set_directory(self, directory):
         """
@@ -736,7 +756,6 @@ class Process(object):
         if not basename:
             
             return_value = util_file.join_path(path, code_name)
-            
         
         return return_value
 
@@ -921,6 +940,8 @@ class Process(object):
         if name == 'options':
             return self.get_option_file()
     
+    #--- options
+    
     def has_options(self):
         self._setup_options()
         
@@ -974,6 +995,8 @@ class Process(object):
         if type(value) == str or type(value) == unicode:
             if value.find(',') > -1:
                 value = value.split(',')
+        
+        util.show('Accessed - Option: %s, value: %s' % (name, value))
         
         return value
         
@@ -1333,6 +1356,7 @@ class Process(object):
         old_process = None
         old_cmds = None
         old_show = None
+        old_warning = None
         
         if 'process' in builtins:
             old_process = __builtin__.process
@@ -1340,6 +1364,8 @@ class Process(object):
             old_cmds = __builtin__.cmds
         if 'show' in builtins:
             old_show = __builtin__.show
+        if 'warning' in builtins:
+            old_warning = __builtin__.warning
         
         if util.is_in_maya():
             
@@ -1352,6 +1378,8 @@ class Process(object):
         if util.is_in_maya():
             cmds.undoInfo(openChunk = True)
         
+        init_passed = False
+        
         try:
             
             if not script.find(':') > -1:
@@ -1361,7 +1389,7 @@ class Process(object):
                 script = self.get_code_file(script)
                 
             if not util_file.is_file(script):
-                self._reset_builtin(old_process, old_cmds, old_show)
+                self._reset_builtin(old_process, old_cmds, old_show, old_warning)
                 return
             
             self._center_view()
@@ -1377,70 +1405,83 @@ class Process(object):
             util_file.delete_pyc(script)
             
             __builtin__.process = self
+            __builtin__.show = util.show
+            __builtin__.warning = util.warning
             
             if util.is_in_maya():
                 
                 import maya.cmds as cmds
                 
                 __builtin__.cmds = cmds
-                __builtin__.show = util.show
                 
             module = util_file.source_python_module(script)     
             
             if type(module) == str:
-                self._reset_builtin(old_process, old_cmds, old_show)
+                self._reset_builtin(old_process, old_cmds, old_show, old_warning)
                 return module
             
             if not module:
-                self._reset_builtin(old_process, old_cmds, old_show)
+                self._reset_builtin(old_process, old_cmds, old_show, old_warning)
                 return
             
             module.process = self
             
+            init_passed = True
+            
         except Exception:
             status = traceback.format_exc()
             
-            self._reset_builtin(old_process, old_cmds, old_show)
+            self._reset_builtin(old_process, old_cmds, old_show, old_warning)
             
             if hard_error:
+                if util.is_in_maya():
+                    cmds.undoInfo(closeChunk = True)
+                    
+                util.show('%s\n' % status)
                 raise
             
-            if not hard_error:
-                return status
+            intit_passed = False
             
-        try:
-            
-            if hasattr(module, 'main'):
+        if init_passed:
+            try:
                 
-                module.main()
+                if hasattr(module, 'main'):
+                    
+                    module.main()
+                    
+                    status = 'Success'
+        
+                if not hasattr(module, 'main'):
+                    
+                    util_file.get_basename(script)
+                    
+                    util.warning('main() not found in %s.' % script)
+                                    
+                del module
                 
-                status = 'Success'
-    
-            if not hasattr(module, 'main'):
+            except Exception:
                 
-                util_file.get_basename(script)
+                status = traceback.format_exc()
                 
-                util.warning('main() not found in %s.' % script)
-                                
-            del module
-            
-        except Exception:
-            
-            status = traceback.format_exc()
-            
-            self._reset_builtin(old_process, old_cmds, old_show)
-            
-            if hard_error:
-                raise
-            
-            if not hard_error:
-                return status
+                self._reset_builtin(old_process, old_cmds, old_show, old_warning)
+                
+                if hard_error:
+                    if util.is_in_maya():
+                        cmds.undoInfo(closeChunk = True)
+                        
+                    util.show('%s\n' % status)
+                    raise
+                
         
         if util.is_in_maya():
             cmds.undoInfo(closeChunk = True)        
-
         
-        self._reset_builtin(old_process, old_cmds, old_show)
+        self._reset_builtin(old_process, old_cmds, old_show, old_warning)
+            
+        if not status == 'Success':
+            util.show('%s\n' % status)
+        if status == 'Success':
+            util.show('End of %s.\n\n' % name)
             
         return status
                
@@ -1473,7 +1514,7 @@ class Process(object):
         Return
             None
         """
-        util.show('Created runtime variable %s with value %s.' % (name, value))
+        util.show('!! Created Runtime Variable: %s, value: %s.' % (name, value))
         self.runtime_values[name] = value
         
     def get_runtime_value(self, name):
@@ -1486,8 +1527,14 @@ class Process(object):
         Return
             The value stored in set_runtime_value.
         """
+        
         if self.runtime_values.has_key(name):
-            return self.runtime_values[name]
+            
+            value = self.runtime_values[name]
+            
+            util.show('Accessed - Runtime Variable: %s, value: %s' % (name, value))
+        
+            return value
         
     def get_runtime_value_keys(self):
         """
@@ -1497,6 +1544,7 @@ class Process(object):
         Return
             (list): keys in runtime value dictionary.
         """
+        
         return self.runtime_values.keys()
     
     def set_runtime_dict(self, dict_value):

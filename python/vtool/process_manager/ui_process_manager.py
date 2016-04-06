@@ -1,6 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import sys
+import __builtin__
 
 from vtool import qt_ui
 from vtool import util_file
@@ -12,6 +13,7 @@ import ui_options
 import ui_data
 import ui_code
 import ui_settings
+import os
 
 if qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
@@ -25,6 +27,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def __init__(self, parent = None):
         
         self.process = process.Process()
+        
         self.tab_widget = None
         self.view_widget = None
         self.data_widget = None
@@ -432,6 +435,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _process(self):
         
+        
+        
         if util.is_in_maya():
             import maya.cmds as cmds
             if cmds.file(q = True, mf = True):
@@ -509,16 +514,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if not status == 'Success':
                 
                 self.code_widget.set_process_script_state(scripts[inc], 0)
-                util.show(status)
                 
                 if stop_on_error:
                     break
-                #util.show(status)
                 
             if status == 'Success':
                 self.code_widget.set_process_script_state(scripts[inc], 1)
-                
-                util.show('\tSuccess')
             
         self.process_button.setEnabled(True)
         self.stop_button.hide()

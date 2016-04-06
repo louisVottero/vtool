@@ -460,7 +460,12 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
             if self.directory == self.last_directory:
                 return
         
+        process_tool = process.Process()
+        process_tool.set_directory(directory)
+        
+        self.code_manifest_tree.process = process_tool
         self.code_manifest_tree.set_directory(directory)
+        
         
     def reset_process_script_state(self):
         self.code_manifest_tree.reset_process_script_state()
@@ -484,6 +489,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         super(CodeManifestTree, self).__init__()
         
+        self.process = None
         
         self.title_text_index = 0
         
@@ -679,8 +685,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def _get_files(self, path = None):
         
-        process_tool = process.Process()
-        process_tool.set_directory(self.directory)
+        process_tool = self.process
         
         scripts, states = process_tool.get_manifest()
         
@@ -693,8 +698,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         found_scripts = []
         found_states = []
         parents = {}
-        
-        
         
         for inc in range(0, len(scripts)):
             #and each increment is slow
@@ -1152,7 +1155,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         return item
         
-    def _add_item(self, filename, state, parent = None):
+    def _add_item(self, filename, state, parent = None, update_manifest = True):
         
         if filename.count('/') > 0:
             basename = util_file.get_basename(filename)
@@ -1164,7 +1167,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self._setup_item(item, state)
         
-        self._update_manifest()
+        if update_manifest:
+            self._update_manifest()
         
         return item
     
@@ -1183,8 +1187,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             script_name = scripts[inc].split('.')[0]
             basename = util_file.get_basename(scripts[inc])
             
-            #item = self._add_item(scripts[inc], states[inc], parent = False)
-            item = self._add_item('...temp...', states[inc], parent = False)
+            item = self._add_item('...temp...', states[inc], parent = False, update_manifest = False)
             
             if parents.has_key(script_name):
                 built_parents[script_name] = item
@@ -1201,9 +1204,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             if not dirname:
                 
-                self.addTopLevelItem(item)
-                
-                
+                self.addTopLevelItem(item)    
                 item.set_text(basename)
             
             if not states[inc]:
@@ -1217,7 +1218,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             self.checkbox.setChecked(False)
             
         self.update_checkbox = True
-    
+        
     def _reparent_item(self, name, item, parent_item):
         
         current_parent = item.parent()
@@ -1245,8 +1246,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if not self.allow_manifest_update:
             return
         
-        process_tool = process.Process()
-        process_tool.set_directory(self.directory)
+        process_tool = self.process
         
         scripts = []
         states = []
@@ -1360,14 +1360,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.scrollToItem(item)
         self.setItemSelected(item, True)
         self.setCurrentItem(item)
-        #self._update_manifest()
         
     def create_import_code(self):
         
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
-        
-
         
         folders = process_tool.get_data_folders()
         
@@ -1394,8 +1391,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
 
     def run_current_item(self, external_code_library = None):
         
-        process_tool = process.Process()
-        process_tool.set_directory(self.directory)
+        process_tool = self.process
         
         scripts, states = process_tool.get_manifest()
         
@@ -1418,8 +1414,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         for item in items:    
             item.set_state(-1)
         
-        process_tool = process.Process()
-        process_tool.set_directory(self.directory)
+        
         
         if external_code_library:
             process_tool.set_external_code_library(external_code_library)
@@ -1597,9 +1592,6 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
                         
                         for child in children:
                             child.setCheckState(column, check_state)
-                    
-            #if hasattr(self, 'tree'):
-            #    self.tree._update_manifest()
                      
     def set_state(self, state):
         
