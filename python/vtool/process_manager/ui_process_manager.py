@@ -435,14 +435,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _process(self):
         
-        
-        
         if util.is_in_maya():
             import maya.cmds as cmds
             if cmds.file(q = True, mf = True):
                 result = qt_ui.get_permission('Changes not saved. Run process anyways?', self)
                 if not result:
                     return
+        
+        watch = util.StopWatch()
+        watch.start(feedback = False)
                 
         self.kill_process = False
         self.stop_button.show()
@@ -523,6 +524,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         self.process_button.setEnabled(True)
         self.stop_button.hide()
+        
+        seconds = watch.stop()
+        
+        util.show('Process %s built in %s' % (self.process.get_name(), seconds))
         
     def _browser(self):
         

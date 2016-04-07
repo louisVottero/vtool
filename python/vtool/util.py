@@ -99,29 +99,34 @@ class StopWatch(object):
     
     def __init__(self):
         self.time = None
+        self.feedback = True
     
-    def start(self, description = ''):
+    def start(self, description = '', feedback = True):
+        self.feedback = feedback
         
-        tabs = '\t' * self.running
-        
-        show('%sstarted timer' % tabs, description)
+        if feedback:
+            tabs = '\t' * self.running
+            show('%sstarted timer' % tabs, description)
+            
         self.time = time.time()
         
-        
-        
-        
-        self.__class__.running += 1
+        if feedback:
+            self.__class__.running += 1
     
     def end(self):
         seconds = time.time()-self.time
         self.time = None
         
-        tabs = '\t' * self.running
+        if self.feedback:
+            tabs = '\t' * self.running
         
-        show('%send timer: %s seconds' % (tabs,seconds))
-        self.__class__.running -= 1
-    def temp(self):
-        pass  
+            show('%send timer: %s seconds' % (tabs,seconds))
+            self.__class__.running -= 1
+        
+        return seconds
+    
+    def stop(self):
+        return self.end()
 
 #--- math
 

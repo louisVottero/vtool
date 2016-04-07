@@ -55,17 +55,21 @@ class Rig(object):
         self.sub_controls = []
         self.control_dict = {}
         
-    """    
+        self.sub_visibility = False
+        
     def __del__(self):
         
         if cmds.objExists(self.setup_group):
-        
+            
             if core.is_empty(self.setup_group):
                 parent = cmds.listRelatives(self.setup_group, p = True)
                 
                 if not parent:
-                    cmds.delete(self.setup_group)
-    """
+                    
+                    class_name = self.__class__.__name__
+                    
+                    vtool.util.warning('Unused setup group in class: %s with description %s %s' % (class_name, self.description, self.side))
+    
     
     def _create_group(self,  prefix = None, description = None):
         
@@ -306,6 +310,10 @@ class Rig(object):
         
     def set_control_offset_axis(self, axis_letter):
         self.control_offset_axis = axis_letter.lower()
+        
+    def set_sub_visibility(self, bool_value):
+        
+        self.sub_visibility = bool_value
         
     def create(self):
         """
@@ -874,7 +882,7 @@ class GroundRig(JointRig):
                 
             if inc > 0:
                 control = self._create_control(sub =  True)
-                attr.connect_visibility('%s.subVisibility' % first_control, '%sShape' % control.get(), 1)
+                attr.connect_visibility('%s.subVisibility' % first_control, '%sShape' % control.get(), self.sub_visibility)
                 
             controls.append(control.get())
             
@@ -991,7 +999,7 @@ class FkRig(BufferRig):
                 
                 space.MatchSpace(self.control.get(), sub_control.get()).translation_rotation()
                 
-                attr.connect_visibility('%s.subVisibility' % self.control.get(), '%sShape' % sub_control.get(), 1)
+                attr.connect_visibility('%s.subVisibility' % self.control.get(), '%sShape' % sub_control.get(), self.sub_visibility)
                 
                 subs.append(sub_control.get())
                 
@@ -3048,7 +3056,7 @@ class IkAppendageRig(BufferRig):
         
             cmds.parent(xform_group, control.get())
             
-            attr.connect_visibility('%s.subVisibility' % self.btm_control, '%sShape' % self.sub_control, 1)
+            attr.connect_visibility('%s.subVisibility' % self.btm_control, '%sShape' % self.sub_control, self.sub_visibility)
         
         return control.get()
     
@@ -3971,6 +3979,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self.top_hold_locator = cmds.spaceLocator(n = self._get_name('locator', 'holdTop'))[0]
         self.btm_hold_locator = cmds.spaceLocator(n = self._get_name('locator', 'holdBtm'))[0]
         
+        cmds.hide(self.top_hold_locator)
+        cmds.hide(self.btm_hold_locator)
+        
         space.MatchSpace(source_chain[0], self.btm_hold_locator).translation_rotation()
         space.MatchSpace(source_chain[-1], self.top_hold_locator).translation_rotation()
         
@@ -4188,7 +4199,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             shapes = cmds.listRelatives(control, shapes = True)
             
             for shape in shapes:
-                attr.connect_visibility('%s.tweakVisibility' % self.top_control, shape, 1)
+                attr.connect_visibility('%s.tweakVisibility' % self.top_control, shape, self.sub_visibility)
             
             follow += sub_follow
         

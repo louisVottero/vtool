@@ -863,7 +863,7 @@ class TransferWeight(object):
         
         self._add_joints_to_skin(source_joints)
         
-        lock_joints(self.skin_cluster, destination_joints)
+        lock_joint_weights(self.skin_cluster, destination_joints)
         
         vert_count = len(weighted_verts)
         
@@ -950,7 +950,7 @@ class TransferWeight(object):
         new_joints = vtool.util.convert_to_sequence(new_joints)
         
         if not new_joints:
-            vtool.util.warning('Destination joints do not exists.')
+            vtool.util.warning('Destination joints do not exist.')
             return
             
         if not joints:
@@ -958,17 +958,15 @@ class TransferWeight(object):
             return
         
         if not self.skin_cluster or not self.mesh:
+            vtool.util.warning('No skin cluster or mesh supplied.')
             return
         
-        lock_joints(self.skin_cluster, joints)
-        
-        self._add_joints_to_skin(new_joints)
+        lock_joint_weights(self.skin_cluster, joints)
         
         value_map = get_skin_weights(self.skin_cluster)
         influence_values = {}
         
         source_joint_weights = []
-        
         influence_index_order = []
         
         for joint in joints:
@@ -1027,10 +1025,17 @@ class TransferWeight(object):
         new_joint_count = len(new_joints)
         joint_count = len(joints)
         
+        self._add_joints_to_skin(new_joints)
+        joint_ids = get_skin_influences(self.skin_cluster, return_dict = True)
+        
+        cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
+        
+        watch = vtool.util.StopWatch()
+        watch.start('weight verts')
+        
         for vert_index in weighted_verts:
-            
+                        
             vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
-            
             
             distances = space.get_distances(new_joints, vert_name)
             
@@ -1043,9 +1048,10 @@ class TransferWeight(object):
             
             joint_weight = {}    
             
-            for inc2 in range(0, len(distances)):
-                if distances[inc2] <= 0.001:
-                    joint_weight[new_joints[inc2]] = 1
+            #check if the distance is almost zero on a new influence
+            for distance_id in range(0, len(distances)):
+                if distances[distance_id] <= 0.001:
+                    joint_weight[new_joints[distance_id]] = 1
                     found_weight = True
                     break
                           
@@ -1110,28 +1116,22 @@ class TransferWeight(object):
                 joint_value = joint_weight[joint]
                 value = weight_value*joint_value
                 
-                segments.append( (joint, value * weight_percent_change) )
+                joint_index = joint_ids[joint]
+                #joint_index = get_index_at_skin_influence(joint, self.skin_cluster)
+                cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value * weight_percent_change)
+                #segments.append( (joint, value * weight_percent_change) )
                 
             for joint_index in range(0, joint_count):
                 change = 1 - weight_percent_change
                 
                 value = source_joint_weights[joint_index]
-                
                 value = value[vert_index] * change
                 
-                segments.append((joints[joint_index], value ))
-            
-            if vert_index == 940:
-                
-                value = 0
-                
-                total_value = 0
-                
-                for segment in segments:
-                    total_value += segment[1]
+                cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
+                #segments.append((joints[joint_index], value ))
                     
-            
-            cmds.skinPercent(self.skin_cluster, vert_name, r = False, transformValue = segments)
+
+            #cmds.skinPercent(self.skin_cluster, vert_name, r = False, transformValue = segments)
             
             bar.inc()
             
@@ -1141,9 +1141,18 @@ class TransferWeight(object):
                 break
             
             inc += 1
-          
-        cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
+        
+        #cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
+        #cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         bar.end()
+
+        for vert_index in weighted_verts:
+            for joint_id in influence_index_order:
+                value = value_map[joint_id][vert_index]
+                if value:
+                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), 0)
+        
+        watch.end()
         vtool.util.show('Done: %s transfer joints to new joints.' % self.mesh)
         
          
@@ -2103,7 +2112,7 @@ def set_envelopes(mesh, value, exclude_type = []):
 
 #--- skin
 
-def get_influences_on_skin(skin_deformer):
+def get_influences_on_skin(skin_deformer, short_name = True):
     """
     Get the names of the skin influences in the skin cluster.
     
@@ -2113,13 +2122,11 @@ def get_influences_on_skin(skin_deformer):
     Return
         list: influences found in the skin cluster
     """
-    indices = attr.get_indices('%s.matrix' % skin_deformer)
-       
-    influences = []
-       
-    for index in indices:
-        influences.append( get_skin_influence_at_index(index, skin_deformer) )
-        
+    
+    skin = api.SkinClusterFunction()
+    skin.set_node_as_mobject(skin_deformer)
+    influences = skin.get_influence_names(short_name = short_name)
+
     return influences
 
 def get_non_zero_influences(skin_deformer):
@@ -2150,6 +2157,7 @@ def get_index_at_skin_influence(influence, skin_deformer):
     Return
         int: The index of the influence. 
     """
+    #this is actually faster than the api call. 
     
     connections = cmds.listConnections('%s.worldMatrix' % influence, p = True, s = True)
     
@@ -2211,7 +2219,12 @@ def get_skin_influence_indices(skin_deformer):
         list: The list of indices.
     """
     
-    return attr.get_indices('%s.matrix' % skin_deformer)
+    skin = api.SkinClusterFunction()
+    skin.set_node_as_mobject(skin_deformer)
+    
+    indices = skin.get_influence_indices()
+    
+    return indices
 
 def get_skin_influences(skin_deformer, return_dict = False):
     """
@@ -2226,6 +2239,17 @@ def get_skin_influences(skin_deformer, return_dict = False):
     Return
         list, dict: A list of influences in the skin cluster. If return_dict = True, return dict[influence] = index
     """
+    
+    skin = api.SkinClusterFunction()
+    skin.set_node_as_mobject(skin_deformer)
+    
+    influence_dict, influences = skin.get_influence_dict(short_name = True)
+    
+    if return_dict == False:
+        return influences
+    if return_dict == True:
+        return influence_dict
+    """   
     indices = get_skin_influence_indices(skin_deformer)
     
     if not return_dict:
@@ -2240,8 +2264,8 @@ def get_skin_influences(skin_deformer, return_dict = False):
             found_influences.append(influence)
         if return_dict:
             found_influences[influence] = index
-        
-    return found_influences
+    """ 
+    
 
 def get_meshes_skinned_to_joint(joint):
     """
@@ -2282,8 +2306,12 @@ def get_skin_weights(skin_deformer):
     Return
         dict: dict[influence_index] = weight values corresponding to point order.
     """
-    value_map = {}
     
+    skin = api.SkinClusterFunction()
+    skin.set_node_as_mobject(skin_deformer)
+    
+    value_map = skin.get_skin_weights_dict()
+    """
     indices = attr.get_indices('%s.weightList' % skin_deformer)
     
     vert_count = len(indices)
@@ -2305,7 +2333,7 @@ def get_skin_weights(skin_deformer):
                     
                 if value:
                     value_map[influence_index][inc] = value
-                
+    """         
     return value_map
 
 
@@ -3544,7 +3572,7 @@ def skin_group(joints, group):
             pass
             
 
-def lock_joints(skin_cluster, skip_joints = None):
+def lock_joint_weights(skin_cluster, skip_joints = None):
     """
     Lock the joints in the skin cluster except joints in skip_joints
     

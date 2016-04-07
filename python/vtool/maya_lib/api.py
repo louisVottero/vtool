@@ -157,15 +157,12 @@ class SelectionList(ApiObject):
         return OpenMaya.MSelectionList()
         
     def create_by_name(self, name):
-                
         
         try:
             self.api_object.add(name)
         except:
             cmds.warning('Could not add %s into selection list' % name)
             return
-        
-        
         
     def get_at_index(self, index = 0):
         
@@ -210,7 +207,6 @@ class TransformFunction(MayaFunction):
         orig_vector = self.api_object.getTranslation(space)
         
         vector_api *= self.get_matrix()
-        
         
         vector_api += orig_vector
         
@@ -432,6 +428,119 @@ class NurbsCurveFunction(MayaFunction):
     
     def get_parameter_at_length(self, double):
         return self.api_object.findParamFromLength(double)
+
+class SkinClusterFunction(MayaFunction):
+    def _define_api_object(self, mobject):
+        return OpenMayaAnim.MFnSkinCluster(mobject)
+
+    def get_influence_dag_paths(self):
+        
+        path_array = OpenMaya.MDagPathArray()
+        
+        self.api_object.influenceObjects(path_array)
+        
+        return path_array
+    
+    def get_influence_names(self, short_name = False):
+        
+        influence_dag_paths = self.get_influence_dag_paths()
+        
+        influence_names = []
+        
+        for x in xrange( influence_dag_paths.length() ):
+            
+            if not short_name:
+                influence_path_name = influence_dag_paths[x].fullPathName()
+            if short_name:
+                influence_path_name = influence_dag_paths[x].partialPathName()
+                
+            influence_names.append(influence_path_name)  
+            
+        return influence_names      
+        
+    def get_influence_indices(self):
+
+        influence_dag_paths = self.get_influence_dag_paths()
+        
+        influence_ids = []
+        
+        for x in xrange( influence_dag_paths.length() ):
+            
+            influence_id = int(self.api_object.indexForInfluenceObject(influence_dag_paths[x]))
+            influence_ids.append(influence_id)  
+            
+        return influence_ids 
+    
+    def get_influence_dict(self, short_name = False):
+        
+        influence_dag_paths = self.get_influence_dag_paths()
+        
+        influence_ids = {}
+        influence_names = []
+        
+        for x in xrange( influence_dag_paths.length() ):
+            
+            influence_path = influence_dag_paths[x]
+            if not short_name:
+                influence_path_name = influence_dag_paths[x].fullPathName()
+            if short_name:
+                influence_path_name = influence_dag_paths[x].partialPathName()
+                
+            influence_id = int(self.api_object.indexForInfluenceObject(influence_path))
+            influence_ids[influence_path_name] = influence_id
+            influence_names.append(influence_path_name)
+            
+        return influence_ids, influence_names
+    
+    def get_index_at_influence(self, influence_name):
+        
+        dag_node = DagNode()
+        dag_node.set_node_as_mobject(influence_name)
+        dag_path = dag_node.api_object.dagPath()
+        
+        influence_id = self.api_object.indexForInfluenceObject(dag_path)
+        return influence_id
+    
+    def get_skin_weights_dict(self):
+        
+        
+        weight_list_plug = self.api_object.findPlug('weightList')
+        weights_plug = self.api_object.findPlug('weights')
+        weight_list_attr = weight_list_plug.attribute()
+        weights_attr = weights_plug.attribute()
+        weight_influence_ids = OpenMaya.MIntArray()
+        
+        weights = {}
+        
+        vert_count = weight_list_plug.numElements()
+        
+        for vertex_id in xrange(vert_count):
+            
+        
+            weights_plug.selectAncestorLogicalIndex(vertex_id, weight_list_attr)
+            
+            weights_plug.getExistingArrayAttributeIndices(weight_influence_ids)
+        
+            influence_plug = OpenMaya.MPlug(weights_plug)
+            for influence_id in weight_influence_ids:
+                
+                influence_plug.selectAncestorLogicalIndex(influence_id, weights_attr)
+                
+                if not influence_id in weights:
+                    weights[influence_id] = [0] * vert_count
+                
+                try:
+                    value = influence_plug.asDouble()
+                    weights[influence_id][vertex_id] = value
+                    
+                except KeyError:
+                    # assumes a removed influence
+                    pass
+                
+        return weights   
+    
+                    
+                
 
 class IterateGeometry(MayaIterator):
     def _define_api_object(self, mobject):

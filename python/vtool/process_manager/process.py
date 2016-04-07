@@ -977,9 +977,13 @@ class Process(object):
         return value
         
     def get_option(self, name, group = None):
+        
         self._setup_options()
         
         value = self.get_unformatted_option(name, group)
+        
+        if value == None:
+            util.warning('Option not accessed - Option: %s, Group: %s. Perhaps the option does not exist in the group.'  % (name, group))
         
         new_value = None
         
@@ -996,7 +1000,7 @@ class Process(object):
             if value.find(',') > -1:
                 value = value.split(',')
         
-        util.show('Accessed - Option: %s, value: %s' % (name, value))
+        util.show('Accessed - Option: %s, Group: %s, value: %s' % (name, group, value))
         
         return value
         

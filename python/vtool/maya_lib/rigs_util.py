@@ -228,15 +228,21 @@ class Control(object):
         cmds.setAttr('%s.scaleY' % self.control, l = False, k = True)
         cmds.setAttr('%s.scaleZ' % self.control, l = False, k = True)
     
-    def hide_attributes(self, attributes):
+    def hide_attributes(self, attributes = None):
         """
-        Lock and hide the given attributes on the control.
+        Lock and hide the given attributes on the control. If no attributes given, hide translate, rotate, scale and visibility.
         
         Args
             
             attributes (list): List of attributes, eg. ['translateX', 'translateY']
         """
-        attr.hide_attributes(self.control, attributes)
+        if attributes:
+            attr.hide_attributes(self.control, attributes)
+            
+        if not attributes:
+            self.hide_translate_attributes()
+            self.hide_rotate_attributes()
+            self.hide_scale_and_visibility_attributes()
         
     def hide_translate_attributes(self):
         """
