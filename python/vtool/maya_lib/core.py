@@ -362,6 +362,9 @@ def is_referenced(node):
 
 def is_empty(node):
 
+    if is_referenced(node):
+        return False
+
     if is_transform(node):
         relatives = cmds.listRelatives(node)
         
@@ -370,13 +373,21 @@ def is_empty(node):
     
     connections = cmds.listConnections(node)
     
-    if connections:
-        return False
+    if connections != ['defaultRenderGlobals']:
     
-    attrs = cmds.listAttr(node, ud = True)
+        if connections:
+            return False
+    
+    attrs = cmds.listAttr(node, ud = True, k = True)
     
     if attrs:
         return False
+    
+    default_nodes = ['defaultLightSet', 'defaultObjectSet', 'initialShadingGroup']
+    if node in default_nodes:
+        return False
+    
+    
     
     return True
 
@@ -1055,7 +1066,7 @@ def delete_garbage():
     
     deleted_nodes = delete_nodes_of_type(straight_delete_types)
     
-    check_connection_node_type = ['shadingEngine']
+    check_connection_node_type = ['shadingEngine', 'partition','objectSet']
     
     check_connection_nodes = []
     
@@ -1073,12 +1084,16 @@ def delete_garbage():
         if not node or not cmds.objExists(node):
             continue
         
-        connections = cmds.listConnections(node)
-        
-        if not connections:
+        if is_empty(node):
+
             cmds.lockNode(node, lock = False)
-            cmds.delete(node)
             
-            garbage_nodes.append(node)
+            try:
+                cmds.delete(node)
+            except:
+                pass
+            
+            if not cmds.objExists(node):
+                garbage_nodes.append(node)
     
     vtool.util.show('Deleted Garbage nodes: %s' % garbage_nodes)

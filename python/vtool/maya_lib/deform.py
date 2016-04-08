@@ -1152,6 +1152,8 @@ class TransferWeight(object):
                 if value:
                     cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), 0)
         
+        cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
+        
         watch.end()
         vtool.util.show('Done: %s transfer joints to new joints.' % self.mesh)
         

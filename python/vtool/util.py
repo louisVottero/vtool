@@ -106,7 +106,7 @@ class StopWatch(object):
         
         if feedback:
             tabs = '\t' * self.running
-            show('%sstarted timer' % tabs, description)
+            show('%sstarted timer:' % tabs, description)
             
         self.time = time.time()
         
