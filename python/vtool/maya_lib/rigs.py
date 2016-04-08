@@ -7267,8 +7267,7 @@ class StickyFadeRig(StickyRig):
             space_scale.set_z_space(self.corner_z_space[0], self.corner_z_space[1])
             
         space_scale.create()
-   
-
+        
     def _create_corner_fades(self):
                
         orig_side = self.side
@@ -7309,12 +7308,7 @@ class StickyFadeRig(StickyRig):
                 
             xform = space.create_xform_group(control.get())
             
-            
-            
             space.create_xform_group(control.get(), 'driver')
-            
-            
-            
             
             self.corner_xforms.append(xform)
             self.corner_controls.append(control.get())
@@ -7356,19 +7350,25 @@ class StickyFadeRig(StickyRig):
                 space.MatchSpace(sub_control.get(), sub_corner_offset).translation()
                 
                 local, local_xform = space.constrain_local(control.get(), corner_offset)
-                attr.connect_scale(xform, local_xform)
+                
                 #parent_local, parent_local_xform = space.constrain_local(xform, corner_offset_xform)
                 
                 sub_local, sub_local_xform = space.constrain_local(sub_control.get(), sub_corner_offset)
                 
                 cmds.parent(sub_local_xform, local)
+                attr.connect_scale(xform, local_xform)
                 #cmds.parent(local_xform, parent_local) 
                 
                 #cmds.parent(parent_local_xform, self.setup_group)
                 cmds.parent(local_xform, self.setup_group)
-                cmds.parent(sub_local_xform, self.setup_group)
                 
-                cmds.parentConstraint(local, sub_local_xform, mo = True)
+                #cmds.parent(sub_local_xform, self.setup_group)
+                
+                
+                #space.create_follow_group(local, sub_local_xform, follow_scale = True)
+                
+                #cmds.parentConstraint(local, sub_local_xform)
+                
             
             #cmds.parent(corner_offset_xform, xform)
             cmds.parent(corner_offset_xform, self.setup_group)
@@ -7377,6 +7377,7 @@ class StickyFadeRig(StickyRig):
             
         
             self._set_corner_space(control.control, xform)  
+        
             
                       
         self.side =orig_side

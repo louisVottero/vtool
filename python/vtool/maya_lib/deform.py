@@ -940,7 +940,6 @@ class TransferWeight(object):
             power (int): The power to multiply the distance by. It amplifies the distnace, so that if something is closer it has a higher value, and if something is further it has a lower value exponentially.
             weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
-        #vtool.util.show('Start: %s transfer joints to new joints.' % self.mesh)
         
         if not self.skin_cluster:
             vtool.util.warning('No skinCluster found on %s. Could not transfer.' % self.mesh)
@@ -1030,11 +1029,8 @@ class TransferWeight(object):
         
         cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
         
-        watch = vtool.util.StopWatch()
-        watch.start('weight verts')
-        
         for vert_index in weighted_verts:
-                        
+                    
             vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
             
             distances = space.get_distances(new_joints, vert_name)
@@ -1046,7 +1042,7 @@ class TransferWeight(object):
             
             found_weight = False
             
-            joint_weight = {}    
+            joint_weight = {}
             
             #check if the distance is almost zero on a new influence
             for distance_id in range(0, len(distances)):
@@ -1065,7 +1061,6 @@ class TransferWeight(object):
                         smallest_distance = distances[joint_index]
                 
                 longest_distance = -1
-                total_distance = 0.0
                 
                 distances_away = []
                 
@@ -1082,9 +1077,6 @@ class TransferWeight(object):
                     
                     if distances[joint_index] > longest_distance:
                         longest_distance = distances[joint_index]
-                        
-                    total_distance += distance_away
-                    
                     
                 total = 0.0
                 
@@ -1109,17 +1101,14 @@ class TransferWeight(object):
             
             weight_value = weights[vert_index]
             
-            segments = []
-            
             for joint in joint_weight:
                 
                 joint_value = joint_weight[joint]
-                value = weight_value*joint_value
+                value = weight_value * joint_value * weight_percent_change
                 
                 joint_index = joint_ids[joint]
-                #joint_index = get_index_at_skin_influence(joint, self.skin_cluster)
-                cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value * weight_percent_change)
-                #segments.append( (joint, value * weight_percent_change) )
+
+                cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
                 
             for joint_index in range(0, joint_count):
                 change = 1 - weight_percent_change
@@ -1127,11 +1116,9 @@ class TransferWeight(object):
                 value = source_joint_weights[joint_index]
                 value = value[vert_index] * change
                 
-                cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
-                #segments.append((joints[joint_index], value ))
-                    
-
-            #cmds.skinPercent(self.skin_cluster, vert_name, r = False, transformValue = segments)
+                joint_id = influence_index_order[joint_index]
+                
+                cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
             
             bar.inc()
             
@@ -1142,20 +1129,10 @@ class TransferWeight(object):
             
             inc += 1
         
-        #cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
-        #cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
-        bar.end()
-
-        for vert_index in weighted_verts:
-            for joint_id in influence_index_order:
-                value = value_map[joint_id][vert_index]
-                if value:
-                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), 0)
-        
         cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
         
-        watch.end()
-        vtool.util.show('Done: %s transfer joints to new joints.' % self.mesh)
+        bar.end()
+        vtool.util.show('Done: %s transfer %s to %s.' % (self.mesh, joints, new_joints))
         
          
 class AutoWeight2D(object):
@@ -2434,12 +2411,16 @@ def set_skin_weights_to_zero(skin_deformer):
         skin_deformer (str): The name of a skin deformer.
     
     """
+    
     weights = cmds.ls('%s.weightList[*]' % skin_deformer)
         
     for weight in weights:
             
         weight_attributes = cmds.listAttr('%s.weights' % (weight), multi = True)
             
+        if not weight_attributes:
+            continue
+        
         for weight_attribute in weight_attributes:
             cmds.setAttr('%s.%s' % (skin_deformer, weight_attribute), 0)
 
