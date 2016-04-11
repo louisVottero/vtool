@@ -153,10 +153,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         old_file_name = old_name + '.py'
         
         self.code_widget.code_edit.rename_tab(old_path, new_path, old_file_name, new_file_name)
-        
-        #print 'set code path in rename'
-        #self.code_widget.set_code_path(new_path, name = new_file_name, load_file = False)
-        
+                
     def _script_remove(self, filepath):
         
         process_instance = process.Process()
@@ -296,8 +293,8 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         #comment = vtool.qt_ui.get_comment(self, '- %s -\nScripts not saved.\nSave scripts?' % note)
         
         #if comment == None:
-        #    print 'no comment!!!!'
             #return
+            
         comment = 'auto save'
         
         for widget in widgets:
@@ -305,6 +302,8 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
             self.save_file.set_text_widget(widget)
             
             folder_path = vtool.util_file.get_dirname(widget.filepath)
+            
+            vtool.util.show('Auto save %s' % folder_path)
             
             self.save_file.set_directory(folder_path)
             self.save_file.save_widget._save(comment)

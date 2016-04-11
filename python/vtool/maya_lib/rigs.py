@@ -6196,10 +6196,7 @@ class QuadFootRig(FootRig):
             
             bankin_roll = self._create_yawin_roll(next_roll, 'bankIn', scale = .5)
             bankout_roll = self._create_yawout_roll(bankin_roll, 'bankOut', scale = .5)
-            #testing
-            #bankforward_roll = self._create_toe_roll(bankout_roll, 'bankForward', scale = .5)
-            #bankback_roll = self._create_heel_roll(bankforward_roll, 'bankBack', scale = .5)
-
+            
             next_roll = bankout_roll
             
         if not self.add_bank:
@@ -6227,16 +6224,9 @@ class QuadFootRig(FootRig):
                 cmds.parent(self.ik_leg, bankout_roll)
                 
                 space.create_follow_group(yawout_roll, toe_control_xform)
-                #cmds.parent(toe_control_xform, self.yawOut)
-                
-                #xform_ball = space.get_xform_group(ball_pivot, 'xform')
-                #print toe_control, xform_ball
-                #cmds.parentConstraint(toe_control, xform_ball, mo = True)
-        
+                        
         cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
             
-        #cmds.connectAttr('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % toe_fk_control_xform)
-                    
     def set_add_bank(self, bool_value):
         self.add_bank = bool_value
              
