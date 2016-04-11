@@ -45,6 +45,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         super(ProcessManagerWindow, self).__init__(parent) 
         
+        util.set_env('VETALA_RUN', 'False')
+        util.set_env('VETALA_STOP', 'False')
+        
         self._set_default_directory()
         self._setup_settings_file()
         
@@ -431,6 +434,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return self.process.get_path()
            
     def _set_kill_process(self):
+        util.set_env('VETALA_STOP', True)
         self.kill_process = True
         
     def _process(self):
@@ -446,6 +450,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         watch.start(feedback = False)
                 
         self.kill_process = False
+                
         self.stop_button.show()
         
         self.process_button.setDisabled(True)
@@ -472,6 +477,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_button.setEnabled(True)
             return
         
+        util.set_env('VETALA_RUN', True)
+        util.set_env('VETALA_STOP', False)
+        
         stop_on_error = self.settings.get('stop_on_error')
         
         script_count = len(scripts)
@@ -481,6 +489,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         skip_scripts = []
         
         for inc in range(0, script_count):
+        
+            if util.get_env('VETALA_RUN') == 'True':
+                if util.get_env('VETALA_STOP') == 'True':
+                    break
             
             script = scripts[inc]
             script_name = util_file.remove_extension(script)
@@ -521,6 +533,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
             if status == 'Success':
                 self.code_widget.set_process_script_state(scripts[inc], 1)
+            
+        util.set_env('VETALA_RUN', False)
+        util.set_env('VETALA_STOP', False)
             
         self.process_button.setEnabled(True)
         self.stop_button.hide()

@@ -18,6 +18,8 @@ current_progress_bar = None
 MAYA_BINARY = 'mayaBinary'
 MAYA_ASCII = 'mayaAscii'
 
+
+
 maya_data_mappings = {  
                         'bool' : 'attributeType',
                         'long' : 'attributeType',

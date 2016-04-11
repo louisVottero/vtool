@@ -1,5 +1,6 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import os
 import traceback
 import threading
 
@@ -727,7 +728,14 @@ class SkinWeightData(MayaCustomData):
                                     
                 progress_ui.inc()
                 
+                if util.get_env('VETALA_RUN') == 'True':
+                    if util.get_env('VETALA_STOP') == 'True':
+                        break
+                                
                 if progress_ui.break_signaled():
+                    if util.get_env('VETALA_RUN') == 'True':
+                        util.set_env('VETALA_STOP', True)
+                            
                     break
                 
                 influence_inc += 1

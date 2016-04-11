@@ -503,7 +503,6 @@ class SkinClusterFunction(MayaFunction):
     
     def get_skin_weights_dict(self):
         
-        
         weight_list_plug = self.api_object.findPlug('weightList')
         weights_plug = self.api_object.findPlug('weights')
         weight_list_attr = weight_list_plug.attribute()

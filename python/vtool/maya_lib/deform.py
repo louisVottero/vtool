@@ -790,6 +790,10 @@ class TransferWeight(object):
             percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
         
+        if vtool.util.get_env('VETALA_RUN') == 'True':
+            if vtool.util.get_env('VETALA_STOP') == 'True':
+                return
+        
         if not self.skin_cluster:
             vtool.util.show('No skinCluster found on %s. Could not transfer.' % self.mesh)
             return
@@ -915,7 +919,13 @@ class TransferWeight(object):
             
             bar.status('transfer weight: %s of %s' % (inc, vert_count))
             
+            if vtool.util.get_env('VETALA_RUN') == 'True':
+                if vtool.util.get_env('VETALA_STOP') == 'True':
+                    break
+                        
             if bar.break_signaled():
+                if vtool.util.get_env('VETALA_RUN') == 'True':
+                    vtool.util.set_env('VETALA_STOP', True)
                 break
             
             inc += 1
@@ -940,6 +950,9 @@ class TransferWeight(object):
             power (int): The power to multiply the distance by. It amplifies the distnace, so that if something is closer it has a higher value, and if something is further it has a lower value exponentially.
             weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
+        if vtool.util.get_env('VETALA_RUN') == 'True':
+            if vtool.util.get_env('VETALA_STOP') == 'True':
+                return
         
         if not self.skin_cluster:
             vtool.util.warning('No skinCluster found on %s. Could not transfer.' % self.mesh)
@@ -1124,7 +1137,14 @@ class TransferWeight(object):
             
             bar.status('transfer weight: %s of %s' % (inc, len(weighted_verts)))
             
+            if vtool.util.get_env('VETALA_RUN') == 'True':
+                if vtool.util.get_env('VETALA_STOP') == 'True':
+                    break
+            
             if bar.break_signaled():
+                if vtool.util.get_env('VETALA_RUN') == 'True':
+                    vtool.util.set_env('VETALA_STOP', True)
+                    
                 break
             
             inc += 1

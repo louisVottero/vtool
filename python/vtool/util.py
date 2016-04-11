@@ -7,6 +7,17 @@ import string
 import datetime
 import traceback
 import __builtin__
+import os
+
+def set_env(name, value):
+    
+    if os.environ.has_key(name):
+        os.environ[name] = str(value)
+        
+def get_env(name):
+    
+    if os.environ.has_key(name):
+        return os.environ[name]
 
 def profiler_event(frame, event, arg, indent = [0]):
     
