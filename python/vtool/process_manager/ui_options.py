@@ -27,11 +27,9 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
-        title = QtGui.QLabel('  Options')
         
         self.option_palette = ProcessOptionPalette()
         
-        self.main_layout.addWidget(title)
         self.main_layout.addWidget(self.option_palette)
         
     def set_directory(self, directory):
@@ -502,6 +500,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum))
         self.main_layout.setContentsMargins(0,0,0,5)
         
+        
     def _get_widget_names(self, parent = None):
         
         if parent:
@@ -565,10 +564,12 @@ class ProcessOptionGroup(ProcessOptionPalette):
         main_group_layout.addSpacing(10)
         
         self.group = QtGui.QGroupBox(self.name)
+        self.group.setAlignment(QtCore.Qt.AlignCenter)
         self.group.setLayout(main_group_layout)
         
         self.group.child_layout = self.child_layout
         
+        self.main_layout.addSpacing(10)
         self.main_layout.addWidget(self.group)
         
     def get_parent(self):

@@ -10,6 +10,7 @@ from vtool import util
 import process
 import ui_view
 import ui_options
+import ui_templates
 import ui_data
 import ui_code
 import ui_settings
@@ -45,8 +46,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         super(ProcessManagerWindow, self).__init__(parent) 
         
-        util.set_env('VETALA_RUN', 'False')
-        util.set_env('VETALA_STOP', 'False')
+        os.environ['VETALA_RUN'] = 'False'
+        os.environ['VETALA_STOP'] = 'False'
         
         self._set_default_directory()
         self._setup_settings_file()
@@ -185,11 +186,24 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
         self.view_widget = ui_view.ViewProcessWidget()
         #splitter stuff
+        
+        tabs = QtGui.QTabWidget()
+        
+        
+        option_layout = QtGui.QVBoxLayout()
         self.option_scroll = QtGui.QScrollArea()
         self.option_scroll.setWidgetResizable(True)
         self.option_scroll.setMinimumWidth(300)
         self.option_widget = ui_options.ProcessOptionsWidget()
         self.option_scroll.setWidget(self.option_widget)
+        self.option_scroll.setFocusPolicy(QtCore.Qt.NoFocus)
+        option_layout.addWidget(self.option_scroll)
+        
+        option_widget = QtGui.QWidget()
+        option_widget.setLayout(option_layout)
+        
+        tabs.addTab(option_widget, 'Options')
+        tabs.addTab(ui_templates.TemplateWidget(), 'Templates')
         
         self.data_widget = ui_data.DataProcessWidget()
         
@@ -201,7 +215,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #splitter stuff
         self.process_splitter = QtGui.QSplitter()
         self.process_splitter.addWidget(self.view_widget)
-        self.process_splitter.addWidget(self.option_scroll)
+        self.process_splitter.addWidget(tabs)
         self.process_splitter.setSizes([1,0])
         
         self.tab_widget.addTab(self.settings_widget, 'Settings')       
@@ -680,3 +694,4 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 if not directory in sys.path:
                     sys.path.append(directory)
         
+

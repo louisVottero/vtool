@@ -189,9 +189,7 @@ class Process(object):
                 util.show('Could not center view')
                 
     def _reset_builtin(self, old_process, old_cmds, old_show, old_warning):
-        
-        os.environ['VETALA_RUN'] == 'false'
-        
+                
         try:
             builtins = __builtin__.dir()
             

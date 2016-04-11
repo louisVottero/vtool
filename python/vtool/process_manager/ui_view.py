@@ -614,6 +614,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         return state
         
     def _get_process_paths(self):
+        
+        print 'get process paths', self.directory
+        
         return process.find_processes(self.directory)
         
     def _load_processes(self, process_paths):
@@ -621,6 +624,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.clear()
         
         for process_path in process_paths:
+            
             self._add_process_item(process_path)
             
     def _get_parent_path(self, item):
@@ -789,6 +793,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.clearSelection()
         process_paths = self._get_process_paths()
+        
+        print 'process paths', process_paths
         
         #this can be slow when there are many processes at the top level, and it checks if each process has sub process.
         self._load_processes(process_paths)

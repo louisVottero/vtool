@@ -1034,9 +1034,14 @@ class FileTreeWidget(TreeWidget):
 
     def set_directory(self, directory, refresh = True):
         
+        print 'set dir'
+        print 'dir', directory
+        
         self.directory = directory
         
         if refresh:
+            print 'dir!!!', self.directory            
+            
             self.refresh()
         
 class EditFileTreeWidget(DirectoryWidget):
@@ -1598,11 +1603,10 @@ class GetString(BasicWidget):
         self.main_layout.setSpacing(0)
         
         self.text_entry = QtGui.QLineEdit()
-        #self.text_entry.setMaximumWidth(100)
         
         self.label = QtGui.QLabel(self.name)
-        self.label.setAlignment(QtCore.Qt.AlignRight)
-        self.label.setMinimumWidth(35)
+        self.label.setAlignment(QtCore.Qt.AlignLeft)
+        self.label.setMinimumWidth(100)
         self._setup_text_widget()
         
         self.main_layout.addWidget(self.label)

@@ -1392,8 +1392,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     def run_current_item(self, external_code_library = None):
         
         
-        vtool.util.set_env('VETALA_RUN', True)
-        vtool.util.set_env('VETALA_STOP', False)
+        vtool.util.set_env('VETALA RUN', True)
+        vtool.util.set_env('VETALA STOP', False)
         
         process_tool = self.process
         
@@ -1435,8 +1435,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
         for inc in range(0, len(scripts)):
             
-            if vtool.util.get_env('VETALA_RUN') == 'True':
-                if vtool.util.get_env('VETALA_STOP') == 'True':
+            if vtool.util.get_env('VETALA RUN') == 'True':
+                if vtool.util.get_env('VETALA STOP') == 'True':
                     break
             
             if set_end_states:
@@ -1480,8 +1480,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                     if name == last_name:
                         set_end_states = True
         
-        vtool.util.set_env('VETALA_RUN', False)
-        vtool.util.set_env('VETALA_STOP', False)
+        vtool.util.set_env('VETALA RUN', False)
+        vtool.util.set_env('VETALA STOP', False)
         
     def remove_current_item(self):
         
