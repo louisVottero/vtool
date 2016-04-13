@@ -35,7 +35,6 @@ def activate_profiler():
     sys.setprofile(profiler_event)
 
 #decorators
-
 def try_pass(function):
     def wrapper(*args, **kwargs):
         
