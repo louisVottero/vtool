@@ -27,6 +27,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     
     def __init__(self, parent = None):
         
+        self.settings = None
+        
         self.process = process.Process()
         
         self.tab_widget = None
@@ -52,12 +54,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._set_default_directory()
         self._setup_settings_file()
         
+        self.view_widget.set_settings( self.settings )
+        self.settings_widget.set_settings(self.settings)
+        
         shortcut = QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Escape), self)
         shortcut.activated.connect(self._set_kill_process)
         
-        project_directory = self.settings.get('project_directory')
-        project_history = self.settings.get('project_history')
-        self._set_default_project_directory(project_directory, project_history)
+        self._set_default_project_directory()
+        self._set_default_template_directory()
         
         code_directory = self.settings.get('code_directory')
         if code_directory:
@@ -71,8 +75,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.show_options.connect(self._show_options)
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
            
-        self.view_widget.set_settings( self.settings )
-        self.settings_widget.set_settings(self.settings)
+        
         
     def _show_options(self):
         
@@ -202,8 +205,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         option_widget = QtGui.QWidget()
         option_widget.setLayout(option_layout)
         
+        self.template_widget = ui_templates.TemplateWidget()
+        
         tabs.addTab(option_widget, 'Options')
-        tabs.addTab(ui_templates.TemplateWidget(), 'Templates')
+        tabs.addTab(self.template_widget, 'Templates')
         
         self.data_widget = ui_data.DataProcessWidget()
         
@@ -211,6 +216,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget = ui_settings.SettingsWidget()
         self.settings_widget.project_directory_changed.connect(self.set_project_directory)
         self.settings_widget.code_directory_changed.connect(self.set_code_directory)
+        self.settings_widget.template_directory_changed.connect(self.set_template_directory)
         
         #splitter stuff
         self.process_splitter = QtGui.QSplitter()
@@ -298,7 +304,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._clear_code()
         
-        
         items = self.view_widget.tree_widget.selectedItems()
         
         title = '-'
@@ -336,7 +341,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.set_directory(default_directory)
         
-    def _set_default_project_directory(self, directory, history = None):
+    def _set_default_project_directory(self):
+        
+        directory = self.settings.get('project_directory')
         
         if directory:
             if type(directory) != list:
@@ -345,10 +352,23 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not directory:
             directory = ['default', util_file.join_path(self.directory, 'project')]
         
-        self.settings_widget.set_project_directory(directory, history)
+        self.settings_widget.set_project_directory(directory)
         
         self.set_project_directory(directory)
         
+    def _set_default_template_directory(self):
+        
+        directory = self.settings.get('template_directory')
+        
+        if directory:
+            if type(directory) != list:
+                directory = ['',directory]
+        
+        self.settings_widget.set_template_directory(directory)
+        
+        self.set_template_directory(directory)
+            
+    
     def _set_title(self, name):
         
         if not name:
@@ -360,8 +380,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         name = name.replace('/', '  /  ')
         
         self.active_title.setText(name)
-        
-
         
     def _open_help(self):
         import webbrowser
@@ -385,6 +403,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if self.tab_widget.currentIndex() == 1:
             if self.build_widget:
                 self.build_widget.show()
+                
+            self.set_template_directory()
                 
         if self.tab_widget.currentIndex() > 1:
             item = self.view_widget.tree_widget.currentItem()
@@ -560,14 +580,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _browser(self):
         
+        if self.tab_widget.currentIndex() == 0:
+            util_file.open_browser(self.directory)
+            return
+        
         directory = self._get_current_path()
         
         if not directory:
             
             directory = str(self.project_directory[1])
-
-        if directory and self.tab_widget.currentIndex() == 0:
-            util_file.open_browser(self.directory)
+            
         if directory and self.tab_widget.currentIndex() == 1:
             util_file.open_browser(directory)
         if directory and self.tab_widget.currentIndex() == 2:
@@ -575,45 +597,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             util_file.open_browser(path)
         if directory and self.tab_widget.currentIndex() == 3:
             path = self.process.get_code_path()
-            util_file.open_browser(path)    
-              
-    def _set_project_history(self, current_directory, previous_directory):
-        
-        history = self.settings.get('project_history')
-        
-        if previous_directory != current_directory and previous_directory:
-
-            if not history:
-                history = []
-            
-            found_history = []
-            
-            for inc in range(0, len(history)):
-                
-                history_inc = history[inc]
-                
-                if not util_file.is_dir(history_inc[1]):
-                    continue
-                
-                if history_inc in found_history:
-                    continue
-
-                found_history.append(history_inc)
-                   
-            history = found_history
-            
-            if not current_directory in history:
-                history.insert(0, current_directory) 
-                
-            self.settings.set('project_history', history)
-            return
-            
-        if history:
-            if not current_directory in history:
-                history.insert(0, current_directory)
-                
-            self.settings_widget.set_history(current_directory, history)
-            
+            util_file.open_browser(path)           
         
     def set_directory(self, directory):
         
@@ -631,41 +615,19 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if type(directory) != list:
             directory = ['', directory]
         
-        self._update_process(None)
+        self._clear_code()
         
         if not directory:
             self.process.set_directory(None)
             self.view_widget.set_directory(None)
-            #self._load_options(None)
             self.handle_selection_change = True
             return
 
         if not sub_part:
-            
-            if self.project_directory:
-                previous_project = str(self.project_directory[1])
-            if not self.project_directory:
-                previous_project = None
-            
-            if not util_file.is_dir(str(directory[1])):
-                util_file.create_dir(None, str(directory[1]))
-        
             self.project_directory = directory
-            
-            clean_list = []
-            
-            #needed for PyQt
-            for project in self.project_directory:
-                clean_list.append( str(project) )
-            
-            self.settings.set('project_directory', clean_list)
-            
-            self._set_project_history(directory, previous_project)
-            
             self.view_widget.clear_sub_path_filter()
-        
             directory = str(directory[1])
-        
+            
         if sub_part:
             directory = sub_part
             
@@ -676,6 +638,35 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter.setSizes([1,0])
         
         self.handle_selection_change = True
+        
+    def set_template_directory(self, directory = None):
+        
+        if not self.settings:
+            return
+        
+        current = self.settings.get('template_directory')
+        template_settings = self.settings.get('template_history')
+        
+        if not current:
+            return
+        
+        current_name = None
+        
+        if not template_settings:
+            current_name = current
+            template_settings = [['', current]]
+            
+        self.template_widget.set_templates(template_settings)
+            
+        if not current_name:
+            for setting in template_settings:
+                if setting[1] == current:
+                    current_name = setting[0]  
+            
+        print 'curretn', current_name
+            
+        if current_name:
+            self.template_widget.set_current(current_name)
         
     def set_code_directory(self, directory):
         
@@ -693,5 +684,4 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if util_file.is_dir(directory):
                 if not directory in sys.path:
                     sys.path.append(directory)
-        
-
+                    
