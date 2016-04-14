@@ -1541,12 +1541,13 @@ class MultiJointShape(object):
         self.joints = []
         
         self.control_values = []
+        self.off_control_values = []
         
         self.base_mesh = None
         self.skinned_mesh = None
         
         self.locators = []
-    
+        
     def _create_locators(self):
         
         
@@ -1589,6 +1590,15 @@ class MultiJointShape(object):
         for control_group in self.control_values:
             cmds.setAttr( control_group[0], 0 )
     
+    def _turn_off_controls_on(self):
+        
+        for control_group in self.off_control_values:
+            cmds.setAttr( control_group[0], control_group[1] )
+                
+    def _turn_off_controls_off(self):
+        for control_group in self.off_control_values:
+            cmds.setAttr( control_group[0], 0 )
+    
     def set_joints(self, joints):
         
         self.joints = joints
@@ -1602,7 +1612,10 @@ class MultiJointShape(object):
     def add_control_value(self, control_attribute, value):
         
         self.control_values.append([control_attribute, value])
-    
+        
+    def add_control_off_value(self, control_attribute, value):
+        
+        self.off_control_values.append([control_attribute, value])
         
     def create(self):
         
@@ -1614,13 +1627,23 @@ class MultiJointShape(object):
         cmds.delete(self.shape)
         new_brow_geo = cmds.rename(new_brow_geo, self.shape)
      
-        joint_values = {}    
+        joint_values = {}
+        off_joint_values = {}    
      
         for locator in self.locators:
             value = cmds.getAttr('%s.translateY' % locator)
             joint_values[locator] = value
         
         self._turn_controls_off()
+        
+        if self.off_control_values:
+            self._turn_off_controls_on()
+            
+            for locator in self.locators:
+                value = cmds.getAttr('%s.translateY' % locator)
+                off_joint_values[locator] = value
+                
+            self._turn_controls_off()
         
         
         split = SplitMeshTarget(new_brow_geo)
@@ -1641,13 +1664,25 @@ class MultiJointShape(object):
             
             value = joint_values[self.locators[inc]]
             
+            off_value = None
+            
+            if off_joint_values:
+                off_value = off_joint_values[self.locators[inc]]
+            
             quick_blendshape(split, self.base_mesh)
-     
-            anim.quick_driven_key('%s.translateY' % self.locators[inc],
-                                    'blendshape_%s.%s' % (self.base_mesh, split),
-                                    [0, value], 
-                                    [0, 1])        
-     
+            
+            if not off_value:
+                anim.quick_driven_key('%s.translateY' % self.locators[inc],
+                                        'blendshape_%s.%s' % (self.base_mesh, split),
+                                        [0, value], 
+                                        [0, 1])        
+                
+            if off_value:
+                anim.quick_driven_key('%s.translateY' % self.locators[inc],
+                                        'blendshape_%s.%s' % (self.base_mesh, split),
+                                        [0, value, off_value], 
+                                        [0, 1, 0])
+         
             inc+=1
      
         cmds.delete(splits)

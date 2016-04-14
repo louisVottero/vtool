@@ -1,5 +1,4 @@
-# Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
-
+# Copyright (C) 2014-2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from vtool import qt_ui
 from vtool import util_file
@@ -47,7 +46,6 @@ class SettingsWidget(qt_ui.BasicWidget):
     def _build_dir_widgets(self):
         
         self.project_directory_widget = ProjectDirectoryWidget()
-        #self.project_directory_widget.set_label('Project Directory')
         self.project_directory_widget.directory_changed.connect(self._project_directory_changed)
         
         tabs = QtGui.QTabWidget()
@@ -70,8 +68,6 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.dir_widget.main_layout.addSpacing(10)
         self.dir_widget.main_layout.addWidget(self.editor_directory_widget)
         self.dir_widget.main_layout.addSpacing(10)
-        
-        
         
     def _build_option_widgets(self):
         
@@ -133,9 +129,18 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.project_directory_widget.set_settings(settings)
         self.editor_directory_widget.set_settings(settings)
         
+        self._get_stop_on_error()
+        
+    def set_template_settings(self, settings):
+        
         self.template_directory_widget.set_settings(settings)
         
-        self._get_stop_on_error()
+    def refresh_template_list(self):
+        
+        current = self.settings.get('template_directory')
+        history = self.settings.get('template_history')
+        
+        self.template_directory_widget.list.refresh_list(current, history)
         
 class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
     
@@ -155,8 +160,6 @@ class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
             self.directory_edit.setText(filename)
             self.directory_changed.emit(filename)
             self.settings.set('external_editor', str(filename))
-    
-    
     
     def set_settings(self, settings):
         
@@ -252,17 +255,14 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.directory_changed.emit(directory)
         
-        self.list.select(directory)
+        #self.list.select(directory)
         #self.set_label(directory[1])
         
         #self.list.refresh_list(directory, found)
         
     def _send_directories(self, directory):
-
         self.directory_changed.emit(directory)
-        self.directory_label.setText(directory)
-
-    
+        
     def _browser(self):
         
         current_dir = self.list.current_directory()
@@ -279,8 +279,9 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         found = self.list.get_directories()
         
-        if filename in found:    
-            return
+        for item in found:
+            if item[1] == filename:
+                return
         
         if found:
             found.insert(0, filename)
@@ -289,28 +290,35 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
             found = [filename] 
         
         if filename and util_file.is_dir(filename):
-            self._text_changed(filename)
             
             self.settings.set(self.directory_entry, filename)
             self._set_history(filename)
             self.list.refresh_list(filename, found)
             
-            self.directory_changed.emit(filename)
+            
+            self._send_directories(filename)
             
     def _set_history(self, current_directory):
         
         if not type(current_directory) == list:
             current_directory = ['', str(current_directory)]
         
-        items = self.list.selectedItems()
+        item = self.list.currentItem()
+        selected = self.list.selectedItems()
+        
+        if not item:
+            item = selected[0]
         
         previous_directory = None
         
-        if items:
+        if item:
         
-            previous_directory = str(items[0].text(1))
+            previous_directory = str(item.text(1))
         
         history = self.settings.get(self.history_entry)
+        
+        if not history and previous_directory:
+            history.insert(0, [str(item.text(0)), previous_directory])
         
         if previous_directory != current_directory[1] and previous_directory:
 
@@ -335,21 +343,22 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
             
             if not current_directory in history:
                 history.insert(0, current_directory) 
-                
-            return
             
         if history:
             if not current_directory in history:
                 history.insert(0, current_directory)
+                
+        
         
         if self.settings:
             self.settings.set(self.history_entry, history)
         
     def set_directory(self, directory):
         
-        print 'set dir!!!', directory
-        
         history = None
+        
+        if not directory:
+            return
         
         if self.settings:
             history = self.settings.get(self.history_entry)
@@ -358,7 +367,6 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
             directory = ['', str(directory)]
             
         self.settings.set(self.directory_entry, directory[1])
-        
         
         self.list.refresh_list(directory, history)
         
@@ -389,6 +397,7 @@ class ProjectList(QtGui.QTreeWidget):
         self.settings = None     
         
         self._setting_entries()
+        
         
     def _setting_entries(self):
         self.directory_entry = 'project_directory'
@@ -431,9 +440,6 @@ class ProjectList(QtGui.QTreeWidget):
             item.setText(0, new_name)
         
             if self.settings:
-                
-                print 'rename', self.history_entry, self.get_directories()
-                print self.directory_entry, new_name, directory
                 
                 self.settings.set(self.history_entry, self.get_directories())
                 self.settings.set(self.directory_entry, [new_name, directory])
@@ -505,9 +511,11 @@ class ProjectList(QtGui.QTreeWidget):
         if project == item.text(1):
             self.directories_changed.emit('')
         
+        directories = self.get_directories()
+        
         if self.settings:
             self.settings.set(self.history_entry, self.get_directories())
-            self.settings.set(self.directory_entry, '')
+            self.settings.set(self.directory_entry, directories[0][1])
         
     def current_directory(self):
         
@@ -532,8 +540,10 @@ class ProjectList(QtGui.QTreeWidget):
         
         select_item = None
         
-        
         for history in self.history:
+            
+            if history == None:
+                continue
                 
             if type(history) != list:
                 history = ['', history]
