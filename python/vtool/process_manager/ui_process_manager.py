@@ -136,7 +136,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._update_process(name)
         self.last_item = item
         
-        self._load_options(item.get_path())
+        path = item.get_path()
+        
+        self._load_options(path)
         
     def _load_options(self, directory):
         
@@ -717,7 +719,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process.set_directory(directory)
         self.view_widget.set_directory(directory)
         
-        self.option_widget.set_directory(None)
+        self.option_widget.set_directory(directory)
         self.process_splitter.setSizes([1,0])
         
     def set_template_directory(self, directory = None):

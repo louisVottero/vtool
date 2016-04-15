@@ -33,6 +33,10 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         self.main_layout.addWidget(self.option_palette)
         
     def set_directory(self, directory):
+        
+        if directory == None:
+            raise
+        
         self.directory = directory
         self.option_palette.set_directory(directory)
         
@@ -239,7 +243,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         palette = self._find_palette(self)
         
         self._write_widget_options(palette)
-        
+                    
     def _load_widgets(self, options):
         
         self.clear_widgets()
@@ -273,10 +277,29 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             if split_name[-1] == '':
                 is_group = True
-                self.add_group(name, widget)
-            
-            if type(option[1]) == str:
                 
+                name = string.join(split_name[:-1], '.')
+                
+                group = self._find_group_widget(name)
+                
+                if not group:
+                    self.add_group(name, widget)
+            
+            if len(split_name) > 1 and split_name[-1] != '':
+                
+                search_group = string.join(split_name[:-2], '.')
+                after_search_group = string.join(split_name[:-1], '.')
+                group_name = split_name[-2]
+                
+                group_widget = self._find_group_widget(search_group)
+                
+                widget = self._find_group_widget(after_search_group)
+                
+                if not widget:
+                    self.add_group(group_name, group_widget)
+                    widget = self._find_group_widget(after_search_group)
+                
+            if type(option[1]) == str:
                 self.add_string_option(name, str(option[1]), widget)
                 
             if type(option[1]) == float:
