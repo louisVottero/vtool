@@ -592,6 +592,7 @@ class BlendShape(object):
         
             for inc in range(0, vertex_count):    
                 attribute = self._get_input_target_base_weights_attribute(mesh_index)
+                print attribute
                 weight = cmds.getAttr('%s[%s]' % (attribute, inc))
                 weights.append(weight)
             
@@ -601,6 +602,7 @@ class BlendShape(object):
             
             for inc in range(0, vertex_count):
                 attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
+                print attribute
                 weight = cmds.getAttr('%s[%s]' % (attribute, inc))
                 weights.append(weight)
             

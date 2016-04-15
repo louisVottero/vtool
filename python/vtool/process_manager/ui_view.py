@@ -375,7 +375,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.rename_action = self.context_menu.addAction('Rename')
         self.copy_action = self.context_menu.addAction('Copy')
         self.paste_action = self.context_menu.addAction('Paste')
-        self.paste_into_action = self.context_menu.addAction('Add In')
+        self.paste_into_action = self.context_menu.addAction('Merge')
         self.paste_action.setVisible(False)
         self.paste_into_action.setVisible(False)
         self.copy_special_action = self.context_menu.addAction('Copy Special')
@@ -490,7 +490,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         path = self._get_parent_path(item)
         
         self.paste_action.setText('Paste: %s' % path)
-        self.paste_into_action.setText('Add In: %s' % path)
+        self.paste_into_action.setText('Merge With: %s' % path)
         
     def _paste_process(self):
         

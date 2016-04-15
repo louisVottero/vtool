@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import string
+
 import vtool.qt_ui
 import vtool.util_file
 import vtool.data
@@ -23,7 +25,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         super(DataProcessWidget, self).__init__()
         
-        
         self.setMouseTracking(True)
         self.data_widget.setMouseTracking(True)
           
@@ -31,8 +32,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         return QtGui.QVBoxLayout()
                 
     def _build_widgets(self):
-        
-        
         
         splitter = QtGui.QSplitter()
         
@@ -59,8 +58,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.main_layout.addWidget(self.label, alignment = QtCore.Qt.AlignCenter)
         self.main_layout.addWidget(self.file_widget)
-        
-        
         
     def mouse_move(self, event):
         
@@ -99,7 +96,9 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                 
                 data_type = process_tool.get_data_type(item.text(0))
                 
-                for key in file_widgets:
+                keys = file_widgets.keys()
+                
+                for key in keys:
                     
                     if key == data_type:
                         
@@ -343,7 +342,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         names.insert(1, '.data')
         
         names.reverse()
-        import string
+        
         path = string.join(names, '/')
         
         return path
@@ -832,6 +831,13 @@ class DeformerWeightFileWidget(MayaDataFileWidget):
     
     def _define_main_tab_name(self):
         return 'Deformer Weights'
+
+class BlendShapeWeightFileWidget(MayaDataFileWidget):
+    def _define_data_class(self):
+        return vtool.data.BlendshapeWeightData()
+    
+    def _define_main_tab_name(self):
+        return 'BlendShape Weights'
       
 class AnimationFileWidget(MayaDataFileWidget):
     
@@ -1168,6 +1174,7 @@ file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.control_cvs' : ControlCvFileWidget,
                  'maya.skin_weights' : SkinWeightFileWidget,
                  'maya.deform_weights' : DeformerWeightFileWidget,
+                 'maya.blend_weights' : BlendShapeWeightFileWidget,
                  'maya.atom' :  AtomFileWidget,
                  'maya.shaders' : MayaShadersFileWidget,
                  'maya.attributes' : MayaAttributesFileWidget,

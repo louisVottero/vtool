@@ -2100,21 +2100,24 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
         list: The names of deformers of type found in the history.
     """
     
-    scope = cmds.listHistory(mesh, interestLevel = 1)
-    
     found = []
     
     history = get_history(mesh)
     
+    print 'find defo', history
+    
     if history:
     
         for thing in history:
-            if cmds.nodeType(thing) == deformer_type:
-                if not return_all:
-                    return thing
-                
-                found.append(thing)
+            if thing:
+                if cmds.nodeType(thing) == deformer_type:
+                    if not return_all:
+                        return thing
+                    
+                    found.append(thing)
             
+            
+    print 'found', found
     if not found:
         return None
         

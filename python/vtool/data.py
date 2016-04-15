@@ -29,13 +29,14 @@ class DataManager(object):
                                ScriptPythonData(),
                                ControlCvData(),
                                SkinWeightData(),
+                               BlendshapeWeightData(),
                                DeformerWeightData(),
+                               PoseData(),
+                               MayaAttributeData(),
                                AnimationData(),
                                ControlAnimationData(),
-                               #AtomData(),
                                MayaShadersData(),
-                               MayaAttributeData(),
-                               PoseData()]
+                               ]
         
     def get_available_types(self):
         
@@ -939,13 +940,13 @@ class ReadWeightFileThread(threading.Thread):
 class BlendshapeWeightData(MayaCustomData):
     
     def _data_name(self):
-        return 'blendshape_weights'
+        return 'blend_weights'
 
     def _data_extension(self):
         return ''
     
     def _data_type(self):
-        return 'maya.blendshape_weights'
+        return 'maya.blend_weights'
 
     def export_data(self, comment = None):
         
@@ -956,9 +957,9 @@ class BlendshapeWeightData(MayaCustomData):
         
         for mesh in meshes:
         
-            blendshape = maya_lib.deform.find_deformer_by_type(mesh, 'blendshape', return_all = True)
+            blendshape = maya_lib.deform.find_deformer_by_type(mesh, 'blendShape', return_all = True)
             
-            blendshapes.append(blendshape)
+            blendshapes += blendshape
             
         if not blendshapes:
             return    
@@ -966,16 +967,21 @@ class BlendshapeWeightData(MayaCustomData):
         for blendshape in blendshapes:
             
             blend = maya_lib.blendshape.BlendShape(blendshape)
+            
             mesh_count = blend.get_mesh_count()
             targets = blend.get_target_names()
             
             blendshape_path = util_file.create_dir(blendshape, path)
             
             for target in targets:
+                
+                target_path = util_file.create_dir(target, blendshape_path)
+                
                 for inc in xrange(mesh_count):
+                    
                     weights = blend.get_weights(target, inc)
                     
-                    filename = util_file.create_file('mesh_%s.weights' % inc, blendshape_path)
+                    filename = util_file.create_file('mesh_%s.weights' % inc, target_path)
                     util_file.write_lines(filename, [weights])
             
         util.show('Exported %s data' % self.name)
@@ -984,8 +990,40 @@ class BlendshapeWeightData(MayaCustomData):
         
         path = util_file.join_path(self.directory, self.name)
         
-        files = util_file.get_files(path)
+        folders = util_file.get_folders(path)
         
+        print 'folderrs!', folders
+        
+        for folder in folders:
+            
+            if cmds.objExists(folder) and cmds.nodeType(folder) == 'blendShape':
+                
+                blendshape_folder = folder
+                blendshape_path = util_file.join_path(path, folder)
+                
+                targets = util_file.get_folders(blendshape_path)
+                
+                for target in targets:
+                    
+                    if cmds.objExists('%s.%s' % (blendshape_folder, target)):
+                        
+                        target_path = util_file.join_path(blendshape_path, target)
+                        
+                        files = util_file.get_files_with_extension('weights', target_path)
+                        
+                        for filename in files:
+                            
+                            filepath = util_file.join_path(target_path, filename)
+                            lines = util_file.get_file_lines(filepath)
+                            
+                            weights = eval(lines[0])
+                                
+                            index = util.get_last_number(filename)
+                            blend = maya_lib.blendshape.BlendShape(blendshape_folder)
+                            blend.set_weights(weights, target, mesh_index = index)
+                                
+                    
+        """
         for filename in files:
             
             file_path = util_file.join_path(path, filename)
@@ -1005,7 +1043,7 @@ class BlendshapeWeightData(MayaCustomData):
                 
             if not cmds.objExists(deformer):
                 util.warning('Import failed: Deformer %s does not exist.' % deformer)    
-                 
+        """      
         util.show('Imported %s data' % self.name)
     
 class DeformerWeightData(MayaCustomData):
