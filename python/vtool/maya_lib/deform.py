@@ -55,7 +55,7 @@ class XformTransfer(object):
         cmds.blendShape(self.target_mesh, self.source_mesh, weight = [0,1], origin = 'world')        
             
     def _move_to_target(self):
-        for inc in range(0, len(self.scope)):
+        for inc in xrange(0, len(self.scope)):
             position = cmds.pointPosition('%s.pt[%s]' % (self.particles,inc))
             transform = self.scope[inc]
             
@@ -298,7 +298,7 @@ class ClusterSurface(ClusterObject):
             cv_count = len(self.cvs[2:self.cv_count])
             start_inc = 2
             
-        for inc in range(start_inc, cv_count):
+        for inc in xrange(start_inc, cv_count):
             
             if self.maya_type == 'nurbsCurve':
                 cv = '%s.cv[%s]' % (self.geometry, inc)
@@ -400,7 +400,7 @@ class ClusterCurve(ClusterSurface):
             cv_count = len(self.cvs[2:self.cv_count])
             start_inc = 2
             
-        for inc in range(start_inc, cv_count):
+        for inc in xrange(start_inc, cv_count):
             cluster, handle = self._create_cluster( '%s.cv[%s]' % (self.geometry, inc) )
             
             self.clusters.append(cluster)
@@ -1010,7 +1010,7 @@ class TransferWeight(object):
         
         for influence_index in influence_index_order:
             
-            for vert_index in range(0, len(verts)):
+            for vert_index in xrange(0, len(verts)):
                 
                 int_vert_index = vtool.util.get_last_number(verts[vert_index])
                 
@@ -1058,7 +1058,7 @@ class TransferWeight(object):
             joint_weight = {}
             
             #check if the distance is almost zero on a new influence
-            for distance_id in range(0, len(distances)):
+            for distance_id in xrange(0, len(distances)):
                 if distances[distance_id] <= 0.001:
                     joint_weight[new_joints[distance_id]] = 1
                     found_weight = True
@@ -1069,7 +1069,7 @@ class TransferWeight(object):
                 smallest_distance = distances[0]
                 distances_in_range = []
                 
-                for joint_index in range(0, new_joint_count):
+                for joint_index in xrange(0, new_joint_count):
                     if distances[joint_index] < smallest_distance:
                         smallest_distance = distances[joint_index]
                 
@@ -1077,7 +1077,7 @@ class TransferWeight(object):
                 
                 distances_away = []
                 
-                for joint_index in range(0, new_joint_count):
+                for joint_index in xrange(0, new_joint_count):
     
                     distance_away = distances[joint_index] - smallest_distance
                     
@@ -1123,7 +1123,7 @@ class TransferWeight(object):
 
                 cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
                 
-            for joint_index in range(0, joint_count):
+            for joint_index in xrange(0, joint_count):
                 change = 1 - weight_percent_change
                 
                 value = source_joint_weights[joint_index]
@@ -1216,7 +1216,7 @@ class AutoWeight2D(object):
         self.verts = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
     
     def _get_joint_index(self, joint):
-        for inc in range(0, len(self.joints)):
+        for inc in xrange(0, len(self.joints)):
             if self.joints[inc] == joint:
                 return inc
             
@@ -1248,7 +1248,7 @@ class AutoWeight2D(object):
         last_position = None
         change = False
         
-        for inc in range(0, len(other_list)):
+        for inc in xrange(0, len(other_list)):
             
             
             
@@ -1326,7 +1326,7 @@ class AutoWeight2D(object):
         
         progress = core.ProgressBar('weighting %s:' % mesh, vert_count)
         
-        for inc in range(0, vert_count):
+        for inc in xrange(0, vert_count):
             
             joint_weights = self._get_vert_weight(inc)
             
@@ -1369,7 +1369,7 @@ class AutoWeight2D(object):
         old_multiplier = multiplier
         multiplier = 1
         
-        for inc in range(0, joint_count):
+        for inc in xrange(0, joint_count):
             
             if inc == joint_count-1:
                 break
@@ -1972,7 +1972,7 @@ def cluster_curve(curve, description, join_ends = False, join_start_end = False,
         cvs = cvs[2:cv_count-2]
         cv_count = len(cvs)+2
     
-    for inc in range(start_inc, cv_count):
+    for inc in xrange(start_inc, cv_count):
         cluster = cmds.cluster( '%s.cv[%s]' % (curve, inc), n = core.inc_name(description) )[1]
         clusters.append(cluster)
     
@@ -2353,7 +2353,7 @@ def get_skin_weights(skin_deformer):
     
     vert_count = len(indices)
     
-    for inc in range(0, vert_count):
+    for inc in xrange(0, vert_count):
         
         influence_indices = attr.get_indices('%s.weightList[ %s ].weights' % (skin_deformer, inc))
         
@@ -2390,7 +2390,7 @@ def get_skin_influence_weights(influence_name, skin_deformer):
     
     weights = [0] * index_count
     
-    for inc in range(0, index_count):
+    for inc in xrange(0, index_count):
         #influence_indices = attr.get_indices('%s.weightList[ %s ].weights' % (skin_deformer, inc))
         
         #if not influence_indices:
@@ -2431,7 +2431,7 @@ def get_skin_blend_weights(skin_deformer):
     
     values = []
     
-    for inc in range(0, len(indices)):
+    for inc in xrange(0, len(indices)):
         
         if inc in blend_weight_dict:
             values.append( blend_weight_dict[inc] )
@@ -2453,7 +2453,7 @@ def set_skin_blend_weights(skin_deformer, weights):
     """
     indices = attr.get_indices('%s.weightList' % skin_deformer)
     
-    for inc in range(0, len(indices)):
+    for inc in xrange(0, len(indices)):
         if cmds.objExists('%s.blendWeights[%s]' % (skin_deformer, inc)):
             try:
                 cmds.setAttr('%s.blendWeights[%s]' % (skin_deformer, inc), weights[inc])
@@ -2519,7 +2519,7 @@ def set_deformer_weights(weights, deformer, index = 0):
         index (int): The geometry index to set weights on. By default it will work on the first mesh.
     """
     
-    for inc in range(0, len(weights) ):    
+    for inc in xrange(0, len(weights) ):    
         cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights[inc])
         
 def get_deformer_weights(deformer, index = 0):
@@ -2547,7 +2547,7 @@ def get_deformer_weights(deformer, index = 0):
             
     weights = []
     
-    for inc in range(0, len(indices)):
+    for inc in xrange(0, len(indices)):
         weights.append( cmds.getAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc)) )
     
     return weights
@@ -2642,7 +2642,7 @@ def set_all_weights_on_wire(wire_deformer, weight, slot = 0):
     if mesh:
         indices = cmds.ls('%s.vtx[*]' % mesh, flatten = True)    
     
-    for inc in range(0, len(indices) ):
+    for inc in xrange(0, len(indices) ):
         cmds.setAttr('%s.weightList[%s].weights[%s]' % (wire_deformer, slot, inc), weight)
 
 def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence):
@@ -2690,7 +2690,7 @@ def prune_wire_weights(deformer, value = 0.0001):
     
     found_verts = []
     
-    for inc in range(0, len(verts)):
+    for inc in xrange(0, len(verts)):
         weight_value = cmds.getAttr('%s.weightList[%s].weights[%s]' % (deformer, 0, inc))
         
         if weight_value < value:
@@ -2970,7 +2970,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
             weights = {}
             verts_inc = {}
             
-            for inc in range(0, len(wire_weights)):
+            for inc in xrange(0, len(wire_weights)):
                 if wire_weights[inc] > 0:
                     weighted_verts.append(verts[inc])
                     weights[verts[inc]] = wire_weights[inc]
@@ -3024,7 +3024,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
                 distances_in_range = []
                 smallest_distance_inc = 0
                 
-                for inc in range(0, joint_count):
+                for inc in xrange(0, joint_count):
                     if distances[inc] < smallest_distance:
                         smallest_distance_inc = inc
                         smallest_distance = distances[inc]
@@ -3033,7 +3033,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
                 if distance_falloff < falloff:
                     distance_falloff = falloff
                 
-                for inc in range(0, joint_count):
+                for inc in xrange(0, joint_count):
 
                     if distances[inc] <= distance_falloff:
                         distances_in_range.append(inc)
@@ -3149,7 +3149,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
             weights = {}
             verts_inc = {}
             
-            for inc in range(0, len(wire_weights)):
+            for inc in xrange(0, len(wire_weights)):
                 if wire_weights[inc] > 0:
                     weighted_verts.append(verts[inc])
                     weights[verts[inc]] = wire_weights[inc]
@@ -3189,7 +3189,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
                 distances_in_range = []
                 smallest_distance_inc = 0
                 
-                for inc in range(0, joint_count):
+                for inc in xrange(0, joint_count):
                     if distances[inc] < smallest_distance:
                         smallest_distance_inc = inc
                         smallest_distance = distances[inc]
@@ -3198,7 +3198,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
                 if distance_falloff < falloff:
                     distance_falloff = falloff
                 
-                for inc in range(0, joint_count):
+                for inc in xrange(0, joint_count):
 
                     if distances[inc] <= distance_falloff:
                         distances_in_range.append(inc)
@@ -3311,7 +3311,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
         
         weight_count = len(index_weights)
         
-        for inc in range(0,weight_count):
+        for inc in xrange(0,weight_count):
             
             if index_weights[inc] == 0:
                 continue
@@ -3357,7 +3357,7 @@ def transfer_cluster_weight_to_joint(cluster, joint, mesh):
     
     weights = get_cluster_weights(cluster)
     
-    for inc in range(0, len(weights)):
+    for inc in xrange(0, len(weights)):
         
         vert = '%s.vtx[%s]' % (mesh, inc)
         
@@ -4054,9 +4054,9 @@ def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
     top_group = cmds.group(em = True, n = core.inc_name('rivetJoints_1_%s' % name))
     joints = []
     
-    for inc in range(0, uv_count[0]):
+    for inc in xrange(0, uv_count[0]):
         
-        for inc2 in range(0, uv_count[1]):
+        for inc2 in xrange(0, uv_count[1]):
             
             rivet = geo.Rivet(name)
             rivet.set_surface(surface, section_value_u, section_value_v)
@@ -4128,7 +4128,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
             
             bad_blendshape = False
             
-            for inc in range(0, len(target_shapes)):
+            for inc in xrange(len(target_shapes)):
             
                 target_shape = target_shapes[inc]
                 shape = shapes[inc]
@@ -4192,7 +4192,7 @@ def isolate_shape_axis(base, target, axis_list = ['X','Y','Z']):
     
     new_target = cmds.duplicate(target, n = '%s_%s' % (target, axis_name))[0]
     
-    for inc in range(0, vert_count):
+    for inc in xrange(0, vert_count):
         
         base_pos = cmds.xform('%s.vtx[%s]' % (base, inc), q = True, t = True, ws = True)
         target_pos = cmds.xform('%s.vtx[%s]' % (target, inc), q = True, t = True, ws = True)

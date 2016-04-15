@@ -118,7 +118,7 @@ class DoubleArray(ApiObject):
         
         length = self.api_object.length()
         
-        for inc in range(0, length):
+        for inc in xrange(0, length):
             numbers.append( self.api_object[inc] )
         
         return numbers
@@ -131,7 +131,7 @@ class PointArray(ApiObject):
         values = []
         length = self.api_object.length()
         
-        for inc in range(0, length):
+        for inc in xrange(0, length):
             point = OpenMaya.MPoint()
             
             point = self.api_object[inc]
@@ -581,7 +581,7 @@ class IteratePolygonFaces(MayaIterator):
     def get_face_center_vectors(self):
         center_vectors = []
         
-        for inc in range(0, self.api_object.count()):
+        for inc in xrange(0, self.api_object.count()):
             
             point = self.api_object.center()
             
