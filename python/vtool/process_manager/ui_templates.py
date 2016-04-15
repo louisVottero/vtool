@@ -11,6 +11,7 @@ if qt_ui.is_pyside():
 class TemplateWidget(qt_ui.BasicWidget):
     
     current_changed = qt_ui.create_signal()
+    add_template = qt_ui.create_signal(object, object)
     
     def _build_widgets(self):
         
@@ -26,18 +27,22 @@ class TemplateWidget(qt_ui.BasicWidget):
         
         self.template_tree = TemplateTree()
         
+        self.template_tree.add_template.connect(self._add_template)
+        
         self.main_layout.addSpacing(10)
         self.main_layout.addLayout(title_layout)
         self.main_layout.addSpacing(10)
         self.main_layout.addWidget(self.template_tree)
-        
-        #template_tree.set_directory('N:/proddev/rig_dev/vtool_templates', refresh = True)
         
         self.template_dict = {}
         self.handle_current_change = True
         self.active = False
         self.current = None
         self.template_list = None
+        
+    def _add_template(self, process_name, directory):
+        
+        self.add_template.emit(process_name, directory)
         
     def _change(self, index):
         
@@ -143,6 +148,8 @@ class TemplateWidget(qt_ui.BasicWidget):
                 
 class TemplateTree(ui_view.ProcessTreeWidget):
     
+    add_template = qt_ui.create_signal(object, object)
+    
     def __init__(self):
         super(TemplateTree, self).__init__()
         
@@ -156,8 +163,16 @@ class TemplateTree(ui_view.ProcessTreeWidget):
         
         self.context_menu = QtGui.QMenu()
         
-        add_into = self.context_menu.addAction('Copy To Current Process')
-        add_into.triggered.connect(self._add_template)
+        copy_to = self.context_menu.addAction('Copy To Current Process')
+        copy_to.triggered.connect(self._add_template)
         
     def _add_template(self):
-        return
+        
+        items = self.selectedItems()
+        if not items:
+            return
+        
+        parent_path = self._get_parent_path(items[0])
+        
+        self.add_template.emit(parent_path, self.directory)
+        

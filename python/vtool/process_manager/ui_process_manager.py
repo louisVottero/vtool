@@ -61,6 +61,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.show_templates.connect(self._show_templates)
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
         
+        
         self._set_default_directory()
         self._setup_settings_file()
         
@@ -110,10 +111,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _item_selection_changed(self):
         
-        print 'selection change!'
-        print self.handle_selection_change
-        
-        
         if not self.handle_selection_change:
             return
         
@@ -132,9 +129,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         item = items[0]
         
         name = item.get_name()
-
-        print 'name:', name
-
+        
         self._update_build_widget(name)
 
         self._set_title(name)
@@ -151,7 +146,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if has_options:
             self.process_splitter.setSizes([1,1])
-        if not has_options:
+        if not has_options and self.option_tabs.currentIndex() == 0:
             self.process_splitter.setSizes([1,0])
         
     def _update_build_widget(self, process_name):
@@ -238,6 +233,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.template_widget = ui_templates.TemplateWidget()
         self.template_widget.set_active(False)
         self.template_widget.current_changed.connect(self._template_current_changed)
+        self.template_widget.add_template.connect(self._add_template)
         
         self.option_tabs.addTab(option_widget, 'Options')
         self.option_tabs.addTab(self.template_widget, 'Templates')
@@ -323,6 +319,43 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.main_layout.addLayout(btm_layout)
         
         self.build_widget.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        
+    def _add_template(self, process_name, directory):
+        
+        source_process = process.Process(process_name)
+        source_process.set_directory(directory)
+        
+        target_process = None
+        
+        items = self.view_widget.tree_widget.selectedItems()
+        if items:
+            target_item = items[0]
+            target_process = target_item.get_process()
+        if not items:
+            target_item = None
+        
+        if not target_process:
+            target_process = process.Process()
+            target_process.set_directory(self.view_widget.tree_widget.directory)
+            target_item = None 
+        
+        new_process = process.copy_process(source_process, target_process)
+        
+        if not new_process:
+            return
+        
+        
+        new_item = self.view_widget.tree_widget._add_process_item(new_process.get_name(), target_item)
+        
+        if target_process:
+            if target_item:
+                self.view_widget.tree_widget.collapseItem(target_item)
+                self.view_widget.tree_widget.expandItem(target_item)
+            
+        if not target_process:
+            self.view_widget.tree_widget.scrollToItem(new_item)
+            
+        self.view_widget.tree_widget.copy_process.emit()
         
     def _option_changed(self):
         
