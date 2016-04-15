@@ -18,6 +18,7 @@ import maya_lib.anim
 import maya_lib.curve
 import maya_lib.corrective
 import maya_lib.rigs_util
+import maya_lib.blendshape
 
 class DataManager(object):
     
@@ -945,6 +946,67 @@ class BlendshapeWeightData(MayaCustomData):
     
     def _data_type(self):
         return 'maya.blendshape_weights'
+
+    def export_data(self, comment = None):
+        
+        path = util_file.create_dir(self.name, self.directory)
+        
+        meshes = maya_lib.geo.get_selected_meshes()
+        blendshapes = []
+        
+        for mesh in meshes:
+        
+            blendshape = maya_lib.deform.find_deformer_by_type(mesh, 'blendshape', return_all = True)
+            
+            blendshapes.append(blendshape)
+            
+        if not blendshapes:
+            return    
+        
+        for blendshape in blendshapes:
+            
+            blend = maya_lib.blendshape.BlendShape(blendshape)
+            mesh_count = blend.get_mesh_count()
+            targets = blend.get_target_names()
+            
+            blendshape_path = util_file.create_dir(blendshape, path)
+            
+            for target in targets:
+                for inc in xrange(mesh_count):
+                    weights = blend.get_weights(target, inc)
+                    
+                    filename = util_file.create_file('mesh_%s.weights' % inc, blendshape_path)
+                    util_file.write_lines(filename, [weights])
+            
+        util.show('Exported %s data' % self.name)
+    
+    def import_data(self):
+        
+        path = util_file.join_path(self.directory, self.name)
+        
+        files = util_file.get_files(path)
+        
+        for filename in files:
+            
+            file_path = util_file.join_path(path, filename)
+            
+            lines = util_file.get_file_lines(file_path)
+            
+            if lines:
+                weights = eval(lines[0])
+                
+            if not lines:
+                return
+            
+            deformer = filename.split('.')[0]
+            
+            if cmds.objExists(deformer):
+                maya_lib.deform.set_deformer_weights(weights, deformer)
+                
+            if not cmds.objExists(deformer):
+                util.warning('Import failed: Deformer %s does not exist.' % deformer)    
+                 
+        util.show('Imported %s data' % self.name)
     
 class DeformerWeightData(MayaCustomData):
     """
@@ -1422,8 +1484,6 @@ class PoseData(MayaCustomData):
         
     def _import_file(self, filepath):
         
-        
-        
         if util_file.is_file(filepath):
             
             cmds.file(filepath, f = True, i = True, iv = True, shd = 'shadingNetworks')
@@ -1505,10 +1565,7 @@ class PoseData(MayaCustomData):
         dirpath = util_file.join_path(self.directory, self.name)
         
         if util_file.is_dir(dirpath):
-            name = util_file.get_basename(dirpath)
-            dirname = util_file.get_dirname(dirpath)
-            util_file.delete_dir(name, dirname)
-        
+            util_file.delete_dir(self.name, self.directory)
         
         dir_path = util_file.create_dir(self.name, self.directory)
         

@@ -76,6 +76,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _show_options(self):
         
         self.process_splitter.setSizes([1,1])
+        self._load_options(self.process.get_path())
         self.option_tabs.setCurrentIndex(0)
         
     def _show_templates(self):

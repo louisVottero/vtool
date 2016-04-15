@@ -254,6 +254,12 @@ class BlendShape(object):
         self._store_targets()
         self._store_meshes()
         
+    def get_mesh_count(self):
+        meshes = cmds.deformer(self.blendshape, q = True, geometry = True)
+        self.meshes = meshes
+        
+        return len(meshes)
+        
     #--- target
 
     def is_target(self, name):
@@ -277,6 +283,9 @@ class BlendShape(object):
         
         if not input_value:
             return False
+        
+    def get_target_names(self):
+        return self.targets
         
     @core.undo_chunk
     def create_target(self, name, mesh = None, inbetween = 1):
@@ -539,7 +548,7 @@ class BlendShape(object):
         
         Args
             weights (list): A list of weight values. If a float is given, the float will be converted into a list of the same float with a count equal to the number of vertices.
-            target_name (str): The name of the target.
+            target_name (str): The name of the target.  If no target given, return the overall weights for the blendshape. 
             mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes. Usually index is 0.
         """
         
@@ -569,6 +578,33 @@ class BlendShape(object):
             for weight in weights:
                 cmds.setAttr('%s[%s]' % (attribute, inc), weight)
                 inc += 1
+        
+    def get_weights(self, target_name = None, mesh_index = 0 ):
+        
+        mesh = self.meshes[mesh_index]
+        
+        vertex_count  = core.get_component_count(mesh)
+        
+        
+        if target_name == None:
+        
+            weights = []
+        
+            for inc in range(0, vertex_count):    
+                attribute = self._get_input_target_base_weights_attribute(mesh_index)
+                weight = cmds.getAttr('%s[%s]' % (attribute, inc))
+                weights.append(weight)
+            
+        if target_name:
+            
+            weights = []
+            
+            for inc in range(0, vertex_count):
+                attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
+                weight = cmds.getAttr('%s[%s]' % (attribute, inc))
+                weights.append(weight)
+            
+        return weights
         
     def set_invert_weights(self, target_name = None, mesh_index = 0):
         """

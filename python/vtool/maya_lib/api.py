@@ -537,9 +537,6 @@ class SkinClusterFunction(MayaFunction):
                     pass
                 
         return weights   
-    
-                    
-                
 
 class IterateGeometry(MayaIterator):
     def _define_api_object(self, mobject):
