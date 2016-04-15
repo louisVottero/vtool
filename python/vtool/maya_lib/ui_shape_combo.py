@@ -347,13 +347,19 @@ class ComboManager(ui.MayaWindow):
             self._add_meshes([mesh])
             
     def _add_meshes(self, meshes, preserve, ui_only = False):
+        
+        shapes = None
+        
         if ui_only:
             inbetweens = self.manager.get_inbetweens()
         if not ui_only:
             shapes, combos, inbetweens = self.manager.add_meshes(meshes, preserve)
         
         self.shape_widget.tree.load(inbetweens = inbetweens)
-        self.combo_widget.tree.load()   
+        self.combo_widget.tree.load() 
+        
+        if shapes and len(shapes) == 1:
+            self.shape_widget.tree.select_shape(shapes[0])
     
     def _add_command(self):
         

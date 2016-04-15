@@ -591,6 +591,9 @@ class SettingsFile(object):
             if type(value) == str or type(value) == unicode:
                 value = '"%s"' % value
             
+            if value == None:
+                value = ""
+            
             line = '%s = %s' % (key, str(value))
             
             lines.append(line)

@@ -28,6 +28,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def __init__(self, parent = None):
         
         self.settings = None
+        self.template_settings = None
         
         self.process = process.Process()
         
@@ -48,24 +49,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         super(ProcessManagerWindow, self).__init__(parent) 
         
-        os.environ['VETALA_RUN'] = 'False'
-        os.environ['VETALA_STOP'] = 'False'
-        
-        self._set_default_directory()
-        self._setup_settings_file()
-        
-        self.view_widget.set_settings( self.settings )
-        self.settings_widget.set_settings(self.settings)
-        
         shortcut = QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Escape), self)
         shortcut.activated.connect(self._set_kill_process)
-        
-        self._set_default_project_directory()
-        self._set_default_template_directory()
-        
-        code_directory = self.settings.get('code_directory')
-        if code_directory:
-            self.set_code_directory(code_directory)
             
         self.view_widget.tree_widget.itemChanged.connect(self._item_changed)
         self.view_widget.tree_widget.item_renamed.connect(self._item_changed)
@@ -73,13 +58,30 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.copy_done.connect(self._copy_done)
         self.view_widget.tree_widget.itemDoubleClicked.connect(self._item_double_clicked)
         self.view_widget.tree_widget.show_options.connect(self._show_options)
+        self.view_widget.tree_widget.show_templates.connect(self._show_templates)
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
-           
+        
+        
+        self._set_default_directory()
+        self._setup_settings_file()
+        
+        self._set_default_project_directory()
+        self._set_default_template_directory()
+        
+        code_directory = self.settings.get('code_directory')
+        if code_directory:
+            self.set_code_directory(code_directory)
         
         
     def _show_options(self):
         
         self.process_splitter.setSizes([1,1])
+        self.option_tabs.setCurrentIndex(0)
+        
+    def _show_templates(self):
+        
+        self.process_splitter.setSizes([1,1])
+        self.option_tabs.setCurrentIndex(1)
         
     def _process_deleted(self):
         self._clear_code(close_windows=True)
@@ -113,7 +115,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
         
         items = self.view_widget.tree_widget.selectedItems()
-        
+                
         if not items:
             
             if self.last_item:
@@ -127,7 +129,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         item = items[0]
         
         name = item.get_name()
-
+        
         self._update_build_widget(name)
 
         self._set_title(name)
@@ -144,7 +146,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if has_options:
             self.process_splitter.setSizes([1,1])
-        if not has_options:
+        if not has_options and self.option_tabs.currentIndex() == 0:
             self.process_splitter.setSizes([1,0])
         
     def _update_build_widget(self, process_name):
@@ -175,6 +177,31 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.settings = settings_file
         
+        self.view_widget.set_settings( self.settings )
+        self.settings_widget.set_settings(self.settings)
+        
+        #template stuff
+        vetala_path = util.get_env('VETALA_PATH')
+        vetala_path = util_file.join_path(vetala_path, 'templates')
+        custom_template_file = 'template_settings.txt'
+        
+        settings = self.settings
+        
+        template_custom_settings = util_file.join_path(vetala_path, custom_template_file)
+        
+        if util_file.is_file(template_custom_settings):
+            
+            settings = util_file.SettingsFile()
+            settings.set_directory(vetala_path, custom_template_file)
+            util.show('Custom template file found. %s' % template_custom_settings)
+            self.template_settings = settings
+        else:
+            if not self.settings.has_setting('template_directory') or not self.settings.get('template_directory'):
+                self.settings.set('template_directory', ['Vetala Templates', vetala_path])
+        
+        self.settings_widget.set_template_settings(settings)
+        self.template_widget.set_settings(settings)
+        
     def _build_widgets(self):
         
         self.header_layout = QtGui.QHBoxLayout()
@@ -186,12 +213,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.tab_widget = QtGui.QTabWidget()
         self.tab_widget.currentChanged.connect(self._tab_changed)
-                
+        
         self.view_widget = ui_view.ViewProcessWidget()
-        #splitter stuff
         
-        tabs = QtGui.QTabWidget()
-        
+        self.option_tabs = QtGui.QTabWidget()
         
         option_layout = QtGui.QVBoxLayout()
         self.option_scroll = QtGui.QScrollArea()
@@ -206,9 +231,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         option_widget.setLayout(option_layout)
         
         self.template_widget = ui_templates.TemplateWidget()
+        self.template_widget.set_active(False)
+        self.template_widget.current_changed.connect(self._template_current_changed)
+        self.template_widget.add_template.connect(self._add_template)
         
-        tabs.addTab(option_widget, 'Options')
-        tabs.addTab(self.template_widget, 'Templates')
+        self.option_tabs.addTab(option_widget, 'Options')
+        self.option_tabs.addTab(self.template_widget, 'Templates')
+        
+        self.option_tabs.currentChanged.connect(self._option_changed)
         
         self.data_widget = ui_data.DataProcessWidget()
         
@@ -221,7 +251,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #splitter stuff
         self.process_splitter = QtGui.QSplitter()
         self.process_splitter.addWidget(self.view_widget)
-        self.process_splitter.addWidget(tabs)
+        self.process_splitter.addWidget(self.option_tabs)
         self.process_splitter.setSizes([1,0])
         
         self.tab_widget.addTab(self.settings_widget, 'Settings')       
@@ -290,6 +320,51 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.build_widget.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         
+    def _add_template(self, process_name, directory):
+        
+        source_process = process.Process(process_name)
+        source_process.set_directory(directory)
+        
+        target_process = None
+        
+        items = self.view_widget.tree_widget.selectedItems()
+        if items:
+            target_item = items[0]
+            target_process = target_item.get_process()
+        if not items:
+            target_item = None
+        
+        if not target_process:
+            target_process = process.Process()
+            target_process.set_directory(self.view_widget.tree_widget.directory)
+            target_item = None 
+        
+        new_process = process.copy_process(source_process, target_process)
+        
+        if not new_process:
+            return
+        
+        
+        new_item = self.view_widget.tree_widget._add_process_item(new_process.get_name(), target_item)
+        
+        if target_process:
+            if target_item:
+                self.view_widget.tree_widget.collapseItem(target_item)
+                self.view_widget.tree_widget.expandItem(target_item)
+            
+        if not target_process:
+            self.view_widget.tree_widget.scrollToItem(new_item)
+            
+        self.view_widget.tree_widget.copy_process.emit()
+        
+    def _option_changed(self):
+        
+        if self.option_tabs.currentIndex() == 0:
+            self.template_widget.set_active(False)
+        
+        if self.option_tabs.currentIndex() == 1:
+            self.template_widget.set_active(True)
+            
     def _clear_code(self, close_windows = False):
         
         self.code_widget.code_widget.code_edit.close_tabs()
@@ -345,6 +420,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         directory = self.settings.get('project_directory')
         
+        if directory == None:
+            return
+        
         if directory:
             if type(directory) != list:
                 directory = ['', directory]
@@ -358,7 +436,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _set_default_template_directory(self):
         
-        directory = self.settings.get('template_directory')
+        if not self.template_settings:
+            directory = self.settings.get('template_directory')
+        if self.template_settings:
+            directory = self.template_settings.get('template_directory')
+        
+        if directory == None:
+            return
         
         if directory:
             if type(directory) != list:
@@ -597,7 +681,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             util_file.open_browser(path)
         if directory and self.tab_widget.currentIndex() == 3:
             path = self.process.get_code_path()
-            util_file.open_browser(path)           
+            util_file.open_browser(path)   
+            
+    def _template_current_changed(self):
+        
+        self.settings_widget.refresh_template_list()        
         
     def set_directory(self, directory):
         
@@ -607,10 +695,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             util_file.create_dir(name = None, directory = directory)
         
     def set_project_directory(self, directory, sub_part = None):
-        #history should not be there...
-        
-        #handle selection change should use a decorator...
-        self.handle_selection_change = False
         
         if type(directory) != list:
             directory = ['', directory]
@@ -620,7 +704,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not directory:
             self.process.set_directory(None)
             self.view_widget.set_directory(None)
-            self.handle_selection_change = True
             return
 
         if not sub_part:
@@ -637,35 +720,43 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.option_widget.set_directory(None)
         self.process_splitter.setSizes([1,0])
         
-        self.handle_selection_change = True
-        
     def set_template_directory(self, directory = None):
         
-        if not self.settings:
-            return
+        if not self.template_settings:
+            if not self.settings:
+                return
         
-        current = self.settings.get('template_directory')
-        template_settings = self.settings.get('template_history')
+        settings = self.settings
+        
+        if self.template_settings:
+            settings = self.template_settings
+        
+        current = settings.get('template_directory')
+        history = settings.get('template_history')
         
         if not current:
+            if history:
+                self.template_widget.set_templates(history)
             return
         
         current_name = None
         
-        if not template_settings:
+        if not history:
             current_name = current
-            template_settings = [['', current]]
+            history = [['', current]]
             
-        self.template_widget.set_templates(template_settings)
+        self.template_widget.set_templates(history)
             
         if not current_name:
-            for setting in template_settings:
+            for setting in history:
                 if setting[1] == current:
-                    current_name = setting[0]  
-            
-        print 'curretn', current_name
-            
+                    current_name = setting[0]
+        
+        if not current_name:
+            current_name = current
+                    
         if current_name:
+            
             self.template_widget.set_current(current_name)
         
     def set_code_directory(self, directory):

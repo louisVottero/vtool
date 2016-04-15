@@ -8,8 +8,6 @@ from vtool import qt_ui
 
 import process
 
-
-
 if qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
 if qt_ui.is_pyside():
@@ -34,7 +32,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         self.setSizePolicy(policy)
         
         self.setMinimumWidth(200)
-
         
     def _define_tree_widget(self):
         return ProcessTreeWidget()
@@ -84,7 +81,6 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         
         self.directory = None
         
-    
     def _define_main_layout(self):
         return QtGui.QVBoxLayout()
     
@@ -134,7 +130,6 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.copy_widget.hide()
         self.copy_done.emit()
         
-        
     def get_current_process(self):
         
         items = self.tree_widget.selectedItems()
@@ -166,7 +161,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     process_deleted = qt_ui.create_signal()
     item_renamed = qt_ui.create_signal(object)
     show_options = qt_ui.create_signal()
-        
+    show_templates = qt_ui.create_signal()
+    selection_changed = qt_ui.create_signal()
+    
     def __init__(self):
         
         self.settings = None
@@ -383,7 +380,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.paste_into_action.setVisible(False)
         self.copy_special_action = self.context_menu.addAction('Copy Special')
         self.remove_action = self.context_menu.addAction('Delete')
+        self.context_menu.addSeparator()
         self.show_options_action = self.context_menu.addAction('Show Options')
+        self.show_templates_action = self.context_menu.addAction('Show Templates')
         self.context_menu.addSeparator()
         browse_action = self.context_menu.addAction('Browse')
         refresh_action = self.context_menu.addAction('Refresh')
@@ -401,9 +400,13 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.copy_special_action.triggered.connect(self._copy_special_process)
         self.remove_action.triggered.connect(self._remove_current_item)
         self.show_options_action.triggered.connect(self._show_options)
+        self.show_templates_action.triggered.connect(self._show_templates)
         
     def _show_options(self):
         self.show_options.emit()
+        
+    def _show_templates(self):
+        self.show_templates.emit()
         
     def _new_process(self):
         self.new_process.emit()
@@ -615,8 +618,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
     def _get_process_paths(self):
         
-        print 'get process paths', self.directory
-        
         return process.find_processes(self.directory)
         
     def _load_processes(self, process_paths):
@@ -678,7 +679,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                         self.setExpanded(index, True)
                         
                     if settings_process[0] == item.name:
+                        
                         self.setCurrentItem(item)
+                        #self.setItemSelected(item, True)
+                        break
                 
             iterator += 1
 
@@ -697,9 +701,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             if not sub_path:
                 self._add_process_item(part, item)
         self.setUpdatesEnabled(True)
-        
-            
-        
         
     def _add_process_item(self, name, parent_item = None, create = False, find_parent_path = True):
 
@@ -794,13 +795,12 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.clearSelection()
         process_paths = self._get_process_paths()
         
-        print 'process paths', process_paths
-        
         #this can be slow when there are many processes at the top level, and it checks if each process has sub process.
         self._load_processes(process_paths)
         
         self.current_item = None
         self.last_item = None
+        
         
         self._goto_settings_process()
         
@@ -875,9 +875,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             iterator += 1
             
     def set_settings(self, settings):
-        self.settings = settings
         
-        self._goto_settings_process()
+        self.settings = settings
       
 class ProcessItem(QtGui.QTreeWidgetItem):
     

@@ -10,6 +10,9 @@ if qt_ui.is_pyside():
 
 class TemplateWidget(qt_ui.BasicWidget):
     
+    current_changed = qt_ui.create_signal()
+    add_template = qt_ui.create_signal(object, object)
+    
     def _build_widgets(self):
         
         title_layout = QtGui.QHBoxLayout()
@@ -24,19 +27,26 @@ class TemplateWidget(qt_ui.BasicWidget):
         
         self.template_tree = TemplateTree()
         
+        self.template_tree.add_template.connect(self._add_template)
+        
         self.main_layout.addSpacing(10)
         self.main_layout.addLayout(title_layout)
         self.main_layout.addSpacing(10)
         self.main_layout.addWidget(self.template_tree)
         
-        #template_tree.set_directory('N:/proddev/rig_dev/vtool_templates', refresh = True)
-        
         self.template_dict = {}
         self.handle_current_change = True
+        self.active = False
+        self.current = None
+        self.template_list = None
+        
+    def _add_template(self, process_name, directory):
+        
+        self.add_template.emit(process_name, directory)
         
     def _change(self, index):
         
-        print 'change', self.handle_current_change
+        
         
         if not self.handle_current_change:
             return
@@ -45,15 +55,32 @@ class TemplateWidget(qt_ui.BasicWidget):
         name = str(name)
         
         directory = str(self.template_dict[name])
-        print name, directory
         
-        self.template_tree.set_directory(directory, refresh = True)
+        if self.active:
+            self.template_tree.set_directory(directory, refresh = True)
+        
+        current_name = name
+        if name == directory:
+            current_name = ''
+        
+        self.settings.set('template_directory', [current_name, directory])
+        self.current_changed.emit()
         
     def set_templates(self, template_list):
+        
+        self.template_list = template_list
+        
+        if not self.active:
+            return
         
         self.handle_current_change = False
         self.template_dict = {}
         self.template_combo.clear()
+        
+        current_directory = self.settings.get('template_directory')
+        
+        inc = 0
+        current_inc = 0
         
         for template in template_list:
             
@@ -68,13 +95,26 @@ class TemplateWidget(qt_ui.BasicWidget):
             
             self.template_combo.addItem(name)
                 
-            self.template_dict[name] = str(directory)
+            directory = str(directory)
+                
+            self.template_dict[name] = directory
+        
+            if current_directory == directory:
+                current_inc = inc
+        
+            inc += 1
+            
+        
+        self.template_combo.setCurrentIndex(current_inc)
         
         self.handle_current_change = True
             
     def set_current(self, name):
         
+        
         self.handle_current_change = True
+        
+        self.current = name
         
         count = self.template_combo.count()
         
@@ -84,19 +124,31 @@ class TemplateWidget(qt_ui.BasicWidget):
             
             text = str(text)
             
-            print text, name
-            
             if text == name:
-                
-                if self.template_combo.currentIndex() != inc:
-                
-                    self.template_combo.setCurrentIndex(inc)
-                
-                if self.template_combo.currentIndex() == inc:
-                    self.template_tree.set_directory(self.template_dict[name], refresh = True)
+                if self.active:
+                    if self.template_combo.currentIndex() != inc:
+                        self.handle_current_change = False
+                        self.template_combo.setCurrentIndex(inc)
+                        self.handle_current_change = True
+                    if self.template_combo.currentIndex() == inc:
+                        self.template_tree.set_directory(self.template_dict[name], refresh = True)
+                    
                 return
+    
+    def set_settings(self, settings):
+        self.settings = settings
+        
+    def set_active(self, active_state):
+        self.active = active_state
+        
+        if active_state:
+            self.set_templates(self.template_list)
+            self.set_current(self.current)
+            
                 
 class TemplateTree(ui_view.ProcessTreeWidget):
+    
+    add_template = qt_ui.create_signal(object, object)
     
     def __init__(self):
         super(TemplateTree, self).__init__()
@@ -111,9 +163,16 @@ class TemplateTree(ui_view.ProcessTreeWidget):
         
         self.context_menu = QtGui.QMenu()
         
-        add_into = self.context_menu.addAction('Copy To Current Process')
-        add_into.triggered.connect(self._add_template)
+        copy_to = self.context_menu.addAction('Copy To Current Process')
+        copy_to.triggered.connect(self._add_template)
         
     def _add_template(self):
-        print 'add templates'
-        return
+        
+        items = self.selectedItems()
+        if not items:
+            return
+        
+        parent_path = self._get_parent_path(items[0])
+        
+        self.add_template.emit(parent_path, self.directory)
+        

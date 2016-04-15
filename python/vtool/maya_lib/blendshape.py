@@ -14,6 +14,7 @@ import attr
 import deform
 import anim
 import geo
+import api
     
 #import util
 
@@ -710,11 +711,11 @@ class ShapeComboManager(object):
     def _add_variable(self, shape):
         
         var = attr.MayaNumberVariable(shape)
-        var.set_min_value(0)
-        var.set_max_value(1)
+        #var.set_min_value(0)
+        #var.set_max_value(1)
         
-        if self.is_negative(shape) or self.has_negative(shape):
-            var.set_min_value(-1)
+        #if self.is_negative(shape) or self.has_negative(shape):
+            #var.set_min_value(-1)
         
         var.set_variable_type('float')
         var.create(self.setup_group)
@@ -754,6 +755,15 @@ class ShapeComboManager(object):
         if keyframe:
             cmds.delete(keyframe)
             
+    def _get_target_keyframe(self, shape_name):
+        
+        attribute = '%s.%s' % (self.blendshape.blendshape, shape_name)
+        
+        keyframe = anim.get_keyframe(attribute)
+        
+        if keyframe:
+            return keyframe
+            
     def _setup_shape_connections(self, name):
         
         blendshape = self.blendshape
@@ -764,6 +774,8 @@ class ShapeComboManager(object):
         
         if inbetween_parent:
             name = inbetween_parent
+        
+        has_negative = self.has_negative(name)
         
         setup_name = name
         
@@ -784,10 +796,24 @@ class ShapeComboManager(object):
         self._remove_target_keyframe(name)
         
         if not inbetweens:
-            
             value = 1
             value = value*negative_value
-            anim.quick_driven_key(setup_attr, blend_attr, [0,value], [0,1], tangent_type = 'linear')
+            
+            infinite_value = True
+            
+            if has_negative:
+                infinite_value = 'post_only'
+            if negative_parent:
+                infinite_value = 'pre_only'
+            
+            anim.quick_driven_key(setup_attr, blend_attr, [0,value], [0,1], tangent_type = 'clamped', infinite = infinite_value)
+            
+            if negative_parent:
+                
+                keyframe = self._get_target_keyframe(negative_parent)
+                
+                key = api.KeyframeFunction(keyframe)
+                key.set_pre_infinity(key.constant)
             
         if inbetweens:
             
@@ -796,6 +822,8 @@ class ShapeComboManager(object):
             last_control_value = 0
             
             value_count = len(values)
+            
+            first_value = None
             
             for inc in range(0, value_count):
                 
@@ -807,20 +835,50 @@ class ShapeComboManager(object):
                 
                 control_value = values[inc] *.01 * negative_value
                 
-                anim.quick_driven_key(setup_attr, blend_attr, [last_control_value, control_value], [0, 1], tangent_type='linear')
+                if inc == 0:
                     
+                    pre_value = 'pre_only'
+                    
+                    if not has_negative:
+                        pre_value = False
+                    if negative_parent:
+                        pre_value = False
+                    
+                    anim.quick_driven_key(setup_attr, blend_attr, [last_control_value, control_value], [0, 1], tangent_type='linear', infinite = pre_value)
+                    first_value = last_control_value
+                    second_value = control_value
+                
+                if inc > 0:
+                    anim.quick_driven_key(setup_attr, blend_attr, [last_control_value, control_value], [0, 1], tangent_type= 'linear')
+                    
+                
                 if value_count > inc+1:
 
                     future_control_value = values[inc+1] *.01 * negative_value
-                    anim.quick_driven_key(setup_attr, blend_attr, [control_value, future_control_value], [1, 0], tangent_type='linear')
+                    anim.quick_driven_key(setup_attr, blend_attr, [control_value, future_control_value], [1, 0], tangent_type= 'linear')
 
                 last_control_value = control_value
+            
+            value = 1*negative_value
+            
+            anim.quick_driven_key(setup_attr, blend_attr, [control_value, value], [1, 0], tangent_type= 'linear', infinite = False)
+            
+            if first_value == 0:
+                if not has_negative and not negative_parent:
+                    cmds.keyTangent( blendshape.blendshape, edit=True, float = (first_value,first_value) , attribute= inbetween, absolute = True, itt = 'clamped', ott = 'linear' )
+                    cmds.keyTangent( blendshape.blendshape, edit=True, float = (second_value,second_value) , attribute= inbetween, absolute = True, itt = 'linear', ott = 'linear' )
+            
+            #switching to parent shape
+            blend_attr = '%s.%s' % (blendshape.blendshape, name)
+            
+            if not negative_parent:
+                anim.quick_driven_key(setup_attr, blend_attr, [control_value, value], [0, 1], tangent_type = 'linear', infinite = 'post_only')
+                cmds.keyTangent( blendshape.blendshape, edit=True, float = (value, value) , absolute = True, attribute= name, itt = 'linear', ott = 'clamped', lock = False, ox = 1, oy = 1)
                 
-            anim.quick_driven_key(setup_attr, blend_attr, [control_value, (1*negative_value)], [1, 0], tangent_type='linear')
-            
-            blend_attr = '%s.%s' % (blendshape.blendshape, name)                        
-            anim.quick_driven_key(setup_attr, blend_attr, [control_value, (1*negative_value)], [0, 1], tangent_type='linear')
-            
+            if negative_parent:
+                anim.quick_driven_key(setup_attr, blend_attr, [control_value, value], [0, 1], tangent_type = 'linear', infinite = 'pre_only')
+                cmds.keyTangent( blendshape.blendshape, edit=True, float = (value, value) , absolute = True, attribute= name, itt = 'clamped', ott = 'linear', lock = False, ix = 1, iy = -1 )    
+                
     def _setup_combo_connections(self, combo, skip_update_others = False):
         
         inbetween_combo_parent = self.get_inbetween_combo_parent(combo)
@@ -924,24 +982,6 @@ class ShapeComboManager(object):
                 if negative_parent:
                     attr.disconnect_attribute('%s.input1X' % multiply)
                     anim.quick_driven_key(source, '%s.input1X' % multiply, [0, -1], [0,1], tangent_type = 'linear')
-        
-        if inbetween_combo_parent:
-            
-            if self.blendshape.is_target(inbetween_combo_parent):
-        
-                self._setup_combo_connections(inbetween_combo_parent, True)
-        
-                if skip_update_others:
-                    return
-                
-                inbetweens = self.get_inbetween_combos(inbetween_combo_parent)
-                
-                if inbetweens:
-                    for inbetween in inbetweens:
-                        if inbetween == combo:
-                            continue
-                        
-                        self._setup_combo_connections(inbetween, True)
         
     def _remove_combo_multiplies(self, combo):
         
@@ -1362,9 +1402,10 @@ class ShapeComboManager(object):
         if value < 1:
             
             var = attr.MayaNumberVariable(name)
-            var.set_min_value(-1)
-            var.set_max_value(1)
+            #var.set_min_value(-1)
+            #var.set_max_value(1)
             var.create(self.setup_group)
+        
         
         cmds.setAttr('%s.%s' % (self.setup_group, name), value)
     
