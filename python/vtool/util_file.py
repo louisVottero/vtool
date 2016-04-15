@@ -591,8 +591,8 @@ class SettingsFile(object):
             if type(value) == str or type(value) == unicode:
                 value = '"%s"' % value
             
-            if value == None:
-                value = ""
+            #if value == None:
+            #    value = "None"
             
             line = '%s = %s' % (key, str(value))
             
