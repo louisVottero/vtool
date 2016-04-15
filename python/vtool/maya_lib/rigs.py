@@ -4008,6 +4008,11 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
                     switch.add_groups_to_index((weight_count-1), self.control_group)
                 switch.create()
         
+    def _create_before_attach_joints(self):
+        super(SpineRig, self)._create_before_attach_joints()
+        
+        self._attach_to_geo()
+        
         
     def _create_curve(self, span_count):
         
@@ -4410,7 +4415,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self.orient_controls_to_joints = bool_value
     
     def create(self):
-        super(SpineRig, self).create()
         
         self._create_geo(self.tweak_control_count)
         
@@ -4421,7 +4425,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         self._create_clusters()
         
-        self._attach_to_geo()
+        super(SpineRig, self).create()
         
         self._create_btm_control()
         self._create_top_control()
