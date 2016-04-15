@@ -1908,7 +1908,20 @@ def create_attribute_spread(control, transforms, name = 'spread', axis = 'Y', in
         invert (bool): Wether to invert the spread behavior so it can mirror.
         create_driver (bool): Wether to create a driver group above the transform.
     """
+    
+    found = []
+    
+    for transform in transforms:
+        if transform and cmds.objExists(transform):
+            found.append(transform)
+    
+    if not found:
+        vtool.util.warning('No transforms found to spead.')
+        return
+    
     variable = '%s.%s' % (control, name)
+    
+    transforms = found
     
     count = len(transforms)
     
