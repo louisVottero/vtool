@@ -1249,11 +1249,12 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None):
     ik.set_curve(curve)
     
     ik_handle = ik.create()
+    cmds.setAttr( '%s.dTwistControlEnable' % ik_handle, 1)
     cmds.refresh()
     cmds.delete(ik_handle)
     
     cmds.makeIdentity(new_joint[0], apply = True, r = True)
-    
+    """
     ik = space.IkHandle(curve)
     ik.set_start_joint(new_joint[0])
     ik.set_end_joint(new_joint[-1])
@@ -1261,11 +1262,13 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None):
     ik.set_curve(curve)
     
     ik_handle = ik.create()  
-      
     
     #if not rig:
+    
     cmds.refresh()
+    
     cmds.delete(ik_handle)
+    """
     return new_joint
         
     #if rig:
