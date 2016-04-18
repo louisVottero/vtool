@@ -249,16 +249,21 @@ def get_mesh_shape(mesh, shape_index = 0):
     if not shapes:
         return
     
+    print 'shapes!', shapes, type(shapes)
+    
     if not cmds.nodeType(shapes[0]) == 'mesh':
         return
     
     shape_count = len(shapes)
     
     if shape_index < shape_count:
+        print 'returning shapes', shapes[0]
         return shapes[0]
     
     if shape_index > shape_count:
         cmds.warning('%s does not have a shape count up to %s' % shape_index)
+        
+    return shapes[shape_index]
     
 def create_shape_from_shape(shape, name = 'new_shape'):
     """
@@ -283,6 +288,10 @@ def create_shape_from_shape(shape, name = 'new_shape'):
     core.add_to_isolate_select([mesh])
     
     mesh = cmds.rename(mesh, core.inc_name(name))
+    shapes = core.get_shapes(mesh, 'mesh')
+    
+    if shapes:
+        cmds.rename(shapes[0], mesh + 'Shape')
     
     if parent:
         space.MatchSpace(parent[0], mesh).translation_rotation()
@@ -290,6 +299,20 @@ def create_shape_from_shape(shape, name = 'new_shape'):
     return mesh
     
 
+def create_texture_reference_object(mesh):
+    
+    shape = get_mesh_shape(mesh, 0)
+    
+    name = core.get_basename(mesh, remove_namespace = True)
+    
+    new_mesh = create_shape_from_shape(shape, '%s_reference' % name)
+    
+    shapes = core.get_shapes(new_mesh, 'mesh')
+    
+    cmds.connectAttr('%s.message' % shapes[0], '%s.referenceObject' % mesh)
+    
+    cmds.setAttr( '%s.template' % shapes[0],  True )
+    return new_mesh
 
 
 def get_of_type_in_hierarchy(transform, node_type):

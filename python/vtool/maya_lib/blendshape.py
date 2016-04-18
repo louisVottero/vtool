@@ -92,7 +92,7 @@ class BlendShape(object):
         
         weights = []
         
-        for inc in range(0, vertex_count):
+        for inc in xrange(0, vertex_count):
             weight = cmds.getAttr('%s[%s]' % (attribute, inc))
             
             weights.append(weight)
@@ -590,7 +590,7 @@ class BlendShape(object):
         
             weights = []
         
-            for inc in range(0, vertex_count):    
+            for inc in xrange(0, vertex_count):    
                 attribute = self._get_input_target_base_weights_attribute(mesh_index)
                 print attribute
                 weight = cmds.getAttr('%s[%s]' % (attribute, inc))
@@ -600,7 +600,7 @@ class BlendShape(object):
             
             weights = []
             
-            for inc in range(0, vertex_count):
+            for inc in xrange(0, vertex_count):
                 attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
                 print attribute
                 weight = cmds.getAttr('%s[%s]' % (attribute, inc))
@@ -863,7 +863,7 @@ class ShapeComboManager(object):
             
             first_value = None
             
-            for inc in range(0, value_count):
+            for inc in xrange(0, value_count):
                 
                 inbetween = value_dict[values[inc]]
                 
@@ -1253,7 +1253,7 @@ class ShapeComboManager(object):
                 
                 shape_gr = cmds.group(em = True, n = '%s_gr' % shape)
                 
-                for inc in range(0, len(shape_inbetweens)):
+                for inc in xrange(0, len(shape_inbetweens)):
                     
                     new_inbetween = new_inbetweens[inc]
                     

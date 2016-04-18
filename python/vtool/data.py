@@ -719,7 +719,7 @@ class SkinWeightData(MayaCustomData):
                 
                 index = influence_index_dict[influence]
                 
-                for inc in range(0, len(weights)):
+                for inc in xrange(0, len(weights)):
                             
                     weight = float(weights[inc])
                     

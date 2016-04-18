@@ -621,7 +621,45 @@ def create_keep_out(collide_transform = None, collide_mesh = None, name = None):
     
     return keep_out, locator
     
+#--- Yeti
 
+def get_attached_yeti_nodes(mesh):
     
+    outputs = attr.get_attribute_outputs('%s.worldMesh' % mesh, True)
     
+    print outputs
+    
+    found = []
+    
+    for output in outputs:
+        
+        if core.has_shape_of_type(output, 'pgYetiMaya'):
+            found.append(output)
+
+    return found
+
+def create_yeti_texture_reference(mesh):
+    
+    yeti_nodes = get_attached_yeti_nodes(mesh)
+    
+    if not yeti_nodes:
+        vtool.util.warning('Found no yeti nodes.')
+        return
+    
+    new_mesh = geo.create_texture_reference_object(mesh)
+    
+    for yeti_node in yeti_nodes:
+        
+        
+        
+        shapes = core.get_shapes(yeti_node)
+        
+        if shapes:
+            cmds.connectAttr('%s.worldMesh' % new_mesh, '%s.inputGeometry[1]' % shapes[0])
+    
+    parent = cmds.listRelatives(yeti_nodes[0], p = True)
+    if parent:
+        cmds.parent(new_mesh, parent[0])
+    
+    return new_mesh
     
