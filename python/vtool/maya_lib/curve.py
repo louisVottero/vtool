@@ -205,12 +205,15 @@ class CurveDataInfo():
     
     def _get_curve_parent(self, curve):
         
-        parent = None
+        parent = curve
         
-        if cmds.nodeType(curve) == 'nurbsCurve':
-            parent = cmds.listRelatives(curve, parent = True)[0]
-        if not cmds.nodeType(curve) == 'nurbsCurve':
-            parent = curve
+        if cmds.objExists(curve):
+            if cmds.nodeType(curve) == 'nurbsCurve':
+                parent = cmds.listRelatives(curve, parent = True)[0]
+            if not cmds.nodeType(curve) == 'nurbsCurve':
+                parent = curve
+            
+        
             
         return parent
     
@@ -524,8 +527,6 @@ class CurveDataInfo():
             if not self.active_library:
                 vtool.util.warning('Must set active library before running this function.')
                 return
-            
-        mel_data_list = self._get_mel_data_list(curve)
                     
         transform = self._get_curve_parent(curve)
         
