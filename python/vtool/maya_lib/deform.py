@@ -2104,8 +2104,6 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
     
     history = get_history(mesh)
     
-    print 'find defo', history
-    
     if history:
     
         for thing in history:
@@ -2116,8 +2114,6 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
                     
                     found.append(thing)
             
-            
-    print 'found', found
     if not found:
         return None
         

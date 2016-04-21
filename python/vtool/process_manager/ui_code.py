@@ -495,6 +495,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.setSortingEnabled(False)
         
+        
+        
         #self.setIndentation(False)
         self.edit_state = False
         self.setBackgroundRole(QtGui.QPalette.Light)
@@ -536,6 +538,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.shift_activate = False
 
         self.allow_manifest_update = True
+        
+        
         
         if vtool.util.is_in_maya():
             palette = self.palette()
@@ -1306,8 +1310,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             item.set_state(1)
         if not status == 'Success':
             item.set_state(0)
-            
-            vtool.util.show(status) 
         
     def refresh(self, sync = False):
         
@@ -1418,8 +1420,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         for item in items:    
             item.set_state(-1)
         
-        
-        
         if external_code_library:
             process_tool.set_external_code_library(external_code_library)
         
@@ -1457,7 +1457,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 if name == scripts[inc]:
                     
                     self._run_item(item, process_tool)
-                    
                     
                     if not item.isExpanded():
                         child_count = item.childCount()

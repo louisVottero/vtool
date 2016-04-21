@@ -135,11 +135,7 @@ def shape_combo():
     import ui_shape_combo
     create_window(ui_shape_combo.ComboManager())
     
-    
-    
 def tool_manager(name = None, directory = None):
-    
-    
     
     tool_manager = ToolManager(name)
     tool_manager.set_directory(directory)
@@ -152,8 +148,6 @@ def tool_manager(name = None, directory = None):
     return tool_manager
 
 def process_manager(directory = None):
-    
-    
     
     window = ProcessMayaWindow()
     
