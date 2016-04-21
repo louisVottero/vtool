@@ -221,7 +221,7 @@ class WriteFile(FileManager):
                 
                 inc+= 1
         except:
-            print 'Could not write to file %s' % self.filepath
+            util.show( 'Could not write to file %s' % self.filepath )
             
         self.close_file()
 

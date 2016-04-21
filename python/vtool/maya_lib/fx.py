@@ -627,8 +627,6 @@ def get_attached_yeti_nodes(mesh):
     
     outputs = attr.get_attribute_outputs('%s.worldMesh' % mesh, True)
     
-    print outputs
-    
     found = []
     
     for output in outputs:

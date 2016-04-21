@@ -992,8 +992,6 @@ class BlendshapeWeightData(MayaCustomData):
         
         folders = util_file.get_folders(path)
         
-        print 'folderrs!', folders
-        
         for folder in folders:
             
             if cmds.objExists(folder) and cmds.nodeType(folder) == 'blendShape':

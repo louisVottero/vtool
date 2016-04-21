@@ -4976,8 +4976,6 @@ class IkBackLegRig(IkFrontLegRig):
             match = space.MatchSpace(self.lower_offset_chain[0], self.offset_control)
             match.translation()
         
-        print control.control
-        
         if self.offset_control_to_locator:
             self.offset_control = cmds.spaceLocator(n = 'locator_%s' % self._get_name('offset'))[0]
             

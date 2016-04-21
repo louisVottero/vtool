@@ -249,15 +249,12 @@ def get_mesh_shape(mesh, shape_index = 0):
     if not shapes:
         return
     
-    print 'shapes!', shapes, type(shapes)
-    
     if not cmds.nodeType(shapes[0]) == 'mesh':
         return
     
     shape_count = len(shapes)
     
     if shape_index < shape_count:
-        print 'returning shapes', shapes[0]
         return shapes[0]
     
     if shape_index > shape_count:

@@ -94,8 +94,6 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
     
     function = api.KeyframeFunction(keyframe)
     
-    print source, target, keyframe
-    
     if infinite:
         function.set_pre_infinity(function.linear)
         function.set_post_infinity(function.linear)
