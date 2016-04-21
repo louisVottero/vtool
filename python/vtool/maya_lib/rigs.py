@@ -3828,6 +3828,9 @@ class ConvertJointToNub(object):
         
         self.up_object = None
         
+        self.control_parent = None
+        self.setup_parent = None
+        
     def set_start_joint(self, joint):
         self.start_joint = joint
     
@@ -3854,6 +3857,18 @@ class ConvertJointToNub(object):
         
     def set_up_object(self, name):
         self.up_object = name
+        
+    def set_control_parent(self, name):
+        self.control_parent = name
+        
+        if cmds.objExists(self.control_group) and cmds.objExists(name):
+            cmds.parent(self.control_group, name)
+        
+    def set_setup_parent(self, name):
+        self.setup_parent = name
+        
+        if cmds.objExists(self.setup_group) and cmds.objExists(name):
+            cmds.parent(self.setup_group, name)
         
     def create(self):
         
@@ -3926,6 +3941,17 @@ class ConvertJointToNub(object):
         self.control_group = rig.control_group
         self.setup_group = rig.setup_group
         
+        if self.control_parent:
+            try:
+                cmds.parent(self.control_group, self.control_parent)
+            except:
+                pass
+            
+        if self.setup_parent:
+            try:
+                cmds.parent(self.setup_group, self.setup_parent)
+            except:
+                pass
 
         
     def get_control_group(self):
@@ -3933,6 +3959,7 @@ class ConvertJointToNub(object):
     
     def get_setup_group(self):
         return self.setup_group
+    
     
     def get_joints(self):
         return self.joints

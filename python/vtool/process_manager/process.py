@@ -1418,24 +1418,26 @@ class Process(object):
                 
                 __builtin__.cmds = cmds
                 
-            module = util_file.source_python_module(script)     
+            module = util_file.source_python_module(script)
             
-            if type(module) == str:
-                self._reset_builtin(old_process, old_cmds, old_show, old_warning)
-                return module
+            if module and type(module) != str:
+                
+                module.process = self
+                init_passed = True
             
-            if not module:
-                self._reset_builtin(old_process, old_cmds, old_show, old_warning)
-                return
-            
-            module.process = self
-            
-            init_passed = True
+            if not module or type(module) == str:
+                status = module
+                init_passed = False
             
         except Exception:
+            
+            util.warning('%s did not source' % script)
+            
             status = traceback.format_exc()
             
             self._reset_builtin(old_process, old_cmds, old_show, old_warning)
+            
+            init_passed = False
             
             if hard_error:
                 if util.is_in_maya():
@@ -1443,8 +1445,6 @@ class Process(object):
                     
                 util.show('%s\n' % status)
                 raise
-            
-            intit_passed = False
             
         if init_passed:
             try:
@@ -1475,13 +1475,12 @@ class Process(object):
                         
                     util.show('%s\n' % status)
                     raise
-                
         
         if util.is_in_maya():
             cmds.undoInfo(closeChunk = True)        
         
         self._reset_builtin(old_process, old_cmds, old_show, old_warning)
-            
+         
         if not status == 'Success':
             util.show('%s\n' % status)
         if status == 'Success':

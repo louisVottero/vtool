@@ -170,7 +170,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.show()
         
     def sizeHint(self):
-        return QtCore.QSize(600,800)
+        return QtCore.QSize(650,800)
         
     def _setup_settings_file(self):
         
@@ -224,7 +224,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         option_layout = QtGui.QVBoxLayout()
         self.option_scroll = QtGui.QScrollArea()
         self.option_scroll.setWidgetResizable(True)
-        self.option_scroll.setMinimumWidth(300)
+        self.option_scroll.setMinimumWidth(350)
         self.option_widget = ui_options.ProcessOptionsWidget()
         self.option_scroll.setWidget(self.option_widget)
         self.option_scroll.setFocusPolicy(QtCore.Qt.NoFocus)
@@ -281,8 +281,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_button.setMinimumWidth(150)
         self.process_button.setMinimumHeight(40)
         
-        self.stop_button = QtGui.QPushButton('STOP!')
-        self.stop_button.setMaximumWidth(60)
+        self.stop_button = QtGui.QPushButton('STOP (Esc key)')
+        self.stop_button.setMaximumWidth(140)
         self.stop_button.setMinimumHeight(30)
         self.stop_button.hide()
         
@@ -609,6 +609,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         skip_scripts = []
         
+        finished = False
+        
         for inc in range(0, script_count):
         
             if util.get_env('VETALA_RUN') == 'True':
@@ -655,6 +657,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if status == 'Success':
                 self.code_widget.set_process_script_state(scripts[inc], 1)
             
+            if inc == script_count-1:
+                finished = True
+            
         util.set_env('VETALA_RUN', False)
         util.set_env('VETALA_STOP', False)
             
@@ -663,7 +668,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         seconds = watch.stop()
         
-        util.show('Process %s built in %s' % (self.process.get_name(), seconds))
+        if finished:
+            util.show('Process %s built in %s' % (self.process.get_name(), seconds))
+            
+        if not finished:
+            util.show('Process %s finished with errors.' % self.process.get_name())
         
     def _browser(self):
         

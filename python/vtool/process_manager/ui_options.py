@@ -278,11 +278,12 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             if split_name[-1] == '':
                 is_group = True
                 
-                name = string.join(split_name[:-1], '.')
+                parent_name = string.join(split_name[:-1], '.')
                 
-                group = self._find_group_widget(name)
+                group = self._find_group_widget(parent_name)
                 
                 if not group:
+                    
                     self.add_group(name, widget)
             
             if len(split_name) > 1 and split_name[-1] != '':
@@ -421,6 +422,20 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         group.process_inst = self.process_inst
         self._write_options(False)
         
+        if self.__class__ == ProcessOptionGroup or parent.__class__ == ProcessOptionGroup:
+            group.group.setAlignment(QtCore.Qt.AlignLeft)
+            group.group.setFlat(True)
+            if util.is_in_maya():
+            
+                group.group.setStyleSheet("QGroupBox { background-color: rgb(70, 70, 70); \
+                border: 1px solid; \
+                border-width: 1px; \
+                padding: 2px; \
+                padding-top: 20px; \
+                padding-right: 0px;\
+                margin: 0px;}""\
+                QGroupBox::title{subcontrol-origin: -30px;subcontrol-position: top left;padding: 5px;font-size: 18px;font-weight: bold; border-top: 1px solid; border-left: 1px solid; }")
+      
     def add_title(self, name = 'title', parent = None):
         
         if type(name) == bool:
@@ -521,7 +536,17 @@ class ProcessOptionGroup(ProcessOptionPalette):
         
         super(ProcessOptionGroup, self).__init__()
         self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum))
-        self.main_layout.setContentsMargins(0,0,0,5)
+        self.main_layout.setContentsMargins(4,0,3,3)
+        
+        if util.is_in_maya():
+            self.group.setStyleSheet("QGroupBox { background-color: rgb(80, 80,80); \
+                    border: 1px solid; \
+                    border-width: 1px; \
+                    padding: 2px; \
+                    padding-top: 30px; \
+                    padding-right: 0px;\
+                    margin: 0px;}""\
+                    QGroupBox::title{subcontrol-origin: -30px;subcontrol-position: top left;padding: 10px;font-size: 25px;font-weight: bold; border-top: 1px solid; border-left: 1px solid; }")
         
         
     def _get_widget_names(self, parent = None):
@@ -911,6 +936,9 @@ class ProcessOptionText(ProcessOption):
         
         value = self.option_widget.get_text()
         
+        if not value:
+            value = ''
+        
         return value
         
 class ProcessOptionNumber(ProcessOption):
@@ -928,6 +956,8 @@ class ProcessOptionNumber(ProcessOption):
 
         
         return self.option_widget.get_value()
+        
+        
     
 class ProcessOptionInteger(ProcessOptionNumber):
     def _define_option_widget(self):
