@@ -237,6 +237,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.template_widget.set_active(False)
         self.template_widget.current_changed.connect(self._template_current_changed)
         self.template_widget.add_template.connect(self._add_template)
+        self.template_widget.merge_template.connect(self._merge_template)
         
         self.option_tabs.addTab(option_widget, 'Options')
         self.option_tabs.addTab(self.template_widget, 'Templates')
@@ -328,6 +329,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         source_process = process.Process(process_name)
         source_process.set_directory(directory)
         
+        self.view_widget.tree_widget.paste_process(source_process)
+        """
         target_process = None
         
         items = self.view_widget.tree_widget.selectedItems()
@@ -347,7 +350,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not new_process:
             return
         
-        
         new_item = self.view_widget.tree_widget._add_process_item(new_process.get_name(), target_item)
         
         if target_process:
@@ -359,6 +361,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.view_widget.tree_widget.scrollToItem(new_item)
             
         self.view_widget.tree_widget.copy_process.emit()
+        """
+        
+    def _merge_template(self, process_name, directory):
+        
+        source_process = process.Process(process_name)
+        source_process.set_directory(directory)
+        
+        self.view_widget.tree_widget.merge_process(source_process)
         
     def _option_changed(self):
         

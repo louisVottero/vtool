@@ -118,7 +118,7 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.copy_widget.show()
         self.copy_widget.set_process(current_process, self.directory)
         
-        self.setFocus()  
+        self.setFocus()
         
         items = self.tree_widget.selectedItems()
         
@@ -375,9 +375,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.rename_action = self.context_menu.addAction('Rename')
         self.copy_action = self.context_menu.addAction('Copy')
         self.paste_action = self.context_menu.addAction('Paste')
-        self.paste_into_action = self.context_menu.addAction('Merge')
+        self.merge_action = self.context_menu.addAction('Merge')
         self.paste_action.setVisible(False)
-        self.paste_into_action.setVisible(False)
+        self.merge_action.setVisible(False)
         self.copy_special_action = self.context_menu.addAction('Copy Special')
         self.remove_action = self.context_menu.addAction('Delete')
         self.context_menu.addSeparator()
@@ -395,8 +395,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         refresh_action.triggered.connect(self.refresh)
         self.rename_action.triggered.connect(self._rename_process)
         self.copy_action.triggered.connect(self._copy_process)
-        self.paste_action.triggered.connect(self._paste_process)
-        self.paste_into_action.triggered.connect(self._paste_into_process)
+        self.paste_action.triggered.connect(self.paste_process)
+        self.merge_action.triggered.connect(self.merge_process)
         self.copy_special_action.triggered.connect(self._copy_special_process)
         self.remove_action.triggered.connect(self._remove_current_item)
         self.show_options_action.triggered.connect(self._show_options)
@@ -483,94 +483,16 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         item = items[0]
         
         self.paste_action.setVisible(True)
-        self.paste_into_action.setVisible(True)
+        self.merge_action.setVisible(True)
         
         self.paste_item = item
         
         path = self._get_parent_path(item)
         
         self.paste_action.setText('Paste: %s' % path)
-        self.paste_into_action.setText('Merge With: %s' % path)
+        self.merge_action.setText('Merge With: %s' % path)
         
-    def _paste_process(self):
-        
-        self.paste_action.setVisible(False)
-        
-        if not self.paste_item:
-            return
-        
-        source_process = self.paste_item.get_process()
-        
-        target_process = None
-        
-        items = self.selectedItems()
-        if items:
-            target_item = items[0]
-            target_process = target_item.get_process()            
-        if not items:
-            target_item = None
-        
-        if not target_process:
-            target_process = process.Process()
-            target_process.set_directory(self.directory)
-            target_item = None 
-        
-        new_process = process.copy_process(source_process, target_process)
-        
-        if not new_process:
-            return
-        
-        self.paste_item = None
-        
-        new_item = self._add_process_item(new_process.get_name(), target_item)
-        
-        if target_process:
-            if target_item:
-                self.collapseItem(target_item)
-                self.expandItem(target_item)
-            
-        if not target_process:
-            self.scrollToItem(new_item)
-            
-        self.copy_process.emit()
-        
-    def _paste_into_process(self):
-        
-        self.paste_action.setVisible(False)
-        
-        if not self.paste_item:
-            return
-        
-        paste_item_text = self.paste_item.text(0)
-        
-        qt_ui.get_permission('Are you sure you want to Add In %s?' % paste_item_text)
-        
-        source_process = self.paste_item.get_process()
-        
-        target_process = None
-        
-        items = self.selectedItems()
-        if items:
-            target_item = items[0]
-            target_process = target_item.get_process()            
-        if not items:
-            target_item = None
-        
-        if not target_process:
-            return 
-        
-        process.copy_process_into(source_process, target_process)
-        
-        if target_item:
-            
-            target_item.setExpanded(False)
-            
-            if source_process.get_sub_processes():
-                
-                temp_item = QtGui.QTreeWidgetItem()
-                target_item.addChild(temp_item)
-        
-        self.copy_process.emit()
+
         
     def _copy_special_process(self):
         self.copy_special_process.emit()
@@ -863,6 +785,89 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
             self.takeTopLevelItem(index)
             self.clearSelection()
+
+    def paste_process(self, source_process = None):
+        
+        self.paste_action.setVisible(False)
+        
+        if not source_process:
+            
+            if not self.paste_item:
+                return
+            
+            source_process = self.paste_item.get_process()
+        
+        target_process = None
+        
+        items = self.selectedItems()
+        if items:
+            target_item = items[0]
+            target_process = target_item.get_process()            
+        if not items:
+            target_item = None
+        
+        if not target_process:
+            target_process = process.Process()
+            target_process.set_directory(self.directory)
+            target_item = None 
+        
+        new_process = process.copy_process(source_process, target_process)
+        
+        if not new_process:
+            return
+        
+        self.paste_item = None
+        
+        new_item = self._add_process_item(new_process.get_name(), target_item)
+        
+        if target_process:
+            if target_item:
+                self.collapseItem(target_item)
+                self.expandItem(target_item)
+            
+        if not target_process:
+            self.scrollToItem(new_item)
+            
+        self.copy_process.emit()
+        
+    def merge_process(self, source_process = None):
+        
+        self.paste_action.setVisible(False)
+        
+        source_process_name = source_process.get_name()
+        
+        qt_ui.get_permission('Are you sure you want to merge in %s?' % source_process_name)
+        
+        if not source_process:
+            if not self.paste_item:
+                return
+            
+            source_process = self.paste_item.get_process()
+            
+        target_process = None
+        
+        items = self.selectedItems()
+        if items:
+            target_item = items[0]
+            target_process = target_item.get_process()            
+        if not items:
+            target_item = None
+        
+        if not target_process:
+            return 
+        
+        process.copy_process_into(source_process, target_process)
+        
+        if target_item:
+            
+            target_item.setExpanded(False)
+            
+            if source_process.get_sub_processes():
+                
+                temp_item = QtGui.QTreeWidgetItem()
+                target_item.addChild(temp_item)
+        
+        self.copy_process.emit()
         
     def get_process_item(self, name):
         

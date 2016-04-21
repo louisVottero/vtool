@@ -75,6 +75,7 @@ class FileManager(object):
         Start write the file.
         """
         self.warning_if_invalid_file('file is invalid')
+        
         self.open_file = open(self.filepath, 'w')
         
     def append_file(self):
@@ -1525,9 +1526,7 @@ def rename(directory, name, make_unique = False):
 
     try:
         
-        #os.chmod(directory, stat.S_IWRITE)
-        #os.chmod(directory, stat.S_IWUSR)
-        os.chmod(directory, stat.S_IRWXU| stat.S_IRWXG| stat.S_IRWXO | stat.S_IWRITE | stat.S_IWUSR)
+        os.chmod(directory, 0777)
         
         os.rename(directory, renamepath)
     except:
@@ -1704,7 +1703,7 @@ def delete_read_only_error(action, name, exc):
     Helper to delete read only files.
     """
     
-    os.chmod(name, stat.S_IWRITE)
+    os.chmod(name, 0777)
     action(name)
     
 
@@ -1773,7 +1772,7 @@ def delete_file(name, directory):
         
         return full_path
         
-    os.chmod(full_path, stat.S_IWRITE)
+    os.chmod(full_path, 0777)
     os.remove(full_path) 
     
     return full_path

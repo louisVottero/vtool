@@ -12,6 +12,7 @@ class TemplateWidget(qt_ui.BasicWidget):
     
     current_changed = qt_ui.create_signal()
     add_template = qt_ui.create_signal(object, object)
+    merge_template = qt_ui.create_signal(object, object)
     
     def _build_widgets(self):
         
@@ -28,6 +29,7 @@ class TemplateWidget(qt_ui.BasicWidget):
         self.template_tree = TemplateTree()
         
         self.template_tree.add_template.connect(self._add_template)
+        self.template_tree.merge_template.connect(self._merge_template)
         
         self.main_layout.addSpacing(10)
         self.main_layout.addLayout(title_layout)
@@ -44,9 +46,10 @@ class TemplateWidget(qt_ui.BasicWidget):
         
         self.add_template.emit(process_name, directory)
         
+    def _merge_template(self, process_name, directory):
+        self.merge_template.emit(process_name, directory)
+        
     def _change(self, index):
-        
-        
         
         if not self.handle_current_change:
             return
@@ -149,6 +152,7 @@ class TemplateWidget(qt_ui.BasicWidget):
 class TemplateTree(ui_view.ProcessTreeWidget):
     
     add_template = qt_ui.create_signal(object, object)
+    merge_template = qt_ui.create_signal(object, object)
     
     def __init__(self):
         super(TemplateTree, self).__init__()
@@ -163,16 +167,29 @@ class TemplateTree(ui_view.ProcessTreeWidget):
         
         self.context_menu = QtGui.QMenu()
         
-        copy_to = self.context_menu.addAction('Copy To Current Process')
-        copy_to.triggered.connect(self._add_template)
+        copy = self.context_menu.addAction('Paste under Current Process')
+        copy.triggered.connect(self._add_template)
         
-    def _add_template(self):
+        merge = self.context_menu.addAction('Merge into Current Process')
+        merge.triggered.connect(self._merge_template)
         
+    def _get_item_parent_path(self):
         items = self.selectedItems()
         if not items:
             return
         
         parent_path = self._get_parent_path(items[0])
         
+        return parent_path
+        
+    def _add_template(self):
+        
+        parent_path = self._get_item_parent_path()
+        
         self.add_template.emit(parent_path, self.directory)
         
+    def _merge_template(self):
+        
+        parent_path = self._get_item_parent_path()
+        
+        self.merge_template.emit(parent_path, self.directory)
