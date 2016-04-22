@@ -4007,6 +4007,8 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self.create_single_fk_follows = True
 
         self.hold_btm = True
+        
+        self.evenly_space_cvs = True
 
 
     def _attach_joints(self, source_chain, target_chain):
@@ -4071,19 +4073,22 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             #    degree = 2
             
             cmds.rebuildCurve(self.curve, 
-                              spans = (span_count+1),
+                              spans = (span_count),
                               rpo = True,  
                               rt = 0, 
                               end = 1, 
                               kr = False, 
                               kcp = False, 
                               kep = True,  
-                              kt = False,
+                              kt = True,
                               d = 2)
             
-            cmds.delete('%s.cv[1]' % self.curve)
+            
+            #cmds.delete('%s.cv[1]' % self.curve)
         
-            geo.evenly_position_curve_cvs(self.curve)
+            if self.evenly_space_cvs:
+                geo.evenly_position_curve_cvs(self.curve, match_curve = self.orig_curve)
+            
             
             name = self.orig_curve
             
@@ -4459,6 +4464,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
     def set_hold_bottom_joint(self, bool_value):
         
         self.hold_btm = bool_value
+    
+    def set_evenly_space_cvs(self, bool_value):
+        self.evenly_space_cvs = bool_value
     
     def create(self):
         

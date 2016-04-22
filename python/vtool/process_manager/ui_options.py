@@ -7,6 +7,7 @@ from vtool import util
 
 from vtool.process_manager import process
 
+
 if qt_ui.is_pyqt():
     from PyQt4 import QtGui, QtCore, Qt, uic
 if qt_ui.is_pyside():
@@ -422,6 +423,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         group.process_inst = self.process_inst
         self._write_options(False)
         
+        if parent.__class__ == ProcessOptionPalette:
+            group.collapse_group()
+        
         if self.__class__ == ProcessOptionGroup or parent.__class__ == ProcessOptionGroup:
             group.group.setAlignment(QtCore.Qt.AlignLeft)
             group.group.setFlat(True)
@@ -568,6 +572,8 @@ class ProcessOptionGroup(ProcessOptionPalette):
            
         return found
         
+    
+        
     def create_right_click(self):
         super(ProcessOptionGroup, self).create_right_click()
         
@@ -611,7 +617,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
         main_group_layout.addLayout(self.child_layout)
         main_group_layout.addSpacing(10)
         
-        self.group = QtGui.QGroupBox(self.name)
+        self.group = OptionGroup(self.name)#QtGui.QGroupBox(self.name)
         self.group.setAlignment(QtCore.Qt.AlignCenter)
         self.group.setLayout(main_group_layout)
         
@@ -696,6 +702,9 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self.deleteLater()
         self._write_all()
         
+    def collapse_group(self):
+        self.group.collapse_group()
+        
     def get_name(self):
         return self.group.title()
     
@@ -705,6 +714,37 @@ class ProcessOptionGroup(ProcessOptionPalette):
         
     def get_value(self):
         return None
+       
+class OptionGroup(QtGui.QGroupBox):
+    
+    def __init__(self, name):
+        super(OptionGroup, self).__init__(name)
+    
+        self.close_height = 40
+        
+    def mousePressEvent(self, event):
+        
+        super(OptionGroup, self).mousePressEvent(event)
+        
+        if event.y() < 25:
+            height = self.height()
+            
+            if height == self.close_height:
+                
+                self.setFixedSize(qt_ui.QWIDGETSIZE_MAX, qt_ui.QWIDGETSIZE_MAX)
+                return
+                    
+            if height >= self.close_height:
+                
+                self.setMaximumHeight(self.close_height)
+                
+                return
+            
+    def collapse_group(self):
+        
+        self.setMaximumHeight(self.close_height)
+            
+        
         
 class ProcessOption(qt_ui.BasicWidget):
     
@@ -874,6 +914,10 @@ class ProcessTitle(ProcessOption):
         super(ProcessTitle, self).__init__(name)
 
         self.main_layout.setContentsMargins(0,5,0,10)
+        
+        title_widget = self.main_layout.itemAt(0)
+        self.main_layout.setAlignment(title_widget, QtCore.Qt.AlignRight)
+        
         
     def _define_option_widget(self):
         return QtGui.QLabel(self.name)

@@ -1309,9 +1309,13 @@ def rebuild_curve(curve, spans):
                        d = 3,
                        tol = 0.01)
     
-def evenly_position_curve_cvs(curve):
+def evenly_position_curve_cvs(curve, match_curve = None):
         
     cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
+    
+    if not match_curve:
+        match_curve = curve
+    
     snap_transforms_to_curve(cvs, curve)
         
 def snap_transforms_to_curve(transforms, curve):

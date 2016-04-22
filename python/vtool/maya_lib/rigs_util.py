@@ -1360,6 +1360,27 @@ def rename_message_groups(search_name, replace_name):
                             cmds.rename(constraint, new_constraint)
                     
                     cmds.rename(node, new_node) 
+          
+def create_joint_buffer(joint):
+    
+    fix_joint = cmds.joint(n = 'bufferFix_%s' % joint)
+    cmds.setAttr('%s.drawStyle' % fix_joint, 2)
+    space.MatchSpace(joint, fix_joint).translation_rotation()
+    cmds.makeIdentity(fix_joint, apply = True, r = True)
+    
+    parent = cmds.listRelatives(joint, p = True, f = True)
+    
+    if parent:
+        parent = parent[0]
+        cmds.parent(fix_joint, parent)
+        if not cmds.isConnected('%s.scale' % parent, '%s.inverseScale' % fix_joint):
+            cmds.connectAttr('%s.scale' % parent, '%s.inverseScale' % fix_joint)
+    
+        
+    cmds.parent(joint, fix_joint)
+    
+    
+    
                     
 def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
     """

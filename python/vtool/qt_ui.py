@@ -10,7 +10,7 @@ import re
 import random
 import sys
 
-
+QWIDGETSIZE_MAX = (1 << 24) - 1
 
 try:
     
@@ -1764,6 +1764,9 @@ class GetNumber(GetNumberBase):
             
         if hasattr(self.number_widget, 'setWrapping'):
             self.number_widget.setWrapping(False)
+        
+        if hasattr(self.number_widget, 'setDecimals'):    
+            self.number_widget.setDecimals(3)
             
         self.number_widget.setMaximum(100000000)
         self.number_widget.setButtonSymbols(self.number_widget.NoButtons)
