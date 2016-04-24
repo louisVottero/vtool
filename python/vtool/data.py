@@ -1533,8 +1533,13 @@ class PoseData(MayaCustomData):
             if not cmds.objExists(node):
                 continue
             
-            if cmds.nodeType(node) == 'hyperLayout':
-                cmds.delete(node)
+            if util.get_maya_version() > 2014:
+                if cmds.nodeType(node) == 'hyperLayout':
+                    if node == 'hyperGraphLayout':
+                        continue
+                    
+                    cmds.delete(node)
+
                 
     def _get_inputs(self, pose):
         
@@ -1634,10 +1639,20 @@ class PoseData(MayaCustomData):
                 rels = cmds.listRelatives(pose)
                 cmds.parent(rels, w = True)
             
+            #this is needed for cases where the hyperGraphLayout is connected to the node and other nodes.
+            outputs = maya_lib.attr.get_attribute_outputs('%s.message' % pose)
+            
+            if outputs:
+                for output_value in outputs:
+                    cmds.disconnectAttr('%s.message' % pose, output_value)
+                
             inputs = self._select_inputs(pose)
+            
             self._filter_inputs(inputs)
             
             path = util_file.join_path(dir_path, '%s.ma' % pose)
+            
+            
             
             self._save_file(path)
             
@@ -1646,6 +1661,7 @@ class PoseData(MayaCustomData):
                 
             if rels:
                 cmds.parent(rels, 'pose_gr')
+        
         
         pose_manager.attach_poses()
                 

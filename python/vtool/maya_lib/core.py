@@ -18,8 +18,6 @@ current_progress_bar = None
 MAYA_BINARY = 'mayaBinary'
 MAYA_ASCII = 'mayaAscii'
 
-
-
 maya_data_mappings = {  
                         'bool' : 'attributeType',
                         'long' : 'attributeType',
@@ -598,6 +596,8 @@ def delete_unknown_nodes():
     unknown = cmds.ls(type = 'unknown')
 
     deleted = []
+    
+    
 
     for node in unknown:
         if cmds.objExists(node):
@@ -823,6 +823,10 @@ def delete_display_layers():
         cmds.delete(layer)
 
 #--- file
+
+def start_new_scene():
+
+    cmds.file(new = True, f = True)
 
 def import_file(filepath):
     """

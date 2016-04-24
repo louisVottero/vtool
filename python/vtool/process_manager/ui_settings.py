@@ -16,6 +16,8 @@ class SettingsWidget(qt_ui.BasicWidget):
     code_directory_changed = qt_ui.create_signal(object)
     
     def __init__(self):
+        
+        
         super(SettingsWidget, self).__init__()
         
         self.code_directories = []
@@ -31,8 +33,11 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         self.tab_widget = QtGui.QTabWidget()
         
+        
         self.dir_widget = qt_ui.BasicWidget()
         self.options_widget = qt_ui.BasicWidget()
+        self.options_widget.main_layout.setSpacing(5)
+        self.options_widget.main_layout.setContentsMargins(10,10,10,10)
         
         self.tab_widget.addTab(self.dir_widget, 'Paths')
         self.tab_widget.addTab(self.options_widget, 'Options')
@@ -71,13 +76,40 @@ class SettingsWidget(qt_ui.BasicWidget):
         
     def _build_option_widgets(self):
         
+        process_group = QtGui.QGroupBox('Process Settings')
+        group_layout = QtGui.QVBoxLayout()
+        process_group.setLayout(group_layout)
+        process_group.setMaximumWidth(500)
+        
+        process_maya_group = QtGui.QGroupBox('Maya')
+        maya_group_layout = QtGui.QVBoxLayout()
+        process_maya_group.setLayout(maya_group_layout)
+        
         self.error_stop = qt_ui.GetCheckBox('Stop Process on error.')
         self.error_stop.check_changed.connect(self._set_stop_on_error)
         
-        self.options_widget.main_layout.addWidget(self.error_stop)
+        self.process_start_new_scene = qt_ui.GetCheckBox('Start New Scene on Process')
+        self.process_start_new_scene.set_state(True)
+        
+        self.process_start_new_scene.check_changed.connect(self._set_start_new_scene_on_process)
+        
+        group_layout.addWidget(self.error_stop)
+        group_layout.addWidget(process_maya_group)
+        maya_group_layout.addWidget(self.process_start_new_scene)
+        
+        
+        self.options_widget.main_layout.addWidget(process_group)
+        
+        
+        #self.options_widget.main_layout.addWidget(self.error_stop)
+        #self.options_widget.main_layout.addWidget(self.process_start_new_scene)
         
     def _set_stop_on_error(self):
         self.settings.set('stop_on_error', self.error_stop.get_state())
+        
+    def _set_start_new_scene_on_process(self):
+        
+        self.settings.set('start_new_scene_on_process', self.process_start_new_scene.get_state())
         
     def _get_stop_on_error(self):
         value = self.settings.get('stop_on_error')
@@ -85,6 +117,15 @@ class SettingsWidget(qt_ui.BasicWidget):
         if value:
             self.error_stop.set_state(True)
             
+    def _get_start_new_scene_on_process(self):
+        value = self.settings.get('start_new_scene_on_process')
+        
+        if value:
+            self.process_start_new_scene.set_state(True)
+        if value == None:
+            self.settings.set('start_new_scene_on_process', True)
+        if value == False:
+            self.process_start_new_scene.set_state(False)
     
     def _project_directory_changed(self, project):
         
@@ -130,6 +171,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.editor_directory_widget.set_settings(settings)
         
         self._get_stop_on_error()
+        self._get_start_new_scene_on_process()
         
     def set_template_settings(self, settings):
         

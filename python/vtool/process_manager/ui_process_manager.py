@@ -599,7 +599,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         code_directory = self.settings.get('code_directory')
         self.process.set_external_code_library(code_directory)
         
-        if util.is_in_maya():
+        start_new_scene = self.settings.get('start_new_scene_on_process')
+        
+        if util.is_in_maya() and start_new_scene:
             cmds.file(new = True, f = True)
         
         scripts, states = self.process.get_manifest()
