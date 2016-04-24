@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from sets import Set
+
 import os
 import string
 
@@ -1044,9 +1046,14 @@ def delete_nodes_of_type(node_type):
     
     deleted = []
     
+    do_not_touch = Set( cmds.ls(ud = True) )
+    
+    
     for node_type_name in node_type:
         
         nodes = cmds.ls(type = node_type_name)
+        
+        process_nodes = 
         
         for node in nodes:
             
