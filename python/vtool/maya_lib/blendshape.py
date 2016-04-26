@@ -1644,6 +1644,7 @@ class ShapeComboManager(object):
         if not blendshape.is_target(name):
             blendshape.create_target(name, delta)
         
+        
         cmds.delete(delta)
         
         self._setup_combo_connections(name)
@@ -1779,8 +1780,6 @@ class ShapeComboManager(object):
         shapes = []
         combos = []
         inbetweens = []
-        
-        #inbetweens still needs to be sorted
         
         for mesh in meshes:
             

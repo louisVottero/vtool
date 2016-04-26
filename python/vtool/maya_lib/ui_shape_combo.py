@@ -66,14 +66,21 @@ class ComboManager(ui.MayaWindow):
         recreate_all.setMaximumWidth(100)
         recreate_all.clicked.connect(self._recreate_all)
         
+        to_default = QtGui.QPushButton('To Default')
+        to_default.setMaximumWidth(100)
+        to_default.clicked.connect(self._to_default)
+        
+        
         layout_1.addWidget(recreate_all)
-        layout_1.addWidget(self.preserve_check)
+        layout_1.addWidget(to_default)
 
         button_layout = QtGui.QHBoxLayout()
         button_layout.setAlignment(QtCore.Qt.AlignLeft)
         button_layout.addWidget(self.add)
         button_layout.addSpacing(10)
         button_layout.addLayout(layout_1)
+        button_layout.addSpacing(10)
+        button_layout.addWidget(self.preserve_check)
                 
         header_layout.addLayout(button_layout)
         
@@ -389,6 +396,11 @@ class ComboManager(ui.MayaWindow):
     def _recreate_all(self):
         
         self.manager.recreate_all()
+            
+    def _to_default(self):
+        
+        self.manager.zero_out()
+        self.shape_widget.tree.clearSelection()
             
     def _update_value(self, value):
         

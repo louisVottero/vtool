@@ -349,7 +349,8 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         selected = self.list.selectedItems()
         
         if not item:
-            item = selected[0]
+            if selected:
+                item = selected[0]
         
         previous_directory = None
         
@@ -557,7 +558,10 @@ class ProjectList(QtGui.QTreeWidget):
         
         if self.settings:
             self.settings.set(self.history_entry, self.get_directories())
-            self.settings.set(self.directory_entry, directories[0][1])
+            if directories:
+                self.settings.set(self.directory_entry, directories[0][1])
+            if not directories:
+                self.settings.set(self.directory_entry, None)
         
     def current_directory(self):
         

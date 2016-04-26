@@ -209,7 +209,6 @@ class ClusterSurface(ClusterObject):
             
             start_cvs = '%s.cv%s' % (self.geometry, index1)
             end_cvs = '%s.cv%s' % (self.geometry,index2)
-            #end_cvs = '%s.cv[0:1][%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
             
             p1 = cmds.xform('%s.cv[0][0]' % self.geometry, q = True, ws = True, t = True)
             p2 = cmds.xform('%s.cv%s' % (self.geometry, index3), q = True, ws = True, t = True)
@@ -1237,7 +1236,6 @@ class AutoWeight2D(object):
             
             position = cmds.xform(joint, q = True, ws = True, t = True)
             
-            #position = (position[0], position[2])
             position = [position[0], 0.0]
             
             self.joint_vectors_2D.append(position)
@@ -2011,7 +2009,6 @@ def create_cluster_bindpre(cluster, handle):
     Return
         str: The bindpre group name.
     """
-    #cluster_parent = cmds.listRelatives(handle, p = True)
     
     bindpre = cmds.duplicate(handle, n = 'bindPre_%s' % handle)[0]
     shapes = core.get_shapes(bindpre)
@@ -2019,9 +2016,6 @@ def create_cluster_bindpre(cluster, handle):
         cmds.delete(shapes)
     
     cmds.connectAttr('%s.worldInverseMatrix' % bindpre, '%s.bindPreMatrix' % cluster)
-    
-    #if cluster_parent:
-        #cmds.parent(bindpre, cluster_parent[0])
     
     return bindpre
 
@@ -2060,7 +2054,6 @@ def get_history(geometry):
         list: A list of deformers in the deformation history.
     """
     
-    #scope = cmds.listHistory(geometry, interestLevel = 1)
     scope = cmds.listHistory(geometry, pdo = True)
     
     found = []
@@ -2074,8 +2067,6 @@ def get_history(geometry):
         
         if 'geometryFilter' in inherited:
             found.append(thing)
-            
-        #found.append(thing)
             
         if cmds.objectType(thing, isa = "shape") and not cmds.nodeType(thing) == 'lattice':
             
@@ -2387,12 +2378,6 @@ def get_skin_influence_weights(influence_name, skin_deformer):
     weights = [0] * index_count
     
     for inc in xrange(0, index_count):
-        #influence_indices = attr.get_indices('%s.weightList[ %s ].weights' % (skin_deformer, inc))
-        
-        #if not influence_indices:
-        #    continue
-        
-        #if influence_index in influence_indices:
             
         value = cmds.getAttr('%s.weightList[%s].weights[%s]' % (skin_deformer, inc, influence_index))
                 
@@ -2817,11 +2802,11 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
     
     index_face_map = get_faces_at_skin_influence(mesh, skin_deformer)
 
-    #cmds.undoInfo(state = False)
     cmds.hide(mesh)
     
     main_duplicate = cmds.duplicate(mesh)[0]
     attr.unlock_attributes(main_duplicate)
+    
     #clean shapes
     shapes = cmds.listRelatives(main_duplicate, shapes = True)
     cmds.delete(shapes[1:])
@@ -2855,7 +2840,6 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
         if vis_attribute:
             cmds.connectAttr(vis_attribute, '%s.visibility' % duplicate_mesh)
     
-    #cmds.undoInfo(state = True)
     cmds.showHidden(mesh)
     
     if constrain:
@@ -2879,14 +2863,11 @@ def add_joint_bindpre(skin, joint, description = None):
         description = joint
     
     bindPre_locator = cmds.spaceLocator(n = core.inc_name('locator_%s' % description))[0]
-    #cmds.parent(bindPre_locator, bindPre_locator_group)
     
     index = get_index_at_skin_influence(joint, skin)
     
     match = space.MatchSpace(joint, bindPre_locator)
     match.translation_rotation()
-        
-    #attach_to_curve(bindPre_locator, base_curve)
     
     cmds.connectAttr('%s.worldInverseMatrix' % bindPre_locator, '%s.bindPreMatrix[%s]' % (skin, index))
     
@@ -2972,8 +2953,6 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
                     weights[verts[inc]] = wire_weights[inc]
                     verts_inc[verts[inc]] = inc
             
-            #joint_vert_map = get_closest_verts_to_joints(joints, weighted_verts)
-            
             skin_cluster = find_deformer_by_type(mesh, 'skinCluster')
             
             base_joint = None
@@ -2988,9 +2967,6 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
                 
             if skin_cluster and not base_joint:
                 base_joint = get_skin_influence_at_index(0, skin_cluster)
-                
-            #indices = get_indices('%s.matrix' % skin_cluster)
-            #last_index = indices[-1]
             
             distance_falloff = falloff
             
@@ -3005,14 +2981,11 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
             
             
             for vert in weighted_verts:
-                #vert_inc = verts_inc[vert]
-    
                 
                 if weights[vert] < 0.0001:
                         continue
                 
                 distances = space.get_distances(joints, vert)
-                
                 
                 joint_count = len(joints)
                 
@@ -3037,8 +3010,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
                 if smallest_distance >= distance_falloff or not distances_in_range:
                     
                     weight_value = weights[vert]
-                    #base_value = 1.00-weight_value
-
+                    
                     cmds.skinPercent(skin_cluster, vert, r = False, transformValue = [joints[smallest_distance_inc], weight_value])
 
                     continue
@@ -3070,7 +3042,6 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
                         joint_weight[joints[distance_inc]] = weight
                     
                     weight_value = weights[vert]
-                    #base_value = 1.00-weight_value
                     
                     segments = []
                     
@@ -3475,24 +3446,6 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                                  influenceAssociation = ['name'],
                                  uvSpace = ['map1','map1'], 
                                  normalize = True)
-            
-    
-            
-    
-    
-    """
-    other_influences = cmds.skinCluster(other_skin, query = True, wi = True)
-    for influence in influences:
-        
-        if not influence in other_influences:
-            try:
-                cmds.skinCluster(other_skin, edit = True, ri = influence)
-            except:
-                cmds.warning('Could not remove influence %s on mesh %s' % (influence, target_mesh))
-    """
-                
-    #cmds.undoInfo(state = True)
-    
 
 def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints = []):
     ''' 
@@ -3797,7 +3750,7 @@ def weight_hammer_verts(verts = None, print_info = True):
         cmds.select(vert)
         
         if print_info:
-            #vtool.util.show(inc, 'of', count)
+            
             #do not remove
             print inc, 'of', count
         
@@ -3930,19 +3883,10 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         envelopes.turn_off_referenced()
         envelopes.turn_off_exclude(['blendShape'])
         
-        #if skin:
-        #    cmds.setAttr('%s.envelope' % skin, 0)
-        
         skin_shapes = core.get_shapes(skin_mesh)
         skin_mesh_name = core.get_basename(skin_mesh, True)
         other_delta = geo.create_shape_from_shape(skin_shapes[0], core.inc_name(skin_mesh_name))
-        """
-        blendshapes = find_deformer_by_type(skin_mesh, 'blendShape', return_all = True)
         
-        if blendshapes:
-            for blendshape in blendshapes[1:]:
-                cmds.setAttr('%s.envelope' % blendshape, 0)
-        """
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
         
@@ -4018,6 +3962,7 @@ def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = Tr
 
     if replace:
         parent = cmds.listRelatives(corrective_mesh, p = True)
+        
         cmds.delete(corrective_mesh)
         
         corrective = cmds.rename(corrective, corrective_mesh)
