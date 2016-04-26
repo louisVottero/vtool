@@ -1053,8 +1053,6 @@ def delete_nodes_of_type(node_type):
         
         nodes = cmds.ls(type = node_type_name)
         
-        process_nodes = 
-        
         for node in nodes:
             
             if node == 'hyperGraphLayout':

@@ -969,24 +969,15 @@ class FkRig(BufferRig):
         self.control_dict[self.control.get()]['driver'] = driver
         
         self.drivers.append(driver)
-        #self.control = self.control.get()
-
+        
         if self.create_sub_controls and not sub:
             
             subs = []
-            
-            #size = self.control_size * self.sub_control_size
             
             for inc in range(0,2):
 
                 if inc == 0:
                     sub_control = super(FkRig, self)._create_control(sub =  True, curve_type = self.sub_control_shape)
-                    #sub_control.set_curve_type(self.control_shape)
-                    
-                    #if self.sub_control_shape:
-                    #    sub_control.set_curve_type(self.sub_control_shape)
-                        
-                    #sub_control.scale_shape(size,size,size)
                     
                 if inc == 1:
                     if not self.nice_sub_naming:
@@ -995,11 +986,6 @@ class FkRig(BufferRig):
                         sub_control = super(FkRig, self)._create_control( sub =  True)
                         
                     sub_control.scale_shape(0.9, 0.9, 0.9)
-                        
-                    #sub_control.scale_shape(self.sub_control_size, self.sub_control_size, self.sub_control_size)
-                    #sub_control.set_curve_type(self.control_shape)
-                    #if self.sub_control_shape:
-                    #    sub_control.set_curve_type(self.sub_control_shape)
                 
                 if self.hide_sub_translates:
                     sub_control.hide_translate_attributes()
@@ -1015,7 +1001,6 @@ class FkRig(BufferRig):
                 if inc == 0:
                     cmds.parent(sub_control.get(), self.control.get())
                 if inc == 1:
-                    
                     cmds.parent(sub_control.get(), self.sub_controls[-2])
                 
             self.control_dict[self.control.get()]['subs'] = subs
@@ -2670,12 +2655,10 @@ class IkSplineNubRig(BufferRig):
     def _create_top_control(self):
         
         if not self.end_with_locator:
-            control = self._create_control('top')
+            control = self._create_control('top', curve_type= self.control_shape)
         if self.end_with_locator:
-            control = self._create_control()
-            
-        control.set_curve_type(self.control_shape)
-            
+            control = self._create_control(curve_type = self.control_shape)
+                        
         control.hide_scale_and_visibility_attributes()
         
         xform = space.create_xform_group(control.get())
@@ -2692,10 +2675,8 @@ class IkSplineNubRig(BufferRig):
         return control.get(), xform
     
     def _create_btm_control(self):
-        control = self._create_control('btm')
+        control = self._create_control('btm', curve_type=self.control_shape)
         control.hide_scale_and_visibility_attributes()
-        
-        control.set_curve_type(self.control_shape)
         
         xform = space.create_xform_group(control.get())
         
@@ -3831,6 +3812,8 @@ class ConvertJointToNub(object):
         self.control_parent = None
         self.setup_parent = None
         
+        self.control_size = None
+        
     def set_start_joint(self, joint):
         self.start_joint = joint
     
@@ -3848,6 +3831,9 @@ class ConvertJointToNub(object):
         
     def set_control_shape(self, shape_type_name):
         self.control_shape = shape_type_name
+        
+    def set_control_size(self, size_value):
+        self.control_size = size_value 
         
     def set_prefix(self, prefix):
         self.prefix = prefix
@@ -3924,6 +3910,10 @@ class ConvertJointToNub(object):
         #rig.set_control_orient(self.start_joint)
         rig.set_buffer(False)
         rig.set_right_side_fix(self.right_side_fix, self.right_side_fix_axis)
+        
+        if self.control_size:
+            rig.set_control_size(self.control_size)
+            
         rig.create()
         
         self.top_control = rig.top_control
@@ -3996,6 +3986,8 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         self.fk_color = None
         self.fk_curve_type = None
+        self.sub_fk_count = 2
+        self.sub_fk_color = None
         
         self.tweak_color = None
         self.tweak_curve_type = None
@@ -4005,12 +3997,16 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         self.create_buffer_joints = True
         self.stretch_on_off = True
         self.create_single_fk_follows = True
+        self.create_sub_fk_controls = False
+        self.create_sub_bottom_controls = False
+        self.create_sub_top_controls = False
 
         self.hold_btm = True
         
         self.evenly_space_cvs = True
-
-
+        
+        self.sub_controls_dict = {}
+        
     def _attach_joints(self, source_chain, target_chain):
         
         if not self.attach_joints:
@@ -4068,10 +4064,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
             self.curve = cmds.duplicate(self.orig_curve)[0]
             
-            #degree = 3
-            #if span_count == 1:
-            #    degree = 2
-            
             cmds.rebuildCurve(self.curve, 
                               spans = (span_count),
                               rpo = True,  
@@ -4082,9 +4074,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
                               kep = True,  
                               kt = True,
                               d = 2)
-            
-            
-            #cmds.delete('%s.cv[1]' % self.curve)
         
             if self.evenly_space_cvs:
                 geo.evenly_position_curve_cvs(self.curve, match_curve = self.orig_curve)
@@ -4110,8 +4099,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         if not self.last_pivot_top_value:
             last_pivot_end = False
         
-        #cluster_surface.set_first_cluster_pivot_at_start(True)
-        #cluster_surface.set_last_cluster_pivot_at_end(last_pivot_end)
         cluster_surface.set_join_ends(False)
         cluster_surface.create()
         
@@ -4122,7 +4109,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         return self.clusters
         
     def _wire_hires(self, curve):
-        #not needed in this rig
+        
         self.ik_curve = curve
 
         
@@ -4160,6 +4147,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         control = control.control
         
+        if self.create_sub_bottom_controls:
+            self._create_sub_controls(control, None, self.btm_curve_type)
+        
         xform = space.create_xform_group(control)
         space.MatchSpace(self.joints[0], xform).translation()
         
@@ -4183,6 +4173,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         control = control.control
         
+        if self.create_sub_top_controls:
+            self._create_sub_controls(control, None, self.top_curve_type)
+        
         xform = space.create_xform_group(control)
         
         space.MatchSpace(self.joints[-1], xform).translation()
@@ -4191,17 +4184,11 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             self._set_pivot_vector(xform, self.top_pivot)
             
         self._orient_to_closest_joint(xform)
-            
-        """
-        if not self.top_pivot:
-            
-            mid_vector = space.get_midpoint(self.clusters[-1], self.clusters[-2])
-            self._set_pivot_vector(xform, mid_vector)
-        """
+        
         cmds.parent(xform, self.control_group)
         
         self.top_control = control
-        
+                
     def _create_tweak_controls(self):
         
         group = self._create_control_group('tweak')
@@ -4236,13 +4223,22 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             
             cmds.parent(xform, group)
             
+            top_control = self.top_control
+            btm_control = self.btm_control
+            
+            if top_control in self.sub_controls_dict:
+                top_control = self.sub_controls_dict[top_control][-1]
+            
+            if btm_control in self.sub_controls_dict:
+                btm_control = self.sub_controls_dict[btm_control][-1]
+            
             if cluster != self.clusters[0] and cluster != self.clusters[-1]:
-                space.create_multi_follow([self.btm_control, self.top_control], xform, control, attribute_name = 'follow', value = follow)
+                space.create_multi_follow([btm_control, top_control], xform, control, attribute_name = 'follow', value = follow)
                 
             if cluster == self.clusters[0]:
-                cmds.parent(xform, self.btm_control)
+                cmds.parent(xform, btm_control)
             if cluster == self.clusters[-1]:
-                cmds.parent(xform, self.top_control)
+                cmds.parent(xform, top_control)
                 
             self.tweak_controls.append(control)
             
@@ -4252,6 +4248,42 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
                 attr.connect_visibility('%s.tweakVisibility' % self.top_control, shape, self.sub_visibility)
             
             follow += sub_follow
+        
+    def _create_sub_controls(self, control, description, curve_type):
+            
+        subs = []
+                
+        for inc in range(0,self.sub_fk_count):
+            
+            number = vtool.util.get_last_number(control)
+            
+            if not description:
+                description = number
+            
+            sub_control = self._create_control(sub =  True, description = description, curve_type = curve_type)
+            
+            attr.connect_message(sub_control, control, 'group_sub')
+            
+            if inc == 1:    
+                sub_control.scale_shape(0.9, 0.9, 0.9)
+                
+            if self.sub_fk_color:
+                sub_control.color(self.sub_fk_color)
+                                    
+            sub_control.hide_scale_and_visibility_attributes()
+            
+            space.MatchSpace(control, sub_control.get()).translation_rotation()
+            
+            attr.connect_visibility('%s.subVisibility' % control, '%sShape' % sub_control.get(), self.sub_visibility)
+            
+            if not subs:
+                cmds.parent(sub_control.get(), control)
+            if subs:
+                cmds.parent(sub_control.get(), subs[-1])
+                
+            subs.append(sub_control.get())
+            
+        self.sub_controls_dict[control] = subs    
         
             
     def _create_fk_controls(self):
@@ -4285,7 +4317,12 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             
             for shape in shapes:
                 attr.connect_visibility('%s.fkVisibility' % self.top_control, shape, 1)    
-            
+
+            if self.create_sub_fk_controls:
+        
+                self._create_sub_controls(control, 'mid_%s' % (inc+1), self.fk_curve_type)
+                
+                    
         self._snap_transforms_to_curve(xforms, self.curve)
         
         pivot_count = len(self.fk_pivots)
@@ -4299,8 +4336,6 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             transform = xforms[inc]
             
             self._set_pivot_vector(transform, self.fk_pivots[inc])
-            
-            
             
         if self.forward_fk == False:
             xforms.reverse()
@@ -4316,8 +4351,11 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             self._orient_to_closest_joint(xform)
             
             if last_control:
-                cmds.parent(xform, last_control)
-            
+                if not self.sub_controls_dict:
+                    cmds.parent(xform, last_control)
+                if self.sub_controls_dict:
+                    cmds.parent(xform, self.sub_controls_dict[last_control][-1])
+                    
             last_control = control
         
         if self.forward_fk == True:
@@ -4325,7 +4363,10 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         if self.forward_fk == False:
             top_xform = space.get_xform_group(self.btm_control)
             
-        cmds.parent(top_xform, last_control)
+        if not self.sub_controls_dict:
+            cmds.parent(top_xform, last_control)
+        if self.sub_controls_dict:
+            cmds.parent(top_xform, self.sub_controls_dict[last_control][-1])
         
         self.fk_controls = controls
         
@@ -4343,9 +4384,12 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
                 value1 = 1
                 value2 = 0
             
-            space.create_multi_follow([self.control_group, self.fk_controls[-1]], space.get_xform_group(self.top_control), self.top_control, value = value1 )
-            space.create_multi_follow([self.control_group, self.fk_controls[0]], space.get_xform_group(self.btm_control), self.btm_control, value = value2 )
-        
+            fk_control = self.controls[-1]
+            if self.sub_controls_dict:
+                fk_control = self.sub_controls_dict[fk_control][-1]
+            
+            space.create_multi_follow([self.control_group, fk_control], space.get_xform_group(self.top_control), self.top_control, value = value1 )
+            space.create_multi_follow([self.control_group, fk_control], space.get_xform_group(self.btm_control), self.btm_control, value = value2 )
         
     def _snap_transforms_to_curve(self, transforms, curve):
         
@@ -4419,6 +4463,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
     def set_bottom_control_color(self, color_value):
         self.bottom_color = color_value
     
+    def set_create_bottom_sub_controls(self, bool_value):
+        self.create_sub_bottom_controls = bool_value
+    
     def set_top_pivot(self, value):
         
         self.top_pivot = value        
@@ -4429,6 +4476,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
     def set_top_control_color(self, color_value):
         self.top_color = color_value
 
+    def set_create_top_sub_controls(self, bool_value):
+        self.create_sub_top_controls = bool_value
+
     def set_fk_control_count(self, control_count):
         """
         Set the number of fk controls.
@@ -4437,6 +4487,15 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             control_count = 0
         
         self.control_count = control_count
+        
+    def set_fk_control_one_sub(self, bool_value):
+        
+        if bool_value:
+            self.sub_fk_count = 1
+            
+    def set_fk_control_sub_color(self, number):
+        
+        self.sub_fk_color = number
         
     def set_fk_pivots(self, values):
         
@@ -4456,6 +4515,10 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
     
     def set_fk_single_control_follow(self, bool_value):
         self.create_single_fk_follows = bool_value
+    
+    def set_create_fk_sub_controls(self, bool_value):
+        
+        self.create_sub_fk_controls = bool_value
     
     def set_orient_controls_to_joints(self, bool_value):
         
