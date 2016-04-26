@@ -446,9 +446,13 @@ def prefix_hierarchy(top_group, prefix):
     
     renamed = []
     
+    prefix = prefix.strip()
+    
     for relative in relatives:
 
-        new_name = cmds.rename(relative, '%s_%s' % (prefix, relative))
+        short_name = get_basename(relative)
+        
+        new_name = cmds.rename(relative, '%s_%s' % (prefix, short_name))
         renamed.append(new_name)
     
     renamed.reverse()

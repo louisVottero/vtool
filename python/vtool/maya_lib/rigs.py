@@ -1991,6 +1991,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         self.closest_y = False
         self.stretch_axis = 'X'
         self.sub_control_size = 1
+        self.sub_visibility = 1
     
     def _create_sub_control(self):
             
@@ -2089,7 +2090,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             
             sub_vis = attr.MayaNumberVariable('subVisibility')
             sub_vis.set_variable_type(sub_vis.TYPE_BOOL)
-            sub_vis.set_value(1)
+            sub_vis.set_value(self.sub_visibility)
             sub_vis.create(control)
             sub_vis.connect_out('%sShape.visibility' % sub_control)
                 
