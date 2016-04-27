@@ -579,6 +579,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def _goto_settings_process(self):
         
+        
+        
         if not self.settings:
             return
         
