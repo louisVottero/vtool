@@ -579,8 +579,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def _goto_settings_process(self):
         
-        
-        
         if not self.settings:
             return
         
@@ -591,13 +589,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         iterator = QtGui.QTreeWidgetItemIterator(self)
         
+        
         while iterator.value():
             item = iterator.value()
             
             if hasattr(item, 'directory') and hasattr(item, 'name'):
             
                 if item.directory == settings_process[1]:
-                        
+                    
                     if settings_process[0].startswith(item.name):
                         index = self.indexFromItem(item)
                         self.setExpanded(index, True)
@@ -605,9 +604,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                     if settings_process[0] == item.name:
                         
                         self.setCurrentItem(item)
-                        self.setItemSelected(item, True)
-                        break
-                
+                        item.setSelected(True)
+                    
             iterator += 1
     
     def _add_process_items(self, item, path):

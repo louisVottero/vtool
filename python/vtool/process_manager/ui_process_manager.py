@@ -166,10 +166,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not util_file.is_dir(data_dir):
             return
         
+        #return after
         self.build_widget.update_data(data_dir)
-        
         self.build_widget.set_directory(data_path)
-        
         self.build_widget.show()
         
     def sizeHint(self):
@@ -450,6 +449,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.set_project_directory(directory)
         
+        self._load_view_widget()
+        
     def _set_default_template_directory(self):
         
         if not self.template_settings:
@@ -475,7 +476,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
         
         if self.project_directory:
-            self.settings.set('process', [name, str(self.project_directory[1])])
+            self.settings.set('process', [name, str(self.project_directory)])
         
         name = name.replace('/', '  /  ')
         
@@ -501,10 +502,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.build_widget.hide()     
              
         if self.tab_widget.currentIndex() == 1:
-            if self.build_widget:
-                self.build_widget.show()
-                
+            #if self.build_widget:
+            #    self.build_widget.show()
+            
+            self._load_view_widget()    
             self.set_template_directory()
+            
                 
         if self.tab_widget.currentIndex() > 1:
             item = self.view_widget.tree_widget.currentItem()
@@ -699,7 +702,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if not directory:
             
-            directory = str(self.project_directory[1])
+            directory = str(self.project_directory)
             
         if directory and self.tab_widget.currentIndex() == 1:
             util_file.open_browser(directory)
@@ -713,6 +716,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _template_current_changed(self):
         
         self.settings_widget.refresh_template_list()        
+        
+    def _load_view_widget(self):
+        
+        self.view_widget.set_directory(self.project_directory)
         
     def set_directory(self, directory):
         
@@ -740,7 +747,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.handle_selection_change = True
 
         if not sub_part:
-            self.project_directory = directory
+            
             self.view_widget.clear_sub_path_filter()
             directory = str(directory[1])
         
@@ -749,10 +756,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         if directory != self.last_project:
         
+            self.project_directory = directory
+        
             self.clear_stage()
             
-            self.view_widget.set_directory(directory)
-            self.process.set_directory(directory)
+            self.process.set_directory(self.project_directory)    
         
         self.last_project = directory
         
@@ -817,4 +825,5 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._clear_code()
         self.active_title.setText('-')
         self.process_splitter.setSizes([1,0])
+        self.build_widget.hide()
         
