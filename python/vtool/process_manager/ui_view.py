@@ -57,9 +57,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         name = self.tree_widget._get_parent_path(item)
         
         self.manager_widget.copy_widget.set_other_process(name, self.directory)
-                        
-    def get_process_item(self, name):
-        return self.tree_widget.get_process_item(name)
     
     def get_current_process(self):
         return self.tree_widget.current_name
@@ -589,13 +586,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         iterator = QtGui.QTreeWidgetItemIterator(self)
         
+        
         while iterator.value():
             item = iterator.value()
             
             if hasattr(item, 'directory') and hasattr(item, 'name'):
             
                 if item.directory == settings_process[1]:
-                        
+                    
                     if settings_process[0].startswith(item.name):
                         index = self.indexFromItem(item)
                         self.setExpanded(index, True)
@@ -603,9 +601,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                     if settings_process[0] == item.name:
                         
                         self.setCurrentItem(item)
-                        self.setItemSelected(item, True)
-                        break
-                
+                        item.setSelected(True)
+                        # I could leave the iterator here but I don't because it could crash Maya.
+                    
             iterator += 1
     
     def _add_process_items(self, item, path):
@@ -868,16 +866,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 target_item.addChild(temp_item)
         
         self.copy_process.emit()
-        
-    def get_process_item(self, name):
-        
-        iterator = QtGui.QTreeWidgetItemIterator(self)
-        
-        while iterator.value():
-            if iterator.text(0) == name:
-                return iterator.value()
-            
-            iterator += 1
             
     def set_settings(self, settings):
         

@@ -3263,25 +3263,26 @@ class Highlighter(QtGui.QSyntaxHighlighter):
         super(Highlighter, self).__init__(parent)
 
         keywordFormat = QtGui.QTextCharFormat()
+        
         if not util.is_in_maya():
             keywordFormat.setForeground(QtGui.QColor(0, 150, 150))
         if util.is_in_maya():
             keywordFormat.setForeground(QtCore.Qt.green)
+            
         
         keywordFormat.setFontWeight(QtGui.QFont.Bold)
-
-        keywordPatterns = ["\\bdef\\b", 
-                           "\\bclass\\b", 
-                           "\\bimport\\b",
-                           "\\breload\\b", 
-                           '\\bpass\\b',
-                           '\\breturn\\b',
-                           '\\braise\\b',
-                           '\\bcontinue\\b',
-                           '\\bbreak\\b',]
+        import keyword
+        
+        key_patterns = keyword.kwlist
+        
+        key_list = []
+        
+        for pattern in key_patterns:
+            new_pattern = '\\b' + pattern + '\\b'
+            key_list.append(new_pattern)
 
         self.highlightingRules = [(QtCore.QRegExp(pattern), keywordFormat)
-                for pattern in keywordPatterns]
+                for pattern in key_list]
 
         classFormat = QtGui.QTextCharFormat()
         classFormat.setFontWeight(QtGui.QFont.Bold)
