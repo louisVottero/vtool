@@ -76,9 +76,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _show_options(self):
         
-        self.process_splitter.setSizes([1,1])
+        
         self._load_options(self.process.get_path())
+        self.process_splitter.setSizes([1,1])
         self.option_tabs.setCurrentIndex(0)
+        
         
     def _show_templates(self):
         
@@ -108,8 +110,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._set_title(name)
         
         self._update_build_widget(name)
-        
-        print 'current changed', item.get_path()
         
         self._load_options(item.get_path())
         
@@ -142,13 +142,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         path = item.get_path()
         
-        print 'select changed', path
-        
         self._load_options(path)
         
     def _load_options(self, directory):
-        
-        print 'load options', directory
         
         self.option_widget.set_directory(directory)
         
@@ -727,41 +723,38 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def set_project_directory(self, directory, sub_part = None):
         
+        self.handle_selection_change = False
         
+        self.view_widget.tree_widget.clearSelection()
         
         if type(directory) != list:
             directory = ['', str(directory)]
         
-        
         if not directory:
+        
             self.process.set_directory(None)
             self.view_widget.set_directory(None)
+            self.handle_selection_change = True
             return
+
+        self.handle_selection_change = True
 
         if not sub_part:
             self.project_directory = directory
             self.view_widget.clear_sub_path_filter()
             directory = str(directory[1])
         
-        print 'set project!', directory
-            
         if sub_part:
             directory = sub_part
             
         if directory != self.last_project:
         
-            print 'new project directory!', directory, 'last', self.last_project
-            
-            self._clear_code()
-            
-            self.process_splitter.setSizes([1,0])
+            self.clear_stage()
             
             self.view_widget.set_directory(directory)
             self.process.set_directory(directory)
         
         self.last_project = directory
-        
-        print 'done set project!'
         
     def set_template_directory(self, directory = None):
         
@@ -818,4 +811,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if util_file.is_dir(directory):
                 if not directory in sys.path:
                     sys.path.append(directory)
-                    
+    
+    def clear_stage(self):
+        
+        self._clear_code()
+        self.active_title.setText('-')
+        self.process_splitter.setSizes([1,0])
+        

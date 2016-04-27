@@ -35,8 +35,6 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
     def set_directory(self, directory):
         
-        print 'set directory', directory
-        
         if directory == None:
             raise
         
@@ -248,8 +246,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     
     def _load_widgets(self, options):
         
-        print 'load widgets'
-        
         self.clear_widgets()
         
         if not options:
@@ -260,8 +256,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.supress_update = True
         
         for option in options:
-            
-            print option
             
             split_name = option[0].split('.')
             
@@ -307,8 +301,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     widget = self._find_group_widget(after_search_group)
                 
             if type(option[1]) == str:
-                
-                print 'adding string option!', name, option[1]
                 
                 self.add_string_option(name, str(option[1]), widget)
                 

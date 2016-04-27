@@ -605,11 +605,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                     if settings_process[0] == item.name:
                         
                         self.setCurrentItem(item)
-                        #self.setItemSelected(item, True)
+                        self.setItemSelected(item, True)
                         break
                 
             iterator += 1
-
+    
     def _add_process_items(self, item, path):
         
         parts = process.find_processes(path)

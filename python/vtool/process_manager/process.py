@@ -1006,19 +1006,13 @@ class Process(object):
         
     def get_options(self):
         
-        print 'get options!'
-        
         self._setup_options()
         
         options = []
         
-        print self.option_settings
-        
         if self.option_settings:
             
             options = self.option_settings.get_settings()
-            
-        print options
             
         return options
         
