@@ -52,7 +52,7 @@ def get_shading_engines(shader_name):
 
 def get_shading_engines_by_geo(geo):
     
-    shapes = cmds.listRelatives(geo, children = True, shapes = True)
+    shapes = cmds.listRelatives(geo, children = True, shapes = True, f = True)
     
     engines = []
     
