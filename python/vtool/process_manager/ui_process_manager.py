@@ -332,38 +332,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         source_process.set_directory(directory)
         
         self.view_widget.tree_widget.paste_process(source_process)
-        """
-        target_process = None
-        
-        items = self.view_widget.tree_widget.selectedItems()
-        if items:
-            target_item = items[0]
-            target_process = target_item.get_process()
-        if not items:
-            target_item = None
-        
-        if not target_process:
-            target_process = process.Process()
-            target_process.set_directory(self.view_widget.tree_widget.directory)
-            target_item = None 
-        
-        new_process = process.copy_process(source_process, target_process)
-        
-        if not new_process:
-            return
-        
-        new_item = self.view_widget.tree_widget._add_process_item(new_process.get_name(), target_item)
-        
-        if target_process:
-            if target_item:
-                self.view_widget.tree_widget.collapseItem(target_item)
-                self.view_widget.tree_widget.expandItem(target_item)
-            
-        if not target_process:
-            self.view_widget.tree_widget.scrollToItem(new_item)
-            
-        self.view_widget.tree_widget.copy_process.emit()
-        """
         
     def _merge_template(self, process_name, directory):
         
@@ -386,7 +354,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.code_widget.script_widget.code_manifest_tree.clearSelection()
         self.code_widget.code_widget.code_edit.clear()
         self.code_widget.set_directory(None, sync_code = False)
-        #self.code_widget
+        
         if close_windows:
             self.code_widget.code_widget.code_edit.close_windows()
         
@@ -449,8 +417,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.set_project_directory(directory)
         
-        self._load_view_widget()
-        
     def _set_default_template_directory(self):
         
         if not self.template_settings:
@@ -504,8 +470,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if self.tab_widget.currentIndex() == 1:
             #if self.build_widget:
             #    self.build_widget.show()
-            
-            self._load_view_widget()    
+                
             self.set_template_directory()
             
                 
@@ -717,10 +682,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.settings_widget.refresh_template_list()        
         
-    def _load_view_widget(self):
-        
-        self.view_widget.set_directory(self.project_directory)
-        
     def set_directory(self, directory):
         
         self.directory = directory
@@ -760,7 +721,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
             self.clear_stage()
             
-            self.process.set_directory(self.project_directory)    
+            self.process.set_directory(self.project_directory)
+            self.view_widget.set_directory(self.project_directory)    
         
         self.last_project = directory
         
