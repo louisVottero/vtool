@@ -40,6 +40,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.project_directory = None
         self.last_tab = 0
         self.last_process = None
+        self.last_project = None
         self.sync_code = False
         self.kill_process = False
         self.build_widget = None
@@ -108,6 +109,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._update_build_widget(name)
         
+        print 'current changed', item.get_path()
+        
         self._load_options(item.get_path())
         
     def _item_selection_changed(self):
@@ -139,9 +142,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         path = item.get_path()
         
+        print 'select changed', path
+        
         self._load_options(path)
         
     def _load_options(self, directory):
+        
+        print 'load options', directory
         
         self.option_widget.set_directory(directory)
         
@@ -720,10 +727,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def set_project_directory(self, directory, sub_part = None):
         
-        if type(directory) != list:
-            directory = ['', directory]
         
-        self._clear_code()
+        
+        if type(directory) != list:
+            directory = ['', str(directory)]
+        
         
         if not directory:
             self.process.set_directory(None)
@@ -734,15 +742,26 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.project_directory = directory
             self.view_widget.clear_sub_path_filter()
             directory = str(directory[1])
+        
+        print 'set project!', directory
             
         if sub_part:
             directory = sub_part
             
-        self.process.set_directory(directory)
-        self.view_widget.set_directory(directory)
+        if directory != self.last_project:
         
-        self.option_widget.set_directory(directory)
-        self.process_splitter.setSizes([1,0])
+            print 'new project directory!', directory, 'last', self.last_project
+            
+            self._clear_code()
+            
+            self.process_splitter.setSizes([1,0])
+            
+            self.view_widget.set_directory(directory)
+            self.process.set_directory(directory)
+        
+        self.last_project = directory
+        
+        print 'done set project!'
         
     def set_template_directory(self, directory = None):
         

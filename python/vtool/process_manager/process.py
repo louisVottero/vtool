@@ -125,15 +125,15 @@ class Process(object):
         self.external_code_paths = []
         self.option_values = {}
         self.runtime_values = {}
-        self.options = None
+        self.option_settings = None
         
     def _setup_options(self):
         
-        if not self.options:
+        if not self.option_settings:
             options = util_file.SettingsFile()
-            self.options = options
+            self.option_settings = options
             
-        self.options.set_directory(self.get_path(), 'options.txt')
+        self.option_settings.set_directory(self.get_path(), 'options.txt')
         
         
     def _set_name(self, new_name):
@@ -945,7 +945,7 @@ class Process(object):
     def has_options(self):
         self._setup_options()
         
-        return self.options.has_settings()
+        return self.option_settings.has_settings()
     
     def add_option(self, name, value, group = None):
         
@@ -956,13 +956,13 @@ class Process(object):
         if not group:
             name = '%s' % name
                 
-        self.options.set(name, value)
+        self.option_settings.set(name, value)
         
     def set_option(self, name, value):
         self._setup_options()
         
-        if self.options.has_setting(name):
-            self.options.set(name, value)
+        if self.option_settings.has_setting(name):
+            self.option_settings.set(name, value)
         
     def get_unformatted_option(self, name, group):
         self._setup_options()
@@ -972,7 +972,7 @@ class Process(object):
         if not group:
             name = '%s' % name
         
-        value = self.options.get(name)
+        value = self.option_settings.get(name)
         
         return value
         
@@ -1006,24 +1006,31 @@ class Process(object):
         
     def get_options(self):
         
+        print 'get options!'
+        
         self._setup_options()
         
         options = []
         
-        if self.options:
-            options = self.options.get_settings()
+        print self.option_settings
+        
+        if self.option_settings:
+            
+            options = self.option_settings.get_settings()
+            
+        print options
             
         return options
         
     def get_option_file(self):
         
         self._setup_options()
-        return self.options.get_file()
+        return self.option_settings.get_file()
         
     def clear_options(self):
         
-        if self.options:
-            self.options.clear()
+        if self.option_settings:
+            self.option_settings.clear()
         
     #--- manifest
         

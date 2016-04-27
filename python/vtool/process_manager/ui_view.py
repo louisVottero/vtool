@@ -92,7 +92,7 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.copy_widget.pasted.connect(self._copy_done)
         self.copy_widget.canceled.connect(self._copy_done)
         
-        self.main_layout.addWidget(self.copy_widget)
+        #self.main_layout.addWidget(self.copy_widget)
 
     def _add_branch(self):
         
@@ -994,7 +994,9 @@ class CopyWidget(qt_ui.BasicWidget):
     def __init__(self):
         
         super(CopyWidget, self).__init__()
-        
+        self.setWindowTitle('Copy Special')
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setMinimumWidth(600)
         self.process = None
     
     def _build_widgets(self):

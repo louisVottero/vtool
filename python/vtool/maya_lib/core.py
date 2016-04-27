@@ -802,7 +802,15 @@ def create_group(name, parent = None):
             
         if parent and cmds.objExists(parent):
             
-            cmds.parent(sub_name, parent)
+            actual_parent = None
+            
+            actual_parent = cmds.listRelatives(sub_name, p = True)
+            
+            if actual_parent:
+                actual_parent = actual_parent[0]
+            
+            if not parent == actual_parent:
+                cmds.parent(sub_name, parent)
 
 def create_display_layer(name, nodes):
     """
