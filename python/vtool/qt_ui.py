@@ -2959,7 +2959,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         self.skip_focus = False
              
     def _setup_highlighter(self):
-        self.highlighter = Highlighter(self.document())
+        self.highlighter = PythonHighlighter(self.document())
     
     def _remove_tab(self,string_value):
         
@@ -3254,217 +3254,6 @@ class FindTextWidget(BasicDialog):
         
         self.found_match = False
         self.text_widget = widget
-            
-
-     
-class Highlighter(QtGui.QSyntaxHighlighter):
-    
-    def __init__(self, parent=None):
-        super(Highlighter, self).__init__(parent)
-
-        keywordFormat = QtGui.QTextCharFormat()
-        
-        if not util.is_in_maya():
-            keywordFormat.setForeground(QtGui.QColor(0, 150, 150))
-        if util.is_in_maya():
-            keywordFormat.setForeground(QtCore.Qt.green)
-            
-        
-        keywordFormat.setFontWeight(QtGui.QFont.Bold)
-        import keyword
-        
-        key_patterns = keyword.kwlist
-        
-        key_list = []
-        
-        for pattern in key_patterns:
-            new_pattern = '\\b' + pattern + '\\b'
-            key_list.append(new_pattern)
-
-        self.highlightingRules = [(QtCore.QRegExp(pattern), keywordFormat)
-                for pattern in key_list]
-
-        classFormat = QtGui.QTextCharFormat()
-        classFormat.setFontWeight(QtGui.QFont.Bold)
-        
-        self.highlightingRules.append((QtCore.QRegExp("\\b\.[a-zA-Z_]+\\b(?=\()"),
-                classFormat))
-
-        numberFormat = QtGui.QTextCharFormat()
-        numberFormat.setForeground(QtCore.Qt.cyan)
-        self.highlightingRules.append((QtCore.QRegExp("[0-9]+"), numberFormat))
-        
-        quotationFormat = QtGui.QTextCharFormat()
-        
-        quotationFormat.setForeground(QtCore.Qt.darkGreen)
-        
-        if util.is_in_maya():
-            quotationFormat.setForeground(QtGui.QColor(230, 230, 0))
-        
-        self.highlightingRules.append((QtCore.QRegExp("\'[^\']*\'"),
-                quotationFormat))
-        self.highlightingRules.append((QtCore.QRegExp("\"[^\"]*\""),
-                quotationFormat))
-        
-        singleLineCommentFormat = QtGui.QTextCharFormat()
-        singleLineCommentFormat.setForeground(QtCore.Qt.red)
-        self.highlightingRules.append((QtCore.QRegExp("#.*"),
-                singleLineCommentFormat))
-
-        self.multiLineCommentFormat = QtGui.QTextCharFormat()
-        
-        self.multiLineCommentFormat.setForeground(QtCore.Qt.darkGreen)
-        
-        if util.is_in_maya():
-            self.multiLineCommentFormat.setForeground(QtGui.QColor(230, 230, 0))
-        
-        self.quote = QtCore.QRegExp('"""')
-        self.single_quote = QtCore.QRegExp("'''")
-        
-    def highlightRules(self, text):
-
-        for pattern, format in self.highlightingRules:
-            expression = QtCore.QRegExp(pattern)
-            index = expression.indexIn(text)
-            while index >= 0:
-                length = expression.matchedLength()
-                self.setFormat(index, length, format)
-                index = expression.indexIn(text, index + length)
-
-        """
-    def highlightQuote(self, text):
-        
-        self.setCurrentBlockState(0)
-        
-        start_index = 0
-        
-        if not self.previousBlockState() == 1:
-            start_index = self.quote.indexIn(text)
-        
-        while start_index >= 0:
-            
-            end_index = self.quote.indexIn(text, start_index)
-            
-            comment_length = 0
-            
-            if end_index == -1:
-                self.setCurrentBlockState(1);
-                comment_length = len(text) - start_index
-                
-            if end_index > -1:
-                comment_length = end_index - start_index + self.quote.matchedLength()
-                
-                self.setFormat(start_index, comment_length, self.multiLineCommentFormat)
-                start_index = self.quote.indexIn(text, start_index + comment_length)
-                                 
-        
-        print text, self.currentBlockState(), self.previousBlockState()
-        """
-        """
-        exp = None
-        
-        if not self.currentBlockState() == 1:
-            
-            
-            start_index = self.quote.indexIn(text)
-            if start_index > -1:
-                self.setCurrentBlockState(1)
-                
-                self.setFormat(start_index, 
-                               len(text) - start_index,
-                               self.multiLineCommentFormat)
-
-        
-        if self.currentBlockState() == 1:
-            
-            if self.quote.indexIn(text) > -1:
-                self.setCurrentBlockState(0)
-            
-            if self.quote.indexIn(text) == -1:
-                self.setFormat(0, len(text), self.multiLineCommentFormat)
-        """
-            
-        """
-        setCurrentBlockState(0);
-
-        int startIndex = 0;
-        if (previousBlockState() != 1)
-            startIndex = text.indexOf(startExpression);
-        
-        while (startIndex >= 0) {
-           int endIndex = text.indexOf(endExpression, startIndex);
-           int commentLength;
-           if (endIndex == -1) {
-               setCurrentBlockState(1);
-               commentLength = text.length() - startIndex;
-           } else {
-               commentLength = endIndex - startIndex
-                               + endExpression.matchedLength();
-           }
-           setFormat(startIndex, commentLength, multiLineCommentFormat);
-           startIndex = text.indexOf(startExpression,
-                                     startIndex + commentLength);
-        }
-        """
-        
-    def highlightQuote(self, text):
-        
-        self.setCurrentBlockState(0)
-        
-        end_index = -1
-        start_index = 0
-        
-        if self.previousBlockState() != 1:
-            start_index = self.quote.indexIn(text)
-            exp = self.quote
-            
-            if start_index == -1:
-                start_index = self.single_quote.indexIn(text)
-                exp = self.single_quote
-            
-            self.exp = exp
-                
-        if self.previousBlockState() == 1:
-            exp = self.exp
-                
-        while start_index >= 0:
-            
-            end_index = exp.indexIn(text, (start_index + exp.matchedLength() + 1))
-            
-            if end_index == -1:
-                
-                self.setCurrentBlockState(1)
-                comment_length = len(text) - start_index
-            
-            else:
-
-                comment_length = end_index - start_index + exp.matchedLength()
-            
-            self.setFormat(start_index, 
-                           comment_length,
-                           self.multiLineCommentFormat)
-            
-            start_index = exp.indexIn(text, start_index + comment_length)
-            
-            if start_index > -1:
-                if exp == self.quote:
-                    
-                    start_index = self.single_quote.indexIn(text, start_index + comment_length)
-                    if start_index != -1:
-                        exp = self.single_quote
-                    continue
-                if exp == self.single_quote:
-                    start_index = self.quote.indexIn(text, start_index + comment_length)
-                    if start_index != -1:
-                        exp = self.quote
-                 
-    def highlightBlock(self, text):
-        
-        self.highlightRules(text)
-        
-        self.highlightQuote(text)
-        #self.highlightQuote(text, self.single_quote)
-        
 
 class CodeLineNumber(QtGui.QWidget):
     
@@ -3483,6 +3272,225 @@ class CodeLineNumber(QtGui.QWidget):
         
         self.code_editor._line_number_paint(event)
 
+#start
+def get_syntax_format(color = None, style=''):
+    """Return a QTextCharFormat with the given attributes.
+    """
+    
+    _color = None
+    
+    if type(color) == str:
+    
+        _color = QtGui.QColor()
+        _color.setNamedColor(color)
+    if type(color) == list:
+        _color = QtGui.QColor(*color)
+
+    if color == 'green':
+        _color = QtCore.Qt.green
+
+    
+
+    _format = QtGui.QTextCharFormat()
+    
+    if _color:
+        _format.setForeground(_color)
+    if 'bold' in style:
+        _format.setFontWeight(QtGui.QFont.Bold)
+    if 'italic' in style:
+        _format.setFontItalic(True)
+
+    return _format
+
+def syntax_styles(name):
+    
+    if name == 'keyword':
+        if util.is_in_maya():
+            return get_syntax_format('green', 'bold')
+        if not util.is_in_maya():
+            return get_syntax_format([0, 150, 150], 'bold')
+    if name == 'operator':
+        if util.is_in_maya():
+            return get_syntax_format('gray')
+        if not util.is_in_maya():
+            return get_syntax_format('darkGray')
+    if name == 'brace':
+        if util.is_in_maya():
+            return get_syntax_format('lightGray')
+        if not util.is_in_maya():
+            return get_syntax_format('darkGray')
+    if name == 'defclass':
+        if util.is_in_maya():
+            return get_syntax_format('green', 'bold')
+        if not util.is_in_maya():
+            return get_syntax_format([0, 150, 150], 'bold')
+    if name == 'string':
+        if util.is_in_maya():
+            return get_syntax_format([230, 230, 0])
+        if not util.is_in_maya():
+            return get_syntax_format('blue') 
+    if name == 'string2':       
+        if util.is_in_maya():
+            return get_syntax_format([230, 230, 0])
+        if not util.is_in_maya():
+            return get_syntax_format('lightGreen')
+    if name == 'comment':
+        if util.is_in_maya():
+            return get_syntax_format('red')
+        if not util.is_in_maya():
+            return get_syntax_format('red')
+    if name == 'self':
+        if util.is_in_maya():
+            return get_syntax_format(None, 'italic')
+        if not util.is_in_maya():
+            return get_syntax_format('black', 'italic')
+    if name == 'bold':
+        return get_syntax_format(None, 'bold')
+    if name == 'numbers':
+        if util.is_in_maya():
+            return get_syntax_format('cyan')
+        if not util.is_in_maya():
+            return get_syntax_format('brown')
+         
+class PythonHighlighter (QtGui.QSyntaxHighlighter):
+    """Syntax highlighter for the Python language.
+    """
+    # Python keywords
+    keywords = [
+        'and', 'assert', 'break', 'class', 'continue', 'def',
+        'del', 'elif', 'else', 'except', 'exec', 'finally',
+        'for', 'from', 'global', 'if', 'import', 'in',
+        'is', 'lambda', 'not', 'or', 'pass', 'print',
+        'raise', 'return', 'try', 'while', 'yield',
+        'None', 'True', 'False',
+    ]
+
+    # Python operators
+    operators = [
+        '=',
+        # Comparison
+        '==', '!=', '<', '<=', '>', '>=',
+        # Arithmetic
+        '\+', '-', '\*', '/', '//', '\%', '\*\*',
+        # In-place
+        '\+=', '-=', '\*=', '/=', '\%=',
+        # Bitwise
+        '\^', '\|', '\&', '\~', '>>', '<<',
+    ]
+
+    # Python braces
+    braces = [
+              '\{', '\}', '\(', '\)', '\[', '\]',
+              ]
+    def __init__(self, document):
+        QtGui.QSyntaxHighlighter.__init__(self, document)
+
+        # Multi-line strings (expression, flag, style)
+        # FIXME: The triple-quotes in these two lines will mess up the
+        # syntax highlighting from this point onward
+        self.tri_single = (QtCore.QRegExp("'''"), 1, syntax_styles('string2'))
+        self.tri_double = (QtCore.QRegExp('"""'), 2, syntax_styles('string2'))
+
+        rules = []
+
+        # Keyword, operator, and brace rules
+        rules += [(r'\b%s\b' % w, 0, syntax_styles('keyword'))
+            for w in PythonHighlighter.keywords]
+        rules += [(r'%s' % o, 0, syntax_styles('operator'))
+            for o in PythonHighlighter.operators]
+        rules += [(r'%s' % b, 0, syntax_styles('brace'))
+            for b in PythonHighlighter.braces]
+
+        # All other rules
+        rules += [
+            # 'self'
+            (r'\bself\b', 0, syntax_styles('self')),
+
+            # Double-quoted string, possibly containing escape sequences
+            (r'"[^"\\]*(\\.[^"\\]*)*"', 0, syntax_styles('string')),
+            # Single-quoted string, possibly containing escape sequences
+            (r"'[^'\\]*(\\.[^'\\]*)*'", 0, syntax_styles('string')),
+
+            # 'def' followed by an identifier
+            (r'\bdef\b\s*(\w+)', 0, syntax_styles('defclass')),
+            # 'class' followed by an identifier
+            (r'\bclass\b\s*(\w+)', 0, syntax_styles('defclass')),
+
+            # From '#' until a newline
+            (r'#[^\n]*', 0, syntax_styles('comment')),
+            #('\\b\.[a-zA-Z_]+\\b(?=\()', 0, syntax_styles('bold')),
+            # Numeric literals
+            (r'\b[+-]?[0-9]+[lL]?\b', 0, syntax_styles('numbers')),
+            (r'\b[+-]?0[xX][0-9A-Fa-f]+[lL]?\b', 0, syntax_styles('numbers')),
+            (r'\b[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b', 0, syntax_styles('numbers')),
+        ]
+
+        # Build a QRegExp for each pattern
+        self.rules = [(QtCore.QRegExp(pat), index, fmt)
+            for (pat, index, fmt) in rules]
+
+
+    def highlightBlock(self, text):
+        """Apply syntax highlighting to the given block of text.
+        """
+        # Do other syntax formatting
+        for expression, nth, format_value in self.rules:
+            index = expression.indexIn(text, 0)
+
+            while index >= 0:
+                # We actually want the index of the nth match
+                index = expression.pos(nth)
+                length = len(expression.cap(nth))
+                self.setFormat(index, length, format_value)
+                index = expression.indexIn(text, index + length)
+
+        self.setCurrentBlockState(0)
+
+        # Do multi-line strings
+        in_multiline = self.match_multiline(text, *self.tri_single)
+        if not in_multiline:
+            in_multiline = self.match_multiline(text, *self.tri_double)
+
+
+    def match_multiline(self, text, delimiter, in_state, style):
+        """Do highlighting of multi-line strings. ``delimiter`` should be a
+        ``QRegExp`` for triple-single-quotes or triple-double-quotes, and
+        ``in_state`` should be a unique integer to represent the corresponding
+        state changes when inside those strings. Returns True if we're still
+        inside a multi-line string when this function is finished.
+        """
+        # If inside triple-single quotes, start at 0
+        if self.previousBlockState() == in_state:
+            start = 0
+            add = 0
+        # Otherwise, look for the delimiter on this line
+        else:
+            start = delimiter.indexIn(text)
+            # Move past this match
+            add = delimiter.matchedLength()
+
+        # As long as there's a delimiter match on this line...
+        while start >= 0:
+            # Look for the ending delimiter
+            end = delimiter.indexIn(text, start + add)
+            # Ending delimiter on this line?
+            if end >= add:
+                length = end - start + add + delimiter.matchedLength()
+                self.setCurrentBlockState(0)
+            # No; multi-line string
+            else:
+                self.setCurrentBlockState(in_state)
+                length = len(text) - start + add
+            # Apply formatting
+            self.setFormat(start, length, style)
+            # Look for the next match
+            start = delimiter.indexIn(text, start + length)
+
+        # Return True if still inside a multi-line string, False otherwise
+        if self.currentBlockState() == in_state:
+            return True
+        else:
+            return False
 
 
 class PythonCompleter(QtGui.QCompleter):
