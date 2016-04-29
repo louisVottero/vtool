@@ -3321,9 +3321,9 @@ def syntax_styles(name):
             return get_syntax_format('darkGray')
     if name == 'defclass':
         if util.is_in_maya():
-            return get_syntax_format('green', 'bold')
+            return get_syntax_format(None, 'bold')
         if not util.is_in_maya():
-            return get_syntax_format([0, 150, 150], 'bold')
+            return get_syntax_format(None, 'bold')
     if name == 'string':
         if util.is_in_maya():
             return get_syntax_format([230, 230, 0])
@@ -3412,9 +3412,9 @@ class PythonHighlighter (QtGui.QSyntaxHighlighter):
             (r"'[^'\\]*(\\.[^'\\]*)*'", 0, syntax_styles('string')),
 
             # 'def' followed by an identifier
-            (r'\bdef\b\s*(\w+)', 0, syntax_styles('defclass')),
+            #(r'\bdef\b\s*(\w+)', 0, syntax_styles('defclass')),
             # 'class' followed by an identifier
-            (r'\bclass\b\s*(\w+)', 0, syntax_styles('defclass')),
+            #(r'\bclass\b\s*(\w+)', 0, syntax_styles('defclass')),
 
             # From '#' until a newline
             (r'#[^\n]*', 0, syntax_styles('comment')),

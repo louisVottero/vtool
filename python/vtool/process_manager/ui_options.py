@@ -67,6 +67,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.supress_update = False
         self.central_palette = self
         
+        self.widget_to_copy = None
+        
     def _build_widgets(self):
         self.child_layout = QtGui.QVBoxLayout()
         
@@ -304,6 +306,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
                 self.add_string_option(name, str(option[1]), widget)
                 
+                
             if type(option[1]) == float:
                 self.add_number_option(name, option[1], widget)
                 
@@ -327,10 +330,30 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             self.child_layout.addWidget(widget)
             if hasattr(widget, 'update_values'):
                 widget.update_values.connect(self._write_options)
+        
         if parent:
             parent.child_layout.addWidget(widget)
             if hasattr(widget, 'update_values'):
                 widget.update_values.connect(parent._write_options)
+        
+    def _clear_action(self):
+        
+        if self.__class__ == ProcessOptionPalette:
+            name = 'the palette?'
+        if not self.__class__ == ProcessOptionPalette:
+            
+            name = 'group: %s?' % self.get_name()
+        
+        permission = qt_ui.get_permission('Clear all the widgets in %s' % name, self)
+        
+        if permission == True:
+            self.clear_widgets()
+            self._write_options(clear = True)
+            
+    def _store_copy(self, widget):
+        
+        self.widget_to_copy = widget
+        
         
     def create_right_click(self, ):
         
@@ -349,7 +372,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         add_boolean = QtGui.QAction(self)
         add_boolean.setText('Add Boolean')
         add_boolean.triggered.connect(self.add_boolean_option)
-        
         
         self.add_group_action = QtGui.QAction(self)
         self.add_group_action.setText('Add Group')
@@ -374,20 +396,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.addAction(self.add_title_action)
         self.addAction(separator)
         self.addAction(self.clear_action)
-        
-    def _clear_action(self):
-        
-        if self.__class__ == ProcessOptionPalette:
-            name = 'the palette?'
-        if not self.__class__ == ProcessOptionPalette:
-            
-            name = 'group: %s?' % self.get_name()
-        
-        permission = qt_ui.get_permission('Clear all the widgets in %s' % name, self)
-        
-        if permission == True:
-            self.clear_widgets()
-            self._write_options(clear = True)
         
     def has_options(self):
         if not self.directory:
@@ -417,6 +425,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         name = self._get_unique_name(name, parent)
         
         group = ProcessOptionGroup(name)
+        if self.__class__ == ProcessOptionGroup or parent.__class__ == ProcessOptionGroup:
+            if util.is_in_maya():
+                group.group.set_inset_dark()
         
         self._handle_parenting(group, parent)
         
@@ -425,21 +436,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         if parent.__class__ == ProcessOptionPalette:
             group.collapse_group()
-        
-        if self.__class__ == ProcessOptionGroup or parent.__class__ == ProcessOptionGroup:
-            group.group.setAlignment(QtCore.Qt.AlignLeft)
-            group.group.setFlat(True)
-            if util.is_in_maya():
-            
-                group.group.setStyleSheet("QGroupBox { background-color: rgb(70, 70, 70); \
-                border: 1px solid; \
-                border-width: 1px; \
-                padding: 2px; \
-                padding-top: 20px; \
-                padding-right: 0px;\
-                margin: 0px;}""\
-                QGroupBox::title{subcontrol-origin: -30px;subcontrol-position: top left;padding: 5px;font-size: 18px;font-weight: bold; border-top: 1px solid; border-left: 1px solid; }")
-      
+
+        group.copy_widget.connect(self._store_copy)
+
+                
     def add_title(self, name = 'title', parent = None):
         
         if type(name) == bool:
@@ -534,6 +534,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
 class ProcessOptionGroup(ProcessOptionPalette):
     
+    copy_widget = qt_ui.create_signal(object)
+    paste_widget = qt_ui.create_signal(object)
+    
     def __init__(self, name):
         
         self.name = name
@@ -572,8 +575,6 @@ class ProcessOptionGroup(ProcessOptionPalette):
            
         return found
         
-    
-        
     def create_right_click(self):
         super(ProcessOptionGroup, self).create_right_click()
         
@@ -596,11 +597,26 @@ class ProcessOptionGroup(ProcessOptionPalette):
         separator = QtGui.QAction(self)
         separator.setSeparator(True)
         
+        copy = QtGui.QAction(self)
+        copy.setText('Copy')
+        copy.triggered.connect(self._copy)
+        
+        self.paste_action = QtGui.QAction(self)
+        self.paste_action.setText('Paste')
+        self.paste_action.setVisible(False)
+        self.paste_action.triggered.connect(self._paste)
+        
+        last_separator = QtGui.QAction(self)
+        last_separator.setSeparator(True)
+        
         self.insertAction(self.add_string, move_up)
         self.insertAction(self.add_string, move_dn)
         self.insertAction(self.add_string, rename)
         self.insertAction(self.add_string, remove)
         self.insertAction(self.add_string, separator)
+        self.insertAction(self.add_string, copy)
+        self.insertAction(self.add_string, self.paste_action)
+        self.insertAction(self.add_string, last_separator)
         
         self.clear_action.setText('Clear Group')
         
@@ -608,23 +624,33 @@ class ProcessOptionGroup(ProcessOptionPalette):
         main_group_layout = QtGui.QVBoxLayout()
         
         main_group_layout.setContentsMargins(0,0,0,0)
+        main_group_layout.setSpacing(1)
         
-        self.child_layout = QtGui.QVBoxLayout()
-        self.child_layout.setContentsMargins(5,10,5,10)
+        #self.child_layout = QtGui.QVBoxLayout()
+        #self.child_layout.setContentsMargins(5,10,5,10)
         
-        self.child_layout.setSpacing(0)
+        #self.child_layout.setSpacing(0)
         
-        main_group_layout.addLayout(self.child_layout)
-        main_group_layout.addSpacing(10)
+        #main_group_layout.addLayout(self.child_layout)
+        #main_group_layout.addSpacing(10)
         
         self.group = OptionGroup(self.name)#QtGui.QGroupBox(self.name)
-        self.group.setAlignment(QtCore.Qt.AlignCenter)
-        self.group.setLayout(main_group_layout)
+        #self.group.setAlignment(QtCore.Qt.AlignCenter)
+        #self.group.setLayout(main_group_layout)
         
-        self.group.child_layout = self.child_layout
+        #self.group.child_layout = self.child_layout
+        
+        self.child_layout = self.group.child_layout
         
         self.main_layout.addSpacing(10)
         self.main_layout.addWidget(self.group)
+        
+        
+    def _copy(self):
+        self.copy_widget.emit(self)
+        
+    def _paste(self):
+        self.paste_widget.emit()
         
     def get_parent(self):
         
@@ -715,35 +741,101 @@ class ProcessOptionGroup(ProcessOptionPalette):
     def get_value(self):
         return None
        
-class OptionGroup(QtGui.QGroupBox):
+class OptionGroup(QtGui.QFrame):
     
     def __init__(self, name):
-        super(OptionGroup, self).__init__(name)
-    
+        super(OptionGroup, self).__init__()
+        
         self.close_height = 40
+        if util.get_maya_version() < 2016:
+            self.setFrameStyle(self.Panel | self.Raised)
+        if util.get_maya_version() > 2015:    
+            self.setFrameStyle(self.NoFrame)
+            
+        self.layout = QtGui.QVBoxLayout()
+        self.child_layout = QtGui.QVBoxLayout()
+        self.child_layout.setContentsMargins(0,4,0,10)
+        self.child_layout.setSpacing(0)
+        
+        self.setLayout(self.layout)
+        
+        self.header_layout = QtGui.QHBoxLayout()
+        
+        self.label = QtGui.QLabel(name)
+        self.label.setMinimumHeight(15)
+        
+        self.label_expand = QtGui.QLabel('--')
+        
+        self.label_expand.setMinimumHeight(15)
+        
+        self.header_layout.addWidget(self.label)
+        self.header_layout.addSpacing(5)
+        self.header_layout.addWidget(self.label_expand)
+        
+        self.setMinimumHeight(self.close_height)
+        
+        self.layout.addLayout(self.header_layout)
+        self.layout.addSpacing(4)
+        self.layout.addLayout(self.child_layout)
+        
+        self.background_shade = 80
+    
+        if util.is_in_maya():
+            palette = self.palette()    
+            palette.setColor(self.backgroundRole(), QtGui.QColor(80,80,80))
+            self.setAutoFillBackground(True)
+            self.setPalette(palette)
         
     def mousePressEvent(self, event):
         
         super(OptionGroup, self).mousePressEvent(event)
+        
+        if not event.button() == QtCore.Qt.LeftButton:
+            return
+        
+        self.setVisible(False)
         
         if event.y() < 25:
             height = self.height()
             
             if height == self.close_height:
                 
+                self.label_expand.setText('--')
                 self.setFixedSize(qt_ui.QWIDGETSIZE_MAX, qt_ui.QWIDGETSIZE_MAX)
+                self.setVisible(True)
                 return
                     
             if height >= self.close_height:
-                
+                self.label_expand.setText('+')
                 self.setMaximumHeight(self.close_height)
-                
+                self.setVisible(True)
                 return
+            
+        self.setVisible(True)
             
     def collapse_group(self):
         
         self.setMaximumHeight(self.close_height)
-            
+        self.label_expand.setText('+')
+           
+    def title(self):
+        return self.label.text() 
+        
+    def setTitle(self, string_value):
+        self.label.setText(string_value)
+        
+    def set_inset_dark(self):
+        
+        value = self.background_shade
+        value -= 15
+        if util.get_maya_version() < 2016:    
+            self.setFrameStyle(self.Panel | self.Sunken)
+        
+        palette = self.palette()    
+        palette.setColor(self.backgroundRole(), QtGui.QColor(value,value,value))
+        self.setAutoFillBackground(True)
+        self.setPalette(palette)        
+        
         
         
 class ProcessOption(qt_ui.BasicWidget):
@@ -764,6 +856,11 @@ class ProcessOption(qt_ui.BasicWidget):
         self.create_right_click()
         
         self._setup_value_change()
+        
+        self.option_type = self._define_type()
+        
+    def _define_type(self):
+        return None
         
     def _define_main_layout(self):
         return QtGui.QHBoxLayout()
@@ -852,6 +949,8 @@ class ProcessOption(qt_ui.BasicWidget):
         remove.triggered.connect(self.remove)
         self.addAction(remove)
         
+        
+        
     def remove(self):
         parent = self.parent()
         
@@ -918,6 +1017,8 @@ class ProcessTitle(ProcessOption):
         title_widget = self.main_layout.itemAt(0)
         self.main_layout.setAlignment(title_widget, QtCore.Qt.AlignRight)
         
+    def _define_type(self):
+        return 'title'
         
     def _define_option_widget(self):
         return QtGui.QLabel(self.name)
@@ -940,6 +1041,9 @@ class ProcessOptionText(ProcessOption):
         insert_button.setMaximumWidth(20)
         insert_button.clicked.connect(self._insert)
         self.main_layout.addWidget(insert_button)
+    
+    def _define_type(self):
+        return 'text'
         
     def _define_option_widget(self):
         return qt_ui.GetString(self.name)
@@ -986,6 +1090,10 @@ class ProcessOptionText(ProcessOption):
         return value
         
 class ProcessOptionNumber(ProcessOption):
+    
+    def _define_type(self):
+        return 'number'
+    
     def _define_option_widget(self):
         
         return qt_ui.GetNumber(self.name)
@@ -1000,15 +1108,20 @@ class ProcessOptionNumber(ProcessOption):
 
         
         return self.option_widget.get_value()
-        
-        
     
 class ProcessOptionInteger(ProcessOptionNumber):
+    
+    def _define_type(self):
+        return 'integer'
+    
     def _define_option_widget(self):
         
         return qt_ui.GetInteger(self.name)
     
 class ProcessOptionBoolean(ProcessOptionNumber):
+    
+    def _define_type(self):
+        return 'boolean'
     
     def __init__(self, name):
         super(ProcessOptionBoolean, self).__init__(name)
