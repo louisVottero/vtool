@@ -143,6 +143,9 @@ class BlendShape(object):
         return attribute        
     
     def _get_mesh_input_for_target(self, name, inbetween = 1):
+        
+        name = core.get_basename(name, remove_namespace = True)
+        
         target_index = self.targets[name].index
         
         value = inbetween * 1000 + 5000
@@ -269,6 +272,8 @@ class BlendShape(object):
         Args
             name (str): The name of a target.
         """
+        name = core.get_basename(name, remove_namespace = True)
+        
         if name in self.targets:
             return True
         
@@ -748,6 +753,8 @@ class ShapeComboManager(object):
     
     def _add_variable(self, shape):
         
+        shape = core.get_basename(shape, remove_namespace = True)
+        
         var = attr.MayaNumberVariable(shape)
         #var.set_min_value(0)
         #var.set_max_value(1)
@@ -803,6 +810,8 @@ class ShapeComboManager(object):
             return keyframe
             
     def _setup_shape_connections(self, name):
+        
+        name = core.get_basename(name, remove_namespace = True)
         
         blendshape = self.blendshape
         
@@ -1363,6 +1372,8 @@ class ShapeComboManager(object):
         if not blendshape:
             vtool.util.warning('No blendshape.')
             return
+        
+        
         
         is_target = blendshape.is_target(name)
         
