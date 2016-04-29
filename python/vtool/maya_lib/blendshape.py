@@ -658,12 +658,7 @@ class ShapeComboManager(object):
         self.vetala_type = 'ShapeComboManager'
         self.home = 'home'
         self.blendshape = None
-        
-
-            
-        
     
-
     def _get_mesh(self):
         
         mesh = attr.get_attribute_input( '%s.mesh' % self.setup_group, node_only = True )
@@ -709,10 +704,13 @@ class ShapeComboManager(object):
         
         found = deform.find_deformer_by_type(mesh, 'blendShape')
         
+        blendshape = BlendShape()
+        
         if found:
+            blendshape.set_targets_to_zero()
             return
         
-        blendshape = BlendShape()
+        
         blendshape.create(mesh)
         
         blendshape.rename('blendshape_%s' % mesh)
@@ -723,7 +721,13 @@ class ShapeComboManager(object):
         if home:
             cmds.delete(home)
             
+        env_history = deform.EnvelopeHistory(mesh)
+        env_history.turn_off()
+            
         self.home = cmds.duplicate(mesh, n = 'home_%s' % mesh)[0]
+        
+        env_history.turn_on(True)
+        
         cmds.parent(self.home, self.setup_group)
         attr.connect_message(self.home, self.setup_group, 'home')
         
@@ -1166,6 +1170,14 @@ class ShapeComboManager(object):
         
         self._create_blendshape()
         
+        shapes = self.get_shapes()
+        
+        print 'shapes!', shapes
+        
+        if shapes:
+            for shape in shapes:
+                self.add_shape(shape)
+        
     def load(self, manager_group):
         
         if self.is_shape_combo_manager(manager_group):
@@ -1192,8 +1204,20 @@ class ShapeComboManager(object):
         
         shapes, combos, inbetweens = self.get_shape_and_combo_lists(meshes)
         
+        home = self._get_home_mesh()
+        base_mesh = self._get_mesh()
+        
         for shape in shapes:
-                self.add_shape(shape, preserve_combos = preserve)    
+            
+            if shape == base_mesh:
+                vtool.util.warning('Cannot add base mesh into the system.')
+                continue
+            
+            if shape == home:
+                vtool.util.warning('Cannot add home mesh into the system.')
+                continue
+            
+            self.add_shape(shape, preserve_combos = preserve)    
             
         for inbetween in inbetweens:
             
@@ -1202,9 +1226,26 @@ class ShapeComboManager(object):
             if not len(str(last_number)) >= 2:
                 continue
             
+            if inbetween == base_mesh:
+                vtool.util.warning('Cannot add base mesh into the system.')
+                continue
+            
+            if inbetween == home:
+                vtool.util.warning('Cannot add home mesh into the system.')
+                continue
+            
             self.add_shape(inbetween)
             
         for combo in combos:
+            
+            if combo == base_mesh:
+                vtool.util.warning('Cannot add base mesh into the system.')
+                continue
+            
+            if combo == home:
+                vtool.util.warning('Cannot add home mesh into the system.')
+                continue
+            
             for mesh in meshes:
                 if mesh == combo:
                     self.add_combo(mesh)

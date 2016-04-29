@@ -370,6 +370,10 @@ class ComboManager(ui.MayaWindow):
     
     def _add_command(self):
         
+        if not self.manager.get_mesh():
+            vtool.util.warning('No base mesh set.')
+            return
+        
         meshes = geo.get_selected_meshes()
         
         #mesh_count = len(meshes)

@@ -224,13 +224,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.option_tabs = QtGui.QTabWidget()
         
         option_layout = QtGui.QVBoxLayout()
-        self.option_scroll = QtGui.QScrollArea()
-        self.option_scroll.setWidgetResizable(True)
-        self.option_scroll.setMinimumWidth(350)
         self.option_widget = ui_options.ProcessOptionsWidget()
-        self.option_scroll.setWidget(self.option_widget)
-        self.option_scroll.setFocusPolicy(QtCore.Qt.NoFocus)
-        option_layout.addWidget(self.option_scroll)
+        option_layout.addWidget(self.option_widget)
         
         option_widget = QtGui.QWidget()
         option_widget.setLayout(option_layout)
