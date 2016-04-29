@@ -1185,7 +1185,7 @@ class ShapeComboManager(object):
     @core.undo_chunk
     def zero_out(self):
         
-        if not self.setup_group:
+        if not self.setup_group or not cmds.objExists(self.setup_group):
             return 
         
         attrs = cmds.listAttr(self.setup_group, ud = True, k = True)
@@ -1625,13 +1625,15 @@ class ShapeComboManager(object):
     
     def add_combo(self, name, mesh = None):
         
-        if not self.is_combo_valid(name):
+        if not mesh:
+            mesh = name
+        
+        nice_name = core.get_basename(name, remove_namespace = True)
+        
+        if not self.is_combo_valid(nice_name):
             vtool.util.warning('Could not add combo %s, a target is missing.' % name)
             return
         
-        if not mesh:
-            mesh = name
-          
         home = self._get_mesh()
         
         if home == mesh:
@@ -1645,20 +1647,20 @@ class ShapeComboManager(object):
         
         home = self._get_home_mesh()
         
-        shapes = self.get_shapes_in_combo(name, include_combos=True)
+        shapes = self.get_shapes_in_combo(nice_name, include_combos=True)
         
         delta = self._get_combo_delta(mesh, shapes, home)
         
-        if blendshape.is_target(name):
-            blendshape.replace_target(name, delta)
+        if blendshape.is_target(nice_name):
+            blendshape.replace_target(nice_name, delta)
         
-        if not blendshape.is_target(name):
-            blendshape.create_target(name, delta)
+        if not blendshape.is_target(nice_name):
+            blendshape.create_target(nice_name, delta)
         
         
         cmds.delete(delta)
         
-        self._setup_combo_connections(name)
+        self._setup_combo_connections(nice_name)
         
             
     def recreate_combo(self, name):
@@ -1794,11 +1796,13 @@ class ShapeComboManager(object):
         
         for mesh in meshes:
             
-            split_shape = mesh.split('_')
+            nice_name = core.get_basename(mesh, remove_namespace = True)
             
-            if mesh.count('_') == 0:
+            split_shape = nice_name.split('_')
+            
+            if nice_name.count('_') == 0:
                 
-                inbetween_parent = self.get_inbetween_parent(mesh)
+                inbetween_parent = self.get_inbetween_parent(nice_name)
                 
                 if inbetween_parent:
                     if inbetween_parent in meshes or self.blendshape.is_target(inbetween_parent):
