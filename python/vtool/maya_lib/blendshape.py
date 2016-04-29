@@ -1172,8 +1172,6 @@ class ShapeComboManager(object):
         
         shapes = self.get_shapes()
         
-        print 'shapes!', shapes
-        
         if shapes:
             for shape in shapes:
                 self.add_shape(shape)
