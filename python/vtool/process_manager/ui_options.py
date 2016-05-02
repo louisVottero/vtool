@@ -13,8 +13,6 @@ if qt_ui.is_pyqt():
 if qt_ui.is_pyside():
     from PySide import QtCore, QtGui
 
-
-
 class ProcessOptionsWidget(qt_ui.BasicWidget):
     
     def __init__(self):
@@ -32,14 +30,41 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
+        self.edit_mode_button = QtGui.QPushButton('Edit')
+        self.edit_mode_button.setCheckable(True)
+        self.edit_mode_button.setMaximumWidth(100)
+        
         
         self.option_scroll = ProcessOptionScroll()
-        self.option_palette = self.option_scroll.palette
-        self.edit_options = EditOptions()
-        #self.edit_options.show()
+        self.option_palette = ProcessOptionPalette()
+        self.option_scroll.setWidget(self.option_palette)
         
+        self.edit_options = EditOptions()
+        self.edit_options.setVisible(False)
+        
+        self.edit_options.move_up.clicked.connect(self.move_up)
+        self.edit_options.move_dn.clicked.connect(self.move_dn)
+        self.edit_options.remove.clicked.connect(self.remove)
+        
+        self.edit_mode_button.toggled.connect(self._edit_click)
+        
+        self.main_layout.addWidget(self.edit_mode_button, alignment = QtCore.Qt.AlignRight)
         self.main_layout.addWidget(self.option_scroll)
         self.main_layout.addWidget(self.edit_options)
+    
+    def _edit_click(self, bool_value):
+        
+        
+        self._edit_activate(bool_value)
+        
+        
+    def _edit_activate(self, bool_value):
+        
+        self.edit_options.setVisible(bool_value)
+        ProcessOptionPalette.edit_mode_state = bool_value
+        ProcessOption.edit_mode_state = bool_value
+        
+        self.option_palette.update_current_widget()
         
     def set_directory(self, directory):
         
@@ -55,7 +80,42 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
             return False
         
         return self.option_palette.has_options()
+    
+    def move_up(self):
         
+        widgets = ProcessOptionPalette.current_widgets
+        widgets = self.option_palette.sort_widgets( widgets, widgets[0].get_parent())
+        
+        if not widgets:
+            return
+        
+        for widget in widgets:
+            widget.move_up()
+    
+    def move_dn(self):
+        widgets = ProcessOptionPalette.current_widgets
+        
+        if widgets:
+            widgets = self.option_palette.sort_widgets( widgets, widgets[0].get_parent())
+        
+        if not widgets:
+            return
+        
+        widgets.reverse()
+        
+        for widget in widgets:
+            widget.move_down()
+        
+    def remove(self):
+        
+        widgets = ProcessOptionPalette.current_widgets
+        widgets = self.option_palette.sort_widgets( widgets, widgets[0].get_parent())
+        
+        if not widgets:
+            return
+        
+        for widget in widgets:
+            widget.remove()
 
 class ProcessOptionScroll(QtGui.QScrollArea):
     def __init__(self):
@@ -63,17 +123,38 @@ class ProcessOptionScroll(QtGui.QScrollArea):
         
         self.setWidgetResizable(True)
         self.setMinimumWidth(350)
-        self.option_widget = ProcessOptionPalette()
-        self.palette = self.option_widget
-        self.setWidget(self.option_widget)
         self.setFocusPolicy(QtCore.Qt.NoFocus)
+    
+class EditOptions(qt_ui.BasicWidget):
+    
+    def __init__(self):
+        super(EditOptions, self).__init__()
+        
+        self.setWindowTitle('Edit Options')
+    
+    def _define_main_layout(self):
+        return QtGui.QHBoxLayout()
+    
+    def _build_widgets(self):
+        
+        self.move_up = QtGui.QPushButton('Move Up')
+        self.move_dn = QtGui.QPushButton('Move Dn')
+        self.remove = QtGui.QPushButton('Remove')
+        
+        self.main_layout.addWidget(self.move_up)
+        self.main_layout.addWidget(self.move_dn)
+        self.main_layout.addWidget(self.remove)
+        
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
     
         
 class ProcessOptionPalette(qt_ui.BasicWidget):
     
     widget_to_copy = None
-    current_widget = None
+    current_widgets = []
     last_widget = None
+    edit_mode = qt_ui.create_signal(object)
+    edit_mode_state = False
     
     def __init__(self):
         super(ProcessOptionPalette, self).__init__()
@@ -81,9 +162,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.main_layout.setContentsMargins(5,10,5,0)
         self.main_layout.setSpacing(1)
         self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
-        
-        #self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
-        #self.create_right_click()
         
         self.directory = None
         self.process_inst = None
@@ -98,10 +176,12 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self._create_context_menu()
         
-        
     def _item_menu(self, position):
         
-        if self.__class__.widget_to_copy:
+        if not ProcessOptionPalette.edit_mode_state:
+            return
+        
+        if ProcessOptionPalette.widget_to_copy:
             self.paste_action.setVisible(True)
         
         self.menu.exec_(self.mapToGlobal(position))
@@ -405,7 +485,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def _handle_parenting(self, widget, parent):
         
-        widget.widget_clicked.connect(self._update_current_widget)
+        widget.widget_clicked.connect(self.update_current_widget)
+        widget.edit_mode.connect(self._activate_edit_mode)
         
         if not parent:
             self.child_layout.addWidget(widget)
@@ -424,16 +505,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 if hasattr(parent, 'expand_group'):
                     parent.expand_group()
         
-    def _update_current_widget(self, widget):
-        
-        last_widget = self.__class__.last_widget
-        
-        self.__class__.current_widget = widget
-        self.__class__.last_widget = widget
-        
-        if last_widget == widget:
-            self.__class__.last_widget = None
-        
+    def _fill_background(self, widget):
         palette = widget.palette()
         
         if not util.is_in_maya():
@@ -443,14 +515,79 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             palette.setColor(widget.backgroundRole(), QtCore.Qt.red)
         widget.setAutoFillBackground(True)
         widget.setPalette(palette)
+    
+    def _unfill_background(self, widget):
         
-        if last_widget:
-            palette = last_widget.palette()
-            palette.setColor(last_widget.backgroundRole(), last_widget.orig_background_color)
-            last_widget.setAutoFillBackground(False)    
-            last_widget.setPalette(palette)
+        palette = widget.palette()
+        palette.setColor(widget.backgroundRole(), widget.orig_background_color)
+        widget.setAutoFillBackground(False)    
+        widget.setPalette(palette)
+        
+    def update_current_widget(self, widget = None):
+        
+        if ProcessOptionPalette.edit_mode_state == False:
+            return
+        
+        if widget:
+        
+            if self.is_selected(widget):
+                self.deselect_widget(widget)
+                return
             
+            if not self.is_selected(widget):
+                self.select_widget(widget)
+                return
         
+    def sort_widgets(self, widgets, parent, return_out_of_scope = False):
+        
+        if not hasattr(parent, 'child_layout'):
+            return
+        
+        item_count = parent.child_layout.count()
+        found = []
+        
+        for inc in range(0, item_count):
+            
+            item = parent.child_layout.itemAt(inc)
+            
+            if item:
+                widget = item.widget()
+                
+                for sub_widget in widgets:
+                    if sub_widget == widget:
+
+                        found.append(widget)
+                        
+        if return_out_of_scope:
+            
+            other_found = []
+            
+            for sub_widget in widgets:
+                if not sub_widget in found:
+                    other_found.append(sub_widget)
+        
+            
+            found = other_found
+        
+        return found
+        
+        pass
+        
+    def _deselect_children(self, widget):
+        
+        children = widget.get_children()
+        
+        for child in children:
+            self.deselect_widget(child)
+        
+        
+    def _activate_edit_mode(self):
+        
+        self.edit_mode_state = True
+        self.edit_mode.emit(True)
+        
+        self.edit_action.setVisible(False)
+        self.disable_edit_action.setVisible(True)
         
     def _clear_action(self):
         
@@ -468,14 +605,76 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
     def _copy_widget(self):
         
-        self.__class__.widget_to_copy = self
-        self.paste_action.setVisible(True)
+        ProcessOptionPalette.widget_to_copy = self
         
     def _paste_widget(self):
         
-        print self.__class__.widget_to_copy
-        
         self.paste_action.setVisible(False)
+        
+        widget_to_copy = ProcessOptionPalette.widget_to_copy
+        
+        if widget_to_copy.option_type == 'group':
+            widget_to_copy.copy_to(self)
+        
+    def is_selected(self, widget):
+        
+        if widget in ProcessOptionPalette.current_widgets:
+            return True
+        
+        return False
+        
+    def get_parent(self):
+        
+        parent = self.parent()
+        
+        grand_parent = parent.parent()
+        
+        if hasattr(grand_parent, 'group'):
+            parent = grand_parent
+            
+        if not hasattr(parent, 'child_layout'):
+            return
+        
+        if parent.__class__ == ProcessOptionPalette:
+            return parent
+        
+        return parent
+        
+    def select_widget(self, widget):
+        
+        if hasattr(widget, 'child_layout'):
+            self._deselect_children(widget)
+            
+        
+        parent = widget.get_parent()
+        
+        if not parent:
+            #get palette
+            parent = widget.parent()
+        
+        out_of_scope = None
+        
+        if parent:
+            out_of_scope = self.sort_widgets(ProcessOptionPalette.current_widgets, 
+                                             parent, 
+                                             return_out_of_scope = True)
+            
+        if out_of_scope:
+            for sub_widget in out_of_scope:
+                self.deselect_widget(sub_widget)
+            
+        ProcessOptionPalette.current_widgets.append(widget)
+        self._fill_background(widget)
+        
+    def deselect_widget(self, widget):
+        
+        if not self.is_selected(widget):
+            return
+        
+        widget_index = ProcessOptionPalette.current_widgets.index(widget)
+        
+        ProcessOptionPalette.current_widgets.pop(widget_index)
+        self._unfill_background(widget)
         
     def has_options(self):
         if not self.directory:
@@ -496,6 +695,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 widget = item.widget()
                 self.child_layout.removeWidget(widget)
                 widget.deleteLater()
+                
+        ProcessOptionPalette.current_widgets = []
             
     def add_group(self, name = 'group', parent = None):
         
@@ -516,6 +717,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         if parent.__class__ == ProcessOptionPalette:
             group.collapse_group()
+            
+        return group
         
     def add_title(self, name = 'title', parent = None):
         
@@ -611,29 +814,18 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             self._load_widgets(options)
             
 
-class EditOptions(qt_ui.BasicWidget):
+    def get_children(self):
+        
+        item_count = self.child_layout.count()
+        found = []
+        for inc in range(0, item_count):
+            
+            item = self.child_layout.itemAt(inc)
+            widget = item.widget()
+            found.append(widget)
+           
+        return found
     
-    def __init__(self):
-        super(EditOptions, self).__init__()
-        
-        self.setWindowTitle('Edit Options')
-    
-    def _define_main_layout(self):
-        return QtGui.QHBoxLayout()
-    
-    def _build_widgets(self):
-        
-        move_up = QtGui.QPushButton('Move Up')
-        move_dn = QtGui.QPushButton('Move Dn')
-        rename = QtGui.QPushButton('Rename')
-        remove = QtGui.QPushButton('Remove')
-        
-        self.main_layout.addWidget(move_up)
-        self.main_layout.addWidget(move_dn)
-        self.main_layout.addWidget(rename)
-        self.main_layout.addWidget(remove)
-        
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
 
 class ProcessOptionGroup(ProcessOptionPalette):
@@ -649,16 +841,22 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self.main_layout.setContentsMargins(1,0,1,1)
         
         self.copy_action.setVisible(True)
-        self.create_right_click()
         self.supress_select = False
         
         self.orig_background_color = self.palette().color(self.backgroundRole())
+        
+        self.option_type = self._define_type()
         
     def mousePressEvent(self, event):
         
         super(ProcessOptionGroup, self).mousePressEvent(event)
         
         if not event.button() == QtCore.Qt.LeftButton:
+            return
+        
+        half = self.width()/2
+        
+        if event.y() > 25 and event.x() > (half - 50) and event.x() < (half + 50):
             return
         
         parent = self.get_parent()
@@ -671,7 +869,10 @@ class ProcessOptionGroup(ProcessOptionPalette):
         
         self.widget_clicked.emit(self)
         
+        self._define_type()
         
+    def _define_type(self):
+        return 'group'
         
     def _get_widget_names(self, parent = None):
         
@@ -692,28 +893,6 @@ class ProcessOptionGroup(ProcessOptionPalette):
            
         return found
         
-    def create_right_click(self):
-        
-        
-        edit_action = self.menu.addAction('Edit')
-        #edit_menu.setTearOffEnabled(True)
-        
-        #self.menu.insertMenu(self.copy_action, edit_action)
-        """
-        move_up = edit_menu.addAction('Move Up')
-        move_up.triggered.connect(self.move_up)
-        
-        move_dn = edit_menu.addAction('Move Down')
-        move_dn.triggered.connect(self.move_down)
-        
-        rename = edit_menu.addAction('Rename')
-        rename.triggered.connect(self.rename)
-
-        remove = edit_menu.addAction('Remove')
-        remove.triggered.connect(self.remove)
-        
-        edit_menu.addSeparator()
-        """
         
     def _build_widgets(self):
         main_group_layout = QtGui.QVBoxLayout()
@@ -721,25 +900,25 @@ class ProcessOptionGroup(ProcessOptionPalette):
         main_group_layout.setContentsMargins(0,0,0,0)
         main_group_layout.setSpacing(1)
         
-        #self.child_layout = QtGui.QVBoxLayout()
-        #self.child_layout.setContentsMargins(5,10,5,10)
-        
-        #self.child_layout.setSpacing(0)
-        
-        #main_group_layout.addLayout(self.child_layout)
-        #main_group_layout.addSpacing(10)
-        
         self.group = OptionGroup(self.name)#QtGui.QGroupBox(self.name)
-        #self.group.setAlignment(QtCore.Qt.AlignCenter)
-        #self.group.setLayout(main_group_layout)
-        
-        #self.group.child_layout = self.child_layout
         
         self.child_layout = self.group.child_layout
         
         self.main_layout.addSpacing(10)
         self.main_layout.addWidget(self.group)
         
+    def _create_context_menu(self):
+        
+        super(ProcessOptionGroup, self)._create_context_menu()
+        
+        rename = QtGui.QAction('Rename', self)
+        rename.triggered.connect(self.rename)
+        
+        remove = QtGui.QAction('Remove', self)
+        remove.triggered.connect(self.remove)
+        
+        self.menu.insertAction(self.copy_action, rename)
+        self.menu.insertAction(self.copy_action, remove)
         
     def _copy(self):
         self.copy_widget.emit(self)
@@ -747,22 +926,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
     def _paste(self):
         self.paste_widget.emit()
         
-    def get_parent(self):
         
-        parent = self.parent()
-        
-        grand_parent = parent.parent()
-        
-        if hasattr(grand_parent, 'group'):
-            parent = grand_parent
-            
-        if not hasattr(parent, 'child_layout'):
-            return
-        
-        if parent.__class__ == ProcessOptionPalette:
-            return parent
-        
-        return parent
         
     def move_up(self):
         
@@ -817,7 +981,13 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self._write_all()
         
     def remove(self):
+        
         parent = self.parent()
+        
+        if self in ProcessOptionPalette.current_widgets:
+            
+            remove_index = ProcessOptionPalette.current_widgets.index(self)
+            ProcessOptionPalette.current_widgets.pop(remove_index)
         
         parent.child_layout.removeWidget(self)
         self.deleteLater()
@@ -838,6 +1008,16 @@ class ProcessOptionGroup(ProcessOptionPalette):
         
     def get_value(self):
         return None
+    
+    def copy_to(self, parent):
+        
+        group = parent.add_group(self.get_name(), parent)
+        
+        children = self.get_children()
+        
+        for child in children:
+            
+            child.copy_to(group)
        
 class OptionGroup(QtGui.QFrame):
     
@@ -891,7 +1071,10 @@ class OptionGroup(QtGui.QFrame):
         if not event.button() == QtCore.Qt.LeftButton:
             return
         
-        if event.y() < 25:
+        half = self.width()/2
+        
+        if event.y() < 25 and event.x() > (half - 50) and event.x() < (half + 50):
+            
             height = self.height()
             
             if height == self.close_height:
@@ -938,6 +1121,8 @@ class ProcessOption(qt_ui.BasicWidget):
     
     update_values = qt_ui.create_signal(object)
     widget_clicked = qt_ui.create_signal(object)
+    edit_mode = qt_ui.create_signal()
+    edit_mode_state = False
     
     def __init__(self, name):
         super(ProcessOption, self).__init__()
@@ -957,6 +1142,34 @@ class ProcessOption(qt_ui.BasicWidget):
         self.option_type = self._define_type()
         
         self.orig_background_color = self.palette().color(self.backgroundRole())
+        
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._item_menu)
+        
+        self._create_context_menu()
+        
+    def _item_menu(self, position):
+        
+        if not self.__class__.edit_mode_state:
+            return
+        
+        self.menu.exec_(self.mapToGlobal(position))
+        
+    def _create_context_menu(self):
+        
+        self.menu = QtGui.QMenu()
+        
+        #move_up = self.menu.addAction('Move Up')
+        #move_up.triggered.connect(self.move_up)
+        
+        #move_dn = self.menu.addAction('Move Down')
+        #move_dn.triggered.connect(self.move_down)
+        
+        rename = self.menu.addAction('Rename')
+        rename.triggered.connect(self._rename)
+        
+        remove = self.menu.addAction('Remove')
+        remove.triggered.connect(self.remove)
         
     def mousePressEvent(self, event):
         
@@ -1036,7 +1249,7 @@ class ProcessOption(qt_ui.BasicWidget):
             return
         
         if parent.__class__ == ProcessOptionPalette:
-            return
+            return parent
         
         return parent
         
@@ -1065,7 +1278,12 @@ class ProcessOption(qt_ui.BasicWidget):
         
         
     def remove(self):
-        parent = self.parent()
+        parent = self.get_parent()
+        
+        if self in ProcessOptionPalette.current_widgets:
+            
+            remove_index = ProcessOptionPalette.current_widgets.index(self)
+            ProcessOptionPalette.current_widgets.pop(remove_index)
         
         parent.child_layout.removeWidget(self)
         self.deleteLater()
@@ -1074,7 +1292,9 @@ class ProcessOption(qt_ui.BasicWidget):
         
     def move_up(self):
         
-        parent = self.parent()
+        parent = self.get_parent()
+        if not parent:
+            parent = self.parent()
         layout = parent.child_layout
         index = layout.indexOf(self)
         
@@ -1090,7 +1310,9 @@ class ProcessOption(qt_ui.BasicWidget):
         
     def move_down(self):
         
-        parent = self.parent()
+        parent = self.get_parent()
+        if not parent:
+            parent = self.parent()
         layout = parent.child_layout
         index = layout.indexOf(self)
         
@@ -1119,6 +1341,17 @@ class ProcessOption(qt_ui.BasicWidget):
     
     def get_value(self):
         pass
+    
+    def copy_to(self, parent):
+        
+        name = self.get_name()
+        value = self.get_value()
+        
+        new_instance = self.__class__(name)
+        
+        new_instance.set_value(value)
+        
+        parent.child_layout.addWidget(new_instance)
         
 class ProcessTitle(ProcessOption):
     
