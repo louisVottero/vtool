@@ -512,7 +512,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             palette.setColor(widget.backgroundRole(), QtCore.Qt.gray)
         
         if util.is_in_maya():
-            palette.setColor(widget.backgroundRole(), QtCore.Qt.red)
+            palette.setColor(widget.backgroundRole(), QtGui.QColor(74, 126, 170))
         widget.setAutoFillBackground(True)
         widget.setPalette(palette)
     
@@ -1017,6 +1017,9 @@ class ProcessOptionGroup(ProcessOptionPalette):
         
         for child in children:
             
+            if child == group:
+                continue
+            
             child.copy_to(group)
        
 class OptionGroup(QtGui.QFrame):
@@ -1275,7 +1278,14 @@ class ProcessOption(qt_ui.BasicWidget):
         remove.triggered.connect(self.remove)
         self.addAction(remove)
         
+        copy = QtGui.QAction(self)
+        copy.setText('Copy')
+        copy.triggered.connect(self._copy)
+        self.addAction(copy)
         
+    def _copy(self):
+        
+        ProcessOptionPalette.widget_to_copy = self
         
     def remove(self):
         parent = self.get_parent()
