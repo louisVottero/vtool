@@ -831,7 +831,8 @@ class Process(object):
     
         filename = data_instance.get_file()
         
-        self.set_manifest(['%s.py' % name], append = True)
+        if not self.is_in_manifest('%s.py' % name):
+            self.set_manifest(['%s.py' % name], append = True)
         
         return filename 
         
@@ -1109,6 +1110,24 @@ class Process(object):
                         break
             
             return found
+    
+    def is_in_manifest(self, entry):
+        
+        filename = self.get_manifest_file()
+        
+        lines = util_file.get_file_lines(filename)
+        
+        for line in lines:
+            
+            split_line = line.split(' ')
+            
+            if split_line[0] == entry:
+                return True
+        
+        return False
+        
+        
+        
     
     def set_manifest(self, scripts, states = [], append = False):
         """

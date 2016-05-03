@@ -1063,7 +1063,6 @@ class CopyWidget(qt_ui.BasicWidget):
         if not self.update_on_select:
             return
         
-        
         selected = self.code_list.selectedItems()
         
         if not selected:
@@ -1072,7 +1071,7 @@ class CopyWidget(qt_ui.BasicWidget):
         self.update_on_select = False
         
         if selected:
-            item = selected[0]
+            item = selected[-1]
         
         name = item.text(0)
         
@@ -1088,7 +1087,6 @@ class CopyWidget(qt_ui.BasicWidget):
                 test_name = item.text(0)
                 
                 if test_name == sub_name:
-                    
                     item.setSelected(True)
         
         self.update_on_select = True
