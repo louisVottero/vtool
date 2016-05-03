@@ -87,7 +87,7 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.copy_widget.hide()
         
         self.copy_widget.pasted.connect(self._copy_done)
-        self.copy_widget.canceled.connect(self._copy_done)
+        #self.copy_widget.canceled.connect(self._copy_done)
         
         #self.main_layout.addWidget(self.copy_widget)
 
@@ -124,7 +124,8 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.copy_done.emit()
         
     def _copy_done(self):
-        self.copy_widget.hide()
+        #self.copy_widget.hide()
+        self.copy_widget.load_compare()
         self.copy_done.emit()
         
     def get_current_process(self):
@@ -375,7 +376,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.merge_action = self.context_menu.addAction('Merge')
         self.paste_action.setVisible(False)
         self.merge_action.setVisible(False)
-        self.copy_special_action = self.context_menu.addAction('Copy Special')
+        self.copy_special_action = self.context_menu.addAction('Copy Match')
         self.remove_action = self.context_menu.addAction('Delete')
         self.context_menu.addSeparator()
         self.show_options_action = self.context_menu.addAction('Show Options')
@@ -976,16 +977,29 @@ class ProcessItem(QtGui.QTreeWidgetItem):
 
 class CopyWidget(qt_ui.BasicWidget):
     
-    canceled = qt_ui.create_signal()
+    #canceled = qt_ui.create_signal()
     pasted = qt_ui.create_signal()
     
     def __init__(self):
         
         super(CopyWidget, self).__init__()
-        self.setWindowTitle('Copy Special')
+        self.setWindowTitle('Copy Match')
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.setMinimumWidth(600)
         self.process = None
+        
+        alpha = 50
+        
+        if util.is_in_maya():
+            alpha = 100
+        
+        self.yes_brush = QtGui.QBrush()
+        self.yes_brush.setColor(QtGui.QColor(0,255,0, alpha))
+        self.yes_brush.setStyle(QtCore.Qt.SolidPattern)
+    
+        self.no_brush = QtGui.QBrush()
+        self.no_brush.setColor(QtGui.QColor(255,0,0, alpha))
+        self.no_brush.setStyle(QtCore.Qt.SolidPattern)
     
     def _build_widgets(self):
         
@@ -994,18 +1008,22 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.tabs = QtGui.QTabWidget()
         
-        self.data_list = QtGui.QListWidget()
-        self.code_list = QtGui.QListWidget()
-        self.settings_list = QtGui.QListWidget()
+        self.data_list = CopyTree()
+        self.code_list = CopyTree()
+        self.settings_list = CopyTree()
         
-        self.data_list.setMaximumHeight(300)
-        self.code_list.setMaximumHeight(300)
-        self.settings_list.setMaximumHeight(300)
+        #self.data_list.setMaximumHeight(300)
+        #self.code_list.setMaximumHeight(300)
+        #self.settings_list.setMaximumHeight(300)
         
         self.data_list.setSortingEnabled(True)
         self.data_list.setSelectionMode(self.data_list.ExtendedSelection)
         self.code_list.setSelectionMode(self.code_list.ExtendedSelection)
         self.settings_list.setSelectionMode(self.settings_list.ExtendedSelection)
+        
+        self.data_list.setHeaderLabels(['Source', 'Size Match', 'Target'])
+        self.code_list.setHeaderLabels(['Source', 'Content Match', 'Target'])
+        self.settings_list.setHeaderLabels(['Source', 'Content Match', 'Target'])
         
         self.tabs.addTab(self.data_list, 'Data')
         self.tabs.addTab(self.code_list, 'Code')
@@ -1019,18 +1037,21 @@ class CopyWidget(qt_ui.BasicWidget):
         cancel = QtGui.QPushButton('Cancel')
         
         self.paste_button.clicked.connect(self.pasted)
-        cancel.clicked.connect(self.canceled)
+        cancel.clicked.connect(self._cancelled)
         
         h_layout.addWidget(self.paste_button)
         h_layout.addWidget(cancel)
         
-        self.paste_to = QtGui.QLabel('Paste to:')
+        self.paste_to = QtGui.QLabel('- Select Process in the View to Match -')
         self.paste_to.setAlignment(QtCore.Qt.AlignCenter)
         
         self.main_layout.addWidget(self.copy_from)
         self.main_layout.addWidget(self.tabs)
         self.main_layout.addWidget(self.paste_to)
         self.main_layout.addLayout(h_layout)
+        
+    def _cancelled(self):
+        self.close()
         
     def _populate_lists(self):
         
@@ -1040,31 +1061,137 @@ class CopyWidget(qt_ui.BasicWidget):
         
         data_folders = self.process.get_data_folders()
         
-        for folder in data_folders:
-            self.data_list.addItem(folder)
+        self.populate_list(0, self.data_list, data_folders)
         
         codes, states = self.process.get_manifest()
         
+        code_names = []
+        
         for code in codes:
-            
             code_name = code.split('.')
             
             if len(code_name) > 1 and code_name[1] == 'py':
-            
-                self.code_list.addItem(code_name[0])
-                
+                code_names.append(code_name[0])
+        
+        self.populate_list(0, self.code_list, code_names)    
+        
         setting_names = self.process.get_setting_names()
         
-        for setting in setting_names:
-            self.settings_list.addItem(setting)
-                
-            
+        self.populate_list(0, self.settings_list, setting_names)
         
+    def populate_list(self, column, list_widget, data):
+        
+        for sub_data in data:
+            
+            list_widget.add_item(column, sub_data)
+            
+    def clear_lists(self):
+        
+        self.data_list.clear()
+        self.code_list.clear()
+        self.settings_list.clear()
+        
+    def populate_other_data(self, data):
+        
+        list_widget = self.data_list
+        
+        count = list_widget.topLevelItemCount()
+        
+        for inc in range(0, count):
+            
+            item = list_widget.topLevelItem(inc)
+            item.setText(1, '-')
+            item.setText(2, '-')
+            
+            for sub_data in data:
+                
+                
+                if item.text(0) == sub_data:
+                    item.setText(2, (' ' * 10) + sub_data)
+                    
+                    source_data = self.process.get_data_instance(sub_data)
+                    target_data = self.other_process.get_data_instance(sub_data)
+                    
+                    source_size = util_file.get_size(source_data.get_file())
+                    target_size = util_file.get_size(target_data.get_file())
+                    
+                    if source_size == target_size:
+                        item.setText(1, 'Yes')
+                        item.setBackground(1, self.yes_brush)
+                    
+                    if not source_size == target_size:
+                        item.setText(1, 'No')
+                        item.setBackground(1, self.no_brush)
+                    #item.setText(2, '-')
+        
+    def populate_other_code(self, code):
+        
+        list_widget = self.code_list
+        
+        count = list_widget.topLevelItemCount()
+        
+        for inc in range(0, count):
+            
+            item = list_widget.topLevelItem(inc)
+            item.setText(1, '-')
+            item.setText(2, '-')
+            
+            for sub_data in code:
+                
+                
+                if item.text(0) == sub_data:
+                    item.setText(2, (' ' * 10) + sub_data)
+                    
+                    source_folder = self.process.get_code_file(sub_data)
+                    target_folder = self.other_process.get_code_file(sub_data)
+                    
+                    match_lines = util_file.is_same_text_content(source_folder, target_folder)
+                    
+                    if match_lines:
+                        item.setText(1, 'Yes')
+                        item.setBackground(1, self.yes_brush)
+                    if not match_lines:
+                        item.setText(1, 'No')
+                        item.setBackground(1, self.no_brush)
+    
+    def populate_other_settings(self, settings):
+        list_widget = self.settings_list
+        
+        count = list_widget.topLevelItemCount()
+        
+        for inc in range(0, count):
+            
+            item = list_widget.topLevelItem(inc)
+            item.setText(1, '-')
+            item.setText(2, '-')
+            
+            for sub_data in settings:
+                
+                
+                if item.text(0) == sub_data:
+                    item.setText(2, (' ' * 10) + sub_data)
+                    
+                    source = self.process.get_setting_file(sub_data)
+                    target = self.other_process.get_setting_file(sub_data)
+                    
+                    match_lines = util_file.is_same_text_content(source, target)
+                    
+                    if match_lines:
+                        item.setText(1, 'Yes')
+                        item.setBackground(1, self.yes_brush)
+                    if not match_lines:
+                        item.setText(1, 'No')
+                        item.setBackground(1, self.no_brush)
+    
     def _paste(self):
         
         self._paste_data()
         self._paste_code()
         self._paste_settings()
+        
+        self.clear_lists()
+        self._populate_lists()
+        self.load_compare()
         
         
     def _paste_data(self):
@@ -1075,7 +1202,7 @@ class CopyWidget(qt_ui.BasicWidget):
             return
         
         for item in data_items:
-            name = str(item.text())
+            name = str(item.text(0))
             
             process.copy_process_data( self.process, self.other_process, name)
             
@@ -1091,7 +1218,7 @@ class CopyWidget(qt_ui.BasicWidget):
         manifest = ''
     
         for item in code_items:
-            name = str(item.text())
+            name = str(item.text(0))
             
             if not name:
                 continue
@@ -1116,7 +1243,7 @@ class CopyWidget(qt_ui.BasicWidget):
             return
         
         for item in setting_items:
-            name = str(item.text())
+            name = str(item.text(0))
             
             process.copy_process_setting(self.process, self.other_process, name)
     
@@ -1148,4 +1275,55 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.paste_to.setText('Paste to:  %s' % process_name)  
         self.paste_button.setEnabled(True)
+        
+        self.load_compare()
+        
+    def load_compare(self):
+        
+        if not self.other_process:
+            return
+        
+        data_folders = self.other_process.get_data_folders()
+        self.populate_other_data(data_folders)
+        
+        
+        codes, states = self.other_process.get_manifest()
+        
+        code_names = []
+        
+        for code in codes:
+            code_name = code.split('.')
+            
+            if len(code_name) > 1 and code_name[1] == 'py':
+                code_names.append(code_name[0])
+                
+        self.populate_other_code(code_names)
+        
+        setting_names = self.process.get_setting_names()
+        
+        self.populate_other_settings(setting_names)
+        
+        
+class CopyTree(QtGui.QTreeWidget):
+    
+    def __init__(self):
+        super(CopyTree, self).__init__()
+        
+        self.setHeaderLabels(['Source', 'State', 'Target'])
+        header_item = self.headerItem()
+        #header_item.setTextAlignment(0, QtCore.Qt.AlignLeft)
+        header_item.setTextAlignment(1, QtCore.Qt.AlignHCenter)
+        
+        self.setColumnWidth(0, 240)
+        self.setColumnWidth(1, 100)
+        #header_item.setTextAlignment(2, QtCore.Qt.AlignRight)
+        
+    def add_item(self, column, name):
+        
+        item = QtGui.QTreeWidgetItem()
+        item.setText(column, name)
+        item.setTextAlignment(1, QtCore.Qt.AlignCenter)
+        self.addTopLevelItem(item)
+        
+        return item
         

@@ -1134,7 +1134,18 @@ def get_files_with_extension(extension, directory, fullpath = False):
             
     return found
 
-def get_filesize(filepath):
+def get_size(path, round_value = 2):
+    
+    size = 0
+    
+    if is_dir(path):
+        size = get_folder_size(path, round_value)
+    if is_file(path):
+        size = get_filesize(path, round_value)
+
+    return size 
+
+def get_filesize(filepath, round_value = 2):
     """
     Get the size of a file.
     
@@ -1146,9 +1157,21 @@ def get_filesize(filepath):
     """
     
     size = os.path.getsize(filepath)
-    size_format = round( size * 0.000001, 2 )
+    size_format = round( size * 0.000001, round_value )
 
     return size_format
+
+def get_folder_size(path, round_value = 2):
+    
+    size = 0
+    
+    for root, dirs, files in os.walk(path):
+        
+        for name in files:
+            
+            size += get_filesize( join_path(root, name), round_value )
+            
+    return size
 
 def get_last_modified_date(filepath):
     """
@@ -1304,6 +1327,16 @@ def is_same_date(file1, file2):
     if abs(value) < 0.01:
         return True
         
+    return False
+
+def is_same_text_content(file1, file2):
+    
+    text1 = get_file_text(file1)
+    text2 = get_file_text(file2)
+    
+    if text1 == text2:
+        return True
+    
     return False
 
 def inc_path_name(directory, padding = 0):

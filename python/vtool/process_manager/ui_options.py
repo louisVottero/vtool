@@ -519,7 +519,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             palette.setColor(widget.backgroundRole(), QtCore.Qt.gray)
         
         if util.is_in_maya():
-            palette.setColor(widget.backgroundRole(), QtGui.QColor(74, 126, 170))
+            palette.setColor(widget.backgroundRole(), QtGui.QColor(115, 194, 251, 150))
         widget.setAutoFillBackground(True)
         widget.setPalette(palette)
     
