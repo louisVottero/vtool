@@ -712,6 +712,10 @@ class SkinWeightData(MayaCustomData):
                 
                 progress_ui.status('importing skin mesh: %s,  influence: %s' % (mesh, influence))
                     
+                if not influence_dict[influence].has_key('weights'):
+                    util.warning('Weights missing for influence %s' % influence)
+                    return 
+                
                 weights = influence_dict[influence]['weights']
                 
                 if not influence in influence_index_dict:
@@ -930,6 +934,11 @@ class ReadWeightFileThread(threading.Thread):
         influence = influence.split('.')[0]
         
         lines = util_file.get_file_lines(file_path)
+        
+        if not lines:
+            influence_dict[influence]['weights'] = None
+            return influence_dict
+        
         weights = eval(lines[0])
         
         if influence in influence_dict:
