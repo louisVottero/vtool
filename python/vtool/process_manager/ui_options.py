@@ -1385,8 +1385,7 @@ class ProcessTitle(ProcessOption):
 
         self.main_layout.setContentsMargins(0,5,0,10)
         
-        title_widget = self.main_layout.itemAt(0)
-        self.main_layout.setAlignment(title_widget, QtCore.Qt.AlignRight)
+        self.main_layout.setAlignment(QtCore.Qt.AlignRight)
         
     def _define_type(self):
         return 'title'
