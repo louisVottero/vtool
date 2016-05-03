@@ -1000,6 +1000,8 @@ class CopyWidget(qt_ui.BasicWidget):
         self.no_brush = QtGui.QBrush()
         self.no_brush.setColor(QtGui.QColor(255,0,0, alpha))
         self.no_brush.setStyle(QtCore.Qt.SolidPattern)
+        
+        self.update_on_select = True
     
     def _build_widgets(self):
         
@@ -1024,6 +1026,8 @@ class CopyWidget(qt_ui.BasicWidget):
         self.data_list.setHeaderLabels(['Source', 'Size Match', 'Target'])
         self.code_list.setHeaderLabels(['Source', 'Content Match', 'Target'])
         self.settings_list.setHeaderLabels(['Source', 'Content Match', 'Target'])
+        
+        self.code_list.itemSelectionChanged.connect(self._code_selected)
         
         self.tabs.addTab(self.data_list, 'Data')
         self.tabs.addTab(self.code_list, 'Code')
@@ -1054,6 +1058,41 @@ class CopyWidget(qt_ui.BasicWidget):
         self.main_layout.addWidget(self.progress_bar)
         self.main_layout.addLayout(h_layout)
         
+    def _code_selected(self):
+        
+        if not self.update_on_select:
+            return
+        
+        
+        selected = self.code_list.selectedItems()
+        
+        if not selected:
+            return
+        
+        self.update_on_select = False
+        
+        if selected:
+            item = selected[0]
+        
+        name = item.text(0)
+        
+        split_name = name.split('/')
+        
+        for inc in range(0, len(split_name)):
+            
+            sub_name = split_name[:inc]
+            sub_name = string.join(sub_name, '/')
+            
+            for inc in range(0, self.code_list.topLevelItemCount()):
+                item = self.code_list.topLevelItem(inc)
+                test_name = item.text(0)
+                
+                if test_name == sub_name:
+                    
+                    item.setSelected(True)
+        
+        self.update_on_select = True
+        
     def _cancelled(self):
         self.close()
         
@@ -1068,14 +1107,21 @@ class CopyWidget(qt_ui.BasicWidget):
         self.populate_list(0, self.data_list, data_folders)
         
         codes, states = self.process.get_manifest()
-        
+        #codes = self.process.get_code_files(basename = True)
         code_names = []
         
         for code in codes:
+            
+            
             code_name = code.split('.')
+            
+            if not self.process.is_code_folder(code_name[0]):
+                continue
             
             if len(code_name) > 1 and code_name[1] == 'py':
                 code_names.append(code_name[0])
+                
+        code_names.insert(0, 'manifest')
         
         self.populate_list(0, self.code_list, code_names)    
         
@@ -1138,12 +1184,13 @@ class CopyWidget(qt_ui.BasicWidget):
             
             for sub_data in code:
                 
-                
                 if item.text(0) == sub_data:
                     item.setText(2, (' ' * 10) + sub_data)
                     
                     source_folder = self.process.get_code_file(sub_data)
                     target_folder = self.other_process.get_code_file(sub_data)
+                    
+                    source_folder, target_folder
                     
                     match_lines = util_file.is_same_text_content(source_folder, target_folder)
                     
@@ -1184,6 +1231,8 @@ class CopyWidget(qt_ui.BasicWidget):
     
     def _paste(self):
         
+        self.progress_bar.setVisible(True)
+        
         self._paste_data()
         self._paste_code()
         self._paste_settings()
@@ -1192,6 +1241,7 @@ class CopyWidget(qt_ui.BasicWidget):
         self._populate_lists()
         self.load_compare()
         
+        self.progress_bar.hide()
         
     def _paste_data(self):
         
@@ -1216,6 +1266,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         manifest = ''
     
+        
         for item in code_items:
             name = str(item.text(0))
             
@@ -1227,12 +1278,25 @@ class CopyWidget(qt_ui.BasicWidget):
                 
             if not name == 'manifest':
                 found.append(name)
+                
+            
+            
+            
         
         if manifest:        
             found.append(manifest)
         
+        inc = 0
+        
+        self.progress_bar.reset()
+        self.progress_bar.setRange(0, len(found))
+        
+        
         for name in found:
+            
             process.copy_process_code( self.process, self.other_process, name)
+            self.progress_bar.setValue(inc)
+            inc += 1
             
     def _paste_settings(self):
         
@@ -1287,15 +1351,21 @@ class CopyWidget(qt_ui.BasicWidget):
         
         
         codes, states = self.other_process.get_manifest()
-        
+        #codes = self.other_process.get_code_files()
         code_names = []
         
         for code in codes:
+            
             code_name = code.split('.')
+            
+            if not self.other_process.is_code_folder(code_name[0]):
+                continue
             
             if len(code_name) > 1 and code_name[1] == 'py':
                 code_names.append(code_name[0])
-                
+        
+        code_names.append('manifest')
+        
         self.populate_other_code(code_names)
         
         setting_names = self.process.get_setting_names()
