@@ -56,6 +56,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
                 
         name = self.tree_widget._get_parent_path(item)
         
+        
         self.manager_widget.copy_widget.set_other_process(name, self.directory)
     
     def get_current_process(self):
@@ -82,14 +83,9 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         return QtGui.QVBoxLayout()
     
     def _build_widgets(self):
-
-        self.copy_widget = CopyWidget()
-        self.copy_widget.hide()
         
-        self.copy_widget.pasted.connect(self._copy_done)
-        #self.copy_widget.canceled.connect(self._copy_done)
-        
-        #self.main_layout.addWidget(self.copy_widget)
+        copy_widget = CopyWidget()
+        self.copy_widget = copy_widget
 
     def _add_branch(self):
         
@@ -101,19 +97,21 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
       
     def _copy(self):
         
+        copy_widget = self.copy_widget 
+                
+        copy_widget.pasted.connect(self._copy_done)
+        copy_widget.canceled.connect(self._copy_done)
+        
         current_process = self.get_current_process()
         
         if not current_process:
             return
             
-        if self.copy_widget.isHidden():
-            self.copy_widget.show()
-            
         if not current_process:
             return
         
-        self.copy_widget.show()
-        self.copy_widget.set_process(current_process, self.directory)
+        copy_widget.show()
+        copy_widget.set_process(current_process, self.directory)
         
         self.setFocus()
         
@@ -124,8 +122,8 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.copy_done.emit()
         
     def _copy_done(self):
-        #self.copy_widget.hide()
-        self.copy_widget.load_compare()
+        
+        self.copy_widget = CopyWidget()
         self.copy_done.emit()
         
     def get_current_process(self):
@@ -977,7 +975,7 @@ class ProcessItem(QtGui.QTreeWidgetItem):
 
 class CopyWidget(qt_ui.BasicWidget):
     
-    #canceled = qt_ui.create_signal()
+    canceled = qt_ui.create_signal()
     pasted = qt_ui.create_signal()
     
     def __init__(self):
@@ -1095,6 +1093,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
     def _cancelled(self):
         self.close()
+        self.canceled.emit()
         
     def _populate_lists(self):
         
@@ -1349,6 +1348,9 @@ class CopyWidget(qt_ui.BasicWidget):
     def set_other_process(self, process_name, process_directory):
         
         if not self.process:
+            return
+        
+        if not self.isVisible():
             return
         
         if process_name == self.process.get_name():
