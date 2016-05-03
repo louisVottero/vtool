@@ -1015,7 +1015,10 @@ def remove_unused_plugins():
     
     if unknown_plugins:
         for unknown_plugin in unknown_plugins:
-            cmds.unknownPlugin(unknown_plugin, remove = True)
+            try:
+                cmds.unknownPlugin(unknown_plugin, remove = True)
+            except:
+                continue
             unused.append(unknown_plugin)
             
     vtool.util.show('Removed unused plugins: %s' % unused)
