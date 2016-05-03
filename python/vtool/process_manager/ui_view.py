@@ -1045,9 +1045,13 @@ class CopyWidget(qt_ui.BasicWidget):
         self.paste_to = QtGui.QLabel('- Select Process in the View to Match -')
         self.paste_to.setAlignment(QtCore.Qt.AlignCenter)
         
+        self.progress_bar = QtGui.QProgressBar()
+        self.progress_bar.hide()
+        
         self.main_layout.addWidget(self.copy_from)
         self.main_layout.addWidget(self.tabs)
         self.main_layout.addWidget(self.paste_to)
+        self.main_layout.addWidget(self.progress_bar)
         self.main_layout.addLayout(h_layout)
         
     def _cancelled(self):
@@ -1100,8 +1104,6 @@ class CopyWidget(qt_ui.BasicWidget):
         for inc in range(0, count):
             
             item = list_widget.topLevelItem(inc)
-            item.setText(1, '-')
-            item.setText(2, '-')
             
             for sub_data in data:
                 
@@ -1133,8 +1135,6 @@ class CopyWidget(qt_ui.BasicWidget):
         for inc in range(0, count):
             
             item = list_widget.topLevelItem(inc)
-            item.setText(1, '-')
-            item.setText(2, '-')
             
             for sub_data in code:
                 
@@ -1162,8 +1162,7 @@ class CopyWidget(qt_ui.BasicWidget):
         for inc in range(0, count):
             
             item = list_widget.topLevelItem(inc)
-            item.setText(1, '-')
-            item.setText(2, '-')
+
             
             for sub_data in settings:
                 
@@ -1322,6 +1321,8 @@ class CopyTree(QtGui.QTreeWidget):
         
         item = QtGui.QTreeWidgetItem()
         item.setText(column, name)
+        item.setText(1, '-')
+        item.setText(2, (' ' * 10) + '-')
         item.setTextAlignment(1, QtCore.Qt.AlignCenter)
         self.addTopLevelItem(item)
         
