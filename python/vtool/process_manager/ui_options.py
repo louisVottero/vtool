@@ -738,8 +738,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         if type(name) == bool:
             name = 'number'
         
-        self._prep_widget()
-        
         name = self._get_unique_name(name, parent)
         
         number_option = ProcessOptionNumber(name)
