@@ -4023,8 +4023,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         if parent:
             cmds.parent(target_chain[-1], parent)
-            space.create_xform_group(target_chain[-1])
+            xform = space.create_xform_group(target_chain[-1])
             space.create_xform_group(target_chain[-1], 'buffer')
+            cmds.reorder(xform, r = -1)
         
         temp_source = list(source_chain)
         temp_source[-1] = self.top_hold_locator
@@ -4035,7 +4036,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             cmds.hide(self.btm_hold_locator)
             space.MatchSpace(source_chain[0], self.btm_hold_locator).translation_rotation()
             temp_source[0] = self.btm_hold_locator
-                    
+        
         space.AttachJoints(temp_source, target_chain).create()
         
         if cmds.objExists('%s.switch' % target_chain[0]):
