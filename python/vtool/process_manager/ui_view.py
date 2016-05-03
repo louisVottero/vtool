@@ -1250,17 +1250,31 @@ class CopyWidget(qt_ui.BasicWidget):
         if not data_items:
             return
         
+        inc = 0
+        
+        self.tabs.setCurrentIndex(0)
+        
+        self.progress_bar.reset()
+        self.progress_bar.setRange(0, len(data_items))
+        
+        
         for item in data_items:
             name = str(item.text(0))
             
             process.copy_process_data( self.process, self.other_process, name)
+            self.progress_bar.setValue(inc)
+            inc += 1
             
     def _paste_code(self):
+        
+        
         
         code_items = self.code_list.selectedItems()
     
         if not code_items:
             return
+    
+        self.tabs.setCurrentIndex(1)
     
         found = []
         
@@ -1300,15 +1314,26 @@ class CopyWidget(qt_ui.BasicWidget):
             
     def _paste_settings(self):
         
+        
+        
         setting_items = self.settings_list.selectedItems()
         
         if not setting_items:
             return
         
+        self.tabs.setCurrentIndex(2)
+        
+        inc = 0
+        
+        self.progress_bar.reset()
+        self.progress_bar.setRange(0, len(setting_items))
+        
         for item in setting_items:
             name = str(item.text(0))
             
             process.copy_process_setting(self.process, self.other_process, name)
+            self.progress_bar.setValue(inc)
+            inc+=1
     
     def set_process(self, process_name, process_directory):
         
