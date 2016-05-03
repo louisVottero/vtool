@@ -176,6 +176,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self._create_context_menu()
         
+        self.disable_auto_expand = False
+        
     def _item_menu(self, position):
         
         if not ProcessOptionPalette.edit_mode_state:
@@ -407,6 +409,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     
     def _load_widgets(self, options):
         
+        
+        
         self.clear_widgets()
         
         if not options:
@@ -415,6 +419,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.setHidden(True)
         self.setUpdatesEnabled(False)
         self.supress_update = True
+        
+        self.disable_auto_expand = True
         
         for option in options:
             
@@ -462,9 +468,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                     widget = self._find_group_widget(after_search_group)
                 
             if type(option[1]) == str:
-                
                 self.add_string_option(name, str(option[1]), widget)
-                
                 
             if type(option[1]) == float:
                 self.add_number_option(name, option[1], widget)
@@ -478,7 +482,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             if option[1] == None and not is_group:
                 self.add_title(name, widget)
                 
-        
+        self.disable_auto_expand = False
         self.setVisible(True)    
         self.setUpdatesEnabled(True)
         self.supress_update = False
@@ -494,7 +498,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 widget.update_values.connect(self._write_options)
                 
                 if hasattr(self, 'expand_group'):
-                    self.expand_group()
+                    if not self.disable_auto_expand:
+                        self.expand_group()
                     
         
         if parent:
@@ -503,7 +508,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 widget.update_values.connect(parent._write_options)
                 
                 if hasattr(parent, 'expand_group'):
-                    parent.expand_group()
+                    if not self.disable_auto_expand:
+                        parent.expand_group()
         
     def _fill_background(self, widget):
         palette = widget.palette()
@@ -845,6 +851,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
         
         self.option_type = self._define_type()
         
+        
     def mousePressEvent(self, event):
         
         super(ProcessOptionGroup, self).mousePressEvent(event)
@@ -898,7 +905,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
         main_group_layout.setContentsMargins(0,0,0,0)
         main_group_layout.setSpacing(1)
         
-        self.group = OptionGroup(self.name)#QtGui.QGroupBox(self.name)
+        self.group = OptionGroup(self.name)
         
         self.child_layout = self.group.child_layout
         
@@ -1093,12 +1100,14 @@ class OptionGroup(QtGui.QFrame):
         self.label_expand.setText('+')
         self.setVisible(True)
         
+        
     def expand_group(self):
         
         self.setVisible(False)
         self.setFixedSize(qt_ui.QWIDGETSIZE_MAX, qt_ui.QWIDGETSIZE_MAX)
         self.label_expand.setText('--')
         self.setVisible(True)
+        
            
     def title(self):
         return self.label.text() 
