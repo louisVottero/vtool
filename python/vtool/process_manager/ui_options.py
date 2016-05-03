@@ -64,7 +64,8 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         ProcessOptionPalette.edit_mode_state = bool_value
         ProcessOption.edit_mode_state = bool_value
         
-        self.option_palette.update_current_widget()
+        if bool_value == False:
+            self.option_palette.clear_selection()
         
     def set_directory(self, directory):
         
@@ -681,6 +682,13 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         ProcessOptionPalette.current_widgets.pop(widget_index)
         self._unfill_background(widget)
+        
+    def clear_selection(self):
+        
+        for widget in ProcessOptionPalette.current_widgets:
+            self._unfill_background(widget)
+            
+        ProcessOptionPalette.current_widgets = []
         
     def has_options(self):
         if not self.directory:
