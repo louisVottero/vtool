@@ -1073,7 +1073,7 @@ class CopyWidget(qt_ui.BasicWidget):
         if selected:
             item = selected[-1]
         
-        name = item.text(0)
+        name = str(item.text(0))
         
         split_name = name.split('/')
         
@@ -1082,8 +1082,10 @@ class CopyWidget(qt_ui.BasicWidget):
             sub_name = split_name[:inc]
             sub_name = string.join(sub_name, '/')
             
-            for inc in range(0, self.code_list.topLevelItemCount()):
-                item = self.code_list.topLevelItem(inc)
+            for inc2 in range(0, self.code_list.topLevelItemCount()):
+                item = self.code_list.topLevelItem(inc2)
+                if str(item.text(2)).find('-') == -1:
+                    continue
                 test_name = item.text(0)
                 
                 if test_name == sub_name:
