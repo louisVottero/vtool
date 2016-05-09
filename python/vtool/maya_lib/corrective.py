@@ -76,6 +76,13 @@ class PoseManager(object):
             return True
         
         return False
+    
+    def is_pose_mesh_in_sculpt(self, index, pose_name):
+        
+        pose = get_pose_instance(pose_name)
+        
+        if hasattr(pose, 'is_mesh_visibile'):
+            pose.is_mesh_in_sculpt(index)
         
     def get_pose_instance(self, pose_name):
         """
@@ -130,6 +137,13 @@ class PoseManager(object):
         control = pose.pose_control
         
         return control
+    
+    def get_pose_type(self, name):
+        
+        pose = self.get_pose_instance(name)
+        pose_type = pose.get_type()
+        
+        return pose_type
     
     def set_pose_group(self, pose_gr_name):
         """
@@ -358,10 +372,10 @@ class PoseManager(object):
         pose.reset_target_meshes()
         
     @core.undo_chunk
-    def update_pose_mesh(self, pose_name):
+    def update_pose_meshes(self, pose_name, only_not_in_sculpt = False):
         
         pose = self.get_pose_instance(pose_name)
-        pose.update_target_meshes()
+        pose.update_target_meshes(only_not_in_sculpt)
         
     @core.undo_chunk
     def update_pose(self, pose_name):
@@ -641,6 +655,16 @@ class PoseGroup(object):
             return True
         
         return False
+    
+    def get_type(self):
+        
+        pose_type = None
+        
+        if cmds.objExists('%s.type' % self.pose_control):
+        
+            pose_type = cmds.getAttr('%s.type' % self.pose_control)
+            
+        return pose_type
 
     def set_pose_group(self, pose_group_name):
         """
@@ -1653,12 +1677,13 @@ class PoseBase(PoseGroup):
         
         target_meshes = self.get_target_meshes()
         
+        longname_target_mesh = cmds.ls(target_mesh, l = True)
+        
+        if longname_target_mesh: 
+            target_mesh = longname_target_mesh[0]
+        
+        
         inc = 0
-        
-        long_target_mesh = cmds.ls(target_mesh, l = True)
-        
-        if long_target_mesh: 
-            target_mesh = long_target_mesh[0]
         
         for target_mesh_test in target_meshes:
             
@@ -1723,13 +1748,19 @@ class PoseBase(PoseGroup):
             
             self.create_blend(inc)
             
-    def update_target_meshes(self):
+    def update_target_meshes(self, only_not_in_sculpt = False):
         count = self._get_mesh_count()
         
         for inc in xrange(0, count):
             
+            if self.is_mesh_in_sculpt(inc) and only_not_in_sculpt:
+                continue
+            
             deformed_mesh = self.get_mesh(inc)
             original_mesh = self.get_target_mesh(deformed_mesh)
+            
+            if geo.is_mesh_position_same(deformed_mesh, original_mesh, 0.0001):
+                continue
             
             cmds.delete(deformed_mesh, ch = True)
             
@@ -1788,6 +1819,20 @@ class PoseBase(PoseGroup):
             for after_sculpt in sculpts:
                 self.create_blend(after_sculpt, False, sub_poses = True)
     
+    def is_mesh_in_sculpt(self, index):
+        
+        sculpt_mesh = self.get_mesh(index)
+        target_mesh = self.get_target_mesh(sculpt_mesh)
+        
+        #primary_vis = cmds.getAttr('%s.visibility' % mesh)
+        secondary_vis = cmds.getAttr('%s.lodVisibility' % target_mesh)
+        
+        if secondary_vis:
+            return False
+        
+        if not secondary_vis:
+            return True
+    
     def visibility_off(self, mesh, view_only = False):
         """
         Turn the sculpt mesh visibility off.
@@ -1807,6 +1852,9 @@ class PoseBase(PoseGroup):
         if target_mesh and cmds.objExists(target_mesh):
             self._set_visibility(target_mesh, 1)
             
+        if geo.is_mesh_position_same(target_mesh, mesh, 0.0001):
+            return
+        
         if not view_only and cmds.objExists(target_mesh):
             
             index = self.get_mesh_index(mesh)
@@ -1928,6 +1976,8 @@ class PoseBase(PoseGroup):
         offset = deform.chad_extract_shape(target_mesh, mesh)
         
         blend.set_weight(self.pose_control, 1)
+        
+        blend.get_mesh_index(target_mesh)
         
         if blend.is_target(self.pose_control):
             blend.replace_target(self.pose_control, offset)

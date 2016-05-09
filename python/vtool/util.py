@@ -6,7 +6,6 @@ import time
 import string
 import datetime
 import traceback
-import __builtin__
 import os
 
 def set_env(name, value):
@@ -20,12 +19,11 @@ def get_env(name):
         return os.environ[name]
 
 def profiler_event(frame, event, arg, indent = [0]):
-    
     if event == "call":
         indent[0] += 2
-        print "-" * indent[0] + "> call function", frame.f_code.co_name
+        print "-" * indent[0] + "> ", event, frame.f_code.co_name
     elif event == "return":
-        print "<" + "-" * indent[0], "exit function", frame.f_code.co_name
+        print "<" + ("-" * indent[0]) + " ", event, frame.f_code.co_name
         indent[0] -= 2
     
     return profiler_event
@@ -107,6 +105,9 @@ class StopWatch(object):
     
     running = 0
     
+    def __del__(self):
+        self.end()
+    
     def __init__(self):
         self.time = None
         self.feedback = True
@@ -124,6 +125,10 @@ class StopWatch(object):
             self.__class__.running += 1
     
     def end(self):
+        
+        if not self.time:
+            return
+        
         seconds = time.time()-self.time
         self.time = None
         
@@ -671,6 +676,13 @@ def get_simple_center_vector(list_of_vectors):
     simple_center_vector = vector_sum/vector_count
     
     return simple_center_vector
+
+def is_the_same_number(number1, number2, tolerance = 0.00001):
+    
+    if abs(number1 - number2) < tolerance:
+        return True
+    
+    return False
 
 def convert_to_sequence(variable, sequence_type = list):
     """

@@ -126,9 +126,9 @@ def create_window(ui, dock_area = 'right'):
         #do not remove
         vtool.util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
     
-def pose_manager():
+def pose_manager(shot_sculpt_only = False):
     import ui_corrective
-    create_window(ui_corrective.PoseManager())
+    create_window(ui_corrective.PoseManager(shot_sculpt_only))
 
 def shape_combo():
     
@@ -156,14 +156,9 @@ def process_manager(directory = None):
     import maya.utils
     maya.utils.executeDeferred(funct)
     
-    
-    #create_window(window)
-    
     if directory:
         window.set_code_directory(directory)
-     
     
-     
     return window
 
 class MayaWindow(vtool.qt_ui.BasicWindow):

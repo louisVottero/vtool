@@ -34,6 +34,8 @@ class BlendShape(object):
         
         if self.blendshape:
             self.set(blendshape_name)
+            
+        self.mesh_index = 0
         
     def _store_meshes(self):
         if not self.blendshape:
@@ -151,7 +153,7 @@ class BlendShape(object):
         value = inbetween * 1000 + 5000
         
         attribute = [self.blendshape,
-                     'inputTarget[0]',
+                     'inputTarget[%s]' % self.mesh_index,
                      'inputTargetGroup[%s]' % target_index,
                      'inputTargetItem[%s]' % value,
                      'inputGeomTarget']
@@ -256,6 +258,13 @@ class BlendShape(object):
         self.blendshape = blendshape_name
         self._store_targets()
         self._store_meshes()
+        
+    def set_mesh_index(self, index):
+        self.mesh_index = index
+        
+    def get_mesh_index(self, mesh):
+        
+        geo = cmds.blendshape(self.blendshape, q = True, geometry = True)
         
     def get_mesh_count(self):
         meshes = cmds.deformer(self.blendshape, q = True, geometry = True)
@@ -459,7 +468,7 @@ class BlendShape(object):
             self._zero_target_weights()
             self.set_weight(name, value)
         
-        output_attribute = '%s.outputGeometry[0]' % self.blendshape
+        output_attribute = '%s.outputGeometry[%s]' % (self.blendshape, self.mesh_index)
         
         if not mesh:
             mesh = cmds.deformer(self.blendshape, q = True, geometry = True)[0]
@@ -501,7 +510,7 @@ class BlendShape(object):
             
             self.set_weight(target, 1)
                     
-            output_attribute = '%s.outputGeometry[0]' % self.blendshape
+            output_attribute = '%s.outputGeometry[%s]' % (self.blendshape, self.mesh_index)
             
             if not mesh:
                 mesh = cmds.deformer(self.blendshape, q = True, geometry = True)[0]
@@ -546,6 +555,8 @@ class BlendShape(object):
             if not cmds.getAttr(attribute_name, l = True):
                 
                 cmds.setAttr(attribute_name, value)
+    
+
     
     def set_weights(self, weights, target_name = None, mesh_index = 0):
         """

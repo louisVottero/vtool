@@ -2,6 +2,7 @@
 
 import vtool.util
 import api
+from vtool.util import is_the_same_number
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
@@ -9,6 +10,351 @@ if vtool.util.is_in_maya():
 import core
 import attr
 import space
+
+
+import maya.cmds as cmds
+import util
+
+class Octree(object):
+        
+    def _get_bounding_box(self, mesh):
+        bounding_box = cmds.exactWorldBoundingBox(mesh)
+        center = cmds.objectCenter(mesh, gl = True)
+                
+        large_value = -1
+                
+        inc = 0
+                
+        for box_value in bounding_box:
+            
+            value = box_value - center[inc]
+            
+            if value > 0:
+                if value > large_value:
+                    large_value = value
+                        
+            inc += 1
+            if inc >= 3:
+                inc = 0
+        
+        max_value = [large_value] * 3
+        min_value = [large_value*-1] * 3
+        
+        max_value = [max_value[0] + center[0],max_value[1] + center[1],max_value[2] + center[2]]
+        min_value = [min_value[0] + center[0],min_value[1] + center[1],min_value[2] + center[2]]
+                
+        return min_value + max_value + center
+                    
+    def create(self, mesh):
+        bounding_box = self._get_bounding_box(mesh)
+        
+        self.top_node = OctreeNode(bounding_box)
+        
+        mesh_fn = api.IterateGeometry(mesh)
+        points = mesh_fn.get_points_as_list()
+        
+        for inc in range(0, len(points)):
+            vertex_position = points[inc]
+            self.add_vertex('%s.vtx[%s]' % (mesh, inc), vertex_position)
+            
+        self.top_node.sort_mesh_vertex()        
+            
+    def add_vertex(self, vertex_name, vertex_position):    
+        self.top_node.add_vertex(vertex_name, vertex_position)
+        
+                
+class OctreeNode(object):
+    
+    #sortMeshDepth = 50 
+    #sortMeshIncrement = 0
+    
+    def __init__(self, boundingBoxData):
+        self.min = boundingBoxData[0:3]
+        self.max = boundingBoxData[3:6]
+        self.center = boundingBoxData[6:9]
+        self.children = []
+        self.parent = None
+        self.verts = []
+        self.child_verts = []
+        
+    def _snap_to_bounding_box(self, vector):
+        new_vector = list(vector)
+        
+        min_value = self.min
+        max_value = self.max
+        
+        for inc in range(0,3):
+            if vector[inc] < min_value[inc]:
+                new_vector[inc] = min_value[inc]
+            if vector[inc] > max_value[inc]:
+                new_vector[inc] = max_value[inc]
+                
+        return new_vector
+            
+        
+    def _is_vector_in_range(self, min_value, max_value, vector):
+        
+        for inc in range(0,3):
+        
+            if vector[inc] < min_value[inc] or vector[inc] > max_value[inc]:
+                return False
+          
+        return True
+        
+    def _get_verts_in_range(self, min_value, max_value):
+        found = []
+        
+        if self.verts:
+            for vertex in self.verts:
+                vector = vertex[1] 
+                
+                if self._is_vector_in_range(min_value, max_value, vector):
+                    
+                    found_vert = False
+                    for child_vert in self.child_verts:
+                    
+                        if vertex[0] == child_vert:
+                            found_vert = True
+                            break
+                        
+                    if not found_vert:
+                        found.append(vertex)        
+        
+        return found
+        
+    def _create_child(self, min_value, max_value, verts):
+        
+        mid_point = vtool.util.get_midpoint(min_value, max_value)
+        
+        bounding_box = min_value + max_value + mid_point
+        
+        self.children.append( OctreeNode(bounding_box) )
+                               
+        for vertex in verts:            
+            self.children[-1].add_vertex(vertex[0], vertex[1])
+            self.child_verts.append(vertex[0])
+            
+        if len(self.child_verts) == 1:
+            if self.child_verts[0][0] == 'body_C.vtx[7916]':
+                goo = self.createCube()
+                cmds.rename(goo, 'panzy')
+    
+    def create_cube(self):
+        cube = cmds.polyCube(ch = 0)[0]
+        min_value = self.min
+        max_value = self.max
+                
+        cmds.move(min_value[0], min_value[1], min_value[2], '%s.vtx[0]' % cube , ws = True)
+        cmds.move(min_value[0], min_value[1], max_value[2], '%s.vtx[1]' % cube , ws = True )
+        cmds.move(min_value[0], max_value[1], min_value[2], '%s.vtx[2]' % cube , ws = True)
+        cmds.move(min_value[0], max_value[1], max_value[2], '%s.vtx[3]' % cube , ws = True)
+        cmds.move(max_value[0], max_value[1], min_value[2], '%s.vtx[4]' % cube , ws = True)
+        cmds.move(max_value[0], max_value[1], max_value[2], '%s.vtx[5]' % cube , ws = True)        
+        cmds.move(max_value[0], min_value[1], min_value[2], '%s.vtx[6]' % cube , ws = True)
+        cmds.move(max_value[0], min_value[1], max_value[2], '%s.vtx[7]' % cube , ws = True)
+        
+        
+        return cube
+        #cluster = cmds.cluster( self.get_verts() )
+        #cmds.parent(cluster[1], cube)
+        
+    def subdivide(self):
+                
+        top_row1 = self.center + self.max
+        
+        top_row2 = [self.min[0], self.center[1], self.center[2], 
+                   self.center[0], self.max[1], self.max[2]]
+        
+        top_row3 = [self.min[0], self.center[1], self.min[2], 
+                   self.center[0], self.max[1], self.center[2]]
+                   
+        top_row4 = [self.center[0], self.center[1], self.min[2], 
+                   self.max[0], self.max[1], self.center[2]]
+                   
+        btm_row1 = self.min + self.center
+        
+        btm_row2 = [self.center[0], self.min[1], self.min[2],
+                   self.max[0], self.center[1], self.center[2]]
+        
+        btm_row3 = [self.min[0], self.min[1], self.center[2],
+                   self.center[0], self.center[1], self.max[2]]
+        
+        btm_row4 = [self.center[0], self.min[1], self.center[2],
+                   self.max[0], self.center[1], self.max[2]]
+        
+        boundings = []
+        boundings.append(top_row1)
+        boundings.append(top_row2)
+        boundings.append(top_row3)
+        boundings.append(top_row4)
+        boundings.append(btm_row1)
+        boundings.append(btm_row2)
+        boundings.append(btm_row3)
+        boundings.append(btm_row4)
+                
+        for bounding in boundings:
+        
+            min_value = bounding[0:3]
+            max_value = bounding[3:6]
+            
+            verts = self._get_verts_in_range(min_value, max_value)
+            
+            if verts:
+                self._create_child(bounding[0:3],bounding[3:6], verts)      
+        
+    def set_parent(self, parent_octree):
+        self.parent = parent_octree
+        
+    def get_verts(self):
+        found = []
+        
+        for vert in self.verts:
+            found.append(vert[0])
+            
+        return found
+    
+    def add_vertex(self, vertex_name, vertex_position):
+        self.verts.append([vertex_name, vertex_position])
+    
+    def has_verts(self):
+        if self.verts:
+            return True
+        
+        if not self.verts:
+            return False
+        
+    def vert_count(self):
+        return len( self.verts )
+        
+    def has_children(self):
+        if self.children:
+            return True
+        
+        if not self.children:
+            return False
+        
+    def find_closest_child(self, three_number_list):
+        
+        closest_distance = 1000000000000000000000000000000
+        found_child = None
+        
+        if self.has_children():
+            for child in self.children:
+                if self._is_vector_in_range(child.min, child.max, three_number_list):
+                    return child
+                    
+                if child.has_children():
+                    distance = vtool.util.get_distance(child.center, three_number_list)            
+                
+                    if distance < 0.001:
+                        return child
+                
+                    if distance < closest_distance:
+                        closest_distance = distance
+                    
+                        found_child = child
+                    
+        return found_child
+        
+    def find_closest_vertex(self, three_number_list):
+        if self.vert_count() == 1:
+            return self
+        
+        child = None
+        inc = 0
+        last_found = self
+        vector = self._snap_to_bounding_box(three_number_list)
+        
+        while not child:
+            
+            if last_found == None:
+                break
+            
+            child = last_found.find_closest_child(vector)
+            
+            if not child:
+                break
+            
+            if child:
+                last_found = child
+                child = None
+            
+            if inc > 100:
+                break
+            
+            inc += 1
+            
+        return last_found.verts[0][0]
+      
+    def sort_mesh_vertex(self):
+        
+        if self.has_verts():
+            self.subdivide()
+            
+            if self.vert_count() > 1:
+                for child in self.children:
+                    child.sort_mesh_vertex()
+
+class MeshTopologyCheck(object):
+    
+    def __init__(self, mesh1, mesh2):
+        
+        self.mesh1 = get_mesh_shape(mesh1, 0)
+        self.mesh2 = get_mesh_shape(mesh2, 0)
+        
+    
+    def check_vert_count(self):
+        
+        mesh1 = api.MeshFunction(self.mesh1)
+        count1 = mesh1.get_number_of_vertices()
+        
+        mesh2 = api.MeshFunction(self.mesh2)
+        count2 = mesh2.get_number_of_vertices()
+        
+        if count1 == count2:
+            return True
+        
+        return False
+    
+    def check_edge_count(self):
+        
+        mesh1 = api.MeshFunction(self.mesh1)
+        count1 = mesh1.get_number_of_edges()
+        
+        mesh2 = api.MeshFunction(self.mesh2)
+        count2 = mesh2.get_number_of_edges()
+        
+        if count1 == count2:
+            return True
+        
+        return False
+    
+    def check_face_count(self):
+        
+        mesh1 = api.MeshFunction(self.mesh1)
+        count1 = mesh1.get_number_of_faces()
+        
+        mesh2 = api.MeshFunction(self.mesh2)
+        count2 = mesh2.get_number_of_faces()
+        
+        if count1 == count2:
+            return True
+        
+        return False
+        
+    
+    def check_vert_edge_face_count(self):
+        
+        if not self.check_face_count():
+            return False
+        
+        if not self.check_vert_count():
+            return False
+        
+        if not self.check_edge_count():
+            return False
+            
+        return True
 
 class Rivet(object):
     def __init__(self, name):
@@ -197,6 +543,100 @@ def is_a_mesh(node):
     
     return False
 
+def is_mesh_compatible(mesh1, mesh2):
+    """
+    Check the two meshes to see if they have the same vert, edge and face count.
+    """
+    check = MeshTopologyCheck(mesh1, mesh2)
+    return check.check_vert_edge_face_count()
+
+def is_mesh_position_same(mesh1, mesh2, tolerance = .00001):
+    """
+    Check the positions of the vertices on the two meshes to see if they have the same positions within the tolerance.
+    """
+    
+    if not is_mesh_compatible(mesh1, mesh2):
+        vtool.util.warning('Skipping vert position compare. %s and %s are not compatible.' % (mesh1, mesh2))
+        return False
+    
+    mesh1_fn = api.IterateGeometry(mesh1)
+    point1 = mesh1_fn.get_points_as_list()
+    
+    mesh2_fn = api.IterateGeometry(mesh2)
+    point2 = mesh2_fn.get_points_as_list()
+    
+    for inc in xrange(0, len(point1)):
+        
+        for sub_inc in xrange(0,3):
+            if (abs(point1[inc][sub_inc] - point2[inc][sub_inc]) > tolerance):
+                vtool.util.show('First non matching vert: %s' % inc)
+                return False
+    
+    return True
+
+def get_position_different(mesh1, mesh2, tolerance):
+    """
+    Get a list of vertex indices that do not match.
+    """
+    mesh1_fn = api.IterateGeometry(mesh1)
+    point1 = mesh1_fn.get_points_as_list()
+    
+    mesh2_fn = api.IterateGeometry(mesh2)
+    point2 = mesh2_fn.get_points_as_list()
+    
+    mismatches = []
+    
+    for inc in xrange(0, len(point1)):
+        
+        for sub_inc in xrange(0,3):
+            if not vtool.util.is_the_same_number(point1[inc][sub_inc], point2[inc][sub_inc], tolerance):
+                mismatches.append(inc)
+                break
+
+    return mismatches
+
+def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
+    
+    mesh1_fn = api.IterateGeometry(mesh1)
+    points = mesh1_fn.get_points_as_list()
+    test_points = list(points)
+    
+    point_count = len(points)
+    
+    not_found = []
+    
+    for inc in xrange(0, point_count):
+        
+        source_point = points[inc]
+        
+        if vtool.util.is_the_same_number(source_point[0], 0):
+            continue
+            
+        test_point_count = len(test_points)
+        
+        found = False
+        
+        for sub_inc in xrange(0, test_point_count):
+            
+            test_point = test_points[sub_inc]
+            
+            if source_point[0] > 0 and test_point[0] > 0:
+                continue
+            
+            if source_point[0] < 0 and test_point[0] < 0:
+                continue
+            
+            if vtool.util.is_the_same_number(source_point[0], (test_point[0] * -1), tolerance):
+                if vtool.util.is_the_same_number(source_point[1], test_point[1]):
+                    if vtool.util.is_the_same_number(source_point[2], test_point[2]):
+                        found = True
+                        test_points.pop(sub_inc)
+                        break
+            
+        if not found:
+            not_found.append(inc)
+            
+    return not_found
 
 def get_meshes_in_list(list_of_things):
     

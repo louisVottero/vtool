@@ -3916,8 +3916,8 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
     except (RuntimeError):
         vtool.util.show( traceback.format_exc() )
-        
-        
+    
+    
 def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = True):
     """
     Create a delta following the equation:

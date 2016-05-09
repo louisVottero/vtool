@@ -323,7 +323,24 @@ class MeshFunction(MayaFunction):
         transform_object = nodename_to_mobject(transform)
         
         self.api_object.copy(mesh_object, transform)
-   
+        
+    def get_number_of_vertices(self):
+        
+        return self.api_object.numVertices()
+        
+    
+    def get_number_of_edges(self):
+        
+        return self.api_object.numEdges()
+    
+    def get_number_of_faces(self):
+        
+        return self.api_object.numPolygons()
+    
+    def get_number_of_uvs(self):
+        
+        return self.api_object.nunUVs()
+        
 class NurbsSurfaceFunction(MayaFunction):
     def _define_api_object(self, mobject):
         return OpenMaya.MFnNurbsSurface(mobject)
@@ -514,7 +531,6 @@ class SkinClusterFunction(MayaFunction):
         vert_count = weight_list_plug.numElements()
         
         for vertex_id in xrange(vert_count):
-            
         
             weights_plug.selectAncestorLogicalIndex(vertex_id, weight_list_attr)
             
@@ -554,6 +570,24 @@ class IterateGeometry(MayaIterator):
         space = OpenMaya.MSpace.kObject
         self.api_object.setAllPositions(points, space)
         
+    def get_points_as_list(self):
+        
+        points = self.get_points()
+        
+        found = []
+        
+        for inc in xrange(0, points.length()):
+        
+            x = points[inc][0]
+            y = points[inc][1]
+            z = points[inc][2]
+            
+            found.append([x,y,z])
+            
+            #if inc == 1000:
+            #    break
+        
+        return found
         
 class IterateEdges(MayaIterator):
     def _define_api_object(self, mobject):

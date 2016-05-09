@@ -24,6 +24,11 @@ class PoseManager(ui.MayaWindow):
     
     title = 'Correctives'
     
+    def __init__(self, shot_sculpt_only = False):
+        self.shot_sculpt_only = shot_sculpt_only
+        
+        super(PoseManager, self).__init__()
+    
     def _define_main_layout(self):
         layout = QtGui.QVBoxLayout()
         layout.setAlignment(QtCore.Qt.AlignTop)
@@ -32,7 +37,7 @@ class PoseManager(ui.MayaWindow):
     def _build_widgets(self):
         
         self.pose_set = PoseSetWidget()
-        self.pose_list = PoseListWidget()
+        self.pose_list = PoseListWidget(self.shot_sculpt_only)
         
         self.sculpt = SculptWidget()
         self.sculpt.setMaximumHeight(200)
@@ -92,11 +97,6 @@ class PoseManager(ui.MayaWindow):
         
         cmds.select(pose_name, r=True)
         
-        # pose_control_widget = self.pose_list.pose_widget.pose_control_widget
-        
-        # if type(pose_control_widget) == PoseConeWidget:
-        #    pose_control_widget._get_pose_values()
-        
     def check_for_mesh(self, pose):
         
         selection = cmds.ls(sl=True)
@@ -146,7 +146,9 @@ class PoseListWidget(qt_ui.BasicWidget):
     pose_update = qt_ui.create_signal(object)
     pose_list_refresh = qt_ui.create_signal()
     
-    def __init__(self):
+    def __init__(self, shot_sculpt_only):
+        self.shot_sculpt_only = shot_sculpt_only
+        
         super(PoseListWidget, self).__init__()
         
         self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
@@ -157,7 +159,7 @@ class PoseListWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
-        self.pose_list = PoseTreeWidget()
+        self.pose_list = PoseTreeWidget(self.shot_sculpt_only)
         
         self.pose_list.list_refresh.connect(self.pose_list_refresh.emit)
         
@@ -269,6 +271,15 @@ class PoseListWidget(qt_ui.BasicWidget):
     def update_current_pose(self):
         
         current_pose = self.pose_list._current_pose()
+        
+        pose_type = cmds.getAttr('%s.type' % current_pose)
+        
+        if pose_type == 'timeline':
+            pass
+        if not pose_type == 'timeline':
+            pass
+        
+        
         self.pose_widget.set_pose(current_pose)
         
     def set_pose_widget(self, widget):
@@ -487,9 +498,9 @@ class PoseTreeWidget(BaseTreeWidget):
     
     check_for_mesh = qt_ui.create_signal(object)
 
-    def __init__(self):
+    def __init__(self, shot_sculpt_only = False):
         
-        
+        self.shot_sculpt_only = shot_sculpt_only
         self.item_context = []
         self.context_menu_item = None
         
@@ -500,7 +511,6 @@ class PoseTreeWidget(BaseTreeWidget):
         self.setAcceptDrops(True)  
         
         self.setAutoScroll(True)
-        
         
         self.setHeaderLabels(['pose', 'type'])
        
@@ -641,8 +651,11 @@ class PoseTreeWidget(BaseTreeWidget):
         self.context_menu.setTearOffEnabled(True)
         
         self.create_group = self.context_menu.addAction('New Group')
-        self.create_cone = self.context_menu.addAction('New Cone')
-        self.create_no_reader = self.context_menu.addAction('New No Reader')
+        
+        if not self.shot_sculpt_only:
+            self.create_cone = self.context_menu.addAction('New Cone')
+            self.create_no_reader = self.context_menu.addAction('New No Reader')
+            
         self.create_timeline = self.context_menu.addAction('New Timeline')
         
         self.item_context = []
@@ -666,11 +679,14 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.item_context = self.item_context + [self.rename_action,
                                                  self.delete_action,
+                                                 self.revert_vertex_action,
                                                  self.reset_sculpts_action,
                                                  self.set_pose_action]
         
-        self.create_cone.triggered.connect(self.create_cone_pose)
-        self.create_no_reader.triggered.connect(self.create_no_reader_pose)
+        if not self.shot_sculpt_only:
+            self.create_cone.triggered.connect(self.create_cone_pose)
+            self.create_no_reader.triggered.connect(self.create_no_reader_pose)
+            
         self.create_timeline.triggered.connect(self.create_timeline_pose)
         self.create_group.triggered.connect(self.create_group_pose)
         
@@ -800,8 +816,6 @@ class PoseTreeWidget(BaseTreeWidget):
 
     def _set_pose_data(self):
         
-        
-        
         name = self._current_pose()
         
         pose_instance = corrective.PoseManager().get_pose_instance(name)
@@ -809,13 +823,10 @@ class PoseTreeWidget(BaseTreeWidget):
         
         corrective.PoseManager().update_pose(name)
         
-        
-        
-        
     def _update_sculpts(self):
         
         name = self._current_pose()
-        corrective.PoseManager().update_pose_mesh(name)
+        corrective.PoseManager().update_pose_meshes(name)
         
     def _revert_vertex(self):
         
@@ -991,7 +1002,6 @@ class PoseWidget(qt_ui.BasicWidget):
             self.pose_control_widget.deleteLater()
             del self.pose_control_widget
             self.pose_control_widget = None
-        
         
         if pose_type == 'no reader':
             self.pose_control_widget = PoseNoReaderWidget()
@@ -1193,7 +1203,16 @@ class MeshWidget(qt_ui.BasicWidget):
         
         if self.pose_class:
             self.pose_class.goto_pose()
-        
+            
+            
+            
+            """
+            pose_type = self.pose_class.get_type()
+            
+            if pose_type == 'timeline':
+                self.pose_class.update_target_meshes()
+                corrective.PoseManager().update_pose(pose_name)
+            """
         current_meshes = self.get_current_meshes_in_list()
         
         if not current_meshes:
@@ -1299,8 +1318,13 @@ class MeshWidget(qt_ui.BasicWidget):
             
             return
         
+
+        
         if current_meshes:
             
+            if corrective.PoseManager().get_pose_type(pose_name) == 'timeline':
+                corrective.PoseManager().update_pose_meshes(pose_name, True)
+                
             indices = self.mesh_list.selectedIndexes()
             
             if indices:
@@ -1310,7 +1334,7 @@ class MeshWidget(qt_ui.BasicWidget):
                     
                     mesh_item = self.mesh_list.item(index)
                     mesh = mesh_item.longname
-                
+                    
                     corrective.PoseManager().toggle_visibility(mesh, pose_name)
     
     def remove_mesh(self):
@@ -1484,6 +1508,13 @@ class SculptWidget(qt_ui.BasicWidget):
             
             return
         
+        pose_type = cmds.getAttr('%s.type' % pose_name)
+        
+        if pose_type == 'timeline':
+            self.button_mirror.hide()
+        if not pose_type == 'timeline':
+            self.button_mirror.show()
+            
         self.pose = pose_name
         
         auto_key_state = cmds.autoKeyframe(q=True, state=True)
