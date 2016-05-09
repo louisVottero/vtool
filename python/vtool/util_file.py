@@ -1257,6 +1257,10 @@ def get_text_lines(text):
         
     return lines
     
+def get_permission(filepath):
+    
+    os.chmod(filepath, 0777)
+    
 def is_dir(directory):
     """
     Return 

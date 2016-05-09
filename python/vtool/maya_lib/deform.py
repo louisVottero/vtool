@@ -1844,6 +1844,9 @@ class EnvelopeHistory(object):
         
         found = []
         
+        if not history:
+            return found
+        
         for thing in history:
             if cmds.objExists('%s.envelope' % thing):
                 found.append(thing)

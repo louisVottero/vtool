@@ -159,8 +159,6 @@ class DataFolder(util_file.FileManager):
         
         folder = util_file.rename(self.folder_path, new_name)
         
-        
-        
         if not folder:
             return
         
@@ -1953,6 +1951,8 @@ class MayaFileData(MayaCustomData):
        
     def save(self, comment):
         
+        util_file.get_permission(self.filepath)
+        
         self._handle_unknowns()
         
         self._clean_scene()
@@ -1976,7 +1976,9 @@ class MayaFileData(MayaCustomData):
         util.show('Vetala: Scene Saved')
         
     def export_data(self, comment):
-                
+        
+        util_file.get_permission(self.filepath)
+        
         self._handle_unknowns()
         
         self._clean_scene()
