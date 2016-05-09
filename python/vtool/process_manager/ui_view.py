@@ -95,35 +95,63 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         
         self.tree_widget.add_process(None)
       
-    def _copy(self):
+    def _copy_match(self, process_name = None, directory = None):
         
         copy_widget = self.copy_widget 
                 
         copy_widget.pasted.connect(self._copy_done)
         copy_widget.canceled.connect(self._copy_done)
         
-        current_process = self.get_current_process()
+        if not process_name:
         
-        if not current_process:
-            return
+            current_process = self.get_current_process()
             
-        if not current_process:
-            return
+            if not current_process:
+                return
+            
+        if process_name:
+            current_process = process_name
+        
+        if not directory:
+            directory = self.directory
         
         copy_widget.show()
-        copy_widget.set_process(current_process, self.directory)
+        copy_widget.set_process(current_process, directory)
         
         self.setFocus()
         
-        items = self.tree_widget.selectedItems()
-        
-        self.tree_widget.scrollToItem(items[0])
+        if not process_name:
+            #then it must be using the found current process
+            items = self.tree_widget.selectedItems()
+            self.tree_widget.scrollToItem(items[0])
         
         self.copy_done.emit()
         
     def _copy_done(self):
         
         self.copy_done.emit()
+        
+    def copy_match(self, process_name, directory):
+        
+        self._copy_match(process_name, directory)
+        
+        target_process = None
+        
+        items = self.tree_widget.selectedItems()
+        if items:
+            target_item = items[0]
+            target_process = target_item.get_process()            
+        if not items:
+            target_item = None
+        
+        if not target_process:
+            return
+                
+        name = target_process.get_name()
+        directory = target_process.directory
+        
+        print name, directory
+        self.copy_widget.set_other_process(name, directory)
         
     def get_current_process(self):
         
@@ -143,7 +171,7 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         
         self.tree_widget.new_process.connect(self._add_branch)
         self.tree_widget.new_top_process.connect(self._add_top_branch)
-        self.tree_widget.copy_special_process.connect(self._copy)
+        self.tree_widget.copy_special_process.connect(self._copy_match)
         self.tree_widget.copy_process.connect(self._copy_done)
         
         

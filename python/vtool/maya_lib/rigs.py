@@ -7333,8 +7333,8 @@ class StickyRig(JointRig):
             anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % left_top_control, [start,end], [0,left_over_value])
             anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % left_btm_control, [start,end], [0,left_over_value])
         
-        cmds.setAttr('%s.stick' % left_top_control, lock = True)
-        cmds.setAttr('%s.stick' % left_btm_control, lock = True)
+        cmds.setAttr('%s.stick' % left_top_control, lock = True, k = False, cb = True)
+        cmds.setAttr('%s.stick' % left_btm_control, lock = True, k = False, cb = True)
         
         right_increment = 1
         
@@ -7351,8 +7351,8 @@ class StickyRig(JointRig):
             anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % right_top_control, [start,end], [0,left_over_value])
             anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % right_btm_control, [start,end], [0,left_over_value])
 
-        cmds.setAttr('%s.stick' % right_top_control, lock = True)
-        cmds.setAttr('%s.stick' % right_btm_control, lock = True)
+        cmds.setAttr('%s.stick' % right_top_control, lock = True, k = False, cb = True)
+        cmds.setAttr('%s.stick' % right_btm_control, lock = True, k = False, cb = True)
         
     def create_roll(self, control, increment, percent):
         

@@ -13,6 +13,7 @@ class TemplateWidget(qt_ui.BasicWidget):
     current_changed = qt_ui.create_signal()
     add_template = qt_ui.create_signal(object, object)
     merge_template = qt_ui.create_signal(object, object)
+    match_template = qt_ui.create_signal(object,object)
     
     def _build_widgets(self):
         
@@ -30,6 +31,7 @@ class TemplateWidget(qt_ui.BasicWidget):
         
         self.template_tree.add_template.connect(self._add_template)
         self.template_tree.merge_template.connect(self._merge_template)
+        self.template_tree.match_template.connect(self._match_template)
         
         self.main_layout.addSpacing(10)
         self.main_layout.addLayout(title_layout)
@@ -48,6 +50,9 @@ class TemplateWidget(qt_ui.BasicWidget):
         
     def _merge_template(self, process_name, directory):
         self.merge_template.emit(process_name, directory)
+        
+    def _match_template(self, process_name, directory):
+        self.match_template.emit(process_name, directory)
         
     def _change(self, index):
         
@@ -153,6 +158,7 @@ class TemplateTree(ui_view.ProcessTreeWidget):
     
     add_template = qt_ui.create_signal(object, object)
     merge_template = qt_ui.create_signal(object, object)
+    match_template = qt_ui.create_signal(object, object)
     
     def __init__(self):
         super(TemplateTree, self).__init__()
@@ -172,6 +178,9 @@ class TemplateTree(ui_view.ProcessTreeWidget):
         
         merge = self.context_menu.addAction('Merge into Current Process')
         merge.triggered.connect(self._merge_template)
+        
+        match = self.context_menu.addAction('Copy Match with Current Process')
+        match.triggered.connect(self._match_template)
         
     def _get_item_parent_path(self):
         items = self.selectedItems()
@@ -193,3 +202,9 @@ class TemplateTree(ui_view.ProcessTreeWidget):
         parent_path = self._get_item_parent_path()
         
         self.merge_template.emit(parent_path, self.directory)
+        
+    def _match_template(self):
+        
+        parent_path = self._get_item_parent_path()
+        
+        self.match_template.emit(parent_path, self.directory)

@@ -1,7 +1,6 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import sys
-import __builtin__
 
 from vtool import qt_ui
 from vtool import util_file
@@ -235,6 +234,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.template_widget.current_changed.connect(self._template_current_changed)
         self.template_widget.add_template.connect(self._add_template)
         self.template_widget.merge_template.connect(self._merge_template)
+        self.template_widget.match_template.connect(self._match_template)
         
         self.option_tabs.addTab(option_widget, 'Options')
         self.option_tabs.addTab(self.template_widget, 'Templates')
@@ -334,6 +334,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         source_process.set_directory(directory)
         
         self.view_widget.tree_widget.merge_process(source_process)
+        
+    def _match_template(self, process_name, directory):
+        
+        self.view_widget.manager_widget.copy_match(process_name, directory)
         
     def _option_changed(self):
         
