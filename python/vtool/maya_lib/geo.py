@@ -2,18 +2,12 @@
 
 import vtool.util
 import api
-from vtool.util import is_the_same_number
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     
 import core
-import attr
 import space
-
-
-import maya.cmds as cmds
-import util
 
 class Octree(object):
         
