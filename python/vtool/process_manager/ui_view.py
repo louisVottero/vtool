@@ -56,6 +56,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
                 
         name = self.tree_widget._get_parent_path(item)
         
+        
         self.manager_widget.copy_widget.set_other_process(name, self.directory)
     
     def get_current_process(self):
@@ -82,14 +83,9 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         return QtGui.QVBoxLayout()
     
     def _build_widgets(self):
-
-        self.copy_widget = CopyWidget()
-        self.copy_widget.hide()
         
-        self.copy_widget.pasted.connect(self._copy_done)
-        #self.copy_widget.canceled.connect(self._copy_done)
-        
-        #self.main_layout.addWidget(self.copy_widget)
+        copy_widget = CopyWidget()
+        self.copy_widget = copy_widget
 
     def _add_branch(self):
         
@@ -101,19 +97,21 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
       
     def _copy(self):
         
+        copy_widget = self.copy_widget 
+                
+        copy_widget.pasted.connect(self._copy_done)
+        copy_widget.canceled.connect(self._copy_done)
+        
         current_process = self.get_current_process()
         
         if not current_process:
             return
             
-        if self.copy_widget.isHidden():
-            self.copy_widget.show()
-            
         if not current_process:
             return
         
-        self.copy_widget.show()
-        self.copy_widget.set_process(current_process, self.directory)
+        copy_widget.show()
+        copy_widget.set_process(current_process, self.directory)
         
         self.setFocus()
         
@@ -124,8 +122,7 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.copy_done.emit()
         
     def _copy_done(self):
-        #self.copy_widget.hide()
-        self.copy_widget.load_compare()
+        
         self.copy_done.emit()
         
     def get_current_process(self):
@@ -977,7 +974,7 @@ class ProcessItem(QtGui.QTreeWidgetItem):
 
 class CopyWidget(qt_ui.BasicWidget):
     
-    #canceled = qt_ui.create_signal()
+    canceled = qt_ui.create_signal()
     pasted = qt_ui.create_signal()
     
     def __init__(self):
@@ -1073,7 +1070,7 @@ class CopyWidget(qt_ui.BasicWidget):
         if selected:
             item = selected[-1]
         
-        name = item.text(0)
+        name = str(item.text(0))
         
         split_name = name.split('/')
         
@@ -1082,8 +1079,10 @@ class CopyWidget(qt_ui.BasicWidget):
             sub_name = split_name[:inc]
             sub_name = string.join(sub_name, '/')
             
-            for inc in range(0, self.code_list.topLevelItemCount()):
-                item = self.code_list.topLevelItem(inc)
+            for inc2 in range(0, self.code_list.topLevelItemCount()):
+                item = self.code_list.topLevelItem(inc2)
+                if str(item.text(2)).find('-') == -1:
+                    continue
                 test_name = item.text(0)
                 
                 if test_name == sub_name:
@@ -1093,8 +1092,13 @@ class CopyWidget(qt_ui.BasicWidget):
         
     def _cancelled(self):
         self.close()
+        self.canceled.emit()
         
     def _populate_lists(self):
+        
+        self.progress_bar.reset()
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setRange(0, 3)
         
         self.data_list.clear()
         self.code_list.clear()
@@ -1103,6 +1107,8 @@ class CopyWidget(qt_ui.BasicWidget):
         data_folders = self.process.get_data_folders()
         
         self.populate_list(0, self.data_list, data_folders)
+        
+        self.progress_bar.setValue(1)
         
         codes, states = self.process.get_manifest()
         #codes = self.process.get_code_files(basename = True)
@@ -1123,9 +1129,15 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.populate_list(0, self.code_list, code_names)    
         
+        self.progress_bar.setValue(2)
+        
         setting_names = self.process.get_setting_names()
         
         self.populate_list(0, self.settings_list, setting_names)
+        
+        self.progress_bar.setValue(3)
+        
+        self.progress_bar.setVisible(False)
         
     def populate_list(self, column, list_widget, data):
         
@@ -1265,8 +1277,6 @@ class CopyWidget(qt_ui.BasicWidget):
             
     def _paste_code(self):
         
-        
-        
         code_items = self.code_list.selectedItems()
     
         if not code_items:
@@ -1290,10 +1300,6 @@ class CopyWidget(qt_ui.BasicWidget):
                 
             if not name == 'manifest':
                 found.append(name)
-                
-            
-            
-            
         
         if manifest:        
             found.append(manifest)
@@ -1302,7 +1308,6 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.progress_bar.reset()
         self.progress_bar.setRange(0, len(found))
-        
         
         for name in found:
             
@@ -1346,13 +1351,21 @@ class CopyWidget(qt_ui.BasicWidget):
         
     def set_other_process(self, process_name, process_directory):
         
+        
+        
         if not self.process:
+            return
+        
+        if not self.isVisible():
             return
         
         if process_name == self.process.get_name():
             self.paste_to.setText('Paste to:')
             self.paste_button.setDisabled(True)
             return
+        
+        self.progress_bar.reset()
+        self.progress_bar.setVisible(True)
         
         process_inst = process.Process(process_name)
         process_inst.set_directory(process_directory)
@@ -1368,10 +1381,15 @@ class CopyWidget(qt_ui.BasicWidget):
         
         if not self.other_process:
             return
+
+        self.progress_bar.reset()
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setRange(0, 3)
         
         data_folders = self.other_process.get_data_folders()
         self.populate_other_data(data_folders)
         
+        self.progress_bar.setValue(1)
         
         codes, states = self.other_process.get_manifest()
         #codes = self.other_process.get_code_files()
@@ -1391,10 +1409,14 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.populate_other_code(code_names)
         
+        self.progress_bar.setValue(2)
+        
         setting_names = self.process.get_setting_names()
         
         self.populate_other_settings(setting_names)
         
+        self.progress_bar.setValue(3)
+        self.progress_bar.setVisible(False)
         
 class CopyTree(QtGui.QTreeWidget):
     
