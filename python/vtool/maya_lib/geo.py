@@ -568,7 +568,7 @@ def is_mesh_position_same(mesh1, mesh2, tolerance = .00001):
     
     return True
 
-def get_position_different(mesh1, mesh2, tolerance):
+def get_position_different(mesh1, mesh2, tolerance = 0.00001):
     """
     Get a list of vertex indices that do not match.
     """
