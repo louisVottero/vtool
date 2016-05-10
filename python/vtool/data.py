@@ -136,8 +136,14 @@ class DataFolder(util_file.FileManager):
         if not data_type:
             data_type = self.data_type
         
+        if data_type == 'None':
+            test_file = util_file.join_path(self.folder_path, '%s.py' % self.name)
+            
+            if util_file.is_file(test_file):
+                data_type = 'script.python'
+                self.settings.set('data_type', data_type)
+                
         if not data_type:
-        
             return
         
         data_manager = DataManager()
