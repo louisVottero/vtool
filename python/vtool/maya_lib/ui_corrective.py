@@ -1527,7 +1527,8 @@ class SculptWidget(qt_ui.BasicWidget):
         if not pose_type == 'timeline':
             self.button_mirror.show()
             
-            self.main_layout.removeWidget(self.frame_number)
+            if self.frame_number:
+                self.main_layout.removeWidget(self.frame_number)
             
             self.frame_number = None
             

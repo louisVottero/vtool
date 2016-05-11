@@ -1978,7 +1978,8 @@ class PoseBase(PoseGroup):
         
         blend.set_weight(self.pose_control, 1)
         
-        blend.get_mesh_index(target_mesh)
+        #eventually it will check mesh index
+        #blend.get_mesh_index(target_mesh)
         
         if blend.is_target(self.pose_control):
             blend.replace_target(self.pose_control, offset)
