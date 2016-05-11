@@ -952,23 +952,28 @@ class FkRig(BufferRig):
 
     def _create_control(self, sub = False):
         
-        self.last_control = self.control
+        control = super(FkRig, self)._create_control(sub = sub)
         
-        self.control = super(FkRig, self)._create_control(sub = sub)
+        if not sub:
+            self.last_control = self.control
+            self.control = control
         
         if len(self.controls) == 1:
-            cmds.parent(self.control.get(), self.control_group)
+            cmds.parent(control.get(), self.control_group)
         
-        self._set_control_attributes(self.control)
+        self._set_control_attributes(control)
                 
-        xform = space.create_xform_group(self.control.get())
-        driver = space.create_xform_group(self.control.get(), 'driver')
+        xform = space.create_xform_group(control.get())
+        driver = space.create_xform_group(control.get(), 'driver')
         
-        self.current_xform_group = xform
-        self.control_dict[self.control.get()]['xform'] = self.current_xform_group
-        self.control_dict[self.control.get()]['driver'] = driver
+        if not sub:
+            self.current_xform_group = xform
+            
+        self.control_dict[control.get()]['xform'] = xform
+        self.control_dict[control.get()]['driver'] = driver
         
-        self.drivers.append(driver)
+        if not sub:
+            self.drivers.append(driver)
         
         if self.create_sub_controls and not sub:
             
@@ -992,20 +997,20 @@ class FkRig(BufferRig):
                     
                 sub_control.hide_scale_and_visibility_attributes()
                 
-                space.MatchSpace(self.control.get(), sub_control.get()).translation_rotation()
+                space.MatchSpace(control.get(), sub_control.get()).translation_rotation()
                 
-                attr.connect_visibility('%s.subVisibility' % self.control.get(), '%sShape' % sub_control.get(), self.sub_visibility)
+                attr.connect_visibility('%s.subVisibility' % control.get(), '%sShape' % sub_control.get(), self.sub_visibility)
                 
                 subs.append(sub_control.get())
                 
                 if inc == 0:
-                    cmds.parent(sub_control.get(), self.control.get())
+                    cmds.parent(sub_control.get(), control.get())
                 if inc == 1:
                     cmds.parent(sub_control.get(), self.sub_controls[-2])
                 
-            self.control_dict[self.control.get()]['subs'] = subs
+            self.control_dict[control.get()]['subs'] = subs
                 
-        return self.control
+        return control
     
     def _set_control_attributes(self, control):
         
@@ -1409,7 +1414,7 @@ class FkCurlNoScaleRig(FkRig):
         
         if self.curl_axis == None:
             
-            return self.control
+            return control
         
         if not self.attribute_control:
             self.attribute_control = control.get()
@@ -1437,7 +1442,7 @@ class FkCurlNoScaleRig(FkRig):
             for axis in all_axis:
                 self._attach_curl_axis(driver, axis)
                 
-        return self.control
+        return control
     
     def _attach_curl_axis(self, driver, axis = None):
 
@@ -1989,25 +1994,27 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         self.create_btm_follow = False
         self.closest_y = False
         self.stretch_axis = 'X'
-        self.sub_control_size = 1
+        self.sub_control_size = .8
         self.sub_visibility = 1
     
     def _create_sub_control(self):
             
-        sub_control = rigs_util.Control( self._get_control_name(sub = True) )
-        sub_control.color( attr.get_color_of_side( self.side , True)  )
+        sub_control = self._create_control( sub = True)
         
-        if self.sub_control_color:
-            sub_control.color( self.sub_control_color )    
+        #sub_control = rigs_util.Control( self._get_control_name(sub = True) )
+        #sub_control.color( attr.get_color_of_side( self.side , True)  )
         
-        if self.control_shape:
+        #if self.sub_control_color:
+        #    sub_control.color( self.sub_control_color )    
+        
+        #if self.control_shape:
             
-            sub_control.set_curve_type(self.control_shape)
-        
+        #    sub_control.set_curve_type(self.control_shape)
+        """
         sub_control.scale_shape(self.control_size * .9 * self.sub_control_size, 
                                 self.control_size * .9 * self.sub_control_size,
                                 self.control_size * .9 * self.sub_control_size)
-    
+        """
         return sub_control
 
     def _first_increment(self, control, current_transform):
@@ -2076,16 +2083,24 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             sub_control = self._create_sub_control()
             sub_control_object = sub_control
             sub_control = sub_control.get()
+            
+
         
-            match = space.MatchSpace(control, sub_control)
+            xform_sub_control = self.control_dict[sub_control]['xform']
+
+            match = space.MatchSpace(control, xform_sub_control)
             match.translation_rotation()
         
-            xform_sub_control = space.create_xform_group(sub_control)
-            self.sub_drivers.append( space.create_xform_group(sub_control, 'driver') )
+            #xform_sub_control = space.create_xform_group(sub_control)
+            #self.sub_drivers.append( space.create_xform_group(sub_control, 'driver') )
+            
+            self.sub_drivers.append( self.control_dict[sub_control]['driver'])
+            
+            print control, self.control.get(), xform_sub_control, sub_control
             
             cmds.parent(xform_sub_control, self.control.get())
             
-            self.sub_controls.append(sub_control)
+            #self.sub_controls.append(sub_control)
             
             sub_vis = attr.MayaNumberVariable('subVisibility')
             sub_vis.set_variable_type(sub_vis.TYPE_BOOL)
