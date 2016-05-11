@@ -1407,6 +1407,7 @@ class SculptWidget(qt_ui.BasicWidget):
         super(SculptWidget, self).__init__()
         
         self.pose = None
+        self.frame_number = None
     
     def sizeHint(self):
         
@@ -1512,8 +1513,25 @@ class SculptWidget(qt_ui.BasicWidget):
         
         if pose_type == 'timeline':
             self.button_mirror.hide()
+            if not self.frame_number:
+                self.frame_number = TimePosition()
+                
+                time_position = cmds.getAttr('%s.timePosition' % pose_name)
+                
+                self.main_layout.insertWidget(0, self.frame_number)
+                
+                self.frame_number.set_value(time_position)
+                
+                self.frame_number.set_pose(pose_name)
+            
         if not pose_type == 'timeline':
             self.button_mirror.show()
+            
+            self.main_layout.removeWidget(self.frame_number)
+            
+            self.frame_number = None
+            
+        
             
         self.pose = pose_name
         
@@ -1540,6 +1558,75 @@ class SculptWidget(qt_ui.BasicWidget):
         value = value * 100
         self.slider.setValue(value)
         
+        
+class TimePosition(qt_ui.GetNumber):
+    
+    def __init__(self):
+        super(TimePosition, self).__init__('Time Position')
+        
+        self.pose = None
+        self.old_value = None
+        self.update_value = True
+        #self.update_value_permission = True
+    
+    def _define_main_layout(self):
+        return QtGui.QHBoxLayout()
+    
+    def _build_widgets(self):
+        
+        self.main_layout.setContentsMargins(0,0,0,0)
+        self.main_layout.setSpacing(0)
+        
+        self.number_widget = self._define_number_widget()
+        self.number_widget.setMaximumWidth(100)
+        
+        self.number_widget.setAlignment(QtCore.Qt.AlignLeft)
+        
+        
+        self.label = QtGui.QLabel(self.name)
+        self.label.setAlignment(QtCore.Qt.AlignLeft)
+        
+        self.main_layout.addWidget(self.number_widget)
+        self.main_layout.addSpacing(10)
+        self.main_layout.addWidget(self.label)
+    
+    def _value_changed(self):
+        
+        if not self.update_value:
+            return
+        super(TimePosition, self)._value_changed()
+        
+        value = self.get_value()
+        """
+        if self.update_value_permission:
+            permission = qt_ui.get_permission('Change Pose?\nMake sure you retime your animation first.', self)
+            
+            if not permission:
+                
+                self.update_value = False
+                if self.pose:
+                    
+                    
+                    value = cmds.getAttr('%s.timePosition' % self.pose)
+                    self.set_value(value)
+                    
+                self.update_value = True
+                
+                return
+        """
+        if self.pose:
+            
+            pose = corrective.PoseTimeline()
+            pose.set_pose(self.pose)
+            
+            pose.shift_time(value)
+            
+        
+        
+    def set_pose(self, name):
+        self.pose = name
+        
+    
 #--- pose widgets
 
 class PoseBaseWidget(qt_ui.BasicWidget):

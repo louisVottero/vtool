@@ -4,6 +4,7 @@ import traceback
 import time
 
 import vtool.util
+from vtool.maya_lib import anim
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
@@ -3216,6 +3217,22 @@ class PoseTimeline(PoseNoReader):
         """
         current_time = cmds.getAttr('%s.timePosition' % self.pose_control)
         cmds.currentTime(current_time)
+        
+    def shift_time(self, value):
+        
+        keyframe = anim.get_keyframe('%s.weight' % self.pose_control)
+        
+        if not keyframe:
+            return
+        
+        old_value = cmds.getAttr('%s.timePosition' % self.pose_control)
+        
+        delta = value - old_value
+         
+        cmds.keyframe( keyframe, e = True, iub = True, r = True, o = 'over', tc = delta)
+        cmds.currentTime(value)
+        
+        cmds.setAttr('%s.timePosition' % self.pose_control, value)
         
     def create(self):
         

@@ -589,6 +589,24 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             self.shift_activate = False
     
+    def dropEvent(self, event):
+        
+        is_dropped = self.is_item_dropped(event, strict = True)
+        
+        #removing this lines triggers the new behavior that is still being developed
+        if not self.hierarchy:
+            is_dropped = False
+        
+        event.accept()
+        
+        if not is_dropped:
+            self._insert_drop(event)
+        #new
+        if is_dropped:
+            self._add_drop(event)
+        
+        self._update_manifest()
+    
     def _get_item_path(self, item):
         
         parent = item.parent()
@@ -869,24 +887,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         new_name = process_tool.move_code(old_name, new_name)
         
         return new_name
-        
-    def dropEvent(self, event):
-        
-        is_dropped = self.is_item_dropped(event, strict = True)
-        
-        #removing this lines triggers the new behavior that is still being developed
-        if not self.hierarchy:
-            is_dropped = False
-        
-        event.accept()
-        
-        if not is_dropped:
-            self._insert_drop(event)
-        #new
-        if is_dropped:
-            self._add_drop(event)
-        
-        self._update_manifest()
         
     def _item_collapsed(self, item):
         
@@ -1285,12 +1285,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
         process_tool.set_manifest(scripts, states)
         
-    def _sync_manifest(self):
-        
-        process_tool = process.Process()
-        process_tool.set_directory(self.directory)
-        
-        process_tool.sync_manifest()
+
         
     def _run_item(self, item, process_tool):
         
@@ -1311,14 +1306,28 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if not status == 'Success':
             item.set_state(0)
         
+    def sync_manifest(self):
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        process_tool.sync_manifest()
+        
     def refresh(self, sync = False):
         
         if sync:
-            self._sync_manifest()
+            self.sync_manifest()
         
         self.allow_manifest_update = False
         super(CodeManifestTree, self).refresh()
         self.allow_manifest_update = True
+
+    def set_directory(self, directory, refresh = True):
+        
+        self.directory = directory
+        
+        if refresh:
+            self.refresh(refresh)
 
     def reset_process_script_state(self):
         
