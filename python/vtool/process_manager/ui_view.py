@@ -150,7 +150,6 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         name = target_process.get_name()
         directory = target_process.directory
         
-        print name, directory
         self.copy_widget.set_other_process(name, directory)
         
     def get_current_process(self):
@@ -1096,9 +1095,11 @@ class CopyWidget(qt_ui.BasicWidget):
         self.update_on_select = False
         
         if selected:
-            item = selected[-1]
+            first_item = selected[-1]
+            first_item.setSelected(False)
+            
         
-        name = str(item.text(0))
+        name = str(first_item.text(0))
         
         split_name = name.split('/')
         
@@ -1115,6 +1116,8 @@ class CopyWidget(qt_ui.BasicWidget):
                 
                 if test_name == sub_name:
                     item.setSelected(True)
+        
+        first_item.setSelected(True)
         
         self.update_on_select = True
         

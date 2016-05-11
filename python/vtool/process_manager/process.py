@@ -832,6 +832,7 @@ class Process(object):
         filename = data_instance.get_file()
         
         if not self.is_in_manifest('%s.py' % name):
+            
             self.set_manifest(['%s.py' % name], append = True)
         
         return filename 
@@ -1217,56 +1218,65 @@ class Process(object):
         
         scripts, states = self.get_manifest()
         
+        script_count = 0
+        
+        if scripts:
+            script_count = len(scripts)
+        
         synced_scripts = []
         synced_states = []
         
         code_folders = self.get_code_folders()
         
-        for inc in range(0,len(scripts)):
-            
-            script_name = util_file.remove_extension(scripts[inc])
-            
-            filepath = self.get_code_file(script_name)
-            
-            if not util_file.is_file(filepath):
-                continue
-            
-            if scripts[inc] in synced_scripts:
-                continue
-            
-            synced_scripts.append(scripts[inc])
-            synced_states.append(states[inc])
-            
-            remove_inc = None
-            
-            for inc in range(0, len(code_folders)):
+        if not script_count and not code_folders:
+            return
+        
+        if script_count:
+            for inc in range(0,script_count):
                 
-                if code_folders[inc] == script_name:
-            
-                    remove_inc = inc
+                script_name = util_file.remove_extension(scripts[inc])
+                
+                filepath = self.get_code_file(script_name)
+                
+                if not util_file.is_file(filepath):
+                    continue
+                
+                if scripts[inc] in synced_scripts:
+                    continue
+                
+                synced_scripts.append(scripts[inc])
+                synced_states.append(states[inc])
+                
+                remove_inc = None
+                
+                for inc in range(0, len(code_folders)):
                     
-                #code_folders_py = code_folders[inc] + '.py'
-                    
-                if code_folders in synced_scripts:
-                    
-                    if not code_folders[inc].count('/'):
-                        continue
+                    if code_folders[inc] == script_name:
+                
+                        remove_inc = inc
                         
-                    common_path = util_file.get_common_path(code_folders[inc], script_name)
-                    
-                    if common_path:
-                        common_path_name = common_path + '.py'
-                        if common_path_name in synced_scripts:
+                    #code_folders_py = code_folders[inc] + '.py'
+                        
+                    if code_folders in synced_scripts:
+                        
+                        if not code_folders[inc].count('/'):
+                            continue
                             
-                            code_script = code_folders[inc] + '.py'
-            
-                            synced_scripts.append(code_script)
-                            synced_states.append(False)
-                            
-                            remove_inc = inc
-            
-            if not remove_inc == None:
-                code_folders.pop(remove_inc)
+                        common_path = util_file.get_common_path(code_folders[inc], script_name)
+                        
+                        if common_path:
+                            common_path_name = common_path + '.py'
+                            if common_path_name in synced_scripts:
+                                
+                                code_script = code_folders[inc] + '.py'
+                
+                                synced_scripts.append(code_script)
+                                synced_states.append(False)
+                                
+                                remove_inc = inc
+                
+                if not remove_inc == None:
+                    code_folders.pop(remove_inc)
             
         for code_folder in code_folders:
             
