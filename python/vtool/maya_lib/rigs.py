@@ -1080,6 +1080,7 @@ class FkRig(BufferRig):
         return
     
     def _loop(self, transforms):
+        
         inc = 0
         
         found_to_skip = []
@@ -1235,7 +1236,6 @@ class FkLocalRig(FkRig):
             orig_xform = self.control_dict[source_transform]['xform']
             attr.connect_transforms(orig_xform, local_xform)
         
-        
         self.local_parent = local_group
         
         return local_group, local_xform
@@ -1252,7 +1252,6 @@ class FkLocalRig(FkRig):
         
         if self.rig_scale:
             self.control.hide_visibility_attribute()
-        
         
         return self.control
 
@@ -7903,6 +7902,8 @@ class JawRig(FkLocalRig):
         super(JawRig, self).__init__(description, side)
         self.jaw_slide_offset = .1
         self.jaw_slide_attribute = True
+        self.jaw_slide_rotate_axis = 'X'
+        self.jaw_slide_translate_axis = 'Z'
     
     def _attach(self, source_transform, target_transform):
         
@@ -7923,8 +7924,9 @@ class JawRig(FkLocalRig):
         driver = space.create_xform_group(control, 'driver')
         driver_local = space.create_xform_group(local_group, 'driver')
         
-        multi = attr.connect_multiply('%s.rotateX' % control, '%s.translateZ' % driver)
-        cmds.connectAttr('%s.outputX' % multi, '%s.translateZ' % driver_local)
+        multi = attr.connect_multiply('%s.rotate%s' % (control, self.jaw_slide_rotate_axis), '%s.translate%s' % (driver, self.jaw_slide_translate_axis))
+        attr.connect_translate(driver, driver_local)
+        #cmds.connectAttr('%s.outputX' % multi, '%s.translate%s' % (driver_local, self.jaw_slide_translate_axis))
         var.connect_out('%s.input2X' % multi)
         
         return local_group, local_xform  
@@ -7935,5 +7937,11 @@ class JawRig(FkLocalRig):
     def set_create_jaw_slide_attribute(self, bool_value):
         self.jaw_slide_attribute = bool_value
         
+    def set_jaw_slide_rotate_axis(self, axis_letter):
         
- 
+        self.jaw_slide_rotate_axis = axis_letter.capitalize()
+        
+    def set_jaw_slide_translate_axis(self, axis_letter):
+        
+        self.jaw_slide_translate_axis = axis_letter.capitalize()
+        
