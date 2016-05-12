@@ -1154,7 +1154,20 @@ def replace_string(string_value, replace_string, start, end):
     
     return first_part + replace_string + second_part
 
-
+def replace_string_at_end(line, string_to_replace, replace_string):
+    
+    m = re.search('%s$' % string_to_replace, line)
+    if not m:
+        return
+    
+    start = m.start(0)
+    end = m.end(0)
+    
+    new_line = line[:start] + replace_string + line[end:]
+    
+    return new_line
+    
+    
 
 def clean_file_string(string):
     

@@ -624,14 +624,22 @@ class StoreControlData(attr.StoreData):
             
         return data
             
-    def eval_mirror_data(self):  
-        data_list = self.eval_data()
-            
+    def eval_mirror_data(self):
+        
+        print 'eval mirror data!!!'
+          
+        data_list = self.eval_data(return_only=True)
+        
+        print 'data list!', data_list
+        
         for control in data_list:
             
             other_control = self._find_other_side(control)
             
-            if not other_control or cmds.objExists(other_control):
+            print 'other control', other_control
+            
+            if not other_control or not cmds.objExists(other_control):
+                print 'skip2', control
                 continue
             
             if cmds.objExists('%s.ikFk' % control):
@@ -642,6 +650,7 @@ class StoreControlData(attr.StoreData):
                 cmds.setAttr('%s.ikFk' % other_control, value)
             
             if not self._has_transform_value(control):
+                print 'skip', control
                 continue 
             
             #if not control.endswith('_L'):
@@ -655,26 +664,28 @@ class StoreControlData(attr.StoreData):
             
             cmds.setAttr('%s.scaleX' % parent_group, -1)
             
-            orig_value_x = cmds.getAttr('%s.rotateX' % control)
-            orig_value_y = cmds.getAttr('%s.rotateY' % control)
-            orig_value_z = cmds.getAttr('%s.rotateZ' % control)
+            #orig_value_x = cmds.getAttr('%s.rotateX' % control)
+            #orig_value_y = cmds.getAttr('%s.rotateY' % control)
+            #orig_value_z = cmds.getAttr('%s.rotateZ' % control)
             
             attr.zero_xform_channels(control)
+            
+            print 'doing this part!!!'
             
             const1 = cmds.pointConstraint(temp_group, other_control)[0]
             const2 = cmds.orientConstraint(temp_group, other_control)[0]
             
-            value_x = cmds.getAttr('%s.rotateX' % other_control)
-            value_y = cmds.getAttr('%s.rotateY' % other_control)
-            value_z = cmds.getAttr('%s.rotateZ' % other_control)
+            #value_x = cmds.getAttr('%s.rotateX' % other_control)
+            #value_y = cmds.getAttr('%s.rotateY' % other_control)
+            #value_z = cmds.getAttr('%s.rotateZ' % other_control)
             
-            cmds.delete([const1, const2])
+            cmds.delete([const1, const2, temp_group])
             
-            if abs(value_x) - abs(orig_value_x) > 0.01 or abs(value_y) - abs(orig_value_y) > 0.01 or abs(value_z) - abs(orig_value_z) > 0.01:
+            #if abs(value_x) - abs(orig_value_x) > 0.01 or abs(value_y) - abs(orig_value_y) > 0.01 or abs(value_z) - abs(orig_value_z) > 0.01:
                 
-                cmds.setAttr('%s.rotateX' % other_control, orig_value_x)
-                cmds.setAttr('%s.rotateY' % other_control, -1*orig_value_y)
-                cmds.setAttr('%s.rotateZ' % other_control, -1*orig_value_z)
+            #    cmds.setAttr('%s.rotateX' % other_control, orig_value_x)
+            #    cmds.setAttr('%s.rotateY' % other_control, -1*orig_value_y)
+            #    cmds.setAttr('%s.rotateZ' % other_control, -1*orig_value_z)
                             
     def eval_multi_transform_data(self, data_list):
         

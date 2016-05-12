@@ -563,7 +563,6 @@ def is_mesh_position_same(mesh1, mesh2, tolerance = .00001):
         
         for sub_inc in xrange(0,3):
             if (abs(point1[inc][sub_inc] - point2[inc][sub_inc]) > tolerance):
-                vtool.util.show('First non matching vert: %s' % inc)
                 return False
     
     return True

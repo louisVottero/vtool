@@ -684,6 +684,9 @@ class PoseGroup(object):
         Args
             pose_name (str): The name of a pose.
         """
+        if not cmds.objExists(pose_name):
+            self.description = pose_name
+        
         if not cmds.objExists('%s.description' % pose_name):
             return
         
@@ -1138,24 +1141,30 @@ class PoseBase(PoseGroup):
         return nodes
 
     def _get_mirror_pose_instance(self):
-        other_pose = self._replace_side(self.pose_control)
         
+        other_pose = self._replace_side(self.pose_control)
         self.left_right = True
         
         if not cmds.objExists(other_pose):
-            other_pose = self._replace_side(self.pose_control, False)
-            self.left_right = False
-            if not other_pose:
-                return
-        
+            invert_other_pose = self._replace_side(self.pose_control, False)
+            if invert_other_pose:
+                other_pose = invert_other_pose
+                self.left_right = False
+                
+        if cmds.objExists(other_pose):
+            self.other_pose_exists = True
+            
         pose = None
         
         if self._pose_type() == 'cone':
+            
             pose = PoseCone()
             
+            
         if self._pose_type() == 'no reader':
+            
             pose = PoseNoReader()
-        
+                       
         other_pose_instance = pose
         other_pose_instance.set_pose(other_pose)
         
@@ -2433,6 +2442,7 @@ class PoseNoReader(PoseBase):
             The pose at pose_arm_R must be a mirrored pose of pose_arm_L.
         
         """
+        self.other_pose_exists = False
         
         description = self.description
         
@@ -2459,19 +2469,28 @@ class PoseNoReader(PoseBase):
             
             if other_target_mesh == None:
                 continue
-
-            index = other_pose_instance.get_target_mesh_index(other_target_mesh)
-            
-            if index == None:
-                other_pose_instance.add_mesh(other_target_mesh)
-                
+    
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
             other_target_meshes.append(other_target_mesh)
         
-        other_pose_instance.goto_pose()
+        if not self.other_pose_exists:
+            store = rigs_util.StoreControlData(self.pose_control)
+            store.eval_mirror_data()
+            
+            other_pose_instance.create()
+            
+        if self.other_pose_exists:
+            other_pose_instance.goto_pose()
+            
         cmds.setAttr('%s.weight' % self.pose_control, 0)
         
         inc = 0
+        
+        for mesh in other_target_meshes:
+            index = other_pose_instance.get_target_mesh_index(other_target_mesh)
+            
+            if index == None:
+                other_pose_instance.add_mesh(other_target_mesh, toggle_vis = False)
         
         for mesh in other_target_meshes:
             
@@ -2666,7 +2685,8 @@ class PoseCone(PoseBase):
         
         cmds.addAttr(control, ln = 'joint', dt = 'string')
         
-        cmds.setAttr('%s.joint' % control, self.transform, type = 'string')
+        if self.transform:
+            cmds.setAttr('%s.joint' % control, self.transform, type = 'string')
         
         cmds.addAttr(control, ln = 'parent', dt = 'string')
         
@@ -2680,15 +2700,17 @@ class PoseCone(PoseBase):
         cmds.connectAttr('%s.worldMatrix' % self.pose_control, 
                          '%s.inMatrix1' % distance_between)
             
-        cmds.connectAttr('%s.worldMatrix' % self.transform, 
-                         '%s.inMatrix2' % distance_between)
+        if self.transform:
+            cmds.connectAttr('%s.worldMatrix' % self.transform, 
+                             '%s.inMatrix2' % distance_between)
         
         return distance_between
         
     def _create_multiply_matrix(self, moving_transform, pose_control):
         multiply_matrix = self._create_node('multMatrix')
         
-        cmds.connectAttr('%s.worldMatrix' % moving_transform, '%s.matrixIn[0]' % multiply_matrix)
+        if moving_transform:
+            cmds.connectAttr('%s.worldMatrix' % moving_transform, '%s.matrixIn[0]' % multiply_matrix)
         cmds.connectAttr('%s.worldInverseMatrix' % pose_control, '%s.matrixIn[1]' % multiply_matrix)
         
         return multiply_matrix
@@ -2906,6 +2928,12 @@ class PoseCone(PoseBase):
             transform (str): The name of a transform to move the cone.
             set_string_only (bool): Wether to connect the transform into the pose or just set its attribute on the cone.
         """
+        transform = transform.replace(' ', '_')
+        
+        self.transform = transform
+        
+        if not self.pose_control or not cmds.objExists(self.pose_control):
+            return
         
         if not cmds.objExists('%s.joint' % self.pose_control):
             cmds.addAttr(self.pose_control, ln = 'joint', dt = 'string')
@@ -3066,6 +3094,8 @@ class PoseCone(PoseBase):
             The pose at pose_arm_R must be a mirrored pose of pose_arm_L.
         
         """
+        self.other_pose_exists = False
+        
         count = self.get_mesh_count()
         
         for inc in xrange(0, count):
@@ -3082,10 +3112,6 @@ class PoseCone(PoseBase):
         
         other_pose_instance = self._get_mirror_pose_instance()
         
-        if not other_pose_instance or not other_pose_instance.pose_control:
-            vtool.util.warning('Could not find corresponding pose to %s.' % self.pose_control)
-            return
-        
         other_target_meshes = []
         input_meshes = {}
 
@@ -3101,17 +3127,22 @@ class PoseCone(PoseBase):
             
             if not other_target_mesh:
                 continue
-            
-            index = other_pose_instance.get_target_mesh_index(other_target_mesh)
-            
-            if index == None:
-                
-                other_pose_instance.add_mesh(other_target_mesh)
                 
             input_meshes[other_target_mesh] = other_target_mesh_duplicate
             other_target_meshes.append(other_target_mesh)
+        
+        if not self.other_pose_exists:
+            store = rigs_util.StoreControlData(self.pose_control)
+            store.eval_mirror_data()
             
-        other_pose_instance.goto_pose()
+            transform = self.get_transform()
+            other_transform = self._replace_side(transform, self.left_right)
+            
+            other_pose_instance.set_transform(other_transform)
+            other_pose_instance.create()
+            
+        if self.other_pose_exists:
+            other_pose_instance.goto_pose()
 
         twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
         distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
@@ -3124,6 +3155,12 @@ class PoseCone(PoseBase):
         cmds.setAttr('%s.maxTwist' % other_pose_instance.pose_control, maxTwist_value)
         
         inc = 0
+        
+        for mesh in other_target_meshes:
+            index = other_pose_instance.get_target_mesh_index(mesh)
+                        
+            if index == None:    
+                other_pose_instance.add_mesh(other_target_mesh, toggle_vis = False)
         
         for mesh in other_target_meshes:
             
@@ -3148,6 +3185,8 @@ class PoseCone(PoseBase):
             cmds.delete(input_mesh, ch = True)
             cmds.delete(fix_mesh)
             inc += 1
+        
+
         
         return other_pose_instance.pose_control
     """
@@ -3177,8 +3216,6 @@ class PoseCone(PoseBase):
         other_pose = ''
         other_description = ''
         
-        vtool.util.replace_string(string_value, replace_string, start, end)
-            
         other_pose = self.pose_control.replace('_L','_R')
         other_description = description.replace('_L','_R')
         

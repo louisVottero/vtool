@@ -1529,6 +1529,7 @@ class SculptWidget(qt_ui.BasicWidget):
             self.button_mirror.show()
             
             if self.frame_number:
+                self.frame_number.hide()
                 self.main_layout.removeWidget(self.frame_number)
             
             self.frame_number = None
