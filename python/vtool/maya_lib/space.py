@@ -2244,6 +2244,7 @@ def find_transform_right_side(transform):
     other = ''
     
     if transform.endswith('_L'):
+        
         other = transform.replace('_L', '_R')
         
         if cmds.objExists(other):

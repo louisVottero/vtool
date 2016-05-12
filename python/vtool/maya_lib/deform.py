@@ -1646,7 +1646,6 @@ class MultiJointShape(object):
         inc = 1
      
         for joint in self.joints:
-                 
             split.set_weight_joint( joint, str(inc))
             inc += 1
      

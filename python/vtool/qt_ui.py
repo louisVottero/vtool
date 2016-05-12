@@ -3709,7 +3709,7 @@ class PythonCompleter(QtGui.QCompleter):
     
     def handle_import_load(self, text, column):
         
-        m = re.search('\s*(\w+)\.(\w*)?$', text)
+        m = re.search('\s*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text)
         
         if m:
             
@@ -3727,16 +3727,37 @@ class PythonCompleter(QtGui.QCompleter):
             lines = util_file.get_text_lines(text)
             imports = util_file.get_line_imports(lines)
             
+            path = None
+            
             if namespace in imports:
                 path = imports[namespace]
+                    
+            if not namespace in imports:
+            
+                split_namespace = namespace.split('.')
                 
-                self.load_sub_imports(path)
-                
+                last_part = split_namespace[-1]
+            
+                if last_part in imports:
+                    path = imports[last_part]
+
+                if not last_part in imports:
+                    return False
+
+            if path:
+
                 test_text = ''
                 
                 if len(m.groups()) > 1:
                     test_text = m.group(2)
+
+                if util_file.is_dir(path):
                 
+                    self.load_imports(path)
+            
+                if util_file.is_file(path):
+                    self.load_sub_imports(path)
+            
                 self.setCompletionPrefix(test_text)
                 self.popup().setCurrentIndex(self.completionModel().index(0,0))
                 return True
