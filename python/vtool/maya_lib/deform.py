@@ -448,8 +448,6 @@ class SplitMeshTarget(object):
         
     def _get_center_fade_weights(self, mesh, other_mesh, fade_distance, positive):
         
-        
-        
         verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
         
         values = []
@@ -1547,8 +1545,6 @@ class MultiJointShape(object):
         self.locators = []
         
     def _create_locators(self):
-        
-        
         
         locators = []
      
