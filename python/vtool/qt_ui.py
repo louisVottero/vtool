@@ -3664,125 +3664,108 @@ class PythonCompleter(QtGui.QCompleter):
             
             text = str(text)
             
-            split_line = text.split()
+            passed = self.handle_from_import(text, column)
+            if passed:
+                return True
             
-            if not split_line:
+            passed = self.handle_sub_import(text, column)
+            if passed:
+                return True
+            
+            passed = self.handle_import_load(text, column)
+            if passed:
+                return True
+
+        return False
+    
+    def handle_import(self, text):
+    
+        m = re.search('(from|import)(?:\s+?)(\w*)', text)
+        if m:
+            
+            #this would need to find available modules in the python path...
+            pass 
+            
+    def handle_sub_import(self, text, column):
+        
+        m = re.search('(from|import)(?:\s+?)(\w*.?\w*)\.(\w*)$', text)
+        
+        if m:
+            if column < m.end(2):
                 return False
+            from_module = m.group(2)
+            module_path = util_file.get_package_path_from_name(from_module)
+            last_part = m.group(3)
             
-            cursor.select(cursor.WordUnderCursor)
-            current_word = cursor.selectedText()
+            if module_path:
+                self.load_imports(module_path)
             
-            current_char = text[column]
-            
-            split_line_count = len(split_line)
-            
-            current_split = split_line_count-1
-            
-            for inc in range(0, split_line_count):
-                if split_line[inc] == current_word:
-                    current_split = inc
-            
-            if current_split >= 0:
+                self.setCompletionPrefix(last_part)
+                self.popup().setCurrentIndex(self.completionModel().index(0,0))
                 
-                if current_char == ' ':
-                    return False
-                
-                if current_char == '.':
-                    self.sub_activated = column
-                    
-                if self.sub_activated:
-                    
-                    split_part = split_line[current_split]
-                    sub_split = split_part.split('.')
-                    
-                    if sub_split[-1].find('(') > -1 or sub_split[-1].find(')') > -1:
-                        return False
-                    
-                    sub_split_count = len(sub_split)
-                
-                    if split_line[current_split-1] == 'import' or split_line[current_split-1] == 'from':
-                    
-                        test_text = ''
-                        
-                        if sub_split_count >= 1:
-                            test_text = sub_split[-1]
-                            
-                        import_sub_part = string.join(sub_split[:-1], '.')
-                        
-                        module_path = util_file.get_package_path_from_name(import_sub_part)
-                        
-                        self.load_imports(module_path)
-                        
-                        if self.currentCompletion() and self.currentCompletion() == current_word:
-                            self.sub_activated = False
-                            return False
-                        
-                        self.setCompletionPrefix(test_text)
-                        
-                        self.popup().setCurrentIndex(self.completionModel().index(0,0))
-                        return True
-                        
-                    text = self.widget().toPlainText()
-                    lines = util_file.get_text_lines(text)
-                    
-                    imports = util_file.get_line_imports(lines)
-                    
-                    if sub_split_count == 2:
-                    
-                        if imports.has_key(sub_split[0]):
-                            
-                            path = imports[sub_split[0]]
-                            
-                            if util_file.is_file(path):
-                                self.load_sub_imports(path)
-                            
-                            if util_file.is_dir(path):
-                                self.load_imports(path)
-                            
-                            test_text = sub_split[1]
-                            
-                            if self.currentCompletion() and self.currentCompletion() == current_word:
-                                self.sub_activated = False
-                                return False
-                            
-                            self.setCompletionPrefix(test_text)
-                            self.popup().setCurrentIndex(self.completionModel().index(0,0))
-    
-                            return True
-            
-            if split_line[0] == 'from':
-                
-                if split_line_count >= 3:
-                    
-                    if split_line[2] == 'import':
-                        
-                        module_path = util_file.get_package_path_from_name(split_line[1])
-                        
-                        test_text = ''
-                        
-                        if split_line_count >= 4:
-                            test_text = split_line[3]
-                            
-                            if test_text and not current_char:
-                                
-                                return False
-                        
-                        if module_path:
-                            
-                            self.load_imports(module_path)
-                            
-                            if self.currentCompletion() and self.currentCompletion() == current_word:
-                                return False
-                        
-                            self.setCompletionPrefix(test_text)
-                            self.popup().setCurrentIndex(self.completionModel().index(0,0))
-                            
-                            return True
-    
-        self.sub_activated = False
+                return True
         
         return False
     
+    def handle_import_load(self, text, column):
+        
+        m = re.search('\s*(\w+)\.(\w*)?$', text)
+        
+        if m:
+            
+            namespace = m.group(1)
+            
+            if column < m.end(1):
+                return False
+            
+            sub_m = re.search('(from|import)\s+(%s)' % namespace, text)
+            
+            if sub_m:
+                return False
+            
+            text = self.widget().toPlainText()
+            lines = util_file.get_text_lines(text)
+            imports = util_file.get_line_imports(lines)
+            
+            if namespace in imports:
+                path = imports[namespace]
+                
+                self.load_sub_imports(path)
+                
+                test_text = ''
+                
+                if len(m.groups()) > 1:
+                    test_text = m.group(2)
+                
+                self.setCompletionPrefix(test_text)
+                self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                return True
+            
+        return False
+    
+    def handle_from_import(self, text, column):
+        
+        m = re.search('(from)(?:\s+?)(\w*.?\w*)(?:\s+?)(import)(?:\s+?)(\w+)?$', text)
+        
+        if m:
+            if column < m.end(3):
+                return False
+            from_module = m.group(2)
+            module_path = util_file.get_package_path_from_name(from_module)
+            
+            last_part = m.group(4)
+            
+            if module_path:
+                
+                self.load_imports(module_path)
+            
+                self.setCompletionPrefix(last_part)
+                self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                
+                return True
+            
+        return False
+                
     def text_under_cursor(self):
         
         cursor = self.widget().textCursor()

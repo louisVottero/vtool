@@ -819,7 +819,8 @@ class PoseTreeWidget(BaseTreeWidget):
         name = self._current_pose()
         
         pose_instance = corrective.PoseManager().get_pose_instance(name)
-        pose_instance.update_target_meshes()
+        if hasattr(pose_instance, 'update_target_meshes'):
+            pose_instance.update_target_meshes()
         
         corrective.PoseManager().update_pose(name)
         

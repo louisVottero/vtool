@@ -1877,7 +1877,7 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
     cmds.setAttr('%s.%s' % (node, attribute_name), value)
        
 
-def create_multi_follow(source_list, target_transform, node = None, constraint_type = 'parentConstraint', attribute_name = 'follow', value = None):
+def create_multi_follow(source_list, target_transform, node = None, constraint_type = 'parentConstraint', attribute_name = 'follow', value = None, create_title = True):
     """
     Create a group above the target that is constrained to multiple transforms. A switch attribute switches their state on/off.
     Direct in this case means the constraints will be added directly on the target_transform.
@@ -1929,7 +1929,9 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
         constraint = cmds.pointConstraint(locators,  follow_group, mo = True)[0]
     
     constraint_editor = ConstraintEditor()
-    constraint_editor.create_title(node, constraint, title_name)
+    
+    if create_title:
+        constraint_editor.create_title(node, constraint, title_name)
     constraint_editor.create_switch(node, attribute_name, constraint)
     
     if value == None:

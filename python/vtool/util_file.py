@@ -1970,6 +1970,8 @@ def load_python_module(module_name, directory):
             
             return module
         
+
+        
 def get_package_path_from_name(module_name, return_module_paths = False):
     
     split_name = module_name.split('.')
@@ -2010,6 +2012,14 @@ def get_package_path_from_name(module_name, return_module_paths = False):
                 return None
             
     return path
+    
+def get_line_class_map(lines):
+    
+    for line in lines:
+        
+        line = str(line)
+        
+        
     
 def get_line_imports(lines):
     """
@@ -2120,7 +2130,25 @@ def get_defined(module_path):
             
     return defined
     
-
+def get_namespace_class(module_path, line_number = None, namespace = None):
+    
+    
+    file_text = get_file_text(module_path)
+    
+    ast_tree = ast.parse(file_text)
+    
+    
+    for node in ast.walk(ast_tree):
+    
+        if isinstance(node, ast.Assign):
+            print node, node.lineno, node.targets, node.value
+            if isinstance(node.value, ast.Call):
+                
+                print node.value.func, node.value
+                print node.value.func.value.id,node.value.func.attr
+                
+            
+        
     
 def launch_maya(version, script = None):
     """
