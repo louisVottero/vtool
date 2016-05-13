@@ -857,15 +857,17 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.paste_action.setVisible(False)
         
-        source_process_name = source_process.get_name()
-        
-        qt_ui.get_permission('Are you sure you want to merge in %s?' % source_process_name)
+
         
         if not source_process:
             if not self.paste_item:
                 return
             
             source_process = self.paste_item.get_process()
+            
+        source_process_name = source_process.get_name()
+        
+        qt_ui.get_permission('Are you sure you want to merge in %s?' % source_process_name)
             
         target_process = None
         

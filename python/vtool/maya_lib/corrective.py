@@ -3314,49 +3314,6 @@ class PoseCone(PoseBase):
         return pose.pose_control
     """
     
-class PoseRBF(PoseCone):
-    
-    def _create_vector_product(self, transform, vector):
-        
-        vector_product = self._create_node('vectorProduct')
-        
-        cmds.connectAttr('%s.matrix' % transform, '%s.matrix' % vector_product)
-        cmds.setAttr('%s.input1X' % vector_product, vector[0])
-        cmds.setAttr('%s.input1Y' % vector_product, vector[1])
-        cmds.setAttr('%s.input1Z' % vector_product, vector[2])
-        cmds.setAttr('%s.operation' % vector_product, 3)
-        
-        return vector_product
-
-    def _create_angle_between(self, vector_product1, vector_product2):
-        
-        angle_between = self._create_node('angleBetween')
-        
-        cmds.connectAttr('%s.outputX' % vector_product1, '%s.vector1X' % angle_between)
-        cmds.connectAttr('%s.outputY' % vector_product1, '%s.vector1Y' % angle_between)
-        cmds.connectAttr('%s.outputZ' % vector_product1, '%s.vector1Z' % angle_between)
-        
-        cmds.connectAttr('%s.outputX' % vector_product2, '%s.vector2X' % angle_between)
-        cmds.connectAttr('%s.outputY' % vector_product2, '%s.vector2Y' % angle_between)
-        cmds.connectAttr('%s.outputZ' % vector_product2, '%s.vector2Z' % angle_between)
-        
-        return angle_between
-    
-    def _create_pose_nodes(self):
-        
-        axis_vector = self._get_pose_axis()
-        vector_product_control = self._create_vector_product(self.pose_control, axis_vector)
-        vector_product_transform = self._create_vector_product(self.transform, axis_vector)
-        
-        angle_between = self._create_angle_between(vector_product_control, vector_product_transform)
-    
-        self._remap_value_angle(angle_between)
-    
-    def _create_pose_math(self, moving_transform, pose_control):
-        super(PoseRBF, self)._create_pose_math(moving_transform, pose_control)
-        
-        self._create_pose_nodes()
-    
 
         
     
