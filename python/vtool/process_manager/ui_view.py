@@ -1338,9 +1338,11 @@ class CopyWidget(qt_ui.BasicWidget):
         self.progress_bar.reset()
         self.progress_bar.setRange(0, len(found))
         
-        sort = util.QuickSort(slash_count_list)
-        sort.set_follower_list(found)
-        slash_count_list, found = sort.run()
+        if found:
+        
+            sort = util.QuickSort(slash_count_list)
+            sort.set_follower_list(found)
+            slash_count_list, found = sort.run()
         
         if manifest:
             found.append(manifest)

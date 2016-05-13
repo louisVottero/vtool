@@ -1373,6 +1373,13 @@ class QuickSort(object):
         If no follower list supplied, return number list sorted: list
         If follower list supplied, return number list and follower list: (list, list)
         """
+        
+        if not self.list_of_numbers:
+            return
+        
+        if not len(self.follower_list) == len(self.list_of_numbers):
+            return
+        
         return self._sort(self.list_of_numbers, self.follower_list)
         
             
