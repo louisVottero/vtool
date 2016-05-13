@@ -1316,9 +1316,9 @@ class CopyWidget(qt_ui.BasicWidget):
         self.tabs.setCurrentIndex(1)
     
         found = []
+        slash_count_list = []
         
         manifest = ''
-    
         
         for item in code_items:
             name = str(item.text(0))
@@ -1331,14 +1331,19 @@ class CopyWidget(qt_ui.BasicWidget):
                 
             if not name == 'manifest':
                 found.append(name)
-        
-        if manifest:        
-            found.append(manifest)
-        
+                slash_count_list.append(name.count('/'))
+                
         inc = 0
         
         self.progress_bar.reset()
         self.progress_bar.setRange(0, len(found))
+        
+        sort = util.QuickSort(slash_count_list)
+        sort.set_follower_list(found)
+        slash_count_list, found = sort.run()
+        
+        if manifest:
+            found.append(manifest)
         
         for name in found:
             

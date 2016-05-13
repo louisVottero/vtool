@@ -1295,3 +1295,84 @@ def find_possible_combos(names, sort = True, one_increment = False):
                 
                 return found
 
+#--- sorting
+
+
+class QuickSort(object):
+    
+    def __init__(self, list_of_numbers):
+        
+        self.list_of_numbers = list_of_numbers
+        self.follower_list = []
+        
+    def _sort(self, list_of_numbers, follower_list = []):
+        
+        less = []
+        equal = []
+        greater = []
+        
+        if follower_list:
+            less_follow = []
+            equal_follow = []
+            greater_follow = []
+        
+        count = len(list_of_numbers)
+    
+        if count > 1:
+            pivot = list_of_numbers[0]
+            
+            for inc in xrange(0, count):
+                
+                value = list_of_numbers[inc]
+                if follower_list:
+                    follower_value = follower_list[inc]
+                
+                if value < pivot:
+                    less.append(value)
+                    if follower_list:
+                        less_follow.append(follower_value)
+                if value == pivot:
+                    equal.append(value)
+                    if follower_list:
+                        equal_follow.append(follower_value)
+                if value > pivot:
+                    greater.append(value)
+                    if follower_list:
+                        greater_follow.append(follower_value)
+                    
+                    
+            
+            if not self.follower_list:
+                # Don't forget to return something!
+                return self._sort(less)+equal+self._sort(greater)  # Just use the + operator to join lists
+            if self.follower_list:
+                
+                less_list_of_numbers, less_follower_list = self._sort(less, less_follow)
+                greater_list_of_numbers, greater_follower_list = self._sort(greater, greater_follow)  # Just use the + operator to join lists
+                
+                list_of_numbers = less_list_of_numbers + equal + greater_list_of_numbers
+                follower_list = less_follower_list + equal_follow + greater_follower_list
+                
+                return list_of_numbers, follower_list
+                        # Note that you want equal ^^^^^ not pivot
+        else:  # You need to hande the part at the end of the recursion - when you only have one element in your list_of_numbers, just return the list_of_numbers.
+            if not self.follower_list:
+                return list_of_numbers
+            if self.follower_list:
+                return list_of_numbers, follower_list
+        
+    def set_follower_list(self, list_of_anything):
+        """
+        This list much match the length of the list given when the class was initialized.
+        """
+        
+        self.follower_list = list_of_anything
+        
+    def run(self):
+        """
+        If no follower list supplied, return number list sorted: list
+        If follower list supplied, return number list and follower list: (list, list)
+        """
+        return self._sort(self.list_of_numbers, self.follower_list)
+        
+            
