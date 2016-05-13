@@ -1343,19 +1343,18 @@ class QuickSort(object):
                     
             
             if not self.follower_list:
-                # Don't forget to return something!
-                return self._sort(less)+equal+self._sort(greater)  # Just use the + operator to join lists
+                return self._sort(less)+equal+self._sort(greater)  
             if self.follower_list:
                 
                 less_list_of_numbers, less_follower_list = self._sort(less, less_follow)
-                greater_list_of_numbers, greater_follower_list = self._sort(greater, greater_follow)  # Just use the + operator to join lists
+                greater_list_of_numbers, greater_follower_list = self._sort(greater, greater_follow)  
                 
                 list_of_numbers = less_list_of_numbers + equal + greater_list_of_numbers
                 follower_list = less_follower_list + equal_follow + greater_follower_list
                 
                 return list_of_numbers, follower_list
-                        # Note that you want equal ^^^^^ not pivot
-        else:  # You need to hande the part at the end of the recursion - when you only have one element in your list_of_numbers, just return the list_of_numbers.
+                        
+        else:  
             if not self.follower_list:
                 return list_of_numbers
             if self.follower_list:
@@ -1382,4 +1381,3 @@ class QuickSort(object):
         
         return self._sort(self.list_of_numbers, self.follower_list)
         
-            
