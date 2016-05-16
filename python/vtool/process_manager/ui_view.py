@@ -857,8 +857,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.paste_action.setVisible(False)
         
-
-        
         if not source_process:
             if not self.paste_item:
                 return
