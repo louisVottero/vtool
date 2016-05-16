@@ -28,6 +28,7 @@ class DataManager(object):
                                ScriptManifestData(),
                                ScriptPythonData(),
                                ControlCvData(),
+                               ControlColorData(),
                                SkinWeightData(),
                                BlendshapeWeightData(),
                                DeformerWeightData(),
@@ -332,8 +333,6 @@ class FileData(Data):
     def create(self):
         name = self.name
         
-        
-        
         self.file = util_file.create_file('%s.%s' % (name, self.data_extension), self.directory)    
     
     def get_file(self):
@@ -549,7 +548,125 @@ class ControlCvData(MayaCustomData):
         
         return True
         
+class ControlColorData(MayaCustomData):
+    def _data_name(self):
+        return 'control_color'
         
+    def _data_type(self):
+        return 'maya.control_color' 
+        
+    def _data_extension(self):
+        return 'data'
+        
+    def _get_data(self):
+        pass
+        
+    def _get_color_dict(self, curve):
+        
+        if not cmds.objExists(curve):
+            return
+        
+        sub_colors = []
+        
+        main_color = cmds.getAttr('%s.overrideColor' % curve)
+        
+        shapes = maya_lib.core.get_shapes(curve)
+
+        if shapes:
+            for shape in shapes:
+                curve_color = cmds.getAttr('%s.overrideColor' % shape)
+                sub_colors.append(curve_color)
+                
+        return {'main': main_color, 'sub':sub_colors}
+    
+    def _set_color_dict(self, curve, color_dict):
+        main_color = color_dict['main']
+        sub_color = color_dict['sub']
+        
+        try:
+            if main_color > 0:
+                
+                current_color = cmds.getAttr('%s.overrideColor' % curve)
+                
+                if not current_color == main_color:
+                
+                    cmds.setAttr('%s.overrideEnabled' % curve, 1 )
+                    cmds.setAttr('%s.overrideColor' % curve, main_color)
+                    
+                    util.show('Set color of %s on %s' % (main_color, maya_lib.core.get_basename(curve)))
+                    
+            if sub_color:
+                shapes = maya_lib.core.get_shapes(curve)
+                inc = 0
+                for shape in shapes:
+                    
+                    sub_current_color = cmds.getAttr('%s.overrideColor' % shape)
+                    
+                    if sub_current_color == sub_color[inc]:
+                        inc+=1
+                        continue
+                    
+                    if sub_color[inc] == 0:
+                        inc+=1
+                        continue
+                    
+                    cmds.setAttr('%s.overrideEnabled' % shape, 1 )
+                                        
+                    if inc < len(sub_color):
+                        cmds.setAttr('%s.overrideColor' % shape, sub_color[inc])
+                        util.show('Set color of %s on %s' % (sub_color[inc], maya_lib.core.get_basename(shape)))
+                    
+                    inc+=1
+        except:
+            util.show(traceback.format_exc())
+            util.show('Error applying color to %s.' % curve)
+
+    def export_data(self, comment):
+        
+        directory = self.directory
+        name = self.name + '.' + self._data_extension()
+        
+        filepath = util_file.create_file(name, directory)
+        
+        if not filepath:
+            return
+        
+        controls = maya_lib.rigs_util.get_controls()
+        
+        lines = []
+        
+        for control in controls:
+            
+            color_dict = self._get_color_dict(control)
+            
+            lines.append('%s = %s' % (control, color_dict))
+            
+        util_file.write_lines(filepath, lines)
+        
+        version = util_file.VersionFile(filepath)
+        version.save(comment)    
+        
+    def import_data(self, filename = None):
+        
+        if not filename:
+            directory = self.directory
+            name = self.name + '.' + self._data_extension()
+            filename = util_file.join_path(directory, name)
+            
+        lines = util_file.get_file_lines(filename)
+        
+        for line in lines:
+            split_line = line.split('=')
+            
+            if len(split_line) == 2:
+                color_dict = eval(split_line[1])
+                
+                control = split_line[0].strip()
+                
+                self._set_color_dict(control, color_dict)
+                
+    
+    
           
 class SkinWeightData(MayaCustomData):
     """
