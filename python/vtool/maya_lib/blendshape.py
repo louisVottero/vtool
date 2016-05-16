@@ -1723,14 +1723,14 @@ class ShapeComboManager(object):
         
         inbetween_combo_parent = self.get_inbetween_combo_parent(name)
         
-        if self.blendshape.is_target(inbetween_combo_parent):
+        if inbetween_combo_parent and self.blendshape.is_target(inbetween_combo_parent):
             self._setup_combo_connections(name)
             
         inbetweens = self.get_inbetween_combos(name)
         
         if inbetweens:
             for inbetween in inbetweens:
-                self._setup_combo_connections(inbetween, skip_update_parent = True) 
+                self._setup_combo_connections(inbetween, skip_update_others = True) 
         
         self.blendshape.remove_target(name)
         self._remove_combo_multiplies(name)

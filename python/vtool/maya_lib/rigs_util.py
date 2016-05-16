@@ -520,17 +520,16 @@ class StoreControlData(attr.StoreData):
                 pass
           
         
-    def _find_other_side(self, control):
+    def _find_other_side(self, control, side):
         
-        pattern_string, replace_string, position_string = self.side_replace
-            
-        start, end = vtool.util.find_special(pattern_string, control, position_string)
+        other_control = None
         
-        if start == None:
-            return
+        if side == 'L':
+            other_control = space.find_transform_right_side(control)
         
-        other_control = vtool.util.replace_string(control, replace_string, start, end)
-            
+        if side == 'R':
+            other_control = space.find_transform_left_side(control)
+        
         return other_control
         
     def remove_data(self, control):
@@ -624,22 +623,15 @@ class StoreControlData(attr.StoreData):
             
         return data
             
-    def eval_mirror_data(self):
-        
-        print 'eval mirror data!!!'
+    def eval_mirror_data(self, side = 'L'):
           
         data_list = self.eval_data(return_only=True)
         
-        print 'data list!', data_list
-        
         for control in data_list:
             
-            other_control = self._find_other_side(control)
-            
-            print 'other control', other_control
+            other_control = self._find_other_side(control, side)
             
             if not other_control or not cmds.objExists(other_control):
-                print 'skip2', control
                 continue
             
             if cmds.objExists('%s.ikFk' % control):
@@ -650,13 +642,10 @@ class StoreControlData(attr.StoreData):
                 cmds.setAttr('%s.ikFk' % other_control, value)
             
             if not self._has_transform_value(control):
-                print 'skip', control
                 continue 
             
-            #if not control.endswith('_L'):
-            #    continue               
-            
             temp_group = cmds.duplicate(control, n = 'temp_%s' % control, po = True)[0]
+            attr.unlock_attributes(temp_group, only_keyable=True)
             
             space.MatchSpace(control, temp_group).translation_rotation()
             parent_group = cmds.group(em = True)
@@ -664,29 +653,23 @@ class StoreControlData(attr.StoreData):
             
             cmds.setAttr('%s.scaleX' % parent_group, -1)
             
-            #orig_value_x = cmds.getAttr('%s.rotateX' % control)
-            #orig_value_y = cmds.getAttr('%s.rotateY' % control)
-            #orig_value_z = cmds.getAttr('%s.rotateZ' % control)
-            
             attr.zero_xform_channels(control)
             
-            print 'doing this part!!!'
+            try:
+                const1 = cmds.pointConstraint(temp_group, other_control)[0]
+                cmds.delete(const1)
+            except:
+                pass
             
-            const1 = cmds.pointConstraint(temp_group, other_control)[0]
-            const2 = cmds.orientConstraint(temp_group, other_control)[0]
+            try:
+                const2 = cmds.orientConstraint(temp_group, other_control)[0]
+                cmds.delete(const2)
+            except:
+                pass
             
-            #value_x = cmds.getAttr('%s.rotateX' % other_control)
-            #value_y = cmds.getAttr('%s.rotateY' % other_control)
-            #value_z = cmds.getAttr('%s.rotateZ' % other_control)
+            cmds.delete([temp_group, parent_group])
             
-            cmds.delete([const1, const2, temp_group])
             
-            #if abs(value_x) - abs(orig_value_x) > 0.01 or abs(value_y) - abs(orig_value_y) > 0.01 or abs(value_z) - abs(orig_value_z) > 0.01:
-                
-            #    cmds.setAttr('%s.rotateX' % other_control, orig_value_x)
-            #    cmds.setAttr('%s.rotateY' % other_control, -1*orig_value_y)
-            #    cmds.setAttr('%s.rotateZ' % other_control, -1*orig_value_z)
-                            
     def eval_multi_transform_data(self, data_list):
         
         controls = {}

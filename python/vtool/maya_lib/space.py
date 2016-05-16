@@ -2230,7 +2230,7 @@ def find_transform_right_side(transform):
     Try to find the right side of a transform.
     *_L will be converted to *_R 
     if not 
-    l_* will be converted to R_*
+    L_* will be converted to R_*
     if not 
     *lf_* will be converted to *rt_*
     
@@ -2245,7 +2245,7 @@ def find_transform_right_side(transform):
     
     if transform.endswith('_L'):
         
-        other = transform.replace('_L', '_R')
+        other = vtool.util.replace_string_at_end(transform, '_L', '_R')
         
         if cmds.objExists(other):
             return other
@@ -2254,15 +2254,59 @@ def find_transform_right_side(transform):
         
     if transform.startswith('L_') and not transform.endswith('_R'):
         
-        other = transform.replace('L_', 'R_')
+        other = vtool.util.replace_string_at_start(transform, 'L_', 'R_')
         
         if cmds.objExists(other):
             return other 
         
     other = ''
         
-    if transform.find('lf_') > -1 and not transform.endswith('_R') and not transform.startswith('L_'):
+    if transform.find('lf_') > -1 and not transform.endswith('_R') and not transform.startswith('R_'):
         other = transform.replace('lf_', 'rt_')
+        
+        if cmds.objExists(other):
+            return other
+        
+    return ''
+
+def find_transform_left_side(transform):
+    """
+    Try to find the right side of a transform.
+    *_R will be converted to *_L 
+    if not 
+    R_* will be converted to L_*
+    if not 
+    *rt_* will be converted to *lf_*
+    
+    Args
+        transform (str): The name of a transform.
+        
+    Return 
+        (str): The name of the right side transform if it exists.
+    """
+    
+    other = ''
+    
+    if transform.endswith('_R'):
+        
+        other = vtool.util.replace_string_at_end(transform, '_R', '_L')
+        
+        if cmds.objExists(other):
+            return other
+    
+    other = ''
+        
+    if transform.startswith('R_') and not transform.endswith('_L'):
+        
+        other = vtool.util.replace_string_at_start(transform, 'R_', 'L_')
+        
+        if cmds.objExists(other):
+            return other 
+        
+    other = ''
+        
+    if transform.find('rt_') > -1 and not transform.endswith('_L') and not transform.startswith('L_'):
+        other = transform.replace('rt_', 'lf_')
         
         if cmds.objExists(other):
             return other

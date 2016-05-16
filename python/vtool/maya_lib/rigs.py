@@ -2096,8 +2096,6 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             
             self.sub_drivers.append( self.control_dict[sub_control]['driver'])
             
-            print control, self.control.get(), xform_sub_control, sub_control
-            
             cmds.parent(xform_sub_control, self.control.get())
             
             #self.sub_controls.append(sub_control)

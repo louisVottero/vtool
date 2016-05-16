@@ -1666,8 +1666,10 @@ class PoseData(MayaCustomData):
             path = util_file.join_path(dir_path, '%s.ma' % pose)
             
             
-            
-            self._save_file(path)
+            try:
+                self._save_file(path)
+            except:
+                util.warning('Could not export pose: %s. Probably because of unknown nodes.' % pose)
             
             if parent:
                 cmds.parent(pose, parent[0])

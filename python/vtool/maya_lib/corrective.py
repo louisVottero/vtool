@@ -49,6 +49,7 @@ class PoseManager(object):
         
         self.pose_group = 'pose_gr'
         self.detached_attributes = {}
+        self.sub_detached_dict = {}
 
     def _check_pose_group(self):
         if not cmds.objExists(self.pose_group):
@@ -499,6 +500,9 @@ class PoseManager(object):
             
             if detached:
                 detached_attributes[pose_name] = detached
+                
+                if pose.sub_detach_dict:
+                    self.sub_detached_dict[pose_name] = pose.sub_detach_dict 
         
         self.detached_attributes = detached_attributes
         
@@ -519,7 +523,18 @@ class PoseManager(object):
                     detached = self.detached_attributes[pose_name]
                     
             pose = self.get_pose_instance(pose_name)
+            
             pose.attach(detached)
+            
+            for pose_name in self.sub_detached_dict:
+                sub_poses = self.sub_detached_dict[pose_name]
+                
+                for key in sub_poses:
+                    pose = key
+                    attributes = sub_poses[key]
+                    
+                    sub_pose = self.get_pose_instance(pose)
+                    sub_pose.attach(attributes)
             
     def create_pose_blends(self, poses = None):
         """
@@ -594,6 +609,8 @@ class PoseGroup(object):
         
         self.pose_gr = 'pose_gr'
         self.create_blends_went_to_pose = False
+        
+        self.sub_detach_dict = {}
     
     def _pose_type(self):
         return 'group'    
@@ -684,6 +701,10 @@ class PoseGroup(object):
         Args
             pose_name (str): The name of a pose.
         """
+        
+        if not pose_name:
+            return
+        
         if not cmds.objExists(pose_name):
             self.description = pose_name
         
@@ -830,6 +851,11 @@ class PoseGroup(object):
         Attaching and detaching help with export/import.
         """
         detach_dict = self.detach_sub_poses()
+        
+        if detach_dict:
+            self.sub_detach_dict = detach_dict
+        
+        
         
         return detach_dict
         
@@ -1145,12 +1171,11 @@ class PoseBase(PoseGroup):
         other_pose = self._replace_side(self.pose_control)
         self.left_right = True
         
-        if not cmds.objExists(other_pose):
-            invert_other_pose = self._replace_side(self.pose_control, False)
-            if invert_other_pose:
-                other_pose = invert_other_pose
-                self.left_right = False
-                
+        
+        if not other_pose:
+            other_pose = self._replace_side(self.pose_control, False)
+            self.left_right = False
+            
         if cmds.objExists(other_pose):
             self.other_pose_exists = True
             
@@ -1862,10 +1887,12 @@ class PoseBase(PoseGroup):
         if target_mesh and cmds.objExists(target_mesh):
             self._set_visibility(target_mesh, 1)
             
-        if geo.is_mesh_position_same(target_mesh, mesh, 0.0001):
-            return
+        
         
         if not view_only and cmds.objExists(target_mesh):
+            
+            if geo.is_mesh_position_same(target_mesh, mesh, 0.0001):
+                return
             
             index = self.get_mesh_index(mesh)
             
@@ -2026,6 +2053,8 @@ class PoseBase(PoseGroup):
             detached = child_instance.detach()
             
             detached_attributes[child] = detached
+            
+        return detached_attributes
             
     def attach_sub_poses(self, outputs):
         """
@@ -2444,14 +2473,6 @@ class PoseNoReader(PoseBase):
         """
         self.other_pose_exists = False
         
-        description = self.description
-        
-        if not description:
-            self._set_description(self.pose_control)
-        
-        if description:
-            description = description.replace(' ', '_')
-        
         other_pose_instance = self._get_mirror_pose_instance()
         
         other_target_meshes = []
@@ -2475,7 +2496,13 @@ class PoseNoReader(PoseBase):
         
         if not self.other_pose_exists:
             store = rigs_util.StoreControlData(self.pose_control)
-            store.eval_mirror_data()
+            
+            if self.left_right:
+                side = 'L'
+            if not self.left_right:
+                side = 'R'
+            
+            store.eval_mirror_data(side)
             
             other_pose_instance.create()
             
@@ -2483,8 +2510,6 @@ class PoseNoReader(PoseBase):
             other_pose_instance.goto_pose()
             
         cmds.setAttr('%s.weight' % self.pose_control, 0)
-        
-        inc = 0
         
         for mesh in other_target_meshes:
             index = other_pose_instance.get_target_mesh_index(other_target_mesh)
@@ -2511,7 +2536,6 @@ class PoseNoReader(PoseBase):
             
             cmds.delete(input_mesh, ch = True)
             cmds.delete(fix_mesh)
-            inc += 1
         
         return other_pose_instance.pose_control
     
@@ -3059,6 +3083,14 @@ class PoseCone(PoseBase):
         
         self._hide_meshes()
         
+        if self.sub_detach_dict:
+            
+            for key in self.sub_detach_dict:
+                pose = get_pose_instance(key)
+                pose.attach(self.sub_detach_dict[pose])
+                
+            self.sub_detach_dict = {}
+            
     def create(self):
         
         pose_control = super(PoseCone, self).create()
@@ -3102,19 +3134,11 @@ class PoseCone(PoseBase):
             mesh = self.get_mesh(inc)
             self.visibility_off(mesh, view_only = False)
         
-        description = self.description
-        
-        if not description:
-            self._set_description(self.pose_control)
-        
-        if description:
-            description = description.replace(' ', '_')
-        
         other_pose_instance = self._get_mirror_pose_instance()
         
         other_target_meshes = []
         input_meshes = {}
-
+        
         for inc in xrange(0, self._get_mesh_count()):
             
             mesh = self.get_mesh(inc)
@@ -3133,16 +3157,24 @@ class PoseCone(PoseBase):
         
         if not self.other_pose_exists:
             store = rigs_util.StoreControlData(self.pose_control)
-            store.eval_mirror_data()
+            
+            if self.left_right:
+                side = 'L'
+            if not self.left_right:
+                side = 'R'
+            
+            store.eval_mirror_data(side)
             
             transform = self.get_transform()
             other_transform = self._replace_side(transform, self.left_right)
             
             other_pose_instance.set_transform(other_transform)
             other_pose_instance.create()
-            
+        
         if self.other_pose_exists:
             other_pose_instance.goto_pose()
+
+        
 
         twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
         distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
@@ -3154,14 +3186,12 @@ class PoseCone(PoseBase):
         cmds.setAttr('%s.maxAngle' % other_pose_instance.pose_control, angle_value)
         cmds.setAttr('%s.maxTwist' % other_pose_instance.pose_control, maxTwist_value)
         
-        inc = 0
-        
         for mesh in other_target_meshes:
             index = other_pose_instance.get_target_mesh_index(mesh)
                         
             if index == None:    
                 other_pose_instance.add_mesh(other_target_mesh, toggle_vis = False)
-        
+                
         for mesh in other_target_meshes:
             
             index = other_pose_instance.get_target_mesh_index(mesh)
@@ -3184,135 +3214,11 @@ class PoseCone(PoseBase):
             
             cmds.delete(input_mesh, ch = True)
             cmds.delete(fix_mesh)
-            inc += 1
-        
-
+            
+            self.visibility_off(input_mesh, view_only = True)
         
         return other_pose_instance.pose_control
-    """
-    def mirror(self):
-        
-        transform = self.get_transform()
-        
-        description = self.description
-        
-        skin = None
-        blendshape_node = None
-        
-        if not description:
-            self._set_description(self.pose_control)
-        
-        if description:
-            description = description.replace(' ', '_')
-        
-        other_transform = ''
-        
-        if transform.endswith('L'):
-            other_transform = transform[:-1] + 'R'
-        
-        if not cmds.objExists(other_transform):
-            return
-        
-        other_pose = ''
-        other_description = ''
-        
-        other_pose = self.pose_control.replace('_L','_R')
-        other_description = description.replace('_L','_R')
-        
-        other_meshes = []
-        
-        input_meshes = {}
 
-        for inc in range(0, self._get_mesh_count()):
-            mesh = self.get_mesh(inc)
-            
-            other_mesh = cmds.duplicate(mesh)[0]
-            
-            new_name = mesh.replace('_L', '_R')
-            
-            other_mesh = cmds.rename(other_mesh, new_name)
-            other_meshes.append(other_mesh)
-            
-            target_mesh = self.get_target_mesh(mesh)
-            split_name = target_mesh.split('|')
-            other_target_mesh = split_name[-1][:-1] + 'R'
-            
-            skin = util.find_deformer_by_type(target_mesh, 'skinCluster')
-            blendshape_node = util.find_deformer_by_type(target_mesh, 'blendShape')
-            
-            cmds.setAttr('%s.envelope' % skin, 0)
-            cmds.setAttr('%s.envelope' % blendshape_node, 0)
-            
-            if not cmds.objExists(other_target_mesh):
-                other_target_mesh = target_mesh
-                
-            other_target_mesh_duplicate = cmds.duplicate(other_target_mesh, n = other_target_mesh)[0]
-            
-            home = cmds.duplicate(target_mesh, n = 'home')[0]
-
-            mirror_group = cmds.group(em = True)
-            cmds.parent(home, mirror_group)
-            cmds.parent(other_mesh, mirror_group)
-            cmds.setAttr('%s.scaleX' % mirror_group, -1)
-            
-            util.create_wrap(home, other_target_mesh_duplicate)
-            
-            cmds.blendShape(other_mesh, home, foc = True, w = [0, 1])
-            
-            cmds.delete(other_target_mesh_duplicate, ch = True)
-            
-            input_meshes[other_target_mesh] = other_target_mesh_duplicate
-            
-            cmds.delete(mirror_group, other_mesh)
-            
-        
-        if skin:
-            cmds.setAttr('%s.envelope' % skin, 1)
-        if blendshape_node:
-            cmds.setAttr('%s.envelope' % blendshape_node, 1)
-          
-        if cmds.objExists(other_pose):
-            pose = PoseControl()
-            pose.set_pose(other_pose)
-            
-            pose.goto_pose()
-        
-        if not cmds.objExists(other_pose):
-        
-            store = util.StoreControlData(self.pose_control)
-            store.eval_mirror_data()
-            
-            pose = PoseControl(other_transform, other_description)
-            pose.create()
-
-        twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
-        distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)
-        angle_value = cmds.getAttr('%s.maxAngle' % self.pose_control)
-        maxTwist_value = cmds.getAttr('%s.maxTwist' % self.pose_control)
-        
-        cmds.setAttr('%s.twistOffOn' % pose.pose_control, twist_on_value)
-        cmds.setAttr('%s.maxDistance' % pose.pose_control, distance_value)
-        cmds.setAttr('%s.maxAngle' % pose.pose_control, angle_value)
-        cmds.setAttr('%s.maxTwist' % pose.pose_control, maxTwist_value)
-        
-        inc = 0
-        
-        for mesh in input_meshes:
-            pose.add_mesh(mesh, False)
-            input_mesh = pose.get_mesh(inc)
-            
-            fix_mesh = input_meshes[mesh]
-            
-            cmds.blendShape(fix_mesh, input_mesh, foc = True, w = [0,1])
-            
-            pose.create_blend(False)
-            
-            cmds.delete(input_mesh, ch = True)
-            cmds.delete(fix_mesh)
-            inc += 1
-        
-        return pose.pose_control
-    """
     
 
         

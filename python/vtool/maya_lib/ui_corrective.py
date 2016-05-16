@@ -818,11 +818,14 @@ class PoseTreeWidget(BaseTreeWidget):
         
         name = self._current_pose()
         
+        corrective.PoseManager().update_pose(name)
+        
         pose_instance = corrective.PoseManager().get_pose_instance(name)
+        
         if hasattr(pose_instance, 'update_target_meshes'):
             pose_instance.update_target_meshes()
         
-        corrective.PoseManager().update_pose(name)
+        
         
     def _update_sculpts(self):
         
@@ -909,7 +912,7 @@ class PoseTreeWidget(BaseTreeWidget):
             return
         
         mirror = corrective.PoseManager().mirror_pose(pose)
-        #self.refresh()
+        self.refresh()
         
         self.select_pose(mirror)
         
@@ -930,11 +933,6 @@ class PoseTreeWidget(BaseTreeWidget):
             
             cmds.autoKeyframe(state=auto_key_state)
         
-        items = self.selectedItems()
-        
-        if not items:
-            return
-        
         if self.last_selection:
             if cmds.objExists(self.last_selection[0]): 
                 corrective.PoseManager().visibility_off(self.last_selection[0])
@@ -952,7 +950,8 @@ class PoseTreeWidget(BaseTreeWidget):
         
             if pose_names:
                 if cmds.objExists(pose_names[0]):
-                    items[0].setSelected(False)
+                    if items:
+                        items[0].setSelected(False)
         
             iterator = QtGui.QTreeWidgetItemIterator(self)
             
