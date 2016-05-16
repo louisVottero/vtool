@@ -1407,7 +1407,6 @@ class SculptWidget(qt_ui.BasicWidget):
         super(SculptWidget, self).__init__()
         
         self.pose = None
-        self.frame_number = None
     
     def sizeHint(self):
         
@@ -1513,25 +1512,9 @@ class SculptWidget(qt_ui.BasicWidget):
         
         if pose_type == 'timeline':
             self.button_mirror.hide()
-            if not self.frame_number:
-                self.frame_number = TimePosition()
-                
-                time_position = cmds.getAttr('%s.timePosition' % pose_name)
-                
-                self.main_layout.insertWidget(0, self.frame_number)
-                
-                self.frame_number.set_value(time_position)
-                
-                self.frame_number.set_pose(pose_name)
             
         if not pose_type == 'timeline':
             self.button_mirror.show()
-            
-            if self.frame_number:
-                self.frame_number.hide()
-                self.main_layout.removeWidget(self.frame_number)
-            
-            self.frame_number = None
             
         
             
@@ -1766,7 +1749,22 @@ class PoseNoReaderWidget(PoseBaseWidget):
         self._get_weight_input()
         
 class PoseTimelineWidget(PoseBaseWidget):
-    pass
+    def _define_main_layout(self):
+        layout = QtGui.QHBoxLayout()
+        return layout
+    
+    def _build_widgets(self):
+        super(PoseTimelineWidget, self)._build_widgets()
+        
+        self.frame_number = TimePosition()
+        self.main_layout.addWidget(self.frame_number)
+        
+    def set_pose(self, pose_name):
+        super(PoseTimelineWidget, self).set_pose(pose_name)
+    
+        time_position = cmds.getAttr('%s.timePosition' % pose_name)
+        self.frame_number.set_value(time_position)
+        self.frame_number.set_pose(pose_name)
 
 class PoseConeWidget(PoseBaseWidget):
     

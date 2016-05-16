@@ -1277,12 +1277,6 @@ class PoseBase(PoseGroup):
         
         shader_name = 'pose_blinn'
         
-        engines = shade.get_shading_engines_by_geo(mesh)
-        
-        if engines:
-            if len(engines) >=1 and engines[0] != 'initialShadingGroup':
-                return
-        
         shader_name = shade.apply_new_shader(mesh, type_of_shader = 'blinn', name = shader_name)
             
         cmds.setAttr('%s.color' % shader_name, 0.4, 0.6, 0.4, type = 'double3' )
@@ -1909,7 +1903,10 @@ class PoseBase(PoseGroup):
         if not mesh:
             return
         
-        self._create_shader(mesh)
+        engines = shade.get_shading_engines_by_geo(mesh)
+        
+        if not engines:
+            self._create_shader(mesh)
         
         self._set_visibility(mesh, 1)
         
