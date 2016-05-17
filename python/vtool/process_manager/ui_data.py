@@ -698,7 +698,7 @@ class ControlCvFileWidget(MayaDataFileWidget):
     
     def _define_main_tab_name(self):
         return 'Control Cvs'
-    
+
 class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
     
     def _build_widgets(self):
@@ -740,9 +740,6 @@ class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
                 
                 remove_item = self.curve_list.takeItem(index.row())
                 del(remove_item)
-                
-        
-                
     
     def tab_update(self):
         
@@ -750,14 +747,23 @@ class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
         
         curves = self.data_class.get_curves()
         
-        
         if not curves:
             return
         
         for curve in curves:
             item = QtGui.QListWidgetItem(curve)
             self.curve_list.addItem(item)
-        
+    
+class ControlColorFileWidget(MayaDataFileWidget):
+    def _define_data_class(self):
+        return vtool.data.ControlColorData()
+    
+    #def _define_option_widget(self):
+    #    return ControlColorOptionFileWidget()
+    
+    def _define_main_tab_name(self):
+        return 'Control Color'
+    
 class SkinWeightFileWidget(MayaDataFileWidget):
     
     def _define_option_widget(self):
@@ -1172,6 +1178,7 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
 file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.ascii' : MayaAsciiFileWidget,
                  'maya.control_cvs' : ControlCvFileWidget,
+                 'maya.control_color' : ControlColorFileWidget,
                  'maya.skin_weights' : SkinWeightFileWidget,
                  'maya.deform_weights' : DeformerWeightFileWidget,
                  'maya.blend_weights' : BlendShapeWeightFileWidget,
