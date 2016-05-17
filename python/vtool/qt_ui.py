@@ -2034,10 +2034,17 @@ class CodeEditTabs(BasicWidget):
         
     def _find(self, text_edit):
         
-        find_widget = FindTextWidget(text_edit)
-        find_widget.show()
+        if not self.find_widget:
+            find_widget = FindTextWidget(text_edit)
+            find_widget.closed.connect(self._clear_find)
+            find_widget.show()
+            
         
-        self.find_widget = find_widget
+            self.find_widget = find_widget
+            
+    def _clear_find(self):
+        
+        self.find_widget = None
             
     def _set_tab_find_widget(self, current_widget):
 
@@ -2584,8 +2591,13 @@ class CodeEdit(BasicWidget):
             
     def _find(self, text_edit):
         
-        self.find = FindTextWidget(text_edit)
-        self.find.show()
+        if not self.find:
+            self.find = FindTextWidget(text_edit)
+            self.find.show()
+            self.find.closed.connect(self._close_find)
+            
+    def _close_find(self):
+        self.find = None
     
     def _text_file_set(self):
         self.save_state.setText('No Changes')
@@ -3128,6 +3140,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
       
 class FindTextWidget(BasicDialog):
     
+    closed = create_signal()
+    
     def __init__(self, text_widget):
         self.found_match = False
         
@@ -3136,6 +3150,11 @@ class FindTextWidget(BasicDialog):
         self.text_widget = text_widget
         
         self.text_widget.cursorPositionChanged.connect(self._reset_found_match)
+        
+    def closeEvent(self, event):
+        super(FindTextWidget, self).closeEvent(event)
+        
+        self.closed.emit()
         
     def _build_widgets(self):
         super(FindTextWidget, self)._build_widgets()
@@ -3218,11 +3237,14 @@ class FindTextWidget(BasicDialog):
             self.found_match = False
             
             if start != 0:
-                get_permission('Wrap Search?', self)
+                permission = get_permission('Wrap Search?', self)
+                
+                if not permission:
+                    return
                 
                 self._move_cursor(0, 0)
-                self._find() 
-        
+                self._find()
+
     def _replace(self):
         
         if not self.found_match:
