@@ -480,7 +480,7 @@ class CurveDataInfo(object):
         transform = self._get_curve_parent(curve)
                
         if library_name:
-            self.library_curves[library_name][transform] = [mel_data_list, curve_type, '']
+            self.library_curves[library_name][transform] = [mel_data_list, curve_type]
             
     def remove_curve(self, curve, library_name = None):
         if not curve:
