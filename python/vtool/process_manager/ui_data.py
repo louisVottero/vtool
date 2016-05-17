@@ -711,6 +711,11 @@ class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
         list_widget.setMaximumHeight(100)
         list_widget.setSelectionMode(list_widget.ExtendedSelection)
         list_widget.setSortingEnabled(True)
+        self.list_widget = list_widget
+        
+        self.filter_names = QtGui.QLineEdit()
+        self.filter_names.setPlaceholderText('Filter Names')
+        self.filter_names.textChanged.connect(self._filter_names)
         
         remove_button = QtGui.QPushButton('Delete Curve Cv Data')
         remove_button.clicked.connect(self._remove_curves)
@@ -718,10 +723,30 @@ class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
         self.curve_list = list_widget
         
         data_options_layout.addWidget(list_widget)
+        data_options_layout.addWidget(self.filter_names)
         data_options_layout.addWidget(remove_button)
     
         self.main_layout.addSpacing(20)
         self.main_layout.addLayout(data_options_layout)
+   
+    def _unhide_names(self):
+        for inc in range(0, self.list_widget.count()):
+            item = self.list_widget.item(inc)
+            item.setHidden(False)
+            
+    def _filter_names(self):
+        self._unhide_names()
+                        
+        for inc in range( 0, self.list_widget.count() ):
+                
+            item = self.list_widget.item(inc)
+            text = str( item.text() )
+            
+            filter_text = self.filter_names.text()
+            
+            if text.find(filter_text) == -1:
+                item.setHidden(True)
+                
    
     def _remove_curves(self):
         
@@ -758,8 +783,8 @@ class ControlColorFileWidget(MayaDataFileWidget):
     def _define_data_class(self):
         return vtool.data.ControlColorData()
     
-    #def _define_option_widget(self):
-    #    return ControlColorOptionFileWidget()
+    def _define_option_widget(self):
+        return ControlCvOptionFileWidget()
     
     def _define_main_tab_name(self):
         return 'Control Color'
@@ -787,6 +812,11 @@ class SkinWeightOptionFileWidget(vtool.qt_ui.OptionFileWidget):
         list_widget.setMaximumHeight(100)
         list_widget.setSelectionMode(list_widget.ExtendedSelection)
         list_widget.setSortingEnabled(True)
+        self.list_widget = list_widget
+        
+        self.filter_names = QtGui.QLineEdit()
+        self.filter_names.setPlaceholderText('Filter Names')
+        self.filter_names.textChanged.connect(self._filter_names)
         
         remove_button = QtGui.QPushButton('Delete Mesh Skin Weights')
         remove_button.clicked.connect(self._remove_meshes)
@@ -794,10 +824,29 @@ class SkinWeightOptionFileWidget(vtool.qt_ui.OptionFileWidget):
         self.mesh_list = list_widget
         
         data_options_layout.addWidget(list_widget)
+        data_options_layout.addWidget(self.filter_names)
         data_options_layout.addWidget(remove_button)
     
         self.main_layout.addSpacing(20)
         self.main_layout.addLayout(data_options_layout)
+        
+    def _unhide_names(self):
+        for inc in range(0, self.list_widget.count()):
+            item = self.list_widget.item(inc)
+            item.setHidden(False)
+            
+    def _filter_names(self):
+        self._unhide_names()
+                        
+        for inc in range( 0, self.list_widget.count() ):
+                
+            item = self.list_widget.item(inc)
+            text = str( item.text() )
+            
+            filter_text = self.filter_names.text()
+            
+            if text.find(filter_text) == -1:
+                item.setHidden(True)
         
     def _remove_meshes(self):
         
@@ -1178,7 +1227,7 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
 file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.ascii' : MayaAsciiFileWidget,
                  'maya.control_cvs' : ControlCvFileWidget,
-                 'maya.control_color' : ControlColorFileWidget,
+                 'maya.control_colors' : ControlColorFileWidget,
                  'maya.skin_weights' : SkinWeightFileWidget,
                  'maya.deform_weights' : DeformerWeightFileWidget,
                  'maya.blend_weights' : BlendShapeWeightFileWidget,

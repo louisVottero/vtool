@@ -265,6 +265,7 @@ class CurveDataInfo(object):
         
         if len(shapes):
             shape_color = cmds.getAttr('%s.overrideColor' % shapes[0])
+            shape_color_enabled = cmds.getAttr('%s.overrideEnabled' % shapes[0])
         
         if len(shapes) > len(data_list):
             cmds.delete(shapes[ len(data_list): ])
@@ -277,7 +278,7 @@ class CurveDataInfo(object):
                 curve_shape = cmds.createNode('nurbsCurve')
                 #maybe curve_shape = cmds.createNode('nurbsCurve', parent = curve, n = '%sShape' % curve)
                 
-                if shape_color != None:
+                if shape_color != None and shape_color_enabled:
                     cmds.setAttr('%s.overrideEnabled' % curve_shape, 1)
                     cmds.setAttr('%s.overrideColor' % curve_shape, shape_color)
                 
@@ -526,8 +527,12 @@ class CurveDataInfo(object):
         
         curves_dict = self.library_curves[self.active_library]
         
-        for curve in curves_dict:
-            self.create_curve(curve)
+        keys = curves_dict.keys()
+        
+        keys.sort()
+        
+        for key in keys:
+            self.create_curve(key)
             
 def get_shapes(transform):
     if is_a_shape(transform):

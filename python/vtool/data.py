@@ -550,16 +550,32 @@ class ControlCvData(MayaCustomData):
         
 class ControlColorData(MayaCustomData):
     def _data_name(self):
-        return 'control_color'
+        return 'control_colors'
         
     def _data_type(self):
-        return 'maya.control_color' 
+        return 'maya.control_colors' 
         
     def _data_extension(self):
         return 'data'
         
-    def _get_data(self):
-        pass
+    def _get_data(self, filename):
+        lines = util_file.get_file_lines(filename)
+        
+        all_control_dict = {}
+        
+        for line in lines:
+            split_line = line.split('=')
+            
+            if len(split_line) == 2:
+                color_dict = eval(split_line[1])
+                
+                control = split_line[0].strip()
+                
+                all_control_dict[control] = color_dict
+                
+        
+        return all_control_dict
+                #self._set_color_dict(control, color_dict)
         
     def _get_color_dict(self, curve):
         
@@ -567,19 +583,49 @@ class ControlColorData(MayaCustomData):
             return
         
         sub_colors = []
+        main_color = None
         
-        main_color = cmds.getAttr('%s.overrideColor' % curve)
+        if cmds.getAttr('%s.overrideEnabled' % curve):
+            main_color = cmds.getAttr('%s.overrideColor' % curve)
         
         shapes = maya_lib.core.get_shapes(curve)
-
+        one_passed = False
         if shapes:
             for shape in shapes:
+                if cmds.getAttr('%s.overrideEnabled' % shape):
+                    one_passed = True
+                
                 curve_color = cmds.getAttr('%s.overrideColor' % shape)
                 sub_colors.append(curve_color)
+                    
+        if not one_passed and main_color == None:
+            return
                 
         return {'main': main_color, 'sub':sub_colors}
     
+    def _store_all_dict(self, all_dict, filename, comment):
+        
+        keys = all_dict.keys()
+        keys.sort()
+        
+        lines = []
+        
+        for key in keys:
+            lines.append('%s = %s' % (key, all_dict[key]))
+            
+        util_file.write_lines(filename, lines)
+        
+        
+        
+        version = util_file.VersionFile(filename)
+        version.save(comment)   
+        
+    
     def _set_color_dict(self, curve, color_dict):
+        
+        if not cmds.objExists(curve):
+            return
+        
         main_color = color_dict['main']
         sub_color = color_dict['sub']
         
@@ -631,20 +677,18 @@ class ControlColorData(MayaCustomData):
         if not filepath:
             return
         
-        controls = maya_lib.rigs_util.get_controls()
+        orig_controls = self._get_data(filepath)
         
-        lines = []
+        controls = maya_lib.rigs_util.get_controls()
         
         for control in controls:
             
             color_dict = self._get_color_dict(control)
             
-            lines.append('%s = %s' % (control, color_dict))
-            
-        util_file.write_lines(filepath, lines)
+            if color_dict:
+                orig_controls[control] = color_dict
         
-        version = util_file.VersionFile(filepath)
-        version.save(comment)    
+        self._store_all_dict(orig_controls, filepath, comment)   
         
     def import_data(self, filename = None):
         
@@ -652,22 +696,44 @@ class ControlColorData(MayaCustomData):
             directory = self.directory
             name = self.name + '.' + self._data_extension()
             filename = util_file.join_path(directory, name)
-            
-        lines = util_file.get_file_lines(filename)
         
-        for line in lines:
-            split_line = line.split('=')
+        all_control_dict = self._get_data(filename)
+        
+        for control in all_control_dict:
+            self._set_color_dict(control, all_control_dict[control])
             
-            if len(split_line) == 2:
-                color_dict = eval(split_line[1])
-                
-                control = split_line[0].strip()
-                
-                self._set_color_dict(control, color_dict)
-                
+    def remove_curve(self, curve_name, filename = None):
+        
+        if not filename:
+            directory = self.directory
+            name = self.name + '.' + self._data_extension()
+            filename = util_file.join_path(directory, name)
+        
+        curve_list = util.convert_to_sequence(curve_name)
+        
+        curve_dict = self._get_data(filename)
+            
+        for curve in curve_list:
+            if curve in curve_dict:
+                curve_dict.pop(curve)
+        
+        self._store_all_dict(curve_dict, filename, comment = 'removed curves')
+        
+        return True
     
-    
-          
+    def get_curves(self, filename = None):
+        if not filename:
+            directory = self.directory
+            name = self.name + '.' + self._data_extension()
+            filename = util_file.join_path(directory, name)
+            
+        curve_dict = self._get_data(filename)
+        
+        keys = curve_dict.keys()
+        keys.sort()
+        
+        return keys
+        
 class SkinWeightData(MayaCustomData):
     """
         maya.skin_weights
