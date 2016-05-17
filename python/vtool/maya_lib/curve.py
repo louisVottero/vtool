@@ -238,7 +238,7 @@ class CurveDataInfo(object):
     
     def _is_curve_of_type(self, existing_curve, type_curve):
         
-        mel_data_list, original_curve_type, color = self._get_curve_data(type_curve, self.active_library)
+        mel_data_list, original_curve_type = self._get_curve_data(type_curve, self.active_library)
 
         if not mel_data_list:
             return False
@@ -290,24 +290,7 @@ class CurveDataInfo(object):
     def _set_curve_type(self, curve, curve_type_value):
         
         create_curve_type_attribute(curve, curve_type_value)
-        
-    def _get_color_dict(self, curve):
-        
-        if not cmds.objExists(curve):
-            return
-        
-        sub_colors = []
-        
-        main_color = cmds.getAttr('%s.overrideColor' % curve)
-        
-        shapes = core.get_shapes(curve)
 
-        if shapes:
-            for shape in shapes:
-                curve_color = cmds.getAttr('%s.overrideColor' % shape)
-                sub_colors.append(curve_color)
-                
-        return {'main': main_color, 'sub':sub_colors}
         
     
     def set_directory(self, directorypath):
@@ -345,7 +328,6 @@ class CurveDataInfo(object):
         curve_name = ''
         curve_data = ''
         curve_type = ''
-        curve_color = ''
         
         readfile = vtool.util_file.ReadFile(path)
         data_lines = readfile.read()
@@ -358,8 +340,7 @@ class CurveDataInfo(object):
                 
                 if curve_data_lines:
                     
-                    self.library_curves[self.active_library][curve_name] = [curve_data_lines, curve_type, curve_color]
-                    curve_color = ''
+                    self.library_curves[self.active_library][curve_name] = [curve_data_lines, curve_type]
                     curve_type = ''
                     curve_name = ''
                     curve_data = ''
@@ -381,22 +362,15 @@ class CurveDataInfo(object):
                                 
             if not line.startswith('->') and last_line_curve:
                 
-
-                if not line.startswith('color {'):                
-                    line = line.strip()
-                    if line:
-                        curve_data = line
-                        curve_data = curve_data.strip()
-                        curve_data_lines.append(curve_data) 
+                line = line.strip()
+                if line:
+                    curve_data = line
+                    curve_data = curve_data.strip()
+                    curve_data_lines.append(curve_data) 
                     
-            if line.startswith('color {'):
-                
-                split_line = line.split('color')
-                if len(split_line) == 2:
-                    curve_color = eval(split_line[1])
          
         if curve_data_lines:
-            self.library_curves[self.active_library][curve_name] = [curve_data_lines, curve_type, curve_color] 
+            self.library_curves[self.active_library][curve_name] = [curve_data_lines, curve_type] 
                 
     def write_data_to_file(self):
         if not self.active_library:
@@ -416,7 +390,7 @@ class CurveDataInfo(object):
         
         for curve in curves:
             
-            curve_data_lines, curve_type, color = current_library[curve]
+            curve_data_lines, curve_type = current_library[curve]
             
             if not curve_type:
                 if cmds.objExists('%s.curveType' % curve):
@@ -429,16 +403,6 @@ class CurveDataInfo(object):
                 
             for curve_data in curve_data_lines:
                 lines.append('%s' % curve_data)
-            
-            if cmds.objExists(curve):
-                
-                color_dict = self._get_color_dict(curve)
-                
-                lines.append('color %s' % color_dict)
-                
-            if not cmds.objExists(curve):
-                
-                lines.append('color %s' % color)
           
         writefile.write(lines)
         
@@ -462,7 +426,7 @@ class CurveDataInfo(object):
             vtool.util.warning('Must set active library before running this function.')
             return
         
-        mel_data_list, original_curve_type, color = self._get_curve_data(curve_in_library, self.active_library)
+        mel_data_list, original_curve_type = self._get_curve_data(curve_in_library, self.active_library)
         
         if not mel_data_list:
             return
@@ -489,49 +453,7 @@ class CurveDataInfo(object):
         
         self._set_curve_type(curve, curve_type_value)
         
-        if color:
-            main_color = color['main']
-            sub_color = color['sub']
-            
-            
-            
-            try:
-                if main_color > 0:
-                    
-                    current_color = cmds.getAttr('%s.overrideColor' % curve)
-                    
-                    if not current_color == main_color:
-                    
-                        cmds.setAttr('%s.overrideEnabled' % curve, 1 )
-                        cmds.setAttr('%s.overrideColor' % curve, main_color)
-                        
-                        vtool.util.show('Set color of %s on %s' % (main_color, core.get_basename(curve)))
-                        
-                if sub_color:
-                    shapes = get_shapes(curve)
-                    inc = 0
-                    for shape in shapes:
-                        
-                        sub_current_color = cmds.getAttr('%s.overrideColor' % shape)
-                        
-                        if sub_current_color == sub_color[inc]:
-                            inc+=1
-                            continue
-                        
-                        if sub_color[inc] == 0:
-                            inc+=1
-                            continue
-                        
-                        cmds.setAttr('%s.overrideEnabled' % shape, 1 )
-                                            
-                        if inc < len(sub_color):
-                            cmds.setAttr('%s.overrideColor' % shape, sub_color[inc])
-                            vtool.util.show('Set color of %s on %s' % (sub_color[inc], core.get_basename(shape)))
-                        
-                        inc+=1
-            except:
-                vtool.util.show(traceback.format_exc())
-                vtool.util.show('Error applying color to %s.' % curve)
+
         
     def add_curve(self, curve, library_name = None):
         
