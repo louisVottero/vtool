@@ -2135,6 +2135,19 @@ def get_namespace_class(module_path, line_number = None, namespace = None):
     
     file_text = get_file_text(module_path)
     
+    import symtable
+    
+    table = symtable.symtable(file_text, module_path, 'exec')
+    
+    print dir(table)
+    symbol = table.lookup('FileData')
+    print symbol.get_name()
+    print symbol.is_referenced()
+    print symbol.is_local()
+    print symbol.is_imported()
+    print dir(symbol)
+    
+    """
     ast_tree = ast.parse(file_text)
     
     
@@ -2147,7 +2160,7 @@ def get_namespace_class(module_path, line_number = None, namespace = None):
                 print node.value.func, node.value
                 print node.value.func.value.id,node.value.func.attr
                 
-            
+    """        
         
     
 def launch_maya(version, script = None):

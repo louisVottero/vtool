@@ -201,7 +201,7 @@ class CurveDataInfo(object):
         if not curve_dict.has_key(curve_name):
             vtool.util.warning('%s is not in the curve library %s.' % (curve_name, curve_library))
             
-            return None, None, None
+            return None, None
         
         return curve_dict[curve_name]
     
@@ -420,8 +420,6 @@ class CurveDataInfo(object):
         return self.library_curves[self.active_library].keys()
         
     def set_shape_to_curve(self, curve, curve_in_library, check_curve = False):
-        
-        
         
         if not self.active_library:
             vtool.util.warning('Must set active library before running this function.')
