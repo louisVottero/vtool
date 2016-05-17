@@ -1218,7 +1218,7 @@ class ShapeComboManager(object):
                 pass
     
     @core.undo_chunk
-    def add_meshes(self, meshes, preserve):
+    def add_meshes(self, meshes, preserve = False):
         
         shapes, combos, inbetweens = self.get_shape_and_combo_lists(meshes)
         

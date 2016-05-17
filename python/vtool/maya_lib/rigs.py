@@ -792,6 +792,7 @@ class ControlRig(Rig):
         self.control_shape_types = {}
         self.control_descriptions = {}
         self.only_translate = False
+        self.no_channels = False
     
     def set_transforms(self, transforms):
         """
@@ -821,6 +822,9 @@ class ControlRig(Rig):
     
     def set_only_translate_channels(self, bool_value):
         self.only_translate = bool_value
+        
+    def set_no_channels(self, bool_value):
+        self.no_channels = bool_value
     
     def create(self):
         
@@ -851,7 +855,10 @@ class ControlRig(Rig):
                 
                 if self.only_translate:
                     control.hide_scale_attributes()
-                    control.hide_rotate_attributes()           
+                    control.hide_rotate_attributes()
+                    
+                if self.no_channels:
+                    control.hide_attributes()           
                 
 class GroundRig(JointRig):
     """
