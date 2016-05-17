@@ -701,6 +701,9 @@ class ControlCvFileWidget(MayaDataFileWidget):
 
 class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
     
+    def _define_remove_button(self):
+        return 'Delete Curve Cv Data'
+    
     def _build_widgets(self):
         super(ControlCvOptionFileWidget, self)._build_widgets()
         
@@ -717,7 +720,7 @@ class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
         self.filter_names.setPlaceholderText('Filter Names')
         self.filter_names.textChanged.connect(self._filter_names)
         
-        remove_button = QtGui.QPushButton('Delete Curve Cv Data')
+        remove_button = QtGui.QPushButton(self._define_remove_button())
         remove_button.clicked.connect(self._remove_curves)
                 
         self.curve_list = list_widget
@@ -784,10 +787,15 @@ class ControlColorFileWidget(MayaDataFileWidget):
         return vtool.data.ControlColorData()
     
     def _define_option_widget(self):
-        return ControlCvOptionFileWidget()
+        return ControlColorOptionFileWidget()
     
     def _define_main_tab_name(self):
         return 'Control Color'
+    
+class ControlColorOptionFileWidget(ControlCvOptionFileWidget):
+    
+    def _define_remove_button(self):
+        return 'Delete Curve Color Data'
     
 class SkinWeightFileWidget(MayaDataFileWidget):
     
