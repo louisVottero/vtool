@@ -898,6 +898,9 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     
     shape = get_mesh_shape(mesh)
     
+    if not is_a_mesh(transform):
+        rotate_pivot = True
+    
     if rotate_pivot:
         position = cmds.xform(transform, q = True, rp = True, ws = True)
     if not rotate_pivot: 
@@ -1391,7 +1394,7 @@ def transforms_to_curve(transforms, spans, description):
     
 
 
-def transform_to_polygon_plane(transform, size = 1):
+def transform_to_polygon_plane(transform, size = 1, axis = 'Y'):
     """
     Create a single polygon face from the position and orientation of a transform.
     
@@ -1402,7 +1405,18 @@ def transform_to_polygon_plane(transform, size = 1):
     Return
         str: The name of the new plane.
     """
-    plane = cmds.polyPlane( w = size, h = size, sx = 1, sy = 1, ax = [0, 1, 0], ch = 0)
+    
+    if type(axis) == type(str):
+        axis.upper()
+    
+    if axis == 'X':
+        axis_vector = [1,0,0]
+    if axis == 'Y':
+        axis_vector = [0,1,0]
+    if axis == 'Z':
+        axis_vector = [0,0,1]
+    
+    plane = cmds.polyPlane( w = size, h = size, sx = 1, sy = 1, ax = axis_vector, ch = 0)
     
     plane = cmds.rename(plane, core.inc_name('%s_plane' % transform))
     
@@ -1410,12 +1424,12 @@ def transform_to_polygon_plane(transform, size = 1):
     
     return plane
 
-def transforms_to_polygon(transforms, name, size = 1, merge = True):
+def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
     
     meshes = []
     
     for transform in transforms:
-        mesh = transform_to_polygon_plane(transform, size)
+        mesh = transform_to_polygon_plane(transform, size, axis = axis)
         meshes.append(mesh)
         
     new_mesh = None

@@ -2073,54 +2073,15 @@ def get_defined(module_path):
         #if node:
             #yield( node.lineno, node.col_offset, 'goobers', 'goo')
         found_args_name = ''
+        
         if isinstance(node, ast.FunctionDef):
             
+            found_args = get_ast_function_args(node)
             
-            if node.args:
-                found_args =[]
-                
-                defaults = node.args.defaults
-                
-                args = node.args.args
-                
-                args.reverse()
-                inc = 0
-                for arg in args:
-                    
-                    name = arg.id
-                    
-                    default_value = None
-                    
-                    if inc < len(defaults):
-                        default_value = defaults[inc]
-                    
-                    if default_value:
-                        
-                        value = None
-                        
-                        if isinstance(default_value, ast.Str):
-                            value = "'%s'" % default_value.s
-                        if isinstance(default_value, ast.Name):
-                            value = default_value.id
-                        if isinstance(default_value, ast.Num):
-                            value = default_value.n
-                        
-                        if value:
-                            found_args.append('%s=%s' % (name, value))
-                        if not value:
-                            found_args.append(name)
-                    if not default_value:
-                        found_args.append(name)
-                        
-                    inc += 1
-                        
-                found_args.reverse()
-                
+            if found_args:
                 found_args_name = string.join(found_args, ',')
-
-            
-            
-            
+            if not found_args:
+                found_args_name = ''
             
             function_name = node.name + '(%s)' % found_args_name
             defined.append( function_name )
@@ -2129,40 +2090,175 @@ def get_defined(module_path):
             defined.append(node.name)
             
     return defined
+
+def get_ast_function_args(function_node):
     
-def get_namespace_class(module_path, line_number = None, namespace = None):
+    found_args =[]
     
+    if not function_node.args:
+        return found_args
+                
+    defaults = function_node.args.defaults
+    
+    args = function_node.args.args
+    
+    args.reverse()
+    defaults.reverse()
+    inc = 0
+    for arg in args:
+        
+        name = arg.id
+        
+        default_value = None
+        
+        if inc < len(defaults):
+            default_value = defaults[inc]
+        
+        if default_value:
+            
+            value = None
+            
+            if isinstance(default_value, ast.Str):
+                value = "'%s'" % default_value.s
+            if isinstance(default_value, ast.Name):
+                value = default_value.id
+            if isinstance(default_value, ast.Num):
+                value = default_value.n
+            
+            if value:
+                found_args.append('%s=%s' % (name, value))
+            if not value:
+                found_args.append(name)
+        if not default_value:
+            found_args.append(name)
+            
+        inc += 1
+            
+    found_args.reverse()
+    
+    return found_args
+
+def get_namespace_class(module_path, line_number = 10, namespace = "goo"):
+    
+    module_path = 'D:/louis/temp/process/.code/code/code.py'
     
     file_text = get_file_text(module_path)
-    
+    file_lines = get_file_lines(module_path)
+    """
     import symtable
     
     table = symtable.symtable(file_text, module_path, 'exec')
     
     print dir(table)
+    
     symbol = table.lookup('FileData')
+    print table.get_lineno()
+    print table.get_type()
+    print table.get_name()
+    print 'classes!'
+    for child in table.get_children():
+        print child.get_name()
+        print child.get_symbols()
+    print 'symbols!'
+    for symbol in table.get_symbols():
+        print symbol.get_name()
+    print dir(symbol)
     print symbol.get_name()
     print symbol.is_referenced()
     print symbol.is_local()
     print symbol.is_imported()
-    print dir(symbol)
     
+    class_stuff =  symbol.get_namespaces()
+    print dir(class_stuff)
+    print help(class_stuff.count)
+    
+    cmds =  table.lookup('cmds')
+    #print help(table.lookup('cmds'))
+    print cmds.is_local()
+    print cmds.is_imported()
+    print cmds.is_referenced()
     """
+    
+    #print class_stuff[0]
+    
+    
     ast_tree = ast.parse(file_text)
     
+    lines = {}
+    
+    print file_lines[7]
+    print file_lines[8]
+    print file_lines[9]
+    print file_lines[10]
+    
+    line_assign_dict = {}
     
     for node in ast.walk(ast_tree):
-    
-        if isinstance(node, ast.Assign):
-            print node, node.lineno, node.targets, node.value
-            if isinstance(node.value, ast.Call):
-                
-                print node.value.func, node.value
-                print node.value.func.value.id,node.value.func.attr
-                
-    """        
         
+        if hasattr( node, 'lineno' ):
+            current_line_number = node.lineno
+            
+            if current_line_number <= line_number:
+                
+                print current_line_number    
+                
+                if isinstance(node, ast.Assign):
+                    
+                    assignment_value = None
+                    print node
+                    print dir(node.value)
+                    print node.lineno, node.targets, node.targets[0].id
+                    print node.value
+                    targets = []
+                    
+                    for target in node.targets:
+                        targets.append( target.id )
+                    
+                    if hasattr(node.value, ''):
+                        pass
+                    
+                    if hasattr(node.value, 'id'):
+                        value = node.value.id
+                        
+                    #if hasattr(node.value, 'args'):
+                    #    print node.value.args[0].s, node.value.args[1].s
+                    #if hasattr(node.value, 'func'):
+                    #    print node.value.func, node.value.func.value.id, node.value.func.attr
+            
+                    if hasattr(node.value, 'func'):
+                        value = []
+                        value.append( node.value.func.value.id )
+                        value.append( node.value.func.attr )
+                        
+                        #value = None
+                        
+                    if targets:
+                        for target in targets:
+                            line_assign_dict[target] = value
+            
+            if current_line_number > line_number:
+                continue
+            """
+            if not lines.has_key(node.lineno):
+                lines[node.lineno] = []
+            lines[node.lineno].append(node)
     
+    
+    print file_lines[8]
+    
+    #print lines[9]
+    print lines[8]
+    print dir(lines[8][0])
+    print help(lines[8][0])
+    print lines[8][0].name
+    print lines[8][0].body
+    print lines[8][0].args
+    print help(lines[8][0].args)
+    print lines[6]
+    print lines[5]
+    print lines[4]
+    """
+    print line_assign_dict
 def launch_maya(version, script = None):
     """
     Needs maya installed. If maya is installed in the default directory, will launch the version specified.
