@@ -4617,10 +4617,17 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         return [self.top_control, self.btm_control]
             
 class NeckRig(FkCurveRig):
+    def __init__(self, description, side):
+        super(NeckRig, self).__init__(description,side)
+        
     def _first_increment(self, control, current_transform):
         self.first_control = control
 
 class IkLegRig(IkAppendageRig):
+    
+    def __init__(self, description, side):
+        
+        super(IkLegRig, self).__init__(description,side)
     
     def _fix_right_side_orient(self, control, axis = 'yz'):
         

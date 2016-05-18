@@ -52,6 +52,7 @@ class FileManager(object):
         filepath (str): Path to the file to work on.
         skip_warning (bool): Wether to print warnings out or not.
     """
+    
     def __init__(self, filepath, skip_warning = False):
         
         self.filepath = filepath
@@ -2064,7 +2065,8 @@ def get_defined(module_path, name_only = False):
     
     file_text = get_file_text(module_path)
     
-    defined = []
+    functions = []
+    classes = []
     
     ast_tree = ast.parse(file_text, 'string', 'exec')
     
@@ -2081,7 +2083,7 @@ def get_defined(module_path, name_only = False):
             if not name_only:
                 function_name = get_ast_function_name_and_args(node)
                 
-            defined.append( function_name )
+            functions.append( function_name )
             
         if isinstance(node, ast.ClassDef):
             
@@ -2098,7 +2100,12 @@ def get_defined(module_path, name_only = False):
                             found_args_name = ''
                         class_name = '%s(%s)' % (node.name, found_args_name)
             
-            defined.append(class_name)
+            classes.append(class_name)
+            
+    classes.sort()
+    functions.sort()
+            
+    defined = classes + functions
             
     return defined
 
@@ -2200,6 +2207,7 @@ def get_ast_class_sub_functions(module_path, class_name):
                     parents.append(defined_dict[base.id])
         
         functions = get_ast_class_members(class_node, parents)
+        functions.sort()
         return functions
 
 def get_ast_class_members(class_node, parents = [], skip_list = None):
