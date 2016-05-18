@@ -2061,6 +2061,7 @@ def get_defined(module_path, name_only = False):
     """
     Get classes and definitions from the text of a module.
     """
+    
     file_text = get_file_text(module_path)
     
     defined = []
@@ -2083,7 +2084,21 @@ def get_defined(module_path, name_only = False):
             defined.append( function_name )
             
         if isinstance(node, ast.ClassDef):
-            defined.append(node.name)
+            
+            class_name = node.name + '()'
+            
+            for sub_node in node.body:
+                if isinstance(sub_node, ast.FunctionDef):
+                    
+                    if sub_node.name == '__init__':
+                        found_args = get_ast_function_args(sub_node)
+                        if found_args:
+                            found_args_name = string.join(found_args, ',')
+                        if not found_args:
+                            found_args_name = ''
+                        class_name = '%s(%s)' % (node.name, found_args_name)
+            
+            defined.append(class_name)
             
     return defined
 
@@ -2173,24 +2188,56 @@ def get_ast_class_sub_functions(module_path, class_name):
 
     if class_name in defined:
         class_node = defined_dict[class_name]
-        functions = get_ast_class_members(class_node)
         
+        parents = []
+        
+        for base in class_node.bases:
+            
+            #there was a case where base was an attribute and had no id...
+            if hasattr(base, 'id'):
+                
+                if base.id in defined_dict:
+                    parents.append(defined_dict[base.id])
+        
+        functions = get_ast_class_members(class_node, parents)
         return functions
 
-def get_ast_class_members(class_node):
+def get_ast_class_members(class_node, parents = [], skip_list = None):
+    
+    if skip_list == None:
+        skip_list = []
     
     class_functions = []
     
     for node in class_node.body:
         
         if isinstance(node, ast.FunctionDef):
+            
+            name = node.name
+            
+            if skip_list:
+                if name in skip_list:
+                    continue
+            
+            skip_list.append(name)
+            
+            
             stuff = get_ast_function_name_and_args(node)
+            
             if stuff.startswith('_'):
                 continue
             stuff = stuff.replace('self', '')
             class_functions.append(stuff)
         
-    return class_functions
+    found_parent_functions = []
+        
+    for parent in parents:
+        parent_functions = get_ast_class_members(parent, skip_list = skip_list)
+        found_parent_functions += parent_functions
+        
+    found_parent_functions += class_functions
+        
+    return found_parent_functions
 
 def get_ast_assignment(text, line_number, assignment):
     
@@ -2237,8 +2284,10 @@ def get_ast_assignment(text, line_number, assignment):
                         
                     if hasattr(node.value, 'func'):
                         value = []
-                        value.append( node.value.func.value.id )
-                        value.append( node.value.func.attr )
+                        if hasattr(node.value.func, 'value'):
+                            #there was a case where func didn't have value...
+                            value.append( node.value.func.value.id )
+                            value.append( node.value.func.attr )
                         
                     if targets:
                         for target in targets:

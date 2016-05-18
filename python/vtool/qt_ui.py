@@ -3707,10 +3707,10 @@ class PythonCompleter(QtGui.QCompleter):
         
         all_text = self.widget().toPlainText()
         
-        
         scope_text = all_text[:(cursor.position() - 1)]
-        scope_text += 'pass'
         
+        if m and m.group(2):
+            scope_text = all_text[:(cursor.position() - len(m.group(2)) + 1)]
         
         if m:
             
@@ -3735,6 +3735,7 @@ class PythonCompleter(QtGui.QCompleter):
             
             target = None
             #searching for assignments
+            
             if assign_map:
                 
                 if assignment in assign_map:
@@ -3758,8 +3759,6 @@ class PythonCompleter(QtGui.QCompleter):
                             break
                 
                     sub_part = string.join(split_assignment[inc:], '.')
-                    
-                
                 
                 if not target:
                     return False
@@ -3791,7 +3790,7 @@ class PythonCompleter(QtGui.QCompleter):
                 if path and not sub_part:
                     test_text = ''
                     
-                    if len(m.groups()) > 1:
+                    if len(m.groups()) > 0:
                         test_text = m.group(2)
     
                     if util_file.is_dir(path):
@@ -3814,7 +3813,7 @@ class PythonCompleter(QtGui.QCompleter):
                     
                     test_text = ''
                     
-                    if len(m.groups()) > 1:
+                    if len(m.groups()) > 0:
                         test_text = m.group(2)
                         
                     self.string_model.setStringList(sub_functions)
