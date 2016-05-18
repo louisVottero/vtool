@@ -18,7 +18,6 @@ import ast
 
 import util
 
-
 class WatchDirectoryThread(threading.Thread):
     """
     Not developed fully.
@@ -53,6 +52,7 @@ class FileManager(object):
         filepath (str): Path to the file to work on.
         skip_warning (bool): Wether to print warnings out or not.
     """
+    
     def __init__(self, filepath, skip_warning = False):
         
         self.filepath = filepath
@@ -2058,111 +2058,254 @@ def get_line_imports(lines):
     
     return module_dict
                     
-def get_defined(module_path):
+def get_defined(module_path, name_only = False):
     """
     Get classes and definitions from the text of a module.
     """
+    
     file_text = get_file_text(module_path)
     
-    defined = []
+    functions = []
+    classes = []
     
-    ast_tree = ast.parse(file_text)
+    ast_tree = ast.parse(file_text, 'string', 'exec')
     
     for node in ast_tree.body:
         
         #if node:
             #yield( node.lineno, node.col_offset, 'goobers', 'goo')
         found_args_name = ''
+        
         if isinstance(node, ast.FunctionDef):
             
+            function_name = node.name
             
-            if node.args:
-                found_args =[]
+            if not name_only:
+                function_name = get_ast_function_name_and_args(node)
                 
-                defaults = node.args.defaults
-                
-                args = node.args.args
-                
-                args.reverse()
-                inc = 0
-                for arg in args:
-                    
-                    name = arg.id
-                    
-                    default_value = None
-                    
-                    if inc < len(defaults):
-                        default_value = defaults[inc]
-                    
-                    if default_value:
-                        
-                        value = None
-                        
-                        if isinstance(default_value, ast.Str):
-                            value = "'%s'" % default_value.s
-                        if isinstance(default_value, ast.Name):
-                            value = default_value.id
-                        if isinstance(default_value, ast.Num):
-                            value = default_value.n
-                        
-                        if value:
-                            found_args.append('%s=%s' % (name, value))
-                        if not value:
-                            found_args.append(name)
-                    if not default_value:
-                        found_args.append(name)
-                        
-                    inc += 1
-                        
-                found_args.reverse()
-                
-                found_args_name = string.join(found_args, ',')
-
-            
-            
-            
-            
-            function_name = node.name + '(%s)' % found_args_name
-            defined.append( function_name )
+            functions.append( function_name )
             
         if isinstance(node, ast.ClassDef):
-            defined.append(node.name)
+            
+            class_name = node.name + '()'
+            
+            for sub_node in node.body:
+                if isinstance(sub_node, ast.FunctionDef):
+                    
+                    if sub_node.name == '__init__':
+                        found_args = get_ast_function_args(sub_node)
+                        if found_args:
+                            found_args_name = string.join(found_args, ',')
+                        if not found_args:
+                            found_args_name = ''
+                        class_name = '%s(%s)' % (node.name, found_args_name)
+            
+            classes.append(class_name)
+            
+    classes.sort()
+    functions.sort()
+            
+    defined = classes + functions
             
     return defined
-    
-def get_namespace_class(module_path, line_number = None, namespace = None):
-    
+
+def get_defined_classes(module_path):
     
     file_text = get_file_text(module_path)
     
-    import symtable
+    defined = []
+    defined_dict = {}
     
-    table = symtable.symtable(file_text, module_path, 'exec')
-    
-    print dir(table)
-    symbol = table.lookup('FileData')
-    print symbol.get_name()
-    print symbol.is_referenced()
-    print symbol.is_local()
-    print symbol.is_imported()
-    print dir(symbol)
-    
-    """
     ast_tree = ast.parse(file_text)
     
+    for node in ast_tree.body:
+        if isinstance(node, ast.ClassDef):
+            defined.append(node.name)
+            defined_dict[node.name] = node
+            
+    return defined, defined_dict
+
+def get_ast_function_name_and_args(function_node):
+    function_name = function_node.name
+    
+    found_args = get_ast_function_args(function_node)
+    
+    if found_args:
+        found_args_name = string.join(found_args, ',')
+    if not found_args:
+        found_args_name = ''
+    
+    function_name = function_name + '(%s)' % found_args_name
+    
+    return function_name
+        
+def get_ast_function_args(function_node):
+    
+    found_args =[]
+    
+    if not function_node.args:
+        return found_args
+                
+    defaults = function_node.args.defaults
+    
+    args = function_node.args.args
+    
+    args.reverse()
+    defaults.reverse()
+    inc = 0
+    for arg in args:
+        
+        name = arg.id
+        
+        if name == 'self':
+            continue
+        
+        default_value = None
+        
+        if inc < len(defaults):
+            default_value = defaults[inc]
+        
+        if default_value:
+            
+            value = None
+            
+            if isinstance(default_value, ast.Str):
+                value = "'%s'" % default_value.s
+            if isinstance(default_value, ast.Name):
+                value = default_value.id
+            if isinstance(default_value, ast.Num):
+                value = default_value.n
+            
+            if value:
+                found_args.append('%s=%s' % (name, value))
+            if not value:
+                found_args.append(name)
+        if not default_value:
+            found_args.append(name)
+            
+        inc += 1
+            
+    found_args.reverse()
+    
+    return found_args
+
+def get_ast_class_sub_functions(module_path, class_name):
+    
+    defined, defined_dict = get_defined_classes(module_path)
+
+    if class_name in defined:
+        class_node = defined_dict[class_name]
+        
+        parents = []
+        
+        for base in class_node.bases:
+            
+            #there was a case where base was an attribute and had no id...
+            if hasattr(base, 'id'):
+                
+                if base.id in defined_dict:
+                    parents.append(defined_dict[base.id])
+        
+        functions = get_ast_class_members(class_node, parents)
+        functions.sort()
+        return functions
+
+def get_ast_class_members(class_node, parents = [], skip_list = None):
+    
+    if skip_list == None:
+        skip_list = []
+    
+    class_functions = []
+    
+    for node in class_node.body:
+        
+        if isinstance(node, ast.FunctionDef):
+            
+            name = node.name
+            
+            if skip_list:
+                if name in skip_list:
+                    continue
+            
+            skip_list.append(name)
+            
+            
+            stuff = get_ast_function_name_and_args(node)
+            
+            if stuff.startswith('_'):
+                continue
+            stuff = stuff.replace('self', '')
+            class_functions.append(stuff)
+        
+    found_parent_functions = []
+        
+    for parent in parents:
+        parent_functions = get_ast_class_members(parent, skip_list = skip_list)
+        found_parent_functions += parent_functions
+        
+    found_parent_functions += class_functions
+        
+    return found_parent_functions
+
+def get_ast_assignment(text, line_number, assignment):
+    
+    try:
+        ast_tree = ast.parse(text, 'string', 'exec')
+    except:
+        return
+    
+    line_assign_dict = {}
     
     for node in ast.walk(ast_tree):
-    
-        if isinstance(node, ast.Assign):
-            print node, node.lineno, node.targets, node.value
-            if isinstance(node.value, ast.Call):
-                
-                print node.value.func, node.value
-                print node.value.func.value.id,node.value.func.attr
-                
-    """        
         
-    
+        if hasattr( node, 'lineno' ):
+            current_line_number = node.lineno
+            
+            if current_line_number <= line_number:
+                
+                if isinstance(node, ast.ImportFrom):
+                    
+                    for name in node.names:
+                        
+                        full_name = node.module + '.' +  name.name
+                        
+                        value = ['import',full_name]
+                        
+                        if not name.asname:
+                            line_assign_dict[name.name] = value
+                        
+                        if name.asname:
+                            line_assign_dict[name.asname] = ['import', full_name]
+                        
+                if isinstance(node, ast.Assign):
+                    
+                    targets = []
+                    
+                    for target in node.targets:
+                        targets.append( target.id )
+                    
+                    if hasattr(node.value, ''):
+                        pass
+                    
+                    if hasattr(node.value, 'id'):
+                        value = node.value.id
+                        
+                    if hasattr(node.value, 'func'):
+                        value = []
+                        if hasattr(node.value.func, 'value'):
+                            #there was a case where func didn't have value...
+                            value.append( node.value.func.value.id )
+                            value.append( node.value.func.attr )
+                        
+                    if targets:
+                        for target in targets:
+                            line_assign_dict[target] = value
+            
+            if current_line_number > line_number:
+                continue
+            
+    return line_assign_dict
+
 def launch_maya(version, script = None):
     """
     Needs maya installed. If maya is installed in the default directory, will launch the version specified.
