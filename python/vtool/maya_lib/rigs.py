@@ -7643,6 +7643,15 @@ class StickyFadeRig(StickyRig):
 
     def create_follow(self, follow_transform, increment, value, top_follow_transform = None):
         
+        value = vtool.util.convert_to_sequence(value)
+        
+        value1 = value[0]
+        
+        if len(value) > 1:
+            value2 = value[1]
+        if len(value) == 1:
+            value2 = 1.0-value
+        
         if not self.follower_group:
             
             self.follower_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'follower')))
@@ -7662,8 +7671,8 @@ class StickyFadeRig(StickyRig):
             top_locator1 = locators[0][0][1]
             btm_locator1 = locators[0][1][1]
             
-            follow_top = space.create_multi_follow([follow_group, follow_transform], top_locator1, top_locator1, value = value)
-            follow_btm = space.create_multi_follow([follow_group, follow_transform], btm_locator1, btm_locator1, value = 1-value)        
+            follow_top = space.create_multi_follow([follow_group, follow_transform], top_locator1, top_locator1, value = value1)
+            follow_btm = space.create_multi_follow([follow_group, follow_transform], btm_locator1, btm_locator1, value = value2)        
             
             self._rename_followers(follow_top, 'top')
             self._rename_followers(follow_btm, 'btm')
@@ -7672,16 +7681,16 @@ class StickyFadeRig(StickyRig):
                 top_locator2 = locators[1][0][1]
                 btm_locator2 = locators[1][1][1]
             
-                follow_top = space.create_multi_follow([follow_group, follow_transform], top_locator2, top_locator2, value = value)
-                follow_btm = space.create_multi_follow([follow_group, follow_transform], btm_locator2, btm_locator2, value = 1-value)
+                follow_top = space.create_multi_follow([follow_group, follow_transform], top_locator2, top_locator2, value = value1)
+                follow_btm = space.create_multi_follow([follow_group, follow_transform], btm_locator2, btm_locator2, value = value2)
             
                 self._rename_followers(follow_top, 'top')
                 self._rename_followers(follow_btm, 'btm')
                 
         if increment == 'corner':
             
-            space.create_multi_follow([follow_group, follow_transform], self.corner_xforms[0], self.corner_xforms[0], value = value)
-            space.create_multi_follow([follow_group, follow_transform], self.corner_xforms[1], self.corner_xforms[1], value = value)
+            space.create_multi_follow([follow_group, follow_transform], self.corner_xforms[0], self.corner_xforms[0], value = value1)
+            space.create_multi_follow([follow_group, follow_transform], self.corner_xforms[1], self.corner_xforms[1], value = value1)
 
     def create_corner_falloff(self, inc, value):
 

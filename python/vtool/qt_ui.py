@@ -2030,6 +2030,8 @@ class CodeEditTabs(BasicWidget):
         
         self.find_widget = None
         
+        self.completer = None
+        
         self.installEventFilter(CodeEditTabs_ActiveFilter(self))
         
     def _find(self, text_edit):
@@ -2188,6 +2190,8 @@ class CodeEditTabs(BasicWidget):
             return
         
         code_edit_widget = CodeEdit()
+        if self.completer:
+            code_edit_widget.set_completer(self.completer)
         
         code_edit_widget.filepath = filepath
 
@@ -2238,6 +2242,8 @@ class CodeEditTabs(BasicWidget):
             return
                 
         code_edit_widget = CodeEdit()
+        if self.completer:
+            code_edit_widget.set_completer(self.completer)
         code_edit_widget.filepath = filepath
         
         self.tabs.addTab(code_edit_widget, basename)
@@ -2310,6 +2316,13 @@ class CodeEditTabs(BasicWidget):
     def set_tab_title(self, index, name):
         
         self.tabs.setTabText(index, name)
+        
+    def set_completer(self, completer_class):
+        
+        print 'set completer!!', completer_class
+        
+        self.completer = completer_class
+        
         
     def rename_tab(self, old_path, new_path, old_name, new_name):
         
@@ -2541,7 +2554,7 @@ class CodeEdit(BasicWidget):
         self.text_edit.file_set.connect(self._text_file_set)
         
         #completer on off... comment out to turn completer off.
-        self.text_edit.set_completer( PythonCompleter() )
+        #self.text_edit.set_completer( PythonCompleter() )
         
     def _build_menu_bar(self):
         
@@ -2618,6 +2631,9 @@ class CodeEdit(BasicWidget):
         self.save_state.setText('No Changes')
         if self.text_edit:
             self.text_edit.document().setModified(False)
+            
+    def set_completer(self, completer_class):
+        self.text_edit.set_completer(completer_class)
         
     def get_document(self):
         return self.text_edit.document()
@@ -3614,21 +3630,24 @@ class PythonCompleter(QtGui.QCompleter):
         
         self.setParent(widget)
         
-    def load_imports(self, paths = None):
+    def get_imports(self, paths = None):
         
         imports = self._get_available_modules(paths)
         imports.sort()
         
-        self.string_model.setStringList(imports)
+        return imports
+        
     
-    def load_sub_imports(self, path):
+    def get_sub_imports(self, path):
         """
         get namespaces in a module.
         """
         
         defined = util_file.get_defined(path)
+        defined.sort()
+        return defined
         
-        self.string_model.setStringList(defined)
+        
         
     
     def clear_completer_list(self):
@@ -3644,10 +3663,9 @@ class PythonCompleter(QtGui.QCompleter):
             
             cursor = self.widget().textCursor()
             
-            #position = curve.position()
             column = cursor.columnNumber() - 1
             block_number = cursor.blockNumber()
-            line_number = block_number + 1
+            #line_number = block_number + 1
             
             if column == -1:
                 return False
@@ -3688,7 +3706,9 @@ class PythonCompleter(QtGui.QCompleter):
             last_part = m.group(3)
             
             if module_path:
-                self.load_imports(module_path)
+                defined = self.get_imports(module_path)
+            
+                self.string_model.setStringList(defined)
             
                 self.setCompletionPrefix(last_part)
                 self.popup().setCurrentIndex(self.completionModel().index(0,0))
@@ -3698,6 +3718,8 @@ class PythonCompleter(QtGui.QCompleter):
         return False
     
     def handle_import_load(self, text, cursor):
+        
+        print 'handle import load'
         
         m = re.search('\s*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text)
         
@@ -3736,6 +3758,8 @@ class PythonCompleter(QtGui.QCompleter):
             target = None
             #searching for assignments
             
+            print 'here?'
+            
             if assign_map:
                 
                 if assignment in assign_map:
@@ -3773,7 +3797,7 @@ class PythonCompleter(QtGui.QCompleter):
                 
                 if module_name in imports:
                     path = imports[module_name]
-                
+                                
                 #import from module   
                 if not module_name in imports:
                 
@@ -3794,15 +3818,21 @@ class PythonCompleter(QtGui.QCompleter):
                         test_text = m.group(2)
     
                     if util_file.is_dir(path):
-                        self.load_imports(path)
+                        defined = self.get_imports(path)
                 
                     if util_file.is_file(path):
-                        self.load_sub_imports(path)
-                
+                        defined = self.get_sub_imports(path)
+                    
+                    custom_defined = self.custom_sub_import(assign_map, module_name)
+                    
+                    if custom_defined:
+                        defined = custom_defined
+                    
+                    self.string_model.setStringList(defined)
                     self.setCompletionPrefix(test_text)
                     self.popup().setCurrentIndex(self.completionModel().index(0,0))
                     return True
-                
+
                 #import from a class of a module
                 if path and sub_part:
                     
@@ -3815,13 +3845,36 @@ class PythonCompleter(QtGui.QCompleter):
                     
                     if len(m.groups()) > 0:
                         test_text = m.group(2)
-                        
+                                        
                     self.string_model.setStringList(sub_functions)
                     self.setCompletionPrefix(test_text)
                     self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                    
                     return True
+                
+            module_name = m.group(1)
+            
+            print 'here!!?', module_name
+            
+            
+            if module_name:
+                custom_defined = self.custom_sub_import(assign_map, module_name)
+                
+                test_text = ''
+                    
+                if len(m.groups()) > 0:
+                    test_text = m.group(2)
+                
+                self.string_model.setStringList(custom_defined)
+                self.setCompletionPrefix(test_text)
+                self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                return True
             
         return False
+    
+    def custom_sub_import(self, assign_map, module_name):
+        
+        return
     
     def handle_from_import(self, text, column):
         
@@ -3837,8 +3890,9 @@ class PythonCompleter(QtGui.QCompleter):
             
             if module_path:
                 
-                self.load_imports(module_path)
-            
+                defined = self.get_imports(module_path)
+                
+                self.string_model.setStringList(defined)
                 self.setCompletionPrefix(last_part)
                 self.popup().setCurrentIndex(self.completionModel().index(0,0))
                 

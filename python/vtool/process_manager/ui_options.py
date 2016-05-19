@@ -178,6 +178,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._create_context_menu()
         
         self.disable_auto_expand = False
+        self.has_first_group = False
         
     def _item_menu(self, position):
         
@@ -409,8 +410,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_widget_options(palette)
                     
     def _load_widgets(self, options):
-        
-        
         
         self.clear_widgets()
         
@@ -699,6 +698,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def clear_widgets(self):
         
+        self.has_first_group = False
+        
         item_count = self.child_layout.count()
         
         for inc in range(item_count, -1, -1):
@@ -729,8 +730,14 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         group.process_inst = self.process_inst
         self._write_options(False)
         
-        if parent.__class__ == ProcessOptionPalette:
+        if not self.has_first_group:
+            group.expand_group()
+        
+        if parent.__class__ == ProcessOptionPalette and self.has_first_group == True:
             group.collapse_group()
+            
+            
+        self.has_first_group = True
             
         return group
         

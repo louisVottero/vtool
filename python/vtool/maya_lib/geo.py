@@ -646,7 +646,44 @@ def get_meshes_in_list(list_of_things):
             if shapes:
                 found.append(thing)
      
-    return found        
+    return found   
+
+def get_curves_in_list(list_of_things):     
+
+    found = []
+    
+    for thing in list_of_things:
+        if cmds.nodeType(thing) == 'nurbsCurve':
+            found_mesh = cmds.listRelatives(thing, p = True)
+            found.append(found_mesh)
+            
+        if cmds.nodeType(thing) == 'transform':
+            
+            
+            shapes = get_curve_shape(thing)
+            if shapes:
+                found.append(thing)
+     
+    return found  
+
+
+def get_surfaces_in_list(list_of_things):     
+
+    found = []
+    
+    for thing in list_of_things:
+        if cmds.nodeType(thing) == 'nurbsSurface':
+            found_mesh = cmds.listRelatives(thing, p = True)
+            found.append(found_mesh)
+            
+        if cmds.nodeType(thing) == 'transform':
+            
+            
+            shapes = get_surface_shape(thing)
+            if shapes:
+                found.append(thing)
+     
+    return found    
 
 def get_selected_meshes():
     """
@@ -657,7 +694,18 @@ def get_selected_meshes():
     
     found = get_meshes_in_list(selection)
     return found
+
+def get_selected_curves():
     
+    selection = cmds.ls(sl = True)
+    found = get_curves_in_list(selection)
+    return found
+
+def get_selected_surfaces():
+    
+    selection = cmds.ls(sl = True)
+    found = get_surfaces_in_list(selection)
+    return found
 
 def get_mesh_shape(mesh, shape_index = 0):
     """
@@ -694,6 +742,59 @@ def get_mesh_shape(mesh, shape_index = 0):
         cmds.warning('%s does not have a shape count up to %s' % shape_index)
         
     return shapes[shape_index]
+
+def get_curve_shape(curve, shape_index = 0):
+    
+    if curve.find('.vtx'):
+        curve = curve.split('.')[0]
+    
+    if cmds.nodeType(curve) == 'nurbsCurve':
+        
+        curve = cmds.listRelatives(curve, p = True)[0]
+        
+    shapes = core.get_shapes(curve)
+    if not shapes:
+        return
+    
+    if not cmds.nodeType(shapes[0]) == 'nurbsCurve':
+        return
+    
+    shape_count = len(shapes)
+    
+    if shape_index < shape_count:
+        return shapes[0]
+    
+    if shape_index > shape_count:
+        cmds.warning('%s does not have a shape count up to %s' % shape_index)
+        
+    return shapes[shape_index]
+
+def get_surface_shape(surface, shape_index = 0):
+    
+    if surface.find('.vtx'):
+        surface = surface.split('.')[0]
+    
+    if cmds.nodeType(surface) == 'nurbsSurface':
+        
+        surface = cmds.listRelatives(surface, p = True)[0]
+        
+    shapes = core.get_shapes(surface)
+    if not shapes:
+        return
+    
+    if not cmds.nodeType(shapes[0]) == 'nurbsSurface':
+        return
+    
+    shape_count = len(shapes)
+    
+    if shape_index < shape_count:
+        return shapes[0]
+    
+    if shape_index > shape_count:
+        cmds.warning('%s does not have a shape count up to %s' % shape_index)
+        
+    return shapes[shape_index]
+    
     
 def create_shape_from_shape(shape, name = 'new_shape'):
     """

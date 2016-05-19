@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import string
+
 import os
 import subprocess
 
@@ -220,6 +222,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
     def _build_widgets(self):
         
         self.code_edit = vtool.qt_ui.CodeEditTabs()
+        self.code_edit.set_completer(CodeCompleter())
         self.code_edit.hide()
         
         self.code_edit.tabChanged.connect(self._tab_changed)
@@ -333,6 +336,72 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.current_process = process_name
         
         self.code_edit.current_process = process_name
+        
+class CodeCompleter(qt_ui.PythonCompleter):
+    
+    def __init__(self):
+        super(CodeCompleter, self).__init__()
+    
+    def _format_live_function(self, function_instance):
+        
+        function_name = None
+        
+        if hasattr(function_instance, 'im_func'):
+            args = function_instance.im_func.func_code.co_varnames
+            count = function_instance.im_func.func_code.co_argcount
+            
+            args_name = ''
+            
+            if args:
+                args = args[:count]
+                if args[0] == 'self':
+                    args = args[1:]
+                    
+                args_name = string.join(args,',')
+                
+            function_name = '%s(%s)' % (function_instance.im_func.func_name, args_name)
+            
+        return function_name
+    
+    def custom_sub_import(self, assign_map, module_name):
+        
+        found = []
+        
+        if module_name == 'process':
+            if assign_map:
+                if module_name in assign_map:
+                    return []
+            
+            functions = dir(process.Process)
+            found = []
+            
+            for function in functions:
+                if function.startswith('_'):
+                    continue
+                
+                function_instance = getattr(process.Process, function)
+                
+                function_name = self._format_live_function(function_instance)
+                if function_name:
+                    found.append(function_name)
+                
+            return found
+        
+        if module_name == 'cmds':
+            
+            if assign_map:
+                if module_name in assign_map:
+                    return []
+            
+            if vtool.util.is_in_maya():
+                
+                import maya.cmds as cmds
+                
+                functions = dir(cmds)
+                                    
+                return functions
+            
+        return found
         
 class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     

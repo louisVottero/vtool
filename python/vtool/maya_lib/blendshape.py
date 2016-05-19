@@ -80,8 +80,13 @@ class BlendShape(object):
         
         name = name.replace(' ', '_')
         
+        target_index = None
+                
         if self.targets.has_key(name):
             target_index = self.targets[name].index
+        
+        if target_index == None:
+            return
         
         return '%s.weight[%s]' % (self.blendshape, target_index)
 
@@ -391,11 +396,11 @@ class BlendShape(object):
         """
         
         target_group = self._get_input_target_group(name)
-        
-        weight_attr = self._get_weight(name)
-        
+                
         cmds.removeMultiInstance(target_group, b = True)
-        cmds.removeMultiInstance(weight_attr, b = True)
+        weight_attr = self._get_weight(name)
+        if weight_attr:
+            cmds.removeMultiInstance(weight_attr, b = True)
         
         self.weight_indices.remove( self.targets[name].index )
         self.targets.pop(name)
@@ -594,6 +599,8 @@ class BlendShape(object):
             for weight in weights:
                 cmds.setAttr('%s[%s]' % (attribute, inc), weight)
                 inc += 1
+        
+    
         
     def get_weights(self, target_name = None, mesh_index = 0 ):
         
