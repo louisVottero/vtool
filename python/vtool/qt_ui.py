@@ -2237,13 +2237,10 @@ class CodeEditTabs(BasicWidget):
         
     def add_tab(self, filepath, name):
         
-        print 'add tab?'
-        
         basename = name
         
         if self.code_tab_map.has_key(basename):
             self.goto_tab(basename)
-            print 'goto tab?'
             return
                 
         code_edit_widget = CodeEdit()
@@ -2263,11 +2260,10 @@ class CodeEditTabs(BasicWidget):
         self.code_tab_map[basename] = code_edit_widget
         
         self.goto_tab(basename)
-        print 'here?', self.code_floater_map
+        
         if self.code_floater_map.has_key(basename):
             float_widget = self.code_floater_map[basename]
             
-            print 'float widget!', float_widget
             if float_widget:
                 if filepath == float_widget.filepath:
                     
@@ -3725,8 +3721,6 @@ class PythonCompleter(QtGui.QCompleter):
     
     def handle_import_load(self, text, cursor):
         
-        print 'handle import load'
-        
         m = re.search('\s*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text)
         
         column = cursor.columnNumber() - 1
@@ -3764,8 +3758,6 @@ class PythonCompleter(QtGui.QCompleter):
             target = None
             #searching for assignments
             
-            print 'here?', assign_map
-            
             if assign_map:
                 
                 if assignment in assign_map:
@@ -3789,11 +3781,7 @@ class PythonCompleter(QtGui.QCompleter):
                             break
                 
                     sub_part = string.join(split_assignment[inc:], '.')
-                
-                #if not target:
-                #    print 'return here1'
-                #    return False
-                
+                    
                 module_name = None
                 
                 if target and len(target) == 2:
@@ -3819,7 +3807,6 @@ class PythonCompleter(QtGui.QCompleter):
                             path = imports[last_part]
         
                         if not last_part in imports:
-                            print 'return here2'
                             return False
                     
                     if path and not sub_part:
@@ -3850,7 +3837,6 @@ class PythonCompleter(QtGui.QCompleter):
                     sub_functions = util_file.get_ast_class_sub_functions(path, sub_part)
                     
                     if not sub_functions:
-                        print 'return here3'
                         return False
                     
                     test_text = ''
@@ -3865,8 +3851,6 @@ class PythonCompleter(QtGui.QCompleter):
                     return True
                 
             module_name = m.group(1)
-            
-            print 'here!!?', module_name
             
             if module_name:
                 custom_defined = self.custom_import_load(assign_map, module_name)
