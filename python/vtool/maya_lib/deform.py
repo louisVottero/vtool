@@ -666,12 +666,29 @@ class SplitMeshTarget(object):
                         if name.endswith('N'):
                             sub_name = name[:-1]
                         
+                        search = vtool.util.search_last_number(name)
+                        
+                        last_number = None
+                        
+                        if search:
+                            last_number = search.group()
+                            
+                            length = len(last_number)
+                            
+                            if length == 2:
+                                sub_name = name[:-2]
+                            
+                            
+                        
                         sub_new_name = sub_name
                         
                         if suffix:
                             sub_new_name = '%s%s' % (sub_new_name, suffix)
                         if prefix:
                             sub_new_name = '%s%s' % (prefix, sub_new_name)
+                        
+                        if last_number:
+                            sub_new_name += last_number 
                         
                         if name.endswith('N'):
                             sub_new_name += 'N'
