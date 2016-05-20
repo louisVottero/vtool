@@ -637,6 +637,18 @@ class SplitMeshTarget(object):
             if self.target_mesh.endswith('N'):
                 target_name = self.target_mesh[:-1]
                 
+            search = vtool.util.search_last_number(target_name)
+                        
+            last_number = None
+                        
+            if search:
+                last_number = search.group()
+                
+                length = len(last_number)
+                
+                if length == 2:
+                    target_name = target_name[:-2]
+                
             new_name = target_name
                 
             if replace:
@@ -647,6 +659,9 @@ class SplitMeshTarget(object):
                 new_name = '%s%s' % (new_name, suffix)
             if prefix:
                 new_name = '%s%s' % (prefix, new_name)
+            
+            if last_number:
+                new_name += last_number
             
             if self.target_mesh.endswith('N'):
                 new_name += 'N'
@@ -666,7 +681,7 @@ class SplitMeshTarget(object):
                         if name.endswith('N'):
                             sub_name = name[:-1]
                         
-                        search = vtool.util.search_last_number(name)
+                        search = vtool.util.search_last_number(sub_name)
                         
                         last_number = None
                         
@@ -676,7 +691,7 @@ class SplitMeshTarget(object):
                             length = len(last_number)
                             
                             if length == 2:
-                                sub_name = name[:-2]
+                                sub_name = sub_name[:-2]
                             
                             
                         
