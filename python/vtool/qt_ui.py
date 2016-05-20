@@ -2008,6 +2008,7 @@ class CodeEditTabs(BasicWidget):
     tabChanged = create_signal(object)
     no_tabs = create_signal()
     multi_save = create_signal(object, object)
+    completer =  None
     
     
     def __init__(self):
@@ -2030,7 +2031,6 @@ class CodeEditTabs(BasicWidget):
         
         self.find_widget = None
         
-        self.completer = None
         
         self.installEventFilter(CodeEditTabs_ActiveFilter(self))
         
@@ -2109,12 +2109,14 @@ class CodeEditTabs(BasicWidget):
             
             self.code_tab_map.pop(str(title))
             
+        """
         if self.code_floater_map.has_key(str(title)):
             #widget = self.code_tab_map[str(title)]
             #self.documents.pop(str(widget.filepath))
             
-            self.code_floater_map.pop(str(title))
             
+            self.code_floater_map.pop(str(title))
+        """
         if self.tabs.count() == 0:
             self.no_tabs.emit()
     
@@ -2190,8 +2192,8 @@ class CodeEditTabs(BasicWidget):
             return
         
         code_edit_widget = CodeEdit()
-        if self.completer:
-            code_edit_widget.set_completer(self.completer)
+        if self.__class__.completer:
+            code_edit_widget.set_completer(self.__class__.completer)
         
         code_edit_widget.filepath = filepath
 
@@ -2235,15 +2237,18 @@ class CodeEditTabs(BasicWidget):
         
     def add_tab(self, filepath, name):
         
+        print 'add tab?'
+        
         basename = name
         
         if self.code_tab_map.has_key(basename):
             self.goto_tab(basename)
+            print 'goto tab?'
             return
                 
         code_edit_widget = CodeEdit()
-        if self.completer:
-            code_edit_widget.set_completer(self.completer)
+        if self.__class__.completer:
+            code_edit_widget.set_completer(self.__class__.completer)
         code_edit_widget.filepath = filepath
         
         self.tabs.addTab(code_edit_widget, basename)
@@ -2258,13 +2263,16 @@ class CodeEditTabs(BasicWidget):
         self.code_tab_map[basename] = code_edit_widget
         
         self.goto_tab(basename)
-        
+        print 'here?', self.code_floater_map
         if self.code_floater_map.has_key(basename):
             float_widget = self.code_floater_map[basename]
             
+            print 'float widget!', float_widget
             if float_widget:
-                code_widget.setDocument(float_widget.text_edit.document())
-            
+                if filepath == float_widget.filepath:
+                    
+                    code_widget.setDocument(float_widget.text_edit.document())
+        
         return code_edit_widget
             
     def save_tabs(self, note = None):
@@ -2319,9 +2327,7 @@ class CodeEditTabs(BasicWidget):
         
     def set_completer(self, completer_class):
         
-        print 'set completer!!', completer_class
-        
-        self.completer = completer_class
+        self.__class__.completer = completer_class
         
         
     def rename_tab(self, old_path, new_path, old_name, new_name):
@@ -3758,7 +3764,7 @@ class PythonCompleter(QtGui.QCompleter):
             target = None
             #searching for assignments
             
-            print 'here?'
+            print 'here?', assign_map
             
             if assign_map:
                 
@@ -3784,54 +3790,59 @@ class PythonCompleter(QtGui.QCompleter):
                 
                     sub_part = string.join(split_assignment[inc:], '.')
                 
-                if not target:
-                    return False
+                #if not target:
+                #    print 'return here1'
+                #    return False
                 
-                if len(target) == 2:
+                module_name = None
+                
+                if target and len(target) == 2:
                     if target[0] == 'import':
                         module_name = target[1]
                     if not target[0] == 'import':
                         
                         module_name = target[0]
                         sub_part = target[1]
-                
-                if module_name in imports:
-                    path = imports[module_name]
-                                
+                        
                 #import from module   
-                if not module_name in imports:
-                
-                    split_assignment = module_name.split('.')
+                if module_name:
                     
-                    last_part = split_assignment[-1]
+                    if module_name in imports:
+                        path = imports[module_name]
+                    if not module_name in imports:
                     
-                    if last_part in imports:
-                        path = imports[last_part]
-    
-                    if not last_part in imports:
-                        return False
-                
-                if path and not sub_part:
-                    test_text = ''
+                        split_assignment = module_name.split('.')
+                        
+                        last_part = split_assignment[-1]
+                        
+                        if last_part in imports:
+                            path = imports[last_part]
+        
+                        if not last_part in imports:
+                            print 'return here2'
+                            return False
                     
-                    if len(m.groups()) > 0:
-                        test_text = m.group(2)
-    
-                    if util_file.is_dir(path):
-                        defined = self.get_imports(path)
-                
-                    if util_file.is_file(path):
-                        defined = self.get_sub_imports(path)
+                    if path and not sub_part:
+                        test_text = ''
+                        
+                        if len(m.groups()) > 0:
+                            test_text = m.group(2)
+        
+                        if util_file.is_dir(path):
+                            defined = self.get_imports(path)
                     
-                    custom_defined = self.custom_sub_import(assign_map, module_name)
-                    
-                    if custom_defined:
-                        defined = custom_defined
-                    
-                    self.string_model.setStringList(defined)
-                    self.setCompletionPrefix(test_text)
-                    self.popup().setCurrentIndex(self.completionModel().index(0,0))
-                    return True
+                        if util_file.is_file(path):
+                            defined = self.get_sub_imports(path)
+                        
+                        custom_defined = self.custom_sub_import(assign_map, module_name)
+                        
+                        if custom_defined:
+                            defined = custom_defined
+                        
+                        self.string_model.setStringList(defined)
+                        self.setCompletionPrefix(test_text)
+                        self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                        return True
 
                 #import from a class of a module
                 if path and sub_part:
@@ -3839,6 +3850,7 @@ class PythonCompleter(QtGui.QCompleter):
                     sub_functions = util_file.get_ast_class_sub_functions(path, sub_part)
                     
                     if not sub_functions:
+                        print 'return here3'
                         return False
                     
                     test_text = ''
@@ -3856,9 +3868,8 @@ class PythonCompleter(QtGui.QCompleter):
             
             print 'here!!?', module_name
             
-            
             if module_name:
-                custom_defined = self.custom_sub_import(assign_map, module_name)
+                custom_defined = self.custom_import_load(assign_map, module_name)
                 
                 test_text = ''
                     
@@ -3872,7 +3883,7 @@ class PythonCompleter(QtGui.QCompleter):
             
         return False
     
-    def custom_sub_import(self, assign_map, module_name):
+    def custom_import_load(self, assign_map, module_name):
         
         return
     
