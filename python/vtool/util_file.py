@@ -2189,7 +2189,10 @@ def get_ast_function_args(function_node):
     
     return found_args
 
+
 def get_ast_class_sub_functions(module_path, class_name):
+    
+    print 'get sub functions'
     
     defined, defined_dict = get_defined_classes(module_path)
 
@@ -2198,19 +2201,35 @@ def get_ast_class_sub_functions(module_path, class_name):
         
         parents = []
         
-        for base in class_node.bases:
+        bases = class_node.bases
+        
+        while bases:
             
-            #there was a case where base was an attribute and had no id...
-            if hasattr(base, 'id'):
+            temp_bases = bases
+            
+            find_bases = []
+            
+            for base in temp_bases:
                 
-                if base.id in defined_dict:
-                    parents.append(defined_dict[base.id])
+                #there was a case where base was an attribute and had no id...
+                if hasattr(base, 'id'):
+                    
+                    if base.id in defined_dict:
+                        parents.append(defined_dict[base.id])
+                        
+                        sub_bases = parents[-1].bases
+                        if sub_bases:
+                            find_bases += sub_bases
+                            
+            bases = find_bases
         
         functions = get_ast_class_members(class_node, parents)
         functions.sort()
         return functions
 
 def get_ast_class_members(class_node, parents = [], skip_list = None):
+    
+    print 'get ast class members', class_node.name, skip_list
     
     if skip_list == None:
         skip_list = []
@@ -2240,6 +2259,9 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
     found_parent_functions = []
         
     for parent in parents:
+        
+        print parent.name
+        
         parent_functions = get_ast_class_members(parent, skip_list = skip_list)
         found_parent_functions += parent_functions
         
@@ -2248,6 +2270,8 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
     return found_parent_functions
 
 def get_ast_assignment(text, line_number, assignment):
+    
+    text = str(text)
     
     try:
         ast_tree = ast.parse(text, 'string', 'exec')

@@ -605,6 +605,9 @@ class SparseRig(JointRig):
         self.xform_scale = scale
         
     def set_control_to_pivot(self, bool_value):
+        """
+        This will build the control at the pivot point of the joint or transform supplied with set_joints()
+        """
         self.control_to_pivot = bool_value
         
     def create(self):

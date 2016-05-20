@@ -3564,6 +3564,12 @@ class PythonCompleter(QtGui.QCompleter):
         self.refresh_completer = True
         self.sub_activated = False
         
+        self.last_path = None
+        self.current_imports = None
+        
+        self.last_path_and_part = None
+        self.current_sub_functions = None
+        
     def show_info_popup(self, info = None):
         
         
@@ -3633,7 +3639,7 @@ class PythonCompleter(QtGui.QCompleter):
         widget.setTextCursor(cursor)
     
     def setWidget(self, widget):
-        
+    
         super(PythonCompleter, self).setWidget(widget)
         
         self.setParent(widget)
@@ -3727,6 +3733,8 @@ class PythonCompleter(QtGui.QCompleter):
     
     def handle_import_load(self, text, cursor):
         
+        print 'handle import load'
+        
         m = re.search('\s*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text)
         
         column = cursor.columnNumber() - 1
@@ -3788,59 +3796,78 @@ class PythonCompleter(QtGui.QCompleter):
                 
                     sub_part = string.join(split_assignment[inc:], '.')
                     
-                module_name = None
+            module_name = m.group(1)
+            
+            if target and len(target) == 2:
+                if target[0] == 'import':
+                    module_name = target[1]
+                if not target[0] == 'import':
+                    
+                    module_name = target[0]
+                    sub_part = target[1]
+                    
+            #import from module   
+            if module_name:
                 
-                if target and len(target) == 2:
-                    if target[0] == 'import':
-                        module_name = target[1]
-                    if not target[0] == 'import':
-                        
-                        module_name = target[0]
-                        sub_part = target[1]
-                        
-                #import from module   
-                if module_name:
+                if module_name in imports:
+                    path = imports[module_name]
+                if not module_name in imports:
+                
+                    split_assignment = module_name.split('.')
                     
-                    if module_name in imports:
-                        path = imports[module_name]
-                    if not module_name in imports:
+                    last_part = split_assignment[-1]
                     
-                        split_assignment = module_name.split('.')
-                        
-                        last_part = split_assignment[-1]
-                        
-                        if last_part in imports:
-                            path = imports[last_part]
-        
-                        if not last_part in imports:
-                            return False
+                    if last_part in imports:
+                        path = imports[last_part]
+    
+                    #if not last_part in imports:
+                    #    module_name = None
+                
+                
+                if path and not sub_part:
+                    test_text = ''
+                    defined = None
                     
-                    if path and not sub_part:
-                        test_text = ''
-                        
-                        if len(m.groups()) > 0:
-                            test_text = m.group(2)
-        
+                    if path == self.last_path:
+                        defined = self.current_imports
+                    
+                    if len(m.groups()) > 0:
+                        test_text = m.group(2)
+                    
+                    if not defined:
                         if util_file.is_dir(path):
                             defined = self.get_imports(path)
+                            self.current_imports = defined
+                        
+                
+                    if util_file.is_file(path):
+                        defined = self.get_sub_imports(path)
                     
-                        if util_file.is_file(path):
-                            defined = self.get_sub_imports(path)
-                        
-                        custom_defined = self.custom_import_load(assign_map, module_name)
-                        
-                        if custom_defined:
-                            defined = custom_defined
-                        
-                        self.string_model.setStringList(defined)
-                        self.setCompletionPrefix(test_text)
-                        self.popup().setCurrentIndex(self.completionModel().index(0,0))
-                        return True
-
+                    custom_defined = self.custom_import_load(assign_map, module_name)
+                    
+                    if custom_defined:
+                        defined = custom_defined
+                    
+                    self.string_model.setStringList(defined)
+                    self.setCompletionPrefix(test_text)
+                    self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                    return True
+    
                 #import from a class of a module
+                
                 if path and sub_part:
                     
-                    sub_functions = util_file.get_ast_class_sub_functions(path, sub_part)
+                    sub_functions = None
+                    
+                    if self.last_path_and_part:
+                        if path == self.last_path_and_part[0] and sub_part == self.last_path_and_part[1]:
+                            sub_functions = self.current_sub_functions
+                        
+                    if not sub_functions:
+                        sub_functions = util_file.get_ast_class_sub_functions(path, sub_part)
+                        self.current_sub_functions = sub_functions
+                    
+                    self.last_path_and_part = [path, sub_part]
                     
                     if not sub_functions:
                         return False
@@ -3888,6 +3915,9 @@ class PythonCompleter(QtGui.QCompleter):
             module_path = util_file.get_package_path_from_name(from_module)
             
             last_part = m.group(4)
+            
+            if not last_part:
+                last_part = ''
             
             if module_path:
                 

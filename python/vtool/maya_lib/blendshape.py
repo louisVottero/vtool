@@ -1374,11 +1374,11 @@ class ShapeComboManager(object):
     
     def get_shapes_in_group(self, group_name):
         
-        relatives = cmds.listRelatives(group_name)
+        relatives = cmds.listRelatives(group_name, f = True)
         
         meshes = geo.get_meshes_in_list(relatives)
         
-        shapes, combos, inbetweens = []
+        shapes, combos, inbetweens = [], [], []
         
         for mesh in meshes:
             if self.is_inbetween(mesh):
