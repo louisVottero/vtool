@@ -4026,7 +4026,9 @@ class TimelineWidget(QtGui.QWidget):
   
 def get_comment(parent = None,text_message = 'add comment', title = 'save'):
     
-    comment, ok = QtGui.QInputDialog.getText(parent, title,text_message)
+    dialogue = QtGui.QInputDialog()
+    
+    comment, ok = dialogue.getText(parent, title,text_message)
     
     comment = comment.replace('\\', '_')  
     

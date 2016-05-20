@@ -641,10 +641,13 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
         self.main_layout.addWidget(save_button)    
 
-    def _save(self, comment = None):
+    def _save(self, comment = None, parent = None):
+        
+        if not parent:
+            parent = self
         
         if comment == None or comment == False:
-            comment = vtool.qt_ui.get_comment(self, title = 'Save %s' % self.data_class.name)
+            comment = vtool.qt_ui.get_comment(parent, title = 'Save %s' % self.data_class.name)
         
         if comment == None:
             return
@@ -658,8 +661,9 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
         self.text_widget.load_modification_date()
         self.text_widget.save_done.emit(True)
+        
         self.text_widget.document().setModified(False)
-
+        
     def set_text_widget(self, text_widget):
         self.text_widget = text_widget
 

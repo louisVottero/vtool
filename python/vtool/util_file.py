@@ -2294,8 +2294,10 @@ def get_ast_assignment(text, line_number, assignment):
                         value = []
                         if hasattr(node.value.func, 'value'):
                             #there was a case where func didn't have value...
-                            value.append( node.value.func.value.id )
-                            value.append( node.value.func.attr )
+                            if hasattr(node.value.func.value, 'id'):
+                                #there might have been a case where func.value didn't have id
+                                value.append( node.value.func.value.id )
+                                value.append( node.value.func.attr )
                         
                     if targets:
                         for target in targets:

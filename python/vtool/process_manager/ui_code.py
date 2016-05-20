@@ -283,8 +283,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         self.save_file.set_directory(filepath)
         self.save_file.set_text_widget(code_edit_widget)
-        
-        self.save_file.save_widget._save()
+        self.save_file.save_widget._save(parent = code_edit_widget)
         
     def _multi_save(self, widgets, note = None):
         
