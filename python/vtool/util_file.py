@@ -2192,8 +2192,6 @@ def get_ast_function_args(function_node):
 
 def get_ast_class_sub_functions(module_path, class_name):
     
-    print 'get sub functions'
-    
     defined, defined_dict = get_defined_classes(module_path)
 
     if class_name in defined:
@@ -2229,8 +2227,6 @@ def get_ast_class_sub_functions(module_path, class_name):
 
 def get_ast_class_members(class_node, parents = [], skip_list = None):
     
-    print 'get ast class members', class_node.name, skip_list
-    
     if skip_list == None:
         skip_list = []
     
@@ -2259,8 +2255,6 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
     found_parent_functions = []
         
     for parent in parents:
-        
-        print parent.name
         
         parent_functions = get_ast_class_members(parent, skip_list = skip_list)
         found_parent_functions += parent_functions

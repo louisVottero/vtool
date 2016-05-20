@@ -3564,8 +3564,11 @@ class PythonCompleter(QtGui.QCompleter):
         self.refresh_completer = True
         self.sub_activated = False
         
+        self.last_imports = None
+        self.last_lines = None
+        
         self.last_path = None
-        self.current_imports = None
+        self.current_defined_imports = None
         
         self.last_path_and_part = None
         self.current_sub_functions = None
@@ -3762,7 +3765,7 @@ class PythonCompleter(QtGui.QCompleter):
             
             text = self.widget().toPlainText()
             lines = util_file.get_text_lines(text)
-            imports = util_file.get_line_imports(lines)
+            
             
             path = None
             
@@ -3809,8 +3812,20 @@ class PythonCompleter(QtGui.QCompleter):
             #import from module   
             if module_name:
                 
+                imports = None
+                
+                if lines == self.last_lines:
+                    imports = self.last_imports
+                
+                if not imports:
+                    imports = util_file.get_line_imports(lines)
+                
+                self.last_imports = imports
+                self.last_lines = lines
+                
                 if module_name in imports:
                     path = imports[module_name]
+                    
                 if not module_name in imports:
                 
                     split_assignment = module_name.split('.')
@@ -3829,7 +3844,7 @@ class PythonCompleter(QtGui.QCompleter):
                     defined = None
                     
                     if path == self.last_path:
-                        defined = self.current_imports
+                        defined = self.current_defined_imports
                     
                     if len(m.groups()) > 0:
                         test_text = m.group(2)
@@ -3837,9 +3852,8 @@ class PythonCompleter(QtGui.QCompleter):
                     if not defined:
                         if util_file.is_dir(path):
                             defined = self.get_imports(path)
-                            self.current_imports = defined
+                            self.current_defined_imports = defined
                         
-                
                     if util_file.is_file(path):
                         defined = self.get_sub_imports(path)
                     
