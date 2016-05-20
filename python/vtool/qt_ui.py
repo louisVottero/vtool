@@ -2124,6 +2124,8 @@ class CodeEditTabs(BasicWidget):
         
         title = current_widget.titlename
         
+        filepath = current_widget.filepath
+        
         if hasattr(current_widget, 'text_edit'):
             current_widget = current_widget.text_edit
         
@@ -2131,11 +2133,15 @@ class CodeEditTabs(BasicWidget):
         
         if self.code_floater_map.has_key(title):
             floater_widget = self.code_floater_map[title]
-            floater_widget.set_no_changes()
+            
+            if floater_widget.filepath == filepath:
+                floater_widget.set_no_changes()
             
         if self.code_tab_map.has_key(title):
             tab_widget = self.code_tab_map[title]
-            tab_widget.set_no_changes()
+            
+            if tab_widget.filepath == filepath:
+                tab_widget.set_no_changes()
     
     def _build_widgets(self):
         
