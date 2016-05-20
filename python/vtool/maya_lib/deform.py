@@ -637,17 +637,10 @@ class SplitMeshTarget(object):
             if self.target_mesh.endswith('N'):
                 target_name = self.target_mesh[:-1]
                 
-            search = vtool.util.search_last_number(target_name)
-                        
-            last_number = None
-                        
-            if search:
-                last_number = search.group()
-                
-                length = len(last_number)
-                
-                if length == 2:
-                    target_name = target_name[:-2]
+            last_number = vtool.util.get_trailing_number(target_name, as_string = True, number_count = 2)
+            
+            if last_number:
+                target_name = target_name[:-2]
                 
             new_name = target_name
                 
@@ -681,17 +674,10 @@ class SplitMeshTarget(object):
                         if name.endswith('N'):
                             sub_name = name[:-1]
                         
-                        search = vtool.util.search_last_number(sub_name)
+                        last_number = vtool.util.get_trailing_number(sub_name, as_string = True, number_count = 2)
                         
-                        last_number = None
-                        
-                        if search:
-                            last_number = search.group()
-                            
-                            length = len(last_number)
-                            
-                            if length == 2:
-                                sub_name = sub_name[:-2]
+                        if last_number:
+                            sub_name = sub_name[:-2]
                             
                             
                         

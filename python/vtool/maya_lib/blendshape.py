@@ -1864,7 +1864,7 @@ class ShapeComboManager(object):
                 if inbetween_parent:
                     if inbetween_parent in meshes or self.blendshape.is_target(inbetween_parent):
                         inbetweens.append(mesh)
-                            
+                
                 if not inbetween_parent:
                     shapes.append(mesh)
                 
@@ -1911,6 +1911,9 @@ class ShapeComboManager(object):
         
         parent = None
         
+        if not shape:
+            return
+        
         inbetween_parent = self.get_inbetween_parent(shape)
         
         if inbetween_parent:
@@ -1930,14 +1933,12 @@ class ShapeComboManager(object):
     
     def is_inbetween(self, shape, parent_shape = None):
         
-        last_number = vtool.util.get_last_number(shape)
+        last_number = vtool.util.get_trailing_number(shape, as_string = True, number_count=2)
         
         if not last_number:
             return False
         
-        last_number_str = str(last_number)
-        
-        if not len(last_number_str) >= 2:
+        if not len(last_number) >= 2:
             return False
         
         first_part = shape[:-2]
@@ -1970,14 +1971,12 @@ class ShapeComboManager(object):
 
     def get_inbetween_parent(self, inbetween):
         
-        last_number = vtool.util.get_last_number(inbetween)
+        last_number = vtool.util.get_trailing_number(inbetween, as_string = True, number_count= 2)
         
         if not last_number:
             return
         
-        last_number_str = str(last_number)
-        
-        if not len(last_number_str) >= 2:
+        if not len(last_number) >= 2:
             return
         
         first_part = inbetween[:-2]

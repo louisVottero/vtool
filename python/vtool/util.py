@@ -953,7 +953,7 @@ class FindUniqueString(object):
     def get(self):
         return self._search()
                 
-def get_end_number(input_string):
+def get_end_number(input_string, as_string = False):
     """
     Get the number at the end of a string.
     
@@ -969,10 +969,37 @@ def get_end_number(input_string):
         if type(number) == list:
             number = number[0]
             
+        if as_string:
+            return number
+            
         number = int(number)
     
     return number
 
+def get_trailing_number(input_string, as_string = False, number_count = -1):
+    """
+    Get the number at the very end of a string. If number not at the end of the string return None.
+    """
+    
+    if not input_string:
+        return
+    
+    number = '\d+'
+    
+    if number_count > 0:
+        number = '\d' * number_count
+    
+    group = re.match('([a-zA-Z_0-9]+)(%s$)' % number, input_string)
+    
+    if group:
+        number = group.group(2)
+        
+        if as_string:
+            return number
+        
+        if not as_string:
+            return int(number)
+    
 def search_last_number(input_string):
     """
     Get the last number in a string.
