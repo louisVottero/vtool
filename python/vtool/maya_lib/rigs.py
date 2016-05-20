@@ -7650,7 +7650,7 @@ class StickyFadeRig(StickyRig):
         if len(value) > 1:
             value2 = value[1]
         if len(value) == 1:
-            value2 = 1.0-value
+            value2 = 1.0-value[0]
         
         if not self.follower_group:
             

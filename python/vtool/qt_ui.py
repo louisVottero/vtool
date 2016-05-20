@@ -3821,7 +3821,7 @@ class PythonCompleter(QtGui.QCompleter):
                         if util_file.is_file(path):
                             defined = self.get_sub_imports(path)
                         
-                        custom_defined = self.custom_sub_import(assign_map, module_name)
+                        custom_defined = self.custom_import_load(assign_map, module_name)
                         
                         if custom_defined:
                             defined = custom_defined
