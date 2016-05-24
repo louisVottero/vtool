@@ -3573,6 +3573,8 @@ class PythonCompleter(QtGui.QCompleter):
         self.last_path_and_part = None
         self.current_sub_functions = None
         
+        self.last_column = 0
+        
     def show_info_popup(self, info = None):
         
         
@@ -3681,8 +3683,11 @@ class PythonCompleter(QtGui.QCompleter):
             cursor = self.widget().textCursor()
             
             column = cursor.columnNumber() - 1
-            block_number = cursor.blockNumber()
-            #line_number = block_number + 1
+            if column < self.last_column:
+                self.last_column = column
+                return False
+            self.last_column = column
+            
             
             if column == -1:
                 return False
