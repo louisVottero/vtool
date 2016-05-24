@@ -678,8 +678,6 @@ class SplitMeshTarget(object):
                         
                         if last_number:
                             sub_name = sub_name[:-2]
-                            
-                            
                         
                         sub_new_name = sub_name
                         
@@ -1661,10 +1659,17 @@ class MultiJointShape(object):
         split = SplitMeshTarget(new_brow_geo)
         split.set_weighted_mesh(self.skinned_mesh)
      
+        
         inc = 1
      
         for joint in self.joints:
-            split.set_weight_joint( joint, str(inc))
+            
+            match = re.search('[A-Z]', new_brow_geo)    
+            
+            if match:
+                
+                split.set_weight_insert_index(joint, match.start(0), str(inc))
+            
             inc += 1
      
         split.set_base_mesh(self.base_mesh)
