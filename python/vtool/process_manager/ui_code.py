@@ -222,7 +222,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
     def _build_widgets(self):
         
         self.code_edit = vtool.qt_ui.CodeEditTabs()
-        self.code_edit.set_completer(CodeCompleter())
+        self.code_edit.set_completer(CodeCompleter)
         self.code_edit.hide()
         
         self.code_edit.tabChanged.connect(self._tab_changed)

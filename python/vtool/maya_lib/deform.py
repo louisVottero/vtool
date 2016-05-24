@@ -566,6 +566,10 @@ class SplitMeshTarget(object):
         """
         
         self.split_parts.append([joint, replace, None, None, None, split_name, [None,None]])
+        
+    def set_weight_joint_insert_at_first_camel(self, joint, insert_value, split_name = True):
+        
+        self.split_parts.append([joint, insert_value, None, None, 'camel_start', split_name, [None, None]])
 
     def set_center_fade(self, fade_distance, positive,  suffix = None, prefix = None, split_name = True):
         """
@@ -604,6 +608,7 @@ class SplitMeshTarget(object):
         Return
             list: The names of the new targets.
         """
+        
         if not self.base_mesh:
             return
 
@@ -644,7 +649,7 @@ class SplitMeshTarget(object):
                 
             new_name = target_name
                 
-            if replace:
+            if replace and type(replace) == list:
                 
                 new_name = re.sub(replace[0], replace[1], new_name)
                 
@@ -663,48 +668,69 @@ class SplitMeshTarget(object):
                 
                 split_name = self.target_mesh.split('_')
                 
-                if len(split_name) > 1:
-                    new_names = []
+                if len(split_name) < 2:
+                    split_name = [self.target_mesh] 
+                
+                new_names = []
                     
-                    inc = 0
+                inc = 0
                     
-                    for name in split_name:
+                for name in split_name:
+                    
+                    sub_name = name
+                    if name.endswith('N'):
+                        sub_name = name[:-1]
+                    
+                    last_number = vtool.util.get_trailing_number(sub_name, as_string = True, number_count = 2)
+                    
+                    if last_number:
+                        sub_name = sub_name[:-2]
+                    
+                    sub_new_name = sub_name
+                    
+                    if suffix:
+                        sub_new_name = '%s%s' % (sub_new_name, suffix)
+                    if prefix:
+                        sub_new_name = '%s%s' % (prefix, sub_new_name)
+                    
+                    if last_number:
+                        sub_new_name += last_number 
+                    
+                    if name.endswith('N'):
+                        sub_new_name += 'N'
+                    
+                    
+                    
+                    if split_index == 'camel_start':
                         
-                        sub_name = name
-                        if name.endswith('N'):
-                            sub_name = name[:-1]
+                        search = re.search('[A-Z]', sub_new_name)
                         
-                        last_number = vtool.util.get_trailing_number(sub_name, as_string = True, number_count = 2)
+                        if search:
+                            camel_insert_index = search.start(0)
+                            sub_new_name = sub_new_name[:camel_insert_index] + replace + new_name[camel_insert_index:]
+                    
+                    """
+                    if len(split_index) > 1:
                         
-                        if last_number:
-                            sub_name = sub_name[:-2]
-                        
-                        sub_new_name = sub_name
-                        
-                        if suffix:
-                            sub_new_name = '%s%s' % (sub_new_name, suffix)
-                        if prefix:
-                            sub_new_name = '%s%s' % (prefix, sub_new_name)
-                        
-                        if last_number:
-                            sub_new_name += last_number 
-                        
-                        if name.endswith('N'):
-                            sub_new_name += 'N'
-                        
-                        if len(split_index) > 1:
-                            
-                            new_names.append(split_index[1])
-                        
-                        new_names.append(sub_new_name)
-                        
-                        inc += 1
+                        new_names.append(split_index[1])
+                    """
+                    new_names.append(sub_new_name)
+                    
+                    inc += 1
                         
                     new_name = string.join(new_names, '_')
             
             if not split_name_option:
                 
-                new_name = new_name[:split_index[0]] + split_index[1] + new_name[split_index[0]:]
+                if type(split_index) == list:
+                    new_name = new_name[:split_index[0]] + split_index[1] + new_name[split_index[0]:]
+                
+                if split_index == 'camel_start':
+                    search = re.search('[A-Z]', new_name)
+                            
+                    if search:
+                        camel_insert_index = search.start(0)
+                        new_name = new_name[:camel_insert_index] + replace + new_name[camel_insert_index:]
             
             new_target = cmds.rename(new_target, new_name)    
             
@@ -1664,14 +1690,7 @@ class MultiJointShape(object):
      
         for joint in self.joints:
             
-            match = re.search('[A-Z]', new_brow_geo)    
-            
-            if match:
-                split.set_weight_insert_index(joint, match.start(0), str(inc), False)
-            
-            if not match:
-                
-                split.set_weight_joint(joint, str(inc))
+            split.set_weight_joint_insert_at_first_camel(joint, str(inc), True)
             
             inc += 1
      

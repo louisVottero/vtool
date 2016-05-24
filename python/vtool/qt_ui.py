@@ -3145,7 +3145,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
 
     def set_completer(self, completer):
         
-        self.completer = completer
+        self.completer = completer()
         
         self.completer.setWidget(self)
         
@@ -3735,8 +3735,6 @@ class PythonCompleter(QtGui.QCompleter):
         return False
     
     def handle_import_load(self, text, cursor):
-        
-        print 'handle import load'
         
         m = re.search('\s*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text)
         
