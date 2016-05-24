@@ -692,7 +692,7 @@ class SplitMeshTarget(object):
                         if name.endswith('N'):
                             sub_new_name += 'N'
                         
-                        if split_index[1] and split_index[0] == inc:
+                        if len(split_index) > 1:
                             
                             new_names.append(split_index[1])
                         
@@ -1667,8 +1667,11 @@ class MultiJointShape(object):
             match = re.search('[A-Z]', new_brow_geo)    
             
             if match:
+                split.set_weight_insert_index(joint, match.start(0), str(inc), False)
+            
+            if not match:
                 
-                split.set_weight_insert_index(joint, match.start(0), str(inc))
+                split.set_weight_joint(joint, str(inc))
             
             inc += 1
      
