@@ -400,6 +400,8 @@ class CodeCompleter(qt_ui.PythonCompleter):
                                     
                 return functions
             
+        
+            
         return found
         
 class ScriptWidget(vtool.qt_ui.DirectoryWidget):

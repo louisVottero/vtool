@@ -603,8 +603,6 @@ def delete_unknown_nodes():
 
     deleted = []
     
-    
-
     for node in unknown:
         if cmds.objExists(node):
             cmds.lockNode(node, lock = False)

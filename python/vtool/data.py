@@ -2156,14 +2156,6 @@ class MayaFileData(MayaCustomData):
         cmds.file(rename = self.filepath)
         
         cmds.file(save = True,
-                  prompt = False, 
-                  force = True, 
-                  pr = True, 
-                  ch = True, 
-                  chn = True, 
-                  exp = True, 
-                  con = True, 
-                  stx = 'always', 
                   type = self.maya_file_type)
         
         version = util_file.VersionFile(self.filepath)
