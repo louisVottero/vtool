@@ -1587,6 +1587,8 @@ class MultiJointShape(object):
         self.locators = []
         self.hook_to_empty_group = False
         self.hook_to_empty_group_name = None
+        self.create_hookup = True
+        self.weight_joints
         
     def _create_locators(self):
         
@@ -1640,7 +1642,13 @@ class MultiJointShape(object):
     def set_joints(self, joints):
         
         self.joints = joints
-        
+    
+    def set_weight_joints(self, joints):
+        self.weight_joints = joints
+    
+    def set_create_hookup(self, bool_value):
+        self.create_hookup = bool_value
+    
     def set_target_mesh(self, base_mesh):
         self.base_mesh = base_mesh
         
@@ -1661,7 +1669,8 @@ class MultiJointShape(object):
         
     def create(self):
         
-        self._create_locators()
+        if self.create_hookup:
+            self._create_locators()
         
         self._turn_controls_on() 
         
@@ -1690,11 +1699,15 @@ class MultiJointShape(object):
         
         split = SplitMeshTarget(new_brow_geo)
         split.set_weighted_mesh(self.skinned_mesh)
-     
         
         inc = 1
      
-        for joint in self.joints:
+        weight_joints = self.joints
+        
+        if self.weight_joints:
+            weight_joints = self.weight_joints
+            
+        for joint in weight_joints:
             
             split.set_weight_joint_insert_at_first_camel(joint, str(inc), True)
             
@@ -1704,47 +1717,51 @@ class MultiJointShape(object):
         splits = split.create()
      
         inc = 0
-        for split in splits:
-            
-            value = joint_values[self.locators[inc]]
-            
-            off_value = None
-            
-            if off_joint_values:
-                off_value = off_joint_values[self.locators[inc]]
-            
-            if not self.hook_to_empty_group:
-                blendshape = quick_blendshape(split, self.base_mesh)
+        
+        if self.create_hookup:
+            for split in splits:
                 
-            if self.hook_to_empty_group:
                 
-                if not self.hook_to_empty_group_name:
-                    group = 'hookup_multi_%s' % self.base_mesh
-                if self.hook_to_empty_group_name:
-                    group = self.hook_to_empty_group_name
                 
-                if not cmds.objExists(group):
-                    group = cmds.group(em = True, n = group)
-                    attr.hide_keyable_attributes(group)
+                value = joint_values[self.locators[inc]]
+                
+                off_value = None
+                
+                if off_joint_values:
+                    off_value = off_joint_values[self.locators[inc]]
+                
+                if not self.hook_to_empty_group:
+                    blendshape = quick_blendshape(split, self.base_mesh)
                     
-                cmds.addAttr(group, ln = split, k = True, at = 'double')
+                if self.hook_to_empty_group:
+                    
+                    if not self.hook_to_empty_group_name:
+                        group = 'hookup_multi_%s' % self.base_mesh
+                    if self.hook_to_empty_group_name:
+                        group = self.hook_to_empty_group_name
+                    
+                    if not cmds.objExists(group):
+                        group = cmds.group(em = True, n = group)
+                        attr.hide_keyable_attributes(group)
+                        
+                    cmds.addAttr(group, ln = split, k = True, at = 'double')
+                    
+                    blendshape = group
+                         
                 
-                blendshape = group
-                     
-            
-            if not off_value:
-                anim.quick_driven_key('%s.translateY' % self.locators[inc],
-                                        '%s.%s' % (blendshape, split),
-                                        [0, value], 
-                                        [0, 1])        
-                
-            if off_value:
-                anim.quick_driven_key('%s.translateY' % self.locators[inc],
-                                        '%s.%s' % (blendshape, split),
-                                        [0, value, off_value], 
-                                        [0, 1, 0])
-         
-            inc+=1
+                if not off_value:
+                    anim.quick_driven_key('%s.translateY' % self.locators[inc],
+                                            '%s.%s' % (blendshape, split),
+                                            [0, value], 
+                                            [0, 1])        
+                    
+                if off_value:
+                    anim.quick_driven_key('%s.translateY' % self.locators[inc],
+                                            '%s.%s' % (blendshape, split),
+                                            [0, value, off_value], 
+                                            [0, 1, 0])
+             
+                inc+=1
      
         cmds.delete(splits)
         cmds.delete(new_brow_geo)
