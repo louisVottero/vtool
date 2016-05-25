@@ -2793,7 +2793,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                 
                 if result == True:
                     rect = self.cursorRect()
-                    #rect.translate(2, 2)
                     
                     width = self.completer.popup().sizeHintForColumn(0) + self.completer.popup().verticalScrollBar().sizeHint().width()
                     
@@ -2921,7 +2920,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     
     def _goto_line(self):
         
-        line = get_comment(self, 'Goto Line', '?')
+        line = get_comment(self, '', 'Goto Line')
         
         if not line:
             return
@@ -3014,10 +3013,20 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     
         return '    %s' % string_value
     
-    def _handle_tab(self, event):    
+    def _handle_tab(self, event):
+        
         cursor = self.textCursor()
         
+        document = self.document()
+        
         start_position = cursor.anchor()
+        select_position = cursor.selectionStart()
+        
+        select_start_block = document.findBlock(select_position)
+        
+        start = select_position - select_start_block.position()
+        
+        #QtGui.QTextCursor.position()
         end_position = cursor.position()
         
         if start_position > end_position:
@@ -3102,11 +3111,17 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                 inc = 0
                 
                 for text_split in split_text:
+                    
                     new_string_value = self._remove_tab(text_split)
                     
                     if new_string_value != text_split:
                         if inc == 0:
-                            start_position -= 4
+                            
+                            offset = (start - 4) + 4
+                            if offset > 4:
+                                offset = 4
+                            start_position -= offset
+                        
                         end_position -=4
                     
                     edited.append( new_string_value )
@@ -3177,6 +3192,8 @@ class FindTextWidget(BasicDialog):
         self.text_widget.cursorPositionChanged.connect(self._reset_found_match)
         
         self.setWindowFlags( self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint )
+        
+        self.setWindowTitle('Find/Replace')
         
     def closeEvent(self, event):
         super(FindTextWidget, self).closeEvent(event)
@@ -4077,8 +4094,9 @@ def get_comment(parent = None,text_message = 'add comment', title = 'save'):
     
     dialogue = QtGui.QInputDialog()
     
-    comment, ok = dialogue.getText(parent, title,text_message)
+    flags = dialogue.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint
     
+    comment, ok = dialogue.getText(parent, title,text_message, flags = flags)
     comment = comment.replace('\\', '_')  
     
     if ok:

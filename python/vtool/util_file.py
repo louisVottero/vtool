@@ -1970,7 +1970,7 @@ def load_python_module(module_name, directory):
             
             return module
         
-
+#--- code analysis
         
 def get_package_path_from_name(module_name, return_module_paths = False):
     
@@ -2124,6 +2124,8 @@ def get_defined_classes(module_path):
             defined_dict[node.name] = node
             
     return defined, defined_dict
+
+#--- ast
 
 def get_ast_function_name_and_args(function_node):
     function_name = function_node.name
@@ -2325,6 +2327,8 @@ def get_ast_assignment(text, line_number, assignment):
                 continue
             
     return line_assign_dict
+
+#--- applications
 
 def launch_maya(version, script = None):
     """
