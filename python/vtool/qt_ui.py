@@ -3074,6 +3074,9 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                 
         if event.key() == QtCore.Qt.Key_Backtab:
             
+            
+                
+            
             if not cursor.hasSelection():
                 
                 cursor = self.textCursor()
@@ -3109,20 +3112,27 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                 edited = []
                 
                 inc = 0
-                
+                skip_indent = False
                 for text_split in split_text:
                     
-                    new_string_value = self._remove_tab(text_split)
+                    new_string_value = text_split
                     
-                    if new_string_value != text_split:
-                        if inc == 0:
+                    if not skip_indent:
+                        new_string_value = self._remove_tab(text_split)
+                    
+                    if inc == 0 and new_string_value == text_split:
+                        skip_indent = True
+                    
+                    if not skip_indent:
+                        if new_string_value != text_split:
+                            if inc == 0:
+                                
+                                offset = (start - 4) + 4
+                                if offset > 4:
+                                    offset = 4
+                                start_position -= offset
                             
-                            offset = (start - 4) + 4
-                            if offset > 4:
-                                offset = 4
-                            start_position -= offset
-                        
-                        end_position -=4
+                            end_position -=4
                     
                     edited.append( new_string_value )
                     
