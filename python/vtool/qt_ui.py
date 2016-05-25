@@ -2148,9 +2148,10 @@ class CodeEditTabs(BasicWidget):
         code_widget = self.code_tab_map[title]
         filepath = code_widget.text_edit.filepath        
         
-        document = code_widget.get_document()
+        
         
         floating_tab = self.add_floating_tab(filepath, title)
+        document = code_widget.get_document()
         floating_tab.set_document(document)
         
     def _window_close_requested(self, widget):
