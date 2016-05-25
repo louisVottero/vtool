@@ -23,7 +23,7 @@ def apply_shading_engine(shader_name, mesh):
     
 def get_shading_engine_geo(shader_name):
     """
-    Non implemented
+    Not implemented
     """
     pass
 
