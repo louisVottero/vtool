@@ -2105,19 +2105,8 @@ class CodeEditTabs(BasicWidget):
         self.tabs.removeTab(index)
                 
         if self.code_tab_map.has_key(str(title)):
-            #widget = self.code_tab_map[str(title)]
-            #self.documents.pop(str(widget.filepath))
-            
             self.code_tab_map.pop(str(title))
-            
-        """
-        if self.code_floater_map.has_key(str(title)):
-            #widget = self.code_tab_map[str(title)]
-            #self.documents.pop(str(widget.filepath))
-            
-            
-            self.code_floater_map.pop(str(title))
-        """
+
         if self.tabs.count() == 0:
             self.no_tabs.emit()
     
@@ -2224,6 +2213,7 @@ class CodeEditTabs(BasicWidget):
         window.setWindowTitle(basename)
         window.set_code_edit(code_edit_widget)
         window.closed_save.connect(self._window_close_requested)
+        window.closed.connect(self._close_window)
         
         window.activated.connect(self._code_window_activated)
         
@@ -2415,6 +2405,13 @@ class CodeEditTabs(BasicWidget):
                 if self.code_floater_map.has_key(name):
                     self.code_floater_map.pop(name)                            
                 
+    def _close_window(self, widget):
+        name = widget.code_edit.text_edit.titlename
+        
+        if name in self.code_floater_map:
+            self.code_floater_map.pop(name)
+        
+                
     def close_tabs(self):
         
         self.save_tabs()
@@ -2498,6 +2495,7 @@ class CodeTabWindow_ActiveFilter(QtCore.QObject):
 class CodeTabWindow(BasicWindow):
     
     closed_save = create_signal(object)
+    closed = create_signal(object)
     activated = create_signal(object)
     
     def __init__(self):
@@ -2527,6 +2525,8 @@ class CodeTabWindow(BasicWindow):
         event.accept()
         if permission == True:
             self.closed_save.emit(self)
+        if not permission:
+            self.closed.emit(self)
             
     def set_code_edit(self, code_edit_widget):
         
