@@ -960,6 +960,8 @@ class FkRig(BufferRig):
         self.hide_sub_translates = True
 
         self.skip_controls = []
+        self.offset_rotation = []
+        self.inc_offset_rotation = {}
 
     def _create_control(self, sub = False):
         
@@ -1135,6 +1137,20 @@ class FkRig(BufferRig):
         if self.create_sub_controls:
             control = self.control_dict[control]['subs'][-1]
         
+        xform = None
+        
+        if self.control_dict[control].has_key('xform'):
+            xform = self.control_dict[control]['xform']
+        
+        if xform:
+            if self.offset_rotation:
+                
+                cmds.xform(xform, ro = self.offset_rotation, r = True, os = True)
+                
+            if self.current_increment in self.inc_offset_rotation:
+                offset_rotation = self.inc_offset_rotation[self.current_increment]
+                cmds.xform(xform,  ro = offset_rotation, r = True, os = True )
+        
         cmds.parentConstraint(control, target_transform, mo = True)
         
     def _convert_to_joints(self):
@@ -1202,6 +1218,19 @@ class FkRig(BufferRig):
         """
         
         self.nice_sub_naming = bool_value
+        
+    def set_offset_rotation(self, value_list):
+        """
+        This will offset the controls by the rotation vector. Ex. [0,90,0] will rotate the xform group of the control 90 degrees on the Y axis.
+        """
+        self.offset_rotation = value_list
+        
+    def set_offset_rotation_at_inc(self, inc, value_list):
+        """
+        This will offset the controls by the rotation vector. Ex. [0,90,0] will rotate the xform group of the control 90 degrees on the Y axis.
+        Inc starts at 0. 0 is the first control.
+        """
+        self.inc_offset_rotation[inc] = value_list
         
     def create(self):
         
@@ -1311,6 +1340,67 @@ class FkScaleRig(FkRig):
         self.controls = [] 
         self.current_xform_group = '' 
           
+    def _create_scale_offset(self, control, target_transform):
+        
+        scale_offset = cmds.group(em = True, n = core.inc_name('scaleOffset_%s' % target_transform))
+        offset_scale_offset = cmds.group(em = True, n = core.inc_name('offset_scaleOffset_%s' % target_transform))
+        
+        
+        space.MatchSpace(control, offset_scale_offset).translation_rotation()
+        space.MatchSpace(target_transform, scale_offset).translation_rotation()
+        
+        cmds.parent(scale_offset, offset_scale_offset)
+        
+        space.create_xform_group(scale_offset)
+        
+        
+        
+        attr.connect_scale(control, offset_scale_offset)
+        cmds.scaleConstraint(scale_offset, target_transform)
+        
+        cmds.parent(offset_scale_offset, self.setup_group)
+        parent = cmds.listRelatives(target_transform, p = True)
+        if parent:
+            cmds.parent(offset_scale_offset, parent[0])
+          
+    def _attach(self, control, target_transform):
+        
+        if self.create_sub_controls:
+            control = self.control_dict[control]['subs'][-1]
+        
+        xform = None
+        
+        if self.control_dict[control].has_key('xform'):
+            xform = self.control_dict[control]['xform']
+        
+        if xform:
+            was_offset = False
+            
+            if self.offset_rotation:
+                cmds.xform(xform, ro = self.offset_rotation, r = True, os = True)
+                self._create_scale_offset(control, target_transform)
+                was_offset = True
+                
+            if self.current_increment in self.inc_offset_rotation:
+                offset_rotation = self.inc_offset_rotation[self.current_increment]
+                cmds.xform(xform,  ro = offset_rotation, r = True, os = True )
+                self._create_scale_offset(control, target_transform)
+                was_offset = True
+                
+            if not was_offset:
+                attr.connect_scale(control, target_transform)
+        
+        if vtool.util.get_maya_version() >= 2015:  
+            cmds.parentConstraint(control, target_transform, mo = True)
+        
+        if vtool.util.get_maya_version() <= 2014:
+            cmds.pointConstraint(control, target_transform, mo = True) 
+            attr.connect_rotate(control, target_transform, mo = True) 
+        
+        
+        
+        #cmds.parentConstraint(control, target_transform, mo = True)
+          
     def _create_control(self, sub = False): 
         control = super(FkScaleRig, self)._create_control(sub) 
   
@@ -1375,13 +1465,8 @@ class FkScaleRig(FkRig):
           
         cmds.makeIdentity(buffer_joint, apply = True, r = True) 
         
-        if vtool.util.get_maya_version() >= 2015:  
-            cmds.parentConstraint(control, current_transform)
-        
-        if vtool.util.get_maya_version() <= 2014:
-            cmds.pointConstraint(control, current_transform) 
-            attr.connect_rotate(control, current_transform) 
-        
+        self._attach(control, current_transform)
+
         driver = self.control_dict[control]['driver']
         
         drivers = [driver]
@@ -1393,7 +1478,7 @@ class FkScaleRig(FkRig):
             for transform in drivers:
                 attr.connect_rotate(transform, current_transform)
         
-        attr.connect_scale(control, current_transform) 
+        
           
         cmds.parent(self.current_xform_group, buffer_joint) 
           
