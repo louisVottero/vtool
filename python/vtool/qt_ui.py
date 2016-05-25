@@ -1771,6 +1771,7 @@ class GetNumber(GetNumberBase):
             self.number_widget.setDecimals(3)
             
         self.number_widget.setMaximum(100000000)
+        self.number_widget.setMinimum(-100000000)
         self.number_widget.setButtonSymbols(self.number_widget.NoButtons)
         
         self.number_widget.valueChanged.connect(self._value_changed)
@@ -3175,6 +3176,7 @@ class FindTextWidget(BasicDialog):
         
         self.text_widget.cursorPositionChanged.connect(self._reset_found_match)
         
+        self.setWindowFlags( self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint )
         
     def closeEvent(self, event):
         super(FindTextWidget, self).closeEvent(event)
