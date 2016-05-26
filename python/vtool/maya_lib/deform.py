@@ -1669,6 +1669,9 @@ class MultiJointShape(object):
         
     def create(self):
         
+        if not self.joints:
+            self.create_hookup = False
+        
         if self.create_hookup:
             self._create_locators()
         
