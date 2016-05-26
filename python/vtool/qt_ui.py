@@ -2143,12 +2143,9 @@ class CodeEditTabs(BasicWidget):
         
     def _tab_double_click(self, index):
         
-        
         title = str(self.tabs.tabText(index))
         code_widget = self.code_tab_map[title]
         filepath = code_widget.text_edit.filepath        
-        
-        
         
         floating_tab = self.add_floating_tab(filepath, title)
         document = code_widget.get_document()
@@ -2793,6 +2790,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                 result = self.completer.handle_text(text)
                 
                 if result == True:
+                    
                     rect = self.cursorRect()
                     
                     width = self.completer.popup().sizeHintForColumn(0) + self.completer.popup().verticalScrollBar().sizeHint().width()
@@ -3694,10 +3692,8 @@ class PythonCompleter(QtGui.QCompleter):
         
         defined = util_file.get_defined(path)
         defined.sort()
+        
         return defined
-        
-        
-        
     
     def clear_completer_list(self):
         
@@ -3707,6 +3703,8 @@ class PythonCompleter(QtGui.QCompleter):
         """
         Parse a single line of text.
         """
+        
+        
         
         if text:
             
