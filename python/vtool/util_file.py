@@ -1291,9 +1291,22 @@ def is_file(filepath):
         return False
     
     try:
+        
+        #alt open check option
+        #watch = util.StopWatch()
+        #watch.start('fist is file')
+        #with open(filepath) as f:
+            #return True
+        
+        
+        #if os.path.isfile(filepath):
+        #    return True
+        
+        #alt os.stat check option
         mode = os.stat(filepath)[stat.ST_MODE]
         if stat.S_ISREG(mode):
             return True
+        
     except:
         return False
     

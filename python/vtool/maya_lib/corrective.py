@@ -1431,6 +1431,8 @@ class PoseBase(PoseGroup):
             
         return blend
     
+
+    
     #--- pose
     
     def set_pose(self, pose_name):
@@ -1778,6 +1780,7 @@ class PoseBase(PoseGroup):
             self.create_blend(inc)
             
     def update_target_meshes(self, only_not_in_sculpt = False):
+        
         count = self._get_mesh_count()
         
         for inc in xrange(0, count):
@@ -1793,12 +1796,21 @@ class PoseBase(PoseGroup):
             
             cmds.delete(deformed_mesh, ch = True)
             
+            envelope = deform.EnvelopeHistory(original_mesh)
+            envelope.turn_off_exclude(['skinCluster', 'blendShape'])
+            
             deform.quick_blendshape(original_mesh, deformed_mesh)
+            
             
             cmds.delete(deformed_mesh, ch = True)
             
             index = self.get_mesh_index(deformed_mesh)
+            
             self.create_blend(index, goto_pose = False, sub_poses = True)
+            
+            envelope.turn_on(respect_initial_state = True)
+            
+            
             
     def revert_selected_verts(self):
         
@@ -1992,6 +2004,11 @@ class PoseBase(PoseGroup):
         
         target_mesh = self.get_target_mesh(mesh)
         
+        
+        
+        envelope = deform.EnvelopeHistory(target_mesh)
+        envelope.turn_off_exclude(['skinCluster', 'blendShape'])
+        
         sub_pass_mesh = target_mesh
         
         if not target_mesh:
@@ -2007,6 +2024,8 @@ class PoseBase(PoseGroup):
         
         blend.set_weight(self.pose_control, 0)
         
+        
+                
         offset = deform.chad_extract_shape(target_mesh, mesh)
         
         blend.set_weight(self.pose_control, 1)
@@ -2029,6 +2048,8 @@ class PoseBase(PoseGroup):
         
         if sub_poses:
             self.create_sub_poses(sub_pass_mesh)
+            
+        envelope.turn_on()
         
     def detach_sub_poses(self):
         """

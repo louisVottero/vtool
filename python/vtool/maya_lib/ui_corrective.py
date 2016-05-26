@@ -1468,6 +1468,7 @@ class SculptWidget(qt_ui.BasicWidget):
         
         self.button_sculpt = QtGui.QPushButton('Sculpt')
         self.button_sculpt.setMinimumWidth(100)
+        self.button_sculpt.setCheckable(True)
 
         button_mirror = QtGui.QPushButton('Mirror')
         button_mirror.setMaximumWidth(100)
@@ -1501,7 +1502,12 @@ class SculptWidget(qt_ui.BasicWidget):
       
     def set_pose(self, pose_name):
         
+        if pose_name == self.pose:
+            return
+        
         self.mesh_widget.set_pose(pose_name)
+        
+        self.button_sculpt.setChecked(False)
         
         if not pose_name:
             self.pose = None
@@ -1898,6 +1904,9 @@ class PoseConeWidget(PoseBaseWidget):
     def _get_pose_values(self):
         
         pose = self.pose
+        
+        if not cmds.objExists(pose):
+            return
                
         x = cmds.getAttr("%s.axisRotateX" % pose)
         y = cmds.getAttr("%s.axisRotateY" % pose)
@@ -1932,7 +1941,7 @@ class PoseConeWidget(PoseBaseWidget):
         
         super(PoseConeWidget, self).set_pose(pose_name)
         
-        if not pose_name:
+        if not pose_name or not cmds.objExists(pose_name):
             self.pose = None
             return
         
