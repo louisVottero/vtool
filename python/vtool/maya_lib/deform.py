@@ -609,8 +609,12 @@ class SplitMeshTarget(object):
             list: The names of the new targets.
         """
         
-        if not self.base_mesh:
+        if not self.base_mesh or not cmds.objExists(self.base_mesh):
+            vtool.util.warning('%s base mesh does not exist to split off of.' % self.base_mesh)
             return
+        
+        if not self.target_mesh or not cmds.objExists(self.target_mesh):
+            vtool.util.warning('%s target does not exist for splitting' % self.target_mesh)
 
         parent = cmds.listRelatives( self.target_mesh, p = True )
         if parent:
@@ -1588,7 +1592,7 @@ class MultiJointShape(object):
         self.hook_to_empty_group = False
         self.hook_to_empty_group_name = None
         self.create_hookup = True
-        self.weight_joints
+        self.weight_joints = []
         
     def _create_locators(self):
         
@@ -1718,7 +1722,9 @@ class MultiJointShape(object):
      
         split.set_base_mesh(self.base_mesh)
         splits = split.create()
-     
+        
+        print 'splits!', splits
+    
         inc = 0
         
         if self.create_hookup:
@@ -1765,9 +1771,12 @@ class MultiJointShape(object):
                                             [0, 1, 0])
              
                 inc+=1
-     
-        cmds.delete(splits)
+        
+        if not self.hook_to_empty_group and self.create_hookup:
+            cmds.delete(splits)
         cmds.delete(new_brow_geo)
+        
+        return splits
 
                     
 class MayaWrap(object):
