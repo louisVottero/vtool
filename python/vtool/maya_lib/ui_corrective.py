@@ -1468,7 +1468,6 @@ class SculptWidget(qt_ui.BasicWidget):
         
         self.button_sculpt = QtGui.QPushButton('Sculpt')
         self.button_sculpt.setMinimumWidth(100)
-        self.button_sculpt.setCheckable(True)
 
         button_mirror = QtGui.QPushButton('Mirror')
         button_mirror.setMaximumWidth(100)
@@ -1506,8 +1505,6 @@ class SculptWidget(qt_ui.BasicWidget):
             return
         
         self.mesh_widget.set_pose(pose_name)
-        
-        self.button_sculpt.setChecked(False)
         
         if not pose_name:
             self.pose = None
