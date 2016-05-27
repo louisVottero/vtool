@@ -545,6 +545,7 @@ class SparseRig(JointRig):
         self.xform_scale = None
         
         self.control_to_pivot = False
+        self.follow_parent = False
         
     def _convert_to_joints(self):
         
@@ -610,6 +611,10 @@ class SparseRig(JointRig):
         """
         self.control_to_pivot = bool_value
         
+    def set_follow_parent(self, bool_value):
+        
+        self.follow_parent = bool_value
+        
     def create(self):
         
         super(SparseRig, self).create()
@@ -668,6 +673,12 @@ class SparseRig(JointRig):
             
             self.control_dict[control_name]['xform'] = xform
             self.control_dict[control_name]['driver'] = driver
+            
+            if self.follow_parent:
+                parent = cmds.listRelatives(joint, p = True)
+                
+                if parent:
+                    space.create_follow_group(parent[0], xform)
             
         if self.use_joint_controls:
             self._convert_to_joints()

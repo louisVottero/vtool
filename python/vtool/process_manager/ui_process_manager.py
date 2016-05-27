@@ -88,6 +88,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _process_deleted(self):
         self._clear_code(close_windows=True)
+        self._set_title()
         
     def _copy_done(self):
         self.sync_code = True
@@ -202,6 +203,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         else:
             if not self.settings.has_setting('template_directory') or not self.settings.get('template_directory'):
                 self.settings.set('template_directory', ['Vetala Templates', vetala_path])
+                self.settings.set('template_history', [['Vetala Templates', vetala_path]])
         
         self.settings_widget.set_template_settings(settings)
         self.template_widget.set_settings(settings)
@@ -402,9 +404,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         directory = self.settings.get('project_directory')
         
-        if directory == None:
-            return
-        
         if directory:
             if type(directory) != list:
                 directory = ['', directory]
@@ -435,9 +434,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.set_template_directory(directory)
             
     
-    def _set_title(self, name):
+    def _set_title(self, name = None):
         
         if not name:
+            self.active_title.setText('')
             return
         
         if self.project_directory:

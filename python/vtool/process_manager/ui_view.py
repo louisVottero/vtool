@@ -671,6 +671,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 if not item_path:
                     parent_item = None
         
+        
+        
         item = ProcessItem(self.directory, name)
         
         if create:
