@@ -270,8 +270,8 @@ class Rig(object):
                 
     def set_control_parent(self, parent_transform):
         """
-        Not tested.
         Sets the parent of the control group for this rig.
+        This usually should get run after create.
         """
         
         self.control_parent = parent_transform
@@ -280,8 +280,8 @@ class Rig(object):
         
     def set_setup_parent(self, parent_transform):
         """
-        Not tested.
         Sets the parent of the setup group for this rig.
+        This usually should get run after create.
         """
         
         
@@ -319,10 +319,23 @@ class Rig(object):
         return entries
         
     def set_control_offset_axis(self, axis_letter):
+        """
+        This sets the axis that the control curve cvs will offset to. This happens by rotating the control in 90 degrees on the axi.
+        This is good for lining up the control cvs to a different axis than its default. 
+        
+        Args
+            axis_letter (str): The letter of the axis to offste the control cvs around. 'x', 'y' or 'z'
+        
+        """
         self.control_offset_axis = axis_letter.lower()
         
     def set_sub_visibility(self, bool_value):
+        """
+        This controls wether sub controls are visible by default after building the rig.
         
+        Args
+            bool_value (bool)
+        """
         self.sub_visibility = bool_value
         
     def create(self):
