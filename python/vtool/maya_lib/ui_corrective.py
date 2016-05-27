@@ -1501,6 +1501,9 @@ class SculptWidget(qt_ui.BasicWidget):
       
     def set_pose(self, pose_name):
         
+        if pose_name == self.pose:
+            return
+        
         self.mesh_widget.set_pose(pose_name)
         
         if not pose_name:
@@ -1898,6 +1901,9 @@ class PoseConeWidget(PoseBaseWidget):
     def _get_pose_values(self):
         
         pose = self.pose
+        
+        if not cmds.objExists(pose):
+            return
                
         x = cmds.getAttr("%s.axisRotateX" % pose)
         y = cmds.getAttr("%s.axisRotateY" % pose)
@@ -1932,7 +1938,7 @@ class PoseConeWidget(PoseBaseWidget):
         
         super(PoseConeWidget, self).set_pose(pose_name)
         
-        if not pose_name:
+        if not pose_name or not cmds.objExists(pose_name):
             self.pose = None
             return
         

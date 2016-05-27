@@ -609,8 +609,12 @@ class SplitMeshTarget(object):
             list: The names of the new targets.
         """
         
-        if not self.base_mesh:
+        if not self.base_mesh or not cmds.objExists(self.base_mesh):
+            vtool.util.warning('%s base mesh does not exist to split off of.' % self.base_mesh)
             return
+        
+        if not self.target_mesh or not cmds.objExists(self.target_mesh):
+            vtool.util.warning('%s target does not exist for splitting' % self.target_mesh)
 
         parent = cmds.listRelatives( self.target_mesh, p = True )
         if parent:
@@ -1588,7 +1592,7 @@ class MultiJointShape(object):
         self.hook_to_empty_group = False
         self.hook_to_empty_group_name = None
         self.create_hookup = True
-        self.weight_joints
+        self.weight_joints = []
         
     def _create_locators(self):
         
@@ -1718,7 +1722,7 @@ class MultiJointShape(object):
      
         split.set_base_mesh(self.base_mesh)
         splits = split.create()
-     
+        
         inc = 0
         
         if self.create_hookup:
@@ -1765,9 +1769,12 @@ class MultiJointShape(object):
                                             [0, 1, 0])
              
                 inc+=1
-     
-        cmds.delete(splits)
+        
+        if not self.hook_to_empty_group and self.create_hookup:
+            cmds.delete(splits)
         cmds.delete(new_brow_geo)
+        
+        return splits
 
                     
 class MayaWrap(object):
@@ -3967,6 +3974,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         envelopes.turn_on(respect_initial_state=True)
         envelopes.turn_off_referenced()
+        
         envelopes.turn_off_exclude(['blendShape'])
         
         skin_shapes = core.get_shapes(skin_mesh)
@@ -3997,6 +4005,8 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
                 cmds.parent(offset, parent)
         
         envelopes.turn_on(respect_initial_state=True)
+        
+        reset_tweaks_on_mesh(skin_mesh)
         
         return offset
         
@@ -4258,6 +4268,7 @@ def reset_tweak(tweak_node):
     Args
         tweak_node (str): The name of the tweak node.
     """
+    
     if not cmds.objExists('%s.vlist' % tweak_node):
         return
     
@@ -4265,10 +4276,22 @@ def reset_tweak(tweak_node):
     
     for index in indices:
         try:
-            cmds.setAttr('%s.vlist[%s].xVertex' % (tweak_node, index), 0.0)
-            cmds.setAttr('%s.vlist[%s].yVertex' % (tweak_node, index), 0.0)
-            cmds.setAttr('%s.vlist[%s].zVertex' % (tweak_node, index), 0.0)
+            sub_indices = attr.get_indices('%s.vlist[%s].vertex' % (tweak_node, index))
+            
+            if not sub_indices:
+                continue
+            
+            for sub_index in sub_indices:
+                cmds.setAttr('%s.vlist[%s].vertex[%s].xVertex' % (tweak_node, index, sub_index), 0.0)
+                cmds.setAttr('%s.vlist[%s].vertex[%s].yVertex' % (tweak_node, index, sub_index), 0.0)
+                cmds.setAttr('%s.vlist[%s].vertex[%s].zVertex' % (tweak_node, index, sub_index), 0.0)
         except:
-            pass
-
+            vtool.util.show( traceback.format_exc() )
     return
+
+def reset_tweaks_on_mesh(mesh):
+        
+    tweaks = find_deformer_by_type(mesh, 'tweak', return_all = True)
+    
+    for tweak in tweaks:
+        reset_tweak(tweak)

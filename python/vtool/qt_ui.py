@@ -3704,8 +3704,6 @@ class PythonCompleter(QtGui.QCompleter):
         Parse a single line of text.
         """
         
-        
-        
         if text:
             
             cursor = self.widget().textCursor()
@@ -3885,8 +3883,8 @@ class PythonCompleter(QtGui.QCompleter):
                             defined = self.get_imports(path)
                             self.current_defined_imports = defined
                         
-                    if util_file.is_file(path):
-                        defined = self.get_sub_imports(path)
+                        if util_file.is_file(path):
+                            defined = self.get_sub_imports(path)
                     
                     custom_defined = self.custom_import_load(assign_map, module_name)
                     
