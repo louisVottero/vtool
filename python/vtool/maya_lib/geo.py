@@ -537,6 +537,21 @@ def is_a_mesh(node):
     
     return False
 
+def is_a_surface(node):
+    """
+    Test whether the node is a surface or has a shape that is a surface.
+    
+    Args
+        node (str): The name of a node.
+        
+    Return
+        bool
+    """
+    if cmds.objExists('%s.v[0]' % node):
+        return True
+    
+    return False
+
 def is_mesh_compatible(mesh1, mesh2):
     """
     Check the two meshes to see if they have the same vert, edge and face count.

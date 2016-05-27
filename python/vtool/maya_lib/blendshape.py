@@ -1073,10 +1073,7 @@ class ShapeComboManager(object):
             
         cmds.delete(mult_nodes)
                     
-    def is_shape_combo_manager(self, group):
-        
-        if attr.get_vetala_type(group) == self.vetala_type:
-            return True
+
         
     def _rename_shape_negative(self, old_name, new_name):
         
@@ -1174,6 +1171,11 @@ class ShapeComboManager(object):
             value_dict[key].sort()
                         
         return value_dict
+    
+    def is_shape_combo_manager(self, group):
+        
+        if attr.get_vetala_type(group) == self.vetala_type:
+            return True
     
     @core.undo_chunk
     def create(self, start_mesh):

@@ -1804,6 +1804,7 @@ class MayaWrap(object):
         
         self.wrap = cmds.deformer(self.mesh, type = 'wrap', n = 'wrap_%s' % basename)[0]
         cmds.setAttr('%s.exclusiveBind' % self.wrap, 1)
+        cmds.setAttr('%s.maxDistance' % self.wrap, 1)
         return self.wrap                 
     
     def _add_driver_meshes(self):
@@ -1825,21 +1826,38 @@ class MayaWrap(object):
         self.base_meshes.append(base)
         cmds.hide(base)
         
-        cmds.connectAttr( '%s.worldMesh' % mesh, '%s.driverPoints[%s]' % (self.wrap, inc) )
-        cmds.connectAttr( '%s.worldMesh' % base, '%s.basePoints[%s]' % (self.wrap, inc) )
-        
-        if not cmds.objExists('%s.dropoff' % mesh):
-            cmds.addAttr(mesh, at = 'short', sn = 'dr', ln = 'dropoff', dv = 10, min = 1, k = True)
+        if geo.is_a_mesh(mesh):
+            cmds.connectAttr( '%s.worldMesh' % mesh, '%s.driverPoints[%s]' % (self.wrap, inc) )
+            cmds.connectAttr( '%s.worldMesh' % base, '%s.basePoints[%s]' % (self.wrap, inc) )
             
-        if not cmds.objExists('%s.inflType' % mesh):
-            cmds.addAttr(mesh, at = 'short', sn = 'ift', ln = 'inflType', dv = 2, min = 1, max = 2, k = True )
             
-        if not cmds.objExists('%s.smoothness' % mesh):    
-            cmds.addAttr(mesh, at = 'short', sn = 'smt', ln = 'smoothness', dv = 0.0, min = 0.0, k = True)
+            if not cmds.objExists('%s.dropoff' % mesh):
+                cmds.addAttr(mesh, at = 'short', sn = 'dr', ln = 'dropoff', dv = 10, min = 1, k = True)
+                
+            if not cmds.objExists('%s.inflType' % mesh):
+                cmds.addAttr(mesh, at = 'short', sn = 'ift', ln = 'inflType', dv = 2, min = 1, max = 2, k = True )
+                
+            if not cmds.objExists('%s.smoothness' % mesh):    
+                cmds.addAttr(mesh, at = 'short', sn = 'smt', ln = 'smoothness', dv = 0.0, min = 0.0, k = True)
+                
+            cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc) )
+            cmds.connectAttr('%s.inflType' % mesh, '%s.inflType[%s]' % (self.wrap, inc) )
+            cmds.connectAttr('%s.smoothness' % mesh, '%s.smoothness[%s]' % (self.wrap, inc) )
+                
+        if geo.is_a_surface(mesh):
+            cmds.connectAttr( '%s.worldSpace' % mesh, '%s.driverPoints[%s]' % (self.wrap, inc) )
+            cmds.connectAttr( '%s.worldSpace' % base, '%s.basePoints[%s]' % (self.wrap, inc) )
         
-        cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc) )
-        cmds.connectAttr('%s.inflType' % mesh, '%s.inflType[%s]' % (self.wrap, inc) )
-        cmds.connectAttr('%s.smoothness' % mesh, '%s.smoothness[%s]' % (self.wrap, inc) )
+            
+            if not cmds.objExists('%s.dropoff' % mesh):
+                cmds.addAttr(mesh, at = 'short', sn = 'dr', ln = 'dropoff', dv = 10, min = 1, k = True)
+                
+            if not cmds.objExists('%s.wrapSamples' % mesh):
+                cmds.addAttr(mesh, at = 'short', sn = 'dr', ln = 'wrapSamples', dv = 0, min = 1, k = True)
+                
+            cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc) )
+            cmds.connectAttr('%s.wrapSamples' % mesh, '%s.nurbsSamples[%s]' % (self.wrap, inc) )
+        
         
         if not cmds.isConnected('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % (self.wrap)):
             cmds.connectAttr('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % (self.wrap))
@@ -1864,6 +1882,10 @@ class MayaWrap(object):
     def set_driver_meshes(self, meshes = []):
         """
         Set the meshes to drive the wrap. If more than 1 exclusive bind won't work properly.
+        Currently polgyons and nurbSurfaces work.
+        
+        Args
+            meshes (list): List of meshes and nurbSurfaces to influence the wrap. 
         """
         if meshes:
             
