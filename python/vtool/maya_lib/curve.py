@@ -62,7 +62,7 @@ class CurveToData(object):
         """
         Get the degree of the curve.
         
-        Args
+        Args:
             index (int): The shape index. 0 for first shape, 1 for the second shape, etc...
             
         Return
@@ -74,7 +74,7 @@ class CurveToData(object):
         """
         Get the degree of the curve.
         
-        Args
+        Args:
             index (int): The shape index. 0 for first shape, 1 for the second shape, etc...
             
         Return

@@ -21,7 +21,7 @@ class Control(object):
     """
     Convenience for creating controls
     
-    Args
+    Args:
         name (str): The name of a control that exists or that should be created.
     """
     
@@ -55,7 +55,7 @@ class Control(object):
         """
         Set the curve type. The type of shape the curve should have.
         
-        Args
+        Args:
         
             type_name (str): eg. 'circle', 'square', 'cube', 'pin_round' 
         """
@@ -70,7 +70,7 @@ class Control(object):
         """
         Set the control to have a joint as its main transform type.
         
-        Args
+        Args:
             joint (str): The name of a joint to use. If none joint will be created automatically.
             scale_compensate (bool): Whether to connect scale of parent to inverseScale of joint. 
             This causes the group above the joint to be able to change scale value without affecting the control's look. 
@@ -161,7 +161,7 @@ class Control(object):
         """
         Translate the shape curve cvs in object space.
         
-        Args
+        Args:
             x (float)
             y (float)
             z (float)
@@ -175,7 +175,7 @@ class Control(object):
         """
         Rotate the shape curve cvs in object space
         
-        Args
+        Args:
             x (float)
             y (float)
             z (float)
@@ -189,7 +189,7 @@ class Control(object):
         """
         Scale the shape curve cvs relative to the current scale.
         
-        Args
+        Args:
             x (float)
             y (float)
             z (float)
@@ -205,7 +205,7 @@ class Control(object):
         """
         Set the color of the curve.
         
-        Args
+        Args:
             value (int): This corresponds to Maya's color override value.
         """
         shapes = core.get_shapes(self.control)
@@ -232,7 +232,7 @@ class Control(object):
         """
         Lock and hide the given attributes on the control. If no attributes given, hide translate, rotate, scale and visibility.
         
-        Args
+        Args:
             
             attributes (list): List of attributes, eg. ['translateX', 'translateY']
         """
@@ -298,7 +298,7 @@ class Control(object):
         """
         Look at the position of a control, and color it according to its side on left, right or center.
         
-        Args
+        Args:
             sub (bool): Wether to set the color to sub colors.
             center_tolerance (float): The distance the control can be from the center before its considered left or right.
             
@@ -334,7 +334,7 @@ class Control(object):
         """
         This returns an xform group above the control.
         
-        Args
+        Args:
             name (str): The prefix name supplied when creating the xform group.  Usually xform or driver.
             
         """
@@ -356,7 +356,7 @@ class Control(object):
         """
         Give the control a new name.
         
-        Args
+        Args:
             
             name (str): The new name.
         """
@@ -1212,7 +1212,7 @@ class RigSwitch(object):
     """
     Create a switch between different rigs on a buffer joint.
     
-    Args
+    Args:
         switch_joint (str): The name of a buffer joint with switch attribute.
     """
     def __init__(self, switch_joint):
@@ -1250,7 +1250,7 @@ class RigSwitch(object):
         By adding groups you define what their visibility is when the switch attribute changes.
         An index of 0 means the groups will be visibile when the switch is at 0, but invisible when the switch is at 1.
         
-        Args
+        Args:
             index (int): The index on the switch. Needs to be an integer value even though switch is a float.
             groups (list): The list of groups that should be have visibility attached to the index.
         """
@@ -1272,7 +1272,7 @@ class RigSwitch(object):
         """
         Set where the switch attribute should live.
         
-        Args
+        Args:
             transform (str): The name of a transform
         """
         
@@ -1282,7 +1282,7 @@ class RigSwitch(object):
         """
         Set the name of the switch attribute on the attribute_control.
         
-        Args
+        Args:
             attribute_name (str): The name for the attribute.
         """
         
@@ -1380,7 +1380,7 @@ def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
     """
     Create a stretch effect on a transform by changing the scale when the distance changes between xform1 and xform2.
     
-    Args
+    Args:
         xform1 (str): The name of a transform.
         xform2 (str): The name of a transform.
         axis (str): "X", "Y", "Z" The axis to attach the stretch effect to.
@@ -1469,7 +1469,7 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
     """
     Create joints on curve that do not aim at child.
     
-    Args
+    Args:
         curve (str): The name of a curve.
         joint_count (int): The number of joints to create.
         description (str): The description to give the joints.
@@ -1607,7 +1607,7 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
     Makes the joints stretch on the curve. 
     Joints must be on a spline ik that is attached to the curve.
     
-    Args
+    Args:
         curve (str): The name of the curve that joints are attached to via spline ik.
         joints (list): List of joints attached to spline ik.
         node_for_attribute (str): The name of the node to create the attributes on.
@@ -1722,7 +1722,7 @@ def create_simple_spline_ik_stretch(curve, joints):
     """
     Stretch joints on curve. Joints must be attached to a spline ik. This is a much simpler setup than create_spline_ik_stretch.
     
-    Args
+    Args:
         curve (str): The name of the curve that joints are attached to via spline ik.
         joints (list): List of joints attached to spline ik.
     """
@@ -1760,7 +1760,7 @@ def create_bulge_chain(joints, control, max_value = 15):
     """
     Adds scaling to a joint chain that mimics a cartoony water bulge moving along a tube.
     
-    Args
+    Args:
         joints (list): List of joints that the bulge effect should move along.
         control (str): Name of the control to put the bulge slider on.
         max_value (float): The maximum value of the slider.
@@ -1884,7 +1884,7 @@ def create_attribute_lag(source, attribute, targets):
     
     create_attribute_lag( 'CNT_FIN_1_L', 'rotateY', ['driver_CNT_FIN_2_L, 'driver_CNT_FIN_3_L', 'driver_CNT_FIN_4_L'] )
     
-    Args
+    Args:
         source (str): The node where the attribute lives. Also a lag attribute will be created here.
         attribute (str): The attribute to lag. Sometimes can be rotateX, rotateY or rotateZ.
         targets (list): A list of targets to connect the lag into. The attribute arg will be used as the attribute to connect into on each target.
@@ -1915,7 +1915,7 @@ def create_attribute_spread(control, transforms, name = 'spread', axis = 'Y', in
     """
     Given a list of transforms, create a spread attribute which will cause them to rotate apart.
     
-    Args
+    Args:
         control (str): The name of a control where the spread attribute should be created.
         transforms (list): A list of transforms that should spread apart by rotation.
         name (str): The name of the attribute to create.
@@ -1974,7 +1974,7 @@ def create_attribute_spread_translate(control, transforms, name = 'spread', axis
     Given a list of transforms, create a spread attribute which will cause them to translate apart.
     This is good for fingers that are rigged with ik handles.
     
-    Args
+    Args:
         control (str): The name of a control where the spread attribute should be created.
         transforms (list): A list of transforms that should spread apart by translation.
         name (str): The name of the attribute to create.
@@ -2281,7 +2281,7 @@ def process_joint_weight_to_parent(mesh):
     Sometimes joints have a sub joint added to help hold weighting and help with heat weighting.
     This will do it for all joints with name matching process_ at the beginning on the mesh arg that is skinned. 
     
-    Args
+    Args:
         mesh (str): A mesh skinned to process joints.
     """
     scope = cmds.ls('process_*', type = 'joint')
@@ -2319,7 +2319,7 @@ def hook_ik_fk(control, joint, groups, attribute = 'ikFk'):
     """
     Convenience for hooking up ik fk.
     
-    Args
+    Args:
         control (str): The name of the control where the attribute arg should be created.
         joint (str): The joint with the switch attribute. When adding multiple rigs to one joint chain, the first joint will have a switch attribute added.
         groups (list): The ik control group name and the fk control group name.
@@ -2346,7 +2346,7 @@ def fix_fade(target_curve, follow_fade_multiplies):
     The function will find the amount the multiplyDivide.input2X needs to move, 
     so that when CNT_EYELID moves on Y it will match the curvature of target_curve.
     
-    Args
+    Args:
         target_curve (str): The name of the curve to match to.
         follow_fade_multiplies (str): A list of a multiplyDivides.
     """

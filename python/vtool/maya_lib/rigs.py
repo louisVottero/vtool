@@ -323,7 +323,7 @@ class Rig(object):
         This sets the axis that the control curve cvs will offset to. This happens by rotating the control in 90 degrees on the axi.
         This is good for lining up the control cvs to a different axis than its default. 
         
-        Args
+        Args:
             axis_letter (str): The letter of the axis to offste the control cvs around. 'x', 'y' or 'z'
         
         """
@@ -333,7 +333,7 @@ class Rig(object):
         """
         This controls wether sub controls are visible by default after building the rig.
         
-        Args
+        Args:
             bool_value (bool)
         """
         self.sub_visibility = bool_value
@@ -411,7 +411,7 @@ class JointRig(Rig):
         """
         Set the joints that the rig should work on.
         
-        Args
+        Args:
             joints (list): Joints by name.
         """
         
@@ -431,7 +431,7 @@ class JointRig(Rig):
         """
         Turn off/on joint attaching.
         
-        Args
+        Args:
             bool_value (bool): Wether to attach joints.
         """
         
@@ -496,7 +496,7 @@ class BufferRig(JointRig):
         """
         Turn off/on the creation of a buffer chain.  
         
-        Args
+        Args:
             bool_value (bool): Wehter to create the buffer chain.
         """
         
@@ -528,7 +528,7 @@ class CurveRig(Rig):
         """
         Set the curve to rig with.
         
-        Args
+        Args:
             curve_list (str): The name of a curve.
         """
         self.curves = vtool.util.convert_to_sequence(curve_list)
@@ -573,7 +573,7 @@ class SparseRig(JointRig):
         """
         Turn off/on the ability for controls to scale the joints.
         
-        Args
+        Args:
             bool_value (bool): Wether to open the scale attributes of the controls.
         """
         
@@ -587,7 +587,7 @@ class SparseRig(JointRig):
         This will also change the naming of the control. 
         The end suffix letter will change to L, R or C depending on where it is in space.
         
-        Args
+        Args:
             bool_value (bool): Wether to have the control respect side by changing name and color.
             tolerance (float): The value a control needs to be away from the center before it has a side.
         """
@@ -599,7 +599,7 @@ class SparseRig(JointRig):
         """
         Match the size of the control to the scale of the joint.
         
-        Args
+        Args:
             bool_value (bool): Wether to match the control to the scale of the joint.
         """
         
@@ -1223,7 +1223,7 @@ class FkRig(BufferRig):
         """
         Set which increments are skipped. 
         
-        Args
+        Args:
             increment_list (list): A list of integers. [0] will skip the first increment, [0,1] will skip the first 2 increments. 
         """
         
@@ -1600,7 +1600,7 @@ class FkCurlNoScaleRig(FkRig):
         """
         Set the axis that the curl should rotate on.
         
-        Args
+        Args:
             axis_letter (str): 'X','Y','Z'
         """
         self.curl_axis = axis_letter.capitalize()
@@ -1609,7 +1609,7 @@ class FkCurlNoScaleRig(FkRig):
         """
         The attribute name for the curl slider.
         
-        Args
+        Args:
             attribute_name (str): The name of the curl slider attribute.
         """
         self.curl_description = description
@@ -1618,7 +1618,7 @@ class FkCurlNoScaleRig(FkRig):
         """
         Set the control that the curl slider should live on.
         
-        Args
+        Args:
             control_name (str): The name of a control.
         """
         self.attribute_control = control_name
@@ -1627,7 +1627,7 @@ class FkCurlNoScaleRig(FkRig):
         """
         The attribute name for the curl slider.
         
-        Args
+        Args:
             attribute_name (str): The name of the curl slider attribute.
         """
         
@@ -1642,7 +1642,7 @@ class FkCurlNoScaleRig(FkRig):
         You can skip increments so they don't get affected by the curl.
         Each increment corresponds to a joint set in set_joints
         
-        Args
+        Args:
             increments (list): Eg. [0], will not add curl to the control on the first joint.
         """
         self.skip_increments = increments
@@ -1707,7 +1707,7 @@ class FkCurlRig(FkScaleRig):
         """
         Set the axis that the curl should rotate on.
         
-        Args
+        Args:
             axis_letter (str): 'X','Y','Z'
         """
         self.curl_axis = axis_letter.capitalize()
@@ -1716,7 +1716,7 @@ class FkCurlRig(FkScaleRig):
         """
         The attribute name for the curl slider.
         
-        Args
+        Args:
             attribute_name (str): The name of the curl slider attribute.
         """
         self.curl_description = description
@@ -1726,7 +1726,7 @@ class FkCurlRig(FkScaleRig):
         You can skip increments so they don't get affected by the curl.
         Each increment corresponds to a joint set in set_joints
         
-        Args
+        Args:
             increments (list): Eg. [0], will not add curl to the control on the first joint.
         """        
         self.skip_increments = increments
@@ -1735,7 +1735,7 @@ class FkCurlRig(FkScaleRig):
         """
         Set the control that the curl slider should live on.
         
-        Args
+        Args:
             control_name (str): The name of a control.
         """
         self.attribute_control = control_name
@@ -1744,7 +1744,7 @@ class FkCurlRig(FkScaleRig):
         """
         The attribute name for the curl slider.
         
-        Args
+        Args:
             attribute_name (str): The name of the curl slider attribute.
         """
         
@@ -2058,7 +2058,7 @@ class SplineRibbonBaseRig(JointRig):
         """
         Set which axis the ribbon width is offset on.
         
-        Args
+        Args:
             axis_letter (str): 'X','Y' or 'Z' 
         """
         self.ribbon_offset_axis = axis_letter
@@ -2286,7 +2286,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         This allows a control to be moved while its being created. 
         This way all the clusters and everything are still functioning properly.
         
-        Args
+        Args:
             vector [list]: Eg [0,0,0], the amount to move the control, relative to its regular position.
             inc [int]: The increment of the control. An increment of 1 would move the first control.
         """
@@ -2297,7 +2297,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         """
         Set a joint to match the orientation of the controls to.
         
-        Args
+        Args:
             joint (str): The name of a joint.
         """
         self.orient_joint = joint
@@ -2313,7 +2313,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         Set the number of controls.
         Wire hires is good for having the joints follow a well defined curve while maintaining a small amount of controls.
         
-        Args
+        Args:
             int_value (int): The number of controls.
             span_count (int): The number of spans on the curve.
             wire_hires (bool): Wether to wire deform the hires to the control Curve. If span count doesn't match the control count.
@@ -2931,7 +2931,7 @@ class IkSplineNubRig(BufferRig):
         """
         Set the orientation of the top and btm control based on the transform.
         
-        Args
+        Args:
             transform (str): The name of a transform.
         """
         
@@ -3475,7 +3475,7 @@ class IkAppendageRig(BufferRig):
         """
         What axis the stretch should scale on.
         
-        Args
+        Args:
             axis_letter (str): 'X','Y','Z'
         """
         self.stretch_axis = axis_letter
@@ -3484,7 +3484,7 @@ class IkAppendageRig(BufferRig):
         """
         Get the amount that the polevector control should offset from the elbow.
         
-        Args
+        Args:
             value (float)
         """
         self.pole_offset = value
@@ -3493,7 +3493,7 @@ class IkAppendageRig(BufferRig):
         """
         Set which joints the pole angle is calculated from.
         
-        Args
+        Args:
             joints (list): A list of of 3 joints that form a triangle. 
         """
         self.pole_angle_joints = joints
@@ -3547,7 +3547,7 @@ class IkAppendageRig(BufferRig):
         """
         Set a transform for the pole to follow with a on/off switch on the pole control.
         
-        Args
+        Args:
             transform (str): The name of a transform.s
         """
         self.pole_follow_transform = transform
@@ -6165,7 +6165,7 @@ class FootRig(BaseFootRig):
         Set the pivots for the foot roll.
         These must be transforms.
         
-        Args
+        Args:
             heel (str): Name of a transform.
             yaw_in (str): Name of a transform.
             yaw_out (str): Name of a transform.

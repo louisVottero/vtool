@@ -32,7 +32,7 @@ def create_mesh_from_mesh(mesh, target_transform):
     """
     Create a mesh from the shape node of another mesh, without duplicating.
     
-    Args
+    Args:
         mesh (str): The name of a mesh.
         target_transform (str): The transform where the newly created mesh should live.
     """
@@ -95,7 +95,7 @@ class MayaObject(ApiObject):
         """
         set the MObject from a node name.
         
-        Args
+        Args:
             node_name (str): The name of a node.
         """
         mobject = nodename_to_mobject(node_name)

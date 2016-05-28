@@ -13,7 +13,7 @@ def apply_shading_engine(shader_name, mesh):
     """
     Adds the named shading engine to the mesh.
     
-    Args
+    Args:
         shader_name (str): Name of an existing shader in maya.
         mesh (str):  Name of a mesh to add the shader to.
     
@@ -34,7 +34,7 @@ def get_shading_engines(shader_name):
     Maya allows one shader to be attached to more than one engine. 
     Most of the time it is probably just attached to one.
     
-    Args
+    Args:
         shader_name (str): The name of the shader.
         
     Return
@@ -80,7 +80,7 @@ def has_shading_engine(geo):
 
 def apply_shader(shader_name, mesh):
     """
-    Args
+    Args:
         shader_name (str): The name of a shader.
         mesh (str): The name of the mesh to apply the shader to.
         
@@ -95,7 +95,7 @@ def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
     """
     Create a new shader to be applied to the named mesh.
     
-    Args
+    Args:
         mesh (str): The name of the mesh to apply the shader to.
         type_of_shader (str): This corresponds to Maya shader types.  Eg. blinn, lambert, etc.
         name (str): The name to give the shader. If not name given a name will be made up using the type_of_shader.
@@ -134,7 +134,7 @@ def apply_transparent_lambert(mesh):
     """
     Convenience to hide geo via shader.
     
-    Args
+    Args:
         mesh (str): Name of the mesh to apply the shader to.
     """
     

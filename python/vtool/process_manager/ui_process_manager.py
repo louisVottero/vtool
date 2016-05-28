@@ -456,7 +456,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         split_folder = folder.split('\\')
         folder = split_folder[:-1]
         
-        path = 'http://www.vetalarig.com/docs/html/index.html'
+        path = 'http://docs.vetalarig.com'
         webbrowser.open(path, 0)
         
         

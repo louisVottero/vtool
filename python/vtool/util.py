@@ -359,7 +359,7 @@ class BoundingBox(object):
     """
     Convenience for dealing with bounding boxes
     
-    Args
+    Args:
         btm_corner_vector (list): [0,0,0] vector of bounding box's btm corner.
         top_corner_vector (list): [0,0,0] vector of bounding box's top corner.
     """
@@ -406,7 +406,7 @@ class Variable(object):
     """
     Simple base class for variables on a node.
     
-    Args
+    Args:
         name (str): The name of the variable.
     """
     
@@ -420,7 +420,7 @@ class Variable(object):
         """
         Set the node to work on.
         
-        Args
+        Args:
             node_name (str)
         """
         self.node = node_name
@@ -429,7 +429,7 @@ class Variable(object):
         """
         Set the name of the variable.
         
-        Args
+        Args:
             name (str): The name to give the variable.
         """
         
@@ -439,7 +439,7 @@ class Variable(object):
         """
         Set the value that the variable holds.
         
-        Args
+        Args:
             value
         """
         self.value = value
@@ -475,7 +475,7 @@ def get_axis_vector(axis_name):
     """
     Convenience. Good for multiplying against a matrix.
     
-    Args
+    Args:
         axis_name (str): 'X' or 'Y' or 'Z'
         
     Return
@@ -535,7 +535,7 @@ def get_distance(vector1, vector2):
     """
     Get the distance between two vectors.
     
-    Args
+    Args:
         vector1 (list): eg. [0,0,0] vector
         vector2 (list): eg. [0,0,0] vector
         
@@ -555,7 +555,7 @@ def get_distance_2D(vector1_2D, vector2_2D):
     """
     Get the distance between two 2D vectors.
     
-    Args
+    Args:
         vector1_2D (list): eg. [0,0] vector
         vector2_2D (list): eg. [0,0] vector
         
@@ -568,7 +568,7 @@ def get_distance_2D(vector1_2D, vector2_2D):
     
 def get_magnitude_2D(vector_2D):
     """
-    Args
+    Args:
         vector_2D (list): eg [0,0] vector
         
     Return
@@ -580,7 +580,7 @@ def get_dot_product(vector1, vector2):
     """
     Get the dot product of two vectors.  Good for calculating angles.
     
-    Args
+    Args:
         vector1 (list): eg. [0,0,0] vector
         vector2 (list): eg. [0,0,0] vector
         
@@ -593,7 +593,7 @@ def get_dot_product_2D(vector1_2D, vector2_2D):
     """
     Get the dot product of two 2D vectors.  Good for calculating angles.
     
-    Args
+    Args:
         vector1_2D (list): eg. [0,0] vector
         vector2_2D (list): eg. [0,0] vector
         
@@ -604,7 +604,7 @@ def get_dot_product_2D(vector1_2D, vector2_2D):
     
 def get_average(numbers):
     """
-    Args
+    Args:
         numbers (list): A list of floats.
         
     Return
@@ -623,7 +623,7 @@ def get_midpoint(vector1, vector2):
     """
     Get the mid vector between two vectors.
     
-    Args
+    Args:
         vector1 (list): eg. [0,0,0] vector
         vector2 (list): eg. [0,0,0] vector
         
@@ -641,7 +641,7 @@ def get_inbetween_vector(vector1, vector2, percent = 0.5):
     """
     Get a vector inbetween vector1 and vector2 at the percent
     
-    Args
+    Args:
         vector1 (list): eg. [0,0,0] vector
         vector2 (list): eg. [0,0,0] vector
         percent (float): The percent the vector should be between vector1 and vector2. 
@@ -694,7 +694,7 @@ def convert_to_sequence(variable, sequence_type = list):
     
     Basically insures that a variable is a list or a tuple.
     
-    Args
+    Args:
     
         variable: Any variable.
         sequence_type: Can either be python list or python tuple. Needs to be the type ojbect, which means pass it list or tuple not as a string.
@@ -724,7 +724,7 @@ def line_side(start_vector, end_vector, position_vector):
     """
     Find out what side a position_vector is on given a line defined by start_vector and end_vector.
     
-    Args
+    Args:
         start_vector (list): eg. [0,0,0] vector\
         end_vector (list): eg. [0,0,0] vector
         position_vector (list): eg. [0,0,0] vector
@@ -957,7 +957,7 @@ def get_end_number(input_string, as_string = False):
     """
     Get the number at the end of a string.
     
-    Args
+    Args:
         input_string (str): The string to search for a number.
     
     Return
@@ -1004,7 +1004,7 @@ def search_last_number(input_string):
     """
     Get the last number in a string.
     
-    Args
+    Args:
         input_string (str): The string to search for a number.
     
     Return
@@ -1018,7 +1018,7 @@ def replace_last_number(input_string, replace_string):
     """
     Replace the last number with something.
     
-    Args
+    Args:
         input_string (str): A string to search for the last number.
         replace_string (str): The string to replace the last number with.
         
@@ -1081,7 +1081,7 @@ def increment_last_number(input_string):
     """
     Up the value of the last number by 1.
     
-    Args
+    Args:
         input_string (str): The string to search for the last number.
         
     Return
@@ -1103,7 +1103,7 @@ def increment_last_number(input_string):
 
 def find_special(pattern, string_value, position_string):
     """
-    Args
+    Args:
         pattern (str): A regular expression pattern to search for.
         string_value (str): The string to search in.
         position_string (str): 'start','end','first','last','inside' Where the pattern should search.

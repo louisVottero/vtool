@@ -83,7 +83,7 @@ class MatchSpace(object):
     Can be used as follows:
     MatchSpace('transform1', 'transform2').translation_rotation()
     
-    Args
+    Args:
         
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
@@ -278,7 +278,7 @@ class ConstraintEditor(object):
         """
         Get the number of inputs weights (transforms) feeding int the constraint.
         
-        Args
+        Args:
             constraint (str): The name of a constraint.
         """
         return len(cmds.ls('%s.target[*]' % constraint))
@@ -287,7 +287,7 @@ class ConstraintEditor(object):
         """
         Find a constraint on the transform.
         
-        Args
+        Args:
             transform (str): The name of a transform that is constrained.
             constraint_type (str): The type of constraint to search for. Eg. parentConstraint, orientConstraint, pointConstraint, etc.
             
@@ -303,7 +303,7 @@ class ConstraintEditor(object):
         """
         Get the transform that the constraint is constraining.
         
-        Args
+        Args:
             constraint (str): The name of the constraint.
         
         Return
@@ -321,7 +321,7 @@ class ConstraintEditor(object):
         """
         Get the transforms influencing the constraint.
         
-        Args
+        Args:
             constraint (str): The name of the constraint.
             
         Return
@@ -338,7 +338,7 @@ class ConstraintEditor(object):
         Remove a target from a constraint. 
         This only works if the constraint has all its original connections intact.
         
-        Args
+        Args:
             target (str): The name of the transform target to remove.
             constraint (str): The name of a constraint that has target affecting it.
             
@@ -354,7 +354,7 @@ class ConstraintEditor(object):
         """
         Set the interpolation type of the constraint.
         
-        Args
+        Args:
             int_value (int): index of the interpolation type.
             constraint (str): The name of a constraint. Probably "parentConstraint" or "orientConstraint".
         """
@@ -366,7 +366,7 @@ class ConstraintEditor(object):
         This will create a title enum attribute based on the targets feeding into a constraint.
         The enum will have the name of the transforms affecting the constraint.
         
-        Args
+        Args:
             node (str): The name of the node to add the title to.
             constraint (str): The name of a constraint. Should be affected by multipe transforms.
             title_name (str): The name to give the title attribute.
@@ -401,7 +401,7 @@ class ConstraintEditor(object):
         """
         Create a switch over all the target weights.
         
-        Args
+        Args:
             node (str): The name of the node to add the switch attribute to.
             attribute (str): The name to give the switch attribute.
             constraint (str): The name of the constraint with multiple weight target transforms affecting it.
@@ -417,7 +417,7 @@ class IkHandle(object):
     """
     Convenience for creating ik handles.
     
-    Args
+    Args:
         name (str): The description to give the node. Name = 'ikHandle_(name)'.
     """
     
@@ -488,7 +488,7 @@ class IkHandle(object):
         """
         Set start joint for the ik handle.
         
-        Args
+        Args:
             joint (str): The name of the start joint.
         """
         self.start_joint = joint
@@ -497,7 +497,7 @@ class IkHandle(object):
         """
         Set end joint for the ik handle.
         
-        Args
+        Args:
             joint (str): The name of the end joint.
         """
         self.end_joint = joint
@@ -508,7 +508,7 @@ class IkHandle(object):
         start joint becomes the first entry.
         end joint beomces the las entry.
         
-        Args
+        Args:
             joints_list (list): A list of joints.
         """
         self.start_joint = joints_list[0]
@@ -519,7 +519,7 @@ class IkHandle(object):
         """
         Set the curve for spline ik.
         
-        Args
+        Args:
             curve (str): The name of the curve.
         """
         self.curve = curve
@@ -534,7 +534,7 @@ class IkHandle(object):
         'ikSplineSolver'
         'ikSpringSolver'
         
-        Args
+        Args:
             type_name (str): The name of the solver type.
         """
         self.solver_type = type_name
@@ -786,7 +786,7 @@ class OrientJoint(object):
       
     def set_aim_vector(self, vector_list):
         """
-        Args
+        Args:
             vector_list (list): [0,0,0] vector that defines what axis should aim.  
             If joint should aim with X axis then vector should be [1,0,0].  If joint should aim with Y axis then [0,1,0], etc.
             If up needs to be opposite of X axis then vector should be [-1,0,0].
@@ -795,7 +795,7 @@ class OrientJoint(object):
         
     def set_up_vector(self, vector_list):
         """
-        Args
+        Args:
             vector_list (list): [0,0,0] vector that defines what axis should aim up.  
             If joint should aim up with X axis then vector should be [1,0,0].  If joint should aim up with Y axis then [0,1,0], etc.
             If up needs to be opposite of X axis then vector should be [-1,0,0].
@@ -804,7 +804,7 @@ class OrientJoint(object):
         
     def set_world_up_vector(self, vector_list):
         """
-        Args
+        Args:
             vector_list (list): [0,0,0] vector that defines what world up axis be.  
             If world should aim up with X axis then vector should be [1,0,0].  If world should aim up with Y axis then [0,1,0], etc.
             If up needs to be opposite of X axis then vector should be [-1,0,0].
@@ -815,7 +815,7 @@ class OrientJoint(object):
         """
         Set how the joint aims.
         
-        Args
+        Args:
             int_value (int): 0 aim at world X, 
                                 1 aim at world Y, 
                                 2 aim at world Z, 
@@ -829,7 +829,7 @@ class OrientJoint(object):
         """
         Set how the joint aims up.
         
-        Args
+        Args:
             int_value (int):  0 world,
                                 1 parent rotate,
                                 2 child position,
@@ -888,7 +888,7 @@ class BoundingBox(vtool.util.BoundingBox):
     """
     Convenience for dealing with bounding boxes.
     
-    Args
+    Args:
         thing (str): The name of a transform in maya. Bounding box info is automatically loaded from the transform.
     """
     def __init__(self, thing):
@@ -947,7 +947,7 @@ class AttachJoints(object):
             
     def set_source_and_target_joints(self, source_joints, target_joints):
         """
-        Args
+        Args:
             source_joints (list): A list of joint names that should move the target.
             target_joints (list): A list of joints names that should be moved by the source.
         """
@@ -964,7 +964,7 @@ class DuplicateHierarchy(object):
     """
     Duplicate the hierachy of a transform.
     
-    Args
+    Args:
         transform (str): The name of a transform with child hierarchy.
     """
     def __init__(self, transform):
@@ -1053,7 +1053,7 @@ class DuplicateHierarchy(object):
         """
         Only duplicate transforms in list_of_transforms.
         
-        Args
+        Args:
             list_of_transforms (list): Names of transforms in the hierarchy.
         """
         self.only_these_transforms = list_of_transforms
@@ -1062,7 +1062,7 @@ class DuplicateHierarchy(object):
         """
         The transform at which to stop the duplication.
         
-        Args
+        Args:
             transform (str): The name of the transform.
         """
         relative = cmds.listRelatives(transform, type = 'transform')
@@ -1074,7 +1074,7 @@ class DuplicateHierarchy(object):
         """
         Replace the naming in the duplicate.
         
-        Args
+        Args:
             old (str): String in the duplicate name to replace.
             new (str): String in the duplicate to replace with.
         """
@@ -1294,7 +1294,7 @@ def has_constraint(transform):
     """
     Find out if a constraint is affecting the transform.
     
-    Args
+    Args:
         transform (str): The name of a transform.
     """
     editor = ConstraintEditor()
@@ -1304,7 +1304,7 @@ def get_center(transform):
     """
     Get the center of a selection. Selection can be component or transform.
     
-    Args
+    Args:
         transform (str): Name of a node in maya.
     
     Return 
@@ -1324,7 +1324,7 @@ def get_btm_center(transform):
     """
     Get the bottom center of a selection. Selection can be component or transform.
     
-    Args
+    Args:
         transform (str): Name of a node in maya.
     
     Return 
@@ -1345,7 +1345,7 @@ def get_top_center(transform):
     """
     Get the top center of a selection. Selection can be component or transform.
     
-    Args
+    Args:
         transform (str): Name of a node in maya.
     
     Return 
@@ -1369,7 +1369,7 @@ def get_closest_transform(source_transform, targets):
     """
     Given the list of target transforms, find the closest to the source transform.
     
-    Args
+    Args:
         source_transform (str): The name of the transform to test distance to.
         targets (list): List of targets to test distance against.
         
@@ -1394,7 +1394,7 @@ def get_middle_transform(transform_list):
     """
     Given a list of transforms, find the middle index. If the list is even, then find the midpoint between the middle two indices.
     
-    Args
+    Args:
         transform_list (list): A list of transforms in order. Transforms should make a hierarchy or a sequence, where the order of the list matches the order in space.
     
     Return 
@@ -1421,7 +1421,7 @@ def get_distance(source, target):
     """
     Get the distance between the source transform and the target transform.
     
-    Args
+    Args:
         source (str): The name of a transform.
         target (str): The name of a transform.
     
@@ -1456,7 +1456,7 @@ def get_midpoint( source, target):
     """
     Get the midpoint between the source transform and the target transform.
     
-    Args
+    Args:
         source (str): The name of a transform.
         target (str): The name of a transform.
     
@@ -1480,7 +1480,7 @@ def get_distances(sources, target):
     """
     Given a list of source transforms, return a list of distances to the target transform
     
-    Args
+    Args:
         sources (list): The names of a transforms.
         target (str): The name of a transform.
     
@@ -1502,7 +1502,7 @@ def get_polevector(transform1, transform2, transform3, offset = 1):
     """
     Given 3 transforms eg. arm, elbow, wrist.  Return a vector of where the pole vector should be located.
         
-    Args
+    Args:
         transform1 (str): name of a transform in maya. eg. joint_arm.
         transform2 (str): name of a transform in maya. eg. joint_elbow.
         transform3 (str): name of a transform in maya. eg. joint_wrist.
@@ -1528,7 +1528,7 @@ def get_group_in_plane(transform1, transform2, transform3):
     """
     Create a group that sits in the triangle plane defined by the 3 transforms.
     
-    Args
+    Args:
         transform1 (str): name of a transform in maya. eg. joint_arm.
         transform2 (str): name of a transform in maya. eg. joint_elbow.
         transform3 (str): name of a transform in maya. eg. joint_wrist.
@@ -1567,7 +1567,7 @@ def get_ordered_distance_and_transform(source_transform, transform_list):
     Returns a distance dictionary with each distacne key returning the corresponding transform.
     Returns a list with the original distance order has fed in from transform_list.
     
-    Args
+    Args:
         source_transform (str)
         
         transform_list (list)
@@ -1617,7 +1617,7 @@ def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
     """
     Create a multiply divide for each transform in drivers with a weight value based on the distance from source_guide.
     
-    Args
+    Args:
         source_guide (str): Name of a transform in maya to calculate distance.
         drivers (list): List of drivers to apply fade to based on distance from source_guide.
         skip_lower (float): The distance below which multiplyDivide fading stops.
@@ -1670,7 +1670,7 @@ def create_match_group(transform, prefix = 'match', use_duplicate = False):
     Create a group that matches a transform.
     Naming = 'match_' + transform
     
-    Args
+    Args:
         transform (str): The transform to match.
         prefix (str): The prefix to add to the matching group.
         use_duplicate (bool):  If True, matching happens by duplication instead of changing transform values.
@@ -1704,7 +1704,7 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
     This is good for zeroing out the values of a transform.
     Naming = 'xform_' + transform
     
-    Args
+    Args:
         transform (str): The transform to match.
         prefix (str): The prefix to add to the matching group.
         use_duplicate (bool):  If True, matching happens by duplication instead of changing transform values.
@@ -1744,7 +1744,7 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
     """
     Create a group above a target_transform that is constrained to the source_transform.
     
-    Args
+    Args:
         source_transform (str): The transform to follow.
         target_transform (str): The transform to make follow.
         prefix (str): The prefix to add to the follow group.
@@ -1780,7 +1780,7 @@ def create_local_follow_group(source_transform, target_transform, prefix = 'foll
     Create a group above a target_transform that is local constrained to the source_transform.
     This helps when setting up controls that need to be parented but only affect what they constrain when the actual control is moved.  
     
-    Args
+    Args:
         source_transform (str): The transform to follow.
         target_transform (str): The transform to make follow.
         prefix (str): The prefix to add to the follow group.
@@ -1827,7 +1827,7 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
     Create a group above the target that is constrained to multiple transforms. A switch attribute switches their state on/off.
     Direct in this case means the constraints will be added directly on the target_transform.
     
-    Args
+    Args:
         source_list (list): List of transforms that the target should be constrained by.
         target_transform (str): The name of a transform that should follow the transforms in source list.
         node (str): The name of the node to add the switch attribute to.
@@ -1882,7 +1882,7 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     Create a group above the target that is constrained to multiple transforms. A switch attribute switches their state on/off.
     Direct in this case means the constraints will be added directly on the target_transform.
     
-    Args
+    Args:
         source_list (list): List of transforms that the target should be constrained by.
         target_transform (str): The name of a transform that should follow the transforms in source list.
         node (str): The name of the node to add the switch attribute to.
@@ -1945,7 +1945,7 @@ def get_xform_group(transform, xform_group_prefix = 'xform'):
     """
     This returns an xform group above the control.
     
-    Args
+    Args:
         name (str): The prefix name supplied when creating the xform group.  Usually xform or driver.
         
     """
@@ -1966,7 +1966,7 @@ def get_hierarchy(node_name):
     Return the name of the node including the hierarchy in the name using "|".
     This is the full path of the node.
     
-    Args
+    Args:
         node_name (str): A node name.
         
     Return
@@ -1985,7 +1985,7 @@ def has_parent(transform, parent):
     """
     Check to see if the transform has parent in its parent hierarchy.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         parent (str): The name of a parent transform.
         
@@ -2015,7 +2015,7 @@ def transfer_relatives(source_node, target_node, reparent = False):
     Reparent the children of source_node under target_node.
     If reparent, move the target_node under the parent of the source_node.
     
-    Args
+    Args:
         source_node (str): The name of a transform to take relatives from.
         target_node (str): The name of a transform to transfer relatives to.
         reparent (bool): Wether to reparent target_node under source_node after transfering relatives.
@@ -2045,7 +2045,7 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
     Constrain a target transform to a source transform in a way that allows for setups to remain local to the origin.
     This is good when a control needs to move with the rig, but move something at the origin only when the actually control moves.
     
-    Args
+    Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         parent (bool): The setup uses a local group to constrain the target_transform. If this is true it will parent the target_transform under the local group.
@@ -2104,7 +2104,7 @@ def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', n
     """
     Add evenly spaced joints inbetween joint1 and joint2.
     
-    Args
+    Args:
         joint1 (str): The first joint. If None given, the first selected joint.
         joint2 (str): The second joint. If None given, the second selected joint.
         count (int): The number of joints to add inbetween joint1 and joint2.
@@ -2203,7 +2203,7 @@ def orient_attributes(scope = None):
     Orient all transforms with attributes added by add_orient_attributes.
     If scope is provided, only orient transforms in the scope that have attributes.
     
-    Args
+    Args:
         scope (list): List of transforms to orient.
     """
     if not scope:
@@ -2234,7 +2234,7 @@ def find_transform_right_side(transform):
     if not 
     *lf_* will be converted to *rt_*
     
-    Args
+    Args:
         transform (str): The name of a transform.
         
     Return 
@@ -2278,7 +2278,7 @@ def find_transform_left_side(transform):
     if not 
     *rt_* will be converted to *lf_*
     
-    Args
+    Args:
         transform (str): The name of a transform.
         
     Return 
@@ -2318,7 +2318,7 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
     Mirror the positions of all transforms that match the search strings.
     If search strings left at None, search all transforms and joints. 
     
-    Args
+    Args:
         prefix (str): The prefix to search for.
         suffix (str): The suffix to search for.
         string_search (str): Search for a name containing string search.
@@ -2468,7 +2468,7 @@ def match_joint_xform(prefix, other_prefix):
     """
     Match the positions of joints with similar names.
     For example, skin_arm_L could be matched to joint_arm_L, if they exists and prefix = skin and other_prefix = joint.
-    Args 
+    Args: 
         prefix (str)
         other_prefix (str) 
     """
@@ -2485,7 +2485,7 @@ def match_orient(prefix, other_prefix):
     """
     Match the orientations of joints with similar names.
     For example, skin_arm_L could be matched to joint_arm_L, if they exists and prefix = skin and other_prefix = joint.
-    Args 
+    Args: 
         prefix (str)
         other_prefix (str) 
     """
@@ -2517,7 +2517,7 @@ def get_side(transform, center_tolerance):
     Get the side of a transform based on its position in world space.
     Center tolerance is distance from the center to include as a center transform.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         center_tolerance (float): How close to the center the transform must be before it is considered in the center.
         
@@ -2546,7 +2546,7 @@ def create_no_twist_aim(source_transform, target_transform, parent, move_vector 
     Aim target transform at the source transform, trying to rotate only on one axis.
     Constrains the target_transform.
     
-    Args
+    Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         parent (str): The parent for the setup.
@@ -2600,7 +2600,7 @@ def create_pole_chain(top_transform, btm_transform, name, solver = IkHandle.solv
     """
     Create a two joint chain with an ik handle.
     
-    Args
+    Args:
         top_transform (str): The name of a transform.
         btm_transform (str): The name of a transform.
         name (str): The name to give the new joints.
@@ -2640,7 +2640,7 @@ def scale_constraint_to_local(scale_constraint):
     Disconnect the parent matrix to remove this behavior.
     Reconnect using scale_constraint_to_world if applying multiple constraints.
     
-    Args
+    Args:
         scale_constraint (str): The name of the scale constraint to work on.
     """
     
@@ -2657,7 +2657,7 @@ def scale_constraint_to_world(scale_constraint):
     """
     Works with scale_constraint_to_local.
     
-    Args
+    Args:
         scale_constraint (str): The name of the scale constraint affected by scale_constraint_to_local.
     """
     
@@ -2682,7 +2682,7 @@ def duplicate_joint_section(joint, name = ''):
     Joint chains ususally have a parent and a child along the chain. 
     This will duplicate one of those sections.  You need only supply the parent joint.
     
-    Args
+    Args:
         joint (str): The name of the joint to duplicate.
         name (str): The name to give the joint section.
         
@@ -2724,7 +2724,7 @@ def get_axis_vector(transform, axis_vector):
     If you give it a vector [0,1,0], it will return the transform's y point.
     If you give it a vector [0,0,1], it will return the transform's z point.
     
-    Args
+    Args:
         transform (str): The name of a transform. Its matrix will be checked.
         axis_vector (list): A vector. X = [1,0,0], Y = [0,1,0], Z = [0,0,1] 
         
@@ -2740,7 +2740,7 @@ def transforms_to_joint_chain(transforms, name = ''):
     """
     Given a list of transforms, create a joint chain.
     
-    Args
+    Args:
         transforms (list): List of transforms. Their positions will be used to set joint positions.
         name (str): The description to give the joints.
         
@@ -2768,7 +2768,7 @@ def attach_to_closest_transform(source_transform, target_transforms):
     """
     Attach the source_transform to the closest transform in the list of target_transforms.
     
-    Args
+    Args:
         source_transform (str): The name of a transform to check distance to.
         target_transforms (list): List of transforms. The closest to source_transform will be attached to it.
     """
@@ -2817,7 +2817,7 @@ def create_ghost_chain(transforms):
     It connects into the an xform group above the transform.  
     This allows for setups that follow a nurbs surface, and then work like an fk hierarchy after.
     
-    Args
+    Args:
         transforms (list): A list of transforms.
         
     Return

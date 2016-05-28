@@ -275,7 +275,7 @@ class TrackNodes(object):
             For example, you can give node_type the string "animCurve" to load only keyframes.
             When after running get_delta(), the delta will only contain keyframes.
             
-        Args
+        Args:
             node_type (str): Maya named type, ie animCurve, transform, joint, etc
             
         Return
@@ -311,7 +311,7 @@ class ProgressBar(object):
     core!!!
     Manipulate the maya progress bar.
     
-    Args
+    Args:
         title (str): The name of the progress bar.
         count (int): The number of items to iterate in the progress bar.
     """
@@ -514,7 +514,7 @@ class MayaVariable(vtool.util.Variable):
         """
         Set the name of the variable.
         
-        Args
+        Args:
             name (str)
             
         """
@@ -531,7 +531,7 @@ class MayaVariable(vtool.util.Variable):
         """
         Set the value of the variable.
         
-        Args
+        Args:
             value
             
         """
@@ -542,7 +542,7 @@ class MayaVariable(vtool.util.Variable):
         """
         Set the lock state of the variable.
         
-        Args
+        Args:
             bool_value (bool)
             
         """
@@ -553,7 +553,7 @@ class MayaVariable(vtool.util.Variable):
         """
         Set the keyable state of the variable.
         
-        Args
+        Args:
             bool_value (bool)
             
         """
@@ -572,7 +572,7 @@ class MayaVariable(vtool.util.Variable):
         """
         Set the node where the variable should live.
         
-        Args
+        Args:
             name (str)
             
         """
@@ -593,7 +593,7 @@ class MayaVariable(vtool.util.Variable):
         """
         Get the name of the variable.
         
-        Args
+        Args:
             name_only (bool): If True just the variable name is returned. If False the node and variable are returned: "node.variable".
         """
         
@@ -623,7 +623,7 @@ class MayaVariable(vtool.util.Variable):
         """
         Set a dictionary that describes the variable. See get_dict.
         
-        Args
+        Args:
             var_dict (dict): A dictionary created from get_dict.
             
         """
@@ -643,7 +643,7 @@ class MayaVariable(vtool.util.Variable):
         """
         Create the variable on the node.
         
-        Args
+        Args:
             node (str): The node for the variable.  If not set, set_node should be set.
             
         """
@@ -668,7 +668,7 @@ class MayaVariable(vtool.util.Variable):
         """
         Delete the variable on the node.
         
-        Args
+        Args:
             node (str): The node for the variable.  If not set, set_node should be set.
             
         """
@@ -694,7 +694,7 @@ class MayaVariable(vtool.util.Variable):
         """
         Connect the attribute into this variable.
         
-        Args
+        Args:
             attribute (str): 'node.attribute'
         
         """
@@ -704,7 +704,7 @@ class MayaVariable(vtool.util.Variable):
         """
         Connect from the variable into the attribute.
         
-        Args
+        Args:
             attribute (str): 'node.attribute'
         
         """
@@ -776,7 +776,7 @@ class MayaNumberVariable(MayaVariable):
         
     def set_min_value(self, value):
         """
-        Args
+        Args:
             value (float): Minimum value constraint
         
         """
@@ -785,7 +785,7 @@ class MayaNumberVariable(MayaVariable):
     
     def set_max_value(self, value):
         """
-        Args
+        Args:
             value (float): Maximum value constraint
         
         """
@@ -856,7 +856,7 @@ class MayaEnumVariable(MayaVariable):
     
     def set_enum_names(self, name_list):
         """
-        Args
+        Args:
             name_list (list): List of strings to define the enum.
         """
         self.enum_names = name_list
@@ -1159,7 +1159,7 @@ class OrientJointAttributes(object):
         """
         Set a joint to create attributes on.
         
-        Args
+        Args:
             joint (str): The name of the joint.
         """
         self.joint = joint
@@ -1413,7 +1413,7 @@ class OrientJoint(object):
       
     def set_aim_vector(self, vector_list):
         """
-        Args
+        Args:
             vector_list (list): [0,0,0] vector that defines what axis should aim.  
             If joint should aim with X axis then vector should be [1,0,0].  If joint should aim with Y axis then [0,1,0], etc.
             If up needs to be opposite of X axis then vector should be [-1,0,0].
@@ -1422,7 +1422,7 @@ class OrientJoint(object):
         
     def set_up_vector(self, vector_list):
         """
-        Args
+        Args:
             vector_list (list): [0,0,0] vector that defines what axis should aim up.  
             If joint should aim up with X axis then vector should be [1,0,0].  If joint should aim up with Y axis then [0,1,0], etc.
             If up needs to be opposite of X axis then vector should be [-1,0,0].
@@ -1431,7 +1431,7 @@ class OrientJoint(object):
         
     def set_world_up_vector(self, vector_list):
         """
-        Args
+        Args:
             vector_list (list): [0,0,0] vector that defines what world up axis be.  
             If world should aim up with X axis then vector should be [1,0,0].  If world should aim up with Y axis then [0,1,0], etc.
             If up needs to be opposite of X axis then vector should be [-1,0,0].
@@ -1442,7 +1442,7 @@ class OrientJoint(object):
         """
         Set how the joint aims.
         
-        Args
+        Args:
             int_value (int): 0 aim at world X, 
                                 1 aim at world Y, 
                                 2 aim at world Z, 
@@ -1456,7 +1456,7 @@ class OrientJoint(object):
         """
         Set how the joint aims up.
         
-        Args
+        Args:
             int_value (int):  0 world,
                                 1 parent rotate,
                                 2 child position,
@@ -1667,7 +1667,7 @@ class MatchSpace(object):
     Can be used as follows:
     MatchSpace('transform1', 'transform2').translation_rotation()
     
-    Args
+    Args:
         
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
@@ -1794,7 +1794,7 @@ class Control(object):
     space!!!
     Convenience for creating controls
     
-    Args
+    Args:
         name (str): The name of a control that exists or that should be created.
     """
     
@@ -1828,7 +1828,7 @@ class Control(object):
         """
         Set the curve type. The type of shape the curve should have.
         
-        Args
+        Args:
         
             type_name (str): eg. 'circle', 'square', 'cube', 'pin_round' 
         """
@@ -1843,7 +1843,7 @@ class Control(object):
         """
         Set the control to have a joint as its main transform type.
         
-        Args
+        Args:
             joint (str): The name of a joint to use. If none joint will be created automatically.
         """
         cmds.setAttr('%s.radius' % joint, l = True, k = False, cb = False)
@@ -1897,7 +1897,7 @@ class Control(object):
         """
         Translate the shape curve cvs in object space.
         
-        Args
+        Args:
             x (float)
             y (float)
             z (float)
@@ -1911,7 +1911,7 @@ class Control(object):
         """
         Rotate the shape curve cvs in object space
         
-        Args
+        Args:
             x (float)
             y (float)
             z (float)
@@ -1925,7 +1925,7 @@ class Control(object):
         """
         Scale the shape curve cvs relative to the current scale.
         
-        Args
+        Args:
             x (float)
             y (float)
             z (float)
@@ -1941,7 +1941,7 @@ class Control(object):
         """
         Set the color of the curve.
         
-        Args
+        Args:
             value (int): This corresponds to Maya's color override value.
         """
         shapes = get_shapes(self.control)
@@ -1968,7 +1968,7 @@ class Control(object):
         """
         Lock and hide the given attributes on the control.
         
-        Args
+        Args:
             
             attributes (list): List of attributes, eg. ['translateX', 'translateY']
         """
@@ -2028,7 +2028,7 @@ class Control(object):
         """
         Look at the position of a control, and color it according to its side on left, right or center.
         
-        Args
+        Args:
             sub (bool): Wether to set the color to sub colors.
             center_tolerance (float): The distance the control can be from the center before its considered left or right.
             
@@ -2075,7 +2075,7 @@ class Control(object):
         """
         Give the control a new name.
         
-        Args
+        Args:
             
             name (str): The new name.
         """
@@ -5055,7 +5055,7 @@ def is_batch():
 
 def is_referenced(node):
     """
-    Args
+    Args:
         node (str): Name of a node in maya. Check to see if it is referenced.
         
     Return
@@ -5072,7 +5072,7 @@ def is_a_shape(node):
     """
     Test whether the node is a shape.
     
-    Args
+    Args:
         node (str): The name of a node.
         
     Return
@@ -5087,7 +5087,7 @@ def inc_name(name):
     """
     Finds a unique name by adding a number to the end.
     
-    Args
+    Args:
         name (str): Name to start from. 
     
     Return
@@ -5101,7 +5101,7 @@ def prefix_name(node, prefix, name, separator = '_'):
     """
     Convenience to quickly rename a Maya node.
     
-    Args
+    Args:
         node (str): Name of a node in maya to rename.
         prefix (str)
         name (str)
@@ -5119,7 +5119,7 @@ def prefix_hierarchy(top_group, prefix):
     """
     Prefix all the names in a hierarchy.
     
-    Args
+    Args:
         top_group (str): Name of the top node of a hierarchy.
         prefix (str): Prefix to add in front of top_group and all children.
         
@@ -5167,7 +5167,7 @@ def get_shapes(transform):
     """
     Get all the shapes under a transform.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         
     Return
@@ -5247,7 +5247,7 @@ def set_hud_visibility(bool_value, displays = None):
     """
     Set the viewport hud display visibility.
     
-    Args
+    Args:
         bool_value (bool): True turns visiliblity on, False turns it off.
         displays (list): List of heads up displays by name.
     """
@@ -5262,7 +5262,7 @@ def set_hud_lines(lines, name):
     """
     Set the viewport hud text for the named hud.
     
-    Args
+    Args:
         lines (list): Each entry in the list is a new text line in the display.
         name (str): The name of the heads up display to work on.
     
@@ -5309,7 +5309,7 @@ def playblast(filename):
     """
     Playblast the viewport to the given filename path.
     
-    Args
+    Args:
         filename (str): This should be the path to a quicktime .mov file.
     """
     
@@ -5382,7 +5382,7 @@ def apply_shading_engine(shader_name, mesh):
     """
     Adds the named shading engine to the mesh.
     
-    Args
+    Args:
         shader_name (str): Name of an existing shader in maya.
         mesh (str):  Name of a mesh to add the shader to.
     
@@ -5404,7 +5404,7 @@ def get_shading_engines(shader_name):
     Maya allows one shader to be attached to more than one engine. 
     Most of the time it is probably just attached to one.
     
-    Args
+    Args:
         shader_name (str): The name of the shader.
         
     Return
@@ -5422,7 +5422,7 @@ def get_shading_engines(shader_name):
 
 def apply_shader(shader_name, mesh):
     """
-    Args
+    Args:
         shader_name (str): The name of a shader.
         mesh (str): The name of the mesh to apply the shader to.
         
@@ -5437,7 +5437,7 @@ def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
     """
     Create a new shader to be applied to the named mesh.
     
-    Args
+    Args:
         mesh (str): The name of the mesh to apply the shader to.
         type_of_shader (str): This corresponds to Maya shader types.  Eg. blinn, lambert, etc.
         name (str): The name to give the shader. If not name given a name will be made up using the type_of_shader.
@@ -5476,7 +5476,7 @@ def apply_transparent_lambert(mesh):
     """
     Convenience to hide geo via shader.
     
-    Args
+    Args:
         mesh (str): Name of the mesh to apply the shader to.
     """
     
@@ -5500,7 +5500,7 @@ def create_display_layer(name, nodes):
     """
     Create a display layer containing the supplied nodes.
     
-    Args
+    Args:
         name (str): The name to give the display layer.
         nodes (str): The nodes that should be in the display layer.
         
@@ -5528,7 +5528,7 @@ def add_to_isolate_select(nodes):
     This will only work on viewports that have isolate select turned on.
     Use when nodes are not being evaluated because isolate select causes them to be invisible.
     
-    Args
+    Args:
         nodes (list): The nodes to add to isolate select.
     """
     
@@ -5559,7 +5559,7 @@ def is_transform(node):
     """
     Is the node a transform.
     
-    Args
+    Args:
         node (str): The name of the node to test.
     
     Return
@@ -5579,7 +5579,7 @@ def get_closest_transform(source_transform, targets):
     """
     Given the list of target transforms, find the closest to the source transform.
     
-    Args
+    Args:
         source_transform (str): The name of the transform to test distance to.
         targets (list): List of targets to test distance against.
         
@@ -5604,7 +5604,7 @@ def get_distance(source, target):
     """
     Get the distance between the source transform and the target transform.
     
-    Args
+    Args:
         source (str): The name of a transform.
         target (str): The name of a transform.
     
@@ -5639,7 +5639,7 @@ def get_midpoint( source, target):
     """
     Get the midpoint between the source transform and the target transform.
     
-    Args
+    Args:
         source (str): The name of a transform.
         target (str): The name of a transform.
     
@@ -5663,7 +5663,7 @@ def get_distances(sources, target):
     """
     Given a list of source transforms, return a list of distances to the target transform
     
-    Args
+    Args:
         sources (list): The names of a transforms.
         target (str): The name of a transform.
     
@@ -5685,7 +5685,7 @@ def get_polevector(transform1, transform2, transform3, offset = 1):
     """
     Given 3 transforms eg. arm, elbow, wrist.  Return a vector of where the pole vector should be located.
         
-    Args
+    Args:
         transform1 (str): name of a transform in maya. eg. joint_arm.
         transform2 (str): name of a transform in maya. eg. joint_elbow.
         transform3 (str): name of a transform in maya. eg. joint_wrist.
@@ -5711,7 +5711,7 @@ def get_group_in_plane(transform1, transform2, transform3):
     """
     Create a group that sits in the triangle plane defined by the 3 transforms.
     
-    Args
+    Args:
         transform1 (str): name of a transform in maya. eg. joint_arm.
         transform2 (str): name of a transform in maya. eg. joint_elbow.
         transform3 (str): name of a transform in maya. eg. joint_wrist.
@@ -5748,7 +5748,7 @@ def  get_center(transform):
     """
     Get the center of a selection. Selection can be component or transform.
     
-    Args
+    Args:
         transform (str): Name of a node in maya.
     
     Return 
@@ -5768,7 +5768,7 @@ def get_btm_center(transform):
     """
     Get the bottom center of a selection. Selection can be component or transform.
     
-    Args
+    Args:
         transform (str): Name of a node in maya.
     
     Return 
@@ -5789,7 +5789,7 @@ def get_top_center(transform):
     """
     Get the top center of a selection. Selection can be component or transform.
     
-    Args
+    Args:
         transform (str): Name of a node in maya.
     
     Return 
@@ -5813,7 +5813,7 @@ def get_ordered_distance_and_transform(source_transform, transform_list):
     Returns a distance dictionary with each distacne key returning the corresponding transform.
     Returns a list with the original distance order has fed in from transform_list.
     
-    Args
+    Args:
         source_transform (str)
         
         transform_list (list)
@@ -5863,7 +5863,7 @@ def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
     """
     Create a multiply divide for each transform in drivers with a weight value based on the distance from source_guide.
     
-    Args
+    Args:
         source_guide (str): Name of a transform in maya to calculate distance.
         drivers (list): List of drivers to apply fade to based on distance from source_guide.
         skip_lower (float): The distance below which multiplyDivide fading stops.
@@ -5913,7 +5913,7 @@ def create_match_group(transform, prefix = 'match', use_duplicate = False):
     Create a group that matches a transform.
     Naming = 'match_' + transform
     
-    Args
+    Args:
         transform (str): The transform to match.
         prefix (str): The prefix to add to the matching group.
         use_duplicate (bool):  If True, matching happens by duplication instead of changing transform values.
@@ -5947,7 +5947,7 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
     This is good for zeroing out the values of a transform.
     Naming = 'xform_' + transform
     
-    Args
+    Args:
         transform (str): The transform to match.
         prefix (str): The prefix to add to the matching group.
         use_duplicate (bool):  If True, matching happens by duplication instead of changing transform values.
@@ -5982,7 +5982,7 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
     """
     Create a group above a target_transform that is constrained to the source_transform.
     
-    Args
+    Args:
         source_transform (str): The transform to follow.
         target_transform (str): The transform to make follow.
         prefix (str): The prefix to add to the follow group.
@@ -6018,7 +6018,7 @@ def create_local_follow_group(source_transform, target_transform, prefix = 'foll
     Create a group above a target_transform that is local constrained to the source_transform.
     This helps when setting up controls that need to be parented but only affect what they constrain when the actual control is moved.  
     
-    Args
+    Args:
         source_transform (str): The transform to follow.
         target_transform (str): The transform to make follow.
         prefix (str): The prefix to add to the follow group.
@@ -6062,7 +6062,7 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
     Create a group above the target that is constrained to multiple transforms. A switch attribute switches their state on/off.
     Direct in this case means the constraints will be added directly on the target_transform.
     
-    Args
+    Args:
         source_list (list): List of transforms that the target should be constrained by.
         target_transform (str): The name of a transform that should follow the transforms in source list.
         node (str): The name of the node to add the switch attribute to.
@@ -6117,7 +6117,7 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     Create a group above the target that is constrained to multiple transforms. A switch attribute switches their state on/off.
     Direct in this case means the constraints will be added directly on the target_transform.
     
-    Args
+    Args:
         source_list (list): List of transforms that the target should be constrained by.
         target_transform (str): The name of a transform that should follow the transforms in source list.
         node (str): The name of the node to add the switch attribute to.
@@ -6180,7 +6180,7 @@ def get_hierarchy(node_name):
     Return the name of the node including the hierarchy in the name using "|".
     This is the full path of the node.
     
-    Args
+    Args:
         node_name (str): A node name.
         
     Return
@@ -6199,7 +6199,7 @@ def has_parent(transform, parent):
     """
     Check to see if the transform has parent in its parent hierarchy.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         parent (str): The name of a parent transform.
         
@@ -6229,7 +6229,7 @@ def transfer_relatives(source_node, target_node, reparent = False):
     Reparent the children of source_node under target_node.
     If reparent, move the target_node under the parent of the source_node.
     
-    Args
+    Args:
         source_node (str): The name of a transform to take relatives from.
         target_node (str): The name of a transform to transfer relatives to.
         reparent (bool): Wether to reparent target_node under source_node after transfering relatives.
@@ -6298,7 +6298,7 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
     Makes the joints stretch on the curve. 
     Joints must be on a spline ik that is attached to the curve.
     
-    Args
+    Args:
         curve (str): The name of the curve that joints are attached to via spline ik.
         joints (list): List of joints attached to spline ik.
         node_for_attribute (str): The name of the node to create the attributes on.
@@ -6413,7 +6413,7 @@ def create_simple_spline_ik_stretch(curve, joints):
     """
     Stretch joints on curve. Joints must be attached to a spline ik. This is a much simpler setup than create_spline_ik_stretch.
     
-    Args
+    Args:
         curve (str): The name of the curve that joints are attached to via spline ik.
         joints (list): List of joints attached to spline ik.
     """
@@ -6451,7 +6451,7 @@ def create_bulge_chain(joints, control, max_value = 15):
     """
     Adds scaling to a joint chain that mimics a cartoony water bulge moving along a tube.
     
-    Args
+    Args:
         joints (list): List of joints that the bulge effect should move along.
         control (str): Name of the control to put the bulge slider on.
         max_value (float): The maximum value of the slider.
@@ -6511,7 +6511,7 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
     Constrain a target transform to a source transform in a way that allows for setups to remain local to the origin.
     This is good when a control needs to move with the rig, but move something at the origin only when the actually control moves.
     
-    Args
+    Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         parent (bool): The setup uses a local group to constrain the target_transform. If this is true it will parent the target_transform under the local group.
@@ -6563,7 +6563,7 @@ def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', n
     """
     Add evenly spaced joints inbetween joint1 and joint2.
     
-    Args
+    Args:
         joint1 (str): The first joint. If None given, the first selected joint.
         joint2 (str): The second joint. If None given, the second selected joint.
         count (int): The number of joints to add inbetween joint1 and joint2.
@@ -6723,7 +6723,7 @@ def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
     """
     Create a stretch effect on a transform by changing the scale when the distance changes between xform1 and xform2.
     
-    Args
+    Args:
         xform1 (str): The name of a transform.
         xform2 (str): The name of a transform.
         axis (str): "X", "Y", "Z" The axis to attach the stretch effect to.
@@ -6766,7 +6766,7 @@ def add_orient_attributes(transform):
     """
     Add orient attributes, used to automatically orient.
     
-    Args
+    Args:
         transform (str): The name of the transform.
     """
     if type(transform) != list:
@@ -6782,7 +6782,7 @@ def orient_attributes(scope = None):
     Orient all transforms with attributes added by add_orient_attributes.
     If scope is provided, only orient transforms in the scope that have attributes.
     
-    Args
+    Args:
         scope (list): List of transforms to orient.
     """
     if not scope:
@@ -6813,7 +6813,7 @@ def find_transform_right_side(transform):
     if not 
     *lf_* will be converted to *rt_*
     
-    Args
+    Args:
         transform (str): The name of a transform.
         
     Return 
@@ -6852,7 +6852,7 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
     Mirror the positions of all transforms that match the search strings.
     If search strings left at None, search all transforms and joints. 
     
-    Args
+    Args:
         prefix (str): The prefix to search for.
         suffix (str): The suffix to search for.
         string_search (str): Search for a name containing string search.
@@ -6941,7 +6941,7 @@ def match_joint_xform(prefix, other_prefix):
     """
     Match the positions of joints with similar names.
     For example, skin_arm_L could be matched to joint_arm_L, if they exists and prefix = skin and other_prefix = joint.
-    Args 
+    Args: 
         prefix (str)
         other_prefix (str) 
     """
@@ -6958,7 +6958,7 @@ def match_orient(prefix, other_prefix):
     """
     Match the orientations of joints with similar names.
     For example, skin_arm_L could be matched to joint_arm_L, if they exists and prefix = skin and other_prefix = joint.
-    Args 
+    Args: 
         prefix (str)
         other_prefix (str) 
     """
@@ -6987,7 +6987,7 @@ def get_y_intersection(curve, vector):
     """
     Given a vector in space, find out the closest intersection on the y axis to the curve. This is usefull for eye blink setups.
     
-    Args
+    Args:
         curve (str): The name of a curve that could represent the btm eyelid.
         vector (vector list): A list that looks like [0,0,0] that could represent a position on the top eyelid.
         
@@ -7018,7 +7018,7 @@ def get_side(transform, center_tolerance):
     Get the side of a transform based on its position in world space.
     Center tolerance is distance from the center to include as a center transform.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         center_tolerance (float): How close to the center the transform must be before it is considered in the center.
         
@@ -7047,7 +7047,7 @@ def create_no_twist_aim(source_transform, target_transform, parent):
     Aim target transform at the source transform, trying to rotate only on one axis.
     Constrains the target_transform.
     
-    Args
+    Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         parent (str): The parent for the setup.
@@ -7099,7 +7099,7 @@ def create_pole_chain(top_transform, btm_transform, name):
     """
     Create a two joint chain with an ik handle.
     
-    Args
+    Args:
         top_transform (str): The name of a transform.
         btm_transform (str): The name of a transform.
         name (str): The name to give the new joints.
@@ -7134,7 +7134,7 @@ def scale_constraint_to_local(scale_constraint):
     Disconnect the parent matrix to remove this behavior.
     Reconnect using scale_constraint_to_world if applying multiple constraints.
     
-    Args
+    Args:
         scale_constraint (str): The name of the scale constraint to work on.
     """
     
@@ -7150,7 +7150,7 @@ def scale_constraint_to_world(scale_constraint):
     """
     Works with scale_constraint_to_local.
     
-    Args
+    Args:
         scale_constraint (str): The name of the scale constraint affected by scale_constraint_to_local.
     """
     
@@ -7175,7 +7175,7 @@ def duplicate_joint_section(joint, name = ''):
     Joint chains ususally have a parent and a child along the chain. 
     This will duplicate one of those sections.  You need only supply the parent joint.
     
-    Args
+    Args:
         joint (str): The name of the joint to duplicate.
         name (str): The name to give the joint section.
         
@@ -7214,7 +7214,7 @@ def get_axis_vector(transform, axis_vector):
     If you give it a vector [0,1,0], it will return the transform's y point.
     If you give it a vector [0,0,1], it will return the transform's z point.
     
-    Args
+    Args:
         transform (str): The name of a transform. Its matrix will be checked.
         axis_vector (list): A vector. X = [1,0,0], Y = [0,1,0], Z = [0,0,1] 
         
@@ -7232,7 +7232,7 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
     """
     A convenience for create set driven key frames.
     
-    Args
+    Args:
         source (str): node.attribute to drive target.
         target (str): node.attribute to be driven by source.
         source_values (list): A list of values at the source.
@@ -7275,7 +7275,7 @@ def get_input_keyframes(node, node_only = True):
     """
     Get all keyframes that input into the node.
     
-    Args
+    Args:
         node (str): The name of a node to check for keyframes.
         node_only (bool): Wether to return just the keyframe name, or also the keyframe.output attribute.
         
@@ -7299,7 +7299,7 @@ def get_output_keyframes(node):
     """
     Get all keyframes that output from the node.
     
-    Args
+    Args:
         node (str): The name of a node to check for keyframes.
         
     Return
@@ -7324,7 +7324,7 @@ def set_infiinity(keyframe, pre = False, post = False):
     """
     Given a keframe set the in and out infinity to linear.
     
-    Args
+    Args:
         keyframe (str): The name of a keyframe.
         pre (bool): Wether to set pre inifinity to linear.
         post (bool): Wether to set post infinity to linear.
@@ -7351,7 +7351,7 @@ def is_a_mesh(node):
     """
     Test whether the node is a mesh or has a shape that is a mesh.
     
-    Args
+    Args:
         node (str): The name of a node.
         
     Return
@@ -7366,7 +7366,7 @@ def has_shape_of_type(node, maya_type):
     """
     Test whether the node has a shape of the supplied type.
     
-    Args
+    Args:
         node (str): The name of a node.
         maya_type (str): Can be a mesh, nurbsCurve, or any maya shape type. 
         
@@ -7415,7 +7415,7 @@ def get_mesh_shape(mesh, shape_index = 0):
     """
     Get the first mesh shape, or one based in the index.
     
-    Args
+    Args:
         mesh (str): The name of a mesh.
         shape_index (int): Usually zero, but can be given 1 or 2, etc up to the number of shapes - 1. 
         The shape at the index will be returned.
@@ -7450,7 +7450,7 @@ def create_shape_from_shape(shape, name = 'new_shape'):
     Duplication in maya can get slow in reference files. 
     This will create a shape and match it to the given shape without using Maya's duplicate command.
     
-    Args
+    Args:
         shape (str): The name of a shape to match to.
         name (str): The name of the new shape.
     
@@ -7481,7 +7481,7 @@ def get_of_type_in_hierarchy(transform, node_type):
     """
     Get nodes of type in a hierarchy.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         node_type (str): The node type to search for.
         
@@ -7514,7 +7514,7 @@ def get_shapes_in_hierarchy(transform):
     Get all the shapes in the child hierarchy excluding intermediates.
     This is good when calculating bounding box of a group.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         
     Return
@@ -7554,7 +7554,7 @@ def rename_shapes(transform):
     Rename all the shapes under a transform. 
     Renames them to match the name of the transform.
     
-    Args
+    Args:
         transform (str): The name of a transform.
     """
     
@@ -7580,7 +7580,7 @@ def get_component_count(transform):
     Get the number of components under a transform. 
     This does not include hierarchy.
     
-    Args
+    Args:
         transform (str): The name of a transform.
     
     Return
@@ -7596,7 +7596,7 @@ def get_components(transform):
     Get the name of the components under a transform.  
     This does not include hierarchy.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         
     Return
@@ -7612,7 +7612,7 @@ def get_components_in_hierarchy(transform):
     Get the components in the hierarchy.
     This includes all transforms with shapes parented under the transform.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         
     Return
@@ -7627,7 +7627,7 @@ def get_components_from_shapes(shapes = None):
     """
     Get the components from the a list of shapes.  Curntly supports cv and vtx components
     
-    Args
+    Args:
         shapes (list): List of shape names.
         
     Return
@@ -7657,7 +7657,7 @@ def get_edge_path(edges = []):
     """
     Given a list of edges, return the edge path.
     
-    Args
+    Args:
         edges (list): A list of edges (by name) along a path.  eg. ['node_name.e[0]'] 
     
     Return
@@ -7673,7 +7673,7 @@ def edge_to_vertex(edges):
     """
     Return the vertices that are part of the edges.
     
-    Args
+    Args:
         edges (list): A list of edges (by name).  eg. ['mesh_name.e[0]'] 
     
     Return
@@ -7708,7 +7708,7 @@ def get_face_center(mesh, face_id):
     """
     Get the center position of a face.
     
-    Args
+    Args:
         mesh (str): The name of a mesh.
         face_id: The index of a face component.
         
@@ -7727,7 +7727,7 @@ def get_face_centers(mesh):
     """
     Return a list of face center positions.
     
-    Args
+    Args:
         mesh (str): The name of a mesh.
         
     Return
@@ -7748,7 +7748,7 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     Important: If you need to attach to the rotate pivot of the transform make sure to set rotate_pivot = True
     This uses a rivet.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         mesh (str): The name of a mesh.
         deform (bool): Wether to deform into position instead of transform. This will create a cluster.
@@ -7850,7 +7850,7 @@ def attach_to_curve(transform, curve, maintain_offset = False, parameter = None)
     """
     Attach the transform to the curve using a point on curve.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         curve (str): The name of a curve
         maintain_offset (bool): Wether to attach to transform and maintain its offset from the curve.
@@ -7909,7 +7909,7 @@ def attach_to_surface(transform, surface, u = None, v = None):
     Attach the transform to the surface using a rivet.
     If no u and v value are supplied, the command will try to find the closest position on the surface.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         surface (str): The name of the surface to attach to.
         u (float): The u value to attach to.
@@ -7939,7 +7939,7 @@ def attach_to_closest_transform(source_transform, target_transforms):
     """
     Attach the source_transform to the closest transform in the list of target_transforms.
     
-    Args
+    Args:
         source_transform (str): The name of a transform to check distance to.
         target_transforms (list): List of transforms. The closest to source_transform will be attached to it.
     """
@@ -7952,7 +7952,7 @@ def follicle_to_mesh(transform, mesh, u = None, v = None):
     Use a follicle to attach the transform to the mesh.
     If no u and v value are supplied, the command will try to find the closest position on the mesh. 
     
-    Args
+    Args:
         transform (str): The name of a transform to follicle to the mesh.
         mesh (str): The name of a mesh to attach to.
         u (float): The u value to attach to.
@@ -7982,7 +7982,7 @@ def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
     """
     Create joints on the given faces.
     
-    Args
+    Args:
         mesh (str): The name of a mesh.
         faces (list): A list of face ids to create joints on.
         follow (bool): Wether the joints should follow.
@@ -8056,7 +8056,7 @@ def follicle_to_surface(transform, surface, u = None, v = None):
     Follicle the transform to a nurbs surface.
     If no u and v value are supplied, the command will try to find the closest position on the surface. 
     
-    Args
+    Args:
         transform (str): The name of a transform to follicle to the surface.
         mesh (str): The name of a surface to attach to.
         u (float): The u value to attach to.
@@ -8083,7 +8083,7 @@ def create_empty_follicle(description, uv = [0,0]):
     """
     Create a follicle
     
-    Args
+    Args:
         description (str): The description of the follicle.
         uv (list): eg. [0,0]
         
@@ -8112,7 +8112,7 @@ def create_mesh_follicle(mesh, description = None, uv = [0,0]):
     """
     Create a follicle on a mesh
     
-    Args
+    Args:
         mesh (str): The name of the mesh to attach to.
         description (str): The description of the follicle.
         uv (list): eg. [0,0] This corresponds to the uvs of the mesh.
@@ -8138,7 +8138,7 @@ def create_surface_follicle(surface, description = None, uv = [0,0]):
     """
     Create a follicle on a surface
     
-    Args
+    Args:
         surface (str): The name of the surface to attach to.
         description (str): The description of the follicle.
         uv (list): eg. [0,0] This corresponds to the uvs of the mesh.
@@ -8164,7 +8164,7 @@ def transforms_to_nurb_surface(transforms, description, spans = -1, offset_axis 
     Create a nurbs surface from a list of joints.  
     Good for creating a nurbs surface that follows a spine or a tail.
     
-    Args
+    Args:
         transforms (list): List of transforms
         description (str): The description of the surface. Eg. 'spine', 'tail'
         spans (int): The number of spans to give the final surface. If -1 the surface will have spans based on the number of transforms.
@@ -8238,7 +8238,7 @@ def transforms_to_curve(transforms, spans, description):
     """
     Create a curve from a list of transforms.  Good for create the curve for a spine joint chain or a tail joint chain.
     
-    Args
+    Args:
         transforms (list): A list of transforms to generate the curve from. Their positions will be used to place cvs.
         spans (int): The number of spans the final curve should have.
         description (str): The description to give the curve, eg. 'spine', 'tail'
@@ -8278,7 +8278,7 @@ def transforms_to_joint_chain(transforms, name = ''):
     """
     Given a list of transforms, create a joint chain.
     
-    Args
+    Args:
         transforms (list): List of transforms. Their positions will be used to set joint positions.
         name (str): The description to give the joints.
         
@@ -8306,7 +8306,7 @@ def transform_to_polygon_plane(transform, size = 1):
     """
     Create a single polygon face from the position and orientation of a transform.
     
-    Args
+    Args:
         transform (str): The name of the transform where the plane should be created.
         size (float): The size of the plane.
         
@@ -8328,7 +8328,7 @@ def edges_to_curve(edges, description):
     """
     Given a list of edges create a curve.
     
-    Args
+    Args:
         edges (list): List of edge names, eg ['mesh_name.e[0]']
         description (str): The description to give the new curve. Name = 'curve_(description)'
         
@@ -8347,7 +8347,7 @@ def get_intersection_on_mesh(mesh, ray_source_vector, ray_direction_vector ):
     """
     Given a ray vector with source and direction, find the closest intersection on a mesh.
     
-    Args
+    Args:
         mesh (str): The name of the mesh to intersect with.
         ray_source_vector (list): eg. [0,0,0], the source of the ray as a vector.
         ray_directrion_vector (list): eg [0,0,0], The end point of the ray that starts at ray_source_vector.
@@ -8366,7 +8366,7 @@ def get_closest_uv_on_mesh(mesh, three_value_list):
     """
     Find the closest uv on a mesh given a vector.
     
-    Args
+    Args:
         mesh (str): The name of the mesh with uvs.
         three_value_list (list): eg. [0,0,0], the position vector from which to find the closest uv.
         
@@ -8384,7 +8384,7 @@ def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis
     """
     This will find the closest intersection on a mesh by rotating incrementally on a rotate axis.
     
-    Args
+    Args:
         mesh (str): The name of a mesh.
         transform (str): The name of a transform.
         rotate_axis (str): 'X', 'Y', 'Z' axis of the transform to rotate.
@@ -8446,7 +8446,7 @@ def get_closest_parameter_on_curve(curve, three_value_list):
     """
     Find the closest parameter value on the curve given a vector.
     
-    Args
+    Args:
         curve (str): The name of a curve.
         three_value_list (list): eg. [0,0,0] The vector from which to search for closest parameter
         
@@ -8468,7 +8468,7 @@ def get_closest_parameter_on_surface(surface, vector):
     """
     Find the closest parameter value on the surface given a vector.
     
-    Args
+    Args:
         surface (str): The name of the surface.
         vector (list): eg [0,0,0] The position from which to check for closest parameter on surface. 
     
@@ -8498,7 +8498,7 @@ def get_closest_position_on_curve(curve, three_value_list):
     """
     Given a vector, find the closest position on a curve.
     
-    Args
+    Args:
         curve (str): The name of a curve.
         three_value_list (list): eg [0,0,0] a vector find the closest position from.
         
@@ -8520,7 +8520,7 @@ def get_parameter_from_curve_length(curve, length_value):
     """
     Find the parameter value given the length section of a curve.
     
-    Args
+    Args:
         curve (str): The name of a curve.
         length_value (float): The length along a curve.
         
@@ -8541,7 +8541,7 @@ def get_point_from_curve_parameter(curve, parameter):
     """
     Find a position on a curve by giving a parameter value.
     
-    Args
+    Args:
         curve (str): The name of a curve.
         parameter (float): The parameter value on a curve.
         
@@ -8555,7 +8555,7 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None, rig =
     """
     Create joints on curve that are oriented to aim at child.
     
-    Args
+    Args:
         curve (str): The name of a curve
         count (int): The number of joints.
         description (str): The description to give the joints.
@@ -8627,7 +8627,7 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
     """
     Create joints on curve that do not aim at child.
     
-    Args
+    Args:
         curve (str): The name of a curve.
         joint_count (int): The number of joints to create.
         description (str): The description to give the joints.
@@ -8769,7 +8769,7 @@ def create_ghost_chain(transforms):
     It connects into the an xform group above the transform.  
     This allows for setups that follow a nurbs surface, and then work like an fk hierarchy after.
     
-    Args
+    Args:
         transforms (list): A list of transforms.
         
     Return
@@ -8807,7 +8807,7 @@ def snap_joints_to_curve(joints, curve = None, count = 10):
     Snap the joints to a curve. 
     If count is greater than the number of joints, than joints will be added along the curve.
     
-    Args
+    Args:
         joints (list): A list of joints to snap to the curve.
         curve (str): The name of a curve. If no curve given a simple curve will be created based on the joints. Helps to smooth out joint positions.
         count (int): The number of joints. if the joints list doesn't have the same number of joints as count, then new joints are created.
@@ -8867,7 +8867,7 @@ def snap_joints_to_curve(joints, curve = None, count = 10):
 def convert_indices_to_mesh_vertices(indices, mesh):
     """
     Convenience for converting mesh index numbers to maya names. eg [mesh.vtx[0]] if index = [0]
-    Args
+    Args:
         indices (list): A list of indices.
         mesh (str): The name of a mesh.
     Return 
@@ -8884,7 +8884,7 @@ def get_vertex_normal(vert_name):
     """
     Get the position of a normal of a vertex.
     
-    Args
+    Args:
         vert_name (str): The name of a vertex.
     
     Return 
@@ -8898,7 +8898,7 @@ def add_poly_smooth(mesh):
     """
     create a polySmooth node on the mesh.
     
-    Args
+    Args:
         mesh (str): The name of a mesh.
         
     Return
@@ -8920,7 +8920,7 @@ def cluster_curve(curve, description, join_ends = False, join_start_end = False,
     joint_start_end, the cv at the start and end of the curve will be joined.
     join_ends, the 2 start cvs will have one cluster, the 2 end cvs will have one cluster.
     
-    Args
+    Args:
         curve (str): The name of a curve.
         description (str): The description to give the clusters.
         join_ends (bool): Wether to joint the 2 start cvs under one cluster, and the two end cvs under another cluster.
@@ -8986,7 +8986,7 @@ def create_cluster(points, name):
     """
     Create a cluster on a bunch of points.
     
-    Args:
+    Args::
         points (list): The names of points to cluster.
         name (str): The description of the cluster.
         
@@ -9005,7 +9005,7 @@ def create_cluster_bindpre(cluster, handle):
     Likewise if you move the bind pre transform and the cluster handle together the cluster does not deform the mesh.
     Only when you move the cluster handle without the bind pre.
     
-    Args
+    Args:
         cluster (str): The name of a cluster deformer.
         handle (str): The handle for the cluster deformer in cluster 
         
@@ -9030,7 +9030,7 @@ def create_lattice(points, description, divisions = (3,3,3), falloff = (2,2,2)):
     """
     Convenience for creating a lattice.
     
-    Args
+    Args:
         points (list): List of points, meshes to deform.
         description (str): The description to give the lattice.
         divisions (tuple): eg (3,3,3) The number of divisions to give the lattice on each axis.
@@ -9054,7 +9054,7 @@ def get_history(geometry):
     """
     Get the history of the geometry. This will not search too deep.
     
-    Args
+    Args:
         geometry (str): The name of the geometry
         
     Return
@@ -9080,7 +9080,7 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
     """
     Given a mesh find a deformer with deformer_type in the history.
     
-    Args
+    Args:
         mesh (str): The name of a mesh.
         deformer_type (str): Corresponds to maya deformer type, eg. skinCluster, blendShape
         return_all (bool): Wether to return all the deformers found of the specified type, or just the first one.
@@ -9113,7 +9113,7 @@ def get_influences_on_skin(skin_deformer):
     """
     Get the names of the skin influences in the skin cluster.
     
-    Args
+    Args:
         skin_deformer (str)
         
     Return
@@ -9132,7 +9132,7 @@ def get_non_zero_influences(skin_deformer):
     """
     Get influences that have weight in the skin cluster.
     
-    Args
+    Args:
         skin_deformer (str)
         
     Return
@@ -9149,7 +9149,7 @@ def get_index_at_skin_influence(influence, skin_deformer):
     Given an influence name, find at what index it connects to the skin cluster. 
     This corresponds to the matrix attribute. eg. skin_deformer.matrix[0] is the connection of the first influence.
     
-    Args
+    Args:
         influence (str): The name of an influence.
         skin_deformer (str): The name of a skin_deformer affected by influence.
         
@@ -9169,7 +9169,7 @@ def get_skin_influence_at_index(index, skin_deformer):
     Find which influence connect to the skin cluster at the index.
     This corresponds to the matrix attribute. eg. skin_deformer.matrix[0] is the connection of the first influence.
     
-    Args
+    Args:
         index (int): The index of an influence.
         skin_deformer (str): The name of the skin cluster to check the index.
         
@@ -9191,7 +9191,7 @@ def get_skin_influence_indices(skin_deformer):
     Get the indices of the connected influences.
     This corresponds to the matrix attribute. eg. skin_deformer.matrix[0] is the connection of the first influence.
     
-    Args
+    Args:
         skin_deformer (str): The name of a skin cluster.
     
     Return
@@ -9206,7 +9206,7 @@ def get_skin_influences(skin_deformer, return_dict = False):
     Return a dictionary with the keys being the name of the influences.
     The value at the key the index where the influence connects to the skin cluster.
     
-    Args
+    Args:
         skin_deformer (str): The name of a skin cluster.
         return_dict (bool): Wether to return a dictionary.
         
@@ -9234,7 +9234,7 @@ def get_meshes_skinned_to_joint(joint):
     """
     Get all meshses that are skinned to the specified joint.
     
-    Args
+    Args:
         joint (str): The name of a joint.
         
     Return
@@ -9263,7 +9263,7 @@ def get_skin_weights(skin_deformer):
     Return a dictionary where the key is the influence, 
     and the value is the a list of weights at the influence.
     
-    Args
+    Args:
         skin_deformer (str): The name of a skin deformer.
         
     Return
@@ -9301,7 +9301,7 @@ def get_skin_blend_weights(skin_deformer):
     """
     Get the blendWeight values on the skin cluster.
     
-    Args
+    Args:
         skin_deformer (str): The name of a skin deformer.
     
     Return
@@ -9337,7 +9337,7 @@ def set_skin_blend_weights(skin_deformer, weights):
     """
     Set the blendWeights on the skin cluster given a list of weights.
     
-    Args
+    Args:
         skin_deformer (str): The name of a skin deformer.
         weights (list): A list of weight values corresponding to point order.
     """
@@ -9355,7 +9355,7 @@ def set_skin_weights_to_zero(skin_deformer):
     """
     Set all the weights on the mesh to zero.
     
-    Args
+    Args:
         skin_deformer (str): The name of a skin deformer.
     
     """
@@ -9372,7 +9372,7 @@ def set_vert_weights_to_zero(vert_index, skin_deformer, joint = None):
     """
     Set the weights at the given point index to zero.
     
-    Args
+    Args:
         vert_index (int): The index of a vert.
         skin_deformer (str): The name of a skin deformer.
         joint (str): The name of a joint that is influencing the vert. If not joint given all the influences for the vert will be zeroed out.
@@ -9397,7 +9397,7 @@ def set_deformer_weights(weights, deformer, index = 0):
     """
     Set the deformer weights. Good for cluster and wire deformers. 
     
-    Args
+    Args:
         weights (list): A list of weight values that should correspond to point order.
         deformer (str): The name of a deformer. eg. cluster or wire.
         index (int): The geometry index to set weights on. By default it will work on the first mesh.
@@ -9410,7 +9410,7 @@ def get_deformer_weights(deformer, index = 0):
     """
     Get the weights on a deformer. In point order.
     
-    Args
+    Args:
         deformer (str): The name of a deformer.
         index (int): The index of the meshes attached. 
     
@@ -9440,7 +9440,7 @@ def set_wire_weights(weights, wire_deformer, index = 0):
     """
     Set the wire weights given a list of weights that corresponds to point order.
     
-    Args
+    Args:
         weights (list): A list of weight values corresponding to point order.
         wire_deformer (str): The name of a wire deformer.
         index (int): The index of the mesh to work on. By default it will work on the first mesh.
@@ -9454,7 +9454,7 @@ def get_wire_weights(wire_deformer, index = 0):
     """
     Get the weights on a wire deformer. In point order.
     
-    Args
+    Args:
         wire_deformer (str): The name of a deformer.
         index (int): The index of the meshes attached. 
     
@@ -9469,7 +9469,7 @@ def get_cluster_weights(cluster_deformer, index = 0):
     """
     Get the weights on a cluster deformer. In point order.
     
-    Args
+    Args:
         cluster_deformer (str): The name of a deformer.
         index (int): The index of the meshes attached. 
     
@@ -9496,7 +9496,7 @@ def get_intermediate_object(transform):
     """
     Get the intermediate object in the list of shape nodes under transform.
     
-    Args
+    Args:
         transform (str): The name of a transform.
     """
     shapes = cmds.listRelatives(transform, s = True, f = True)
@@ -9507,7 +9507,7 @@ def set_all_weights_on_wire(wire_deformer, weight, slot = 0):
     """
     Set all the weights on a wire deformer.
     
-    Args
+    Args:
         wire_deformer (str): The name of a wire deformer.
         weight (float): The weight value to assign the weights of a wire deformer.
         slot (int): The index of the deformed mesh. Usually 0.
@@ -9534,7 +9534,7 @@ def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence
     """
     Set the wire weights from a skinned joint.
     
-    Args
+    Args:
         wire_deformer (str): The name of a wire deformer.
         weighted_mesh (str): The name of a skinned mesh.
         influence (str): The name of an influence.
@@ -9559,7 +9559,7 @@ def prune_wire_weights(deformer, value = 0.0001):
     """
     Removes weights that fall below value.
     
-    Args
+    Args:
         deformer (str): The name of a deformer.
         value (float): The value below which verts get removed from wire deformer.
     """
@@ -9588,7 +9588,7 @@ def map_influence_on_verts(verts, skin_deformer):
     """
     Given a list of verts, get which influences have the most weight.
     
-    Args
+    Args:
         verts (list): The index of vertices on the mesh to get weights from.
         skin_deformer (str): The name of a skin cluster.
         
@@ -9643,7 +9643,7 @@ def map_influence_on_verts(verts, skin_deformer):
 
 def get_faces_at_skin_influence(mesh, skin_deformer):
     """
-    Args
+    Args:
         mesh (str): The name of a mesh affected by skin_deformer.
         skin_deformer (str): The name of a skin deformer.
         
@@ -9688,7 +9688,7 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
     """
     Split a mesh into smaller sections based on skin deformer weights.
     
-    Args
+    Args:
         mesh (str): The name of a mesh.
         skin_deformer (str): The name of a skin deformer.
         vs_attribute (str): The name of a visibility attribute to connect to. eg. 'node_name.sectionVisibility'
@@ -9758,7 +9758,7 @@ def transfer_weight(source_joint, target_joints, mesh):
     #Transfer weight from the source joint to the target joints.
     
     
-    #Args
+    #Args:
     #    source_joint (str): The name of the joint to transfer from.
     #    target_joints (list): A list of joints to transfer to. 
     #    mesh (str): The name of the mesh to work on.
@@ -9828,7 +9828,7 @@ def add_joint_bindpre(skin, joint, description = None):
     """
     Add a bind pre locator to the bindPreMatrix of the skin.
     
-    Args
+    Args:
         skin (str): The name of a skin cluster to add bind pre to.
         joint (str): The name of the joint to match bind pre to.
         description(str): The description of the bind pre.
@@ -9877,7 +9877,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
     """
     Meant to take a wire deformer and turn it into a skinned joint chain.
     
-    Args
+    Args:
         wire_deformer (str): The name of a wire deformer.
         description (str): The description to give the setup
         joint_count (int): The number of joints to create. Higher number better resembles the effect of a wire deformer, but gets slow fast.
@@ -10088,7 +10088,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
     """
     Convert a wire deformer to skinned joints
     
-    Args
+    Args:
         wire_deformer (str): The name of a wire deformer.
         description (str): The description to give the setup.
         joint_count (int): The number of joints to create. Higher number better resembles the effect of a wire deformer, but gets slow fast.
@@ -10242,7 +10242,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh):
     """
     Transfer the weight from one joint to another.  Does it for all vertices affected by source_joint in mesh.
     
-    Args
+    Args:
         source_joint (str): The name of a joint to take weights from.
         target_joint (str): The name of a joint to transfer weights to.
         mesh (str): The mesh to work with.
@@ -10299,7 +10299,7 @@ def transfer_weight_from_joint_to_parent(joint, mesh):
     Transfer the weight from child joint to parent joint.  Does it for all vertices affected by child joint in mesh.
     If no parent joint, then do nothing.
     
-    Args
+    Args:
         joint (str): The name of a joint to take weights from.
         mesh (str): The mesh to work with.
         
@@ -10333,7 +10333,7 @@ def transfer_joint_weight_to_blendshape(blendshape_node, joint, mesh, index = 0,
     """
     Transfer the weight of a joint on a skincluster to a blendshape target weight.
     
-    Args
+    Args:
         blendshape_node (str): The name of a blendshape node.
         joint (str): The name of a joint influencing mesh.
         mesh (str): The name of a mesh that has joint has a skin influence.
@@ -10364,7 +10364,7 @@ def add_missing_influences(skin1, skin2):
     Make sure used influences in skin1 are added to skin2. 
     When transfering skin weights this can be handy.
     
-    Args
+    Args:
         skin1 (str): The name of a skin cluster.
         skin2 (str): The name of a skin cluster.
     """
@@ -10387,7 +10387,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     include_joints = only include the specified joints. 
     If exlude_joints, only exclude_joints in include_joints will be excluded.
     
-    Args
+    Args:
         source_mesh (str): The name of a mesh.
         target_mesh (str): The name of a mesh.
         exlude_joints (list): Exclude the named joints from the skin cluster.
@@ -10468,7 +10468,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints
     If exlude_joints, only exclude_joints in include_joints will be excluded.
     
     
-    Args
+    Args:
         source_mesh (str): The name of a mesh.
         group (str): The name of a group.
         exlude_joints (list): Exclude the named joints from the skin cluster.
@@ -10506,7 +10506,7 @@ def skin_lattice_from_mesh(source_mesh, target, divisions = [10,10,10], falloff 
     include_joints = only include the specified joints. 
     If exlude_joints, only exclude_joints in include_joints will be excluded.
     
-    Args
+    Args:
         source_mesh (str): The name of a mesh.
         target (str): The name of a group or mesh.
         divisions (list): eg [10,10,10] the divisions of the lattice.
@@ -10542,7 +10542,7 @@ def skin_curve_from_mesh(source_mesh, target, include_joints = [], exclude_joint
     include_joints = only include the specified joints. 
     If exlude_joints, only exclude_joints in include_joints will be excluded.
     
-    Args
+    Args:
     
         source_mesh (str): The name of a mesh.
         target (str): The name of a curve.
@@ -10557,7 +10557,7 @@ def skin_group(joints, group):
     Skin all the meshes in a group to the specified joints.  
     Good for attaching the face geo to the head joint.
     
-    Args
+    Args:
         joints (list): A list of joints to skin to.
         group (str): The group to skin.
     """
@@ -10577,7 +10577,7 @@ def lock_joints(skin_cluster, skip_joints = None):
     """
     Lock the joints in the skin cluster except joints in skip_joints
     
-    Args
+    Args:
         skin_cluster (str): The name of a skin cluster.
         skip_joints (list): The names of the joints to skip.
     """
@@ -10603,7 +10603,7 @@ def get_closest_verts_to_joints(joints, verts):
     """
     Get the closest vertices to a joint.
     
-    Args
+    Args:
         joints (list): A list of joints.
         verts (list): A list of vertices.
     
@@ -10648,7 +10648,7 @@ def create_wrap(source_mesh, target_mesh):
     Create an Maya exclusive bind wrap. 
     Source_mesh drives target_mesh.
     
-    Args
+    Args:
         source_mesh (str): The mesh to influence target_mesh. This can be a list of meshes.
         target_mesh (str): Mesh to be deformed by source_mesh.
         
@@ -10682,7 +10682,7 @@ def wire_mesh(curve, mesh, falloff):
     """
     Create a wire deformer.
     
-    Args
+    Args:
         curve (str): The name of a curve.
         mesh (str): The name of a mesh.
         falloff (float): The falloff of the wire influence.
@@ -10702,7 +10702,7 @@ def wire_to_mesh(edges, geometry, description, auto_edge_path = True):
     
     auto_edge_path = The command will try fill in gaps between edges.
     
-    Args
+    Args:
         edges (list): The edges from the source mesh to build the wire curve from. Eg. ["node_name.e[0]"]
         geometry (list): The target geometry that should follow.
         description (str): The description to give the setup.
@@ -10740,7 +10740,7 @@ def weight_hammer_verts(verts = None, print_info = True):
     """
     Convenience to use Maya's weight hammer command on many verts individually.
     
-    Args
+    Args:
         verts (list): The names of verts to weigth hammer. If verts = None, currently selected verts will be hammered. 
         
     """
@@ -10775,7 +10775,7 @@ def map_blend_target_alias_to_index(blendshape_node):
     """
     Get the aliases for blendshape weight targets and the index of the target.
     
-    Args
+    Args:
         blendshape_node (str): The name of the blendshape.
     
     Return 
@@ -10803,7 +10803,7 @@ def map_blend_index_to_target_alias(blendshape_node):
     """
     Get a map between the target index and its alias name on the blendshape.
     
-    Args
+    Args:
         blendshape_node (str): The name of the blendshape.
     
     Return 
@@ -10832,7 +10832,7 @@ def get_index_at_alias(alias, blendshape_node):
     """
     Given a blendshape weight alias, get the corresponding target index.
     
-    Args
+    Args:
         alias (str): The name of the weight alias.
     
     Return 
@@ -10850,7 +10850,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
     Get the delta of t he skin cluster and blendshape to the corrective.  
     Requires a skin cluster or blendshape in the deformation stack.
     
-    Args
+    Args:
         skin_mesh (str): The name of the skinned mesh, or blendshaped mesh to extract a delta from.
         corrective (str): The target shape for the skin mesh.  
         replace (bool): Wether to replace the corrective with the delta.
@@ -10940,7 +10940,7 @@ def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = Tr
     Create a delta following the equation:
     delta = orig_mesh + corrective_mesh - source_meshes
     
-    Args
+    Args:
         orig_mesh (str): The unchanged base mesh.
         source_meshes (list): Name of the mesh that represents where the mesh has moved. Can be a list or a single target. 
         corrective_mesh (str): Name of the mesh where the source mesh needs to move to.
@@ -10984,7 +10984,7 @@ def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
     """
     Create evenly spaced joints on a surface.
     
-    Args
+    Args:
         surface (str): the name of a nurbs surface.
         name(str): = the name to give to nodes created.
         uv_count(list): = number of joints on u and v, eg [10,4]
@@ -11029,7 +11029,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
     Create a blendshape. Add target source_mesh into the target_mesh.
     If target_mesh already has a blendshape, add source_mesh into existing blendshape.
     
-    Args
+    Args:
         blendshape (str): The name of the blendshape to work with.
         target_mesh (str): The name of the target mesh to add into the blendshape.
         weight (float): The value to set the weight of the target to.
@@ -11118,7 +11118,7 @@ def isolate_shape_axis(base, target, axis_list = ['X','Y','Z']):
     """
     Given a base mesh, only take axis movement on the target that is specified in axis_list.
     
-    Args
+    Args:
         base (str): The base mesh that has no targets applied.
         target (str): The target mesh vertices moved to a different position than the base.
         axis_list (list): The axises of movement allowed. If axis_list = ['X'], only vertex movement on x will be present in the result.
@@ -11175,7 +11175,7 @@ def reset_tweak(tweak_node):
     """
     Reset the tweak node in deformation history.
     
-    Args
+    Args:
         tweak_node (str): The name of the tweak node.
     """
     if not cmds.objExists('%s.vlist' % tweak_node):
@@ -11243,7 +11243,7 @@ def is_translate_rotate_connected(transform):
     """
     Check if translate and rotate attributes are connected.
     
-    Args
+    Args:
         transform (str): The name of a transform.
         
     Return
@@ -11269,7 +11269,7 @@ def get_inputs(node, node_only = True):
     """
     Get all the inputs into the specified node.
     
-    Args
+    Args:
         node (str): The name of a node.
         node_only (str): Wether to return the node name or the node name + the attribute eg. 'node_name.attribute'
     
@@ -11295,7 +11295,7 @@ def get_outputs(node, node_only = True):
     """
     Get all the outputs from the specified node.
         
-    Args
+    Args:
         node (str): The name of a node.
         node_only (str): Wether to return the node name or the node name + the attribute eg. 'node_name.attribute'
     
@@ -11319,7 +11319,7 @@ def get_attribute_input(node_and_attribute, node_only = False):
     """
     Get the input into the specified attribute.
     
-    Args
+    Args:
         node_and_attribute (str): The node_name.attribute name to find an input into.
         node_only (str): Wether to return the node name or the node name + the attribute eg. 'node_name.attribute'
         
@@ -11347,7 +11347,7 @@ def get_attribute_outputs(node_and_attribute, node_only = False):
     """
     Get the outputs from the specified attribute.
     
-    Args
+    Args:
         node_and_attribute (str): The node_name.attribute name to find outputs.
         node_only (str): Wether to return the node name or the node name + the attribute eg. 'node_name.attribute'
         
@@ -11371,7 +11371,7 @@ def transfer_output_connections(source_node, target_node):
     """
     Transfer output connections from source_node to target_node.
     
-    Args
+    Args:
         source_node (str): The node to take output connections from.
         target_node (str): The node to transfer output connections to.
     """
@@ -11391,7 +11391,7 @@ def set_color(nodes, color):
     """
     Set the override color for the nodes in nodes.
     
-    Args
+    Args:
         nodes (list): A list of nodes to change the override color.
         color (int): The color index to set override color to.
     """
@@ -11413,7 +11413,7 @@ def hide_attributes(node, attributes):
     """
     Lock and hide the attributes specified in attributes.
     
-    Args
+    Args:
         node (str): The name of a node.
         attributes (list): A list of attributes on node to lock and hide.
     """
@@ -11428,7 +11428,7 @@ def hide_keyable_attributes(node):
     """
     Lock and hide keyable attributes on node.
     
-    Args
+    Args:
         node (str) The name of a node.
     """
     
@@ -11480,7 +11480,7 @@ def get_color_of_side(side = 'C', sub_color = False):
     """
     Get the override color for the given side.
     
-    Args
+    Args:
         side (str): 'L','R', 'C'
         sub_color (bool): Wether to return a sub color.
         
@@ -11513,7 +11513,7 @@ def connect_vector_attribute(source_transform, target_transform, attribute, conn
     """
     Connect an X,Y,Z attribute, eg translate, rotate, scale. 
     
-    Args
+    Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         attribute (str): eg, translate, rotate, scale.
@@ -11558,7 +11558,7 @@ def connect_translate(source_transform, target_transform):
     """
     Connect translate attributes
     
-    Args
+    Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
     """
@@ -11569,7 +11569,7 @@ def connect_rotate(source_transform, target_transform):
     """
     Connect rotate attributes. This will automatically connect rotateOrder from source to target, if not already connected.
     
-    Args
+    Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
     """
@@ -11586,7 +11586,7 @@ def connect_scale(source_transform, target_transform):
     """
     Connect scale attributes.
     
-    Args
+    Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
     """
@@ -11596,7 +11596,7 @@ def connect_translate_plus(source_transform, target_transform):
     """
     Connect translate attributes. If target_transform already has input connections, reconnect with plusMinusAverage to accomodate both.
     
-    Args
+    Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         
@@ -11651,7 +11651,7 @@ def connect_translate_multiply(source_transform, target_transform, value = 1, re
     """
     Connect translate attributes with a multiplyDivide to multiply the effect.
     
-    Args
+    Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         value (float): The multiply value. Set to 0.5 to translate target half of what source translates.
@@ -11748,7 +11748,7 @@ def connect_rotate_multiply(source_transform, target_transform, value = 1, respe
     This is dangerous because rotate is not calculated in the same linear way as translate. 
     Probably shouldn't be used because of Quaternion math. Would be better to use a double orient constraint.
     
-    Args
+    Args:
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
         value (float): The multiply value. Set to 0.5 to rotate target half of what source translates.
@@ -11927,7 +11927,7 @@ def connect_visibility(attribute_name, target_node, value = 1):
     """
     Connect the visibility into an attribute
     
-    Args
+    Args:
         attribute_name (str): The node.attribute name of an attribute. Does not have to exists. Will be created if doesn't exist.
         target_node (str): The target node to connect attribute_name into.
         value (bool): 0 or 1 whether you want the visibility on or off by default.
@@ -11949,7 +11949,7 @@ def connect_plus(source_attribute, target_attribute, respect_value = False):
     """
     Connect source_attribute into target_attribute with a plusMinusAverage inbetween.
     
-    Args
+    Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
         respect_value (bool): Wether to edit the input1D list to accomodate for values in the target attribute.
@@ -12010,7 +12010,7 @@ def connect_plus_new(source_attribute, target_attribute, respect_value = False):
     Not in use. Connect source_attribute into target_attribute with a plusMinusAverage inbetween.
     Tried to make it better, but isn't.
     
-    Args
+    Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
         respect_value (bool): Wether to edit the input1D list to accomodate for values in the target attribute.
@@ -12091,7 +12091,7 @@ def connect_multiply(source_attribute, target_attribute, value = 0.1, skip_attac
     """
     Connect source_attribute into target_attribute with a multiplyDivide inbetween.
     
-    Args
+    Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
         skip_attach (bool): Wether to attach the input into target_attribute (if there is one) into input2X of multiplyDivide.
@@ -12132,7 +12132,7 @@ def insert_multiply(target_attribute, value = 0.1):
     """
     Insert a multiply divide into the input attribute of target_attribute.
     
-    Args
+    Args:
         target_attribute (str): The node.attribute name of an attribute.
         value (float): The float value to multiply the target_attribute by.
         
@@ -12162,7 +12162,7 @@ def connect_blend(source_attribute1, source_attribute2, target_attribute, value 
     """
     Connect source 1 and source 2 into the target_attribute with and blendColors node.
     
-    Args
+    Args:
         source_attribute1 (str): The node.attribute name of an attribute.
         source_attribute2 (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
@@ -12186,7 +12186,7 @@ def connect_reverse(source_attribute, target_attribute):
     """
     Connect source_attribute into target_attribute with a reverse node inbetween.
     
-    Args
+    Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
         
@@ -12204,7 +12204,7 @@ def connect_equal_condition(source_attribute, target_attribute, equal_value):
     """
     Connect source_attribute into target_attribute with a condition node inbetween.
     
-    Args
+    Args:
         source_attribute (str): The node.attribute name of an attribute.
         target_attribute (str): The node.attribute name of an attribute.
         equal_value (float): The value the condition should be equal to, in order to pass 1. 0 otherwise.
@@ -12229,7 +12229,7 @@ def connect_message( input_node, destination_node, attribute ):
     """
     Connect the message attribute of input_node into a custom message attribute on destination_node
     
-    Args
+    Args:
         input_node (str): The name of a node.
         destination_node (str): The name of a node.
         attribute (str): The name of the message attribute to create and connect into. If already exists than just connect. 
@@ -12250,7 +12250,7 @@ def disconnect_attribute(attribute):
     """
     Disconnect an attribute.  Find its input automatically and disconnect it.
     
-    Args
+    Args:
         attribute (str): The name of an attribute that has a connection.
     """
     connection = get_attribute_input(attribute)
@@ -12263,7 +12263,7 @@ def get_indices(attribute):
     """
     Get the index values of a multi attribute.
     
-    Args
+    Args:
         attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
         
     Return
@@ -12294,7 +12294,7 @@ def get_slots(attribute):
     attributes!!!
     Given a multi attribute, get all the slots currently made.
     
-    Args
+    Args:
         attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget 
     
     Return
@@ -12317,7 +12317,7 @@ def get_slot_count(attribute):
     attributes!!!
     Get the number of created slots in a multi attribute.
     
-    Args
+    Args:
         attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
         
     Return
@@ -12336,7 +12336,7 @@ def get_available_slot(attribute):
     attributes!!!
     Find the next available slot in a multi attribute.
     
-    Args
+    Args:
         attribute (str): The node.attribute name of a multi attribute. Eg. blendShape1.inputTarget
         
     Return
@@ -12353,7 +12353,7 @@ def create_title(node, name):
     """
     Create a enum title attribute on node
     
-    Args
+    Args:
         node (str): The name of a node
         name (str): The title name.
     """
@@ -12364,7 +12364,7 @@ def zero_xform_channels(transform):
     """
     Zero out the translate and rotate. Set scale to 1.
     
-    Args
+    Args:
         transform (str): The name of a transform node.
     """
     
@@ -12400,7 +12400,7 @@ def create_attribute_lag(source, attribute, targets):
     
     create_attribute_lag( 'CNT_FIN_1_L', 'rotateY', ['driver_CNT_FIN_2_L, 'driver_CNT_FIN_3_L', 'driver_CNT_FIN_4_L'] )
     
-    Args
+    Args:
         source (str): The node where the attribute lives. Also a lag attribute will be created here.
         attribute (str): The attribute to lag. Sometimes can be rotateX, rotateY or rotateZ.
         targets (list): A list of targets to connect the lag into. The attribute arg will be used as the attribute to connect into on each target.
@@ -12431,7 +12431,7 @@ def create_attribute_spread(control, transforms, name = 'spread', axis = 'Y', in
     """
     Given a list of transforms, create a spread attribute which will cause them to rotate apart.
     
-    Args
+    Args:
         control (str): The name of a control where the spread attribute should be created.
         transforms (list): A list of transforms that should spread apart by rotation.
         name (str): The name of the attribute to create.
@@ -12477,7 +12477,7 @@ def create_attribute_spread_translate(control, transforms, name = 'spread', axis
     Given a list of transforms, create a spread attribute which will cause them to translate apart.
     This is good for fingers that are rigged with ik handles.
     
-    Args
+    Args:
         control (str): The name of a control where the spread attribute should be created.
         transforms (list): A list of transforms that should spread apart by translation.
         name (str): The name of the attribute to create.
@@ -12781,7 +12781,7 @@ def process_joint_weight_to_parent(mesh):
     Sometimes joints have a sub joint added to help hold weighting and help with heat weighting.
     This will do it for all joints with name matching process_ at the beginning on the mesh arg that is skinned. 
     
-    Args
+    Args:
         mesh (str): A mesh skinned to process joints.
     """
     scope = cmds.ls('process_*', type = 'joint')
@@ -12817,7 +12817,7 @@ def hook_ik_fk(control, joint, groups, attribute = 'ikFk'):
     """
     Convenience for hooking up ik fk.
     
-    Args
+    Args:
         control (str): The name of the control where the attribute arg should be created.
         joint (str): The joint with the switch attribute. When adding multiple rigs to one joint chain, the first joint will have a switch attribute added.
         groups (list): The ik control group name and the fk control group name.
@@ -12844,7 +12844,7 @@ def fix_fade(target_curve, follow_fade_multiplies):
     The function will find the amount the multiplyDivide.input2X needs to move, 
     so that when CNT_EYELID moves on Y it will match the curvature of target_curve.
     
-    Args
+    Args:
         target_curve (str): The name of the curve to match to.
         follow_fade_multiplies (str): A list of a multiplyDivides.
     """
@@ -12902,7 +12902,7 @@ def create_nucleus(name = None):
     """
     Create a nucleus node.
     
-    Args
+    Args:
         name (str): The description for the nucleus. Final name = 'nucleus_(name)'. If no name given, name = 'nucleus'.
     
     Return 
@@ -12927,7 +12927,7 @@ def create_hair_system(name = None, nucleus = None):
     """
     Create a hair system.  
     
-    Args
+    Args:
         name (str): The description for the hair system. Final name = 'hairSystem_(name)'. If no name given, name = 'hairSystem'.  
         nucleus (str): The name of a nucleus node to attach to the hairSystem.
         
@@ -12956,7 +12956,7 @@ def connect_hair_to_nucleus(hair_system, nucleus):
     """
     Connect a hair system to a nucleus.
     
-    Args
+    Args:
         hair_system (str): The name of a hair system.
         nucleus (str): The name of a nucleus node.
     """
@@ -12985,7 +12985,7 @@ def create_follicle(name = None, hair_system = None):
     """
     Create a follicle.
     
-    Args 
+    Args: 
         name (str): The description for the hair system. Final name = 'follicle_(name)'. If no name given, name = 'follicle'.
         hair_system (str): The name of a hair system to connect to.
         
@@ -13017,7 +13017,7 @@ def connect_follicle_to_hair(follicle, hair_system):
     """
     Connect a follicle to a hair system
     
-    Args
+    Args:
         follicle (str): The name of a follicle.
         hair_system (str): The name of a hair system.
     """
@@ -13043,7 +13043,7 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     Add a follicle to a curve. Good for attaching to a spline ik, to make it dynamic.
     It will make a duplicate of the curve so that the dynamics of the follicle can be switched on/off.
     
-    Args
+    Args:
         curve (str): The name of a curve.
         hair_system(str): The name of a hair system, that the created follicle should attach to.
         switch_control (str): The name of the control to add the switch attribute to.
@@ -13121,7 +13121,7 @@ def add_passive_collider_to_mesh(mesh):
     """
     Make mesh into a passive collider.
     
-    Args
+    Args:
         mesh (str)
         
     Return

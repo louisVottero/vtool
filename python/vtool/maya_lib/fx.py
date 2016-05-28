@@ -22,7 +22,7 @@ def create_nucleus(name = None):
     Create a nucleus node.
     I've had cases where Maya insists on creating nucleus1 instead of using the last created nucleus.  This can be fixed by restarting Maya.
     
-    Args
+    Args:
         name (str): The description for the nucleus. Final name = 'nucleus_(name)'. If no name given, name = 'nucleus'.
     
     Return 
@@ -47,7 +47,7 @@ def create_hair_system(name = None, nucleus = None):
     """
     Create a hair system.  
     
-    Args
+    Args:
         name (str): The description for the hair system. Final name = 'hairSystem_(name)'. If no name given, name = 'hairSystem'.  
         nucleus (str): The name of a nucleus node to attach to the hairSystem.
         
@@ -76,7 +76,7 @@ def connect_hair_to_nucleus(hair_system, nucleus):
     """
     Connect a hair system to a nucleus.
     
-    Args
+    Args:
         hair_system (str): The name of a hair system.
         nucleus (str): The name of a nucleus node.
     """
@@ -105,7 +105,7 @@ def create_follicle(name = None, hair_system = None):
     """
     Create a follicle.
     
-    Args 
+    Args: 
         name (str): The description for the hair system. Final name = 'follicle_(name)'. If no name given, name = 'follicle'.
         hair_system (str): The name of a hair system to connect to.
         
@@ -137,7 +137,7 @@ def connect_follicle_to_hair(follicle, hair_system):
     """
     Connect a follicle to a hair system
     
-    Args
+    Args:
         follicle (str): The name of a follicle.
         hair_system (str): The name of a hair system.
     """
@@ -163,7 +163,7 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     Add a follicle to a curve. Good for attaching to a spline ik, to make it dynamic.
     It will make a duplicate of the curve so that the dynamics of the follicle can be switched on/off.
     
-    Args
+    Args:
         curve (str): The name of a curve.
         hair_system(str): The name of a hair system, that the created follicle should attach to.
         switch_control (str): The name of the control to add the switch attribute to.
@@ -233,7 +233,7 @@ def add_passive_collider_to_mesh(mesh):
     """
     Make mesh into a passive collider.
     
-    Args
+    Args:
         mesh (str)
         
     Return
@@ -277,7 +277,7 @@ def nConstrain_to_mesh(verts, mesh, name = None, force_passive = False,):
     
     Constrain an ncloth to a passive collider.
     
-    Args
+    Args:
         verts (list): The list of verts to constrain on an nCloth mesh.
         mesh (str): The name of a mesh to constrain to.
         force_passive (bool): Wether to make mesh into a passive collider.
@@ -586,7 +586,7 @@ def create_keep_out(collide_transform = None, collide_mesh = None, name = None):
     Collide a transform with a mesh.
     It will generate a locator that can be used to drive an aim or an ik, or a set driven key
     
-    Args 
+    Args: 
         collide_transform (str): The transform that should collide with the mesh.  This needs to be a point in space, generally at the edge of the object that needs to collide. 
         collide_mesh (str): The mesh that should collide with collide_transform.
         name (str):  the description to give the nodes generated.
