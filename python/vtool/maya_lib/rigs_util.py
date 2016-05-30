@@ -302,7 +302,7 @@ class Control(object):
             sub (bool): Wether to set the color to sub colors.
             center_tolerance (float): The distance the control can be from the center before its considered left or right.
             
-        Return
+        Returns:
             str: The side the control is on in a letter. Can be 'L','R' or 'C'
         """
         position = cmds.xform(self.control, q = True, ws = True, t = True)
@@ -325,7 +325,7 @@ class Control(object):
             
     def get(self):
         """
-        Return
+        Returns:
             str: The name of the control.
         """
         return self.control
@@ -345,7 +345,7 @@ class Control(object):
         """
         Create an xform above the control.
         
-        Return
+        Returns:
             str: The name of the xform group.
         """
         xform = space.create_xform_group(self.control)
@@ -1386,8 +1386,8 @@ def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
         axis (str): "X", "Y", "Z" The axis to attach the stretch effect to.
         offset (float): Add an offset to the value.
         
-    Return
-        ([locator1, locator2]): The names of the two locators used to calculate distance.
+    Returns:
+        tuple: (locator1, locator2) The names of the two locators used to calculate distance.
     """
     locator1 = cmds.spaceLocator(n = core.inc_name('locatorDistance_%s' % xform1))[0]
     
@@ -1476,7 +1476,7 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
         attach (bool): Wether to attach the joints to the curve.
         create_controls (bool): Wether to create controls on the joints.
         
-    Return
+    Returns:
         list: [ joints, group, control_group ] joints is a list of joinst, group is the main group for the joints, control_group is the main group above the controls. 
         If create_controls = False then control_group = None
         
@@ -2056,7 +2056,7 @@ def get_controls():
     
     If it matches any of these conditions it is considered a control.
     
-    Return
+    Returns:
         list: List of control names.
     """
     transforms = cmds.ls(type = 'transform')

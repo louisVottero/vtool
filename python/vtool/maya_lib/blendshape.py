@@ -460,7 +460,7 @@ class BlendShape(object):
             value (float):  The weight value to recreate the target it.
             mesh (float): The mesh to duplicate. This can be a mesh that doesn't have the blendshape in its deformation stack.
             
-        Return 
+        Returns: 
             str: The name of the recreated target.
         """
         if not self.is_target(name):
@@ -501,7 +501,7 @@ class BlendShape(object):
         Args:
             mesh (float): The mesh to duplicate. This can be a mesh that doesn't have the blendshape in its deformation stack.
             
-        Return 
+        Returns: 
             str: The name of the recreated target.
         """
     

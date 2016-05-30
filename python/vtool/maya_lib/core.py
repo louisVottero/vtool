@@ -116,7 +116,7 @@ class TrackNodes(object):
         Args:
             node_type (str): Maya named type, ie animCurve, transform, joint, etc
             
-        Return
+        Returns:
             None
         """
         self.node_type = node_type
@@ -131,8 +131,8 @@ class TrackNodes(object):
         Get the new nodes in the Maya scene created after load() was executed.
         The load() node_type variable is stored in the class and used when getting the delta.
             
-        Return
-            (list) : list of new nodes.
+        Returns:
+            list: list of new nodes.
         """
         if self.node_type:
             current_nodes = cmds.ls(type = self.node_type)
@@ -307,8 +307,8 @@ def undo_chunk(function):
 
 def is_batch():
     """
-    Return 
-        (bool): True if Maya is in batch mode.
+    Returns: 
+        bool: True if Maya is in batch mode.
     """
     
     return cmds.about(batch = True)
@@ -320,8 +320,8 @@ def is_transform(node):
     Args:
         node (str): The name of the node to test.
     
-    Return
-        (bool)
+    Returns:
+        bool
     """
     
     if not cmds.objExists(node):
@@ -339,7 +339,7 @@ def is_a_shape(node):
     Args:
         node (str): The name of a node.
         
-    Return
+    Returns:
         bool
     """
     if cmds.objectType(node, isAType = 'shape'):
@@ -352,8 +352,8 @@ def is_referenced(node):
     Args:
         node (str): Name of a node in maya. Check to see if it is referenced.
         
-    Return
-        (bool)
+    Returns:
+        bool
     """
     if not cmds.objExists(node):
         return False
@@ -400,8 +400,8 @@ def inc_name(name):
     Args:
         name (str): Name to start from. 
     
-    Return
-        (str): Modified name, number added if not unique..
+    Returns:
+        str: Modified name, number added if not unique..
     """
     
     if not cmds.objExists(name):
@@ -420,8 +420,8 @@ def prefix_name(node, prefix, name, separator = '_'):
         name (str)
         separator (str)
         
-    Return
-        (str): prefix + separator + name
+    Returns:
+        str: prefix + separator + name
     
     """
     new_name = cmds.rename(node, '%s%s%s' % (prefix,separator, name))
@@ -436,8 +436,8 @@ def prefix_hierarchy(top_group, prefix):
         top_group (str): Name of the top node of a hierarchy.
         prefix (str): Prefix to add in front of top_group and all children.
         
-    Return
-        (list): The renamed hierarchy including top_group.
+    Returns:
+        list: The renamed hierarchy including top_group.
     """
     
     relatives = cmds.listRelatives(top_group, ad = True)
@@ -486,8 +486,8 @@ def get_outliner_sets():
     """
     Get the sets found in the outliner.
     
-    Return
-        (list): List of sets in the outliner.
+    Returns:
+        list: List of sets in the outliner.
     """
     
     sets = cmds.ls(type = 'objectSet')
@@ -515,8 +515,8 @@ def get_top_dag_nodes(exclude_cameras = True):
     """
     Get transforms that sit at the very top of the hierarchy.
     
-    Return
-        (list)
+    Returns:
+        list
     """
     
     top_transforms = cmds.ls(assemblies = True)
@@ -537,7 +537,7 @@ def get_shapes(transform, shape_type = None):
     Args:
         transform (str): The name of a transform.
         
-    Return
+    Returns:
         list: The names of shapes under the transform
     """
     if is_a_shape(transform):
@@ -554,8 +554,8 @@ def get_node_types(nodes, return_shape_type = True):
     """
     Get the maya node types for the nodes supplied.
     
-    Return
-        (dict[node_type_name]): node dict of matching nodes
+    Returns:
+        dict: dict[node_type_name] node dict of matching nodes
     """
     
     found_type = {}
@@ -646,7 +646,7 @@ def get_shapes_in_hierarchy(transform):
     Args:
         transform (str): The name of a transform.
         
-    Return
+    Returns:
         list: The list of shape nodes.
     """
     hierarchy = [transform]
@@ -687,7 +687,7 @@ def has_shape_of_type(node, maya_type):
         node (str): The name of a node.
         maya_type (str): Can be a mesh, nurbsCurve, or any maya shape type. 
         
-    Return
+    Returns:
         bool
     """
     test = None
@@ -715,7 +715,7 @@ def get_component_count(transform):
     Args:
         transform (str): The name of a transform.
     
-    Return
+    Returns:
         int: The number of components under transform, eg. verts, cvs, etc.
     """
     
@@ -731,7 +731,7 @@ def get_components(transform):
     Args:
         transform (str): The name of a transform.
         
-    Return
+    Returns:
         list: The name of all components under transform, eg verts, cvs, etc.
     """
     
@@ -747,7 +747,7 @@ def get_components_in_hierarchy(transform):
     Args:
         transform (str): The name of a transform.
         
-    Return
+    Returns:
         list: The name of all components under transform, eg verts, cvs, etc.
     """
     
@@ -762,7 +762,7 @@ def get_components_from_shapes(shapes = None):
     Args:
         shapes (list): List of shape names.
         
-    Return
+    Returns:
         list: The components of the supplied shapes.
     """
     components = []
@@ -875,8 +875,8 @@ def get_visible_hud_displays():
     """
     Get viewport hud displays.
     
-    Return
-        (list):  List of names of heads up displays.
+    Returns:
+        list:  List of names of heads up displays.
     """    
     
     found = []
@@ -988,8 +988,8 @@ def get_current_audio_node():
     """
     Get the current audio node. Important when getting sound in a playblast.
     
-    Return
-        (str): Name of the audio node.
+    Returns:
+        str: Name of the audio node.
     """
     
     play_slider = mel.eval('global string $gPlayBackSlider; string $goo = $gPlayBackSlider')

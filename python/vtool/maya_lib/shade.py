@@ -37,8 +37,8 @@ def get_shading_engines(shader_name):
     Args:
         shader_name (str): The name of the shader.
         
-    Return
-        (list): A list of attached shading engines by name.
+    Returns:
+        list: A list of attached shading engines by name.
     """
     outputs = attr.get_outputs('%s.outColor' % shader_name, node_only = True)
     
@@ -100,8 +100,8 @@ def apply_new_shader(mesh, type_of_shader = 'blinn', name = ''):
         type_of_shader (str): This corresponds to Maya shader types.  Eg. blinn, lambert, etc.
         name (str): The name to give the shader. If not name given a name will be made up using the type_of_shader.
         
-    Return
-        (str): The name of the new shader.
+    Returns:
+        str: The name of the new shader.
     """
     
     

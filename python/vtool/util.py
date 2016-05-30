@@ -53,7 +53,7 @@ def is_in_maya():
     """
     Check to see if scope is in Maya.
     
-    Return
+    Returns:
         bool:
     """
     try:
@@ -66,7 +66,7 @@ def is_in_nuke():
     """
     Check to see if scope is in Nuke
     
-    Return
+    Returns:
         bool:
     """
     try:
@@ -79,7 +79,7 @@ def get_maya_version():
     """
     Get the version of maya that the scope is running in.
     
-    Return
+    Returns:
         int: The date of the Maya version.
     """
     
@@ -379,7 +379,7 @@ class BoundingBox(object):
         """
         Get the center of the bounding box in a vector.
         
-        Return
+        Returns:
             list: [0,0,0] vector
         """
         return get_midpoint(self.min_vector, self.max_vector)
@@ -388,7 +388,7 @@ class BoundingBox(object):
         """
         Get the top center of the bounding box in a vector.
         
-        Return
+        Returns:
             list: [0,0,0] vector
         """
         return get_midpoint(self.max_vector, self.opposite_max_vector)
@@ -397,7 +397,7 @@ class BoundingBox(object):
         """
         Get the btm center of the bounding box in a vector.
         
-        Return
+        Returns:
             list: [0,0,0] vector
         """
         return get_midpoint(self.min_vector, self.opposite_min_vector)
@@ -478,8 +478,8 @@ def get_axis_vector(axis_name):
     Args:
         axis_name (str): 'X' or 'Y' or 'Z'
         
-    Return
-        (list): vector eg. [1,0,0] for 'X', [0,1,0] for 'Y' and [0,0,1] for 'Z'
+    Returns:
+        tuple: vector eg. (1,0,0) for 'X', (0,1,0) for 'Y' and (0,0,1) for 'Z'
     """
     if axis_name == 'X':
         return (1,0,0)
@@ -539,7 +539,7 @@ def get_distance(vector1, vector2):
         vector1 (list): eg. [0,0,0] vector
         vector2 (list): eg. [0,0,0] vector
         
-    Return
+    Returns:
         float: The distance between the two vectors.
     """
     vector1 = Vector(vector1)
@@ -559,7 +559,7 @@ def get_distance_2D(vector1_2D, vector2_2D):
         vector1_2D (list): eg. [0,0] vector
         vector2_2D (list): eg. [0,0] vector
         
-    Return
+    Returns:
         float: The distance between the two 2D vectors.
     """
     dist = vector1_2D[0] - vector2_2D[0], vector1_2D[1] - vector2_2D[1]
@@ -571,7 +571,7 @@ def get_magnitude_2D(vector_2D):
     Args:
         vector_2D (list): eg [0,0] vector
         
-    Return
+    Returns:
         float: The magnitude of the vector.
     """
     return math.sqrt( (vector_2D[0] * vector_2D[0]) + (vector_2D[1] * vector_2D[1]) )
@@ -584,7 +584,7 @@ def get_dot_product(vector1, vector2):
         vector1 (list): eg. [0,0,0] vector
         vector2 (list): eg. [0,0,0] vector
         
-    Return
+    Returns:
         float: The dot product between the two vectors.
     """
     return (vector1.x * vector2.x) + (vector1.y * vector2.y) + (vector1.z * vector2.z)
@@ -597,7 +597,7 @@ def get_dot_product_2D(vector1_2D, vector2_2D):
         vector1_2D (list): eg. [0,0] vector
         vector2_2D (list): eg. [0,0] vector
         
-    Return
+    Returns:
         float: The dot product between the two 2D vectors.
     """
     return (vector1_2D.x * vector2_2D.x) + (vector1_2D.y * vector2_2D.y)
@@ -607,7 +607,7 @@ def get_average(numbers):
     Args:
         numbers (list): A list of floats.
         
-    Return
+    Returns:
         float: The average of the floats in numbers list.
     """
     
@@ -627,7 +627,7 @@ def get_midpoint(vector1, vector2):
         vector1 (list): eg. [0,0,0] vector
         vector2 (list): eg. [0,0,0] vector
         
-    Return
+    Returns:
         list: eg. [0,0,0] the midpoint vector between vector1 and vector2
     """
     values = []
@@ -649,7 +649,7 @@ def get_inbetween_vector(vector1, vector2, percent = 0.5):
         1 percent will be exactly on vector2. 
         0.5 percent will be exactly the midpoint between vector1 and vector2.
         
-    Return
+    Returns:
         list: eg. [0,0,0] the vector that represents the vector at the percentage between vector1 and vector2
     """
     vector1 = Vector(vector1)
@@ -699,7 +699,7 @@ def convert_to_sequence(variable, sequence_type = list):
         variable: Any variable.
         sequence_type: Can either be python list or python tuple. Needs to be the type ojbect, which means pass it list or tuple not as a string.
         
-    Return
+    Returns:
         list, tuple: Returns list or tuple depending on the sequence_type.
     """
     
@@ -729,7 +729,7 @@ def line_side(start_vector, end_vector, position_vector):
         end_vector (list): eg. [0,0,0] vector
         position_vector (list): eg. [0,0,0] vector
         
-    Return
+    Returns:
         float: If positive it's on one side of the line, if negative its on the other side.
     """
     
@@ -960,7 +960,7 @@ def get_end_number(input_string, as_string = False):
     Args:
         input_string (str): The string to search for a number.
     
-    Return
+    Returns:
         int: The number at the end of the string.
     """
     number = re.findall('\d+', input_string)
@@ -1007,7 +1007,7 @@ def search_last_number(input_string):
     Args:
         input_string (str): The string to search for a number.
     
-    Return
+    Returns:
         int: The last number in the string.
     """
     
@@ -1022,7 +1022,7 @@ def replace_last_number(input_string, replace_string):
         input_string (str): A string to search for the last number.
         replace_string (str): The string to replace the last number with.
         
-    Return
+    Returns:
         str: The new string after replacing.
     """
     
@@ -1084,7 +1084,7 @@ def increment_last_number(input_string):
     Args:
         input_string (str): The string to search for the last number.
         
-    Return
+    Returns:
         str: The new string after the last number is incremented.
     """
     search = search_last_number(input_string)
@@ -1108,7 +1108,7 @@ def find_special(pattern, string_value, position_string):
         string_value (str): The string to search in.
         position_string (str): 'start','end','first','last','inside' Where the pattern should search.
         
-    Return
+    Returns:
         tuple: (start_int, end_int) The start and end index of the found pattern. Returns (None,None) if nothing found.
     """
     

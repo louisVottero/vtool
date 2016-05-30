@@ -25,7 +25,7 @@ def create_nucleus(name = None):
     Args:
         name (str): The description for the nucleus. Final name = 'nucleus_(name)'. If no name given, name = 'nucleus'.
     
-    Return 
+    Returns: 
         str: name of the nucleus.
     """
     if name:
@@ -51,7 +51,7 @@ def create_hair_system(name = None, nucleus = None):
         name (str): The description for the hair system. Final name = 'hairSystem_(name)'. If no name given, name = 'hairSystem'.  
         nucleus (str): The name of a nucleus node to attach to the hairSystem.
         
-    Return
+    Returns:
         list: [hair system, hair system shape] 
     """
     if name:
@@ -109,7 +109,7 @@ def create_follicle(name = None, hair_system = None):
         name (str): The description for the hair system. Final name = 'follicle_(name)'. If no name given, name = 'follicle'.
         hair_system (str): The name of a hair system to connect to.
         
-    Return
+    Returns:
         list: [follicle name, follicle shape name]
     """
     
@@ -169,7 +169,7 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
         switch_control (str): The name of the control to add the switch attribute to.
         attribute_name (str): The name of the attribute on switch_control.
         
-    Return
+    Returns:
         str: The name of the follicle.
         
     """
@@ -236,7 +236,7 @@ def add_passive_collider_to_mesh(mesh):
     Args:
         mesh (str)
         
-    Return
+    Returns:
         list: List of nodes in the passive collider.
     """
     cmds.select(mesh, r = True)
@@ -591,7 +591,7 @@ def create_keep_out(collide_transform = None, collide_mesh = None, name = None):
         collide_mesh (str): The mesh that should collide with collide_transform.
         name (str):  the description to give the nodes generated.
 
-    Return
+    Returns:
         list: [keep_out_node, keep_out_driven_locator]
     """
     

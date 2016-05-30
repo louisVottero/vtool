@@ -72,8 +72,8 @@ class PinXform(object):
         
     def get_pin_nodes(self):
         """
-        Return
-            (list): List of nodes involved in the pinning. Ususally includes constraints and empty groups.
+        Returns:
+            list: List of nodes involved in the pinning. Ususally includes constraints and empty groups.
         """
         return self.delete_later
 
@@ -306,7 +306,7 @@ class ConstraintEditor(object):
         Args:
             constraint (str): The name of the constraint.
         
-        Return
+        Returns:
             str: The name of the transform that is being constrained.
         """
         transform = attr.get_attribute_input('%s.constraintParentInverseMatrix' % constraint)
@@ -324,7 +324,7 @@ class ConstraintEditor(object):
         Args:
             constraint (str): The name of the constraint.
             
-        Return
+        Returns:
             list: The names of the transforms affecting the constraint.
         """
         transform = self.get_transform(constraint)
@@ -549,7 +549,7 @@ class IkHandle(object):
         """
         Create the ik handle.
         
-        Return
+        Returns:
             str: The name of the ik handle.
         """
         
@@ -1307,8 +1307,8 @@ def get_center(transform):
     Args:
         transform (str): Name of a node in maya.
     
-    Return 
-        (vector list):  The center vector, eg [0,0,0]
+    Returns: 
+        vector list:  The center vector, eg [0,0,0]
     """
     
     
@@ -1327,8 +1327,8 @@ def get_btm_center(transform):
     Args:
         transform (str): Name of a node in maya.
     
-    Return 
-        (vector list): The btrm center vector, eg [0,0,0]
+    Returns: 
+        vector list: The btrm center vector, eg [0,0,0]
     """
     
     components = core.get_components_in_hierarchy(transform)
@@ -1348,8 +1348,8 @@ def get_top_center(transform):
     Args:
         transform (str): Name of a node in maya.
     
-    Return 
-        (vector list): The top center vector, eg [0,0,0]
+    Returns: 
+        vector list: The top center vector, eg [0,0,0]
     """
     
     components = core.get_components_in_hierarchy(transform)
@@ -1373,8 +1373,8 @@ def get_closest_transform(source_transform, targets):
         source_transform (str): The name of the transform to test distance to.
         targets (list): List of targets to test distance against.
         
-    Return
-        (str): The name of the target in targets that is closest to source_transform.
+    Returns:
+        str: The name of the target in targets that is closest to source_transform.
     """
     
     least_distant = 1000000.0
@@ -1397,7 +1397,7 @@ def get_middle_transform(transform_list):
     Args:
         transform_list (list): A list of transforms in order. Transforms should make a hierarchy or a sequence, where the order of the list matches the order in space.
     
-    Return 
+    Returns: 
         list: [x,y,z] the midpoint.
     """
     
@@ -1425,8 +1425,8 @@ def get_distance(source, target):
         source (str): The name of a transform.
         target (str): The name of a transform.
     
-    Return 
-        (float): The distance between source and target transform.
+    Returns: 
+        float: The distance between source and target transform.
     """
     #CBB
     
@@ -1460,8 +1460,8 @@ def get_midpoint( source, target):
         source (str): The name of a transform.
         target (str): The name of a transform.
     
-    Return 
-        (vector list): The midpoint as [0,0,0] vector between source and target transform.
+    Returns: 
+        vector list: The midpoint as [0,0,0] vector between source and target transform.
     """
     vector1 = cmds.xform(source, 
                          query = True, 
@@ -1484,8 +1484,8 @@ def get_distances(sources, target):
         sources (list): The names of a transforms.
         target (str): The name of a transform.
     
-    Return 
-        (list): The distances betweeen each source and the target.
+    Returns: 
+        list: The distances betweeen each source and the target.
     """
     
     distances = []
@@ -1507,8 +1507,8 @@ def get_polevector(transform1, transform2, transform3, offset = 1):
         transform2 (str): name of a transform in maya. eg. joint_elbow.
         transform3 (str): name of a transform in maya. eg. joint_wrist.
         
-    Return 
-        (vector list): The triangle plane vector eg. [0,0,0].  This is good for placing the pole vector.
+    Returns: 
+        vector list: The triangle plane vector eg. [0,0,0].  This is good for placing the pole vector.
     """
     
     distance = get_distance(transform1, transform3)
@@ -1533,8 +1533,8 @@ def get_group_in_plane(transform1, transform2, transform3):
         transform2 (str): name of a transform in maya. eg. joint_elbow.
         transform3 (str): name of a transform in maya. eg. joint_wrist.
         
-    Return 
-        (vector list): The triangle plane vector eg. [0,0,0].  This is good for placing the pole vector.
+    Returns: 
+        vector list: The triangle plane vector eg. [0,0,0].  This is good for placing the pole vector.
     """
     #CBB
     
@@ -1563,17 +1563,17 @@ def get_group_in_plane(transform1, transform2, transform3):
 
 def get_ordered_distance_and_transform(source_transform, transform_list):
     """
-    Returns a list of distances based on how far each transform in transform list is from source_transform.
-    Returns a distance dictionary with each distacne key returning the corresponding transform.
-    Returns a list with the original distance order has fed in from transform_list.
+    Return a list of distances based on how far each transform in transform list is from source_transform.
+    Return a distance dictionary with each distacne key returning the corresponding transform.
+    Return a list with the original distance order has fed in from transform_list.
     
     Args:
         source_transform (str)
         
         transform_list (list)
         
-    Return
-        (dict)
+    Returns:
+        dict
         
     """
     
@@ -1622,8 +1622,8 @@ def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
         drivers (list): List of drivers to apply fade to based on distance from source_guide.
         skip_lower (float): The distance below which multiplyDivide fading stops.
         
-    Return
-        (list) : The list of multiplyDivide nodes.
+    Returns:
+        list : The list of multiplyDivide nodes.
     
     """
     distance_list, distance_dict, original_distance_order = get_ordered_distance_and_transform(source_guide, drivers)
@@ -1675,8 +1675,8 @@ def create_match_group(transform, prefix = 'match', use_duplicate = False):
         prefix (str): The prefix to add to the matching group.
         use_duplicate (bool):  If True, matching happens by duplication instead of changing transform values.
         
-    Return
-        (str):  The name of the new group.
+    Returns:
+        str:  The name of the new group.
     """
     parent = cmds.listRelatives(transform, p = True, f = True)
     
@@ -1709,8 +1709,8 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
         prefix (str): The prefix to add to the matching group.
         use_duplicate (bool):  If True, matching happens by duplication instead of changing transform values.
         
-    Return
-        (str):  The name of the new group.
+    Returns:
+        str:  The name of the new group.
     """
     
     parent = cmds.listRelatives(transform, p = True, f = True)
@@ -1750,8 +1750,8 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
         prefix (str): The prefix to add to the follow group.
         follow_scale (bool): Wether to add a scale constraint or not.
     
-    Return
-        (str):  The name of the new group.
+    Returns:
+        str:  The name of the new group.
     """
     
     parent = cmds.listRelatives(target_transform, p = True, f = True)
@@ -1786,8 +1786,8 @@ def create_local_follow_group(source_transform, target_transform, prefix = 'foll
         prefix (str): The prefix to add to the follow group.
         orient_only (bool): Wether the local constraint should just be an orient constraint.
     
-    Return
-        (str):  The name of the new group.
+    Returns:
+        str:  The name of the new group.
     """
     
     parent = cmds.listRelatives(target_transform, p = True)
@@ -1835,8 +1835,8 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
         attribute_name (str): The name of the switch attribute to add to the node.
         value (float): The value to give the switch attribute on the node.
     
-    Return
-        (str):  The name of the new group.
+    Returns:
+        str:  The name of the new group.
     """
     
     if attribute_name == 'follow':
@@ -1890,8 +1890,8 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
         attribute_name (str): The name of the switch attribute to add to the node.
         value (float): The value to give the switch attribute on the node.
     
-    Return
-        (str):  The name of the new group.
+    Returns:
+        str:  The name of the new group.
     """
     
     if node == None:
@@ -1969,8 +1969,8 @@ def get_hierarchy(node_name):
     Args:
         node_name (str): A node name.
         
-    Return
-        (str): The node name with hierarchy included. The full path to the node.
+    Returns:
+        str: The node name with hierarchy included. The full path to the node.
     """
     
     parent_path = cmds.listRelatives(node_name, f = True)[0]
@@ -1989,8 +1989,8 @@ def has_parent(transform, parent):
         transform (str): The name of a transform.
         parent (str): The name of a parent transform.
         
-    Return
-        (bool)
+    Returns:
+        bool
     """
     
     long_transform = cmds.ls(transform, l = True)
@@ -2052,7 +2052,7 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
         scale_connect (bool): Wether to also add a scale constraint.
         constraint (str): The type of constraint to use. Currently supported: parentConstraint, pointConstraint, orientConstraint.
         
-    Return
+    Returns:
         (str, str) : The local group that constrains the target_transform, and the xform group above the local group.
     """
     
@@ -2112,8 +2112,8 @@ def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', n
         name (str): The name to give the new joints after the prefix. Name = prefix + '_' + name
         duplicate (bool): Wether to create a duplicate chain.
         
-    Return
-        (list): List of the newly created joints.
+    Returns:
+        list: List of the newly created joints.
         
     """
     if not joint1 and not joint2:
@@ -2237,8 +2237,8 @@ def find_transform_right_side(transform):
     Args:
         transform (str): The name of a transform.
         
-    Return 
-        (str): The name of the right side transform if it exists.
+    Returns: 
+        str: The name of the right side transform if it exists.
     """
     
     other = ''
@@ -2281,8 +2281,8 @@ def find_transform_left_side(transform):
     Args:
         transform (str): The name of a transform.
         
-    Return 
-        (str): The name of the right side transform if it exists.
+    Returns: 
+        str: The name of the right side transform if it exists.
     """
     
     other = ''
@@ -2521,8 +2521,8 @@ def get_side(transform, center_tolerance):
         transform (str): The name of a transform.
         center_tolerance (float): How close to the center the transform must be before it is considered in the center.
         
-    Return
-        (str): The side that the transform is on, could be 'L','R' or 'C'.
+    Returns:
+        str: The side that the transform is on, could be 'L','R' or 'C'.
     """
     if type(transform) == list or type(transform) == tuple:
         position = transform
@@ -2605,8 +2605,8 @@ def create_pole_chain(top_transform, btm_transform, name, solver = IkHandle.solv
         btm_transform (str): The name of a transform.
         name (str): The name to give the new joints.
         
-        Return
-            (joint1, joint2, ik_pole)
+    Returns:
+        tuple: (joint1, joint2, ik_pole)
     """
     
     cmds.select(cl =True)
@@ -2686,7 +2686,7 @@ def duplicate_joint_section(joint, name = ''):
         joint (str): The name of the joint to duplicate.
         name (str): The name to give the joint section.
         
-    Return
+    Returns:
         list: [duplicate, sub duplicate]. If no sub duplicate, then [duplicate, None]
     """
     
@@ -2728,7 +2728,7 @@ def get_axis_vector(transform, axis_vector):
         transform (str): The name of a transform. Its matrix will be checked.
         axis_vector (list): A vector. X = [1,0,0], Y = [0,1,0], Z = [0,0,1] 
         
-    Return
+    Returns:
         list: The result of multiplying the vector by the matrix. Good to get an axis in relation to the matrix.
     """
     t_func = api.TransformFunction(transform)
@@ -2744,7 +2744,7 @@ def transforms_to_joint_chain(transforms, name = ''):
         transforms (list): List of transforms. Their positions will be used to set joint positions.
         name (str): The description to give the joints.
         
-    Return
+    Returns:
         list: The names of the joints created.
     """
     cmds.select(cl = True)
@@ -2820,7 +2820,7 @@ def create_ghost_chain(transforms):
     Args:
         transforms (list): A list of transforms.
         
-    Return
+    Returns:
         list: A list of ghost transforms corresponding to transforms.
     """
     last_ghost = None

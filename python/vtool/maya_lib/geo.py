@@ -529,7 +529,7 @@ def is_a_mesh(node):
     Args:
         node (str): The name of a node.
         
-    Return
+    Returns:
         bool
     """
     if cmds.objExists('%s.vtx[0]' % node):
@@ -544,7 +544,7 @@ def is_a_surface(node):
     Args:
         node (str): The name of a node.
         
-    Return
+    Returns:
         bool
     """
     if cmds.objExists('%s.v[0]' % node):
@@ -702,7 +702,7 @@ def get_surfaces_in_list(list_of_things):
 
 def get_selected_meshes():
     """
-    Return
+    Returns:
         list: Any meshes in the selection list.
     """
     selection = cmds.ls(sl = True)
@@ -731,7 +731,7 @@ def get_mesh_shape(mesh, shape_index = 0):
         shape_index (int): Usually zero, but can be given 1 or 2, etc up to the number of shapes - 1. 
         The shape at the index will be returned.
         
-    Return
+    Returns:
         str: The name of the shape. If no mesh shapes then returns None.
     """
     if mesh.find('.vtx'):
@@ -820,7 +820,7 @@ def create_shape_from_shape(shape, name = 'new_shape'):
         shape (str): The name of a shape to match to.
         name (str): The name of the new shape.
     
-    Return
+    Returns:
         The name of the transform above the new shape.
     """
     parent = cmds.listRelatives(shape, p = True, f = True)
@@ -869,7 +869,7 @@ def get_of_type_in_hierarchy(transform, node_type):
         transform (str): The name of a transform.
         node_type (str): The node type to search for.
         
-    Return
+    Returns:
         list: Nodes that match node_type in the hierarchy below transform.  
         If a shape matches, the transform above the shape will be added.
     """
@@ -902,7 +902,7 @@ def get_edge_path(edges = []):
     Args:
         edges (list): A list of edges (by name) along a path.  eg. ['node_name.e[0]'] 
     
-    Return
+    Returns:
         list: The names of edges in the edge path.
     """
     
@@ -918,7 +918,7 @@ def edge_to_vertex(edges):
     Args:
         edges (list): A list of edges (by name).  eg. ['mesh_name.e[0]'] 
     
-    Return
+    Returns:
         list: The names of vertices on an edge. eg. ['mesh_name.vtx[0]']
     
     """
@@ -954,7 +954,7 @@ def get_face_center(mesh, face_id):
         mesh (str): The name of a mesh.
         face_id: The index of a face component.
         
-    Return
+    Returns:
         list: eg [0,0,0] The vector of the center of the face.
     """
     mesh = get_mesh_shape(mesh)
@@ -967,12 +967,12 @@ def get_face_center(mesh, face_id):
     
 def get_face_centers(mesh):
     """
-    Return a list of face center positions.
+    Returns: a list of face center positions.
     
     Args:
         mesh (str): The name of a mesh.
         
-    Return
+    Returns:
         list: A list of lists.  eg. [[0,0,0],[0,0,0]]  Each sub list is the face center vector.
     """
     mesh = get_mesh_shape(mesh)
@@ -1004,7 +1004,7 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
         rotate_pivot (bool): Wether to find the closest face to the rotate pivot of the transform.  If not it will search the center of the transform, including shapes.
         constrain (bool): Wether to parent the transform under the rivet.
         
-    Return
+    Returns:
         str: The name of the rivet.
     """
     
@@ -1101,7 +1101,7 @@ def attach_to_curve(transform, curve, maintain_offset = False, parameter = None)
         maintain_offset (bool): Wether to attach to transform and maintain its offset from the curve.
         parameter (float): The parameter on the curve where the transform should attach.
         
-    Return
+    Returns:
         str: The name of the pointOnCurveInfo
     """
     
@@ -1160,7 +1160,7 @@ def attach_to_surface(transform, surface, u = None, v = None):
         u (float): The u value to attach to.
         v (float): The v value to attach to. 
         
-    Return
+    Returns:
         str: The name of the rivet.
     """
     
@@ -1192,7 +1192,7 @@ def follicle_to_mesh(transform, mesh, u = None, v = None):
         u (float): The u value to attach to.
         v (float): The v value to attach to. 
         
-    Return 
+    Returns: 
         str: The name of the follicle created.
         
         
@@ -1222,7 +1222,7 @@ def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
         follow (bool): Wether the joints should follow.
         name (str): The name to applied to created nodes
         
-    Return 
+    Returns: 
         list: Either the list of created joints, or if follow = True then [joints, follicles] 
     """
     mesh = get_mesh_shape(mesh)
@@ -1296,7 +1296,7 @@ def follicle_to_surface(transform, surface, u = None, v = None):
         u (float): The u value to attach to.
         v (float): The v value to attach to. 
         
-    Return 
+    Returns: 
         str: The name of the follicle created.
         
     """
@@ -1321,7 +1321,7 @@ def create_empty_follicle(description, uv = [0,0]):
         description (str): The description of the follicle.
         uv (list): eg. [0,0]
         
-    Return
+    Returns:
         str: The name of the created follicle.
     """
 
@@ -1351,7 +1351,7 @@ def create_mesh_follicle(mesh, description = None, uv = [0,0]):
         description (str): The description of the follicle.
         uv (list): eg. [0,0] This corresponds to the uvs of the mesh.
         
-    Return
+    Returns:
         str: The name of the created follicle.
     """
 
@@ -1377,7 +1377,7 @@ def create_surface_follicle(surface, description = None, uv = [0,0]):
         description (str): The description of the follicle.
         uv (list): eg. [0,0] This corresponds to the uvs of the mesh.
         
-    Return
+    Returns:
         str: The name of the created follicle.
     """    
     
@@ -1405,7 +1405,7 @@ def transforms_to_nurb_surface(transforms, description, spans = -1, offset_axis 
         offset_axis (str): The axis to offset the surface relative to the transform.  Can be 'X','Y', or 'Z'
         offset_amount (int): The amount the surface offsets from the transforms.
         
-    Return
+    Returns:
         str: The name of the nurbs surface.
     """
     
@@ -1477,7 +1477,7 @@ def transforms_to_curve(transforms, spans, description):
         spans (int): The number of spans the final curve should have.
         description (str): The description to give the curve, eg. 'spine', 'tail'
         
-    Return
+    Returns:
         str: The name of the curve.
     """
     transform_positions = []
@@ -1518,7 +1518,7 @@ def transform_to_polygon_plane(transform, size = 1, axis = 'Y'):
         transform (str): The name of the transform where the plane should be created.
         size (float): The size of the plane.
         
-    Return
+    Returns:
         str: The name of the new plane.
     """
     
@@ -1568,7 +1568,7 @@ def edges_to_curve(edges, description):
         edges (list): List of edge names, eg ['mesh_name.e[0]']
         description (str): The description to give the new curve. Name = 'curve_(description)'
         
-    Return
+    Returns:
         str: The name of the curve.
     """
     cmds.select(edges)
@@ -1588,7 +1588,7 @@ def get_intersection_on_mesh(mesh, ray_source_vector, ray_direction_vector ):
         ray_source_vector (list): eg. [0,0,0], the source of the ray as a vector.
         ray_directrion_vector (list): eg [0,0,0], The end point of the ray that starts at ray_source_vector.
         
-    Return
+    Returns:
         list: eg [0,0,0] the place where the ray intersects with the mesh.
         
     """
@@ -1606,7 +1606,7 @@ def get_closest_uv_on_mesh(mesh, three_value_list):
         mesh (str): The name of the mesh with uvs.
         three_value_list (list): eg. [0,0,0], the position vector from which to find the closest uv.
         
-    Return
+    Returns:
         uv: The uv of that is closest to three_value_list
     """
     
@@ -1629,7 +1629,7 @@ def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis
         angle_range (float): How far to rotate along the rotate_axis.
     
     
-    Return
+    Returns:
         list: eg. [0,0,0] The vector of the clostest intersection
     """
     closest = None
@@ -1686,7 +1686,7 @@ def get_closest_parameter_on_curve(curve, three_value_list):
         curve (str): The name of a curve.
         three_value_list (list): eg. [0,0,0] The vector from which to search for closest parameter
         
-    Return
+    Returns:
         float: The closest parameter.
     """
     curve_shapes = core.get_shapes(curve)
@@ -1708,7 +1708,7 @@ def get_closest_parameter_on_surface(surface, vector):
         surface (str): The name of the surface.
         vector (list): eg [0,0,0] The position from which to check for closest parameter on surface. 
     
-    Return
+    Returns:
         list: [0,0] The parameter coordinates of the closest point on the surface.
     """
     shapes = core.get_shapes(surface)
@@ -1738,7 +1738,7 @@ def get_closest_position_on_curve(curve, three_value_list):
         curve (str): The name of a curve.
         three_value_list (list): eg [0,0,0] a vector find the closest position from.
         
-    Return
+    Returns:
         list: eg [0,0,0] The closest position on the curve as vector.
     """
     
@@ -1760,7 +1760,7 @@ def get_parameter_from_curve_length(curve, length_value):
         curve (str): The name of a curve.
         length_value (float): The length along a curve.
         
-    Return
+    Returns:
         float: The parameter value at the length.
     """
     
@@ -1781,7 +1781,7 @@ def get_point_from_curve_parameter(curve, parameter):
         curve (str): The name of a curve.
         parameter (float): The parameter value on a curve.
         
-    Return 
+    Returns: 
         list: [0,0,0] the vector found at the parameter on the curve.
     """
     return cmds.pointOnCurve(curve, pr = parameter, ch = False)
@@ -1797,7 +1797,7 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None):
         description (str): The description to give the joints.
         rig (bool): Wether to rig the joints to the curve.
         
-    Return
+    Returns:
         list: The names of the joints created. If rig = True, than return [joints, ik_handle] 
     """
     if not description:
@@ -1983,7 +1983,7 @@ def convert_indices_to_mesh_vertices(indices, mesh):
     Args:
         indices (list): A list of indices.
         mesh (str): The name of a mesh.
-    Return 
+    Returns: 
         list: A list of properly named vertices out of a list of indices.
     """
     verts = []
@@ -2000,7 +2000,7 @@ def get_vertex_normal(vert_name):
     Args:
         vert_name (str): The name of a vertex.
     
-    Return 
+    Returns: 
         list: eg [0,0,0] The vector where the normal points.
     """
     normal = cmds.polyNormalPerVertex(vert_name, q = True, normalXYZ = True)
@@ -2015,8 +2015,8 @@ def get_y_intersection(curve, vector):
         curve (str): The name of a curve that could represent the btm eyelid.
         vector (vector list): A list that looks like [0,0,0] that could represent a position on the top eyelid.
         
-    Return
-        (float): The parameter position on the curve.
+    Returns:
+        float: The parameter position on the curve.
     """
     
     duplicate_curve = cmds.duplicate(curve)
@@ -2044,7 +2044,7 @@ def add_poly_smooth(mesh):
     Args:
         mesh (str): The name of a mesh.
         
-    Return
+    Returns:
         str: The name of the poly smooth node.
     """
     poly_smooth = cmds.polySmooth(mesh, mth = 0, dv = 1, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]

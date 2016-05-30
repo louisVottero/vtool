@@ -134,14 +134,14 @@ class ClusterObject(object):
         
     def get_cluster_list(self):
         """
-        Return
+        Returns:
             list: The names of cluster deformers.
         """
         return self.clusters
     
     def get_cluster_handle_list(self):
         """
-        Return
+        Returns:
             list: The name of cluster handles.
         """
         return  self.handles
@@ -605,7 +605,7 @@ class SplitMeshTarget(object):
         """
         Create the splits.
         
-        Return
+        Returns:
             list: The names of the new targets.
         """
         
@@ -2039,7 +2039,7 @@ def cluster_curve(curve, description, join_ends = False, join_start_end = False,
         joint_start_end (bool): Wether to join the start and end cvs under one cluster.
         last_pivot_end (bool): Wether to put the pivot of the last cluster at the end of the curve.
         
-    Return
+    Returns:
         list: [cluster_handle, cluster_handle, ...]
     """
     
@@ -2102,7 +2102,7 @@ def create_cluster(points, name):
         points (list): The names of points to cluster.
         name (str): The description of the cluster.
         
-    Return:
+    Returns:
         list: [cluster, handle]
     """
     cluster, handle = cmds.cluster(points, n = core.inc_name('cluster_%s' % name))
@@ -2121,7 +2121,7 @@ def create_cluster_bindpre(cluster, handle):
         cluster (str): The name of a cluster deformer.
         handle (str): The handle for the cluster deformer in cluster 
         
-    Return
+    Returns:
         str: The bindpre group name.
     """
     
@@ -2144,7 +2144,7 @@ def create_lattice(points, description, divisions = (3,3,3), falloff = (2,2,2)):
         divisions (tuple): eg (3,3,3) The number of divisions to give the lattice on each axis.
         falloff (tuple): eg (2,2,2) The falloff to give each axis.
         
-    Return
+    Returns:
         list: ffd, lattice, base
     """
     
@@ -2165,7 +2165,7 @@ def get_history(geometry):
     Args:
         geometry (str): The name of the geometry
         
-    Return
+    Returns:
         list: A list of deformers in the deformation history.
     """
     
@@ -2202,7 +2202,7 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
         deformer_type (str): Corresponds to maya deformer type, eg. skinCluster, blendShape
         return_all (bool): Wether to return all the deformers found of the specified type, or just the first one.
         
-    Return
+    Returns:
         list: The names of deformers of type found in the history.
     """
     
@@ -2258,7 +2258,7 @@ def get_influences_on_skin(skin_deformer, short_name = True):
     Args:
         skin_deformer (str)
         
-    Return
+    Returns:
         list: influences found in the skin cluster
     """
     
@@ -2275,7 +2275,7 @@ def get_non_zero_influences(skin_deformer):
     Args:
         skin_deformer (str)
         
-    Return
+    Returns:
         list: influences found in the skin cluster that have influence.
         
     """
@@ -2293,7 +2293,7 @@ def get_index_at_skin_influence(influence, skin_deformer):
         influence (str): The name of an influence.
         skin_deformer (str): The name of a skin_deformer affected by influence.
         
-    Return
+    Returns:
         int: The index of the influence. 
     """
     #this is actually faster than the api call. 
@@ -2333,7 +2333,7 @@ def get_skin_influence_at_index(index, skin_deformer):
         index (int): The index of an influence.
         skin_deformer (str): The name of the skin cluster to check the index.
         
-    Return
+    Returns:
         str: The name of the influence at the index.
         
     """
@@ -2354,7 +2354,7 @@ def get_skin_influence_indices(skin_deformer):
     Args:
         skin_deformer (str): The name of a skin cluster.
     
-    Return
+    Returns:
         list: The list of indices.
     """
     
@@ -2375,7 +2375,7 @@ def get_skin_influences(skin_deformer, return_dict = False):
         skin_deformer (str): The name of a skin cluster.
         return_dict (bool): Wether to return a dictionary.
         
-    Return
+    Returns:
         list, dict: A list of influences in the skin cluster. If return_dict = True, return dict[influence] = index
     """
     
@@ -2413,7 +2413,7 @@ def get_meshes_skinned_to_joint(joint):
     Args:
         joint (str): The name of a joint.
         
-    Return
+    Returns:
         list: The skin clusters affected by joint.
     """
     skins = cmds.ls(type = 'skinCluster')
@@ -2442,7 +2442,7 @@ def get_skin_weights(skin_deformer):
     Args:
         skin_deformer (str): The name of a skin deformer.
         
-    Return
+    Returns:
         dict: dict[influence_index] = weight values corresponding to point order.
     """
     
@@ -2510,7 +2510,7 @@ def get_skin_blend_weights(skin_deformer):
     Args:
         skin_deformer (str): The name of a skin deformer.
     
-    Return
+    Returns:
         list: The blend weight values corresponding to point order.
     """
     indices = attr.get_indices('%s.weightList' % skin_deformer)
@@ -2626,7 +2626,7 @@ def get_deformer_weights(deformer, index = 0):
         deformer (str): The name of a deformer.
         index (int): The index of the meshes attached. 
     
-    Return
+    Returns:
         list: The weight values in point order.
         
     """
@@ -2670,7 +2670,7 @@ def get_wire_weights(wire_deformer, index = 0):
         wire_deformer (str): The name of a deformer.
         index (int): The index of the meshes attached. 
     
-    Return
+    Returns:
         list: The weight values in point order.
         
     """
@@ -2685,7 +2685,7 @@ def get_cluster_weights(cluster_deformer, index = 0):
         cluster_deformer (str): The name of a deformer.
         index (int): The index of the meshes attached. 
     
-    Return
+    Returns:
         list: The weight values in point order.
         
     """
@@ -2803,7 +2803,7 @@ def map_influence_on_verts(verts, skin_deformer):
         verts (list): The index of vertices on the mesh to get weights from.
         skin_deformer (str): The name of a skin cluster.
         
-    Return
+    Returns:
         dict: dict[influence_index] = value
     
     """
@@ -2858,7 +2858,7 @@ def get_faces_at_skin_influence(mesh, skin_deformer):
         mesh (str): The name of a mesh affected by skin_deformer.
         skin_deformer (str): The name of a skin deformer.
         
-    Return
+    Returns:
         dict: dict[influence_index] = [face ids]
     """
     scope = cmds.ls('%s.f[*]' % mesh, flatten = True)
@@ -2905,7 +2905,7 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
         vs_attribute (str): The name of a visibility attribute to connect to. eg. 'node_name.sectionVisibility'
         constrain (bool): Wether to constrain the sections or parent them.
         
-    Return
+    Returns:
         str: If constrain = True, the name of the group above the sections. Otherwise return none.
     """
     
@@ -2969,7 +2969,7 @@ def add_joint_bindpre(skin, joint, description = None):
         joint (str): The name of the joint to match bind pre to.
         description(str): The description of the bind pre.
         
-    Return
+    Returns:
         str: The name of the bind pre locator.
         
     """
@@ -3001,7 +3001,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
         falloff (float): Corresponds to the wire distance value.
         create_controls (bool): Wether to create controls on the joints.
          
-    Return
+    Returns:
         list: [convert_group, control_group, zero_verts] Zero verts are the verts that were not affected by the wire conversion.
     """
     vtool.util.show('converting %s' % wire_deformer)
@@ -3199,7 +3199,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
         joint_count (int): The number of joints to create. Higher number better resembles the effect of a wire deformer, but gets slow fast.
         falloff (float): Corresponds to the wire distance value.
         
-    Return
+    Returns:
         str: The top group above the joints.
     """
     
@@ -3711,7 +3711,7 @@ def get_closest_verts_to_joints(joints, verts):
         joints (list): A list of joints.
         verts (list): A list of vertices.
     
-    Return 
+    Returns: 
         dict: dict[joint] = vertex list
     """
 
@@ -3756,7 +3756,7 @@ def create_wrap(source_mesh, target_mesh):
         source_mesh (str): The mesh to influence target_mesh. This can be a list of meshes.
         target_mesh (str): Mesh to be deformed by source_mesh.
         
-    Return
+    Returns:
         list: A list of base meshes.
     """
     
@@ -3791,7 +3791,7 @@ def wire_mesh(curve, mesh, falloff):
         mesh (str): The name of a mesh.
         falloff (float): The falloff of the wire influence.
         
-    Return
+    Returns:
         list: [wire_deformer, wire_curve]
     """
     wire_deformer, wire_curve = cmds.wire(mesh,  gw = False, w = curve, n = 'wire_%s' % curve, dds = [0, falloff])
@@ -3812,7 +3812,7 @@ def wire_to_mesh(edges, geometry, description, auto_edge_path = True):
         description (str): The description to give the setup.
         auto_edge_path (bool): Wether to fill in the path between the edges.
         
-    Return
+    Returns:
         str: The group name for the setup.
     """
     group = cmds.group(em = True, n = core.inc_name('setup_%s' % description))
@@ -3882,7 +3882,7 @@ def map_blend_target_alias_to_index(blendshape_node):
     Args:
         blendshape_node (str): The name of the blendshape.
     
-    Return 
+    Returns: 
         dict: dict[alias] = target index
     """
     
@@ -3910,7 +3910,7 @@ def map_blend_index_to_target_alias(blendshape_node):
     Args:
         blendshape_node (str): The name of the blendshape.
     
-    Return 
+    Returns: 
         dict: dict[target index] = weight alias
     """
     
@@ -3939,7 +3939,7 @@ def get_index_at_alias(alias, blendshape_node):
     Args:
         alias (str): The name of the weight alias.
     
-    Return 
+    Returns: 
         int: The corresponding target index to the alias.
     """
     
@@ -3959,7 +3959,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         corrective (str): The target shape for the skin mesh.  
         replace (bool): Wether to replace the corrective with the delta.
         
-    Return
+    Returns:
         str: The name of the delta. The delta can be applied to the blendshape before the skin cluster.
     """
     
@@ -4046,8 +4046,8 @@ def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = Tr
         source_meshes (list): Name of the mesh that represents where the mesh has moved. Can be a list or a single target. 
         corrective_mesh (str): Name of the mesh where the source mesh needs to move to.
     
-    Return 
-        (str): name of new delta mesh
+    Returns: 
+        str: name of new delta mesh
     """
     
     sources = vtool.util.convert_to_sequence(source_meshes)
@@ -4101,7 +4101,7 @@ def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
         uv_count(list): = number of joints on u and v, eg [10,4]
         offset(float): = the offset from the border.
         
-    Return
+    Returns:
         list: [top_group, joints] The top group is the group for the joints. The joints is a list of joints by name that were created.
     """
     
@@ -4146,7 +4146,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
         weight (float): The value to set the weight of the target to.
         blendshape (str): The name of the blendshape to edit. If None, it will be set to 'blendshape_%s' % target_mesh.
         
-    Return
+    Returns:
         str: The name of the blendshape node.
     """
     
@@ -4235,7 +4235,7 @@ def isolate_shape_axis(base, target, axis_list = ['X','Y','Z']):
         target (str): The target mesh vertices moved to a different position than the base.
         axis_list (list): The axises of movement allowed. If axis_list = ['X'], only vertex movement on x will be present in the result.
     
-    Return
+    Returns:
         str: A new mesh with verts moving only on the isolated axis.
     """
     

@@ -25,7 +25,7 @@ def get_pose_instance(pose_name):
     Args:
         pose_name (str): The name of a pose.
     
-    Return
+    Returns:
         object: The instance of the pose at the pose type.
     """
     
@@ -71,7 +71,7 @@ class PoseManager(object):
         Args:
             name (str): Check if the node at name is a pose.
             
-        Return
+        Returns:
             bool
         """
         if PoseBase().is_a_pose(name):
@@ -93,7 +93,7 @@ class PoseManager(object):
         Args:
             pose_name (str): The name of a pose.
             
-        Return
+        Returns:
             object: The instance of the pose at the pose type.
         """
         pose = get_pose_instance(pose_name)
@@ -104,7 +104,7 @@ class PoseManager(object):
         """
         Get the poses under the pose_gr
         
-        Return
+        Returns:
             list: The names of poses.
         """
         self._check_pose_group()
@@ -131,7 +131,7 @@ class PoseManager(object):
         Args:
             name (str): The name of a pose.
             
-        Return
+        Returns:
             str: The name of the pose.
         """
         pose = self.get_pose_instance(name)
@@ -245,7 +245,7 @@ class PoseManager(object):
             pose_type (str): The name of a pose type.
             name (str): The name for the pose.
             
-        Return
+        Returns:
             str: The name of the new pose.
         """
         pose = None
@@ -269,7 +269,7 @@ class PoseManager(object):
         Args:
             name (str): The name for the pose.
             
-        Return
+        Returns:
             str: The name of the pose.
         """
         selection = cmds.ls(sl = True, l = True)
@@ -302,7 +302,7 @@ class PoseManager(object):
         Args:
             name (str): The name for the pose.
             
-        Return
+        Returns:
             str: The name of the pose.
         """
         if not name:
@@ -324,7 +324,7 @@ class PoseManager(object):
         Args:
             name (str): The name for the pose.
             
-        Return
+        Returns:
             str: The name of the pose.
         """
         current_time = str(cmds.currentTime(q = True))
@@ -353,7 +353,7 @@ class PoseManager(object):
         Args:
             name (str): The name for the pose.
             
-        Return
+        Returns:
             str: The name of the pose.
         """
         if not name:
@@ -735,7 +735,7 @@ class PoseGroup(object):
         Args:
             description (str): The new name for the pose.
             
-        Return
+        Returns:
             str: The new name.
         """
         description = vtool.util.clean_name_string(description)
@@ -750,7 +750,7 @@ class PoseGroup(object):
         """
         Create the pose.
         
-        Return
+        Returns:
             str: The new name.
         """
         top_group = self._create_top_group()
@@ -1456,7 +1456,7 @@ class PoseBase(PoseGroup):
         Args:
             description (str): The new name for the pose.
             
-        Return
+        Returns:
             str: The new name.
         """
         
@@ -1492,7 +1492,7 @@ class PoseBase(PoseGroup):
         """
         Check if the pose has a mesh.
         
-        Return
+        Returns:
             bool: Wether the pose has a mesh or not.
         """
         if self._get_mesh_message_attributes():
@@ -1510,8 +1510,8 @@ class PoseBase(PoseGroup):
             mesh (str): The name of a mesh.
             toggle_vis (bool): Wether to toggle the meshes visibility.
             
-        Return
-            str: Return the name of the created pose mesh for sculpting. Return False if failed. 
+        Returns:
+            str: Returns: the name of the created pose mesh for sculpting. Return False if failed. 
         """
         
         mesh = cmds.ls(mesh, l = True)
@@ -1606,7 +1606,7 @@ class PoseBase(PoseGroup):
         Args:
             index (int): The index of a sculpt mesh.
             
-        Return
+        Returns:
             str: The name of the sculpt mesh at the index.
         """
         if index == None:
@@ -1629,7 +1629,7 @@ class PoseBase(PoseGroup):
         """
         Get the number of meshes the pose affects.
         
-        Return
+        Returns:
             int
         """
         attrs = self._get_mesh_message_attributes()
@@ -1643,7 +1643,7 @@ class PoseBase(PoseGroup):
         """
         Get the meshes affected by the pose.
         
-        Return
+        Returns:
             list: A list of the names of meshes.
         """
         meshes = []
@@ -1664,7 +1664,7 @@ class PoseBase(PoseGroup):
         Args:
             mesh (str): The name of a mesh affected by the pose.
             
-        Return
+        Returns:
             str: The name of a mesh.
         """
         long_name = None
@@ -1702,7 +1702,7 @@ class PoseBase(PoseGroup):
         Args:
             target_mesh (str): The name of a target mesh.
             
-        Return
+        Returns:
             int: The index of the mesh. 
         """
         
@@ -2444,7 +2444,7 @@ class PoseNoReader(PoseBase):
         Get the connection into the weightInput attribute of a no reader.
         No readers need to have a connection specified that tells the pose when to turn on.
         
-        Return
+        Returns:
             str: node.attribute name
         """
         attribute = attr.get_attribute_input('%s.weight' % self.pose_control)
@@ -2946,7 +2946,7 @@ class PoseCone(PoseBase):
         """
         Get the connected/stored transform on a cone.
         
-        Return
+        Returns:
             str: The name of the transform.
         """
         
@@ -2996,7 +2996,7 @@ class PoseCone(PoseBase):
         """
         Get the connected/stored parent on a cone.
         
-        Return
+        Returns:
             str: The name of the parent.
         """
         
