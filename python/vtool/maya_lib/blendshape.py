@@ -1246,9 +1246,11 @@ class ShapeComboManager(object):
             
         for inbetween in inbetweens:
             
-            last_number = vtool.util.get_last_number(inbetween)
+            last_number = vtool.util.get_trailing_number(inbetween, as_string = True, number_count = 2)
             
-            if not len(str(last_number)) >= 2:
+            #last_number = vtool.util.get_last_number(inbetween)
+            
+            if not last_number:
                 continue
             
             if inbetween == base_mesh:
@@ -1466,23 +1468,20 @@ class ShapeComboManager(object):
                     
     def turn_on_shape(self, name, value = 1):
         
-        last_number = vtool.util.get_last_number(name)
+        last_number = vtool.util.get_trailing_number(name, as_string = True, number_count = 2)
         
         if last_number:
-            last_number_str = str(last_number)
             
-            if len(last_number_str) >= 2:
-                first_part = name[:-2]
+            first_part = name[:-2]
+            
+            if self.blendshape.is_target(first_part):
                 
-                if self.blendshape.is_target(first_part):
-                    
-                    last_number_str = last_number_str[-2:]
-                    last_number = int(last_number_str)
-                    value = last_number * .01 * value
-                    
-                    self.set_shape_weight(first_part, value)
-                    
-                    name = first_part
+                last_number_value = int(last_number)
+                value = last_number_value * .01 * value
+                
+                self.set_shape_weight(first_part, value)
+                
+                name = first_part
                         
         if not last_number:
             self.set_shape_weight(name, 1 * value)
@@ -1490,7 +1489,7 @@ class ShapeComboManager(object):
         return name
             
     def set_shape_weight(self, name, value):
-        
+           
         value = value
         
         if not self.blendshape.is_target(name):
@@ -1985,10 +1984,12 @@ class ShapeComboManager(object):
         
     def get_inbetween_value(self, shape):
         
-        number = vtool.util.get_last_number(shape)
-            
-        if not number:
+        number_str = vtool.util.get_trailing_number(shape, as_string = True, number_count = 2)
+        
+        if not number_str:
             return
+        
+        number = int(number_str)
         
         number_str = str(number)
         if not len(number_str) >= 2:

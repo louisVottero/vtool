@@ -678,7 +678,7 @@ class SplitMeshTarget(object):
                 new_names = []
                     
                 inc = 0
-                    
+                
                 for name in split_name:
                     
                     sub_name = name
@@ -711,7 +711,7 @@ class SplitMeshTarget(object):
                         
                         if search:
                             camel_insert_index = search.start(0)
-                            sub_new_name = sub_new_name[:camel_insert_index] + replace + new_name[camel_insert_index:]
+                            sub_new_name = sub_new_name[:camel_insert_index] + replace + sub_new_name[camel_insert_index:]
                     
                     """
                     if len(split_index) > 1:
@@ -722,7 +722,7 @@ class SplitMeshTarget(object):
                     
                     inc += 1
                         
-                    new_name = string.join(new_names, '_')
+                new_name = string.join(new_names, '_')
             
             if not split_name_option:
                 
@@ -1594,6 +1594,8 @@ class MultiJointShape(object):
         self.create_hookup = True
         self.weight_joints = []
         
+        self.read_axis = 'Y'
+        
     def _create_locators(self):
         
         locators = []
@@ -1671,6 +1673,10 @@ class MultiJointShape(object):
         self.hook_to_empty_group_name = name
         self.hook_to_empty_group = bool_value
         
+    def set_read_axis(self, axis_letter):
+        
+        self.read_axis = axis_letter.upper()
+        
     def create(self):
         
         if not self.joints:
@@ -1689,7 +1695,7 @@ class MultiJointShape(object):
         off_joint_values = {}    
      
         for locator in self.locators:
-            value = cmds.getAttr('%s.translateY' % locator)
+            value = cmds.getAttr('%s.translate%s' % (locator, self.read_axis))
             joint_values[locator] = value
         
         self._turn_controls_off()
@@ -1698,7 +1704,7 @@ class MultiJointShape(object):
             self._turn_off_controls_on()
             
             for locator in self.locators:
-                value = cmds.getAttr('%s.translateY' % locator)
+                value = cmds.getAttr('%s.translate%s' % (locator, self.read_axis))
                 off_joint_values[locator] = value
                 
             self._turn_controls_off()
@@ -1757,13 +1763,13 @@ class MultiJointShape(object):
                          
                 
                 if not off_value:
-                    anim.quick_driven_key('%s.translateY' % self.locators[inc],
+                    anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
                                             '%s.%s' % (blendshape, split),
                                             [0, value], 
                                             [0, 1])        
                     
                 if off_value:
-                    anim.quick_driven_key('%s.translateY' % self.locators[inc],
+                    anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
                                             '%s.%s' % (blendshape, split),
                                             [0, value, off_value], 
                                             [0, 1, 0])
