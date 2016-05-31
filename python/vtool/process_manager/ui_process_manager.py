@@ -88,7 +88,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _process_deleted(self):
         self._clear_code(close_windows=True)
-        self._set_title()
+        
+        self._set_title('-')
+        
+        self.build_widget.hide()
         
     def _copy_done(self):
         self.sync_code = True

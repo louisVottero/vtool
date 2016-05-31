@@ -1514,7 +1514,7 @@ class Process(object):
         if not status == 'Success':
             util.show('%s\n' % status)
         if status == 'Success':
-            util.show('End of %s.\n\n' % name)
+            util.show('\nEnd of %s.\n\n' % name)
             
         return status
                
