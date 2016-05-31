@@ -223,10 +223,13 @@ class ComboManager(ui.MayaWindow):
 
             if parent:
                 
-                for inc in range(0, parent.childCount()):
-                    self.update_on_select = False
-                    parent.setSelected(False)
-                    self.update_on_select = True
+                parent.setSelected(False)
+                
+                #not sure why this code was like this...
+                #for inc in range(0, parent.childCount()):
+                #    self.update_on_select = False
+                #    parent.setSelected(False)
+                #    self.update_on_select = True
                 
                 self.update_on_select = False
                 self.shape_widget.tree.setCurrentItem(item)

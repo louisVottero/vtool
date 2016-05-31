@@ -268,7 +268,9 @@ class BlendShape(object):
         self.mesh_index = index
         
     def get_mesh_index(self, mesh):
-        
+        """
+        Wip
+        """
         geo = cmds.blendshape(self.blendshape, q = True, geometry = True)
         
     def get_mesh_count(self):
