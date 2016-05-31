@@ -175,6 +175,7 @@ class BlendShape(object):
             return 0
 
     def _disconnect_targets(self):
+        
         for target in self.targets:
             self._disconnect_target(target)
             
@@ -204,11 +205,13 @@ class BlendShape(object):
             self.set_weight(target, self.targets[target].value )
         
     def _restore_connections(self):
+                
         for target in self.targets:
+            
             connection = self.targets[target].connection
             
             if not connection:
-                return
+                continue
             
             cmds.connectAttr(connection, self._get_target_attr(target)) 
 
@@ -1236,6 +1239,8 @@ class ShapeComboManager(object):
         home = self._get_home_mesh()
         base_mesh = self._get_mesh()
         
+        vtool.util.show('Adding shapes.')
+        
         for shape in shapes:
             
             if shape == base_mesh:
@@ -1247,7 +1252,9 @@ class ShapeComboManager(object):
                 continue
             
             self.add_shape(shape, preserve_combos = preserve)    
-            
+        
+        vtool.util.show('Adding inbetweens.')
+        
         for inbetween in inbetweens:
             
             last_number = vtool.util.get_trailing_number(inbetween, as_string = True, number_count = 2)
@@ -1266,7 +1273,9 @@ class ShapeComboManager(object):
                 continue
             
             self.add_shape(inbetween)
-            
+        
+        vtool.util.show('Adding combos.')
+        
         for combo in combos:
             
             if combo == base_mesh:
@@ -1281,6 +1290,7 @@ class ShapeComboManager(object):
                 if mesh == combo:
                     self.add_combo(mesh)
                     
+          
         return shapes, combos, inbetweens
     
     @core.undo_chunk
@@ -1689,7 +1699,7 @@ class ShapeComboManager(object):
             mesh = name
         
         nice_name = core.get_basename(name, remove_namespace = True)
-        
+                
         if not self.is_combo_valid(nice_name):
             vtool.util.warning('Could not add combo %s, a target is missing.' % name)
             return
@@ -1791,10 +1801,7 @@ class ShapeComboManager(object):
         found_combos = []
         
         for shape in shapes:
-        
-            if self.is_combo_valid(shape):
-                pass
-                
+                        
             for combo in combos:
                 
                 split_combo = combo.split('_')
