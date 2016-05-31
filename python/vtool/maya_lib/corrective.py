@@ -22,10 +22,10 @@ def get_pose_instance(pose_name):
     """
     Get a pose instance from the pose name.
     
-    Args
+    Args:
         pose_name (str): The name of a pose.
     
-    Return
+    Returns:
         object: The instance of the pose at the pose type.
     """
     
@@ -68,10 +68,10 @@ class PoseManager(object):
         """
         Check if name matches the name of a pose.
         
-        Args
+        Args:
             name (str): Check if the node at name is a pose.
             
-        Return
+        Returns:
             bool
         """
         if PoseBase().is_a_pose(name):
@@ -90,10 +90,10 @@ class PoseManager(object):
         """
         Get the instance of a pose. 
         
-        Args
+        Args:
             pose_name (str): The name of a pose.
             
-        Return
+        Returns:
             object: The instance of the pose at the pose type.
         """
         pose = get_pose_instance(pose_name)
@@ -104,7 +104,7 @@ class PoseManager(object):
         """
         Get the poses under the pose_gr
         
-        Return
+        Returns:
             list: The names of poses.
         """
         self._check_pose_group()
@@ -128,10 +128,10 @@ class PoseManager(object):
         """
         Get the control of a pose.
         
-        Args
+        Args:
             name (str): The name of a pose.
             
-        Return
+        Returns:
             str: The name of the pose.
         """
         pose = self.get_pose_instance(name)
@@ -151,7 +151,7 @@ class PoseManager(object):
         """
         Set the pose group to work with.
         
-        Args
+        Args:
             pose_gr_name (str): The name of a pose group.
         """
         self.pose_group = pose_gr_name
@@ -201,7 +201,7 @@ class PoseManager(object):
         Set the control pose to the a pose.
         This is handy for returning a character to the pose it was sculpted in.
         
-        Args
+        Args:
             pose (str): The name of a pose.
         """
         pose_instance = self.get_pose_instance(pose)
@@ -213,7 +213,7 @@ class PoseManager(object):
         Set the pose data from the control values. 
         This is handy for making sure a character can get back into pose before sculpting it.
         
-        Args
+        Args:
             pose (str): The name of a pose.
         """
         store = rigs_util.StoreControlData(pose)
@@ -224,7 +224,7 @@ class PoseManager(object):
         Not in use.  This was the beginning of a combo system.
         It proved difficult to extrapulate a combo pose from multiple poses.
         
-        Args
+        Args:
             pose_list (list): A list of pose names.
         """
         data_list = []
@@ -241,11 +241,11 @@ class PoseManager(object):
         """
         Create a pose.
         
-        Args
+        Args:
             pose_type (str): The name of a pose type.
             name (str): The name for the pose.
             
-        Return
+        Returns:
             str: The name of the new pose.
         """
         pose = None
@@ -266,10 +266,10 @@ class PoseManager(object):
         """
         Create a cone pose. 
         
-        Args
+        Args:
             name (str): The name for the pose.
             
-        Return
+        Returns:
             str: The name of the pose.
         """
         selection = cmds.ls(sl = True, l = True)
@@ -299,10 +299,10 @@ class PoseManager(object):
         """
         Create a no reader pose. 
         
-        Args
+        Args:
             name (str): The name for the pose.
             
-        Return
+        Returns:
             str: The name of the pose.
         """
         if not name:
@@ -321,10 +321,10 @@ class PoseManager(object):
         """
         Create a no timeline pose. 
         
-        Args
+        Args:
             name (str): The name for the pose.
             
-        Return
+        Returns:
             str: The name of the pose.
         """
         current_time = str(cmds.currentTime(q = True))
@@ -350,10 +350,10 @@ class PoseManager(object):
         """
         Create a group pose. 
         
-        Args
+        Args:
             name (str): The name for the pose.
             
-        Return
+        Returns:
             str: The name of the pose.
         """
         if not name:
@@ -434,7 +434,7 @@ class PoseManager(object):
         """
         Change the visibility of the pose meshes.
         
-        Args
+        Args:
             pose_name (str): The name of a pose.
         """
         pose = self.get_pose_instance(pose_name)
@@ -455,7 +455,7 @@ class PoseManager(object):
         """
         Toggle the visibility of the sculpt mesh.
         
-        Args
+        Args:
             target_mesh (str): The name of a mesh affected by the pose.
             pose_name (str): The name of a pose.
             view_only (bool): Wether to calculate its delta when turning visibility off, or just turn visibility off.
@@ -478,7 +478,7 @@ class PoseManager(object):
         """
         Delete a pose by name.
         
-        Args
+        Args:
             name (str): The name of a pose.
         """
         pose = self.get_pose_instance(name)
@@ -540,7 +540,7 @@ class PoseManager(object):
         """
         Refresh the deltas on poses. By default do it to all poses under the pose_gr.
         
-        Args
+        Args:
             poses (args): The names of poses.
         """
         if not poses:
@@ -585,7 +585,7 @@ class PoseManager(object):
             If pose name = pose_arm_L, there must be a corresponding pose_arm_R.
             The pose at pose_arm_R must be a mirrored pose of pose_arm_L.
             
-        Args
+        Args:
             name (str): The name of a left side pose.
         
         """
@@ -666,7 +666,7 @@ class PoseGroup(object):
         """
         Check if the named node is a pose.
         
-        Args
+        Args:
             node (str): The name of a node.
         """
         if cmds.objExists('%s.POSE' % node ):    
@@ -689,7 +689,7 @@ class PoseGroup(object):
         Set the pose group to work with.
         The pose group is pose_gr by default and is setu automatically.
         
-        Args
+        Args:
             pose_group_name (str): The name of a pose group.
         """
         self.pose_gr = pose_group_name
@@ -698,7 +698,7 @@ class PoseGroup(object):
         """
         Set the pose that the instance should work on.
         
-        Args
+        Args:
             pose_name (str): The name of a pose.
         """
         
@@ -732,10 +732,10 @@ class PoseGroup(object):
         """
         Rename the pose.
         
-        Args
+        Args:
             description (str): The new name for the pose.
             
-        Return
+        Returns:
             str: The new name.
         """
         description = vtool.util.clean_name_string(description)
@@ -750,7 +750,7 @@ class PoseGroup(object):
         """
         Create the pose.
         
-        Return
+        Returns:
             str: The new name.
         """
         top_group = self._create_top_group()
@@ -776,7 +776,7 @@ class PoseGroup(object):
         """
         Create the blend. This will refresh the delta.
         
-        Args
+        Args:
             mesh_index (int): Work with the mesh at the index. Pose needs to be affecting at least one mesh.
             goto_pose (bool): Wether to go to the pose. 
             sub_poses (bool): Wether to create blend for sub poses as well.
@@ -791,7 +791,7 @@ class PoseGroup(object):
         """
         Create the blends and refresh deltas for the sub poses in a pose.
         
-        Args
+        Args:
             mesh (int): Work with the mesh at the index. Pose needs to be affecting at least one mesh.
         """
         children = self._get_sub_poses()
@@ -837,7 +837,7 @@ class PoseGroup(object):
         Attach the pose. 
         Attaching and detaching help with export/import.
         
-        Args
+        Args:
             outputs (list) 
         """
         
@@ -1439,7 +1439,7 @@ class PoseBase(PoseGroup):
         """
         Set the pose that the instance should work on.
         
-        Args
+        Args:
             pose_name (str): The name of a pose.
         """
         
@@ -1453,10 +1453,10 @@ class PoseBase(PoseGroup):
         """
         Rename the pose and the target on the blendshape.
         
-        Args
+        Args:
             description (str): The new name for the pose.
             
-        Return
+        Returns:
             str: The new name.
         """
         
@@ -1492,7 +1492,7 @@ class PoseBase(PoseGroup):
         """
         Check if the pose has a mesh.
         
-        Return
+        Returns:
             bool: Wether the pose has a mesh or not.
         """
         if self._get_mesh_message_attributes():
@@ -1506,12 +1506,12 @@ class PoseBase(PoseGroup):
         """
         Add a mesh to the pose.
         
-        Args
+        Args:
             mesh (str): The name of a mesh.
             toggle_vis (bool): Wether to toggle the meshes visibility.
             
-        Return
-            str: Return the name of the created pose mesh for sculpting. Return False if failed. 
+        Returns:
+            str: Returns: the name of the created pose mesh for sculpting. Return False if failed. 
         """
         
         mesh = cmds.ls(mesh, l = True)
@@ -1570,7 +1570,7 @@ class PoseBase(PoseGroup):
         """
         Remove a mesh from the pose.
         
-        Args
+        Args:
             mesh (str): The name of a mesh affected by the pose.
         """
         index = self.get_target_mesh_index(mesh)
@@ -1603,10 +1603,10 @@ class PoseBase(PoseGroup):
         """
         Get the sculpt mesh at the index. Sculpt mesh is the mesh used to generate the delta.
         
-        Args
+        Args:
             index (int): The index of a sculpt mesh.
             
-        Return
+        Returns:
             str: The name of the sculpt mesh at the index.
         """
         if index == None:
@@ -1629,7 +1629,7 @@ class PoseBase(PoseGroup):
         """
         Get the number of meshes the pose affects.
         
-        Return
+        Returns:
             int
         """
         attrs = self._get_mesh_message_attributes()
@@ -1643,7 +1643,7 @@ class PoseBase(PoseGroup):
         """
         Get the meshes affected by the pose.
         
-        Return
+        Returns:
             list: A list of the names of meshes.
         """
         meshes = []
@@ -1661,10 +1661,10 @@ class PoseBase(PoseGroup):
         """
         Get the mesh that the sculpt mesh affects.
         
-        Args
+        Args:
             mesh (str): The name of a mesh affected by the pose.
             
-        Return
+        Returns:
             str: The name of a mesh.
         """
         long_name = None
@@ -1699,10 +1699,10 @@ class PoseBase(PoseGroup):
         """
         Get the index of a target mesh. Target meshes are the meshes that have the delta applied to them.
         
-        Args
+        Args:
             target_mesh (str): The name of a target mesh.
             
-        Return
+        Returns:
             int: The index of the mesh. 
         """
         
@@ -1727,7 +1727,7 @@ class PoseBase(PoseGroup):
         """
         Get the index of a sculpt mesh.
         
-        Args
+        Args:
             mesh (str): The name of a sculpt mesh.
         """
         
@@ -1878,7 +1878,7 @@ class PoseBase(PoseGroup):
         """
         Turn the sculpt mesh visibility off.
         
-        Args
+        Args:
             mesh (str): The name of the mesh afftected by the pose. Its corresponding sculpt mesh will have its visibility turned off.
             vew_only (bool): Wether to just change the view, or recalculate the delta.
         """
@@ -1908,7 +1908,7 @@ class PoseBase(PoseGroup):
         """
         Turn sculpt visibility on.
         
-        Args
+        Args:
             mesh (str): The name of a mesh affected by the pose. Its corresponding sculpt mesh will have its visibility turned on.
         """
         
@@ -1935,7 +1935,7 @@ class PoseBase(PoseGroup):
         """
         Toggle the visibility of a sculpt mesh.
         
-        Args
+        Args:
             mesh_index (int): The index of a sculpt mesh.
             view_only (bool): Wether to just change visibility, or refresh the delta when visibility is turned off.
         """
@@ -1988,7 +1988,7 @@ class PoseBase(PoseGroup):
         """
         Create the blend. This will refresh the delta.
         
-        Args
+        Args:
             mesh_index (int): Work with the mesh at the index. Pose needs to be affecting at least one mesh.
             goto_pose (bool): Wether to go to the pose. 
             sub_poses (bool): Wether to create blend for sub poses as well.
@@ -2101,7 +2101,7 @@ class PoseBase(PoseGroup):
         """
         Connect pose to the blendshape.
         
-        Args
+        Args:
             mesh_index (int): Work with the mesh at the index. 
         """
         mesh = None
@@ -2133,7 +2133,7 @@ class PoseBase(PoseGroup):
         """
         Disconnect pose to the blendshape.
         
-        Args
+        Args:
             mesh_index (int): Work with the mesh at the index. 
         """
         
@@ -2227,7 +2227,7 @@ class PoseBase(PoseGroup):
         """
         Get the blendshape.
         
-        Args
+        Args:
             mesh_index (int): Work with the mesh at the index. 
         """
         mesh = None
@@ -2419,7 +2419,7 @@ class PoseNoReader(PoseBase):
         Set the input into the weightInput of the no reader.
         No readers need to have a connection specified that tells the pose when to turn on.
         
-        Args
+        Args:
             attribute (str): The node.attribute name of a connection to feed into the no reader.
         """
         self.weight_input = attribute
@@ -2444,7 +2444,7 @@ class PoseNoReader(PoseBase):
         Get the connection into the weightInput attribute of a no reader.
         No readers need to have a connection specified that tells the pose when to turn on.
         
-        Return
+        Returns:
             str: node.attribute name
         """
         attribute = attr.get_attribute_input('%s.weight' % self.pose_control)
@@ -2563,7 +2563,7 @@ class PoseNoReader(PoseBase):
         No readers have connections specified. 
         If no connection is specified and connected, this can set the weight.
         
-        Args
+        Args:
             value (float): The value to set the weight to.
         """
         input_attr = attr.get_attribute_input('%s.weight' % self.pose_control)
@@ -2946,7 +2946,7 @@ class PoseCone(PoseBase):
         """
         Get the connected/stored transform on a cone.
         
-        Return
+        Returns:
             str: The name of the transform.
         """
         
@@ -2966,7 +2966,7 @@ class PoseCone(PoseBase):
         Cone poses need a transform. 
         This helps them to know when to turn on.
         
-        Args
+        Args:
             transform (str): The name of a transform to move the cone.
             set_string_only (bool): Wether to connect the transform into the pose or just set its attribute on the cone.
         """
@@ -2996,7 +2996,7 @@ class PoseCone(PoseBase):
         """
         Get the connected/stored parent on a cone.
         
-        Return
+        Returns:
             str: The name of the parent.
         """
         
@@ -3020,7 +3020,7 @@ class PoseCone(PoseBase):
         Cone poses need a parent. 
         This helps them to turn on only when their transform moves.
         
-        Args
+        Args:
             parent (str): The name of a transform above the cone.
             set_string_only (bool): Wether to connect the parent into the pose or just set its attribute on the cone.
         """

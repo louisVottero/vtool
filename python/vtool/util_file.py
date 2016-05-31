@@ -48,7 +48,7 @@ class FileManager(object):
     """
     Convenience to deal with file write/read.
     
-    Args
+    Args:
         filepath (str): Path to the file to work on.
         skip_warning (bool): Wether to print warnings out or not.
     """
@@ -145,7 +145,7 @@ class ReadFile(FileManager):
         """
         Read the file.
         
-        Return
+        Returns:
             list: A list of file lines.
         """
         
@@ -181,7 +181,7 @@ class WriteFile(FileManager):
         """
         Append new lines to end of document instead of replace.
         
-        Args
+        Args:
             bool_value (bool)
         """
         self.append = bool_value
@@ -190,7 +190,7 @@ class WriteFile(FileManager):
         """
         Write a single line to the file.
         
-        Args
+        Args:
             line (str): The line to add to the file.
         """
         
@@ -203,7 +203,7 @@ class WriteFile(FileManager):
         """
         Write the lines to the file.
         
-        Args
+        Args:
             lines (list): A list of lines. Each entry is a new line in the file.
             last_line_empty (bool): Wether or not to add a line after the last line.
         """
@@ -229,7 +229,7 @@ class VersionFile(object):
     """
     Convenience to version a file or folder.
     
-    Args
+    Args:
         filepath (str): The path to the file to version.
     """
     
@@ -318,7 +318,7 @@ class VersionFile(object):
         """
         Save a comment to a log file.
         
-        Args
+        Args:
             comment (str)
             version_file (str): The corresponding version file.
         """
@@ -344,10 +344,10 @@ class VersionFile(object):
         """
         Save a version.
         
-        Args
+        Args:
             comment (str): The comment to add to the version.
         
-        Return
+        Returns:
             str: The new version file name
         """
         
@@ -389,7 +389,7 @@ class VersionFile(object):
         """
         Set the folder where the version folder should be created.
         
-        Args
+        Args:
             folder_path (str): Full path to where the version folder should be created.
         """
         self.path = folder_path
@@ -398,7 +398,7 @@ class VersionFile(object):
         """
         Set the name of the version folder.
         
-        Args
+        Args:
             name (str)
         """
         self.version_folder_name = name
@@ -407,7 +407,7 @@ class VersionFile(object):
         """
         Set the version name.
         
-        Args
+        Args:
             name (str): The name of the version.
         """
         self.version_name = name
@@ -416,10 +416,10 @@ class VersionFile(object):
         """
         Get the path to a version.
         
-        Args
+        Args:
             version_int (int): The version number.
             
-        Return
+        Returns:
             str: The path to the version.
         """
         return self._get_version_path(version_int)
@@ -428,10 +428,10 @@ class VersionFile(object):
         """
         Get the version comment.
                 
-        Args
+        Args:
             version_int (int): The version number.
             
-        Return
+        Returns:
             str: The version comment.
         """
         comment, user = self.get_version_data(version_int)
@@ -441,10 +441,10 @@ class VersionFile(object):
         """
         Get the version data.  Comment and user.
                 
-        Args
+        Args:
             version_int (int): The version number.
             
-        Return
+        Returns:
             tuple: (comment, user)
         """
         filepath = self._get_comment_path()
@@ -486,7 +486,7 @@ class VersionFile(object):
         """
         Get filepaths of all versions.
         
-        Return
+        Returns:
             list: List of version filepaths.
         """
         version_folder = self._get_version_folder()
@@ -527,7 +527,7 @@ class VersionFile(object):
         """
         Get the filepath to the latest version.
         
-        Return
+        Returns:
             str: Filepath to latest version.
         """
         versions = self.get_versions()
@@ -859,10 +859,10 @@ def get_basename(directory):
     """
     Get the last part of a directory name. If the name is C:/goo/foo, this will return foo.
     
-    Args
+    Args:
         directoroy(str): A directory path.
         
-    Return
+    Returns:
         str: The last part of the directory path.
     """
     return os.path.basename(directory)
@@ -871,10 +871,10 @@ def get_basename_no_extension(filepath):
     """
     Get the last part of a directory name. If the name is C:/goo/foo.py, this will return foo.
     
-    Args
+    Args:
         directoroy(str): A directory path.
         
-    Return
+    Returns:
         str: The last part of the directory path, without any extensions.
     """
     
@@ -889,10 +889,10 @@ def get_dirname(directory):
     Given a directory path, this will return the path above the last thing in the path.
     If C:/goo/foo is give, C:/goo will be returned.
     
-    Args
+    Args:
         directory (str): A directory path. 
         
-    Return
+    Returns:
         str: The front portion of the path.
     """
     try:
@@ -904,7 +904,7 @@ def get_user_dir():
     """
     Get the path to the user directory.
     
-    Return
+    Returns:
         str: The path to the user directory.
     """
     return fix_slashes( os.path.expanduser('~') )
@@ -913,7 +913,7 @@ def get_temp_dir():
     """
     Get path to the temp directory.
     
-    Return
+    Returns:
         str: The path to the temp directory.
     """
     return fix_slashes( tempfile.gettempdir() ) 
@@ -922,7 +922,7 @@ def get_cwd():
     """
     Get the current working directory.
     
-    Return
+    Returns:
         str: The path to the current working directory.
     """
     return os.getcwd()
@@ -931,10 +931,10 @@ def get_files(directory):
     """
     Get files found in the directory.
     
-    Args
+    Args:
         directory (str): A directory path.
     
-    Return
+    Returns:
         list: A list of files in the directory.
     """
     
@@ -1018,10 +1018,10 @@ def get_folders(directory, recursive = False):
     """
     Get folders found in the directory.
     
-    Args
+    Args:
         directory (str): A directory path.
     
-    Return
+    Returns:
         list: A list of folders in the directory.
     """
     
@@ -1058,10 +1058,10 @@ def get_files_and_folders(directory):
     """
     Get files and folders found in the directory.
     
-    Args
+    Args:
         directory (str): A directory path.
     
-    Return
+    Returns:
         list: A list of files and folders in the directory.
     """
         
@@ -1076,10 +1076,10 @@ def get_folders_date_sorted(directory):
     """
     Get folders date sorted found in the directory.
     
-    Args
+    Args:
         directory (str): A directory path.
     
-    Return
+    Returns:
         list: A list of folders date sorted in the directory.
     """
     mtime = lambda f: os.stat(os.path.join(directory, f)).st_mtime
@@ -1090,10 +1090,10 @@ def get_files_date_sorted(directory, extension = None):
     """
     Get files date sorted found in the directory.
     
-    Args
+    Args:
         directory (str): A directory path.
     
-    Return
+    Returns:
         list: A list of files date sorted in the directory.
     """    
     if not extension:
@@ -1111,12 +1111,12 @@ def get_files_with_extension(extension, directory, fullpath = False):
     """
     Get files that have the extensions.
     
-    Args
+    Args:
         extension (str): eg. .py, .data, etc.
         directory (str): A directory path.
         fullpath (bool): Wether to returh the filepath or just the file names.
     
-    Return
+    Returns:
         list: A list of files with the extension.
     """
     found = []
@@ -1149,7 +1149,7 @@ def get_filesize(filepath, round_value = 2):
     """
     Get the size of a file.
     
-    Args
+    Args:
         filepath (str)
         
     Retrun
@@ -1177,10 +1177,10 @@ def get_last_modified_date(filepath):
     """
     Get the last data a file was modifief.
     
-    Args
+    Args:
         filepath (str)
         
-    Return
+    Returns:
         str: A formatted date and time.
     """
     
@@ -1210,7 +1210,7 @@ def get_user():
     """
     Get the current user.
     
-    Return
+    Returns:
         str: The name of the current user.
     """
     return getpass.getuser()
@@ -1231,10 +1231,10 @@ def get_file_lines(filepath):
     """
     Get the text from a file.
     
-    Args
+    Args:
         filepath (str): The filename and path.
     
-    Return
+    Returns:
         str
     """
     read = ReadFile(filepath)
@@ -1246,10 +1246,10 @@ def get_text_lines(text):
     """
     Get the text from a file. Each line is stored as a different entry in a list.
     
-    Args
+    Args:
         text (str): Text from get_file_lines
         
-    Return
+    Returns:
         list
     """
     text = text.replace('\r', '')
@@ -1266,7 +1266,7 @@ def get_permission(filepath):
     
 def is_dir(directory):
     """
-    Return 
+    Returns: 
         bool
     """
     
@@ -1283,7 +1283,7 @@ def is_dir(directory):
     
 def is_file(filepath):
     """
-    Return 
+    Returns: 
         bool
     """
     
@@ -1316,11 +1316,11 @@ def is_file(filepath):
 def is_file_in_dir(filename, directory):
     """
     
-    Args
+    Args:
         filename (str): Filename including path.
         directory (str): Directory name including path.
     
-    Return
+    Returns:
         bool: Wether the file is in the directory.
     """
     filepath = join_path(directory, filename)
@@ -1331,11 +1331,11 @@ def is_same_date(file1, file2):
     """
     Check if 2 files have the same data.
     
-    Args
+    Args:
         file1 (str): Filename including path.
         file2 (str): Filename including path.
         
-    Return 
+    Returns: 
         bool
     """
     date1 = os.path.getmtime(file1)
@@ -1363,11 +1363,11 @@ def inc_path_name(directory, padding = 0):
     """
     Add padding to a name if it is not unique.
     
-    Args
+    Args:
         directory (str): Directory name including path.
         padding (int): Where the padding should start.
         
-    Return
+    Returns:
         str: The new directory with path.
     """
     unique_path = FindUniquePath(directory)
@@ -1379,7 +1379,7 @@ def open_browser(filepath):
     """
     Open the file browser to the path specified. Currently only works in windows.
     
-    Args
+    Args:
         filepath (str): Filename with path.
         
     """
@@ -1509,7 +1509,7 @@ def fix_slashes(directory):
     """
     Fix slashes in a path so the are all /
     
-    Return
+    Returns:
         str: The new directory path.
     """
     directory = directory.replace('\\','/')
@@ -1521,7 +1521,7 @@ def set_windows_slashes(directory):
     """
     Set all the slashes in a name so they are all \
     
-    Return
+    Returns:
         str: The new directory path.
     """
     
@@ -1534,7 +1534,7 @@ def join_path(directory1, directory2):
     """
     Append directory2 to the end of directory1
     
-    Return
+    Returns:
         str: The combined directory path.
     """
     if not directory1 or not directory2:
@@ -1553,7 +1553,7 @@ def join_path(directory1, directory2):
 
 def rename(directory, name, make_unique = False):
     """
-    Args
+    Args:
         directory (str): Full path to the directory to rename.
         name (str): The new name.
         make_unique (bool): Wether to add a number to the name to make it unique, if needed.
@@ -1594,11 +1594,11 @@ def move(path1, path2):
     """
     Move the folder or file pointed to by path1 under the directory path2
     
-    Args
+    Args:
         path1 (str): File or folder including path.
         path2 (str): Path where path1 should move to.
         
-    Return
+    Returns:
         bool: Wether the move was successful.
     """
     try:
@@ -1614,7 +1614,7 @@ def comment(filepath, comment, comment_directory):
     """
     Add a comment to comments.txt
     
-    Args
+    Args:
         filepath (str): Filename and path of the file that is being commented about.
         comment (str): The comment
         comment_directoyr (str): Directory where the comments.txt file should be saved. 
@@ -1637,11 +1637,11 @@ def get_comments(comment_directory, comment_filename = None):
     """
     Get the comments from a comments.txt file.
     
-    Args
+    Args:
         comment_directory (str): Directory where the comments.txt file lives.
         comment_filename (str): The name of the comment file. By default comments.txt
         
-    Return
+    Returns:
         dict: comment dict, keys are filename, and value is (comment, user) 
     """
     
@@ -1679,7 +1679,7 @@ def write_lines(filepath, lines, append = False):
     """
     Write a list of text lines to a file. Every entry in the list is a new line.
     
-    Args
+    Args:
         filepath (str): filename and path
         lines (list): A list of text lines. Each entry is a new line.
         append (bool): Wether to append the text or if not replace it.
@@ -1694,11 +1694,11 @@ def write_lines(filepath, lines, append = False):
 
 def create_dir(name, directory, make_unique = False):
     """
-    Args
+    Args:
         name (str): The name of the new directory.
         make_unique (bool): Wether to pad the name with a number to make it unique. Only if the name is taken.
         
-    Return
+    Returns:
         str: The folder name with path. False if create_dir failed.
     """
     
@@ -1725,11 +1725,11 @@ def delete_dir(name, directory):
     """
     Delete the folder by name in the directory.
     
-    Args
+    Args:
         name (str): The name of the folder to delete.
         directory (str): The dirpath where the folder lives.
         
-    Return
+    Returns:
         str: The folder that was deleted with path.
     """
     
@@ -1780,11 +1780,11 @@ def refresh_dir(directory):
 
 def create_file(name, directory, make_unique = False):
     """
-    Args
+    Args:
         name (str): The name of the new file. 
         make_unique (bool): Wether to pad the name with a number to make it unique. Only if the name is taken.
         
-    Return
+    Returns:
         str: The filename with path. False if create_dir failed.
     """
     
@@ -1809,11 +1809,11 @@ def delete_file(name, directory):
     """
     Delete the file by name in the directory.
     
-    Args
+    Args:
         name (str): The name of the file to delete.
         directory (str): The dirpath where the file lives.
         
-    Return
+    Returns:
         str: The filepath that was deleted.
     """
     
@@ -1834,13 +1834,13 @@ def copy_dir(directory, directory_destination, ignore_patterns = []):
     """
     Copy the directory to a new directory.
     
-    Args
+    Args:
         directory (str): The directory to copy with path.
         directory_destination (str): The destination directory.
         ignore_patterns (list): Add txt, py or extensions to ingore them from copying. 
         Eg. if py is added to the ignore patterns list, all *.py files will be ignored from the copy.
         
-    Return
+    Returns:
         str: The destination directory
     """
     if not is_dir(directory):
@@ -1861,11 +1861,11 @@ def copy_file(filepath, filepath_destination):
     """
     Copy the file to a new directory.
     
-    Args
+    Args:
         filepath (str): The file to copy with path.
         filepath_destination (str): The destination directory. 
         
-    Return
+    Returns:
         str: The destination directory
     """
     shutil.copy2(filepath, filepath_destination)
@@ -1947,11 +1947,11 @@ def load_python_module(module_name, directory):
     """
     Load a module by name and return its instance.
     
-    Args
+    Args:
         module_name (str): The name of the module found in the directory.
         directory (str): The directory path where the module lives.
         
-    Return
+    Returns:
         module instance: The module instance. 
         With the module instance you can access programattically functions and attributes of the modules.
         

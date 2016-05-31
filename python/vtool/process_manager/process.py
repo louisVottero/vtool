@@ -18,10 +18,10 @@ def find_processes(directory = None):
     """
     This will try to find the processes in the supplied directory. If no directory supplied, it will search the current working directory.
     
-    Args
+    Args:
         directory(str): The directory to search for processes.
         
-    Returns
+    Returns:
         list: The procceses in the directory.
     """
     
@@ -69,11 +69,11 @@ def get_unused_process_name(directory = None, name = None):
     It will increment the name to process1 and beyond until it finds a unique name. 
     If no directory supplied, it will search the current working directory.
     
-    Args
+    Args:
         directory (str): Direcotry to search for processes.
         name (str): name to give the process.
         
-    Returns
+    Returns:
         str: The unique process name.
     """
     if not directory:
@@ -225,14 +225,14 @@ class Process(object):
             
     def set_directory(self, directory):
         """
-        Args
+        Args:
             directory (str): Directory path to the process that should be created or where an existing process lives.
         """ 
         self.directory = directory
         
     def set_external_code_library(self, directory):
         """
-        Args
+        Args:
             directory (str,list): Directory or list of directories where code can be sourced from. This makes it more convenient when writing scripts in a process. 
         """
         directory = util.convert_to_sequence(directory)
@@ -241,7 +241,7 @@ class Process(object):
         
     def is_process(self):
         """
-        Return
+        Returns:
             bool: Check to see if the initialized process is valid.
         """
         
@@ -279,7 +279,7 @@ class Process(object):
         
     def get_path(self):
         """
-        Return
+        Returns:
             str: The full path to the process folder. 
             If the process hasn't been created yet, this will return the directory set in set_directory.        """
         
@@ -291,14 +291,14 @@ class Process(object):
     
     def get_name(self):
         """
-        Return
+        Returns:
             str: The name of the process.
         """
         return self.process_name
     
     def get_basename(self):
         """
-        Return
+        Returns:
             str: The name of the process. If no name return basename of directory.
         """
         name = self.process_name
@@ -311,10 +311,10 @@ class Process(object):
     
     def get_relative_process(self, relative_path):
         """
-        Args
+        Args:
             relative_path (str): The path to a relative process. 
-        Return
-            (Process):An instance of a process at the relative path. 
+        Returns:
+            Process:An instance of a process at the relative path. 
             
             If a name with no backslash is supplied, this will return any matching process parented directly under the current process. 
             
@@ -386,7 +386,7 @@ class Process(object):
     
     def get_sub_processes(self):
         """
-        Return
+        Returns:
             list: The process names found directly under the current process.
         """
         process_path = self.get_path()
@@ -397,11 +397,11 @@ class Process(object):
     
     def get_sub_process(self, part_name):
         """
-        Args
+        Args:
             part_name (str): The name of a child process.
             
-        Return
-            A sub process if there is one that matches part_name.
+        Returns:
+            Process: A sub process if there is one that matches part_name.
         """
         
         
@@ -439,10 +439,10 @@ class Process(object):
         
     def is_data_folder(self, name):
         """
-        Args
+        Args:
             name (str): The name of a data folder in the process.
             
-        Return
+        Returns:
             bool: True if the supplied name string matches the name of the a data folder in the current process.
         """
         
@@ -457,18 +457,18 @@ class Process(object):
         
     def get_data_path(self):
         """
-        Return
-            (str): The path to the data folder for this process.
+        Returns:
+            str: The path to the data folder for this process.
         """
         return self._get_path(self.data_folder_name)        
     
     def get_data_folder(self, name):
         """
-        Args
+        Args:
             name (str): The name of a data folder in the process.
 
-        Return
-            (str): The path to the data folder with the same name if it exists.
+        Returns:
+            str: The path to the data folder with the same name if it exists.
         """
         
         folders = self.get_data_folders()
@@ -482,11 +482,11 @@ class Process(object):
             
     def get_data_type(self, name):
         """
-        Args
+        Args:
             name (str): The name of a data folder in the process.
             
-        Return
-            (str): The name of the data type of the data folder with the same name if it exists.
+        Returns:
+            str: The name of the data type of the data folder with the same name if it exists.
         """
         
         data_folder = data.DataFolder(name, self.get_data_path())
@@ -496,8 +496,8 @@ class Process(object):
         
     def get_data_folders(self):
         """
-        Return
-            (list): A list of data folder names found in the current process.
+        Returns:
+            list: A list of data folder names found in the current process.
         """
         directory = self.get_data_path()
         
@@ -505,11 +505,11 @@ class Process(object):
      
     def get_data_instance(self, name):
         """
-        Args
+        Args:
             name (str): The name of a data folder in the process. 
             
-        Return
-            ( Process ): An instance of the data type class for data with the specified name in the current process. 
+        Returns:
+            Process: An instance of the data type class for data with the specified name in the current process. 
             
             This gives access to the data functions like import_data found in the data type class.
         """
@@ -520,12 +520,12 @@ class Process(object):
      
     def create_data(self, name, data_type):
         """
-        Args
+        Args:
             name (str): The name of a data folder in the process.
             data_type (str): A string with the name of the data type of the data in the process.
         
-        Return
-            (str): The path to the new data folder.
+        Returns:
+            str: The path to the new data folder.
         
         """
         
@@ -544,10 +544,10 @@ class Process(object):
         """
         Convenience function which will run the import_data function found on the data_type instance for the specified data folder.
         
-        Args
+        Args:
             name (str): The name of a data folder in the process.
         
-        Return
+        Returns:
             None
         """
         path = self.get_data_path()
@@ -569,10 +569,10 @@ class Process(object):
         """
         Convenience function that tries to run the save function function found on the data_type instance for the specified data folder. Not all data type instances have a save function. 
         
-        Args
+        Args:
             name (str): The name of a data folder in the process.
         
-        Return
+        Returns:
             None
         """
         
@@ -589,12 +589,12 @@ class Process(object):
         """
         Renames the data folder specified with old_name to the new_name.
         
-        Args
+        Args:
             old_name (str): The current name of the data.
             new_name (str): The new name for the data.
             
-        Return
-            (str): The new path to the data if rename was successful.
+        Returns:
+            str: The new path to the data if rename was successful.
         """
         data_folder = data.DataFolder(old_name, self.get_data_path())
         
@@ -604,10 +604,10 @@ class Process(object):
         """
         Deletes the specified data folder from the file system.
         
-        Args 
+        Args: 
             name (str): The name of a data folder in the process.
         
-        Return
+        Returns:
             None
         """
         data_folder = data.DataFolder(name, self.get_data_path())
@@ -618,11 +618,11 @@ class Process(object):
     
     def is_code_folder(self, name):
         """
-        Args 
+        Args: 
             name (str): The name of a code folder in the process.
             
-        Return
-            (bool): If the supplied name string matches the name of a code folder in the current process. 
+        Returns:
+            bool: If the supplied name string matches the name of a code folder in the current process. 
             
         """
         path = self.get_code_folder(name)
@@ -636,18 +636,18 @@ class Process(object):
     
     def get_code_path(self):
         """
-        Return
-            (str): The path to the code folder for this process.
+        Returns:
+            str: The path to the code folder for this process.
         """
         return self._get_path(self.code_folder_name)
     
     def get_code_folder(self, name):
         """
-        Args 
+        Args: 
             name (str): The name of a code folder in the process.
             
-        Return
-            (str): A path to the code folder with the supplied name string if it exists.
+        Returns:
+            str: A path to the code folder with the supplied name string if it exists.
         """
         
         folder = util_file.join_path(self.get_code_path(), name)
@@ -657,8 +657,8 @@ class Process(object):
 
     def get_code_folders(self, code_name = None):
         """
-        Return
-            (list): A list of code folder names found in the current process. 
+        Returns:
+            list: A list of code folder names found in the current process. 
         """
         directory = self.get_code_path()
         
@@ -683,11 +683,11 @@ class Process(object):
 
     def get_code_type(self, name):
         """
-        Args 
+        Args: 
             name (str): The name of a code folder in the process.
             
-        Return 
-            (str): The code type name of the code folder with the supplied name if the code folder exists. Otherwise return None. Right now only python code type is used by the Process Manager.
+        Returns: 
+            str: The code type name of the code folder with the supplied name if the code folder exists. Otherwise return None. Right now only python code type is used by the Process Manager.
         """
     
         data_folder = data.DataFolder(name, self.get_code_path())
@@ -696,11 +696,11 @@ class Process(object):
     
     def get_code_files(self, basename = False):
         """
-        Args 
+        Args: 
             basename (bool): Wether to return the full path or just the name of the file.
         
-        Return
-            (list): The path to the code files found in the code folder for the current process. 
+        Returns:
+            list: The path to the code files found in the code folder for the current process. 
             If basename is True, only return the file names without the path.             
         """
         directory = self.get_code_path()
@@ -731,12 +731,12 @@ class Process(object):
     
     def get_code_file(self, name, basename = False):
         """
-        Args 
+        Args: 
             name (str): The name of a code folder in the process.
             basename (bool): Wether to return the full path or just the name of the file.
         
-        Return
-            (str): The path to the code file with the specified name in the current process. 
+        Returns:
+            str: The path to the code file with the specified name in the current process. 
         """
         
         path = util_file.join_path(self.get_code_path(), name)
@@ -787,15 +787,15 @@ class Process(object):
         """
         Create a new code folder with the specified name and data_type. 
         
-        Args
+        Args:
             name (str): The name of the code to create.
             data_type (str): Usually 'script.python'.
             inc_name (bool): Wether or not to increment the name.
             import_data (str): The name of data in the process. 
             Lines will be added to the code file to import the data.
         
-        Return
-            (str): Filename
+        Returns:
+            str: Filename
         """
         
         path = self.get_code_path()
@@ -883,12 +883,12 @@ class Process(object):
         """
         Renames the code folder specified with old_name to the new_name.
         
-        Args
+        Args:
             old_name (str): The current name of the code.
             new_name (str): The new name for the code.
             
-        Return
-            (str): The new path to the code if rename was successful.
+        Returns:
+            str: The new path to the code if rename was successful.
         """
         
         new_name = util.clean_file_string(new_name)
@@ -920,10 +920,10 @@ class Process(object):
         """
         Deletes the specified data folder from the file system.
         
-        Args 
+        Args: 
             name (str): The name of a data folder in the process.
         
-        Return
+        Returns:
             None
         """
         util_file.delete_dir(name, self.get_code_path())
@@ -1032,8 +1032,8 @@ class Process(object):
         
     def get_manifest_folder(self):
         """
-        Return
-            (str): The path to the manifest folder.
+        Returns:
+            str: The path to the manifest folder.
         """
         code_path = self.get_code_path()
         
@@ -1046,8 +1046,8 @@ class Process(object):
         
     def get_manifest_file(self):
         """
-        Return
-            (str): The path to the manifest file.
+        Returns:
+            str: The path to the manifest file.
         """
         manifest_path = self.get_manifest_folder()
         
@@ -1060,10 +1060,10 @@ class Process(object):
     
     def get_manifest_scripts(self, basename = True):
         """
-        Args
+        Args:
             basename (bool): Wether to return the full path or just the name of the file. 
-        Return
-            The code files named in the manifest.  
+        Returns:
+            list: The code files named in the manifest.  
         """
         
         manifest_file = self.get_manifest_file()
@@ -1134,7 +1134,7 @@ class Process(object):
         """
         This will tell the manifest what scripts to list. Scripts is a list of python files that need to correspond with code data.
         
-        Args
+        Args:
             scripts (list): List of scripts to add to the manifest.
             states (list): List that of states for that corresponds to the scripts list.
             append (bool): Wether to add the scripts to the end of the manifest or replace it.
@@ -1168,8 +1168,8 @@ class Process(object):
         
     def get_manifest(self):
         """
-        Return
-            (list, list): Two lists, scripts and states. 
+        Returns:
+            tuple: (list, list) Two lists, scripts and states. 
             The scripts list contains the name of scripts in the manifest. 
             States contains the enabled/disabled state of the script. 
         """
@@ -1293,10 +1293,10 @@ class Process(object):
         """
         Loads the named process into the instance.
         
-        Args
+        Args:
             name (str): Name of a process found in the directory.
             
-        Return
+        Returns:
             None
             
         """
@@ -1305,11 +1305,11 @@ class Process(object):
         
     def add_part(self, name):
         """
-        Args
+        Args:
             name (str): Name for a new process.
             
-        Return
-            (Process): Instnace of the added part.
+        Returns:
+            Process: Instnace of the added part.
         """
         part_process = Process(name)
         
@@ -1340,7 +1340,7 @@ class Process(object):
         """
         Delete the process.
         
-        Return
+        Returns:
             None
         """
         
@@ -1357,11 +1357,11 @@ class Process(object):
         """
         Rename the process.
         
-        Args
+        Args:
             new_name (str): New name for the process.
             
-        Return
-            (bool): Wether or not the process was renamed properly.
+        Returns:
+            bool: Wether or not the process was renamed properly.
         """
         
         split_name = new_name.split('/')
@@ -1377,12 +1377,12 @@ class Process(object):
         """
         Run a script in the process.
         
-        Args
+        Args:
             script(str): Name of a code in the process.
             hard_error (bool): Wether to error hard when errors encountered, or to just pass an error string.
 
-        Return
-            (str): The status from running the script. This includes error messages.
+        Returns:
+            str: The status from running the script. This includes error messages.
         """
 
         builtins = dir(__builtin__)
@@ -1514,7 +1514,7 @@ class Process(object):
         if not status == 'Success':
             util.show('%s\n' % status)
         if status == 'Success':
-            util.show('End of %s.\n\n' % name)
+            util.show('\nEnd of %s.\n\n' % name)
             
         return status
                
@@ -1522,7 +1522,7 @@ class Process(object):
         """
         Run all the scripts in the manifest, respecting their on/off state.
         
-        Return
+        Returns:
             None
         """
         
@@ -1540,11 +1540,11 @@ class Process(object):
         """
         This stores data to run between scripts.
         
-        Args
+        Args:
             name (str): The name of the script.
             value : Can be many different types including str, list, tuple, float, int, etc.
             
-        Return
+        Returns:
             None
         """
         util.show('!! Created Runtime Variable: %s, value: %s.' % (name, value))
@@ -1554,10 +1554,10 @@ class Process(object):
         """
         Get the value stored with set_runtime_value.
         
-        Args
+        Args:
             name (str): The name given to the runtime value in set_runtime_value.
         
-        Return
+        Returns:
             The value stored in set_runtime_value.
         """
         
@@ -1574,8 +1574,8 @@ class Process(object):
         Get the runtime value dictionary keys.
         Every time a value is set with set_runtime_value, and dictionary entry is made.
         
-        Return
-            (list): keys in runtime value dictionary.
+        Returns:
+            list: keys in runtime value dictionary.
         """
         
         return self.runtime_values.keys()
@@ -1588,7 +1588,7 @@ def get_default_directory():
     Get a default directory to begin in.  
     The directory is different if running from inside Maya.
     
-    Return
+    Returns:
         str: Path to the default directory.
     """
     if util.is_in_maya():
@@ -1607,7 +1607,7 @@ def copy_process(source_process, target_process = None ):
     If there is already a process named the same in the target process, the name will be incremented. 
     If you need to give the copy a specific name, you should rename it after copy. 
     
-    Args
+    Args:
         source_process (str): The instance of a process.
         target_process (str): The instance of a process. If None give, duplicate the source_process.
     """
@@ -1725,7 +1725,7 @@ def copy_process_data(source_process, target_process, data_name, replace = False
     data_name specifies the name of the data folder to copy. 
     If replace the existing data with the same name will be deleted and replaced by the copy. 
     
-    Args
+    Args:
         source_process (str): The instance of a process.
         target_process (str): The instance of a process.
         data_name (str): The name of the data to copy.
@@ -1791,7 +1791,7 @@ def copy_process_code(source_process, target_process, code_name, replace = False
     code_name specifies the name of the code folder to copy. 
     If replace the existing code with the same name will be deleted and replaced by the copy.
     
-    Args
+    Args:
         source_process (str): The instance of a process.
         target_process (str): The instance of a process.
         code_name (str): The name of the code to copy.

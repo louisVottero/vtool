@@ -88,7 +88,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _process_deleted(self):
         self._clear_code(close_windows=True)
-        self._set_title()
+        
+        self._set_title('-')
+        
+        self.build_widget.hide()
         
     def _copy_done(self):
         self.sync_code = True
@@ -456,7 +459,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         split_folder = folder.split('\\')
         folder = split_folder[:-1]
         
-        path = 'http://www.vetalarig.com/docs/html/index.html'
+        path = 'http://docs.vetalarig.com'
         webbrowser.open(path, 0)
         
         

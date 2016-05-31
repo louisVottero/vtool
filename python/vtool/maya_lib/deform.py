@@ -72,7 +72,7 @@ class XformTransfer(object):
         """
         Set all transforms under parent.
         
-        Args
+        Args:
             parent (str): The name of a parent transform.
         """
         self.scope = cmds.listRelatives(parent, allDescendents = True, type = 'transform')
@@ -82,7 +82,7 @@ class XformTransfer(object):
         """
         Set the transforms to work on.
         
-        Args
+        Args:
             scope (list): Names of transforms.
         """
         self.scope = scope
@@ -134,14 +134,14 @@ class ClusterObject(object):
         
     def get_cluster_list(self):
         """
-        Return
+        Returns:
             list: The names of cluster deformers.
         """
         return self.clusters
     
     def get_cluster_handle_list(self):
         """
-        Return
+        Returns:
             list: The name of cluster handles.
         """
         return  self.handles
@@ -326,7 +326,7 @@ class ClusterSurface(ClusterObject):
         """
         Clusters on the ends of the surface take up 2 cvs.
         
-         Args
+         Args:
             bool_value (bool): Wether 2 cvs at the start have one cluster, and 2 cvs on the end have one cluster.
         """
         self.join_ends = bool_value
@@ -335,7 +335,7 @@ class ClusterSurface(ClusterObject):
         """
         Clusters on the ends of the surface are joined together.
         
-        Args
+        Args:
             bool_value (bool): Wether to join the ends of the surface.
         """
         self.join_both_ends = bool_value
@@ -356,7 +356,7 @@ class ClusterSurface(ClusterObject):
         
     def set_cluster_u(self, bool_value):
         """
-        Args
+        Args:
             bool_value (bool): Wether to cluster the u instead of the v spans.
         """
         self.cluster_u = bool_value
@@ -437,7 +437,7 @@ class SplitMeshTarget(object):
         
         result = smileL and smileR meshes.
         
-    Args
+    Args:
         target_mesh (str): The name of a target mesh, eg. smile.
     """
     def __init__(self, target_mesh):
@@ -531,7 +531,7 @@ class SplitMeshTarget(object):
         """
         Set the a joint to split the shape. Must be skinned to the weight mesh
         
-        Args
+        Args:
             joint (str): The name of the joint to take weighting from. Must be affecting weight mesh.
             suffix (str): Add string to the end of the target mesh name.
             prefix (str): Add string to the beginning of the target mesh name.
@@ -546,7 +546,7 @@ class SplitMeshTarget(object):
         Insert a string for the new target shape name.
         Needs to be tested!!
         
-        Args
+        Args:
             joint (str): The name of the joint to take weighting from. Must be affecting weight mesh.
             insert_index (int): The index on the string where the insert_name should be inserted.
             insert_name (str): The string to insert at insert_index.
@@ -559,7 +559,7 @@ class SplitMeshTarget(object):
         Replace the string at the end of the target name when splitting.
         Needs to be tested!!
         
-        Args
+        Args:
             joint (str): The name of the joint to take weighting from. Must be affecting weight mesh.
             replace (str): The string to replace the end with.
             split_name (bool): Weither to split the name based on "_"..  
@@ -573,7 +573,7 @@ class SplitMeshTarget(object):
 
     def set_center_fade(self, fade_distance, positive,  suffix = None, prefix = None, split_name = True):
         """
-        Args
+        Args:
             fade_distance (float): The distance from the center that the target should fade off.
             positive (bool): Weither the fade off should start at positive or at negative.
             
@@ -584,7 +584,7 @@ class SplitMeshTarget(object):
         """
         Set the weight mesh, the mesh that the weight joints are affecting through a skin cluster.
         
-        Args
+        Args:
             weighted_mesh (str): The name of a mesh with a skin cluster.
         """
         self.weighted_mesh = weighted_mesh
@@ -596,7 +596,7 @@ class SplitMeshTarget(object):
         Set the base mesh. The target mesh will revert back to base mesh based on skin weighting.
         This is the mesh with points at their default positions.
         
-        Args
+        Args:
             base_mesh (str): The name of a mesh.
         """
         self.base_mesh = base_mesh
@@ -605,7 +605,7 @@ class SplitMeshTarget(object):
         """
         Create the splits.
         
-        Return
+        Returns:
             list: The names of the new targets.
         """
         
@@ -777,7 +777,7 @@ class TransferWeight(object):
     """
     Transfer weight has functions for dealing with moving weight from joints to other joints.
     
-    Args
+    Args:
         mesh (str): The name of the mesh that is skinned with joints.
     """
     def __init__(self, mesh):
@@ -826,7 +826,7 @@ class TransferWeight(object):
         For example if I transfer joint_nose into joint_head, joint_head will lose its weights where joint_nose has overlapping weights. 
         Source joints will take over the weighting of destination_joints.  Source mesh must match the mesh TransferWeight(mesh).
         
-        Args
+        Args:
             source_joints (list): Joint names.
             destination_joints (list): Joint names.
             source_mesh (str): The name of the mesh were source_joints are weighted.  If None, algorithms assumes weighting is coming from the main mesh.
@@ -986,7 +986,7 @@ class TransferWeight(object):
         For example, joint_arm could move its weights onto [joint_arm_tweak1, joint_arm_tweak2, joint_arm_tweak3]
         Weighting is assigned based on distance.
         
-        Args
+        Args:
             joints (list): Joint names to take weighting from.
             destination_joints (list): Joint names to add weighting to.
             falloff (float): The distance a vertex has to be from the joint before it has no priority.
@@ -1787,7 +1787,7 @@ class MayaWrap(object):
     """
     Convenience for making maya wraps.
     
-    Args
+    Args:
         mesh (str): The name of a mesh that should get wrapped.
     """
     def __init__(self, mesh):
@@ -1810,6 +1810,7 @@ class MayaWrap(object):
         
         self.wrap = cmds.deformer(self.mesh, type = 'wrap', n = 'wrap_%s' % basename)[0]
         cmds.setAttr('%s.exclusiveBind' % self.wrap, 1)
+        cmds.setAttr('%s.maxDistance' % self.wrap, 1)
         return self.wrap                 
     
     def _add_driver_meshes(self):
@@ -1831,21 +1832,38 @@ class MayaWrap(object):
         self.base_meshes.append(base)
         cmds.hide(base)
         
-        cmds.connectAttr( '%s.worldMesh' % mesh, '%s.driverPoints[%s]' % (self.wrap, inc) )
-        cmds.connectAttr( '%s.worldMesh' % base, '%s.basePoints[%s]' % (self.wrap, inc) )
-        
-        if not cmds.objExists('%s.dropoff' % mesh):
-            cmds.addAttr(mesh, at = 'short', sn = 'dr', ln = 'dropoff', dv = 10, min = 1, k = True)
+        if geo.is_a_mesh(mesh):
+            cmds.connectAttr( '%s.worldMesh' % mesh, '%s.driverPoints[%s]' % (self.wrap, inc) )
+            cmds.connectAttr( '%s.worldMesh' % base, '%s.basePoints[%s]' % (self.wrap, inc) )
             
-        if not cmds.objExists('%s.inflType' % mesh):
-            cmds.addAttr(mesh, at = 'short', sn = 'ift', ln = 'inflType', dv = 2, min = 1, max = 2, k = True )
             
-        if not cmds.objExists('%s.smoothness' % mesh):    
-            cmds.addAttr(mesh, at = 'short', sn = 'smt', ln = 'smoothness', dv = 0.0, min = 0.0, k = True)
+            if not cmds.objExists('%s.dropoff' % mesh):
+                cmds.addAttr(mesh, at = 'short', sn = 'dr', ln = 'dropoff', dv = 10, min = 1, k = True)
+                
+            if not cmds.objExists('%s.inflType' % mesh):
+                cmds.addAttr(mesh, at = 'short', sn = 'ift', ln = 'inflType', dv = 2, min = 1, max = 2, k = True )
+                
+            if not cmds.objExists('%s.smoothness' % mesh):    
+                cmds.addAttr(mesh, at = 'short', sn = 'smt', ln = 'smoothness', dv = 0.0, min = 0.0, k = True)
+                
+            cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc) )
+            cmds.connectAttr('%s.inflType' % mesh, '%s.inflType[%s]' % (self.wrap, inc) )
+            cmds.connectAttr('%s.smoothness' % mesh, '%s.smoothness[%s]' % (self.wrap, inc) )
+                
+        if geo.is_a_surface(mesh):
+            cmds.connectAttr( '%s.worldSpace' % mesh, '%s.driverPoints[%s]' % (self.wrap, inc) )
+            cmds.connectAttr( '%s.worldSpace' % base, '%s.basePoints[%s]' % (self.wrap, inc) )
         
-        cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc) )
-        cmds.connectAttr('%s.inflType' % mesh, '%s.inflType[%s]' % (self.wrap, inc) )
-        cmds.connectAttr('%s.smoothness' % mesh, '%s.smoothness[%s]' % (self.wrap, inc) )
+            
+            if not cmds.objExists('%s.dropoff' % mesh):
+                cmds.addAttr(mesh, at = 'short', sn = 'dr', ln = 'dropoff', dv = 10, min = 1, k = True)
+                
+            if not cmds.objExists('%s.wrapSamples' % mesh):
+                cmds.addAttr(mesh, at = 'short', sn = 'dr', ln = 'wrapSamples', dv = 0, min = 1, k = True)
+                
+            cmds.connectAttr('%s.dropoff' % mesh, '%s.dropoff[%s]' % (self.wrap, inc) )
+            cmds.connectAttr('%s.wrapSamples' % mesh, '%s.nurbsSamples[%s]' % (self.wrap, inc) )
+        
         
         if not cmds.isConnected('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % (self.wrap)):
             cmds.connectAttr('%s.worldMatrix' % self.mesh, '%s.geomMatrix' % (self.wrap))
@@ -1870,6 +1888,10 @@ class MayaWrap(object):
     def set_driver_meshes(self, meshes = []):
         """
         Set the meshes to drive the wrap. If more than 1 exclusive bind won't work properly.
+        Currently polgyons and nurbSurfaces work.
+        
+        Args:
+            meshes (list): List of meshes and nurbSurfaces to influence the wrap. 
         """
         if meshes:
             
@@ -1914,7 +1936,7 @@ class EnvelopeHistory(object):
     """
     Convenience for turning on/off deformation history on a node.
     
-    Args
+    Args:
         transform (str): The name of a transform.
     """
     def __init__(self, transform):
@@ -2016,14 +2038,14 @@ def cluster_curve(curve, description, join_ends = False, join_start_end = False,
     joint_start_end, the cv at the start and end of the curve will be joined.
     join_ends, the 2 start cvs will have one cluster, the 2 end cvs will have one cluster.
     
-    Args
+    Args:
         curve (str): The name of a curve.
         description (str): The description to give the clusters.
         join_ends (bool): Wether to joint the 2 start cvs under one cluster, and the two end cvs under another cluster.
         joint_start_end (bool): Wether to join the start and end cvs under one cluster.
         last_pivot_end (bool): Wether to put the pivot of the last cluster at the end of the curve.
         
-    Return
+    Returns:
         list: [cluster_handle, cluster_handle, ...]
     """
     
@@ -2082,11 +2104,11 @@ def create_cluster(points, name):
     """
     Create a cluster on a bunch of points.
     
-    Args:
+    Args::
         points (list): The names of points to cluster.
         name (str): The description of the cluster.
         
-    Return:
+    Returns:
         list: [cluster, handle]
     """
     cluster, handle = cmds.cluster(points, n = core.inc_name('cluster_%s' % name))
@@ -2101,11 +2123,11 @@ def create_cluster_bindpre(cluster, handle):
     Likewise if you move the bind pre transform and the cluster handle together the cluster does not deform the mesh.
     Only when you move the cluster handle without the bind pre.
     
-    Args
+    Args:
         cluster (str): The name of a cluster deformer.
         handle (str): The handle for the cluster deformer in cluster 
         
-    Return
+    Returns:
         str: The bindpre group name.
     """
     
@@ -2122,13 +2144,13 @@ def create_lattice(points, description, divisions = (3,3,3), falloff = (2,2,2)):
     """
     Convenience for creating a lattice.
     
-    Args
+    Args:
         points (list): List of points, meshes to deform.
         description (str): The description to give the lattice.
         divisions (tuple): eg (3,3,3) The number of divisions to give the lattice on each axis.
         falloff (tuple): eg (2,2,2) The falloff to give each axis.
         
-    Return
+    Returns:
         list: ffd, lattice, base
     """
     
@@ -2146,10 +2168,10 @@ def get_history(geometry):
     """
     Get the history of the geometry. This will not search too deep.
     
-    Args
+    Args:
         geometry (str): The name of the geometry
         
-    Return
+    Returns:
         list: A list of deformers in the deformation history.
     """
     
@@ -2181,12 +2203,12 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
     """
     Given a mesh find a deformer with deformer_type in the history.
     
-    Args
+    Args:
         mesh (str): The name of a mesh.
         deformer_type (str): Corresponds to maya deformer type, eg. skinCluster, blendShape
         return_all (bool): Wether to return all the deformers found of the specified type, or just the first one.
         
-    Return
+    Returns:
         list: The names of deformers of type found in the history.
     """
     
@@ -2239,10 +2261,10 @@ def get_influences_on_skin(skin_deformer, short_name = True):
     """
     Get the names of the skin influences in the skin cluster.
     
-    Args
+    Args:
         skin_deformer (str)
         
-    Return
+    Returns:
         list: influences found in the skin cluster
     """
     
@@ -2256,10 +2278,10 @@ def get_non_zero_influences(skin_deformer):
     """
     Get influences that have weight in the skin cluster.
     
-    Args
+    Args:
         skin_deformer (str)
         
-    Return
+    Returns:
         list: influences found in the skin cluster that have influence.
         
     """
@@ -2273,11 +2295,11 @@ def get_index_at_skin_influence(influence, skin_deformer):
     Given an influence name, find at what index it connects to the skin cluster. 
     This corresponds to the matrix attribute. eg. skin_deformer.matrix[0] is the connection of the first influence.
     
-    Args
+    Args:
         influence (str): The name of an influence.
         skin_deformer (str): The name of a skin_deformer affected by influence.
         
-    Return
+    Returns:
         int: The index of the influence. 
     """
     #this is actually faster than the api call. 
@@ -2313,11 +2335,11 @@ def get_skin_influence_at_index(index, skin_deformer):
     Find which influence connect to the skin cluster at the index.
     This corresponds to the matrix attribute. eg. skin_deformer.matrix[0] is the connection of the first influence.
     
-    Args
+    Args:
         index (int): The index of an influence.
         skin_deformer (str): The name of the skin cluster to check the index.
         
-    Return
+    Returns:
         str: The name of the influence at the index.
         
     """
@@ -2335,10 +2357,10 @@ def get_skin_influence_indices(skin_deformer):
     Get the indices of the connected influences.
     This corresponds to the matrix attribute. eg. skin_deformer.matrix[0] is the connection of the first influence.
     
-    Args
+    Args:
         skin_deformer (str): The name of a skin cluster.
     
-    Return
+    Returns:
         list: The list of indices.
     """
     
@@ -2355,11 +2377,11 @@ def get_skin_influences(skin_deformer, return_dict = False):
     Return a dictionary with the keys being the name of the influences.
     The value at the key the index where the influence connects to the skin cluster.
     
-    Args
+    Args:
         skin_deformer (str): The name of a skin cluster.
         return_dict (bool): Wether to return a dictionary.
         
-    Return
+    Returns:
         list, dict: A list of influences in the skin cluster. If return_dict = True, return dict[influence] = index
     """
     
@@ -2394,10 +2416,10 @@ def get_meshes_skinned_to_joint(joint):
     """
     Get all meshses that are skinned to the specified joint.
     
-    Args
+    Args:
         joint (str): The name of a joint.
         
-    Return
+    Returns:
         list: The skin clusters affected by joint.
     """
     skins = cmds.ls(type = 'skinCluster')
@@ -2423,10 +2445,10 @@ def get_skin_weights(skin_deformer):
     Return a dictionary where the key is the influence, 
     and the value is the a list of weights at the influence.
     
-    Args
+    Args:
         skin_deformer (str): The name of a skin deformer.
         
-    Return
+    Returns:
         dict: dict[influence_index] = weight values corresponding to point order.
     """
     
@@ -2491,10 +2513,10 @@ def get_skin_blend_weights(skin_deformer):
     """
     Get the blendWeight values on the skin cluster.
     
-    Args
+    Args:
         skin_deformer (str): The name of a skin deformer.
     
-    Return
+    Returns:
         list: The blend weight values corresponding to point order.
     """
     indices = attr.get_indices('%s.weightList' % skin_deformer)
@@ -2527,7 +2549,7 @@ def set_skin_blend_weights(skin_deformer, weights):
     """
     Set the blendWeights on the skin cluster given a list of weights.
     
-    Args
+    Args:
         skin_deformer (str): The name of a skin deformer.
         weights (list): A list of weight values corresponding to point order.
     """
@@ -2545,7 +2567,7 @@ def set_skin_weights_to_zero(skin_deformer):
     """
     Set all the weights on the mesh to zero.
     
-    Args
+    Args:
         skin_deformer (str): The name of a skin deformer.
     
     """
@@ -2568,7 +2590,7 @@ def set_vert_weights_to_zero(vert_index, skin_deformer, joint = None):
     """
     Set the weights at the given point index to zero.
     
-    Args
+    Args:
         vert_index (int): The index of a vert.
         skin_deformer (str): The name of a skin deformer.
         joint (str): The name of a joint that is influencing the vert. If not joint given all the influences for the vert will be zeroed out.
@@ -2593,7 +2615,7 @@ def set_deformer_weights(weights, deformer, index = 0):
     """
     Set the deformer weights. Good for cluster and wire deformers. 
     
-    Args
+    Args:
         weights (list): A list of weight values that should correspond to point order.
         deformer (str): The name of a deformer. eg. cluster or wire.
         index (int): The geometry index to set weights on. By default it will work on the first mesh.
@@ -2606,11 +2628,11 @@ def get_deformer_weights(deformer, index = 0):
     """
     Get the weights on a deformer. In point order.
     
-    Args
+    Args:
         deformer (str): The name of a deformer.
         index (int): The index of the meshes attached. 
     
-    Return
+    Returns:
         list: The weight values in point order.
         
     """
@@ -2636,7 +2658,7 @@ def set_wire_weights(weights, wire_deformer, index = 0):
     """
     Set the wire weights given a list of weights that corresponds to point order.
     
-    Args
+    Args:
         weights (list): A list of weight values corresponding to point order.
         wire_deformer (str): The name of a wire deformer.
         index (int): The index of the mesh to work on. By default it will work on the first mesh.
@@ -2650,11 +2672,11 @@ def get_wire_weights(wire_deformer, index = 0):
     """
     Get the weights on a wire deformer. In point order.
     
-    Args
+    Args:
         wire_deformer (str): The name of a deformer.
         index (int): The index of the meshes attached. 
     
-    Return
+    Returns:
         list: The weight values in point order.
         
     """
@@ -2665,11 +2687,11 @@ def get_cluster_weights(cluster_deformer, index = 0):
     """
     Get the weights on a cluster deformer. In point order.
     
-    Args
+    Args:
         cluster_deformer (str): The name of a deformer.
         index (int): The index of the meshes attached. 
     
-    Return
+    Returns:
         list: The weight values in point order.
         
     """
@@ -2692,7 +2714,7 @@ def get_intermediate_object(transform):
     """
     Get the intermediate object in the list of shape nodes under transform.
     
-    Args
+    Args:
         transform (str): The name of a transform.
     """
     shapes = cmds.listRelatives(transform, s = True, f = True)
@@ -2703,7 +2725,7 @@ def set_all_weights_on_wire(wire_deformer, weight, slot = 0):
     """
     Set all the weights on a wire deformer.
     
-    Args
+    Args:
         wire_deformer (str): The name of a wire deformer.
         weight (float): The weight value to assign the weights of a wire deformer.
         slot (int): The index of the deformed mesh. Usually 0.
@@ -2729,7 +2751,7 @@ def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence
     """
     Set the wire weights from a skinned joint.
     
-    Args
+    Args:
         wire_deformer (str): The name of a wire deformer.
         weighted_mesh (str): The name of a skinned mesh.
         influence (str): The name of an influence.
@@ -2754,7 +2776,7 @@ def prune_wire_weights(deformer, value = 0.0001):
     """
     Removes weights that fall below value.
     
-    Args
+    Args:
         deformer (str): The name of a deformer.
         value (float): The value below which verts get removed from wire deformer.
     """
@@ -2783,11 +2805,11 @@ def map_influence_on_verts(verts, skin_deformer):
     """
     Given a list of verts, get which influences have the most weight.
     
-    Args
+    Args:
         verts (list): The index of vertices on the mesh to get weights from.
         skin_deformer (str): The name of a skin cluster.
         
-    Return
+    Returns:
         dict: dict[influence_index] = value
     
     """
@@ -2838,11 +2860,11 @@ def map_influence_on_verts(verts, skin_deformer):
 
 def get_faces_at_skin_influence(mesh, skin_deformer):
     """
-    Args
+    Args:
         mesh (str): The name of a mesh affected by skin_deformer.
         skin_deformer (str): The name of a skin deformer.
         
-    Return
+    Returns:
         dict: dict[influence_index] = [face ids]
     """
     scope = cmds.ls('%s.f[*]' % mesh, flatten = True)
@@ -2883,13 +2905,13 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
     """
     Split a mesh into smaller sections based on skin deformer weights.
     
-    Args
+    Args:
         mesh (str): The name of a mesh.
         skin_deformer (str): The name of a skin deformer.
         vs_attribute (str): The name of a visibility attribute to connect to. eg. 'node_name.sectionVisibility'
         constrain (bool): Wether to constrain the sections or parent them.
         
-    Return
+    Returns:
         str: If constrain = True, the name of the group above the sections. Otherwise return none.
     """
     
@@ -2948,12 +2970,12 @@ def add_joint_bindpre(skin, joint, description = None):
     """
     Add a bind pre locator to the bindPreMatrix of the skin.
     
-    Args
+    Args:
         skin (str): The name of a skin cluster to add bind pre to.
         joint (str): The name of the joint to match bind pre to.
         description(str): The description of the bind pre.
         
-    Return
+    Returns:
         str: The name of the bind pre locator.
         
     """
@@ -2976,7 +2998,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
     """
     Meant to take a wire deformer and turn it into a skinned joint chain.
     
-    Args
+    Args:
         wire_deformer (str): The name of a wire deformer.
         description (str): The description to give the setup
         joint_count (int): The number of joints to create. Higher number better resembles the effect of a wire deformer, but gets slow fast.
@@ -2985,7 +3007,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
         falloff (float): Corresponds to the wire distance value.
         create_controls (bool): Wether to create controls on the joints.
          
-    Return
+    Returns:
         list: [convert_group, control_group, zero_verts] Zero verts are the verts that were not affected by the wire conversion.
     """
     vtool.util.show('converting %s' % wire_deformer)
@@ -3177,13 +3199,13 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
     """
     Convert a wire deformer to skinned joints
     
-    Args
+    Args:
         wire_deformer (str): The name of a wire deformer.
         description (str): The description to give the setup.
         joint_count (int): The number of joints to create. Higher number better resembles the effect of a wire deformer, but gets slow fast.
         falloff (float): Corresponds to the wire distance value.
         
-    Return
+    Returns:
         str: The top group above the joints.
     """
     
@@ -3331,7 +3353,7 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
     """
     Transfer the weight from one joint to another.  Does it for all vertices affected by source_joint in mesh.
     
-    Args
+    Args:
         source_joint (str): The name of a joint to take weights from.
         target_joint (str): The name of a joint to transfer weights to.
         mesh (str): The mesh to work with.
@@ -3399,7 +3421,7 @@ def transfer_weight_from_joint_to_parent(joint, mesh):
     Transfer the weight from child joint to parent joint.  Does it for all vertices affected by child joint in mesh.
     If no parent joint, then do nothing.
     
-    Args
+    Args:
         joint (str): The name of a joint to take weights from.
         mesh (str): The mesh to work with.
         
@@ -3433,7 +3455,7 @@ def transfer_joint_weight_to_blendshape(blendshape_node, joint, mesh, index = 0,
     """
     Transfer the weight of a joint on a skincluster to a blendshape target weight.
     
-    Args
+    Args:
         blendshape_node (str): The name of a blendshape node.
         joint (str): The name of a joint influencing mesh.
         mesh (str): The name of a mesh that has joint has a skin influence.
@@ -3464,7 +3486,7 @@ def add_missing_influences(skin1, skin2):
     Make sure used influences in skin1 are added to skin2. 
     When transfering skin weights this can be handy.
     
-    Args
+    Args:
         skin1 (str): The name of a skin cluster.
         skin2 (str): The name of a skin cluster.
     """
@@ -3487,7 +3509,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     include_joints = only include the specified joints. 
     If exlude_joints, only exclude_joints in include_joints will be excluded.
     
-    Args
+    Args:
         source_mesh (str): The name of a mesh.
         target_mesh (str): The name of a mesh.
         exlude_joints (list): Exclude the named joints from the skin cluster.
@@ -3556,7 +3578,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints
     If exlude_joints, only exclude_joints in include_joints will be excluded.
     
     
-    Args
+    Args:
         source_mesh (str): The name of a mesh.
         group (str): The name of a group.
         exlude_joints (list): Exclude the named joints from the skin cluster.
@@ -3594,7 +3616,7 @@ def skin_lattice_from_mesh(source_mesh, target, divisions = [10,10,10], falloff 
     include_joints = only include the specified joints. 
     If exlude_joints, only exclude_joints in include_joints will be excluded.
     
-    Args
+    Args:
         source_mesh (str): The name of a mesh.
         target (str): The name of a group or mesh.
         divisions (list): eg [10,10,10] the divisions of the lattice.
@@ -3630,7 +3652,7 @@ def skin_curve_from_mesh(source_mesh, target, include_joints = [], exclude_joint
     include_joints = only include the specified joints. 
     If exlude_joints, only exclude_joints in include_joints will be excluded.
     
-    Args
+    Args:
     
         source_mesh (str): The name of a mesh.
         target (str): The name of a curve.
@@ -3645,7 +3667,7 @@ def skin_group(joints, group):
     Skin all the meshes in a group to the specified joints.  
     Good for attaching the face geo to the head joint.
     
-    Args
+    Args:
         joints (list): A list of joints to skin to.
         group (str): The group to skin.
     """
@@ -3665,7 +3687,7 @@ def lock_joint_weights(skin_cluster, skip_joints = None):
     """
     Lock the joints in the skin cluster except joints in skip_joints
     
-    Args
+    Args:
         skin_cluster (str): The name of a skin cluster.
         skip_joints (list): The names of the joints to skip.
     """
@@ -3691,11 +3713,11 @@ def get_closest_verts_to_joints(joints, verts):
     """
     Get the closest vertices to a joint.
     
-    Args
+    Args:
         joints (list): A list of joints.
         verts (list): A list of vertices.
     
-    Return 
+    Returns: 
         dict: dict[joint] = vertex list
     """
 
@@ -3736,11 +3758,11 @@ def create_wrap(source_mesh, target_mesh):
     Create an Maya exclusive bind wrap. 
     Source_mesh drives target_mesh.
     
-    Args
+    Args:
         source_mesh (str): The mesh to influence target_mesh. This can be a list of meshes.
         target_mesh (str): Mesh to be deformed by source_mesh.
         
-    Return
+    Returns:
         list: A list of base meshes.
     """
     
@@ -3770,12 +3792,12 @@ def wire_mesh(curve, mesh, falloff):
     """
     Create a wire deformer.
     
-    Args
+    Args:
         curve (str): The name of a curve.
         mesh (str): The name of a mesh.
         falloff (float): The falloff of the wire influence.
         
-    Return
+    Returns:
         list: [wire_deformer, wire_curve]
     """
     wire_deformer, wire_curve = cmds.wire(mesh,  gw = False, w = curve, n = 'wire_%s' % curve, dds = [0, falloff])
@@ -3790,13 +3812,13 @@ def wire_to_mesh(edges, geometry, description, auto_edge_path = True):
     
     auto_edge_path = The command will try fill in gaps between edges.
     
-    Args
+    Args:
         edges (list): The edges from the source mesh to build the wire curve from. Eg. ["node_name.e[0]"]
         geometry (list): The target geometry that should follow.
         description (str): The description to give the setup.
         auto_edge_path (bool): Wether to fill in the path between the edges.
         
-    Return
+    Returns:
         str: The group name for the setup.
     """
     group = cmds.group(em = True, n = core.inc_name('setup_%s' % description))
@@ -3828,7 +3850,7 @@ def weight_hammer_verts(verts = None, print_info = True):
     """
     Convenience to use Maya's weight hammer command on many verts individually.
     
-    Args
+    Args:
         verts (list): The names of verts to weigth hammer. If verts = None, currently selected verts will be hammered. 
         
     """
@@ -3863,10 +3885,10 @@ def map_blend_target_alias_to_index(blendshape_node):
     """
     Get the aliases for blendshape weight targets and the index of the target.
     
-    Args
+    Args:
         blendshape_node (str): The name of the blendshape.
     
-    Return 
+    Returns: 
         dict: dict[alias] = target index
     """
     
@@ -3891,10 +3913,10 @@ def map_blend_index_to_target_alias(blendshape_node):
     """
     Get a map between the target index and its alias name on the blendshape.
     
-    Args
+    Args:
         blendshape_node (str): The name of the blendshape.
     
-    Return 
+    Returns: 
         dict: dict[target index] = weight alias
     """
     
@@ -3920,10 +3942,10 @@ def get_index_at_alias(alias, blendshape_node):
     """
     Given a blendshape weight alias, get the corresponding target index.
     
-    Args
+    Args:
         alias (str): The name of the weight alias.
     
-    Return 
+    Returns: 
         int: The corresponding target index to the alias.
     """
     
@@ -3938,12 +3960,12 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
     Get the delta of t he skin cluster and blendshape to the corrective.  
     Requires a skin cluster or blendshape in the deformation stack.
     
-    Args
+    Args:
         skin_mesh (str): The name of the skinned mesh, or blendshaped mesh to extract a delta from.
         corrective (str): The target shape for the skin mesh.  
         replace (bool): Wether to replace the corrective with the delta.
         
-    Return
+    Returns:
         str: The name of the delta. The delta can be applied to the blendshape before the skin cluster.
     """
     
@@ -4025,13 +4047,13 @@ def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = Tr
     Create a delta following the equation:
     delta = orig_mesh + corrective_mesh - source_meshes
     
-    Args
+    Args:
         orig_mesh (str): The unchanged base mesh.
         source_meshes (list): Name of the mesh that represents where the mesh has moved. Can be a list or a single target. 
         corrective_mesh (str): Name of the mesh where the source mesh needs to move to.
     
-    Return 
-        (str): name of new delta mesh
+    Returns: 
+        str: name of new delta mesh
     """
     
     sources = vtool.util.convert_to_sequence(source_meshes)
@@ -4079,13 +4101,13 @@ def create_surface_joints(surface, name, uv_count = [10, 4], offset = 0):
     """
     Create evenly spaced joints on a surface.
     
-    Args
+    Args:
         surface (str): the name of a nurbs surface.
         name(str): = the name to give to nodes created.
         uv_count(list): = number of joints on u and v, eg [10,4]
         offset(float): = the offset from the border.
         
-    Return
+    Returns:
         list: [top_group, joints] The top group is the group for the joints. The joints is a list of joints by name that were created.
     """
     
@@ -4124,13 +4146,13 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
     Create a blendshape. Add target source_mesh into the target_mesh.
     If target_mesh already has a blendshape, add source_mesh into existing blendshape.
     
-    Args
+    Args:
         blendshape (str): The name of the blendshape to work with.
         target_mesh (str): The name of the target mesh to add into the blendshape.
         weight (float): The value to set the weight of the target to.
         blendshape (str): The name of the blendshape to edit. If None, it will be set to 'blendshape_%s' % target_mesh.
         
-    Return
+    Returns:
         str: The name of the blendshape node.
     """
     
@@ -4214,12 +4236,12 @@ def isolate_shape_axis(base, target, axis_list = ['X','Y','Z']):
     """
     Given a base mesh, only take axis movement on the target that is specified in axis_list.
     
-    Args
+    Args:
         base (str): The base mesh that has no targets applied.
         target (str): The target mesh vertices moved to a different position than the base.
         axis_list (list): The axises of movement allowed. If axis_list = ['X'], only vertex movement on x will be present in the result.
     
-    Return
+    Returns:
         str: A new mesh with verts moving only on the isolated axis.
     """
     
@@ -4271,7 +4293,7 @@ def reset_tweak(tweak_node):
     """
     Reset the tweak node in deformation history.
     
-    Args
+    Args:
         tweak_node (str): The name of the tweak node.
     """
     

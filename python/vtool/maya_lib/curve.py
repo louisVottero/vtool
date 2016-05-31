@@ -62,10 +62,10 @@ class CurveToData(object):
         """
         Get the degree of the curve.
         
-        Args
+        Args:
             index (int): The shape index. 0 for first shape, 1 for the second shape, etc...
             
-        Return
+        Returns:
             int: The number of degrees.
         """
         return self.curve_functions[index].get_degree()
@@ -74,10 +74,10 @@ class CurveToData(object):
         """
         Get the degree of the curve.
         
-        Args
+        Args:
             index (int): The shape index. 0 for first shape, 1 for the second shape, etc...
             
-        Return
+        Returns:
             int: The number of degrees.
         """
         return self.curve_functions[index].get_knot_values()

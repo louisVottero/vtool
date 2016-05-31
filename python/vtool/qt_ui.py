@@ -171,6 +171,8 @@ class BasicDialog(QtGui.QDialog):
         
         self.setLayout(self.main_layout)
         
+        self.setWindowFlags( self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint)
+        
         self._build_widgets()  
             
     def _define_main_layout(self):
@@ -1990,6 +1992,54 @@ class LoginWidget( BasicWidget ):
         if not bool_value:
             self.login_state.hide()
      
+class WidgetToPicture(BasicDialog):
+    
+    def __init__(self):
+        super(WidgetToPicture, self).__init__()
+        
+        self.last_path = ''
+    
+    def _build_widgets(self):
+        
+        #widget_button = QtGui.QPushButton('Get widget')
+        #widget_button.clicked.connect(self._get_widget())
+        
+        self.setMinimumHeight(100)
+        self.setMinimumWidth(100)
+        self.setMouseTracking(True)
+        #self.main_layout.addWidget()
+        
+    def mouseReleaseEvent(self, event):
+        super(WidgetToPicture, self).mousePressEvent(event)
+        
+        position = event.globalPos()
+        
+        print position
+        
+        app = QtGui.qApp
+        widget = app.widgetAt(position)
+        
+        print widget
+        
+        self.take_picture(widget)
+        
+        
+    def take_picture(self, widget):
+        
+        pixmap =  QtGui.QPixmap.grabWidget(widget)
+        
+        
+        filename = QtGui.QFileDialog.getSaveFileName(self, "Save Image", filter = '*.png', dir = self.last_path)
+        
+        if filename:
+            if util_file.is_file(filename[0]):
+                name = util_file.get_basename(filename[0])
+                directory = util_file.get_dirname(filename[0])
+                util_file.delete_file(name, directory)
+            pixmap.save(filename[0], 'png')
+            
+            self.last_path = filename[0]
+        
 #--- Code Editor
         
 class CodeEditTabs_ActiveFilter(QtCore.QObject):
@@ -3200,7 +3250,6 @@ class FindTextWidget(BasicDialog):
         
         self.text_widget.cursorPositionChanged.connect(self._reset_found_match)
         
-        self.setWindowFlags( self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint )
         
         self.setWindowTitle('Find/Replace')
         
@@ -4191,9 +4240,9 @@ def get_pick(list, text_message, parent = None):
         return picked
     
     
+
     
-    
-    
+
     
 
 
