@@ -25,6 +25,7 @@ class BlendShape(object):
     Args:
         blendshape_name (str): The name of the blendshape to work on. 
     """
+    
     def __init__(self, blendshape_name = None):
         self.blendshape = blendshape_name
         

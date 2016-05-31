@@ -361,7 +361,8 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         history = self.settings.get(self.history_entry)
         
         if not history and previous_directory:
-            history.insert(0, [str(item.text(0)), previous_directory])
+            history = []
+            history.append([str(item.text(0)), previous_directory])
         
         if previous_directory != current_directory[1] and previous_directory:
 
@@ -749,6 +750,7 @@ class CodeList(QtGui.QListWidget):
         
         self._create_context_menu()
         
+    
     def _item_menu(self, position):
         
         item = self.itemAt(position)
@@ -818,4 +820,4 @@ class TemplateList(ProjectList):
     
     def _setting_entries(self):
         self.directory_entry = 'template_directory'
-        self.history_entry = 'template_history'         
+        self.history_entry = 'template_history'

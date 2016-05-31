@@ -2014,12 +2014,8 @@ class WidgetToPicture(BasicDialog):
         
         position = event.globalPos()
         
-        print position
-        
         app = QtGui.qApp
         widget = app.widgetAt(position)
-        
-        print widget
         
         self.take_picture(widget)
         
@@ -2824,9 +2820,13 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                     return
 
         pass_on = True
-    
+        
         if event.key() == QtCore.Qt.Key_Backtab or event.key() == QtCore.Qt.Key_Tab:
             self._handle_tab(event)
+            pass_on = False
+
+        if event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return:
+            self._handle_enter(event)
             pass_on = False
 
         if pass_on:
@@ -3062,6 +3062,34 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     
         return '    %s' % string_value
     
+    def _handle_enter(self, event):
+        
+        cursor = self.textCursor()
+        current_block = cursor.block()
+                
+        current_block_text = str(current_block.text())
+        current_found = ''
+        
+        """
+        stripped_text = current_block_text.rstrip()
+        
+        if stripped_text.endswith(','):
+            current_found = stripped_text
+        """
+        
+        if not current_found:
+            current_found = re.search('^ +', current_block_text)
+            
+            if current_found:
+                current_found = current_found.group(0)
+        
+        indent = 0
+        
+        if current_found:
+            indent = len(current_found)
+        
+        cursor.insertText(('\n' + ' ' * indent))
+        
     def _handle_tab(self, event):
         
         cursor = self.textCursor()
