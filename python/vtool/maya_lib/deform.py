@@ -1595,6 +1595,7 @@ class MultiJointShape(object):
         self.weight_joints = []
         
         self.read_axis = 'Y'
+        self.only_locator = None
         
     def _create_locators(self):
         
@@ -1624,7 +1625,15 @@ class MultiJointShape(object):
             locators.append(locator)
         self.locators = locators
         
-    
+        if self.only_locator != None:
+            
+            use_locators = []
+            
+            for locator in self.locators:
+                use_locators.append(self.locators[self.only_locator])
+        
+            self.locators = use_locators
+            
     def _turn_controls_on(self):
         
         for control_group in self.control_values:
@@ -1676,6 +1685,10 @@ class MultiJointShape(object):
     def set_read_axis(self, axis_letter):
         
         self.read_axis = axis_letter.upper()
+        
+    def set_use_only_locator(self, at_inc = 0):
+        
+        self.only_locator = at_inc
         
     def create(self):
         
