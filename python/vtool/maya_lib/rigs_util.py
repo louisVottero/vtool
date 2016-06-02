@@ -1355,7 +1355,7 @@ def rename_message_groups(search_name, replace_name):
                     
                     cmds.rename(node, new_node) 
           
-def create_joint_buffer(joint):
+def create_joint_buffer(joint, connect_inverse = True):
     
     fix_joint = cmds.joint(n = 'bufferFix_%s' % joint)
     cmds.setAttr('%s.drawStyle' % fix_joint, 2)
@@ -1367,12 +1367,15 @@ def create_joint_buffer(joint):
     if parent:
         parent = parent[0]
         cmds.parent(fix_joint, parent)
-        if not cmds.isConnected('%s.scale' % parent, '%s.inverseScale' % fix_joint):
-            cmds.connectAttr('%s.scale' % parent, '%s.inverseScale' % fix_joint)
+        
+        if connect_inverse:
+            if not cmds.isConnected('%s.scale' % parent, '%s.inverseScale' % fix_joint):
+                cmds.connectAttr('%s.scale' % parent, '%s.inverseScale' % fix_joint)
     
         
     cmds.parent(joint, fix_joint)
     
+    return fix_joint
     
     
                     

@@ -3142,8 +3142,8 @@ class PoseCone(PoseBase):
         For example
             If self.pose_control = pose_arm_L, there must be a corresponding pose_arm_R.
             The pose at pose_arm_R must be a mirrored pose of pose_arm_L.
-        
         """
+        
         self.other_pose_exists = False
         
         count = self.get_mesh_count()
@@ -3191,8 +3191,6 @@ class PoseCone(PoseBase):
         
         if self.other_pose_exists:
             other_pose_instance.goto_pose()
-
-        
 
         twist_on_value = cmds.getAttr('%s.twistOffOn' % self.pose_control)
         distance_value = cmds.getAttr('%s.maxDistance' % self.pose_control)

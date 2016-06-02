@@ -712,6 +712,9 @@ class SplitMeshTarget(object):
                         if search:
                             camel_insert_index = search.start(0)
                             sub_new_name = sub_new_name[:camel_insert_index] + replace + sub_new_name[camel_insert_index:]
+                            
+                        if not search:
+                            sub_new_name = sub_new_name + replace
                     
                     """
                     if len(split_index) > 1:
@@ -735,6 +738,9 @@ class SplitMeshTarget(object):
                     if search:
                         camel_insert_index = search.start(0)
                         new_name = new_name[:camel_insert_index] + replace + new_name[camel_insert_index:]
+                        
+                    if not search:
+                        sub_new_name = sub_new_name + replace
             
             new_target = cmds.rename(new_target, new_name)    
             
@@ -1596,6 +1602,7 @@ class MultiJointShape(object):
         
         self.read_axis = 'Y'
         self.only_locator = None
+        self.delta = True
         
     def _create_locators(self):
         
@@ -1690,6 +1697,9 @@ class MultiJointShape(object):
         
         self.only_locator = at_inc
         
+    def set_delta(self, bool_value):
+        self.delta = bool_value
+        
     def create(self):
         
         if not self.joints:
@@ -1700,8 +1710,14 @@ class MultiJointShape(object):
         
         self._turn_controls_on() 
         
-        new_brow_geo = chad_extract_shape(self.base_mesh, self.shape)
+        if self.delta:
+            new_brow_geo = chad_extract_shape(self.base_mesh, self.shape)
+            
+        if not self.delta:
+            new_brow_geo = cmds.duplicate(self.shape)[0]
+            
         cmds.delete(self.shape)
+        
         new_brow_geo = cmds.rename(new_brow_geo, self.shape)
      
         joint_values = {}
@@ -1743,21 +1759,28 @@ class MultiJointShape(object):
         splits = split.create()
         
         inc = 0
-        
+    
         if self.create_hookup:
             for split in splits:
-                
-                
+                inbetween = False
                 
                 value = joint_values[self.locators[inc]]
                 
                 off_value = None
                 
-                if off_joint_values:
+                if off_joint_values and self.create_hookup:
                     off_value = off_joint_values[self.locators[inc]]
                 
                 if not self.hook_to_empty_group:
                     blendshape = quick_blendshape(split, self.base_mesh)
+                    
+                hookup_attribute = split
+                    
+                number = vtool.util.get_trailing_number(split, number_count=2)
+                if number:
+                    inbetween = True
+                    hookup_attribute = split[:-2]
+                    between_value = (number * 0.01)
                     
                 if self.hook_to_empty_group:
                     
@@ -1769,25 +1792,32 @@ class MultiJointShape(object):
                     if not cmds.objExists(group):
                         group = cmds.group(em = True, n = group)
                         attr.hide_keyable_attributes(group)
-                        
-                    cmds.addAttr(group, ln = split, k = True, at = 'double')
                     
-                    blendshape = group
-                         
+                    if not cmds.objExists('%s.%s' % (group, hookup_attribute)): 
+                        cmds.addAttr(group, ln = hookup_attribute, k = True, at = 'double')
                 
-                if not off_value:
+                    blendshape = group
+                
+                
+                if not inbetween:
+                    if not off_value:
+                        anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
+                                                '%s.%s' % (blendshape, hookup_attribute),
+                                                [0, value], 
+                                                [0, 1])        
+                        
+                    if off_value:
+                        anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
+                                                '%s.%s' % (blendshape, hookup_attribute),
+                                                [0, value, off_value], 
+                                                [0, 1, 0])
+                if inbetween:
                     anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
-                                            '%s.%s' % (blendshape, split),
-                                            [0, value], 
-                                            [0, 1])        
-                    
-                if off_value:
-                    anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
-                                            '%s.%s' % (blendshape, split),
-                                            [0, value, off_value], 
-                                            [0, 1, 0])
-             
+                                                '%s.%s' % (blendshape, hookup_attribute),
+                                                [value], 
+                                                [between_value])
                 inc+=1
+    
         
         if not self.hook_to_empty_group and self.create_hookup:
             cmds.delete(splits)
@@ -2598,6 +2628,18 @@ def set_skin_weights_to_zero(skin_deformer):
             cmds.setAttr('%s.%s' % (skin_deformer, weight_attribute), 0)
 
 #--- deformers
+
+def invert_weights(weights):
+    
+    new_weights = []
+    
+    for weight in weights:
+        
+        new_weight = 1.00-weight
+        
+        new_weights.append(new_weight)
+        
+    return new_weights
 
 def set_vert_weights_to_zero(vert_index, skin_deformer, joint = None):
     """
