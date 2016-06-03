@@ -1077,6 +1077,7 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
 
     if not constrain:
         cmds.parent(transform, rivet)
+        
                     
     if not inherit_transform:
         cmds.setAttr('%s.inheritsTransform' % rivet, 0)
