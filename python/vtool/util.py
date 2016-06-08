@@ -1285,7 +1285,7 @@ def warning(*args):
         raise(RuntimeError)
         
 
-def find_possible_combos(names, sort = True, one_increment = False):
+def find_possible_combos(names, sort = False, one_increment = False):
         
         if not names:
             return []

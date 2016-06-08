@@ -602,9 +602,11 @@ class BlendShape(object):
             
             attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
             
-            for weight in weights:
-                cmds.setAttr('%s[%s]' % (attribute, inc), weight)
-                inc += 1
+            cmds.setAttr( attribute + '[0:%i]' % (len(weights) - 1), *weights, size = len(weights))
+            
+            #for weight in weights:
+            #    cmds.setAttr('%s[%s]' % (attribute, inc), weight)
+            #    inc += 1
         
     
         
@@ -861,6 +863,9 @@ class ShapeComboManager(object):
         name = core.get_basename(name, remove_namespace = True)
         
         blendshape = self.blendshape
+        
+        if not cmds.objExists(blendshape.blendshape):
+            return
         
         blend_attr = '%s.%s' % (blendshape.blendshape, name)
 

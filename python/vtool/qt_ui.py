@@ -1874,8 +1874,8 @@ class GetCheckBox(BasicWidget):
             return False
         
     def set_state(self, bool_value):
-        if bool_value:
-            self.check_box.setChecked(True)
+        if bool_value != None:
+            self.check_box.setChecked(bool_value)
             
 
 class Slider(BasicWidget):

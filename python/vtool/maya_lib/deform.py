@@ -609,6 +609,8 @@ class SplitMeshTarget(object):
             list: The names of the new targets.
         """
         
+        
+        
         if not self.base_mesh or not cmds.objExists(self.base_mesh):
             vtool.util.warning('%s base mesh does not exist to split off of.' % self.base_mesh)
             return
@@ -1228,6 +1230,7 @@ class AutoWeight2D(object):
         self.min_max = None
         
         self.prune_weights = []
+        self.auto_joint_order = True
         
     def _create_offset_group(self):
         
@@ -1258,6 +1261,7 @@ class AutoWeight2D(object):
         
         self.mesh = duplicate_mesh
         self.joints = duplicate_joints
+        self.auto_joint_order = True
         
     def _store_verts(self):
         
@@ -1290,6 +1294,9 @@ class AutoWeight2D(object):
             
             self.joint_vectors_2D.append(position)
             
+        if not self.auto_joint_order:
+            return
+        
         other_list = list(self.joint_vectors_2D)
         other_list.reverse()
         
@@ -1474,7 +1481,7 @@ class AutoWeight2D(object):
                 
     def set_joints(self, joints):
         self.joints = joints
-    
+        
     def set_mesh(self, mesh):
         self.mesh = mesh
         
@@ -1486,6 +1493,9 @@ class AutoWeight2D(object):
         
     def set_weights_to_zero(self, bool_value):
         self.zero_weights = bool_value
+        
+    def set_auto_joint_order(self, bool_value):
+        self.auto_joint_order = bool_value
         
     def set_orientation_transform(self, transform):
         """
@@ -1603,6 +1613,7 @@ class MultiJointShape(object):
         self.read_axis = 'Y'
         self.only_locator = None
         self.delta = True
+        self.weight_joints = None
         
     def _create_locators(self):
         

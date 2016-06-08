@@ -653,7 +653,8 @@ def get_meshes_in_list(list_of_things):
     for thing in list_of_things:
         if cmds.nodeType(thing) == 'mesh':
             found_mesh = cmds.listRelatives(thing, p = True)
-            found.append(found_mesh)
+            if found_mesh:
+                found.append(found_mesh[0])
             
         if cmds.nodeType(thing) == 'transform':
             
@@ -982,8 +983,34 @@ def get_face_centers(mesh):
     return face_iter.get_face_center_vectors()
     
     
-
-
+def snap_to_mesh(transform, mesh, face = None):
+    
+    shape = get_mesh_shape(mesh)
+    
+    if not is_a_mesh(transform):
+        rotate_pivot = True
+    
+    if rotate_pivot:
+        position = cmds.xform(transform, q = True, rp = True, ws = True)
+    if not rotate_pivot: 
+        position = space.get_center(transform)
+    
+    face_fn = None
+    face_id = None
+    
+    try:
+        face_fn = api.IteratePolygonFaces(shape)
+        face_id = face_fn.get_closest_face(position)
+    except:
+        return
+    
+    if face != None:
+        face_id = face
+    
+    new_position = face_fn.get_center(face_id)
+    
+    cmds.xform(transform, ws = True, t = new_position)
+    
 def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None, point_constrain = False, auto_parent = False, hide_shape= True, inherit_transform = False, local = False, rotate_pivot = False, constrain = True):
     """
     Be default this will attach the center point of the transform (including hierarchy and shapes) to the mesh.

@@ -1419,7 +1419,7 @@ class FkScaleRig(FkRig):
         
         if vtool.util.get_maya_version() <= 2014:
             cmds.pointConstraint(control, target_transform, mo = True) 
-            attr.connect_rotate(control, target_transform, mo = True) 
+            cmds.orientConstraint(control, target_transform, mo = True) 
         
         
         

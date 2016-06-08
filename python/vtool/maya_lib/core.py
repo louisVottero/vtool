@@ -706,6 +706,28 @@ def has_shape_of_type(node, maya_type):
         if maya_type == cmds.nodeType(test):
             
             return True
+        
+def get_orig_nodes(parent = None):
+    """
+    Get all the orig nodes in a scene, or just the ones under the parent.
+    """
+    shapes = None
+    
+    if not parent:
+        shapes = cmds.ls(type = 'shape', l = True)
+    if parent:
+        shapes = cmds.listRelatives(parent, shapes = True)
+    
+    if not shapes:
+        return
+    
+    found = []
+    
+    for shape in shapes:
+        if cmds.getAttr('%s.intermediateObject' % shape):
+            found.append(shape)
+            
+    return found
 
 def get_component_count(transform):
     """
@@ -833,6 +855,11 @@ def delete_display_layers():
     
     for layer in layers:
         cmds.delete(layer)
+
+def print_help(string_value):
+    
+    import maya.OpenMaya as om 
+    om.MGlobal.displayInfo(string_value) 
 
 #--- file
 
@@ -996,6 +1023,8 @@ def get_current_audio_node():
     
     return cmds.timeControl(play_slider, q = True, s = True)
 
+#--- garbage cleanup
+
 def remove_unused_plugins():
     
     list_cmds = dir(cmds)
@@ -1020,7 +1049,6 @@ def remove_unused_plugins():
             unused.append(unknown_plugin)
             
     vtool.util.show('Removed unused plugins: %s' % unused)
-    
 
 def delete_turtle_nodes():
 
@@ -1121,3 +1149,18 @@ def delete_garbage():
                 garbage_nodes.append(node)
     
     vtool.util.show('Deleted Garbage nodes: %s' % garbage_nodes)
+    
+def delete_empty_orig_nodes():
+    
+    origs = get_orig_nodes()
+    
+    found = []
+    
+    for orig in origs:
+        connections = cmds.listConnections(orig)
+        
+        if not connections:
+            found.append(orig)
+            cmds.delete(orig)
+            
+    print_help('Deleted Unused Intermediate Object or Orig nodes: %s' % found)
