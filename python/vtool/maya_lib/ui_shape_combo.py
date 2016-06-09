@@ -163,20 +163,7 @@ class ComboManager(ui.MayaWindow):
         if shapes:
             self.slider.setEnabled(True)
             
-            value = 1
-            
-            """
-            if len(shapes) == 1:
-                if self.manager.is_inbetween(shapes[0]):
-                    inbetween_value = self.manager.get_inbetween_value(shapes[0])
-                    
-                    if inbetween_value != None:
-                        value = (inbetween_value * .01)
-            """
-            #for shape in shapes:
-                #self.manager.turn_on_shape(shape)
-                
-            self.slider.set_value(value)
+            self.slider.set_value(1)
         
     def _shape_selection_changed(self):
         
