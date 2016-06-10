@@ -799,7 +799,7 @@ class ShapeComboManager(object):
         
         temp_targets = []
         
-        parent  = self.get_inbetween_combo_parent(combo)
+        #parent  = self.get_inbetween_combo_parent(combo)
         
         sub_value = 1
                 
@@ -814,7 +814,7 @@ class ShapeComboManager(object):
                 
                 if between_value:
                     sub_value *= (between_value * 0.01)
-
+        """
         if parent:
             if self.blendshape.is_target(parent):
                 
@@ -822,7 +822,7 @@ class ShapeComboManager(object):
                 combo_target = self.blendshape.recreate_target(parent, sub_value)
                 
                 temp_targets.append(combo_target)        
-        
+        """
         delta = deform.get_blendshape_delta(home, temp_targets, corrective_mesh, replace = False)
         
         cmds.delete(temp_targets)
@@ -992,7 +992,7 @@ class ShapeComboManager(object):
             
             for sub_shape in sub_shapes:
             
-                source = '%s.%s' % (self.setup_group , sub_shape)
+                source = '%s.%s' % (self.blendshape.blendshape , sub_shape)
                 target_combo = '%s.%s' % (self.blendshape.blendshape, combo)
                 
                 if not last_multiply:
@@ -1001,6 +1001,7 @@ class ShapeComboManager(object):
                 if last_multiply:
                     multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
                 
+                """
                 attr.disconnect_attribute('%s.input1X' % multiply)
                 
                 on_value = 1
@@ -1011,8 +1012,9 @@ class ShapeComboManager(object):
                     on_value = -1
                 
                 anim.quick_driven_key(source, '%s.input1X' % multiply, [0, on_value], [0,1], tangent_type = 'linear')
-                
+                """
                 last_multiply = multiply
+                
                 
         if inbetween_combo_parent:
             for sub_shape in sub_shapes:
