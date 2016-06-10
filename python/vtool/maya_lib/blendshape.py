@@ -786,11 +786,6 @@ class ShapeComboManager(object):
         shape = core.get_basename(shape, remove_namespace = True)
         
         var = attr.MayaNumberVariable(shape)
-        #var.set_min_value(0)
-        #var.set_max_value(1)
-        
-        #if self.is_negative(shape) or self.has_negative(shape):
-            #var.set_min_value(-1)
         
         var.set_variable_type('float')
         var.create(self.setup_group)
@@ -798,8 +793,6 @@ class ShapeComboManager(object):
     def _get_combo_delta(self, corrective_mesh, combo, home):
         
         temp_targets = []
-        
-        #parent  = self.get_inbetween_combo_parent(combo)
         
         sub_value = 1
                 
@@ -814,15 +807,7 @@ class ShapeComboManager(object):
                 
                 if between_value:
                     sub_value *= (between_value * 0.01)
-        """
-        if parent:
-            if self.blendshape.is_target(parent):
-                
-                
-                combo_target = self.blendshape.recreate_target(parent, sub_value)
-                
-                temp_targets.append(combo_target)        
-        """
+        
         delta = deform.get_blendshape_delta(home, temp_targets, corrective_mesh, replace = False)
         
         cmds.delete(temp_targets)
