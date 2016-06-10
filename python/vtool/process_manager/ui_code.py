@@ -1472,6 +1472,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
 
     def run_current_item(self, external_code_library = None):
         
+
+        
         
         vtool.util.set_env('VETALA RUN', True)
         vtool.util.set_env('VETALA STOP', False)
@@ -1495,6 +1497,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     
                 if value == None:
                     return
+
+
+        watch = vtool.util.StopWatch()
+        watch.start(feedback = False)
 
         for item in items:    
             item.set_state(-1)
@@ -1560,6 +1566,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         vtool.util.set_env('VETALA RUN', False)
         vtool.util.set_env('VETALA STOP', False)
+        
+        seconds = watch.stop()
+        
+        vtool.util.show('Processes run in %s' % seconds)
         
     def remove_current_item(self):
         

@@ -1419,7 +1419,7 @@ class FkScaleRig(FkRig):
         
         if vtool.util.get_maya_version() <= 2014:
             cmds.pointConstraint(control, target_transform, mo = True) 
-            attr.connect_rotate(control, target_transform, mo = True) 
+            cmds.orientConstraint(control, target_transform, mo = True) 
         
         
         
@@ -7687,26 +7687,17 @@ class StickyFadeRig(StickyRig):
                 
                 local, local_xform = space.constrain_local(control.get(), corner_offset)
                 
-                #parent_local, parent_local_xform = space.constrain_local(xform, corner_offset_xform)
-                
                 sub_local, sub_local_xform = space.constrain_local(sub_control.get(), sub_corner_offset)
                 
                 cmds.parent(sub_local_xform, local)
                 attr.connect_scale(xform, local_xform)
-                #cmds.parent(local_xform, parent_local) 
                 
-                #cmds.parent(parent_local_xform, self.setup_group)
                 cmds.parent(local_xform, self.setup_group)
                 
-                #cmds.parent(sub_local_xform, self.setup_group)
+                buffer_joint = rigs_util.create_joint_buffer(sub_local, connect_inverse = False)
                 
+                cmds.connectAttr('%s.scale' % local_xform, '%s.inverseScale' % buffer_joint)
                 
-                #space.create_follow_group(local, sub_local_xform, follow_scale = True)
-                
-                #cmds.parentConstraint(local, sub_local_xform)
-                
-            
-            #cmds.parent(corner_offset_xform, xform)
             cmds.parent(corner_offset_xform, self.setup_group)
             cmds.parent(sub_corner_offset, corner_offset_xform)
             

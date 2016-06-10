@@ -25,6 +25,7 @@ class BlendShape(object):
     Args:
         blendshape_name (str): The name of the blendshape to work on. 
     """
+    
     def __init__(self, blendshape_name = None):
         self.blendshape = blendshape_name
         
@@ -175,6 +176,7 @@ class BlendShape(object):
             return 0
 
     def _disconnect_targets(self):
+        
         for target in self.targets:
             self._disconnect_target(target)
             
@@ -204,11 +206,13 @@ class BlendShape(object):
             self.set_weight(target, self.targets[target].value )
         
     def _restore_connections(self):
+                
         for target in self.targets:
+            
             connection = self.targets[target].connection
             
             if not connection:
-                return
+                continue
             
             cmds.connectAttr(connection, self._get_target_attr(target)) 
 
@@ -268,7 +272,9 @@ class BlendShape(object):
         self.mesh_index = index
         
     def get_mesh_index(self, mesh):
-        
+        """
+        Wip
+        """
         geo = cmds.blendshape(self.blendshape, q = True, geometry = True)
         
     def get_mesh_count(self):
@@ -596,9 +602,11 @@ class BlendShape(object):
             
             attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
             
-            for weight in weights:
-                cmds.setAttr('%s[%s]' % (attribute, inc), weight)
-                inc += 1
+            cmds.setAttr( attribute + '[0:%i]' % (len(weights) - 1), *weights, size = len(weights))
+            
+            #for weight in weights:
+            #    cmds.setAttr('%s[%s]' % (attribute, inc), weight)
+            #    inc += 1
         
     
         
@@ -787,14 +795,33 @@ class ShapeComboManager(object):
         var.set_variable_type('float')
         var.create(self.setup_group)
     
-    def _get_combo_delta(self, corrective_mesh, shapes, home):
+    def _get_combo_delta(self, corrective_mesh, combo, home):
         
         temp_targets = []
+        
+        parent  = self.get_inbetween_combo_parent(combo)
+        
+        sub_value = 1
+                
+        shapes = self.get_shapes_in_combo(combo, include_combos=True)
         
         for shape in shapes:
             if self.blendshape.is_target(shape):
                 new_shape = self.blendshape.recreate_target(shape)
                 temp_targets.append(new_shape)
+                
+                between_value = vtool.util.get_trailing_number(shape, as_string = False, number_count = 2)
+                
+                if between_value:
+                    sub_value *= (between_value * 0.01)
+
+        if parent:
+            if self.blendshape.is_target(parent):
+                
+                
+                combo_target = self.blendshape.recreate_target(parent, sub_value)
+                
+                temp_targets.append(combo_target)        
         
         delta = deform.get_blendshape_delta(home, temp_targets, corrective_mesh, replace = False)
         
@@ -836,6 +863,9 @@ class ShapeComboManager(object):
         name = core.get_basename(name, remove_namespace = True)
         
         blendshape = self.blendshape
+        
+        if not cmds.objExists(blendshape.blendshape):
+            return
         
         blend_attr = '%s.%s' % (blendshape.blendshape, name)
 
@@ -947,111 +977,59 @@ class ShapeComboManager(object):
             if negative_parent:
                 anim.quick_driven_key(setup_attr, blend_attr, [control_value, value], [0, 1], tangent_type = 'linear', infinite = 'pre_only')
                 cmds.keyTangent( blendshape.blendshape, edit=True, float = (value, value) , absolute = True, attribute= name, itt = 'clamped', ott = 'linear', lock = False, ix = 1, iy = -1 )    
-                
+       
     def _setup_combo_connections(self, combo, skip_update_others = False):
-        
-        inbetween_combo_parent = self.get_inbetween_combo_parent(combo)
-        
-        values = None
-        
-        if inbetween_combo_parent:
-            values = self._get_inbetween_combo_value_dict(inbetween_combo_parent)
-            
-        if not inbetween_combo_parent:
-            values = self._get_inbetween_combo_value_dict(combo)
         
         self._remove_combo_multiplies(combo)
         
-        shapes = self.get_shapes_in_combo(combo, include_combos=False)
-        
-        target_combo = '%s.%s' % (self.blendshape.blendshape, combo)
-        
         last_multiply = None
         
-        for shape in shapes:
+        sub_shapes = self.get_shapes_in_combo(combo, include_combos=False)
+        
+        inbetween_combo_parent = self.get_inbetween_combo_parent(combo)
+          
+        if not inbetween_combo_parent:
             
-            negative_offset = 1
+            for sub_shape in sub_shapes:
             
-            if not self.blendshape.is_target(shape):
-                continue
-            
-            orig_shape = shape
-            
-            inbetween_parent = self.get_inbetween_parent(shape)
-            
-            if inbetween_parent:
-                shape = inbetween_parent
+                source = '%s.%s' % (self.setup_group , sub_shape)
+                target_combo = '%s.%s' % (self.blendshape.blendshape, combo)
                 
-            setup_shape = shape
-                
-            negative_parent = self.get_negative_parent(shape)
-            if negative_parent:
-                negative_offset = -1
-                setup_shape = negative_parent
-            
-            source = '%s.%s' % (self.setup_group, setup_shape)
-            
-            if not last_multiply:
-                multiply = attr.connect_multiply(source, target_combo, 1)
-                
-            if last_multiply:
-                multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
-            
-            multiply = cmds.rename(multiply, core.inc_name('multiply_combo_%s_1' % combo))
-            
-            value_list = []
-               
-            if shape in values:
-                value_list = values[shape]
-            
-            if values:
-                
-                value = None
-                
-                if orig_shape:
-                    value = self.get_inbetween_value(orig_shape)
-                
-                before_value = 0
-                after_value = 1 * negative_offset
-                
-                if value:
+                if not last_multiply:
+                    multiply = attr.connect_multiply(source, target_combo, 1)
                     
-                    if value in value_list:
-                        
-                        if not len(value_list) == 1:
-                            index = value_list.index(value)
-                            
-                            if index > 0:
-                                before_value = (value_list[index-1] * 0.01 * negative_offset)
-                            
-                            if index < len(value_list)-1:
-                                after_value = (value_list[index+1] * 0.01 * negative_offset)
-                    
-                    value *= 0.01 * negative_offset
-                    attr.disconnect_attribute('%s.input1X' % multiply)
-                    
-                    anim.quick_driven_key(source, '%s.input1X' % multiply, [before_value,value,after_value], [0,1,0], tangent_type = 'linear')    
-                                
-                if not value:
-                    
-                    before_value = 0
-                    
-                    if value_list:
-                        before_value = value_list[-1] * 0.01 * negative_offset
-                    
-                    attr.disconnect_attribute('%s.input1X' % multiply)
-                    anim.quick_driven_key(source, '%s.input1X' % multiply, [before_value, (1 * negative_offset)], [0,1], tangent_type = 'linear')
-            
-            last_multiply = multiply
-            
-            if not values:
+                if last_multiply:
+                    multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
+                
                 attr.disconnect_attribute('%s.input1X' % multiply)
-                anim.quick_driven_key(source, '%s.input1X' % multiply, [0, 1], [0,1], tangent_type = 'linear')
+                
+                on_value = 1
+                
+                negative_parent = self.get_negative_parent(sub_shape)
                 
                 if negative_parent:
-                    attr.disconnect_attribute('%s.input1X' % multiply)
-                    anim.quick_driven_key(source, '%s.input1X' % multiply, [0, -1], [0,1], tangent_type = 'linear')
-        
+                    on_value = -1
+                
+                anim.quick_driven_key(source, '%s.input1X' % multiply, [0, on_value], [0,1], tangent_type = 'linear')
+                
+                last_multiply = multiply
+                
+        if inbetween_combo_parent:
+            for sub_shape in sub_shapes:
+                
+                source = '%s.%s' % (self.blendshape.blendshape, sub_shape)
+                target_combo = '%s.%s' % (self.blendshape.blendshape, combo)
+                
+                if not last_multiply:
+                    multiply = attr.connect_multiply(source, target_combo, 1)
+                    
+                if last_multiply:
+                    multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
+                
+                multiply = cmds.rename(multiply, core.inc_name('multiply_combo_%s_1' % combo))
+                
+                last_multiply = multiply
+                
     def _remove_combo_multiplies(self, combo):
         
         input_node = attr.get_attribute_input('%s.%s' % (self.blendshape.blendshape, combo), node_only = True)
@@ -1234,6 +1212,8 @@ class ShapeComboManager(object):
         home = self._get_home_mesh()
         base_mesh = self._get_mesh()
         
+        vtool.util.show('Adding shapes.')
+        
         for shape in shapes:
             
             if shape == base_mesh:
@@ -1245,12 +1225,16 @@ class ShapeComboManager(object):
                 continue
             
             self.add_shape(shape, preserve_combos = preserve)    
-            
+        
+        vtool.util.show('Adding inbetweens.')
+        
         for inbetween in inbetweens:
             
-            last_number = vtool.util.get_last_number(inbetween)
+            last_number = vtool.util.get_trailing_number(inbetween, as_string = True, number_count = 2)
             
-            if not len(str(last_number)) >= 2:
+            #last_number = vtool.util.get_last_number(inbetween)
+            
+            if not last_number:
                 continue
             
             if inbetween == base_mesh:
@@ -1262,7 +1246,9 @@ class ShapeComboManager(object):
                 continue
             
             self.add_shape(inbetween)
-            
+        
+        vtool.util.show('Adding combos.')
+        
         for combo in combos:
             
             if combo == base_mesh:
@@ -1277,6 +1263,7 @@ class ShapeComboManager(object):
                 if mesh == combo:
                     self.add_combo(mesh)
                     
+          
         return shapes, combos, inbetweens
     
     @core.undo_chunk
@@ -1468,23 +1455,20 @@ class ShapeComboManager(object):
                     
     def turn_on_shape(self, name, value = 1):
         
-        last_number = vtool.util.get_last_number(name)
+        last_number = vtool.util.get_trailing_number(name, as_string = True, number_count = 2)
         
         if last_number:
-            last_number_str = str(last_number)
             
-            if len(last_number_str) >= 2:
-                first_part = name[:-2]
+            first_part = name[:-2]
+            
+            if self.blendshape.is_target(first_part):
                 
-                if self.blendshape.is_target(first_part):
-                    
-                    last_number_str = last_number_str[-2:]
-                    last_number = int(last_number_str)
-                    value = last_number * .01 * value
-                    
-                    self.set_shape_weight(first_part, value)
-                    
-                    name = first_part
+                last_number_value = int(last_number)
+                value = last_number_value * .01 * value
+                
+                self.set_shape_weight(first_part, value)
+                
+                name = first_part
                         
         if not last_number:
             self.set_shape_weight(name, 1 * value)
@@ -1492,7 +1476,7 @@ class ShapeComboManager(object):
         return name
             
     def set_shape_weight(self, name, value):
-        
+           
         value = value
         
         if not self.blendshape.is_target(name):
@@ -1688,7 +1672,7 @@ class ShapeComboManager(object):
             mesh = name
         
         nice_name = core.get_basename(name, remove_namespace = True)
-        
+                
         if not self.is_combo_valid(nice_name):
             vtool.util.warning('Could not add combo %s, a target is missing.' % name)
             return
@@ -1706,16 +1690,13 @@ class ShapeComboManager(object):
         
         home = self._get_home_mesh()
         
-        shapes = self.get_shapes_in_combo(nice_name, include_combos=True)
-        
-        delta = self._get_combo_delta(mesh, shapes, home)
+        delta = self._get_combo_delta(mesh, name, home)
         
         if blendshape.is_target(nice_name):
             blendshape.replace_target(nice_name, delta)
         
         if not blendshape.is_target(nice_name):
             blendshape.create_target(nice_name, delta)
-        
         
         cmds.delete(delta)
         
@@ -1760,6 +1741,8 @@ class ShapeComboManager(object):
             if split_target and len(split_target) > 1:
                 found.append(target)
             
+        found.sort()
+            
         return found
         
     def find_possible_combos(self, shapes):
@@ -1790,10 +1773,7 @@ class ShapeComboManager(object):
         found_combos = []
         
         for shape in shapes:
-        
-            if self.is_combo_valid(shape):
-                pass
-                
+                        
             for combo in combos:
                 
                 split_combo = combo.split('_')
@@ -1853,6 +1833,11 @@ class ShapeComboManager(object):
         combos = []
         inbetweens = []
         
+        underscore_count = {}
+        inbetween_underscore_count = {}
+        
+        meshes.sort()
+        
         for mesh in meshes:
             
             nice_name = core.get_basename(mesh, remove_namespace = True)
@@ -1871,8 +1856,48 @@ class ShapeComboManager(object):
                     shapes.append(mesh)
                 
             if len(split_shape) > 1:
-                combos.append(mesh)
                 
+                underscore_number = mesh.count('_')
+                
+                
+                
+                inbetween = False
+                
+                for split_name in split_shape:
+                    
+                    if self.is_inbetween(split_name, check_exists=False):
+                        inbetween = True
+                        break
+                
+                if inbetween:
+                    
+                    
+                    if not inbetween_underscore_count.has_key(underscore_number):
+                        inbetween_underscore_count[underscore_number] = []
+                        
+                    inbetween_underscore_count[underscore_number].append(mesh)
+                    
+                
+                if not inbetween:
+                    
+                    
+                    if not underscore_count.has_key(underscore_number):
+                        underscore_count[underscore_number] = []
+                        
+                    underscore_count[underscore_number].append(mesh)
+        
+        combo_keys = underscore_count.keys()
+        combo_keys.sort()
+        
+        inbetween_combo_keys = inbetween_underscore_count.keys()
+        inbetween_combo_keys.sort()
+        
+        for key in combo_keys:
+            combos += underscore_count[key]
+            
+        for key in inbetween_combo_keys:
+            combos += inbetween_underscore_count[key]
+        
         return shapes, combos, inbetweens
     
     def is_negative(self, shape, parent_shape = None):
@@ -1933,7 +1958,7 @@ class ShapeComboManager(object):
         
         return False
     
-    def is_inbetween(self, shape, parent_shape = None):
+    def is_inbetween(self, shape, parent_shape = None, check_exists = True):
         
         last_number = vtool.util.get_trailing_number(shape, as_string = True, number_count=2)
         
@@ -1945,14 +1970,18 @@ class ShapeComboManager(object):
         
         first_part = shape[:-2]
         
-        if self.blendshape.is_target(first_part):
-            
-            if parent_shape:
-                if parent_shape == first_part:
-                    return True 
-                if not parent_shape == first_part:
-                    return False
-            
+        if check_exists:
+            if self.blendshape.is_target(first_part):
+                
+                if parent_shape:
+                    if parent_shape == first_part:
+                        return True 
+                    if not parent_shape == first_part:
+                        return False
+                
+                return True
+        
+        if not check_exists:
             return True
 
     def get_inbetweens(self, shape = None):
@@ -1987,10 +2016,12 @@ class ShapeComboManager(object):
         
     def get_inbetween_value(self, shape):
         
-        number = vtool.util.get_last_number(shape)
-            
-        if not number:
+        number_str = vtool.util.get_trailing_number(shape, as_string = True, number_count = 2)
+        
+        if not number_str:
             return
+        
+        number = int(number_str)
         
         number_str = str(number)
         if not len(number_str) >= 2:

@@ -609,6 +609,8 @@ class SplitMeshTarget(object):
             list: The names of the new targets.
         """
         
+        
+        
         if not self.base_mesh or not cmds.objExists(self.base_mesh):
             vtool.util.warning('%s base mesh does not exist to split off of.' % self.base_mesh)
             return
@@ -678,7 +680,7 @@ class SplitMeshTarget(object):
                 new_names = []
                     
                 inc = 0
-                    
+                
                 for name in split_name:
                     
                     sub_name = name
@@ -711,7 +713,10 @@ class SplitMeshTarget(object):
                         
                         if search:
                             camel_insert_index = search.start(0)
-                            sub_new_name = sub_new_name[:camel_insert_index] + replace + new_name[camel_insert_index:]
+                            sub_new_name = sub_new_name[:camel_insert_index] + replace + sub_new_name[camel_insert_index:]
+                            
+                        if not search:
+                            sub_new_name = sub_new_name + replace
                     
                     """
                     if len(split_index) > 1:
@@ -722,7 +727,7 @@ class SplitMeshTarget(object):
                     
                     inc += 1
                         
-                    new_name = string.join(new_names, '_')
+                new_name = string.join(new_names, '_')
             
             if not split_name_option:
                 
@@ -735,6 +740,9 @@ class SplitMeshTarget(object):
                     if search:
                         camel_insert_index = search.start(0)
                         new_name = new_name[:camel_insert_index] + replace + new_name[camel_insert_index:]
+                        
+                    if not search:
+                        sub_new_name = sub_new_name + replace
             
             new_target = cmds.rename(new_target, new_name)    
             
@@ -1222,6 +1230,7 @@ class AutoWeight2D(object):
         self.min_max = None
         
         self.prune_weights = []
+        self.auto_joint_order = True
         
     def _create_offset_group(self):
         
@@ -1252,6 +1261,7 @@ class AutoWeight2D(object):
         
         self.mesh = duplicate_mesh
         self.joints = duplicate_joints
+        self.auto_joint_order = True
         
     def _store_verts(self):
         
@@ -1284,6 +1294,9 @@ class AutoWeight2D(object):
             
             self.joint_vectors_2D.append(position)
             
+        if not self.auto_joint_order:
+            return
+        
         other_list = list(self.joint_vectors_2D)
         other_list.reverse()
         
@@ -1468,7 +1481,7 @@ class AutoWeight2D(object):
                 
     def set_joints(self, joints):
         self.joints = joints
-    
+        
     def set_mesh(self, mesh):
         self.mesh = mesh
         
@@ -1480,6 +1493,9 @@ class AutoWeight2D(object):
         
     def set_weights_to_zero(self, bool_value):
         self.zero_weights = bool_value
+        
+    def set_auto_joint_order(self, bool_value):
+        self.auto_joint_order = bool_value
         
     def set_orientation_transform(self, transform):
         """
@@ -1594,6 +1610,11 @@ class MultiJointShape(object):
         self.create_hookup = True
         self.weight_joints = []
         
+        self.read_axis = 'Y'
+        self.only_locator = None
+        self.delta = True
+        self.weight_joints = None
+        
     def _create_locators(self):
         
         locators = []
@@ -1622,7 +1643,15 @@ class MultiJointShape(object):
             locators.append(locator)
         self.locators = locators
         
-    
+        if self.only_locator != None:
+            
+            use_locators = []
+            
+            for locator in self.locators:
+                use_locators.append(self.locators[self.only_locator])
+        
+            self.locators = use_locators
+            
     def _turn_controls_on(self):
         
         for control_group in self.control_values:
@@ -1671,6 +1700,17 @@ class MultiJointShape(object):
         self.hook_to_empty_group_name = name
         self.hook_to_empty_group = bool_value
         
+    def set_read_axis(self, axis_letter):
+        
+        self.read_axis = axis_letter.upper()
+        
+    def set_use_only_locator(self, at_inc = 0):
+        
+        self.only_locator = at_inc
+        
+    def set_delta(self, bool_value):
+        self.delta = bool_value
+        
     def create(self):
         
         if not self.joints:
@@ -1681,15 +1721,21 @@ class MultiJointShape(object):
         
         self._turn_controls_on() 
         
-        new_brow_geo = chad_extract_shape(self.base_mesh, self.shape)
+        if self.delta:
+            new_brow_geo = chad_extract_shape(self.base_mesh, self.shape)
+            
+        if not self.delta:
+            new_brow_geo = cmds.duplicate(self.shape)[0]
+            
         cmds.delete(self.shape)
+        
         new_brow_geo = cmds.rename(new_brow_geo, self.shape)
      
         joint_values = {}
         off_joint_values = {}    
      
         for locator in self.locators:
-            value = cmds.getAttr('%s.translateY' % locator)
+            value = cmds.getAttr('%s.translate%s' % (locator, self.read_axis))
             joint_values[locator] = value
         
         self._turn_controls_off()
@@ -1698,7 +1744,7 @@ class MultiJointShape(object):
             self._turn_off_controls_on()
             
             for locator in self.locators:
-                value = cmds.getAttr('%s.translateY' % locator)
+                value = cmds.getAttr('%s.translate%s' % (locator, self.read_axis))
                 off_joint_values[locator] = value
                 
             self._turn_controls_off()
@@ -1724,21 +1770,28 @@ class MultiJointShape(object):
         splits = split.create()
         
         inc = 0
-        
+    
         if self.create_hookup:
             for split in splits:
-                
-                
+                inbetween = False
                 
                 value = joint_values[self.locators[inc]]
                 
                 off_value = None
                 
-                if off_joint_values:
+                if off_joint_values and self.create_hookup:
                     off_value = off_joint_values[self.locators[inc]]
                 
                 if not self.hook_to_empty_group:
                     blendshape = quick_blendshape(split, self.base_mesh)
+                    
+                hookup_attribute = split
+                    
+                number = vtool.util.get_trailing_number(split, number_count=2)
+                if number:
+                    inbetween = True
+                    hookup_attribute = split[:-2]
+                    between_value = (number * 0.01)
                     
                 if self.hook_to_empty_group:
                     
@@ -1750,25 +1803,32 @@ class MultiJointShape(object):
                     if not cmds.objExists(group):
                         group = cmds.group(em = True, n = group)
                         attr.hide_keyable_attributes(group)
-                        
-                    cmds.addAttr(group, ln = split, k = True, at = 'double')
                     
-                    blendshape = group
-                         
+                    if not cmds.objExists('%s.%s' % (group, hookup_attribute)): 
+                        cmds.addAttr(group, ln = hookup_attribute, k = True, at = 'double')
                 
-                if not off_value:
-                    anim.quick_driven_key('%s.translateY' % self.locators[inc],
-                                            '%s.%s' % (blendshape, split),
-                                            [0, value], 
-                                            [0, 1])        
-                    
-                if off_value:
-                    anim.quick_driven_key('%s.translateY' % self.locators[inc],
-                                            '%s.%s' % (blendshape, split),
-                                            [0, value, off_value], 
-                                            [0, 1, 0])
-             
+                    blendshape = group
+                
+                
+                if not inbetween:
+                    if not off_value:
+                        anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
+                                                '%s.%s' % (blendshape, hookup_attribute),
+                                                [0, value], 
+                                                [0, 1])        
+                        
+                    if off_value:
+                        anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
+                                                '%s.%s' % (blendshape, hookup_attribute),
+                                                [0, value, off_value], 
+                                                [0, 1, 0])
+                if inbetween:
+                    anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
+                                                '%s.%s' % (blendshape, hookup_attribute),
+                                                [value], 
+                                                [between_value])
                 inc+=1
+    
         
         if not self.hook_to_empty_group and self.create_hookup:
             cmds.delete(splits)
@@ -2579,6 +2639,18 @@ def set_skin_weights_to_zero(skin_deformer):
             cmds.setAttr('%s.%s' % (skin_deformer, weight_attribute), 0)
 
 #--- deformers
+
+def invert_weights(weights):
+    
+    new_weights = []
+    
+    for weight in weights:
+        
+        new_weight = 1.00-weight
+        
+        new_weights.append(new_weight)
+        
+    return new_weights
 
 def set_vert_weights_to_zero(vert_index, skin_deformer, joint = None):
     """

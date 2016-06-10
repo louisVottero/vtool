@@ -432,6 +432,17 @@ class CustomData(FileData):
       
 class MayaCustomData(CustomData):
     def _center_view(self):
+        
+        settings_path = util.get_env('VETALA_SETTINGS')
+        
+        settings = util_file.SettingsFile()
+        settings.set_directory(settings_path)
+        
+        auto_focus = settings.get('auto_focus_scene')
+        
+        if not auto_focus:
+            return
+        
         try:
             cmds.select(cl = True)
             cmds.viewFit(an = True)
@@ -2068,7 +2079,10 @@ class MayaFileData(MayaCustomData):
         
     def _after_open(self):
         
+
+        
         maya_lib.geo.smooth_preview_all(False)
+
         self._center_view()
         
     def _prep_scene_for_export(self):

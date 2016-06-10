@@ -85,6 +85,9 @@ class SettingsWidget(qt_ui.BasicWidget):
         maya_group_layout = QtGui.QVBoxLayout()
         process_maya_group.setLayout(maya_group_layout)
         
+        self.auto_focus_scene = qt_ui.GetCheckBox('Auto Focus Scene')
+        self.auto_focus_scene.set_state(True)
+        
         self.error_stop = qt_ui.GetCheckBox('Stop Process on error.')
         self.error_stop.check_changed.connect(self._set_stop_on_error)
         
@@ -93,9 +96,13 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         self.process_start_new_scene.check_changed.connect(self._set_start_new_scene_on_process)
         
+        self.auto_focus_scene.check_changed.connect(self._set_auto_focus_scene)
+        
         group_layout.addWidget(self.error_stop)
         group_layout.addWidget(process_maya_group)
+        
         maya_group_layout.addWidget(self.process_start_new_scene)
+        maya_group_layout.addWidget(self.auto_focus_scene)
         
         
         self.options_widget.main_layout.addWidget(process_group)
@@ -110,6 +117,10 @@ class SettingsWidget(qt_ui.BasicWidget):
     def _set_start_new_scene_on_process(self):
         
         self.settings.set('start_new_scene_on_process', self.process_start_new_scene.get_state())
+        
+    def _set_auto_focus_scene(self):
+        
+        self.settings.set('auto_focus_scene', self.auto_focus_scene.get_state())
         
     def _get_stop_on_error(self):
         value = self.settings.get('stop_on_error')
@@ -126,6 +137,16 @@ class SettingsWidget(qt_ui.BasicWidget):
             self.settings.set('start_new_scene_on_process', True)
         if value == False:
             self.process_start_new_scene.set_state(False)
+    
+    def _get_auto_focus_scene(self):
+        value = self.settings.get('auto_focus_scene')
+        
+        if value:
+            self.auto_focus_scene.set_state(True)
+        if value == None:
+            self.settings.set('auto_focus_scene', True)
+        if value == False:
+            self.auto_focus_scene.set_state(False)
     
     def _project_directory_changed(self, project):
         
@@ -172,6 +193,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         self._get_stop_on_error()
         self._get_start_new_scene_on_process()
+        self._get_auto_focus_scene()
         
     def set_template_settings(self, settings):
         
@@ -361,7 +383,8 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         history = self.settings.get(self.history_entry)
         
         if not history and previous_directory:
-            history.insert(0, [str(item.text(0)), previous_directory])
+            history = []
+            history.append([str(item.text(0)), previous_directory])
         
         if previous_directory != current_directory[1] and previous_directory:
 
@@ -749,6 +772,7 @@ class CodeList(QtGui.QListWidget):
         
         self._create_context_menu()
         
+    
     def _item_menu(self, position):
         
         item = self.itemAt(position)
@@ -818,4 +842,4 @@ class TemplateList(ProjectList):
     
     def _setting_entries(self):
         self.directory_entry = 'template_directory'
-        self.history_entry = 'template_history'         
+        self.history_entry = 'template_history'

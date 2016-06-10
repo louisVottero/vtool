@@ -185,6 +185,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.settings = settings_file
         
+        util.set_env('VETALA_SETTINGS', self.directory)
+        
         self.view_widget.set_settings( self.settings )
         self.settings_widget.set_settings(self.settings)
         

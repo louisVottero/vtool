@@ -119,6 +119,7 @@ class TemplateWidget(qt_ui.BasicWidget):
             
     def set_current(self, name):
         
+        name = str(name)
         
         self.handle_current_change = True
         
