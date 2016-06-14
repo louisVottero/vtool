@@ -1700,7 +1700,7 @@ class MultiJointShape(object):
         self.off_control_values.append([control_attribute, value])
         
     def add_control_start_value(self, control_attribute, value):
-        self.start_control_values.append([control_attribute], value)
+        self.start_control_values.append([control_attribute, value])
         
     def set_hook_to_empty_group(self, bool_value, name = None):
         self.hook_to_empty_group_name = name
@@ -1830,12 +1830,12 @@ class MultiJointShape(object):
                 
                     blendshape = group
                 
-                
                 if not inbetween:
                     
                     pass_off_value = value
                     pass_start_value = 0
                     dest_off_value = 1
+                    
                     
                     if off_value != None:
                         pass_off_value = off_value
@@ -1844,12 +1844,11 @@ class MultiJointShape(object):
                     if start_value != None:
                         pass_start_value = start_value
                     
-                    if not off_value:
-                        anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
-                                                '%s.%s' % (blendshape, hookup_attribute),
-                                                [pass_start_value, value, pass_off_value], 
-                                                [pass_start_value, 1, dest_off_value])        
-                        
+                    anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
+                                            '%s.%s' % (blendshape, hookup_attribute),
+                                            [pass_start_value, value, pass_off_value], 
+                                            [0, 1, dest_off_value])        
+                    
                     """
                     if off_value:
                         anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
@@ -1859,6 +1858,7 @@ class MultiJointShape(object):
                     """
                     
                 if inbetween:
+                    
                     anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
                                                 '%s.%s' % (blendshape, hookup_attribute),
                                                 [value], 
