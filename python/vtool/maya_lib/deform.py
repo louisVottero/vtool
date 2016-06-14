@@ -1599,6 +1599,7 @@ class MultiJointShape(object):
         self.joints = []
         
         self.control_values = []
+        self.start_control_values = []
         self.off_control_values = []
         
         self.base_mesh = None
@@ -1667,11 +1668,21 @@ class MultiJointShape(object):
         
         for control_group in self.off_control_values:
             cmds.setAttr( control_group[0], control_group[1] )
-                
+            
     def _turn_off_controls_off(self):
         for control_group in self.off_control_values:
             cmds.setAttr( control_group[0], 0 )
-    
+            
+    def _turn_start_controls_on(self):
+        
+        for control_group in self.start_control_values:
+            cmds.setAttr( control_group[0], control_group[1] )
+            
+    def _turn_start_controls_off(self):
+        
+        for control_group in self.start_control_values:
+            cmds.setAttr( control_group[0], 0 )
+        
     def set_joints(self, joints):
         
         self.joints = joints
@@ -1695,6 +1706,9 @@ class MultiJointShape(object):
     def add_control_off_value(self, control_attribute, value):
         
         self.off_control_values.append([control_attribute, value])
+        
+    def add_control_start_value(self, control_attribute, value):
+        self.start_control_values.append([control_attribute], value)
         
     def set_hook_to_empty_group(self, bool_value, name = None):
         self.hook_to_empty_group_name = name
@@ -1733,6 +1747,7 @@ class MultiJointShape(object):
      
         joint_values = {}
         off_joint_values = {}    
+        start_joint_values = {}
      
         for locator in self.locators:
             value = cmds.getAttr('%s.translate%s' % (locator, self.read_axis))
@@ -1748,6 +1763,15 @@ class MultiJointShape(object):
                 off_joint_values[locator] = value
                 
             self._turn_controls_off()
+            
+        if self.start_control_values:
+            self._turn_start_controls_on()
+            
+            for locator in self.locators:
+                value = cmds.getAttr('%s.translate%s' % (locator, self.read_axis))
+                start_joint_values[locator] = value
+                
+            self._turn_start_controls_off()
         
         
         split = SplitMeshTarget(new_brow_geo)
@@ -1778,9 +1802,14 @@ class MultiJointShape(object):
                 value = joint_values[self.locators[inc]]
                 
                 off_value = None
+                start_value = None
                 
                 if off_joint_values and self.create_hookup:
                     off_value = off_joint_values[self.locators[inc]]
+                    
+                if start_joint_values and self.create_hookup:
+                    
+                    start_value = start_joint_values[self.locators[inc]]
                 
                 if not self.hook_to_empty_group:
                     blendshape = quick_blendshape(split, self.base_mesh)
@@ -1811,17 +1840,32 @@ class MultiJointShape(object):
                 
                 
                 if not inbetween:
+                    
+                    pass_off_value = value
+                    pass_start_value = 0
+                    dest_off_value = 1
+                    
+                    if off_value != None:
+                        pass_off_value = off_value
+                        dest_off_value = 0
+                        
+                    if start_value != None:
+                        pass_start_value = start_value
+                    
                     if not off_value:
                         anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
                                                 '%s.%s' % (blendshape, hookup_attribute),
-                                                [0, value], 
-                                                [0, 1])        
+                                                [pass_start_value, value, pass_off_value], 
+                                                [pass_start_value, 1, dest_off_value])        
                         
+                    """
                     if off_value:
                         anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
                                                 '%s.%s' % (blendshape, hookup_attribute),
                                                 [0, value, off_value], 
                                                 [0, 1, 0])
+                    """
+                    
                 if inbetween:
                     anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
                                                 '%s.%s' % (blendshape, hookup_attribute),
