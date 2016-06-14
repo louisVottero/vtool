@@ -860,9 +860,11 @@ class TransferWeight(object):
         if not source_mesh:
             source_mesh = self.mesh
             
+        verts_source_mesh = []
+            
         if source_mesh:
             verts_mesh = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
-            verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)
+            verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)    
             
             if len(verts_mesh) != len(verts_source_mesh):
                 vtool.util.warning('%s and %s have different vert counts. Can not transfer weights.' % (self.mesh, source_mesh))
@@ -872,30 +874,10 @@ class TransferWeight(object):
         source_value_map = get_skin_weights(source_skin_cluster)
         destination_value_map = get_skin_weights(self.skin_cluster)
         
-        joint_map = {}
-        destination_joint_map = {}
-        
         self._add_joints_to_skin(destination_joints)
         
-        for joint in source_joints:
-            if not cmds.objExists(joint):
-                vtool.util.warning('%s does not exist.' % joint)
-                continue
-                        
-            index = get_index_at_skin_influence(joint,source_skin_cluster)
-            
-            joint_map[index] = joint
-                        
-        for joint in destination_joints:
-            if not cmds.objExists(joint):
-                vtool.util.warning('%s does not exist.' % joint)
-                continue
-            
-            index = get_index_at_skin_influence(joint,self.skin_cluster)
-                        
-            destination_joint_map[index] = joint
-        
-        verts = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)
+        joint_map = get_joint_index_map(source_joints, source_skin_cluster)
+        destination_joint_map = get_joint_index_map(destination_joints, self.skin_cluster)
                             
         weighted_verts = []
         
@@ -904,17 +886,18 @@ class TransferWeight(object):
             if influence_index == None:
                 continue
             
-            for vert_index in range(0, len(verts)):
+            for vert_index in range(0, len(verts_source_mesh)):
                 
-                int_vert_index = int(vtool.util.get_last_number(verts[vert_index]))
+                int_vert_index = int(vtool.util.get_last_number(verts_source_mesh[vert_index]))
                 
                 if not source_value_map.has_key(influence_index):
                     continue
                 
                 value = source_value_map[influence_index][int_vert_index]
                 
-                if value > 0.001:
-                    weighted_verts.append(int_vert_index)
+                if value > 0.0001:
+                    if not int_vert_index in weighted_verts:
+                        weighted_verts.append(int_vert_index)
         
         self._add_joints_to_skin(source_joints)
         
@@ -931,6 +914,7 @@ class TransferWeight(object):
         inc = 1
         
         for vert_index in weighted_verts:
+            
             vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
         
             destination_value = 0
@@ -961,14 +945,20 @@ class TransferWeight(object):
                 value *= destination_value
                 value *= percent
                 
+                if value > 1:
+                    value = 1
+                
+                if value == 0:
+                    continue
+                
                 segments.append((joint, value))
-              
+                
             if segments:
                 cmds.skinPercent(self.skin_cluster, vert_name, r = False, transformValue = segments)
 
             bar.inc()
             
-            bar.status('transfer weight: %s of %s' % (inc, vert_count))
+            bar.status('transfer new weight: %s of %s' % (inc, vert_count))
             
             if vtool.util.get_env('VETALA_RUN') == 'True':
                 if vtool.util.get_env('VETALA_STOP') == 'True':
@@ -1067,7 +1057,7 @@ class TransferWeight(object):
                 
                 value = influence_values[influence_index][int_vert_index]
                 
-                if value > 0.001:
+                if value > 0:
                     if not int_vert_index in weighted_verts:
                         weighted_verts.append(int_vert_index)
                     
@@ -1108,13 +1098,15 @@ class TransferWeight(object):
             
             joint_weight = {}
             
+            """
             #check if the distance is almost zero on a new influence
             for distance_id in xrange(0, len(distances)):
                 if distances[distance_id] <= 0.001:
                     joint_weight[new_joints[distance_id]] = 1
                     found_weight = True
                     break
-                          
+            """
+                       
             if not found_weight:
             
                 smallest_distance = distances[0]
@@ -2681,6 +2673,21 @@ def set_skin_weights_to_zero(skin_deformer):
         
         for weight_attribute in weight_attributes:
             cmds.setAttr('%s.%s' % (skin_deformer, weight_attribute), 0)
+
+def get_joint_index_map(joints, skin_cluster):
+    
+    joint_map = {}
+    
+    for joint in joints:
+        if not cmds.objExists(joint):
+            vtool.util.warning('%s does not exist.' % joint)
+            continue
+                    
+        index = get_index_at_skin_influence(joint, skin_cluster)
+        
+        joint_map[index] = joint    
+        
+    return joint_map
 
 #--- deformers
 
