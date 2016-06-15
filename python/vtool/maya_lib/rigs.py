@@ -1445,7 +1445,8 @@ class FkScaleRig(FkRig):
         
         if vtool.util.get_maya_version() <= 2014:
             cmds.pointConstraint(control, target_transform, mo = True) 
-            cmds.orientConstraint(control, target_transform, mo = True) 
+            attr.connect_rotate(control, target_transform)
+            #cmds.orientConstraint(control, target_transform, mo = True) 
         
         
         
@@ -1491,6 +1492,19 @@ class FkScaleRig(FkRig):
     def _first_increment(self, control, current_transform): 
         super(FkScaleRig, self)._first_increment(control, current_transform) 
           
+        if vtool.util.get_maya_version() <= 2014:
+            driver = self.control_dict[control]['driver']
+            
+            drivers = [driver]
+            if self.control_dict[control].has_key('driver2'):
+                driver2 = self.control_dict[control]['driver2']
+                drivers.append(driver2)
+            
+            if vtool.util.get_maya_version() <= 2014:
+                
+                for transform in drivers:
+                    attr.connect_rotate(transform, current_transform)
+          
         attr.connect_scale(control, current_transform) 
       
     def _increment_greater_than_zero(self, control, current_transform): 
@@ -1525,6 +1539,7 @@ class FkScaleRig(FkRig):
             drivers.append(driver2)
         
         if vtool.util.get_maya_version() <= 2014:
+            
             for transform in drivers:
                 attr.connect_rotate(transform, current_transform)
         
