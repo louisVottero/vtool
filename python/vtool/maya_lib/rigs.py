@@ -7073,13 +7073,6 @@ class EyeLidAimRig(JointRig):
                 space.MatchSpace(self.center_locator, xform).rotation()
             
             
-            
-            local, local_xform = space.constrain_local(control.get(), cluster)
-            local_driver = space.create_xform_group(local, 'driver')
-            
-            attr.connect_scale(xform, local_xform)
-            
-            
             if type(self.scale_space) == list:
                 
                 offset_scale = [1,1,1]
@@ -7095,20 +7088,25 @@ class EyeLidAimRig(JointRig):
                     
                 cmds.scale(self.scale_space[0],self.scale_space[1], self.scale_space[2], xform)    
                 cmds.scale(offset_scale[0], offset_scale[1], offset_scale[2], control.control)
-                
+
             if type(self.scale_space) != list:
                 if self.scale_space < 1 or self.scale_space > 1:
                     cmds.scale(self.scale_space, self.scale_space, self.scale_space, xform)
+
+            cluster_xform = space.create_xform_group(cluster, use_duplicate=True)
+
+            
+            local, local_xform = space.constrain_local(control.get(), cluster_xform)
+            local_driver = space.create_xform_group(local, 'driver')
+            
+            attr.connect_scale(xform, local_xform)
             
             attr.connect_translate(driver, local_driver)
-            #attr.connect_translate(driver, cluster)
-            cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
             
+            cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
             
             cmds.parent(xform, self.control_group)
             cmds.parent(local_xform, local_group)
-            
-            #control.hide_scale_attributes()
             
             inc += 1
     
