@@ -1730,10 +1730,12 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
         if parent:
             cmds.parent(xform_group, parent[0])    
         
-    if use_duplicate:
-        xform_group = cmds.duplicate(transform, po = True)
-        xform_group = cmds.rename(xform_group, core.inc_name(name))
     
+    if use_duplicate:
+        #this sometimes doesn't duplicate with values because Maya... :(
+        xform_group = cmds.duplicate(transform)[0]
+        xform_group = cmds.rename(xform_group, core.inc_name(name))
+
     cmds.parent(transform, xform_group)
     
     attr.connect_group_with_message(xform_group, transform, prefix)
@@ -2040,7 +2042,7 @@ def transfer_relatives(source_node, target_node, reparent = False):
 
     
 
-def constrain_local(source_transform, target_transform, parent = False, scale_connect = False, constraint = 'parentConstraint', connect_xform = False):
+def constrain_local(source_transform, target_transform, parent = False, scale_connect = False, constraint = 'parentConstraint', connect_xform = False, use_duplicate = False):
     """
     Constrain a target transform to a source transform in a way that allows for setups to remain local to the origin.
     This is good when a control needs to move with the rig, but move something at the origin only when the actually control moves.
@@ -2056,22 +2058,38 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
         (str, str) : The local group that constrains the target_transform, and the xform group above the local group.
     """
     
-    local_group = cmds.group(em = True, n = core.inc_name('local_%s' % source_transform))
-    
-    xform_group = create_xform_group(local_group)
-    
-    parent_world = cmds.listRelatives(source_transform, p = True)
-    
-    if parent_world:
-        parent_world = parent_world[0]
+    if use_duplicate:
+        local_group = cmds.duplicate(source_transform, n = 'local_%s' % source_transform)[0]
         
-        match = MatchSpace(parent_world, xform_group)
-        match.translation_rotation()
+        children = cmds.listRelatives(local_group)
         
-    if target_transform.endswith('R'):
-        match = MatchSpace(target_transform, xform_group).scale()
+        if children:
+            cmds.delete(children)
         
+        dup_parent = cmds.listRelatives(local_group, p = True)
+        
+        if dup_parent:
+            cmds.parent(local_group, w = True)
             
+        xform_group = create_xform_group(local_group, use_duplicate = True)
+    
+    if not use_duplicate:
+        local_group = cmds.group(em = True, n = core.inc_name('local_%s' % source_transform))
+        
+        xform_group = create_xform_group(local_group)
+        
+        
+        parent_world = cmds.listRelatives(source_transform, p = True)
+        
+        if target_transform.endswith('R'):
+            match = MatchSpace(target_transform, xform_group).scale()
+        
+        if parent_world:
+            parent_world = parent_world[0]
+            
+            match = MatchSpace(parent_world, xform_group)
+            match.translation_rotation()
+    
     match = MatchSpace(source_transform, local_group)
     
     match.translation_rotation()

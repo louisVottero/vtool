@@ -559,6 +559,7 @@ class SparseRig(JointRig):
         
         self.control_to_pivot = False
         self.follow_parent = False
+        self.control_compensate = False
         
     def _convert_to_joints(self):
         
@@ -628,6 +629,13 @@ class SparseRig(JointRig):
         
         self.follow_parent = bool_value
         
+    def set_control_compensate(self, bool_value):
+        """
+        This feeds the translation of the control into a group above using a negative offset.
+        Good if the control is attached to a mesh that it affects usings a rivet.
+        """
+        self.control_compensate = bool_value
+        
     def create(self):
         
         super(SparseRig, self).create()
@@ -641,6 +649,11 @@ class SparseRig(JointRig):
             
             xform = space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
+            
+            if self.control_compensate:
+                offset = space.create_xform_group(control_name, 'offset')
+                
+                attr.connect_translate_multiply(control_name, offset, -1)
             
             match = space.MatchSpace(joint, xform)
                 
@@ -692,10 +705,13 @@ class SparseRig(JointRig):
                 
                 if parent:
                     space.create_follow_group(parent[0], xform)
+
+    
             
+                        
         if self.use_joint_controls:
             self._convert_to_joints()
-    
+
 
 class SparseLocalRig(SparseRig):
     """
@@ -737,6 +753,11 @@ class SparseLocalRig(SparseRig):
             
             xform = space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
+
+            if self.control_compensate:
+                offset = space.create_xform_group(control_name, 'offset')
+            
+                attr.connect_translate_multiply(control_name, offset, -1)
             
             match = space.MatchSpace(joint, xform)
             
@@ -777,7 +798,7 @@ class SparseLocalRig(SparseRig):
                 attr.connect_rotate(driver, joint)
             
             if self.local_constraint:
-                local_group, local_xform = space.constrain_local(control.get(), joint)
+                local_group, local_xform = space.constrain_local(control.get(), joint, use_duplicate = True)
                 
                 if self.local_xform:
                     cmds.parent(local_xform, self.local_xform)
@@ -798,6 +819,8 @@ class SparseLocalRig(SparseRig):
             attr.connect_scale(control.get(), joint)
             
             cmds.parent(xform, self.control_group)
+
+
             
         if self.local_parent:
             space.create_follow_group(self.local_parent, self.local_xform)
@@ -807,6 +830,9 @@ class SparseLocalRig(SparseRig):
         
         if self.use_joint_controls:
             self._convert_to_joints()
+            
+
+            
             
 class ControlRig(Rig):
     """
@@ -7014,13 +7040,6 @@ class EyeLidAimRig(JointRig):
                 space.MatchSpace(self.center_locator, xform).rotation()
             
             
-            
-            local, local_xform = space.constrain_local(control.get(), cluster)
-            local_driver = space.create_xform_group(local, 'driver')
-            
-            attr.connect_scale(xform, local_xform)
-            
-            
             if type(self.scale_space) == list:
                 
                 offset_scale = [1,1,1]
@@ -7036,20 +7055,23 @@ class EyeLidAimRig(JointRig):
                     
                 cmds.scale(self.scale_space[0],self.scale_space[1], self.scale_space[2], xform)    
                 cmds.scale(offset_scale[0], offset_scale[1], offset_scale[2], control.control)
-                
+
             if type(self.scale_space) != list:
                 if self.scale_space < 1 or self.scale_space > 1:
                     cmds.scale(self.scale_space, self.scale_space, self.scale_space, xform)
+
             
-            attr.connect_translate(driver, local_driver)
-            #attr.connect_translate(driver, cluster)
             cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
             
+            local, local_xform = space.constrain_local(control.get(), cluster)
+            local_driver = space.create_xform_group(local, 'driver')
+            
+            attr.connect_scale(xform, local_xform)
+            
+            attr.connect_translate(driver, local_driver)
             
             cmds.parent(xform, self.control_group)
             cmds.parent(local_xform, local_group)
-            
-            #control.hide_scale_attributes()
             
             inc += 1
     

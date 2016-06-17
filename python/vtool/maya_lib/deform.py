@@ -841,6 +841,9 @@ class TransferWeight(object):
             percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
         
+        source_joints = vtool.util.convert_to_sequence(source_joints)
+        destination_joints = vtool.util.convert_to_sequence(destination_joints)
+        
         if vtool.util.get_env('VETALA_RUN') == 'True':
             if vtool.util.get_env('VETALA_STOP') == 'True':
                 return
@@ -991,6 +994,9 @@ class TransferWeight(object):
             power (int): The power to multiply the distance by. It amplifies the distnace, so that if something is closer it has a higher value, and if something is further it has a lower value exponentially.
             weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
+        joints = vtool.util.convert_to_sequence(joints)
+        new_joints = vtool.util.convert_to_sequence(new_joints)
+        
         if vtool.util.get_env('VETALA_RUN') == 'True':
             if vtool.util.get_env('VETALA_STOP') == 'True':
                 return
