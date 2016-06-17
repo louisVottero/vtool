@@ -1864,7 +1864,6 @@ class PoseData(MayaCustomData):
             
             path = util_file.join_path(dir_path, '%s.ma' % pose)
             
-            
             try:
                 self._save_file(path)
             except:
@@ -1878,6 +1877,9 @@ class PoseData(MayaCustomData):
         
         
         pose_manager.attach_poses()
+        
+        version = util_file.VersionFile(dir_path)
+        version.save(comment)
                 
         util.show('Exported %s data.' % self.name)
     
