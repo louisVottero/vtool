@@ -7093,17 +7093,15 @@ class EyeLidAimRig(JointRig):
                 if self.scale_space < 1 or self.scale_space > 1:
                     cmds.scale(self.scale_space, self.scale_space, self.scale_space, xform)
 
-            cluster_xform = space.create_xform_group(cluster, use_duplicate=True)
-
             
-            local, local_xform = space.constrain_local(control.get(), cluster_xform)
+            cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
+            
+            local, local_xform = space.constrain_local(control.get(), cluster)
             local_driver = space.create_xform_group(local, 'driver')
             
             attr.connect_scale(xform, local_xform)
             
             attr.connect_translate(driver, local_driver)
-            
-            cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
             
             cmds.parent(xform, self.control_group)
             cmds.parent(local_xform, local_group)

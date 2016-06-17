@@ -1730,10 +1730,12 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
         if parent:
             cmds.parent(xform_group, parent[0])    
         
-    if use_duplicate:
-        xform_group = cmds.duplicate(transform, po = True)
-        xform_group = cmds.rename(xform_group, core.inc_name(name))
     
+    if use_duplicate:
+        #this sometimes doesn't duplicate with values because Maya... :(
+        xform_group = cmds.duplicate(transform)[0]
+        xform_group = cmds.rename(xform_group, core.inc_name(name))
+
     cmds.parent(transform, xform_group)
     
     attr.connect_group_with_message(xform_group, transform, prefix)
