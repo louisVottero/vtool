@@ -2074,8 +2074,10 @@ class MayaFileData(MayaCustomData):
         util.show('Vetala: Clean Scene')
         
         maya_lib.core.delete_turtle_nodes()
-        maya_lib.core.delete_garbage()
-        maya_lib.core.remove_unused_plugins()
+        
+        if util.get_maya_version() > 2014:
+            maya_lib.core.delete_garbage()
+            maya_lib.core.remove_unused_plugins()
         
     def _after_open(self):
         
