@@ -1481,8 +1481,8 @@ class ShapeComboManager(object):
         if value < 1:
             
             var = attr.MayaNumberVariable(name)
-            #var.set_min_value(-1)
-            #var.set_max_value(1)
+            var.set_min_value(-1)
+            var.set_max_value(1)
             var.create(self.setup_group)
         
         

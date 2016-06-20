@@ -225,6 +225,7 @@ class ComboManager(ui.MayaWindow):
         shapes = self._get_selected_shapes()
         
         if self.refresh_combo_list:
+            shapes.sort()
             self._update_combo_selection(shapes)
             
         self._update_slider_for_shapes(shapes)
