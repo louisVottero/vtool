@@ -440,7 +440,7 @@ def prefix_hierarchy(top_group, prefix):
         list: The renamed hierarchy including top_group.
     """
     
-    relatives = cmds.listRelatives(top_group, ad = True)
+    relatives = cmds.listRelatives(top_group, ad = True, f = True)
      
     relatives.append(top_group)
     
