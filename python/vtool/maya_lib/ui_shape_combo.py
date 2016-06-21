@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import string
+
 from vtool import qt_ui
 import vtool.util
 import ui
@@ -26,6 +28,7 @@ class ComboManager(ui.MayaWindow):
         
         self.manager = blendshape.ShapeComboManager()
         self.refresh_combo_list = True
+        self.combo_select_update = True
         
         self.shape_widget.tree.manager = self.manager
         self.update_on_select = True
@@ -216,15 +219,15 @@ class ComboManager(ui.MayaWindow):
                 previous_item.setSelected(False)
                 self.update_on_select = True
             
-        #handle parent selected... clear children.
-        child_count = shape_items[-1].childCount()
+            #handle parent selected... clear children.
+            child_count = shape_items[-1].childCount()
+                
+            if child_count:
+                for inc in range(0, child_count):
+                    if shape_items[-1].child(inc).isSelected():
+                        shape_items[-1].child(inc).setSelected(False)
             
-        if child_count:
-            for inc in range(0, child_count):
-                if shape_items[-1].child(inc).isSelected():
-                    shape_items[-1].child(inc).setSelected(False)
-        
-        #handle, is a child, clear parent.
+        #handle, is a child, clear parent and sibling.
         shape_items = self.shape_widget.tree.selectedItems()
         
         for item in shape_items:
@@ -237,21 +240,40 @@ class ComboManager(ui.MayaWindow):
                 self.update_on_select = False
                 self.shape_widget.tree.setCurrentItem(item)
                 self.update_on_select = True
+                
+                child_count = parent.childCount()
+            
+                if child_count:
+                    for inc in range(0, child_count):
+                        if item.text(0) != parent.child(inc).text(0):
+                            parent.child(inc).setSelected(False)
         
         shapes = self._get_selected_shapes()
         
         if self.refresh_combo_list:
             if shapes:
+                
+                self.update_on_select = False
+                self.refresh_combo_list = False
+                
+                self.combo_widget.tree.clearSelection()
                 shapes.sort()
+                
                 self._update_combo_selection(shapes)
-            
+                self.update_on_select = True
+                self.refresh_combo_list = True
+                
         self._update_slider_for_shapes(shapes)
         
     def _combo_selection_changed(self):
         
+        if not self.combo_select_update:
+            return
+        
         combo_items = self.combo_widget.tree.selectedItems()
         
         if not combo_items:
+            
             return
         
         combo_name = str(combo_items[0].text(0))
@@ -271,6 +293,8 @@ class ComboManager(ui.MayaWindow):
         
     def _update_combo_selection(self, shapes):
         
+        if not self.combo_select_update:
+            return
         #if not shapes:
         #    self.combo_widget.tree.clear()
         #    return
@@ -278,7 +302,9 @@ class ComboManager(ui.MayaWindow):
         combos = self.manager.get_combos()
         possible_combos = self.manager.find_possible_combos(shapes)
         
-        self.combo_widget.tree.load(combos, possible_combos)
+        self.combo_select_update = False
+        self.combo_widget.tree.load(combos, possible_combos, shapes)
+        self.combo_select_update = True
     
     def _set_base(self):
         
@@ -460,8 +486,6 @@ class ShapeTree(qt_ui.TreeWidget):
         super(ShapeTree, self).__init__()
         
         self.text_edit = False
-        
-        #self.setSelectionMode(self.ExtendedSelection)
         
         self.setSortingEnabled(False)
         
@@ -647,7 +671,6 @@ class ShapeTree(qt_ui.TreeWidget):
         modifiers = QtGui.QApplication.keyboardModifiers()
         
         if modifiers == QtCore.Qt.ControlModifier or modifiers == QtCore.Qt.ShiftModifier:
-            #this messes things up?
             self.ctrl_active = True
         
         mouse = QtGui.QApplication.mouseButtons()
@@ -670,7 +693,6 @@ class ShapeTree(qt_ui.TreeWidget):
                 if not self.ctrl_active:
                     
                     self.clearSelection()
-                    
                 
                 parent_index = index.parent().row()
                 
@@ -1007,7 +1029,7 @@ class ComboTree(qt_ui.TreeWidget):
         self.highlight_item(items[0], False)
         self.setItemSelected(items[0], False)
     
-    def load(self, combos = None, possible_combos = None):
+    def load(self, combos = None, possible_combos = None, current_shapes = None):
         
         if not combos:
             combos = self.manager.get_combos()
@@ -1021,6 +1043,14 @@ class ComboTree(qt_ui.TreeWidget):
             self.highlight_item(item)
             
             self.addTopLevelItem(item)
+            
+            current_combo = None
+            if current_shapes:
+                current_combo = string.join(current_shapes, '_')
+            
+            if current_combo == item.text(0):
+            
+                item.setSelected(True)
             
             if possible_combos:
             
