@@ -186,6 +186,7 @@ class ComboManager(ui.MayaWindow):
         
         shape_items = self.shape_widget.tree.selectedItems()
         
+        #handle corresponding shape selected.
         if len(shape_items) > 1:
             
             test_item = shape_items[-1]
@@ -215,6 +216,15 @@ class ComboManager(ui.MayaWindow):
                 previous_item.setSelected(False)
                 self.update_on_select = True
             
+        #handle parent selected... clear children.
+        child_count = shape_items[-1].childCount()
+            
+        if child_count:
+            for inc in range(0, child_count):
+                if shape_items[-1].child(inc).isSelected():
+                    shape_items[-1].child(inc).setSelected(False)
+        
+        #handle, is a child, clear parent.
         shape_items = self.shape_widget.tree.selectedItems()
         
         for item in shape_items:
@@ -223,12 +233,6 @@ class ComboManager(ui.MayaWindow):
             if parent:
                 
                 parent.setSelected(False)
-                
-                #not sure why this code was like this...
-                #for inc in range(0, parent.childCount()):
-                #    self.update_on_select = False
-                #    parent.setSelected(False)
-                #    self.update_on_select = True
                 
                 self.update_on_select = False
                 self.shape_widget.tree.setCurrentItem(item)
@@ -451,6 +455,7 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self.text_edit = False
         self.preserve_state = False
+        self.update_selection = True
         
         super(ShapeTree, self).__init__()
         
@@ -472,6 +477,7 @@ class ShapeTree(qt_ui.TreeWidget):
         self.doubleClicked.connect(self.recreate)
 
         self.left_press = False
+        
         
         
     def _item_menu(self, position):
@@ -622,6 +628,7 @@ class ShapeTree(qt_ui.TreeWidget):
         super(ShapeTree, self).keyPressEvent(event)
         
     def keyReleaseEvent(self, event):
+        
         ctrl_key = QtCore.Qt.Key_Control
         shift_key = QtCore.Qt.Key_Shift
         
@@ -632,17 +639,38 @@ class ShapeTree(qt_ui.TreeWidget):
 
     def selectionCommand(self, index, event):
         
+        if not self.update_selection:
+            return
+        
+        self.update_selection = False
+        
+        modifiers = QtGui.QApplication.keyboardModifiers()
+        
+        if modifiers == QtCore.Qt.ControlModifier or modifiers == QtCore.Qt.ShiftModifier:
+            #this messes things up?
+            self.ctrl_active = True
+        
+        mouse = QtGui.QApplication.mouseButtons()
+        if mouse == QtCore.Qt.LeftButton:
+            self.left_press = True
+        if not mouse == QtCore.Qt.LeftButton:
+            self.left_press = False
+            
         if not event:
+            
+            self.update_selection = True
             return QtGui.QItemSelectionModel.NoUpdate
         
         if event.button() == QtCore.Qt.LeftButton:
-            if not self.left_press:
-                self.left_press = True
+            
+            if self.left_press:
                 
                 item = None
                 
                 if not self.ctrl_active:
+                    
                     self.clearSelection()
+                    
                 
                 parent_index = index.parent().row()
                 
@@ -654,18 +682,25 @@ class ShapeTree(qt_ui.TreeWidget):
                     item = self.topLevelItem(index.row())
                 
                 if item:
+                    
                     if not item.isSelected():
                         
                         self.setItemSelected(item, True)
+                        self.update_selection = True
                         return QtGui.QItemSelectionModel.Select
                     
                     if item.isSelected():    
+                        
                         self.setItemSelected(item, False)
+                        self.update_selection = True
                         return QtGui.QItemSelectionModel.Deselect
-            
-            if self.left_press:
-                self.left_press = False
+                
+            if not self.left_press:
+                self.update_selection = True
                 return QtGui.QItemSelectionModel.NoUpdate
+        
+        self.update_selection = True
+        
     
     def recreate(self):
         
