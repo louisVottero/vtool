@@ -81,6 +81,8 @@ class ComboManager(ui.MayaWindow):
         button_layout.addLayout(layout_1)
         button_layout.addSpacing(10)
         button_layout.addWidget(self.preserve_check)
+        
+        self.preserve_check.stateChanged.connect(self._preserve_state_change)
                 
         header_layout.addLayout(button_layout)
         
@@ -95,13 +97,10 @@ class ComboManager(ui.MayaWindow):
         self.current_base = QtGui.QLabel('    Base: -')
         self.current_base.setMaximumWidth(300)
         
-        
-        
         layout_base = QtGui.QHBoxLayout()
         layout_base.setAlignment(QtCore.Qt.AlignLeft)
         layout_base.addWidget(base)
         layout_base.addWidget(self.current_base)
-        
         
         header_layout.addSpacing(5)
         header_layout.addLayout(layout_base)
@@ -122,8 +121,21 @@ class ComboManager(ui.MayaWindow):
         splitter.setSizes([120,200])
         
         self.main_layout.addWidget(splitter)
-        #self.main_layout.addSpacing(10)
         self.main_layout.addLayout(header_layout)
+        
+    def _preserve_state_change(self):
+        
+        pass_state = False
+        
+        state = self.preserve_check.checkState()
+        
+        if state == QtCore.Qt.Checked:
+            pass_state = True
+            
+        if state == QtCore.Qt.Unchecked:
+            pass_state = False
+        
+        self.shape_widget.tree.preserve_state = pass_state
         
     def _refresh(self):
         
@@ -225,8 +237,9 @@ class ComboManager(ui.MayaWindow):
         shapes = self._get_selected_shapes()
         
         if self.refresh_combo_list:
-            shapes.sort()
-            self._update_combo_selection(shapes)
+            if shapes:
+                shapes.sort()
+                self._update_combo_selection(shapes)
             
         self._update_slider_for_shapes(shapes)
         
@@ -437,6 +450,7 @@ class ShapeTree(qt_ui.TreeWidget):
     def __init__(self):
         
         self.text_edit = False
+        self.preserve_state = False
         
         super(ShapeTree, self).__init__()
         
@@ -458,6 +472,7 @@ class ShapeTree(qt_ui.TreeWidget):
         self.doubleClicked.connect(self.recreate)
 
         self.left_press = False
+        
         
     def _item_menu(self, position):
                 
@@ -672,7 +687,7 @@ class ShapeTree(qt_ui.TreeWidget):
             match_count = len(new_shape_list)
             
             if match_count == 1:
-                self.manager.add_shape(name, new_shape)
+                self.manager.add_shape(name, new_shape, preserve_combos = self.preserve_state)
             
             if match_count > 1:
                 vtool.util.warning('Shape not updated. More than one object matches %s. Selecting all.' % new_shape)

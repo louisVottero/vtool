@@ -1232,7 +1232,7 @@ class ShapeComboManager(object):
                 vtool.util.warning('Cannot add home mesh into the system.')
                 continue
             
-            self.add_shape(inbetween)
+            self.add_shape(inbetween, preserve_combos = preserve)
         
         vtool.util.show('Adding combos.')
         
@@ -1319,30 +1319,8 @@ class ShapeComboManager(object):
             
             for combo in combos:
                 
-                sub_shapes = self.get_shapes_in_combo(combo, include_combos = True)
-                sub_shapes.append(combo)
-                
-                new_combo = cmds.duplicate(self._get_home_mesh())[0]
-                new_shapes = []
-                
-                for shape in sub_shapes:
-                    
-                    if not self.blendshape.is_target(shape):
-                        continue
-                    
-                    new_shape = self.blendshape.recreate_target(shape)
-                    
-                    deform.quick_blendshape(new_shape, new_combo)
-                    new_shapes.append(new_shape)
-                    
-                cmds.delete(new_combo, ch = True)
-                cmds.delete(new_shapes)
-                
+                new_combo = self.recreate_shape(combo)
                 cmds.parent(new_combo, combos_gr)
-                
-                new_combo = cmds.rename(new_combo, combo)
-                
-                cmds.showHidden(new_combo)
                 
             cmds.parent(combos_gr, targets_gr)
             
@@ -1379,6 +1357,7 @@ class ShapeComboManager(object):
             preserve_these = {}
             
             for combo in combos:
+                
                 new_combo = self.recreate_combo(combo)
                 preserve_these[combo] = new_combo
         
@@ -1406,8 +1385,6 @@ class ShapeComboManager(object):
             vtool.util.warning('No blendshape.')
             return
         
-        
-        
         is_target = blendshape.is_target(name)
         
         if is_target:
@@ -1431,11 +1408,12 @@ class ShapeComboManager(object):
         self._setup_shape_connections(name)
         
         if preserve_combos:
-            
+        
             if not combos:
                 return
             
             for combo in combos:
+                
                 self.add_combo(combo, preserve_these[combo])
                 cmds.delete(preserve_these[combo])
             
@@ -1524,7 +1502,30 @@ class ShapeComboManager(object):
                 target = cmds.duplicate(self._get_mesh())[0]
                 
         if name.count('_') > 0:
-            target = cmds.duplicate(self._get_mesh())[0]
+            
+            sub_shapes = self.get_shapes_in_combo(name, include_combos = True)
+            sub_shapes.append(name)
+            
+            new_combo = cmds.duplicate(self._get_home_mesh())[0]
+            new_shapes = []
+            
+            for shape in sub_shapes:
+                
+                if not self.blendshape.is_target(shape):
+                    continue
+                
+                new_shape = self.blendshape.recreate_target(shape)
+                
+                deform.quick_blendshape(new_shape, new_combo)
+                new_shapes.append(new_shape)
+                
+            cmds.delete(new_combo, ch = True)
+            cmds.delete(new_shapes)
+            
+            new_combo = cmds.rename(new_combo, name)
+            
+            cmds.showHidden(new_combo)
+            target = new_combo
             
         if target != name:
                 target = cmds.rename(target, core.inc_name( name ) )
