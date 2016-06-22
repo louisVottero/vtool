@@ -125,6 +125,8 @@ def create_window(ui, dock_area = 'right'):
     except:
         #do not remove
         vtool.util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
+        
+        
     
 def pose_manager(shot_sculpt_only = False):
     import ui_corrective

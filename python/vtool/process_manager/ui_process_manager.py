@@ -47,7 +47,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.runtime_values = {}
         self.handle_selection_change = True
         
-        super(ProcessManagerWindow, self).__init__(parent) 
+        super(ProcessManagerWindow, self).__init__(parent = parent) 
         
         shortcut = QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key_Escape), self)
         shortcut.activated.connect(self._set_kill_process)
@@ -71,7 +71,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         code_directory = self.settings.get('code_directory')
         if code_directory:
             self.set_code_directory(code_directory)
-        
         
     def _show_options(self):
         

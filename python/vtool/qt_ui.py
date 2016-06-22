@@ -41,6 +41,7 @@ if not type_QT == 'pyside':
         import PyQt4
         from PyQt4 import QtGui, QtCore, Qt, uic
         import sip
+        from sip import wrapinstance as wrapInstance
         type_QT = 'pyqt'
         
         util.show('using pyQT')
@@ -122,6 +123,9 @@ class BasicWindow(QtGui.QMainWindow):
         
         self._build_widgets()
         
+    def keyPressEvent(self, event):
+        return
+        
     def _define_main_layout(self):
         return QtGui.QVBoxLayout()
     
@@ -151,6 +155,9 @@ class BasicWidget(QtGui.QWidget):
         self.setLayout(self.main_layout)
         
         self._build_widgets()
+        
+    def keyPressEvent(self, event):
+        return
 
     def _define_main_layout(self):
         layout = QtGui.QVBoxLayout()
@@ -186,7 +193,7 @@ class BasicDialog(QtGui.QDialog):
         
 class BasicDockWidget(QtGui.QDockWidget):
     def __init__(self, parent = None):
-        super(BasicWidget, self).__init__()
+        super(BasicDockWidget, self).__init__()
         
         self.main_layout = self._define_main_layout() 
         self.main_layout.setContentsMargins(2,2,2,2)
@@ -2716,7 +2723,7 @@ class ListAndHelp(QtGui.QListView):
         
         layout.addWidget(self.list)
         layout.addWidget(button)
-        
+
 class CodeTextEdit(QtGui.QPlainTextEdit):
     
     save = create_signal(object)
@@ -2773,7 +2780,9 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         self.find_widget = None
         
         self.completer = None
-    
+        
+        self.focus_out = False
+
     def resizeEvent(self, event):
         
         super(CodeTextEdit, self).resizeEvent(event)
