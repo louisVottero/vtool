@@ -3066,16 +3066,11 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         cursor = self.textCursor()
         current_block = cursor.block()
+        
+        cursor_position = cursor.positionInBlock()
                 
         current_block_text = str(current_block.text())
         current_found = ''
-        
-        """
-        stripped_text = current_block_text.rstrip()
-        
-        if stripped_text.endswith(','):
-            current_found = stripped_text
-        """
         
         if not current_found:
             current_found = re.search('^ +', current_block_text)
@@ -3087,6 +3082,9 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         if current_found:
             indent = len(current_found)
+        
+        if cursor_position < indent:
+            indent = (cursor_position - indent) + indent
         
         cursor.insertText(('\n' + ' ' * indent))
         

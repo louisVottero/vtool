@@ -84,9 +84,22 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         item = None
         
         if items:
-            item = items[0]
+            if len(items) == 1:
+                item = items[0]
+                
+            if len(items) > 1:
+                item = 'group'
+                if self.file_widget:
+                    self.label.hide()
+                    self.file_widget.close()
+                    self.file_widget.deleteLater()
+                    del self.file_widget
+                    self.file_widget = None
+                
+                self.file_widget = GroupWidget()
+                self.main_layout.addWidget(self.file_widget)
             
-        if item:
+        if item and not type(item) == str:
             
             process_tool = process.Process()
             process_tool.set_directory(self.directory)
@@ -116,6 +129,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                         self.file_widget.set_directory(path_to_data)
                         self.main_layout.addWidget(self.file_widget)
                         self.label.setText( str( item.text(0)) )
+                        self.label.show()
             if not is_data:
                 item = None
             
@@ -127,6 +141,10 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                 self.file_widget.hide()
                 self.file_widget.deleteLater()
                 self.file_widget = None
+                self.label.setText('')
+                
+                
+                
                 
     def _update_file_widget(self, directory):
         
@@ -158,6 +176,9 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     def __init__(self):     
         super(DataTreeWidget, self).__init__()
         
+        #this will be used for hierarcy
+        #self.setSelectionMode(self.ExtendedSelection)
+        
         self.text_edit = False
         
         self.directory = None
@@ -176,6 +197,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
+        
+        
         
     def _item_menu(self, position):
         
@@ -526,6 +549,16 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
             return str(parent.text(0))
 
 #--- data widgets
+
+class GroupWidget(vtool.qt_ui.BasicWidget):
+    
+    def _build_widgets(self):
+        super(GroupWidget, self)._build_widgets()
+        
+        group = QtGui.QPushButton('Group Data')
+        group.setMaximumWidth(200)
+        group.setMinimumHeight(50)
+        self.main_layout.addWidget(group)
 
 class DataFileWidget(vtool.qt_ui.FileManagerWidget):
     
