@@ -2773,7 +2773,7 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         self.find_widget = None
         
         self.completer = None
-    
+        
     def resizeEvent(self, event):
         
         super(CodeTextEdit, self).resizeEvent(event)
