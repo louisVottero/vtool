@@ -219,12 +219,14 @@ class MeshFunction(MayaFunction):
     
     def get_uv_at_point(self, vector):
     
+        api_space = OpenMaya.MSpace.kWorld
+    
         point = Point(vector[0],vector[1],vector[2])
         
         uv = OpenMaya.MScriptUtil()
         uvPtr = uv.asFloat2Ptr()
         
-        self.api_object.getUVAtPoint(point.get_api_object(), uvPtr)
+        self.api_object.getUVAtPoint(point.get_api_object(), uvPtr, api_space)
         
         u = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 0)
         v = OpenMaya.MScriptUtil.getFloat2ArrayItem(uvPtr, 0, 1)

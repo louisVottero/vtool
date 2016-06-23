@@ -389,6 +389,13 @@ class ComboManager(ui.MayaWindow):
             
     def _add_meshes(self, meshes, preserve, ui_only = False):
         
+        for mesh in meshes:
+            if mesh.find('|') > -1:
+                nice_name = core.get_basename(mesh)
+                qt_ui.warning('%s is not unique. Aborting ADD.' % nice_name, self)
+                return
+                
+                
         shapes = None
         
         if ui_only:

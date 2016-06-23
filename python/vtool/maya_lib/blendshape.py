@@ -330,7 +330,9 @@ class BlendShape(object):
             
             self._store_target(name, current_index)
             
-            mesh_input = self._get_mesh_input_for_target(name, inbetween)
+            nice_name = core.get_basename(name)
+            
+            mesh_input = self._get_mesh_input_for_target(nice_name, inbetween)
             
             if mesh and cmds.objExists(mesh):
                 cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
@@ -1419,6 +1421,8 @@ class ShapeComboManager(object):
             
                     
     def turn_on_shape(self, name, value = 1):
+        
+        name = core.get_basename(name)
         
         last_number = vtool.util.get_trailing_number(name, as_string = True, number_count = 2)
         

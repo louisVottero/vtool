@@ -1194,6 +1194,8 @@ def attach_to_surface(transform, surface, u = None, v = None):
     
     position = cmds.xform(transform, q = True, ws = True, t = True)
 
+    uv = [u,v]
+
     if u == None or v == None:
         uv = get_closest_parameter_on_surface(surface, position)   
         
@@ -1209,7 +1211,7 @@ def attach_to_surface(transform, surface, u = None, v = None):
     return rivet.rivet
 
 
-def follicle_to_mesh(transform, mesh, u = None, v = None):
+def follicle_to_mesh(transform, mesh, u = None, v = None, constrain = False, constraint_type = 'parentConstraint', local = False):
     """
     Use a follicle to attach the transform to the mesh.
     If no u and v value are supplied, the command will try to find the closest position on the mesh. 
@@ -1228,15 +1230,28 @@ def follicle_to_mesh(transform, mesh, u = None, v = None):
     mesh = get_mesh_shape(mesh)
     
     position = cmds.xform(transform, q = True, ws = True, t = True)
+    print position, transform
+    
     
     uv = u,v
     
     if u == None or v == None:
         uv = get_closest_uv_on_mesh(mesh, position)
         
+    print 'closes uv', uv, mesh
+        
     follicle = create_mesh_follicle(mesh, transform, uv)   
     
-    cmds.parent(transform, follicle)
+    if not constrain:
+        cmds.parent(transform, follicle)
+    if constrain:
+        if not local:
+            eval('cmds.%s("%s", "%s", mo = True)' % (constraint_type, follicle, transform))
+        if local:
+            space.constrain_local(follicle, transform, constraint = constraint_type)
+    
+    
+    
     
     return follicle
 
@@ -1580,6 +1595,7 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
         
     if merge:
         new_mesh = cmds.polyUnite(meshes, ch = False, mergeUVSets = True, name = name)
+        cmds.polyLayoutUV(new_mesh, lm = 1)
         
     if new_mesh:
         return new_mesh[0]
