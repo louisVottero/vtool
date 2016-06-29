@@ -2632,7 +2632,17 @@ def get_skin_blend_weights(skin_deformer):
     for inc in xrange(0, len(indices)):
         
         if inc in blend_weight_dict:
-            values.append( blend_weight_dict[inc] )
+            
+            value = blend_weight_dict[inc]
+            if type(value) == type(0.0):
+                if value < 0.000001:
+                    value = 0.0
+            if type(value) != type(0.0):
+                value = 0.0
+            if value != value:
+                value = 0.0
+            
+            values.append( value )
             continue
                     
         if not inc in blend_weight_dict:
@@ -2650,6 +2660,14 @@ def set_skin_blend_weights(skin_deformer, weights):
         weights (list): A list of weight values corresponding to point order.
     """
     indices = attr.get_indices('%s.weightList' % skin_deformer)
+    
+    new_weights = []
+    
+    for weight in weights:
+        if weight != weight:
+            weight = 0.0
+            
+        new_weights.append(weight)
     
     for inc in xrange(0, len(indices)):
         if cmds.objExists('%s.blendWeights[%s]' % (skin_deformer, inc)):

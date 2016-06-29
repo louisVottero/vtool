@@ -1229,6 +1229,10 @@ class FileManagerWidget(DirectoryWidget):
     def __init__(self, parent = None):
         super(FileManagerWidget, self).__init__(parent)
         
+        save_tip = self._define_io_tip()
+        if save_tip:
+            self.save_widget.set_io_tip(save_tip)
+        
         self.data_class = self._define_data_class()
         #self.save_widget.set_data_class(self.data_class)
         #self.history_widget.set_data_class(self.data_class)
@@ -1237,6 +1241,9 @@ class FileManagerWidget(DirectoryWidget):
         #    self.option_widget.set_data_class(self.data_class)
         
         self.history_attached = False
+        
+    def _define_io_tip(self):
+        return ''
         
     def _define_main_layout(self):
         return QtGui.QHBoxLayout()
@@ -1404,14 +1411,27 @@ class SaveFileWidget(DirectoryWidget):
     file_changed = create_signal()
     
     def __init__(self, parent = None):
+        
+        self.tip = self._define_tip()
+        
         super(SaveFileWidget, self).__init__(parent)
         
+        if self.tip:
+            self._create_io_tip()
+        
         self.data_class = None
+        
+        
+    def _define_tip(self):
+        
+        return ''
         
     def _define_main_layout(self):
         return QtGui.QHBoxLayout()
         
     def _build_widgets(self):
+        
+        
         
         self.save_button = QtGui.QPushButton('Save')
         self.load_button = QtGui.QPushButton('Open')
@@ -1424,6 +1444,7 @@ class SaveFileWidget(DirectoryWidget):
         self.save_button.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         self.load_button.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         
+
         self.save_button.clicked.connect(self._save)
         self.load_button.clicked.connect(self._open)
         
@@ -1439,6 +1460,22 @@ class SaveFileWidget(DirectoryWidget):
     
     def _open(self):
         pass
+
+    def _create_io_tip(self):
+        self.setToolTip(self.tip)
+        """
+        self.tip_widget = QtGui.QLineEdit()
+        self.tip_widget.setText(self.tip)
+        self.tip_widget.setReadOnly(True)
+        self.main_layout.insertWidget(0, self.tip_widget)
+        """
+    def set_io_tip(self, value):
+        self.tip = value
+        
+        if self.tip:
+            self._create_io_tip()
+
+    
 
     def set_data_class(self, data_class_instance):
         self.data_class = data_class_instance

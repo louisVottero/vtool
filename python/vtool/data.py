@@ -1080,7 +1080,10 @@ class SkinWeightData(MayaCustomData):
         
         path = util_file.join_path(self.directory, self.name)
         
-        meshes = util_file.get_folders(path)
+        meshes = None
+        
+        if util_file.is_dir(path):
+            meshes = util_file.get_folders(path)
         
         return meshes
     

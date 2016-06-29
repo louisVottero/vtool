@@ -504,8 +504,6 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
 
     def _add_data_item(self, data_type, parent):
         
-        
-        
         item = QtGui.QTreeWidgetItem(parent)
         item.setText(0, data_type)
         item.setSizeHint(0, QtCore.QSize(100, 20))
@@ -727,6 +725,10 @@ class ScriptHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         self.text_widget = text_widget
     
 class ControlCvFileWidget(MayaDataFileWidget):
+    def _define_io_tip(self):
+        return """This will export/import control cv positions.
+    Controls are discovered automatically, no need to select them."""
+    
     def _define_data_class(self):
         return vtool.data.ControlCvData()
     
@@ -735,6 +737,8 @@ class ControlCvFileWidget(MayaDataFileWidget):
     
     def _define_main_tab_name(self):
         return 'Control Cvs'
+
+
 
 class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
     
@@ -823,6 +827,10 @@ class ControlColorFileWidget(MayaDataFileWidget):
     def _define_data_class(self):
         return vtool.data.ControlColorData()
     
+    def _define_io_tip(self):
+        return """This will export/import control colors.
+    Controls are discovered automatically, no need to select them."""
+    
     def _define_option_widget(self):
         return ControlColorOptionFileWidget()
     
@@ -835,6 +843,16 @@ class ControlColorOptionFileWidget(ControlCvOptionFileWidget):
         return 'Delete Curve Color Data'
     
 class SkinWeightFileWidget(MayaDataFileWidget):
+    def _define_io_tip(self):
+        
+        tip = """    This will export/import skin weights. 
+    To Export you must select a geometry with a skinCluster.
+    To import you do not need to have anything selected.
+    Weights will import on everything that was exported that can be found.
+    However you can import on just the selected geometry as well."""
+        
+        return tip
+        
     
     def _define_option_widget(self):
         return SkinWeightOptionFileWidget()
