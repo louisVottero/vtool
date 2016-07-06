@@ -254,10 +254,13 @@ class PoseManager(object):
             pose = self.create_cone_pose(name)
         if pose_type == 'no reader':
             pose = self.create_no_reader_pose(name)
+        if pose_type == 'combo':
+            pose = self.create_combo_pose(name)
         if pose_type == 'timeline':
             pose = self.create_timeline_pose(name)
         if pose_type == 'group':
             pose = self.create_group_pose(name)
+        
             
         return pose
             
@@ -309,6 +312,28 @@ class PoseManager(object):
             name = core.inc_name('pose_no_reader_1')
         
         pose = PoseNoReader(name)
+        pose.set_pose_group(self.pose_group)
+        pose_control = pose.create()
+        
+        self.pose_control = pose_control
+        
+        return pose_control
+    
+    def create_combo_pose(self, name = None):
+        """
+        Create a combo pose. 
+        
+        Args:
+            name (str): The name for the pose.
+            
+        Returns:
+            str: The name of the pose.
+        """
+        
+        if not name:
+            name = core.inc_name('pose_combo_1')
+        
+        pose = PoseCombo(name)
         pose.set_pose_group(self.pose_group)
         pose_control = pose.create()
         
@@ -1028,8 +1053,7 @@ class PoseBase(PoseGroup):
         
         return node
         
-    def _get_mesh_message_attributes(self):
-        
+    def _get_message_attribute_with_prefix(self, prefix):
         if not self.pose_control:
             return []
         
@@ -1038,13 +1062,17 @@ class PoseBase(PoseGroup):
         messages = []
         
         for attribute in attributes:
-            if attribute.startswith('mesh'):
+            if attribute.startswith(prefix):
                 node_and_attribute = '%s.%s' % (self.pose_control, attribute)
             
                 if cmds.getAttr(node_and_attribute, type = True) == 'message':
                     messages.append(attribute)
                 
         return messages
+        
+    def _get_mesh_message_attributes(self):
+        
+        return self._get_message_attribute_with_prefix('mesh')
         
     def _get_empty_mesh_message_index(self):
         messages = self._get_mesh_message_attributes()
@@ -2583,6 +2611,114 @@ class PoseNoReader(PoseBase):
                 
                 child_instance = manager.get_pose_instance(child)
                 child_instance.set_weight(value)
+                
+class PoseCombo(PoseNoReader):
+    def _pose_type(self):
+        return 'combo'
+        
+    def _get_pose_message_attributes(self):
+        
+        return self._get_message_attribute_with_prefix('pose')
+        
+    def get_pose_index(self, pose):
+        
+        attributes = self._get_pose_message_attributes()
+        
+        inc = 0
+        
+        for attribute in attributes:
+        
+            stored_pose = self._get_named_message_attribute(attribute)
+            
+            if stored_pose == pose:
+                return inc
+            
+            inc += 1
+    
+    def _get_empty_pose_message_index(self):
+        
+        messages = self._get_pose_message_attributes()
+        
+        inc = 1
+        for message in messages:
+            
+            message_input = attr.get_attribute_input('%s.%s' % (self.pose_control, message))
+            
+            if not message_input:
+                break
+            
+            inc+=1
+        
+        return inc
+    
+    def _connect_pose(self, pose):
+        
+        index = self.get_pose_index(pose)
+        
+        if index != None:
+            return
+        
+        empty_index = self._get_empty_pose_message_index()
+        
+        self._connect_node(pose, 'pose', empty_index)
+    
+    def _get_pose_count(self):
+        
+        attrs = self._get_pose_message_attributes()
+        
+        return len(attrs)
+        
+    
+    def add_pose(self, pose_name):
+        
+        self._connect_pose(pose_name)
+        
+    def remove_pose(self, pose_name):
+        
+        index = self.get_pose_index(pose_name)
+        pose = self.get_pose(index)
+        
+        if index == None:
+            return
+
+        if pose == None:
+            return
+        
+        attributes = self._get_pose_message_attributes()
+        attribute = attributes[index]
+        
+        attr.disconnect_attribute(attribute)
+        
+        
+    def get_pose(self, index):
+        
+        if index == None:
+            return
+        
+        pose_attributes = self._get_pose_message_attributes()
+        
+        if not pose_attributes:
+            return
+        
+        if index > (len(pose_attributes)-1):
+            return
+            
+        pose = attr.get_attribute_input('%s.%s' % (self.pose_control, pose_attributes[index]), True)
+        
+        return pose
+        
+    def get_poses(self):
+        
+        pose_count = self._get_pose_count()
+        
+        poses = []
+        
+        for pose_index in range(0, pose_count):
+            
+            poses.append(self.get_pose(pose_index))
+        
+        return poses
+        
     
 class PoseCone(PoseBase):
     """
@@ -3300,4 +3436,5 @@ class PoseTimeline(PoseNoReader):
 corrective_type = { 'cone' : PoseCone,
                      'no reader' : PoseNoReader,
                      'timeline' : PoseTimeline,
-                     'group' : PoseGroup }
+                     'group' : PoseGroup,
+                     'combo' : PoseCombo }

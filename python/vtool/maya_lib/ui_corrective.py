@@ -7,6 +7,7 @@ import ui
 import vtool.util
 
 
+
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
@@ -655,6 +656,7 @@ class PoseTreeWidget(BaseTreeWidget):
         if not self.shot_sculpt_only:
             self.create_cone = self.context_menu.addAction('New Cone')
             self.create_no_reader = self.context_menu.addAction('New No Reader')
+            self.create_combo = self.context_menu.addAction('New Combo')
             
         self.create_timeline = self.context_menu.addAction('New Timeline')
         
@@ -686,6 +688,7 @@ class PoseTreeWidget(BaseTreeWidget):
         if not self.shot_sculpt_only:
             self.create_cone.triggered.connect(self.create_cone_pose)
             self.create_no_reader.triggered.connect(self.create_no_reader_pose)
+            self.create_combo.triggered.connect(self.create_combo_pose)
             
         self.create_timeline.triggered.connect(self.create_timeline_pose)
         self.create_group.triggered.connect(self.create_group_pose)
@@ -897,12 +900,17 @@ class PoseTreeWidget(BaseTreeWidget):
     
     def create_no_reader_pose(self):
         self.create_pose('no reader', None, None)
+    
+    def create_combo_pose(self):
+        self.create_pose('combo', None, None)
         
     def create_timeline_pose(self):
         self.create_pose('timeline', None, None)
         
     def create_group_pose(self):
         self.create_pose('group', None, None)
+        
+    
     
     def mirror_pose(self):
         
@@ -1005,6 +1013,9 @@ class PoseWidget(qt_ui.BasicWidget):
         
         if pose_type == 'no reader':
             self.pose_control_widget = PoseNoReaderWidget()
+            
+        if pose_type == 'combo':
+            self.pose_control_widget = PoseComboWidget()
             
         if pose_type == 'cone':
             self.pose_control_widget = PoseConeWidget()
@@ -1987,4 +1998,209 @@ class PoseConeWidget(PoseBaseWidget):
         self.slider.setValue(value)
     
 class PoseComboWidget(PoseBaseWidget):
-    pass
+    
+    def _define_main_layout(self):
+        return QtGui.QHBoxLayout()
+    
+    def _build_widgets(self):
+        
+        add_layout = QtGui.QVBoxLayout()
+        
+        self.add_layout = add_layout
+        
+        self._add_pose_list(add_layout)
+        
+        add = QtGui.QPushButton('Add')
+        add.setMinimumWidth(100)
+        add.clicked.connect(self._add_pose)
+        
+        add_layout.addWidget(add, alignment = QtCore.Qt.AlignRight)
+        
+        scroll = QtGui.QScrollArea()
+        scroll.setWidgetResizable(True)
+        
+        self.main_layout.addLayout(add_layout)
+        self.main_layout.addWidget(scroll)
+        
+        self.pose_combo_widget = PoseComboList()
+        
+        scroll.setWidget(self.pose_combo_widget)
+        scroll.setMinimumWidth(200)
+        
+        
+        self.pose_widgets = []
+        
+    def _add_pose_list(self, layout):
+        tree = PoseTreeWidget(False)
+        
+        #tree.setMaximumHeight(80)
+        
+        self.tree = tree
+        self.tree.setColumnCount(1)
+        self.tree.setSelectionMode(self.tree.ExtendedSelection)
+        self.tree.setHeaderHidden(True)
+        self.tree.setDragEnabled(False)
+        
+        self.tree.itemSelectionChanged.connect(self._select_changed)
+        
+        layout.addWidget(self.tree)
+        
+    def _has_pose(self, pose):
+        
+        for widget in self.pose_widgets:
+            
+            if widget.get_name() == pose:
+                return True
+        
+    def _add_pose(self):
+        
+        items = self.tree.selectedItems()
+        
+        if not items:
+            return
+        
+        if self._has_pose(items[0].text(0)):
+            return
+        
+        pose_instance = corrective.get_pose_instance(self.pose)
+        pose_instance.add_pose(items[0].text(0))
+        
+        self._refresh_pose_list()
+        
+    def _refresh_pose_list(self):
+        
+        pose_instance = corrective.get_pose_instance(self.pose)
+        poses = pose_instance.get_poses()
+        
+        self.pose_combo_widget.clear_widgets()
+            
+        self.pose_widgets = []
+        
+        for pose in poses:
+            
+            widget = PoseInComboWidget(pose)
+            
+            self.pose_combo_widget.add_widget(widget)
+            #self.added_poses_layout.addWidget(widget)
+            
+    def _select_changed(self):
+        
+        items = self.tree.selectedItems()
+        
+        if not items:
+            return
+        
+        item = items[0]
+        
+        if item.text(0) == self.pose:
+            item.setSelected(False)
+        
+    def set_pose(self, pose_name):
+        pose = super(PoseComboWidget, self).set_pose(pose_name)
+        
+        
+        self.pose_combo_widget.set_pose(pose_name)
+        self._refresh_pose_list()
+        
+        
+        return pose
+
+class PoseComboList(qt_ui.BasicWidget):
+    def __init__(self):
+        super(PoseComboList, self).__init__()
+        
+        self.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
+        
+        self.pose_widgets = []
+    
+    def _remove_widget(self, widget):
+        
+        inc = 0
+        pop_inc = None
+        
+        pose_instance = corrective.get_pose_instance(self.pose)
+        pose_instance.remove_pose(widget.get_name())
+        
+        for pose_widget in self.pose_widgets:
+            if widget.get_name() == pose_widget.get_name():
+                
+                pop_inc = inc 
+            
+            inc += 1 
+            
+        if pop_inc != None:
+            self.pose_widgets.pop(pop_inc)
+            self.main_layout.removeWidget(widget)
+            widget.deleteLater()
+        
+    def clear_widgets(self):
+        for widget in self.pose_widgets:
+            self.main_layout.removeWidget(widget)
+            widget.deleteLater()
+            
+            
+        self.pose_widgets = []
+        
+    def add_widget(self, widget):
+        
+        widget.removed.connect(self._remove_widget)
+        
+        self.main_layout.addWidget(widget)
+        
+        self.pose_widgets.append(widget)
+    
+    def set_pose(self, pose_name):
+        self.pose = pose_name
+        
+    
+
+class PoseInComboWidget(qt_ui.BasicWidget):
+    
+    removed = qt_ui.create_signal(object)
+    
+    def __init__(self, name):
+        super(PoseInComboWidget, self).__init__()
+        
+        self.set_name(name)
+    
+    def _build_widgets(self):
+        
+        self.label = QtGui.QLabel()
+        weight = QtGui.QLabel('  ')
+        self.number = QtGui.QLabel()
+        
+        self.remove = QtGui.QPushButton('Remove')
+        self.remove.clicked.connect(self._remove)
+        
+        h_layout = QtGui.QHBoxLayout()
+        
+        h_layout.addWidget(self.label)
+        h_layout.addWidget(weight)
+        h_layout.addWidget(self.number)
+        h_layout.addWidget(self.remove)
+        
+        self.main_layout.addLayout(h_layout)
+        
+    def _remove(self):
+        self.removed.emit(self)
+        
+    def get_name(self):
+        return str(self.label.text())
+        
+    def set_name(self, name):
+        self.label.setText(name)
+        
+        pose_instance = corrective.get_pose_instance(name)
+        
+        if pose_instance.get_type() == 'cone' or pose_instance.get_type() == 'no reader':
+            
+            value = cmds.getAttr('%s.weight' % pose_instance.pose_control)
+            self.set_value(value)
+            
+    def set_value(self, number):
+        
+        if number < 0.0001:
+            number = 0.0
+        
+        self.number.setText(str(number))
+        

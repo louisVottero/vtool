@@ -5031,6 +5031,19 @@ class IkScapulaRig(BufferRig):
         super(IkScapulaRig, self).__init__(description, side)
         
         self.control_offset = 10
+        
+        self.create_rotate_control = False
+        self.ik_joints = None
+        
+    def _duplicate_scapula(self):
+        
+        duplicate = space.DuplicateHierarchy(self.joints[0])
+        duplicate.stop_at(self.joints[-1])
+        duplicate.replace('joint', 'ik')
+        joints = duplicate.create()
+        
+        self.ik_joints = joints
+        cmds.parent(self.ik_joints[0], self.setup_group)
     
     def _create_top_control(self):
         control = self._create_control()
@@ -5045,16 +5058,23 @@ class IkScapulaRig(BufferRig):
         return control.get()
     
     def _create_shoulder_control(self):
+        
         control = self._create_control()
         control.hide_scale_and_visibility_attributes()
         
+        ik_joints = self.joints
+        
+        if self.ik_joints:
+            ik_joints = self.ik_joints
+        
         cmds.parent(control.get(), self.control_group)
         
-        space.MatchSpace(self.joints[0], control.get()).translation()
-        cmds.parentConstraint(control.get(), self.joints[0], mo = True)
-        #cmds.pointConstraint(control.get(), self.joints[0], mo = True)
+        space.MatchSpace(self.ik_joints[0], control.get()).translation()
+        cmds.parentConstraint(control.get(), ik_joints[0], mo = True)
         
         space.create_xform_group(control.get())
+        
+        self.shoulder_control = control.get()
         
         return control.get()
     
@@ -5070,12 +5090,17 @@ class IkScapulaRig(BufferRig):
         match.translation()
         
         cmds.delete(offset)
-    
+        
     def _create_ik(self, control):
         
+        ik_joints = self.joints
+        
+        if self.ik_joints:
+            ik_joints = self.ik_joints
+        
         handle = space.IkHandle(self._get_name())
-        handle.set_start_joint(self.joints[0])
-        handle.set_end_joint(self.joints[-1])
+        handle.set_start_joint(ik_joints[0])
+        handle.set_end_joint(ik_joints[-1])
         handle.set_solver(handle.solver_sc)
         handle = handle.create()
         
@@ -5084,12 +5109,34 @@ class IkScapulaRig(BufferRig):
         cmds.parent(handle, control)
         cmds.hide(handle)
         
-    
+    def _create_rotate_control(self):
+        
+        control = self._create_control('rotate')
+        control.hide_scale_and_visibility_attributes()
+        
+        cmds.parent(control.get(), self.control_group)
+        
+        space.MatchSpace(self.joints[0], control.get()).translation_rotation()
+        xform = space.create_xform_group(control.get())
+        space.create_xform_group(control.get(), 'driver')
+         
+        cmds.parent(xform, self.shoulder_control)
+        
+        space.create_follow_group( self.ik_joints[0], xform)
+        
+        cmds.parentConstraint(control.get(), self.joints[0],mo = True)
+        
     def set_control_offset(self, value):
         self.control_offset = value
     
+    def set_create_rotate_control(self, bool_value):
+        self.create_rotate_control = bool_value
+    
     def create(self):
         super(IkScapulaRig, self).create()
+        
+        if self.create_rotate_control:
+            self._duplicate_scapula()
         
         control = self._create_top_control()
         self._create_shoulder_control()
@@ -5097,11 +5144,13 @@ class IkScapulaRig(BufferRig):
         self._create_ik(control)
         
         rig_line = rigs_util.RiggedLine(control, self.joints[-1], self._get_name()).create()
-        cmds.parent(rig_line, self.control_group) 
-
-
-
-
+        cmds.parent(rig_line, self.control_group)
+        
+        if self.create_rotate_control:
+            
+            self._create_rotate_control()
+            
+        
 class IkBackLegRig(IkFrontLegRig):
     
     def __init__(self, description, side):
@@ -7161,6 +7210,8 @@ class StickyRig(JointRig):
         self.sticky_control_group = self._create_control_group('sticky')
         
         self.tweaker_space = 1
+        
+        self.use_joint = True
             
         #self.sticky_control_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'sticky_controls')))
         #cmds.parent(self.sticky_control_group, self.control_group)
@@ -7321,7 +7372,9 @@ class StickyRig(JointRig):
         control = self._create_control(description)
         control.rotate_shape(90,0,0)
         control.scale_shape(.5, .5, .5)
-        control.set_to_joint()
+        
+        if self.use_joint:
+            control.set_to_joint()
         
         control_name = control.get()
         
@@ -7355,8 +7408,8 @@ class StickyRig(JointRig):
             
         if self.tweaker_space < 1 or self.tweaker_space > 1:
                 
-                
-            space.connect_inverse_scale(scale, control)
+            if self.use_joint:
+                space.connect_inverse_scale(scale, control)
             
             scale_x = cmds.getAttr('%s.scaleX' % scale)
             scale_y = cmds.getAttr('%s.scaleY' % scale)
@@ -7443,6 +7496,9 @@ class StickyRig(JointRig):
     def set_tweaker_space(self, value):
         
         self.tweaker_space = value
+    
+    def set_use_joint_controls(self, bool_value):
+        self.use_joint = bool_value
     
     def create(self):
         super(StickyRig, self).create()
@@ -7653,7 +7709,8 @@ class StickyFadeRig(StickyRig):
             control.hide_rotate_attributes()
             control.hide_scale_attributes()
             
-            control.set_to_joint()
+            if self.use_joint:
+                control.set_to_joint()
             
             sub_control = self._create_control('corner', sub = True, curve_type=self.corner_control_shape)
             #sub_control.set_curve_type(self.corner_control_shape)
@@ -7662,7 +7719,8 @@ class StickyFadeRig(StickyRig):
             sub_control.hide_rotate_attributes()
             sub_control.hide_scale_attributes()
             
-            sub_control.set_to_joint()
+            if self.use_joint:
+                sub_control.set_to_joint()
             
             cmds.parent(sub_control.get(), control.get())
                 
@@ -7690,7 +7748,8 @@ class StickyFadeRig(StickyRig):
                 const = cmds.scaleConstraint( corner_match, xform)
                 cmds.delete(const)
             
-            space.connect_inverse_scale(xform, control.control)
+            if self.use_joint:
+                space.connect_inverse_scale(xform, control.control)
             
             cmds.parent(xform, self.control_group)
             
