@@ -1878,7 +1878,6 @@ class PoseData(MayaCustomData):
             if rels:
                 cmds.parent(rels, 'pose_gr')
         
-        
         pose_manager.attach_poses()
         
         version = util_file.VersionFile(dir_path)

@@ -48,6 +48,7 @@ class PoseManager(ui.MayaWindow):
         self.sculpt.sculpted_mesh.connect(self.pose_list.update_current_pose)
         self.pose_list.pose_list_refresh.connect(self._list_refreshed)
         self.pose_list.pose_list.itemSelectionChanged.connect(self.select_pose)
+        self.pose_list.pose_list.itemSelectionChanged.connect(self.pose_list.update_pose_widget)
         self.pose_list.pose_renamed.connect(self._pose_renamed)
         self.pose_list.pose_deleted.connect(self._pose_deleted)
         self.pose_list.pose_list.check_for_mesh.connect(self.check_for_mesh)
@@ -164,7 +165,7 @@ class PoseListWidget(qt_ui.BasicWidget):
         
         self.pose_list.list_refresh.connect(self.pose_list_refresh.emit)
         
-        self.pose_list.itemSelectionChanged.connect(self._update_pose_widget)
+        #self.pose_list.itemSelectionChanged.connect(self.update_pose_widget)
         
         self.pose_widget = PoseWidget()
         self.pose_widget.hide()
@@ -237,7 +238,17 @@ class PoseListWidget(qt_ui.BasicWidget):
         cmds.autoKeyframe(state=auto_key_state)
         
 
-    def _update_pose_widget(self):
+
+        
+        
+                
+    def _pose_renamed(self, new_name):
+        self.pose_renamed.emit(new_name)
+        
+    def _pose_deleted(self):
+        self.pose_deleted.emit()
+
+    def update_pose_widget(self):
         
         current_pose = self.pose_list._current_pose()
         current_weight_attribute = '%s.weight' % current_pose
@@ -260,14 +271,6 @@ class PoseListWidget(qt_ui.BasicWidget):
         
         if pose_type == 'no reader':
             self._update_pose_no_reader(current_pose, current_weight_attribute)
-        
-        
-                
-    def _pose_renamed(self, new_name):
-        self.pose_renamed.emit(new_name)
-        
-    def _pose_deleted(self):
-        self.pose_deleted.emit()
 
     def update_current_pose(self):
         
@@ -2059,13 +2062,17 @@ class PoseComboWidget(PoseBaseWidget):
         if not items:
             return
         
-        if self._has_pose(items[0].text(0)):
-            return
-        
         pose_instance = corrective.get_pose_instance(self.pose)
-        pose_instance.add_pose(items[0].text(0))
         
+        for item in items:
+            if self._has_pose(item.text(0)):
+                continue
+            
+            
+            pose_instance.add_pose(item.text(0))
+            
         self._refresh_pose_list()
+        pose_instance.refresh_multiply_connections()
         
     def _refresh_pose_list(self):
         
@@ -2078,10 +2085,13 @@ class PoseComboWidget(PoseBaseWidget):
         
         for pose in poses:
             
-            widget = PoseInComboWidget(pose)
+            if pose:
             
-            self.pose_combo_widget.add_widget(widget)
-            #self.added_poses_layout.addWidget(widget)
+                widget = PoseInComboWidget(pose)
+            
+                self.pose_combo_widget.add_widget(widget)
+                
+        pose_instance.refresh_multiply_connections()
             
     def _select_changed(self):
         
@@ -2152,8 +2162,6 @@ class PoseComboList(qt_ui.BasicWidget):
     def set_pose(self, pose_name):
         self.pose = pose_name
         
-    
-
 class PoseInComboWidget(qt_ui.BasicWidget):
     
     removed = qt_ui.create_signal(object)

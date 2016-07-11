@@ -540,14 +540,14 @@ class PoseManager(object):
             poses = self.get_poses()
         
         for pose_name in poses:
-        
+            
+            pose = self.get_pose_instance(pose_name)
+            
             detached = None
             
             if self.detached_attributes:
                 if self.detached_attributes.has_key(pose_name):
                     detached = self.detached_attributes[pose_name]
-                    
-            pose = self.get_pose_instance(pose_name)
             
             pose.attach(detached)
             
@@ -559,6 +559,7 @@ class PoseManager(object):
                     attributes = sub_poses[key]
                     
                     sub_pose = self.get_pose_instance(pose)
+                    
                     sub_pose.attach(attributes)
             
     def create_pose_blends(self, poses = None):
@@ -1033,6 +1034,14 @@ class PoseBase(PoseGroup):
         if not cmds.isConnected('%s.message' % node, '%s.%s' % (self.pose_control, attribute)):
             cmds.connectAttr('%s.message' % node, '%s.%s' % (self.pose_control, attribute))
     
+    def _set_string_node(self, node, maya_node_type, inc = 1):
+        attribute = '%s%s' % (maya_node_type, inc)
+        
+        if not cmds.objExists('%s.%s' % (self.pose_control, attribute)):
+            cmds.addAttr(self.pose_control, ln = attribute, dt = 'string' )
+            
+        cmds.setAttr('%s.%s' % (self.pose_control, attribute), node, type = 'string')
+            
     def _connect_mesh(self, mesh):
         
         index = self.get_mesh_index(mesh)
@@ -1047,11 +1056,36 @@ class PoseBase(PoseGroup):
     def _multiply_weight(self):
         pass
 
+    def _get_string_attribute_with_prefix(self, prefix):
+        if not self.pose_control:
+            return []
+        
+        attributes = cmds.listAttr(self.pose_control, ud = True)
+        
+        strings = []
+        
+        for attribute in attributes:
+            if attribute.startswith(prefix):
+                node_and_attribute = '%s.%s' % (self.pose_control, attribute)
+            
+                if cmds.getAttr(node_and_attribute, type = True) == 'string':
+                    strings.append(attribute)
+                
+        return strings
+    
+    def _get_named_string_attribute(self, name):
+        
+        node = cmds.getAttr('%s.%s' % (self.pose_control, name))
+        
+        return node
+    
     def _get_named_message_attribute(self, name):
         
         node = attr.get_attribute_input('%s.%s' % (self.pose_control, name), True)
         
         return node
+        
+    
         
     def _get_message_attribute_with_prefix(self, prefix):
         if not self.pose_control:
@@ -1217,6 +1251,9 @@ class PoseBase(PoseGroup):
         if self._pose_type() == 'no reader':
             
             pose = PoseNoReader()
+            
+        if self._pose_type() == 'combo':
+            pose = PoseCombo()
                        
         other_pose_instance = pose
         other_pose_instance.set_pose(other_pose)
@@ -2312,6 +2349,9 @@ class PoseBase(PoseGroup):
         
         for attribute in outputs:
             
+            if not cmds.objExists(attribute):
+                continue
+            
             input_value = attr.get_attribute_input(attribute)
             
             if not input_value:
@@ -2493,6 +2533,14 @@ class PoseNoReader(PoseBase):
             
         self._hide_meshes()
         
+        if self.sub_detach_dict:
+            
+            for key in self.sub_detach_dict:
+                pose = get_pose_instance(key)
+                pose.attach(self.sub_detach_dict[pose])
+                
+            self.sub_detach_dict = {}
+        
     def detach(self):    
         super(PoseNoReader, self).detach()
         
@@ -2555,7 +2603,7 @@ class PoseNoReader(PoseBase):
         if self.other_pose_exists:
             other_pose_instance.goto_pose()
             
-        cmds.setAttr('%s.weight' % self.pose_control, 0)
+        #cmds.setAttr('%s.weight' % self.pose_control, 0)
         
         for mesh in other_target_meshes:
             index = other_pose_instance.get_target_mesh_index(other_target_mesh)
@@ -2616,35 +2664,38 @@ class PoseCombo(PoseNoReader):
     def _pose_type(self):
         return 'combo'
         
-    def _get_pose_message_attributes(self):
+    def _create_attributes(self, control):
         
-        return self._get_message_attribute_with_prefix('pose')
+        super(PoseNoReader, self)._create_attributes(control)
+        #pose_input = attr.MayaStringVariable('weightInput')
+        #pose_input.create(control)
+    
         
-    def get_pose_index(self, pose):
+    def _remove_empty_multiply_attributes(self):
         
-        attributes = self._get_pose_message_attributes()
-        
-        inc = 0
+        attributes = self._get_message_attribute_with_prefix('multiply')
         
         for attribute in attributes:
-        
-            stored_pose = self._get_named_message_attribute(attribute)
+            input_value = attr.get_attribute_input('%s.%s' % (self.pose_control, attribute))
             
-            if stored_pose == pose:
-                return inc
-            
-            inc += 1
+            if not input_value:
+                cmds.deleteAttr('%s.%s' % (self.pose_control, attribute))
     
-    def _get_empty_pose_message_index(self):
         
-        messages = self._get_pose_message_attributes()
+    def _get_pose_string_attributes(self):
+        
+        return self._get_string_attribute_with_prefix('pose')
+    
+    def _get_empty_pose_string_index(self):
+        
+        strings = self._get_pose_string_attributes()
         
         inc = 1
-        for message in messages:
+        for string in strings:
             
-            message_input = attr.get_attribute_input('%s.%s' % (self.pose_control, message))
+            value = cmds.getAttr('%s.%s' % (self.pose_control, string))
             
-            if not message_input:
+            if not value:
                 break
             
             inc+=1
@@ -2658,20 +2709,122 @@ class PoseCombo(PoseNoReader):
         if index != None:
             return
         
-        empty_index = self._get_empty_pose_message_index()
+        empty_index = self._get_empty_pose_string_index()
         
-        self._connect_node(pose, 'pose', empty_index)
+        self._set_string_node(pose, 'pose', empty_index)
     
     def _get_pose_count(self):
         
-        attrs = self._get_pose_message_attributes()
+        attrs = self._get_pose_string_attributes()
         
         return len(attrs)
-        
     
+    def _connect_multiplies(self):
+        
+        poses = self.get_poses()
+        
+        multiply = None
+        
+        if len(poses) > 1:
+            for pose in poses:
+                
+                if not pose:
+                    continue
+                
+                output = '%s.weight' % pose
+                
+                if not multiply:
+                    input_value = '%s.weight' % self.pose_control
+                if multiply:
+                    input_value = '%s.input2X' % multiply
+                
+                multiply = attr.connect_multiply(output, input_value)
+                
+            if multiply:
+                
+                cmds.connectAttr('%s.enable' % self.pose_control, '%s.input2X' % multiply)
+        
+    def _disconnect_multiplies(self):
+        
+        multiplies = self._find_multiplies()
+        
+        if multiplies:
+            cmds.delete(multiplies)
+            
+            
+        
+    def _find_multiplies(self):
+        
+        input_value = attr.get_attribute_input('%s.weight' % self.pose_control, node_only = True)
+        
+        multi = []
+        multiplies = []
+        
+        if cmds.nodeType(input_value) == 'multiplyDivide':
+            multi = [input_value]
+            
+        while multi:
+            
+            multiplies += multi
+            
+            new_multi = []
+            
+            for m in multi:
+                input_value = attr.get_attribute_input('%s.input1X' % m, node_only = True)
+                if cmds.nodeType(input_value) == 'multiplyDivide':
+                    new_multi.append(input_value)
+                
+                input_value = attr.get_attribute_input('%s.input2X' % m, node_only = True)
+                if cmds.nodeType(input_value) == 'multiplyDivide':
+                    new_multi.append(input_value)
+                    
+            if new_multi:
+                multi = new_multi
+            if not new_multi:
+                multi = []
+                
+        attributes = self._get_message_attribute_with_prefix('multiply')
+        
+        for attribute in attributes:
+            input_attr = attr.get_attribute_input('%s.%s' % (self.pose_control, attribute), node_only = True)
+            
+            if input_attr:
+                inputs = attr.get_inputs(input_attr, node_only = True)
+                
+                if not inputs:
+                    multiplies.append(input_attr)
+                    
+        return multiplies
+        
+    def set_input(self, attribute):
+        """
+        Set the input into the weightInput of the no reader.
+        No readers need to have a connection specified that tells the pose when to turn on.
+        
+        Args:
+            attribute (str): The node.attribute name of a connection to feed into the no reader.
+        """
+        pass
+
+        
     def add_pose(self, pose_name):
         
         self._connect_pose(pose_name)
+        
+    def get_pose_index(self, pose):
+        
+        attributes = self._get_pose_string_attributes()
+        
+        inc = 0
+        
+        for attribute in attributes:
+        
+            stored_pose = self._get_named_string_attribute(attribute)
+            
+            if stored_pose == pose:
+                return inc
+            
+            inc += 1
         
     def remove_pose(self, pose_name):
         
@@ -2680,22 +2833,23 @@ class PoseCombo(PoseNoReader):
         
         if index == None:
             return
-
-        if pose == None:
+        
+        if pose != pose_name:
             return
         
-        attributes = self._get_pose_message_attributes()
+        attributes = self._get_pose_string_attributes()
         attribute = attributes[index]
         
-        attr.disconnect_attribute(attribute)
+        attr.disconnect_attribute('%s.%s' % (self.pose_control, attribute))
         
+        self.refresh_multiply_connections()
         
     def get_pose(self, index):
         
         if index == None:
             return
         
-        pose_attributes = self._get_pose_message_attributes()
+        pose_attributes = self._get_pose_string_attributes()
         
         if not pose_attributes:
             return
@@ -2703,7 +2857,7 @@ class PoseCombo(PoseNoReader):
         if index > (len(pose_attributes)-1):
             return
             
-        pose = attr.get_attribute_input('%s.%s' % (self.pose_control, pose_attributes[index]), True)
+        pose = cmds.getAttr('%s.%s' % (self.pose_control, pose_attributes[index]))
         
         return pose
         
@@ -2718,8 +2872,41 @@ class PoseCombo(PoseNoReader):
             poses.append(self.get_pose(pose_index))
         
         return poses
-        
     
+    def refresh_multiply_connections(self):
+        
+        self._disconnect_multiplies()
+        self._connect_multiplies()
+        
+    def attach(self, outputs = None):
+        #super(PoseNoReader, self).attach(outputs)
+        
+        if outputs:
+            self.reconnect_weight_outputs(outputs)
+            
+        self.refresh_multiply_connections()
+            
+        self._hide_meshes()
+        
+        if self.sub_detach_dict:
+            
+            for key in self.sub_detach_dict:
+                pose = get_pose_instance(key)
+                pose.attach(self.sub_detach_dict[pose])
+                
+            self.sub_detach_dict = {}
+        
+    def detach(self):    
+        #super(PoseNoReader, self).detach()
+        
+        self._disconnect_multiplies()
+        
+        outputs = self.disconnect_weight_outputs()
+        
+        self._show_meshes()
+        
+        return outputs
+        
 class PoseCone(PoseBase):
     """
     This type of pose reads from a joint or transform, for the defined angle of influence. 
