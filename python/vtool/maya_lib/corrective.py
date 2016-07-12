@@ -2394,8 +2394,8 @@ class PoseNoReader(PoseBase):
             if not cmds.isConnected('%s.enable' % self.pose_control, '%s.input2X' % multiply):
                 cmds.connectAttr('%s.enable' % self.pose_control, '%s.input2X' % multiply)
         
-        if not cmds.isConnected('%s.outputX' % multiply, destination):
-            cmds.connectAttr('%s.outputX' % multiply, destination)
+        attr.disconnect_attribute('%s.outputX' % multiply)
+        cmds.connectAttr('%s.outputX' % multiply, destination)
     
     def _connect_weight_input(self, attribute):
         
