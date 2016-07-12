@@ -2709,7 +2709,7 @@ class IkSplineNubRig(BufferRig):
         
         self.end_locator = True
         
-    def _create_joint_line(self):
+    def _create_joint_line(self, rp = False):
     
         name = self._get_name()
     
@@ -2731,17 +2731,27 @@ class IkSplineNubRig(BufferRig):
         cmds.makeIdentity(guide_btm, r = True, jo = True, apply = True)
         
         handle = space.IkHandle(name)
-        handle.set_solver(handle.solver_sc)
+        if not rp:
+            handle.set_solver(handle.solver_sc)
+        if rp:
+            handle.set_solver(handle.solver_rp)
         handle.set_start_joint(guide_top)
         handle.set_end_joint(guide_btm)
         
         handle = handle.create()
+        
+        if not rp:
+            cmds.setAttr('%s.poleVectorX' % handle, 0)
+            cmds.setAttr('%s.poleVectorY' % handle, 0)
+            cmds.setAttr('%s.poleVectorZ' % handle, 0)
         
         return guide_top, handle
     
     def _create_spline(self, follow, btm_constrain, mid_constrain):
         
         name = self._get_name()
+        
+        ik_handle = None
         
         spline_setup_group = cmds.group( em = True, n = core.inc_name('splineSetup_%s' % name))
         cmds.hide(spline_setup_group)
@@ -2760,8 +2770,8 @@ class IkSplineNubRig(BufferRig):
         ik_handle = cmds.rename(ik_handle, core.inc_name('handle_spline_%s' % name))
         """
         
-        #here
         
+        #here
         ik_handle, effector, curve = cmds.ikHandle(sj = self.buffer_joints[0], 
                                                 ee = self.buffer_joints[-1], 
                                                 sol = 'ikSplineSolver', 
@@ -2811,9 +2821,15 @@ class IkSplineNubRig(BufferRig):
         if not orient_transform:
             orient_transform = self.joints[0]
         
-        space.MatchSpace(orient_transform, xform).translation_rotation()
+        space.MatchSpace(orient_transform, xform).translation()
+        space.MatchSpace(orient_transform, xform).rotation()
         
         self._fix_right_side_orient(xform)
+        
+        if self.negate_right_scale and self.side == 'R':
+            cmds.setAttr('%s.scaleX' % xform, -1)
+            cmds.setAttr('%s.scaleY' % xform, -1)
+            cmds.setAttr('%s.scaleZ' % xform, -1)  
         
         return control.get(), xform
     
@@ -2833,6 +2849,11 @@ class IkSplineNubRig(BufferRig):
         space.MatchSpace(orient_rotate, xform).rotation()
         
         self._fix_right_side_orient(xform)
+        
+        if self.negate_right_scale and self.side == 'R':
+            cmds.setAttr('%s.scaleX' % xform, -1)
+            cmds.setAttr('%s.scaleY' % xform, -1)
+            cmds.setAttr('%s.scaleZ' % xform, -1)   
         
         return control.get(), xform
     
@@ -2854,6 +2875,11 @@ class IkSplineNubRig(BufferRig):
         
         
         self._fix_right_side_orient(xform)
+        
+        if self.negate_right_scale and self.side == 'R':
+            cmds.setAttr('%s.scaleX' % xform, -1)
+            cmds.setAttr('%s.scaleY' % xform, -1)
+            cmds.setAttr('%s.scaleZ' % xform, -1)   
         
         return control.get(), xform
         
@@ -2883,7 +2909,10 @@ class IkSplineNubRig(BufferRig):
         
         self._fix_right_side_orient(xform)
         
-
+        if self.negate_right_scale and self.side == 'R':
+            cmds.setAttr('%s.scaleX' % xform, -1)
+            cmds.setAttr('%s.scaleY' % xform, -1)
+            cmds.setAttr('%s.scaleZ' % xform, -1)      
         
         return control, xform
     
@@ -2910,10 +2939,7 @@ class IkSplineNubRig(BufferRig):
         
         cmds.delete(spacer)
         
-        if self.negate_right_scale:
-            cmds.setAttr('%s.scaleX' % control, -1)
-            cmds.setAttr('%s.scaleY' % control, -1)
-            cmds.setAttr('%s.scaleZ' % control, -1)
+  
     
     def set_end_with_locator(self, bool_value):
         """
@@ -2990,6 +3016,11 @@ class IkSplineNubRig(BufferRig):
             
             self._fix_right_side_orient(btm_control)
             
+            if self.negate_right_scale and self.side == 'R':
+                cmds.setAttr('%s.scaleX' % btm_control, -1)
+                cmds.setAttr('%s.scaleY' % btm_control, -1)
+                cmds.setAttr('%s.scaleZ' % btm_control, -1)   
+            
 
         
         
@@ -3005,36 +3036,32 @@ class IkSplineNubRig(BufferRig):
         top_joint, handle = self._create_joint_line()
         sub_joint, sub_handle = self._create_joint_line()
         
-        
-        
         cmds.parent(sub_joint, top_joint)
         cmds.parent(sub_handle, top_joint)
         
         self._create_twist_group(top_control, handle, top_joint)
         
-        space.create_follow_group(top_joint, mid_xform)
+        space.create_follow_group(top_joint, mid_xform, use_duplicate = True)
         cmds.pointConstraint(top_control, sub_btm_control, mid_xform)
         
         spline_handle, curve = self._create_spline(top_joint, sub_btm_control, mid_control)
-        #cmds.connectAttr( '%s.rotateX' % sub_joint, '%s.twist' % spline_handle)
         
         self._setup_stretchy(curve, top_control)
         
         space.create_follow_group(top_control, top_joint)
-        #cmds.parentConstraint(top_control, top_joint, mo = True)
         space.create_follow_group(sub_btm_control, sub_handle)
-        #cmds.parentConstraint(sub_btm_control, sub_handle, mo = True)
         
         top_twist = cmds.group(em = True, n = 'topTwist_%s' % spline_handle)
         btm_twist = cmds.group(em = True, n = 'btmTwist_%s' % spline_handle)
-        
-        cmds.parent(btm_twist, sub_joint)
         
         space.MatchSpace(self.buffer_joints[0], top_twist).translation_rotation()
         
         space.MatchSpace(self.buffer_joints[-1], btm_twist).translation()
         space.MatchSpace(self.buffer_joints[0], btm_twist).rotation()
         
+        
+        
+                
         cmds.setAttr('%s.dTwistControlEnable' % spline_handle, 1)
         cmds.setAttr('%s.dWorldUpType' % spline_handle, 4)
         
@@ -3050,11 +3077,15 @@ class IkSplineNubRig(BufferRig):
         
         cmds.parent(btm_xform, top_control)
         
+        
+        
         if self.top_guide:
             cmds.parentConstraint(self.top_guide, top_xform, mo =  True)
         
         if self.btm_guide:
             cmds.parent(btm_xform, self.btm_guide)
+            
+        cmds.parent(btm_twist, sub_joint)
 
 
 class IkAppendageRig(BufferRig):
@@ -3994,6 +4025,8 @@ class ConvertJointToNub(object):
         
         self.control_size = None
         
+        self.orient_to_first_transform = False
+        
     def set_start_joint(self, joint):
         self.start_joint = joint
     
@@ -4088,7 +4121,8 @@ class ConvertJointToNub(object):
         rig.set_create_middle_control(self.add_mid_control)
         rig.set_control_shape(self.control_shape)
         rig.set_negate_right_scale(self.negate_right_scale)
-        #rig.set_control_orient(self.start_joint)
+        if self.orient_to_first_transform:
+            rig.set_control_orient(self.start_joint)
         rig.set_buffer(False)
         rig.set_right_side_fix(self.right_side_fix, self.right_side_fix_axis)
         
@@ -4141,6 +4175,10 @@ class ConvertJointToNub(object):
 
     def set_negate_right_scale(self, bool_value):
         self.negate_right_scale = bool_value
+           
+    def set_orient_to_first_transform(self, bool_value):
+        
+        self.orient_to_first_transform = bool_value
                           
 #---Body Rig
 
@@ -5191,8 +5229,6 @@ class IkScapulaRig(BufferRig):
         
         self.rotate_control = control.get()
         
-        space.create_follow_group( self.ik_joints[0], self.xform_rotate)
-        
         
     def set_control_offset(self, value):
         self.control_offset = value
@@ -5227,7 +5263,7 @@ class IkScapulaRig(BufferRig):
             
             self._create_rotate_control()
             
-        cmds.parent(self.xform_rotate, self.shoulder_control)
+
         
         if self.negate_right_scale and self.side == 'R':
             
@@ -5236,6 +5272,12 @@ class IkScapulaRig(BufferRig):
             cmds.setAttr('%s.scaleZ' % self.xform_rotate, 1)
         
         cmds.parentConstraint(self.rotate_control, self.joints[0],mo = True)
+        
+        if self.create_rotate_control:
+            follow = space.create_follow_group( self.ik_joints[0], self.xform_rotate, use_duplicate = True)
+            cmds.parent(follow, self.shoulder_control)
+            #cmds.parent(self.xform_rotate, self.shoulder_control)
+            
         
 class IkBackLegRig(IkFrontLegRig):
     

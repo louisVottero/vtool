@@ -1742,7 +1742,7 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
 
     return xform_group
 
-def create_follow_group(source_transform, target_transform, prefix = 'follow', follow_scale = False):
+def create_follow_group(source_transform, target_transform, prefix = 'follow', follow_scale = False, use_duplicate = False):
     """
     Create a group above a target_transform that is constrained to the source_transform.
     
@@ -1760,7 +1760,11 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
     
     name = '%s_%s' % (prefix, target_transform)
     
-    follow_group = cmds.group( em = True, n = core.inc_name(name) )
+    if not use_duplicate:
+        follow_group = cmds.group( em = True, n = core.inc_name(name) )
+    if use_duplicate:
+        follow_group = cmds.duplicate( target_transform, n = core.inc_name(name), po = True)
+        parent = None
     
     match = MatchSpace(source_transform, follow_group)
     match.translation_rotation()
