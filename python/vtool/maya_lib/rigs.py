@@ -5279,7 +5279,7 @@ class IkScapulaRig(BufferRig):
             
             cmds.setAttr('%s.scaleX' % self.xform_rotate, -1)
             cmds.setAttr('%s.scaleY' % self.xform_rotate, -1)
-            cmds.setAttr('%s.scaleZ' % self.xform_rotate, 1)
+            cmds.setAttr('%s.scaleZ' % self.xform_rotate, -1)
         
         
 class IkBackLegRig(IkFrontLegRig):
