@@ -5265,19 +5265,22 @@ class IkScapulaRig(BufferRig):
             
 
         
+        
+        cmds.parentConstraint(self.rotate_control, self.joints[0],mo = True)
+        
+        if self.create_rotate_control:
+            cmds.parent(self.xform_rotate, self.shoulder_control)
+            space.create_follow_group( self.ik_joints[0], self.xform_rotate, use_duplicate = True)
+            #cmds.parent(follow, self.shoulder_control)
+            
+            
+        
         if self.negate_right_scale and self.side == 'R':
             
             cmds.setAttr('%s.scaleX' % self.xform_rotate, -1)
             cmds.setAttr('%s.scaleY' % self.xform_rotate, -1)
             cmds.setAttr('%s.scaleZ' % self.xform_rotate, 1)
         
-        cmds.parentConstraint(self.rotate_control, self.joints[0],mo = True)
-        
-        if self.create_rotate_control:
-            follow = space.create_follow_group( self.ik_joints[0], self.xform_rotate, use_duplicate = True)
-            cmds.parent(follow, self.shoulder_control)
-            #cmds.parent(self.xform_rotate, self.shoulder_control)
-            
         
 class IkBackLegRig(IkFrontLegRig):
     
