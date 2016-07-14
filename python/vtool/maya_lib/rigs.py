@@ -3709,6 +3709,8 @@ class TweakCurveRig(BufferRig):
         
         self.ribbon_offset = 1
         self.ribbon_offset_axis = 'Z'
+        
+        self.follicle_ribbon = False
     
     def _create_control(self, sub = False):
         
@@ -3775,6 +3777,9 @@ class TweakCurveRig(BufferRig):
     def set_ribbon(self, bool_value):
         self.use_ribbon = bool_value
         
+    def set_ribbon_follicle(self, bool_value):
+        self.follicle_ribbon = bool_value
+        
     def set_ribbon_offset(self, float_value):
         self.ribbon_offset = float_value
        
@@ -3827,8 +3832,12 @@ class TweakCurveRig(BufferRig):
             for joint in self.buffer_joints:
                 
                 if self.maya_type == 'nurbsSurface':
-                    rivet = geo.attach_to_surface(joint, self.surface)
-                    cmds.parent(rivet, self.setup_group)
+                    if not self.follicle_ribbon:
+                        rivet = geo.attach_to_surface(joint, self.surface)
+                        cmds.parent(rivet, self.setup_group)
+                    if self.follicle_ribbon:
+                        follicle = geo.follicle_to_surface(joint, self.surface, constrain = True)
+                        cmds.parent(follicle, self.setup_group)
                     
                 if self.maya_type == 'nurbsCurve':
                     geo.attach_to_curve(joint, self.surface)
@@ -5148,6 +5157,8 @@ class IkScapulaRig(BufferRig):
         
         self.ik_joints = joints
         cmds.parent(self.ik_joints[0], self.setup_group)
+        
+        
     
     def _create_top_control(self):
         control = self._create_control()
@@ -5179,7 +5190,7 @@ class IkScapulaRig(BufferRig):
         
         cmds.parent(control.get(), self.control_group)
         
-        space.MatchSpace(self.ik_joints[0], control.get()).translation()
+        space.MatchSpace(self.joints[0], control.get()).translation()
         
         xform = space.create_xform_group(control.get())
         
@@ -5228,9 +5239,11 @@ class IkScapulaRig(BufferRig):
         handle.set_solver(handle.solver_sc)
         handle = handle.create()
         
-        cmds.pointConstraint(control, handle)
+        #cmds.pointConstraint(control, handle)
         
-        cmds.parent(handle, control)
+        xform = space.create_xform_group(handle)
+        
+        cmds.parent(xform, control)
         cmds.hide(handle)
         
     def _create_rotate_control(self):
@@ -5270,6 +5283,7 @@ class IkScapulaRig(BufferRig):
         if self.create_rotate_control:
             self._duplicate_scapula()
         
+        
         control = self._create_top_control()
         self._create_shoulder_control()
         
@@ -5278,14 +5292,17 @@ class IkScapulaRig(BufferRig):
         rig_line = rigs_util.RiggedLine(control, self.joints[-1], self._get_name()).create()
         cmds.parent(rig_line, self.control_group)
         
+        
         if self.create_rotate_control:
             
             self._create_rotate_control()
             
-
         
         
-        cmds.parentConstraint(self.rotate_control, self.joints[0],mo = True)
+        
+        
+        
+        
         
         if self.create_rotate_control:
             cmds.parent(self.xform_rotate, self.shoulder_control)
@@ -5293,13 +5310,15 @@ class IkScapulaRig(BufferRig):
             #cmds.parent(follow, self.shoulder_control)
             
             
-        
         if self.negate_right_scale and self.side == 'R':
             
             cmds.setAttr('%s.scaleX' % self.xform_rotate, -1)
             cmds.setAttr('%s.scaleY' % self.xform_rotate, -1)
             cmds.setAttr('%s.scaleZ' % self.xform_rotate, -1)
         
+        
+        
+        cmds.parentConstraint(self.rotate_control, self.joints[0],mo = True)
         
 class IkBackLegRig(IkFrontLegRig):
     
