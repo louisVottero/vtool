@@ -1328,7 +1328,7 @@ def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
         return joints
     
 
-def follicle_to_surface(transform, surface, u = None, v = None):
+def follicle_to_surface(transform, surface, u = None, v = None, constrain = False):
     """
     Follicle the transform to a nurbs surface.
     If no u and v value are supplied, the command will try to find the closest position on the surface. 
@@ -1352,7 +1352,10 @@ def follicle_to_surface(transform, surface, u = None, v = None):
 
     follicle = create_surface_follicle(surface, transform, uv)
     
-    cmds.parent(transform, follicle)
+    if not constrain:
+        cmds.parent(transform, follicle)
+    if constrain:
+        cmds.parentConstraint(follicle, transform, mo = True)
     
     return follicle
 
