@@ -1782,6 +1782,8 @@ class SplineRibbonBaseRig(JointRig):
         self.closest_y = False
         self.stretch_axis = 'X'
         
+        self.follicle_ribbon = False
+        
     def _create_curve(self, span_count):
         
         if not self.curve:
@@ -1853,12 +1855,26 @@ class SplineRibbonBaseRig(JointRig):
             return
         
         if self.ribbon:
-            rivet_group = self._create_setup_group('rivets')
+            
+            group_name = 'rivets'
+            
+            if self.follicle_ribbon:
+                group_name = 'follicles'
+            
+            rivet_group = self._create_setup_group(group_name)
         
             for joint in self.buffer_joints:
-                rivet = geo.attach_to_surface(joint, self.surface)
-                cmds.setAttr('%s.inheritsTransform' % rivet, 0)
-                cmds.parent(rivet, rivet_group)
+                
+                if not self.follicle_ribbon:
+                    rivet = geo.attach_to_surface(joint, self.surface)
+                    cmds.setAttr('%s.inheritsTransform' % rivet, 0)
+                    cmds.parent(rivet, rivet_group)
+                
+                if self.follicle_ribbon:
+                    
+                    follicle = geo.follicle_to_surface(joint, self.surface, constrain = True)
+                    cmds.setAttr('%s.inheritsTransform' % follicle, 0)
+                    cmds.parent(follicle, rivet_group)
         
         if not self.ribbon:
             self._create_spline_ik()
@@ -2070,6 +2086,9 @@ class SplineRibbonBaseRig(JointRig):
             axis_letter (str): 'X','Y' or 'Z' 
         """
         self.ribbon_offset_axis = axis_letter
+        
+    def set_ribbon_follicle(self, bool_value):
+        self.follicle_ribbon = bool_value
         
     def set_last_pivot_top(self, bool_value):
         """
@@ -7154,6 +7173,7 @@ class EyeLidAimRig(JointRig):
         self.follow_multiply = 1
         
         self.scale_space = 1
+        self.use_joint = True
     
     def _aim_constraint(self, transform_to_aim, aim_target):
         
@@ -7204,7 +7224,8 @@ class EyeLidAimRig(JointRig):
         for cluster in self.clusters:
             
             control = self._create_control()
-            control.set_to_joint()
+            if self.use_joint:
+                control.set_to_joint()
             
             
             control.rotate_shape(90, 0, 0)
@@ -7241,8 +7262,8 @@ class EyeLidAimRig(JointRig):
                 if self.scale_space < 1 or self.scale_space > 1:
                     cmds.scale(self.scale_space, self.scale_space, self.scale_space, xform)
 
-            
-            cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
+            if self.use_joint:
+                cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
             
             local, local_xform = space.constrain_local(control.get(), cluster)
             local_driver = space.create_xform_group(local, 'driver')
@@ -7261,6 +7282,9 @@ class EyeLidAimRig(JointRig):
     
     def set_scale_space(self, value):
         self.scale_space = value
+    
+    def set_use_joint_controls(self, value):
+        self.use_joint = value
     
     def set_center_locator(self, locator):
         self.center_locator = locator
@@ -7795,6 +7819,7 @@ class StickyFadeRig(StickyRig):
         self.corner_x_space = []
         self.corner_y_space = []
         self.corner_z_space = []
+        
         
         
 
