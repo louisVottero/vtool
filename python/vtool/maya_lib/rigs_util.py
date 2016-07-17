@@ -2387,7 +2387,8 @@ def fix_fade(target_curve, follow_fade_multiplies):
         value = (driver_distance/total_distance)
     
         cmds.setAttr('%s.input2Y' % multi, value)
-
+        
+@core.undo_chunk
 def scale_controls(value):
     things = get_controls()
 
@@ -2407,3 +2408,60 @@ def scale_controls(value):
             if components:
                 cmds.scale(value, value, value, components, p = pivot, r = True)
                 
+@core.undo_chunk
+def fix_sub_controls(control = None):
+    
+    print 'fix sub control!', control
+    
+    if not control:
+        scope = cmds.ls(sl = True)
+        
+        if scope:
+            control = scope[0]
+    
+    if not control:
+        return
+    
+    if not core.has_shape_of_type(control, 'nurbsCurve'):
+        return
+    
+    if not cmds.objExists('%s.subVisibility' % control):
+        return
+    
+    
+    outputs = attr.get_attribute_outputs('%s.subVisibility' % control, node_only=True)
+    
+    print 'got here?', control, outputs
+    
+    
+    scale_offset = .9
+    
+    for output_node in outputs:
+        
+        transform = output_node
+        shape = None
+        
+        if cmds.nodeType(output_node) == 'nurbsCurve':
+            
+            transform = cmds.listRelative(output_node, p = True)
+            shape = output_node
+            
+        if not shape:
+            if not core.has_shape_of_type(transform, 'nurbsCurve'):
+                continue
+            
+            shapes = core.get_shapes(transform, 'nurbsCurve')
+            
+            
+        control_shapes = core.get_shapes(control)
+        
+        if len(shapes) != len(control_shapes):
+            continue
+        
+        for inc in range(0, len(control_shapes)):
+            deform.quick_blendshape(control_shapes[inc], shapes[inc])
+            cmds.delete(shapes[inc], ch = True)
+            control = Control(transform)
+            control.scale_shape(scale_offset, scale_offset, scale_offset)
+        
+        scale_offset -= .1

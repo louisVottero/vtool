@@ -1177,6 +1177,44 @@ def attach_to_curve(transform, curve, maintain_offset = False, parameter = None)
     
     return curve_info_node
 
+def attach_to_motion_path(transform, curve, up_rotate_object = None):
+    
+    motion = cmds.createNode('motionPath', n = 'motionPath_%s' % transform )
+    
+    if up_rotate_object:
+        cmds.setAttr('%s.wut' % motion, 2)
+        cmds.connectAttr('%s.worldMatrix' % up_rotate_object, '%s.wum' % motion)
+    
+    
+    cmds.setAttr('%s.fractionMode' % motion, True)
+    
+    position = cmds.xform(transform, q = True, ws = True, t = True)
+    
+    u_value = get_closest_parameter_on_curve(curve, position)
+    u_value = get_curve_length_from_parameter(curve, u_value)
+    
+    curve_length = cmds.arclen(curve, ch = False)
+    
+    u_value = u_value/curve_length
+    
+    cmds.setAttr('%s.uValue' % motion, u_value)
+    
+    cmds.connectAttr('%s.worldSpace' % curve, '%s.geometryPath' % motion)
+    
+    locator = cmds.spaceLocator(n = 'locator_%s' % motion)[0]
+    
+    cmds.connectAttr('%s.xCoordinate' % motion, '%s.translateX' % locator)
+    cmds.connectAttr('%s.yCoordinate' % motion, '%s.translateY' % locator)
+    cmds.connectAttr('%s.zCoordinate' % motion, '%s.translateZ' % locator)
+    
+    cmds.connectAttr('%s.rotateX' % motion, '%s.rotateX' % locator)
+    cmds.connectAttr('%s.rotateY' % motion, '%s.rotateY' % locator)
+    cmds.connectAttr('%s.rotateZ' % motion, '%s.rotateZ' % locator)
+    
+    cmds.parentConstraint(locator, transform, mo = True)
+    
+    return motion, locator
+
 def attach_to_surface(transform, surface, u = None, v = None):
     """
     Attach the transform to the surface using a rivet.
@@ -1819,6 +1857,22 @@ def get_parameter_from_curve_length(curve, length_value):
     curve = api.NurbsCurveFunction(curve)
     
     return curve.get_parameter_at_length(length_value)
+
+def get_curve_length_from_parameter(curve, parameter_value):
+    """
+    Given a parameter return the curve length to that parameter.
+    
+    """
+    
+    arc_node = cmds.arcLengthDimension( '%s.u[%s]' % (curve, parameter_value))
+    
+    length = cmds.getAttr('%s.arcLength' % arc_node)
+    
+    parent = cmds.listRelatives(arc_node, p = True)
+    if parent:
+        cmds.delete(parent[0])
+    
+    return length
 
 def get_point_from_curve_parameter(curve, parameter):
     """

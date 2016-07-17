@@ -363,12 +363,16 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         number_button.clicked.connect(self._size_controls)
         self.scale_control_button = number_button
         
+        self.fix_sub_controls = QtGui.QPushButton('Fix Sub Controls')
+        self.fix_sub_controls.clicked.connect(rigs_util.fix_sub_controls)
+        
         parent.main_layout.addWidget(number_button)
         
         parent.main_layout.addWidget(mirror_control)
         parent.main_layout.addWidget(mirror_controls)
         
         parent.main_layout.addWidget(size_slider)
+        parent.main_layout.addWidget(self.fix_sub_controls)
         
     def _create_deformation_widgets(self, parent):
         corrective_button = QtGui.QPushButton('Create Corrective')

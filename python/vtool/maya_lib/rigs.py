@@ -1781,6 +1781,7 @@ class SplineRibbonBaseRig(JointRig):
         self.ribbon_offset_axis = 'Y'
         self.closest_y = False
         self.stretch_axis = 'X'
+        self.stretch_attribute_control = None
         
         self.follicle_ribbon = False
         
@@ -1937,6 +1938,11 @@ class SplineRibbonBaseRig(JointRig):
         
         if self.stretchy:    
             
+            if self.stretch_attribute_control:
+                control = self.stretch_attribute_control
+            
+            attr.create_title(control, 'STRETCH')
+            
             rigs_util.create_spline_ik_stretch(self.ik_curve, self.buffer_joints[:-1], control, self.stretch_on_off, self.stretch_axis)
     
         
@@ -1994,10 +2000,13 @@ class SplineRibbonBaseRig(JointRig):
         if children:
             cmds.parent(children, w = True)
         
+        start_joint = joints[0]
+        end_joint = joints[-1]
+        
         handle = space.IkHandle(self._get_name())
         handle.set_solver(handle.solver_spline)
-        handle.set_start_joint(joints[0])
-        handle.set_end_joint(joints[-1])
+        handle.set_start_joint(start_joint)
+        handle.set_end_joint(end_joint)
         handle.set_curve(self.ik_curve)
         handle = handle.create()
         
@@ -2058,6 +2067,9 @@ class SplineRibbonBaseRig(JointRig):
         Set the axis that the joints should stretch on.
         """
         self.stretch_axis = axis_letter
+        
+    def set_stretch_attribute_control(self, node_name):
+        self.stretch_attribute_control = node_name
     
     def set_curve(self, curve):
         """
@@ -2193,6 +2205,9 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
 
     def _last_increment(self, control, current_transform):
         
+        if not self.sub_controls:
+            return
+        
         if self.create_follows:
             
             space.create_follow_fade(self.controls[-1], self.sub_drivers[:-1])
@@ -2293,10 +2308,16 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
                 cmds.parent(self.start_locator, self.sub_controls[0])
                 
             if not hasattr(self, 'top_sub_control'):
-                cmds.parent(self.start_locator, self.sub_controls[0])
+                if not self.sub_controls:
+                    cmds.parent(self.start_locator, self.controls[0])
+                if self.sub_controls:
+                    cmds.parent(self.start_locator, self.sub_controls[0])
                 
-            cmds.parent(self.end_locator, self.sub_controls[-1])
-            
+            if self.sub_controls:
+                cmds.parent(self.end_locator, self.sub_controls[-1])
+            if not self.sub_controls:
+                cmds.parent(self.end_locator, self.controls[-1])
+                
         if not self.advanced_twist and self.buffer_joints != self.joints:
             
             follow = space.create_follow_group(self.controls[0], self.buffer_joints[0])
@@ -3776,7 +3797,7 @@ class TweakCurveRig(BufferRig):
         
     def set_ribbon(self, bool_value):
         self.use_ribbon = bool_value
-        
+    
     def set_ribbon_follicle(self, bool_value):
         self.follicle_ribbon = bool_value
         
@@ -3977,7 +3998,10 @@ class RopeRig(CurveRig):
                     control = self._create_control()
                 
                 if not alt_color:
-                    control.color(attr.get_color_of_side(self.side))    
+                    if not self.control_color:
+                        control.color(attr.get_color_of_side(self.side))
+                    if self.control_color:
+                        control.color = self.control_color    
                 if alt_color:
                     control.color(attr.get_color_of_side(self.side, sub_color = True))
                 
@@ -7821,6 +7845,8 @@ class StickyRig(JointRig):
             cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleY' % btm_right_driver)
             cmds.connectAttr('%s.bulge' % btm_center_control, '%s.scaleZ' % btm_right_driver)
             
+
+            
 class StickyFadeRig(StickyRig):       
 
     def __init__(self, description, side):
@@ -8094,9 +8120,36 @@ class StickyFadeRig(StickyRig):
             attr.connect_translate_multiply(corner_control, top_control_driver, value)
             attr.connect_translate_multiply(corner_control, btm_control_driver, value)
             
-
         
-
+    """
+    def create_corner_locator(self, positive_scale_vector = None, negative_scale_vector = None):
+        
+        for control in self.corner_controls:
+        
+            top_xform = space.get_xform_group(control)
+            parent = cmds.listRelatives(top_xform, p = True)
+            if parent:
+                parent = parent
+            
+            cmds.select(cl = True)
+            locator = cmds.joint(n = 'locatorJoint_%s' % control)
+            #locator = cmds.spaceLocator(n = 'locator_%s' % control)[0]
+            xform = space.create_xform_group(locator)
+            cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % locator)
+            
+            cmds.delete( cmds.parentConstraint(control, xform) )
+            
+            if parent:
+                cmds.parent(xform, parent)
+            
+            self.set_corner_x_space(positive_scale_vector[0], negative_scale_vector[0])
+            self.set_corner_y_space(positive_scale_vector[1], negative_scale_vector[1])
+            self.set_corner_z_space(positive_scale_vector[2], negative_scale_vector[2])
+            
+            self._set_corner_space(locator, xform)  
+            
+            cmds.parentConstraint(control, locator)
+    """
     
         
 class EyeRig(JointRig):

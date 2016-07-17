@@ -447,6 +447,7 @@ class NurbsCurveFunction(MayaFunction):
     
     def get_parameter_at_length(self, double):
         return self.api_object.findParamFromLength(double)
+    
 
 class SkinClusterFunction(MayaFunction):
     def _define_api_object(self, mobject):

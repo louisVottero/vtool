@@ -2289,6 +2289,8 @@ def get_ast_assignment(text, line_number, assignment):
     
     line_assign_dict = {}
     
+    value = None
+    
     for node in ast.walk(ast_tree):
         
         if hasattr( node, 'lineno' ):
@@ -2334,7 +2336,8 @@ def get_ast_assignment(text, line_number, assignment):
                         
                     if targets:
                         for target in targets:
-                            line_assign_dict[target] = value
+                            if value:
+                                line_assign_dict[target] = value
             
             if current_line_number > line_number:
                 continue
