@@ -2818,6 +2818,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         self.completer = None
         
+        self.selection = None
+        
     def resizeEvent(self, event):
         
         super(CodeTextEdit, self).resizeEvent(event)
@@ -2854,8 +2856,21 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
     def keyPressEvent(self, event):
         
         if self.completer:
+            if not self.completer.popup().isVisible():
+                if util.is_in_maya():
+                    if self.selection:
+                        import maya.cmds as cmds
+                        cmds.select(self.selection)
+                        self.selection = None
+                        
             if self.completer.popup().isVisible():
-             
+                
+                if util.is_in_maya():
+                    if not self.selection:
+                        import maya.cmds as cmds
+                        self.selection = cmds.ls(sl = True, l = True)
+                        cmds.select(cl = True)
+                    
                 if event.key() == QtCore.Qt.Key_Enter:
                     event.ignore()
                     return
@@ -2897,6 +2912,14 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                     self.completer.complete(rect)
                 
                 if result == False:
+                    if util.is_in_maya():
+                        if self.selection:
+                            import maya.cmds as cmds
+                            cmds.select(self.selection)
+                            self.selection = None
+                            
+                    
+                    
                     self.completer.popup().hide()
                     self.completer.clear_completer_list()
                     self.completer.refresh_completer = True

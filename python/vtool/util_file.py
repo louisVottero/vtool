@@ -2317,7 +2317,8 @@ def get_ast_assignment(text, line_number, assignment):
                     targets = []
                     
                     for target in node.targets:
-                        targets.append( target.id )
+                        if hasattr(target, 'id'):
+                            targets.append( target.id )
                     
                     if hasattr(node.value, ''):
                         pass

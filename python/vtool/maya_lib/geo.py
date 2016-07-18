@@ -1177,7 +1177,7 @@ def attach_to_curve(transform, curve, maintain_offset = False, parameter = None)
     
     return curve_info_node
 
-def attach_to_motion_path(transform, curve, up_rotate_object = None):
+def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain = True, local = False):
     
     motion = cmds.createNode('motionPath', n = 'motionPath_%s' % transform )
     
@@ -1199,10 +1199,13 @@ def attach_to_motion_path(transform, curve, up_rotate_object = None):
     
     cmds.setAttr('%s.uValue' % motion, u_value)
     
-    cmds.connectAttr('%s.worldSpace' % curve, '%s.geometryPath' % motion)
+    if not local:
+        cmds.connectAttr('%s.worldSpace' % curve, '%s.geometryPath' % motion)
+    if local:
+        cmds.connectAttr('%s.local' % curve, '%s.geometryPath' % motion)
     
     locator = cmds.spaceLocator(n = 'locator_%s' % motion)[0]
-    
+        
     cmds.connectAttr('%s.xCoordinate' % motion, '%s.translateX' % locator)
     cmds.connectAttr('%s.yCoordinate' % motion, '%s.translateY' % locator)
     cmds.connectAttr('%s.zCoordinate' % motion, '%s.translateZ' % locator)
@@ -1211,7 +1214,15 @@ def attach_to_motion_path(transform, curve, up_rotate_object = None):
     cmds.connectAttr('%s.rotateY' % motion, '%s.rotateY' % locator)
     cmds.connectAttr('%s.rotateZ' % motion, '%s.rotateZ' % locator)
     
-    cmds.parentConstraint(locator, transform, mo = True)
+    if constrain:
+        cmds.parentConstraint(locator, transform, mo = True)
+    if not constrain:
+        current_parent = cmds.listRelatives(transform, p = True)
+        
+        cmds.parent(transform, locator)
+        
+        if current_parent:
+            cmds.parent(locator, current_parent)
     
     return motion, locator
 
