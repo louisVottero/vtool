@@ -2820,6 +2820,19 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         self.selection = None
         
+        
+        
+    def _activate(self, value):
+        
+        print 'activated!', value
+        
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            
+            if self.selection:
+                cmds.select(self.selection)
+                self.selection = None
+        
     def resizeEvent(self, event):
         
         super(CodeTextEdit, self).resizeEvent(event)
@@ -2854,6 +2867,9 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
             self._update_request()
             
     def keyPressEvent(self, event):
+        
+        if self.completer:
+            self.completer.activated.connect(self._activate)
         
         if self.completer:
             if not self.completer.popup().isVisible():
