@@ -2062,7 +2062,7 @@ def set_color(nodes, color):
         color (int): The color index to set override color to.
     """
     
-    vtool.util.convert_to_sequence(nodes)
+    nodes = vtool.util.convert_to_sequence(nodes)
     
     for node in nodes:
         
@@ -2073,6 +2073,28 @@ def set_color(nodes, color):
             cmds.setAttr(overrideEnabled, 1)
             cmds.setAttr(overrideColor, color)
 
+def set_color_rgb(nodes, r = 0, g = 0, b = 0):
+    """
+    Maya 2015 and above.
+    Set to zero by default.
+    Max value is 1.0.
+    """
+    nodes = vtool.util.convert_to_sequence(nodes)
+    
+    for node in nodes:
+        
+        overrideRGB = '%s.overrideRGBColors' % node
+        overrideEnabled = '%s.overrideEnabled' % node
+        overrideColor = '%s.overrideColorRGB' % node
+        
+        if cmds.objExists(overrideEnabled) and cmds.objExists(overrideRGB):
+            cmds.setAttr(overrideRGB, 1)
+            cmds.setAttr(overrideEnabled, 1)
+            
+            cmds.setAttr(overrideColor, r,g,b)
+            
+        
+        
 
 def get_color_of_side(side = 'C', sub_color = False):
     """

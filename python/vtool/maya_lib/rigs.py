@@ -1544,6 +1544,9 @@ class FkCurlNoScaleRig(FkRig):
             
             return control
         
+        if sub:
+            return control
+        
         if not self.attribute_control:
             self.attribute_control = control.get()
             
@@ -1664,14 +1667,18 @@ class FkCurlRig(FkScaleRig):
         self.curl_axis = 'Z'
         self.curl_description = self.description
         self.skip_increments = []
+        self.title = 'CURL'
         
     def _create_control(self, sub = False):
         control = super(FkCurlRig, self)._create_control(sub)
         
+        if sub:
+            return control
+        
         if not self.attribute_control:
             self.attribute_control = control.get()
             
-        attr.create_title(self.attribute_control, 'CURL')
+        attr.create_title(self.attribute_control, self.title)
         
         driver = space.create_xform_group(control.get(), 'driver2')
         self.control_dict[control.get()]['driver2'] = driver
@@ -1679,6 +1686,8 @@ class FkCurlRig(FkScaleRig):
         other_driver = self.drivers[-1]
         self.drivers[-1] = [other_driver, driver]
         
+        
+    
         if self.curl_axis != 'All':
             self._attach_curl_axis(driver)
             
@@ -1687,7 +1696,7 @@ class FkCurlRig(FkScaleRig):
             
             for axis in all_axis:
                 self._attach_curl_axis(driver, axis)
-                
+            
         return self.control
     
     def _attach_curl_axis(self, driver, axis = None):
@@ -1738,6 +1747,10 @@ class FkCurlRig(FkScaleRig):
             increments (list): Eg. [0], will not add curl to the control on the first joint.
         """        
         self.skip_increments = increments
+        
+    def set_curl_skip_incrment(self, increments):
+        
+        self.set_skip_increments(increments)
     
     def set_attribute_control(self, control_name):
         """
@@ -1757,6 +1770,9 @@ class FkCurlRig(FkScaleRig):
         """
         
         self.attribute_name = attribute_name
+        
+    def set_curl_title(self, name):
+        self.title = name.upper()
         
 class SplineRibbonBaseRig(JointRig):
     

@@ -212,6 +212,19 @@ class Control(object):
         
         attr.set_color(shapes, value)
     
+    def color_rgb(self, r=0,g=0,b=0):
+        """
+        Maya 2015 and above.
+        Set to zero by default.
+        Max value is 1.0.
+        """
+        
+        shapes = core.get_shapes(self.control)
+        
+        attr.set_color_rgb(shapes, r,g,b)
+        
+        
+    
     def show_rotate_attributes(self):
         """
         Unlock and set keyable the control's rotate attributes.
@@ -2411,8 +2424,6 @@ def scale_controls(value):
 @core.undo_chunk
 def fix_sub_controls(control = None):
     
-    print 'fix sub control!', control
-    
     if not control:
         scope = cmds.ls(sl = True)
         
@@ -2430,9 +2441,6 @@ def fix_sub_controls(control = None):
     
     
     outputs = attr.get_attribute_outputs('%s.subVisibility' % control, node_only=True)
-    
-    print 'got here?', control, outputs
-    
     
     scale_offset = .9
     

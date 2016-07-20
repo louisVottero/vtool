@@ -109,8 +109,6 @@ class BasicWindow(QtGui.QMainWindow):
         
         main_widget = QtGui.QWidget()
         
-        
-        
         util.show('Main layout: %s' % self.main_layout)
         
         main_widget.setLayout(self.main_layout)
@@ -122,6 +120,7 @@ class BasicWindow(QtGui.QMainWindow):
         self.main_layout.setSpacing(2)
         
         self._build_widgets()
+        
         
     def keyPressEvent(self, event):
         return
@@ -2818,20 +2817,9 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
         
         self.completer = None
         
-        self.selection = None
-        
-        
         
     def _activate(self, value):
-        
-        print 'activated!', value
-        
-        if util.is_in_maya():
-            import maya.cmds as cmds
-            
-            if self.selection:
-                cmds.select(self.selection)
-                self.selection = None
+        pass
         
     def resizeEvent(self, event):
         
@@ -2872,20 +2860,8 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
             self.completer.activated.connect(self._activate)
         
         if self.completer:
-            if not self.completer.popup().isVisible():
-                if util.is_in_maya():
-                    if self.selection:
-                        import maya.cmds as cmds
-                        cmds.select(self.selection)
-                        self.selection = None
                         
             if self.completer.popup().isVisible():
-                
-                if util.is_in_maya():
-                    if not self.selection:
-                        import maya.cmds as cmds
-                        self.selection = cmds.ls(sl = True, l = True)
-                        cmds.select(cl = True)
                     
                 if event.key() == QtCore.Qt.Key_Enter:
                     event.ignore()
@@ -2928,13 +2904,6 @@ class CodeTextEdit(QtGui.QPlainTextEdit):
                     self.completer.complete(rect)
                 
                 if result == False:
-                    if util.is_in_maya():
-                        if self.selection:
-                            import maya.cmds as cmds
-                            cmds.select(self.selection)
-                            self.selection = None
-                            
-                    
                     
                     self.completer.popup().hide()
                     self.completer.clear_completer_list()
@@ -3597,7 +3566,7 @@ class PythonHighlighter (QtGui.QSyntaxHighlighter):
         'for', 'from', 'global', 'if', 'import', 'in',
         'is', 'lambda', 'not', 'or', 'pass', 'print',
         'raise', 'return', 'try', 'while', 'yield',
-        'None', 'True', 'False',
+        'None', 'True', 'False', 'process'
     ]
 
     # Python operators
@@ -3741,6 +3710,8 @@ class PythonCompleter(QtGui.QCompleter):
         self.string_model =QtGui.QStringListModel(self.model_strings, self)
         
         self.setCompletionMode(self.PopupCompletion)
+        #self.setCompletionMode(self.Un)
+        #self.setCompletionMode(self.InlineCompletion)
         self.setCaseSensitivity(QtCore.Qt.CaseSensitive)
         self.setModel(self.string_model)
         self.setModelSorting(self.CaseInsensitivelySortedModel)
@@ -3760,6 +3731,11 @@ class PythonCompleter(QtGui.QCompleter):
         self.current_sub_functions = None
         
         self.last_column = 0
+        
+        
+        
+    def keyPressEvent(self):
+        return
         
     def show_info_popup(self, info = None):
         
@@ -3826,6 +3802,7 @@ class PythonCompleter(QtGui.QCompleter):
         extra = len(completion_string) - len(self.completionPrefix() )
         
         cursor.insertText( completion_string[-extra:] )
+        
         
         widget.setTextCursor(cursor)
     

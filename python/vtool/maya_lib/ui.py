@@ -166,6 +166,8 @@ def process_manager(directory = None):
 class MayaWindow(vtool.qt_ui.BasicWindow):
     def __init__(self):
         super(MayaWindow, self).__init__( get_maya_window() )
+        
+        
                 
 class MayaDirectoryWindow(vtool.qt_ui.DirectoryWindow):
     def __init__(self):

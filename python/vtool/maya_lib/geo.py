@@ -1205,6 +1205,9 @@ def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain =
         cmds.connectAttr('%s.local' % curve, '%s.geometryPath' % motion)
     
     locator = cmds.spaceLocator(n = 'locator_%s' % motion)[0]
+    shapes = core.get_shapes(locator)
+    if shapes:
+        cmds.hide(shapes)
         
     cmds.connectAttr('%s.xCoordinate' % motion, '%s.translateX' % locator)
     cmds.connectAttr('%s.yCoordinate' % motion, '%s.translateY' % locator)
@@ -1213,6 +1216,9 @@ def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain =
     cmds.connectAttr('%s.rotateX' % motion, '%s.rotateX' % locator)
     cmds.connectAttr('%s.rotateY' % motion, '%s.rotateY' % locator)
     cmds.connectAttr('%s.rotateZ' % motion, '%s.rotateZ' % locator)
+    
+    cmds.connectAttr('%s.rotateOrder' % motion, '%s.rotateOrder' % locator)
+    cmds.connectAttr('%s.message' % motion, '%s.specifiedManipLocation' % locator)
     
     if constrain:
         cmds.parentConstraint(locator, transform, mo = True)
@@ -1279,15 +1285,11 @@ def follicle_to_mesh(transform, mesh, u = None, v = None, constrain = False, con
     mesh = get_mesh_shape(mesh)
     
     position = cmds.xform(transform, q = True, ws = True, t = True)
-    print position, transform
-    
     
     uv = u,v
     
     if u == None or v == None:
         uv = get_closest_uv_on_mesh(mesh, position)
-        
-    print 'closes uv', uv, mesh
         
     follicle = create_mesh_follicle(mesh, transform, uv)   
     

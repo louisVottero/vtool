@@ -92,8 +92,6 @@ def clean_place_holder_list_entries(filepath):
     """
     good_lines = lines
     
-    print 'writing to file...'
-    
     bad_inc.reverse()
     
     for inc in bad_inc:
