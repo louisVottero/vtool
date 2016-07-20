@@ -352,6 +352,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
         #this stops maya from entering edit mode in the outliner, if something is selected
         if vtool.util.is_in_maya():
             import maya.cmds as cmds
+            
             cmds.setFocus('modelPanel1')
             #cmds.select(cl = True)
     
