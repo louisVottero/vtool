@@ -2093,6 +2093,7 @@ class PoseBase(PoseGroup):
                 
         offset = deform.chad_extract_shape(target_mesh, mesh)
         
+        
         blend.set_weight(self.pose_control, 1)
         
         #eventually it will check mesh index

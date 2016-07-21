@@ -4134,7 +4134,6 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
             cmds.setAttr('%s.envelope' % skin, 1)
                 
         offset = correct.invert(skin_mesh, corrective)
-        
         cmds.delete(offset, ch = True)
         
         orig = get_intermediate_object(skin_mesh)

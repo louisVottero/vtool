@@ -82,6 +82,8 @@ def invert(base=None, corrective=None, name=None):
     #invertedShape = cmds.duplicate(base, name = name)[0]
     
     # Delete the unnessary shapes
+    
+    
     shapes = cmds.listRelatives(invertedShape, children=True, shapes=True, fullPath = True)
     
     for s in shapes:
@@ -124,7 +126,10 @@ def invert(base=None, corrective=None, name=None):
     plugDeformedPoints = fnDeformer.findPlug('deformedPoints', False)
     plugDeformedPoints.setMObject(oPointData)
 
+    
+
     cmds.connectAttr('%s.outMesh' % getShape(corrective), '%s.correctiveMesh' % deformer)
+    
     cmds.setAttr('%s.activate' % deformer, True)
 
     cmds.undoInfo(closeChunk=True)
