@@ -2857,7 +2857,7 @@ def connect_equal_condition(source_attribute, target_attribute, equal_value):
     
     return condition
         
-def create_blend_attribute(source, target, min_value = 0, max_value = 10):
+def create_blend_attribute(source, target, min_value = 0, max_value = 10, value = 0):
     """
     Create an attribute to hook into a blendshape.
     
@@ -2870,7 +2870,7 @@ def create_blend_attribute(source, target, min_value = 0, max_value = 10):
     """
     if not cmds.objExists(source):
         split_source = source.split('.')
-        cmds.addAttr(split_source[0], ln = split_source[1], min = min_value, max = max_value, k = True, dv = 0)
+        cmds.addAttr(split_source[0], ln = split_source[1], min = min_value, max = max_value, k = True, dv = value)
         
     multi = connect_multiply(source, target, .1)
     
