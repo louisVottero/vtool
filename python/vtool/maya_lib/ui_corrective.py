@@ -674,8 +674,9 @@ class PoseTreeWidget(BaseTreeWidget):
         self.option_menu = self.context_menu.addMenu('Options')
         # self._create_pose_options_context()
         self.context_menu.addSeparator()
-        self.set_pose_action = self.context_menu.addAction('Update Pose (Controls and Deformation)')
-        self.set_controls_action = self.context_menu.addAction('Update Pose (Controls)')
+        self.set_pose_action = self.context_menu.addAction('Update Pose (Controls with Current Deformation)')
+        self.set_controls_action = self.context_menu.addAction('Update Pose (Controls with Stored Deformation)')
+        self.set_controls_only_action = self.context_menu.addAction('Update Pose (Controls Only)')
         #self.update_sculpts_action = self.context_menu.addAction('Update Sculpt')
         self.revert_vertex_action = self.context_menu.addAction('Revert Vertex')
         self.reset_sculpts_action = self.context_menu.addAction('Reset Sculpt')
@@ -688,7 +689,8 @@ class PoseTreeWidget(BaseTreeWidget):
                                                  self.revert_vertex_action,
                                                  self.reset_sculpts_action,
                                                  self.set_pose_action,
-                                                 self.set_controls_action]
+                                                 self.set_controls_action,
+                                                 self.set_controls_only_action]
         
         if not self.shot_sculpt_only:
             self.create_cone.triggered.connect(self.create_cone_pose)
@@ -702,6 +704,7 @@ class PoseTreeWidget(BaseTreeWidget):
         self.delete_action.triggered.connect(self.delete_pose)
         self.set_pose_action.triggered.connect(self._set_pose_data)
         self.set_controls_action.triggered.connect(self._update_stored_controls)
+        self.set_controls_only_action.triggered.connect(self._update_only_stored_controls)
         self.reset_sculpts_action.triggered.connect(self._reset_sculpts)
         #self.update_sculpts_action.triggered.connect(self._update_sculpts)
         self.revert_vertex_action.triggered.connect(self._revert_vertex)
@@ -830,6 +833,13 @@ class PoseTreeWidget(BaseTreeWidget):
         
         pose_instance = corrective.PoseManager().get_pose_instance(name)
         pose_instance.create_all_blends()
+
+    def _update_only_stored_controls(self):
+        
+        name = self._current_pose()
+        corrective.PoseManager().update_pose(name)
+        
+
 
     def _set_pose_data(self):
         

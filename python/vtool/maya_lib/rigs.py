@@ -4087,6 +4087,7 @@ class ConvertJointToNub(object):
         self.negate_right_scale = False
         
         self.up_object = None
+        self.up_axis = None
         
         self.control_parent = None
         self.setup_parent = None
@@ -4125,6 +4126,9 @@ class ConvertJointToNub(object):
     def set_up_object(self, name):
         self.up_object = name
         
+    def set_up_axis(self, axis_name):
+        self.up_axis = axis_name.upper()
+        
     def set_control_parent(self, name):
         self.control_parent = name
         
@@ -4155,7 +4159,24 @@ class ConvertJointToNub(object):
                 if not self.up_object:
                     self.up_object = self.start_joint
                 
+                up_vector = None
+                
+                if self.up_axis:
+                    
+                    if self.up_axis == 'X':
+                        up_vector = [1,0,0]
+                    if self.up_axis == 'Y':
+                        up_vector = [0,1,0]
+                    if self.up_axis == 'Z':
+                        up_vector = [0,0,1]
+                    if self.up_axis == 'None':
+                        up_vector = [0,0,0]
+                
                 orient.set_aim_up_at_object(self.up_object)
+                
+                if up_vector:
+                    orient.set_world_up_vector(up_vector)
+                    
                 orient.run()
             
             cmds.makeIdentity(joints[-1], r = True, jo = True, apply = True)
@@ -5389,8 +5410,8 @@ class IkBackLegRig(IkFrontLegRig):
             cmds.parentConstraint(self.offset_chain[inc], self.buffer_joints[inc], mo = True)
             attr.connect_scale(self.offset_chain[inc], self.buffer_joints[inc])
             
-            cmds.connectAttr('%s.scaleX' % self.ik_chain[inc], 
-                             '%s.scaleX' % self.offset_chain[inc])
+            cmds.connectAttr('%s.scale%s' % (self.ik_chain[inc],self.stretch_axis), 
+                             '%s.scale%s' % (self.offset_chain[inc], self.stretch_axis))
         
         cmds.orientConstraint(self.ik_chain[-1], self.buffer_joints[-1], mo = True)
         

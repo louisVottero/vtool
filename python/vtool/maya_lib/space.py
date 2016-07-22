@@ -883,6 +883,7 @@ class OrientJoint(object):
         self._cleanup()
         
         self._freeze()
+        
 
 class BoundingBox(vtool.util.BoundingBox):
     """

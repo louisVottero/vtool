@@ -840,8 +840,9 @@ class PoseGroup(object):
                         child_instance.create_blend(index, goto_pose = True)
             
                 if mesh:
-                    mesh_index = child_instance.get_target_mesh_index(mesh)
-                    self.create_blend(mesh_index, True, False)
+                    if hasattr(child_instance, 'get_target_mesh_index'):
+                        mesh_index = child_instance.get_target_mesh_index(mesh)
+                        self.create_blend(mesh_index, True, False)
     
     def delete(self):
         """
