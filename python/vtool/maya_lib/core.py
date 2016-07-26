@@ -873,7 +873,7 @@ def import_file(filepath):
     """
     cmds.file(filepath, f = True, i = True, iv = True)
 
-def reference_file(filepath, namespace = None, use_namespace = True):
+def reference_file(filepath, namespace = None):
     """
     Reference a maya file in a generic vtool way.
     
@@ -894,7 +894,6 @@ def reference_file(filepath, namespace = None, use_namespace = True):
            gl = True, 
            mergeNamespacesOnClash = False, 
            namespace = namespace, 
-           usingNamespaces = use_namespace,
            options = "v=0;")
     
 #--- ui
