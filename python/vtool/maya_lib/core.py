@@ -832,7 +832,7 @@ def create_group(name, parent = None):
             if not parent == actual_parent:
                 cmds.parent(sub_name, parent)
 
-def create_display_layer(name, nodes):
+def create_display_layer(name, nodes, display_type = 2):
     """
     Create a display layer containing the supplied nodes.
     
@@ -843,7 +843,7 @@ def create_display_layer(name, nodes):
     """
     layer = cmds.createDisplayLayer( name = name )
     cmds.editDisplayLayerMembers( layer, nodes, noRecurse = True)
-    cmds.setAttr( '%s.displayType' % layer, 2 )
+    cmds.setAttr( '%s.displayType' % layer, display_type )
 
 def delete_display_layers():
     """
@@ -873,7 +873,7 @@ def import_file(filepath):
     """
     cmds.file(filepath, f = True, i = True, iv = True)
 
-def reference_file(filepath, namespace = None):
+def reference_file(filepath, namespace = None, use_namespace = True):
     """
     Reference a maya file in a generic vtool way.
     
@@ -894,6 +894,7 @@ def reference_file(filepath, namespace = None):
            gl = True, 
            mergeNamespacesOnClash = False, 
            namespace = namespace, 
+           usingNamespaces = use_namespace,
            options = "v=0;")
     
 #--- ui

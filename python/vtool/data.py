@@ -2209,12 +2209,12 @@ class MayaFileData(MayaCustomData):
         version = util_file.VersionFile(self.filepath)
         version.save(comment)
 
-    def maya_reference_data(self, filepath = None):
+    def maya_reference_data(self, filepath = None, namespace = True):
         
         if not filepath:
             filepath = self.filepath
         
-        maya_lib.core.reference_file(filepath)
+        maya_lib.core.reference_file(filepath, use_namespace = namespace)
         
     def set_directory(self, directory):
         super(MayaFileData, self).set_directory(directory)
