@@ -1005,6 +1005,8 @@ class DuplicateHierarchy(object):
         
         duplicate = cmds.duplicate(transform, po = True)[0]
         
+        attr.remove_user_defined(duplicate)
+        
         duplicate = cmds.rename(duplicate, core.inc_name(new_name))
         
         self.duplicates.append( duplicate )
@@ -1695,6 +1697,9 @@ def create_match_group(transform, prefix = 'match', use_duplicate = False):
         
     if use_duplicate:
         xform_group = cmds.duplicate(transform, po = True)
+        
+        attr.remove_user_defined(xform_group)
+        
         xform_group = cmds.rename(xform_group, core.inc_name(name))
     
     return xform_group    
@@ -1768,6 +1773,9 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
         follow_group = cmds.group( em = True, n = core.inc_name(name) )
     if use_duplicate:
         follow_group = cmds.duplicate( target_transform, n = core.inc_name(name), po = True)
+        
+        attr.remove_user_defined(follow_group)
+        
         parent = None
     
     match = MatchSpace(source_transform, follow_group)
@@ -2068,6 +2076,8 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
     
     if use_duplicate:
         local_group = cmds.duplicate(source_transform, n = 'local_%s' % source_transform)[0]
+        
+        attr.remove_user_defined(local_group)
         
         children = cmds.listRelatives(local_group)
         
@@ -2813,11 +2823,15 @@ def create_ghost_follow_chain(transforms):
         parent = cmds.duplicate(parent[0], po = True, n = 'ghost_%s' % parent[0])
         cmds.parent(parent, w = True)
         
+        attr.remove_user_defined(parent)
+        
         last_ghost = parent
     
     for transform in transforms:
         
         ghost = cmds.duplicate(transform, po = True, n = 'ghost_%s' % transform)[0]
+        
+        attr.remove_user_defined(ghost)
         
         cmds.parent(ghost, w = True)
         
@@ -2855,6 +2869,9 @@ def create_ghost_chain(transforms):
     
     for transform in transforms:
         ghost = cmds.duplicate(transform, po = True, n = 'ghost_%s' % transform)[0]
+        
+        attr.remove_user_defined(ghost)
+        
         cmds.parent(ghost, w = True)
         
         MatchSpace(transform, ghost).translation_rotation()
