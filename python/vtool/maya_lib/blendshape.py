@@ -2013,13 +2013,9 @@ class ShapeComboManager(object):
         if not number_str:
             return
         
-        number = int(number_str)
-        
-        number_str = str(number)
-        if not len(number_str) >= 2:
-            return
+        value = int(number_str)
             
-        value = int(number_str[-2:])
+        #value = int(number_str[-2:])
         
         return value
         
