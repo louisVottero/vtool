@@ -1735,6 +1735,9 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
     if use_duplicate:
         #this sometimes doesn't duplicate with values because Maya... :(
         xform_group = cmds.duplicate(transform)[0]
+        
+        attr.remove_user_defined(xform_group)
+        
         xform_group = cmds.rename(xform_group, core.inc_name(name))
 
     cmds.parent(transform, xform_group)
