@@ -2048,8 +2048,6 @@ class MayaAttributeData(MayaCustomData):
                 
                 attribute_name = '%s.%s' % (thing, attribute)
                 
-                print attribute_name
-                
                 value = cmds.getAttr(attribute_name)
                 
                 lines.append("[ '%s', %s ]" % (attribute, value))
