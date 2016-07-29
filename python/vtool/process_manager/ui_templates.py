@@ -2,11 +2,18 @@
 
 import ui_view
 from vtool import qt_ui
+from vtool import util
 
 if qt_ui.is_pyqt():
-    from PyQt4 import QtGui, QtCore, Qt, uic
+    from PyQt4 import QtCore, Qt, uic
+    from PyQt4.QtGui import *
 if qt_ui.is_pyside():
-    from PySide import QtCore, QtGui
+        from PySide import QtCore
+        from PySide.QtGui import *
+if qt_ui.is_pyside2():
+        from PySide2 import QtCore
+        from PySide2.QtGui import *
+        from PySide2.QtWidgets import *
 
 class TemplateWidget(qt_ui.BasicWidget):
     
@@ -17,11 +24,11 @@ class TemplateWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
-        title_layout = QtGui.QHBoxLayout()
+        title_layout = QHBoxLayout()
         
-        title_label = QtGui.QLabel('Template Source')
+        title_label = QLabel('Template Source')
         
-        self.template_combo = QtGui.QComboBox()
+        self.template_combo = QComboBox()
         self.template_combo.currentIndexChanged.connect(self._change)
         
         title_layout.addWidget(title_label)
@@ -172,7 +179,7 @@ class TemplateTree(ui_view.ProcessTreeWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QtGui.QMenu()
+        self.context_menu = QMenu()
         
         copy = self.context_menu.addAction('Paste under Current Process')
         copy.triggered.connect(self._add_template)

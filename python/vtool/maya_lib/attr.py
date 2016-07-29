@@ -2053,6 +2053,23 @@ def unlock_attributes(node, attributes = [], only_keyable = False):
         for attr in attrs:
             cmds.setAttr('%s.%s' % (node, attr), l = False, k = True)
 
+def remove_user_defined(node):
+    """
+    Removes user defined attributes from a node.
+    """
+    
+    attrs = cmds.listAttr(node, ud = True)
+    
+    try:
+        for attr in attrs:
+            
+            unlock_attributes(node, attr)
+            disconnect_attribute(attr)
+            cmds.deleteAttr('%s.%s' % (node, attr))
+    except:
+        vtool.util.warning('Could not remove all user defined attributes on node: %s' % node)
+        
+
 def set_color(nodes, color):
     """
     Set the override color for the nodes in nodes.

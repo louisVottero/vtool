@@ -6,6 +6,7 @@ import maya.cmds as cmds
 
 import maya.OpenMayaUI as OpenMayaUI
 import maya.mel as mel
+import maya.utils
 
 import vtool.qt_ui
 
@@ -19,11 +20,16 @@ import deform
 import rigs_util
 
 #import util
-
 if vtool.qt_ui.is_pyqt():
-    from PyQt4 import QtGui, QtCore, Qt, uic
+    from PyQt4 import QtCore, Qt, uic
+    from PyQt4.QtGui import *
 if vtool.qt_ui.is_pyside():
-    from PySide import QtCore, QtGui
+    from PySide import QtCore
+    from PySide.QtGui import *
+if vtool.qt_ui.is_pyside2():
+    from PySide2 import QtCore
+    from PySide2.QtGui import *
+    from PySide2.QtWidgets import *
     
 
 #--- signals
@@ -79,28 +85,17 @@ def get_maya_window():
             from shiboken import wrapInstance
         except:
             from PySide.shiboken import wrapInstance
-            
+    
+    if vtool.qt_ui.is_pyside2():
+        from shiboken2 import wrapInstance
             #vtool.util.show(traceback.format_exc)
              
-        maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
-        return wrapInstance(long(maya_window_ptr), QtGui.QWidget)
-    
-def defer_execute(function):
-        
-    def wrapper(*args, **kwargs):
-        
-        funct = lambda : function(*args, **kwargs)
-    
-        import maya.utils
-        maya.utils.executeDeferred(funct)
-               
-    return wrapper
-    
-@defer_execute
+    maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
+    return wrapInstance(long(maya_window_ptr), QWidget)
+
 def create_window(ui, dock_area = 'right'): 
     
-    #this was needed to have the ui predictably load. 
-    mel.eval('updateRendererUI;')
+    
     
     ui_name = str(ui.objectName())
     dock_name = '%sDock' % ui_name
@@ -116,7 +111,10 @@ def create_window(ui, dock_area = 'right'):
     allowedAreas = ['right', 'left']
     
     #do not remove
-    print 'Creating dock window.', ui_name, ui, ui.layout()
+    vtool.util.show('Vetala creating dock window.', ui_name)
+    
+    #this was needed to have the ui predictably load. 
+    mel.eval('updateRendererUI;')
     
     try:
         cmds.dockControl(dock_name,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name, w=350, fl = False, visible = True)
@@ -125,7 +123,6 @@ def create_window(ui, dock_area = 'right'):
     except:
         #do not remove
         vtool.util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
-        
         
     
 def pose_manager(shot_sculpt_only = False):
@@ -145,6 +142,8 @@ def tool_manager(name = None, directory = None):
     funct = lambda : create_window(tool_manager)
     
     import maya.utils
+    import time
+    time.sleep(1)
     maya.utils.executeDeferred(funct)
     
     return tool_manager
@@ -155,7 +154,7 @@ def process_manager(directory = None):
     
     funct = lambda : create_window(window)
     
-    import maya.utils
+    
     maya.utils.executeDeferred(funct)
     
     if directory:
@@ -189,12 +188,12 @@ class ToolManager(MayaDirectoryWindow):
         super(ToolManager, self).__init__()
         
     def _build_widgets(self):
-        self.tab_widget = QtGui.QTabWidget()
+        self.tab_widget = QTabWidget()
         self.tab_widget.setTabPosition(self.tab_widget.West)
         
-        self.modeling_widget = ModelManager()
+        #self.modeling_widget = ModelManager()
         self.rigging_widget = RigManager()
-        self.shot_widget = QtGui.QWidget()
+        #self.shot_widget = QWidget()
         
         self.tab_widget.addTab(self.rigging_widget, 'RIG')
         self.tab_widget.setCurrentIndex(1)
@@ -222,8 +221,8 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
     
     def _build_widgets(self):
         
-        manager_group = QtGui.QGroupBox('Applications')
-        manager_layout = QtGui.QVBoxLayout()
+        manager_group = QGroupBox('Applications')
+        manager_layout = QVBoxLayout()
         manager_layout.setContentsMargins(2,2,2,2)
         manager_layout.setSpacing(2)
         manager_layout.setAlignment(QtCore.Qt.AlignCenter)
@@ -232,28 +231,28 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         button_width = 200        
         
-        process_button = QtGui.QPushButton('VETALA')
+        process_button = QPushButton('VETALA')
         process_button.clicked.connect(self._process_manager)
         process_button.setMinimumWidth(button_width)
         manager_layout.addWidget(process_button)
         
-        pose_button = QtGui.QPushButton('Correctives')
+        pose_button = QPushButton('Correctives')
         pose_button.clicked.connect(self._pose_manager)
         pose_button.setMinimumWidth(button_width)
         manager_layout.addWidget(pose_button)
         
-        shape_combo_button = QtGui.QPushButton('Shape Combos')
+        shape_combo_button = QPushButton('Shape Combos')
         shape_combo_button.clicked.connect(self._shape_combo)
         shape_combo_button.setMinimumWidth(button_width)
         manager_layout.addWidget(shape_combo_button)
         
-        tool_group = QtGui.QGroupBox('Tools')
-        tool_layout = QtGui.QVBoxLayout()
+        tool_group = QGroupBox('Tools')
+        tool_layout = QVBoxLayout()
         tool_layout.setContentsMargins(2,2,2,2)
         tool_layout.setSpacing(2)
         tool_group.setLayout(tool_layout)
         
-        tool_tab = QtGui.QTabWidget()
+        tool_tab = QTabWidget()
         deformation_widget = vtool.qt_ui.BasicWidget()
         structure_widget = vtool.qt_ui.BasicWidget()
         control_widget = vtool.qt_ui.BasicWidget()
@@ -280,16 +279,16 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         subdivide_joint_button.clicked.connect(self._subdivide_joint)
         subdivide_joint_button.setToolTip('select parent and child joint')
         
-        add_orient = QtGui.QPushButton('Add Orient')
+        add_orient = QPushButton('Add Orient')
         add_orient.setMaximumWidth(80)
         add_orient.setToolTip('select joints')
-        orient_joints = QtGui.QPushButton('Orient Joints')
+        orient_joints = QPushButton('Orient Joints')
         orient_joints.setMinimumHeight(40)
         
-        mirror = QtGui.QPushButton('Mirror Transforms')
+        mirror = QPushButton('Mirror Transforms')
         mirror.setMinimumHeight(40)
         
-        #match_joints = QtGui.QPushButton('Match')
+        #match_joints = QPushButton('Match')
         #match_joints.setMinimumHeight(40)
         
         joints_on_curve = vtool.qt_ui.GetIntNumberButton('create joints on curve')
@@ -297,12 +296,12 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         snap_to_curve = vtool.qt_ui.GetIntNumberButton('snap joints to curve')
         
-        transfer_joints = QtGui.QPushButton('transfer joints')
-        transfer_process = QtGui.QPushButton('transfer process weights to parent')
+        transfer_joints = QPushButton('transfer joints')
+        transfer_process = QPushButton('transfer process weights to parent')
         
-        self.joint_axis_check = QtGui.QCheckBox('joint axis visibility')
+        self.joint_axis_check = QCheckBox('joint axis visibility')
         
-        mirror_invert = QtGui.QPushButton('Mirror Invert')
+        mirror_invert = QPushButton('Mirror Invert')
         mirror_invert.clicked.connect(self._mirror_invert)
         
         
@@ -318,7 +317,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         main_layout = parent.main_layout
         
-        orient_layout = QtGui.QHBoxLayout()
+        orient_layout = QHBoxLayout()
         orient_layout.addWidget(orient_joints)
         orient_layout.addWidget(add_orient)
         
@@ -347,10 +346,10 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
     def _create_control_widgets(self, parent):
         
-        mirror_control = QtGui.QPushButton('Mirror Control')
+        mirror_control = QPushButton('Mirror Control')
         mirror_control.clicked.connect(self._mirror_control)
         
-        mirror_controls = QtGui.QPushButton('Mirror Controls')
+        mirror_controls = QPushButton('Mirror Controls')
         mirror_controls.clicked.connect(self._mirror_controls)
         mirror_controls.setMinimumHeight(40)
         
@@ -365,7 +364,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         number_button.clicked.connect(self._size_controls)
         self.scale_control_button = number_button
         
-        self.fix_sub_controls = QtGui.QPushButton('Fix Sub Controls')
+        self.fix_sub_controls = QPushButton('Fix Sub Controls')
         self.fix_sub_controls.clicked.connect(rigs_util.fix_sub_controls)
         
         parent.main_layout.addWidget(number_button)
@@ -377,11 +376,11 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         parent.main_layout.addWidget(self.fix_sub_controls)
         
     def _create_deformation_widgets(self, parent):
-        corrective_button = QtGui.QPushButton('Create Corrective')
+        corrective_button = QPushButton('Create Corrective')
         corrective_button.setToolTip('select deformed mesh then fixed mesh')
         corrective_button.clicked.connect(self._create_corrective)
         
-        skin_mesh_from_mesh = QtGui.QPushButton('Skin Mesh From Mesh')
+        skin_mesh_from_mesh = QPushButton('Skin Mesh From Mesh')
         skin_mesh_from_mesh.clicked.connect(self._skin_mesh_from_mesh)
         
         parent.main_layout.addWidget(corrective_button)

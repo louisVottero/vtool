@@ -19,9 +19,15 @@ from vtool import util_file
 from multiprocessing.dummy import current_process
 
 if vtool.qt_ui.is_pyqt():
-    from PyQt4 import QtGui, QtCore, Qt, uic
+    from PyQt4 import QtCore, Qt, uic
+    from PyQt4.QtGui import *
 if vtool.qt_ui.is_pyside():
-    from PySide import QtCore, QtGui
+        from PySide import QtCore
+        from PySide.QtGui import *
+if vtool.qt_ui.is_pyside2():
+        from PySide2 import QtCore
+        from PySide2.QtGui import *
+        from PySide2.QtWidgets import *
     
 class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     """
@@ -35,7 +41,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     
     def _build_widgets(self):
         
-        self.splitter = QtGui.QSplitter()
+        self.splitter = QSplitter()
         self.main_layout.addWidget(self.splitter)
         
         self.code_widget = CodeWidget()
@@ -77,7 +83,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.sizes = self.splitter.sizes()
         
     def _define_main_layout(self):
-        return QtGui.QVBoxLayout()
+        return QVBoxLayout()
         
     def _close_splitter(self):
         
@@ -237,7 +243,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.main_layout.addWidget(self.code_edit, stretch = 1)
         self.main_layout.addWidget(self.save_file, stretch = 0)
         
-        self.alt_layout = QtGui.QVBoxLayout()
+        self.alt_layout = QVBoxLayout()
         
         self.save_file.hide()
         
@@ -440,13 +446,13 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         self.exteranl_code_libarary = None
         
     def _define_main_layout(self):
-        return QtGui.QVBoxLayout()
+        return QVBoxLayout()
         
     def _build_widgets(self):
         
         self.code_manifest_tree = CodeManifestTree()
         
-        buttons_layout = QtGui.QHBoxLayout()
+        buttons_layout = QHBoxLayout()
                 
         self.code_manifest_tree.item_renamed.connect(self._rename)
         self.code_manifest_tree.script_open.connect(self._script_open)
@@ -584,7 +590,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         #self.setIndentation(False)
         self.edit_state = False
-        self.setBackgroundRole(QtGui.QPalette.Light)
+        self.setBackgroundRole(QPalette.Light)
         
         self.setSelectionMode(self.ExtendedSelection)
         
@@ -612,7 +618,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         header = self.header()
         
-        self.checkbox = QtGui.QCheckBox(header)
+        self.checkbox = QCheckBox(header)
         self.checkbox.stateChanged.connect(self._set_all_checked)
         
         self.update_checkbox = True
@@ -629,8 +635,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if vtool.util.is_in_maya():
             palette = self.palette()
             
-            palette.setColor(QtGui.QPalette.Base, QtGui.QColor(60,60,60,255) )
-            palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(70,70,70,255) )
+            palette.setColor(QPalette.Base, QColor(60,60,60,255) )
+            palette.setColor(QPalette.AlternateBase, QColor(70,70,70,255) )
         
             self.setPalette(palette)
         
@@ -1018,7 +1024,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QtGui.QMenu()
+        self.context_menu = QMenu()
         
         new_python = self.context_menu.addAction('New Python Code')
         new_data_import = self.context_menu.addAction('New Data Import')
@@ -1342,7 +1348,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         #Could not user item iterator because it updates setData which updates the manifest, 
         #which causes the manifest to be updated too much.
-        #it = QtGui.QTreeWidgetItemIterator(self)
+        #it = QTreeWidgetItemIterator(self)
         #while it:
             #item = it.value()
             #items.append(item)
@@ -1630,7 +1636,7 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         self.setSizeHint(0, QtCore.QSize(10, 28))
         
         #if vtool.util.is_in_maya():
-        #    brush = QtGui.QBrush(QtGui.QColor(100,100,100))
+        #    brush = QBrush(QColor(100,100,100))
         #    self.setBackground(0, brush)
         
         maya_version = vtool.util.get_maya_version()
@@ -1648,14 +1654,14 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     
     def _square_fill_icon(self, r,g,b):
         
-        pixmap = QtGui.QPixmap(20, 20)
-        pixmap.fill(QtGui.QColor.fromRgbF(r, g, b, 1))
+        pixmap = QPixmap(20, 20)
+        pixmap.fill(QColor.fromRgbF(r, g, b, 1))
         
-        painter = QtGui.QPainter(pixmap)
-        painter.fillRect(0, 0, 100, 100, QtGui.QColor.fromRgbF(r, g, b, 1))
+        painter = QPainter(pixmap)
+        painter.fillRect(0, 0, 100, 100, QColor.fromRgbF(r, g, b, 1))
         painter.end()
         
-        icon = QtGui.QIcon(pixmap)
+        icon = QIcon(pixmap)
         
         self.setIcon(0, icon)
         
@@ -1665,17 +1671,17 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         self._square_fill_icon(r, g, b)
         
         
-        pixmap = QtGui.QPixmap(20, 20)
+        pixmap = QPixmap(20, 20)
         pixmap.fill(QtCore.Qt.transparent)
-        gradient = QtGui.QRadialGradient(10, 10, 10)
-        gradient.setColorAt(0, QtGui.QColor.fromRgbF(r, g, b, 1))
-        gradient.setColorAt(1, QtGui.QColor.fromRgbF(0, 0, 0, 0))
+        gradient = QRadialGradient(10, 10, 10)
+        gradient.setColorAt(0, QColor.fromRgbF(r, g, b, 1))
+        gradient.setColorAt(1, QColor.fromRgbF(0, 0, 0, 0))
         
-        painter = QtGui.QPainter(pixmap)
+        painter = QPainter(pixmap)
         painter.fillRect(0, 0, 100, 100, gradient)
         painter.end()
         
-        icon = QtGui.QIcon(pixmap)
+        icon = QIcon(pixmap)
         
         self.setIcon(0, icon)
         
@@ -1766,28 +1772,28 @@ class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
     def __init__(self):
         super(ManifestItemWidget, self).__init__()
         
-        self.setSizePolicy(QtGui.QSizePolicy(10, 40))
+        self.setSizePolicy(QSizePolicy(10, 40))
     
 
     
     def _build_widgets(self):
         
-        #check_box.setIcon(QtGui.QIcon())
-        self.status_icon = QtGui.QLabel()
+        #check_box.setIcon(QIcon())
+        self.status_icon = QLabel()
         self.status_icon.setMaximumSize(20,20)
         self._radial_fill_icon(0.6, 0.6, 0.6)
-        #check_box.setIcon(QtGui.QIcon(pixmap))
+        #check_box.setIcon(QIcon(pixmap))
         
-        self.check_box = QtGui.QCheckBox()
+        self.check_box = QCheckBox()
         self.check_box.setCheckState(QtCore.Qt.Checked)
         
-        #self.palette = QtGui.QPalette()
-        #self.palette.setColor(self.palette.Background, QtGui.QColor(.5,.5,.5))
+        #self.palette = QPalette()
+        #self.palette.setColor(self.palette.Background, QColor(.5,.5,.5))
         
         #self.check_box.setPalette(self.palette)
         
-        #self.label = QtGui.QLabel()
-        #self.label = QtGui.QLineEdit()
+        #self.label = QLabel()
+        #self.label = QLineEdit()
         #self.label.setReadOnly(True)
         
         
