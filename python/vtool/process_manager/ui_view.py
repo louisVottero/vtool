@@ -1049,7 +1049,7 @@ class CopyWidget(qt_ui.BasicWidget):
         self.code_list.setSelectionMode(self.code_list.ExtendedSelection)
         self.settings_list.setSelectionMode(self.settings_list.ExtendedSelection)
         
-        self.data_list.setHeaderLabels(['Source', 'Size Match', 'Target'])
+        self.data_list.setHeaderLabels(['Source', 'Size/Date Match', 'Target'])
         self.code_list.setHeaderLabels(['Source', 'Content Match', 'Target'])
         self.settings_list.setHeaderLabels(['Source', 'Content Match', 'Target'])
         
@@ -1203,14 +1203,30 @@ class CopyWidget(qt_ui.BasicWidget):
                     source_data = self.process.get_data_instance(sub_data)
                     target_data = self.other_process.get_data_instance(sub_data)
                     
+                    source_file = source_data.get_file()
+                    target_file = target_data.get_file()
+                    
                     source_size = util_file.get_size(source_data.get_file())
                     target_size = util_file.get_size(target_data.get_file())
+                     
+                    
+                     
+                    same = False
                     
                     if source_size == target_size:
+                        same = True
+                    
+                    if same:
+                        same = util_file.is_same_date(source_file, target_file)
+                        
+                     
+                    
+                    if same:
+                        
                         item.setText(1, 'Yes')
                         item.setBackground(1, self.yes_brush)
                     
-                    if not source_size == target_size:
+                    if not same:
                         item.setText(1, 'No')
                         item.setBackground(1, self.no_brush)
                     #item.setText(2, '-')

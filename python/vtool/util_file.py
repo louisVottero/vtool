@@ -1418,16 +1418,7 @@ def get_common_path(path1, path2):
     
     first_list = split_path1
     second_list = split_path2
-    
-    """
-    if len(split_path1) > split_path2:
-        first_list = split_path1
-        second_list = split_path2
-        
-    if len(split_path2) > split_path1:
-        first_list = split_path2
-        second_list = split_path1
-    """
+
     
     found = []
         

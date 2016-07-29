@@ -1801,6 +1801,8 @@ class SplineRibbonBaseRig(JointRig):
         
         self.follicle_ribbon = False
         
+        self.create_ribbon_buffer_group = False
+        
     def _create_curve(self, span_count):
         
         if not self.curve:
@@ -1882,16 +1884,41 @@ class SplineRibbonBaseRig(JointRig):
         
             for joint in self.buffer_joints:
                 
-                if not self.follicle_ribbon:
-                    rivet = geo.attach_to_surface(joint, self.surface)
-                    cmds.setAttr('%s.inheritsTransform' % rivet, 0)
-                    cmds.parent(rivet, rivet_group)
+                buffer_group = None
                 
-                if self.follicle_ribbon:
+                if self.create_ribbon_buffer_group:
+                    buffer_group = cmds.group(em = True, n = 'ribbonBuffer_%s' % joint)
+                    xform = space.create_xform_group(buffer_group)
                     
-                    follicle = geo.follicle_to_surface(joint, self.surface, constrain = True)
-                    cmds.setAttr('%s.inheritsTransform' % follicle, 0)
-                    cmds.parent(follicle, rivet_group)
+                    space.MatchSpace(joint, xform).translation_rotation()
+                
+                if not buffer_group:
+                    if not self.follicle_ribbon:
+                        rivet = geo.attach_to_surface(joint, self.surface)
+                        cmds.setAttr('%s.inheritsTransform' % rivet, 0)
+                        cmds.parent(rivet, rivet_group)
+                    
+                    if self.follicle_ribbon:
+                        
+                        follicle = geo.follicle_to_surface(joint, self.surface, constrain = True)
+                        cmds.setAttr('%s.inheritsTransform' % follicle, 0)
+                        cmds.parent(follicle, rivet_group)
+                        
+                if buffer_group:
+                    if not self.follicle_ribbon:
+                        
+                        rivet = geo.attach_to_surface(xform, self.surface, constrain = False)
+                        cmds.setAttr('%s.inheritsTransform' % rivet, 0)
+                        cmds.parentConstraint(buffer_group, joint, mo = True)
+                        cmds.parent(rivet, rivet_group)
+                    
+                    if self.follicle_ribbon:
+                        
+                        follicle = geo.follicle_to_surface(xform, self.surface, constrain = False)
+                        cmds.setAttr('%s.inheritsTransform' % follicle, 0)
+                        cmds.parentConstraint(buffer_group, joint, mo = True)
+                        cmds.parent(follicle, rivet_group)
+                    
         
         if not self.ribbon:
             self._create_spline_ik()
@@ -2117,6 +2144,9 @@ class SplineRibbonBaseRig(JointRig):
         
     def set_ribbon_follicle(self, bool_value):
         self.follicle_ribbon = bool_value
+        
+    def set_ribbon_buffer_group(self, bool_value):
+        self.create_ribbon_buffer_group = bool_value
         
     def set_last_pivot_top(self, bool_value):
         """

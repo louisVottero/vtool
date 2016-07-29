@@ -1232,7 +1232,7 @@ def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain =
     
     return motion, locator
 
-def attach_to_surface(transform, surface, u = None, v = None):
+def attach_to_surface(transform, surface, u = None, v = None, constrain = True):
     """
     Attach the transform to the surface using a rivet.
     If no u and v value are supplied, the command will try to find the closest position on the surface.
@@ -1261,7 +1261,10 @@ def attach_to_surface(transform, surface, u = None, v = None):
     
     rivet.create()
     
-    cmds.parentConstraint(rivet.rivet, transform, mo = True)
+    if constrain:
+        cmds.parentConstraint(rivet.rivet, transform, mo = True)
+    if not constrain:
+        cmds.parent(transform, rivet.rivet)
     
     return rivet.rivet
 
