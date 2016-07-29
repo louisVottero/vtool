@@ -5208,6 +5208,7 @@ class IkScapulaRig(BufferRig):
         self.negate_right_scale = False
         
         self.offset_axis = 'X'
+        self.rotate_control = None
         
     def _duplicate_scapula(self):
         
@@ -5378,8 +5379,8 @@ class IkScapulaRig(BufferRig):
             cmds.setAttr('%s.scaleZ' % self.xform_rotate, -1)
         
         
-        
-        cmds.parentConstraint(self.rotate_control, self.joints[0],mo = True)
+        if self.rotate_control:
+            cmds.parentConstraint(self.rotate_control, self.joints[0],mo = True)
         
 class IkBackLegRig(IkFrontLegRig):
     
