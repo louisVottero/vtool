@@ -15,9 +15,15 @@ if vtool.util.is_in_maya():
     import core
 
 if qt_ui.is_pyqt():
-    from PyQt4 import QtGui, QtCore, Qt, uic
+    from PyQt4 import QtCore, Qt, uic
+    from PyQt4.QtGui import *
 if qt_ui.is_pyside():
-    from PySide import QtCore, QtGui
+        from PySide import QtCore
+        from PySide.QtGui import *
+if qt_ui.is_pyside2():
+        from PySide2 import QtCore
+        from PySide2.QtGui import *
+        from PySide2.QtWidgets import *
 
 class ComboManager(ui.MayaWindow):
     
@@ -36,25 +42,25 @@ class ComboManager(ui.MayaWindow):
         #self._refresh()
     
     def _define_main_layout(self):
-        layout = QtGui.QVBoxLayout()
+        layout = QVBoxLayout()
         layout.setAlignment(QtCore.Qt.AlignTop)
         
         return layout
         
     def _build_widgets(self):
         
-        header_layout = QtGui.QVBoxLayout()
+        header_layout = QVBoxLayout()
         header_layout.setAlignment(QtCore.Qt.AlignLeft)
         
         
-        self.add = QtGui.QPushButton('ADD')
+        self.add = QPushButton('ADD')
         self.add.setMinimumWidth(100)
         self.add.setMaximumWidth(200)
         self.add.setMinimumHeight(50)
         
         self.add.clicked.connect(self._add_command)
         
-        layout_1 = QtGui.QVBoxLayout()
+        layout_1 = QVBoxLayout()
         
         self.slider = WeightSlider()
         self.slider.value_change.connect(self._update_value)
@@ -63,13 +69,13 @@ class ComboManager(ui.MayaWindow):
         header_layout.addWidget(self.slider)
         header_layout.addSpacing(5)
         
-        self.preserve_check = QtGui.QCheckBox('Preserve Combos')
+        self.preserve_check = QCheckBox('Preserve Combos')
         
-        recreate_all = QtGui.QPushButton('Recreate All')
+        recreate_all = QPushButton('Recreate All')
         recreate_all.setMaximumWidth(100)
         recreate_all.clicked.connect(self._recreate_all)
         
-        to_default = QtGui.QPushButton('To Default')
+        to_default = QPushButton('To Default')
         to_default.setMaximumWidth(100)
         to_default.clicked.connect(self._to_default)
         
@@ -77,7 +83,7 @@ class ComboManager(ui.MayaWindow):
         layout_1.addWidget(recreate_all)
         layout_1.addWidget(to_default)
 
-        button_layout = QtGui.QHBoxLayout()
+        button_layout = QHBoxLayout()
         button_layout.setAlignment(QtCore.Qt.AlignLeft)
         button_layout.addWidget(self.add)
         button_layout.addSpacing(10)
@@ -89,7 +95,7 @@ class ComboManager(ui.MayaWindow):
                 
         header_layout.addLayout(button_layout)
         
-        base = QtGui.QPushButton('Set')
+        base = QPushButton('Set')
         
         base.setMinimumWidth(50)
         base.setMaximumWidth(100)
@@ -97,10 +103,10 @@ class ComboManager(ui.MayaWindow):
         
         base.clicked.connect(self._set_base)
         
-        self.current_base = QtGui.QLabel('    Base: -')
+        self.current_base = QLabel('    Base: -')
         self.current_base.setMaximumWidth(300)
         
-        layout_base = QtGui.QHBoxLayout()
+        layout_base = QHBoxLayout()
         layout_base.setAlignment(QtCore.Qt.AlignLeft)
         layout_base.addWidget(base)
         layout_base.addWidget(self.current_base)
@@ -113,14 +119,14 @@ class ComboManager(ui.MayaWindow):
         
         self.combo_widget = ComboWidget()
         
-        splitter = QtGui.QSplitter()
+        splitter = QSplitter()
         
         self.shape_widget.tree.itemSelectionChanged.connect(self._shape_selection_changed)
         self.combo_widget.tree.itemSelectionChanged.connect(self._combo_selection_changed)
         
         splitter.addWidget(self.shape_widget)
         splitter.addWidget(self.combo_widget)
-        splitter.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
+        splitter.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
         splitter.setSizes([120,200])
         
         self.main_layout.addWidget(splitter)
@@ -378,8 +384,8 @@ class ComboManager(ui.MayaWindow):
             name = inbetween_items[0].text(0)
             self.manager.add_shape(name, mesh)
             
-            brush = QtGui.QBrush()
-            color = QtGui.QColor()
+            brush = QBrush()
+            color = QColor()
             color.setRgb(200,200,200)
             brush.setColor(color)
             item.setForeground(0, brush)
@@ -464,10 +470,10 @@ class ShapeWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
-        header_layout = QtGui.QVBoxLayout()
+        header_layout = QVBoxLayout()
         
-        info_layout = QtGui.QHBoxLayout()
-        info_widget = QtGui.QLabel('Shape')
+        info_layout = QHBoxLayout()
+        info_widget = QLabel('Shape')
         info_widget.setAlignment(QtCore.Qt.AlignCenter)
         
         info_layout.addWidget(info_widget)
@@ -532,7 +538,7 @@ class ShapeTree(qt_ui.TreeWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QtGui.QMenu()
+        self.context_menu = QMenu()
         
         self.recreate_action = self.context_menu.addAction('Recreate')
         
@@ -547,7 +553,7 @@ class ShapeTree(qt_ui.TreeWidget):
         
     def _create_item(self, shape, inbetweens = None):
         
-        item = QtGui.QTreeWidgetItem()
+        item = QTreeWidgetItem()
         item.setSizeHint(0, QtCore.QSize(100, 18))
         
         item.setText(0, shape)
@@ -611,7 +617,7 @@ class ShapeTree(qt_ui.TreeWidget):
         
     def _create_child_item(self, name, parent = None):
         
-        child_item = QtGui.QTreeWidgetItem(parent)
+        child_item = QTreeWidgetItem(parent)
         child_item.setSizeHint(0, QtCore.QSize(100, 15))
         child_item.setText(0, name)
         
@@ -624,15 +630,15 @@ class ShapeTree(qt_ui.TreeWidget):
             font.setBold(True)
             item.setFont(0, font)
             
-            brush = QtGui.QBrush()
-            color = QtGui.QColor()
+            brush = QBrush()
+            color = QColor()
             color.setRgb(200,200,200)
             brush.setColor(color)
             item.setForeground(0, brush)
         
         if not bool_value:
-            brush = QtGui.QBrush()
-            color = QtGui.QColor()
+            brush = QBrush()
+            color = QColor()
             color.setRgb(100,100,100)
             brush.setColor(color)
             
@@ -675,12 +681,12 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self.update_selection = False
         
-        modifiers = QtGui.QApplication.keyboardModifiers()
+        modifiers = QApplication.keyboardModifiers()
         
         if modifiers == QtCore.Qt.ControlModifier or modifiers == QtCore.Qt.ShiftModifier:
             self.ctrl_active = True
         
-        mouse = QtGui.QApplication.mouseButtons()
+        mouse = QApplication.mouseButtons()
         if mouse == QtCore.Qt.LeftButton:
             self.left_press = True
         if not mouse == QtCore.Qt.LeftButton:
@@ -689,7 +695,7 @@ class ShapeTree(qt_ui.TreeWidget):
         if not event:
             
             self.update_selection = True
-            return QtGui.QItemSelectionModel.NoUpdate
+            return QItemSelectionModel.NoUpdate
         
         if event.button() == QtCore.Qt.LeftButton:
             
@@ -716,17 +722,17 @@ class ShapeTree(qt_ui.TreeWidget):
                         
                         self.setItemSelected(item, True)
                         self.update_selection = True
-                        return QtGui.QItemSelectionModel.Select
+                        return QItemSelectionModel.Select
                     
                     if item.isSelected():    
                         
                         self.setItemSelected(item, False)
                         self.update_selection = True
-                        return QtGui.QItemSelectionModel.Deselect
+                        return QItemSelectionModel.Deselect
                 
             if not self.left_press:
                 self.update_selection = True
-                return QtGui.QItemSelectionModel.NoUpdate
+                return QItemSelectionModel.NoUpdate
         
         self.update_selection = True
         
@@ -922,10 +928,10 @@ class ComboWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
-        header_layout = QtGui.QVBoxLayout()
+        header_layout = QVBoxLayout()
         
-        info_layout = QtGui.QHBoxLayout()
-        info_widget = QtGui.QLabel('Combo')
+        info_layout = QHBoxLayout()
+        info_widget = QLabel('Combo')
         info_widget.setAlignment(QtCore.Qt.AlignCenter)
         
         info_layout.addWidget(info_widget)
@@ -960,7 +966,7 @@ class ComboTree(qt_ui.TreeWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QtGui.QMenu()
+        self.context_menu = QMenu()
         
         self.recreate_action = self.context_menu.addAction('Recreate')
         self.remove_action = self.context_menu.addAction('Remove')
@@ -977,16 +983,16 @@ class ComboTree(qt_ui.TreeWidget):
             font = item.font(0)
             font.setBold(True)
             
-            brush = QtGui.QBrush()
-            color = QtGui.QColor()
+            brush = QBrush()
+            color = QColor()
             color.setRgb(200,200,200)
             brush.setColor(color)
         
         if not bool_value:
             
             font.setBold(False)
-            brush = QtGui.QBrush()
-            color = QtGui.QColor()
+            brush = QBrush()
+            color = QColor()
             color.setRgb(100,100,100)
             brush.setColor(color)
         
@@ -1044,7 +1050,7 @@ class ComboTree(qt_ui.TreeWidget):
         self.clear()
         
         for combo in combos:
-            item = QtGui.QTreeWidgetItem()
+            item = QTreeWidgetItem()
             item.setSizeHint(0, QtCore.QSize(100, 20))
             item.setText(0, combo)
             self.highlight_item(item)
@@ -1068,7 +1074,7 @@ class ComboTree(qt_ui.TreeWidget):
         if possible_combos:
             for combo in possible_combos:
                 
-                item = QtGui.QTreeWidgetItem()
+                item = QTreeWidgetItem()
                 item.setSizeHint(0, QtCore.QSize(100, 18))
                 item.setText(0, combo)
                 
@@ -1091,11 +1097,11 @@ class WeightSlider(qt_ui.BasicWidget):
         super(WeightSlider, self).__init__()
         
     def _define_main_layout(self):
-        return QtGui.QHBoxLayout()
+        return QHBoxLayout()
 
     def _build_widgets(self):
         
-        self.value = QtGui.QDoubleSpinBox()
+        self.value = QDoubleSpinBox()
         self.value.setMinimum(0)
         self.value.setMaximum(1)
         self.value.setDecimals(3)
@@ -1103,7 +1109,7 @@ class WeightSlider(qt_ui.BasicWidget):
         self.value.setMinimumWidth(60)
         self.value.setButtonSymbols(self.value.NoButtons)
         
-        self.slider = QtGui.QSlider()
+        self.slider = QSlider()
         self.slider.setMinimum(0)
         self.slider.setMaximum(1000)
         self.slider.setTickPosition(self.slider.TicksBelow)

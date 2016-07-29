@@ -9,9 +9,15 @@ import vtool.util
 import process
 
 if vtool.qt_ui.is_pyqt():
-    from PyQt4 import QtGui, QtCore, Qt, uic
+    from PyQt4 import QtCore, Qt, uic
+    from PyQt4.QtGui import *
 if vtool.qt_ui.is_pyside():
-    from PySide import QtCore, QtGui
+        from PySide import QtCore
+        from PySide.QtGui import *
+if vtool.qt_ui.is_pyside2():
+        from PySide2 import QtCore
+        from PySide2.QtGui import *
+        from PySide2.QtWidgets import *
 
 
 class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
@@ -29,11 +35,11 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.data_widget.setMouseTracking(True)
           
     def _define_main_layout(self):
-        return QtGui.QVBoxLayout()
+        return QVBoxLayout()
                 
     def _build_widgets(self):
         
-        splitter = QtGui.QSplitter()
+        splitter = QSplitter()
         
         self.data_widget = DataTreeWidget()
         self.data_widget.itemSelectionChanged.connect(self._data_item_selection_changed)
@@ -42,7 +48,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.datatype_widget = DataTypeWidget()
         self.datatype_widget.data_added.connect(self._refresh_data)
         
-        splitter.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)   
+        splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)   
         self.main_layout.addWidget(splitter, stretch = 1)
                 
         splitter.addWidget(self.data_widget)
@@ -51,9 +57,9 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         splitter.setSizes([1,1])
         self.splitter = splitter
         
-        self.label = QtGui.QLabel('-')
+        self.label = QLabel('-')
         
-        self.file_widget = QtGui.QWidget()
+        self.file_widget = QWidget()
         self.file_widget.hide()
         
         self.main_layout.addWidget(self.label, alignment = QtCore.Qt.AlignCenter)
@@ -212,7 +218,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QtGui.QMenu()
+        self.context_menu = QMenu()
         
         self.rename_action = self.context_menu.addAction('Rename')
         self.remove_action = self.context_menu.addAction('Delete')
@@ -331,7 +337,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         for foldername in folders:
             
-            item = QtGui.QTreeWidgetItem()
+            item = QTreeWidgetItem()
             item.setText(0, foldername)
             
             data_type = process_tool.get_data_type(foldername)
@@ -409,7 +415,7 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
     def _build_widgets(self):
         self.data_type_tree_widget = DataTypeTreeWidget()
         
-        add_button = QtGui.QPushButton('Add')
+        add_button = QPushButton('Add')
         add_button.setMaximumWidth(100)
         add_button.clicked.connect(self._add )
         
@@ -483,7 +489,7 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
     def set_directory(self, filepath):
         self.directory = filepath
     
-class DataTypeTreeWidget(QtGui.QTreeWidget):
+class DataTypeTreeWidget(QTreeWidget):
     
     def __init__(self):
         
@@ -504,7 +510,7 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
 
     def _add_data_item(self, data_type, parent):
         
-        item = QtGui.QTreeWidgetItem(parent)
+        item = QTreeWidgetItem(parent)
         item.setText(0, data_type)
         item.setSizeHint(0, QtCore.QSize(100, 20))
         #self.addTopLevelItem(item)
@@ -524,7 +530,7 @@ class DataTypeTreeWidget(QtGui.QTreeWidget):
         group_item = self._find_group(group_type)
         
         if not group_item:
-            item = QtGui.QTreeWidgetItem()
+            item = QTreeWidgetItem()
             item.setText(0, group_type)
             item.setSizeHint(0, QtCore.QSize(100, 25))
             self.addTopLevelItem(item)    
@@ -553,7 +559,7 @@ class GroupWidget(vtool.qt_ui.BasicWidget):
     def _build_widgets(self):
         super(GroupWidget, self)._build_widgets()
         
-        group = QtGui.QPushButton('Group Data')
+        group = QPushButton('Group Data')
         group.setMaximumWidth(200)
         group.setMinimumHeight(50)
         self.main_layout.addWidget(group)
@@ -594,7 +600,7 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
     def _create_button(self, name):
         
-        button = QtGui.QPushButton(name)
+        button = QPushButton(name)
         button.setMaximumWidth(120)
         
         return button
@@ -666,7 +672,7 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
     def _build_widgets(self):
         
-        save_button = QtGui.QPushButton('Save')
+        save_button = QPushButton('Save')
         save_button.clicked.connect(self._save)
         save_button.setMaximumWidth(100)
         
@@ -748,20 +754,20 @@ class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
     def _build_widgets(self):
         super(ControlCvOptionFileWidget, self)._build_widgets()
         
-        data_options_layout = QtGui.QVBoxLayout()
+        data_options_layout = QVBoxLayout()
                 
-        list_widget = QtGui.QListWidget()
-        list_widget.setSizePolicy(QtGui.QSizePolicy.Minimum,QtGui.QSizePolicy.Minimum)
+        list_widget = QListWidget()
+        list_widget.setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Minimum)
         list_widget.setMaximumHeight(100)
         list_widget.setSelectionMode(list_widget.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
         
-        self.filter_names = QtGui.QLineEdit()
+        self.filter_names = QLineEdit()
         self.filter_names.setPlaceholderText('Filter Names')
         self.filter_names.textChanged.connect(self._filter_names)
         
-        remove_button = QtGui.QPushButton(self._define_remove_button())
+        remove_button = QPushButton(self._define_remove_button())
         remove_button.clicked.connect(self._remove_curves)
                 
         self.curve_list = list_widget
@@ -820,7 +826,7 @@ class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
             return
         
         for curve in curves:
-            item = QtGui.QListWidgetItem(curve)
+            item = QListWidgetItem(curve)
             self.curve_list.addItem(item)
     
 class ControlColorFileWidget(MayaDataFileWidget):
@@ -868,20 +874,20 @@ class SkinWeightOptionFileWidget(vtool.qt_ui.OptionFileWidget):
     def _build_widgets(self):
         super(SkinWeightOptionFileWidget, self)._build_widgets()
         
-        data_options_layout = QtGui.QVBoxLayout()
+        data_options_layout = QVBoxLayout()
                 
-        list_widget = QtGui.QListWidget()
-        list_widget.setSizePolicy(QtGui.QSizePolicy.Minimum,QtGui.QSizePolicy.Minimum)
+        list_widget = QListWidget()
+        list_widget.setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Minimum)
         list_widget.setMaximumHeight(100)
         list_widget.setSelectionMode(list_widget.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
         
-        self.filter_names = QtGui.QLineEdit()
+        self.filter_names = QLineEdit()
         self.filter_names.setPlaceholderText('Filter Names')
         self.filter_names.textChanged.connect(self._filter_names)
         
-        remove_button = QtGui.QPushButton('Delete Mesh Skin Weights')
+        remove_button = QPushButton('Delete Mesh Skin Weights')
         remove_button.clicked.connect(self._remove_meshes)
                 
         self.mesh_list = list_widget
@@ -940,7 +946,7 @@ class SkinWeightOptionFileWidget(vtool.qt_ui.OptionFileWidget):
             return
         
         for mesh in meshes:
-            item = QtGui.QListWidgetItem(mesh)
+            item = QListWidgetItem(mesh)
             self.mesh_list.addItem(item)
       
 class DeformerWeightFileWidget(MayaDataFileWidget):
@@ -1056,7 +1062,7 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
     def _create_button(self, name):
         
-        button = QtGui.QPushButton(name)
+        button = QPushButton(name)
         
         button.setMaximumWidth(100)
         
@@ -1073,11 +1079,11 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         import_button = self._create_button('Import')
         reference_button = self._create_button('Reference')
         
-        out_box = QtGui.QGroupBox('File Out')
-        in_box = QtGui.QGroupBox('File In')
+        out_box = QGroupBox('File Out')
+        in_box = QGroupBox('File In')
         
-        out_box_layout = QtGui.QVBoxLayout()
-        in_box_layout = QtGui.QVBoxLayout()
+        out_box_layout = QVBoxLayout()
+        in_box_layout = QVBoxLayout()
         
         out_box_layout.setContentsMargins(2,2,2,2)
         out_box_layout.setSpacing(2)
@@ -1181,13 +1187,13 @@ class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         
         super(MayaHistoryFileWidget, self)._build_widgets()
         
-        import_button = QtGui.QPushButton('Import')
+        import_button = QPushButton('Import')
         import_button.setMaximumWidth(100)
         self.button_layout.addWidget(import_button)
         
         import_button.clicked.connect(self._import_version)
         
-        reference_button = QtGui.QPushButton('Reference')
+        reference_button = QPushButton('Reference')
         reference_button.setMaximumWidth(100)
         self.button_layout.addWidget(reference_button)
         
