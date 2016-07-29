@@ -12,6 +12,8 @@ import sys
 
 QWIDGETSIZE_MAX = (1 << 24) - 1
 
+type_QT = None
+
 try:
     
     try:
@@ -28,10 +30,9 @@ try:
         
         type_QT = 'pyside2'
         util.show('using PySide2')
-        
 except:
     type_QT = None
-
+    
 if type_QT == None:
     try:
         import PyQt4

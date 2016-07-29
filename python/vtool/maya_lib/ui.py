@@ -23,12 +23,12 @@ if vtool.qt_ui.is_pyqt():
     from PyQt4 import QtCore, Qt, uic
     from PyQt4.QtGui import *
 if vtool.qt_ui.is_pyside():
-        from PySide import QtCore
-        from PySide.QtGui import *
+    from PySide import QtCore
+    from PySide.QtGui import *
 if vtool.qt_ui.is_pyside2():
-        from PySide2 import QtCore
-        from PySide2.QtGui import *
-        from PySide2.QtWidgets import *
+    from PySide2 import QtCore
+    from PySide2.QtGui import *
+    from PySide2.QtWidgets import *
     
 
 #--- signals
@@ -89,8 +89,8 @@ def get_maya_window():
         from shiboken2 import wrapInstance
             #vtool.util.show(traceback.format_exc)
              
-        maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
-        return wrapInstance(long(maya_window_ptr), QWidget)
+    maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
+    return wrapInstance(long(maya_window_ptr), QWidget)
     
 def defer_execute(function):
         

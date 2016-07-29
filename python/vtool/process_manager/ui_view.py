@@ -8,19 +8,15 @@ from vtool import qt_ui
 
 import process
 
-print qt_ui.type_QT,'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-
 if qt_ui.is_pyqt():
     from PyQt4 import QtCore, Qt, uic
     from PyQt4.QtGui import *
     
 if qt_ui.is_pyside():
-    print 'here!'
     from PySide import QtCore
     from PySide.QtGui import *
     
 if qt_ui.is_pyside2():
-    print 'using pyside 2!!!'
     from PySide2 import QtCore
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
