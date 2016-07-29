@@ -21,7 +21,7 @@ try:
         from PySide.QtGui import *
         
         type_QT = 'pyside'
-        util.show('using PySide')
+        util.show('Vetala using PySide')
         
     except:
         from PySide2 import QtCore
@@ -29,20 +29,17 @@ try:
         from PySide2.QtWidgets import *
         
         type_QT = 'pyside2'
-        util.show('using PySide2')
+        util.show('Vetala using PySide2')
 except:
     type_QT = None
     
 if type_QT == None:
     try:
-        import PyQt4
         from PyQt4 import QtCore, Qt, uic
         from PyQt4.QtGui import *
-        import sip
-        from sip import wrapinstance as wrapInstance
         type_QT = 'pyqt'
         
-        util.show('using pyQT')
+        util.show('Vetala using pyQT')
         
     except:
         type_QT = None
@@ -113,7 +110,7 @@ class BasicWindow(QMainWindow):
         
         main_widget = QWidget()
         
-        util.show('Main layout: %s' % self.main_layout)
+        #util.show('Main layout: %s' % self.main_layout)
         
         main_widget.setLayout(self.main_layout)
         

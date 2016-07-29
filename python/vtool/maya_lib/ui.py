@@ -6,6 +6,7 @@ import maya.cmds as cmds
 
 import maya.OpenMayaUI as OpenMayaUI
 import maya.mel as mel
+import maya.utils
 
 import vtool.qt_ui
 
@@ -91,23 +92,10 @@ def get_maya_window():
              
     maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
     return wrapInstance(long(maya_window_ptr), QWidget)
-    
-def defer_execute(function):
-        
-    def wrapper(*args, **kwargs):
-        
-        funct = lambda : function(*args, **kwargs)
-    
-        import maya.utils
-        maya.utils.executeDeferred(funct)
-               
-    return wrapper
-    
-@defer_execute
+
 def create_window(ui, dock_area = 'right'): 
     
-    #this was needed to have the ui predictably load. 
-    mel.eval('updateRendererUI;')
+    
     
     ui_name = str(ui.objectName())
     dock_name = '%sDock' % ui_name
@@ -123,7 +111,10 @@ def create_window(ui, dock_area = 'right'):
     allowedAreas = ['right', 'left']
     
     #do not remove
-    print 'Creating dock window.', ui_name, ui, ui.layout()
+    vtool.util.show('Vetala creating dock window.', ui_name)
+    
+    #this was needed to have the ui predictably load. 
+    mel.eval('updateRendererUI;')
     
     try:
         cmds.dockControl(dock_name,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name, w=350, fl = False, visible = True)
@@ -132,7 +123,6 @@ def create_window(ui, dock_area = 'right'):
     except:
         #do not remove
         vtool.util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
-        
         
     
 def pose_manager(shot_sculpt_only = False):
@@ -152,6 +142,8 @@ def tool_manager(name = None, directory = None):
     funct = lambda : create_window(tool_manager)
     
     import maya.utils
+    import time
+    time.sleep(1)
     maya.utils.executeDeferred(funct)
     
     return tool_manager
@@ -162,7 +154,7 @@ def process_manager(directory = None):
     
     funct = lambda : create_window(window)
     
-    import maya.utils
+    
     maya.utils.executeDeferred(funct)
     
     if directory:
@@ -199,9 +191,9 @@ class ToolManager(MayaDirectoryWindow):
         self.tab_widget = QTabWidget()
         self.tab_widget.setTabPosition(self.tab_widget.West)
         
-        self.modeling_widget = ModelManager()
+        #self.modeling_widget = ModelManager()
         self.rigging_widget = RigManager()
-        self.shot_widget = QWidget()
+        #self.shot_widget = QWidget()
         
         self.tab_widget.addTab(self.rigging_widget, 'RIG')
         self.tab_widget.setCurrentIndex(1)

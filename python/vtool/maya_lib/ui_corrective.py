@@ -525,7 +525,11 @@ class PoseTreeWidget(BaseTreeWidget):
         self.setHeaderLabels(['pose', 'type'])
        
         self.header().setStretchLastSection(False)
-        self.header().setResizeMode(0, self.header().Stretch)
+        
+        if vtool.util.get_maya_version() < 2017:
+            self.header().setResizeMode(0, self.header().Stretch)
+        if vtool.util.get_maya_version() >= 2017:
+            self.header().setSectionResizeMode(0, self.header().Stretch)
         
         self.last_selection = []
     
