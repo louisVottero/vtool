@@ -4276,7 +4276,11 @@ def get_permission(message, parent = None):
     
     message_box = QMessageBox(parent)
     
-    message = message_box.question(parent, 'Permission', message, message_box.Yes | message_box.No | message_box.Cancel )
+    message_box.setText('Permission')
+    message_box.setInformativeText(message)
+    message_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+    message = message_box.exec_()
+    #message = message_box.question(parent, 'Permission', message, QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel )
     
     if message == message_box.Yes:
         return True

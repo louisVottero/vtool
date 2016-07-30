@@ -31,7 +31,7 @@ vetala_version = util_file.get_vetala_version()
 
 class ProcessManagerWindow(qt_ui.BasicWindow):
     
-    title = 'VETALA    %s'  % vetala_version
+    title = 'VETALA'
     
     def __init__(self, parent = None):
         
@@ -222,6 +222,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.template_widget.set_settings(settings)
         
     def _build_widgets(self):
+        
+        version = QLabel('version: %s' % util_file.get_vetala_version())
+        
+        self.main_layout.addWidget(version)
         
         self.header_layout = QHBoxLayout()
         

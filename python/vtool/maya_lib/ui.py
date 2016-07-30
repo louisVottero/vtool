@@ -181,7 +181,7 @@ class ProcessMayaWindow(ui_process_manager.ProcessManagerWindow):
 vetala_version = vtool.util_file.get_vetala_version()
     
 class ToolManager(MayaDirectoryWindow):
-    title = 'VETALA  HUB   %s' % vetala_version
+    title = 'VETALA  HUB'
     
     def __init__(self, name = None):
         if name:
@@ -200,6 +200,8 @@ class ToolManager(MayaDirectoryWindow):
         self.tab_widget.addTab(self.rigging_widget, 'RIG')
         self.tab_widget.setCurrentIndex(1)
         
+        version = QLabel('version: %s' % vtool.util_file.get_vetala_version())
+        self.main_layout.addWidget(version)
         self.main_layout.addWidget(self.tab_widget)
         
     def set_directory(self, directory):
