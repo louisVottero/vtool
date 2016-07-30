@@ -26,9 +26,12 @@ if qt_ui.is_pyside2():
         from PySide2.QtGui import *
         from PySide2.QtWidgets import *
         
+
+vetala_version = util_file.get_vetala_version()
+
 class ProcessManagerWindow(qt_ui.BasicWindow):
     
-    title = 'VETALA'
+    title = 'VETALA    %s'  % vetala_version
     
     def __init__(self, parent = None):
         

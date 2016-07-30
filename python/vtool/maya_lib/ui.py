@@ -178,8 +178,10 @@ class ProcessMayaWindow(ui_process_manager.ProcessManagerWindow):
     def __init__(self):
         super(ProcessMayaWindow, self).__init__( get_maya_window() )
     
+vetala_version = vtool.util_file.get_vetala_version()
+    
 class ToolManager(MayaDirectoryWindow):
-    title = 'VETALA  HUB'
+    title = 'VETALA  HUB   %s' % vetala_version
     
     def __init__(self, name = None):
         if name:
