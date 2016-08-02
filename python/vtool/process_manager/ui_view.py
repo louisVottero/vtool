@@ -1198,7 +1198,13 @@ class CopyWidget(qt_ui.BasicWidget):
         
         count = list_widget.topLevelItemCount()
         
+        self.progress_bar.setValue(0)
+        self.progress_bar.setRange(0, count)
+        
+        
         for inc in range(0, count):
+            
+            self.progress_bar.setValue(inc)
             
             item = list_widget.topLevelItem(inc)
             
@@ -1211,24 +1217,43 @@ class CopyWidget(qt_ui.BasicWidget):
                     source_data = self.process.get_data_instance(sub_data)
                     target_data = self.other_process.get_data_instance(sub_data)
                     
+                    if not target_data:
+                        continue
+                    
+                    
                     source_file = source_data.get_file()
                     target_file = target_data.get_file()
                     
-                    source_size = util_file.get_size(source_data.get_file())
-                    target_size = util_file.get_size(target_data.get_file())
-                     
+                    if not target_file:
+                        continue
                     
-                     
+                    
+                    same_content = False
+                    
                     same = False
                     
-                    if source_size == target_size:
-                        same = True
-                    
-                    if same:
-                        same = util_file.is_same_date(source_file, target_file)
+                    if util_file.is_file(source_file) and util_file.is_file(target_file):
                         
-                     
+                        same_content = util_file.is_same_text_content(source_file, target_file)
+                        
+                        if same_content:
+                            same = True  
+                        
+                    else:
+                        
+
+                        same_date = util_file.is_same_date(source_file, target_file)
+                        
+                        if same_date:
+                            same = True
                     
+                        if same:
+                            source_size = util_file.get_size(source_data.get_file())
+                            target_size = util_file.get_size(target_data.get_file())
+                        
+                            if abs(source_size) - abs(target_size) > 0.01:
+                                same = False
+                                        
                     if same:
                         
                         item.setText(1, 'Yes')
@@ -1237,15 +1262,24 @@ class CopyWidget(qt_ui.BasicWidget):
                     if not same:
                         item.setText(1, 'No')
                         item.setBackground(1, self.no_brush)
-                    #item.setText(2, '-')
+                        
+                    model_index = list_widget.indexFromItem(item, column=0)
+                    list_widget.scrollTo(model_index)
         
     def populate_other_code(self, code):
+        
+        self.tabs.setCurrentIndex(1)
         
         list_widget = self.code_list
         
         count = list_widget.topLevelItemCount()
         
+        self.progress_bar.setValue(0)
+        self.progress_bar.setRange(0, count)
+        
         for inc in range(0, count):
+            
+            self.progress_bar.setValue(inc)
             
             item = list_widget.topLevelItem(inc)
             
@@ -1269,11 +1303,19 @@ class CopyWidget(qt_ui.BasicWidget):
                         item.setBackground(1, self.no_brush)
     
     def populate_other_settings(self, settings):
+        
+        self.tabs.setCurrentIndex(2)
+        
         list_widget = self.settings_list
         
         count = list_widget.topLevelItemCount()
         
+        self.progress_bar.setValue(0)
+        self.progress_bar.setRange(0, count)
+                
         for inc in range(0, count):
+        
+            self.progress_bar.setValue(inc)
             
             item = list_widget.topLevelItem(inc)
 
@@ -1448,10 +1490,12 @@ class CopyWidget(qt_ui.BasicWidget):
 
         self.progress_bar.reset()
         self.progress_bar.setVisible(True)
-        self.progress_bar.setRange(0, 3)
+        #self.progress_bar.setRange(0, 3)
         
         data_folders = self.other_process.get_data_folders()
         self.populate_other_data(data_folders)
+        
+        
         
         self.progress_bar.setValue(1)
         
@@ -1473,14 +1517,13 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.populate_other_code(code_names)
         
-        self.progress_bar.setValue(2)
-        
         setting_names = self.process.get_setting_names()
         
         self.populate_other_settings(setting_names)
         
-        self.progress_bar.setValue(3)
         self.progress_bar.setVisible(False)
+        
+        self.tabs.setCurrentIndex(0)
         
 class CopyTree(QTreeWidget):
     
