@@ -26,6 +26,9 @@ if qt_ui.is_pyside2():
         from PySide2.QtGui import *
         from PySide2.QtWidgets import *
         
+
+vetala_version = util_file.get_vetala_version()
+
 class ProcessManagerWindow(qt_ui.BasicWindow):
     
     title = 'VETALA'
@@ -219,6 +222,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.template_widget.set_settings(settings)
         
     def _build_widgets(self):
+        
+        version = QLabel('version: %s' % util_file.get_vetala_version())
+        
+        self.main_layout.addWidget(version)
         
         self.header_layout = QHBoxLayout()
         

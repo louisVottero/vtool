@@ -18,6 +18,30 @@ import ast
 
 import util
 
+def get_vetala_version():
+    
+    filepath = __file__
+    filepath = get_dirname(filepath)
+    version_filepath = join_path(filepath, 'version.txt')
+    
+    if not is_file(version_filepath):
+        return
+    
+    version_lines = get_file_lines(version_filepath)
+    
+    if not version_lines:
+        return ''
+    
+    split_line = version_lines[0].split(':')
+    
+    if not split_line > 1:
+        return ''
+    
+    version = split_line[1]
+    version = version.strip()
+    
+    return 'BETA  ' + version
+
 class WatchDirectoryThread(threading.Thread):
     """
     Not developed fully.
