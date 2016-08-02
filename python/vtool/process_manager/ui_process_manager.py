@@ -223,7 +223,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _build_widgets(self):
         
-        version = QLabel('version: %s' % util_file.get_vetala_version())
+        version = QLabel('%s' % util_file.get_vetala_version())
         
         self.main_layout.addWidget(version)
         
