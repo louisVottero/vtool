@@ -1,7 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from sets import Set
-
 import os
 import string
 
@@ -1086,8 +1084,6 @@ def delete_nodes_of_type(node_type):
     node_type = vtool.util.convert_to_sequence(node_type)
     
     deleted = []
-    
-    do_not_touch = Set( cmds.ls(ud = True) )
     
     
     for node_type_name in node_type:

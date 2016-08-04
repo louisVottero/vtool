@@ -227,7 +227,7 @@ class ToolManager(MayaDirectoryWindow):
         
         self.tab_widget.setCurrentIndex(1)
         
-        version = QLabel('version: %s' % vtool.util_file.get_vetala_version())
+        version = QLabel('%s' % vtool.util_file.get_vetala_version())
         self.main_layout.addWidget(version)
         self.main_layout.addWidget(self.tab_widget)
         
