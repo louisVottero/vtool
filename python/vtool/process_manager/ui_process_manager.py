@@ -303,6 +303,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.stop_button.setMinimumHeight(30)
         self.stop_button.hide()
         
+        self.continue_button = QPushButton('CONTINUE')
+        self.continue_button.setMaximumWidth(150)
+        self.continue_button.setMinimumHeight(30)
+        self.continue_button.hide()
+        
+        self.run_selected_button = QPushButton('RUN SELECTED')
+        self.run_selected_button.setMaximumWidth(150)
+        self.run_selected_button.setMinimumHeight(30)
+        self.run_selected_button.hide()
+        
         self.browser_button = QPushButton('Browse')
         self.browser_button.setMaximumWidth(120)
         help_button = QPushButton('Help')
@@ -316,6 +326,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         left_button_layout.addWidget(self.process_button)
         left_button_layout.addSpacing(10)
         left_button_layout.addWidget(self.stop_button)
+        left_button_layout.addWidget(self.continue_button)
+        left_button_layout.addSpacing(20)
+        left_button_layout.addWidget(self.run_selected_button)
         
         right_button_layout.setAlignment(QtCore.Qt.AlignRight)
         right_button_layout.addWidget(self.browser_button)
@@ -642,6 +655,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if skip:
                 continue
             
+            
+            
             self.code_widget.set_process_script_state(scripts[inc], 2)
             
             status = self.process.run_script(script_name, False)
@@ -658,6 +673,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             if inc == script_count-1:
                 finished = True
+            
+            if self.code_widget.script_widget.code_manifest_tree.break_index:
+                if self.code_widget.script_widget.code_manifest_tree.is_process_script_breakpoint(scripts[inc]):
+                    self.continue_button.show()
+                    break
             
         util.set_env('VETALA_RUN', False)
         util.set_env('VETALA_STOP', False)

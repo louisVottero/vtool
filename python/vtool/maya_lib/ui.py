@@ -39,26 +39,38 @@ class new_scene_object(QtCore.QObject):
 
 class open_scene_object(QtCore.QObject):
     signal = vtool.qt_ui.create_signal()
+    
+class read_scene_object(QtCore.QObject):
+    signal = vtool.qt_ui.create_signal()
+
         
 new_scene_signal = new_scene_object()
 open_scene_signal = open_scene_object()
+read_scene_signal = read_scene_object()
 
 def emit_new_scene_signal():
     new_scene_signal.signal.emit()
 
 def emit_open_scene_signal():
     new_scene_signal.signal.emit()
+    
+def emit_read_scene_signal():
+    read_scene_signal.signal.emit()
 
 #--- script jobs
 job_new_scene = None
 job_open_scene = None
+job_read_scene = None
+
 def create_scene_script_jobs():
     
     global job_new_scene
     global job_open_scene
+    global job_read_scene
     
     job_new_scene = cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui;ui.emit_new_scene_signal();print "Vetala: Emit new scene."'], protected = False)
     job_open_scene = cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui;ui.emit_open_scene_signal();print "Vetala: Emit open scene."'], protected = False)
+    job_read_scene = cmds.scriptJob( ct = ['readingFile', 'from vtool.maya_lib import ui;ui.emit_read_scene_signal();print "Vetala: Emit reading scene."'], protected = False)
 
 create_scene_script_jobs()
   
@@ -66,9 +78,11 @@ def delete_scene_script_jobs():
     
     global job_new_scene
     global job_open_scene
+    global job_read_scene
     
     cmds.scriptJob(kill = job_new_scene)
     cmds.scriptJob(kill = job_open_scene)
+    cmds.scriptJob(kill = job_read_scene)
     
 #--- ui 
 
@@ -134,6 +148,16 @@ def shape_combo():
     import ui_shape_combo
     create_window(ui_shape_combo.ComboManager())
     
+def picker():
+    
+    import ui_picker
+    create_window(ui_picker.PickManager())
+    
+def character_manager():
+    
+    import ui_character
+    create_window(ui_character.CharacterManager())
+    
 def tool_manager(name = None, directory = None):
     
     tool_manager = ToolManager(name)
@@ -195,9 +219,12 @@ class ToolManager(MayaDirectoryWindow):
         
         #self.modeling_widget = ModelManager()
         self.rigging_widget = RigManager()
+        self.animation_widget = AnimationManager()
         #self.shot_widget = QWidget()
         
+        self.tab_widget.addTab(self.animation_widget, 'ANIMATION')
         self.tab_widget.addTab(self.rigging_widget, 'RIG')
+        
         self.tab_widget.setCurrentIndex(1)
         
         version = QLabel('version: %s' % vtool.util_file.get_vetala_version())
@@ -214,6 +241,27 @@ class LightManager(vtool.qt_ui.BasicWidget):
 class ModelManager(vtool.qt_ui.BasicWidget):
     def _build_widgets(self):
         pass
+
+class AnimationManager(vtool.qt_ui.BasicWidget):
+    def _build_widgets(self):
+        manager_group = QGroupBox('Applications')
+        manager_layout = QVBoxLayout()
+        manager_layout.setContentsMargins(2,2,2,2)
+        manager_layout.setSpacing(2)
+        manager_layout.setAlignment(QtCore.Qt.AlignCenter)
+        
+        manager_group.setLayout(manager_layout)
+        
+        character_button = QPushButton('Character Manager')
+        character_button.clicked.connect(self._character_manager)
+        
+        manager_layout.addWidget(character_button)
+        
+        self.main_layout.addWidget(manager_group)
+        
+    def _character_manager(self):
+        
+        character_manager()
         
 class RigManager(vtool.qt_ui.DirectoryWidget):
     
@@ -222,6 +270,7 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         self.scale_controls = []
         self.last_scale_value = None
+        self.last_scale_center_value = None
     
     def _build_widgets(self):
         
@@ -250,7 +299,12 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         shape_combo_button.setMinimumWidth(button_width)
         manager_layout.addWidget(shape_combo_button)
         
-        tool_group = QGroupBox('Tools')
+        picker_button = QPushButton('Picker')
+        picker_button.clicked.connect(self._picker)
+        picker_button.setMinimumWidth(button_width)
+        manager_layout.addWidget(picker_button)
+        
+        tool_group = QGroupBox('Utilities')
         tool_layout = QVBoxLayout()
         tool_layout.setContentsMargins(2,2,2,2)
         tool_layout.setSpacing(2)
@@ -357,11 +411,17 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         mirror_controls.clicked.connect(self._mirror_controls)
         mirror_controls.setMinimumHeight(40)
         
-        size_slider = vtool.qt_ui.Slider('Scale Control(s)')
+        size_slider = vtool.qt_ui.Slider('Scale Controls at Pivot')
         size_slider.value_changed.connect(self._scale_control)
         size_slider.slider.setRange(-200, 200)
         size_slider.set_auto_recenter(True)
         size_slider.slider.sliderReleased.connect(self._reset_scale_slider)
+        
+        size_center_slider = vtool.qt_ui.Slider('Scale Controls at Center')
+        size_center_slider.value_changed.connect(self._scale_center_control)
+        size_center_slider.slider.setRange(-200, 200)
+        size_center_slider.set_auto_recenter(True)
+        size_center_slider.slider.sliderReleased.connect(self._reset_scale_center_slider)
         
         number_button = vtool.qt_ui.GetNumberButton('Global Size Controls')
         number_button.set_value(2)
@@ -371,13 +431,29 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         self.fix_sub_controls = QPushButton('Fix Sub Controls')
         self.fix_sub_controls.clicked.connect(rigs_util.fix_sub_controls)
         
-        parent.main_layout.addWidget(number_button)
+        project_curve = vtool.qt_ui.GetNumberButton('Project Curves on Mesh')
+        project_curve.set_value(1)
+        project_curve.set_value_label('Offset')
+        project_curve.clicked.connect(self._project_curve)
+        
+        snap_curve = vtool.qt_ui.GetNumberButton('Snap Curves to Mesh')
+        snap_curve.set_value(1)
+        snap_curve.set_value_label('Offset')
+        snap_curve.clicked.connect(self._snap_curve)
+        
+        
+        
         
         parent.main_layout.addWidget(mirror_control)
         parent.main_layout.addWidget(mirror_controls)
         
-        parent.main_layout.addWidget(size_slider)
         parent.main_layout.addWidget(self.fix_sub_controls)
+        parent.main_layout.addWidget(number_button)
+        parent.main_layout.addWidget(size_slider)
+        parent.main_layout.addWidget(size_center_slider)
+        
+        parent.main_layout.addWidget(project_curve)
+        parent.main_layout.addWidget(snap_curve)
         
     def _create_deformation_widgets(self, parent):
         corrective_button = QPushButton('Create Corrective')
@@ -398,6 +474,9 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
 
     def _shape_combo(self):
         shape_combo()
+
+    def _picker(self):
+        picker()
 
     def _create_corrective(self):
         
@@ -544,7 +623,13 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
     def _reset_scale_slider(self):
         
         self.scale_controls = []
-        self.last_scale_value = None
+        
+        cmds.undoInfo(closeChunk = True)
+
+    def _reset_scale_center_slider(self):
+        
+        self.scale_center_controls = []
+        self.last_scale_center_value = None
         
         cmds.undoInfo(closeChunk = True)
         
@@ -569,13 +654,13 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
             return
         
         if value > self.last_scale_value:
-            pass_value = 1.2
+            pass_value = 1.02
         
         if value < self.last_scale_value:
-            pass_value = 0.8
+            pass_value = .99
             
-        #things = rigs_util.get_controls()
-        things = cmds.ls(sl = True)
+        
+        things = geo.get_selected_curves()
         
         if not things:
             return
@@ -590,5 +675,57 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
                 if components:
                     cmds.scale(pass_value, pass_value, pass_value, components, p = pivot, r = True)
                 
-        self.last_scale_value = value        
-    
+        self.last_scale_value = value   
+        
+    def _scale_center_control(self, value):
+        
+        if self.last_scale_center_value == None:
+            self.last_scale_center_value = 0
+            cmds.undoInfo(openChunk = True)
+        
+        if value == self.last_scale_center_value:
+            return
+        
+        if value > self.last_scale_center_value:
+            pass_value = 1.02
+        
+        if value < self.last_scale_center_value:
+            pass_value = .99
+            
+        
+        things = geo.get_selected_curves()
+        
+        if not things:
+            return
+            
+        if things:
+            for thing in things:
+                
+                shapes = core.get_shapes(thing, shape_type = 'nurbsCurve')
+                components = core.get_components_from_shapes(shapes)
+            
+                bounding = space.BoundingBox(components)
+                pivot = bounding.get_center()
+                
+                if components:
+                    cmds.scale(pass_value, pass_value, pass_value, components, pivot = pivot, r = True)
+                
+        self.last_scale_center_value = value      
+        
+    @core.undo_chunk
+    def _project_curve(self, value):
+        
+        curves = geo.get_selected_curves()
+        meshes = geo.get_selected_meshes()
+        
+        for curve in curves:
+            geo.snap_project_curve_to_surface(curve, meshes[0], value)
+    @core.undo_chunk
+    def _snap_curve(self, value):
+        
+        
+        curves = geo.get_selected_curves()
+        meshes = geo.get_selected_meshes()
+        
+        for curve in curves:
+            geo.snap_curve_to_surface(curve, meshes[0], value)

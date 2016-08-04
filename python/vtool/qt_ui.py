@@ -81,17 +81,6 @@ class BasicGraphicsView(QGraphicsView):
         super(BasicGraphicsView, self).__init__()
                 
         self.scene = QGraphicsScene()
-        #self.scene.set
-        
-        button = QGraphicsRectItem(20,20,20,20)
-        
-        button.setFlags(QGraphicsItem.ItemIsMovable)
-        button.setFlags(QGraphicsItem.ItemIsSelectable)
-        
-        graphic = QGraphicsPixmapItem()
-        
-        
-        self.scene.addItem(button)
         
         self.setScene(self.scene)
 
@@ -1770,8 +1759,12 @@ class GetNumberBase(BasicWidget):
         self.label = QLabel(self.name)
         self.label.setAlignment(QtCore.Qt.AlignRight)
         
+        self.value_label = QLabel('value')
+        self.value_label.hide()
+        
         self.main_layout.addWidget(self.label)
         self.main_layout.addSpacing(5)
+        self.main_layout.addWidget(self.value_label, alignment = QtCore.Qt.AlignRight)
         self.main_layout.addWidget(self.number_widget)
                     
     def _value_changed(self):
@@ -1783,12 +1776,17 @@ class GetNumberBase(BasicWidget):
     def get_value(self):
         return self.number_widget.value()
         
+    def set_value_label(self, text):
+        self.value_label.show()
+        return self.value_label.setText(text)
+        
     def set_label(self, label):
         self.label.setText(label)
         
     def get_label(self):
         
         return self.label.text()
+    
     
 class GetNumber(GetNumberBase):
     
@@ -1921,6 +1919,26 @@ class GetCheckBox(BasicWidget):
         if bool_value != None:
             self.check_box.setChecked(bool_value)
             
+class Group(QGroupBox):
+    
+    def __init__(self, name):
+        super(Group, self).__init__()
+        
+        self.setTitle(name)
+        
+        manager_layout = QVBoxLayout()
+        manager_layout.setContentsMargins(2,2,2,2)
+        manager_layout.setSpacing(2)
+        manager_layout.setAlignment(QtCore.Qt.AlignCenter)
+        
+        self.main_layout = manager_layout
+        
+        self.setLayout(manager_layout)
+        
+    def set_title(self, titlename):
+        
+        self.setTitle(titlename)
+
 
 class Slider(BasicWidget):
     
@@ -1933,6 +1951,7 @@ class Slider(BasicWidget):
         super(Slider, self).__init__(parent)
         
         self.emit_value_change = True
+        self.last_value = None
         
         
     def _build_widgets(self):
@@ -1962,6 +1981,7 @@ class Slider(BasicWidget):
         
         self.emit_value_change = False
         self.slider.setValue(0)
+        self.last_scale_value = None
         self.emit_value_change = True
     
     def set_auto_recenter(self, bool_value):

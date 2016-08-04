@@ -586,6 +586,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.setSortingEnabled(False)
         
+        self.setAlternatingRowColors(False)
         
         
         #self.setIndentation(False)
@@ -639,7 +640,25 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             palette.setColor(QPalette.AlternateBase, QColor(70,70,70,255) )
         
             self.setPalette(palette)
+            
+        self.break_index = None
+        self.break_item = None
+    
+    def drawRow(self, painter, option, index):
         
+        if index.internalId() == self.break_index:
+            painter.save()
+            
+            if vtool.util.is_in_maya():
+                brush = QBrush( QColor(70,0,0))
+            if not vtool.util.is_in_maya():
+                brush = QBrush( QColor(240,230,230))
+            
+            painter.fillRect( option.rect, brush)
+            painter.restore()
+        
+        super(CodeManifestTree, self).drawRow(painter, option, index)
+    
     def resizeEvent(self, event = None):
         super(CodeManifestTree, self).resizeEvent(event)
         
@@ -699,6 +718,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self._update_manifest()
     
     def _get_item_path(self, item):
+        """
+        get the path to an item from the highest level down. eg script/script/script
+        """
         
         parent = item.parent()
         parent_path = ''
@@ -721,6 +743,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         return parent_path
         
     def _get_item_path_name(self, item, keep_extension = False):
+        """
+        get the script name with path, eg script/script/script.py
+        """
+        
         name = item.text(0)
         
         if not keep_extension:
@@ -744,6 +770,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     
     def _get_item_by_name(self, name):
         
+        print 'get item name'
+        
         items = self._get_all_items()
         
         for item in items:
@@ -758,6 +786,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             check_name = self._get_item_path_name(item, keep_extension=True)
             
             if check_name == name:
+                
+                print 'match', name, item
                 return item
         
     def _get_all_items(self):
@@ -1043,6 +1073,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         browse_action = self.context_menu.addAction('Browse')
         refresh_action = self.context_menu.addAction('Refresh')
         
+        
+        self.context_menu.addSeparator()
+        break_action = self.context_menu.addAction('Set Breakpoint')
+        self.cancel_break_action = self.context_menu.addAction('Cancel Breakpoint')
+        
         self.edit_actions = [self.run_action, rename_action, delete_action]
         
         
@@ -1050,6 +1085,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         new_data_import.triggered.connect(self.create_import_code)
         
         self.run_action.triggered.connect(self.run_current_item)
+        break_action.triggered.connect(self.set_breakpoint)
+        self.cancel_break_action.triggered.connect(self.cancel_breakpoint)
         rename_action.triggered.connect(self._activate_rename)
         delete_action.triggered.connect(self.remove_current_item)
         
@@ -1384,7 +1421,14 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         item.set_state(2)
         
+        
         item.setExpanded(True)
+        
+        background = item.background(0)
+        orig_background = background
+        color = QColor(1,0,0)
+        background.setColor(color)
+        item.setBackground(0, background)
         
         name = self._get_item_path_name(item)
         
@@ -1397,6 +1441,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if not status == 'Success':
             item.set_state(0)
         
+        item.setBackground(0, orig_background)
+        
     def sync_manifest(self):
         
         process_tool = process.Process()
@@ -1406,12 +1452,22 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def refresh(self, sync = False):
         
+        if self.break_item:
+            break_item_path = self._get_item_path_name(self.break_item, keep_extension=True)
+        
+        
         if sync:
             self.sync_manifest()
         
         self.allow_manifest_update = False
         super(CodeManifestTree, self).refresh()
         self.allow_manifest_update = True
+        
+        if self.break_item:
+            item = self._get_item_by_name(break_item_path)
+            
+            if item:
+                self.set_breakpoint(item)
 
     def set_directory(self, directory, refresh = True):
         
@@ -1440,6 +1496,19 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             return
         
         item.set_state(state)
+        
+    def is_process_script_breakpoint(self, directory):
+        
+        item = self._get_item_by_name(directory)
+        
+        model_index = self.indexFromItem(item)
+        
+        index = model_index.internalId()
+        
+        if index == self.break_index:
+            return True
+        
+        return False
         
     def create_python_code(self):
         
@@ -1623,6 +1692,29 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 
         self.item_removed.emit(filepath)
         
+    def set_breakpoint(self, item = None):
+        
+        if not item:
+            items = self.selectedItems()
+            
+            if not items:
+                return
+            
+            item = items[0]
+            
+        self.clearSelection()
+        
+        item_index = self.indexFromItem(item)
+        
+        self.break_index = item_index.internalId()
+        self.break_item = item
+        
+    def cancel_breakpoint(self):
+        
+        self.break_index = None
+        self.break_item = None
+        
+        
 class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     
     
@@ -1718,7 +1810,6 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         
         maya_version = vtool.util.get_maya_version()
         
-        
         if maya_version < 2016 and maya_version != 0:
             
             if state == 0:
@@ -1742,7 +1833,7 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
                 self._square_fill_icon(1.0, 1.0, 0.0)
                 
         self.run_state = state
-                
+        
     def get_run_state(self):
         return self.run_state
     

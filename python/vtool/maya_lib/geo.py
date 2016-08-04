@@ -2094,6 +2094,50 @@ def snap_joints_to_curve(joints, curve = None, count = 10):
     if delete_after:
         cmds.delete(delete_after)    
 
+def snap_curve_to_surface(curve, surface, offset = 1):
+    
+    shapes = core.get_shapes(curve)
+    
+    for shape in shapes:
+        
+        cvs = cmds.ls('%s.cv[*]' % shape, flatten = True)
+        
+        for cv in cvs:
+            
+            position = cmds.xform(cv, q = True, ws = True, t = True)
+            
+            if is_a_mesh(surface):
+                mesh_fn = api.MeshFunction(surface)
+                closest_point = mesh_fn.get_closest_position(position)
+                
+                print cv, position, closest_point
+                
+                cmds.xform(cv, ws = True, t = closest_point)
+    
+        cmds.scale(offset,offset,offset, cvs, r = True)
+            
+def snap_project_curve_to_surface(curve, surface, offset = 1):
+    
+    center = cmds.xform(curve, q = True, ws = True, rp = True)
+    shapes = core.get_shapes(curve)
+    
+    for shape in shapes:
+        
+        cvs = cmds.ls('%s.cv[*]' % shape, flatten = True)
+        
+        for cv in cvs:
+            
+            position = cmds.xform(cv, q = True, ws = True, t = True)
+            
+            
+            if is_a_mesh(surface):
+                mesh_fn = api.MeshFunction(surface)
+                closest_point = mesh_fn.get_closest_intersection(position, center)
+            
+                cmds.xform(cv, ws = True, t = closest_point)
+
+        cmds.scale(offset,offset,offset, cvs, r = True)
+
 def convert_indices_to_mesh_vertices(indices, mesh):
     """
     Convenience for converting mesh index numbers to maya names. eg [mesh.vtx[0]] if index = [0]

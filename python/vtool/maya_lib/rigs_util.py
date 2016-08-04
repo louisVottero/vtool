@@ -38,6 +38,11 @@ class Control(object):
         if not self.shapes:
             vtool.util.warning('%s has no shapes' % self.control)
             
+        try:
+            cmds.controller(self.control)
+        except:
+            pass
+            
     def _create(self):
         
         self.control = cmds.circle(ch = False, n = self.control, normal = [1,0,0])[0]
@@ -185,7 +190,7 @@ class Control(object):
         if components:
             cmds.rotate(x,y,z, components, relative = True)
             
-    def scale_shape(self, x,y,z):
+    def scale_shape(self, x,y,z, use_pivot = True):
         """
         Scale the shape curve cvs relative to the current scale.
         
@@ -193,13 +198,22 @@ class Control(object):
             x (float)
             y (float)
             z (float)
+            use_pivot (bool)
         """
+        
         components = self._get_components()
         
-        pivot = cmds.xform( self.control, q = True, rp = True, ws = True)
+        if use_pivot:
+            pivot = cmds.xform( self.control, q = True, rp = True, ws = True)
+        if not use_pivot:
+            shapes = core.get_shapes(self.control, shape_type = 'nurbsCurve')
+            components = core.get_components_from_shapes(shapes)
+            
+            bounding = space.BoundingBox(components)
+            pivot = bounding.get_center()
         
         if components:
-            cmds.scale(x,y,z, components, p = pivot, r = True)
+            cmds.scale(x,y,z, components, pivot = pivot, r = True)
 
     def color(self, value):
         """
@@ -2422,54 +2436,56 @@ def scale_controls(value):
                 cmds.scale(value, value, value, components, p = pivot, r = True)
                 
 @core.undo_chunk
-def fix_sub_controls(control = None):
+def fix_sub_controls(controls = None):
     
-    if not control:
+    vtool.util.convert_to_sequence(controls)
+    
+    if not controls:
         scope = cmds.ls(sl = True)
-        
         if scope:
-            control = scope[0]
-    
-    if not control:
+            controls = scope
+    if not controls:
         return
     
-    if not core.has_shape_of_type(control, 'nurbsCurve'):
-        return
-    
-    if not cmds.objExists('%s.subVisibility' % control):
-        return
-    
-    
-    outputs = attr.get_attribute_outputs('%s.subVisibility' % control, node_only=True)
-    
-    scale_offset = .9
-    
-    for output_node in outputs:
-        
-        transform = output_node
-        shape = None
-        
-        if cmds.nodeType(output_node) == 'nurbsCurve':
-            
-            transform = cmds.listRelative(output_node, p = True)
-            shape = output_node
-            
-        if not shape:
-            if not core.has_shape_of_type(transform, 'nurbsCurve'):
-                continue
-            
-            shapes = core.get_shapes(transform, 'nurbsCurve')
-            
-            
-        control_shapes = core.get_shapes(control)
-        
-        if len(shapes) != len(control_shapes):
+    for control in controls:
+        if not core.has_shape_of_type(control, 'nurbsCurve'):
             continue
         
-        for inc in range(0, len(control_shapes)):
-            deform.quick_blendshape(control_shapes[inc], shapes[inc])
-            cmds.delete(shapes[inc], ch = True)
-            control = Control(transform)
-            control.scale_shape(scale_offset, scale_offset, scale_offset)
+        if not cmds.objExists('%s.subVisibility' % control):
+            continue
         
-        scale_offset -= .1
+        
+        outputs = attr.get_attribute_outputs('%s.subVisibility' % control, node_only=True)
+        
+        scale_offset = .9
+        
+        for output_node in outputs:
+            
+            transform = output_node
+            shape = None
+            
+            if cmds.nodeType(output_node) == 'nurbsCurve':
+                
+                transform = cmds.listRelative(output_node, p = True)
+                shape = output_node
+                
+            if not shape:
+                if not core.has_shape_of_type(transform, 'nurbsCurve'):
+                    continue
+                
+                shapes = core.get_shapes(transform, 'nurbsCurve')
+                
+                
+            control_shapes = core.get_shapes(control)
+            
+            if len(shapes) != len(control_shapes):
+                continue
+            
+            for inc in range(0, len(control_shapes)):
+                deform.quick_blendshape(control_shapes[inc], shapes[inc])
+                cmds.delete(shapes[inc], ch = True)
+                control_inst = Control(transform)
+                control_inst.scale_shape(scale_offset, scale_offset, scale_offset, use_pivot= False)
+            
+            scale_offset -= .1
+            

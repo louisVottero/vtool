@@ -812,7 +812,6 @@ def closest_point_to_line_2D(start_vector, end_vector, position_vector, clamp = 
         return closest_vector, percent 
 
 
-
 #--- time
 
 def convert_number_to_month(month_int):
