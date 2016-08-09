@@ -1288,13 +1288,16 @@ class DeformerWeightData(MayaCustomData):
             
             clusters = maya_lib.deform.find_deformer_by_type(mesh, 'cluster', return_all = True)
             wires = maya_lib.deform.find_deformer_by_type(mesh, 'wire', return_all = True)
+            delta_mushes = maya_lib.deform.find_deformer_by_type(mesh, 'deltaMush', return_all = True)
             
             if not clusters:
                 clusters = []
             if not wires:
                 wires = []
+            if not delta_mushes:
+                delta_mushes = []
             
-            deformers = clusters + wires
+            deformers = clusters + wires + delta_mushes
             
             if not deformers:
                 util.warning('Did not find a cluster or wire deformer on %s.' % mesh)

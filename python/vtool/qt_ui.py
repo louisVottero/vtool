@@ -79,10 +79,13 @@ class BasicGraphicsView(QGraphicsView):
     def __init__(self):
         
         super(BasicGraphicsView, self).__init__()
-                
+        
         self.scene = QGraphicsScene()
         
+        self.setViewportUpdateMode(self.FullViewportUpdate)
+        
         self.setScene(self.scene)
+        
 
 class BasicWindow(QMainWindow):
     

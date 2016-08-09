@@ -1979,6 +1979,18 @@ def get_xform_group(transform, xform_group_prefix = 'xform'):
         
     return input_node
 
+def get_local_group(transform):
+    attribute_name = 'out_local'
+    
+    node_and_attr = '%s.%s' % (transform,attribute_name)
+    
+    if not cmds.objExists(node_and_attr):
+        return
+        
+    input_node = attr.get_attribute_input(node_and_attr, node_only=True)
+        
+    return input_node
+
 def get_hierarchy(node_name):
     """
     Return the name of the node including the hierarchy in the name using "|".

@@ -2114,16 +2114,26 @@ def set_color_rgb(nodes, r = 0, g = 0, b = 0):
         
 def get_color(node, rgb = False):
     
-    if not cmds.getAttr('%s.overrideRGBColors' % node): 
+    
+    if not cmds.objExists('%s.overrideColor' % node):
+        if not rgb:
+            return 0
+        if rgb:
+            return [0,0,0]
+    
+    if not cmds.getAttr('%s.overrideRGBColors' % node) or not cmds.objExists('%s.overrideRGBColors' % node): 
         color = cmds.getAttr('%s.overrideColor' % node)
         
         if not rgb:
             return color
         if rgb:
             
-            print 'color index!', color
+            if color == 0:
+                color = 5
             
             color = cmds.colorIndex(color, q = True)
+            
+            
             
             color = vtool.util.convert_to_sequence(color, list)
             
@@ -2136,6 +2146,8 @@ def get_color(node, rgb = False):
             
     if cmds.getAttr('%s.overrideRGBColors' % node): 
         color = cmds.getAttr('%s.overrideColorRGB' % node)
+        color = color[0]
+        color = vtool.util.convert_to_sequence(color, list)
         if not rgb:
             return color
         if rgb:
