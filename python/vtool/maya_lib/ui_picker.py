@@ -100,10 +100,7 @@ class PickManager(ui.MayaWindow):
             
             for item in items:
                 
-                item_dict = {}
-                name = item.name
-                
-                item_dict['name'] = name
+                item_dict = self._get_item_dict(item)
                 
                 found_items.append(item_dict)
                 
@@ -113,11 +110,42 @@ class PickManager(ui.MayaWindow):
                 
         return view_data
     
+    def _get_item_dict(self, item):
+        
+        item_dict = {}
+        name = item.name
+        rect = item.rect()
+        x = rect.x()
+        y = rect.y()
+        height = rect.height()
+        width = rect.width()
+        size = rect.size()
+        
+        item_dict['name'] = name
+        item_dict['x'] = x
+        item_dict['y'] = y
+        item_dict['height'] = height
+        item_dict['width'] = width
+        #item_dict['size'] = size.height()
+        
+        return item_dict
+    
     def _export(self):
         view_data = self._get_data_from_views()
         
+        self._create_picker_group()
+        
+        attribute = '%s.DATA' % self.picker_group
+        
+        if cmds.objExists(attribute):
+            cmds.setAttr(attribute, l = False)
+            cmds.setAttr(attribute, str(view_data), type = 'string')
+            
+        
         for data in view_data:
             print data
+        
+        cmds.setAttr(attribute, l = True)
     
     def _import(self):
         pass
@@ -129,13 +157,9 @@ class PickManager(ui.MayaWindow):
         
     def _tab_changed(self):
         
-        print 'current pickers!',self.pickers
-        
         index = self.tab_widget.currentIndex()
         
         title = self.tab_widget.tabText(index)
-        
-        print 'title of current tab!', title
         
         if title == '+':
             picker = self._create_picker()
@@ -145,11 +169,8 @@ class PickManager(ui.MayaWindow):
             self.tab_widget.setCurrentIndex(index)
             index = index + 1
             
-        print 'tab index!', index, self.pickers
         if not title == '+':
-            print 'here!!!!', self.edit_buttons
             self.edit_buttons.set_picker(self.pickers[index])
-            print 'here2!!!!'
         
     def _create_picker(self):
         
@@ -192,18 +213,10 @@ class PickManager(ui.MayaWindow):
             
     def _close_tab(self, current_index):
         
-        print 'close tab part 2 !'
-        
-        print 'pickers before close', self.pickers
-        
         self.pickers.pop(current_index)
-        
-        print 'close tab', current_index, self.pickers
-        
             
     def _build_btm_widgets(self):
         
-        #self.edit_buttons = EditButtons(self.picker)
         self.edit_buttons = EditButtons(None)
         
         self.main_layout.addWidget(self.edit_buttons)
@@ -409,7 +422,10 @@ class EditButtons(qt_ui.BasicWidget):
     def set_picker(self, picker):
         self.picker = picker
         
-     
+class ItemValues( qt_ui.BasicWidget ):
+    
+    pass
+    
 class Picker(qt_ui.BasicGraphicsView):
     
     item_added = qt_ui.create_signal(object)
@@ -562,7 +578,7 @@ def get_control_position(control, view_axis = 'Z'):
     pos = cmds.xform(control, q = True, ws = True, t = True)
     
     if view_axis == 'X':
-        x = pos[2]* 3
+        x = pos[2]* -3
         y = pos[1]* -3
     
     if view_axis == 'Y':
@@ -589,6 +605,11 @@ def create_picker_group():
     if not cmds.objExists(name):
         group = cmds.group(em = True, n = name)
         attr.hide_keyable_attributes(group)
+        
+    attribute = '%s.DATA' % group
+        
+    if not cmds.objExists(attribute):
+        cmds.addAttr(group, ln = 'DATA', dt = 'string')
         
     return group
     

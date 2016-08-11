@@ -4116,25 +4116,31 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         skin = find_deformer_by_type(skin_mesh, 'skinCluster')
         
-        if not cmds.pluginInfo('cvShapeInverterDeformer.py', query=True, loaded=True):
+        maya_version = cmds.about(version = True)
         
-            split_name = __name__.split('.')
-        
-            file_name = __file__
-            file_name = file_name.replace('%s.py' % split_name[-1], 'cvShapeInverterDeformer.py')
-            file_name = file_name.replace('.pyc', '.py')
+        if vtool.util.get_maya_version() < 2017 and maya_version.find('2016 Extension 2') == -1:
+            if not cmds.pluginInfo('cvShapeInverterDeformer.py', query=True, loaded=True):
             
-            cmds.loadPlugin( file_name )
-        
-        import cvShapeInverterScript as correct
+                split_name = __name__.split('.')
+            
+                file_name = __file__
+                file_name = file_name.replace('%s.py' % split_name[-1], 'cvShapeInverterDeformer.py')
+                file_name = file_name.replace('.pyc', '.py')
+                
+                cmds.loadPlugin( file_name )
+            
+            import cvShapeInverterScript as correct
         
         envelopes.turn_off()
         
         if skin:
             cmds.setAttr('%s.envelope' % skin, 1)
-                
-        offset = correct.invert(skin_mesh, corrective)
-        cmds.delete(offset, ch = True)
+        
+        if vtool.util.get_maya_version() < 2017 and maya_version.find('2016 Extension 2') == -1:
+            offset = correct.invert(skin_mesh, corrective)
+            cmds.delete(offset, ch = True)
+        if vtool.util.get_maya_version() >= 2017 or maya_version.find('2016 Extension 2') > -1:
+            offset = mel.eval('invertShape %s %s' % (skin_mesh, corrective))
         
         orig = get_intermediate_object(skin_mesh)
         
