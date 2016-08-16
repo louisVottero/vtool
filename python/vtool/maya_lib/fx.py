@@ -15,6 +15,23 @@ import deform
 import geo
 import space
 
+#--- Cache
+
+def maya_cache(geo, name = 'maya_cache', dirpath = ''):
+    
+    vtool.util.convert_to_sequence(geo)
+    
+    shapes = core.get_shapes(geo)
+    
+    print shapes
+    
+    if not dirpath:
+        #use workspace
+        dirpath = cmds.workspace(q = True, dir = True)
+        
+    cmds.cacheFile(f=name,format='OneFile', points = str(shapes), dir = dirpath)
+    
+
 #--- Nucleus
 
 def create_nucleus(name = None):
