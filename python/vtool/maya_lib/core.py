@@ -592,6 +592,22 @@ def get_basename(name, remove_namespace = True):
     
     return split_name[-1]
 
+def get_namespace(name):
+    
+    namespace = name.rpartition(':')[0]
+    return namespace
+
+def remove_namespace_from_string(name):
+    
+    sub_name = name.split(':')
+        
+    new_name = ''
+        
+    if sub_name:
+        new_name = sub_name[-1]
+        
+    return new_name
+
 def delete_unknown_nodes():
     """
     This will find all unknown nodes. Unlock and delete them.
@@ -636,7 +652,7 @@ def rename_shapes(transform):
         cmds.rename(shape, '%sShape%s' % (transform, inc))
         inc += 1
 
-def get_shapes_in_hierarchy(transform):
+def get_shapes_in_hierarchy(transform, shape_type = ''):
     """
     Get all the shapes in the child hierarchy excluding intermediates.
     This is good when calculating bounding box of a group.
@@ -658,7 +674,7 @@ def get_shapes_in_hierarchy(transform):
     
     for child in hierarchy:
         
-        found_shapes = get_shapes(child)
+        found_shapes = get_shapes(child, shape_type)
         sifted_shapes = []
         
         if not found_shapes:
