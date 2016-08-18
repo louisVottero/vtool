@@ -5286,7 +5286,7 @@ class IkScapulaRig(BufferRig):
         space.MatchSpace(self.joints[0], control.get()).translation()
         
         xform = space.create_xform_group(control.get())
-        print 'create driver !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        
         space.create_xform_group(control.get(), 'driver')
         
         if self.side == 'R':
