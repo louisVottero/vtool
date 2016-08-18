@@ -381,13 +381,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
     def _clear_code(self, close_windows = False):
         
-        self.code_widget.code_widget.code_edit.close_tabs()
-        self.code_widget.script_widget.code_manifest_tree.clearSelection()
-        self.code_widget.code_widget.code_edit.clear()
-        self.code_widget.set_directory(None, sync_code = False)
-        
-        if close_windows:
-            self.code_widget.code_widget.code_edit.close_windows()
+        self.code_widget.close_widgets(close_windows)
         
     def _update_process(self, name):
         

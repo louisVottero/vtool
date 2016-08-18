@@ -205,7 +205,19 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     def set_settings(self, settings):
         
         self.settings = settings
+    
+    def close_widgets(self, close_windows = False):
+        
+        self.code_widget.code_edit.clear()
+        self.code_widget.code_edit.close_tabs()
+        self.script_widget.code_manifest_tree.clearSelection()
+        self.set_directory(None, sync_code = False)
+        
+        if close_windows:
+            self.code_widget.code_edit.close_windows()
             
+        self.script_widget.code_manifest_tree.break_index = None
+        self.script_widget.code_manifest_tree.break_item = None
         
 class CodeWidget(vtool.qt_ui.BasicWidget):
     

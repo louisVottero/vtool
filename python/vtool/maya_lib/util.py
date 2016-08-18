@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+print 'Warning!!! vtool.maya_lib.util deprecated. It should no longer be used. Warning!!!'
+
 import sys
 
 import string
