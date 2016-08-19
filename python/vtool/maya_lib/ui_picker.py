@@ -140,10 +140,7 @@ class PickManager(ui.MayaWindow):
         if cmds.objExists(attribute):
             cmds.setAttr(attribute, l = False)
             cmds.setAttr(attribute, str(view_data), type = 'string')
-            
         
-        for data in view_data:
-            print data
         
         cmds.setAttr(attribute, l = True)
     
@@ -268,8 +265,6 @@ class PickerTab(QTabWidget):
         
         
         current_index = self.currentIndex()
-        print 'close tab!', current_index
-        
         
         if current_index == 0:
             return

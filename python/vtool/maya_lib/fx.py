@@ -9,11 +9,157 @@ if vtool.util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
     
+from vtool import util_file
+    
 import core
 import attr
 import deform
 import geo
 import space
+import anim
+
+#--- Cache
+
+def export_maya_cache_group(source_group, dir_path = ''):
+    
+    source_meshes = core.get_shapes_in_hierarchy(source_group, shape_type = 'mesh')
+    source_curves = core.get_shapes_in_hierarchy(source_group, shape_type = 'nurbsCurve')
+    
+    sources = source_meshes + source_curves
+    
+    core.get_basename(source_group, remove_namespace=True)    
+    export_maya_cache(sources, source_group, dir_path)
+    
+    refresh_maya_caches()
+
+def import_maya_cache_group(target_group, dir_path = '', source_group = None):
+    
+    target_meshes = core.get_shapes_in_hierarchy(target_group, shape_type = 'mesh')
+    target_curves = core.get_shapes_in_hierarchy(target_group, shape_type = 'nurbsCurve')
+    
+    targets = target_meshes + target_curves
+    
+    source_group_folder = target_group
+    
+    if source_group:
+        namespace = core.get_namespace(source_group)
+        source_group_folder = source_group.replace(':', '_')
+     
+    import_maya_cache(targets, source_group_folder, dir_path, source_namespace=namespace)
+
+
+def export_maya_cache(geo, name = 'maya_cache', dirpath = ''):
+    
+    vtool.util.convert_to_sequence(geo)
+    
+    found_shapes = get_shapes_for_cache(geo)
+        
+    if not dirpath:
+        dirpath = cmds.workspace(q = True, dir = True)
+        vtool.util.show('Cache export dir: %s' % dirpath)
+    
+    folder = util_file.create_dir('maya_cache', dirpath)
+    
+    min_value, max_value = anim.get_min_max_time()
+     
+    cmds.cacheFile(f=name,format='OneFile', points = found_shapes, dir = folder, ws = True, sch = True, st = min_value, et = max_value)
+    
+def import_maya_cache(geo, name = 'maya_cache', dirpath = '', source_namespace = None):
+    
+    if not dirpath:
+        dirpath = cmds.workspace(q = True, dir = True)
+        vtool.util.show('Cache import dir: %s' % dirpath)
+    
+    folder = util_file.join_path(dirpath, 'maya_cache')
+    
+    #the geo is stored in channelName. channels is the geo in the cache.
+    #channels = cmds.cacheFile(fileName = (folder + '/' + name + '.mcx'), q = True, channelName = True)
+    
+    geo = vtool.util.convert_to_sequence(geo)
+    
+    found_shapes = get_shapes_for_cache(geo)
+    
+    for geo_name in found_shapes:
+        
+        found_history_switch = deform.find_deformer_by_type(geo_name, 'historySwitch')
+        
+        if found_history_switch:
+            continue
+        
+        nice_geo_name = core.remove_namespace_from_string(geo_name)        
+        
+        deformer = cmds.deformer(geo_name, type = 'historySwitch', n = ('cacheSwitch_%s' % nice_geo_name))
+        
+        connection = cmds.listConnections(deformer[0] + '.ip[0].ig', p = True )
+        cmds.connectAttr( connection[0], deformer[0] + '.ug[0]')
+        cmds.setAttr(deformer[0]+ '.playFromCache', 1)
+        cmds.getAttr(deformer[0]+ '.op[0]', silent = True)
+        cmds.setAttr(deformer[0]+ '.playFromCache', 0)    
+        cmds.disconnectAttr(connection[0],  deformer[0]+ '.ug[0]')    
+        
+        cmds.setAttr(deformer[0] + '.ihi', 0)
+        
+        channel_name = geo_name
+        
+        geo_name = nice_geo_name
+
+        if source_namespace:
+            channel_name = source_namespace + ':' + geo_name        
+        
+        cache_file = cmds.cacheFile( attachFile = True, fileName = name, dir = folder, ia = '%s.inp[0]' % deformer[0], channelName = channel_name)
+        
+        cmds.connectAttr('%s.inRange' % cache_file, '%s.playFromCache' % deformer[0])
+        
+        cmds.rename(cache_file, 'cacheFile_%s' % nice_geo_name)
+        
+
+        
+def refresh_maya_caches(maya_caches = []):
+    
+    maya_caches = vtool.util.convert_to_sequence(maya_caches)
+    
+    if not maya_caches:
+        
+        maya_caches = cmds.ls(type = 'cacheFile')
+    
+    for maya_cache in maya_caches:
+        
+        cache_name = cmds.getAttr('%s.cacheName' % maya_cache)
+        cmds.setAttr('%s.cacheName' % maya_cache, '', type = 'string')
+        cmds.setAttr('%s.cacheName' % maya_cache, cache_name, type = 'string')        
+        
+        cmds.setAttr( maya_cache + '.enable', 0)
+        cmds.setAttr( maya_cache + '.enable', 1)
+        
+    
+        
+def get_shapes_for_cache(geo):        
+    children = cmds.listRelatives(geo, ad = True, type = 'transform')
+    
+    found_shapes = []
+    
+    if children:
+        geo += children
+    
+    for sub_geo in geo:
+        
+        
+        
+        mesh_shapes = core.get_shapes(sub_geo, shape_type = 'mesh')
+        curve_shapes = core.get_shapes(sub_geo, shape_type = 'nurbsCurve')
+    
+        shapes = mesh_shapes + curve_shapes
+    
+        for shape in shapes:
+            if cmds.getAttr('%s.intermediateObject' % shape):
+                continue
+            
+            found_shape = cmds.ls(shape)
+            
+            if found_shape and not found_shape[0] in found_shapes:
+                found_shapes.append(found_shape[0])
+            
+    return found_shapes
 
 #--- Nucleus
 

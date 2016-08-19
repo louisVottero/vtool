@@ -782,8 +782,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     
     def _get_item_by_name(self, name):
         
-        print 'get item name'
-        
         items = self._get_all_items()
         
         for item in items:
@@ -798,8 +796,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             check_name = self._get_item_path_name(item, keep_extension=True)
             
             if check_name == name:
-                
-                print 'match', name, item
                 return item
         
     def _get_all_items(self):
