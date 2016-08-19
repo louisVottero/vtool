@@ -20,7 +20,7 @@ import anim
 
 #--- Cache
 
-def export_maya_cache_group(source_group, dir_path = ''):
+def export_maya_cache_group(source_group, dirpath = ''):
     
     source_meshes = core.get_shapes_in_hierarchy(source_group, shape_type = 'mesh')
     source_curves = core.get_shapes_in_hierarchy(source_group, shape_type = 'nurbsCurve')
@@ -28,11 +28,11 @@ def export_maya_cache_group(source_group, dir_path = ''):
     sources = source_meshes + source_curves
     
     core.get_basename(source_group, remove_namespace=True)    
-    export_maya_cache(sources, source_group, dir_path)
+    export_maya_cache(sources, source_group, dirpath)
     
     refresh_maya_caches()
 
-def import_maya_cache_group(target_group, dir_path = '', source_group = None):
+def import_maya_cache_group(target_group, dirpath = '', source_group = None):
     
     target_meshes = core.get_shapes_in_hierarchy(target_group, shape_type = 'mesh')
     target_curves = core.get_shapes_in_hierarchy(target_group, shape_type = 'nurbsCurve')
@@ -45,7 +45,7 @@ def import_maya_cache_group(target_group, dir_path = '', source_group = None):
         namespace = core.get_namespace(source_group)
         source_group_folder = source_group.replace(':', '_')
      
-    import_maya_cache(targets, source_group_folder, dir_path, source_namespace=namespace)
+    import_maya_cache(targets, source_group_folder, dirpath, source_namespace=namespace)
 
 
 def export_maya_cache(geo, name = 'maya_cache', dirpath = ''):
@@ -112,6 +112,32 @@ def import_maya_cache(geo, name = 'maya_cache', dirpath = '', source_namespace =
         
         cmds.rename(cache_file, 'cacheFile_%s' % nice_geo_name)
         
+def export_alembic(root_node, name, dirpath = None):
+    
+    min_value, max_value = anim.get_min_max_time()
+    
+    if not dirpath:
+        dirpath = cmds.workspace(q = True, dir = True)
+        vtool.util.show('Cache export dir: %s' % dirpath)
+    
+    folder = util_file.create_dir('cache/alembic_cache', dirpath)
+    
+    filename = '%s/%s.abc' % (folder, name)
+    
+    mel.eval('AbcExport -j "-frameRange %s %s -stripNamespaces -worldSpace -writeVisibility -dataFormat ogawa -root %s -file %s";' % (min_value, max_value, root_node, filename))
+
+def import_alembic(root_node, name, dirpath = None):
+    
+    if not dirpath:
+        dirpath = cmds.workspace(q = True, dir = True)
+        vtool.util.show('Cache export dir: %s' % dirpath)
+    
+    folder = util_file.create_dir('cache/alembic_cache', dirpath)
+    
+    filename = '%s/%s.abc' % (folder, name)
+    
+    mel.eval('AbcImport -mode import -setToStartFrame -connect %s "%s";' % (root_node, filename))
+
 
         
 def refresh_maya_caches(maya_caches = []):
