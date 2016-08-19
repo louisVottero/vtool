@@ -152,10 +152,16 @@ class ProgressBar(object):
     
     def __init__(self, title, count):
         if is_batch():
+            self.title = title
+            self.count = count
+            
+            message = '%s count: %s' % (title, count)
+            self.status_string = ''
+            vtool.util.show(message)
             return
         
         gMainProgressBar = mel.eval('$tmp = $gMainProgressBar');
-    
+        
         self.progress_ui = cmds.progressBar( gMainProgressBar,
                                         edit=True,
                                         beginProgress=True,
@@ -190,6 +196,8 @@ class ProgressBar(object):
         Set that status string of the progress bar.
         """
         if is_batch():
+            self.status_string = status_string
+            #vtool.util.show(status_string)
             return
         
         cmds.progressBar(self.progress_ui, edit=True, status = status_string)
@@ -199,7 +207,7 @@ class ProgressBar(object):
         break the progress bar loop so that it stops and disappears.
         """
         if is_batch():
-            return True
+            return False
         
         break_progress = cmds.progressBar(self.progress_ui, query=True, isCancelled=True )
 

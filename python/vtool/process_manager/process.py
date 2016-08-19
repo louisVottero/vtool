@@ -110,7 +110,7 @@ class Process(object):
     """
     This class has functions to work on individual processes in the Process Manager.
     """
-     
+    
     description = 'process'
     data_folder_name = '.data'
     code_folder_name = '.code'
@@ -126,6 +126,8 @@ class Process(object):
         self.option_values = {}
         self.runtime_values = {}
         self.option_settings = None
+        
+        util.initialize_env('VETALA_CURRENT_PROCESS')
         
     def _setup_options(self):
         
@@ -180,13 +182,23 @@ class Process(object):
                 
         return directory
     
-    def _center_view(self):
+    def _prep_maya(self):
+        
         if util.is_in_maya():
+        
+            cmds.select(cl = True)
+            
+            self._center_view()
+    
+    def _center_view(self):
+        from vtool.maya_lib import core
+        if not core.is_batch():
             try:
                 cmds.select(cl = True)
                 cmds.viewFit(an = True)
             except:
                 util.show('Could not center view')
+            
                 
     def _reset_builtin(self, old_process, old_cmds, old_show, old_warning):
                 
@@ -565,7 +577,7 @@ class Process(object):
         if hasattr(instance, 'import_data'):
             instance.import_data()
             
-    def save_data(self, name):
+    def save_data(self, name, comment = ''):
         """
         Convenience function that tries to run the save function function found on the data_type instance for the specified data folder. Not all data type instances have a save function. 
         
@@ -582,8 +594,11 @@ class Process(object):
         
         instance = data_folder.get_folder_data_instance()
         
+        if not comment:
+            comment = 'Saved through process class with no comment.'
+        
         if hasattr(instance, 'save'):
-            instance.save()
+            instance.save(comment)
     
     def rename_data(self, old_name, new_name):
         """
@@ -1426,7 +1441,8 @@ class Process(object):
                 self._reset_builtin(old_process, old_cmds, old_show, old_warning)
                 return
             
-            self._center_view()
+            self._prep_maya()
+            
             name = util_file.get_basename(script)
             
             for external_code_path in self.external_code_paths:
@@ -1526,6 +1542,9 @@ class Process(object):
             None
         """
         
+        watch = util.StopWatch()
+        watch.start(feedback = False)
+        
         if util.is_in_maya():
             cmds.file(new = True, f = True)
             
@@ -1535,7 +1554,11 @@ class Process(object):
         
         for script in scripts:
             self.run_script(script)
-            
+        
+        seconds = watch.stop()
+        
+        util.show('Process %s built in %s' % (self.get_name(), seconds))
+        
     def set_runtime_value(self, name, value):
         """
         This stores data to run between scripts.

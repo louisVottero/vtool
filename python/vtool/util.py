@@ -8,6 +8,10 @@ import datetime
 import traceback
 import os
 
+def initialize_env(name):
+    if not os.environ.has_key(name):
+        os.environ[name] = ''
+
 def set_env(name, value):
     
     if os.environ.has_key(name):
@@ -61,7 +65,16 @@ def is_in_maya():
         return True
     except:
         return False
+
+def get_current_maya_location():
     
+    location = ''
+    
+    if os.environ.has_key('MAYA_LOCATION'):
+        location = os.environ['MAYA_LOCATION']
+    
+    return location
+
 def is_in_nuke():
     """
     Check to see if scope is in Nuke

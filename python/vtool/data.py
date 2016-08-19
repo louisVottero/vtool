@@ -11,14 +11,14 @@ if util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
     
-import maya_lib.core
-import maya_lib.attr
-import maya_lib.deform
-import maya_lib.anim
-import maya_lib.curve
-import maya_lib.corrective
-import maya_lib.rigs_util
-import maya_lib.blendshape
+    import maya_lib.core
+    import maya_lib.attr
+    import maya_lib.deform
+    import maya_lib.anim
+    import maya_lib.curve
+    import maya_lib.corrective
+    import maya_lib.rigs_util
+    import maya_lib.blendshape
 
 class DataManager(object):
     
@@ -828,6 +828,8 @@ class SkinWeightData(MayaCustomData):
         
         for folder in folders:
             
+            
+            
             util.show('Importing weights on %s' % folder)
             
             mesh = folder
@@ -908,7 +910,9 @@ class SkinWeightData(MayaCustomData):
                     if len(split_influence) > 1:
                         influence = split_influence[-1]
                 
-                progress_ui.status('importing skin mesh: %s,  influence: %s' % (mesh, influence))
+                message = 'importing skin mesh: %s,  influence: %s' % (mesh, influence)
+                
+                progress_ui.status(message)
                     
                 if not influence_dict[influence].has_key('weights'):
                     util.warning('Weights missing for influence %s' % influence)
