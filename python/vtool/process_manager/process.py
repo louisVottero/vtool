@@ -127,7 +127,6 @@ class Process(object):
         self.runtime_values = {}
         self.option_settings = None
         
-        util.initialize_env('VETALA_CURRENT_PROCESS')
         
     def _setup_options(self):
         

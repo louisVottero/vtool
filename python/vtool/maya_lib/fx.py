@@ -20,7 +20,17 @@ import anim
 
 #--- Cache
 
+def get_cache_folder(name, dirpath = ''):
+    if not dirpath:
+        dirpath = cmds.workspace(q = True, rd = True)
+        
+    folder = util_file.create_dir('cache/%s' % name, dirpath)
+    
+    return folder
+    
+
 def export_maya_cache_group(source_group, dirpath = ''):
+    
     
     source_meshes = core.get_shapes_in_hierarchy(source_group, shape_type = 'mesh')
     source_curves = core.get_shapes_in_hierarchy(source_group, shape_type = 'nurbsCurve')
@@ -33,6 +43,8 @@ def export_maya_cache_group(source_group, dirpath = ''):
     refresh_maya_caches()
 
 def import_maya_cache_group(target_group, dirpath = '', source_group = None):
+    
+
     
     target_meshes = core.get_shapes_in_hierarchy(target_group, shape_type = 'mesh')
     target_curves = core.get_shapes_in_hierarchy(target_group, shape_type = 'nurbsCurve')
@@ -53,12 +65,9 @@ def export_maya_cache(geo, name = 'maya_cache', dirpath = ''):
     vtool.util.convert_to_sequence(geo)
     
     found_shapes = get_shapes_for_cache(geo)
-        
-    if not dirpath:
-        dirpath = cmds.workspace(q = True, dir = True)
-        vtool.util.show('Cache export dir: %s' % dirpath)
     
-    folder = util_file.create_dir('maya_cache', dirpath)
+    folder = get_cache_folder('maya_cache', dirpath)
+    vtool.util.show('Exporting to: %s' % folder)
     
     min_value, max_value = anim.get_min_max_time()
      
@@ -66,11 +75,8 @@ def export_maya_cache(geo, name = 'maya_cache', dirpath = ''):
     
 def import_maya_cache(geo, name = 'maya_cache', dirpath = '', source_namespace = None):
     
-    if not dirpath:
-        dirpath = cmds.workspace(q = True, dir = True)
-        vtool.util.show('Cache import dir: %s' % dirpath)
-    
-    folder = util_file.join_path(dirpath, 'maya_cache')
+    folder = get_cache_folder('maya_cache', dirpath)
+    vtool.util.show('Importing from: %s' % folder)
     
     #the geo is stored in channelName. channels is the geo in the cache.
     #channels = cmds.cacheFile(fileName = (folder + '/' + name + '.mcx'), q = True, channelName = True)
@@ -114,13 +120,14 @@ def import_maya_cache(geo, name = 'maya_cache', dirpath = '', source_namespace =
         
 def export_alembic(root_node, name, dirpath = None):
     
+    if not cmds.pluginInfo('AbcExport', query = True, loaded = True):
+        cmds.loadPlugin('AbcExport')
+    
+    
     min_value, max_value = anim.get_min_max_time()
     
-    if not dirpath:
-        dirpath = cmds.workspace(q = True, dir = True)
-        vtool.util.show('Cache export dir: %s' % dirpath)
-    
-    folder = util_file.create_dir('cache/alembic_cache', dirpath)
+    folder = get_cache_folder('alembic_cache', dirpath)
+    vtool.util.show('Exporting to: %s' % folder)
     
     filename = '%s/%s.abc' % (folder, name)
     
@@ -128,15 +135,17 @@ def export_alembic(root_node, name, dirpath = None):
 
 def import_alembic(root_node, name, dirpath = None):
     
-    if not dirpath:
-        dirpath = cmds.workspace(q = True, dir = True)
-        vtool.util.show('Cache export dir: %s' % dirpath)
+    if not cmds.pluginInfo('AbcImport', query = True, loaded = True):
+        cmds.loadPlugin('AbcImport')
     
-    folder = util_file.create_dir('cache/alembic_cache', dirpath)
+    folder = get_cache_folder('alembic_cache', dirpath)
+    vtool.util.show('Importing from: %s' % folder)
     
     filename = '%s/%s.abc' % (folder, name)
     
-    mel.eval('AbcImport -mode import -setToStartFrame -connect %s "%s";' % (root_node, filename))
+    
+    
+    mel.eval('AbcImport -connect %s "%s";' % (root_node, filename))
 
 
         
