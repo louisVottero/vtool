@@ -2110,8 +2110,6 @@ def snap_curve_to_surface(curve, surface, offset = 1):
                 mesh_fn = api.MeshFunction(surface)
                 closest_point = mesh_fn.get_closest_position(position)
                 
-                print cv, position, closest_point
-                
                 cmds.xform(cv, ws = True, t = closest_point)
     
         cmds.scale(offset,offset,offset, cvs, r = True)

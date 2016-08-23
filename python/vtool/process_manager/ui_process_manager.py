@@ -483,7 +483,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.settings.set('process', [name, str(self.project_directory)])
             
             fullpath = util_file.join_path(self.project_directory, name)
-            print 'title set path', fullpath
+            
             util.set_env('VETALA_CURRENT_PROCESS', fullpath)
         
         name = name.replace('/', '  /  ')
