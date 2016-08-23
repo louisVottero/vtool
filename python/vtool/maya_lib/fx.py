@@ -124,7 +124,7 @@ def export_alembic(root_node, name, dirpath = None):
     
     filename = '%s/%s.abc' % (folder, name)
     
-    mel.eval('AbcExport -j "-frameRange %s %s -stripNamespaces -worldSpace -writeVisibility -dataFormat ogawa -root %s -file %s";' % (min_value, max_value, root_node, filename))
+    mel.eval('AbcExport -j "-frameRange %s %s -stripNamespaces -uvWrite -worldSpace -writeVisibility -dataFormat ogawa -root %s -file %s";' % (min_value, max_value, root_node, filename))
 
 def import_alembic(root_node, name, dirpath = None):
     
