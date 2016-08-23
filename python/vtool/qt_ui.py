@@ -1490,8 +1490,9 @@ class HistoryTreeWidget(FileTreeWidget):
     def __init__(self):
         super(HistoryTreeWidget, self).__init__()
         
-        if is_pyside():
+        if is_pyside() or is_pyside2():
             self.sortByColumn(0, QtCore.Qt.SortOrder.DescendingOrder)
+        
             
         self.setColumnWidth(0, 70)  
         self.setColumnWidth(1, 150)

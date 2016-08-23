@@ -35,6 +35,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     
     def __init__(self, parent = None):
         
+        util.initialize_env('VETALA_CURRENT_PROCESS')
+        
         self.settings = None
         self.template_settings = None
         
@@ -80,6 +82,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         code_directory = self.settings.get('code_directory')
         if code_directory:
             self.set_code_directory(code_directory)
+        
+        
         
     def _show_options(self):
         
@@ -147,7 +151,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._update_build_widget(name)
 
-        self._set_title(name)
+        #self._set_title(name)
         self._update_process(name)
         self.last_item = item
         
@@ -298,6 +302,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_button.setMinimumWidth(150)
         self.process_button.setMinimumHeight(40)
         
+        self.batch_button = QPushButton('BATCH PROCESS')
+        self.process_button.setDisabled(True)
+        self.process_button.setMinimumWidth(150)
+        self.process_button.setMinimumHeight(40)
+        
         self.stop_button = QPushButton('STOP (Esc key)')
         self.stop_button.setMaximumWidth(140)
         self.stop_button.setMinimumHeight(30)
@@ -327,6 +336,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         left_button_layout.addSpacing(10)
         left_button_layout.addWidget(self.stop_button)
         left_button_layout.addWidget(self.continue_button)
+        left_button_layout.addSpacing(10)
+        left_button_layout.addWidget(self.batch_button)
         left_button_layout.addSpacing(20)
         left_button_layout.addWidget(self.run_selected_button)
         
@@ -346,6 +357,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.browser_button.clicked.connect(self._browser)
         self.process_button.clicked.connect(self._process)
+        self.batch_button.clicked.connect(self._batch)
         help_button.clicked.connect(self._open_help)
         self.stop_button.clicked.connect(self._set_kill_process)
         
@@ -407,6 +419,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.tab_widget.setTabEnabled(3, True)
             
             self.process_button.setEnabled(True)
+            self.batch_button.setEnabled(True)
         
         if not name:
             
@@ -416,6 +429,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.tab_widget.setTabEnabled(3, False)
             
             self.process_button.setDisabled(True)
+            self.batch_button.setDisabled(True)
             
         self.last_process = name
         
@@ -462,10 +476,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if not name:
             self.active_title.setText('')
+            util.set_env('VETALA_CURRENT_PROCESS', '')
             return
         
         if self.project_directory:
             self.settings.set('process', [name, str(self.project_directory)])
+            
+            fullpath = util_file.join_path(self.project_directory, name)
+            print 'title set path', fullpath
+            util.set_env('VETALA_CURRENT_PROCESS', fullpath)
         
         name = name.replace('/', '  /  ')
         
@@ -579,6 +598,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.stop_button.show()
         
         self.process_button.setDisabled(True)
+        self.batch_button.setDisabled(True)
         
         self.code_widget.reset_process_script_state()
         
@@ -602,6 +622,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if not scripts:
             self.process_button.setEnabled(True)
+            self.batch_button.setEnabled(True)
             return
         
         util.set_env('VETALA_RUN', True)
@@ -677,6 +698,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         util.set_env('VETALA_STOP', False)
             
         self.process_button.setEnabled(True)
+        self.batch_button.setEnabled(True)
         self.stop_button.hide()
         
         seconds = watch.stop()
@@ -686,6 +708,19 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         if not finished:
             util.show('Process %s finished with errors.' % self.process.get_name())
+        
+    def _batch(self):
+        
+        dirpath = os.environ['MAYA_LOCATION']
+        import subprocess
+        
+        filepath = __file__
+        filepath = util_file.get_dirname(filepath)
+        
+        batch_python = util_file.join_path(filepath, 'batch.py')
+        
+        mayapy = subprocess.Popen(['%s/bin/mayapy.exe' % dirpath, batch_python], shell = False)
+        #output, errors = mayapy.communicate()
         
     def _browser(self):
         

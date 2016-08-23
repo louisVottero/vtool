@@ -20,8 +20,7 @@ import util
 
 def get_vetala_version():
     
-    filepath = __file__
-    filepath = get_dirname(filepath)
+    filepath = get_vetala_directory()
     version_filepath = join_path(filepath, 'version.txt')
     
     if not is_file(version_filepath):
@@ -41,6 +40,12 @@ def get_vetala_version():
     version = version.strip()
     
     return 'BETA  ' + version
+
+def get_vetala_directory():
+    filepath = __file__
+    filepath = get_dirname(filepath)
+    
+    return filepath
 
 class WatchDirectoryThread(threading.Thread):
     """
