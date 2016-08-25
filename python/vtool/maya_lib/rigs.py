@@ -7357,7 +7357,6 @@ class EyeLidAimRig(JointRig):
             if self.center_locator:
                 space.MatchSpace(self.center_locator, xform).rotation()
                 
-                print 'matching space!!!',self.center_locator
                 space.MatchSpace(self.center_locator, xform).scale()
             
             current_scale = cmds.getAttr('%s.scale' % xform)[0]
@@ -8076,9 +8075,13 @@ class StickyFadeRig(StickyRig):
                 cmds.parent(sub_local_xform, local)
                 attr.connect_scale(xform, local_xform)
                 
+
+                
                 cmds.parent(local_xform, self.setup_group)
                 
                 buffer_joint = rigs_util.create_joint_buffer(sub_local, connect_inverse = False)
+
+                space.MatchSpace(xform, sub_local_xform).scale()
                 
                 cmds.connectAttr('%s.scale' % local_xform, '%s.inverseScale' % buffer_joint)
                 
