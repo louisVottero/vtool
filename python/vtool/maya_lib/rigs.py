@@ -7349,32 +7349,45 @@ class EyeLidAimRig(JointRig):
             
             space.MatchSpace(cluster, control.get()).translation_to_rotate_pivot()
             
+            
+            
             xform = space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
             
             if self.center_locator:
                 space.MatchSpace(self.center_locator, xform).rotation()
+                
+                space.MatchSpace(self.center_locator, xform).scale()
             
+            current_scale = cmds.getAttr('%s.scale' % xform)[0]
             
             if type(self.scale_space) == list:
+            
+                if self.side == 'R':
+                    raise
+                
+                scale_value = [current_scale[0] * self.scale_space[0],
+                               current_scale[1] * self.scale_space[1],
+                               current_scale[2] * self.scale_space[2]]
                 
                 offset_scale = [1,1,1]
                 
                 if self.scale_space[0] < 0:
                     offset_scale[0] = -1
                 
-                if self.scale_space[1] < 1:
+                if self.scale_space[1] < 0:
                     offset_scale[1] = -1
                     
                 if self.scale_space[2] < 0:
                     offset_scale[2] = -1
                     
-                cmds.scale(self.scale_space[0],self.scale_space[1], self.scale_space[2], xform)    
+                cmds.scale(scale_value,scale_value, scale_value, xform)    
                 cmds.scale(offset_scale[0], offset_scale[1], offset_scale[2], control.control)
 
             if type(self.scale_space) != list:
                 if self.scale_space < 1 or self.scale_space > 1:
-                    cmds.scale(self.scale_space, self.scale_space, self.scale_space, xform)
+                    print self.scale_space, current_scale
+                    cmds.scale(self.scale_space*current_scale[0], self.scale_space*current_scale[1], self.scale_space*current_scale[2], xform)
 
             if self.use_joint:
                 cmds.connectAttr('%s.scale' % xform, '%s.inverseScale' % control.control)
@@ -7442,11 +7455,25 @@ class EyeLidAimRig(JointRig):
         
         
         control = self.controls[increment]
-        parent = cmds.listRelatives(control, p = True)[0]
+        driver = space.get_xform_group(control, 'driver')
+        
+        xform = space.get_xform_group(control)
+        
+        main_xform = space.get_xform_group(main_control)
+        
+        scale = cmds.getAttr('%s.scale' % xform)[0]
+        main_scale = cmds.getAttr('%s.scale' % main_xform)[0]
+        
+        if main_scale[0] < 0:
+            cmds.setAttr('%s.scaleX' % xform, (scale[0] * -1))
+        if main_scale[1] < 0:
+            cmds.setAttr('%s.scaleY' % xform, (scale[0] * -1))
+        if main_scale[2] < 0:
+            cmds.setAttr('%s.scaleZ' % xform, (scale[0] * -1))
         
         value = self.follow_multiply * weight
         
-        attr.connect_translate_multiply(main_control, parent, value)
+        attr.connect_translate_multiply(main_control, driver, value)
         
             
                     
@@ -8048,9 +8075,13 @@ class StickyFadeRig(StickyRig):
                 cmds.parent(sub_local_xform, local)
                 attr.connect_scale(xform, local_xform)
                 
+
+                
                 cmds.parent(local_xform, self.setup_group)
                 
                 buffer_joint = rigs_util.create_joint_buffer(sub_local, connect_inverse = False)
+
+                space.MatchSpace(xform, sub_local_xform).scale()
                 
                 cmds.connectAttr('%s.scale' % local_xform, '%s.inverseScale' % buffer_joint)
                 
