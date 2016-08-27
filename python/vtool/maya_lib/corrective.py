@@ -580,6 +580,10 @@ class PoseManager(object):
         
         for inc in xrange(count):
             
+            if vtool.util.get_env('VETALA_RUN') == 'True':
+                if vtool.util.get_env('VETALA_STOP') == 'True':
+                    break
+            
             if progress.break_signaled():
                 break
             
@@ -597,6 +601,13 @@ class PoseManager(object):
             
             if pose_type == 'no reader':
                 pose.set_weight(0)
+            
+            
+                                
+            if progress.break_signaled():
+                if vtool.util.get_env('VETALA_RUN') == 'True':
+                    vtool.util.set_env('VETALA_STOP', True)
+                break
             
             progress.inc()
             

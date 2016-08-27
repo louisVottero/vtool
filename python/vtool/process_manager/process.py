@@ -241,6 +241,7 @@ class Process(object):
         """ 
         self.directory = directory
         
+        
     def set_external_code_library(self, directory):
         """
         Args:
@@ -1547,8 +1548,12 @@ class Process(object):
         if util.is_in_maya():
             cmds.file(new = True, f = True)
             
-        util.show('\n\a\tRunning %s Scripts\t\a' % self.get_name())
- 
+        name = self.get_name()
+        if not name:
+            name = util_file.get_dirname(self.directory)
+            
+        util.show('\n\a\tRunning %s Scripts\t\a' % name)
+        
         scripts = self.get_manifest_scripts(False)
         
         for script in scripts:

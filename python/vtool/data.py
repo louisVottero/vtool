@@ -1405,11 +1405,39 @@ class MayaShadersData(CustomData):
             if not meshes:
                 continue
             
+            found_meshes = {}
+            
             for mesh in meshes:
+                
                 if not cmds.objExists(mesh):
                     continue
                 
-                cmds.sets( mesh, e = True, forceElement = name)
+                split_mesh = mesh.split('.')
+                
+                if len(split_mesh) > 1:
+                    if not found_meshes.has_key(split_mesh[0]):
+                        found_meshes[split_mesh[0]] = []
+                    
+                    found_meshes[split_mesh[0]].append(mesh)
+                
+                if len(split_mesh) == 1:
+                    if not found_meshes.has_key(mesh):
+                        mesh_name = cmds.ls('%s.f[*]' % mesh, flatten = False)
+                        found_meshes[mesh] = [mesh_name]
+                
+            visited_geo = []
+            
+            for key in found_meshes:
+                if not cmds.objExists(key):
+                    continue
+                
+                if not key in visited_geo:
+                    cmds.sets(key, e = True, forceElement = name)
+                    #cmds.sets( found_meshes[key][:-1], e = True, forceElement = name)
+                
+                if key in visited_geo:
+                    cmds.sets( found_meshes[key], e = True, forceElement = name)
+                visited_geo.append(key)
     
     def export_data(self, comment):
         
@@ -1913,6 +1941,11 @@ class PoseData(MayaCustomData):
         cmds.renderThumbnailUpdate( False )
         
         for pose_file in pose_files:
+            
+            if util.get_env('VETALA_RUN') == 'True':
+                #stop doesn't get picked up when files are loading.
+                if util.get_env('VETALA_STOP') == 'True':
+                    break
             
             if not pose_file.endswith('.ma') and not pose_file.endswith('.mb'):
                 continue

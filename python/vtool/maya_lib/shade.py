@@ -52,7 +52,10 @@ def get_shading_engines(shader_name):
 
 def get_shading_engines_by_geo(geo):
     
-    shapes = cmds.listRelatives(geo, children = True, shapes = True, f = True)
+    if not core.is_a_shape(geo):
+        shapes = cmds.listRelatives(geo, children = True, shapes = True, f = True)
+    if core.is_a_shape(geo):
+        shapes = [geo]
     
     engines = []
     
@@ -65,8 +68,14 @@ def get_shading_engines_by_geo(geo):
         
         if sub_engines:
             engines += sub_engines
-            
-    return engines
+    
+    found = []
+    
+    for engine in engines:
+        if not engine in found:
+            found.append(engine)
+    
+    return found
     
 def has_shading_engine(geo):
     
@@ -77,6 +86,75 @@ def has_shading_engine(geo):
     
     if not engines:
         return False
+
+def get_shader_info(geo):
+    
+    shaders = get_shading_engines_by_geo(geo)
+    
+    shader_dict = {}
+    
+    if core.is_a_shape(geo):
+        geo = cmds.listRelatives(geo, p = True)[0]
+    
+    for shader in shaders:
+        members = cmds.sets(shader, q = True)
+    
+    
+        found_members = []
+        
+        for member in members:
+            if member.startswith(geo):
+                found_members.append(member) 
+    
+        shader_dict[shader] = found_members
+
+    shader_dict['.shader.order'] = shaders
+    
+    return shader_dict
+
+def set_shader_info(geo, shader_dict):
+    
+    
+    
+    shaders = shader_dict.keys()
+    
+    if shader_dict.has_key('.shader.order'):
+        shaders = shader_dict['.shader.order']
+    
+    for shader in shaders:
+        
+        if not cmds.objExists(shader):
+            continue
+        
+        shader_geo = shader_dict[shader]
+        
+        found_meshes = {}
+        
+        for mesh in shader_geo:
+            
+            split_mesh = mesh.split('.')
+            
+            if not found_meshes.has_key(geo):
+                geo_name = cmds.ls('%s.f[*]' % geo, flatten = False)
+                found_meshes[geo] = geo_name
+            
+            if len(split_mesh) > 1:
+                
+                found_meshes[geo].append( '%s.%s' % (geo, split_mesh[1]) )
+        
+        for key in found_meshes:
+            
+            cmds.sets( found_meshes[key], e = True, forceElement = shader)
+            
+            
+def remove_shaders(geo):
+    
+    shaders = get_shading_engines_by_geo(geo)
+    
+    for shader in shaders:
+        cmds.sets(geo, e = True, remove = shader)
+    
+        
 
 def apply_shader(shader_name, mesh):
     """
