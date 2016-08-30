@@ -83,7 +83,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if code_directory:
             self.set_code_directory(code_directory)
         
-        
+        self.last_process_script_inc = 0
         
     def _show_options(self):
         
@@ -360,6 +360,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.batch_button.clicked.connect(self._batch)
         help_button.clicked.connect(self._open_help)
         self.stop_button.clicked.connect(self._set_kill_process)
+        self.continue_button.clicked.connect(self._continue)
         
         self.main_layout.addLayout(btm_layout)
         
@@ -581,7 +582,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         util.set_env('VETALA_STOP', True)
         self.kill_process = True
         
-    def _process(self):
+    def _process(self, last_inc = None):
         
         if util.is_in_maya():
             import maya.cmds as cmds
@@ -589,6 +590,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 result = qt_ui.get_permission('Changes not saved. Run process anyways?', self)
                 if not result:
                     return
+        
+        self.continue_button.hide()
         
         watch = util.StopWatch()
         watch.start(feedback = False)
@@ -600,13 +603,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_button.setDisabled(True)
         self.batch_button.setDisabled(True)
         
-        self.code_widget.reset_process_script_state()
-        
-        try:
-            #this was not working when processing in a new Vetala session without going to the code tab.
-            self.code_widget.refresh_manifest()
-        except:
-            pass
+        if last_inc == None:
+            self.code_widget.reset_process_script_state()
+            
+            try:
+                #this was not working when processing in a new Vetala session without going to the code tab.
+                self.code_widget.refresh_manifest()
+            except:
+                pass
         
         self.tab_widget.setCurrentIndex(3)
         
@@ -615,7 +619,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         start_new_scene = self.settings.get('start_new_scene_on_process')
         
-        if util.is_in_maya() and start_new_scene:
+        if util.is_in_maya() and start_new_scene and last_inc == None:
             cmds.file(new = True, f = True)
         
         scripts, states = self.process.get_manifest()
@@ -638,7 +642,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         finished = False
         
-        for inc in range(0, script_count):
+        code_manifest_tree = self.code_widget.script_widget.code_manifest_tree
+        
+        start = 0
+        
+        if last_inc != None:
+            start = last_inc + 1
+            
+        
+        for inc in range(start, script_count):
         
             if util.get_env('VETALA_RUN') == 'True':
                 if util.get_env('VETALA_STOP') == 'True':
@@ -689,10 +701,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if inc == script_count-1:
                 finished = True
             
-            if self.code_widget.script_widget.code_manifest_tree.break_index:
-                if self.code_widget.script_widget.code_manifest_tree.is_process_script_breakpoint(scripts[inc]):
+            if code_manifest_tree.break_index:
+                if code_manifest_tree.is_process_script_breakpoint(scripts[inc]):
                     self.continue_button.show()
+                    self.last_process_script_inc = inc
+                    
                     break
+        
+        
             
         util.set_env('VETALA_RUN', False)
         util.set_env('VETALA_STOP', False)
@@ -708,6 +724,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         if not finished:
             util.show('Process %s finished with errors.' % self.process.get_name())
+    
+    def _continue(self):
+        
+        self._process(self.last_process_script_inc)
         
     def _batch(self):
         
@@ -721,6 +741,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         mayapy = subprocess.Popen(['%s/bin/mayapy.exe' % dirpath, batch_python], shell = False)
         #output, errors = mayapy.communicate()
+        
+    
         
     def _browser(self):
         

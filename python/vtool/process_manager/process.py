@@ -13,6 +13,7 @@ import os
 
 if util.is_in_maya():
     import maya.cmds as cmds
+    from vtool.maya_lib import core
 
 def find_processes(directory = None):
     """
@@ -598,7 +599,13 @@ class Process(object):
             comment = 'Saved through process class with no comment.'
         
         if hasattr(instance, 'save'):
-            instance.save(comment)
+            saved = instance.save(comment)
+            
+            if saved:
+                return True
+        
+        return False
+            
     
     def rename_data(self, old_name, new_name):
         """
@@ -1450,7 +1457,13 @@ class Process(object):
                     if not external_code_path in sys.path:
                         sys.path.append(external_code_path)
             
-            util.show('\n\t\a\t%s\n\n' % name)
+            message = '\n\n\t\a\t%s START\n\n' % name
+            
+            if util.is_in_maya():
+                if core.is_batch():
+                    message = '\n\n\t%s START\n\n' % name
+            
+            util.show(message)
             
             util_file.delete_pyc(script)
             
@@ -1530,7 +1543,7 @@ class Process(object):
         if not status == 'Success':
             util.show('%s\n' % status)
         if status == 'Success':
-            util.show('\nEnd of %s.\n\n' % name)
+            util.show('\n\t%s END.\n\n' % name)
             
         return status
                
@@ -1552,7 +1565,13 @@ class Process(object):
         if not name:
             name = util_file.get_dirname(self.directory)
             
-        util.show('\n\a\tRunning %s Scripts\t\a' % name)
+        message = '\n\n\a\tRunning %s Scripts\t\a\n' % name
+        
+        if util.is_in_maya():
+            if core.is_batch():
+                message = '\n\n\tRunning %s Scripts\n' % name
+        
+        util.show(message)
         
         scripts = self.get_manifest_scripts(False)
         
@@ -1561,7 +1580,7 @@ class Process(object):
         
         seconds = watch.stop()
         
-        util.show('Process %s built in %s' % (self.get_name(), seconds))
+        util.show('Vetala:  Process built in %s' % seconds)
         
     def set_runtime_value(self, name, value):
         """

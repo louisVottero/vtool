@@ -2,6 +2,8 @@
 
 import os
 import sys
+import time
+import traceback
 
 def main():
     
@@ -37,15 +39,18 @@ def main():
             try:
                 process_inst.run()
             except:
-                pass
+                print traceback.format_exc()
             
-            process_inst.save_data('build', 'Generated from batch.')
+            saved = process_inst.save_data('build', 'Generated from batch.')
             
+            if saved:
+                vtool.util.show('Vetala:  Batch finished.  Contents saved to build.')
+            if not saved:
+                vtool.util.show('Vetala:  Batch finished.  Unable to save contents!!')
         else:
-            print 'Could not get current process.'
+            vtool.util.show('VETALA:  Could not get current process.  Batch finished, nothing processed.')
     
-    import time
-    time.sleep(10)
+    time.sleep(20)
     
 if __name__ == '__main__':
     main()

@@ -2213,15 +2213,31 @@ class MayaFileData(MayaCustomData):
         
         self._clean_scene()
         
-        cmds.file(rename = self.filepath)
+        saved = False
         
-        cmds.file(save = True,
-                  type = self.maya_file_type)
+        util.show('Vetala:  Saving...')
         
-        version = util_file.VersionFile(self.filepath)
-        version.save(comment)
+        try:
+            cmds.file(rename = self.filepath)
+            
+            cmds.file(save = True,
+                      type = self.maya_file_type)
+            saved = True
+        except:
+            saved = False
         
-        util.show('Vetala: Scene Saved')
+        if saved:
+            version = util_file.VersionFile(self.filepath)
+            version.save(comment)
+            
+            util.show('Vetala: Scene Saved')
+            return True
+        
+        if not saved:
+            util.show('Vetala:  Scene not saved:  %s' % self.filepath)
+            return False
+        
+        return False
         
     def export_data(self, comment):
         
