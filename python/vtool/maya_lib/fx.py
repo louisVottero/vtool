@@ -4,6 +4,7 @@ import re
 import string
 
 import vtool.util
+import vtool.util_alembic
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
@@ -17,8 +18,15 @@ import deform
 import geo
 import space
 import anim
+import shade
+
+import alembic
+from alembic import Abc
+from alembic import AbcGeom
 
 #--- Cache
+
+
 
 def get_cache_folder(name, dirpath = ''):
     if not dirpath:
@@ -44,8 +52,6 @@ def export_maya_cache_group(source_group, dirpath = ''):
 
 def import_maya_cache_group(target_group, dirpath = '', source_group = None):
     
-
-    
     target_meshes = core.get_shapes_in_hierarchy(target_group, shape_type = 'mesh')
     target_curves = core.get_shapes_in_hierarchy(target_group, shape_type = 'nurbsCurve')
     
@@ -58,8 +64,7 @@ def import_maya_cache_group(target_group, dirpath = '', source_group = None):
         source_group_folder = source_group.replace(':', '_')
      
     import_maya_cache(targets, source_group_folder, dirpath, source_namespace=namespace)
-
-
+    
 def export_maya_cache(geo, name = 'maya_cache', dirpath = ''):
     
     vtool.util.convert_to_sequence(geo)
@@ -123,7 +128,6 @@ def export_alembic(root_node, name, dirpath = None):
     if not cmds.pluginInfo('AbcExport', query = True, loaded = True):
         cmds.loadPlugin('AbcExport')
     
-    
     min_value, max_value = anim.get_min_max_time()
     
     folder = get_cache_folder('alembic_cache', dirpath)
@@ -143,10 +147,55 @@ def import_alembic(root_node, name, dirpath = None):
     
     filename = '%s/%s.abc' % (folder, name)
     
+    top_alembic = vtool.util_alembic.get_top_in(filename)
     
+    meshes = vtool.util_alembic.get_all_instances(top_alembic, 'polyMesh')
+    curves = vtool.util_alembic.get_all_instances(top_alembic, 'nurbsCurve')
     
-    mel.eval('AbcImport -connect %s "%s";' % (root_node, filename))
-
+    alembic_node = cmds.createNode('AlembicNode')
+    cmds.connectAttr('time1.outTime', '%s.time' % alembic_node)
+    
+    cmds.setAttr('%s.abc_File' % alembic_node, filename, type = 'string')
+    
+    #mel.eval('AbcImport -connect %s "%s";' % (root_node, filename))
+    
+    found_shapes = get_shapes_for_cache(root_node)
+    found_geo = []
+    
+    for geo_name in found_shapes:
+        
+        for inc in range(0, len(meshes)):
+            
+            mesh_name = meshes[inc].getName()
+            base_mesh = core.get_basename(mesh_name, remove_namespace = True)
+            
+            if vtool.util_alembic.is_constant(meshes[inc]):
+                continue
+            
+            base_geo = core.get_basename(geo_name, remove_namespace = True)
+            
+            if base_mesh == base_geo:
+                
+                found_geo.append(geo_name)
+    
+    shader_info_dict = {}
+    for inc in range(len(found_geo)-1, -1,-1):
+        
+        geo_name = found_geo[inc]
+        
+        shader_info = shade.get_shader_info(geo_name)
+        
+        shade.remove_shaders(geo_name)
+        
+        cmds.connectAttr('%s.outPolyMesh[%s]' % (alembic_node, inc), '%s.inMesh' % geo_name, force = True)
+        
+        shader_info_dict[geo_name] = shader_info
+        
+    for geo in shader_info_dict:
+        
+        
+        shade.set_shader_info(geo, shader_info_dict[geo])
+    
 
         
 def refresh_maya_caches(maya_caches = []):
@@ -168,7 +217,10 @@ def refresh_maya_caches(maya_caches = []):
         
     
         
-def get_shapes_for_cache(geo):        
+def get_shapes_for_cache(geo):
+    
+    geo = vtool.util.convert_to_sequence(geo)
+            
     children = cmds.listRelatives(geo, ad = True, type = 'transform')
     
     found_shapes = []
@@ -178,11 +230,15 @@ def get_shapes_for_cache(geo):
     
     for sub_geo in geo:
         
-        
-        
         mesh_shapes = core.get_shapes(sub_geo, shape_type = 'mesh')
+        
         curve_shapes = core.get_shapes(sub_geo, shape_type = 'nurbsCurve')
-    
+        
+        if mesh_shapes == None:
+            mesh_shapes = []
+        if curve_shapes == None:
+            curve_shapes = []
+            
         shapes = mesh_shapes + curve_shapes
     
         for shape in shapes:

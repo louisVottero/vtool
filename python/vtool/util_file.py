@@ -42,9 +42,9 @@ def get_vetala_version():
     return 'BETA  ' + version
 
 def get_vetala_directory():
-    filepath = __file__
-    filepath = get_dirname(filepath)
     
+    filepath = util.get_env('VETALA_PATH')
+    filepath = fix_slashes(filepath)
     return filepath
 
 class WatchDirectoryThread(threading.Thread):

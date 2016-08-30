@@ -35,7 +35,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     
     def __init__(self, parent = None):
         
-        util.initialize_env('VETALA_CURRENT_PROCESS')
+        
         
         self.settings = None
         self.template_settings = None
@@ -203,7 +203,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.set_settings(self.settings)
         
         #template stuff
-        vetala_path = util.get_env('VETALA_PATH')
+        vetala_path = util_file.get_vetala_directory()
         vetala_path = util_file.join_path(vetala_path, 'templates')
         custom_template_file = 'template_settings.txt'
         

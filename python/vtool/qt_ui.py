@@ -3353,6 +3353,8 @@ class FindTextWidget(BasicDialog):
         
         self.text_widget.cursorPositionChanged.connect(self._reset_found_match)
         
+        #self.setWindowFlags( self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint)
+        #self.setWindowFlags( QtCore.Qt.WindowStaysOnBottomHint)
         
         self.setWindowTitle('Find/Replace')
         
@@ -4261,7 +4263,7 @@ def get_comment(parent = None,text_message = 'add comment', title = 'save'):
     
     dialogue = QInputDialog()
     
-    flags = dialogue.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint
+    flags = dialogue.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
     
     comment, ok = dialogue.getText(parent, title,text_message, flags = flags)
     comment = comment.replace('\\', '_')  
@@ -4300,9 +4302,12 @@ def get_permission(message, parent = None):
     
     message_box = QMessageBox(parent)
     
+    flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    
     message_box.setText('Permission')
     message_box.setInformativeText(message)
     message_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+    message_box.setWindowFlags(flags)
     message = message_box.exec_()
     #message = message_box.question(parent, 'Permission', message, QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel )
     
@@ -4318,10 +4323,14 @@ def get_permission(message, parent = None):
 def get_new_name(message, parent = None, old_name = None):
     
     
+    dialog = QInputDialog()
+    
+    flags = dialog.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    
     if not old_name:
-        comment, ok = QInputDialog.getText(parent, 'Rename', message)
+        comment, ok = dialog.getText(parent, 'Rename', message, flags = flags)
     if old_name:
-        comment, ok = QInputDialog.getText(parent, 'Rename', message, text = old_name)
+        comment, ok = dialog.getText(parent, 'Rename', message, text = old_name, flags = flags)
     
     
     comment = comment.replace('\\', '_')  
@@ -4332,33 +4341,31 @@ def get_new_name(message, parent = None, old_name = None):
 def critical(message, parent = None):
     
     message_box = QMessageBox(parent)
-    
+    flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    message_box.setWindowFlags(flags)
     message_box.critical(parent, 'Critical Error', message)
     
 def warning(message, parent = None):
     
     message_box = QMessageBox(parent)
+    flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    message_box.setWindowFlags(flags)
     message_box.warning(parent, 'Warning', message)
 
 def about(message, parent = None):
     
     message_box = QMessageBox(parent)
+    flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    message_box.setWindowFlags(flags)
     message_box.about(parent, 'About', message)
 
 def get_pick(list, text_message, parent = None):
     
     input_dialog = QInputDialog(parent)
     input_dialog.setComboBoxItems(list)
-    picked, ok = QInputDialog.getItem(parent, 'Pick One', text_message, list)
+    
+    flags = input_dialog.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    picked, ok = QInputDialog.getItem(parent, 'Pick One', text_message, list, flags = flags)
     
     if ok:
         return picked
-    
-    
-
-    
-
-    
-
-
-
