@@ -789,6 +789,9 @@ class ShapeComboManager(object):
         
         var = attr.MayaNumberVariable(shape)
         
+        var.set_min_value(0)
+        var.set_max_value(1)
+        
         var.set_variable_type('float')
         var.create(self.setup_group)
     
@@ -1460,13 +1463,12 @@ class ShapeComboManager(object):
             value *= -1
             name = negative_parent
         
-        if value < 1:
+        if value < -1:
             
             var = attr.MayaNumberVariable(name)
             var.set_min_value(-1)
             var.set_max_value(1)
             var.create(self.setup_group)
-        
         
         cmds.setAttr('%s.%s' % (self.setup_group, name), value)
     

@@ -731,7 +731,7 @@ class StickyLipRig(StickyRig):
     def _create_curves(self):
         
         top_cv_count = len(self.top_joints) - 3
-        btm_cv_count = len(self.btm_joints) - 3
+        #btm_cv_count = len(self.btm_joints) - 3
         
         self.top_curve = geo.transforms_to_curve(self.top_joints, self.control_count, self.description + '_top')
         self.btm_curve = geo.transforms_to_curve(self.btm_joints, self.control_count, self.description + '_btm')
@@ -1097,12 +1097,6 @@ class StickyLipRig(StickyRig):
         
         super(StickyLipRig, self).create_follow(follow_transform, increment, value)
         
-        #for control in self.main_controls:
-        #    cmds.orientConstraint(self.follower_group, control[2])
-            
-        #for control in self.corner_controls:
-        #    cmds.orientConstraint(self.follower_group, control[1])
-            
     def create(self):
         super(StickyLipRig, self).create()
         
@@ -1407,7 +1401,6 @@ class FaceCurveRig(rigs.JointRig):
         
         self.span_count = count - 1
         
-        
     def set_create_sub_controls(self, bool_value):
         self.sub_controls_create = bool_value
         
@@ -1477,7 +1470,6 @@ class EyeLidRig(rigs.JointRig):
         self.main_joint_dict = {}
         self.row_joint_dict = {}
         self.main_controls = []
-        
         
     def _create_curve(self):
         
@@ -1610,26 +1602,6 @@ class EyeLidRig(rigs.JointRig):
             cmds.warning('Row joint count and rig joint count do not match.')
   
         for inc in range(0, len(self.joints)):
-            """
-            groups_created = False
-            if self.row_joint_dict.has_key(joints[inc]):
-                
-                xform = self.row_joint_dict[joints[inc]]['xform']
-                offset = self.row_joint_dict[joints[inc]]['offset']
-                driver = self.row_joint_dict[joints[inc]]['driver']
-            
-            if not self.row_joint_dict.has_key(joints[inc]):
-
-                xform = space.create_xform_group(joints[inc])
-                offset = space.create_xform_group(joints[inc], 'offset')
-                driver = space.create_xform_group(joints[inc], 'driver')
-                
-                self.row_joint_dict[joints[inc]] = {}
-                self.row_joint_dict[joints[inc]]['xform'] = xform
-                self.row_joint_dict[joints[inc]]['offset'] = offset
-                self.row_joint_dict[joints[inc]]['driver'] = driver
-                groups_created = True
-            """
             
             driver = cmds.listRelatives(joints[inc], p = True)[0]
             offset = cmds.listRelatives(driver, p = True)
@@ -1837,8 +1809,6 @@ class CurveAndSurfaceRig(rigs.BufferRig):
         self.control_shape = 'square'
         self.delete_end_cvs = True
         self.respect_side = False
-    
-
         
     def _create_inc_control(self, curve, inc, sub = False, description = None, center_tolerance = 0.001):
         
@@ -2316,8 +2286,6 @@ class EyeLidSphereRig2(rigs.BufferRig):
         for locator in self.curve_locators:
             geo.attach_to_curve(locator, curve)
         
-        
-        
     def _create_controls(self):
         
         inc = 1
@@ -2341,10 +2309,6 @@ class EyeLidSphereRig2(rigs.BufferRig):
             group = cmds.group(em = True, n = self._get_name('group', name))
             local_group = cmds.group(em = True, n = self._get_name('local_group', name))
             
-            
-            
-            
-            #group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'local')))
             cmds.parent(group, self.control_group)
             cmds.parent(local_group, self.setup_group)
                         
@@ -2362,10 +2326,6 @@ class EyeLidSphereRig2(rigs.BufferRig):
                 space.MatchSpace(cluster, xform).translation_to_rotate_pivot()
                 
                 local, xform_local = space.constrain_local(control.get(), cluster, constraint = 'pointConstraint')
-                #cmds.parent(xform_local, group)
-                #cmds.pointConstraint(control.get(), cluster)
-                
-                
                 
                 cmds.parent(xform, self.control_group)
                 
@@ -2426,27 +2386,8 @@ class MouthTweakers(rigs.Rig):
         for inc in range(0, len(locators1)):
             if inc != len(locators1)-1:
                 
-                #pos = cmds.xform(locators1[inc+1], q = True, ws = True, t = True)
-                
-                #if pos[0] < -0.1 or pos[0] > 0.1:
-                
-                aim = cmds.aimConstraint(locators1[inc+1], locators1[inc])[0]
-                #cmds.setAttr('%s.worldUpType' % aim, 4)
-                
-                #if inc != 0:
-                #    cmds.setAttr('%s.worldUpType' % aim, 2)
-                #    cmds.connectAttr('%s.worldMatrix' % locators1[inc-1], '%s.worldUpMatrix' % aim)
-            
-                #pos = cmds.xform(locators2[inc+1], q = True, ws = True, t = True)
-                
-                #if pos[0] < -0.1 or pos[0] > 0.1:
-                
-                aim = cmds.aimConstraint(locators2[inc+1], locators2[inc])[0]
-                #cmds.setAttr('%s.worldUpType' % aim, 4)
-                
-                #if inc != 0:
-                #    cmds.setAttr('%s.worldUpType' % aim, 2)
-                #    cmds.connectAttr('%s.worldMatrix' % locators2[inc-1], '%s.worldUpMatrix' % aim)
+                cmds.aimConstraint(locators1[inc+1], locators1[inc])[0]
+                cmds.aimConstraint(locators2[inc+1], locators2[inc])[0]
                     
     def _add_joints(self, joints1, joints2):
     
@@ -2601,13 +2542,7 @@ class MouthTweakers(rigs.Rig):
             cmds.connectAttr('%s.positionY' % point_on_curve, '%s.translateY' % xform)
             cmds.connectAttr('%s.positionZ' % point_on_curve, '%s.translateZ' % xform)
             
-            #aim_control = space.create_xform_group(control_name, 'aim')
-            
             space.MatchSpace(joint, xform_control).translation_rotation()
-            
-            
-            #attr.connect_translate(xform_control, xform)
-            #attr.connect_rotate(aim_control, aim)
             
             driver = space.create_xform_group(joint, 'driver')
             
@@ -2665,16 +2600,10 @@ class MouthTweakers(rigs.Rig):
         joints1 = []
         joints2 = []
         
-        aim_controls1 = []
-        aim_controls2 = []
-
-        
         middle_joint, middle_aim, middle_xform, middle_control, middle_aim_control, middle_xform_control = self._create_joint(curve, length/2.0, control = True)
         
         for inc in range(0, sections/2):
         
-            
-            
             param1 = geo.get_parameter_from_curve_length(curve, start_offset)
             position1 = geo.get_point_from_curve_parameter(curve, param1)
             
@@ -2687,36 +2616,14 @@ class MouthTweakers(rigs.Rig):
             
             joint1, aim1, xform1, control1, aim_control1, xform_control1 = self._create_joint(curve, start_offset, control = True)    
             joint2, aim2, xform2, control2, aim_control2, xform_control2 = self._create_joint(curve, end_offset, control = True)
-            
-            """
-            if len(joints1):
-                
-                aim = cmds.aimConstraint(aim_controls1[-1], aim_control1)
-                
-            if len(joints2):
-                
-                aim = cmds.aimConstraint(aim_control2, aim_controls2[-1])
-            
-            if inc == (sections/2)-1:
-                
-                aim = cmds.aimConstraint(aim_controls1[-1], aim_control1)    
-                aim = cmds.aimConstraint(middle_aim_control, aim_control2)
-            """
+
             start_offset += section_length
             end_offset -= section_length
-        
-            #aim_controls1.append(aim_control1)
-            #aim_controls2.append(aim_control2)
             
             joints1.append(joint1)
             joints2.append(joint2)
             
-        #aim = cmds.aimConstraint(aim_controls1[1], aim_controls1[0], aimVector = [-1,0,0])
-                
         return joints1 + [middle_joint] + joints2
-        
-        
-    
     
     def _create_joints(self, curve1, curve2, count = 11):
     
@@ -2763,8 +2670,6 @@ class MouthTweakers(rigs.Rig):
             
             joints.append(end_joint)
             
-            #cmds.parent(lip_joints[inc], end_joint)
-            
             new_joints = []
         
             for joint in joints:
@@ -2778,11 +2683,6 @@ class MouthTweakers(rigs.Rig):
             
             new_muzzle_joints.append( new_joints[0] )
             new_lip_joints.append( new_joints[-1] )
-            
-        
-        
-          
-            
         
         muzzle_joints = new_muzzle_joints
         lip_joints = new_lip_joints
@@ -2807,8 +2707,6 @@ class MouthTweakers(rigs.Rig):
             
             ik = space.IkHandle('top_lip')
             ik.set_start_joint( joints1[inc] )
-            
-            #parent_joint = cmds.listRelatives(joints2[inc], p = True)[0]
             
             child = cmds.listRelatives(joints1[inc], type = 'joint')[0]
             child2 = cmds.listRelatives(child, type = 'joint')[0]
@@ -2835,10 +2733,6 @@ class MouthTweakers(rigs.Rig):
     def _create_controls(self, locators = []):
         
         inc = 1
-        
-        #control_curves = [self.lip_curve, self.muzzel_curve]
-        
-        #for curve in control_curves:
         
         if self.lip_curve and not locators:
             curve = self.lip_curve
@@ -2910,7 +2804,6 @@ class MouthTweakers(rigs.Rig):
             attr.connect_translate(driver, local_driver)
             
             cmds.parent(xform_local, group)
-            #cmds.pointConstraint(control.get(), cluster)
             
             cmds.parent(xform, self.control_group)
             
@@ -2947,9 +2840,6 @@ class MouthTweakers(rigs.Rig):
     
         super(MouthTweakers, self).create()
         
-        #if self.muzzel_curve:
-        #    self._create_joints_on_curve(self.muzzel_curve, 5)
-        
         muzzle_joints, lip_joints = self._create_joints( self.muzzel_curve , self.lip_curve, 15) 
         
         
@@ -2966,16 +2856,7 @@ class MouthTweakers(rigs.Rig):
             self._create_controls()
         if not self.lip_curve:
             self._create_controls(locators2)
-        
-        """
-        self._attach_joints_to_locators(self.sub_locators1, muzzle_joints)
-        
-        
-        self._attach_joints_to_locators(self.sub_locators2, lip_joints)
-        
-        self._create_locator_controls(self.sub_locators2)
-        """
-
+            
 class WorldJawRig(rigs.BufferRig):
     
     def __init__(self, description, side):
@@ -2996,8 +2877,6 @@ class WorldJawRig(rigs.BufferRig):
         self.control_dict[self.control.get()]['driver'] = driver
         
         cmds.parent(xform, self.control_group)
-        
-        #self.control.rotate_shape(0, 0, 90)    
     
     def _attach(self):
         
@@ -3433,10 +3312,8 @@ class WorldStickyFadeRig(WorldStickyRig):
             self.side = side
             
             corner_offset = cmds.group(em = True, n = self._get_name('offset', 'corner'))
-            #corner_offset_xform = space.create_xform_group(corner_offset)
             
             sub_corner_offset = cmds.duplicate(corner_offset, n = self._get_name('subOffset', 'corner'))[0]
-            #cmds.parent(sub_corner_offset, corner_offset_xform)
             
             if side == 'L':
                 joint = self.top_joints[0]
@@ -3464,7 +3341,6 @@ class WorldStickyFadeRig(WorldStickyRig):
             self.corner_xforms.append(xform)
             self.corner_controls.append(control.get())
             
-            #space.MatchSpace(joint, corner_offset_xform).translation()
             if not self.corner_match:
                 space.MatchSpace(joint, xform).translation_rotation()
             if self.corner_match:
@@ -3481,12 +3357,9 @@ class WorldStickyFadeRig(WorldStickyRig):
             
             cmds.parent(xform, self.control_group)
             
-            
             self.corner_offsets.append(corner_offset)
             self.sub_corner_offsets.append(sub_corner_offset)
             
-            #const = cmds.pointConstraint(control.get(), corner_offset_xform)
-            #cmds.delete(const)
             cmds.pointConstraint(control.get(), corner_offset)
             cmds.pointConstraint(sub_control.get(), sub_corner_offset)
             
@@ -3557,10 +3430,7 @@ class WorldStickyFadeRig(WorldStickyRig):
             space.create_multi_follow([self.follower_group, follow_transform], self.corner_xforms[1], self.corner_xforms[1], value = value)
 
     def create_corner_falloff(self, inc, value):
-
-        top_control_count = len(self.top_controls)
-        btm_control_count = len(self.btm_controls)
-
+        
         for side in ['L','R']:
             
             self.side = side
@@ -3720,7 +3590,6 @@ class WorldStickyLipRig(WorldStickyRig):
             negative_inc = cluster_count - (inc+1)
             
             #do first part
-
             top_local, top_xform = space.constrain_local(top_locator, self.clusters_guide_top[inc])
             btm_local, btm_xform = space.constrain_local(btm_locator, self.clusters_guide_btm[inc])
 
@@ -3935,8 +3804,6 @@ class WorldStickyLipRig(WorldStickyRig):
         self._create_curves()
         
         self._cluster_curves()
-        
-        #self._create_curve_joints()
         
         self._connect_curve_joints()
                 

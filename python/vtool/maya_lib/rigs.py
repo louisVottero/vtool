@@ -668,7 +668,6 @@ class SparseRig(JointRig):
                 side = control.color_respect_side(center_tolerance = self.respect_side_tolerance)
             
                 if side != 'C':
-                    old_control_name = control_name
                     
                     control_data = self.control_dict[control_name]
                     self.control_dict.pop(control_name)
@@ -4434,12 +4433,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             cluster_surface = deform.ClusterSurface(self.surface, self.description)
         if not self.ribbon:
             cluster_surface = deform.ClusterCurve(self.curve, self.description)
-        
-        if self.last_pivot_top_value:
-            last_pivot_end = True
-        if not self.last_pivot_top_value:
-            last_pivot_end = False
-        
+            
         cluster_surface.set_join_ends(False)
         cluster_surface.create()
         
@@ -5350,7 +5344,7 @@ class IkScapulaRig(BufferRig):
         
         space.MatchSpace(self.joints[0], control.get()).translation_rotation()
         self.xform_rotate = space.create_xform_group(control.get())
-        xform = self.xform_rotate
+        
         space.create_xform_group(control.get(), 'driver')
         
         
@@ -8337,9 +8331,7 @@ class EyeRig(JointRig):
 
         if self.skip_ik:
             group1 = cmds.group(em = True, n = self._get_name('group', 'aim'))
-            #group2 = cmds.group(em = True, n = self._get_name('group', 'aim'))
             
-            #cmds.parent(group2, group1)
             cmds.parent(group1, self.setup_group)
             
             

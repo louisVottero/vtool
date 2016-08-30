@@ -79,8 +79,6 @@ def invert(base=None, corrective=None, name=None):
     
     invertedShape = create_shape_from_shape(base_shape)
     
-    #invertedShape = cmds.duplicate(base, name = name)[0]
-    
     # Delete the unnessary shapes
     
     

@@ -3367,7 +3367,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
     inc = 0
     
     for mesh in meshes:
-        zero_verts = []
+        
         skin = True                 
         if skin:
             verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)

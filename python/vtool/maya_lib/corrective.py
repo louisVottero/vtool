@@ -2,6 +2,7 @@
 
 import traceback
 import time
+import string
 
 import vtool.util
 from vtool.maya_lib import anim
@@ -168,8 +169,8 @@ class PoseManager(object):
         
         for pose_name in poses:
                 
-            input = attr.get_attribute_input('%s.weight' % pose_name)
-            if not input:
+            input_value = attr.get_attribute_input('%s.weight' % pose_name)
+            if not input_value:
                 if cmds.objExists('%s.weight' % pose_name):
                     cmds.setAttr('%s.weight' % pose_name, 0)
     
@@ -1439,7 +1440,7 @@ class PoseBase(PoseGroup):
             
             return fixed[0]
         
-        import string
+        
         fixed = string.join(fixed, '|')
         
         return fixed
