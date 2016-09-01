@@ -1795,6 +1795,7 @@ class GetNumberBase(BasicWidget):
 class GetNumber(GetNumberBase):
     
     valueChanged = create_signal(object)
+    enter_pressed = create_signal()
     
     def __init__(self, name, parent = None):
         super(GetNumber, self).__init__(name, parent)
@@ -1823,6 +1824,15 @@ class GetNumber(GetNumberBase):
         self.number_widget.setButtonSymbols(self.number_widget.NoButtons)
         
         self.number_widget.valueChanged.connect(self._value_changed)
+        
+    def keyPressEvent(self, event):
+        
+        if event.key() == QtCore.Qt.Key_Return:
+            self.enter_pressed.emit()
+            
+        if event.key() == QtCore.Qt.Key_Enter:
+            self.enter_pressed.emit()
+        
     
 class GetInteger(GetNumber):
     

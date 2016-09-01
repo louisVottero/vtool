@@ -20,6 +20,8 @@ import rigs_util
 import attr
 import core
 
+import picker
+
 class PickManager(ui.MayaWindow):
     
     title = 'Picker'
@@ -39,28 +41,28 @@ class PickManager(ui.MayaWindow):
                 }
             """)
     
+        self._import()
+    
     def _build_widgets(self):
-        
-        #self._build_top_widgets()
         
         self.tab_widget = PickerTab()
         
         self.tab_widget.tabBar().setMinimumHeight(60)
         self.tab_widget.tab_closed.connect(self._close_tab)
+        self.tab_widget.tab_renamed.connect(self._rename_tab)
         
-        picker = self._create_picker()
+        picker_inst = self._create_picker()
         
-        picker.item_added.connect(self._picker_item_added)
+        picker_inst.item_added.connect(self._picker_item_added)
         
-        self.tab_widget.addTab(picker, 'View')
+        self.tab_widget.addTab(picker_inst, 'View')
         
-        self.tab_widget.addTab(QWidget(), '+')
+        #self.tab_widget.addTab(QWidget(), '+')
         
-        corner_widget = CornerWidget()
+        self.corner_widget = CornerWidget()
+        self.edit_button = self.corner_widget.edit_button
         
-        self.edit_button = corner_widget.edit_button
-        
-        self.tab_widget.setCornerWidget(corner_widget)
+        self.tab_widget.setCornerWidget(self.corner_widget)
         
         
         self.edit_button.clicked.connect(self._edit_mode)
@@ -89,8 +91,11 @@ class PickManager(ui.MayaWindow):
             view_dict = {}
             
             title = self.tab_widget.tabText(inc)
+            picker_widget = self.tab_widget.widget(inc)
+            background = picker_widget.background_file
             
             view_dict['title'] = title
+            view_dict['background'] = background
             
             picker = self.pickers[inc]
             
@@ -113,42 +118,68 @@ class PickManager(ui.MayaWindow):
     def _get_item_dict(self, item):
         
         item_dict = {}
+        item_type = str(item.picker_item_type)
         name = item.name
-        rect = item.rect()
-        x = rect.x()
-        y = rect.y()
-        height = rect.height()
-        width = rect.width()
-        size = rect.size()
+        
+        x = item.x()
+        y = item.y()
+        size = item.scale()
+        
+        level = item.zValue()
         
         item_dict['name'] = name
         item_dict['x'] = x
         item_dict['y'] = y
-        item_dict['height'] = height
-        item_dict['width'] = width
-        #item_dict['size'] = size.height()
+        item_dict['size'] = size
+        item_dict['level'] = level
+        item_dict['type'] = item_type
         
         return item_dict
     
     def _export(self):
+        
         view_data = self._get_data_from_views()
         
-        self._create_picker_group()
-        
-        attribute = '%s.DATA' % self.picker_group
-        
-        if cmds.objExists(attribute):
-            cmds.setAttr(attribute, l = False)
-            cmds.setAttr(attribute, str(view_data), type = 'string')
-        
-        
-        cmds.setAttr(attribute, l = True)
+        picker_inst = picker.Picker()
+        picker_inst.set_data(view_data)
     
     def _import(self):
-        pass
+        
+        picker_inst = picker.Picker(self.picker_group)
+        view_data = picker_inst.get_data()
+        
+        if not view_data:
+            return
+        
+        self.tab_widget.close_tabs()
+        
+        for view in view_data:
+            
+            view_name = view['title']
+            background = view['background']
+            
+            picker_inst = self._create_picker()
+            self.tab_widget.addTab(picker_inst, view_name)
+            picker_inst.set_background(background)
+            
+            
+            items = view['items']
+            
+            for item in items:
+                item_type = item['type']
+                
+                if item_type == Picker.ITEM_TYPE_SIMPLE_SQUARE:
+                    name = item['name']
+                    x = item['x']
+                    y = item['y']
+                    size = item['size']
+                    level = item['level']
+                    picker_inst.add_item(name, x, y, size, level)
+        
+        self._export()
         
     def _create_picker_group(self):
-        picker_group = create_picker_group()
+        picker_group = picker.Picker().create_picker_group()
         
         self.picker_group = picker_group
         
@@ -159,11 +190,12 @@ class PickManager(ui.MayaWindow):
         title = self.tab_widget.tabText(index)
         
         if title == '+':
-            picker = self._create_picker()
+            picker_inst = self._create_picker()
             self.tab_widget.removeTab(index)
-            self.tab_widget.addTab(picker, 'View')
+            self.tab_widget.addTab(picker_inst, 'View')
             self.tab_widget.addTab(QWidget(), '+')
             self.tab_widget.setCurrentIndex(index)
+            self._export()
             index = index + 1
             
         if not title == '+':
@@ -171,28 +203,11 @@ class PickManager(ui.MayaWindow):
         
     def _create_picker(self):
         
-        picker = Picker()
-        self.pickers.append(picker)
-        return picker
-        
-    def _build_top_widgets(self):
-        
-        top_layout = QHBoxLayout()
-        self.main_layout.addLayout(top_layout)
-        
-        self.title = QLabel()
-        
-        self.edit_button = QPushButton('Edit')
-        self.edit_button.setCheckable(True)
-        self.edit_button.setChecked(False)
-        self.edit_button.setMaximumWidth(150)
-        self.edit_button.setMinimumHeight(60)
-        self.edit_button.clicked.connect(self._edit_mode)
-        top_layout.addWidget(self.title, alignment = QtCore.Qt.AlignLeft)
-        top_layout.addWidget(self.edit_button, alignment = QtCore.Qt.AlignRight)
-        
-        self.main_layout.addLayout(top_layout)
-        
+        picker_inst = Picker()
+        self.pickers.append(picker_inst)
+        picker_inst.scene_update.connect(self._export)
+        return picker_inst
+    
     def _edit_mode(self):
         
         current_index = self.tab_widget.currentIndex()
@@ -200,21 +215,39 @@ class PickManager(ui.MayaWindow):
         self.edit_buttons.set_picker(self.pickers[current_index])
         
         if self.edit_button.isChecked():
+            
+            self.tab_widget.addTab(QWidget(), '+')
+            
             self.edit_buttons.setHidden(False)
             
             self.pickers[current_index].set_edit_mode(True)
             
         if not self.edit_button.isChecked():
             self.edit_buttons.setHidden(True)
-            self.pickers[current_index].set_edit_mode(False)            
+            self.pickers[current_index].set_edit_mode(False)  
             
+            tab_count = self.tab_widget.count()
+            
+            for inc in range(0, tab_count):
+            
+                if self.tab_widget.tabText(inc) == '+':
+                    self.tab_widget.removeTab(inc)
+            
+            self._export()
+            
+    def _rename_tab(self, current_index):
+        
+        self._export()
+    
     def _close_tab(self, current_index):
         
         self.pickers.pop(current_index)
+        self._export()
             
     def _build_btm_widgets(self):
         
         self.edit_buttons = EditButtons(None)
+        self.edit_buttons.item_changed.connect(self._export)
         
         self.main_layout.addWidget(self.edit_buttons)
         
@@ -225,7 +258,7 @@ class PickManager(ui.MayaWindow):
 class PickerTab(QTabWidget):
     
     tab_closed = qt_ui.create_signal(object)
-    tab_renamed = qt_ui.create_signal()
+    tab_renamed = qt_ui.create_signal(object)
     
     def __init__(self):
         super(PickerTab, self).__init__()
@@ -259,16 +292,17 @@ class PickerTab(QTabWidget):
         
         self.setTabText(index, new_name)
         
-        self.tab_renamed.emit()
+        self.tab_renamed.emit(index)
         
-    def _close_tab(self):
+    def _close_tab(self, index = None):
         
         
-        current_index = self.currentIndex()
+        if index == None:
+            current_index = self.currentIndex()
+            
         
-        if current_index == 0:
-            return
-        
+        if not index == None:
+            current_index = index
         
         
         self.setCurrentIndex( (current_index - 1) )
@@ -283,7 +317,12 @@ class PickerTab(QTabWidget):
         
         self.tab_closed.emit(current_index)
         
+    def close_tabs(self):
         
+        tab_count = self.count()
+        
+        for inc in range(0, tab_count):
+            self._close_tab(inc)
         
 
 class CornerWidget(qt_ui.BasicWidget):
@@ -293,6 +332,7 @@ class CornerWidget(qt_ui.BasicWidget):
         return QHBoxLayout()
     
     def _build_widgets(self):
+        
         self.edit_button = QPushButton('Edit')
         self.edit_button.setCheckable(True)
         self.edit_button.setChecked(False)
@@ -300,6 +340,9 @@ class CornerWidget(qt_ui.BasicWidget):
         self.main_layout.addWidget(self.edit_button)
         
 class EditButtons(qt_ui.BasicWidget):
+    
+    item_changed = qt_ui.create_signal()
+    
     
     def __init__(self, picker = None):
         
@@ -325,11 +368,20 @@ class EditButtons(qt_ui.BasicWidget):
         self.add_controls.clicked.connect(self._add_controls)
         side_buttons.addWidget(self.add_controls)
         
+        select_from_viewport = QPushButton('Select From Maya')
+        select_from_viewport.clicked.connect( self._select_from_viewport )
+        side_buttons.addWidget(select_from_viewport)
+        
+        set_background = QPushButton('Set Background')
+        set_background.clicked.connect(self._set_background)
+        side_buttons.addWidget(set_background)
+        
         btm_layout.addLayout(side_buttons, alignment = QtCore.Qt.AlignLeft)
         
         self.main_layout.addLayout(btm_layout)
         
         group = qt_ui.Group('Options')
+        group.setMaximumWidth(200)
         
         alignment_layout = QHBoxLayout()
         
@@ -354,7 +406,18 @@ class EditButtons(qt_ui.BasicWidget):
         
         group.main_layout.addWidget(scale_slider)
         
+        self.item_values = ItemValues()
+        
+        btm_layout.addWidget(self.item_values)
         btm_layout.addWidget(group)
+        
+        
+    def _set_background(self):
+        
+        image_file = qt_ui.get_file('')
+        
+        self.picker.set_background(image_file)
+        
         
     def _load_positions(self):
         
@@ -411,50 +474,250 @@ class EditButtons(qt_ui.BasicWidget):
         
         self.picker.add_item()
         
+        self.item_changed.emit()
+        
     def _add_controls(self):
+        
+        
         self.picker.add_controls()
+        
+        self.item_changed.emit()
+        
+    def _clicked(self, item):
+        
+        self.item_values.load_item(item)
+        
+    def _select_from_viewport(self):
+        
+        scope = cmds.ls(sl = True)
+        
+        for node in scope:
+            items = self.picker.items()
+            
+            for item in items:
+                if item.name == node:
+                    item.setSelected(True)
+                 
+        
         
     def set_picker(self, picker):
         self.picker = picker
+        self.item_values.picker = self.picker
+        self.picker.clicked.connect(self._clicked)
         
 class ItemValues( qt_ui.BasicWidget ):
     
-    pass
+    def __init__(self):
+        super(ItemValues, self).__init__()
+        
+        self.picker = None
+    
+    def _build_widgets(self):
+        
+        self.x_widget = qt_ui.GetInteger('X')
+        self.y_widget = qt_ui.GetInteger('Y')
+        self.size_widget = qt_ui.GetNumber('Size')
+        self.size_widget.set_value(1)
+        self.level_widget = qt_ui.GetInteger('Level')
+        
+        self.x_widget.enter_pressed.connect(self.set_x_value)
+        self.y_widget.enter_pressed.connect(self.set_y_value)
+        self.size_widget.enter_pressed.connect(self.set_size_value)
+        self.level_widget.enter_pressed.connect(self.set_level_value)
+        
+        self.main_layout.addWidget(self.x_widget)
+        self.main_layout.addWidget(self.y_widget)
+        self.main_layout.addWidget(self.size_widget)
+        self.main_layout.addWidget(self.level_widget)
+        
+        self.skip_update_values = False
+        
+        
+    def load_item(self, item):
+        
+        if not item:
+            self.x_widget.set_value(0)
+            self.y_widget.set_value(0)
+            self.size_widget.set_value(1)
+            self.level_widget.set_value(0)
+            return
+        
+        self.skip_update_values = True
+        
+        x_value = item.x()
+        y_value = item.y()
+        size = item.scale()
+        level = item.zValue()
+        
+        self.x_widget.set_value(x_value)
+        self.y_widget.set_value(y_value)
+        self.size_widget.set_value(size)
+        self.level_widget.set_value(level)
+        self.skip_update_values = False
+        
+    def set_x_value(self):
+        
+        if self.skip_update_values:
+            return
+        
+        items = self.picker.scene.selectedItems()
+        
+        if not items:
+            return
+        
+        if len(items) > 1:
+            
+            x_value = self.x_widget.get_value()
+            
+            for item in items:
+                
+                item.setX(x_value)
+                
+        if len(items) == 1:
+            items[0].setX(self.x_widget.get_value())
+            
+    def set_y_value(self):
+        
+        if self.skip_update_values:
+            
+            return
+        
+        items = self.picker.scene.selectedItems()
+        
+        if not items:
+            return
+        
+        if len(items) > 1:
+            
+            y_value = self.y_widget.get_value()
+            
+            for item in items:
+                
+                item.setY(y_value)
+                
+        if len(items) == 1:
+            items[0].setY(self.y_widget.get_value())
+            
+
+    def set_size_value(self):
+        
+        if self.skip_update_values:
+            return
+        
+        items = self.picker.scene.selectedItems()
+        
+        if not items:
+            return
+        
+        if len(items) > 1:
+            
+            size_value = self.size_widget.get_value()
+
+            for item in items:
+
+                item.setScale(size_value)
+        
+        if len(items) == 1:
+            items[0].setScale(self.size_widget.get_value())
+
+    def set_level_value(self):
+        
+        if self.skip_update_values:
+            return
+        
+        items = self.picker.scene.selectedItems()
+        
+        if not items:
+            return
+        
+        if len(items) > 1:
+            
+            level_value = self.level_widget.get_value()
+
+            for item in items:
+
+                item.setScale(level_value)
+        
+        if len(items) == 1:
+            items[0].setZValue(self.level_widget.get_value())    
+    
     
 class Picker(qt_ui.BasicGraphicsView):
     
+    ITEM_TYPE_SIMPLE_SQUARE = 'simple_square'
+    
     item_added = qt_ui.create_signal(object)
+    scene_update = qt_ui.create_signal()
+    clicked = qt_ui.create_signal(object)
     
     def __init__(self):
         
         super(Picker, self).__init__()
         
-        self.setDragMode(self.RubberBandDrag)
-        
-        #line = QGraphicsLineItem()
-        #line.setPen(line_pen)
-        
-        #height = self.height()
-        
-        #line.setLine(0,self.rect().top(), 0, self.rect().bottom())
+        self.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.setTransformationAnchor(self.AnchorUnderMouse)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         
         self.scene.selectionChanged.connect(self._item_selected)
         self.current_item_names = []
         
-        #self.addItem(line)
+        self.setInteractive(True)
         
+        
+        self.background_image = None
+        self.background_file = None
+        
+        self.edit_mode = False
+        
+    
+    def fitInView(self):
+        rect = QtCore.QRectF(self._photo.pixmap().rect())
+        
+        if not rect.isNull():
+            unity = self.transform().mapRect(QtCore.QRectF(0, 0, 1, 1))
+            self.scale(1 / unity.width(), 1 / unity.height())
+            viewrect = self.viewport().rect()
+            scenerect = self.transform().mapRect(rect)
+            factor = min(viewrect.width() / scenerect.width(),
+                         viewrect.height() / scenerect.height())
+            self.scale(factor, factor)
+            self.centerOn(rect.center())
+            self._zoom = 0
+    
     def drawBackground(self, painter, rect):
         
-        line_pen = QPen()
-        line_pen.setColor(QColor(60,60,60))
-        line_pen.setStyle(QtCore.Qt.DashLine)
-        line_pen.setWidth(2)
+        if self.background_image:
         
-        painter.setPen(line_pen)
-        painter.drawLine(0, rect.top(), 0, rect.bottom())
+            size = self.background_image.size()
+            
+            width = size.width()
+            height = size.height()
+            
+            sub_width = width/2
+            sub_height = height/2
+            
+            painter.drawPixmap(-1*sub_width, -1*sub_height, self.background_image )
+            self.setSceneRect(-1*sub_width, -1*sub_height, width, height)
         
-        painter.drawLine((rect.right() / 2), 0, (rect.right()), 0)
-        painter.drawLine((rect.left() / 2), 0, (rect.left()), 0)
+        if self.edit_mode == True:
+            line_pen = QPen()
+            line_pen.setColor(QColor(60,60,60))
+            line_pen.setStyle(QtCore.Qt.DashLine)
+            line_pen.setWidth(2)
+            
+            
+            if self.background_image:
+                painter.setPen(line_pen)
+                painter.drawLine(0, (rect.top()-sub_height), 0, rect.bottom())
+            
+            if not self.background_image:
+                painter.setPen(line_pen)
+                painter.drawLine(0, rect.top(), 0, rect.bottom())
+                
+                painter.drawLine((rect.right()  / 2), 0, (rect.right()), 0)
+                painter.drawLine((rect.left() / 2), 0, (rect.left()), 0)
+            
         
     def drawForeground(self, painter, rect):
         if self.current_item_names:
@@ -468,6 +731,25 @@ class Picker(qt_ui.BasicGraphicsView):
             painter.drawText((rect.left()+20),(rect.top()+20), name)
         #return qt_ui.BasicGraphicsView.drawBackground(self, *args, **kwargs)
         
+    def drawItems(self, painter, items, options):
+        super(Picker, self).drawItems(painter,items,options)
+        
+        self.scene_update.emit()
+        
+    def mousePressEvent(self, event):
+        super(Picker, self).mousePressEvent(event)
+        
+        x = event.x()
+        y = event.y()
+        
+        item = self.itemAt(x,y)
+        
+        if item:
+            self.clicked.emit(item)
+        
+        if not item:
+            cmds.select(cl = True)
+        
     def _item_selected(self):
         
         items = self.scene.selectedItems()
@@ -475,69 +757,102 @@ class Picker(qt_ui.BasicGraphicsView):
         self.current_item_names = []
         
         if not items:
+            cmds.select(cl = True)
             return
         
         for item in items:
-            
             self.current_item_names.append(item.name)
         
-    
+    def set_background(self, image_file):
+        
+        self.background_image = QPixmap(image_file)
+        self.viewport().update()
+        
+        self.background_file = image_file
         
     def add_controls(self, view_axis = 'Z', namespace = ''):
         
         controls = rigs_util.get_controls()
         
-
-        
         for control in controls:
             
             x,y,size,level = get_control_position(control)
             
-            
             self.add_item(control, x, y, size, level)
         
-    def add_item(self, name = None, x = 0, y = 0, size = 1, level = 0):
+    def add_item(self, name = None, x = 0, y = 0, size = 1, level = 0, item_type = None):
         
-        if not name:
+        if name == None:
             selection = cmds.ls(sl = True)
             name = selection[0]
         
         for item in self.items():
             if item.name == name:
                 return
+        
+        item = None
+        
+        if not item_type:
+            item_type = self.ITEM_TYPE_SIMPLE_SQUARE
+        
+        if item_type == self.ITEM_TYPE_SIMPLE_SQUARE:
+            item = SimpleSquareItem(name)
             
-        item = PickerItem(name)
+        if not item:
+            return
+        
         self.scene.addItem(item)
         
         item.setScale(size)
-        item.setPos(x,y)
+        item.setPos(int(x),int(y))
         item.setZValue(level)
         
         self.item_added.emit(item)
         
+        return item
+        
     def set_edit_mode(self, bool_value):
+        
+        self.edit_mode = bool_value
         
         items = self.scene.items()
         
         for item in items:
             if hasattr(item, 'set_edit_mode'):
                 item.set_edit_mode(bool_value)
-
-class PickerItem(QGraphicsRectItem):
+                
+        if not self.edit_mode:
+            self.setDragMode(QGraphicsView.ScrollHandDrag)
+            self.setTransformationAnchor(self.AnchorUnderMouse)
+            self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+            self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+            
+        if self.edit_mode:
+            #self.setDragMode(QGraphicsView.ScrollHandDrag)
+            self.setDragMode(QGraphicsView.RubberBandDrag)
+            self.setTransformationAnchor(self.AnchorUnderMouse)
+            self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+            self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+            
+class SimpleSquareItem(QGraphicsRectItem):
     
     def __init__(self, node):
-        super(PickerItem, self).__init__()
+        super(SimpleSquareItem, self).__init__()
         
-        shapes = core.get_shapes(node)
+        self.picker_item_type = Picker.ITEM_TYPE_SIMPLE_SQUARE
         
-        color_node = None
+        color = [1,1,1]
         
-        if shapes:
-            color_node = shapes[0]
+        if cmds.objExists(node):
+            shapes = core.get_shapes(node)
+            
+            if shapes:
+                color_node = shapes[0]
         
-        if not shapes:
-            color_node = node
-        color = attr.get_color(color_node, rgb = True)
+            if not shapes:
+                color_node = node
+            
+            color = attr.get_color(color_node, rgb = True)
         
         self.setRect(-10,-10,20,20)
         
@@ -546,15 +861,13 @@ class PickerItem(QGraphicsRectItem):
         brush.setStyle(QtCore.Qt.SolidPattern)
         self.setBrush(brush)
         
-        self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
-        
-        
+        #self.setFlags(QGraphicsItem.itemis)
         
         self.name = node
         
 
     def mousePressEvent(self, event):
-        super(PickerItem, self).mousePressEvent(event)
+        super(SimpleSquareItem, self).mousePressEvent(event)
         
         cmds.select(self.name)
         
@@ -563,7 +876,7 @@ class PickerItem(QGraphicsRectItem):
         if bool_value == True:
             self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
         if bool_value == False:
-            self.setFlags(QGraphicsItem.ItemIsSelectable)
+            self.setFlags(self.flags() & ~QGraphicsItem.ItemIsSelectable & ~QGraphicsItem.ItemIsMovable)
             
 def get_control_position(control, view_axis = 'Z'):
     
@@ -587,24 +900,8 @@ def get_control_position(control, view_axis = 'Z'):
     
     if control.find('SUB') > -1:
         level = 1
-        x *= 1.5
-        size = .5
+        x *= 1.75
+        size = .75
     
     return x,y,size,level
 
-def create_picker_group():
-    
-    name = 'picker_gr'
-    group = name
-    
-    if not cmds.objExists(name):
-        group = cmds.group(em = True, n = name)
-        attr.hide_keyable_attributes(group)
-        
-    attribute = '%s.DATA' % group
-        
-    if not cmds.objExists(attribute):
-        cmds.addAttr(group, ln = 'DATA', dt = 'string')
-        
-    return group
-    
