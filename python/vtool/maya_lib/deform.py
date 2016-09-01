@@ -3367,7 +3367,7 @@ def convert_wire_to_skinned_joints(wire_deformer, description, joint_count = 10,
     inc = 0
     
     for mesh in meshes:
-        zero_verts = []
+        
         skin = True                 
         if skin:
             verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
@@ -4140,6 +4140,8 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
             offset = correct.invert(skin_mesh, corrective)
             cmds.delete(offset, ch = True)
         if vtool.util.get_maya_version() >= 2017 or maya_version.find('2016 Extension 2') > -1:
+            if not cmds.pluginInfo('invertShape', query=True, loaded=True):
+                cmds.loadPlugin( 'invertShape' )
             offset = mel.eval('invertShape %s %s' % (skin_mesh, corrective))
         
         orig = get_intermediate_object(skin_mesh)

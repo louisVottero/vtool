@@ -11,10 +11,10 @@ import attr
 
 def get_min_max_time():
     
-    min = cmds.playbackOptions(query = True, minTime = True)
-    max = cmds.playbackOptions(query = True, maxTime = True)    
+    min_value = cmds.playbackOptions(query = True, minTime = True)
+    max_value = cmds.playbackOptions(query = True, maxTime = True)    
     
-    return min,max
+    return min_value,max_value
 
 def playblast(filename):
     """
@@ -24,7 +24,7 @@ def playblast(filename):
         filename (str): This should be the path to a quicktime .mov file.
     """
     
-    min, max = get_min_max_time()
+    min_value, max_value = get_min_max_time()
     #min = cmds.playbackOptions(query = True, minTime = True)
     #max = cmds.playbackOptions(query = True, maxTime = True)
     
@@ -32,7 +32,7 @@ def playblast(filename):
     
     frames = []
     
-    for inc in range(int(min), int((max+2)) ):
+    for inc in range(int(min_value), int((max_value+2)) ):
         frames.append(inc)
     
     if sound:

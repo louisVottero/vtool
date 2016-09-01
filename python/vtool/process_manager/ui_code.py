@@ -600,8 +600,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.setAlternatingRowColors(False)
         
-        
-        #self.setIndentation(False)
         self.edit_state = False
         self.setBackgroundRole(QPalette.Light)
         

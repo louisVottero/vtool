@@ -48,6 +48,7 @@ def duplicate(node):
     """
     dag_node = DagNode(node)
     value = dag_node.duplicate()
+    return value
     
 class ApiObject(object):
     """
@@ -338,7 +339,6 @@ class MeshFunction(MayaFunction):
     def copy(self, source_mesh, transform):
         
         mesh_object = nodename_to_mobject(source_mesh)
-        transform_object = nodename_to_mobject(transform)
         
         self.api_object.copy(mesh_object, transform)
         

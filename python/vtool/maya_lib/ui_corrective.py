@@ -311,8 +311,8 @@ class PoseListWidget(qt_ui.BasicWidget):
     def view_mesh(self):
         self.pose_list.view_mesh()
         
-    def change_mesh(self, int):
-        self.pose_list.mesh_change(int)
+    def change_mesh(self, int_value):
+        self.pose_list.mesh_change(int_value)
         
     def change_axis(self, string):
         
@@ -789,7 +789,7 @@ class PoseTreeWidget(BaseTreeWidget):
             
             cmds.select(cl=True)
             
-            pose_item = self._add_pose_item(pose)
+            self._add_pose_item(pose)
                
         self.item_select = True
         

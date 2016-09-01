@@ -183,11 +183,11 @@ class CurveDataInfo(object):
     def _load_libraries(self):
         files = os.listdir(self.curve_data_path)
         
-        for file in files:
-            if file.endswith('.data'):
-                split_file = file.split('.')
+        for filename in files:
+            if filename.endswith('.data'):
+                split_file = filename.split('.')
                 
-                self.libraries[split_file[0]] = file
+                self.libraries[split_file[0]] = filename
                 
     def _initialize_library_curve(self):
         names = self.get_library_names()

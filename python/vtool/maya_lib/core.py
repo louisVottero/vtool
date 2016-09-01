@@ -11,6 +11,7 @@ import vtool.util
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
+    import maya.OpenMaya as om
     
 undo_chunk_active = False
 current_progress_bar = None
@@ -879,8 +880,7 @@ def delete_display_layers():
         cmds.delete(layer)
 
 def print_help(string_value):
-    
-    import maya.OpenMaya as om 
+     
     om.MGlobal.displayInfo(string_value) 
 
 #--- file

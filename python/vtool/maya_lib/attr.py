@@ -441,13 +441,13 @@ class RemapAttributesToAttribute(object):
         variable.set_keyable(self.keyable)
         variable.create()
 
-    def set_keyable(self, bool):
+    def set_keyable(self, bool_value):
         """
         Whether the switch attribute should be keyable. 
         This only works if the attribute doesn't exist prior to create()
         """
         
-        self.keyable = bool
+        self.keyable = bool_value
       
     def create_attributes(self, node, attributes):
         """
@@ -2303,10 +2303,6 @@ def connect_translate_plus(source_transform, target_transform):
     value_y = cmds.getAttr('%s.translateY' % source_transform)
     value_z = cmds.getAttr('%s.translateZ' % source_transform)
     
-    current_value_x = cmds.getAttr('%s.translateX' % target_transform)
-    current_value_y = cmds.getAttr('%s.translateY' % target_transform)
-    current_value_z = cmds.getAttr('%s.translateZ' % target_transform)
-    
     cmds.connectAttr('%s.translateX' % source_transform, '%s.input3D[0].input3Dx' % plus)
     cmds.connectAttr('%s.translateY' % source_transform, '%s.input3D[0].input3Dy' % plus)
     cmds.connectAttr('%s.translateZ' % source_transform, '%s.input3D[0].input3Dz' % plus)
@@ -2314,10 +2310,6 @@ def connect_translate_plus(source_transform, target_transform):
     cmds.setAttr('%s.input3D[1].input3Dx' % plus, -1*value_x)
     cmds.setAttr('%s.input3D[1].input3Dy' % plus, -1*value_y)
     cmds.setAttr('%s.input3D[1].input3Dz' % plus, -1*value_z)
-    
-    #cmds.setAttr('%s.input3D[2].input3Dx' % plus, -1*current_value_x)
-    #cmds.setAttr('%s.input3D[2].input3Dy' % plus, -1*current_value_y)
-    #cmds.setAttr('%s.input3D[2].input3Dz' % plus, -1*current_value_z)
     
     disconnect_attribute('%s.translateX' % target_transform)
     disconnect_attribute('%s.translateY' % target_transform)

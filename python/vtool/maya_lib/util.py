@@ -2920,7 +2920,7 @@ class RiggedLine(object):
         
         
         shapes = get_shapes(self.curve)
-        new_name = cmds.rename(shapes[0], '%sShape' % self.curve)
+        cmds.rename(shapes[0], '%sShape' % self.curve)
         
         cmds.setAttr('%s.template' % self.curve, 1)
         

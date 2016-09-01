@@ -75,6 +75,10 @@ def get_current_maya_location():
     
     return location
 
+def get_maya_py_installs():
+    
+    pass
+
 def is_in_nuke():
     """
     Check to see if scope is in Nuke
