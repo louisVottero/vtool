@@ -174,7 +174,9 @@ class PickManager(ui.MayaWindow):
                     y = item['y']
                     size = item['size']
                     level = item['level']
-                    picker_inst.add_item(name, x, y, size, level)
+                    item = picker_inst.add_item(name, x, y, size, level)
+                    
+                    
         
         self._export()
         
@@ -406,11 +408,12 @@ class EditButtons(qt_ui.BasicWidget):
         
         group.main_layout.addWidget(scale_slider)
         
+        
+        
         self.item_values = ItemValues()
         
         btm_layout.addWidget(self.item_values)
         btm_layout.addWidget(group)
-        
         
     def _set_background(self):
         
@@ -418,11 +421,9 @@ class EditButtons(qt_ui.BasicWidget):
         
         self.picker.set_background(image_file)
         
-        
     def _load_positions(self):
         
         items = self.picker.scene.selectedItems()
-        
         
         for item in items:
             
@@ -432,9 +433,7 @@ class EditButtons(qt_ui.BasicWidget):
             x,y,size,level = get_control_position(control, axis)
             
             item.setPos(x,y)
-            #item.setScale(size)
-            #item.setZValue(level)
-        
+            
     def _scale_item(self, value):
         
         if self.scale_slider.last_value == None:
@@ -450,8 +449,6 @@ class EditButtons(qt_ui.BasicWidget):
             pass_value = -0.05
         
         items = self.picker.scene.selectedItems()
-        
-        
         
         for inc in range(0, len(items)):
             
@@ -469,7 +466,9 @@ class EditButtons(qt_ui.BasicWidget):
             item.setScale(pass_value)
 
         self.scale_slider.last_value = value
-        
+    
+
+    
     def _add_item(self):
         
         self.picker.add_item()
@@ -477,7 +476,6 @@ class EditButtons(qt_ui.BasicWidget):
         self.item_changed.emit()
         
     def _add_controls(self):
-        
         
         self.picker.add_controls()
         
@@ -497,9 +495,7 @@ class EditButtons(qt_ui.BasicWidget):
             for item in items:
                 if item.name == node:
                     item.setSelected(True)
-                 
-        
-        
+                    
     def set_picker(self, picker):
         self.picker = picker
         self.item_values.picker = self.picker
@@ -520,15 +516,21 @@ class ItemValues( qt_ui.BasicWidget ):
         self.size_widget.set_value(1)
         self.level_widget = qt_ui.GetInteger('Level')
         
+        self.text = qt_ui.GetString('label')
+        self.text.label.setAlignment(QtCore.Qt.AlignRight)
+        self.text.text_entry.setMaximumWidth(100)
+        
         self.x_widget.enter_pressed.connect(self.set_x_value)
         self.y_widget.enter_pressed.connect(self.set_y_value)
         self.size_widget.enter_pressed.connect(self.set_size_value)
         self.level_widget.enter_pressed.connect(self.set_level_value)
+        self.text.text_changed.connect(self.set_text)
         
         self.main_layout.addWidget(self.x_widget)
         self.main_layout.addWidget(self.y_widget)
         self.main_layout.addWidget(self.size_widget)
         self.main_layout.addWidget(self.level_widget)
+        self.main_layout.addWidget(self.text)
         
         self.skip_update_values = False
         
@@ -553,6 +555,8 @@ class ItemValues( qt_ui.BasicWidget ):
         self.y_widget.set_value(y_value)
         self.size_widget.set_value(size)
         self.level_widget.set_value(level)
+        self.text.set_text(item.text)
+        
         self.skip_update_values = False
         
     def set_x_value(self):
@@ -640,7 +644,13 @@ class ItemValues( qt_ui.BasicWidget ):
         
         if len(items) == 1:
             items[0].setZValue(self.level_widget.get_value())    
-    
+
+    def set_text(self):
+        
+        items = self.picker.scene.selectedItems()
+        
+        for item in items:
+            item.set_text(self.text.get_text())
     
 class Picker(qt_ui.BasicGraphicsView):
     
@@ -857,14 +867,42 @@ class SimpleSquareItem(QGraphicsRectItem):
         self.setRect(-10,-10,20,20)
         
         brush = QBrush()
-        brush.setColor(QColor(color[0],color[1], color[2]))
+        brush.setColor(QColor(color[0],color[1], color[2], 150)) #255 is maximum
         brush.setStyle(QtCore.Qt.SolidPattern)
         self.setBrush(brush)
+        
         
         #self.setFlags(QGraphicsItem.itemis)
         
         self.name = node
+        self.text = None
         
+
+    def paint(self, painter, option, widget):
+        
+        super(SimpleSquareItem, self).paint(painter, option, widget)
+        
+        scale = self.scale()
+        
+        font = painter.font() 
+        
+        if scale > 1:
+            
+            font.setPointSizeF(10.0*1/scale)
+        
+        painter.setFont(font)
+        
+        line_pen = QPen()
+        line_pen.setColor(QColor(255,255,255, 200))
+        
+        
+        painter.setPen(line_pen)
+        
+        if not self.text:
+            return
+        
+        rect = QtCore.QRect(-25,-25,50,50)
+        painter.drawText(rect, QtCore.Qt.AlignCenter, self.text)
 
     def mousePressEvent(self, event):
         super(SimpleSquareItem, self).mousePressEvent(event)
@@ -877,6 +915,15 @@ class SimpleSquareItem(QGraphicsRectItem):
             self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
         if bool_value == False:
             self.setFlags(self.flags() & ~QGraphicsItem.ItemIsSelectable & ~QGraphicsItem.ItemIsMovable)
+            
+    def set_text(self, text):
+        
+        #if len(text) > 3:
+        #    text = text[:3]
+            
+        self.text = text
+        
+        self.update()
             
 def get_control_position(control, view_axis = 'Z'):
     

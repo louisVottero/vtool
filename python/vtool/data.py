@@ -2215,7 +2215,7 @@ class MayaFileData(MayaCustomData):
         
         saved = False
         
-        util.show('Vetala:  Saving...')
+        util.show('Vetala:  Saving:  %s' % self.filepath)
         
         try:
             cmds.file(rename = self.filepath)
@@ -2224,6 +2224,8 @@ class MayaFileData(MayaCustomData):
                       type = self.maya_file_type)
             saved = True
         except:
+            status = traceback.format_exc()
+            util.show(status)
             saved = False
         
         if saved:
@@ -2234,7 +2236,12 @@ class MayaFileData(MayaCustomData):
             return True
         
         if not saved:
+            
+            if not maya_lib.core.is_batch():
+                cmds.confirmDialog(message = 'Vetala Warning:\n\n Maya was unable to save!', button = 'Confirm')
+                
             util.show('Vetala:  Scene not saved:  %s' % self.filepath)
+            util.show('Vetala:  This is a Maya save bug, not necessarily an issue with Vetala.  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
             return False
         
         return False

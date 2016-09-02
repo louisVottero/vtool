@@ -1096,7 +1096,7 @@ class TransferWeight(object):
             distances = space.get_distances(new_joints, vert_name)
             
             if not distances:
-                vtool.util.show('Error: No distances found. Check your target joints.')
+                vtool.util.warning('No distances found. Check your target joints.')
                 bar.end()
                 return
             
@@ -1172,15 +1172,22 @@ class TransferWeight(object):
 
                 cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
                 
-            for joint_index in xrange(0, joint_count):
-                change = 1 - weight_percent_change
-                
-                value = source_joint_weights[joint_index]
-                value = value[vert_index] * change
-                
-                joint_id = influence_index_order[joint_index]
-                
-                cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
+            
+            print source_joint_weights
+            
+            if source_joint_weights:
+                for joint_index in xrange(0, joint_count):
+                    change = 1 - weight_percent_change
+                    
+                    value = source_joint_weights[joint_index]
+                    value = value[vert_index] * change
+                    
+                    joint_id = influence_index_order[joint_index]
+                    
+                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
+            
+            if not source_joint_weights:
+                vtool.util.warning('No weighting on source joints.')
             
             bar.inc()
             
