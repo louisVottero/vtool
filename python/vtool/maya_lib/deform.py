@@ -1171,9 +1171,13 @@ class TransferWeight(object):
                 joint_index = joint_ids[joint]
 
                 cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
-                
+            
             for joint_index in xrange(0, joint_count):
                 change = 1 - weight_percent_change
+                
+                if joint_index > len(source_joint_weights) - 1:
+                    break
+                    
                 
                 value = source_joint_weights[joint_index]
                 value = value[vert_index] * change
