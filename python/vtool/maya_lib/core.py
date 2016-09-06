@@ -59,6 +59,8 @@ maya_data_mappings = {
                         'pointArray' : 'dataType'
                         }
 
+
+
 class FindUniqueName(vtool.util.FindUniqueString):
     """
     This class is intended to find a name that doesn't clash with other names in the Maya scene.
@@ -362,6 +364,10 @@ def is_referenced(node):
     Returns:
         bool
     """
+    
+    if not node:
+        return False
+    
     if not cmds.objExists(node):
         return False
     
@@ -1184,3 +1190,5 @@ def delete_empty_orig_nodes():
             cmds.delete(orig)
             
     print_help('Deleted Unused Intermediate Object or Orig nodes: %s' % found)
+    
+    

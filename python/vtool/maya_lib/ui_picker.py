@@ -29,7 +29,7 @@ class PickManager(ui.MayaWindow):
     def __init__(self):
         
         self.pickers = []
-        
+        self.namespace = None
         self._create_picker_group()
         
         super(PickManager, self).__init__()
@@ -57,7 +57,11 @@ class PickManager(ui.MayaWindow):
         
         self.tab_widget.addTab(picker_inst, 'View')
         
-        #self.tab_widget.addTab(QWidget(), '+')
+        
+        self.namespace_widget = NamespaceWidget()
+        if self.namespace_widget.currentText() != '-':
+            self._set_namespace(str(self.namespace_widget.currentText()))
+        self.namespace_widget.activated.connect(self._namespace_combo_activate)
         
         self.corner_widget = CornerWidget()
         self.edit_button = self.corner_widget.edit_button
@@ -69,9 +73,38 @@ class PickManager(ui.MayaWindow):
         
         self.tab_widget.currentChanged.connect(self._tab_changed)
         
+        self.main_layout.addWidget(self.namespace_widget)
         self.main_layout.addWidget(self.tab_widget)
         
         self._build_btm_widgets()
+        
+
+    def _set_namespace(self, namespace):
+        
+        self.namespace = namespace
+        self._set_picker_group(self._get_picker_group())
+        
+        if self.picker_group:
+            self._import()
+            
+            for picker in self.pickers:
+                picker.set_namespace(self.namespace)
+                picker.namespace = self.namespace
+                
+        if not self.picker_group:
+            util.warning('Could not load. No picker group in namespace: %s' % namespace)
+        
+    def _namespace_combo_activate(self, index):
+        
+        namespace = self.namespace_widget.itemText(index)
+        
+        self._set_namespace(namespace)
+        
+        
+        
+
+            
+        
         
     def _picker_item_added(self):
         self._export()
@@ -126,6 +159,7 @@ class PickManager(ui.MayaWindow):
         size = item.scale()
         
         level = item.zValue()
+        text = item.get_text()
         
         item_dict['name'] = name
         item_dict['x'] = x
@@ -133,12 +167,18 @@ class PickManager(ui.MayaWindow):
         item_dict['size'] = size
         item_dict['level'] = level
         item_dict['type'] = item_type
+        item_dict['text'] = text
         
         return item_dict
     
     def _export(self):
         
+        if self._is_picker_reference():
+            return
+        
         view_data = self._get_data_from_views()
+        
+        
         
         picker_inst = picker.Picker()
         picker_inst.set_data(view_data)
@@ -174,7 +214,8 @@ class PickManager(ui.MayaWindow):
                     y = item['y']
                     size = item['size']
                     level = item['level']
-                    item = picker_inst.add_item(name, x, y, size, level)
+                    text = item['text']
+                    item = picker_inst.add_item(name, x, y, size, level, text)
                     
                     
         
@@ -184,7 +225,11 @@ class PickManager(ui.MayaWindow):
         picker_group = picker.Picker().create_picker_group()
         
         self.picker_group = picker_group
+    
+    def _set_picker_group(self, picker_name):
         
+        self.picker_group = picker_name
+    
     def _tab_changed(self):
         
         index = self.tab_widget.currentIndex()
@@ -210,10 +255,28 @@ class PickManager(ui.MayaWindow):
         picker_inst.scene_update.connect(self._export)
         return picker_inst
     
+    def _get_picker_group(self):
+        
+        picker = 'picker_gr'
+        
+        if self.namespace:
+            picker = self.namespace + ':picker_gr'
+        
+        if cmds.objExists(picker):
+            return picker
+            
+    def _is_picker_reference(self):
+        
+        return core.is_referenced(self._get_picker_group())
+    
     def _edit_mode(self):
         
         current_index = self.tab_widget.currentIndex()
         
+        if self._is_picker_reference():
+            self.edit_buttons.setHidden(True)
+            self.pickers[current_index].set_edit_mode(False)
+            
         self.edit_buttons.set_picker(self.pickers[current_index])
         
         if self.edit_button.isChecked():
@@ -255,7 +318,40 @@ class PickManager(ui.MayaWindow):
         
         self.edit_buttons.setHidden(True)
         
-
+class NamespaceWidget(QComboBox):
+    
+    def __init__(self):
+        super(NamespaceWidget, self).__init__()
+        
+        self._load_namespaces()
+        
+    def _load_namespaces(self):
+        self.clear()
+        
+        names = self._get_namespaces()
+        
+        names.remove('UI')
+        names.remove('shared')
+        
+        if names:
+            for name in names:
+                self.addItem(name)
+            
+        if not names:
+            self.addItem('-')
+    
+    def mousePressEvent(self, event):
+        
+        self._load_namespaces()
+        
+        return super(NamespaceWidget, self).mousePressEvent(event)
+        
+    def _get_namespaces(self):
+        
+        namespaces = cmds.namespaceInfo(lon = True)
+        
+        return namespaces
+        
         
 class PickerTab(QTabWidget):
     
@@ -679,6 +775,7 @@ class Picker(qt_ui.BasicGraphicsView):
         self.background_file = None
         
         self.edit_mode = False
+        self.namespace = None
         
     
     def fitInView(self):
@@ -738,6 +835,9 @@ class Picker(qt_ui.BasicGraphicsView):
             name = self.current_item_names[0]
             if len(self.current_item_names) > 1:
                 name += '  ...'
+                
+            if self.namespace:
+                name = self.namespace + ':' + name
             painter.drawText((rect.left()+20),(rect.top()+20), name)
         #return qt_ui.BasicGraphicsView.drawBackground(self, *args, **kwargs)
         
@@ -790,11 +890,13 @@ class Picker(qt_ui.BasicGraphicsView):
             
             self.add_item(control, x, y, size, level)
         
-    def add_item(self, name = None, x = 0, y = 0, size = 1, level = 0, item_type = None):
+    def add_item(self, name = None, x = 0, y = 0, size = 1, level = 0, text = '', item_type = None):
         
         if name == None:
             selection = cmds.ls(sl = True)
             name = selection[0]
+            
+            core.get_basename(name, remove_namespace = True)
         
         for item in self.items():
             if item.name == name:
@@ -816,10 +918,22 @@ class Picker(qt_ui.BasicGraphicsView):
         item.setScale(size)
         item.setPos(int(x),int(y))
         item.setZValue(level)
+        item.set_text(text)
         
         self.item_added.emit(item)
         
+        item.set_edit_mode(self.edit_mode)
+        
         return item
+        
+    def set_namespace(self, namespace):
+        self.namespace = namespace
+        
+        items = self.scene.items()
+        
+        for item in items:
+            if hasattr(item, 'namespace'):
+                item.namespace = self.namespace
         
     def set_edit_mode(self, bool_value):
         
@@ -838,7 +952,7 @@ class Picker(qt_ui.BasicGraphicsView):
             self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
             
         if self.edit_mode:
-            #self.setDragMode(QGraphicsView.ScrollHandDrag)
+            
             self.setDragMode(QGraphicsView.RubberBandDrag)
             self.setTransformationAnchor(self.AnchorUnderMouse)
             self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
@@ -871,11 +985,10 @@ class SimpleSquareItem(QGraphicsRectItem):
         brush.setStyle(QtCore.Qt.SolidPattern)
         self.setBrush(brush)
         
-        
-        #self.setFlags(QGraphicsItem.itemis)
-        
         self.name = node
         self.text = None
+        
+        self.namespace = None
         
 
     def paint(self, painter, option, widget):
@@ -907,7 +1020,12 @@ class SimpleSquareItem(QGraphicsRectItem):
     def mousePressEvent(self, event):
         super(SimpleSquareItem, self).mousePressEvent(event)
         
-        cmds.select(self.name)
+        name = self.name
+        
+        if self.namespace:
+            name = self.namespace + ':' + name
+        
+        cmds.select(name)
         
     def set_edit_mode(self, bool_value):
         
@@ -918,13 +1036,14 @@ class SimpleSquareItem(QGraphicsRectItem):
             
     def set_text(self, text):
         
-        #if len(text) > 3:
-        #    text = text[:3]
-            
         self.text = text
         
         self.update()
-            
+    
+    def get_text(self):
+        
+        return self.text
+    
 def get_control_position(control, view_axis = 'Z'):
     
     size = 1

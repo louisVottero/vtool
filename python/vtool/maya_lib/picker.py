@@ -5,6 +5,7 @@ from vtool.maya_lib import attr
 class Picker(object):
     
     def __init__(self, picker_group = None):
+        self.picker_group = picker_group
         self.load_picker_group(picker_group)
     
     def load_picker_group(self, picker_group):
@@ -46,6 +47,9 @@ class Picker(object):
         cmds.setAttr(attribute, l = True)
         
     def get_data(self):
+        
+        if not self.picker_group:
+            return
         
         view_data = cmds.getAttr('%s.DATA' % self.picker_group)
         

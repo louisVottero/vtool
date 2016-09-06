@@ -7380,7 +7380,6 @@ class EyeLidAimRig(JointRig):
 
             if type(self.scale_space) != list:
                 if self.scale_space < 1 or self.scale_space > 1:
-                    print self.scale_space, current_scale
                     cmds.scale(self.scale_space*current_scale[0], self.scale_space*current_scale[1], self.scale_space*current_scale[2], xform)
 
             if self.use_joint:

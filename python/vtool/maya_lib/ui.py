@@ -299,10 +299,12 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         shape_combo_button.setMinimumWidth(button_width)
         manager_layout.addWidget(shape_combo_button)
         
+        """
         picker_button = QPushButton('Picker')
         picker_button.clicked.connect(self._picker)
         picker_button.setMinimumWidth(button_width)
         manager_layout.addWidget(picker_button)
+        """
         
         tool_group = QGroupBox('Utilities')
         tool_layout = QVBoxLayout()
