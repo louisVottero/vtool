@@ -1321,6 +1321,7 @@ class DeformerWeightData(MayaCustomData):
                 info_lines = [weights]
                 
                 write_info.write(info_lines)
+                util.show('Exported weights on %s.' % deformer)
     
         util.show('Exported %s data' % self.name)
     
