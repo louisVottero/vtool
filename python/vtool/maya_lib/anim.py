@@ -62,7 +62,7 @@ def playblast(filename):
                    clearCache = True, 
                    forceOverwrite = True)
 
-def quick_driven_key(source, target, source_values, target_values, infinite = False, tangent_type = 'spline'):
+def quick_driven_key(source, target, source_values, target_values, infinite = False, tangent_type = 'linear'):
     """
     A convenience for create set driven key frames.
     
