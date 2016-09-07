@@ -1615,6 +1615,56 @@ def get_transform_list_from_distance(source_transform, transform_list):
         
     return found
 
+def get_side(transform, center_tolerance):
+    """
+    Get the side of a transform based on its position in world space.
+    Center tolerance is distance from the center to include as a center transform.
+    
+    Args:
+        transform (str): The name of a transform.
+        center_tolerance (float): How close to the center the transform must be before it is considered in the center.
+        
+    Returns:
+        str: The side that the transform is on, could be 'L','R' or 'C'.
+    """
+    if type(transform) == list or type(transform) == tuple:
+        position = transform
+    
+    if not type(transform) == list and not type(transform) == tuple:
+        position = cmds.xform(transform, q = True, ws = True, rp = True)
+        
+    if position[0] > 0:
+        side = 'L'
+
+    if position[0] < 0:
+        side = 'R'
+        
+    if position[0] < center_tolerance and position[0] > center_tolerance*-1:
+        side = 'C'
+            
+    return side
+
+def get_axis_vector(transform, axis_vector):
+    """
+    This currently only works on transforms that have not been frozen.
+    It does not work on joints. 
+    
+    Get the vector matrix product.
+    If you give it a vector [1,0,0], it will return the transform's x point.
+    If you give it a vector [0,1,0], it will return the transform's y point.
+    If you give it a vector [0,0,1], it will return the transform's z point.
+    
+    Args:
+        transform (str): The name of a transform. Its matrix will be checked.
+        axis_vector (list): A vector. X = [1,0,0], Y = [0,1,0], Z = [0,0,1] 
+        
+    Returns:
+        list: The result of multiplying the vector by the matrix. Good to get an axis in relation to the matrix.
+    """
+    t_func = api.TransformFunction(transform)
+    new_vector = t_func.get_vector_matrix_product(axis_vector)
+    
+    return new_vector
 
 def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
     """
@@ -2560,34 +2610,7 @@ def match_orient(prefix, other_prefix):
 
 
     
-def get_side(transform, center_tolerance):
-    """
-    Get the side of a transform based on its position in world space.
-    Center tolerance is distance from the center to include as a center transform.
-    
-    Args:
-        transform (str): The name of a transform.
-        center_tolerance (float): How close to the center the transform must be before it is considered in the center.
-        
-    Returns:
-        str: The side that the transform is on, could be 'L','R' or 'C'.
-    """
-    if type(transform) == list or type(transform) == tuple:
-        position = transform
-    
-    if not type(transform) == list and not type(transform) == tuple:
-        position = cmds.xform(transform, q = True, ws = True, rp = True)
-        
-    if position[0] > 0:
-        side = 'L'
 
-    if position[0] < 0:
-        side = 'R'
-        
-    if position[0] < center_tolerance and position[0] > center_tolerance*-1:
-        side = 'C'
-            
-    return side
 
 def create_no_twist_aim(source_transform, target_transform, parent, move_vector = [0,0,1]):
     """
@@ -2762,27 +2785,7 @@ def duplicate_joint_section(joint, name = ''):
     if sub_duplicate:
         return duplicate, sub_duplicate   
     
-def get_axis_vector(transform, axis_vector):
-    """
-    This currently only works on transforms that have not been frozen.
-    It does not work on joints. 
-    
-    Get the vector matrix product.
-    If you give it a vector [1,0,0], it will return the transform's x point.
-    If you give it a vector [0,1,0], it will return the transform's y point.
-    If you give it a vector [0,0,1], it will return the transform's z point.
-    
-    Args:
-        transform (str): The name of a transform. Its matrix will be checked.
-        axis_vector (list): A vector. X = [1,0,0], Y = [0,1,0], Z = [0,0,1] 
-        
-    Returns:
-        list: The result of multiplying the vector by the matrix. Good to get an axis in relation to the matrix.
-    """
-    t_func = api.TransformFunction(transform)
-    new_vector = t_func.get_vector_matrix_product(axis_vector)
-    
-    return new_vector
+
 
 def transforms_to_joint_chain(transforms, name = ''):
     """

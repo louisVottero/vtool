@@ -29,7 +29,7 @@ class Rig(object):
     side_right = 'R'
     side_center = 'C'
     
-    def __init__(self, description, side):
+    def __init__(self, description, side = None):
         
         cmds.refresh()
         
@@ -126,8 +126,11 @@ class Rig(object):
             
     def _get_name(self, prefix = None, description = None):
         
-        name_list = [prefix,self.description, description, '1', self.side]
-        
+        if self.side:
+            name_list = [prefix,self.description, description, '1', self.side]
+        if not self.side:
+            name_list = [prefix,self.description, description, '1', self.side]
+            
         filtered_name_list = []
         
         for name in name_list:
@@ -159,7 +162,12 @@ class Rig(object):
         if curve_type:
             control.set_curve_type(curve_type)
         
-        control.color( attr.get_color_of_side( self.side , sub)  )
+        side = self.side
+        
+        if not side:
+            side = 'C'
+        
+        control.color( attr.get_color_of_side( side , sub)  )
         
         if self.control_color >=0 and not sub:
             control.color( self.control_color )
@@ -542,7 +550,7 @@ class SparseRig(JointRig):
     This is good for a pile of leaves or tweakers on a body.
     """
     
-    def __init__(self, description, side):
+    def __init__(self, description, side = None):
         super(SparseRig, self).__init__(description, side)
         
         self.control_shape = 'cube'
@@ -718,7 +726,7 @@ class SparseLocalRig(SparseRig):
     This is important for cases where the controls when parented need to move serparetly from the rig.
     For example if the setup deformation blendshapes in before a skin cluster.
     """
-    def __init__(self, description, side):
+    def __init__(self, description, side = None):
         super(SparseLocalRig, self).__init__(description, side)
         
         self.local_constraint = True
@@ -8449,7 +8457,7 @@ class EyeRig(JointRig):
         cmds.hide(locator)
         
 class JawRig(FkLocalRig):
-    def __init__(self, description, side):
+    def __init__(self, description, side = None):
         super(JawRig, self).__init__(description, side)
         self.jaw_slide_offset = .1
         self.jaw_slide_attribute = True

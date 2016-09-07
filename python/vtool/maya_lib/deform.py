@@ -1174,7 +1174,12 @@ class TransferWeight(object):
             
             if source_joint_weights:
                 for joint_index in xrange(0, joint_count):
+                    
+                    if joint_index > len(source_joint_weights) - 1:
+                        break
+                    
                     change = 1 - weight_percent_change
+                    
                     
                     value = source_joint_weights[joint_index]
                     value = value[vert_index] * change
@@ -1190,7 +1195,7 @@ class TransferWeight(object):
                 change = 1 - weight_percent_change
                 
                 if joint_index > len(source_joint_weights) - 1:
-                    break
+                        break
                 
                 value = source_joint_weights[joint_index]
                 value = value[vert_index] * change

@@ -1644,6 +1644,8 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
     
     meshes = []
     
+    transforms = vtool.util.convert_to_sequence(transforms)
+    
     for transform in transforms:
         mesh = transform_to_polygon_plane(transform, size, axis = axis)
         meshes.append(mesh)
@@ -1651,11 +1653,16 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
     new_mesh = None
         
     if merge:
-        new_mesh = cmds.polyUnite(meshes, ch = False, mergeUVSets = True, name = name)
+        if len(transforms) > 1:
+            new_mesh = cmds.polyUnite(meshes, ch = False, mergeUVSets = True, name = name)
+            new_mesh = new_mesh[0]
+            
+        if len(transforms) == 1:
+            new_mesh = cmds.rename(meshes[0], name)
         cmds.polyLayoutUV(new_mesh, lm = 1)
         
     if new_mesh:
-        return new_mesh[0]
+        return new_mesh
     
 
 def curve_to_nurb_surface(curve):

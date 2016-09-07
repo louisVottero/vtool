@@ -160,8 +160,6 @@ class Control(object):
         var.create(joint)
         var.set_value(curve_type_value)
         
-        
-        
     def translate_shape(self, x,y,z):
         """
         Translate the shape curve cvs in object space.
