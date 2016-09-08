@@ -1457,13 +1457,12 @@ class Process(object):
                     if not external_code_path in sys.path:
                         sys.path.append(external_code_path)
             
-            message = '\n\n\a\t%s    START\n\n' % name
+            message = 'START\t%s\n\n' % name
+
             
-            if util.is_in_maya():
-                if core.is_batch():
-                    message = '\n\n%s    START\n\n' % name
-            
+            util.show('\n-----------------------------------------------------------------------------------')
             util.show(message)
+            
             
             util_file.delete_pyc(script)
             
@@ -1543,11 +1542,7 @@ class Process(object):
         if not status == 'Success':
             util.show('%s\n' % status)
         
-        message = '\n\a\t%s    END.\n\n\n' % name
-        
-        if util.is_in_maya():
-            if core.is_batch():
-                message = '\n%s    END.\n\n\n' % name
+        message = '\nEND\t%s\n\n\n' % name
                 
         util.show(message)
             
