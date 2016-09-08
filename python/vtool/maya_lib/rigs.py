@@ -376,7 +376,7 @@ class JointRig(Rig):
     
     """
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(JointRig, self).__init__(description, side)
         
         self.joints = []
@@ -461,7 +461,7 @@ class BufferRig(JointRig):
     """
     
     
-    def __init__(self, name, side):
+    def __init__(self, name, side=None):
         super(BufferRig, self).__init__(name, side)
         
         self.create_buffer_joints = False
@@ -527,7 +527,7 @@ class CurveRig(Rig):
         A rig class that accepts curves instead of joints as the base structure.
     """
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(CurveRig, self).__init__(description, side)
         
         self.curves = None
@@ -845,7 +845,7 @@ class ControlRig(Rig):
     """
     Convenience for creating controls to hold blendshape sliders.
     """
-    def __init__(self, name, side):
+    def __init__(self, name, side=None):
         super(ControlRig, self).__init__(name,side)
         
         self.transforms = None
@@ -925,7 +925,7 @@ class GroundRig(JointRig):
     """
     Create a ground and sub controls
     """
-    def __init__(self, name, side):
+    def __init__(self, name, side=None):
         super(GroundRig, self).__init__(name, side)
         
         self.control_shape = 'square_point'
@@ -991,7 +991,7 @@ class FkRig(BufferRig):
     This is a great simple setup for appendages like fingers or arms.
     """
     
-    def __init__(self, name, side):
+    def __init__(self, name, side=None):
         super(FkRig, self).__init__(name, side)
         self.last_control = ''
         self.control = ''
@@ -1306,7 +1306,7 @@ class FkLocalRig(FkRig):
     Same as FkRig but joints get connected in instead of constrained. 
     This allows the controls as a group to move separately from the joints.
     """
-    def __init__(self, name, side):
+    def __init__(self, name, side=None):
         super(FkLocalRig, self).__init__(name, side)
         
         self.local_parent = None
@@ -1390,7 +1390,7 @@ class FkScaleRig(FkRig):
     This extends FkRig so that it can be scalable at each control.
     """
       
-    def __init__(self, name, side): 
+    def __init__(self, name, side=None): 
         super(FkScaleRig, self).__init__(name, side) 
         self.last_control = '' 
         self.control = '' 
@@ -1532,7 +1532,7 @@ class FkCurlNoScaleRig(FkRig):
     """
     This extends FkRig with the ability to have a curl attribute. Good for fingers.
     """
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(FkCurlNoScaleRig, self).__init__(description, side)
         
         self.attribute_control = None
@@ -1667,7 +1667,7 @@ class FkCurlNoScaleRig(FkRig):
         
 class FkCurlRig(FkScaleRig):
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(FkCurlRig, self).__init__(description, side)
         
         self.attribute_control = None
@@ -1783,7 +1783,7 @@ class FkCurlRig(FkScaleRig):
         
 class SplineRibbonBaseRig(JointRig):
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         
         super(SplineRibbonBaseRig, self).__init__(description, side)
         
@@ -2175,7 +2175,7 @@ class SplineRibbonBaseRig(JointRig):
         self.closest_y = bool_value
 
 class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
-    def __init__(self, name, side):
+    def __init__(self, name, side=None):
         super(SimpleFkCurveRig, self).__init__(name, side)
         
         self.controls = []
@@ -2489,7 +2489,7 @@ class FkCurveRig(SimpleFkCurveRig):
     """
     This extends SimpleFkCurveRig. This is usually used for spine setups.
     """
-    def __init__(self, name, side):
+    def __init__(self, name, side=None):
         super(FkCurveRig, self).__init__(name, side)
         
         self.aim_end_vectors = False
@@ -2544,7 +2544,7 @@ class FkCurveRig(SimpleFkCurveRig):
 
 class FkCurveLocalRig(FkCurveRig):
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(FkCurveLocalRig, self).__init__(description, side)
         
         self.last_local_group = None
@@ -2751,7 +2751,7 @@ class IkSplineNubRig(BufferRig):
     """
     
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         
         super(IkSplineNubRig, self).__init__(description, side)
         
@@ -3186,7 +3186,7 @@ class IkAppendageRig(BufferRig):
     This is usually used for arms or legs.
     """
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(IkAppendageRig, self).__init__(description, side)
         
         self.create_twist = True
@@ -3766,7 +3766,7 @@ class TweakCurveRig(BufferRig):
     """
     
     
-    def __init__(self, name, side):
+    def __init__(self, name, side=None):
         super(TweakCurveRig, self).__init__(name, side)
         
         self.control_count = 4
@@ -3919,7 +3919,7 @@ class TweakCurveRig(BufferRig):
                         
 class RopeRig(CurveRig):
 
-    def __init__(self, name, side):
+    def __init__(self, name, side=None):
         super(RopeRig, self).__init__(name, side)
         
         self.subdivision = 0
@@ -4310,7 +4310,7 @@ class ConvertJointToNub(object):
 
 class SpineRig(BufferRig, SplineRibbonBaseRig):
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         
         super(SpineRig, self).__init__(description, side)
         
@@ -4938,7 +4938,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         return [self.top_control, self.btm_control]
             
 class NeckRig(FkCurveRig):
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(NeckRig, self).__init__(description,side)
         
     def _first_increment(self, control, current_transform):
@@ -4946,7 +4946,7 @@ class NeckRig(FkCurveRig):
 
 class IkLegRig(IkAppendageRig):
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         
         super(IkLegRig, self).__init__(description,side)
     
@@ -5058,7 +5058,7 @@ class IkLegRig(IkAppendageRig):
 class IkFrontLegRig(IkAppendageRig):
     
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(IkFrontLegRig, self).__init__(description, side)
         
         self.right_side_fix = False
@@ -5226,7 +5226,7 @@ class IkFrontLegRig(IkAppendageRig):
 
 class IkScapulaRig(BufferRig):
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         
         self.control_shape = 'square'
         
@@ -5419,7 +5419,7 @@ class IkScapulaRig(BufferRig):
         
 class IkBackLegRig(IkFrontLegRig):
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(IkBackLegRig, self).__init__(description, side)
         
         self.offset_control_to_locator = False
@@ -5580,7 +5580,7 @@ class IkBackLegRig(IkFrontLegRig):
     
 class RollRig(JointRig):
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(RollRig, self).__init__(description, side)
         
         self.create_roll_controls = True
@@ -5797,7 +5797,7 @@ class RollRig(JointRig):
     
 class FootRollRig(RollRig):
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(FootRollRig, self).__init__(description, side)
         
         self.defined_joints = []
@@ -6066,7 +6066,7 @@ class FootRollRig(RollRig):
         #connect_reverse('%s.%s' % (self.roll_control.get(), self.ik_attribute), '%s.visibility' % ball_pivot)
               
 class BaseFootRig(BufferRig):
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(BaseFootRig, self).__init__(description, side)
         
         self.create_roll_controls = True
@@ -6205,7 +6205,7 @@ class BaseFootRig(BufferRig):
             bool_var.set_value(self.sub_visibility)
             
 class FootRig(BaseFootRig):
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(FootRig, self).__init__(description, side)
         
         self.build_hierarchy = True
@@ -6647,7 +6647,7 @@ class QuadSpineRig(BufferRig):
         
 class QuadFootRig(FootRig):
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(QuadFootRig, self).__init__(description, side)
         
         self.ball_attrtribute = None
@@ -6936,7 +6936,7 @@ class EyeLidCurveRig(JointRig):
     Very slow.
     """
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         
         super(EyeLidCurveRig, self).__init__(description, side)
         
@@ -7280,7 +7280,7 @@ class EyeLidCurveRig(JointRig):
                     
 class EyeLidAimRig(JointRig):
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(EyeLidAimRig, self).__init__(description, side)
         
         self.orient_aim_axis = 'Z'
@@ -7480,7 +7480,7 @@ class EyeLidAimRig(JointRig):
                     
 class StickyRig(JointRig):
     
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(StickyRig, self).__init__(description, side)
         
         self.top_joints = []
@@ -7948,7 +7948,7 @@ class StickyRig(JointRig):
             
 class StickyFadeRig(StickyRig):       
 
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(StickyFadeRig, self).__init__(description, side)
         
         self.corner_offsets = []
@@ -8256,7 +8256,7 @@ class StickyFadeRig(StickyRig):
     
         
 class EyeRig(JointRig):
-    def __init__(self, description, side):
+    def __init__(self, description, side=None):
         super(EyeRig, self).__init__(description, side)
         self.local_parent = None
         self.parent = None
