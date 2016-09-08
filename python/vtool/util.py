@@ -1275,13 +1275,13 @@ def show(*args):
     try:
         
         string_value = show_list_to_string(*args)
-        
+        string_value = string_value.replace('\n', '\nV:\t\t')
         #do not remove
-        print '\t%s' % string_value
+        print 'V:\t\t%s' % string_value
     
     except:
         #do not remove
-        print 'Could not show %s' % args
+        print 'V:\t\tCould not show %s' % args
         raise(RuntimeError)
         
         
@@ -1289,10 +1289,10 @@ def warning(*args):
     
     try:    
         string_value = show_list_to_string(*args)
-        
+        string_value = string_value.replace('\n', '\nV:\t\t')
         #do not remove
         if not is_in_maya():
-            print '\tWarning %s' % string_value
+            print 'V:\t\tWarning %s' % string_value
         if is_in_maya():
             import maya.cmds as cmds
             cmds.warning(string_value)

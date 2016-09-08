@@ -19,6 +19,8 @@ if util.is_in_maya():
     import maya_lib.corrective
     import maya_lib.rigs_util
     import maya_lib.blendshape
+    
+    import maya_lib.api
 
 class DataManager(object):
     
@@ -2106,6 +2108,30 @@ class MayaFileData(MayaCustomData):
         super(MayaFileData, self).__init__(name)
         
         self.maya_file_type = self._set_maya_file_type()
+        
+        if not maya_lib.core.is_batch():
+        
+            pre_save_initialized = util.get_env('VETALA_PRE_SAVE_INITIALIZED')
+            
+            if pre_save_initialized == 'False':
+            
+                maya_lib.api.start_check_before_save(self._check_before_save)
+                util.set_env('VETALA_PRE_SAVE_INITIALIZED', 'True')
+    
+    def _check_before_save(self, client_data):
+        
+        filepath = cmds.file(q = True, sn = True)
+        
+        version = util_file.VersionFile(filepath)
+        
+        dirpath = util_file.get_dirname(filepath)
+        
+        if util_file.VersionFile(dirpath).has_versions():
+            
+            version.save('Automatically versioned up with Maya save.')
+            
+            maya_lib.core.print_help('version saved!')
+        
     
     def _data_type(self):
         return 'maya.vtool'
@@ -2116,7 +2142,7 @@ class MayaFileData(MayaCustomData):
     
     def _clean_scene(self):
         
-        util.show('Vetala: Clean Scene')
+        util.show('Clean Scene')
         
         maya_lib.core.delete_turtle_nodes()
         
@@ -2204,8 +2230,7 @@ class MayaFileData(MayaCustomData):
             util.show(traceback.format_exc())
             
         self._after_open()
-        
-       
+
     def save(self, comment):
         
         util_file.get_permission(self.filepath)
@@ -2216,13 +2241,14 @@ class MayaFileData(MayaCustomData):
         
         saved = False
         
-        util.show('Vetala:  Saving:  %s' % self.filepath)
+        util.show('Saving:  %s' % self.filepath)
         
         try:
             cmds.file(rename = self.filepath)
             
             cmds.file(save = True,
                       type = self.maya_file_type)
+            
             saved = True
         except:
             status = traceback.format_exc()
@@ -2233,16 +2259,16 @@ class MayaFileData(MayaCustomData):
             version = util_file.VersionFile(self.filepath)
             version.save(comment)
             
-            util.show('Vetala: Scene Saved')
+            util.show('Scene Saved')
             return True
         
         if not saved:
             
             if not maya_lib.core.is_batch():
-                cmds.confirmDialog(message = 'Vetala Warning:\n\n Maya was unable to save!', button = 'Confirm')
+                cmds.confirmDialog(message = 'Warning:\n\n Maya was unable to save!', button = 'Confirm')
                 
-            util.show('Vetala:  Scene not saved:  %s' % self.filepath)
-            util.show('Vetala:  This is a Maya save bug, not necessarily an issue with Vetala.  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
+            util.show('Scene not saved:  %s' % self.filepath)
+            util.show('This is a Maya save bug, not necessarily an issue with Vetala.  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
             return False
         
         return False

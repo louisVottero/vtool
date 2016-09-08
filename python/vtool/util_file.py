@@ -68,8 +68,8 @@ class WatchDirectoryThread(threading.Thread):
             added = [f for f in after if not f in before]
             removed = [f for f in before if not f in after]
     
-            if added: print "Added: ", ", ".join (added)
-            if removed: print "Removed: ", ", ".join (removed)
+            if added: util.show("Added: ", ", ".join (added))
+            if removed: util.show("Removed: ", ", ".join (removed))
             
             before = after
 
@@ -266,6 +266,7 @@ class VersionFile(object):
         self.filepath = filepath
         
         if filepath:
+
             self.filename = get_basename(self.filepath)
             self.path = get_dirname(filepath)
             
@@ -404,16 +405,6 @@ class VersionFile(object):
         if is_dir(version_folder):
             return True
         
-        """
-        files = get_files_and_folders(version_folder)
-        
-        if not files:
-            return
-            
-        for filepath in files: 
-            if filepath.startswith(self.version_name):
-                return True
-        """
     def set_version_folder(self, folder_path):
         """
         Set the folder where the version folder should be created.

@@ -8,8 +8,16 @@ if vtool.util.is_in_maya():
     import maya.OpenMaya as OpenMaya
     import maya.OpenMayaAnim as OpenMayaAnim
 
-
-
+allow_save = False
+    
+def start_check_before_save(function):
+    
+    try:
+        #function should accept arguments, clientData
+        id = OpenMaya.MSceneMessage.addCallback(OpenMaya.MSceneMessage.kAfterSave, function)
+    except:
+        pass
+    
 #--- old api
 
 def nodename_to_mobject(object_name):

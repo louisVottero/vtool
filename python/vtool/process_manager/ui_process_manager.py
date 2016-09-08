@@ -303,9 +303,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_button.setMinimumHeight(40)
         
         self.batch_button = QPushButton('BATCH PROCESS')
-        self.process_button.setDisabled(True)
-        self.process_button.setMinimumWidth(150)
-        self.process_button.setMinimumHeight(40)
+        self.batch_button.setDisabled(True)
+        #self.process_button.setMinimumWidth(150)
+        #self.process_button.setMinimumHeight(40)
         
         self.stop_button = QPushButton('STOP (Esc key)')
         self.stop_button.setMaximumWidth(140)
@@ -586,11 +586,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if util.is_in_maya():
             import maya.cmds as cmds
+            
             if cmds.file(q = True, mf = True):
                 result = qt_ui.get_permission('Changes not saved. Run process anyways?', self)
                 if not result:
                     return
-        
+                
+            cmds.file(renameToSave = True)
+            
         self.continue_button.hide()
         
         watch = util.StopWatch()
@@ -636,7 +639,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         script_count = len(scripts)
         
-        util.show('\n\a\tRunning %s Scripts\t\a\n' % self.process.get_name())
+        util.show('\n\n\n\a\tRunning %s Scripts\t\a\n' % self.process.get_name())
         
         skip_scripts = []
         
@@ -709,6 +712,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     break
         
         
+        
             
         util.set_env('VETALA_RUN', False)
         util.set_env('VETALA_STOP', False)
@@ -720,10 +724,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         seconds = watch.stop()
         
         if finished:
-            util.show('Process %s built in %s' % (self.process.get_name(), seconds))
+            util.show('Process %s built in %s\n\n' % (self.process.get_name(), seconds))
             
         if not finished:
-            util.show('Process %s finished with errors.' % self.process.get_name())
+            util.show('Process %s finished with errors.\n' % self.process.get_name())
     
     def _continue(self):
         

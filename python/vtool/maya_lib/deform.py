@@ -624,6 +624,8 @@ class SplitMeshTarget(object):
 
         targets = []
         
+        vtool.util.show('Splitting target: %s' % self.target_mesh)
+        
         for part in self.split_parts:
             
             joint = part[0]

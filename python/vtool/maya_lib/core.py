@@ -244,7 +244,7 @@ def undo_off(function):
                 cmds.undoInfo( state = True )
                     
                 # do not remove
-                print traceback.format_exc()
+                vtool.util.show( traceback.format_exc() )
                 
             raise(RuntimeError)
         
@@ -293,7 +293,7 @@ def undo_chunk(function):
                 undo_chunk_active = False
             
                 # do not remove
-                print traceback.format_exc()
+                vtool.util.show( traceback.format_exc() )
             
             raise(RuntimeError)
 
@@ -886,8 +886,10 @@ def delete_display_layers():
         cmds.delete(layer)
 
 def print_help(string_value):
-     
-    om.MGlobal.displayInfo(string_value) 
+    
+    string_value = string_value.replace('\n', '\nV:\t\t')
+    
+    om.MGlobal.displayInfo('V:\t\t' + string_value) 
 
 #--- file
 

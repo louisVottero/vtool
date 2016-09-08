@@ -1488,7 +1488,7 @@ class SculptWidget(qt_ui.BasicWidget):
             
         except:
             
-            print traceback.format_exc()
+            vtool.util.show(traceback.format_exc())
             
             self.button_sculpt.setEnabled(True)
             

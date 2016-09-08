@@ -30,6 +30,10 @@ def main():
 
     if vtool.util.is_in_maya():
         
+        if vtool.util.get_maya_version() >= 2017:
+            import maya.cmds as cmds
+            cmds.loadPlugin('mtoa')
+        
         if process_path:
             
             from vtool.process_manager import process
@@ -39,16 +43,16 @@ def main():
             try:
                 process_inst.run()
             except:
-                print traceback.format_exc()
+                vtool.util.show( traceback.format_exc() )
             
             saved = process_inst.save_data('build', 'Generated from batch.')
             
             if saved:
-                vtool.util.show('Vetala:  Batch finished.  Contents saved to build.')
+                vtool.util.show('Batch finished.  Contents saved to build.')
             if not saved:
-                vtool.util.show('Vetala:  Batch finished.  Unable to save contents!!')
+                vtool.util.show('Batch finished.  Unable to save contents!!')
         else:
-            vtool.util.show('VETALA:  Could not get current process.  Batch finished, nothing processed.')
+            vtool.util.show('Could not get current process.  Batch finished, nothing processed.')
     
     time.sleep(20)
     

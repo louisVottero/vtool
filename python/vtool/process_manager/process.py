@@ -1457,11 +1457,11 @@ class Process(object):
                     if not external_code_path in sys.path:
                         sys.path.append(external_code_path)
             
-            message = '\n\n\t\a\t%s START\n\n' % name
+            message = '\n\n\a\t%s    START\n\n' % name
             
             if util.is_in_maya():
                 if core.is_batch():
-                    message = '\n\n\t%s START\n\n' % name
+                    message = '\n\n%s    START\n\n' % name
             
             util.show(message)
             
@@ -1542,8 +1542,14 @@ class Process(object):
          
         if not status == 'Success':
             util.show('%s\n' % status)
-        if status == 'Success':
-            util.show('\n\t%s END.\n\n' % name)
+        
+        message = '\n\a\t%s    END.\n\n\n' % name
+        
+        if util.is_in_maya():
+            if core.is_batch():
+                message = '\n%s    END.\n\n\n' % name
+                
+        util.show(message)
             
         return status
                
@@ -1565,11 +1571,11 @@ class Process(object):
         if not name:
             name = util_file.get_dirname(self.directory)
             
-        message = '\n\n\a\tRunning %s Scripts\t\a\n' % name
+        message = '\n\n\aRunning %s Scripts\t\a\n' % name
         
         if util.is_in_maya():
             if core.is_batch():
-                message = '\n\n\tRunning %s Scripts\n' % name
+                message = '\n\nRunning %s Scripts\n' % name
         
         util.show(message)
         
@@ -1580,7 +1586,7 @@ class Process(object):
         
         seconds = watch.stop()
         
-        util.show('Vetala:  Process built in %s' % seconds)
+        util.show('Process built in %s\n\n' % seconds)
         
     def set_runtime_value(self, name, value):
         """

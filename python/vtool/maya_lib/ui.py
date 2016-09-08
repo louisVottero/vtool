@@ -68,9 +68,9 @@ def create_scene_script_jobs():
     global job_open_scene
     global job_read_scene
     
-    job_new_scene = cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui;ui.emit_new_scene_signal();print "Vetala: Emit new scene."'], protected = False)
-    job_open_scene = cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui;ui.emit_open_scene_signal();print "Vetala: Emit open scene."'], protected = False)
-    job_read_scene = cmds.scriptJob( ct = ['readingFile', 'from vtool.maya_lib import ui;ui.emit_read_scene_signal();print "Vetala: Emit reading scene."'], protected = False)
+    job_new_scene = cmds.scriptJob( event = ['NewSceneOpened', 'from vtool.maya_lib import ui;ui.emit_new_scene_signal();print "V:\t\tEmit new scene."'], protected = False)
+    job_open_scene = cmds.scriptJob( event = ['SceneOpened', 'from vtool.maya_lib import ui;ui.emit_open_scene_signal();print "V:\t\tEmit open scene."'], protected = False)
+    job_read_scene = cmds.scriptJob( ct = ['readingFile', 'from vtool.maya_lib import ui;ui.emit_read_scene_signal();print "V:\t\tEmit reading scene."'], protected = False)
 
 create_scene_script_jobs()
   
@@ -125,7 +125,7 @@ def create_window(ui, dock_area = 'right'):
     allowedAreas = ['right', 'left']
     
     #do not remove
-    vtool.util.show('Vetala creating dock window.', ui_name)
+    vtool.util.show('Creating dock window.', ui_name)
     
     #this was needed to have the ui predictably load. 
     mel.eval('updateRendererUI;')

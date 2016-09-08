@@ -21,7 +21,7 @@ try:
         from PySide.QtGui import *
         
         type_QT = 'pyside'
-        util.show('Vetala using PySide')
+        util.show('using PySide')
         
     except:
         from PySide2 import QtCore
@@ -29,7 +29,7 @@ try:
         from PySide2.QtWidgets import *
         
         type_QT = 'pyside2'
-        util.show('Vetala using PySide2')
+        util.show('using PySide2')
 except:
     type_QT = None
     
@@ -39,7 +39,7 @@ if type_QT == None:
         from PyQt4.QtGui import *
         type_QT = 'pyqt'
         
-        util.show('Vetala using pyQT')
+        util.show('using pyQT')
         
     except:
         type_QT = None
@@ -1272,7 +1272,6 @@ class FileManagerWidget(DirectoryWidget):
         
         self.history_widget = self._define_history_widget()
         self.history_widget.file_changed.connect(self._file_changed)
-        
         
         self.tab_widget.addTab(self.history_buffer_widget, self.version_tab_name)
         
@@ -4329,6 +4328,7 @@ def get_permission(message, parent = None):
     
     if message == message_box.Cancel:
         return None
+
     
 def get_new_name(message, parent = None, old_name = None):
     
