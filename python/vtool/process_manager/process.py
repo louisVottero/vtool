@@ -1542,7 +1542,7 @@ class Process(object):
         if not status == 'Success':
             util.show('%s\n' % status)
         
-        message = '\nEND\t%s\n\n\n' % name
+        message = '\nEND\t%s\n\n' % name
                 
         util.show(message)
             

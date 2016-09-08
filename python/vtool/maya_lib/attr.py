@@ -2061,15 +2061,17 @@ def remove_user_defined(node):
     
     attrs = cmds.listAttr(node, ud = True)
     
-    try:
-        for attr in attrs:
-            
+    if not attrs:
+        return
+    
+    for attr in attrs:
+        
+        try:
             unlock_attributes(node, attr)
             disconnect_attribute(attr)
             cmds.deleteAttr('%s.%s' % (node, attr))
-    except:
-        vtool.util.warning('Could not remove all user defined attributes on node: %s' % node)
-        
+        except:
+            pass
 
 def set_color(nodes, color):
     """
