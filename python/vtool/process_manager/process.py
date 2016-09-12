@@ -231,7 +231,7 @@ class Process(object):
                     
         except Exception:
             status = traceback.format_exc()
-            util.show(status)
+            util.error(status)
             
         
             
@@ -1501,7 +1501,7 @@ class Process(object):
                 if util.is_in_maya():
                     cmds.undoInfo(closeChunk = True)
                     
-                util.show('%s\n' % status)
+                util.error('%s\n' % status)
                 raise
             
         if init_passed:
@@ -1531,7 +1531,7 @@ class Process(object):
                     if util.is_in_maya():
                         cmds.undoInfo(closeChunk = True)
                         
-                    util.show('%s\n' % status)
+                    util.error('%s\n' % status)
                     raise
         
         if util.is_in_maya():
@@ -1565,23 +1565,50 @@ class Process(object):
         name = self.get_name()
         if not name:
             name = util_file.get_dirname(self.directory)
-            
-        message = '\n\n\aRunning %s Scripts\t\a\n' % name
+        
+        
+        message = '\n\n\aRunning %s Scripts\t\a\n\n' % name
         
         if util.is_in_maya():
             if core.is_batch():
-                message = '\n\nRunning %s Scripts\n' % name
+                message = '\n\nRunning %s Scripts\n\n' % name
         
         util.show(message)
         
         scripts = self.get_manifest_scripts(False)
         
-        for script in scripts:
-            self.run_script(script)
+        scripts, states = self.get_manifest()
+        
+        scripts_that_error = []
+        
+        for inc in range(0, len(scripts)):
+            
+            if states[inc]:
+                
+                try:
+                    status = self.run_script(scripts[inc])
+                except:
+                    status = 'fail'
+                
+                if not status == 'Success':
+                    scripts_that_error.append(scripts[inc])
+            
+            if not states[inc]:
+                util.show('\n-----------------------------------------------------------------------------------')
+                util.show('Skipping: %s\n\n' % scripts[inc])
         
         seconds = watch.stop()
         
-        util.show('Process built in %s\n\n' % seconds)
+        if scripts_that_error:
+            util.show('\n\n\nThe following scripts errored during build:\n')
+            for script in scripts_that_error:
+                util.show('\n' + script)
+                
+            
+        
+        util.show('\n\n\nProcess built in %s\n\n' % seconds)
+        
+        
         
     def set_runtime_value(self, name, value):
         """

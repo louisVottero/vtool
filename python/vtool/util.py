@@ -45,7 +45,7 @@ def try_pass(function):
         try:
             return_value = function(*args, **kwargs)
         except:
-            show(traceback.format_exc())
+            error(traceback.format_exc())
                     
         return return_value
                      
@@ -1291,15 +1291,22 @@ def warning(*args):
         string_value = show_list_to_string(*args)
         string_value = string_value.replace('\n', '\nV:\t\t')
         #do not remove
-        if not is_in_maya():
-            print 'V:\t\tWarning %s' % string_value
-        if is_in_maya():
-            import maya.cmds as cmds
-            cmds.warning(string_value)
+        print 'V: Warning!\t%s' % string_value
     
     except:
         raise(RuntimeError)
         
+def error(*args):
+    
+    try:    
+        string_value = show_list_to_string(*args)
+        string_value = string_value.replace('\n', '\nV:\t\t')
+        #do not remove
+        print 'V: Error!\t%s' % string_value
+    
+    except:
+        raise(RuntimeError)
+
 
 def find_possible_combos(names, sort = False, one_increment = False):
         

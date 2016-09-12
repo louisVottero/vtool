@@ -10934,7 +10934,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         return offset
         
     except (RuntimeError):
-        vtool.util.show( traceback.format_exc() )
+        vtool.util.error( traceback.format_exc() )
         
         
 def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = True):

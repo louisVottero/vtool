@@ -244,7 +244,7 @@ def undo_off(function):
                 cmds.undoInfo( state = True )
                     
                 # do not remove
-                vtool.util.show( traceback.format_exc() )
+                vtool.util.error( traceback.format_exc() )
                 
             raise(RuntimeError)
         
@@ -293,7 +293,7 @@ def undo_chunk(function):
                 undo_chunk_active = False
             
                 # do not remove
-                vtool.util.show( traceback.format_exc() )
+                vtool.util.error( traceback.format_exc() )
             
             raise(RuntimeError)
 

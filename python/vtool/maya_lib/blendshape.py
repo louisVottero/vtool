@@ -1463,7 +1463,9 @@ class ShapeComboManager(object):
             value *= -1
             name = negative_parent
         
-        if value < -1:
+        
+        
+        if value == -1:
             
             var = attr.MayaNumberVariable(name)
             var.set_min_value(-1)
@@ -1539,6 +1541,9 @@ class ShapeComboManager(object):
         parent = cmds.listRelatives(target, p = True)
         if parent:
             cmds.parent(target, w = True)
+            
+        if cmds.objExists(target):
+            attr.unlock_attributes(target)
             
         return target
             

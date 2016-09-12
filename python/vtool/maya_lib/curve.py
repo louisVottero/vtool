@@ -1,7 +1,6 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import os
-import traceback
 
 #import util  do not import util, curve is used in util
 import api

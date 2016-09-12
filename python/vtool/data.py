@@ -445,13 +445,14 @@ class MayaCustomData(CustomData):
         if not auto_focus:
             return
         
-        try:
-            cmds.select(cl = True)
-            cmds.viewFit(an = True)
-            self._fix_camera()
-        except:
-            util.show('Could not center view')
-            
+        if not maya_lib.core.is_batch():
+            try:
+                cmds.select(cl = True)
+                cmds.viewFit(an = True)
+                self._fix_camera()
+            except:
+                util.show('Could not center view')
+                
     def _fix_camera(self):
         
         camera_pos = cmds.xform('persp', q = True, ws = True, t = True)
@@ -677,7 +678,7 @@ class ControlColorData(MayaCustomData):
                     
                     inc+=1
         except:
-            util.show(traceback.format_exc())
+            util.error(traceback.format_exc())
             util.show('Error applying color to %s.' % curve)
 
     def export_data(self, comment):
@@ -794,7 +795,7 @@ class SkinWeightData(MayaCustomData):
             try:
                 influence_dict = read_thread.run(influence_dict, folder_path, influence)
             except:
-                util.show(traceback.format_exc())
+                util.error(traceback.format_exc())
                 util.show('Errors with %s weight file.' % influence)
                     
         return influence_dict
@@ -2227,7 +2228,7 @@ class MayaFileData(MayaCustomData):
             
         except:
             
-            util.show(traceback.format_exc())
+            util.error(traceback.format_exc())
             
         self._after_open()
 
@@ -2252,7 +2253,7 @@ class MayaFileData(MayaCustomData):
             saved = True
         except:
             status = traceback.format_exc()
-            util.show(status)
+            util.error(status)
             saved = False
         
         if saved:
@@ -2267,7 +2268,7 @@ class MayaFileData(MayaCustomData):
             if not maya_lib.core.is_batch():
                 cmds.confirmDialog(message = 'Warning:\n\n Maya was unable to save!', button = 'Confirm')
                 
-            util.show('Scene not saved:  %s' % self.filepath)
+            util.warning('Scene not saved:  %s' % self.filepath)
             util.show('This is a Maya save bug, not necessarily an issue with Vetala.  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
             return False
         
