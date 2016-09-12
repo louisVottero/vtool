@@ -100,12 +100,6 @@ class PickManager(ui.MayaWindow):
         
         self._set_namespace(namespace)
         
-        
-        
-
-            
-        
-        
     def _picker_item_added(self):
         self._export()
         

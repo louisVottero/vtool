@@ -4379,3 +4379,4 @@ def get_pick(list, text_message, parent = None):
     
     if ok:
         return picked
+    

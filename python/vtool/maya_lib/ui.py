@@ -165,9 +165,6 @@ def tool_manager(name = None, directory = None):
     
     funct = lambda : create_window(tool_manager)
     
-    import maya.utils
-    import time
-    time.sleep(1)
     maya.utils.executeDeferred(funct)
     
     return tool_manager
@@ -299,12 +296,12 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         shape_combo_button.setMinimumWidth(button_width)
         manager_layout.addWidget(shape_combo_button)
         
-        """
+        
         picker_button = QPushButton('Picker')
         picker_button.clicked.connect(self._picker)
         picker_button.setMinimumWidth(button_width)
         manager_layout.addWidget(picker_button)
-        """
+        
         
         tool_group = QGroupBox('Utilities')
         tool_layout = QVBoxLayout()
@@ -549,17 +546,19 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
         node_types = core.get_node_types(scope)
         
-        joints = node_types['joint']
+        joints = []
+        
+        if node_types.has_key('joint'):
+            joints = node_types['joint']
         
         curve = None
         if 'nurbsCurve' in node_types:
             curves = node_types['nurbsCurve']
             curve = curves[0]
             
-        if not joints:
-            return
-
-        geo.snap_joints_to_curve(joints, curve, count)
+        if joints:
+            geo.snap_joints_to_curve(joints, curve, count)
+        
         
     def _transfer_joints(self):
         
