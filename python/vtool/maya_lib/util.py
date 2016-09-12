@@ -1,6 +1,6 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-print 'Warning!!! vtool.maya_lib.util deprecated. It should no longer be used. Warning!!!'
+
 
 import sys
 
@@ -11,6 +11,9 @@ import traceback
 import vtool.util
 import api
 import curve
+
+
+vtool.util.error( 'Warning!!! vtool.maya_lib.util deprecated. It should no longer be used. Warning!!!' )
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
