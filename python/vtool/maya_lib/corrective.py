@@ -1,7 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import traceback
-import time
 import string
 
 import vtool.util

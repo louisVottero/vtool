@@ -1,7 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import traceback
-
 import maya.cmds as cmds
 
 import maya.OpenMayaUI as OpenMayaUI
@@ -102,7 +100,6 @@ def get_maya_window():
     
     if vtool.qt_ui.is_pyside2():
         from shiboken2 import wrapInstance
-            #vtool.util.show(traceback.format_exc)
              
     maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
     return wrapInstance(long(maya_window_ptr), QWidget)
