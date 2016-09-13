@@ -445,6 +445,7 @@ class SplitMeshTarget(object):
         self.weighted_mesh = None
         self.base_mesh = None
         self.split_parts = []
+        self.skip_target_rename = []
         
     def _get_center_fade_weights(self, mesh, other_mesh, fade_distance, positive):
         
@@ -589,7 +590,8 @@ class SplitMeshTarget(object):
         """
         self.weighted_mesh = weighted_mesh
         
-
+    def set_skip_target_rename(self, list_of_targets):
+        self.skip_target_rename = list_of_targets
     
     def set_base_mesh(self, base_mesh):
         """
@@ -608,8 +610,6 @@ class SplitMeshTarget(object):
         Returns:
             list: The names of the new targets.
         """
-        
-        
         
         if not self.base_mesh or not cmds.objExists(self.base_mesh):
             vtool.util.warning('%s base mesh does not exist to split off of.' % self.base_mesh)
@@ -680,54 +680,48 @@ class SplitMeshTarget(object):
                     split_name = [self.target_mesh] 
                 
                 new_names = []
-                    
-                inc = 0
                 
                 for name in split_name:
                     
-                    sub_name = name
-                    if name.endswith('N'):
-                        sub_name = name[:-1]
-                    
-                    last_number = vtool.util.get_trailing_number(sub_name, as_string = True, number_count = 2)
-                    
-                    if last_number:
-                        sub_name = sub_name[:-2]
-                    
-                    sub_new_name = sub_name
-                    
-                    if suffix:
-                        sub_new_name = '%s%s' % (sub_new_name, suffix)
-                    if prefix:
-                        sub_new_name = '%s%s' % (prefix, sub_new_name)
-                    
-                    if last_number:
-                        sub_new_name += last_number 
-                    
-                    if name.endswith('N'):
-                        sub_new_name += 'N'
-                    
-                    
-                    
-                    if split_index == 'camel_start':
+                    if name in self.skip_target_rename:
                         
-                        search = re.search('[A-Z]', sub_new_name)
+                        new_names.append(name)
                         
-                        if search:
-                            camel_insert_index = search.start(0)
-                            sub_new_name = sub_new_name[:camel_insert_index] + replace + sub_new_name[camel_insert_index:]
+                    if not name in self.skip_target_rename:
+                        sub_name = name
+                        if name.endswith('N'):
+                            sub_name = name[:-1]
+                        
+                        last_number = vtool.util.get_trailing_number(sub_name, as_string = True, number_count = 2)
+                        
+                        if last_number:
+                            sub_name = sub_name[:-2]
+                        
+                        sub_new_name = sub_name
+                        
+                        if suffix:
+                            sub_new_name = '%s%s' % (sub_new_name, suffix)
+                        if prefix:
+                            sub_new_name = '%s%s' % (prefix, sub_new_name)
+                        
+                        if last_number:
+                            sub_new_name += last_number 
+                        
+                        if name.endswith('N'):
+                            sub_new_name += 'N'
+                        
+                        if split_index == 'camel_start':
                             
-                        if not search:
-                            sub_new_name = sub_new_name + replace
-                    
-                    """
-                    if len(split_index) > 1:
-                        
-                        new_names.append(split_index[1])
-                    """
-                    new_names.append(sub_new_name)
-                    
-                    inc += 1
+                            search = re.search('[A-Z]', sub_new_name)
+                            
+                            if search:
+                                camel_insert_index = search.start(0)
+                                sub_new_name = sub_new_name[:camel_insert_index] + replace + sub_new_name[camel_insert_index:]
+                                
+                            if not search:
+                                sub_new_name = sub_new_name + replace
+                                
+                        new_names.append(sub_new_name)
                         
                 new_name = string.join(new_names, '_')
             
@@ -765,7 +759,7 @@ class SplitMeshTarget(object):
             
             blendshape_node = cmds.blendShape(self.target_mesh, new_target, w = [0,1])[0]
             blend = blendshape.BlendShape(blendshape_node)
-            blend.set_weights(weights, self.target_mesh)
+            blend.set_weights(weights)
             
             cmds.delete(new_target, ch = True)
         

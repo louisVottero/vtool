@@ -586,29 +586,22 @@ class BlendShape(object):
         vertex_count  = core.get_component_count(mesh)
         
         weights = vtool.util.convert_to_sequence(weights)
+        weight_count = len(weights)
         
-        if len(weights) == 1:
+        if weight_count == 1:
             weights = weights * vertex_count
-        
-        inc = 0
         
         if target_name == None:
             
             attribute = self._get_input_target_base_weights_attribute(mesh_index)
             
-            for weight in weights:     
-                cmds.setAttr('%s[%s]' % (attribute, inc), weight)
-                inc += 1
+            cmds.setAttr( attribute + '[0:%i]' % (weight_count - 1), *weights, size = weight_count)
                 
         if target_name:
             
             attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
             
-            cmds.setAttr( attribute + '[0:%i]' % (len(weights) - 1), *weights, size = len(weights))
-            
-            #for weight in weights:
-            #    cmds.setAttr('%s[%s]' % (attribute, inc), weight)
-            #    inc += 1
+            cmds.setAttr( attribute + '[0:%i]' % (weight_count - 1), *weights, size = weight_count)
         
     
         
@@ -783,13 +776,16 @@ class ShapeComboManager(object):
         
         return var
     
-    def _add_variable(self, shape):
+    def _add_variable(self, shape, negative = False):
         
         shape = core.get_basename(shape, remove_namespace = True)
         
         var = attr.MayaNumberVariable(shape)
         
-        var.set_min_value(0)
+        if not negative:
+            var.set_min_value(0)
+        if negative:
+            var.set_min_value(-1)
         var.set_max_value(1)
         
         var.set_variable_type('float')
@@ -1356,6 +1352,8 @@ class ShapeComboManager(object):
       
     def add_shape(self, name, mesh = None, preserve_combos = False):
         
+        is_negative = False
+        
         if preserve_combos:
             combos = self.get_associated_combos(name)
             
@@ -1408,7 +1406,10 @@ class ShapeComboManager(object):
             if negative_parent:
                 shape = negative_parent
             
-        self._add_variable(shape)
+        if negative_parent:
+            is_negative = True
+            
+        self._add_variable(shape, is_negative)
     
         self._setup_shape_connections(name)
         
@@ -1465,7 +1466,7 @@ class ShapeComboManager(object):
         
         
         
-        if value == -1:
+        if value < 0:
             
             var = attr.MayaNumberVariable(name)
             var.set_min_value(-1)
@@ -1566,6 +1567,7 @@ class ShapeComboManager(object):
                 attributes = attr.Attributes(self.setup_group)
                 attributes.rename_variable(old_name, name)
             if not cmds.objExists(new_attr_name):
+                
                 self._add_variable(name)
                 
             self._setup_shape_connections(name)
