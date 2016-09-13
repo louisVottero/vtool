@@ -138,17 +138,37 @@ def create_window(ui, dock_area = 'right'):
     
 def pose_manager(shot_sculpt_only = False):
     import ui_corrective
-    create_window(ui_corrective.PoseManager(shot_sculpt_only))
+    
+    window = ui_corrective.PoseManager(shot_sculpt_only)
+    
+    if ToolManager._last_instance:
+        ToolManager._last_instance.add_tab(window, window.title)
+    
+    if not ToolManager._last_instance:
+        create_window(window)
 
 def shape_combo():
     
     import ui_shape_combo
-    create_window(ui_shape_combo.ComboManager())
+    window = ui_shape_combo.ComboManager()
+    
+    if ToolManager._last_instance:
+        ToolManager._last_instance.add_tab(window, window.title)
+    
+    if not ToolManager._last_instance:
+        create_window(window)
     
 def picker():
     
     import ui_picker
-    create_window(ui_picker.PickManager())
+    window = ui_picker.PickManager()
+    
+    if ToolManager._last_instance:
+        ToolManager._last_instance.add_tab(window, window.title)
+    
+    if not ToolManager._last_instance:
+        create_window(window)
+    
     
 def character_manager():
     
@@ -157,23 +177,25 @@ def character_manager():
     
 def tool_manager(name = None, directory = None):
     
-    tool_manager = ToolManager(name)
-    tool_manager.set_directory(directory)
+    manager = ToolManager(name)
+    manager.set_directory(directory)
     
-    funct = lambda : create_window(tool_manager)
+    funct = lambda : create_window(manager)
     
     maya.utils.executeDeferred(funct)
     
-    return tool_manager
+    return manager
 
 def process_manager(directory = None):
     
     window = ProcessMayaWindow()
     
-    funct = lambda : create_window(window)
+    if ToolManager._last_instance:
+        ToolManager._last_instance.add_tab(window, 'VETALA')
     
-    
-    maya.utils.executeDeferred(funct)
+    if not ToolManager._last_instance:
+        funct = lambda : create_window(window)
+        maya.utils.executeDeferred(funct)
     
     if directory:
         window.set_code_directory(directory)
@@ -221,9 +243,40 @@ class ToolManager(MayaDirectoryWindow):
         
         self.tab_widget.setCurrentIndex(1)
         
+        self.tab_widget.setMovable(True)
+        self.tab_widget.setTabsClosable(True)
+        
+        
+        
         version = QLabel('%s' % vtool.util_file.get_vetala_version())
         self.main_layout.addWidget(version)
         self.main_layout.addWidget(self.tab_widget)
+        
+        self.tab_widget.tabBar().tabButton(0, QTabBar.RightSide).hide()
+        self.tab_widget.tabBar().tabButton(1, QTabBar.RightSide).hide()
+        
+        self.tab_widget.tabCloseRequested.connect(self._close_tab)
+        
+    def _close_tab(self, index):
+        
+        self.tab_widget.removeTab(index)
+        
+    def add_tab(self, widget, name):
+        
+        tab_count = self.tab_widget.count()
+        
+        for inc in range(0, tab_count):
+            tab_title = self.tab_widget.tabText(inc)
+            
+            if tab_title == name:
+                self.tab_widget.removeTab(inc)
+                break
+                
+        self.tab_widget.addTab(widget, name)
+        
+        tab_count = self.tab_widget.count()
+            
+        self.tab_widget.setCurrentIndex( (tab_count-1) )
         
     def set_directory(self, directory):
         super(ToolManager, self).set_directory(directory)

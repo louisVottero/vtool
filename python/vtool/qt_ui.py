@@ -90,10 +90,13 @@ class BasicGraphicsView(QGraphicsView):
 class BasicWindow(QMainWindow):
     
     title = 'BasicWindow'
+    _last_instance = None
 
     def __init__(self, parent = None):
         
         self.main_layout = self._define_main_layout()
+        print 'setting last instance!', self.__class__
+        self.__class__._last_instance = self
         
         super(BasicWindow, self).__init__(parent)
         
@@ -115,6 +118,8 @@ class BasicWindow(QMainWindow):
         self._build_widgets()
         
         
+        
+        
     def keyPressEvent(self, event):
         return
         
@@ -122,7 +127,7 @@ class BasicWindow(QMainWindow):
         return QVBoxLayout()
     
     def _build_widgets(self):
-        return
+        return       
        
 class DirectoryWindow(BasicWindow):
     

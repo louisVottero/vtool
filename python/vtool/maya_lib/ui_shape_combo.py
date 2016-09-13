@@ -695,8 +695,10 @@ class ShapeTree(qt_ui.TreeWidget):
         if not event:
             
             self.update_selection = True
-            return QItemSelectionModel.NoUpdate
-        
+            
+            return
+            #return QItemSelectionModel.NoUpdate
+            
         if event.button() == QtCore.Qt.LeftButton:
             
             if self.left_press:
@@ -722,17 +724,23 @@ class ShapeTree(qt_ui.TreeWidget):
                         
                         self.setItemSelected(item, True)
                         self.update_selection = True
-                        return QItemSelectionModel.Select
+                        
+                        return
+                        #return QItemSelectionModel.Select
                     
                     if item.isSelected():    
                         
                         self.setItemSelected(item, False)
                         self.update_selection = True
-                        return QItemSelectionModel.Deselect
+                        
+                        return
+                        #return QItemSelectionModel.Deselect
                 
             if not self.left_press:
                 self.update_selection = True
-                return QItemSelectionModel.NoUpdate
+            
+                return
+                #return QItemSelectionModel.NoUpdate
         
         self.update_selection = True
         
