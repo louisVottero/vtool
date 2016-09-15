@@ -2118,6 +2118,8 @@ class MayaFileData(MayaCustomData):
             
                 maya_lib.api.start_check_before_save(self._check_before_save)
                 util.set_env('VETALA_PRE_SAVE_INITIALIZED', 'True')
+            
+            
     
     def _check_before_save(self, client_data):
         
@@ -2129,9 +2131,16 @@ class MayaFileData(MayaCustomData):
         
         if util_file.VersionFile(dirpath).has_versions():
             
-            version.save('Automatically versioned up with Maya save.')
+            comment = util.get_env('VETALA_SAVE_COMMENT')
             
+            if not comment:
+                comment = 'Automatically versioned up with Maya save.'
+            
+            version.save(comment)
+            
+            util.set_env('VETALA_SAVE_COMMENT', '')
             maya_lib.core.print_help('version saved!')
+            
         
     
     def _data_type(self):
@@ -2234,6 +2243,8 @@ class MayaFileData(MayaCustomData):
 
     def save(self, comment):
         
+        util.set_env('VETALA_SAVE_COMMENT', comment)
+        
         util_file.get_permission(self.filepath)
         
         self._handle_unknowns()
@@ -2257,8 +2268,8 @@ class MayaFileData(MayaCustomData):
             saved = False
         
         if saved:
-            version = util_file.VersionFile(self.filepath)
-            version.save(comment)
+            #version = util_file.VersionFile(self.filepath)
+            #version.save(comment)
             
             util.show('Scene Saved')
             return True
