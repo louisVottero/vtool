@@ -2323,6 +2323,10 @@ def process_joint_weight_to_parent(mesh):
         deform.transfer_weight_from_joint_to_parent(joint, mesh)
         
         progress.inc()
+        
+        if vtool.util.break_signaled():
+            break
+        
         if progress.break_signaled():
             break
         

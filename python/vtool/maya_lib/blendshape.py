@@ -91,12 +91,16 @@ class BlendShape(object):
         
         return '%s.weight[%s]' % (self.blendshape, target_index)
 
-    def _get_weights(self, target_name, mesh_index):
+    def _get_weights(self, target_name = None, mesh_index = 0):
         mesh = self.meshes[mesh_index]
                         
         vertex_count = core.get_component_count(mesh)
         
-        attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
+        if not target_name:
+            attribute = self._get_input_target_base_weights_attribute(mesh_index)
+        
+        if target_name:
+            attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
         
         weights = []
         

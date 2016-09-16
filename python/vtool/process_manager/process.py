@@ -1460,7 +1460,7 @@ class Process(object):
             message = 'START\t%s\n\n' % name
 
             
-            util.show('\n-----------------------------------------------------------------------------------')
+            util.show('\n------------------------------------------------')
             util.show(message)
             
             
@@ -1586,7 +1586,7 @@ class Process(object):
             if states[inc]:
                 
                 try:
-                    status = self.run_script(scripts[inc])
+                    status = self.run_script(scripts[inc], hard_error=False)
                 except:
                     status = 'fail'
                 
@@ -1594,7 +1594,7 @@ class Process(object):
                     scripts_that_error.append(scripts[inc])
             
             if not states[inc]:
-                util.show('\n-----------------------------------------------------------------------------------')
+                util.show('\n------------------------------------------------')
                 util.show('Skipping: %s\n\n' % scripts[inc])
         
         seconds = watch.stop()
@@ -1606,7 +1606,7 @@ class Process(object):
                 
             
         
-        util.show('\n\n\nProcess built in %s\n\n' % seconds)
+        util.show('\n\n\nProcess built in %s seconds.\n\n' % seconds)
         
         
         

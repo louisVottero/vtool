@@ -114,6 +114,12 @@ def get_maya_version():
     if not is_in_maya():
         return 0
 
+def break_signaled():
+    if get_env('VETALA_RUN') == 'True':
+        if get_env('VETALA_STOP') == 'True':
+            return True
+
+    return False
 
 class StopWatch(object):
     """

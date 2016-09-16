@@ -611,9 +611,19 @@ class SplitMeshTarget(object):
             list: The names of the new targets.
         """
         
+        import blendshape
+        
+        
+        if not core.is_unique(self.target_mesh):
+            vtool.util.warning('%s target is not unique. Target not split.' % self.target_mesh)
+            return
+        
         if not self.base_mesh or not cmds.objExists(self.base_mesh):
             vtool.util.warning('%s base mesh does not exist to split off of.' % self.base_mesh)
             return
+        
+        
+            
         
         if not self.target_mesh or not cmds.objExists(self.target_mesh):
             vtool.util.warning('%s target does not exist for splitting' % self.target_mesh)
@@ -626,8 +636,11 @@ class SplitMeshTarget(object):
         
         vtool.util.show('Splitting target: %s' % self.target_mesh)
         
+        
+        bar = core.ProgressBar('Splitting target: %s' % self.target_mesh, (len(self.split_parts)+1) )
+        
         for part in self.split_parts:
-            
+                        
             joint = part[0]
             replace = part[1]
             suffix = part[2]
@@ -754,8 +767,6 @@ class SplitMeshTarget(object):
                 
             if not weights:
                 continue
-                
-            import blendshape
             
             blendshape_node = cmds.blendShape(self.target_mesh, new_target, w = [0,1])[0]
             blend = blendshape.BlendShape(blendshape_node)
@@ -773,6 +784,16 @@ class SplitMeshTarget(object):
                     cmds.parent(new_target, parent)
             
             targets.append(new_target)
+            
+            if vtool.util.break_signaled():
+                break
+            
+            if bar.break_signaled():
+                break
+            
+            bar.inc()
+                
+        bar.end()
         
         return targets
             
@@ -959,13 +980,10 @@ class TransferWeight(object):
             
             bar.status('transfer new weight: %s of %s' % (inc, vert_count))
             
-            if vtool.util.get_env('VETALA_RUN') == 'True':
-                if vtool.util.get_env('VETALA_STOP') == 'True':
-                    break
+            if vtool.util.break_signaled():
+                break
                         
             if bar.break_signaled():
-                if vtool.util.get_env('VETALA_RUN') == 'True':
-                    vtool.util.set_env('VETALA_STOP', True)
                 break
             
             inc += 1
@@ -1204,14 +1222,10 @@ class TransferWeight(object):
             
             bar.status('transfer weight: %s of %s' % (inc, len(weighted_verts)))
             
-            if vtool.util.get_env('VETALA_RUN') == 'True':
-                if vtool.util.get_env('VETALA_STOP') == 'True':
-                    break
+            if vtool.util.break_signaled():
+                break
             
             if bar.break_signaled():
-                if vtool.util.get_env('VETALA_RUN') == 'True':
-                    vtool.util.set_env('VETALA_STOP', True)
-                    
                 break
             
             inc += 1
@@ -1410,8 +1424,11 @@ class AutoWeight2D(object):
                 
             progress.inc()
             progress.status('weighting %s: vert %s' % (mesh, inc))
+            
+            if vtool.util.break_signaled():
+                break
+            
             if progress.break_signaled():
-                progress.end()
                 break
         
         progress.end()
@@ -2570,29 +2587,7 @@ def get_skin_weights(skin_deformer):
     skin.set_node_as_mobject(skin_deformer)
     
     value_map = skin.get_skin_weights_dict()
-    """
-    indices = attr.get_indices('%s.weightList' % skin_deformer)
     
-    vert_count = len(indices)
-    
-    for inc in xrange(0, vert_count):
-        
-        influence_indices = attr.get_indices('%s.weightList[ %s ].weights' % (skin_deformer, inc))
-        
-        if influence_indices:        
-            for influence_index in influence_indices:
-                                
-                value = cmds.getAttr('%s.weightList[%s].weights[%s]' % (skin_deformer, inc, influence_index))
-                
-                if value < 0.0001:
-                    continue
-                
-                if not influence_index in value_map:
-                    value_map[influence_index] = [0] * vert_count
-                    
-                if value:
-                    value_map[influence_index][inc] = value
-    """         
     return value_map
 
 
@@ -2607,19 +2602,18 @@ def get_skin_influence_weights(influence_name, skin_deformer):
     if influence_index == None:
         return
     
-    indices = attr.get_indices('%s.weightList' % skin_deformer)
-    index_count = len(indices)
+    skin = api.nodename_to_mobject(skin_deformer)
+    skinFn = api.SkinClusterFunction(skin)
     
-    weights = [0] * index_count
+    weights_dict = skinFn.get_skin_weights_dict()
     
-    for inc in xrange(0, index_count):
-            
-        value = cmds.getAttr('%s.weightList[%s].weights[%s]' % (skin_deformer, inc, influence_index))
-                
-        if value < 0.0001:
-            continue
-                
-        weights[inc] = value
+    if weights_dict.has_key(influence_index):
+        weights = weights_dict[influence_index]
+        
+    if not weights_dict.has_key(influence_index):
+        indices = attr.get_indices('%s.weightList' % skin_deformer)
+        index_count = len(indices)
+        weights = [0] * index_count
     
     return weights
 

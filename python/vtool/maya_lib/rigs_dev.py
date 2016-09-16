@@ -6605,8 +6605,10 @@ class WeightFade(object):
             
             progress.inc()
             progress.status('weighting %s: vert %s' % (self.mesh, inc))
+            
+            
+            
             if progress.break_signaled():
-                progress.end()
                 break
         
         progress.end()

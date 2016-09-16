@@ -744,9 +744,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         batch_python = util_file.join_path(filepath, 'batch.py')
         
         mayapy = subprocess.Popen(['%s/bin/mayapy.exe' % dirpath, batch_python], shell = False)
-        #output, errors = mayapy.communicate()
         
-    
         
     def _browser(self):
         

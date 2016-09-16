@@ -939,13 +939,10 @@ class SkinWeightData(MayaCustomData):
                                     
                 progress_ui.inc()
                 
-                if util.get_env('VETALA_RUN') == 'True':
-                    if util.get_env('VETALA_STOP') == 'True':
-                        break
+                if util.break_signaled():
+                    break
                                 
                 if progress_ui.break_signaled():
-                    if util.get_env('VETALA_RUN') == 'True':
-                        util.set_env('VETALA_STOP', True)
                             
                     break
                 
@@ -1043,9 +1040,6 @@ class SkinWeightData(MayaCustomData):
                         continue
                     
                     thread = LoadWeightFileThread()
-                    
-                
-                    #util_file.ReadFile(geo_path)
                     
                     influence_line = thread.run(influence, skin, weights[influence], geo_path)
                     
@@ -2243,6 +2237,9 @@ class MayaFileData(MayaCustomData):
 
     def save(self, comment):
         
+        if not comment:
+            comment = '-'
+        
         util.set_env('VETALA_SAVE_COMMENT', comment)
         
         util_file.get_permission(self.filepath)
@@ -2268,8 +2265,9 @@ class MayaFileData(MayaCustomData):
             saved = False
         
         if saved:
-            #version = util_file.VersionFile(self.filepath)
-            #version.save(comment)
+            if maya_lib.core.is_batch():
+                version = util_file.VersionFile(self.filepath)
+                version.save(comment)
             
             util.show('Scene Saved')
             return True

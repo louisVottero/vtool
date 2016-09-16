@@ -579,16 +579,17 @@ class PoseManager(object):
         
         for inc in xrange(count):
             
-            if vtool.util.get_env('VETALA_RUN') == 'True':
-                if vtool.util.get_env('VETALA_STOP') == 'True':
-                    break
+            pose_name = poses[inc]
             
+            if vtool.util.break_signaled():
+                break
+                                
             if progress.break_signaled():
                 break
             
-            pose_name = poses[inc]
-            
             progress.status('adding pose %s' % pose_name)
+
+            
             
             pose = self.get_pose_instance(pose_name)
             
@@ -602,11 +603,7 @@ class PoseManager(object):
                 pose.set_weight(0)
             
             
-                                
-            if progress.break_signaled():
-                if vtool.util.get_env('VETALA_RUN') == 'True':
-                    vtool.util.set_env('VETALA_STOP', True)
-                break
+
             
             progress.inc()
             

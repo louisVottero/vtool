@@ -8,6 +8,7 @@ from functools import wraps
 
 import vtool.util
 
+
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
@@ -163,9 +164,12 @@ class ProgressBar(object):
             vtool.util.show(message)
             return
         
-        gMainProgressBar = mel.eval('$tmp = $gMainProgressBar');
+        self.progress_ui = None
         
-        self.progress_ui = cmds.progressBar( gMainProgressBar,
+        if not is_batch():
+            gMainProgressBar = mel.eval('$tmp = $gMainProgressBar');
+        
+            self.progress_ui = cmds.progressBar( gMainProgressBar,
                                         edit=True,
                                         beginProgress=True,
                                         isInterruptable=True,
@@ -216,6 +220,8 @@ class ProgressBar(object):
 
         if break_progress:
             self.end()
+            if vtool.util.get_env('VETALA_RUN') == 'True':
+                vtool.util.set_env('VETALA_STOP', True)
             return True
         
         return False
@@ -406,6 +412,18 @@ def is_empty(node):
     
     return True
 
+def is_unique(name):
+    
+    scope = cmds.ls(name)
+    
+    count = len(scope)
+    
+    if count > 1:
+        return False
+    
+    if count == 1:
+        return True
+    
 def inc_name(name):
     """
     Finds a unique name by adding a number to the end.

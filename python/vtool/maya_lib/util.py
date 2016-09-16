@@ -13,7 +13,7 @@ import api
 import curve
 
 
-vtool.util.error( 'Warning!!! vtool.maya_lib.util deprecated. It should no longer be used. Warning!!!' )
+
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
@@ -21,6 +21,8 @@ if vtool.util.is_in_maya():
     
     import maya.OpenMaya as OpenMaya
 
+print 'Warning!!! vtool.maya_lib.util deprecated. It should no longer be used. Warning!!!'
+ 
 undo_chunk_active = False
 current_progress_bar = None
 
@@ -12800,6 +12802,10 @@ def process_joint_weight_to_parent(mesh):
         transfer_weight_from_joint_to_parent(joint, mesh)
         
         progress.inc()
+        
+        if vtool.util.break_signaled():
+            break
+        
         if progress.break_signaled():
             break
         
