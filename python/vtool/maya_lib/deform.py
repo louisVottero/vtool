@@ -603,6 +603,7 @@ class SplitMeshTarget(object):
         """
         self.base_mesh = base_mesh
     
+    @core.undo_off
     def create(self):
         """
         Create the splits.
@@ -637,7 +638,7 @@ class SplitMeshTarget(object):
         vtool.util.show('Splitting target: %s' % self.target_mesh)
         
         
-        bar = core.ProgressBar('Splitting target: %s' % self.target_mesh, (len(self.split_parts)+1) )
+        bar = core.ProgressBar('Splitting target: %s' % self.target_mesh, len(self.split_parts) )
         
         for part in self.split_parts:
                         

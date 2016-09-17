@@ -20,6 +20,14 @@ def start_check_before_save(function):
     
 #--- old api
 
+def attribute_to_plug(attribute_name):
+    plug = OpenMaya.MPlug()
+    selection = OpenMaya.MSelectionList()
+    selection.add(attribute_name)
+    selection.getPlug(0, plug)
+
+    return plug
+
 def nodename_to_mobject(object_name):
     """
     Initialize an MObject of the named node.
@@ -225,6 +233,23 @@ class MeshFunction(MayaFunction):
     
     def _define_api_object(self, mobject):
         return OpenMaya.MFnMesh(mobject)
+    
+    def get_vertex_positions(self):
+        
+        point_array = PointArray()
+        
+        self.api_object.getPoints(point_array.api_object, OpenMaya.MSpace.kWorld)
+
+        return point_array.get()
+    
+    def set_vertex_positions(self, positions):
+        
+        point_array = PointArray()
+        for pos in positions:
+            point_array.api_object.append(*pos)
+        
+        
+        self.api_object.setPoints(point_array.api_object, OpenMaya.MSpace.kWorld)
     
     def get_uv_at_point(self, vector):
     

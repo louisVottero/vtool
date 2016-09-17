@@ -2156,8 +2156,6 @@ class MayaFileData(MayaCustomData):
         
     def _after_open(self):
         
-
-        
         maya_lib.geo.smooth_preview_all(False)
 
         self._center_view()

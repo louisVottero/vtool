@@ -38,6 +38,9 @@ class BlendShape(object):
             
         self.mesh_index = 0
         
+        self.prune_compare_mesh = None
+        self.prune_distance = -1
+        
     def _store_meshes(self):
         if not self.blendshape:
             return
@@ -220,6 +223,86 @@ class BlendShape(object):
             
             cmds.connectAttr(connection, self._get_target_attr(target)) 
 
+    @core.undo_off
+    def _connect_target(self, target_mesh, blend_input):
+        
+        temp_target = None
+        
+        if self.prune_compare_mesh and self.prune_distance > -1:
+            
+            found = False
+            
+            temp_target = cmds.duplicate(target_mesh)[0]
+            
+            if geo.is_mesh_compatible(target_mesh, self.prune_compare_mesh):
+                
+                target_object = api.nodename_to_mobject(target_mesh)
+                target_fn = api.MeshFunction(target_object)
+                target_positions = target_fn.get_vertex_positions()
+                
+                compare_object = api.nodename_to_mobject(self.prune_compare_mesh)
+                compare_fn = api.MeshFunction(compare_object)
+                compare_positions = compare_fn.get_vertex_positions()
+                
+                target_vtx_count = len(target_positions)
+                
+                bar = core.ProgressBar('pruning verts on %s' % target_mesh, target_vtx_count)
+                
+                
+                positions = target_positions
+                
+                for inc in xrange(0, target_vtx_count):
+                    
+                    
+                    target_pos = target_positions[inc]
+                    compare_pos = compare_positions[inc]
+                    
+                    
+                    
+                    if target_pos[0] == compare_pos[0] and target_pos[1] == compare_pos[1] and target_pos[2] == compare_pos[2]:
+                        continue
+                    
+                    x_offset = abs(target_pos[0] - compare_pos[0])
+                    y_offset = abs(target_pos[1] - compare_pos[1])
+                    z_offset = abs(target_pos[2] - compare_pos[2])
+                    
+                    if x_offset == 0 and y_offset == 0 and z_offset == 0:
+                        continue
+                    
+                    if x_offset > self.prune_distance:
+                        continue
+                    if y_offset > self.prune_distance:
+                        continue
+                    if z_offset > self.prune_distance:
+                        continue
+                    
+                    positions[inc] = compare_pos
+                    
+                    found = True
+                    
+                    bar.inc()
+                    
+                    if vtool.util.break_signaled():
+                        break
+                    
+                    if bar.break_signaled():
+                        break
+                    
+                bar.end()
+        
+            if found:
+                target_object = api.nodename_to_mobject(temp_target)
+                target_fn = api.MeshFunction(target_object)
+                target_fn.set_vertex_positions(positions)
+                
+                target_mesh = temp_target
+            
+        
+        cmds.connectAttr( '%s.outMesh' % target_mesh, blend_input)
+        
+        if temp_target:
+            cmds.delete(temp_target)
+
     #--- blendshape deformer
 
     def create(self, mesh):
@@ -274,6 +357,11 @@ class BlendShape(object):
         
     def set_mesh_index(self, index):
         self.mesh_index = index
+        
+    def set_prune_distance(self, distance, comparison_mesh):
+        
+        self.prune_compare_mesh = comparison_mesh
+        self.prune_distance = distance
         
     def get_mesh_index(self, mesh):
         """
@@ -339,7 +427,8 @@ class BlendShape(object):
             mesh_input = self._get_mesh_input_for_target(nice_name, inbetween)
             
             if mesh and cmds.objExists(mesh):
-                cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
+                self._connect_target(mesh, mesh_input)
+                #cmds.connectAttr( '%s.outMesh' % mesh, mesh_input)
             
             attr_name = core.get_basename(name)
             
@@ -390,7 +479,8 @@ class BlendShape(object):
                 if current_input:
                     attr.disconnect_attribute(mesh_input)
                 
-                cmds.connectAttr('%s.outMesh' % mesh, mesh_input)
+                self._connect_target(mesh, mesh_input)
+                #cmds.connectAttr('%s.outMesh' % mesh, mesh_input)
                 
                 if not leave_connected:
                     cmds.disconnectAttr('%s.outMesh' % mesh, mesh_input)
@@ -595,19 +685,21 @@ class BlendShape(object):
         if weight_count == 1:
             weights = weights * vertex_count
         
+        attribute = None
+        
         if target_name == None:
             
             attribute = self._get_input_target_base_weights_attribute(mesh_index)
-            
-            cmds.setAttr( attribute + '[0:%i]' % (weight_count - 1), *weights, size = weight_count)
-                
+        
         if target_name:
             
             attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
             
-            cmds.setAttr( attribute + '[0:%i]' % (weight_count - 1), *weights, size = weight_count)
+            
+        plug = api.attribute_to_plug(attribute)
         
-    
+        for inc in xrange(weight_count):
+            plug.elementByLogicalIndex(inc).setFloat(weights[inc])
         
     def get_weights(self, target_name = None, mesh_index = 0 ):
         
@@ -688,6 +780,7 @@ class ShapeComboManager(object):
         self.vetala_type = 'ShapeComboManager'
         self.home = 'home'
         self.blendshape = None
+        self._prune_distance = -1
     
     def _get_mesh(self):
         
@@ -719,6 +812,9 @@ class ShapeComboManager(object):
         blendshape = deform.find_deformer_by_type(mesh, 'blendShape')
         
         self.blendshape = BlendShape(blendshape)
+        
+        if self._prune_distance > -1:
+            self.blendshape.set_prune_distance(self._prune_distance, self.home)
         
         if not blendshape:
             return None
@@ -1451,7 +1547,7 @@ class ShapeComboManager(object):
             self.set_shape_weight(name, 1 * value)
             
         return name
-            
+    
     def set_shape_weight(self, name, value):
            
         value = value
@@ -1478,6 +1574,9 @@ class ShapeComboManager(object):
             var.create(self.setup_group)
         
         cmds.setAttr('%s.%s' % (self.setup_group, name), value)
+    
+    def set_prune_distance(self, distance):
+        self._prune_distance = distance
     
     def get_mesh(self):
         return self._get_mesh()
