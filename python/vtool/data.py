@@ -8,6 +8,7 @@ import util
 import util_file
 
 if util.is_in_maya():
+    
     import maya.cmds as cmds
     import maya.mel as mel
     
@@ -935,7 +936,10 @@ class SkinWeightData(MayaCustomData):
                     if weight == 0 or weight < 0.0001:
                         continue
                     
-                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin_cluster, inc, index), weight)
+                    plug = maya_lib.api.attribute_to_plug('%s.weightList[%s].weights[%s]' % (skin_cluster, inc, index))
+                    
+                    plug.setFloat(weight)
+                    #cmds.setAttr(, weight)
                                     
                 progress_ui.inc()
                 

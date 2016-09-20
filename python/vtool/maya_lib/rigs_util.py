@@ -2492,3 +2492,20 @@ def fix_sub_controls(controls = None):
             scale_offset -= .1
             
 
+def set_control_space(x,y,z, control, compensate_cvs = True):
+    
+    xform = space.get_xform_group(control)
+    
+    cmds.setAttr('%s.scaleX' % xform, x)
+    cmds.setAttr('%s.scaleY' % xform, y)
+    cmds.setAttr('%s.scaleZ' % xform, z)
+    
+    if compensate_cvs:
+        offset_x = 1.0/x
+        offset_y = 1.0/y
+        offset_z = 1.0/z
+        
+        control_inst = Control(control)
+        control_inst.scale_shape(offset_x, offset_y, offset_z)
+    
+    
