@@ -208,9 +208,13 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     
     def close_widgets(self, close_windows = False):
         
-        self.code_widget.code_edit.clear()
-        self.code_widget.code_edit.close_tabs()
         self.script_widget.code_manifest_tree.clearSelection()
+        
+        #this line was causing Maya 2014 to crash.
+        #self.code_widget.code_edit.clear()
+        
+        self.code_widget.code_edit.close_tabs()
+        
         self.set_directory(None, sync_code = False)
         
         if close_windows:

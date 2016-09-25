@@ -238,7 +238,8 @@ class ToolManager(MayaDirectoryWindow):
         self.animation_widget = AnimationManager()
         #self.shot_widget = QWidget()
         
-        self.tab_widget.addTab(self.animation_widget, 'ANIMATION')
+        #temporary
+        #self.tab_widget.addTab(self.animation_widget, 'ANIMATION')
         self.tab_widget.addTab(self.rigging_widget, 'RIG')
         
         self.tab_widget.setCurrentIndex(1)
@@ -253,7 +254,9 @@ class ToolManager(MayaDirectoryWindow):
         self.main_layout.addWidget(self.tab_widget)
         
         self.tab_widget.tabBar().tabButton(0, QTabBar.RightSide).hide()
-        self.tab_widget.tabBar().tabButton(1, QTabBar.RightSide).hide()
+        
+        #temporary
+        #self.tab_widget.tabBar().tabButton(1, QTabBar.RightSide).hide()
         
         self.tab_widget.tabCloseRequested.connect(self._close_tab)
         

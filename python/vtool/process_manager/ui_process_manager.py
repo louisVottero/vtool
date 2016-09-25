@@ -227,9 +227,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _build_widgets(self):
         
-        version = QLabel('%s' % util_file.get_vetala_version())
-        
-        self.main_layout.addWidget(version)
+        #version = QLabel('%s' % util_file.get_vetala_version())
+        #self.main_layout.addWidget(version)
         
         self.header_layout = QHBoxLayout()
         
@@ -297,13 +296,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         left_button_layout = QHBoxLayout()
         right_button_layout = QHBoxLayout()
         
+        #process_button_layout = QVBoxLayout()
         self.process_button = QPushButton('PROCESS')
         self.process_button.setDisabled(True)
         self.process_button.setMinimumWidth(150)
-        self.process_button.setMinimumHeight(40)
+        self.process_button.setMinimumHeight(30)
         
-        self.batch_button = QPushButton('BATCH PROCESS')
+        self.batch_button = QPushButton('BATCH')
         self.batch_button.setDisabled(True)
+        self.batch_button.setMinimumHeight(30)
+        self.batch_button.setMinimumWidth(150)
         #self.process_button.setMinimumWidth(150)
         #self.process_button.setMinimumHeight(40)
         
@@ -333,15 +335,20 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         left_button_layout.setAlignment(QtCore.Qt.AlignLeft)
         left_button_layout.addWidget(self.process_button)
+        #process_button_layout.addWidget(self.process_button)
+        #process_button_layout.addWidget(self.batch_button, alignment = QtCore.Qt.AlignCenter)
         left_button_layout.addSpacing(10)
         left_button_layout.addWidget(self.stop_button)
         left_button_layout.addWidget(self.continue_button)
-        left_button_layout.addSpacing(10)
-        left_button_layout.addWidget(self.batch_button)
+        #left_button_layout.addSpacing(10)
+        #left_button_layout.addWidget(self.batch_button)
         left_button_layout.addSpacing(20)
         left_button_layout.addWidget(self.run_selected_button)
         
         right_button_layout.setAlignment(QtCore.Qt.AlignRight)
+        
+        right_button_layout.addWidget(self.batch_button)
+        right_button_layout.addSpacing(10)
         right_button_layout.addWidget(self.browser_button)
         right_button_layout.addWidget(help_button)
         
@@ -352,7 +359,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.hide()
         
         btm_layout.addLayout(button_layout)
-        btm_layout.addSpacing(10)
+        btm_layout.addSpacing(20)
         btm_layout.addWidget(self.build_widget, alignment = QtCore.Qt.AlignBottom)
         
         self.browser_button.clicked.connect(self._browser)

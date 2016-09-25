@@ -2108,14 +2108,15 @@ class MayaFileData(MayaCustomData):
         
         self.maya_file_type = self._set_maya_file_type()
         
-        if not maya_lib.core.is_batch():
-        
-            pre_save_initialized = util.get_env('VETALA_PRE_SAVE_INITIALIZED')
+        if util.is_in_maya():
+            if not maya_lib.core.is_batch():
             
-            if pre_save_initialized == 'False':
-            
-                maya_lib.api.start_check_before_save(self._check_before_save)
-                util.set_env('VETALA_PRE_SAVE_INITIALIZED', 'True')
+                pre_save_initialized = util.get_env('VETALA_PRE_SAVE_INITIALIZED')
+                
+                if pre_save_initialized == 'False':
+                
+                    maya_lib.api.start_check_before_save(self._check_before_save)
+                    util.set_env('VETALA_PRE_SAVE_INITIALIZED', 'True')
             
             
     

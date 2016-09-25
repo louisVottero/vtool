@@ -582,6 +582,18 @@ def is_mesh_position_same(mesh1, mesh2, tolerance = .00001):
     
     return True
 
+def match_point_position( source_mesh, target_mesh):
+    """
+    Source and target must have the same topology.
+    """
+    
+    mesh1_fn = api.IterateGeometry(source_mesh)
+    point1 = mesh1_fn.get_points_as_list()
+    
+    target_object = api.nodename_to_mobject(target_mesh)
+    target_fn = api.MeshFunction(target_object)
+    target_fn.set_vertex_positions(point1)
+
 def get_position_different(mesh1, mesh2, tolerance = 0.00001):
     """
     Get a list of vertex indices that do not match.

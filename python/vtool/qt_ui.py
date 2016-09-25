@@ -95,7 +95,7 @@ class BasicWindow(QMainWindow):
     def __init__(self, parent = None):
         
         self.main_layout = self._define_main_layout()
-        print 'setting last instance!', self.__class__
+        
         self.__class__._last_instance = self
         
         super(BasicWindow, self).__init__(parent)
