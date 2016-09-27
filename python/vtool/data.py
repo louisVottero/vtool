@@ -832,8 +832,6 @@ class SkinWeightData(MayaCustomData):
         
         for folder in folders:
             
-            
-            
             util.show('Importing weights on %s' % folder)
             
             mesh = folder
@@ -893,8 +891,21 @@ class SkinWeightData(MayaCustomData):
                 
             influences += add_joints
             
-            if not skin_cluster:
-                skin_cluster = cmds.skinCluster(influences, mesh,  tsb = True, n = 'skin_%s' % mesh)[0]
+            if skin_cluster:
+                cmds.delete(skin_cluster)
+            """
+            skin_cluster = cmds.deformer(mesh, type = 'skinCluster', n = 'skin_%s' % mesh)[0]
+            
+            for inc in xrange(0, len(influences)):
+                if not cmds.objExists('%s.lockInfluenceWeights' % influences[inc]):
+                    cmds.addAttr(influences[inc], ln = 'lockInfluenceWeights', at = 'bool', dv = True)
+                cmds.connectAttr('%s.worldMatrix' % influences[inc], '%s.matrix[%s]' % (skin_cluster, inc))
+                cmds.connectAttr('%s.lockInfluenceWeights' % influences[inc], '%s.lockWeights[%s]' % (skin_cluster, inc))
+                #cmds.connectAttr('%s.objectColorRGB' % influences[inc], '%s.influenceColor[%s]' % (skin_cluster, inc))
+                matrix = cmds.getAttr('%s.worldInverseMatrix' % influences[inc])
+                cmds.setAttr('%s.bindPreMatrix[%s]' % (skin_cluster, inc), matrix, type = 'matrix') 
+            """
+            skin_cluster = cmds.skinCluster(influences, mesh,  tsb = True, n = 'skin_%s' % mesh)[0]
             
             cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
             
@@ -906,6 +917,8 @@ class SkinWeightData(MayaCustomData):
             
             progress_ui = maya_lib.core.ProgressBar('import skin', len(influence_dict.keys()))
             
+
+            
             for influence in influences:
                 
                 if influence.count('|') > 1:
@@ -916,7 +929,7 @@ class SkinWeightData(MayaCustomData):
                 
                 message = 'importing skin mesh: %s,  influence: %s' % (mesh, influence)
                 
-                progress_ui.status(message)
+                progress_ui.status(message)                
                     
                 if not influence_dict[influence].has_key('weights'):
                     util.warning('Weights missing for influence %s' % influence)
@@ -936,10 +949,11 @@ class SkinWeightData(MayaCustomData):
                     if weight == 0 or weight < 0.0001:
                         continue
                     
-                    plug = maya_lib.api.attribute_to_plug('%s.weightList[%s].weights[%s]' % (skin_cluster, inc, index))
+                    attr = '%s.weightList[%s].weights[%s]' % (skin_cluster, inc, index)
+                    #plug = maya_lib.api.attribute_to_plug()
+                    #plug.setFloat(weight)
                     
-                    plug.setFloat(weight)
-                    #cmds.setAttr(, weight)
+                    cmds.setAttr(attr, weight)
                                     
                 progress_ui.inc()
                 

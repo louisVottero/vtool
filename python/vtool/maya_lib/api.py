@@ -7,7 +7,8 @@ if vtool.util.is_in_maya():
     
     import maya.OpenMaya as OpenMaya
     import maya.OpenMayaAnim as OpenMayaAnim
-
+    import maya.OpenMayaUI as OpenMayaUI
+    
 allow_save = False
     
 def start_check_before_save(function):
@@ -66,6 +67,19 @@ def duplicate(node):
     value = dag_node.duplicate()
     return value
     
+def get_3D_position_from_x_y():
+    pass
+    #omui.M3dView().active3dView().viewToWorld(int(vpX)     , int(vpY), pos, direction)
+
+def get_current_camera():
+    
+    camera = OpenMaya.MDagPath()
+    
+    OpenMayaUI.M3dView().active3dView().getCamera(camera)
+    
+    return camera.fullPathName()
+    
+
 class ApiObject(object):
     """
     A wrapper object for MObjects.

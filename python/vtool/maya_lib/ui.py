@@ -509,14 +509,23 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
         
     def _create_deformation_widgets(self, parent):
         corrective_button = QPushButton('Create Corrective')
-        corrective_button.setToolTip('select deformed mesh then fixed mesh')
+        corrective_button.setToolTip('Select deformed mesh then sculpted mesh.')
+        corrective_button.setMaximumWidth(200)
         corrective_button.clicked.connect(self._create_corrective)
         
         skin_mesh_from_mesh = QPushButton('Skin Mesh From Mesh')
+        skin_mesh_from_mesh.setToolTip('Select skinned mesh then mesh without skin cluster.')
+        skin_mesh_from_mesh.setMaximumWidth(200)
         skin_mesh_from_mesh.clicked.connect(self._skin_mesh_from_mesh)
+        
+        cluster_mesh = QPushButton('Create Tweak Cluster')
+        cluster_mesh.setToolTip('Go into cluster creation context.  Click on a mesh to add cluster at point and start paint weighting.')
+        cluster_mesh.clicked.connect(self._cluster_tweak_mesh)
         
         parent.main_layout.addWidget(corrective_button)
         parent.main_layout.addWidget(skin_mesh_from_mesh)
+        parent.main_layout.addSpacing(10)
+        parent.main_layout.addWidget(cluster_mesh)
             
     def _pose_manager(self):
         pose_manager()
@@ -539,6 +548,11 @@ class RigManager(vtool.qt_ui.DirectoryWidget):
     def _skin_mesh_from_mesh(self):
         selection = cmds.ls(sl = True)
         deform.skin_mesh_from_mesh(selection[0], selection[1])
+    
+    def _cluster_tweak_mesh(self):
+        
+        ctx = deform.ClusterTweakCtx()
+        ctx.run()
     
     def _subdivide_joint(self, number):
         space.subdivide_joint(count = number)

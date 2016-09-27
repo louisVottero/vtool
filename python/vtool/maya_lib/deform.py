@@ -2164,6 +2164,103 @@ class EnvelopeHistory(object):
             if connection:
                 cmds.connectAttr(connection, '%s.envelope' % history)
 
+class ClusterTweakCtx():
+
+    context_name = 'VETALA_clusterTweakCtx'
+
+    def __init__(self):
+        
+        cursor = 'crossHair'
+        
+        if not cmds.draggerContext(self.context_name, exists = True):
+            cmds.draggerContext(self.context_name)
+
+        cmds.draggerContext(self.context_name, e = True, pressCommand=self.press, dragCommand=self.drag, releaseCommand = self.release, cursor=cursor, space = 'world')
+    
+    def _create_cluster(self, pos, geo):
+        
+        cluster, cluster_handle = cmds.cluster(geo)
+        #cluster = cmds.rename(cluster, 'cluster_%s_1' % geo_nicename)
+        #cluster_handle = cmds.rename(cluster_handle, core.inc_name('clusterHandle_%s_1' % geo_nicename))
+        
+        
+        set_deformer_weights(0.0, cluster)
+        
+        cmds.setAttr('%s.origin' % cluster_handle, *pos)
+        
+        cmds.xform(cluster_handle, ws = True, rp = pos)
+        cmds.xform(cluster_handle, ws = True, sp = pos)
+        
+        cmds.select(geo, r = True)
+        
+        tool = 'artAttrContext'
+        
+        if not cmds.artAttrCtx(tool, exists = True):
+            cmds.artAttrCtx(tool)
+        
+        cmds.workspaceControl('ToolSettings', e = True, close = True)
+        cluster_code = 'cluster.%s.weights' % cluster
+        cmds.artAttrCtx(tool, e = True, 
+                        i1 = 'attrPaint.png', 
+                        whichTool = 'general', 
+                        stampProfile = 'gaussian',
+                        val = 1.0,
+                        pas = cluster_code,
+                        #sa = False,
+                        #tfp = 'select -r %s;artAttrCtx -e -tfp "" %s;' % (cluster_handle, tool))
+                        tfp = 'select -r %s;' % cluster_handle)
+        
+        cmds.setToolTo(tool)
+        
+        cmds.select(cluster_handle, add = True)
+        
+        mel.eval('global string $gArtAttrCurrentAttr; $gArtAttrCurrentAttr = "%s"' % cluster_code)
+        
+        cmds.workspaceControl('ToolSettings', e = True, visible = True)
+        
+        
+        #cmds.select(cluster_handle, r = True)
+    
+    def press(self):
+        #anchorPoint is the start point
+        pass
+
+    def drag(self):
+        pass
+
+    def release(self):
+        print 'release!'
+        cmds.draggerContext(self.context_name, e = True, space = 'screen space')
+        screen_position = cmds.draggerContext(self.context_name, query = True, dragPoint = True)
+        
+        cmds.draggerContext(self.context_name, e = True, space = 'world')
+        release_position = cmds.draggerContext(self.context_name, query = True, dragPoint=True)
+        print cmds.dagObjectHit(m = True)
+        print screen_position
+        
+        camera = api.get_current_camera()
+        camera_parent = cmds.listRelatives(camera, p = True)
+        
+        print camera
+        
+        camera_position = cmds.xform(camera_parent, q = True, ws = True, t = True)
+        
+        under_cursor = core.get_under_cursor()
+        
+        if geo.is_a_mesh(under_cursor):
+            
+            hit_position = geo.get_intersection_on_mesh(under_cursor, camera_position, release_position)
+            
+            self._create_cluster(hit_position, under_cursor)
+            
+            print hit_position
+        
+        
+
+    def run(self):
+        
+        cmds.setToolTo(self.context_name)
+
 def cluster_curve(curve, description, join_ends = False, join_start_end = False, last_pivot_end = False):
     """
     Create clusters on the cvs of a curve.
@@ -2709,7 +2806,12 @@ def set_skin_weights_to_zero(skin_deformer):
             continue
         
         for weight_attribute in weight_attributes:
-            cmds.setAttr('%s.%s' % (skin_deformer, weight_attribute), 0)
+            
+            attr = '%s.%s' % (skin_deformer, weight_attribute)
+            
+            #plug = api.attribute_to_plug(attr)
+            #plug.setFloat(0)  
+            cmds.setAttr(attr, 0)
 
 def get_joint_index_map(joints, skin_cluster):
     
@@ -2775,9 +2877,22 @@ def set_deformer_weights(weights, deformer, index = 0):
         index (int): The geometry index to set weights on. By default it will work on the first mesh.
     """
     
-    for inc in xrange(0, len(weights) ):    
-        cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights[inc])
+    
+    
+    if type(weights) == list:
         
+    
+        for inc in xrange(0, len(weights) ):
+            cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights[inc])
+    
+    if type(weights) == float or type(weights) == int:
+        
+        meshes = cmds.deformer(deformer, q = True, g = True)
+        vert_count = cmds.polyEvaluate(meshes[index], v=1)
+        
+        for inc in xrange(0, vert_count):
+            cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights)
+            
 def get_deformer_weights(deformer, index = 0):
     """
     Get the weights on a deformer. In point order.

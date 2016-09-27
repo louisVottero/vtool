@@ -1,5 +1,19 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from vtool import qt_ui
+
+if qt_ui.is_pyqt():
+    from PyQt4 import QtCore, Qt, uic
+    from PyQt4.QtGui import *
+if qt_ui.is_pyside():
+    from PySide import QtCore
+    from PySide.QtGui import *
+if qt_ui.is_pyside2():
+    from PySide2 import QtCore
+    from PySide2.QtGui import *
+    from PySide2.QtWidgets import *
+
+
 import os
 import string
 
@@ -945,6 +959,47 @@ def reference_file(filepath, namespace = None):
            options = "v=0;")
     
 #--- ui
+
+def get_under_cursor(use_qt = True):
+    """
+    Get what is currently under the cursor using qt or not.
+    When not using qt it is more of a hack.
+    """
+    
+    if not use_qt:
+        try:
+            menu = cmds.popupMenu()
+        
+            cmds.dagObjectHit(mn = menu)
+            
+            items = cmds.popupMenu(menu, q = True, ia = True)
+            if not items:
+                return
+            selected_item =  cmds.menuItem(items[0], q = True, l = True)
+            
+            cmds.deleteUI(menu)
+            
+            selected_item = selected_item[:-3]
+            
+            return selected_item
+        except:
+            return
+
+    if use_qt:
+        pos = QCursor.pos()
+        widget = qApp.widgetAt(pos)
+        
+        if not widget:
+            return
+        
+        relpos = widget.mapFromGlobal(pos)
+    
+        panel = cmds.getPanel(underPointer=True) or ""
+    
+        if not "modelPanel" in panel:
+            return
+    
+        return (cmds.hitTest(panel, relpos.x(), relpos.y()) or [None])[0]
 
 def get_visible_hud_displays():
     """
