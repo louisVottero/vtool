@@ -2,7 +2,7 @@
 
 import sys
 
-from vtool import qt_ui
+from vtool import qt_ui, maya_lib
 from vtool import util_file
 from vtool import util
 
@@ -589,14 +589,33 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         util.set_env('VETALA_STOP', True)
         self.kill_process = True
         
+    def _auto_save(self):
+        if not util.is_in_maya():
+            return
+        
+        import maya.cmds as cmds
+        
+        filepath = cmds.file(q = True, sn = True)
+        
+        saved = maya_lib.core.save(filepath)
+        
+        return saved
+        
     def _process(self, last_inc = None):
         
         if util.is_in_maya():
             import maya.cmds as cmds
             
             if cmds.file(q = True, mf = True):
-                result = qt_ui.get_permission('Changes not saved. Run process anyways?', self)
-                if not result:
+                result = qt_ui.get_save_permission('Save before processing?', self)
+                
+                if result:
+                    saved = self._auto_save()
+                    
+                    if not saved:
+                        return
+                    
+                if result == None:
                     return
                 
             cmds.file(renameToSave = True)
@@ -728,11 +747,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.batch_button.setEnabled(True)
         self.stop_button.hide()
         
-        seconds = watch.stop()
+        minutes, seconds = watch.stop()
         
         if finished:
-            util.show('Process %s built in %s\n\n' % (self.process.get_name(), seconds))
-            
+            if minutes == None:
+                util.show('Process %s built in %s seconds\n\n' % (self.process.get_name(), seconds))
+            if minutes != None:
+                util.show('Process %s built in %s minutes, %s seconds\n\n' % (self.process.get_name(), minutes,seconds))
         if not finished:
             util.show('Process %s finished with errors.\n' % self.process.get_name())
     

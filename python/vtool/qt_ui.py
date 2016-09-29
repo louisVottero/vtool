@@ -4334,6 +4334,26 @@ def get_permission(message, parent = None):
     if message == message_box.Cancel:
         return None
 
+def get_save_permission(message, parent = None):
+    message_box = QMessageBox(parent)
+    
+    flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    
+    message_box.setText('Permission')
+    message_box.setInformativeText(message)
+    message_box.setStandardButtons(QMessageBox.Save | QMessageBox.No | QMessageBox.Cancel)
+    message_box.setWindowFlags(flags)
+    message = message_box.exec_()
+    #message = message_box.question(parent, 'Permission', message, QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel )
+    
+    if message == message_box.Save:
+        return True
+    
+    if message == message_box.No:
+        return False
+    
+    if message == message_box.Cancel:
+        return None
     
 def get_new_name(message, parent = None, old_name = None):
     

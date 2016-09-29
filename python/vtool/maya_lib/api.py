@@ -11,7 +11,7 @@ if vtool.util.is_in_maya():
     
 allow_save = False
     
-def start_check_before_save(function):
+def start_check_after_save(function):
     
     try:
         #function should accept arguments, clientData

@@ -155,13 +155,25 @@ class StopWatch(object):
         seconds = time.time()-self.time
         self.time = None
         
+        seconds = round(seconds, 2)
+        minutes = None
+        
+        if seconds > 60:
+            minutes, seconds = divmod(seconds, 60)
+            seconds = round(seconds,2)
+            minutes = int(minutes)
+            
+        
         if self.feedback:
             tabs = '\t' * self.running
         
-            show('%send timer: %s seconds' % (tabs,seconds))
+            if minutes == None:
+                show('%send timer: %s seconds' % (tabs,seconds))
+            if minutes != None:
+                show('%send timer: %s minutes, %s seconds' % (tabs,minutes, seconds))
             self.__class__.running -= 1
         
-        return seconds
+        return minutes, seconds
     
     def stop(self):
         return self.end()
@@ -941,6 +953,11 @@ class FindUniqueString(object):
     
     def _search(self):
         
+        scope = self._get_scope_list()
+        
+        if scope:
+            self.test_string = scope[-1]
+        
         number = self._get_number()
         
         self.increment_string = self.test_string
@@ -949,7 +966,7 @@ class FindUniqueString(object):
         
         while not unique:
             
-            scope = self._get_scope_list()
+            
             
             if not self.increment_string in scope:
                 unique = True

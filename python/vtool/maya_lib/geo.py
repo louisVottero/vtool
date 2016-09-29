@@ -2241,6 +2241,9 @@ def smooth_preview(mesh, bool_value = True):
         
 def smooth_preview_all(bool_value = True):
     
+    if core.is_batch():
+        return
+    
     meshes = cmds.ls(type = 'mesh')
     
     for mesh in meshes:

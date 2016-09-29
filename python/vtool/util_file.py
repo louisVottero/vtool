@@ -330,7 +330,11 @@ class VersionFile(object):
         return path
         
     def _get_version_folder(self):
-        path = join_path(self.filepath, self.version_folder_name)
+        if is_file(self.filepath):
+            dirname = get_dirname(self.filepath)
+            path = join_path(dirname, self.version_folder_name)
+        else:
+            path = join_path(self.filepath, self.version_folder_name)
         
         return path
     
@@ -400,7 +404,11 @@ class VersionFile(object):
         return inc_file_name
     
     def has_versions(self):
+        
+        
+        
         version_folder = self._get_version_folder()
+        
         
         if is_dir(version_folder):
             return True

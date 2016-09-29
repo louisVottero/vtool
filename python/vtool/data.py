@@ -436,6 +436,9 @@ class CustomData(FileData):
 class MayaCustomData(CustomData):
     def _center_view(self):
         
+        if maya_lib.core.is_batch():
+            return
+        
         settings_path = util.get_env('VETALA_SETTINGS')
         
         settings = util_file.SettingsFile()
@@ -446,13 +449,12 @@ class MayaCustomData(CustomData):
         if not auto_focus:
             return
         
-        if not maya_lib.core.is_batch():
-            try:
-                cmds.select(cl = True)
-                cmds.viewFit(an = True)
-                self._fix_camera()
-            except:
-                util.show('Could not center view')
+        try:
+            cmds.select(cl = True)
+            cmds.viewFit(an = True)
+            self._fix_camera()
+        except:
+            util.show('Could not center view')
                 
     def _fix_camera(self):
         
@@ -2129,12 +2131,12 @@ class MayaFileData(MayaCustomData):
                 
                 if pre_save_initialized == 'False':
                 
-                    maya_lib.api.start_check_before_save(self._check_before_save)
+                    maya_lib.api.start_check_after_save(self._check_after_save)
                     util.set_env('VETALA_PRE_SAVE_INITIALIZED', 'True')
             
             
     
-    def _check_before_save(self, client_data):
+    def _check_after_save(self, client_data):
         
         filepath = cmds.file(q = True, sn = True)
         
@@ -2265,38 +2267,17 @@ class MayaFileData(MayaCustomData):
         
         self._clean_scene()
         
-        saved = False
-        
-        util.show('Saving:  %s' % self.filepath)
-        
-        try:
-            cmds.file(rename = self.filepath)
-            
-            cmds.file(save = True,
-                      type = self.maya_file_type)
-            
-            saved = True
-        except:
-            status = traceback.format_exc()
-            util.error(status)
-            saved = False
+        saved = maya_lib.core.save(self.filepath)
         
         if saved:
-            if maya_lib.core.is_batch():
-                version = util_file.VersionFile(self.filepath)
+            version = util_file.VersionFile(self.filepath)
+            
+            if maya_lib.core.is_batch() or not version.has_versions():
+                
                 version.save(comment)
             
-            util.show('Scene Saved')
-            return True
-        
-        if not saved:
             
-            if not maya_lib.core.is_batch():
-                cmds.confirmDialog(message = 'Warning:\n\n Maya was unable to save!', button = 'Confirm')
-                
-            util.warning('Scene not saved:  %s' % self.filepath)
-            util.show('This is a Maya save bug, not necessarily an issue with Vetala.  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
-            return False
+            return True
         
         return False
         

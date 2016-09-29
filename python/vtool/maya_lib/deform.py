@@ -623,9 +623,6 @@ class SplitMeshTarget(object):
             vtool.util.warning('%s base mesh does not exist to split off of.' % self.base_mesh)
             return
         
-        
-            
-        
         if not self.target_mesh or not cmds.objExists(self.target_mesh):
             vtool.util.warning('%s target does not exist for splitting' % self.target_mesh)
 
@@ -678,7 +675,7 @@ class SplitMeshTarget(object):
             if suffix:
                 new_name = '%s%s' % (new_name, suffix)
             if prefix:
-                new_name = '%s%s' % (prefix, new_name)
+                sub_new_name = '%s%s' % (prefix, new_name[0].upper() + new_name[1:])
             
             if last_number:
                 new_name += last_number
@@ -716,7 +713,7 @@ class SplitMeshTarget(object):
                         if suffix:
                             sub_new_name = '%s%s' % (sub_new_name, suffix)
                         if prefix:
-                            sub_new_name = '%s%s' % (prefix, sub_new_name)
+                            sub_new_name = '%s%s' % (prefix, sub_new_name[0].upper() + sub_new_name[1:])
                         
                         if last_number:
                             sub_new_name += last_number 
@@ -2205,10 +2202,10 @@ class ClusterTweakCtx():
                         whichTool = 'general', 
                         stampProfile = 'gaussian',
                         val = 1.0,
-                        pas = cluster_code,
+                        pas = cluster_code)
                         #sa = False,
                         #tfp = 'select -r %s;artAttrCtx -e -tfp "" %s;' % (cluster_handle, tool))
-                        tfp = 'select -r %s;' % cluster_handle)
+                        #tfp = 'select -r %s;' % cluster_handle)
         
         cmds.setToolTo(tool)
         
@@ -2229,19 +2226,15 @@ class ClusterTweakCtx():
         pass
 
     def release(self):
-        print 'release!'
+        
         cmds.draggerContext(self.context_name, e = True, space = 'screen space')
         screen_position = cmds.draggerContext(self.context_name, query = True, dragPoint = True)
         
         cmds.draggerContext(self.context_name, e = True, space = 'world')
         release_position = cmds.draggerContext(self.context_name, query = True, dragPoint=True)
-        print cmds.dagObjectHit(m = True)
-        print screen_position
         
         camera = api.get_current_camera()
         camera_parent = cmds.listRelatives(camera, p = True)
-        
-        print camera
         
         camera_position = cmds.xform(camera_parent, q = True, ws = True, t = True)
         
@@ -2252,9 +2245,6 @@ class ClusterTweakCtx():
             hit_position = geo.get_intersection_on_mesh(under_cursor, camera_position, release_position)
             
             self._create_cluster(hit_position, under_cursor)
-            
-            print hit_position
-        
         
 
     def run(self):

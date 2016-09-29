@@ -933,7 +933,7 @@ def import_file(filepath):
     """
     Import a maya file in a generic vtool way.
     """
-    cmds.file(filepath, f = True, i = True, iv = True)
+    cmds.file(filepath, f = True, i = True, iv = True, rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
 
 def reference_file(filepath, namespace = None):
     """
@@ -957,6 +957,53 @@ def reference_file(filepath, namespace = None):
            mergeNamespacesOnClash = False, 
            namespace = namespace, 
            options = "v=0;")
+    
+def save(filepath):
+    
+    saved = False
+    
+    vtool.util.show('Saving:  %s' % filepath)
+    
+    if not filepath.endswith('.mb') and not filepath.endswith('.ma'):
+        
+        filepath = cmds.workspace(q = True, rd = True)
+        #cmds.file(renameToSave = True)
+        filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Ascii (*.ma)", dir = filepath)
+        
+        if filepath:
+            filepath = filepath[0]
+        
+    if filepath:
+        
+        try:
+            cmds.file(rename = filepath)
+            cmds.file(save = True)
+            
+            saved = True
+        except:
+            status = traceback.format_exc()
+            vtool.util.error(status)
+            saved = False
+        
+    if not filepath:
+        saved = False
+        
+    if saved:
+        vtool.util.show('Scene Saved')
+    
+    if not saved:
+            
+        if not is_batch():
+            cmds.confirmDialog(message = 'Warning:\n\n Maya was unable to save!', button = 'Confirm')
+        
+        vtool.util.warning('Scene not saved.  Filepath:  %s' % filepath)
+        
+        if filepath:
+            
+            vtool.util.show('This is a Maya save bug, not necessarily an issue with Vetala.  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
+        return False
+    
+    return saved
     
 #--- ui
 

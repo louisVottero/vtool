@@ -233,6 +233,7 @@ class Process(object):
             status = traceback.format_exc()
             util.error(status)
             
+
         
             
     def set_directory(self, directory):
@@ -1597,17 +1598,22 @@ class Process(object):
                 util.show('\n------------------------------------------------')
                 util.show('Skipping: %s\n\n' % scripts[inc])
         
-        seconds = watch.stop()
+        minutes, seconds = watch.stop()
         
         if scripts_that_error:
+            
+            
+            
             util.show('\n\n\nThe following scripts errored during build:\n')
             for script in scripts_that_error:
                 util.show('\n' + script)
                 
             
         
-        util.show('\n\n\nProcess built in %s seconds.\n\n' % seconds)
-        
+        if minutes == None:
+            util.show('\n\n\nProcess built in %s seconds.\n\n' % seconds)
+        if minutes != None:
+            util.show('\n\n\nProcess built in %s minutes, %s seconds.\n\n' % (minutes,seconds))
         
         
     def set_runtime_value(self, name, value):
