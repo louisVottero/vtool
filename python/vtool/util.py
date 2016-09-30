@@ -955,8 +955,7 @@ class FindUniqueString(object):
         
         scope = self._get_scope_list()
         
-        if scope:
-            self.test_string = scope[-1]
+        
         
         number = self._get_number()
         
