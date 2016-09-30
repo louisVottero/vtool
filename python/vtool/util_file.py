@@ -712,6 +712,11 @@ class FindUniquePath(util.FindUniqueString):
         return get_files_and_folders(self.parent_path)
     
     def _search(self):
+        name = super(FindUniquePath, self)._search()
+        
+        return join_path(self.parent_path, name)
+    """
+    def _search(self):
         
         scope = self._get_scope_list()
         
@@ -745,7 +750,7 @@ class FindUniquePath(util.FindUniqueString):
                 continue
         
         return join_path(self.parent_path, self.increment_string)
-    
+    """
     
 
 class ParsePython(object):
