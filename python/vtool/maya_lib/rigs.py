@@ -2586,7 +2586,7 @@ class FkCurveLocalRig(FkCurveRig):
             
             self.sub_local_controls.append( local_group )
             
-            cmds.parent(local_xform, self.setup_group)
+            #cmds.parent(local_xform, self.setup_group)
             
             control_local_group, control_local_xform = space.constrain_local(control, local_xform)
             
@@ -2599,6 +2599,7 @@ class FkCurveLocalRig(FkCurveRig):
             
             cmds.parent(control_local_xform, self.setup_group)
             
+            cmds.parent(local_xform, control_local_group)
             
             if self.last_local_group:
                 cmds.parent(control_local_xform, self.last_local_group)
@@ -3209,6 +3210,8 @@ class IkAppendageRig(BufferRig):
         self.stretch_axis = 'X'
         self.control_offset_axis = None
         self.negate_right_scale = False
+        #dampen for legacy...
+        self.damp_name = 'dampen'
         
     
     def _attach_ik_joints(self, source_chain, target_chain):
@@ -3598,7 +3601,7 @@ class IkAppendageRig(BufferRig):
         
         stretchy.set_joints(self.ik_chain)
         #dampen should be damp... dampen means wet, damp means diminish
-        stretchy.set_add_dampen(True)
+        stretchy.set_add_damp(True, self.damp_name)
         stretchy.set_node_for_attributes(control)
         stretchy.set_description(self._get_name())
         stretchy.set_scale_axis(self.stretch_axis)
@@ -3728,6 +3731,9 @@ class IkAppendageRig(BufferRig):
         """
         axis = axis.lower()
         self.control_offset_axis = axis
+    
+    def set_damp_name(self, name):
+        self.damp_name = name
     
     def create(self):
         super(IkAppendageRig, self).create()

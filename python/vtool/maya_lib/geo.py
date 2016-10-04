@@ -8,6 +8,7 @@ if vtool.util.is_in_maya():
     
 import core
 import space
+import attr
 
 class Octree(object):
         
@@ -1315,9 +1316,7 @@ def follicle_to_mesh(transform, mesh, u = None, v = None, constrain = False, con
             eval('cmds.%s("%s", "%s", mo = True)' % (constraint_type, follicle, transform))
         if local:
             space.constrain_local(follicle, transform, constraint = constraint_type)
-    
-    
-    
+            
     
     return follicle
 
@@ -2226,8 +2225,6 @@ def add_poly_smooth(mesh):
         str: The name of the poly smooth node.
     """
     poly_smooth = cmds.polySmooth(mesh, mth = 0, dv = 1, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
-    
-
     
     return poly_smooth
 

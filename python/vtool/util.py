@@ -953,10 +953,6 @@ class FindUniqueString(object):
     
     def _search(self):
         
-        scope = self._get_scope_list()
-        
-        
-        
         number = self._get_number()
         
         self.increment_string = self.test_string
@@ -965,7 +961,7 @@ class FindUniqueString(object):
         
         while not unique:
             
-            
+            scope = self._get_scope_list()
             
             if not self.increment_string in scope:
                 unique = True

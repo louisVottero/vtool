@@ -2161,8 +2161,10 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
         
         parent_world = cmds.listRelatives(source_transform, p = True)
         
+        
+        
         if target_transform.endswith('R'):
-            match = MatchSpace(target_transform, xform_group).scale()
+            match = MatchSpace(target_transform, local_group).scale()
         
         if parent_world:
             parent_world = parent_world[0]

@@ -1449,7 +1449,8 @@ class ShapeComboManager(object):
         return shapes, combos, inbetweens
     
     #--- shapes
-      
+    
+    @core.undo_chunk
     def add_shape(self, name, mesh = None, preserve_combos = False):
         
         is_negative = False

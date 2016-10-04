@@ -965,7 +965,7 @@ class StretchyChain:
         
         min_length = space.get_distance(self.joints[0], self.joints[-1])
         #max_length = self._get_length()
-
+            
         dampen = attr.MayaNumberVariable(self.damp_name)
         dampen.set_node(self.attribute_node)
         dampen.set_variable_type(dampen.TYPE_DOUBLE)
@@ -1067,11 +1067,14 @@ class StretchyChain:
         self.vector = bool_value
     
     def set_add_dampen(self, bool_value, damp_name = None):
+        self.set_add_damp(bool_value, damp_name)
+        
+    def set_add_damp(self, bool_value, damp_name = None):
         self.add_dampen = bool_value
         
         if damp_name:
             self.damp_name = damp_name
-    
+            
     def set_simple(self, bool_value):
         self.simple = bool_value
     

@@ -2170,6 +2170,10 @@ def get_color_of_side(side = 'C', sub_color = False):
     Returns:
         int: A color index for override color.
     """
+    
+    if side == None:
+        side = 'C'
+    
     if not sub_color:
         
         if side == 'L':
