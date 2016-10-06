@@ -2195,7 +2195,8 @@ class ClusterTweakCtx():
         if not cmds.artAttrCtx(tool, exists = True):
             cmds.artAttrCtx(tool)
         
-        cmds.workspaceControl('ToolSettings', e = True, close = True)
+        
+        #cmds.workspaceControl('ToolSettings', e = True, close = True)
         cluster_code = 'cluster.%s.weights' % cluster
         cmds.artAttrCtx(tool, e = True, 
                         i1 = 'attrPaint.png', 
@@ -2213,7 +2214,7 @@ class ClusterTweakCtx():
         
         mel.eval('global string $gArtAttrCurrentAttr; $gArtAttrCurrentAttr = "%s"' % cluster_code)
         
-        cmds.workspaceControl('ToolSettings', e = True, visible = True)
+        #cmds.workspaceControl('ToolSettings', e = True, visible = True)
         
         
         #cmds.select(cluster_handle, r = True)
