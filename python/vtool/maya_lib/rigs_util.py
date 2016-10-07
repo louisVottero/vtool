@@ -763,6 +763,7 @@ class StretchyChain:
         self.vector = False
         self.extra_joint = None
         self.damp_name = 'dampen'
+        self.scale_offset = 1
     
     def _get_joint_count(self):
         return len(self.joints)
@@ -891,12 +892,30 @@ class StretchyChain:
             offset_variable.set_variable_type(offset_variable.TYPE_DOUBLE)
             offset_variable.set_node(multiply)
             
+
+                
+                
             
             offset_variable.create()
-            offset_variable.set_value(1)
+            offset_variable.set_value(self.scale_offset)
             offset_variable.set_min_value(0.1)
-            offset_variable.connect_out('%s.input2X' % multiply)
-            offset_variable.connect_out('%s.input1D[%s]' % (plus_total_offset, inc+1))
+            
+            if self.scale_offset != 1:
+                
+                offset_multiply = cmds.createNode('multiplyDivide', n = 'multiplyDivide_scaleOffset')
+                offset_variable.connect_out('%s.input1X' % offset_multiply)
+                
+                offset_value = 1.0/self.scale_offset
+                
+                cmds.setAttr('%s.input2X' % offset_multiply, offset_value)
+                
+                cmds.connectAttr('%s.outputX' % offset_multiply, '%s.input2X' % multiply)
+                cmds.connectAttr('%s.outputX' % offset_multiply, '%s.input1D[%s]' % (plus_total_offset, inc+1))
+                                
+
+            if self.scale_offset == 1:
+                offset_variable.connect_out('%s.input2X' % multiply)
+                offset_variable.connect_out('%s.input1D[%s]' % (plus_total_offset, inc+1))
             
             stretch_offsets.append(multiply)
         
@@ -944,7 +963,7 @@ class StretchyChain:
             
             stretch_offset.create()
             
-            stretch_offset.set_value(1)
+            stretch_offset.set_value(self.scale_offset)
             stretch_offset.set_min_value(0.1)
             
             stretch_offset.connect_out('%s.offset%s' % (stretch_offsets[inc], inc+1) )
@@ -1083,6 +1102,9 @@ class StretchyChain:
     
     def set_per_joint_stretch(self, bool_value):
         self.per_joint_stretch = bool_value
+    
+    def set_scale_attribute_offset(self, value):
+        self.scale_offset = value
     
     def set_extra_joint(self, joint):
         self.extra_joint = joint

@@ -3213,6 +3213,8 @@ class IkAppendageRig(BufferRig):
         #dampen for legacy...
         self.damp_name = 'dampen'
         
+        self.stretch_scale_attribute_offset = 1
+        
     
     def _attach_ik_joints(self, source_chain, target_chain):
         
@@ -3605,6 +3607,7 @@ class IkAppendageRig(BufferRig):
         stretchy.set_node_for_attributes(control)
         stretchy.set_description(self._get_name())
         stretchy.set_scale_axis(self.stretch_axis)
+        stretchy.set_scale_attribute_offset(self.stretch_scale_attribute_offset)
         
         #this is new stretch distance
         #stretchy.set_vector_instead_of_matrix(False)
@@ -3734,6 +3737,9 @@ class IkAppendageRig(BufferRig):
     
     def set_damp_name(self, name):
         self.damp_name = name
+    
+    def set_stretch_scale_attribute_offset(self, value):
+        self.stretch_scale_attribute_offset = value
     
     def create(self):
         super(IkAppendageRig, self).create()
@@ -5204,6 +5210,7 @@ class IkFrontLegRig(IkAppendageRig):
         stretchy.set_node_for_attributes(control)
         stretchy.set_description(self._get_name())
         stretchy.set_scale_axis(self.stretch_axis)
+        stretchy.set_scale_attribute_offset(self.stretch_scale_attribute_offset)
         #this is new stretch distance
         #stretchy.set_vector_instead_of_matrix(False)
         top_locator, btm_locator = stretchy.create()
