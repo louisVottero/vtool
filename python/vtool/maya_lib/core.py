@@ -912,7 +912,7 @@ def delete_display_layers():
         
     
     """
-    layers = cmds.ls('displayLayer')
+    layers = cmds.ls(type = 'displayLayer')
     
     for layer in layers:
         cmds.delete(layer)
