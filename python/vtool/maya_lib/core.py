@@ -83,6 +83,11 @@ class FindUniqueName(vtool.util.FindUniqueString):
     If no number is found it will append a 1 to the end of the name.
     """
     
+    def __init__(self, test_string):
+        super(FindUniqueName, self).__init__(test_string)
+        
+        self.work_on_last_number = True
+    
     def _get_scope_list(self):
 
         if cmds.objExists(self.increment_string):
@@ -98,15 +103,25 @@ class FindUniqueName(vtool.util.FindUniqueString):
             self.increment_string = '%s_%s' % (self.test_string, number)
         
         if number > 1:
-            self.increment_string = vtool.util.increment_last_number(self.increment_string)
+            if self.work_on_last_number:
+                self.increment_string = vtool.util.increment_last_number(self.increment_string)
+            if not self.work_on_last_number:
+                self.increment_string = vtool.util.increment_first_number(self.increment_string)
     
     def _get_number(self):
-        number = vtool.util.get_last_number(self.test_string)
+        
+        if self.work_on_last_number:
+            number = vtool.util.get_last_number(self.test_string)
+        if not self.work_on_last_number:
+            number = vtool.util.get_first_number(self.test_string) 
         
         if number == None:
             return 0
         
         return number
+    
+    def get_last_number(self, bool_value):
+        self.work_on_last_number = bool_value
 
 class TrackNodes(object):
     """
@@ -438,7 +453,7 @@ def is_unique(name):
     if count == 1:
         return True
     
-def inc_name(name):
+def inc_name(name, inc_last_number = True):
     """
     Finds a unique name by adding a number to the end.
     
@@ -453,6 +468,7 @@ def inc_name(name):
         return name
     
     unique = FindUniqueName(name)
+    unique.get_last_number(inc_last_number)
     return unique.get()
 
 def prefix_name(node, prefix, name, separator = '_'):

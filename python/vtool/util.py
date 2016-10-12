@@ -949,8 +949,9 @@ class FindUniqueString(object):
                 self.increment_string = '%s%s' % (self.test_string, number)
     
     def _get_number(self):
+        
         return get_end_number(self.test_string)
-    
+        
     def _search(self):
         
         number = self._get_number()
@@ -986,6 +987,37 @@ class FindUniqueString(object):
     
     def get(self):
         return self._search()
+    
+                
+def get_first_number(input_string, as_string = False):
+    found = re.search('[0-9]+', input_string)
+    
+    if found:
+        number_str = found.group()
+        
+        if as_string:
+            return number_str
+        
+        number = int(number_str)
+        
+        return number
+        
+def get_last_number(input_string):
+    
+    search = search_last_number(input_string)
+    
+    if not search:
+        return None
+    
+    found_string = search.group()
+    
+    number = None
+    
+    if found_string:
+        number = int(found_string)
+    
+    return number
+        
                 
 def get_end_number(input_string, as_string = False):
     """
@@ -1033,6 +1065,12 @@ def get_trailing_number(input_string, as_string = False, number_count = -1):
         
         if not as_string:
             return int(number)
+   
+def search_first_number(input_string):
+
+    
+    expression = re.compile('[0-9]+')
+    return expression.search( input_string)
     
 def search_last_number(input_string):
     """
@@ -1095,21 +1133,22 @@ def replace_last_number(input_string, replace_string):
         replace_string *= count
 """
 
-def get_last_number(input_string):
+
+def increment_first_number(input_string):
     
-    search = search_last_number(input_string)
+    search = search_first_number(input_string)
+
+    if search:
+        new_string = '%s%s%s' % (
+                                 input_string[ 0 : search.start()], 
+                                 int(search.group()) + 1,
+                                 input_string[ search.end():]
+                                 )
     
     if not search:
-        return None
+        new_string = input_string + '_1'
     
-    found_string = search.group()
-    
-    number = None
-    
-    if found_string:
-        number = int(found_string)
-    
-    return number
+    return new_string
 
 def increment_last_number(input_string):
     """
@@ -1134,6 +1173,8 @@ def increment_last_number(input_string):
         new_string = input_string + '1'
     
     return new_string
+
+
 
 def find_special(pattern, string_value, position_string):
     """

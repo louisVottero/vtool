@@ -900,4 +900,113 @@ def create_yeti_texture_reference(mesh):
         cmds.parent(new_mesh, parent[0])
     
     return new_mesh
+
+#--- Ziva
+
+def get_ziva_geo_names():
     
+    z_geo = cmds.ls(type = 'zGeo')
+    
+    found = []
+    
+    for geo in z_geo:
+        connection = cmds.listConnections('%s.iNeutralMatrix' % geo)
+        if connection:
+            found.append(connection[0])
+            
+    return found
+
+def is_ziva_tissue(mesh):
+    cmds.select(mesh)
+    zTissue = mel.eval('zQueryNodeTrain -nodeType "zTissue"')
+    if zTissue:
+        return True
+    
+    return False
+    
+def is_ziva_bone(mesh):
+    cmds.select(mesh)
+    zBone = mel.eval('zQueryNodeTrain -nodeType "zBone"')
+    if zBone:
+        return True
+    
+    return False
+
+def rename_ziva_nodes_on_mesh(mesh):
+    
+    mesh = str(mesh)
+    
+    history = deform.get_history(mesh)
+    
+    if not history:
+        return
+    
+    for node in history:
+        
+        if cmds.nodeType(node) == 'zAttachment':
+            source = mel.eval('zQueryAttachments -s %s' % node)
+            target = mel.eval('zQueryAttachments -t %s' % node)
+            
+            print 'attachment!', source, target
+            
+            cmds.rename(node, 'zAttachment___%s___into___%s' % (source, target))
+            continue 
+        
+        if cmds.nodeType(node) == 'zMaterial':
+            cmds.rename(node, 'zMaterial___%s' % mesh)
+            continue
+            
+        if cmds.nodeType(node) == 'zFiber':
+            cmds.rename(node, 'zFiber___%s' % mesh)
+            continue
+            
+        if cmds.nodeType(node) == 'zTet':
+            cmds.rename(node, 'zTet___%s' % mesh)
+            continue
+      
+    cmds.select(mesh)
+    zGeo = mel.eval('zQueryNodeTrain -nodeType "zGeo"')
+    cmds.rename(zGeo, 'zGeo___%s' % mesh)
+    
+    
+    zTissue = mel.eval('zQueryNodeTrain -nodeType "zTissue"')
+    if zTissue:
+        cmds.rename(zTissue, 'zTissue___%s' % mesh)
+    
+    zBone = mel.eval('zQueryNodeTrain -nodeType "zBone"')
+    if zBone:
+        cmds.rename(zBone, 'zBone___%s' % mesh)
+        
+def copy_ziva(source_mesh, target_mesh):
+        
+    history = deform.get_history(source_mesh)
+    
+    if is_ziva_tissue(source_mesh):
+        cmds.select(target_mesh)
+        mel.eval('ziva -t')
+        
+    if is_ziva_bone(source_mesh):
+        cmds.select(target_mesh)
+        mel.eval('ziva -b')
+    
+    if not history:
+        return
+    
+    for node in history:
+        if cmds.nodeType(node) == 'zAttachment':
+            pass
+        
+        if cmds.nodeType(node) == 'zMaterial':
+            cmds.select(target_mesh)
+            mel.eval('ziva -m')
+            continue
+            
+        if cmds.nodeType(node) == 'zFiber':
+            cmds.select(target_mesh)
+            mel.eval('ziva -f')
+            continue
+            
+        if cmds.nodeType(node) == 'zTet':
+            continue
+        
+    rename_ziva_nodes_on_mesh(target_mesh)
