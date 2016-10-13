@@ -607,7 +607,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             import maya.cmds as cmds
             
             if cmds.file(q = True, mf = True):
-                result = qt_ui.get_save_permission('Save before processing?', self)
+                
+                filepath = cmds.file(q = True, sn = True)
+                
+                process_path = util.get_env('VETALA_CURRENT_PROCESS')
+                filepath = util_file.remove_common_path_simple(process_path, filepath)
+                
+                result = qt_ui.get_save_permission('Save before processing?', self, filepath)
                 
                 if result:
                     saved = self._auto_save()

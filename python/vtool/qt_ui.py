@@ -4334,26 +4334,33 @@ def get_permission(message, parent = None):
     if message == message_box.Cancel:
         return None
 
-def get_save_permission(message, parent = None):
+def get_save_permission(message, parent = None, path = None):
     message_box = QMessageBox(parent)
     
     flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
     
-    message_box.setText('Permission')
-    message_box.setInformativeText(message)
-    message_box.setStandardButtons(QMessageBox.Save | QMessageBox.No | QMessageBox.Cancel)
+    message_box.setText(message)
+    
+    if path:
+        path_message = 'Path:  %s' % path
+        message_box.setInformativeText(path_message)
+    
+    save = message_box.addButton('Save', QMessageBox.YesRole)
+    no_save = message_box.addButton("Don't Save", QMessageBox.NoRole)
+    cancel = message_box.addButton('Cancel', QMessageBox.RejectRole)
+    
     message_box.setWindowFlags(flags)
     message = message_box.exec_()
-    #message = message_box.question(parent, 'Permission', message, QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel )
     
-    if message == message_box.Save:
+    if message_box.clickedButton() == save:
         return True
     
-    if message == message_box.No:
+    if message_box.clickedButton() == no_save:
         return False
     
-    if message == message_box.Cancel:
+    if message_box.clickedButton() == cancel:
         return None
+    
     
 def get_new_name(message, parent = None, old_name = None):
     

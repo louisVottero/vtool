@@ -2054,6 +2054,9 @@ def unlock_attributes(node, attributes = [], only_keyable = False):
         for attr in attrs:
             cmds.setAttr('%s.%s' % (node, attr), l = False, k = True)
 
+def lock_scale_attributes(node):
+    lock_attributes(node, attributes = ['scaleX','scaleY','scaleZ'], hide = True)
+
 def remove_user_defined(node):
     """
     Removes user defined attributes from a node.

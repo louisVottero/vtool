@@ -1164,13 +1164,39 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
         self.file_changed.emit()
         
+    def _auto_save(self):
+        if not vtool.util.is_in_maya():
+            return
+        
+        import maya.cmds as cmds
+        
+        filepath = cmds.file(q = True, sn = True)
+        
+        from vtool.maya_lib import core
+        saved = core.save(filepath)
+        
+        return saved
+    
     def _open_file(self):
         
         if vtool.util.is_in_maya():
             import maya.cmds as cmds
             if cmds.file(q = True, mf = True):
-                result = vtool.qt_ui.get_permission('Changes not saved. Continue Opening?', self)
-                if not result:
+                
+                filepath = cmds.file(q = True, sn = True)
+                
+                process_path = vtool.util.get_env('VETALA_CURRENT_PROCESS')
+                filepath = vtool.util_file.remove_common_path_simple(process_path, filepath)
+                
+                result = vtool.qt_ui.get_save_permission('Save changes?', self, filepath)
+                
+                if result:
+                    saved = self._auto_save()
+                    
+                    if not saved:
+                        return
+                    
+                if result == None:
                     return
         
         self.data_class.open()

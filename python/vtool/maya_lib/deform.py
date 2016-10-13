@@ -4133,7 +4133,7 @@ def weight_hammer_verts(verts = None, print_info = True):
         if print_info:
             
             #do not remove
-            print inc, 'of', count
+            vtool.util.show( inc, 'of', count )
         
         mel.eval('weightHammerVerts;')
             
