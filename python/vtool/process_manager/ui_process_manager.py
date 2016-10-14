@@ -100,6 +100,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _process_deleted(self):
         self._clear_code(close_windows=True)
+        self._clear_data()
         
         self._set_title('-')
         
@@ -402,6 +403,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _clear_code(self, close_windows = False):
         
         self.code_widget.close_widgets(close_windows)
+        
+    def _clear_data(self):
+        
+        self.data_widget.clear_data()
         
     def _update_process(self, name):
         

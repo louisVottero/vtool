@@ -175,6 +175,9 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.last_directory = directory
         
+    def clear_data(self):
+        self.set_directory('')
+        
 class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     
     active_folder_changed = vtool.qt_ui.create_signal(object)

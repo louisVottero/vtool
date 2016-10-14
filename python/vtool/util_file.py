@@ -1092,8 +1092,16 @@ def get_folders(directory, recursive = False):
     
     found_folders = []
 
-    if not recursive:    
-        files = os.listdir(directory)
+    if not recursive:
+        files = None
+        
+        try:
+            files = os.listdir(directory)
+        except:
+            return found_folders
+        
+        if not files:
+            return found_folders
         
         for filename in files:
             
@@ -1105,16 +1113,20 @@ def get_folders(directory, recursive = False):
                 found_folders.append(folder_name)
     
     if recursive:
-        for root, dirs, files in os.walk(directory):
+        try:
+            for root, dirs, files in os.walk(directory):
+                
+                for folder in dirs:
+                    
+                    folder_name = join_path(root, folder)
+                    
+                    folder_name = os.path.relpath(folder_name,directory)
+                    folder_name = fix_slashes(folder_name)
+                    
+                    found_folders.append(folder_name)
+        except:
+            return found_folders
             
-            for folder in dirs:
-                
-                folder_name = join_path(root, folder)
-                
-                folder_name = os.path.relpath(folder_name,directory)
-                folder_name = fix_slashes(folder_name)
-                
-                found_folders.append(folder_name)
     
     
     return found_folders           
@@ -1636,6 +1648,9 @@ def rename(directory, name, make_unique = False):
     try:
         
         os.chmod(directory, 0777)
+        
+        message = 'rename: ' + directory + '   to   ' + renamepath
+        util.show( message)
         
         os.rename(directory, renamepath)
     except:
