@@ -3284,13 +3284,13 @@ class Rivet(object):
         edge_index_2 = vtool.util.get_last_number(self.edges[1])
         
         vert_iterator = api.IterateEdges(shape)
-        vert_ids = vert_iterator.get_vertices(edge_index_1)
+        vert_ids = vert_iterator.get_connected_vertices(edge_index_1)
         
         edge_to_curve_1 = cmds.createNode('polyEdgeToCurve', n = inc_name('rivetCurve1_%s' % self.name))
         cmds.setAttr('%s.inputComponents' % edge_to_curve_1, 2,'vtx[%s]' % vert_ids[0], 'vtx[%s]' % vert_ids[1], type='componentList')
         
         vert_iterator = api.IterateEdges(shape)
-        vert_ids = vert_iterator.get_vertices(edge_index_2)
+        vert_ids = vert_iterator.get_connected_vertices(edge_index_2)
         
         edge_to_curve_2 = cmds.createNode('polyEdgeToCurve', n = inc_name('rivetCurve2_%s' % self.name))
         

@@ -377,13 +377,13 @@ class Rivet(object):
         edge_index_2 = vtool.util.get_last_number(self.edges[1])
         
         vert_iterator = api.IterateEdges(shape)
-        vert_ids = vert_iterator.get_vertices(edge_index_1)
+        vert_ids = vert_iterator.get_connected_vertices(edge_index_1)
         
         edge_to_curve_1 = cmds.createNode('polyEdgeToCurve', n = core.inc_name('rivetCurve1_%s' % self.name))
         cmds.setAttr('%s.inputComponents' % edge_to_curve_1, 2,'vtx[%s]' % vert_ids[0], 'vtx[%s]' % vert_ids[1], type='componentList')
         
         vert_iterator = api.IterateEdges(shape)
-        vert_ids = vert_iterator.get_vertices(edge_index_2)
+        vert_ids = vert_iterator.get_connected_vertices(edge_index_2)
         
         edge_to_curve_2 = cmds.createNode('polyEdgeToCurve', n = core.inc_name('rivetCurve2_%s' % self.name))
         
@@ -659,6 +659,17 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
             
     return not_found
 
+def get_edges_in_list(list_of_things):
+    
+    found = []
+    
+    for thing in list_of_things:
+        if cmds.nodeType(thing) == 'mesh':
+            if thing.find('.e[') > 0:
+                found.append(thing)
+                
+    return found 
+
 def get_meshes_in_list(list_of_things):
     
     found = []
@@ -713,6 +724,13 @@ def get_surfaces_in_list(list_of_things):
                 found.append(thing)
      
     return found    
+
+def get_selected_edges():
+    
+    selection = cmds.ls(sl = True, flatten = True)
+    found = get_edges_in_list(selection)
+    
+    return found
 
 def get_selected_meshes():
     """
@@ -907,7 +925,52 @@ def get_of_type_in_hierarchy(transform, node_type):
               
             
 
+def expand_selected_edge_loop():
+    
+    edges = get_selected_edges()
+    
+    found_new_edges = []
+    
+    for edge in edges:
+        
+        mesh, edge = edge.split('.')
+        
+        edge_id = vtool.util.get_last_number(edge)
+        
+        new_edges = expand_edge_loop(mesh, edge_id)
+        
+        if new_edges:
+            found_new_edges += new_edges
+    
+    for edge in found_new_edges:
+        cmds.select('%s.e[%s]' % (mesh, edge), add = True)
+    
+    
 
+def expand_edge_loop(mesh, edge_id):
+    
+    
+    
+    iter_edges = api.IterateEdges(mesh)
+    
+    connected_faces = iter_edges.get_connected_faces(edge_id)
+    connected_edges = iter_edges.get_connected_edges(edge_id)
+    
+    face_edges = []
+    
+    for face_id in connected_faces:
+        
+        iter_faces = api.IteratePolygonFaces(mesh)
+        face_edges += iter_faces.get_edges(face_id)
+        
+    edge_set = set(connected_edges)
+    face_edge_set = set(face_edges)
+    
+    good_edges = edge_set.difference(face_edge_set)
+    
+    good_edges = list(good_edges)
+    
+    return good_edges
 
 def get_edge_path(edges = []):
     """

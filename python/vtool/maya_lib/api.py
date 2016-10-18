@@ -659,19 +659,43 @@ class IterateEdges(MayaIterator):
     def _define_api_object(self, mobject):
         return OpenMaya.MItMeshEdge(mobject)
     
-    def get_vertices(self, edge_id):
-        
+    def set_edge(self, edge_id):
         script_util = OpenMaya.MScriptUtil()
         prev = script_util.asIntPtr()
         
         self.api_object.setIndex(edge_id, prev)
+        
+        return prev
+    
+    def get_connected_vertices(self, edge_id):
+        
+        self.set_edge(edge_id)
         
         vert1_id = self.api_object.index(0)
         vert2_id = self.api_object.index(1)
         
         self.api_object.reset()
         return [vert1_id, vert2_id]
+    
+    def get_connected_faces(self, edge_id):
         
+        self.set_edge(edge_id)
+        
+        int_array = OpenMaya.MIntArray()
+        
+        self.api_object.getConnectedFaces(int_array)
+        
+        return int_array
+    
+    def get_connected_edges(self, edge_id):
+        
+        self.set_edge(edge_id)
+        
+        int_array = OpenMaya.MIntArray()
+        
+        self.api_object.getConnectedEdges(int_array)
+        
+        return int_array
 
 class IteratePolygonFaces(MayaIterator):
     

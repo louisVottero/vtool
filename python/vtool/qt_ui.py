@@ -4364,7 +4364,6 @@ def get_save_permission(message, parent = None, path = None):
     
 def get_new_name(message, parent = None, old_name = None):
     
-    
     dialog = QInputDialog()
     
     flags = dialog.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint

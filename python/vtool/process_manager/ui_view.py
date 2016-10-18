@@ -783,8 +783,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         item = self._add_process_item(name, parent_item = parent_item, create = True)
         
-        if not item.parent():
-            self.setCurrentItem(item)
+        #if not item.parent():
+        self.setCurrentItem(item)
+            
+        self._rename_process()
         
     def delete_process(self):
         

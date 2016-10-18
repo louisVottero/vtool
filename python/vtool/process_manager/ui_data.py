@@ -46,7 +46,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.data_widget.active_folder_changed.connect(self._update_file_widget)
         
         self.datatype_widget = DataTypeWidget()
-        self.datatype_widget.data_added.connect(self._refresh_data)
+        self.datatype_widget.data_added.connect(self._add_data)
         
         splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)   
         self.main_layout.addWidget(splitter, stretch = 1)
@@ -77,6 +77,14 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
             self.splitter.setSizes([1,1])
         if x_value < width * .8:
             self.splitter.setSizes([1,1])
+        
+    def _add_data(self, data_name):
+        
+        
+        
+        self._refresh_data(data_name)
+        
+        self.data_widget._rename_data()
         
     def _refresh_data(self, data_name):
         self.data_widget._load_data(new_data = data_name)

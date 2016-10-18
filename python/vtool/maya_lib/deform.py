@@ -1951,6 +1951,10 @@ class MayaWrap(object):
         
     def _connect_driver_mesh(self, mesh, inc):
         
+        if not cmds.objExists(mesh):
+            vtool.util.warning('%s could not be added to the wrap.  It does not exist.' % mesh)
+            return
+        
         base = cmds.duplicate(mesh, n = 'wrapBase_%s' % mesh)[0]
         
         core.rename_shapes(base)
@@ -2252,6 +2256,161 @@ class ClusterTweakCtx():
         
         cmds.setToolTo(self.context_name)
 
+class ZipWire(object):
+    
+    def __init__(self, top_curve, btm_curve):
+        
+        self.top_group = None
+        self.top_curve = top_curve
+        self.btm_curve = btm_curve
+        self.wire_mesh = None
+        
+        self.left_control = None
+        self.right_control = None
+        
+    def _create_top_group(self):
+        
+        self.top_group = cmds.group(em = True, n = 'zip_lip_gr')
+        
+        
+        attr.hide_keyable_attributes(self.top_group)
+        
+        return self.top_group
+        
+    def _create_loft(self):
+        
+        surface, loft_node = cmds.loft(self.top_curve, 
+                                          self.btm_curve, 
+                                          ch = True, 
+                                          u = 1, 
+                                          c = 0, 
+                                          ar = 1, 
+                                          d = 3, 
+                                          ss = 1, 
+                                          rn = 0, 
+                                          po = 0, 
+                                          rsn = True,
+                                          n = core.inc_name('zip_loft_surface_1'))
+        
+        cmds.rename(loft_node, core.inc_name('zip_loft_1'))
+        
+        self.loft_surface = surface
+        self.loft_node = loft_node
+        
+        cmds.parent(self.loft_surface, self.top_group)
+        
+    def _duplicate_surface_curves(self):
+        
+        top_follow_curve, top_follow_node = cmds.duplicateCurve(self.loft_surface + '.v[0]', ch = True, rn = 0, local = 0, n = 'curve_zip_top')
+        btm_follow_curve, btm_follow_node = cmds.duplicateCurve(self.loft_surface + '.v[1]', ch = True, rn = 0, local = 0, n = 'curve_zip_btm')
+        
+        cmds.setAttr('%s.isoparmValue' % top_follow_node, 0.5)
+        cmds.setAttr('%s.isoparmValue' % btm_follow_node, 0.5)
+        
+        self.top_follow_curve = top_follow_curve
+        self.top_follow_node = top_follow_node
+        
+        self.btm_follow_curve = btm_follow_curve
+        self.btm_follow_node = btm_follow_node
+        
+        cmds.parent(self.top_follow_curve, self.top_group)
+        cmds.parent(self.btm_follow_curve, self.top_group)
+        
+    def _setup_wire_deformers(self):
+            
+        top_wire_deformer, top_wire_curve = wire_mesh(self.top_follow_curve, self.wire_mesh, 100)
+        btm_wire_deformer, btm_wire_curve = wire_mesh(self.btm_follow_curve, self.wire_mesh, 100)
+        
+        self.top_wire_deformer = top_wire_deformer
+        self.btm_wire_deformer = btm_wire_deformer
+        
+        top_max_value = cmds.getAttr(self.top_follow_curve + '.maxValue')
+        btm_max_value = cmds.getAttr(self.btm_follow_curve + '.maxValue')
+        
+        total = 3
+        
+        offset_value = 0
+        inc_value = 1.0/ (total-1)
+        
+        for inc in range(0, total):
+            
+            if inc == 0:
+                top_value = 0
+                btm_value = 0
+                
+            if inc > 0:
+                top_value = top_max_value * offset_value
+                btm_value = btm_max_value * offset_value 
+                
+            offset_value += inc_value
+                
+            top_name = '%s.u[%s]' % (self.top_follow_curve, top_value)
+            btm_name = '%s.u[%s]' % (self.btm_follow_curve, btm_value)
+            
+            cmds.dropoffLocator(1,1, top_wire_deformer, top_name)
+            cmds.dropoffLocator(1,1, btm_wire_deformer, btm_name)
+            
+        
+            
+        quick_blendshape(self.top_curve, top_wire_curve)
+        quick_blendshape(self.btm_curve, btm_wire_curve)
+    
+    def _setup_zip_controls(self):
+        
+        if not self.left_control or not self.right_control:
+            return
+        
+        cmds.addAttr(self.top_group, ln = 'zipCenterL', min = 0, max = 1, k = True)
+        cmds.addAttr(self.top_group, ln = 'zipCenterR', min = 0, max = 1, k = True)
+        cmds.addAttr(self.top_group, ln = 'zipCenter', min = 0, max = 1, k = True)
+        
+        attr.create_title(self.left_control, 'ZIP_LIP')
+        cmds.addAttr(self.left_control, ln = 'zip', min = 0, max = 10, k = True)
+        
+        attr.create_title(self.right_control, 'ZIP_LIP')
+        cmds.addAttr(self.right_control, ln = 'zip', min = 0, max = 10, k = True)
+        
+        anim.quick_driven_key('%s.zip' % self.left_control, '%s.zipCenterL' % self.top_group, [0,5,10],[0,0,1])
+        anim.quick_driven_key('%s.zip' % self.right_control, '%s.zipCenterR' % self.top_group, [0,5,10],[0,0,1])
+        
+        multiply = cmds.createNode('multiplyDivide', n = '%s_multiply_center' % self.top_group)
+        
+        cmds.connectAttr('%s.zipCenterL' % self.top_group, '%s.input1X' % multiply)
+        cmds.connectAttr('%s.zipCenterR' % self.top_group, '%s.input2X' % multiply)
+        cmds.connectAttr('%s.outputX' % multiply, '%s.zipCenter' % self.top_group)
+    
+        key = anim.quick_driven_key('%s.zip' % self.left_control, '%s.wireLocatorEnvelope[0]' % self.top_wire_deformer, [0,5],[0,1])
+        cmds.connectAttr('%s.output' % key, '%s.wireLocatorEnvelope[0]' % self.btm_wire_deformer)
+    
+        key = anim.quick_driven_key('%s.zip' % self.right_control, '%s.wireLocatorEnvelope[2]' % self.top_wire_deformer, [0,5],[0,1])
+        cmds.connectAttr('%s.output' % key, '%s.wireLocatorEnvelope[2]' % self.btm_wire_deformer)
+        
+        cmds.connectAttr('%s.zipCenter' % self.top_group,'%s.wireLocatorEnvelope[1]' % self.top_wire_deformer)
+        cmds.connectAttr('%s.zipCenter' % self.top_group,'%s.wireLocatorEnvelope[1]' % self.btm_wire_deformer)
+        
+    def set_wire_mesh(self, mesh):
+        
+        self.wire_mesh = mesh
+        
+    def set_controls(self, zip_left_control, zip_right_control):
+        
+        self.left_control = zip_left_control
+        self.right_control = zip_right_control
+        
+    def create(self):
+        
+        self._create_top_group()
+        
+        
+        
+        self._create_loft()
+        self._duplicate_surface_curves()
+        
+        if self.wire_mesh:
+            self._setup_wire_deformers()
+        
+        self._setup_zip_controls()
+        
 def cluster_curve(curve, description, join_ends = False, join_start_end = False, last_pivot_end = False):
     """
     Create clusters on the cvs of a curve.
@@ -2901,8 +3060,8 @@ def get_deformer_weights(deformer, index = 0):
     
     try:
         mesh = meshes[index]
-        vtool.util.warning('index "%s" out of range of deformed meshes.' % index)
     except:
+        vtool.util.warning('index "%s" out of range of deformed meshes.' % index)
         return
     
     indices = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
@@ -2941,7 +3100,7 @@ def get_wire_weights(wire_deformer, index = 0):
         
     """
     
-    get_deformer_weights(wire_deformer, index)
+    return get_deformer_weights(wire_deformer, index)
 
 def get_cluster_weights(cluster_deformer, index = 0):
     """
@@ -3031,36 +3190,6 @@ def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence
     
     set_wire_weights(weight, wire_deformer)
     
-
-def prune_wire_weights(deformer, value = 0.0001):
-    """
-    Removes weights that fall below value.
-    
-    Args:
-        deformer (str): The name of a deformer.
-        value (float): The value below which verts get removed from wire deformer.
-    """
-    
-    meshes = cmds.deformer(deformer, q = True, g = True)
-    
-    try:
-        mesh = meshes[0]
-    except:
-        mesh = None
-    
-    verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
-    
-    found_verts = []
-    
-    for inc in xrange(0, len(verts)):
-        weight_value = cmds.getAttr('%s.weightList[%s].weights[%s]' % (deformer, 0, inc))
-        
-        if weight_value < value:
-            found_verts.append('%s.vtx[%s]' % (mesh, inc))
-    
-    cmds.sets(found_verts, rm = '%sSet' % deformer  )
-    
-
 def map_influence_on_verts(verts, skin_deformer):
     """
     Given a list of verts, get which influences have the most weight.
@@ -3286,8 +3415,9 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
     base_curve = attr.get_attribute_input('%s.baseWire[0]' % wire_deformer, node_only= True)
     base_curve = cmds.listRelatives(base_curve, p = True)[0]
     
+    from vtool.maya_lib import rigs_util
     
-    joints, joints_group, control_group = geo.create_joints_on_curve(curve, joint_count, description, create_controls = create_controls)
+    joints, joints_group, control_group = rigs_util.create_joints_on_curve(curve, joint_count, description, create_controls = create_controls)
     
     meshes = cmds.deformer(wire_deformer, q = True, geometry = True)
     if not meshes:
@@ -3297,6 +3427,8 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
     
     for mesh in meshes:
         zero_verts = []
+        
+        
         
         if not skin:
             skin_cluster = find_deformer_by_type(mesh, 'skinCluster')
@@ -3328,11 +3460,11 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
             weights = {}
             verts_inc = {}
             
-            for inc in xrange(0, len(wire_weights)):
-                if wire_weights[inc] > 0:
-                    weighted_verts.append(verts[inc])
-                    weights[verts[inc]] = wire_weights[inc]
-                    verts_inc[verts[inc]] = inc
+            for sub_inc in xrange(0, len(wire_weights)):
+                if wire_weights[sub_inc] > 0:
+                    weighted_verts.append(verts[sub_inc])
+                    weights[verts[sub_inc]] = wire_weights[sub_inc]
+                    verts_inc[verts[sub_inc]] = inc
             
             skin_cluster = find_deformer_by_type(mesh, 'skinCluster')
             
@@ -3374,19 +3506,19 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
                 distances_in_range = []
                 smallest_distance_inc = 0
                 
-                for inc in xrange(0, joint_count):
-                    if distances[inc] < smallest_distance:
-                        smallest_distance_inc = inc
-                        smallest_distance = distances[inc]
+                for sub_inc in xrange(0, joint_count):
+                    if distances[sub_inc] < smallest_distance:
+                        smallest_distance_inc = sub_inc
+                        smallest_distance = distances[sub_inc]
                 
                 distance_falloff = smallest_distance*1.3
                 if distance_falloff < falloff:
                     distance_falloff = falloff
                 
-                for inc in xrange(0, joint_count):
+                for sub_inc in xrange(0, joint_count):
 
-                    if distances[inc] <= distance_falloff:
-                        distances_in_range.append(inc)
+                    if distances[sub_inc] <= distance_falloff:
+                        distances_in_range.append(sub_inc)
 
                 if smallest_distance >= distance_falloff or not distances_in_range:
                     
@@ -4048,6 +4180,34 @@ def exclusive_bind_wrap(source_mesh, target_mesh):
     return wraps
 """
     
+def prune_wire_weights(deformer, value = 0.0001):
+    """
+    Removes weights that fall below value.
+    
+    Args:
+        deformer (str): The name of a deformer.
+        value (float): The value below which verts get removed from wire deformer.
+    """
+    
+    meshes = cmds.deformer(deformer, q = True, g = True)
+    
+    try:
+        mesh = meshes[0]
+    except:
+        mesh = None
+    
+    verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
+    
+    found_verts = []
+    
+    for inc in xrange(0, len(verts)):
+        weight_value = cmds.getAttr('%s.weightList[%s].weights[%s]' % (deformer, 0, inc))
+        
+        if weight_value < value:
+            found_verts.append('%s.vtx[%s]' % (mesh, inc))
+    
+    cmds.sets(found_verts, rm = '%sSet' % deformer  )
+    
 def wire_mesh(curve, mesh, falloff):
     """
     Create a wire deformer.
@@ -4062,6 +4222,8 @@ def wire_mesh(curve, mesh, falloff):
     """
     wire_deformer, wire_curve = cmds.wire(mesh,  gw = False, w = curve, n = 'wire_%s' % curve, dds = [0, falloff])
     cmds.setAttr('%s.rotation' % wire_deformer, 0)
+    
+    wire_curve = wire_curve + 'BaseWire'
     
     return wire_deformer, wire_curve
     
@@ -4104,6 +4266,8 @@ def wire_to_mesh(edges, geometry, description, auto_edge_path = True):
     cmds.connectAttr('%s.twist' % curve, '%s.wireLocatorTwist[1]' % wire_deformer)
     
     return group
+    
+
     
 @core.undo_chunk
 def weight_hammer_verts(verts = None, print_info = True):
@@ -4590,3 +4754,6 @@ def reset_tweaks_on_mesh(mesh):
     
     for tweak in tweaks:
         reset_tweak(tweak)
+        
+
+    

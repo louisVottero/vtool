@@ -1148,6 +1148,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         new_name = qt_ui.get_new_name('New Name', self, self.old_name)
         
+        if new_name == self.old_name:
+            return
+        
         if not new_name:
             return
     
@@ -1541,6 +1544,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.scrollToItem(item)
         self.setItemSelected(item, True)
         self.setCurrentItem(item)
+        
+        self._activate_rename()
         
     def create_import_code(self):
         
