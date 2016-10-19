@@ -1938,6 +1938,26 @@ def get_message_input(node, message):
     
     return input_value
 
+def transfer_attribute_values(source_node, target_node, keyable_only = True):
+    
+    attrs = cmds.listAttr(source_node, k = keyable_only)
+    
+    for attr in attrs:
+        
+        try:
+            value = cmds.getAttr('%s.%s' % (source_node, attr))
+        except:
+            continue
+        
+        try:
+            cmds.setAttr('%s.%s' % (target_node, attr), value)
+        except:
+            pass
+    
+    
+    
+    
+
 def transfer_variables():
     """
     Not done

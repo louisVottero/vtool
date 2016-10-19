@@ -1567,7 +1567,7 @@ def create_surface_follicle(surface, description = None, uv = [0,0]):
     
     return follicle
 
-def transforms_to_nurb_surface(transforms, description, spans = -1, offset_axis = 'Y', offset_amount = 1):
+def transforms_to_nurb_surface(transforms, description = 'from_transforms', spans = -1, offset_axis = 'Y', offset_amount = 1):
     """
     Create a nurbs surface from a list of joints.  
     Good for creating a nurbs surface that follows a spine or a tail.
@@ -1642,7 +1642,7 @@ def transforms_to_nurb_surface(transforms, description, spans = -1, offset_axis 
     
     return loft[0]
 
-def transforms_to_curve(transforms, spans, description):
+def transforms_to_curve(transforms, spans = None, description = 'from_transforms'):
     """
     Create a curve from a list of transforms.  Good for create the curve for a spine joint chain or a tail joint chain.
     
@@ -1661,20 +1661,36 @@ def transforms_to_curve(transforms, spans, description):
         
         transform_positions.append( joint_position )
     
+    print transform_positions
+    
     curve = cmds.curve(p = transform_positions, degree = 1)
     
-    cmds.rebuildCurve(curve, ch = False, 
-                                rpo = True,  
-                                rt = 0, 
-                                end = 1, 
-                                kr = False, 
-                                kcp = False, 
-                                kep = True,  
-                                kt = False, 
-                                spans = spans, 
-                                degree = 3, 
-                                tol =  0.01)
-    
+    """
+    if not spans:
+        cmds.rebuildCurve(curve, ch = False, 
+                                    rpo = True,  
+                                    rt = 0, 
+                                    end = 1, 
+                                    kr = False, 
+                                    kcp = False, 
+                                    kep = True,  
+                                    kt = False,  
+                                    degree = 3, 
+                                    tol =  0.01)
+    """
+    if spans:
+        cmds.rebuildCurve(curve, ch = False, 
+                                    rpo = True,  
+                                    rt = 0, 
+                                    end = 1, 
+                                    kr = False, 
+                                    kcp = False, 
+                                    kep = True,  
+                                    kt = False, 
+                                    spans = spans, 
+                                    degree = 3, 
+                                    tol =  0.01)
+        
     
     curve = cmds.rename( curve, core.inc_name('curve_%s' % description) )
     
