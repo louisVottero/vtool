@@ -572,7 +572,7 @@ def get_outliner_sets():
             
     return top_sets
 
-def get_top_dag_nodes(exclude_cameras = True):
+def get_top_dag_nodes(exclude_cameras = True, namespace = None):
     """
     Get transforms that sit at the very top of the hierarchy.
     
@@ -582,12 +582,23 @@ def get_top_dag_nodes(exclude_cameras = True):
     
     top_transforms = cmds.ls(assemblies = True)
     
-    cameras = ['persp', 'top', 'front', 'side']
+    if exclude_cameras:
+        cameras = ['persp', 'top', 'front', 'side']
+        
+        for camera in cameras:
+            if camera in top_transforms:
+                top_transforms.remove(camera)
     
-    for camera in cameras:
-        if camera in top_transforms:
-            top_transforms.remove(camera)
-     
+    if namespace:
+        
+        found = []
+        
+        for transform in top_transforms:
+            if transform.startswith(namespace + ':'):
+                found.append(transform)
+    
+        top_transforms = found
+    
     return top_transforms 
 
     
@@ -670,6 +681,24 @@ def remove_namespace_from_string(name):
         new_name = sub_name[-1]
         
     return new_name
+
+def get_characters():
+    
+    namespaces = cmds.namespaceInfo(lon = True)
+    
+    found = []
+    
+    check_for_groups = ['controls', 'model', 'geo', 'setup', 'DO_NOT_TOUCH', 'rig']
+    
+    for namespace in namespaces:
+        
+        for group in check_for_groups:
+        
+            if cmds.objExists(namespace + ':' + group):
+                found.append(namespace)
+            
+            
+    return found
 
 def delete_unknown_nodes():
     """

@@ -4,15 +4,15 @@ import string
 
 from vtool import qt_ui
 import vtool.util
-import ui
+from vtool.maya_lib import ui_core
 
 if vtool.util.is_in_maya():
 
     import maya.cmds as cmds
     import maya.mel as mel
-    import blendshape
-    import geo
-    import core
+    from vtool.maya_lib import blendshape
+    from vtool.maya_lib import geo
+    from vtool.maya_lib import core
 
 if qt_ui.is_pyqt():
     from PyQt4 import QtCore, Qt, uic
@@ -25,7 +25,7 @@ if qt_ui.is_pyside2():
         from PySide2.QtGui import *
         from PySide2.QtWidgets import *
 
-class ComboManager(ui.MayaWindow):
+class ComboManager(ui_core.MayaWindow):
     
     title = 'Shape Combo'
     

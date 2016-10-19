@@ -1,6 +1,6 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import ui
+from vtool.maya_lib import ui_core
 from vtool import qt_ui
 from vtool import util
 
@@ -16,13 +16,13 @@ if qt_ui.is_pyside2():
         from PySide2.QtWidgets import *
         
 import maya.cmds as cmds
-import rigs_util
-import attr
-import core
+from vtool.maya_lib import rigs_util
+from vtool.maya_lib import attr
+from vtool.maya_lib import core
 
-import picker
+from vtool.maya_lib import picker
 
-class PickManager(ui.MayaWindow):
+class PickManager(ui_core.MayaWindow):
     
     title = 'Picker'
     
@@ -45,9 +45,10 @@ class PickManager(ui.MayaWindow):
     
     def _build_widgets(self):
         
-        self.tab_widget = PickerTab()
+        self.tab_widget = qt_ui.NewItemTabWidget()
         
-        self.tab_widget.tabBar().setMinimumHeight(60)
+        self.tab_widget.currentChanged.connect(self._tab_changed)
+        
         self.tab_widget.tab_closed.connect(self._close_tab)
         self.tab_widget.tab_renamed.connect(self._rename_tab)
         
@@ -71,13 +72,22 @@ class PickManager(ui.MayaWindow):
         
         self.edit_button.clicked.connect(self._edit_mode)
         
-        self.tab_widget.currentChanged.connect(self._tab_changed)
+        #self.tab_widget.currentChanged.connect(self._tab_changed)
+        
+        self.tab_widget.tab_add.connect(self._tab_add)
         
         self.main_layout.addWidget(self.namespace_widget)
         self.main_layout.addWidget(self.tab_widget)
         
         self._build_btm_widgets()
         
+    def _tab_changed(self):
+        
+        index = self.tab_widget.currentIndex()
+        title = self.tab_widget.tabText(index)
+        
+        if not title == '+':
+            self.edit_buttons.set_picker(self.pickers[index])
 
     def _set_namespace(self, namespace):
         
@@ -224,24 +234,13 @@ class PickManager(ui.MayaWindow):
         
         self.picker_group = picker_name
     
-    def _tab_changed(self):
+    
+    
+    def _tab_add(self):
         
-        index = self.tab_widget.currentIndex()
-        
-        title = self.tab_widget.tabText(index)
-        
-        if title == '+':
-            picker_inst = self._create_picker()
-            self.tab_widget.removeTab(index)
-            self.tab_widget.addTab(picker_inst, 'View')
-            self.tab_widget.addTab(QWidget(), '+')
-            self.tab_widget.setCurrentIndex(index)
-            self._export()
-            index = index + 1
-            
-        if not title == '+':
-            self.edit_buttons.set_picker(self.pickers[index])
-        
+        picker_inst = self._create_picker()
+        self.tab_widget.addTab(picker_inst, 'View')
+
     def _create_picker(self):
         
         picker_inst = Picker()
@@ -346,75 +345,6 @@ class NamespaceWidget(QComboBox):
         
         return namespaces
         
-        
-class PickerTab(QTabWidget):
-    
-    tab_closed = qt_ui.create_signal(object)
-    tab_renamed = qt_ui.create_signal(object)
-    
-    def __init__(self):
-        super(PickerTab, self).__init__()
-        
-        self.tabBar().setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.tabBar().customContextMenuRequested.connect(self._item_menu)
-        
-        self._create_context_menu()
-        
-    def _create_context_menu(self):
-        
-        self.context_menu = QMenu()
-        
-        rename = self.context_menu.addAction('Rename')
-        rename.triggered.connect(self._rename_tab)
-        
-        close = self.context_menu.addAction('Close')
-        close.triggered.connect(self._close_tab)
-        
-    def _item_menu(self, position):
-        
-        self.context_menu.exec_(self.tabBar().mapToGlobal(position))
-    
-    def _rename_tab(self):
-        
-        index = self.currentIndex()
-        
-        tab_name = self.tabText(index)
-        
-        new_name = qt_ui.get_new_name('New Name', self, tab_name)
-        
-        self.setTabText(index, new_name)
-        
-        self.tab_renamed.emit(index)
-        
-    def _close_tab(self, index = None):
-        
-        
-        if index == None:
-            current_index = self.currentIndex()
-            
-        
-        if not index == None:
-            current_index = index
-        
-        
-        self.setCurrentIndex( (current_index - 1) )
-        
-        widget = self.widget( current_index )
-        widget.scene.clearSelection()
-        widget.close()
-        widget.deleteLater()
-        
-        
-        self.removeTab( current_index )
-        
-        self.tab_closed.emit(current_index)
-        
-    def close_tabs(self):
-        
-        tab_count = self.count()
-        
-        for inc in range(0, tab_count):
-            self._close_tab(inc)
         
 
 class CornerWidget(qt_ui.BasicWidget):

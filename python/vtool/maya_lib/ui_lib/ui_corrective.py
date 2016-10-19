@@ -3,7 +3,7 @@
 import traceback
 
 from vtool import qt_ui
-import ui
+from vtool.maya_lib import ui_core
 import vtool.util
 
 
@@ -11,10 +11,10 @@ import vtool.util
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
-    import core
-    import attr
-    import space
-    import corrective
+    from vtool.maya_lib import core
+    from vtool.maya_lib import attr
+    from vtool.maya_lib import space
+    from vtool.maya_lib import corrective
     
 if qt_ui.is_pyqt():
     from PyQt4 import QtCore, Qt, uic
@@ -27,7 +27,7 @@ if qt_ui.is_pyside2():
         from PySide2.QtGui import *
         from PySide2.QtWidgets import *
 
-class PoseManager(ui.MayaWindow):
+class PoseManager(ui_core.MayaWindow):
     
     title = 'Correctives'
     
@@ -356,7 +356,7 @@ class BaseTreeWidget(qt_ui.TreeWidget):
         self.setSortingEnabled(True)
         self.setSelectionMode(self.SingleSelection)
         
-        ui.new_scene_signal.signal.connect(self.refresh)
+        ui_core.new_scene_signal.signal.connect(self.refresh)
         
         self.text_edit = False
         

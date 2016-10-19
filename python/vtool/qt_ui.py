@@ -3517,6 +3517,105 @@ class CodeLineNumber(QWidget):
         
         self.code_editor._line_number_paint(event)
 
+class NewItemTabWidget(QTabWidget):
+    
+    tab_closed = create_signal(object)
+    tab_renamed = create_signal(object)
+    tab_add = create_signal(object)
+    
+    def __init__(self):
+        super(NewItemTabWidget, self).__init__()
+        
+        #self.tabBar().setMinimumHeight(60)
+        
+        self.tabBar().setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.tabBar().customContextMenuRequested.connect(self._item_menu)
+        
+        self._create_context_menu()
+        
+        self.currentChanged.connect(self._tab_changed)
+        
+    def _create_context_menu(self):
+        
+        self.context_menu = QMenu()
+        
+        rename = self.context_menu.addAction('Rename')
+        rename.triggered.connect(self._rename_tab)
+        
+        close = self.context_menu.addAction('Close')
+        close.triggered.connect(self._close_tab)
+        
+    def _item_menu(self, position):
+        
+        self.context_menu.exec_(self.tabBar().mapToGlobal(position))
+    
+    def _rename_tab(self):
+        
+        index = self.currentIndex()
+        
+        tab_name = self.tabText(index)
+        
+        new_name = get_new_name('New Name', self, tab_name)
+        
+        self.setTabText(index, new_name)
+        
+        self.tab_renamed.emit(index)
+        
+    def _close_tab(self, index = None):
+        
+        
+        if index == None:
+            current_index = self.currentIndex()
+            
+        
+        if not index == None:
+            current_index = index
+        
+        self.setCurrentIndex( (current_index - 1) )
+        
+        self.tab_closed.emit(current_index)
+        
+        widget = self.widget( current_index )
+        
+        if hasattr(widget, 'scene'):
+            widget.scene.clearSelection()
+        
+        widget.close()
+        
+        widget.deleteLater()
+        
+        self.removeTab( current_index )
+        
+        
+        
+    def _tab_changed(self):
+        
+        index = self.currentIndex()
+        
+        title = self.tabText(index)
+        
+        if title == '+':
+            self.removeTab(index)
+            self.tab_add.emit(index)
+            self.addTab(QWidget(), '+')
+            self.setCurrentIndex(index)
+            
+            index = index + 1
+            
+        #if not title == '+':
+        #    self.edit_buttons.set_picker(self.pickers[index])
+        
+
+    def custom_close(self):
+        return
+        
+    def close_tabs(self):
+        
+        tab_count = self.count()
+        
+        for inc in range(0, tab_count):
+            self._close_tab(inc)
+
 #start
 def get_syntax_format(color = None, style=''):
     """Return a QTextCharFormat with the given attributes.
