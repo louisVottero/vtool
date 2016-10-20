@@ -1267,6 +1267,11 @@ class StoreData(object):
     def __init__(self, node = None):
         self.node = node
         
+        if not cmds.objExists(node):
+            return
+        
+        
+        
         if not node:
             return
         
@@ -1277,15 +1282,22 @@ class StoreData(object):
             self.data.create(node)
         
     def set_data(self, data):
+        
+        if not cmds.objExists(self.node):
+            return
+        
         str_value = str(data)
         
         self.data.set_value(str_value)
         
     def get_data(self):
-        
+        if not cmds.objExists(self.node):
+            return
         return self.data.get_value()
     
     def eval_data(self):
+        if not cmds.objExists(self.node):
+            return
         data = self.get_data()
         
         if data:
@@ -1955,8 +1967,35 @@ def transfer_attribute_values(source_node, target_node, keyable_only = True):
             pass
     
     
+def get_attribute_values(node, keyable_only = True):
+    
+    attrs = cmds.listAttr(node, k = keyable_only)
+    
+    values = {}
+    
+    for attr in attrs:
+        
+        try:
+            value = cmds.getAttr('%s.%s' % (node, attr))
+            
+            values[attr] = value
+        except:
+            continue
+        
+    return values
+        
+def set_attribute_values(node, values):
     
     
+    for attr in values:
+        
+        value = values[attr]
+        
+        try:
+            cmds.setAttr('%s.%s' % (node, attr), value)
+        except:
+            pass
+
 
 def transfer_variables():
     """
