@@ -9,6 +9,7 @@ import vtool.qt_ui
 from vtool.maya_lib.ui_lib import ui_fx
 from vtool.maya_lib.ui_lib import ui_rig
 from vtool.maya_lib.ui_lib import ui_anim
+from vtool.maya_lib.ui_lib import ui_model
 import ui_core
 
 
@@ -115,7 +116,7 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         self.tab_widget = QTabWidget()
         self.tab_widget.setTabPosition(self.tab_widget.West)
         
-        self.modeling_widget = ModelManager()
+        self.modeling_widget = ui_model.ModelManager()
         self.rigging_widget = ui_rig.RigManager()
         self.animation_widget = ui_anim.AnimationManager()
         #self.shot_widget = QWidget()
@@ -178,9 +179,7 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         
         
      
-class ModelManager(vtool.qt_ui.BasicWidget):
-    def _build_widgets(self):
-        pass
+
 
 
         

@@ -17,6 +17,9 @@ from vtool.maya_lib import ui_core
 
 class AnimationManager(qt_ui.BasicWidget):
     def _build_widgets(self):
+        pass
+
+"""
         manager_group = QGroupBox('Applications')
         manager_layout = QVBoxLayout()
         manager_layout.setContentsMargins(2,2,2,2)
@@ -41,3 +44,4 @@ def character_manager():
     from vtool.maya_lib.ui_lib import ui_character
     ui_core.create_window(ui_character.CharacterManager())
     
+"""

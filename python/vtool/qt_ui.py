@@ -1942,20 +1942,74 @@ class Group(QGroupBox):
     def __init__(self, name):
         super(Group, self).__init__()
         
+        self.close_height = 20
+        
         self.setTitle(name)
         
         manager_layout = QVBoxLayout()
-        manager_layout.setContentsMargins(2,2,2,2)
+        manager_layout.setContentsMargins(10,10,10,10)
         manager_layout.setSpacing(2)
         manager_layout.setAlignment(QtCore.Qt.AlignCenter)
+        
+        
         
         self.main_layout = manager_layout
         
         self.setLayout(manager_layout)
         
+        #self.label_expand = QLabel('Expand')
+        
+        #self.main_layout.addWidget(self.label_expand)
+    
+    """
+    def mousePressEvent(self, event):
+        
+        print 'mouse Click!!!'
+        
+        super(Group, self).mousePressEvent(event)
+        
+        if not event.button() == QtCore.Qt.LeftButton:
+            return
+        
+        half = self.width()/2
+        
+        if event.y() < 25 and event.x() > (half - 50) and event.x() < (half + 50):
+            
+            print 'here I am!', self.height(), self.close_height
+            
+            height = self.height()
+            
+            if height == self.close_height:
+                self.expand_group()
+                return
+                    
+            if height >= self.close_height:
+                self.collapse_group()
+                return
+            
+        print 'nope did not make it'
+    """     
+    def collapse_group(self):
+        
+        self.setVisible(False)
+        self.setMaximumHeight(self.close_height)
+        self.label_expand.setText('Expand')
+        self.setVisible(True)
+        
+        
+    def expand_group(self):
+        
+        self.setVisible(False)
+        self.setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX)
+        self.label_expand.setText('Collapse')
+        self.setVisible(True)
+        
     def set_title(self, titlename):
         
         self.setTitle(titlename)
+        
+        
+        
 
 
 class Slider(BasicWidget):
@@ -3557,6 +3611,9 @@ class NewItemTabWidget(QTabWidget):
         
         new_name = get_new_name('New Name', self, tab_name)
         
+        if not new_name:
+            return
+        
         self.setTabText(index, new_name)
         
         self.tab_renamed.emit(index)
@@ -3613,7 +3670,7 @@ class NewItemTabWidget(QTabWidget):
         
         tab_count = self.count()
         
-        for inc in range(0, tab_count):
+        for inc in reversed(range(0, tab_count)):
             self._close_tab(inc)
 
 #start

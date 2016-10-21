@@ -22,6 +22,8 @@ import maya.cmds as cmds
 class FxManager(qt_ui.BasicWidget):
     def _build_widgets(self):
         
+        self.main_layout.setContentsMargins(10,10,10,10)
+        
         character_tree = ui_character.CharacterTree()
         
         character_tree.characters_selected.connect(self._update_characters)

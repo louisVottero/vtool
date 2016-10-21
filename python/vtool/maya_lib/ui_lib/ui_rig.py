@@ -82,15 +82,20 @@ class RigManager(qt_ui.DirectoryWidget):
     
     def _build_widgets(self):
         
+        self.main_layout.setContentsMargins(10,10,10,10)
+        
         manager_group = QGroupBox('Applications')
+        manager_group.setFlat(True)
         manager_layout = QVBoxLayout()
-        manager_layout.setContentsMargins(2,2,2,2)
+        manager_layout.setContentsMargins(10,10,10,10)
         manager_layout.setSpacing(2)
         manager_layout.setAlignment(QtCore.Qt.AlignCenter)
         
         manager_group.setLayout(manager_layout)
         
         button_width = 200        
+        
+        manager_layout.addSpacing(15)
         
         process_button = QPushButton('VETALA')
         process_button.clicked.connect(self._process_manager)
@@ -110,28 +115,37 @@ class RigManager(qt_ui.DirectoryWidget):
         manager_layout.addWidget(shape_combo_button)
         
         
+        
+        manager_layout.addSpacing(15)
+        
+        
         picker_button = QPushButton('Picker')
         picker_button.clicked.connect(self._picker)
         picker_button.setMinimumWidth(button_width)
         manager_layout.addWidget(picker_button)
+        
+        
         
         presets_button = QPushButton('Presets')
         presets_button.clicked.connect(self._presets)
         presets_button.setMinimumWidth(button_width)
         manager_layout.addWidget(presets_button)
         
+        manager_layout.addSpacing(15)
         
-        tool_group = QGroupBox('Utilities')
-        tool_layout = QVBoxLayout()
-        tool_layout.setContentsMargins(2,2,2,2)
-        tool_layout.setSpacing(2)
-        tool_group.setLayout(tool_layout)
+        tool_group = qt_ui.Group('Utilities')
+        tool_group.setFlat(True)
         
         tool_tab = QTabWidget()
+        
         deformation_widget = qt_ui.BasicWidget()
         structure_widget = qt_ui.BasicWidget()
         control_widget = qt_ui.BasicWidget()
-        tool_layout.addWidget(tool_tab)
+        tool_group.main_layout.addWidget(tool_tab)
+        
+        deformation_widget.main_layout.setContentsMargins(10,10,10,10)
+        structure_widget.main_layout.setContentsMargins(10,10,10,10)
+        control_widget.main_layout.setContentsMargins(10,10,10,10)
         
         tool_tab.addTab(structure_widget, 'structure')
         tool_tab.addTab(control_widget, 'controls')
@@ -142,6 +156,7 @@ class RigManager(qt_ui.DirectoryWidget):
         self._create_deformation_widgets(deformation_widget)
         
         self.main_layout.addWidget(manager_group)
+        self.main_layout.addSpacing(15)
         self.main_layout.addWidget(tool_group)
         
         self.main_layout.setAlignment(QtCore.Qt.AlignTop)

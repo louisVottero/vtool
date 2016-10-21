@@ -31,12 +31,37 @@ class Presets(qt_ui.BasicWidget):
         
         super(Presets, self).__init__()
         
-
+        ui_core.new_scene_signal.signal.connect(self._load)
+        ui_core.open_scene_signal.signal.connect(self._load)
+        ui_core.read_scene_signal.signal.connect(self._load)
+        
+        self.main_layout.setContentsMargins(10,10,10,10)
+        
+        self._load()
+        
+    def _load(self):
+        
+        preset_group = 'preset'
+        
+        self.settings = []
+        self.tabs.close_tabs()
+        
+        if cmds.objExists(preset_group):
+            
+            store = attr.StoreData(preset_group)
+            data = store.eval_data()
+            
+            for tab in data:
+                tab_name = tab[0]
+                #tab_settings = tab[1]
+                preset_settings = Preset_Settings()
+                self.tabs.addTab(preset_settings, tab_name)
+                self.settings.append(preset_settings)
             
         
-        
-        
     def _build_widgets(self):
+        
+        
         
         tabs = qt_ui.NewItemTabWidget()
         
@@ -44,20 +69,24 @@ class Presets(qt_ui.BasicWidget):
         
         self.main_layout.addWidget(tabs)
         
-        preset_settings = Preset_Settings()
         
-        preset_settings.export_needed.connect(self.export)
+        preset_settings = Preset_Settings()
         
         tabs.addTab(preset_settings, 'Preset')
         self.settings.append(preset_settings)
-        self.export()
         tabs.addTab(QWidget(), '+')
         tabs.tab_add.connect(self._tab_add)
         
         tabs.tab_closed.connect(self._close_tab)
         tabs.tab_renamed.connect(self._rename_tab)
         
-    def _add_tab(self):
+        
+        
+    def _add_tab(self, name = None):
+        
+        if not name:
+            name = 'Preset'
+        
         settings = Preset_Settings()
         settings.export_needed.connect(self.export)
         self.tabs.addTab(settings, 'Preset')
@@ -76,12 +105,12 @@ class Presets(qt_ui.BasicWidget):
     
     def _close_tab(self, current_index):
         
-        self.settings.pop(current_index)
+        if self.settings:
+            self.settings.pop(current_index)
+            
         self.export()
         
     def export(self):
-        
-        print 'export data!!!', self.settings
         
         tab_count = self.tabs.count()
         
@@ -157,8 +186,6 @@ class Preset_Settings(qt_ui.BasicWidget):
         
     def _item_renamed(self, old_name, new_name):
         
-        print old_name, new_name, self.preset_attributes
-        
         if not self.preset_attributes.has_key(old_name):
             self.export_needed.emit()
             return
@@ -166,17 +193,11 @@ class Preset_Settings(qt_ui.BasicWidget):
         stored_value = self.preset_attributes[old_name]
         self.preset_attributes.pop(old_name)
         
-        
-        
         self.preset_attributes[new_name] = stored_value
-        
-        print 'about to export after rename'
         
         self.export_needed.emit()
         
     def _preset_clicked(self, item, column):
-        
-        print 'item clicked!'
         
         items = self.preset_settings.selectedItems()
         current_item = items[0]
@@ -199,8 +220,6 @@ class Preset_Settings(qt_ui.BasicWidget):
                     attr.set_attribute_values(node, attributes)
         
     def _preset_select_change(self):
-        
-        print 'preset selection change!'
         
         items = self.preset_settings.selectedItems()
         
@@ -354,6 +373,9 @@ class SettingTree(QTreeWidget):
         
         name = item.text(0)        
         new_name = qt_ui.get_new_name('New Name', self, name)
+        
+        if not new_name:
+            return
         
         if inc_name:
             
