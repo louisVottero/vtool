@@ -26,38 +26,78 @@ class Presets(qt_ui.BasicWidget):
     def __init__(self):
         self.settings = []
         
-        if not cmds.objExists('presets'):
-            cmds.group(em = True, n = 'presets')
+        
+        
+        
         
         super(Presets, self).__init__()
         
         ui_core.new_scene_signal.signal.connect(self._load)
-        ui_core.open_scene_signal.signal.connect(self._load)
+        #ui_core.open_scene_signal.signal.connect(self._load)
         ui_core.read_scene_signal.signal.connect(self._load)
         
         self.main_layout.setContentsMargins(10,10,10,10)
         
         self._load()
         
-    def _load(self):
         
-        preset_group = 'preset'
+        
+    def _load(self):
+        self.no_export = True
+        
+        preset_group = 'presets'
         
         self.settings = []
+        
         self.tabs.close_tabs()
         
         if cmds.objExists(preset_group):
-            
+                
             store = attr.StoreData(preset_group)
             data = store.eval_data()
             
-            for tab in data:
-                tab_name = tab[0]
-                #tab_settings = tab[1]
-                preset_settings = Preset_Settings()
-                self.tabs.addTab(preset_settings, tab_name)
-                self.settings.append(preset_settings)
+            if data:
+                
             
+                for tab in data:
+                    tab_name = tab[0]
+                    tab_settings = tab[1]
+                    
+                    preset_settings = Preset_Settings()
+                    preset_settings.export_needed.connect(self.export)
+                    self.tabs.addTab(preset_settings, tab_name)
+                    
+                    self.settings.append(preset_settings)
+                    
+                    for settings in tab_settings:
+                        preset_settings.add_item(settings[0], settings[1])
+                        
+                        if settings[1]:
+                            nodes = []
+                            
+                            for setting in settings[1]:
+                            
+                                nodes.append(setting[0])
+                        
+                            if nodes:
+                                preset_settings.preset_nodes.set_nodes(nodes)
+                                
+                self.tabs.addTab(QWidget(), '+')
+        
+        if not cmds.objExists(preset_group):
+            cmds.group(em = True, n = 'presets')
+            self._add_default_tabs()
+            
+        
+        self.no_export = False
+        
+    def _add_default_tabs(self):
+        preset_settings = Preset_Settings()
+        
+        self.tabs.addTab(preset_settings, 'Preset')
+        self.settings.append(preset_settings)
+        preset_settings.export_needed.connect(self.export)
+        self.tabs.addTab(QWidget(), '+')
         
     def _build_widgets(self):
         
@@ -69,12 +109,6 @@ class Presets(qt_ui.BasicWidget):
         
         self.main_layout.addWidget(tabs)
         
-        
-        preset_settings = Preset_Settings()
-        
-        tabs.addTab(preset_settings, 'Preset')
-        self.settings.append(preset_settings)
-        tabs.addTab(QWidget(), '+')
         tabs.tab_add.connect(self._tab_add)
         
         tabs.tab_closed.connect(self._close_tab)
@@ -111,6 +145,9 @@ class Presets(qt_ui.BasicWidget):
         self.export()
         
     def export(self):
+        
+        if self.no_export:
+            return
         
         tab_count = self.tabs.count()
         
@@ -158,13 +195,20 @@ class Preset_Settings(qt_ui.BasicWidget):
         
         self.preset_nodes.hide()
         
+        self.load_attr_button = QPushButton('Update Attributes')
+        self.load_attr_button.setDisabled(True)
+        self.load_attr_button.setMaximumWidth(100)
+        
+        
+        
         layout1.addWidget(self.preset_settings)
         layout2.addWidget(self.preset_nodes)
         
-        self.load_attr_button = QPushButton('Update Attributes')
-        self.load_attr_button.hide()
+        layout1.addSpacing(20)
         
-        layout2.addWidget(self.load_attr_button)
+        layout1.addWidget(self.load_attr_button)
+        
+        layout1.addSpacing(20)
         
         self.preset_settings.setHeaderLabel('Setting')
         self.preset_nodes.setHeaderLabel('Nodes')
@@ -206,17 +250,13 @@ class Preset_Settings(qt_ui.BasicWidget):
             
             current_text = current_item.text(0)
             
-            print current_text
-            
             if self.preset_attributes.has_key(current_text):
                 attribute_values = self.preset_attributes[current_text]
-                
-                print attribute_values
                 
                 for values in attribute_values:
                     node = values[0]
                     attributes = values[1]
-                    print node, attributes
+                    
                     attr.set_attribute_values(node, attributes)
         
     def _preset_select_change(self):
@@ -225,11 +265,11 @@ class Preset_Settings(qt_ui.BasicWidget):
         
         if not items:
             self.preset_nodes.hide()
-            self.load_attr_button.hide()
+            self.load_attr_button.setDisabled(True)
             
         if items:
             self.preset_nodes.show()
-            self.load_attr_button.show()
+            self.load_attr_button.setEnabled(True)
         
         
     
@@ -247,23 +287,15 @@ class Preset_Settings(qt_ui.BasicWidget):
 
         node_count = self.preset_nodes.topLevelItemCount()
         
-        print 'node count', node_count
-        
         for inc2 in range(0, node_count):
             
-            print 'inc!',inc2
-            
             node_item = self.preset_nodes.topLevelItem(inc2)
-            
-            print node_item
             
             node_name = node_item.text(0)
             
             attribute_values = attr.get_attribute_values(node_name)
             
             self.preset_attributes[current_name] += [[node_name, attribute_values]]
-            
-            print 'presets!!!', self.preset_attributes
             
         self.export_needed.emit()
             
@@ -275,13 +307,9 @@ class Preset_Settings(qt_ui.BasicWidget):
         
         for inc in range(0, preset_count):
             
-            
-            
             item = self.preset_settings.topLevelItem(inc)
             
             preset_name = item.text(0)
-            
-            print 'getting preset data', preset_name, self.preset_attributes
             
             preset_data = []
             
@@ -292,6 +320,11 @@ class Preset_Settings(qt_ui.BasicWidget):
     
         return presets
     
+    def add_item(self, name, data = []):
+        
+        self.preset_settings.add_item(name = name, rename = False)
+        self.preset_attributes[name] = data
+    
 class SettingTree(QTreeWidget):
     
     item_renamed = qt_ui.create_signal(object, object)
@@ -299,13 +332,11 @@ class SettingTree(QTreeWidget):
     
     def __init__(self):
         
-        self.preset_attributes = {}
+        
         super(SettingTree, self).__init__()
         
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
-        
-        
         
         self._create_context_menu()
 
@@ -351,16 +382,21 @@ class SettingTree(QTreeWidget):
             
         return name
         
-    def add_item(self):
+    def add_item(self, name = None, rename = True):
+        
+        if not name:
+            name = 'Preset'
         
         item = QTreeWidgetItem()
-        item.setText(0, self._inc_name('Preset'))
+        item.setText(0, self._inc_name(name))
         item.setSizeHint(0, QtCore.QSize(100, 18))
         self.addTopLevelItem(item)
-        self.preset_attributes[str(item.text(0))] = []
+        
         self.setCurrentItem(item)
         
-        self.rename_item(False)
+        if rename:
+            self.rename_item(False)
+            
         self.export_needed.emit()
         
         
@@ -409,6 +445,8 @@ class NodeTree(QTreeWidget):
         
         self._create_context_menu()
         
+        self.setSelectionMode(self.NoSelection)
+        
     def _item_menu(self, position):
         
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
@@ -417,15 +455,27 @@ class NodeTree(QTreeWidget):
         
         self.context_menu = QMenu()
         
-        self.set_action = self.context_menu.addAction('Set Node(s)')
+        self.set_action = self.context_menu.addAction('Set Nodes')
         self.remove_action = self.context_menu.addAction('Remove')
         
-        self.set_action.triggered.connect(self._set_nodes)
+        self.set_action.triggered.connect(self.set_nodes)
         self.remove_action.triggered.connect(self._remove_nodes)
         
-    def _set_nodes(self):
+    def _remove_nodes(self):
         
-        selection = cmds.ls(sl = True)
+        items = self.selectedItems()
+        
+        for item in items:
+            index = self.indexFromItem(item)
+            self.takeTopLevelItem(index.row())
+        
+    def set_nodes(self, nodes = []):
+        
+        if not nodes:
+            nodes = cmds.ls(sl = True)
+            
+        if not nodes:
+            return
         
         top_count = self.topLevelItemCount()
         
@@ -435,7 +485,7 @@ class NodeTree(QTreeWidget):
             item = self.topLevelItem(inc)
             existing_items.append(item.text(0))
         
-        for thing in selection:
+        for thing in nodes:
             
             if thing in existing_items:
                 continue
@@ -445,19 +495,4 @@ class NodeTree(QTreeWidget):
             item.setText(0, thing)
             
             self.addTopLevelItem(item)
-        
-        items = self.selectedItems()
-        
-        for item in items:
-            
-            print item.text(0)
-    
-    def _remove_nodes(self):
-        
-        items = self.selectedItems()
-        
-        for item in items:
-            index = self.indexFromItem(item)
-            self.takeTopLevelItem(index.row())
-        
         
