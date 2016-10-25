@@ -275,7 +275,8 @@ class VersionFile(object):
             self.version_folder = None
             self.updated_old = False
             
-            self._handle_old_version()
+            #this isn't needed any more.
+            #self._handle_old_version()
         
     def _handle_old_version(self):
         
@@ -389,10 +390,6 @@ class VersionFile(object):
         self._create_comment_file()
         
         inc_file_name = self._increment_version_file_name()
-        
-        #copy_file(self.filepath, inc_file_name)
-        
-        
         
         if is_dir(self.filepath):
             copy_dir(self.filepath, inc_file_name)
@@ -524,7 +521,6 @@ class VersionFile(object):
         if not files:
             return
         
-        number_dict = {} 
         number_list = []
         pass_files = []
             
@@ -541,13 +537,17 @@ class VersionFile(object):
             number = int(split_name[1])
             
             number_list.append(number)
-            number_dict[number] = filepath
+            pass_files.append(filepath)
             
         
-        number_list.sort()
+        if not pass_files:
+            return
         
-        for number in number_list:
-            pass_files.append(number_dict[number])
+        quick_sort = util.QuickSort(number_list)
+        quick_sort.set_follower_list(pass_files)
+        pass_files = quick_sort.run()
+        
+        pass_files = pass_files[1]
         
         return pass_files
     

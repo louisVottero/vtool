@@ -1754,7 +1754,7 @@ def create_match_group(transform, prefix = 'match', use_duplicate = False):
     
     return xform_group    
 
-def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
+def create_xform_group(transform, prefix = 'xform', use_duplicate = False, copy_scale = False):
     """
     Create a group above a transform that matches transformation of the transform. 
     This is good for zeroing out the values of a transform.
@@ -1778,13 +1778,25 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
     
     name = '%s_%s' % (prefix, basename)
     
+    if copy_scale:
+        orig_scale = cmds.getAttr('%s.scale' % transform)[0]
+        cmds.setAttr('%s.scaleX' % transform, 1)
+        cmds.setAttr('%s.scaleY' % transform, 1)
+        cmds.setAttr('%s.scaleZ' % transform, 1)
+            
     if not use_duplicate:    
         xform_group = cmds.group(em = True, n = core.inc_name( name ))
         match_space = MatchSpace(transform, xform_group)
         match_space.translation_rotation()
         
+        if copy_scale: 
+            match_space.scale()
+
+        
         if parent:
             cmds.parent(xform_group, parent[0])    
+
+
         
     
     if use_duplicate:
@@ -1796,6 +1808,16 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False):
         xform_group = cmds.rename(xform_group, core.inc_name(name))
 
     cmds.parent(transform, xform_group)
+    
+    if copy_scale:
+        
+        cmds.setAttr('%s.scaleX' % xform_group, orig_scale[0])
+        cmds.setAttr('%s.scaleY' % xform_group, orig_scale[1])
+        cmds.setAttr('%s.scaleZ' % xform_group, orig_scale[2])
+        
+
+        
+        
     
     attr.connect_group_with_message(xform_group, transform, prefix)
 

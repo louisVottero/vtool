@@ -83,6 +83,9 @@ class Presets(qt_ui.BasicWidget):
                                 preset_settings.preset_nodes.set_nodes(nodes)
                                 
                 self.tabs.addTab(QWidget(), '+')
+            
+            if not data:
+                self._add_default_tabs()
         
         if not cmds.objExists(preset_group):
             cmds.group(em = True, n = 'presets')
@@ -241,14 +244,11 @@ class Preset_Settings(qt_ui.BasicWidget):
         
         self.export_needed.emit()
         
-    def _preset_clicked(self, item, column):
-        
-        items = self.preset_settings.selectedItems()
-        current_item = items[0]
+    def _load_item(self,item):
         
         if self.preset_attributes:
             
-            current_text = current_item.text(0)
+            current_text = item.text(0)
             
             if self.preset_attributes.has_key(current_text):
                 attribute_values = self.preset_attributes[current_text]
@@ -258,6 +258,12 @@ class Preset_Settings(qt_ui.BasicWidget):
                     attributes = values[1]
                     
                     attr.set_attribute_values(node, attributes)
+    def _preset_clicked(self, item, column):
+        
+        items = self.preset_settings.selectedItems()
+        current_item = items[0]
+        
+        self._load_item(current_item)
         
     def _preset_select_change(self):
         
@@ -271,7 +277,7 @@ class Preset_Settings(qt_ui.BasicWidget):
             self.preset_nodes.show()
             self.load_attr_button.setEnabled(True)
         
-        
+        self._load_item(items[0])
     
     def _load_attributes(self):
         
@@ -363,10 +369,16 @@ class SettingTree(QTreeWidget):
         self.new_action = self.context_menu.addAction('New')
         self.rename_action = self.context_menu.addAction('Rename')
         self.remove_action = self.context_menu.addAction('Remove')
+        self.context_menu.addSeparator()
+        move_up = self.context_menu.addAction('Move Up')
+        move_down = self.context_menu.addAction('Move Down')
         
         self.new_action.triggered.connect(self.add_item)
         self.rename_action.triggered.connect(self.rename_item)
         self.remove_action.triggered.connect(self.remove_item)
+        
+        move_up.triggered.connect(self.move_up)
+        move_down.triggered.connect(self.move_down)
         
     def _inc_name(self, name):
         
@@ -435,6 +447,38 @@ class SettingTree(QTreeWidget):
         self.takeTopLevelItem(index.row())
         self.export_needed.emit()
 
+    def move_up(self):
+        
+        item = self.currentItem()
+        index = self.indexFromItem(item)
+        
+        index = index.row()
+        
+        if index < 1:
+            return
+        
+        self.takeTopLevelItem(index)
+        self.insertTopLevelItem(index-1, item)
+        
+        self.setCurrentItem(item)
+        
+    def move_down(self):
+
+        item = self.currentItem()
+        index = self.indexFromItem(item)
+        index = index.row()
+        
+        if index == (self.topLevelItemCount() - 1):
+            return
+        
+        self.takeTopLevelItem(index)
+        
+        
+        
+        self.insertTopLevelItem(index + 1, item)
+        
+        self.setCurrentItem(item)
+        
 class NodeTree(QTreeWidget):
     
     def __init__(self):
