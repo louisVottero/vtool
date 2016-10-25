@@ -164,7 +164,7 @@ class SettingWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
-        self.main_layout.setContentsMargins(10,10,10,10)
+        self.main_layout.setContentsMargins(10,10,10,5)
         
         self.label = QLabel()
         

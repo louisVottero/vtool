@@ -76,6 +76,8 @@ class CharacterTree(QTreeWidget):
             
             cmds.select(top_nodes, add = True)
             
+            
+            
             self.current_characters.append(namespace)
     
         self.characters_selected.emit(self.current_characters)
