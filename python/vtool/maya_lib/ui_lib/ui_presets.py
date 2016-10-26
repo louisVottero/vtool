@@ -258,6 +258,8 @@ class Preset_Settings(qt_ui.BasicWidget):
                     attributes = values[1]
                     
                     attr.set_attribute_values(node, attributes)
+                    
+                    
     def _preset_clicked(self, item, column):
         
         items = self.preset_settings.selectedItems()
@@ -299,9 +301,10 @@ class Preset_Settings(qt_ui.BasicWidget):
             
             node_name = node_item.text(0)
             
-            attribute_values = attr.get_attribute_values(node_name)
+            attribute_values = attr.get_attribute_values(node_name, keyable_only=False)
             
             self.preset_attributes[current_name] += [[node_name, attribute_values]]
+            
             
         self.export_needed.emit()
             
@@ -489,9 +492,13 @@ class NodeTree(QTreeWidget):
         
         self._create_context_menu()
         
-        self.setSelectionMode(self.NoSelection)
+        #self.setSelectionMode(self.NoSelection)
         
     def _item_menu(self, position):
+        
+        item = self.itemAt(position)
+        
+        self.menu_item = item 
         
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
         

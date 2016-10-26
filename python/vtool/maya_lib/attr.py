@@ -1969,7 +1969,7 @@ def transfer_attribute_values(source_node, target_node, keyable_only = True):
     
 def get_attribute_values(node, keyable_only = True):
     
-    attrs = cmds.listAttr(node, k = keyable_only)
+    attrs = cmds.listAttr(node, k = keyable_only, v = True)
     
     values = {}
     

@@ -695,7 +695,8 @@ def get_characters():
         for group in check_for_groups:
         
             if cmds.objExists(namespace + ':' + group):
-                found.append(namespace)
+                if not namespace in found:
+                    found.append(namespace)
             
             
     return found
