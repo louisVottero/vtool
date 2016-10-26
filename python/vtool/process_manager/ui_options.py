@@ -2,22 +2,11 @@
 
 import string
 
-from vtool import qt_ui
+from vtool import qt_ui, qt
 from vtool import util
 
 from vtool.process_manager import process
 
-
-if qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if qt_ui.is_pyside():
-        from PySide import QtCore
-        from PySide.QtGui import *
-if qt_ui.is_pyside2():
-        from PySide2 import QtCore
-        from PySide2.QtGui import *
-        from PySide2.QtWidgets import *
 
 class ProcessOptionsWidget(qt_ui.BasicWidget):
     
@@ -36,7 +25,7 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
-        self.edit_mode_button = QPushButton('Edit')
+        self.edit_mode_button = qt.QPushButton('Edit')
         self.edit_mode_button.setCheckable(True)
         self.edit_mode_button.setMaximumWidth(100)
         
@@ -54,7 +43,7 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
         self.edit_mode_button.toggled.connect(self._edit_click)
         
-        self.main_layout.addWidget(self.edit_mode_button, alignment = QtCore.Qt.AlignRight)
+        self.main_layout.addWidget(self.edit_mode_button, alignment = qt.QtCore.Qt.AlignRight)
         self.main_layout.addWidget(self.option_scroll)
         self.main_layout.addWidget(self.edit_options)
     
@@ -124,13 +113,13 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         for widget in widgets:
             widget.remove()
 
-class ProcessOptionScroll(QScrollArea):
+class ProcessOptionScroll(qt.QScrollArea):
     def __init__(self):
         super(ProcessOptionScroll, self).__init__()
         
         self.setWidgetResizable(True)
         self.setMinimumWidth(350)
-        self.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.setFocusPolicy(qt.QtCore.Qt.NoFocus)
     
 class EditOptions(qt_ui.BasicWidget):
     
@@ -140,19 +129,19 @@ class EditOptions(qt_ui.BasicWidget):
         self.setWindowTitle('Edit Options')
     
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
     
     def _build_widgets(self):
         
-        self.move_up = QPushButton('Move Up')
-        self.move_dn = QPushButton('Move Dn')
-        self.remove = QPushButton('Remove')
+        self.move_up = qt.QPushButton('Move Up')
+        self.move_dn = qt.QPushButton('Move Dn')
+        self.remove = qt.QPushButton('Remove')
         
         self.main_layout.addWidget(self.move_up)
         self.main_layout.addWidget(self.move_dn)
         self.main_layout.addWidget(self.remove)
         
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(qt.QtCore.Qt.WindowStaysOnTopHint)
     
         
 class ProcessOptionPalette(qt_ui.BasicWidget):
@@ -168,7 +157,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self.main_layout.setContentsMargins(5,10,5,0)
         self.main_layout.setSpacing(1)
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
+        self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
         
         self.directory = None
         self.process_inst = None
@@ -178,7 +167,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self.widget_to_copy = None
         
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
@@ -198,7 +187,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def _create_context_menu(self):
         
-        self.menu = QMenu()
+        self.menu = qt.QMenu()
         
         create_menu = self.menu.addMenu('Create')
         create_menu.setTitle('Add Options')
@@ -239,7 +228,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         clear_action.triggered.connect(self._clear_action)
 
     def _build_widgets(self):
-        self.child_layout = QVBoxLayout()
+        self.child_layout = qt.QVBoxLayout()
         
         self.main_layout.addLayout(self.child_layout)
         self.main_layout.addSpacing(30)
@@ -521,10 +510,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         palette = widget.palette()
         
         if not util.is_in_maya():
-            palette.setColor(widget.backgroundRole(), QtCore.Qt.gray)
+            palette.setColor(widget.backgroundRole(), qt.QtCore.Qt.gray)
         
         if util.is_in_maya():
-            palette.setColor(widget.backgroundRole(), QColor(115, 194, 251, 150))
+            palette.setColor(widget.backgroundRole(), qt.QColor(115, 194, 251, 150))
         widget.setAutoFillBackground(True)
         widget.setPalette(palette)
     
@@ -862,7 +851,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self.name = name
         
         super(ProcessOptionGroup, self).__init__()
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
+        self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum))
         self.main_layout.setContentsMargins(1,0,1,1)
         
         self.copy_action.setVisible(True)
@@ -877,7 +866,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
         
         super(ProcessOptionGroup, self).mousePressEvent(event)
         
-        if not event.button() == QtCore.Qt.LeftButton:
+        if not event.button() == qt.QtCore.Qt.LeftButton:
             return
         
         half = self.width()/2
@@ -921,7 +910,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
         
         
     def _build_widgets(self):
-        main_group_layout = QVBoxLayout()
+        main_group_layout = qt.QVBoxLayout()
         
         main_group_layout.setContentsMargins(0,0,0,0)
         main_group_layout.setSpacing(1)
@@ -937,10 +926,10 @@ class ProcessOptionGroup(ProcessOptionPalette):
         
         super(ProcessOptionGroup, self)._create_context_menu()
         
-        rename = QAction('Rename', self)
+        rename = qt.QAction('Rename', self)
         rename.triggered.connect(self.rename)
         
-        remove = QAction('Remove', self)
+        remove = qt.QAction('Remove', self)
         remove.triggered.connect(self.remove)
         
         self.menu.insertAction(self.copy_action, rename)
@@ -1048,7 +1037,7 @@ class ProcessOptionGroup(ProcessOptionPalette):
             
             child.copy_to(group)
        
-class OptionGroup(QFrame):
+class OptionGroup(qt.QFrame):
     
     def __init__(self, name):
         super(OptionGroup, self).__init__()
@@ -1059,19 +1048,19 @@ class OptionGroup(QFrame):
         if util.get_maya_version() > 2015:    
             self.setFrameStyle(self.NoFrame)
             
-        self.layout = QVBoxLayout()
-        self.child_layout = QVBoxLayout()
+        self.layout = qt.QVBoxLayout()
+        self.child_layout = qt.QVBoxLayout()
         self.child_layout.setContentsMargins(0,4,0,10)
         self.child_layout.setSpacing(0)
         
         self.setLayout(self.layout)
         
-        self.header_layout = QHBoxLayout()
+        self.header_layout = qt.QHBoxLayout()
         
-        self.label = QLabel(name)
+        self.label = qt.QLabel(name)
         self.label.setMinimumHeight(15)
         
-        self.label_expand = QLabel('--')
+        self.label_expand = qt.QLabel('--')
         
         self.label_expand.setMinimumHeight(15)
         
@@ -1089,7 +1078,7 @@ class OptionGroup(QFrame):
     
         if util.is_in_maya():
             palette = self.palette()    
-            palette.setColor(self.backgroundRole(), QColor(80,80,80))
+            palette.setColor(self.backgroundRole(), qt.QColor(80,80,80))
             self.setAutoFillBackground(True)
             self.setPalette(palette)
         
@@ -1097,7 +1086,7 @@ class OptionGroup(QFrame):
         
         super(OptionGroup, self).mousePressEvent(event)
         
-        if not event.button() == QtCore.Qt.LeftButton:
+        if not event.button() == qt.QtCore.Qt.LeftButton:
             return
         
         half = self.width()/2
@@ -1144,7 +1133,7 @@ class OptionGroup(QFrame):
             self.setFrameStyle(self.Panel | self.Sunken)
         
         palette = self.palette()    
-        palette.setColor(self.backgroundRole(), QColor(value,value,value))
+        palette.setColor(self.backgroundRole(), qt.QColor(value,value,value))
         self.setAutoFillBackground(True)
         self.setPalette(palette)
         
@@ -1165,7 +1154,7 @@ class ProcessOption(qt_ui.BasicWidget):
             self.main_layout.addWidget(self.option_widget)
         self.main_layout.setContentsMargins(0,0,0,0)
         
-        self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        self.setContextMenuPolicy(qt.QtCore.Qt.ActionsContextMenu)
         self.create_right_click()
         
         self._setup_value_change()
@@ -1174,7 +1163,7 @@ class ProcessOption(qt_ui.BasicWidget):
         
         self.orig_background_color = self.palette().color(self.backgroundRole())
         
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
@@ -1188,7 +1177,7 @@ class ProcessOption(qt_ui.BasicWidget):
         
     def _create_context_menu(self):
         
-        self.menu = QMenu()
+        self.menu = qt.QMenu()
         
         #move_up = self.menu.addAction('Move Up')
         #move_up.triggered.connect(self.move_up)
@@ -1206,7 +1195,7 @@ class ProcessOption(qt_ui.BasicWidget):
         
         super(ProcessOption, self).mousePressEvent(event)
         
-        if not event.button() == QtCore.Qt.LeftButton:
+        if not event.button() == qt.QtCore.Qt.LeftButton:
             return
         
         
@@ -1220,7 +1209,7 @@ class ProcessOption(qt_ui.BasicWidget):
         return None
         
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
         
     def _setup_value_change(self):
         return
@@ -1286,27 +1275,27 @@ class ProcessOption(qt_ui.BasicWidget):
         
     def create_right_click(self):
         
-        move_up = QAction(self)
+        move_up = qt.QAction(self)
         move_up.setText('Move Up')
         move_up.triggered.connect(self.move_up)
         self.addAction(move_up)
         
-        move_dn = QAction(self)
+        move_dn = qt.QAction(self)
         move_dn.setText('Move Down')
         move_dn.triggered.connect(self.move_down)
         self.addAction(move_dn)
         
-        rename = QAction(self)
+        rename = qt.QAction(self)
         rename.setText('Rename')
         rename.triggered.connect(self._rename)
         self.addAction(rename)
         
-        remove = QAction(self)
+        remove = qt.QAction(self)
         remove.setText('Remove')
         remove.triggered.connect(self.remove)
         self.addAction(remove)
         
-        copy = QAction(self)
+        copy = qt.QAction(self)
         copy.setText('Copy')
         copy.triggered.connect(self._copy)
         self.addAction(copy)
@@ -1398,13 +1387,13 @@ class ProcessTitle(ProcessOption):
 
         self.main_layout.setContentsMargins(0,5,0,10)
         
-        self.main_layout.setAlignment(QtCore.Qt.AlignRight)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignRight)
         
     def _define_type(self):
         return 'title'
         
     def _define_option_widget(self):
-        return QLabel(self.name)
+        return qt.QLabel(self.name)
     
     def get_name(self):
         
@@ -1420,7 +1409,7 @@ class ProcessOptionText(ProcessOption):
     def __init__(self, name):
         super(ProcessOptionText, self).__init__(name)
     
-        insert_button = QPushButton('<')
+        insert_button = qt.QPushButton('<')
         insert_button.setMaximumWidth(20)
         insert_button.clicked.connect(self._insert)
         self.main_layout.addWidget(insert_button)

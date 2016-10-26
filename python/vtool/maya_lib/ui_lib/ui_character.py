@@ -1,17 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from vtool import qt_ui
+from vtool import qt_ui, qt
 
-if qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if qt_ui.is_pyside():
-    from PySide import QtCore
-    from PySide.QtGui import *
-if qt_ui.is_pyside2():
-    from PySide2 import QtCore
-    from PySide2.QtGui import *
-    from PySide2.QtWidgets import *
 
 from vtool.maya_lib import ui_core
 
@@ -27,7 +17,7 @@ class CharacterManager(qt_ui.BasicWidget):
     def __init__(self):
         super(CharacterManager, self).__init__()
         
-        self.main_layout.setAlignment(QtCore.Qt.AlignTop)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
         
     def _build_widgets(self):
         
@@ -39,7 +29,7 @@ class CharacterManager(qt_ui.BasicWidget):
         
         self.main_layout.addWidget(select_widget)
         
-class CharacterTree(QTreeWidget):
+class CharacterTree(qt.QTreeWidget):
     
     characters_selected = qt_ui.create_signal(object)
     
@@ -92,9 +82,9 @@ class CharacterTree(QTreeWidget):
         self.current_characters = []
         
         for character in characters:
-            item = QTreeWidgetItem()
+            item = qt.QTreeWidgetItem()
             item.setText(0, character)
-            item.setSizeHint(0, QtCore.QSize(30,30) )
+            item.setSizeHint(0, qt.QtCore.QSize(30,30) )
             
             self.insertTopLevelItem(0, item)
             
@@ -108,7 +98,7 @@ class CharacterSelectWidget(qt_ui.BasicWidget):
         
         self.select_group = qt_ui.Group('Select')
         
-        all_controls = QPushButton('All Controls')
+        all_controls = qt.QPushButton('All Controls')
         all_controls.clicked.connect(self._select_all_controls)
         
         self.select_group.main_layout.addWidget(all_controls)

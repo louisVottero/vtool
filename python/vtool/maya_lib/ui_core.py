@@ -1,16 +1,6 @@
-from vtool import qt_ui
+from vtool import qt_ui, qt
 from vtool import util
 
-if qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if qt_ui.is_pyside():
-    from PySide import QtCore
-    from PySide.QtGui import *
-if qt_ui.is_pyside2():
-    from PySide2 import QtCore
-    from PySide2.QtGui import *
-    from PySide2.QtWidgets import *
 
 import maya.OpenMayaUI as OpenMayaUI
 import maya.cmds as cmds
@@ -20,16 +10,16 @@ import maya.utils
 
 
 #--- signals
-class new_scene_object(QtCore.QObject):
+class new_scene_object(qt.QtCore.QObject):
     signal = qt_ui.create_signal()
 
-class open_scene_object(QtCore.QObject):
+class open_scene_object(qt.QtCore.QObject):
     signal = qt_ui.create_signal()
     
-class read_scene_object(QtCore.QObject):
+class read_scene_object(qt.QtCore.QObject):
     signal = qt_ui.create_signal()
     
-class new_tool_object(QtCore.QObject):
+class new_tool_object(qt.QtCore.QObject):
     signal = qt_ui.create_signal(object)
     
 new_scene_signal = new_scene_object()
@@ -84,7 +74,7 @@ def get_maya_window():
         import sip
         #Get the maya main window as a QMainWindow instance
         ptr = OpenMayaUI.MQtUtil.mainWindow()
-        return sip.wrapinstance(long(ptr), QtCore.QObject)
+        return sip.wrapinstance(long(ptr), qt.QtCore.QObject)
     
     if qt_ui.is_pyside():
         try:
@@ -96,7 +86,7 @@ def get_maya_window():
         from shiboken2 import wrapInstance
              
     maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
-    return wrapInstance(long(maya_window_ptr), QWidget)
+    return wrapInstance(long(maya_window_ptr), qt.QWidget)
 
 def create_window(ui, dock_area = 'right'): 
     

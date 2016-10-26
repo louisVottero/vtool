@@ -1,93 +1,59 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-global type_QT
+from vtool import qt
 
 import util
 import util_file
-import threading
 import string
 import re
 import random
 import sys
 
-QWIDGETSIZE_MAX = (1 << 24) - 1
+QWIDGETSIZE_MAX = qt.QWIDGETSIZE_MAX
 
-type_QT = None
-
-try:
-    
-    try:
-        from PySide import QtCore
-        from PySide.QtGui import *
-        
-        type_QT = 'pyside'
-        util.show('using PySide')
-        
-    except:
-        from PySide2 import QtCore
-        from PySide2.QtGui import *
-        from PySide2.QtWidgets import *
-        
-        type_QT = 'pyside2'
-        util.show('using PySide2')
-except:
-    type_QT = None
-    
-if type_QT == None:
-    try:
-        from PyQt4 import QtCore, Qt, uic
-        from PyQt4.QtGui import *
-        type_QT = 'pyqt'
-        
-        util.show('using pyQT')
-        
-    except:
-        type_QT = None
-    
+global type_QT
+type_QT = qt.type_QT
 
 def is_pyqt():
-    global type_QT
-    if type_QT == 'pyqt':
+    if qt.is_pyqt():
         return True
     return False
     
 def is_pyside():
-    global type_QT
-    if type_QT == 'pyside':
+    if qt.is_pyside():
         return True
     return False
 
 def is_pyside2():
-    global type_QT
-    if type_QT == 'pyside2':
+    if qt.is_pyside2():
         return True
     return False
 
 def build_qt_application(*argv):
-    application = QApplication(*argv)
+    application = qt.QApplication(*argv)
     return application
 
 def create_signal(*arg_list):
     if is_pyqt():
-        return QtCore.pyqtSignal(*arg_list)
+        return qt.QtCore.pyqtSignal(*arg_list)
     if is_pyside() or is_pyside2():
-        return QtCore.Signal(*arg_list)
+        return qt.QtCore.Signal(*arg_list)
     
 
-class BasicGraphicsView(QGraphicsView):
+class BasicGraphicsView(qt.QGraphicsView):
     
     def __init__(self):
         
         super(BasicGraphicsView, self).__init__()
         
-        self.scene = QGraphicsScene()
+        self.scene = qt.QGraphicsScene()
         
         self.setViewportUpdateMode(self.FullViewportUpdate)
         
         self.setScene(self.scene)
         
 
-class BasicWindow(QMainWindow):
+class BasicWindow(qt.QMainWindow):
     
     title = 'BasicWindow'
     _last_instance = None
@@ -103,7 +69,7 @@ class BasicWindow(QMainWindow):
         self.setWindowTitle(self.title)
         self.setObjectName(self.title)
         
-        main_widget = QWidget()
+        main_widget = qt.QWidget()
         
         #util.show('Main layout: %s' % self.main_layout)
         
@@ -124,7 +90,7 @@ class BasicWindow(QMainWindow):
         return
         
     def _define_main_layout(self):
-        return QVBoxLayout()
+        return qt.QVBoxLayout()
     
     def _build_widgets(self):
         return       
@@ -140,7 +106,7 @@ class DirectoryWindow(BasicWindow):
     def set_directory(self, directory):
         self.directory = directory
        
-class BasicWidget(QWidget):
+class BasicWidget(qt.QWidget):
 
     def __init__(self, parent = None):
         super(BasicWidget, self).__init__(parent)
@@ -157,14 +123,14 @@ class BasicWidget(QWidget):
         return
 
     def _define_main_layout(self):
-        layout = QVBoxLayout()
-        layout.setAlignment(QtCore.Qt.AlignTop)
+        layout = qt.QVBoxLayout()
+        layout.setAlignment(qt.QtCore.Qt.AlignTop)
         return layout
         
     def _build_widgets(self):
         pass
     
-class BasicDialog(QDialog):
+class BasicDialog(qt.QDialog):
     
     def __init__(self, parent = None):
         super(BasicDialog, self).__init__(parent)
@@ -175,20 +141,20 @@ class BasicDialog(QDialog):
         
         self.setLayout(self.main_layout)
         
-        self.setWindowFlags( self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags( self.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint)
         
         self._build_widgets()  
             
     def _define_main_layout(self):
-        layout = QVBoxLayout()
-        layout.setAlignment(QtCore.Qt.AlignTop)
+        layout = qt.QVBoxLayout()
+        layout.setAlignment(qt.QtCore.Qt.AlignTop)
         return layout
 
     def _build_widgets(self):
         pass
        
         
-class BasicDockWidget(QDockWidget):
+class BasicDockWidget(qt.QDockWidget):
     def __init__(self, parent = None):
         super(BasicDockWidget, self).__init__()
         
@@ -201,8 +167,8 @@ class BasicDockWidget(QDockWidget):
         self._build_widgets()
 
     def _define_main_layout(self):
-        layout = QVBoxLayout()
-        layout.setAlignment(QtCore.Qt.AlignTop)
+        layout = qt.QVBoxLayout()
+        layout.setAlignment(qt.QtCore.Qt.AlignTop)
         return layout
         
     def _build_widgets(self):
@@ -226,7 +192,7 @@ class DirectoryWidget(BasicWidget):
      
     
        
-class TreeWidget(QTreeWidget):
+class TreeWidget(qt.QTreeWidget):
     
     def __init__(self):
         super(TreeWidget, self).__init__()
@@ -244,7 +210,7 @@ class TreeWidget(QTreeWidget):
             self.setAlternatingRowColors(False)
             
         self.setSortingEnabled(True)
-        self.sortByColumn(0, QtCore.Qt.AscendingOrder)
+        self.sortByColumn(0, qt.QtCore.Qt.AscendingOrder)
         
         self.itemActivated.connect(self._item_activated)
         self.itemChanged.connect(self._item_changed)
@@ -260,40 +226,40 @@ class TreeWidget(QTreeWidget):
         self.current_name = None
         
         if not util.is_in_maya() and not util.is_in_nuke():
-            palette = QPalette()
-            palette.setColor(palette.Highlight, QtCore.Qt.gray)
+            palette = qt.QPalette()
+            palette.setColor(palette.Highlight, qt.QtCore.Qt.gray)
             self.setPalette(palette)
             
-        self.dropIndicatorRect = QtCore.QRect()
+        self.dropIndicatorRect = qt.QtCore.QRect()
 
     def paintEvent(self, event):
-        painter = QPainter(self.viewport())
+        painter = qt.QPainter(self.viewport())
         self.drawTree(painter, event.region())
         # in original implementation, it calls an inline function paintDropIndicator here
         self.paintDropIndicator(painter)
     
     def paintDropIndicator(self, painter):
 
-        if self.state() == QAbstractItemView.DraggingState:
-            opt = QStyleOption()
+        if self.state() == qt.QAbstractItemView.DraggingState:
+            opt = qt.QStyleOption()
             opt.initFrom(self)
             opt.rect = self.dropIndicatorRect
             rect = opt.rect
 
-            color = QtCore.Qt.black
+            color = qt.QtCore.Qt.black
             
             if util.is_in_maya():
-                color = QtCore.Qt.white
+                color = qt.QtCore.Qt.white
             
 
-            brush = QBrush(QColor(color))
+            brush = qt.QBrush(qt.QColor(color))
 
             if rect.height() == 0:
-                pen = QPen(brush, 2, QtCore.Qt.DotLine)
+                pen = qt.QPen(brush, 2, qt.QtCore.Qt.DotLine)
                 painter.setPen(pen)
                 painter.drawLine(rect.topLeft(), rect.topRight())
             else:
-                pen = QPen(brush, 2, QtCore.Qt.DotLine)
+                pen = qt.QPen(brush, 2, qt.QtCore.Qt.DotLine)
                 painter.setPen(pen)
                 painter.drawRect(rect)
     
@@ -315,18 +281,18 @@ class TreeWidget(QTreeWidget):
             self.dropIndicatorPosition = self.position(event.pos(), rect, index)
             
             if self.dropIndicatorPosition == self.AboveItem:
-                self.dropIndicatorRect = QtCore.QRect(rect_left.left(), rect_left.top(), rect_right.right() - rect_left.left(), 0)
+                self.dropIndicatorRect = qt.QtCore.QRect(rect_left.left(), rect_left.top(), rect_right.right() - rect_left.left(), 0)
                 event.accept()
             elif self.dropIndicatorPosition == self.BelowItem:
-                self.dropIndicatorRect = QtCore.QRect(rect_left.left(), rect_left.bottom(), rect_right.right() - rect_left.left(), 0)
+                self.dropIndicatorRect = qt.QtCore.QRect(rect_left.left(), rect_left.bottom(), rect_right.right() - rect_left.left(), 0)
                 event.accept()
             elif self.dropIndicatorPosition == self.OnItem:
-                self.dropIndicatorRect = QtCore.QRect(rect_left.left(), rect_left.top(), rect_right.right() - rect_left.left(), rect.height())
+                self.dropIndicatorRect = qt.QtCore.QRect(rect_left.left(), rect_left.top(), rect_right.right() - rect_left.left(), rect.height())
                 event.accept()
             else:
-                self.dropIndicatorRect = QtCore.QRect()
+                self.dropIndicatorRect = qt.QtCore.QRect()
 
-            self.model().setData(index, self.dropIndicatorPosition, QtCore.Qt.UserRole)
+            self.model().setData(index, self.dropIndicatorPosition, qt.QtCore.Qt.UserRole)
         
         self.viewport().update()
         
@@ -375,18 +341,18 @@ class TreeWidget(QTreeWidget):
         return True
         
     def position(self, pos, rect, index):
-        r = QAbstractItemView.OnViewport
+        r = qt.QAbstractItemView.OnViewport
         # margin*2 must be smaller than row height, or the drop onItem rect won't show
         margin = 10
         if pos.y() - rect.top() < margin:
-            r = QAbstractItemView.AboveItem
+            r = qt.QAbstractItemView.AboveItem
         elif rect.bottom() - pos.y() < margin:
-            r = QAbstractItemView.BelowItem
+            r = qt.QAbstractItemView.BelowItem
 
         # this rect is always the first column rect
         # elif rect.contains(pos, True):
         elif pos.y() - rect.top() > margin and rect.bottom() - pos.y() > margin:
-            r = QAbstractItemView.OnItem
+            r = qt.QAbstractItemView.OnItem
 
         return r
     
@@ -401,9 +367,9 @@ class TreeWidget(QTreeWidget):
 
         is_dropped = False
 
-        if event.source == self and event.dropAction() == QtCore.Qt.MoveAction or self.dragDropMode() == QAbstractItemView.InternalMove:
+        if event.source == self and event.dropAction() == qt.QtCore.Qt.MoveAction or self.dragDropMode() == qt.QAbstractItemView.InternalMove:
             
-            topIndex = QtCore.QModelIndex()
+            topIndex = qt.QtCore.QModelIndex()
             col = -1
             row = -1
             l = [event, row, col, topIndex]
@@ -428,7 +394,7 @@ class TreeWidget(QTreeWidget):
         return is_dropped
     
     def _define_item(self):
-        return QTreeWidgetItem()
+        return qt.QTreeWidgetItem()
     
     def _define_item_size(self):
         return 
@@ -708,7 +674,7 @@ class TreeWidget(QTreeWidget):
         try:
             #when selecting an item in the tree and refreshing it will throw this error:
             #wrapped C/C++ object of type ProcessItem has been deleted
-            count = QTreeWidgetItem.columnCount( tree_item )
+            count = qt.QTreeWidgetItem.columnCount( tree_item )
         except:
             count = 0
             
@@ -784,7 +750,7 @@ class TreeWidget(QTreeWidget):
     def set_text_edit(self, bool_value):
         self.text_edit = bool_value
         
-class TreeWidgetItem(QTreeWidgetItem):
+class TreeWidgetItem(qt.QTreeWidgetItem):
     
     def __init__(self, parent = None):
         self.widget = self._define_widget()
@@ -811,10 +777,10 @@ class TreeItemWidget(BasicWidget):
         super(TreeItemWidget, self).__init__(parent)
         
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
     
     def _build_widgets(self):
-        self.label = QLabel()
+        self.label = qt.QLabel()
         
         self.main_layout.addWidget(self.label)
     
@@ -845,7 +811,7 @@ class FileTreeWidget(TreeWidget):
         return ['name','size','date']
 
     def _define_item(self):
-        return QTreeWidgetItem()
+        return qt.QTreeWidgetItem()
     
     def _define_exclude_extensions(self):
         return
@@ -909,7 +875,7 @@ class FileTreeWidget(TreeWidget):
         
         size = self._define_item_size()
         if size:
-            size = QtCore.QSize(*size)
+            size = qt.QtCore.QSize(*size)
             
             item.setSizeHint(self.title_text_index, size)
             
@@ -942,7 +908,7 @@ class FileTreeWidget(TreeWidget):
             
             if exclude_count != len(sub_files):
                 
-                QTreeWidgetItem(item)
+                qt.QTreeWidgetItem(item)
         
         if not parent == False:
             
@@ -1063,7 +1029,7 @@ class EditFileTreeWidget(DirectoryWidget):
         
         super(EditFileTreeWidget, self).__init__(parent)
         
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum) 
+        self.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum) 
         
     def _define_tree_widget(self):
         return FileTreeWidget()
@@ -1170,12 +1136,12 @@ class FilterTreeWidget( DirectoryWidget ):
         super(FilterTreeWidget, self).__init__()
     
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
     
     def _build_widgets(self): 
-        self.filter_names = QLineEdit()
+        self.filter_names = qt.QLineEdit()
         self.filter_names.setPlaceholderText('filter names')
-        self.sub_path_filter = QLineEdit()
+        self.sub_path_filter = qt.QLineEdit()
         self.sub_path_filter.setPlaceholderText('set sub path')
         self.sub_path_filter.textChanged.connect(self._sub_path_filter_changed)
         
@@ -1243,7 +1209,7 @@ class FileManagerWidget(DirectoryWidget):
         return ''
         
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
         
     def _define_data_class(self):
         return
@@ -1253,7 +1219,7 @@ class FileManagerWidget(DirectoryWidget):
     
     def _build_widgets(self):
         
-        self.tab_widget = QTabWidget()
+        self.tab_widget = qt.QTabWidget()
         
         self.main_tab_name = self._define_main_tab_name()
         self.version_tab_name = 'Version'
@@ -1270,7 +1236,7 @@ class FileManagerWidget(DirectoryWidget):
         self.tab_widget.currentChanged.connect(self._tab_changed)    
         self.main_layout.addWidget(self.tab_widget)
         
-        self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding)
 
     def _add_history_widget(self):
         self.history_buffer_widget = BasicWidget()
@@ -1423,22 +1389,22 @@ class SaveFileWidget(DirectoryWidget):
         return ''
         
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
         
     def _build_widgets(self):
         
         
         
-        self.save_button = QPushButton('Save')
-        self.load_button = QPushButton('Open')
+        self.save_button = qt.QPushButton('Save')
+        self.load_button = qt.QPushButton('Open')
         
         self.save_button.setMaximumWidth(100)
         self.load_button.setMaximumWidth(100)
         self.save_button.setMinimumWidth(70)
         self.load_button.setMinimumWidth(70)
         
-        self.save_button.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        self.load_button.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.save_button.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Fixed)
+        self.load_button.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Fixed)
         
 
         self.save_button.clicked.connect(self._save)
@@ -1448,7 +1414,7 @@ class SaveFileWidget(DirectoryWidget):
         self.main_layout.addWidget(self.save_button)
         
         
-        self.main_layout.setAlignment(QtCore.Qt.AlignTop)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
 
     def _save(self):
         
@@ -1495,7 +1461,7 @@ class HistoryTreeWidget(FileTreeWidget):
         super(HistoryTreeWidget, self).__init__()
         
         if is_pyside() or is_pyside2():
-            self.sortByColumn(0, QtCore.Qt.SortOrder.DescendingOrder)
+            self.sortByColumn(0, qt.QtCore.Qt.SortOrder.DescendingOrder)
         
             
         self.setColumnWidth(0, 70)  
@@ -1545,7 +1511,7 @@ class HistoryTreeWidget(FileTreeWidget):
         
         version_str = str(version_int).zfill(self.padding)
         
-        item = QTreeWidgetItem()
+        item = qt.QTreeWidgetItem()
         item.setText(0, version_str)
         item.setText(1, comment)
         item.setText(2, str(file_size))
@@ -1560,19 +1526,19 @@ class HistoryFileWidget(DirectoryWidget):
     file_changed = create_signal()
     
     def _define_main_layout(self):
-        return QVBoxLayout()
+        return qt.QVBoxLayout()
     
     def _define_list(self):
         return HistoryTreeWidget()
     
     def _build_widgets(self):
         
-        self.setSizePolicy(QSizePolicy.MinimumExpanding,
-                           QSizePolicy.MinimumExpanding)
+        self.setSizePolicy(qt.QSizePolicy.MinimumExpanding,
+                           qt.QSizePolicy.MinimumExpanding)
         
-        self.button_layout = QHBoxLayout()
+        self.button_layout = qt.QHBoxLayout()
         
-        open_button = QPushButton('Open')
+        open_button = qt.QPushButton('Open')
         open_button.clicked.connect(self._open_version)
         
         open_button.setMaximumWidth(100)
@@ -1636,17 +1602,17 @@ class GetString(BasicWidget):
         super(GetString, self).__init__(parent)
     
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
             
     def _build_widgets(self):
         
         self.main_layout.setContentsMargins(0,0,0,0)
         self.main_layout.setSpacing(0)
         
-        self.text_entry = QLineEdit()
+        self.text_entry = qt.QLineEdit()
         
-        self.label = QLabel(self.name)
-        self.label.setAlignment(QtCore.Qt.AlignLeft)
+        self.label = qt.QLabel(self.name)
+        self.label.setAlignment(qt.QtCore.Qt.AlignLeft)
         self.label.setMinimumWidth(100)
         self._setup_text_widget()
         
@@ -1692,17 +1658,17 @@ class GetDirectoryWidget(DirectoryWidget):
         self.label = 'directory'
     
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
     
     def _build_widgets(self):
         
-        self.directory_label = QLabel('directory')
+        self.directory_label = qt.QLabel('directory')
         self.directory_label.setMinimumWidth(100)
         self.directory_label.setMaximumWidth(100)
         
-        self.directory_edit = QLineEdit()
+        self.directory_edit = qt.QLineEdit()
         self.directory_edit.textChanged.connect(self._text_changed)
-        directory_browse = QPushButton('browse')
+        directory_browse = qt.QPushButton('browse')
         
         directory_browse.clicked.connect(self._browser)
         
@@ -1751,7 +1717,7 @@ class GetNumberBase(BasicWidget):
         super(GetNumberBase, self).__init__(parent)
     
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
     
     def _define_number_widget(self):
         return
@@ -1764,15 +1730,15 @@ class GetNumberBase(BasicWidget):
         self.number_widget = self._define_number_widget()
         self.number_widget.setMaximumWidth(100)
         
-        self.label = QLabel(self.name)
-        self.label.setAlignment(QtCore.Qt.AlignRight)
+        self.label = qt.QLabel(self.name)
+        self.label.setAlignment(qt.QtCore.Qt.AlignRight)
         
-        self.value_label = QLabel('value')
+        self.value_label = qt.QLabel('value')
         self.value_label.hide()
         
         self.main_layout.addWidget(self.label)
         self.main_layout.addSpacing(5)
-        self.main_layout.addWidget(self.value_label, alignment = QtCore.Qt.AlignRight)
+        self.main_layout.addWidget(self.value_label, alignment = qt.QtCore.Qt.AlignRight)
         self.main_layout.addWidget(self.number_widget)
                     
     def _value_changed(self):
@@ -1807,10 +1773,10 @@ class GetNumber(GetNumberBase):
         self._setup_spin_widget()
     
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
     
     def _define_number_widget(self):
-        return QDoubleSpinBox()
+        return qt.QDoubleSpinBox()
         
     def _setup_spin_widget(self):
         
@@ -1831,17 +1797,17 @@ class GetNumber(GetNumberBase):
         
     def keyPressEvent(self, event):
         
-        if event.key() == QtCore.Qt.Key_Return:
+        if event.key() == qt.QtCore.Qt.Key_Return:
             self.enter_pressed.emit()
             
-        if event.key() == QtCore.Qt.Key_Enter:
+        if event.key() == qt.QtCore.Qt.Key_Enter:
             self.enter_pressed.emit()
         
     
 class GetInteger(GetNumber):
     
     def _define_number_widget(self):
-        return QSpinBox()
+        return qt.QSpinBox()
     
 class GetBoolean(GetNumberBase):
     
@@ -1855,14 +1821,14 @@ class GetBoolean(GetNumberBase):
         
     
     def _define_number_widget(self):
-        return QCheckBox()
+        return qt.QCheckBox()
     
     def set_value(self, value):
         
         if value:
-            state = QtCore.Qt.CheckState.Checked
+            state = qt.QtCore.Qt.CheckState.Checked
         if not value:
-            state = QtCore.Qt.CheckState.Unchecked
+            state = qt.QtCore.Qt.CheckState.Unchecked
         self.number_widget.setCheckState(state)
         
         
@@ -1882,7 +1848,7 @@ class GetNumberButton(GetNumber):
     def _build_widgets(self):   
         super(GetNumberButton, self)._build_widgets()
         
-        self.button = QPushButton('run')
+        self.button = qt.QPushButton('run')
         self.button.clicked.connect(self._clicked)
         self.button.setMaximumWidth(60)
         
@@ -1893,7 +1859,7 @@ class GetNumberButton(GetNumber):
         
 class GetIntNumberButton(GetNumberButton):
     def _define_number_widget(self):
-        number_widget = QSpinBox()
+        number_widget = qt.QSpinBox()
         return number_widget
     
 class GetCheckBox(BasicWidget):
@@ -1909,11 +1875,11 @@ class GetCheckBox(BasicWidget):
         
         
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
             
     def _build_widgets(self):
         
-        self.check_box = QCheckBox()
+        self.check_box = qt.QCheckBox()
         self.check_box.setText(self.name)
         self.main_layout.addWidget(self.check_box)
         
@@ -1937,7 +1903,7 @@ class GetCheckBox(BasicWidget):
         if bool_value != None:
             self.check_box.setChecked(bool_value)
             
-class Group(QGroupBox):
+class Group(qt.QGroupBox):
     
     def __init__(self, name):
         super(Group, self).__init__()
@@ -1946,10 +1912,10 @@ class Group(QGroupBox):
         
         self.setTitle(name)
         
-        manager_layout = QVBoxLayout()
+        manager_layout = qt.QVBoxLayout()
         manager_layout.setContentsMargins(10,10,10,10)
         manager_layout.setSpacing(2)
-        manager_layout.setAlignment(QtCore.Qt.AlignCenter)
+        manager_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
         
         
         
@@ -2028,10 +1994,10 @@ class Slider(BasicWidget):
         
     def _build_widgets(self):
         
-        self.label = QLabel()
+        self.label = qt.QLabel()
         self.label.setText(self.title)
-        self.slider = QSlider()
-        self.slider.setOrientation(QtCore.Qt.Horizontal)
+        self.slider = qt.QSlider()
+        self.slider.setOrientation(qt.QtCore.Qt.Horizontal)
         
         self.slider.valueChanged.connect(self._value_change)
         
@@ -2067,7 +2033,7 @@ class Slider(BasicWidget):
         
 
        
-class ProgressBar(QProgressBar):
+class ProgressBar(qt.QProgressBar):
     
     def set_count(self, count):
         
@@ -2083,18 +2049,18 @@ class LoginWidget( BasicWidget ):
     
     def _build_widgets(self):
         
-        group_widget = QGroupBox('Login')
-        group_layout = QVBoxLayout()
+        group_widget = qt.QGroupBox('Login')
+        group_layout = qt.QVBoxLayout()
         group_widget.setLayout(group_layout)
         
         self.login_widget = GetString('User: ')
         self.password_widget = GetString('Password: ')
         self.password_widget.set_password_mode(True)
         
-        self.login_state = QLabel('Login failed.')
+        self.login_state = qt.QLabel('Login failed.')
         self.login_state.hide()
         
-        login_button = QPushButton('Enter')
+        login_button = qt.QPushButton('Enter')
 
         login_button.clicked.connect( self._login )
         
@@ -2137,7 +2103,7 @@ class WidgetToPicture(BasicDialog):
     
     def _build_widgets(self):
         
-        #widget_button = QPushButton('Get widget')
+        #widget_button = qt.QPushButton('Get widget')
         #widget_button.clicked.connect(self._get_widget())
         
         self.setMinimumHeight(100)
@@ -2150,7 +2116,7 @@ class WidgetToPicture(BasicDialog):
         
         position = event.globalPos()
         
-        app = qApp
+        app = qt.qApp
         widget = app.widgetAt(position)
         
         self.take_picture(widget)
@@ -2158,10 +2124,10 @@ class WidgetToPicture(BasicDialog):
         
     def take_picture(self, widget):
         
-        pixmap =  QPixmap.grabWidget(widget)
+        pixmap =  qt.QPixmap.grabWidget(widget)
         
         
-        filename = QFileDialog.getSaveFileName(self, "Save Image", filter = '*.png', dir = self.last_path)
+        filename = qt.QFileDialog.getSaveFileName(self, "Save Image", filter = '*.png', dir = self.last_path)
         
         if filename:
             if util_file.is_file(filename[0]):
@@ -2174,16 +2140,16 @@ class WidgetToPicture(BasicDialog):
         
 #--- Code Editor
         
-class CodeEditTabs_ActiveFilter(QtCore.QObject):
+class CodeEditTabs_ActiveFilter(qt.QtCore.QObject):
     def eventFilter(self, obj, event):
         
-        if event.type() == QtCore.QEvent.WindowActivate:
+        if event.type() == qt.QtCore.QEvent.WindowActivate:
             obj._tabs_activated()
             return True
             
         else:
             # standard event processing
-            return QtCore.QObject.eventFilter(self, obj, event)
+            return qt.QtCore.QObject.eventFilter(self, obj, event)
         
 class CodeEditTabs(BasicWidget):
     
@@ -2628,7 +2594,7 @@ class CodeEditTabs(BasicWidget):
                 window.show()
                 window.setFocus()
                      
-class CodeTabs(QTabWidget):
+class CodeTabs(qt.QTabWidget):
     
     double_click = create_signal(object)
     
@@ -2645,7 +2611,7 @@ class CodeTabs(QTabWidget):
     
         self.double_click.emit(index)
         
-class CodeTabBar(QTabBar):
+class CodeTabBar(qt.QTabBar):
     
     double_click = create_signal(object)
     
@@ -2660,17 +2626,17 @@ class CodeTabBar(QTabBar):
         
         self.double_click.emit(index)
         
-class CodeTabWindow_ActiveFilter(QtCore.QObject):
+class CodeTabWindow_ActiveFilter(qt.QtCore.QObject):
     def eventFilter(self, obj, event):
         
-        if event.type() == QtCore.QEvent.WindowActivate:
+        if event.type() == qt.QtCore.QEvent.WindowActivate:
             
             obj.activated.emit(obj)
             return True
         
         else:
             # standard event processing
-            return QtCore.QObject.eventFilter(self, obj, event)
+            return qt.QtCore.QObject.eventFilter(self, obj, event)
         
 class CodeTabWindow(BasicWindow):
     
@@ -2682,7 +2648,7 @@ class CodeTabWindow(BasicWindow):
         super(CodeTabWindow, self).__init__()
         
         self.installEventFilter(CodeTabWindow_ActiveFilter(self))
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(qt.QtCore.Qt.WindowStaysOnTopHint)
         
         self.code_edit = None
         
@@ -2727,10 +2693,10 @@ class CodeEdit(BasicWidget):
         
         self.text_edit = CodeTextEdit()
         
-        self.status_layout = QHBoxLayout()
+        self.status_layout = qt.QHBoxLayout()
         
-        self.line_number = QLabel('Line:')
-        self.save_state = QLabel('No Changes')
+        self.line_number = qt.QLabel('Line:')
+        self.save_state = qt.QLabel('No Changes')
         
         self.status_layout.addWidget(self.line_number)
         self.status_layout.addWidget(self.save_state)
@@ -2747,7 +2713,7 @@ class CodeEdit(BasicWidget):
         
     def _build_menu_bar(self):
         
-        self.menu_bar = QMenuBar()
+        self.menu_bar = qt.QMenuBar()
         
         self.main_layout.insertWidget(0, self.menu_bar)
         
@@ -2762,7 +2728,7 @@ class CodeEdit(BasicWidget):
         
     def _build_process_title(self, title):
         
-        process_title = QLabel('Process: %s' % title)
+        process_title = qt.QLabel('Process: %s' % title)
         self.main_layout.insertWidget(0, process_title)
         
     def _open_browser(self):
@@ -2835,25 +2801,25 @@ class CodeEdit(BasicWidget):
         if not modified:
             self.save_state.setText('No Changes')
         
-class ListAndHelp(QListView):
+class ListAndHelp(qt.QListView):
     
     def __init__(self):
         super(ListAndHelp, self).__init__()
         
-        layout = QHBoxLayout()
+        layout = qt.QHBoxLayout()
         
         self.setLayout(layout)
         
-        self.list = QListView()
+        self.list = qt.QListView()
         
-        button = QTextEdit()
+        button = qt.QTextEdit()
         
         layout.setContentsMargins(0,0,0,0)
         
         layout.addWidget(self.list)
         layout.addWidget(button)
         
-class CodeTextEdit(QPlainTextEdit):
+class CodeTextEdit(qt.QPlainTextEdit):
     
     save = create_signal(object)
     save_done = create_signal(object)
@@ -2866,31 +2832,31 @@ class CodeTextEdit(QPlainTextEdit):
         
         super(CodeTextEdit, self).__init__()
         
-        self.setFont( QFont('Courier', 9)  )
+        self.setFont( qt.QFont('Courier', 9)  )
         
-        shortcut_save = QShortcut(QKeySequence(self.tr("Ctrl+s")), self)
+        shortcut_save = qt.QShortcut(qt.QKeySequence(self.tr("Ctrl+s")), self)
         shortcut_save.activated.connect(self._save)
         
-        shortcut_find = QShortcut(QKeySequence(self.tr('Ctrl+f')), self)
+        shortcut_find = qt.QShortcut(qt.QKeySequence(self.tr('Ctrl+f')), self)
         shortcut_find.activated.connect(self._find)
         
-        shortcut_goto_line = QShortcut(QKeySequence(self.tr('Ctrl+l')), self)
+        shortcut_goto_line = qt.QShortcut(qt.QKeySequence(self.tr('Ctrl+l')), self)
         shortcut_goto_line.activated.connect(self._goto_line)
         
-        plus_seq = QKeySequence( QtCore.Qt.CTRL + QtCore.Qt.Key_Plus)
-        equal_seq = QKeySequence( QtCore.Qt.CTRL + QtCore.Qt.Key_Equal)
-        minus_seq = QKeySequence( QtCore.Qt.CTRL + QtCore.Qt.Key_Minus)
+        plus_seq = qt.QKeySequence( qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Plus)
+        equal_seq = qt.QKeySequence( qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Equal)
+        minus_seq = qt.QKeySequence( qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Minus)
         
-        shortcut_zoom_in = QShortcut(plus_seq, self)
+        shortcut_zoom_in = qt.QShortcut(plus_seq, self)
         shortcut_zoom_in.activated.connect(self._zoom_in_text)
-        shortcut_zoom_in_other = QShortcut(equal_seq, self)
+        shortcut_zoom_in_other = qt.QShortcut(equal_seq, self)
         shortcut_zoom_in_other.activated.connect(self._zoom_in_text)
-        shortcut_zoom_out = QShortcut(minus_seq, self)
+        shortcut_zoom_out = qt.QShortcut(minus_seq, self)
         shortcut_zoom_out.activated.connect(self._zoom_out_text)
         
         self._setup_highlighter()
         
-        self.setWordWrapMode(QTextOption.NoWrap)
+        self.setWordWrapMode(qt.QTextOption.NoWrap)
         
         self.last_modified = None
         
@@ -2920,7 +2886,7 @@ class CodeTextEdit(QPlainTextEdit):
         
         rect = self.contentsRect()
         
-        new_rect = QtCore.QRect( rect.left(), rect.top(), self._line_number_width(), rect.height() )
+        new_rect = qt.QtCore.QRect( rect.left(), rect.top(), self._line_number_width(), rect.height() )
         
         self.line_numbers.setGeometry( new_rect )   
     
@@ -2929,7 +2895,7 @@ class CodeTextEdit(QPlainTextEdit):
         delta = event.delta()
         keys =  event.modifiers()
         
-        if keys == QtCore.Qt.CTRL:           
+        if keys == qt.QtCore.Qt.CTRL:           
             if delta > 0:
                 self._zoom_in_text()
             if delta < 0:
@@ -2956,20 +2922,20 @@ class CodeTextEdit(QPlainTextEdit):
                         
             if self.completer.popup().isVisible():
                     
-                if event.key() == QtCore.Qt.Key_Enter:
+                if event.key() == qt.QtCore.Qt.Key_Enter:
                     event.ignore()
                     return
-                if event.key() == QtCore.Qt.Key_Return:
+                if event.key() == qt.QtCore.Qt.Key_Return:
                     event.ignore()
                     return
 
         pass_on = True
         
-        if event.key() == QtCore.Qt.Key_Backtab or event.key() == QtCore.Qt.Key_Tab:
+        if event.key() == qt.QtCore.Qt.Key_Backtab or event.key() == qt.QtCore.Qt.Key_Tab:
             self._handle_tab(event)
             pass_on = False
 
-        if event.key() == QtCore.Qt.Key_Enter or event.key() == QtCore.Qt.Key_Return:
+        if event.key() == qt.QtCore.Qt.Key_Enter or event.key() == qt.QtCore.Qt.Key_Return:
             self._handle_enter(event)
             pass_on = False
 
@@ -3004,13 +2970,13 @@ class CodeTextEdit(QPlainTextEdit):
 
     def _line_number_paint(self, event):
         
-        paint = QPainter(self.line_numbers)
+        paint = qt.QPainter(self.line_numbers)
         
         if not util.is_in_maya():
-            paint.fillRect(event.rect(), QtCore.Qt.lightGray)
+            paint.fillRect(event.rect(), qt.QtCore.Qt.lightGray)
         
         if util.is_in_maya():
-            paint.fillRect(event.rect(), QtCore.Qt.black)
+            paint.fillRect(event.rect(), qt.QtCore.Qt.black)
         
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
@@ -3023,11 +2989,11 @@ class CodeTextEdit(QPlainTextEdit):
                 number = block_number + 1
                 
                 if util.is_in_maya():
-                    paint.setPen(QtCore.Qt.lightGray)
+                    paint.setPen(qt.QtCore.Qt.lightGray)
                 if not util.is_in_maya():
-                    paint.setPen(QtCore.Qt.black)
+                    paint.setPen(qt.QtCore.Qt.black)
                 
-                paint.drawText(0, top, self.line_numbers.width(), self.fontMetrics().height(), QtCore.Qt.AlignRight, str(number))
+                paint.drawText(0, top, self.line_numbers.width(), self.fontMetrics().height(), qt.QtCore.Qt.AlignRight, str(number))
                 
             block = block.next()
             top = bottom
@@ -3050,20 +3016,20 @@ class CodeTextEdit(QPlainTextEdit):
     
     def _line_number_highlight(self):
         
-        extra_selection = QTextEdit.ExtraSelection()
+        extra_selection = qt.QTextEdit.ExtraSelection()
         
         selections = [extra_selection]
         
         if not self.isReadOnly():
-            selection = QTextEdit.ExtraSelection()
+            selection = qt.QTextEdit.ExtraSelection()
             
             if util.is_in_maya():
-                line_color = QColor(QtCore.Qt.black)
+                line_color = qt.QColor(qt.QtCore.Qt.black)
             if not util.is_in_maya():
-                line_color = QColor(QtCore.Qt.lightGray)
+                line_color = qt.QColor(qt.QtCore.Qt.lightGray)
                 
             selection.format.setBackground(line_color)
-            selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+            selection.format.setProperty(qt.QTextFormat.FullWidthSelection, True)
             selection.cursor = self.textCursor()
             selection.cursor.clearSelection()
             selections.append(selection)
@@ -3144,7 +3110,7 @@ class CodeTextEdit(QPlainTextEdit):
         size += 1
         
         font.setPointSize( size )
-        self.setFont( QFont('Courier', size) )
+        self.setFont( qt.QFont('Courier', size) )
 
     def _zoom_out_text(self):
         font = self.font()
@@ -3156,7 +3122,7 @@ class CodeTextEdit(QPlainTextEdit):
             return
         
         font.setPointSize( size )
-        self.setFont( QFont('Courier', size) )
+        self.setFont( qt.QFont('Courier', size) )
         
     def _has_changed(self):
         
@@ -3246,7 +3212,7 @@ class CodeTextEdit(QPlainTextEdit):
         
         start = select_position - select_start_block.position()
         
-        #QTextCursor.position()
+        #qt.QTextCursor.position()
         end_position = cursor.position()
         
         if start_position > end_position:
@@ -3256,7 +3222,7 @@ class CodeTextEdit(QPlainTextEdit):
             end_position = start_position
             start_position = temp_position
         
-        if event.key() == QtCore.Qt.Key_Tab:
+        if event.key() == qt.QtCore.Qt.Key_Tab:
             
             if not cursor.hasSelection():
                 
@@ -3267,8 +3233,8 @@ class CodeTextEdit(QPlainTextEdit):
             if cursor.hasSelection():
                 
                 cursor.setPosition(start_position)
-                cursor.movePosition(QTextCursor.StartOfLine)
-                cursor.setPosition(end_position,QTextCursor.KeepAnchor)
+                cursor.movePosition(qt.QTextCursor.StartOfLine)
+                cursor.setPosition(end_position,qt.QTextCursor.KeepAnchor)
                 
                 text = cursor.selection()
                 text = text.toPlainText()
@@ -3292,7 +3258,7 @@ class CodeTextEdit(QPlainTextEdit):
                 cursor.insertText(edited_text)
                 self.setTextCursor(cursor)
                 
-        if event.key() == QtCore.Qt.Key_Backtab:
+        if event.key() == qt.QtCore.Qt.Key_Backtab:
             
             
                 
@@ -3301,8 +3267,8 @@ class CodeTextEdit(QPlainTextEdit):
                 
                 cursor = self.textCursor()
                 
-                cursor.movePosition(QTextCursor.StartOfLine)
-                cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 4)
+                cursor.movePosition(qt.QTextCursor.StartOfLine)
+                cursor.movePosition(qt.QTextCursor.Right, qt.QTextCursor.KeepAnchor, 4)
                 
                 text = cursor.selection()
                 text = text.toPlainText()
@@ -3320,9 +3286,9 @@ class CodeTextEdit(QPlainTextEdit):
             if cursor.hasSelection():
                 
                 cursor.setPosition(start_position)
-                cursor.movePosition(QTextCursor.StartOfLine)
-                cursor.setPosition(end_position,QTextCursor.KeepAnchor)
-                cursor.movePosition(QTextCursor.EndOfLine, QTextCursor.KeepAnchor)
+                cursor.movePosition(qt.QTextCursor.StartOfLine)
+                cursor.setPosition(end_position,qt.QTextCursor.KeepAnchor)
+                cursor.movePosition(qt.QTextCursor.EndOfLine, qt.QTextCursor.KeepAnchor)
                 self.setTextCursor(cursor)
                 text = cursor.selection()
                 text = str(text.toPlainText())
@@ -3365,14 +3331,14 @@ class CodeTextEdit(QPlainTextEdit):
         
         cursor = self.textCursor()
         cursor.setPosition(start_position)
-        cursor.setPosition(end_position,QTextCursor.KeepAnchor)
+        cursor.setPosition(end_position,qt.QTextCursor.KeepAnchor)
         self.setTextCursor(cursor)
     
     def set_file(self, filepath):
         
-        in_file = QtCore.QFile(filepath)
+        in_file = qt.QtCore.QFile(filepath)
         
-        if in_file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text):
+        if in_file.open(qt.QtCore.QFile.ReadOnly | qt.QtCore.QFile.Text):
             text = in_file.readAll()
             
             text = str(text)
@@ -3437,13 +3403,13 @@ class FindTextWidget(BasicDialog):
         self.find_string = GetString( 'Find' )
         self.replace_string = GetString( 'Replace' )
         
-        h_layout = QHBoxLayout()
-        h_layout2 = QHBoxLayout()
+        h_layout = qt.QHBoxLayout()
+        h_layout2 = qt.QHBoxLayout()
         
-        find_button = QPushButton('Find')
-        replace_button = QPushButton('Replace')
-        replace_all_button = QPushButton('Replace All')
-        replace_find_button = QPushButton('Replace/Find')
+        find_button = qt.QPushButton('Find')
+        replace_button = qt.QPushButton('Replace')
+        replace_all_button = qt.QPushButton('Replace All')
+        replace_find_button = qt.QPushButton('Replace/Find')
         
         find_button.setMaximumWidth(100)
         replace_button.setMaximumWidth(100)
@@ -3483,7 +3449,7 @@ class FindTextWidget(BasicDialog):
         
         cursor.setPosition(start)
         
-        cursor.movePosition(QTextCursor.Right,QTextCursor.KeepAnchor,end - start)
+        cursor.movePosition(qt.QTextCursor.Right,qt.QTextCursor.KeepAnchor,end - start)
         
         self.text_widget.setTextCursor(cursor)
         
@@ -3554,7 +3520,7 @@ class FindTextWidget(BasicDialog):
         self.found_match = False
         self.text_widget = widget
 
-class CodeLineNumber(QWidget):
+class CodeLineNumber(qt.QWidget):
     
     def __init__(self, code_editor):
         super(CodeLineNumber, self).__init__()
@@ -3565,13 +3531,13 @@ class CodeLineNumber(QWidget):
     
     def sizeHint(self):
         
-        return QtCore.QSize(self.code_editor._line_number_width(), 0)
+        return qt.QtCore.QSize(self.code_editor._line_number_width(), 0)
     
     def paintEvent(self, event):
         
         self.code_editor._line_number_paint(event)
 
-class NewItemTabWidget(QTabWidget):
+class NewItemTabWidget(qt.QTabWidget):
     
     tab_closed = create_signal(object)
     tab_renamed = create_signal(object)
@@ -3582,7 +3548,7 @@ class NewItemTabWidget(QTabWidget):
         
         #self.tabBar().setMinimumHeight(60)
         
-        self.tabBar().setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.tabBar().setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.tabBar().customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
@@ -3591,7 +3557,7 @@ class NewItemTabWidget(QTabWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QMenu()
+        self.context_menu = qt.QMenu()
         
         rename = self.context_menu.addAction('Rename')
         rename.triggered.connect(self._rename_tab)
@@ -3654,7 +3620,7 @@ class NewItemTabWidget(QTabWidget):
         if title == '+':
             self.removeTab(index)
             self.tab_add.emit(index)
-            self.addTab(QWidget(), '+')
+            self.addTab(qt.QWidget(), '+')
             self.setCurrentIndex(index)
             
             index = index + 1
@@ -3682,22 +3648,22 @@ def get_syntax_format(color = None, style=''):
     
     if type(color) == str:
     
-        _color = QColor()
+        _color = qt.QColor()
         _color.setNamedColor(color)
     if type(color) == list:
-        _color = QColor(*color)
+        _color = qt.QColor(*color)
 
     if color == 'green':
-        _color = QtCore.Qt.green
+        _color = qt.QtCore.Qt.green
 
     
 
-    _format = QTextCharFormat()
+    _format = qt.QTextCharFormat()
     
     if _color:
         _format.setForeground(_color)
     if 'bold' in style:
-        _format.setFontWeight(QFont.Bold)
+        _format.setFontWeight(qt.QFont.Bold)
     if 'italic' in style:
         _format.setFontItalic(True)
 
@@ -3753,7 +3719,7 @@ def syntax_styles(name):
         if not util.is_in_maya():
             return get_syntax_format('brown')
          
-class PythonHighlighter (QSyntaxHighlighter):
+class PythonHighlighter (qt.QSyntaxHighlighter):
     """Syntax highlighter for the Python language.
     """
     # Python keywords
@@ -3784,13 +3750,13 @@ class PythonHighlighter (QSyntaxHighlighter):
               '\{', '\}', '\(', '\)', '\[', '\]',
               ]
     def __init__(self, document):
-        QSyntaxHighlighter.__init__(self, document)
+        qt.QSyntaxHighlighter.__init__(self, document)
 
         # Multi-line strings (expression, flag, style)
         # FIXME: The triple-quotes in these two lines will mess up the
         # syntax highlighting from this point onward
-        self.tri_single = (QtCore.QRegExp("'''"), 1, syntax_styles('string2'))
-        self.tri_double = (QtCore.QRegExp('"""'), 2, syntax_styles('string2'))
+        self.tri_single = (qt.QtCore.QRegExp("'''"), 1, syntax_styles('string2'))
+        self.tri_double = (qt.QtCore.QRegExp('"""'), 2, syntax_styles('string2'))
 
         rules = []
 
@@ -3827,7 +3793,7 @@ class PythonHighlighter (QSyntaxHighlighter):
         ]
 
         # Build a QRegExp for each pattern
-        self.rules = [(QtCore.QRegExp(pat), index, fmt)
+        self.rules = [(qt.QtCore.QRegExp(pat), index, fmt)
             for (pat, index, fmt) in rules]
 
 
@@ -3894,7 +3860,7 @@ class PythonHighlighter (QSyntaxHighlighter):
             return False
 
 
-class PythonCompleter(QCompleter):
+class PythonCompleter(qt.QCompleter):
     
     def __init__(self):
         super(PythonCompleter, self).__init__()
@@ -3904,12 +3870,12 @@ class PythonCompleter(QCompleter):
         
         self.reset_list = True
         
-        self.string_model =QStringListModel(self.model_strings, self)
+        self.string_model =qt.QStringListModel(self.model_strings, self)
         
         self.setCompletionMode(self.PopupCompletion)
         #self.setCompletionMode(self.Un)
         #self.setCompletionMode(self.InlineCompletion)
-        self.setCaseSensitivity(QtCore.Qt.CaseSensitive)
+        self.setCaseSensitivity(qt.QtCore.Qt.CaseSensitive)
         self.setModel(self.string_model)
         self.setModelSorting(self.CaseInsensitivelySortedModel)
         self.setWrapAround(False)
@@ -3937,11 +3903,11 @@ class PythonCompleter(QCompleter):
     def show_info_popup(self, info = None):
         
         
-        self.info = QTextEdit()
+        self.info = qt.QTextEdit()
         self.info.setEnabled(False)
         
         
-        self.info.setWindowFlags(QtCore.Qt.Popup)
+        self.info.setWindowFlags(qt.QtCore.Qt.Popup)
         self.info.show()
     
     def _get_available_modules(self, paths = None):
@@ -4323,22 +4289,22 @@ class PythonCompleter(QCompleter):
    
 #--- Custom Painted Widgets
 
-class TimelineWidget(QWidget):
+class TimelineWidget(qt.QWidget):
 
     def __init__(self):
         super(TimelineWidget, self).__init__()
-        self.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding)
+        self.setSizePolicy(qt.QSizePolicy.Expanding,qt.QSizePolicy.Expanding)
         self.setMaximumHeight(120)
         self.setMinimumHeight(80)
         self.values = []
         self.skip_random = False
         
     def sizeHint(self):
-        return QtCore.QSize(100,80)
+        return qt.QtCore.QSize(100,80)
        
     def paintEvent(self, e):
 
-        painter = QPainter()
+        painter = qt.QPainter()
         
         painter.begin(self)
                         
@@ -4354,7 +4320,7 @@ class TimelineWidget(QWidget):
         
     def _draw_frame(self, painter):
         
-        pen = QPen(QtCore.Qt.gray)
+        pen = qt.QPen(qt.QtCore.Qt.gray)
         pen.setWidth(2)
         painter.setPen(pen)
         
@@ -4381,13 +4347,13 @@ class TimelineWidget(QWidget):
             
             painter.drawLine(sub_accum, height-(height_offset+1), sub_accum, height-(height_offset+11))
             
-            painter.drawText(accum-15, height-(height_offset+12), 30,height-(height_offset+12), QtCore.Qt.AlignCenter, str(value))
+            painter.drawText(accum-15, height-(height_offset+12), 30,height-(height_offset+12), qt.QtCore.Qt.AlignCenter, str(value))
             
             accum+=section
         
     def _draw_random_lines(self, painter):
       
-        pen = QPen(QtCore.Qt.green)
+        pen = qt.QPen(qt.QtCore.Qt.green)
         pen.setWidth(2)
         
         height_offset = 20
@@ -4402,7 +4368,7 @@ class TimelineWidget(QWidget):
             
     def _draw_lines(self, painter):
         
-        pen = QPen(QtCore.Qt.green)
+        pen = qt.QPen(qt.QtCore.Qt.green)
         pen.setWidth(3)
         
         height_offset = 20
@@ -4431,9 +4397,9 @@ class TimelineWidget(QWidget):
   
 def get_comment(parent = None,text_message = 'add comment', title = 'save'):
     
-    dialogue = QInputDialog()
+    dialogue = qt.QInputDialog()
     
-    flags = dialogue.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    flags = dialogue.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     
     comment, ok = dialogue.getText(parent, title,text_message, flags = flags)
     comment = comment.replace('\\', '_')  
@@ -4442,7 +4408,7 @@ def get_comment(parent = None,text_message = 'add comment', title = 'save'):
         return comment
 
 def get_file(directory, parent = None):
-    fileDialog = QFileDialog(parent)
+    fileDialog = qt.QFileDialog(parent)
     
     if directory:
         fileDialog.setDirectory(directory)
@@ -4457,7 +4423,7 @@ def get_file(directory, parent = None):
     
     
 def get_folder(directory, parent = None):
-    fileDialog = QFileDialog(parent)
+    fileDialog = qt.QFileDialog(parent)
     
     if directory:
         fileDialog.setDirectory(directory)
@@ -4470,15 +4436,15 @@ def get_folder(directory, parent = None):
 
 def get_permission(message = None, parent = None, cancel = True, title = 'Permission'):
     
-    message_box = QMessageBox(parent)
+    message_box = qt.QMessageBox(parent)
 
     if message:
         message_box.setText(message)
     message_box.setWindowTitle(title)
     if cancel:
-        message_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+        message_box.setStandardButtons(qt.QMessageBox.Yes | qt.QMessageBox.No | qt.QMessageBox.Cancel)
     if not cancel:
-        message_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        message_box.setStandardButtons(qt.QMessageBox.Yes | qt.QMessageBox.No)
     
     message = message_box.exec_()
     
@@ -4492,7 +4458,7 @@ def get_permission(message = None, parent = None, cancel = True, title = 'Permis
         return None
 
 def get_save_permission(message, parent = None, path = None):
-    message_box = QMessageBox(parent)
+    message_box = qt.QMessageBox(parent)
     
     #flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
     
@@ -4502,8 +4468,8 @@ def get_save_permission(message, parent = None, path = None):
         path_message = 'Path:  %s' % path
         message_box.setInformativeText(path_message)
     
-    save = message_box.addButton('Save', QMessageBox.YesRole)
-    no_save = message_box.addButton("Don't Save", QMessageBox.NoRole)
+    save = message_box.addButton('Save', qt.QMessageBox.YesRole)
+    no_save = message_box.addButton("Don't Save", qt.QMessageBox.NoRole)
     #cancel = message_box.addButton('Cancel', QMessageBox.RejectRole)
     
     #message_box.setWindowFlags(flags)
@@ -4521,9 +4487,9 @@ def get_save_permission(message, parent = None, path = None):
     
 def get_new_name(message, parent = None, old_name = None):
     
-    dialog = QInputDialog()
+    dialog = qt.QInputDialog()
     
-    flags = dialog.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    flags = dialog.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     
     if not old_name:
         comment, ok = dialog.getText(parent, 'Rename', message, flags = flags)
@@ -4538,32 +4504,32 @@ def get_new_name(message, parent = None, old_name = None):
     
 def critical(message, parent = None):
     
-    message_box = QMessageBox(parent)
-    flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    message_box = qt.QMessageBox(parent)
+    flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     message_box.setWindowFlags(flags)
     message_box.critical(parent, 'Critical Error', message)
     
 def warning(message, parent = None):
     
-    message_box = QMessageBox(parent)
-    flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    message_box = qt.QMessageBox(parent)
+    flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     message_box.setWindowFlags(flags)
     message_box.warning(parent, 'Warning', message)
 
 def about(message, parent = None):
     
-    message_box = QMessageBox(parent)
-    flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    message_box = qt.QMessageBox(parent)
+    flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     message_box.setWindowFlags(flags)
     message_box.about(parent, 'About', message)
 
 def get_pick(list_values, text_message, parent = None):
     
-    input_dialog = QInputDialog(parent)
+    input_dialog = qt.QInputDialog(parent)
     input_dialog.setComboBoxItems(list)
     
-    flags = input_dialog.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
-    picked, ok = QInputDialog.getItem(parent, 'Pick One', text_message, list_values, flags = flags)
+    flags = input_dialog.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
+    picked, ok = qt.QInputDialog.getItem(parent, 'Pick One', text_message, list_values, flags = flags)
     
     if ok:
         return picked

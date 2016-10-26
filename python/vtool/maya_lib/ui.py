@@ -4,7 +4,8 @@ import maya.cmds as cmds
 import maya.utils
 
 
-import vtool.qt_ui
+from vtool import qt_ui, qt
+from vtool import util_file
 
 from vtool.maya_lib.ui_lib import ui_fx
 from vtool.maya_lib.ui_lib import ui_rig
@@ -21,17 +22,6 @@ import geo
 import deform
 import rigs_util
 
-#import util
-if vtool.qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if vtool.qt_ui.is_pyside():
-    from PySide import QtCore
-    from PySide.QtGui import *
-if vtool.qt_ui.is_pyside2():
-    from PySide2 import QtCore
-    from PySide2.QtGui import *
-    from PySide2.QtWidgets import *
     
 def load_into_tool_manager(window):
     
@@ -113,13 +103,13 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         super(ToolManager, self).__init__()
         
     def _build_widgets(self):
-        self.tab_widget = QTabWidget()
+        self.tab_widget = qt.QTabWidget()
         self.tab_widget.setTabPosition(self.tab_widget.West)
         
         self.modeling_widget = ui_model.ModelManager()
         self.rigging_widget = ui_rig.RigManager()
         self.animation_widget = ui_anim.AnimationManager()
-        #self.shot_widget = QWidget()
+        #self.shot_widget = qt.QWidget()
         self.fx_widget = ui_fx.FxManager()
         
         #temporary
@@ -136,17 +126,17 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         
         
         
-        version = QLabel('%s' % vtool.util_file.get_vetala_version())
+        version = qt.QLabel('%s' % util_file.get_vetala_version())
         self.main_layout.addWidget(version)
         self.main_layout.addWidget(self.tab_widget)
         
-        self.tab_widget.tabBar().tabButton(0, QTabBar.RightSide).hide()
-        self.tab_widget.tabBar().tabButton(1, QTabBar.RightSide).hide()
-        self.tab_widget.tabBar().tabButton(2, QTabBar.RightSide).hide()
-        self.tab_widget.tabBar().tabButton(3, QTabBar.RightSide).hide()
+        self.tab_widget.tabBar().tabButton(0, qt.QTabBar.RightSide).hide()
+        self.tab_widget.tabBar().tabButton(1, qt.QTabBar.RightSide).hide()
+        self.tab_widget.tabBar().tabButton(2, qt.QTabBar.RightSide).hide()
+        self.tab_widget.tabBar().tabButton(3, qt.QTabBar.RightSide).hide()
         
         #temporary
-        #self.tab_widget.tabBar().tabButton(1, QTabBar.RightSide).hide()
+        #self.tab_widget.tabBar().tabButton(1, qt.QTabBar.RightSide).hide()
         
         self.tab_widget.tabCloseRequested.connect(self._close_tab)
         

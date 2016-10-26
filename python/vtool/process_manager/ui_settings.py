@@ -1,19 +1,9 @@
 # Copyright (C) 2014-2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from vtool import qt_ui
+from vtool import qt_ui, qt
 from vtool import util_file
 from vtool import util
 
-if qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if qt_ui.is_pyside():
-        from PySide import QtCore
-        from PySide.QtGui import *
-if qt_ui.is_pyside2():
-        from PySide2 import QtCore
-        from PySide2.QtGui import *
-        from PySide2.QtWidgets import *
     
 class SettingsWidget(qt_ui.BasicWidget):
     
@@ -31,13 +21,13 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.settings = None
     
     def _define_main_layout(self):
-        layout = QVBoxLayout()
-        layout.setAlignment(QtCore.Qt.AlignTop)
+        layout = qt.QVBoxLayout()
+        layout.setAlignment(qt.QtCore.Qt.AlignTop)
         return layout 
     
     def _build_widgets(self):
         
-        self.tab_widget = QTabWidget()
+        self.tab_widget = qt.QTabWidget()
         
         
         self.dir_widget = qt_ui.BasicWidget()
@@ -59,7 +49,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.project_directory_widget = ProjectDirectoryWidget()
         self.project_directory_widget.directory_changed.connect(self._project_directory_changed)
         
-        tabs = QTabWidget()
+        tabs = qt.QTabWidget()
                              
         self.code_directory_widget = CodeDirectoryWidget()
         self.code_directory_widget.directory_changed.connect(self._code_directory_changed)
@@ -82,13 +72,13 @@ class SettingsWidget(qt_ui.BasicWidget):
         
     def _build_option_widgets(self):
         
-        process_group = QGroupBox('Process Settings')
-        group_layout = QVBoxLayout()
+        process_group = qt.QGroupBox('Process Settings')
+        group_layout = qt.QVBoxLayout()
         process_group.setLayout(group_layout)
         process_group.setMaximumWidth(500)
         
-        process_maya_group = QGroupBox('Maya')
-        maya_group_layout = QVBoxLayout()
+        process_maya_group = qt.QGroupBox('Maya')
+        maya_group_layout = qt.QVBoxLayout()
         process_maya_group.setLayout(maya_group_layout)
         
         self.auto_focus_scene = qt_ui.GetCheckBox('Auto Focus Scene')
@@ -185,9 +175,9 @@ class SettingsWidget(qt_ui.BasicWidget):
         items = []
         
         for code in self.code_directories:
-            item = QListWidgetItem()
+            item = qt.QListWidgetItem()
             item.setText(code)
-            item.setSizeHint(QtCore.QSize(30, 40))
+            item.setSizeHint(qt.QtCore.QSize(30, 40))
             
             items.append(item)
             self.code.addItem(item)
@@ -257,20 +247,20 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.history_entry = 'project_history' 
     
     def _define_main_layout(self):
-        return QVBoxLayout()
+        return qt.QVBoxLayout()
     
     def _define_history_list(self):
         return ProjectList()
     
     def _build_widgets(self):
     
-        file_layout = QHBoxLayout()
+        file_layout = qt.QHBoxLayout()
     
-        #self.directory_label = QLabel('directory')
+        #self.directory_label = qt.QLabel('directory')
 
-        #self.label = QLabel('Paths')
+        #self.label = qt.QLabel('Paths')
         
-        directory_browse = QPushButton('Browse')
+        directory_browse = qt.QPushButton('Browse')
         directory_browse.setMaximumWidth(100)
         
         directory_browse.clicked.connect(self._browser)
@@ -449,7 +439,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.settings = settings
         self.list.set_settings(settings)
 
-class ProjectList(QTreeWidget):
+class ProjectList(qt.QTreeWidget):
 
     directories_changed = qt_ui.create_signal(object)
 
@@ -462,7 +452,7 @@ class ProjectList(QTreeWidget):
 
         self.setColumnWidth(0, 200)
         
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
@@ -485,7 +475,7 @@ class ProjectList(QTreeWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QMenu()
+        self.context_menu = qt.QMenu()
         
         name_action = self.context_menu.addAction('Rename')
         
@@ -623,10 +613,10 @@ class ProjectList(QTreeWidget):
             if type(history) != list:
                 history = ['', history]
             
-            item = QTreeWidgetItem()
+            item = qt.QTreeWidgetItem()
             item.setText(0, history[0])
             item.setText(1, history[1])
-            item.setSizeHint(0, QtCore.QSize(20, 25))
+            item.setSizeHint(0, qt.QtCore.QSize(20, 25))
             
             if current[1] == history[1]:
                 select_item = item
@@ -689,20 +679,20 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         super(CodeDirectoryWidget, self).__init__(parent)
             
     def _define_main_layout(self):
-        return QVBoxLayout()
+        return qt.QVBoxLayout()
     
     def _build_widgets(self):
     
-        file_layout = QHBoxLayout()
+        file_layout = qt.QHBoxLayout()
     
-        directory_browse = QPushButton('Browse')
+        directory_browse = qt.QPushButton('Browse')
         directory_browse.setMaximumWidth(100)
         
         directory_browse.clicked.connect(self._browser)
         
         file_layout.addWidget(directory_browse)
         
-        code_label = QLabel('Paths')
+        code_label = qt.QLabel('Paths')
         
         self.code_list = CodeList()
         self.code_list.setAlternatingRowColors(True)
@@ -763,7 +753,7 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
         
         self.code_list.refresh_code_list(directory)
     
-class CodeList(QListWidget):
+class CodeList(qt.QListWidget):
     
     directories_changed = qt_ui.create_signal(object)
     
@@ -773,7 +763,7 @@ class CodeList(QListWidget):
         self.setAlternatingRowColors(True)
         self.setSelectionMode(self.NoSelection)
 
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
@@ -789,7 +779,7 @@ class CodeList(QListWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QMenu()
+        self.context_menu = qt.QMenu()
         
         remove_action = self.context_menu.addAction('Remove')
         
@@ -812,9 +802,9 @@ class CodeList(QListWidget):
             
             if not util_file.is_dir(directory):
                 name = 'Directory Not Valid!   %s' % directory
-            item = QListWidgetItem()
+            item = qt.QListWidgetItem()
             item.setText(name)
-            item.setSizeHint(QtCore.QSize(20, 25))
+            item.setSizeHint(qt.QtCore.QSize(20, 25))
             
             self.addItem(item)
             

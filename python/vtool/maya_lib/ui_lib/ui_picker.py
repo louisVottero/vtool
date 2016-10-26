@@ -1,19 +1,9 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from vtool.maya_lib import ui_core
-from vtool import qt_ui
-from vtool import util
+from vtool import qt_ui, qt
 
-if qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if qt_ui.is_pyside():
-        from PySide import QtCore
-        from PySide.QtGui import *
-if qt_ui.is_pyside2():
-        from PySide2 import QtCore
-        from PySide2.QtGui import *
-        from PySide2.QtWidgets import *
+from vtool import util
         
 import maya.cmds as cmds
 from vtool.maya_lib import rigs_util
@@ -36,7 +26,7 @@ class PickManager(ui_core.MayaWindow):
         
         if util.get_maya_version() > 2016:
             self.setStyleSheet("""
-                QTabBar::tab {
+                qt.QTabBar::tab {
                     min-height: 30px;
                 }
             """)
@@ -274,7 +264,7 @@ class PickManager(ui_core.MayaWindow):
         
         if self.edit_button.isChecked():
             
-            self.tab_widget.addTab(QWidget(), '+')
+            self.tab_widget.addTab(qt.QWidget(), '+')
             
             self.edit_buttons.setHidden(False)
             
@@ -311,7 +301,7 @@ class PickManager(ui_core.MayaWindow):
         
         self.edit_buttons.setHidden(True)
         
-class NamespaceWidget(QComboBox):
+class NamespaceWidget(qt.QComboBox):
     
     def __init__(self):
         super(NamespaceWidget, self).__init__()
@@ -351,11 +341,11 @@ class CornerWidget(qt_ui.BasicWidget):
     
     
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
     
     def _build_widgets(self):
         
-        self.edit_button = QPushButton('Edit')
+        self.edit_button = qt.QPushButton('Edit')
         self.edit_button.setCheckable(True)
         self.edit_button.setChecked(False)
         
@@ -375,41 +365,41 @@ class EditButtons(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
-        btm_layout = QHBoxLayout()
+        btm_layout = qt.QHBoxLayout()
         self.btm_layout = btm_layout
         
         self.main_layout.addLayout(btm_layout)
         
-        side_buttons = QVBoxLayout()
+        side_buttons = qt.QVBoxLayout()
         
-        self.add_button = QPushButton('Add Control')
+        self.add_button = qt.QPushButton('Add Control')
         self.add_button.clicked.connect(self._add_item)
         side_buttons.addWidget(self.add_button)
         
-        self.add_controls = QPushButton('Add All Controls')
+        self.add_controls = qt.QPushButton('Add All Controls')
         self.add_controls.clicked.connect(self._add_controls)
         side_buttons.addWidget(self.add_controls)
         
-        select_from_viewport = QPushButton('Select From Maya')
+        select_from_viewport = qt.QPushButton('Select From Maya')
         select_from_viewport.clicked.connect( self._select_from_viewport )
         side_buttons.addWidget(select_from_viewport)
         
-        set_background = QPushButton('Set Background')
+        set_background = qt.QPushButton('Set Background')
         set_background.clicked.connect(self._set_background)
         side_buttons.addWidget(set_background)
         
-        btm_layout.addLayout(side_buttons, alignment = QtCore.Qt.AlignLeft)
+        btm_layout.addLayout(side_buttons, alignment = qt.QtCore.Qt.AlignLeft)
         
         self.main_layout.addLayout(btm_layout)
         
         group = qt_ui.Group('Options')
         group.setMaximumWidth(200)
         
-        alignment_layout = QHBoxLayout()
+        alignment_layout = qt.QHBoxLayout()
         
-        self.load_positions = QPushButton('Load Positions')
+        self.load_positions = qt.QPushButton('Load Positions')
         self.load_positions.clicked.connect(self._load_positions)
-        self.load_alignments = QComboBox()
+        self.load_alignments = qt.QComboBox()
         self.load_alignments.addItem('X')
         self.load_alignments.addItem('Y')
         self.load_alignments.addItem('Z')
@@ -537,7 +527,7 @@ class ItemValues( qt_ui.BasicWidget ):
         self.level_widget = qt_ui.GetInteger('Level')
         
         self.text = qt_ui.GetString('label')
-        self.text.label.setAlignment(QtCore.Qt.AlignRight)
+        self.text.label.setAlignment(qt.QtCore.Qt.AlignRight)
         self.text.text_entry.setMaximumWidth(100)
         
         self.x_widget.enter_pressed.connect(self.set_x_value)
@@ -684,10 +674,10 @@ class Picker(qt_ui.BasicGraphicsView):
         
         super(Picker, self).__init__()
         
-        self.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.setDragMode(qt.QGraphicsView.ScrollHandDrag)
         self.setTransformationAnchor(self.AnchorUnderMouse)
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
         
         self.scene.selectionChanged.connect(self._item_selected)
         self.current_item_names = []
@@ -703,10 +693,10 @@ class Picker(qt_ui.BasicGraphicsView):
         
     
     def fitInView(self):
-        rect = QtCore.QRectF(self._photo.pixmap().rect())
+        rect = qt.QtCore.QRectF(self._photo.pixmap().rect())
         
         if not rect.isNull():
-            unity = self.transform().mapRect(QtCore.QRectF(0, 0, 1, 1))
+            unity = self.transform().mapRect(qt.QtCore.QRectF(0, 0, 1, 1))
             self.scale(1 / unity.width(), 1 / unity.height())
             viewrect = self.viewport().rect()
             scenerect = self.transform().mapRect(rect)
@@ -732,9 +722,9 @@ class Picker(qt_ui.BasicGraphicsView):
             self.setSceneRect(-1*sub_width, -1*sub_height, width, height)
         
         if self.edit_mode == True:
-            line_pen = QPen()
-            line_pen.setColor(QColor(60,60,60))
-            line_pen.setStyle(QtCore.Qt.DashLine)
+            line_pen = qt.QPen()
+            line_pen.setColor(qt.QColor(60,60,60))
+            line_pen.setStyle(qt.QtCore.Qt.DashLine)
             line_pen.setWidth(2)
             
             
@@ -752,9 +742,9 @@ class Picker(qt_ui.BasicGraphicsView):
         
     def drawForeground(self, painter, rect):
         if self.current_item_names:
-            text_pen = QPen()
-            text_pen.setColor(QColor(150,150,150))
-            text_pen.setStyle(QtCore.Qt.SolidLine)
+            text_pen = qt.QPen()
+            text_pen.setColor(qt.QColor(150,150,150))
+            text_pen.setStyle(qt.QtCore.Qt.SolidLine)
             painter.setPen(text_pen)
             name = self.current_item_names[0]
             if len(self.current_item_names) > 1:
@@ -799,7 +789,7 @@ class Picker(qt_ui.BasicGraphicsView):
         
     def set_background(self, image_file):
         
-        self.background_image = QPixmap(image_file)
+        self.background_image = qt.QPixmap(image_file)
         self.viewport().update()
         
         self.background_file = image_file
@@ -870,19 +860,19 @@ class Picker(qt_ui.BasicGraphicsView):
                 item.set_edit_mode(bool_value)
                 
         if not self.edit_mode:
-            self.setDragMode(QGraphicsView.ScrollHandDrag)
+            self.setDragMode(qt.QGraphicsView.ScrollHandDrag)
             self.setTransformationAnchor(self.AnchorUnderMouse)
-            self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-            self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+            self.setVerticalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
+            self.setHorizontalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
             
         if self.edit_mode:
             
-            self.setDragMode(QGraphicsView.RubberBandDrag)
+            self.setDragMode(qt.QGraphicsView.RubberBandDrag)
             self.setTransformationAnchor(self.AnchorUnderMouse)
-            self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-            self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+            self.setVerticalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOn)
+            self.setHorizontalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOn)
             
-class SimpleSquareItem(QGraphicsRectItem):
+class SimpleSquareItem(qt.QGraphicsRectItem):
     
     def __init__(self, node):
         super(SimpleSquareItem, self).__init__()
@@ -904,9 +894,9 @@ class SimpleSquareItem(QGraphicsRectItem):
         
         self.setRect(-10,-10,20,20)
         
-        brush = QBrush()
-        brush.setColor(QColor(color[0],color[1], color[2], 150)) #255 is maximum
-        brush.setStyle(QtCore.Qt.SolidPattern)
+        brush = qt.QBrush()
+        brush.setColor(qt.QColor(color[0],color[1], color[2], 150)) #255 is maximum
+        brush.setStyle(qt.QtCore.Qt.SolidPattern)
         self.setBrush(brush)
         
         self.name = node
@@ -929,8 +919,8 @@ class SimpleSquareItem(QGraphicsRectItem):
         
         painter.setFont(font)
         
-        line_pen = QPen()
-        line_pen.setColor(QColor(255,255,255, 200))
+        line_pen = qt.QPen()
+        line_pen.setColor(qt.QColor(255,255,255, 200))
         
         
         painter.setPen(line_pen)
@@ -938,8 +928,8 @@ class SimpleSquareItem(QGraphicsRectItem):
         if not self.text:
             return
         
-        rect = QtCore.QRect(-25,-25,50,50)
-        painter.drawText(rect, QtCore.Qt.AlignCenter, self.text)
+        rect = qt.QtCore.QRect(-25,-25,50,50)
+        painter.drawText(rect, qt.QtCore.Qt.AlignCenter, self.text)
 
     def mousePressEvent(self, event):
         super(SimpleSquareItem, self).mousePressEvent(event)
@@ -954,9 +944,9 @@ class SimpleSquareItem(QGraphicsRectItem):
     def set_edit_mode(self, bool_value):
         
         if bool_value == True:
-            self.setFlags(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+            self.setFlags(qt.QGraphicsItem.ItemIsMovable | qt.QGraphicsItem.ItemIsSelectable)
         if bool_value == False:
-            self.setFlags(self.flags() & ~QGraphicsItem.ItemIsSelectable & ~QGraphicsItem.ItemIsMovable)
+            self.setFlags(self.flags() & ~qt.QGraphicsItem.ItemIsSelectable & ~qt.QGraphicsItem.ItemIsMovable)
             
     def set_text(self, text):
         

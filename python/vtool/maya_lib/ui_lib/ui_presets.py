@@ -3,19 +3,9 @@
 from vtool.maya_lib import ui_core
 from vtool.maya_lib import attr
 
-from vtool import qt_ui
-from vtool import util
+from vtool import qt_ui, qt
 
-if qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if qt_ui.is_pyside():
-        from PySide import QtCore
-        from PySide.QtGui import *
-if qt_ui.is_pyside2():
-        from PySide2 import QtCore
-        from PySide2.QtGui import *
-        from PySide2.QtWidgets import *
+from vtool import util
 
 import maya.cmds as cmds
 
@@ -82,7 +72,7 @@ class Presets(qt_ui.BasicWidget):
                             if nodes:
                                 preset_settings.preset_nodes.set_nodes(nodes)
                                 
-                self.tabs.addTab(QWidget(), '+')
+                self.tabs.addTab(qt.QWidget(), '+')
             
             if not data:
                 self._add_default_tabs()
@@ -100,7 +90,7 @@ class Presets(qt_ui.BasicWidget):
         self.tabs.addTab(preset_settings, 'Preset')
         self.settings.append(preset_settings)
         preset_settings.export_needed.connect(self.export)
-        self.tabs.addTab(QWidget(), '+')
+        self.tabs.addTab(qt.QWidget(), '+')
         
     def _build_widgets(self):
         
@@ -185,12 +175,12 @@ class Preset_Settings(qt_ui.BasicWidget):
     export_needed = qt_ui.create_signal()
     
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
     
     def _build_widgets(self):
         
-        layout1 = QVBoxLayout()
-        layout2 = QVBoxLayout()
+        layout1 = qt.QVBoxLayout()
+        layout2 = qt.QVBoxLayout()
         
         self.preset_settings = SettingTree()
         self.preset_settings.export_needed.connect(self._export_needed)
@@ -198,7 +188,7 @@ class Preset_Settings(qt_ui.BasicWidget):
         
         self.preset_nodes.hide()
         
-        self.load_attr_button = QPushButton('Update Attributes')
+        self.load_attr_button = qt.QPushButton('Update Attributes')
         self.load_attr_button.setDisabled(True)
         self.load_attr_button.setMaximumWidth(100)
         
@@ -334,7 +324,7 @@ class Preset_Settings(qt_ui.BasicWidget):
         self.preset_settings.add_item(name = name, rename = False)
         self.preset_attributes[name] = data
     
-class SettingTree(QTreeWidget):
+class SettingTree(qt.QTreeWidget):
     
     item_renamed = qt_ui.create_signal(object, object)
     export_needed = qt_ui.create_signal()
@@ -344,7 +334,7 @@ class SettingTree(QTreeWidget):
         
         super(SettingTree, self).__init__()
         
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
@@ -367,7 +357,7 @@ class SettingTree(QTreeWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QMenu()
+        self.context_menu = qt.QMenu()
         
         self.new_action = self.context_menu.addAction('New')
         self.rename_action = self.context_menu.addAction('Rename')
@@ -402,9 +392,9 @@ class SettingTree(QTreeWidget):
         if not name:
             name = 'Preset'
         
-        item = QTreeWidgetItem()
+        item = qt.QTreeWidgetItem()
         item.setText(0, self._inc_name(name))
-        item.setSizeHint(0, QtCore.QSize(100, 18))
+        item.setSizeHint(0, qt.QtCore.QSize(100, 18))
         self.addTopLevelItem(item)
         
         self.setCurrentItem(item)
@@ -482,12 +472,12 @@ class SettingTree(QTreeWidget):
         
         self.setCurrentItem(item)
         
-class NodeTree(QTreeWidget):
+class NodeTree(qt.QTreeWidget):
     
     def __init__(self):
         super(NodeTree, self).__init__()
         
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
@@ -504,7 +494,7 @@ class NodeTree(QTreeWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QMenu()
+        self.context_menu = qt.QMenu()
         
         self.set_action = self.context_menu.addAction('Set Nodes')
         self.remove_action = self.context_menu.addAction('Remove')
@@ -541,7 +531,7 @@ class NodeTree(QTreeWidget):
             if thing in existing_items:
                 continue
             
-            item = QTreeWidgetItem()
+            item = qt.QTreeWidgetItem()
             
             item.setText(0, thing)
             

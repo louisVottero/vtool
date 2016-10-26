@@ -1,17 +1,7 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from vtool import qt_ui
+from vtool import qt_ui, qt
 
-if qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if qt_ui.is_pyside():
-    from PySide import QtCore
-    from PySide.QtGui import *
-if qt_ui.is_pyside2():
-    from PySide2 import QtCore
-    from PySide2.QtGui import *
-    from PySide2.QtWidgets import *
 
 import ui_character
 
@@ -49,7 +39,7 @@ class FxTabWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
-        self.tabs = QTabWidget()
+        self.tabs = qt.QTabWidget()
         
         self.settings_widget = FxSettingsWidget()
         self.cache_widget = CacheWidget()
@@ -74,7 +64,7 @@ class CacheWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
-        maya_cache = QPushButton('Maya Cache')
+        maya_cache = qt.QPushButton('Maya Cache')
         
         maya_cache.clicked.connect(self._maya_cache)
         
@@ -109,7 +99,7 @@ class FxSettingsWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
-        self.scroll_area = QScrollArea()
+        self.scroll_area = qt.QScrollArea()
         
         self.main_widget = qt_ui.BasicWidget()
         
@@ -166,7 +156,7 @@ class SettingWidget(qt_ui.BasicWidget):
         
         self.main_layout.setContentsMargins(10,10,10,5)
         
-        self.label = QLabel()
+        self.label = qt.QLabel()
         
         self.tree = SettingTree()
         
@@ -183,7 +173,7 @@ class SettingWidget(qt_ui.BasicWidget):
     def add_setting(self, name, value):
         self.tree.add_setting(name, value)
         
-class SettingTree(QTreeWidget):
+class SettingTree(qt.QTreeWidget):
     
     def __init__(self):
         super(SettingTree, self).__init__()
@@ -237,7 +227,7 @@ class SettingTree(QTreeWidget):
         
         self.settings[name] = value
         
-        item = QTreeWidgetItem()
+        item = qt.QTreeWidgetItem()
         item.setText(0, name)
         
         self.addTopLevelItem(item)

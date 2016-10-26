@@ -4,22 +4,11 @@ import string
 
 from vtool import util
 from vtool import util_file
-from vtool import qt_ui
+from vtool import qt_ui, qt
 
 import process
 
-if qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-    
-if qt_ui.is_pyside():
-    from PySide import QtCore
-    from PySide.QtGui import *
-    
-if qt_ui.is_pyside2():
-    from PySide2 import QtCore
-    from PySide2.QtGui import *
-    from PySide2.QtWidgets import *
+
 
 class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
@@ -88,7 +77,7 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         self.directory = None
         
     def _define_main_layout(self):
-        return QVBoxLayout()
+        return qt.QVBoxLayout()
     
     def _build_widgets(self):
         
@@ -213,7 +202,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.setHeaderHidden(True)
         self.activation_fix = True
         
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
@@ -344,7 +333,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if not item or model_index.column() == 1:
             self.clearSelection()
         
-        if event.button() == QtCore.Qt.RightButton:
+        if event.button() == qt.QtCore.Qt.RightButton:
             return
         
         if model_index.column() == 0 and item:
@@ -395,7 +384,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QMenu()
+        self.context_menu = qt.QMenu()
         
         self.new_process_action = self.context_menu.addAction('New Process')
         self.new_top_level_action = self.context_menu.addAction('New Top Level Process')
@@ -617,7 +606,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if not settings_process:
             return
         
-        iterator = QTreeWidgetItemIterator(self)
+        iterator = qt.QTreeWidgetItemIterator(self)
         
         
         while iterator.value():
@@ -696,7 +685,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         #has parts takes time because it needs to check children folders
         if item.has_parts():
-            QTreeWidgetItem(item)
+            qt.QTreeWidgetItem(item)
         
         return item
 
@@ -899,7 +888,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
             if source_process.get_sub_processes():
                 
-                temp_item = QTreeWidgetItem()
+                temp_item = qt.QTreeWidgetItem()
                 target_item.addChild(temp_item)
         
         self.copy_process.emit()
@@ -908,7 +897,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.settings = settings
       
-class ProcessItem(QTreeWidgetItem):
+class ProcessItem(qt.QTreeWidgetItem):
     
     def __init__(self, directory, name):
         super(ProcessItem, self).__init__()
@@ -924,7 +913,7 @@ class ProcessItem(QTreeWidgetItem):
         
         self.detail = False
         
-        self.setSizeHint(0, QtCore.QSize(100,26))
+        self.setSizeHint(0, qt.QtCore.QSize(100,26))
         
     def _add_process(self, directory, name):
         
@@ -1020,7 +1009,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         super(CopyWidget, self).__init__()
         self.setWindowTitle('Copy Match')
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(qt.QtCore.Qt.WindowStaysOnTopHint)
         self.setMinimumWidth(600)
         self.process = None
         
@@ -1029,22 +1018,22 @@ class CopyWidget(qt_ui.BasicWidget):
         if util.is_in_maya():
             alpha = 100
         
-        self.yes_brush = QBrush()
-        self.yes_brush.setColor(QColor(0,255,0, alpha))
-        self.yes_brush.setStyle(QtCore.Qt.SolidPattern)
+        self.yes_brush = qt.QBrush()
+        self.yes_brush.setColor(qt.QColor(0,255,0, alpha))
+        self.yes_brush.setStyle(qt.QtCore.Qt.SolidPattern)
     
-        self.no_brush = QBrush()
-        self.no_brush.setColor(QColor(255,0,0, alpha))
-        self.no_brush.setStyle(QtCore.Qt.SolidPattern)
+        self.no_brush = qt.QBrush()
+        self.no_brush.setColor(qt.QColor(255,0,0, alpha))
+        self.no_brush.setStyle(qt.QtCore.Qt.SolidPattern)
         
         self.update_on_select = True
     
     def _build_widgets(self):
         
-        self.copy_from = QLabel('Copy from:')
-        self.copy_from.setAlignment(QtCore.Qt.AlignCenter)
+        self.copy_from = qt.QLabel('Copy from:')
+        self.copy_from.setAlignment(qt.QtCore.Qt.AlignCenter)
         
-        self.tabs = QTabWidget()
+        self.tabs = qt.QTabWidget()
         
         self.data_list = CopyTree()
         self.code_list = CopyTree()
@@ -1069,12 +1058,12 @@ class CopyWidget(qt_ui.BasicWidget):
         self.tabs.addTab(self.code_list, 'Code')
         self.tabs.addTab(self.settings_list, 'Settings')
         
-        h_layout = QHBoxLayout()
+        h_layout = qt.QHBoxLayout()
         
-        self.paste_button = QPushButton('Paste')
+        self.paste_button = qt.QPushButton('Paste')
         self.paste_button.setDisabled(True)
         self.paste_button.clicked.connect(self._paste)
-        cancel = QPushButton('Cancel')
+        cancel = qt.QPushButton('Cancel')
         
         self.paste_button.clicked.connect(self.pasted)
         cancel.clicked.connect(self._cancelled)
@@ -1082,10 +1071,10 @@ class CopyWidget(qt_ui.BasicWidget):
         h_layout.addWidget(self.paste_button)
         h_layout.addWidget(cancel)
         
-        self.paste_to = QLabel('- Select Process in the View to Match -')
-        self.paste_to.setAlignment(QtCore.Qt.AlignCenter)
+        self.paste_to = qt.QLabel('- Select Process in the View to Match -')
+        self.paste_to.setAlignment(qt.QtCore.Qt.AlignCenter)
         
-        self.progress_bar = QProgressBar()
+        self.progress_bar = qt.QProgressBar()
         self.progress_bar.hide()
         
         self.main_layout.addWidget(self.copy_from)
@@ -1527,7 +1516,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.tabs.setCurrentIndex(0)
         
-class CopyTree(QTreeWidget):
+class CopyTree(qt.QTreeWidget):
     
     def __init__(self):
         super(CopyTree, self).__init__()
@@ -1535,7 +1524,7 @@ class CopyTree(QTreeWidget):
         self.setHeaderLabels(['Source', 'State', 'Target'])
         header_item = self.headerItem()
         #header_item.setTextAlignment(0, QtCore.Qt.AlignLeft)
-        header_item.setTextAlignment(1, QtCore.Qt.AlignHCenter)
+        header_item.setTextAlignment(1, qt.QtCore.Qt.AlignHCenter)
         
         self.setColumnWidth(0, 240)
         self.setColumnWidth(1, 100)
@@ -1543,11 +1532,11 @@ class CopyTree(QTreeWidget):
         
     def add_item(self, column, name):
         
-        item = QTreeWidgetItem()
+        item = qt.QTreeWidgetItem()
         item.setText(column, name)
         item.setText(1, '-')
         item.setText(2, (' ' * 10) + '-')
-        item.setTextAlignment(1, QtCore.Qt.AlignCenter)
+        item.setTextAlignment(1, qt.QtCore.Qt.AlignCenter)
         self.addTopLevelItem(item)
         
         return item
