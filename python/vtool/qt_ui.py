@@ -4468,18 +4468,19 @@ def get_folder(directory, parent = None):
         return directory
     
 
-def get_permission(message, parent = None):
+def get_permission(message = None, parent = None, cancel = True, title = 'Permission'):
     
     message_box = QMessageBox(parent)
+
+    if message:
+        message_box.setText(message)
+    message_box.setWindowTitle(title)
+    if cancel:
+        message_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+    if not cancel:
+        message_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
     
-    flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
-    
-    message_box.setText('Permission')
-    message_box.setInformativeText(message)
-    message_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
-    message_box.setWindowFlags(flags)
     message = message_box.exec_()
-    #message = message_box.question(parent, 'Permission', message, QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel )
     
     if message == message_box.Yes:
         return True
@@ -4493,19 +4494,19 @@ def get_permission(message, parent = None):
 def get_save_permission(message, parent = None, path = None):
     message_box = QMessageBox(parent)
     
-    flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    #flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
     
     message_box.setText(message)
-    
+    message_box.setWindowTitle('Permission')
     if path:
         path_message = 'Path:  %s' % path
         message_box.setInformativeText(path_message)
     
     save = message_box.addButton('Save', QMessageBox.YesRole)
     no_save = message_box.addButton("Don't Save", QMessageBox.NoRole)
-    cancel = message_box.addButton('Cancel', QMessageBox.RejectRole)
+    #cancel = message_box.addButton('Cancel', QMessageBox.RejectRole)
     
-    message_box.setWindowFlags(flags)
+    #message_box.setWindowFlags(flags)
     message = message_box.exec_()
     
     if message_box.clickedButton() == save:
@@ -4514,8 +4515,8 @@ def get_save_permission(message, parent = None, path = None):
     if message_box.clickedButton() == no_save:
         return False
     
-    if message_box.clickedButton() == cancel:
-        return None
+    #if message_box.clickedButton() == cancel:
+    #    return None
     
     
 def get_new_name(message, parent = None, old_name = None):
@@ -4556,13 +4557,13 @@ def about(message, parent = None):
     message_box.setWindowFlags(flags)
     message_box.about(parent, 'About', message)
 
-def get_pick(list, text_message, parent = None):
+def get_pick(list_values, text_message, parent = None):
     
     input_dialog = QInputDialog(parent)
     input_dialog.setComboBoxItems(list)
     
     flags = input_dialog.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
-    picked, ok = QInputDialog.getItem(parent, 'Pick One', text_message, list, flags = flags)
+    picked, ok = QInputDialog.getItem(parent, 'Pick One', text_message, list_values, flags = flags)
     
     if ok:
         return picked

@@ -618,6 +618,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 process_path = util.get_env('VETALA_CURRENT_PROCESS')
                 filepath = util_file.remove_common_path_simple(process_path, filepath)
                 
+                result = qt_ui.get_permission('Continue?', self, cancel = False, title = 'Changes not saved.')
+                
+                """
                 result = qt_ui.get_save_permission('Save before processing?', self, filepath)
                 
                 if result:
@@ -625,8 +628,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     
                     if not saved:
                         return
-                    
-                if result == None:
+                """ 
+                if result == None or result == False:
                     return
                 
             cmds.file(renameToSave = True)
