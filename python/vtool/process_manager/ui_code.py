@@ -14,20 +14,9 @@ import vtool.util
 import ui_data
 import process
 
-from vtool import qt_ui
+from vtool import qt_ui, qt
 from vtool import util_file
 from multiprocessing.dummy import current_process
-
-if vtool.qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if vtool.qt_ui.is_pyside():
-        from PySide import QtCore
-        from PySide.QtGui import *
-if vtool.qt_ui.is_pyside2():
-        from PySide2 import QtCore
-        from PySide2.QtGui import *
-        from PySide2.QtWidgets import *
     
 class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     """
@@ -41,7 +30,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     
     def _build_widgets(self):
         
-        self.splitter = QSplitter()
+        self.splitter = qt.QSplitter()
         self.main_layout.addWidget(self.splitter)
         
         self.code_widget = CodeWidget()
@@ -83,7 +72,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.sizes = self.splitter.sizes()
         
     def _define_main_layout(self):
-        return QVBoxLayout()
+        return qt.QVBoxLayout()
         
     def _close_splitter(self):
         
@@ -259,7 +248,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.main_layout.addWidget(self.code_edit, stretch = 1)
         self.main_layout.addWidget(self.save_file, stretch = 0)
         
-        self.alt_layout = QVBoxLayout()
+        self.alt_layout = qt.QVBoxLayout()
         
         self.save_file.hide()
         
@@ -462,13 +451,13 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         self.exteranl_code_libarary = None
         
     def _define_main_layout(self):
-        return QVBoxLayout()
+        return qt.QVBoxLayout()
         
     def _build_widgets(self):
         
         self.code_manifest_tree = CodeManifestTree()
         
-        buttons_layout = QHBoxLayout()
+        buttons_layout = qt.QHBoxLayout()
                 
         self.code_manifest_tree.item_renamed.connect(self._rename)
         self.code_manifest_tree.script_open.connect(self._script_open)
@@ -605,7 +594,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.setAlternatingRowColors(False)
         
         self.edit_state = False
-        self.setBackgroundRole(QPalette.Light)
+        self.setBackgroundRole(qt.QPalette.Light)
         
         self.setSelectionMode(self.ExtendedSelection)
         
@@ -615,13 +604,13 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.setDropIndicatorShown(True) 
         self.setAutoScroll(True)
         
-        self.setDefaultDropAction(QtCore.Qt.MoveAction)
-        self.invisibleRootItem().setFlags(QtCore.Qt.ItemIsDropEnabled) 
+        self.setDefaultDropAction(qt.QtCore.Qt.MoveAction)
+        self.invisibleRootItem().setFlags(qt.QtCore.Qt.ItemIsDropEnabled) 
         
         self.dragged_item = None
         self.handle_selection_change = True
         
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
         self.future_rename = False
@@ -633,7 +622,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         header = self.header()
         
-        self.checkbox = QCheckBox(header)
+        self.checkbox = qt.QCheckBox(header)
         self.checkbox.stateChanged.connect(self._set_all_checked)
         
         self.update_checkbox = True
@@ -650,8 +639,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if vtool.util.is_in_maya():
             palette = self.palette()
             
-            palette.setColor(QPalette.Base, QColor(60,60,60,255) )
-            palette.setColor(QPalette.AlternateBase, QColor(70,70,70,255) )
+            palette.setColor(qt.QPalette.Base, qt.QColor(60,60,60,255) )
+            palette.setColor(qt.QPalette.AlternateBase, qt.QColor(70,70,70,255) )
         
             self.setPalette(palette)
             
@@ -664,9 +653,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             painter.save()
             
             if vtool.util.is_in_maya():
-                brush = QBrush( QColor(70,0,0))
+                brush = qt.QBrush( qt.QColor(70,0,0))
             if not vtool.util.is_in_maya():
-                brush = QBrush( QColor(240,230,230))
+                brush = qt.QBrush( qt.QColor(240,230,230))
             
             painter.fillRect( option.rect, brush)
             painter.restore()
@@ -676,7 +665,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     def resizeEvent(self, event = None):
         super(CodeManifestTree, self).resizeEvent(event)
         
-        self.checkbox.setGeometry(QtCore.QRect(3, 2, 16, 17))
+        self.checkbox.setGeometry(qt.QtCore.QRect(3, 2, 16, 17))
         
     def mouseDoubleClickEvent(self, event):
         
@@ -704,12 +693,12 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def keyPressEvent(self, event):
         
-        if event.key() == QtCore.Qt.Key_Shift:
+        if event.key() == qt.QtCore.Qt.Key_Shift:
             self.shift_activate = True
     
     def keyReleaseEvent(self, event):
         
-        if event.key() == QtCore.Qt.Key_Shift:
+        if event.key() == qt.QtCore.Qt.Key_Shift:
             
             self.shift_activate = False
     
@@ -1051,9 +1040,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             return
         
         if int == 2:
-            state = QtCore.Qt.Checked
+            state = qt.QtCore.Qt.Checked
         if int == 0:
-            state = QtCore.Qt.Unchecked
+            state = qt.QtCore.Qt.Unchecked
         
         count = self.topLevelItemCount()
         
@@ -1064,7 +1053,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QMenu()
+        self.context_menu = qt.QMenu()
         
         new_python = self.context_menu.addAction('New Python Code')
         new_data_import = self.context_menu.addAction('New Data Import')
@@ -1273,17 +1262,17 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     def _setup_item(self, item, state):
         
         if not state:
-            item.setCheckState(0, QtCore.Qt.Unchecked)
+            item.setCheckState(0, qt.QtCore.Qt.Unchecked)
         if state:
-            item.setCheckState(0, QtCore.Qt.Checked)
+            item.setCheckState(0, qt.QtCore.Qt.Checked)
         
         if not self.hierarchy:
             #dont remove this comment.  You can make an item not be drop enabled by giving it every flag except drop enabled.
-            item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEditable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsUserCheckable)
+            item.setFlags(qt.QtCore.Qt.ItemIsSelectable|qt.QtCore.Qt.ItemIsEditable|qt.QtCore.Qt.ItemIsEnabled|qt.QtCore.Qt.ItemIsDragEnabled|qt.QtCore.Qt.ItemIsUserCheckable)
         
         if self.hierarchy:
             #this allows for dropping
-            item.setFlags(QtCore.Qt.ItemIsSelectable|QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsDragEnabled|QtCore.Qt.ItemIsUserCheckable|QtCore.Qt.ItemIsDropEnabled)
+            item.setFlags(qt.QtCore.Qt.ItemIsSelectable|qt.QtCore.Qt.ItemIsEnabled|qt.QtCore.Qt.ItemIsDragEnabled|qt.QtCore.Qt.ItemIsUserCheckable|qt.QtCore.Qt.ItemIsDropEnabled)
         
         #setData in the item is an issue. If this isn't happening then the manifest will update every time the check state changes by the program.
         #this avoids it updating while it is being set by the program.
@@ -1398,7 +1387,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         #Could not user item iterator because it updates setData which updates the manifest, 
         #which causes the manifest to be updated too much.
-        #it = QTreeWidgetItemIterator(self)
+        #it = qt.QTreeWidgetItemIterator(self)
         #while it:
             #item = it.value()
             #items.append(item)
@@ -1439,7 +1428,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         background = item.background(0)
         orig_background = background
-        color = QColor(1,0,0)
+        color = qt.QColor(1,0,0)
         background.setColor(color)
         item.setBackground(0, background)
         
@@ -1740,10 +1729,10 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         
         super(ManifestItem, self).__init__()
         
-        self.setSizeHint(0, QtCore.QSize(10, 28))
+        self.setSizeHint(0, qt.QtCore.QSize(10, 28))
         
         #if vtool.util.is_in_maya():
-        #    brush = QBrush(QColor(100,100,100))
+        #    brush = qt.QBrush(qt.QColor(100,100,100))
         #    self.setBackground(0, brush)
         
         maya_version = vtool.util.get_maya_version()
@@ -1754,21 +1743,21 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         if maya_version < 2016 and maya_version != 0:
             self.status_icon = self._radial_fill_icon(0.6, 0.6, 0.6)
         
-        self.setCheckState(0, QtCore.Qt.Unchecked)
+        self.setCheckState(0, qt.QtCore.Qt.Unchecked)
         
         self.run_state = -1
         
     
     def _square_fill_icon(self, r,g,b):
         
-        pixmap = QPixmap(20, 20)
-        pixmap.fill(QColor.fromRgbF(r, g, b, 1))
+        pixmap = qt.QPixmap(20, 20)
+        pixmap.fill(qt.QColor.fromRgbF(r, g, b, 1))
         
-        painter = QPainter(pixmap)
-        painter.fillRect(0, 0, 100, 100, QColor.fromRgbF(r, g, b, 1))
+        painter = qt.QPainter(pixmap)
+        painter.fillRect(0, 0, 100, 100, qt.QColor.fromRgbF(r, g, b, 1))
         painter.end()
         
-        icon = QIcon(pixmap)
+        icon = qt.QIcon(pixmap)
         
         self.setIcon(0, icon)
         
@@ -1778,17 +1767,17 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         self._square_fill_icon(r, g, b)
         
         
-        pixmap = QPixmap(20, 20)
-        pixmap.fill(QtCore.Qt.transparent)
-        gradient = QRadialGradient(10, 10, 10)
-        gradient.setColorAt(0, QColor.fromRgbF(r, g, b, 1))
-        gradient.setColorAt(1, QColor.fromRgbF(0, 0, 0, 0))
+        pixmap = qt.QPixmap(20, 20)
+        pixmap.fill(qt.QtCore.Qt.transparent)
+        gradient = qt.QRadialGradient(10, 10, 10)
+        gradient.setColorAt(0, qt.QColor.fromRgbF(r, g, b, 1))
+        gradient.setColorAt(1, qt.QColor.fromRgbF(0, 0, 0, 0))
         
-        painter = QPainter(pixmap)
+        painter = qt.QPainter(pixmap)
         painter.fillRect(0, 0, 100, 100, gradient)
         painter.end()
         
-        icon = QIcon(pixmap)
+        icon = qt.QIcon(pixmap)
         
         self.setIcon(0, icon)
         
@@ -1796,11 +1785,11 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         super(ManifestItem, self).setData(column, role, value)
         
         if value == 0:
-            check_state = QtCore.Qt.Unchecked
+            check_state = qt.QtCore.Qt.Unchecked
         if value == 2:
-            check_state = QtCore.Qt.Checked
+            check_state = qt.QtCore.Qt.Checked
         
-        if role == QtCore.Qt.CheckStateRole:
+        if role == qt.QtCore.Qt.CheckStateRole:
             
             if self.handle_manifest:
                 tree = self.treeWidget()
@@ -1878,28 +1867,28 @@ class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
     def __init__(self):
         super(ManifestItemWidget, self).__init__()
         
-        self.setSizePolicy(QSizePolicy(10, 40))
+        self.setSizePolicy(qt.QSizePolicy(10, 40))
     
 
     
     def _build_widgets(self):
         
-        #check_box.setIcon(QIcon())
-        self.status_icon = QLabel()
+        #check_box.setIcon(qt.QIcon())
+        self.status_icon = qt.QLabel()
         self.status_icon.setMaximumSize(20,20)
         self._radial_fill_icon(0.6, 0.6, 0.6)
-        #check_box.setIcon(QIcon(pixmap))
+        #check_box.setIcon(qt.QIcon(pixmap))
         
-        self.check_box = QCheckBox()
-        self.check_box.setCheckState(QtCore.Qt.Checked)
+        self.check_box = qt.QCheckBox()
+        self.check_box.setCheckState(qt.QtCore.Qt.Checked)
         
-        #self.palette = QPalette()
-        #self.palette.setColor(self.palette.Background, QColor(.5,.5,.5))
+        #self.palette = qt.QPalette()
+        #self.palette.setColor(self.palette.Background, qt.QColor(.5,.5,.5))
         
         #self.check_box.setPalette(self.palette)
         
-        #self.label = QLabel()
-        #self.label = QLineEdit()
+        #self.label = qt.QLabel()
+        #self.label = qt.QLineEdit()
         #self.label.setReadOnly(True)
         
         
@@ -1908,7 +1897,7 @@ class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
         self.main_layout.addWidget(self.check_box)
         self.main_layout.addSpacing(5)
         #self.main_layout.addWidget(self.label)
-        self.main_layout.setAlignment(QtCore.Qt.AlignLeft)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         
     def set_text(self, text):
         pass
@@ -1931,8 +1920,8 @@ class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
     def set_check_state(self, bool_value):
         
         if bool_value:
-            self.check_box.setCheckState(QtCore.Qt.Checked)
+            self.check_box.setCheckState(qt.QtCore.Qt.Checked)
         if not bool_value:
-            self.check_box.setCheckState(QtCore.Qt.Unchecked)
+            self.check_box.setCheckState(qt.QtCore.Qt.Unchecked)
         
     

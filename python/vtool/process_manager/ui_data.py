@@ -8,17 +8,7 @@ import vtool.data
 import vtool.util
 import process
 
-if vtool.qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if vtool.qt_ui.is_pyside():
-        from PySide import QtCore
-        from PySide.QtGui import *
-if vtool.qt_ui.is_pyside2():
-        from PySide2 import QtCore
-        from PySide2.QtGui import *
-        from PySide2.QtWidgets import *
-
+from vtool import qt
 
 class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
     
@@ -35,11 +25,11 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.data_widget.setMouseTracking(True)
           
     def _define_main_layout(self):
-        return QVBoxLayout()
+        return qt.QVBoxLayout()
                 
     def _build_widgets(self):
         
-        splitter = QSplitter()
+        splitter = qt.QSplitter()
         
         self.data_widget = DataTreeWidget()
         self.data_widget.itemSelectionChanged.connect(self._data_item_selection_changed)
@@ -48,7 +38,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.datatype_widget = DataTypeWidget()
         self.datatype_widget.data_added.connect(self._add_data)
         
-        splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)   
+        splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)   
         self.main_layout.addWidget(splitter, stretch = 1)
                 
         splitter.addWidget(self.data_widget)
@@ -57,12 +47,12 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         splitter.setSizes([1,1])
         self.splitter = splitter
         
-        self.label = QLabel('-')
+        self.label = qt.QLabel('-')
         
-        self.file_widget = QWidget()
+        self.file_widget = qt.QWidget()
         self.file_widget.hide()
         
-        self.main_layout.addWidget(self.label, alignment = QtCore.Qt.AlignCenter)
+        self.main_layout.addWidget(self.label, alignment = qt.QtCore.Qt.AlignCenter)
         self.main_layout.addWidget(self.file_widget)
         
     def mouse_move(self, event):
@@ -210,7 +200,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         self.setColumnWidth(0, 150)
         self.setColumnWidth(1, 150)
         
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
@@ -229,7 +219,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QMenu()
+        self.context_menu = qt.QMenu()
         
         self.rename_action = self.context_menu.addAction('Rename')
         self.remove_action = self.context_menu.addAction('Delete')
@@ -348,7 +338,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         for foldername in folders:
             
-            item = QTreeWidgetItem()
+            item = qt.QTreeWidgetItem()
             item.setText(0, foldername)
             
             data_type = process_tool.get_data_type(foldername)
@@ -356,7 +346,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             item.setText(1, data_type)
             
             item.folder = foldername
-            item.setSizeHint(0, QtCore.QSize(100,25))
+            item.setSizeHint(0, qt.QtCore.QSize(100,25))
             self.addTopLevelItem(item)
             
             if foldername == new_data:
@@ -421,12 +411,12 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         
     def sizeHint(self):
         
-        return QtCore.QSize(0,20)
+        return qt.QtCore.QSize(0,20)
                 
     def _build_widgets(self):
         self.data_type_tree_widget = DataTypeTreeWidget()
         
-        add_button = QPushButton('Add')
+        add_button = qt.QPushButton('Add')
         add_button.setMaximumWidth(100)
         add_button.clicked.connect(self._add )
         
@@ -500,7 +490,7 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
     def set_directory(self, filepath):
         self.directory = filepath
     
-class DataTypeTreeWidget(QTreeWidget):
+class DataTypeTreeWidget(qt.QTreeWidget):
     
     def __init__(self):
         
@@ -521,9 +511,9 @@ class DataTypeTreeWidget(QTreeWidget):
 
     def _add_data_item(self, data_type, parent):
         
-        item = QTreeWidgetItem(parent)
+        item = qt.QTreeWidgetItem(parent)
         item.setText(0, data_type)
-        item.setSizeHint(0, QtCore.QSize(100, 20))
+        item.setSizeHint(0, qt.QtCore.QSize(100, 20))
         #self.addTopLevelItem(item)
         
         return item
@@ -541,9 +531,9 @@ class DataTypeTreeWidget(QTreeWidget):
         group_item = self._find_group(group_type)
         
         if not group_item:
-            item = QTreeWidgetItem()
+            item = qt.QTreeWidgetItem()
             item.setText(0, group_type)
-            item.setSizeHint(0, QtCore.QSize(100, 25))
+            item.setSizeHint(0, qt.QtCore.QSize(100, 25))
             self.addTopLevelItem(item)    
             group_item = item
         
@@ -570,7 +560,7 @@ class GroupWidget(vtool.qt_ui.BasicWidget):
     def _build_widgets(self):
         super(GroupWidget, self)._build_widgets()
         
-        group = QPushButton('Group Data')
+        group = qt.QPushButton('Group Data')
         group.setMaximumWidth(200)
         group.setMinimumHeight(50)
         self.main_layout.addWidget(group)
@@ -611,7 +601,7 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
     def _create_button(self, name):
         
-        button = QPushButton(name)
+        button = qt.QPushButton(name)
         button.setMaximumWidth(120)
         
         return button
@@ -683,7 +673,7 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
     def _build_widgets(self):
         
-        save_button = QPushButton('Save')
+        save_button = qt.QPushButton('Save')
         save_button.clicked.connect(self._save)
         save_button.setMaximumWidth(100)
         
@@ -729,9 +719,9 @@ class ScriptHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         version_tool = vtool.util_file.VersionFile(self.directory)
         version_file = version_tool.get_version_path(version)
         
-        in_file = QtCore.QFile(version_file)
+        in_file = qt.QtCore.QFile(version_file)
         
-        if in_file.open(QtCore.QFile.ReadOnly | QtCore.QFile.Text):
+        if in_file.open(qt.QtCore.QFile.ReadOnly | qt.QtCore.QFile.Text):
             text = in_file.readAll()
             
             text = str(text)
@@ -765,20 +755,20 @@ class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
     def _build_widgets(self):
         super(ControlCvOptionFileWidget, self)._build_widgets()
         
-        data_options_layout = QVBoxLayout()
+        data_options_layout = qt.QVBoxLayout()
                 
-        list_widget = QListWidget()
-        list_widget.setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Minimum)
+        list_widget = qt.QListWidget()
+        list_widget.setSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum)
         list_widget.setMaximumHeight(100)
         list_widget.setSelectionMode(list_widget.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
         
-        self.filter_names = QLineEdit()
+        self.filter_names = qt.QLineEdit()
         self.filter_names.setPlaceholderText('Filter Names')
         self.filter_names.textChanged.connect(self._filter_names)
         
-        remove_button = QPushButton(self._define_remove_button())
+        remove_button = qt.QPushButton(self._define_remove_button())
         remove_button.clicked.connect(self._remove_curves)
                 
         self.curve_list = list_widget
@@ -837,7 +827,7 @@ class ControlCvOptionFileWidget(vtool.qt_ui.OptionFileWidget):
             return
         
         for curve in curves:
-            item = QListWidgetItem(curve)
+            item = qt.QListWidgetItem(curve)
             self.curve_list.addItem(item)
     
 class ControlColorFileWidget(MayaDataFileWidget):
@@ -885,20 +875,20 @@ class SkinWeightOptionFileWidget(vtool.qt_ui.OptionFileWidget):
     def _build_widgets(self):
         super(SkinWeightOptionFileWidget, self)._build_widgets()
         
-        data_options_layout = QVBoxLayout()
+        data_options_layout = qt.QVBoxLayout()
                 
-        list_widget = QListWidget()
-        list_widget.setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Minimum)
+        list_widget = qt.QListWidget()
+        list_widget.setSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum)
         list_widget.setMaximumHeight(100)
         list_widget.setSelectionMode(list_widget.ExtendedSelection)
         list_widget.setSortingEnabled(True)
         self.list_widget = list_widget
         
-        self.filter_names = QLineEdit()
+        self.filter_names = qt.QLineEdit()
         self.filter_names.setPlaceholderText('Filter Names')
         self.filter_names.textChanged.connect(self._filter_names)
         
-        remove_button = QPushButton('Delete Mesh Skin Weights')
+        remove_button = qt.QPushButton('Delete Mesh Skin Weights')
         remove_button.clicked.connect(self._remove_meshes)
                 
         self.mesh_list = list_widget
@@ -957,7 +947,7 @@ class SkinWeightOptionFileWidget(vtool.qt_ui.OptionFileWidget):
             return
         
         for mesh in meshes:
-            item = QListWidgetItem(mesh)
+            item = qt.QListWidgetItem(mesh)
             self.mesh_list.addItem(item)
       
 class DeformerWeightFileWidget(MayaDataFileWidget):
@@ -1021,10 +1011,10 @@ class MayaPoseSaveFileWidget(MayaDataSaveFileWidget):
         
     def _import_data(self):
         
-        from vtool.maya_lib import ui
-        ui.delete_scene_script_jobs()
+        from vtool.maya_lib import ui_core
+        ui_core.delete_scene_script_jobs()
         self.data_class.import_data()
-        ui.create_scene_script_jobs()
+        ui_core.create_scene_script_jobs()
 
         
 class MayaShadersFileWidget(MayaDataFileWidget):
@@ -1073,7 +1063,7 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
     def _create_button(self, name):
         
-        button = QPushButton(name)
+        button = qt.QPushButton(name)
         
         button.setMaximumWidth(100)
         
@@ -1090,11 +1080,11 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         import_button = self._create_button('Import')
         reference_button = self._create_button('Reference')
         
-        out_box = QGroupBox('File Out')
-        in_box = QGroupBox('File In')
+        out_box = qt.QGroupBox('File Out')
+        in_box = qt.QGroupBox('File In')
         
-        out_box_layout = QVBoxLayout()
-        in_box_layout = QVBoxLayout()
+        out_box_layout = qt.QVBoxLayout()
+        in_box_layout = qt.QVBoxLayout()
         
         out_box_layout.setContentsMargins(2,2,2,2)
         out_box_layout.setSpacing(2)
@@ -1122,7 +1112,7 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.main_layout.addWidget(out_box)
         self.main_layout.addWidget(in_box)
         
-        self.main_layout.setAlignment(QtCore.Qt.AlignTop)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
 
     def _skip_mismatch_file(self):
         if vtool.util.is_in_maya():
@@ -1224,13 +1214,13 @@ class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         
         super(MayaHistoryFileWidget, self)._build_widgets()
         
-        import_button = QPushButton('Import')
+        import_button = qt.QPushButton('Import')
         import_button.setMaximumWidth(100)
         self.button_layout.addWidget(import_button)
         
         import_button.clicked.connect(self._import_version)
         
-        reference_button = QPushButton('Reference')
+        reference_button = qt.QPushButton('Reference')
         reference_button.setMaximumWidth(100)
         self.button_layout.addWidget(reference_button)
         
@@ -1282,7 +1272,7 @@ class ProcessBuildDataWidget(MayaFileWidget):
         
         super(ProcessBuildDataWidget,self).__init__()
         
-        self.main_layout.setAlignment(QtCore.Qt.AlignBottom)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignBottom)
     
     def _define_main_tab_name(self):
         return 'BUILD'
@@ -1325,7 +1315,7 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
         save_button.clicked.connect( self._save_file )
         open_button.clicked.connect( self._open_file )
         
-        self.main_layout.setAlignment(QtCore.Qt.AlignLeft)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         self.main_layout.addWidget(save_button)
         self.main_layout.addWidget(open_button)
 

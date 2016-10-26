@@ -1,18 +1,9 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from vtool import qt_ui
-from vtool import util_file
+from vtool import qt_ui, qt
 
-if qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if qt_ui.is_pyside():
-    from PySide import QtCore
-    from PySide.QtGui import *
-if qt_ui.is_pyside2():
-    from PySide2 import QtCore
-    from PySide2.QtGui import *
-    from PySide2.QtWidgets import *
+
+from vtool import util_file
     
 import maya.cmds as cmds
 
@@ -84,12 +75,12 @@ class RigManager(qt_ui.DirectoryWidget):
         
         self.main_layout.setContentsMargins(10,10,10,10)
         
-        manager_group = QGroupBox('Applications')
+        manager_group = qt.QGroupBox('Applications')
         manager_group.setFlat(True)
-        manager_layout = QVBoxLayout()
+        manager_layout = qt.QVBoxLayout()
         manager_layout.setContentsMargins(10,10,10,10)
         manager_layout.setSpacing(2)
-        manager_layout.setAlignment(QtCore.Qt.AlignCenter)
+        manager_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
         
         manager_group.setLayout(manager_layout)
         
@@ -97,19 +88,19 @@ class RigManager(qt_ui.DirectoryWidget):
         
         manager_layout.addSpacing(15)
         
-        process_button = QPushButton('VETALA')
+        process_button = qt.QPushButton('VETALA')
         process_button.clicked.connect(self._process_manager)
         process_button.setMinimumWidth(button_width)
         manager_layout.addWidget(process_button)
         
 
         
-        pose_button = QPushButton('Correctives')
+        pose_button = qt.QPushButton('Correctives')
         pose_button.clicked.connect(self._pose_manager)
         pose_button.setMinimumWidth(button_width)
         manager_layout.addWidget(pose_button)
         
-        shape_combo_button = QPushButton('Shape Combos')
+        shape_combo_button = qt.QPushButton('Shape Combos')
         shape_combo_button.clicked.connect(self._shape_combo)
         shape_combo_button.setMinimumWidth(button_width)
         manager_layout.addWidget(shape_combo_button)
@@ -119,14 +110,14 @@ class RigManager(qt_ui.DirectoryWidget):
         manager_layout.addSpacing(15)
         
         
-        picker_button = QPushButton('Picker')
+        picker_button = qt.QPushButton('Picker')
         picker_button.clicked.connect(self._picker)
         picker_button.setMinimumWidth(button_width)
         manager_layout.addWidget(picker_button)
         
         
         
-        presets_button = QPushButton('Presets')
+        presets_button = qt.QPushButton('Presets')
         presets_button.clicked.connect(self._presets)
         presets_button.setMinimumWidth(button_width)
         manager_layout.addWidget(presets_button)
@@ -136,7 +127,7 @@ class RigManager(qt_ui.DirectoryWidget):
         tool_group = qt_ui.Group('Utilities')
         tool_group.setFlat(True)
         
-        tool_tab = QTabWidget()
+        tool_tab = qt.QTabWidget()
         
         deformation_widget = qt_ui.BasicWidget()
         structure_widget = qt_ui.BasicWidget()
@@ -159,7 +150,7 @@ class RigManager(qt_ui.DirectoryWidget):
         self.main_layout.addSpacing(15)
         self.main_layout.addWidget(tool_group)
         
-        self.main_layout.setAlignment(QtCore.Qt.AlignTop)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
         
         
     def _create_structure_widgets(self, parent):
@@ -169,16 +160,16 @@ class RigManager(qt_ui.DirectoryWidget):
         subdivide_joint_button.clicked.connect(self._subdivide_joint)
         subdivide_joint_button.setToolTip('select parent and child joint')
         
-        add_orient = QPushButton('Add Orient')
+        add_orient = qt.QPushButton('Add Orient')
         add_orient.setMaximumWidth(80)
         add_orient.setToolTip('select joints')
-        orient_joints = QPushButton('Orient Joints')
+        orient_joints = qt.QPushButton('Orient Joints')
         orient_joints.setMinimumHeight(40)
         
-        mirror = QPushButton('Mirror Transforms')
+        mirror = qt.QPushButton('Mirror Transforms')
         mirror.setMinimumHeight(40)
         
-        #match_joints = QPushButton('Match')
+        #match_joints = qt.QPushButton('Match')
         #match_joints.setMinimumHeight(40)
         
         joints_on_curve = qt_ui.GetIntNumberButton('create joints on curve')
@@ -186,12 +177,12 @@ class RigManager(qt_ui.DirectoryWidget):
         
         snap_to_curve = qt_ui.GetIntNumberButton('snap joints to curve')
         
-        transfer_joints = QPushButton('transfer joints')
-        transfer_process = QPushButton('transfer process weights to parent')
+        transfer_joints = qt.QPushButton('transfer joints')
+        transfer_process = qt.QPushButton('transfer process weights to parent')
         
-        self.joint_axis_check = QCheckBox('joint axis visibility')
+        self.joint_axis_check = qt.QCheckBox('joint axis visibility')
         
-        mirror_invert = QPushButton('Mirror Invert')
+        mirror_invert = qt.QPushButton('Mirror Invert')
         mirror_invert.clicked.connect(self._mirror_invert)
         
         
@@ -207,7 +198,7 @@ class RigManager(qt_ui.DirectoryWidget):
         
         main_layout = parent.main_layout
         
-        orient_layout = QHBoxLayout()
+        orient_layout = qt.QHBoxLayout()
         orient_layout.addWidget(orient_joints)
         orient_layout.addWidget(add_orient)
         
@@ -236,10 +227,10 @@ class RigManager(qt_ui.DirectoryWidget):
         
     def _create_control_widgets(self, parent):
         
-        mirror_control = QPushButton('Mirror Control')
+        mirror_control = qt.QPushButton('Mirror Control')
         mirror_control.clicked.connect(self._mirror_control)
         
-        mirror_controls = QPushButton('Mirror Controls')
+        mirror_controls = qt.QPushButton('Mirror Controls')
         mirror_controls.clicked.connect(self._mirror_controls)
         mirror_controls.setMinimumHeight(40)
         
@@ -260,7 +251,7 @@ class RigManager(qt_ui.DirectoryWidget):
         number_button.clicked.connect(self._size_controls)
         self.scale_control_button = number_button
         
-        self.fix_sub_controls = QPushButton('Fix Sub Controls')
+        self.fix_sub_controls = qt.QPushButton('Fix Sub Controls')
         self.fix_sub_controls.clicked.connect(rigs_util.fix_sub_controls)
         
         project_curve = qt_ui.GetNumberButton('Project Curves on Mesh')
@@ -285,17 +276,17 @@ class RigManager(qt_ui.DirectoryWidget):
         parent.main_layout.addWidget(snap_curve)
         
     def _create_deformation_widgets(self, parent):
-        corrective_button = QPushButton('Create Corrective')
+        corrective_button = qt.QPushButton('Create Corrective')
         corrective_button.setToolTip('Select deformed mesh then sculpted mesh.')
         corrective_button.setMaximumWidth(200)
         corrective_button.clicked.connect(self._create_corrective)
         
-        skin_mesh_from_mesh = QPushButton('Skin Mesh From Mesh')
+        skin_mesh_from_mesh = qt.QPushButton('Skin Mesh From Mesh')
         skin_mesh_from_mesh.setToolTip('Select skinned mesh then mesh without skin cluster.')
         skin_mesh_from_mesh.setMaximumWidth(200)
         skin_mesh_from_mesh.clicked.connect(self._skin_mesh_from_mesh)
         
-        cluster_mesh = QPushButton('Create Tweak Cluster')
+        cluster_mesh = qt.QPushButton('Create Tweak Cluster')
         cluster_mesh.setToolTip('Go into cluster creation context.  Click on a mesh to add cluster at point and start paint weighting.')
         cluster_mesh.clicked.connect(self._cluster_tweak_mesh)
         

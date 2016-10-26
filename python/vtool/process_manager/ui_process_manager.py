@@ -2,7 +2,7 @@
 
 import sys
 
-from vtool import qt_ui, maya_lib
+from vtool import qt_ui, qt, maya_lib
 from vtool import util_file
 from vtool import util
 
@@ -14,17 +14,6 @@ import ui_data
 import ui_code
 import ui_settings
 import os
-
-if qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if qt_ui.is_pyside():
-        from PySide import QtCore
-        from PySide.QtGui import *
-if qt_ui.is_pyside2():
-        from PySide2 import QtCore
-        from PySide2.QtGui import *
-        from PySide2.QtWidgets import *
         
 
 vetala_version = util_file.get_vetala_version()
@@ -60,7 +49,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         super(ProcessManagerWindow, self).__init__(parent = parent) 
         
-        shortcut = QShortcut(QKeySequence(QtCore.Qt.Key_Escape), self)
+        shortcut = qt.QShortcut(qt.QKeySequence(qt.QtCore.Qt.Key_Escape), self)
         shortcut.activated.connect(self._set_kill_process)
             
         self.view_widget.tree_widget.itemChanged.connect(self._item_changed)
@@ -188,7 +177,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.show()
         
     def sizeHint(self):
-        return QtCore.QSize(650,800)
+        return qt.QtCore.QSize(650,800)
         
     def _setup_settings_file(self):
         
@@ -231,25 +220,25 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #version = QLabel('%s' % util_file.get_vetala_version())
         #self.main_layout.addWidget(version)
         
-        self.header_layout = QHBoxLayout()
+        self.header_layout = qt.QHBoxLayout()
         
-        self.active_title = QLabel('-')
-        self.active_title.setAlignment(QtCore.Qt.AlignCenter)
+        self.active_title = qt.QLabel('-')
+        self.active_title.setAlignment(qt.QtCore.Qt.AlignCenter)
         
-        self.header_layout.addWidget(self.active_title, alignment = QtCore.Qt.AlignCenter)
+        self.header_layout.addWidget(self.active_title, alignment = qt.QtCore.Qt.AlignCenter)
         
-        self.tab_widget = QTabWidget()
+        self.tab_widget = qt.QTabWidget()
         self.tab_widget.currentChanged.connect(self._tab_changed)
         
         self.view_widget = ui_view.ViewProcessWidget()
         
-        self.option_tabs = QTabWidget()
+        self.option_tabs = qt.QTabWidget()
         
-        option_layout = QVBoxLayout()
+        option_layout = qt.QVBoxLayout()
         self.option_widget = ui_options.ProcessOptionsWidget()
         option_layout.addWidget(self.option_widget)
         
-        option_widget = QWidget()
+        option_widget = qt.QWidget()
         option_widget.setLayout(option_layout)
         
         self.template_widget = ui_templates.TemplateWidget()
@@ -273,7 +262,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.template_directory_changed.connect(self.set_template_directory)
         
         #splitter stuff
-        self.process_splitter = QSplitter()
+        self.process_splitter = qt.QSplitter()
         self.process_splitter.addWidget(self.view_widget)
         self.process_splitter.addWidget(self.option_tabs)
         self.process_splitter.setSizes([1,0])
@@ -294,47 +283,47 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.main_layout.addSpacing(4)
         self.main_layout.addWidget( self.tab_widget )
         
-        left_button_layout = QHBoxLayout()
-        right_button_layout = QHBoxLayout()
+        left_button_layout = qt.QHBoxLayout()
+        right_button_layout = qt.QHBoxLayout()
         
-        #process_button_layout = QVBoxLayout()
-        self.process_button = QPushButton('PROCESS')
+        #process_button_layout = qt.QVBoxLayout()
+        self.process_button = qt.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
         self.process_button.setMinimumWidth(150)
         self.process_button.setMinimumHeight(30)
         
-        self.batch_button = QPushButton('BATCH')
+        self.batch_button = qt.QPushButton('BATCH')
         self.batch_button.setDisabled(True)
         self.batch_button.setMinimumHeight(30)
         self.batch_button.setMinimumWidth(150)
         #self.process_button.setMinimumWidth(150)
         #self.process_button.setMinimumHeight(40)
         
-        self.stop_button = QPushButton('STOP (Esc key)')
+        self.stop_button = qt.QPushButton('STOP (Esc key)')
         self.stop_button.setMaximumWidth(140)
         self.stop_button.setMinimumHeight(30)
         self.stop_button.hide()
         
-        self.continue_button = QPushButton('CONTINUE')
+        self.continue_button = qt.QPushButton('CONTINUE')
         self.continue_button.setMaximumWidth(150)
         self.continue_button.setMinimumHeight(30)
         self.continue_button.hide()
         
-        self.run_selected_button = QPushButton('RUN SELECTED')
+        self.run_selected_button = qt.QPushButton('RUN SELECTED')
         self.run_selected_button.setMaximumWidth(150)
         self.run_selected_button.setMinimumHeight(30)
         self.run_selected_button.hide()
         
-        self.browser_button = QPushButton('Browse')
+        self.browser_button = qt.QPushButton('Browse')
         self.browser_button.setMaximumWidth(120)
-        help_button = QPushButton('Help')
+        help_button = qt.QPushButton('Help')
         help_button.setMaximumWidth(100)       
         
-        btm_layout = QVBoxLayout()
+        btm_layout = qt.QVBoxLayout()
         
-        button_layout = QHBoxLayout()
+        button_layout = qt.QHBoxLayout()
         
-        left_button_layout.setAlignment(QtCore.Qt.AlignLeft)
+        left_button_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         left_button_layout.addWidget(self.process_button)
         #process_button_layout.addWidget(self.process_button)
         #process_button_layout.addWidget(self.batch_button, alignment = QtCore.Qt.AlignCenter)
@@ -346,7 +335,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         left_button_layout.addSpacing(20)
         left_button_layout.addWidget(self.run_selected_button)
         
-        right_button_layout.setAlignment(QtCore.Qt.AlignRight)
+        right_button_layout.setAlignment(qt.QtCore.Qt.AlignRight)
         
         right_button_layout.addWidget(self.batch_button)
         right_button_layout.addSpacing(10)
@@ -361,7 +350,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         btm_layout.addLayout(button_layout)
         btm_layout.addSpacing(20)
-        btm_layout.addWidget(self.build_widget, alignment = QtCore.Qt.AlignBottom)
+        btm_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
         
         self.browser_button.clicked.connect(self._browser)
         self.process_button.clicked.connect(self._process)
@@ -372,7 +361,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.main_layout.addLayout(btm_layout)
         
-        self.build_widget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.build_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
         
     def _add_template(self, process_name, directory):
         
@@ -618,6 +607,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 process_path = util.get_env('VETALA_CURRENT_PROCESS')
                 filepath = util_file.remove_common_path_simple(process_path, filepath)
                 
+                result = qt_ui.get_permission('Continue?', self, cancel = False, title = 'Changes not saved.')
+                
+                """
                 result = qt_ui.get_save_permission('Save before processing?', self, filepath)
                 
                 if result:
@@ -625,8 +617,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     
                     if not saved:
                         return
-                    
-                if result == None:
+                """ 
+                if result == None or result == False:
                     return
                 
             cmds.file(renameToSave = True)

@@ -2,7 +2,7 @@
 
 import traceback
 
-from vtool import qt_ui
+from vtool import qt_ui, qt
 from vtool.maya_lib import ui_core
 import vtool.util
 
@@ -16,16 +16,6 @@ if vtool.util.is_in_maya():
     from vtool.maya_lib import space
     from vtool.maya_lib import corrective
     
-if qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if qt_ui.is_pyside():
-        from PySide import QtCore
-        from PySide.QtGui import *
-if qt_ui.is_pyside2():
-        from PySide2 import QtCore
-        from PySide2.QtGui import *
-        from PySide2.QtWidgets import *
 
 class PoseManager(ui_core.MayaWindow):
     
@@ -37,8 +27,8 @@ class PoseManager(ui_core.MayaWindow):
         super(PoseManager, self).__init__()
     
     def _define_main_layout(self):
-        layout = QVBoxLayout()
-        layout.setAlignment(QtCore.Qt.AlignTop)
+        layout = qt.QVBoxLayout()
+        layout.setAlignment(qt.QtCore.Qt.AlignTop)
         return layout
         
     def _build_widgets(self):
@@ -112,7 +102,7 @@ class PoseManager(ui_core.MayaWindow):
         self.sculpt.set_pose(pose)
         self.sculpt.mesh_widget.add_mesh(selection)
         
-class PoseSetWidget(QWidget): 
+class PoseSetWidget(qt.QWidget): 
     
     pose_reset = qt_ui.create_signal()
     
@@ -120,9 +110,9 @@ class PoseSetWidget(QWidget):
         
         super(PoseSetWidget, self).__init__()
         
-        self.main_layout = QHBoxLayout()
+        self.main_layout = qt.QHBoxLayout()
         self.setLayout(self.main_layout)
-        self.main_layout.setAlignment(QtCore.Qt.AlignTop)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
             
         self._add_buttons()
         
@@ -130,8 +120,8 @@ class PoseSetWidget(QWidget):
         
     def _add_buttons(self):
         
-        button_default = QPushButton('Set Default Pose')
-        button_reset = QPushButton('To Default Pose')
+        button_default = qt.QPushButton('Set Default Pose')
+        button_reset = qt.QPushButton('To Default Pose')
         
         button_reset.clicked.connect(self._button_reset)
         button_default.clicked.connect(self._button_default)
@@ -159,10 +149,10 @@ class PoseListWidget(qt_ui.BasicWidget):
         
         super(PoseListWidget, self).__init__()
         
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
              
     def _define_main_layout(self):
-        layout = QVBoxLayout()
+        layout = qt.QVBoxLayout()
         return layout
         
     def _build_widgets(self):
@@ -179,7 +169,7 @@ class PoseListWidget(qt_ui.BasicWidget):
         self.pose_list.pose_renamed.connect(self._pose_renamed)
         self.pose_list.pose_deleted.connect(self._pose_deleted)
         
-        self.filter_names = QLineEdit()
+        self.filter_names = qt.QLineEdit()
         self.filter_names.setPlaceholderText('filter names')
 
         self.filter_names.textChanged.connect(self.set_filter_names)
@@ -533,7 +523,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
         self.last_selection = []
     
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
@@ -562,7 +552,7 @@ class PoseTreeWidget(BaseTreeWidget):
             self.clearSelection()
             
         
-        if event.button() == QtCore.Qt.RightButton:
+        if event.button() == qt.QtCore.Qt.RightButton:
             return
         
         if model_index.column() == 0 and item:
@@ -661,7 +651,7 @@ class PoseTreeWidget(BaseTreeWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QMenu()
+        self.context_menu = qt.QMenu()
         self.context_menu.setTearOffEnabled(True)
         
         self.create_group = self.context_menu.addAction('New Group')
@@ -759,8 +749,8 @@ class PoseTreeWidget(BaseTreeWidget):
     
     def _add_item(self, pose, parent):
         
-        item = QTreeWidgetItem(parent)
-        item.setSizeHint(0, QtCore.QSize(100, 26))
+        item = qt.QTreeWidgetItem(parent)
+        item.setSizeHint(0, qt.QtCore.QSize(100, 26))
         item.setText(0, pose)
         
         if cmds.objExists('%s.type' % pose):
@@ -996,7 +986,7 @@ class PoseTreeWidget(BaseTreeWidget):
                     if items:
                         items[0].setSelected(False)
         
-            iterator = QTreeWidgetItemIterator(self)
+            iterator = qt.QTreeWidgetItemIterator(self)
             
             while iterator.value():
                 
@@ -1021,11 +1011,11 @@ class PoseWidget(qt_ui.BasicWidget):
         self.pose_name = None
         self.pose_control_widget = None
         
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
     
     def _define_main_layout(self):
-        layout = QHBoxLayout()
-        layout.setAlignment(QtCore.Qt.AlignRight)
+        layout = qt.QHBoxLayout()
+        layout.setAlignment(qt.QtCore.Qt.AlignRight)
         return layout
     
     def set_pose(self, pose_name):
@@ -1063,8 +1053,8 @@ class PoseWidget(qt_ui.BasicWidget):
         
         self.pose_control_widget.set_pose(pose_name)
         
-        self.main_layout.setAlignment(QtCore.Qt.AlignLeft)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
+        self.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Minimum)
         self.main_layout.addWidget(self.pose_control_widget)
         
     def set_pose_parent_name(self, parent_name):
@@ -1093,7 +1083,7 @@ class MeshWidget(qt_ui.BasicWidget):
         
         self.mesh_list.setSelectionMode(self.mesh_list.ExtendedSelection)
         
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
@@ -1101,7 +1091,7 @@ class MeshWidget(qt_ui.BasicWidget):
         self.handle_selection_change = True
         
     def sizeHint(self):    
-        return QtCore.QSize(200, 100)
+        return qt.QtCore.QSize(200, 100)
     
     def _item_menu(self, position):
         
@@ -1109,7 +1099,7 @@ class MeshWidget(qt_ui.BasicWidget):
         
     def _create_context_menu(self):
         
-        self.context_menu = QMenu()
+        self.context_menu = qt.QMenu()
         
         remove = self.context_menu.addAction('Remove')
                 
@@ -1117,7 +1107,7 @@ class MeshWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
 
-        self.mesh_list = QListWidget()        
+        self.mesh_list = qt.QListWidget()        
         self.mesh_list.itemSelectionChanged.connect(self._item_selected)
         
         self.main_layout.addWidget(self.mesh_list)
@@ -1410,8 +1400,8 @@ class MeshWidget(qt_ui.BasicWidget):
             if not mesh:
                 continue
             
-            item = QListWidgetItem()
-            item.setSizeHint(QtCore.QSize(0, 20))
+            item = qt.QListWidgetItem()
+            item.setSizeHint(qt.QtCore.QSize(0, 20))
             basename = core.get_basename(mesh)
             item.setText(basename)
             item.longname = mesh
@@ -1456,10 +1446,10 @@ class SculptWidget(qt_ui.BasicWidget):
     
     def sizeHint(self):
         
-        return QtCore.QSize(200, 200)
+        return qt.QtCore.QSize(200, 200)
         
     def _define_main_layout(self):
-        return QVBoxLayout()
+        return qt.QVBoxLayout()
     
     def _button_sculpt(self):
         
@@ -1502,9 +1492,9 @@ class SculptWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
-        self.slider = QSlider()
+        self.slider = qt.QSlider()
         
-        self.slider.setOrientation(QtCore.Qt.Horizontal)
+        self.slider.setOrientation(qt.QtCore.Qt.Horizontal)
         self.slider.setMaximumHeight(30)
         self.slider.setMinimum(0)
         self.slider.setMaximum(100)
@@ -1512,16 +1502,16 @@ class SculptWidget(qt_ui.BasicWidget):
         
         self.slider.valueChanged.connect(self._pose_enable)
         
-        self.button_sculpt = QPushButton('Sculpt')
+        self.button_sculpt = qt.QPushButton('Sculpt')
         self.button_sculpt.setMinimumWidth(100)
 
-        button_mirror = QPushButton('Mirror')
+        button_mirror = qt.QPushButton('Mirror')
         button_mirror.setMaximumWidth(100)
         button_mirror.clicked.connect(self._button_mirror)
         
         self.button_mirror = button_mirror
         
-        v_layout = QHBoxLayout()
+        v_layout = qt.QHBoxLayout()
         v_layout.addWidget(self.button_sculpt)
         v_layout.addSpacing(5)
         v_layout.addWidget(self.slider)
@@ -1604,7 +1594,7 @@ class TimePosition(qt_ui.GetNumber):
         #self.update_value_permission = True
     
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
     
     def _build_widgets(self):
         
@@ -1614,11 +1604,11 @@ class TimePosition(qt_ui.GetNumber):
         self.number_widget = self._define_number_widget()
         self.number_widget.setMaximumWidth(100)
         
-        self.number_widget.setAlignment(QtCore.Qt.AlignLeft)
+        self.number_widget.setAlignment(qt.QtCore.Qt.AlignLeft)
         
         
-        self.label = QLabel(self.name)
-        self.label.setAlignment(QtCore.Qt.AlignLeft)
+        self.label = qt.QLabel(self.name)
+        self.label.setAlignment(qt.QtCore.Qt.AlignLeft)
         
         self.main_layout.addWidget(self.number_widget)
         self.main_layout.addSpacing(10)
@@ -1677,10 +1667,10 @@ class PoseBaseWidget(qt_ui.BasicWidget):
         super(PoseBaseWidget, self)._build_widgets()
         
     def _string_widget(self, name):
-        layout = QHBoxLayout()
+        layout = qt.QHBoxLayout()
         
-        label = QLabel(name)
-        text = QLineEdit()
+        label = qt.QLabel(name)
+        text = qt.QLineEdit()
         
         layout.addWidget(label)
         layout.addWidget(text)
@@ -1688,14 +1678,14 @@ class PoseBaseWidget(qt_ui.BasicWidget):
         return layout, text
         
     def _add_spin_widget(self, name):
-        layout = QHBoxLayout()
+        layout = qt.QHBoxLayout()
         layout.setSpacing(1)
         layout.setContentsMargins(0, 0, 0, 0)
         
-        label = QLabel(name)
-        label.setAlignment(QtCore.Qt.AlignRight)
+        label = qt.QLabel(name)
+        label.setAlignment(qt.QtCore.Qt.AlignRight)
         
-        widget = QDoubleSpinBox()
+        widget = qt.QDoubleSpinBox()
         
         widget.setCorrectionMode(widget.CorrectToNearestValue)
         widget.setWrapping(False)
@@ -1719,15 +1709,15 @@ class PoseGroupWidget(PoseBaseWidget):
     def _build_widgets(self):
         super(PoseGroupWidget, self)._build_widgets()
         
-        layout = QVBoxLayout()
-        build_all = QPushButton('Build Sub Poses')
+        layout = qt.QVBoxLayout()
+        build_all = qt.QPushButton('Build Sub Poses')
         build_all.setMinimumSize(200, 40)
         
         layout.addSpacing(10)
-        layout.addWidget(build_all, alignment=QtCore.Qt.AlignLeft)
+        layout.addWidget(build_all, alignment=qt.QtCore.Qt.AlignLeft)
         layout.addSpacing(10)
-        build_all.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.main_layout.setAlignment(QtCore.Qt.AlignLeft)
+        build_all.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Minimum)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         self.main_layout.addLayout(layout)
         
         build_all.clicked.connect(self._build_sub_poses)
@@ -1762,7 +1752,7 @@ class PoseNoReaderWidget(PoseBaseWidget):
         
     def _input_change(self):
         
-        self.input_text.setStyleSheet('QLineEdit{background:red}')
+        self.input_text.setStyleSheet('qt.QLineEdit{background:red}')
         
         text = str(self.input_text.text())
         
@@ -1799,7 +1789,7 @@ class PoseNoReaderWidget(PoseBaseWidget):
         
 class PoseTimelineWidget(PoseBaseWidget):
     def _define_main_layout(self):
-        layout = QHBoxLayout()
+        layout = qt.QHBoxLayout()
         return layout
     
     def _build_widgets(self):
@@ -1823,19 +1813,19 @@ class PoseConeWidget(PoseBaseWidget):
         self.value_update_enable = True
         
     def _define_main_layout(self):
-        layout = QVBoxLayout()
+        layout = qt.QVBoxLayout()
         return layout
         
     def _build_widgets(self):
         super(PoseConeWidget, self)._build_widgets()
-        self.combo_label = QLabel('Alignment')
+        self.combo_label = qt.QLabel('Alignment')
         
-        self.combo_axis = QComboBox()
+        self.combo_axis = qt.QComboBox()
         self.combo_axis.addItems(['X', 'Y', 'Z'])
         
-        layout_combo = QHBoxLayout()
+        layout_combo = qt.QHBoxLayout()
         
-        layout_combo.addWidget(self.combo_label, alignment=QtCore.Qt.AlignRight)
+        layout_combo.addWidget(self.combo_label, alignment=qt.QtCore.Qt.AlignRight)
         layout_combo.addWidget(self.combo_axis)
         
         layout_angle, self.max_angle = self._add_spin_widget('Max Angle')
@@ -1850,14 +1840,14 @@ class PoseConeWidget(PoseBaseWidget):
         self.max_distance.setMinimum(0)
         self.max_distance.setMaximum(10000000)
         
-        parent_combo = QHBoxLayout()
+        parent_combo = qt.QHBoxLayout()
         
-        parent_label = QLabel('Parent')
-        self.parent_text = QLineEdit()
+        parent_label = qt.QLabel('Parent')
+        self.parent_text = qt.QLineEdit()
         
         self.parent_text.textChanged.connect(self._parent_name_change)
         
-        parent_combo.addWidget(parent_label, alignment=QtCore.Qt.AlignRight)
+        parent_combo.addWidget(parent_label, alignment=qt.QtCore.Qt.AlignRight)
         parent_combo.addWidget(self.parent_text)
         
         self.max_angle.valueChanged.connect(self._value_changed)
@@ -1896,7 +1886,7 @@ class PoseConeWidget(PoseBaseWidget):
         
     def _parent_name_change(self):
         
-        self.parent_text.setStyleSheet('QLineEdit{background:red}')
+        self.parent_text.setStyleSheet('qt.QLineEdit{background:red}')
         
         text = str(self.parent_text.text())
         
@@ -2035,23 +2025,23 @@ class PoseConeWidget(PoseBaseWidget):
 class PoseComboWidget(PoseBaseWidget):
     
     def _define_main_layout(self):
-        return QHBoxLayout()
+        return qt.QHBoxLayout()
     
     def _build_widgets(self):
         
-        add_layout = QVBoxLayout()
+        add_layout = qt.QVBoxLayout()
         
         self.add_layout = add_layout
         
         self._add_pose_list(add_layout)
         
-        add = QPushButton('Add')
+        add = qt.QPushButton('Add')
         add.setMinimumWidth(100)
         add.clicked.connect(self._add_pose)
         
-        add_layout.addWidget(add, alignment = QtCore.Qt.AlignRight)
+        add_layout.addWidget(add, alignment = qt.QtCore.Qt.AlignRight)
         
-        scroll = QScrollArea()
+        scroll = qt.QScrollArea()
         scroll.setWidgetResizable(True)
         
         self.main_layout.addLayout(add_layout)
@@ -2151,7 +2141,7 @@ class PoseComboList(qt_ui.BasicWidget):
     def __init__(self):
         super(PoseComboList, self).__init__()
         
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
+        self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
         
         self.pose_widgets = []
     
@@ -2205,14 +2195,14 @@ class PoseInComboWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
-        self.label = QLabel()
-        weight = QLabel('  ')
-        self.number = QLabel()
+        self.label = qt.QLabel()
+        weight = qt.QLabel('  ')
+        self.number = qt.QLabel()
         
-        self.remove = QPushButton('Remove')
+        self.remove = qt.QPushButton('Remove')
         self.remove.clicked.connect(self._remove)
         
-        h_layout = QHBoxLayout()
+        h_layout = qt.QHBoxLayout()
         
         h_layout.addWidget(self.label)
         h_layout.addWidget(weight)
