@@ -52,10 +52,10 @@ class FxTabWidget(qt_ui.BasicWidget):
         self.tabs = QTabWidget()
         
         self.settings_widget = FxSettingsWidget()
-        self.cache_widget = CacheWidget()
+        
         
         self.tabs.addTab(self.settings_widget,'Presets')
-        self.tabs.addTab(self.cache_widget, 'Cache')
+        
         
         self.main_layout.addWidget(self.tabs)
         
@@ -105,7 +105,7 @@ class FxSettingsWidget(qt_ui.BasicWidget):
         super(FxSettingsWidget, self).__init__()
         
         
-        self.main_layout.setContentsMargins(10,10,10,10)
+        self.main_layout.setContentsMargins(10,10,5,10)
         
     def _build_widgets(self):
         
@@ -164,7 +164,7 @@ class SettingWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
-        self.main_layout.setContentsMargins(10,10,10,5)
+        #self.main_layout.setContentsMargins(10,10,5,10)
         
         self.label = QLabel()
         

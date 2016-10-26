@@ -17,8 +17,6 @@ import maya.cmds as cmds
 import maya.mel as mel
 import maya.utils
 
-
-
 #--- signals
 class new_scene_object(QtCore.QObject):
     signal = qt_ui.create_signal()
