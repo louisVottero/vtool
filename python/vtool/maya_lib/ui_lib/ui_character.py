@@ -88,6 +88,13 @@ class CharacterTree(qt.QTreeWidget):
             
             self.insertTopLevelItem(0, item)
             
+        if not characters:
+            item = qt.QTreeWidgetItem()
+            item.setText(0, 'Nothing Referenced')
+            item.setDisabled(True)
+            
+            self.addTopLevelItem(item)
+            
 class CharacterSelectWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):

@@ -91,6 +91,7 @@ class RigManager(qt_ui.DirectoryWidget):
         process_button = qt.QPushButton('VETALA')
         process_button.clicked.connect(self._process_manager)
         process_button.setMinimumWidth(button_width)
+        process_button.setToolTip('Manage and rebuild rigs.')
         manager_layout.addWidget(process_button)
         
 
@@ -98,21 +99,26 @@ class RigManager(qt_ui.DirectoryWidget):
         pose_button = qt.QPushButton('Correctives')
         pose_button.clicked.connect(self._pose_manager)
         pose_button.setMinimumWidth(button_width)
+        pose_button.setToolTip('Create correctives on meshes deformed by a rig.')
         manager_layout.addWidget(pose_button)
+        
         
         shape_combo_button = qt.QPushButton('Shape Combos')
         shape_combo_button.clicked.connect(self._shape_combo)
         shape_combo_button.setMinimumWidth(button_width)
+        shape_combo_button.setToolTip('Create combo shapes for use in facial setups.')
         manager_layout.addWidget(shape_combo_button)
+        
         
         
         
         manager_layout.addSpacing(15)
         
         
-        picker_button = qt.QPushButton('Picker')
+        picker_button = qt.QPushButton('Picker - ALPHA')
         picker_button.clicked.connect(self._picker)
         picker_button.setMinimumWidth(button_width)
+        picker_button.setToolTip('Create a picker for the character that gets stored on "picker_gr" node.')
         manager_layout.addWidget(picker_button)
         
         
@@ -120,7 +126,9 @@ class RigManager(qt_ui.DirectoryWidget):
         presets_button = qt.QPushButton('Presets')
         presets_button.clicked.connect(self._presets)
         presets_button.setMinimumWidth(button_width)
+        presets_button.setToolTip('Presets creates a node in Maya called "presets" that stores attribute values. Values can be read from referenced assets in the FX tab.')
         manager_layout.addWidget(presets_button)
+        
         
         manager_layout.addSpacing(15)
         
@@ -138,9 +146,9 @@ class RigManager(qt_ui.DirectoryWidget):
         structure_widget.main_layout.setContentsMargins(10,10,10,10)
         control_widget.main_layout.setContentsMargins(10,10,10,10)
         
-        tool_tab.addTab(structure_widget, 'structure')
-        tool_tab.addTab(control_widget, 'controls')
-        tool_tab.addTab(deformation_widget, 'deformation')
+        tool_tab.addTab(structure_widget, 'Structure')
+        tool_tab.addTab(control_widget, 'Controls')
+        tool_tab.addTab(deformation_widget, 'Deform')
         
         self._create_structure_widgets(structure_widget)
         self._create_control_widgets(control_widget)

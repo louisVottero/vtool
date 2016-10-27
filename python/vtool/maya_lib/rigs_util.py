@@ -2096,7 +2096,7 @@ def create_offset_sequence(attribute, target_transforms, target_attributes):
         inc += 1
         offset += section
 
-def get_controls():
+def get_controls(namespace = ''):
     """
     Get the controls in a scene.
     
@@ -2112,8 +2112,8 @@ def get_controls():
     Returns:
         list: List of control names.
     """
-    transforms = cmds.ls(type = 'transform')
-    joints = cmds.ls(type = 'joint')
+    transforms = cmds.ls(namespace + '*', type = 'transform')
+    joints = cmds.ls(namespace + '*', type = 'joint')
     
     if joints:
         transforms += joints
@@ -2121,36 +2121,48 @@ def get_controls():
     found = []
     found_with_value = []
     
-    for transform in transforms:
+    for transform_node in transforms:
+        
+        transform = core.remove_namespace_from_string(transform_node)
+        
         if transform.startswith('CNT_'):
-            found.append(transform)
-            continue
-                
-        if cmds.objExists('%s.control' % transform):
-            found.append(transform)
+            found.append(transform_node)
             continue
         
-        if cmds.objExists('%s.tag' % transform):
+        if transform.endswith('_CON'):
+            found.append(transform_node)
+            continue
+                
+        if cmds.objExists('%s.control' % transform_node):
+            found.append(transform_node)
+            continue
+        
+        if cmds.objExists('%s.tag' % transform_node):
             
-            if core.has_shape_of_type(transform, 'nurbsCurve'):
+            if core.has_shape_of_type(transform_node, 'nurbsCurve'):
                 
                 
-                found.append(transform)
-                value = cmds.getAttr('%s.tag' % transform)
+                found.append(transform_node)
+                value = cmds.getAttr('%s.tag' % transform_node)
                 
                 if value:
-                    found_with_value.append(transform)
+                    found_with_value.append(transform_node)
             
             continue
         
-        if cmds.objExists('%s.curveType' % transform):
-            found.append(transform)
+        if cmds.objExists('%s.curveType' % transform_node):
+            found.append(transform_node)
             continue
     
     if found_with_value:
         found = found_with_value
         
     return found
+    
+def select_controls(namespace = ''):
+    
+    controls = get_controls(namespace)
+    cmds.select(controls)
     
 @core.undo_chunk
 def mirror_control(control):

@@ -18,6 +18,7 @@ class FxManager(qt_ui.BasicWidget):
         character_tree = ui_character.CharacterTree()
         
         character_tree.characters_selected.connect(self._update_characters)
+        character_tree.setMaximumHeight(200)
         
         self.fx_tabs = FxTabWidget()
         
@@ -120,8 +121,10 @@ class FxSettingsWidget(qt_ui.BasicWidget):
             
             preset = '%s:presets' % character
             
-            if cmds.objExists(preset):
+            if not cmds.objExists(preset):
+                preset = 'presets'
             
+            if cmds.objExists(preset):
                 store = attr.StoreData(preset)
                 data = store.eval_data()
                 
@@ -143,6 +146,14 @@ class FxSettingsWidget(qt_ui.BasicWidget):
                         setting_tree.add_setting(sub_name, sub_value)         
                     
                     layout.addWidget(setting_tree) 
+                    
+            if not cmds.objExists(preset):
+                
+                setting_tree = SettingWidget()
+                setting_tree.set_header('No Presets')
+                setting_tree.set_namespace(character)
+                
+                layout.addWidget(setting_tree)
             
     
     def set_characters(self, character_namespaces):
@@ -154,11 +165,10 @@ class SettingWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
-        #self.main_layout.setContentsMargins(10,10,5,10)
-        
         self.label = qt.QLabel()
         
         self.tree = SettingTree()
+        self.tree.hide()
         
         self.main_layout.addWidget(self.label)
         self.main_layout.addWidget(self.tree)
@@ -171,6 +181,7 @@ class SettingWidget(qt_ui.BasicWidget):
         self.tree.set_namespace(namespace)
         
     def add_setting(self, name, value):
+        self.tree.show()
         self.tree.add_setting(name, value)
         
 class SettingTree(qt.QTreeWidget):

@@ -1,36 +1,92 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 from vtool import qt_ui, qt
+from vtool.maya_lib.ui_lib import ui_character
     
 from vtool.maya_lib import ui_core
 
+from vtool.maya_lib import rigs_util
+
 class AnimationManager(qt_ui.BasicWidget):
     def _build_widgets(self):
-        pass
+        
+        self.main_layout.setContentsMargins(10,10,10,10)
+        
+        character_tree = ui_character.CharacterTree()
+        
+        character_tree.characters_selected.connect(self._update_characters)
+        character_tree.setMaximumHeight(200)
+        
+        self.animation_tabs = AnimTabWidget()
+        
+        self.main_layout.addWidget(character_tree)
+        self.main_layout.addSpacing(15)
+        self.main_layout.addWidget(self.animation_tabs)
+        
+    def _update_characters(self, characters):
+        
+        self.animation_tabs_tabs.set_namespaces(characters)
 
-"""
-        manager_group = qt.QGroupBox('Applications')
-        manager_layout = qt.QVBoxLayout()
-        manager_layout.setContentsMargins(2,2,2,2)
-        manager_layout.setSpacing(2)
-        manager_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
-        
-        manager_group.setLayout(manager_layout)
-        
-        character_button = qt.QPushButton('Character Manager')
-        character_button.clicked.connect(self._character_manager)
-        
-        manager_layout.addWidget(character_button)
-        
-        self.main_layout.addWidget(manager_group)
-        
-    def _character_manager(self):
-        
-        character_manager()
+class AnimTabWidget(qt_ui.BasicWidget):
     
-def character_manager():
+    def __init__(self):
+        super(AnimTabWidget, self).__init__()
+        
+        self.namespaces = []
+        
+    def _build_widgets(self):
+        
+        self.tabs = qt.QTabWidget()
+        
+        self.settings_widget = AnimControlWidget()
+        
+        self.tabs.addTab(self.settings_widget,'Utilities')
+        
+        
+        self.main_layout.addWidget(self.tabs)
+        
+    def set_namespaces(self, namespaces):
+        
+        self.namespaces = namespaces
+        
+        self.settings_widget.set_characters(namespaces)
+        self.cache_widget.set_namespace(namespaces)
+        
+class AnimControlWidget(qt_ui.BasicWidget):
     
-    from vtool.maya_lib.ui_lib import ui_character
-    ui_core.create_window(ui_character.CharacterManager())
+    def __init__(self):
+        super(AnimControlWidget, self).__init__()
+        
+        self.main_layout.setContentsMargins(10,10,10,10)
+        
+        self.namespaces = []
     
-"""
+    def _build_widgets(self):
+        
+        select_controls = qt.QPushButton('Select All Controls')
+        select_controls.setMaximumWidth(150)
+        select_controls.clicked.connect(self._select_all_controls)
+        
+        mirror_controls = qt.QPushButton('Mirror Controls')
+        mirror_controls.setMaximumWidth(150)
+        
+        flip_controls = qt.QPushButton('Flip Controls')
+        flip_controls.setMaximumWidth(150)
+        
+        self.main_layout.addWidget(select_controls)
+        self.main_layout.addSpacing(10)
+        self.main_layout.addWidget(mirror_controls)
+        self.main_layout.addWidget(flip_controls)
+        
+    def set_namespaces(self, namespaces):
+        
+        self.namespaces = namespaces
+        
+    def _select_all_controls(self):
+        
+        namespace = ''
+        
+        if self.namespaces:
+            namespace = self.namespaces[0]
+        
+        rigs_util.select_controls(namespace)

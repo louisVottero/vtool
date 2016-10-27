@@ -4,7 +4,7 @@ import re
 import string
 
 import vtool.util
-import vtool.util_alembic
+
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
@@ -20,9 +20,11 @@ import space
 import anim
 import shade
 
-import alembic
-from alembic import Abc
-from alembic import AbcGeom
+if vtool.util.get_maya_version() > 2014:
+    import vtool.util_alembic
+    import alembic
+    from alembic import Abc
+    from alembic import AbcGeom
 
 #--- Cache
 
