@@ -971,6 +971,15 @@ def print_help(string_value):
 
 #--- file
 
+def get_scene_file(directory = False):
+    
+    path = cmds.file(q=True, sn=True)
+    
+    if directory and path:
+        path = vtool.util_file.get_dirname(path)
+    
+    return path
+    
 def start_new_scene():
 
     cmds.file(new = True, f = True)

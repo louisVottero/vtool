@@ -9,25 +9,6 @@ from vtool.maya_lib import core
 from vtool.maya_lib import rigs_util
 
 import maya.cmds as cmds
-
-class CharacterManager(qt_ui.BasicWidget):
-
-    title = 'Character'
-    
-    def __init__(self):
-        super(CharacterManager, self).__init__()
-        
-        self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
-        
-    def _build_widgets(self):
-        
-        self.character_tree = CharacterTree()
-        self.character_tree.setMaximumHeight(200)
-        self.main_layout.addWidget(self.character_tree)
-        
-        select_widget = CharacterSelectWidget()
-        
-        self.main_layout.addWidget(select_widget)
         
 class CharacterTree(qt.QTreeWidget):
     
@@ -84,7 +65,7 @@ class CharacterTree(qt.QTreeWidget):
         for character in characters:
             item = qt.QTreeWidgetItem()
             item.setText(0, character)
-            item.setSizeHint(0, qt.QtCore.QSize(30,30) )
+            item.setSizeHint(0, qt.QtCore.QSize(20,20) )
             
             self.insertTopLevelItem(0, item)
             
@@ -95,25 +76,3 @@ class CharacterTree(qt.QTreeWidget):
             
             self.addTopLevelItem(item)
             
-class CharacterSelectWidget(qt_ui.BasicWidget):
-    
-    def _build_widgets(self):
-        
-        self._build_select()
-    
-    def _build_select(self):
-        
-        self.select_group = qt_ui.Group('Select')
-        
-        all_controls = qt.QPushButton('All Controls')
-        all_controls.clicked.connect(self._select_all_controls)
-        
-        self.select_group.main_layout.addWidget(all_controls)
-        
-        self.main_layout.addWidget(self.select_group)
-        
-    def _select_all_controls(self):
-        
-        controls = rigs_util.get_controls()
-        
-        cmds.select(controls)

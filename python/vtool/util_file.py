@@ -1,6 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import platform
 import sys
 import os
 import shutil
@@ -15,6 +14,7 @@ import tempfile
 import threading
 import stat
 import ast
+import _winreg
 
 import util
 
@@ -920,6 +920,7 @@ class PythonScope(object):
 
 #---- get
 
+
 def get_basename(directory):
     """
     Get the last part of a directory name. If the name is C:/goo/foo, this will return foo.
@@ -1461,12 +1462,10 @@ def open_browser(filepath):
         
     """
     
-    
-    if platform.system() == 'Windows':
+    if util.is_windows():
         os.startfile(filepath)
         
-    if platform.system() == 'Linux':
-        
+    if util.is_linux():
         try:
             opener ="open" if sys.platform == "darwin" else "xdg-open"
             subprocess.call([opener, filepath])  
@@ -1569,7 +1568,26 @@ def remove_common_path_simple(path1, path2):
             sub_part = sub_part[1:]
         
     return sub_part
+    
+def get_installed_programs():
+    
+    if util.is_windows():
+        #this is a hack for now.
+        uninstall_dir = 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall'
         
+        uninstall  = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, uninstall_dir)
+        
+        try:
+            inc = 0
+            while 1:
+                name, value, type = _winreg.EnumValue(uninstall, inc)
+                print repr(name)
+                inc += 1
+                
+        except WindowsError:
+            print
+        
+        get_files(uninstall_dir)
     
 #---- edit
 
@@ -1872,6 +1890,7 @@ def create_file(name, directory, make_unique = False):
         open_file = open(full_path, 'a')
         open_file.close()
     except:
+        print traceback.format_exc()
         return False
     
     return full_path

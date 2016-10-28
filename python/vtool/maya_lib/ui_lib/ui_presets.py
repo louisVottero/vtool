@@ -16,10 +16,6 @@ class Presets(qt_ui.BasicWidget):
     def __init__(self):
         self.settings = []
         
-        
-        
-        
-        
         super(Presets, self).__init__()
         
         ui_core.new_scene_signal.signal.connect(self._load)

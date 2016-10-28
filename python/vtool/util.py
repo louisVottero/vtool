@@ -6,6 +6,7 @@ import time
 import string
 import datetime
 import traceback
+import platform
 import os
 
 def initialize_env(name):
@@ -66,6 +67,10 @@ def is_in_maya():
     except:
         return False
 
+
+        
+
+
 def get_current_maya_location():
     
     location = ''
@@ -91,6 +96,18 @@ def is_in_nuke():
         return True
     except:
         return False
+
+def is_linux():
+    if platform.system() == 'Linux':
+        return True
+    
+    return False
+    
+def is_windows():
+    if platform.system() == 'Windows':
+        return True
+    
+    return False
 
 def get_maya_version():
     """
