@@ -74,16 +74,19 @@ class Job(object):
             
             if fields:
                 if fields.has_key('Shot'):
-                    name = fields["Shot"] + '_' + str(fields["version"])
+                    name = fields["Shot"]
                 if fields.has_key('Asset'):
-                    name = fields["Asset"] + '_' + str(fields["version"])
+                    name = fields["Asset"]
+            
+            version = fields['version']
             
             self.name = name    
             command = self._get_command()
             
             temp_lines[0] = 'namespace = "%s"\n' % self.namespace
             temp_lines[1] = 'name = "%s"\n' % name
-            temp_lines[2] = 'command = "%s"\n' % command
+            temp_lines[2] = 'version = "%s"\n' % version
+            temp_lines[3] = 'command = "%s"\n' % command
             
             temp_file = open(temp_script, "w")
             temp_file.writelines(temp_lines)
@@ -107,7 +110,7 @@ class Job(object):
         self.job_dict = {
         'Plugin' : '',
         'Name' : '',
-        'Comment' : 'Automatically submitted.',
+        'Comment' : 'Auto Submit',
         #'Department' : '',
         'Pool' : '',
         'Group' : '',
@@ -255,17 +258,16 @@ class YetiJob(MayaJob):
     def __init__(self):
         super(YetiJob, self).__init__()
         
-        
-        
         self.samples = 3
     
     def _get_script_name(self):
         
-        return 'cache_yeti.py'
+        return 'deadline_cache_yeti.py'
     
     def _initialize_job(self):
         super(YetiJob, self)._initialize_job()
         
+        self.job_dict['Comment'] = 'Yeti Submit'
         self.job_dict['Name'] = self.name
         self.job_dict['Pool'] = 'lighting'
         self.job_dict['Group'] = 'yeti2016'
@@ -281,4 +283,26 @@ class YetiJob(MayaJob):
         
         self.sameples = samples
         
+class AlembicJob(MayaJob):
+    
+    def _initialize_job(self):
+        super(AlembicJob, self)._initialize_job()
+        
+        if self.namespace:
+            self.job_dict['Name'] = self.namespace + ' ' + self.name
+        
+        if not self.namespace:
+            self.job_dict['Name'] = self.name
+            
+        self.job_dict['Comment'] = 'Alembic Submit'
+    
+    def _get_command(self):
+        
+        command = "cmds.AbcExport( j = '-frameRange {} {} -stripNamespaces -uvWrite -worldSpace -writeVisibility -dataFormat ogawa -root %s -file %s' % (node, cache_path))".format(self.in_value, self.out_value)
+        return command
+    
+    def _get_script_name(self):
+        
+        return 'deadline_cache_alembic.py'    
+    
         
