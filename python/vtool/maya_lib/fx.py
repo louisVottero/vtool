@@ -949,8 +949,6 @@ def rename_ziva_nodes_on_mesh(mesh):
             source = mel.eval('zQueryAttachments -s %s' % node)
             target = mel.eval('zQueryAttachments -t %s' % node)
             
-            print 'attachment!', source, target
-            
             cmds.rename(node, 'zAttachment___%s___into___%s' % (source, target))
             continue 
         

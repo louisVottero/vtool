@@ -67,7 +67,15 @@ def is_in_maya():
     except:
         return False
 
-
+def has_shotgun():
+    
+    try:
+        import tank
+        import sgtk
+        return True
+    except:
+        return False
+        
         
 
 

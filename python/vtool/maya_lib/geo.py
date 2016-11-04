@@ -1661,8 +1661,6 @@ def transforms_to_curve(transforms, spans = None, description = 'from_transforms
         
         transform_positions.append( joint_position )
     
-    print transform_positions
-    
     curve = cmds.curve(p = transform_positions, degree = 1)
     
     """

@@ -1,6 +1,6 @@
 # Copyright (C) 2016 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from vtool import qt_ui, qt
+from vtool import qt_ui, qt, util
 
 
 import ui_character
@@ -8,7 +8,10 @@ import ui_character
 from vtool.maya_lib import attr
 from vtool.maya_lib import fx
 from vtool.maya_lib import anim
-from vtool.render_farm import deadline
+
+#this will need a function to check for deadline
+if util.has_shotgun():
+    from vtool.render_farm import deadline
 
 
 import maya.cmds as cmds
@@ -49,7 +52,9 @@ class FxTabWidget(qt_ui.BasicWidget):
         self.cache_widget = CacheWidget()
         
         self.tabs.addTab(self.settings_widget,'Presets')
-        self.tabs.addTab(self.cache_widget, 'Cache')
+        
+        if util.has_shotgun():
+            self.tabs.addTab(self.cache_widget, 'Cache')
         
         self.main_layout.addWidget(self.tabs)
         
@@ -68,41 +73,41 @@ class CacheWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
-        self.min_value = qt_ui.GetInteger('Start Frame')
-        self.max_value = qt_ui.GetInteger('End Frame')
-        self.max_value.set_value(100)
-        update_min_max = qt.QPushButton('Update')
-        update_min_max.setMaximumWidth(100)
+        if util.has_shotgun():
         
-        min_max_layout = qt.QHBoxLayout()
-        min_max_layout.addWidget(self.min_value)
-        min_max_layout.addWidget(self.max_value)
-        min_max_layout.addSpacing(10)
-        min_max_layout.addWidget(update_min_max)
-        
-        yeti_cache_button = qt.QPushButton('Yeti')
-        alembic_cache_button = qt.QPushButton('Alembic')
-        maya_cache_button = qt.QPushButton('Maya Cache')
-        
-        yeti_cache_button.clicked.connect(self._yeti_cache)
-        alembic_cache_button.clicked.connect(self._alembic_cache)
-        maya_cache_button.clicked.connect(self._maya_cache)
-        
-        group = qt_ui.Group('Deadline')
-        group.main_layout.addWidget(yeti_cache_button)
-        group.main_layout.addWidget(alembic_cache_button)
-        group.main_layout.addWidget(maya_cache_button)
+            self.min_value = qt_ui.GetInteger('Start Frame')
+            self.max_value = qt_ui.GetInteger('End Frame')
+            self.max_value.set_value(100)
+            update_min_max = qt.QPushButton('Update')
+            update_min_max.setMaximumWidth(100)
+            
+            min_max_layout = qt.QHBoxLayout()
+            min_max_layout.addWidget(self.min_value)
+            min_max_layout.addWidget(self.max_value)
+            min_max_layout.addSpacing(10)
+            min_max_layout.addWidget(update_min_max)
         
         
+            
+            yeti_cache_button = qt.QPushButton('Yeti')
+            alembic_cache_button = qt.QPushButton('Alembic')
+            maya_cache_button = qt.QPushButton('Maya Cache')
+            
+            yeti_cache_button.clicked.connect(self._yeti_cache)
+            alembic_cache_button.clicked.connect(self._alembic_cache)
+            maya_cache_button.clicked.connect(self._maya_cache)
+            
+            group = qt_ui.Group('Deadline')
+            group.main_layout.addWidget(yeti_cache_button)
+            group.main_layout.addWidget(alembic_cache_button)
+            group.main_layout.addWidget(maya_cache_button)
         
-        #maya_cache.clicked.connect(self._maya_cache)
-        
-        self.main_layout.addSpacing(10)
-        
-        
-        self.main_layout.addLayout(min_max_layout)
-        self.main_layout.addSpacing(5)
-        self.main_layout.addWidget(group)
+            self.main_layout.addSpacing(10)
+            
+            self.main_layout.addLayout(min_max_layout)
+            self.main_layout.addSpacing(5)
+
+            self.main_layout.addWidget(group)
         
         self.namespaces = []
         

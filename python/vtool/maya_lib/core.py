@@ -1013,10 +1013,12 @@ def reference_file(filepath, namespace = None):
            options = "v=0;")
     
 def replace_reference(reference_node, new_path):
-    
+    """
+    Not tested
+    """
     rn_node = cmds.referenceQuery(reference_node, rn = True)
     
-    cmds.file(loadReference = rn_node, new_path)
+    cmds.file(new_path,loadReference = rn_node)
     
     #file -loadReference "TyrannosaurusRexRN" -type "mayaAscii" -options "v=0;" "N:/projects/dinodana/assets/Character/TyrannosaurusRex/SURF/publish/maya/TyrannosaurusRex.v024.ma";
     

@@ -1875,8 +1875,6 @@ class SplineRibbonBaseRig(JointRig):
             
         if not self.ribbon:
             
-            print span_count
-            
             self._create_curve(span_count)
     
     def _attach_to_geo(self):

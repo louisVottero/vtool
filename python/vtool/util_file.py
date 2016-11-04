@@ -1570,7 +1570,9 @@ def remove_common_path_simple(path1, path2):
     return sub_part
     
 def get_installed_programs():
-    
+    """
+    Not working at all, very hacky
+    """
     if util.is_windows():
         #this is a hack for now.
         uninstall_dir = 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall'
@@ -1581,11 +1583,11 @@ def get_installed_programs():
             inc = 0
             while 1:
                 name, value, type = _winreg.EnumValue(uninstall, inc)
-                print repr(name)
+                
                 inc += 1
                 
         except WindowsError:
-            print
+            pass
         
         get_files(uninstall_dir)
     
@@ -1890,7 +1892,7 @@ def create_file(name, directory, make_unique = False):
         open_file = open(full_path, 'a')
         open_file.close()
     except:
-        print traceback.format_exc()
+        util.show( traceback.format_exc() )
         return False
     
     return full_path

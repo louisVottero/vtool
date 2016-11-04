@@ -3,7 +3,7 @@
 import os
 import subprocess
 import traceback
-import util_shotgun
+from vtool import util_shotgun
 
 from vtool import util_file
 from vtool.maya_lib import anim
@@ -72,8 +72,6 @@ class Job(object):
             temp_file = open(temp_script, "r")
             temp_lines = temp_file.readlines()
             
-            print self.submit_file
-            
             fields = util_shotgun.get_file_info(self.submit_file)
             
             name = 'cache'
@@ -103,11 +101,7 @@ class Job(object):
         
         temp_dir = self._get_temp_dir()
         
-        print temp_dir, name
-        
         filename = util_file.create_file(name, temp_dir)
-                
-        print 'create file:', filename
                 
         return filename
     
@@ -148,8 +142,6 @@ class Job(object):
         'ScriptJob' : True,
         'ScriptFilename' : util_file.get_basename(self.script)
         }
-        
-        print 'script file', self.script
     
     def _create_job_file(self):
         
