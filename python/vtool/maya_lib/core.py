@@ -1005,13 +1005,20 @@ def reference_file(filepath, namespace = None):
         if split_name:
             namespace = string.join(split_name[:-1], '_')
         
-    
     cmds.file( filepath,
            reference = True, 
            gl = True, 
            mergeNamespacesOnClash = False, 
            namespace = namespace, 
            options = "v=0;")
+    
+def replace_reference(reference_node, new_path):
+    
+    rn_node = cmds.referenceQuery(reference_node, rn = True)
+    
+    cmds.file(loadReference = rn_node, new_path)
+    
+    #file -loadReference "TyrannosaurusRexRN" -type "mayaAscii" -options "v=0;" "N:/projects/dinodana/assets/Character/TyrannosaurusRex/SURF/publish/maya/TyrannosaurusRex.v024.ma";
     
 def save(filepath):
     

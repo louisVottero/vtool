@@ -34,22 +34,37 @@ def get_yeti_dir():
     
     return cache_dir
 
-def get_output_dir(cache_name, yeti_node, yeti_dir):
+def get_output_dir(yeti_dir):
     
+    pass_namespace = namespace
     
+    if not namespace:
+        pass_namespace = 'default'
+        
+    output_dir = os.path.join(yeti_dir, pass_namespace)
+    create_dir(output_dir)    
+    
+    return output_dir
+
+def get_file_name(yeti_node):
+
     parent = cmds.listRelatives(yeti_node, p = True)[0]
     yeti_obj = parent
     yeti_type = yeti_obj
     
     if yeti_obj.find(':') > -1:
         yeti_type = (yeti_obj.split(":"))
-        yeti_type = yeti_type[1]
-        
-    output_name = name + '_' + yeti_type
-    output_dir = os.path.join(yeti_dir, output_name)
-    create_dir(output_dir)    
+        yeti_type = yeti_type[1]    
+
+    output_name = yeti_type    
     
-    return output_name, output_dir
+    if version:
+        pad_version = str('{0:03d}'.format(int(version)))
+        output_name = output_name + '.' + pad_version + '.%04d.fur'
+    if not version:
+        output_name = output_name + '.%04d.fur'
+        
+    return output_name
 
 def cache(cache_namespace = None):
     
@@ -65,13 +80,11 @@ def cache(cache_namespace = None):
         
         cmds.setAttr("%s.fileMode" % yeti_node, 0)
         
-        output_name, output_dir = get_output_dir(cache_name, yeti_node, yeti_dir)
+        output_dir = get_output_dir(yeti_dir)
+        output_name = get_file_name(yeti_node)
         
-        if version:
-            pad_version = str('{0:03d}'.format(int(version)))
-            cache_path = os.path.join(output_dir, (output_name + '.' + pad_version)) + '.abc'
-        if not version:
-            cache_path = os.path.join(output_dir, output_name) + '.%04d.fur'
+        
+        cache_path = os.path.join(output_dir, output_name)
         
         print 'Caching yeti node: %s   to path: %s' % (yeti_node, cache_path)
         

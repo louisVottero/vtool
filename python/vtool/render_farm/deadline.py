@@ -3,15 +3,21 @@
 import os
 import subprocess
 import traceback
+import util_shotgun
 
 from vtool import util_file
-from vtool import util_shotgun
+from vtool.maya_lib import anim
+
+
 
 class Job(object):
 
     def __init__(self):
         
         self.name = 'cache'
+        
+        self.pool = ''
+        self.secondary_pool = ''
         
         self.in_value = 0
         self.out_value = 100
@@ -112,9 +118,9 @@ class Job(object):
         'Name' : '',
         'Comment' : 'Auto Submit',
         #'Department' : '',
-        'Pool' : '',
+        'Pool' : self.pool,
         'Group' : '',
-        #'SecondaryPool' : '',
+        #'SecondaryPool' : self.secondary_pool,
         'Group' : '',
         'Priority' : 99,
         #'TaskTimeoutMinutes' : 0, 
@@ -180,15 +186,10 @@ class Job(object):
         
         self.chunk_value = (self.out_value - self.in_value) + 1
         
-        self.job_dict['Frames'] = self.in_value + '-' + self.out_value,
-        self.job_dict['ChunkSize'] = self.chunk_value
-        
     def set_pool(self, pool_name, secondary_pool_name = ''):
         self.pool = pool_name
         self.secondary_pool = secondary_pool_name
         
-        self.job_dict['Pool'] = self.pool
-        self.job_dict['SecondaryPool'] = secondary_pool_name
         
     def set_group(self, group_name):
         
@@ -242,13 +243,19 @@ class MayaJob( Job ):
     def _initialize_job(self):
         super(MayaJob, self)._initialize_job()
         
+        if self.namespace:
+            self.job_dict['Name'] = self.namespace + ' ' + self.name
         
+        if not self.namespace:
+            self.job_dict['Name'] = self.name
+            
         self.job_dict['Plugin'] = 'MayaBatch'
 
     def _initialize_plugin(self):
         super(MayaJob, self)._initialize_plugin()
         
         self.plugin_dict['ProjectPath'] = os.path.dirname(self.submit_file)
+
 
     def set_maya_version(self, version):
         self.version
@@ -267,8 +274,7 @@ class YetiJob(MayaJob):
     def _initialize_job(self):
         super(YetiJob, self)._initialize_job()
         
-        self.job_dict['Comment'] = 'Yeti Submit'
-        self.job_dict['Name'] = self.name
+        self.job_dict['Comment'] = 'Yeti'
         self.job_dict['Pool'] = 'lighting'
         self.job_dict['Group'] = 'yeti2016'
         
@@ -288,13 +294,7 @@ class AlembicJob(MayaJob):
     def _initialize_job(self):
         super(AlembicJob, self)._initialize_job()
         
-        if self.namespace:
-            self.job_dict['Name'] = self.namespace + ' ' + self.name
-        
-        if not self.namespace:
-            self.job_dict['Name'] = self.name
-            
-        self.job_dict['Comment'] = 'Alembic Submit'
+        self.job_dict['Comment'] = 'Alembic'
     
     def _get_command(self):
         
@@ -305,4 +305,18 @@ class AlembicJob(MayaJob):
         
         return 'deadline_cache_alembic.py'    
     
+class MayaCacheJob(MayaJob):
+    
+    def _initialize_job(self):
+        super(MayaCacheJob, self)._initialize_job()
         
+        self.job_dict['Comment'] = 'Maya Cache'
+    
+    def _get_command(self):
+        
+        command = "cmds.cacheFile(f=output_name,format='OneFile', points = nodes, dir = cache_path, ws = True, sch = True, st = %s, et = %s)" % (self.in_value, self.out_value)        
+        return command
+    
+    def _get_script_name(self):
+        
+        return 'deadline_cache_maya.py'

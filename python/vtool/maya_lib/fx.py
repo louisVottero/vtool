@@ -133,7 +133,7 @@ def export_alembic(root_node, name, dirpath = None):
     min_value, max_value = anim.get_min_max_time()
     
     folder = get_cache_folder('alembic_cache', dirpath)
-    vtool.util.show('Exporting to: %s' % folder)
+    vtool.util.show('Exporting %s to %s' % (name, folder))
     
     filename = '%s/%s.abc' % (folder, name)
     

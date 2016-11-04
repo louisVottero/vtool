@@ -2,6 +2,7 @@ namespace = ''
 name = ''
 version = ''
 command = ''
+auto_run = False
 #above can be replaced with file read/write and submitted to deadline
 
 import maya.cmds as cmds
@@ -28,7 +29,7 @@ def get_cache_node(namespace = None):
             test_group = '%s:master|%s:%s' % (namespace, namespace, model_group)
         if not namespace:
             test_group = 'master|%s' % model_group
-
+            
         if cmds.objExists(test_group):
             found = test_group
             break
@@ -58,8 +59,6 @@ def get_output_dir(node, dir_name):
         
     output_dir = os.path.join(dir_name, output_name)
     
-    print 'output dir!', output_dir
-    
     create_dir(output_dir)
     
     return output_name, output_dir
@@ -68,13 +67,17 @@ def cache(cache_namespace = None):
     
     if not cache_namespace:
         cache_namespace = namespace
+    else:
+        global namespace
+        namespace = cache_namespace
+        
     
     node = get_cache_node(cache_namespace)
     cache_dir = get_cache_dir()
     
     output_name, output_dir = get_output_dir(node, cache_dir)
         
-     
+    
         
     if version:
         pad_version = str('{0:03d}'.format(int(version)))
@@ -93,4 +96,5 @@ def cache(cache_namespace = None):
         cmds.AbcExport( j = "-frameRange %s %s -stripNamespaces -uvWrite -worldSpace -writeVisibility -dataFormat ogawa -root %s -file %s" % (0, 100, node, cache_path))
       
 #run cache  
-cache()
+if auto_run:
+    cache()
