@@ -25,7 +25,7 @@ class AnimationManager(qt_ui.BasicWidget):
         
     def _update_characters(self, characters):
         
-        self.animation_tabs_tabs.set_namespaces(characters)
+        self.animation_tabs.set_namespaces(characters)
 
 class AnimTabWidget(qt_ui.BasicWidget):
     
@@ -49,8 +49,8 @@ class AnimTabWidget(qt_ui.BasicWidget):
         
         self.namespaces = namespaces
         
-        self.settings_widget.set_characters(namespaces)
-        self.cache_widget.set_namespace(namespaces)
+        self.settings_widget.set_namespaces(namespaces)
+        
         
 class AnimControlWidget(qt_ui.BasicWidget):
     
@@ -67,17 +67,17 @@ class AnimControlWidget(qt_ui.BasicWidget):
         select_controls.setMaximumWidth(150)
         select_controls.clicked.connect(self._select_all_controls)
         
-        """
-        mirror_controls = qt.QPushButton('Mirror Controls')
-        mirror_controls.setMaximumWidth(150)
         
-        flip_controls = qt.QPushButton('Flip Controls')
-        flip_controls.setMaximumWidth(150)
-        """
+        key_controls = qt.QPushButton('Key All Controls')
+        key_controls.setMaximumWidth(150)
+        key_controls.clicked.connect(self._key_all_controls)
+        
         
         self.main_layout.addWidget(select_controls)
         self.main_layout.addSpacing(10)
         #self.main_layout.addWidget(mirror_controls)
+        #self.main_layout.addWidget(flip_controls)
+        self.main_layout.addWidget(key_controls)
         #self.main_layout.addWidget(flip_controls)
         
     def set_namespaces(self, namespaces):
@@ -92,3 +92,13 @@ class AnimControlWidget(qt_ui.BasicWidget):
             namespace = self.namespaces[0]
         
         rigs_util.select_controls(namespace)
+        
+    def _key_all_controls(self):
+        
+        namespace = ''
+        
+        if self.namespaces:
+            namespace = self.namespaces[0]
+            
+        rigs_util.key_controls(namespace)
+        

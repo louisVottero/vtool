@@ -7,6 +7,9 @@ import ui_character
 
 from vtool.maya_lib import attr
 from vtool.maya_lib import fx
+from vtool.maya_lib import anim
+from vtool.render_farm import deadline
+
 
 import maya.cmds as cmds
 
@@ -43,10 +46,10 @@ class FxTabWidget(qt_ui.BasicWidget):
         self.tabs = qt.QTabWidget()
         
         self.settings_widget = FxSettingsWidget()
-        
+        self.cache_widget = CacheWidget()
         
         self.tabs.addTab(self.settings_widget,'Presets')
-        
+        self.tabs.addTab(self.cache_widget, 'Cache')
         
         self.main_layout.addWidget(self.tabs)
         
@@ -54,7 +57,7 @@ class FxTabWidget(qt_ui.BasicWidget):
         
         self.namespaces = namespaces
         
-        self.settings_widget.set_characters(namespaces)
+        self.settings_widget.set_namespace(namespaces)
         self.cache_widget.set_namespace(namespaces)
 
 class CacheWidget(qt_ui.BasicWidget):
@@ -65,14 +68,99 @@ class CacheWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
-        maya_cache = qt.QPushButton('Maya Cache')
+        self.min_value = qt_ui.GetInteger('Start Frame')
+        self.max_value = qt_ui.GetInteger('End Frame')
+        self.max_value.set_value(100)
+        update_min_max = qt.QPushButton('Update')
+        update_min_max.setMaximumWidth(100)
         
-        maya_cache.clicked.connect(self._maya_cache)
+        min_max_layout = qt.QHBoxLayout()
+        min_max_layout.addWidget(self.min_value)
+        min_max_layout.addWidget(self.max_value)
+        min_max_layout.addSpacing(10)
+        min_max_layout.addWidget(update_min_max)
         
-        self.main_layout.addWidget(maya_cache)
+        yeti_cache_button = qt.QPushButton('Yeti')
+        alembic_cache_button = qt.QPushButton('Alembic')
+        maya_cache_button = qt.QPushButton('Maya Cache')
+        
+        yeti_cache_button.clicked.connect(self._yeti_cache)
+        alembic_cache_button.clicked.connect(self._alembic_cache)
+        maya_cache_button.clicked.connect(self._maya_cache)
+        
+        group = qt_ui.Group('Deadline')
+        group.main_layout.addWidget(yeti_cache_button)
+        group.main_layout.addWidget(alembic_cache_button)
+        group.main_layout.addWidget(maya_cache_button)
+        
+        
+        
+        #maya_cache.clicked.connect(self._maya_cache)
+        
+        self.main_layout.addSpacing(10)
+        
+        
+        self.main_layout.addLayout(min_max_layout)
+        self.main_layout.addSpacing(5)
+        self.main_layout.addWidget(group)
         
         self.namespaces = []
         
+    def _yeti_cache(self):
+        
+        if not self.namespaces:
+            return
+        
+        for namespace in self.namespaces:
+            job = deadline.YetiJob()
+            job.set_namespace(namespace)
+            
+            in_value = self.min_value.get_value()
+            out_value = self.max_value.get_value()
+            
+            job.set_frames(in_value, out_value)
+            job.submit()
+        
+    
+    def _alembic_cache(self):
+        
+        if not self.namespaces:
+            return
+        
+        for namespace in self.namespaces:
+            job = deadline.AlembicJob()
+            job.set_namespace(namespace)
+            
+            in_value = self.min_value.get_value()
+            out_value = self.max_value.get_value()
+            
+            job.set_frames(in_value, out_value)
+            job.submit()
+        
+    
+    def _maya_cache(self):
+        
+        if not self.namespaces:
+            return
+        
+        for namespace in self.namespaces:
+            job = deadline.MayaCacheJob()
+            job.set_namespace(namespace)
+            
+            in_value = self.min_value.get_value()
+            out_value = self.max_value.get_value()
+            
+            job.set_frames(in_value, out_value)
+            job.submit()
+        
+    def _update_min_max(self):
+        
+        min_value, max_value = anim.get_min_max_time()
+        
+        self.min_value.set_value(min_value)
+        self.max_value.set_value(max_value)
+    
+    """    
     def _maya_cache(self):
         
 
@@ -81,10 +169,11 @@ class CacheWidget(qt_ui.BasicWidget):
 
         fx.export_maya_cache_group(anim_model)
         fx.import_maya_cache_group(render_model, source_group = anim_model)
-        
+    """    
     def set_namespace(self, namespaces):
         self.namespaces = namespaces
-        
+    
+
 
 class FxSettingsWidget(qt_ui.BasicWidget):
     
@@ -156,7 +245,7 @@ class FxSettingsWidget(qt_ui.BasicWidget):
                 layout.addWidget(setting_tree)
             
     
-    def set_characters(self, character_namespaces):
+    def set_namespace(self, character_namespaces):
         
         self.characters = character_namespaces
         self.create_preset_widgets()

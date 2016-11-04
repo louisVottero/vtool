@@ -2112,8 +2112,13 @@ def get_controls(namespace = ''):
     Returns:
         list: List of control names.
     """
-    transforms = cmds.ls(namespace + '*', type = 'transform')
-    joints = cmds.ls(namespace + '*', type = 'joint')
+    
+    name = '*'
+    if namespace:
+        name = '%s:*' % namespace
+    
+    transforms = cmds.ls(name, type = 'transform')
+    joints = cmds.ls(name, type = 'joint')
     
     if joints:
         transforms += joints
@@ -2122,6 +2127,9 @@ def get_controls(namespace = ''):
     found_with_value = []
     
     for transform_node in transforms:
+        
+        if cmds.objExists('%s.POSE' % transform_node):
+            continue
         
         transform = core.remove_namespace_from_string(transform_node)
         
@@ -2163,6 +2171,11 @@ def select_controls(namespace = ''):
     
     controls = get_controls(namespace)
     cmds.select(controls)
+    
+def key_controls(namespace = ''):
+    
+    controls = get_controls(namespace)
+    cmds.setKeyframe(controls, shape = 0, controlPoints = 0, hierarchy = 'none', breakdown = 0)
     
 @core.undo_chunk
 def mirror_control(control):
