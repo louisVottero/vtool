@@ -116,7 +116,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._update_build_widget(name)
         
-        self._load_options(item.get_path())
+        if hasattr(item, 'get_path'):
+            self._load_options(item.get_path())
         
     def _item_selection_changed(self):
         

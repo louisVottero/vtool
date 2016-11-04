@@ -223,7 +223,7 @@ class FkWithSubControlRig(rigs.FkRig):
         return sub_control
     
 class PointingFkCurveRig(rigs.SimpleFkCurveRig): 
-    def _create_curve(self):
+    def _create_curve(self, span_count):
         
         if not self.curve:
         
@@ -231,7 +231,7 @@ class PointingFkCurveRig(rigs.SimpleFkCurveRig):
             
             self.set_control_count(1)
             
-            self.curve = geo.transforms_to_curve(self.buffer_joints, self.control_count - 1, name)
+            self.curve = geo.transforms_to_curve(self.joints, self.control_count - 1, name)
             
             self.curve = cmds.rebuildCurve( self.curve, 
                                    constructionHistory = False,

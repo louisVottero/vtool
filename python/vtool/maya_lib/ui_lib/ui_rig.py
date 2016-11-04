@@ -123,7 +123,7 @@ class RigManager(qt_ui.DirectoryWidget):
         
         
         
-        presets_button = qt.QPushButton('Presets')
+        presets_button = qt.QPushButton('Presets - ALPHA')
         presets_button.clicked.connect(self._presets)
         presets_button.setMinimumWidth(button_width)
         presets_button.setToolTip('Presets creates a node in Maya called "presets" that stores attribute values. Values can be read from referenced assets in the FX tab.')

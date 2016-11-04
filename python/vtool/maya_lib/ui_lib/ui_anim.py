@@ -67,16 +67,18 @@ class AnimControlWidget(qt_ui.BasicWidget):
         select_controls.setMaximumWidth(150)
         select_controls.clicked.connect(self._select_all_controls)
         
+        """
         mirror_controls = qt.QPushButton('Mirror Controls')
         mirror_controls.setMaximumWidth(150)
         
         flip_controls = qt.QPushButton('Flip Controls')
         flip_controls.setMaximumWidth(150)
+        """
         
         self.main_layout.addWidget(select_controls)
         self.main_layout.addSpacing(10)
-        self.main_layout.addWidget(mirror_controls)
-        self.main_layout.addWidget(flip_controls)
+        #self.main_layout.addWidget(mirror_controls)
+        #self.main_layout.addWidget(flip_controls)
         
     def set_namespaces(self, namespaces):
         
