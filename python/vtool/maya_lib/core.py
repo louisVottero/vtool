@@ -1016,11 +1016,19 @@ def replace_reference(reference_node, new_path):
     """
     Not tested
     """
-    rn_node = cmds.referenceQuery(reference_node, rn = True)
+    rn_node = cmds.referenceQuery(reference_node, rfn = True)
     
     cmds.file(new_path,loadReference = rn_node)
     
     #file -loadReference "TyrannosaurusRexRN" -type "mayaAscii" -options "v=0;" "N:/projects/dinodana/assets/Character/TyrannosaurusRex/SURF/publish/maya/TyrannosaurusRex.v024.ma";
+    
+def reload_reference(reference_node):
+    
+    rn_node = cmds.referenceQuery(reference_node, rfn = True)
+    
+    filepath = cmds.referenceQuery(rn_node, filename = True)
+    
+    cmds.file(filepath, loadReference = rn_node) 
     
 def save(filepath):
     
