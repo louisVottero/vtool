@@ -4526,7 +4526,7 @@ def about(message, parent = None):
 def get_pick(list_values, text_message, parent = None):
     
     input_dialog = qt.QInputDialog(parent)
-    input_dialog.setComboBoxItems(list)
+    input_dialog.setComboBoxItems(list_values)
     
     flags = input_dialog.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     picked, ok = qt.QInputDialog.getItem(parent, 'Pick One', text_message, list_values, flags = flags)
