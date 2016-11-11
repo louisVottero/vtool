@@ -4764,4 +4764,25 @@ def reset_tweaks_on_mesh(mesh):
         reset_tweak(tweak)
         
 
+def match_geo_blendshape(source_geo, target_geo, attr_name):
     
+    blendshape = cmds.deformer(target_geo, type = 'blendShape')[0]
+    
+    for inc in range(0, len(source_geo)):
+        
+        
+        if inc > (len(target_geo)-1):
+            break
+        
+        if not geo.is_mesh_compatible(source_geo[inc], target_geo[inc]):
+            vtool.util.warning('Skipping blendshape geo because incompatible:  %s   %s' % (source_geo[inc], target_geo[inc]))
+            continue
+        
+        cmds.connectAttr('%s.outMesh' % source_geo[inc], 
+                         '%s.inputTarget[%s].inputTargetGroup[0].inputTargetItem[6000].inputGeomTarget' % (blendshape, inc))
+        
+        if not cmds.objExists('%s.%s' % (blendshape, attr_name)):
+            cmds.setAttr('%s.weight[%s]' % (blendshape, 0), 1)
+            cmds.aliasAttr(attr_name, '%s.weight[0]' % blendshape)
+            
+        
