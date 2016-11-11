@@ -841,57 +841,6 @@ def get_surface_shape(surface, shape_index = 0):
         cmds.warning('%s does not have a shape count up to %s' % shape_index)
         
     return shapes[shape_index]
-    
-    
-def create_shape_from_shape(shape, name = 'new_shape'):
-    """
-    Duplication in maya can get slow in reference files. 
-    This will create a shape and match it to the given shape without using Maya's duplicate command.
-    
-    Args:
-        shape (str): The name of a shape to match to.
-        name (str): The name of the new shape.
-    
-    Returns:
-        The name of the transform above the new shape.
-    """
-    parent = cmds.listRelatives(shape, p = True, f = True)
-    
-    transform = cmds.group(em = True)
-    transform = cmds.ls(transform, l = True)[0]
-    
-    api.create_mesh_from_mesh(shape, transform)
-    mesh = transform
-    
-    core.add_to_isolate_select([mesh])
-    
-    mesh = cmds.rename(mesh, core.inc_name(name))
-    shapes = core.get_shapes(mesh, 'mesh')
-    
-    if shapes:
-        cmds.rename(shapes[0], mesh + 'Shape')
-    
-    if parent:
-        space.MatchSpace(parent[0], mesh).translation_rotation()
-        
-    return mesh
-    
-
-def create_texture_reference_object(mesh):
-    
-    shape = get_mesh_shape(mesh, 0)
-    
-    name = core.get_basename(mesh, remove_namespace = True)
-    
-    new_mesh = create_shape_from_shape(shape, '%s_reference' % name)
-    
-    shapes = core.get_shapes(new_mesh, 'mesh')
-    
-    cmds.connectAttr('%s.message' % shapes[0], '%s.referenceObject' % mesh)
-    
-    cmds.setAttr( '%s.template' % shapes[0],  True )
-    return new_mesh
-
 
 def get_of_type_in_hierarchy(transform, node_type):
     """
@@ -922,56 +871,59 @@ def get_of_type_in_hierarchy(transform, node_type):
             found.append(relative)
             
     return found
-              
+
+def get_matching_geo(source_list, target_list):
+    """
+    Searches for matches to the source list.  Only one geo can match each source.  
+    Checkes topology first, then naming.
+    Returns a list with [[source, target],[source,target]]
+    """
+    
+    source_dict = {}
+    found_source_dict = {}
+    
+    for source in source_list:
+        
+        if not is_a_mesh(source):
+            continue
+        
+        source_dict[source] = []
+        
+        for target in target_list:
             
-
-def expand_selected_edge_loop():
-    
-    edges = get_selected_edges()
-    
-    found_new_edges = []
-    
-    for edge in edges:
+            if not is_a_mesh(target):
+                continue
+            
+            if is_mesh_compatible(source, target):
+                
+                source_dict[source].append(target)
+                
+    for source in source_dict:
         
-        mesh, edge = edge.split('.')
+        matches = source_dict[source]
         
-        edge_id = vtool.util.get_last_number(edge)
+        for match in matches:
+            if source == match:
+                found_source_dict[source] = match
+                break
+            
+            source_base = core.get_basename(source, remove_namespace = True)
+            match_base = core.get_basename(match, remove_namespace= True)
+            
+            if source_base == match_base:
+                found_source_dict[source] = match
+                
+    found = []
+                
+    for source in source_list:
+        match = found_source_dict[source]
         
-        new_edges = expand_edge_loop(mesh, edge_id)
-        
-        if new_edges:
-            found_new_edges += new_edges
-    
-    for edge in found_new_edges:
-        cmds.select('%s.e[%s]' % (mesh, edge), add = True)
+        found.append(source, match)
+                
+                
+            
     
     
-
-def expand_edge_loop(mesh, edge_id):
-    
-    
-    
-    iter_edges = api.IterateEdges(mesh)
-    
-    connected_faces = iter_edges.get_connected_faces(edge_id)
-    connected_edges = iter_edges.get_connected_edges(edge_id)
-    
-    face_edges = []
-    
-    for face_id in connected_faces:
-        
-        iter_faces = api.IteratePolygonFaces(mesh)
-        face_edges += iter_faces.get_edges(face_id)
-        
-    edge_set = set(connected_edges)
-    face_edge_set = set(face_edges)
-    
-    good_edges = edge_set.difference(face_edge_set)
-    
-    good_edges = list(good_edges)
-    
-    return good_edges
-
 def get_edge_path(edges = []):
     """
     Given a list of edges, return the edge path.
@@ -1057,6 +1009,109 @@ def get_face_centers(mesh):
     face_iter = api.IteratePolygonFaces(mesh)
     
     return face_iter.get_face_center_vectors()
+    
+def create_shape_from_shape(shape, name = 'new_shape'):
+    """
+    Duplication in maya can get slow in reference files. 
+    This will create a shape and match it to the given shape without using Maya's duplicate command.
+    
+    Args:
+        shape (str): The name of a shape to match to.
+        name (str): The name of the new shape.
+    
+    Returns:
+        The name of the transform above the new shape.
+    """
+    parent = cmds.listRelatives(shape, p = True, f = True)
+    
+    transform = cmds.group(em = True)
+    transform = cmds.ls(transform, l = True)[0]
+    
+    api.create_mesh_from_mesh(shape, transform)
+    mesh = transform
+    
+    core.add_to_isolate_select([mesh])
+    
+    mesh = cmds.rename(mesh, core.inc_name(name))
+    shapes = core.get_shapes(mesh, 'mesh')
+    
+    if shapes:
+        cmds.rename(shapes[0], mesh + 'Shape')
+    
+    if parent:
+        space.MatchSpace(parent[0], mesh).translation_rotation()
+        
+    return mesh
+    
+
+def create_texture_reference_object(mesh):
+    
+    shape = get_mesh_shape(mesh, 0)
+    
+    name = core.get_basename(mesh, remove_namespace = True)
+    
+    new_mesh = create_shape_from_shape(shape, '%s_reference' % name)
+    
+    shapes = core.get_shapes(new_mesh, 'mesh')
+    
+    cmds.connectAttr('%s.message' % shapes[0], '%s.referenceObject' % mesh)
+    
+    cmds.setAttr( '%s.template' % shapes[0],  True )
+    return new_mesh
+
+
+
+              
+            
+
+def expand_selected_edge_loop():
+    
+    edges = get_selected_edges()
+    
+    found_new_edges = []
+    
+    for edge in edges:
+        
+        mesh, edge = edge.split('.')
+        
+        edge_id = vtool.util.get_last_number(edge)
+        
+        new_edges = expand_edge_loop(mesh, edge_id)
+        
+        if new_edges:
+            found_new_edges += new_edges
+    
+    for edge in found_new_edges:
+        cmds.select('%s.e[%s]' % (mesh, edge), add = True)
+    
+    
+
+def expand_edge_loop(mesh, edge_id):
+    
+    
+    
+    iter_edges = api.IterateEdges(mesh)
+    
+    connected_faces = iter_edges.get_connected_faces(edge_id)
+    connected_edges = iter_edges.get_connected_edges(edge_id)
+    
+    face_edges = []
+    
+    for face_id in connected_faces:
+        
+        iter_faces = api.IteratePolygonFaces(mesh)
+        face_edges += iter_faces.get_edges(face_id)
+        
+    edge_set = set(connected_edges)
+    face_edge_set = set(face_edges)
+    
+    good_edges = edge_set.difference(face_edge_set)
+    
+    good_edges = list(good_edges)
+    
+    return good_edges
+
+
     
     
 def snap_to_mesh(transform, mesh, face = None):

@@ -4768,6 +4768,10 @@ def match_geo_blendshape(source_geo, target_geo, attr_name):
     
     blendshape = cmds.deformer(target_geo, type = 'blendShape')[0]
     
+    
+
+            
+    
     for inc in range(0, len(source_geo)):
         
         
@@ -4785,4 +4789,4 @@ def match_geo_blendshape(source_geo, target_geo, attr_name):
             cmds.setAttr('%s.weight[%s]' % (blendshape, 0), 1)
             cmds.aliasAttr(attr_name, '%s.weight[0]' % blendshape)
             
-        
+    return blendshape
