@@ -16,6 +16,11 @@ def get_min_max_time():
     
     return min_value,max_value
 
+def set_min_max_time(min_value, max_value):
+    
+    cmds.playbackOptions(minTime = min_value)
+    cmds.playbackOptions(maxTime = max_value)    
+
 def playblast(filename):
     """
     Playblast the viewport to the given filename path.

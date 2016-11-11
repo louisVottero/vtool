@@ -32,8 +32,11 @@ if vtool.util.get_maya_version() > 2014:
 
 def get_cache_folder(name, dirpath = ''):
     if not dirpath:
-        dirpath = cmds.workspace(q = True, rd = True)
-        
+        dirpath = cmds.file(q = True, sn = True)
+        dirpath = util_file.get_dirname(dirpath)
+    
+    
+    
     folder = util_file.create_dir('cache/%s' % name, dirpath)
     
     return folder
@@ -77,7 +80,10 @@ def export_maya_cache(geo, name = 'maya_cache', dirpath = ''):
     vtool.util.show('Exporting to: %s' % folder)
     
     min_value, max_value = anim.get_min_max_time()
-     
+    
+    print min_value, max_value, name, found_shapes, folder, 
+    
+    
     cmds.cacheFile(f=name,format='OneFile', points = found_shapes, dir = folder, ws = True, sch = True, st = min_value, et = max_value)
     
 def import_maya_cache(geo, name = 'maya_cache', dirpath = '', source_namespace = None):
@@ -93,6 +99,18 @@ def import_maya_cache(geo, name = 'maya_cache', dirpath = '', source_namespace =
     found_shapes = get_shapes_for_cache(geo)
     
     for geo_name in found_shapes:
+        
+        if geo_name.endswith('Deformed') > -1:
+            parent = cmds.listRelatives(geo_name, p = True)
+            
+            if parent:
+                parent = parent[0]
+            
+            split_parent = parent.split(':')
+            
+            namespace = split_parent[0]
+            
+            geo_name = namespace + ':' + geo_name[:-8]
         
         found_history_switch = deform.find_deformer_by_type(geo_name, 'historySwitch')
         
@@ -125,27 +143,36 @@ def import_maya_cache(geo, name = 'maya_cache', dirpath = '', source_namespace =
         
         cmds.rename(cache_file, 'cacheFile_%s' % nice_geo_name)
         
-def export_alembic(root_node, name, dirpath = None):
+        
+def export_alembic(root_node, name, dirpath = None, auto_sub_folders = True):
     
     if not cmds.pluginInfo('AbcExport', query = True, loaded = True):
         cmds.loadPlugin('AbcExport')
     
     min_value, max_value = anim.get_min_max_time()
     
-    folder = get_cache_folder('alembic_cache', dirpath)
+    if auto_sub_folders:
+        folder = get_cache_folder('alembic', dirpath)
+    if not auto_sub_folders:
+        folder = dirpath
+        
     vtool.util.show('Exporting %s to %s' % (name, folder))
     
     filename = '%s/%s.abc' % (folder, name)
     
     mel.eval('AbcExport -j "-frameRange %s %s -stripNamespaces -uvWrite -worldSpace -writeVisibility -dataFormat ogawa -root %s -file %s";' % (min_value, max_value, root_node, filename))
 
-def import_alembic(root_node, name, dirpath = None):
+def import_alembic(root_node, name, dirpath = None, auto_sub_folders = True):
     
     if not cmds.pluginInfo('AbcImport', query = True, loaded = True):
         cmds.loadPlugin('AbcImport')
     
-    folder = get_cache_folder('alembic_cache', dirpath)
-    vtool.util.show('Importing from: %s' % folder)
+    if auto_sub_folders:
+        folder = get_cache_folder('alembic', dirpath)
+    if not auto_sub_folders:
+        folder = dirpath
+        
+    vtool.util.show('Importing %s from: %s' % (name, folder))
     
     filename = '%s/%s.abc' % (folder, name)
     
@@ -163,6 +190,8 @@ def import_alembic(root_node, name, dirpath = None):
     
     found_shapes = get_shapes_for_cache(root_node)
     found_geo = []
+    
+    print found_shapes
     
     for geo_name in found_shapes:
         
@@ -197,7 +226,28 @@ def import_alembic(root_node, name, dirpath = None):
         
         
         shade.set_shader_info(geo, shader_info_dict[geo])
+        
+
+def import_alembic_geo(name, dirpath = None, auto_sub_folders = True):
+
+    if not cmds.pluginInfo('AbcImport', query = True, loaded = True):
+        cmds.loadPlugin('AbcImport')
+        
+    if auto_sub_folders:
+        folder = get_cache_folder('alembic', dirpath)
+    if not auto_sub_folders:
+        folder = dirpath
+        
+    vtool.util.show('Importing %s from: %s' % (name, folder))
     
+    cache_group = cmds.group(em = True, n = 'cache_%s' % name)
+    
+    filename = '%s/%s.abc' % (folder, name)
+    cmds.select(cache_group, replace = True)
+    
+    mel.eval('AbcImport -mode "import" -reparent "%s" "%s"' % (cache_group, filename)) 
+    
+    return cache_group
 
         
 def refresh_maya_caches(maya_caches = []):
