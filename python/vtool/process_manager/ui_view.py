@@ -453,7 +453,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             if child_item.text(0) == new_name:
                 new_name = pre_inc_name + str(name_inc)
                 name_inc += 1
-                
+        
         return new_name
     
     def _rename_process(self):
@@ -474,7 +474,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if not new_name:
             return
         
-        self._inc_name(item, new_name)
+        new_name = self._inc_name(item, new_name)
         
         item.setText(0, new_name)
         

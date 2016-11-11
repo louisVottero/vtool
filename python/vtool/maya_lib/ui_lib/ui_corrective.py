@@ -805,6 +805,8 @@ class PoseTreeWidget(BaseTreeWidget):
             for sub_pose in sub_poses:
                 self._add_pose_item(sub_pose, new_item)
         
+
+        
         return new_item 
                       
     def _select_joint(self):
@@ -917,6 +919,8 @@ class PoseTreeWidget(BaseTreeWidget):
             item.setSelected(True)
             self.scrollToItem(item)
         self.update_select = True
+        
+        self._rename_pose()
         
         return item
     

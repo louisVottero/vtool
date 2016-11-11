@@ -84,8 +84,6 @@ def cache(cache_namespace = None):
         cache_path = os.path.join(output_dir, (output_name + '.' + pad_version)) + '.abc'
     if not version:
         cache_path = os.path.join(output_dir, output_name) + '.abc'
-        
-    print 'Caching alembic: %s   to path: %s' % (node, cache_path)
     
     if not cmds.pluginInfo('AbcExport', query = True, loaded = True):
         cmds.loadPlugin('AbcExport')
