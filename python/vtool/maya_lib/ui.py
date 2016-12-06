@@ -26,7 +26,7 @@ import rigs_util
 def load_into_tool_manager(window):
     
     if ToolManager._last_instance:
-        ToolManager._last_instance.add_tab(window, window.title)
+        ToolManager._last_instance.add_dock(window, window.title)
     
     if not ToolManager._last_instance:
         ui_core.create_window(window)
@@ -100,45 +100,90 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         if name:
             self.title = name
     
+        self.default_docks = []
+        
         super(ToolManager, self).__init__()
         
     def _build_widgets(self):
-        self.tab_widget = qt.QTabWidget()
-        self.tab_widget.setTabPosition(self.tab_widget.West)
+        
+        #self.tab_widget = qt.QTabWidget()
+        #self.tab_widget.setTabPosition(self.tab_widget.West)
+        
+        
+        
+        #self.setDockOptions( self.AnimatedDocks | self.AllowNestedDocks | self.AllowTabbedDocks)
+        
+        
+        
+        #self.setAnimated(True)
+        #self.setDockNestingEnabled(True)
+        #self.setTabPosition(qt.QtCore.Qt.DockWidgetArea, qt.QTabWidget.West)
+        
+        self.main_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+        
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
+        
+        header_layout = qt.QHBoxLayout()
+        
+        version = qt.QLabel('%s' % util_file.get_vetala_version())
+        version.setMaximumHeight(30)
+        
+        header_layout.addWidget(version)
+        
+        self.main_layout.addLayout(header_layout)
+        
+        self.dock_window = DockWindow()
+        
+        self.main_layout.addWidget(self.dock_window)
         
         self.modeling_widget = ui_model.ModelManager()
         self.rigging_widget = ui_rig.RigManager()
         self.animation_widget = ui_anim.AnimationManager()
-        #self.shot_widget = qt.QWidget()
+        ##self.shot_widget = qt.QWidget()
         self.fx_widget = ui_fx.FxManager()
         
-        #temporary
+        self.add_tab(self.modeling_widget, 'MODEL')
+        self.add_tab(self.rigging_widget, 'RIG')
+        self.add_tab(self.animation_widget, 'ANIMATE')
+        self.add_tab(self.fx_widget, 'FX')
         
-        self.tab_widget.addTab(self.modeling_widget, 'MODEL')
-        self.tab_widget.addTab(self.rigging_widget, 'RIG')
-        self.tab_widget.addTab(self.animation_widget, 'ANIMATE')
-        self.tab_widget.addTab(self.fx_widget, 'FX')
+        self.default_docks[1].raise_()
         
-        self.tab_widget.setCurrentIndex(1)
+        #self.tab_widget.setCurrentIndex(1)
         
-        self.tab_widget.setMovable(True)
-        self.tab_widget.setTabsClosable(True)
+        #self.tab_widget.setMovable(True)
+        #self.tab_widget.setTabsClosable(True)
         
         
         
-        version = qt.QLabel('%s' % util_file.get_vetala_version())
-        self.main_layout.addWidget(version)
-        self.main_layout.addWidget(self.tab_widget)
         
-        self.tab_widget.tabBar().tabButton(0, qt.QTabBar.RightSide).hide()
-        self.tab_widget.tabBar().tabButton(1, qt.QTabBar.RightSide).hide()
-        self.tab_widget.tabBar().tabButton(2, qt.QTabBar.RightSide).hide()
-        self.tab_widget.tabBar().tabButton(3, qt.QTabBar.RightSide).hide()
+        #self.main_layout.addWidget(self.tab_widget)
         
-        #temporary
+        #self.tab_widget.tabBar().tabButton(0, qt.QTabBar.RightSide).hide()
         #self.tab_widget.tabBar().tabButton(1, qt.QTabBar.RightSide).hide()
+        #self.tab_widget.tabBar().tabButton(2, qt.QTabBar.RightSide).hide()
+        #self.tab_widget.tabBar().tabButton(3, qt.QTabBar.RightSide).hide()
         
-        self.tab_widget.tabCloseRequested.connect(self._close_tab)
+        ###temporary
+        ##self.tab_widget.tabBar().tabButton(1, qt.QTabBar.RightSide).hide()
+        
+        #self.tab_widget.tabCloseRequested.connect(self._close_tab)
+        
+    def _add_default_tabs(self):
+        
+        for dock in self.default_docks:
+            try:
+                dock.close()
+            except:
+                pass
+            
+        self.default_docks = []
+        
+        self.add_tab(self.modeling_widget, 'MODEL')
+        self.add_tab(self.rigging_widget, 'RIG')
+        self.add_tab(self.animation_widget, 'ANIMATE')
+        self.add_tab(self.fx_widget, 'FX')
+        
         
     def _close_tab(self, index):
         
@@ -146,6 +191,9 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         
     def add_tab(self, widget, name):
         
+        dock = self.add_dock(widget, name)
+        
+        """
         tab_count = self.tab_widget.count()
         
         for inc in range(0, tab_count):
@@ -160,22 +208,68 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         tab_count = self.tab_widget.count()
             
         self.tab_widget.setCurrentIndex( (tab_count-1) )
+        """
+        
+        dock.setFeatures(dock.DockWidgetMovable| dock.DockWidgetFloatable)
+        self.default_docks.append(dock)
+        
+    def add_dock(self, widget , name):
+        
+        dock = self.dock_window.add_dock(widget, name)
+        
+        return dock
         
     def set_directory(self, directory):
+        
         super(ToolManager, self).set_directory(directory)
         self.rigging_widget.set_directory(directory)
-     
-
+        
+class DockWindow(qt_ui.BasicWindow):
+    
+    def __init__(self, name = None):
+        
+        self.docks = []
+        
+        super(DockWindow, self).__init__()
+        
+        print 'children!', self.children()
+        
+    def _build_widgets(self):
+        
+        self.main_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+        self.centralWidget().hide()
+        self.setTabPosition(qt.QtCore.Qt.BottomDockWidgetArea, qt.QTabWidget.West)
+        self.setDockOptions( self.AnimatedDocks | self.AllowTabbedDocks)
+        #self.setSizePolicy(qt.QSizePolicy.Maximum, qt.QSizePolicy.Maximum)
+        
+    def add_dock(self, widget , name):
+        
+        for dock in self.docks:
+            if dock.windowTitle() == name:
+                return
+        
+        dock_widget = DockWidget(name, self)
+        dock_widget.setWidget(widget)
+        
+        self.addDockWidget(qt.QtCore.Qt.BottomDockWidgetArea, dock_widget)
         
         
-     
-
-
-
+        if self.docks:
+            self.tabifyDockWidget( self.docks[-1], dock_widget)
+            #self.setTabPosition()b
         
-
-
-
+        self.docks.append(dock_widget)
         
+        return dock_widget
 
+    
+    
+class DockWidget(qt.QDockWidget):
+    
+    def __init__(self, name, parent):
+        super(DockWidget, self).__init__(name, parent)
+        
+        self.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
+        self.setAllowedAreas(qt.QtCore.Qt.BottomDockWidgetArea)
+        
         
