@@ -970,7 +970,7 @@ def get_ziva_geo_names():
 
 def is_ziva_tissue(mesh):
     cmds.select(mesh)
-    zTissue = mel.eval('zQueryNodeTrain -nodeType "zTissue"')
+    zTissue = mel.eval('zQuery -type "zTissue"')
     if zTissue:
         return True
     
@@ -978,7 +978,7 @@ def is_ziva_tissue(mesh):
     
 def is_ziva_bone(mesh):
     cmds.select(mesh)
-    zBone = mel.eval('zQueryNodeTrain -nodeType "zBone"')
+    zBone = mel.eval('zQuery -type "zBone"')
     if zBone:
         return True
     
@@ -996,36 +996,37 @@ def rename_ziva_nodes_on_mesh(mesh):
     for node in history:
         
         if cmds.nodeType(node) == 'zAttachment':
-            source = mel.eval('zQueryAttachments -s %s' % node)
-            target = mel.eval('zQueryAttachments -t %s' % node)
+            source = mel.eval('zQuery -as %s' % node)
+            target = mel.eval('zQuery -at %s' % node)
             
-            cmds.rename(node, 'zAttachment___%s___into___%s' % (source, target))
-            continue 
+            if source and target:
+                cmds.rename(node, core.inc_name('zAttachment___%s___into___%s' % (source[0], target[0])))
+                continue 
         
         if cmds.nodeType(node) == 'zMaterial':
-            cmds.rename(node, 'zMaterial___%s' % mesh)
+            cmds.rename(node, core.inc_name('zMaterial___%s' % mesh))
             continue
             
         if cmds.nodeType(node) == 'zFiber':
-            cmds.rename(node, 'zFiber___%s' % mesh)
+            cmds.rename(node, core.inc_name('zFiber___%s' % mesh))
             continue
             
         if cmds.nodeType(node) == 'zTet':
-            cmds.rename(node, 'zTet___%s' % mesh)
+            cmds.rename(node, core.inc_name('zTet___%s' % mesh))
             continue
       
     cmds.select(mesh)
-    zGeo = mel.eval('zQueryNodeTrain -nodeType "zGeo"')
-    cmds.rename(zGeo, 'zGeo___%s' % mesh)
+    zGeo = mel.eval('zQuery -type "zGeo"')
+    cmds.rename(zGeo, core.inc_name('zGeo___%s' % mesh))
     
     
-    zTissue = mel.eval('zQueryNodeTrain -nodeType "zTissue"')
+    zTissue = mel.eval('zQuery -type "zTissue"')
     if zTissue:
-        cmds.rename(zTissue, 'zTissue___%s' % mesh)
+        cmds.rename(zTissue, core.inc_name('zTissue___%s' % mesh))
     
-    zBone = mel.eval('zQueryNodeTrain -nodeType "zBone"')
+    zBone = mel.eval('zQuery -type "zBone"')
     if zBone:
-        cmds.rename(zBone, 'zBone___%s' % mesh)
+        cmds.rename(zBone, core.inc_name('zBone___%s' % mesh))
         
 def copy_ziva(source_mesh, target_mesh):
         

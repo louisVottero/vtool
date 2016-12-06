@@ -294,45 +294,50 @@ class MeshTopologyCheck(object):
     
     def __init__(self, mesh1, mesh2):
         
-        self.mesh1 = get_mesh_shape(mesh1, 0)
-        self.mesh2 = get_mesh_shape(mesh2, 0)
+        self.set_first_mesh(mesh1)
+        self.set_second_mesh(mesh2)
+
         
+    def set_first_mesh(self, mesh):
+        self.mesh1 = get_mesh_shape(mesh,0)
+        self.mesh1_function = None
+        self.mesh1_vert_count = None
+        self.mesh1_edge_count = None
+        self.mesh1_face_count = None
+
+        self.mesh1_function = api.MeshFunction(self.mesh1)
+        self.mesh1_vert_count = self.mesh1_function.get_number_of_vertices()
+        self.mesh1_edge_count = self.mesh1_function.get_number_of_edges()
+        self.mesh1_face_count = self.mesh1_function.get_number_of_faces()
+
+    def set_second_mesh(self, mesh):
+        self.mesh2 = get_mesh_shape(mesh,0)
+        self.mesh2_vert_count = None
+        self.mesh2_edge_count = None
+        self.mesh2_face_count = None
+        
+        self.mesh2_function = api.MeshFunction(self.mesh2)
+        self.mesh2_vert_count = self.mesh2_function.get_number_of_vertices()
+        self.mesh2_edge_count = self.mesh2_function.get_number_of_edges()
+        self.mesh2_face_count = self.mesh2_function.get_number_of_faces()
     
     def check_vert_count(self):
         
-        mesh1 = api.MeshFunction(self.mesh1)
-        count1 = mesh1.get_number_of_vertices()
-        
-        mesh2 = api.MeshFunction(self.mesh2)
-        count2 = mesh2.get_number_of_vertices()
-        
-        if count1 == count2:
+        if self.mesh1_vert_count == self.mesh2_vert_count:
             return True
         
         return False
     
     def check_edge_count(self):
-        
-        mesh1 = api.MeshFunction(self.mesh1)
-        count1 = mesh1.get_number_of_edges()
-        
-        mesh2 = api.MeshFunction(self.mesh2)
-        count2 = mesh2.get_number_of_edges()
-        
-        if count1 == count2:
+
+        if self.mesh1_edge_count == self.mesh2_edge_count:
             return True
         
         return False
     
     def check_face_count(self):
         
-        mesh1 = api.MeshFunction(self.mesh1)
-        count1 = mesh1.get_number_of_faces()
-        
-        mesh2 = api.MeshFunction(self.mesh2)
-        count2 = mesh2.get_number_of_faces()
-        
-        if count1 == count2:
+        if self.mesh1_face_count == self.mesh2_face_count:
             return True
         
         return False
@@ -754,7 +759,7 @@ def get_selected_surfaces():
     found = get_surfaces_in_list(selection)
     return found
 
-def get_mesh_shape(mesh, shape_index = 0):
+def get_mesh_shape(mesh, shape_index = 0, full_path = False):
     """
     Get the first mesh shape, or one based in the index.
     
@@ -882,10 +887,16 @@ def get_matching_geo(source_list, target_list):
     source_dict = {}
     found_source_dict = {}
     
+    source_mesh_list = []
+    
+    match_instances = {}
+    
     for source in source_list:
         
         if not is_a_mesh(source):
             continue
+        
+        source_mesh_list.append(source)
         
         source_dict[source] = []
         
@@ -894,7 +905,27 @@ def get_matching_geo(source_list, target_list):
             if not is_a_mesh(target):
                 continue
             
-            if is_mesh_compatible(source, target):
+            check = None
+            
+            if not match_instances.has_key(target):
+                check = MeshTopologyCheck(source, target)
+                match_instances[target] = check
+            if match_instances.has_key(target):
+                check = match_instances[target]
+                check.set_first_mesh(source)
+            
+            if check and check.check_vert_edge_face_count():
+                
+                if source == target:
+                    found_source_dict[source] = target
+                    break
+                
+                source_base = core.get_basename(source, remove_namespace = True)
+                target_base = core.get_basename(target, remove_namespace= True)
+                
+                if source_base == target_base:
+                    found_source_dict[source] = target
+                    break
                 
                 source_dict[source].append(target)
                 
@@ -902,26 +933,35 @@ def get_matching_geo(source_list, target_list):
         
         matches = source_dict[source]
         
-        for match in matches:
-            if source == match:
-                found_source_dict[source] = match
-                break
-            
-            source_base = core.get_basename(source, remove_namespace = True)
-            match_base = core.get_basename(match, remove_namespace= True)
-            
-            if source_base == match_base:
-                found_source_dict[source] = match
+        if len(matches) == 1:
+            found_source_dict[source] = matches[0]
+        
+        if len(matches) > 1:
+            for match in matches:
+                if source == match:
+                    found_source_dict[source] = match
+                    break
+                
+                source_base = core.get_basename(source, remove_namespace = True)
+                match_base = core.get_basename(match, remove_namespace= True)
+                
+                if source_base == match_base:
+                    found_source_dict[source] = match
+                    break
                 
     found = []
                 
-    for source in source_list:
-        match = found_source_dict[source]
+    for source in source_mesh_list:
         
-        found.append(source, match)
-                
-                
+        if found_source_dict.has_key(source):
+            match = found_source_dict[source]
+        
+            found.append([source, match])
             
+        if not found_source_dict.has_key(source):
+            found.append([source, None])
+            
+    return found
     
     
 def get_edge_path(edges = []):

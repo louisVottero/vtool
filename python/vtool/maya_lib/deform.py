@@ -628,7 +628,7 @@ class SplitMeshTarget(object):
             return
 
         if not self.weighted_mesh or not cmds.objExists(self.weighted_mesh):
-            vtool.util.warning('%s weight mesh does not exist for splitting' % self.weight_mesh)
+            vtool.util.warning('%s weight mesh does not exist for splitting' % self.weighted_mesh)
             return
 
         parent = cmds.listRelatives( self.target_mesh, p = True )
@@ -4767,10 +4767,7 @@ def reset_tweaks_on_mesh(mesh):
 def match_geo_blendshape(source_geo, target_geo, attr_name):
     
     blendshape = cmds.deformer(target_geo, type = 'blendShape')[0]
-    
-    
-
-            
+    cmds.setAttr('%s.origin' % blendshape, 0)
     
     for inc in range(0, len(source_geo)):
         
@@ -4782,11 +4779,11 @@ def match_geo_blendshape(source_geo, target_geo, attr_name):
             vtool.util.warning('Skipping blendshape geo because incompatible:  %s   %s' % (source_geo[inc], target_geo[inc]))
             continue
         
-        cmds.connectAttr('%s.outMesh' % source_geo[inc], 
+        cmds.connectAttr('%s.worldMesh' % source_geo[inc], 
                          '%s.inputTarget[%s].inputTargetGroup[0].inputTargetItem[6000].inputGeomTarget' % (blendshape, inc))
         
         if not cmds.objExists('%s.%s' % (blendshape, attr_name)):
             cmds.setAttr('%s.weight[%s]' % (blendshape, 0), 1)
             cmds.aliasAttr(attr_name, '%s.weight[0]' % blendshape)
-            
+        
     return blendshape
