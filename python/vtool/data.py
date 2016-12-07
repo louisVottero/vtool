@@ -1652,7 +1652,7 @@ class AnimationData(MayaCustomData):
         
         for key in info_dict:
             keyframes = info_dict[key]
-            
+                        
             outputs = keyframes['output']
             
             if outputs:
@@ -1671,7 +1671,7 @@ class AnimationData(MayaCustomData):
                         
                     if locked:
                         cmds.setAttr(output, l = False)
-
+            
             input_attr = keyframes['input']
             
             if input_attr:

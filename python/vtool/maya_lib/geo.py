@@ -294,45 +294,50 @@ class MeshTopologyCheck(object):
     
     def __init__(self, mesh1, mesh2):
         
-        self.mesh1 = get_mesh_shape(mesh1, 0)
-        self.mesh2 = get_mesh_shape(mesh2, 0)
+        self.set_first_mesh(mesh1)
+        self.set_second_mesh(mesh2)
+
         
+    def set_first_mesh(self, mesh):
+        self.mesh1 = get_mesh_shape(mesh,0)
+        self.mesh1_function = None
+        self.mesh1_vert_count = None
+        self.mesh1_edge_count = None
+        self.mesh1_face_count = None
+
+        self.mesh1_function = api.MeshFunction(self.mesh1)
+        self.mesh1_vert_count = self.mesh1_function.get_number_of_vertices()
+        self.mesh1_edge_count = self.mesh1_function.get_number_of_edges()
+        self.mesh1_face_count = self.mesh1_function.get_number_of_faces()
+
+    def set_second_mesh(self, mesh):
+        self.mesh2 = get_mesh_shape(mesh,0)
+        self.mesh2_vert_count = None
+        self.mesh2_edge_count = None
+        self.mesh2_face_count = None
+        
+        self.mesh2_function = api.MeshFunction(self.mesh2)
+        self.mesh2_vert_count = self.mesh2_function.get_number_of_vertices()
+        self.mesh2_edge_count = self.mesh2_function.get_number_of_edges()
+        self.mesh2_face_count = self.mesh2_function.get_number_of_faces()
     
     def check_vert_count(self):
         
-        mesh1 = api.MeshFunction(self.mesh1)
-        count1 = mesh1.get_number_of_vertices()
-        
-        mesh2 = api.MeshFunction(self.mesh2)
-        count2 = mesh2.get_number_of_vertices()
-        
-        if count1 == count2:
+        if self.mesh1_vert_count == self.mesh2_vert_count:
             return True
         
         return False
     
     def check_edge_count(self):
-        
-        mesh1 = api.MeshFunction(self.mesh1)
-        count1 = mesh1.get_number_of_edges()
-        
-        mesh2 = api.MeshFunction(self.mesh2)
-        count2 = mesh2.get_number_of_edges()
-        
-        if count1 == count2:
+
+        if self.mesh1_edge_count == self.mesh2_edge_count:
             return True
         
         return False
     
     def check_face_count(self):
         
-        mesh1 = api.MeshFunction(self.mesh1)
-        count1 = mesh1.get_number_of_faces()
-        
-        mesh2 = api.MeshFunction(self.mesh2)
-        count2 = mesh2.get_number_of_faces()
-        
-        if count1 == count2:
+        if self.mesh1_face_count == self.mesh2_face_count:
             return True
         
         return False

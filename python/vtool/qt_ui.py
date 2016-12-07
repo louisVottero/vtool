@@ -77,6 +77,8 @@ class BasicWindow(qt.QMainWindow):
         
         self.setCentralWidget( main_widget )
         
+        self.main_widget = main_widget
+        
         self.main_layout.expandingDirections()
         self.main_layout.setContentsMargins(1,1,1,1)
         self.main_layout.setSpacing(2)
@@ -4470,7 +4472,7 @@ def get_save_permission(message, parent = None, path = None):
     
     save = message_box.addButton('Save', qt.QMessageBox.YesRole)
     no_save = message_box.addButton("Don't Save", qt.QMessageBox.NoRole)
-    #cancel = message_box.addButton('Cancel', QMessageBox.RejectRole)
+    cancel = message_box.addButton('Cancel', qt.QMessageBox.RejectRole)
     
     #message_box.setWindowFlags(flags)
     message = message_box.exec_()
@@ -4481,8 +4483,8 @@ def get_save_permission(message, parent = None, path = None):
     if message_box.clickedButton() == no_save:
         return False
     
-    #if message_box.clickedButton() == cancel:
-    #    return None
+    if message_box.clickedButton() == cancel:
+        return None
     
     
 def get_new_name(message, parent = None, old_name = None):

@@ -5,6 +5,7 @@ import string
 #import util
 import api
 import vtool.util
+from vtool.maya_lib.space import get_xform_group
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
@@ -568,6 +569,7 @@ class SparseRig(JointRig):
         self.control_to_pivot = False
         self.follow_parent = False
         self.control_compensate = False
+        self.run_function = None
         
     def _convert_to_joints(self):
         
@@ -644,9 +646,22 @@ class SparseRig(JointRig):
         """
         self.control_compensate = bool_value
         
+    def set_run_after_increment(self, function):
+        """
+        function will get passed the current control and current transform.
+        """
+        
+        self.run_function = function
+        
+        print 'set run func', self.run_function
+        
+        
     def create(self):
         
         super(SparseRig, self).create()
+        
+        inc = 0
+        self.current_inc = 0
         
         for joint in self.joints:
             
@@ -713,8 +728,11 @@ class SparseRig(JointRig):
                 if parent:
                     space.create_follow_group(parent[0], xform)
 
-    
+            if self.run_function:
+                self.run_function(self.controls[self.current_inc], self.joints[self.current_inc])    
             
+            inc += 1
+            self.current_inc = inc
                         
         if self.use_joint_controls:
             self._convert_to_joints()
@@ -751,6 +769,9 @@ class SparseLocalRig(SparseRig):
         if self.local_parent:
             self.local_xform = cmds.group(em = True, n = 'localParent_%s' % self._get_name())
             cmds.parent(self.local_xform, self.setup_group)
+        
+        self.current_inc = 0
+        inc = 0
         
         for joint in self.joints:
             
@@ -827,6 +848,11 @@ class SparseLocalRig(SparseRig):
             
             cmds.parent(xform, self.control_group)
 
+            if self.run_function:
+                self.run_function(self.controls[self.current_inc], self.joints[self.current_inc])
+                    
+            self.current_inc = inc
+            inc += 1
 
             
         if self.local_parent:
@@ -7631,11 +7657,15 @@ class StickyRig(JointRig):
 
         self._create_follow([self.top_locator[0], self.mid_top_locator[0]], control_top[1], top_joint)
         
-        cmds.addAttr(control_top[0], ln = 'stick', min = 0, max = 1, k = True)
+        control_top_xform = space.get_xform_group(control_top[0])
         
-        cmds.connectAttr('%s.stick' % control_top[0], '%s.stick' % top_joint)
+        cmds.addAttr(control_top_xform, ln = 'stick', min = 0, max = 1, k = True)
         
-        self._create_follow([self.btm_locator[0], self.mid_btm_locator[0]], control_btm[1], control_btm[0])
+        cmds.connectAttr('%s.stick' % control_top_xform, '%s.stick' % top_joint)
+        
+        control_btm_xform = space.get_xform_group(control_btm[0])
+        
+        self._create_follow([self.btm_locator[0], self.mid_btm_locator[0]], control_btm[1], control_btm_xform)
         
         self._create_follow([self.top_locator[0], self.btm_locator[0]], self.mid_top_locator[1], self.mid_top_locator[0])
         self._create_follow([self.top_locator[0], self.btm_locator[0]], self.mid_btm_locator[1], self.mid_btm_locator[0])
@@ -7857,15 +7887,22 @@ class StickyRig(JointRig):
         left_top_control = self.zip_controls[increment][0][0]
         left_btm_control = self.zip_controls[increment][0][1]
             
-        anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % left_top_control, [start,end], [0,end_value])
-        anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % left_btm_control, [start,end], [0,end_value])
+        xform_left_top_control = space.get_xform_group(left_top_control)
+        xform_left_btm_control = space.get_xform_group(left_btm_control)
+            
+        anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_left_top_control, [start,end], [0,end_value])
+        anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_left_btm_control, [start,end], [0,end_value])
                 
         if left_over_value:
-            anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % left_top_control, [start,end], [0,left_over_value])
-            anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % left_btm_control, [start,end], [0,left_over_value])
+            
+            xform_left_top_control = get_xform_group(left_top_control)
+            xform_left_btm_control = get_xform_group(left_btm_control)
+            
+            anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_left_top_control, [start,end], [0,left_over_value])
+            anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_left_btm_control, [start,end], [0,left_over_value])
         
-        cmds.setAttr('%s.stick' % left_top_control, lock = True, k = False, cb = True)
-        cmds.setAttr('%s.stick' % left_btm_control, lock = True, k = False, cb = True)
+        cmds.setAttr('%s.stick' % xform_left_top_control, lock = True, k = False, cb = True)
+        cmds.setAttr('%s.stick' % xform_left_btm_control, lock = True, k = False, cb = True)
         
         right_increment = 1
         
@@ -7875,15 +7912,22 @@ class StickyRig(JointRig):
         right_top_control = self.zip_controls[increment][right_increment][0]
         right_btm_control = self.zip_controls[increment][right_increment][1]
         
-        anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % right_top_control, [start,end], [0,end_value])
-        anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % right_btm_control, [start,end], [0,end_value])
+        xform_right_top_control = space.get_xform_group(right_top_control)
+        xform_right_btm_control = space.get_xform_group(right_btm_control)
+        
+        anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_right_top_control, [start,end], [0,end_value])
+        anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_right_btm_control, [start,end], [0,end_value])
         
         if left_over_value:
-            anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % right_top_control, [start,end], [0,left_over_value])
-            anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % right_btm_control, [start,end], [0,left_over_value])
+            
+            xform_right_top_control = get_xform_group(right_top_control)
+            xform_right_btm_control = get_xform_group(right_btm_control)
+            
+            anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_right_top_control, [start,end], [0,left_over_value])
+            anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_right_btm_control, [start,end], [0,left_over_value])
 
-        cmds.setAttr('%s.stick' % right_top_control, lock = True, k = False, cb = True)
-        cmds.setAttr('%s.stick' % right_btm_control, lock = True, k = False, cb = True)
+        cmds.setAttr('%s.stick' % xform_right_top_control, lock = True, k = False, cb = True)
+        cmds.setAttr('%s.stick' % xform_right_btm_control, lock = True, k = False, cb = True)
         
     def create_roll(self, control, increment, percent):
         

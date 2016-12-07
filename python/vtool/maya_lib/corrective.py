@@ -597,7 +597,18 @@ class PoseManager(object):
             pose.create_all_blends()
             
             pose_type = '%s.type' % pose.pose_control
-            pose_type = cmds.getAttr(pose_type)
+            
+
+                
+            if not cmds.objExists(pose_type):
+                #this is a patch fix to work with really old poses
+                #old poses were only of type cone
+                cmds.addAttr(pose.pose_control, ln = 'type', dt = 'string')
+                cmds.setAttr('%s.type' % pose.pose_control, 'cone', type = 'string')
+                pose_type = 'cone'
+
+            if cmds.objExists(pose_type):
+                pose_type = cmds.getAttr(pose_type)
             
             if pose_type == 'no reader':
                 pose.set_weight(0)
@@ -3257,7 +3268,11 @@ class PoseCone(PoseBase):
         cmds.connectAttr('%s.outputX' % multiply, '%s.input1X' % multiply_offset)
         cmds.connectAttr('%s.enable' % self.pose_control, '%s.input2X' % multiply_offset)
         
-        cmds.connectAttr('%s.outputX' % multiply_offset, '%s.weight' % self.pose_control)
+        
+        input_attr = attr.get_attribute_input('%s.weight' % self.pose_control)
+        
+        if not input_attr:
+            cmds.connectAttr('%s.outputX' % multiply_offset, '%s.weight' % self.pose_control)
 
     def _get_parent_constraint(self):
         constraint = space.ConstraintEditor()
