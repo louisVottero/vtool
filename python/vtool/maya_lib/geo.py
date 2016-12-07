@@ -912,6 +912,7 @@ def get_matching_geo(source_list, target_list):
             
             if source_base == match_base:
                 found_source_dict[source] = match
+                break
                 
     found = []
                 

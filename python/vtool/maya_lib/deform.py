@@ -627,8 +627,8 @@ class SplitMeshTarget(object):
             vtool.util.warning('%s target does not exist for splitting' % self.target_mesh)
             return
 
-        if not self.weighted_mesh or not cmds.objExists(self.weighted_mesh):
-            vtool.util.warning('%s weight mesh does not exist for splitting' % self.weight_mesh)
+        if self.weighted_mesh and not cmds.objExists(self.weighted_mesh):
+            vtool.util.warning('%s weight mesh does not exist for splitting' % self.weighted_mesh)
             return
 
         parent = cmds.listRelatives( self.target_mesh, p = True )
