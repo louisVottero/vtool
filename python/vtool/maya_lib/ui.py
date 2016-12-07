@@ -101,6 +101,7 @@ class ToolManager(ui_core.MayaDirectoryWindow):
             self.title = name
     
         self.default_docks = []
+        self.docks = []
         
         super(ToolManager, self).__init__()
         
@@ -149,6 +150,8 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         
         self.default_docks[1].raise_()
         
+        
+        
         #self.tab_widget.setCurrentIndex(1)
         
         #self.tab_widget.setMovable(True)
@@ -168,6 +171,20 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         ##self.tab_widget.tabBar().tabButton(1, qt.QTabBar.RightSide).hide()
         
         #self.tab_widget.tabCloseRequested.connect(self._close_tab)
+        
+
+            
+                #child.setMovable(True)
+                #child.currentChanged.connect(self._current_tab_changed)
+                #child.tabMoved.connect(self._tab_moved)
+        
+    def _get_tab_bar(self):
+        return self.dock_window._get_tab_bar()
+        
+    def _tab_moved(self, from_index, to_index):
+        
+        self.dock_window.tabifyDockWidget(self.docks[from_index], self.docks[to_index])
+        return
         
     def _add_default_tabs(self):
         
@@ -230,35 +247,83 @@ class DockWindow(qt_ui.BasicWindow):
         
         self.docks = []
         
+        self.connect_tab_change = True
+        
         super(DockWindow, self).__init__()
         
-        print 'children!', self.children()
+        self.tab_change_hide_show = True
+        
+        
+        
+    def _get_tab_bar(self):
+        
+        children = self.children()
+        
+        for child in children:
+            
+            if isinstance(child, qt.QTabBar):
+                return child
+        
+    def _get_dock_widgets(self):
+        
+        children = self.children()
+        
+        found = []
+        
+        for child in children:
+            
+            if isinstance(child, qt.QDockWidget):
+                found.append(child)
+                
+        return found
         
     def _build_widgets(self):
         
         self.main_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
         self.centralWidget().hide()
-        self.setTabPosition(qt.QtCore.Qt.BottomDockWidgetArea, qt.QTabWidget.West)
+        
+        self.setTabPosition(qt.QtCore.Qt.TopDockWidgetArea, qt.QTabWidget.West)
         self.setDockOptions( self.AnimatedDocks | self.AllowTabbedDocks)
         #self.setSizePolicy(qt.QSizePolicy.Maximum, qt.QSizePolicy.Maximum)
         
+    def _tab_changed(self, index):
+        
+        if not self.tab_change_hide_show:
+            return
+        
+        docks = self._get_dock_widgets()
+        
+        docks[index].hide()
+        docks[index].show()
+        
     def add_dock(self, widget , name):
         
-        for dock in self.docks:
+        docks = self._get_dock_widgets()
+            
+        for dock in docks:
             if dock.windowTitle() == name:
-                return
+                dock.deleteLater()
+                dock.close()
         
         dock_widget = DockWidget(name, self)
         dock_widget.setWidget(widget)
         
-        self.addDockWidget(qt.QtCore.Qt.BottomDockWidgetArea, dock_widget)
+        self.addDockWidget(qt.QtCore.Qt.TopDockWidgetArea, dock_widget)
         
+        if docks:
+            self.tabifyDockWidget( docks[-1], dock_widget)
         
-        if self.docks:
-            self.tabifyDockWidget( self.docks[-1], dock_widget)
-            #self.setTabPosition()b
+        dock_widget.show()
+        dock_widget.raise_()
         
-        self.docks.append(dock_widget)
+        dock_widget.dockLocationChanged.connect(self._test)
+        
+        tab_bar = self._get_tab_bar()
+        
+        if tab_bar:
+            if self.connect_tab_change:
+                tab_bar.currentChanged.connect(self._tab_changed)
+                self.connect_tab_change = False
         
         return dock_widget
 
@@ -269,7 +334,7 @@ class DockWidget(qt.QDockWidget):
     def __init__(self, name, parent):
         super(DockWidget, self).__init__(name, parent)
         
-        self.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
-        self.setAllowedAreas(qt.QtCore.Qt.BottomDockWidgetArea)
+        self.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+        self.setAllowedAreas(qt.QtCore.Qt.TopDockWidgetArea)
         
         

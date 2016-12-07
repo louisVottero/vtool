@@ -81,9 +81,6 @@ def export_maya_cache(geo, name = 'maya_cache', dirpath = ''):
     
     min_value, max_value = anim.get_min_max_time()
     
-    print min_value, max_value, name, found_shapes, folder, 
-    
-    
     cmds.cacheFile(f=name,format='OneFile', points = found_shapes, dir = folder, ws = True, sch = True, st = min_value, et = max_value)
     
 def import_maya_cache(geo, name = 'maya_cache', dirpath = '', source_namespace = None):
@@ -190,8 +187,6 @@ def import_alembic(root_node, name, dirpath = None, auto_sub_folders = True):
     
     found_shapes = get_shapes_for_cache(root_node)
     found_geo = []
-    
-    print found_shapes
     
     for geo_name in found_shapes:
         

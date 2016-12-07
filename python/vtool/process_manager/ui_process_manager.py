@@ -178,7 +178,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.show()
         
     def sizeHint(self):
-        return qt.QtCore.QSize(650,800)
+        return qt.QtCore.QSize(600,650)
         
     def _setup_settings_file(self):
         

@@ -653,9 +653,6 @@ class SparseRig(JointRig):
         
         self.run_function = function
         
-        print 'set run func', self.run_function
-        
-        
     def create(self):
         
         super(SparseRig, self).create()
