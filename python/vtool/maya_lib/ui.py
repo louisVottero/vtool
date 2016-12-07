@@ -316,8 +316,6 @@ class DockWindow(qt_ui.BasicWindow):
         dock_widget.show()
         dock_widget.raise_()
         
-        dock_widget.dockLocationChanged.connect(self._test)
-        
         tab_bar = self._get_tab_bar()
         
         if tab_bar:
