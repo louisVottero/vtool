@@ -141,12 +141,13 @@ def import_maya_cache(geo, name = 'maya_cache', dirpath = '', source_namespace =
         cmds.rename(cache_file, 'cacheFile_%s' % nice_geo_name)
         
         
-def export_alembic(root_node, name, dirpath = None, auto_sub_folders = True):
+def export_alembic(root_node, name, dirpath = None, auto_sub_folders = True, min_value = None, max_value = None):
     
     if not cmds.pluginInfo('AbcExport', query = True, loaded = True):
         cmds.loadPlugin('AbcExport')
     
-    min_value, max_value = anim.get_min_max_time()
+    if min_value == None or max_value == None:
+        min_value, max_value = anim.get_min_max_time()
     
     if auto_sub_folders:
         folder = get_cache_folder('alembic', dirpath)
@@ -1056,3 +1057,6 @@ def copy_ziva(source_mesh, target_mesh):
             continue
         
     rename_ziva_nodes_on_mesh(target_mesh)
+    
+def find_empty_attachment_targets():
+    pass

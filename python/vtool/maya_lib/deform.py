@@ -3997,9 +3997,12 @@ def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints
     
     for relative in relatives:
         
-        shape = geo.get_mesh_shape(relative)
+        shape = core.get_shapes(relative)
         
-        if shape and cmds.nodeType(shape) == 'mesh':
+        
+        if shape and cmds.nodeType(shape[0]) == 'mesh':
+            skin_mesh_from_mesh(source_mesh, relative, include_joints = include_joints, exclude_joints = exclude_joints)
+        if shape and cmds.nodeType(shape[0]) == 'nurbsCurve':
             skin_mesh_from_mesh(source_mesh, relative, include_joints = include_joints, exclude_joints = exclude_joints)
             
     if old_selection:

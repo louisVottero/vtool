@@ -2033,10 +2033,11 @@ def transfer_output_connections(source_node, target_node):
 def hide_attributes(node, attributes):
     """
     Lock and hide the attributes specified in attributes.
+    This has been tested on individual attributes like translateX, not attributes like translate.
     
     Args:
         node (str): The name of a node.
-        attributes (list): A list of attributes on node to lock and hide.
+        attributes (list): A list of attributes on node to lock and hide. Just the name of the attribute.
     """
     
     for attribute in attributes:
