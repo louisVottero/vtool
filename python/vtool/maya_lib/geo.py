@@ -946,41 +946,6 @@ def get_edge_path(edges = []):
     
     return cmds.ls(sl = True, l = True)
 
-def edge_to_vertex(edges):
-    """
-    Return the vertices that are part of the edges.
-    
-    Args:
-        edges (list): A list of edges (by name).  eg. ['mesh_name.e[0]'] 
-    
-    Returns:
-        list: The names of vertices on an edge. eg. ['mesh_name.vtx[0]']
-    
-    """
-    edges = cmds.ls(edges, flatten = True)
-    
-    verts = []
-    
-    mesh = edges[0].split('.')
-    mesh = mesh[0]
-    
-    for edge in edges:
-        
-        info = cmds.polyInfo(edge, edgeToVertex = True)
-        info = info[0]
-        info = info.split()
-        
-        vert1 = info[2]
-        vert2 = info[3]
-        
-        if not vert1 in verts:
-            verts.append('%s.vtx[%s]' % (mesh, vert1))
-            
-        if not vert2 in verts:
-            verts.append('%s.vtx[%s]' % (mesh, vert2))
-            
-    return verts
-
 def get_face_center(mesh, face_id):
     """
     Get the center position of a face.
@@ -1016,6 +981,151 @@ def get_face_centers(mesh):
     
     return face_iter.get_face_center_vectors()
     
+def get_render_stats(node_name):
+    
+    render_stats = ['castsShadows',
+                    'receiveShadows',
+                    'holdOut',
+                    'motionBlur',
+                    'primaryVisibility',
+                    'smoothShading',
+                    'visibleInReflections',
+                    'visibleInRefractions',
+                    'doubleSided',
+                    'opposite',
+                    ]
+    
+    render_list = []
+    
+    for stat in render_stats:
+        attr = '%s.%s' % (node_name, stat)
+        
+        if cmds.objExists(attr):
+            value = cmds.getAttr(attr)
+            
+            render_list.append( [stat, value])
+    
+    return render_list
+
+RENDER_DEFAULT_CAST_SHADOWS = True
+RENDER_DEFAULT_RECEIVE_SHADOWS = True
+RENDER_DEFAULT_HOLD_OUT = False
+RENDER_DEFAULT_MOTION_BLUR = True
+RENDER_DEFAULT_PRIMARY_VISIBILITY = True
+RENDER_DEFAULT_SMOOTH_SHADING = True
+RENDER_DEFAULT_VISIBLE_IN_REFLECTIONS = True
+RENDER_DEFAULT_VISIBLE_IN_REFRACTIONS = True
+RENDER_DEFAULT_DOUBLE_SIDED = True
+RENDER_DEFAULT_OPPOSITE = False
+
+def check_render_stats_are_default(node_name):
+    """
+    check for nodes with non default render stats
+    
+    returns:
+        list:
+    """
+    
+    stats = get_render_stats(node_name)
+    
+    for inc in range(0, len(stats)):
+        
+        stat = stats[inc][0]
+        value = stats[inc][1]
+        
+        if stat == 'castsShadows':
+            if value == RENDER_DEFAULT_CAST_SHADOWS:
+                return False
+        if stat == 'receiveShadows':
+            if value == RENDER_DEFAULT_RECEIVE_SHADOWS:
+                return False
+        if stat == 'holdOut':
+            if value == RENDER_DEFAULT_HOLD_OUT:
+                return False
+        if stat == 'motionBlur':
+            if value == RENDER_DEFAULT_MOTION_BLUR:
+                return False
+        if stat == 'primaryVisibility':
+            if value == RENDER_DEFAULT_PRIMARY_VISIBILITY:
+                return False
+        if stat == 'smoothShading':
+            if value == RENDER_DEFAULT_SMOOTH_SHADING:
+                return False   
+        if stat == 'visibleInReflections':
+            if value == RENDER_DEFAULT_VISIBLE_IN_REFLECTIONS:
+                return False    
+        if stat == 'visibleInRefractions':
+            if value == RENDER_DEFAULT_VISIBLE_IN_REFRACTIONS:
+                return False
+        if stat == 'doubleSided':
+            if value == RENDER_DEFAULT_DOUBLE_SIDED:
+                return False
+        if stat == 'opposite':
+            if value == RENDER_DEFAULT_OPPOSITE:
+                return False
+            
+    return True
+
+def set_default_render_stats(node_name):
+    """
+    check for nodes with non default render stats
+    
+    returns:
+        list:
+    """
+    
+    stats = get_render_stats(node_name)
+    
+    for inc in range(0, len(stats)):
+        
+        stat = stats[inc][0]
+        attr = ('%s.%s' % (node_name, stat))
+        
+        if stat == 'castsShadows':
+            cmds.setAttr(attr, RENDER_DEFAULT_CAST_SHADOWS)
+            
+        if stat == 'receiveShadows':
+            cmds.setAttr(attr, RENDER_DEFAULT_RECEIVE_SHADOWS)
+            
+        if stat == 'holdOut':
+            cmds.setAttr(attr, RENDER_DEFAULT_HOLD_OUT)
+            
+        if stat == 'motionBlur':
+            cmds.setAttr(attr, RENDER_DEFAULT_MOTION_BLUR)
+            
+        if stat == 'primaryVisibility':
+            cmds.setAttr(attr, RENDER_DEFAULT_PRIMARY_VISIBILITY)
+            
+        if stat == 'smoothShading':
+            cmds.setAttr(attr, RENDER_DEFAULT_SMOOTH_SHADING)
+            
+        if stat == 'visibleInReflections':
+            cmds.setAttr(attr, RENDER_DEFAULT_VISIBLE_IN_REFLECTIONS)
+                
+        if stat == 'visibleInRefractions':
+            cmds.setAttr(attr, RENDER_DEFAULT_VISIBLE_IN_REFRACTIONS)
+            
+        if stat == 'doubleSided':
+            cmds.setAttr(attr, RENDER_DEFAULT_DOUBLE_SIDED)
+            
+        if stat == 'opposite':
+            cmds.setAttr(attr, RENDER_DEFAULT_OPPOSITE)
+            
+
+def set_render_stats_double_sided_default(node_name):
+    stats = get_render_stats(node_name)
+    
+    for inc in range(0, len(stats)):
+        
+        stat = stats[inc][0]
+        attr = ('%s.%s' % (node_name, stat))
+        
+        if stat == 'doubleSided':
+            cmds.setAttr(attr, RENDER_DEFAULT_DOUBLE_SIDED)
+            
+        if stat == 'opposite':
+            cmds.setAttr(attr, RENDER_DEFAULT_OPPOSITE)
+
 def create_shape_from_shape(shape, name = 'new_shape'):
     """
     Duplication in maya can get slow in reference files. 
@@ -1835,6 +1945,40 @@ def edges_to_curve(edges, description):
     curve = cmds.rename(curve, core.inc_name('curve_%s' % description))
     
     return curve
+    
+def edge_to_vertex(edges):
+    """
+    Return the vertices that are part of the edges.
+    
+    Args:
+        edges (list): A list of edges (by name).  eg. ['mesh_name.e[0]'] 
+    
+    Returns:
+        list: The names of vertices on an edge. eg. ['mesh_name.vtx[0]']
+    
+    """
+    edges = cmds.ls(edges, flatten = True)
+    
+    verts = []
+    
+    mesh = edges[0].split('.')
+    mesh = mesh[0]
+    
+    for edge in edges:
+        
+        info = cmds.polyInfo(edge, edgeToVertex = True)
+        info = info[0]
+        info = info.split()
+        
+        vert1 = info[2]
+        vert2 = info[3]
+        
+        if not vert1 in verts:
+            verts.append('%s.vtx[%s]' % (mesh, vert1))
+            
+        if not vert2 in verts:
+            verts.append('%s.vtx[%s]' % (mesh, vert2))
+            
     
 def get_intersection_on_mesh(mesh, ray_source_vector, ray_direction_vector ):
     """
