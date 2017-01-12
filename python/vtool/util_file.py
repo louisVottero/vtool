@@ -329,6 +329,12 @@ class VersionFile(object):
         path = join_path(self._get_version_folder(), self.version_name + '.' + str(version_int))
         
         return path
+    
+    def _get_version_number(self, filepath):
+        
+        version_number = util.get_end_number(filepath)
+        
+        return version_number
         
     def _get_version_folder(self):
         if is_file(self.filepath):
@@ -437,6 +443,8 @@ class VersionFile(object):
         """
         self.version_name = name
         
+    
+        
     def get_version_path(self, version_int):
         """
         Get the path to a version.
@@ -461,7 +469,76 @@ class VersionFile(object):
         """
         comment, user = self.get_version_data(version_int)
         return comment
+    
+    def get_organized_version_data(self):
+        
+        
+        version_paths, version_numbers = self.get_versions(return_version_numbers_also = True)
+        
+        filepath = self._get_comment_path()
+
+        if not filepath:
+            return []
+        
+        datas = []
+        
+        if is_file(filepath):
+            
+            read = ReadFile(filepath)
+            lines = read.read()
+            
+
+            
+            
+            
+            for line in lines:
                 
+                line_info_dict = {}    
+                version = None
+                comment = None
+                user = None
+                file_size = None
+                modified = None
+                
+                split_line = line.split(';')
+                
+                for sub_line in split_line:
+                    
+                    assignment = sub_line.split('=')
+                    
+                    if assignment and assignment[0]:
+                        
+                        name = assignment[0].strip()
+                        value = assignment[1].strip()
+                    
+                        line_info_dict[name] = value
+                
+                if not line_info_dict.has_key('version'):
+                    continue
+                
+                version = int(line_info_dict['version'])
+                    
+                if not int(line_info_dict['version']) in version_numbers:
+                    continue
+                
+                if line_info_dict.has_key('comment'):
+                    comment = line_info_dict['comment']
+                    comment = comment[1:-1]
+                if line_info_dict.has_key('user'):
+                    user = line_info_dict['user']
+                    user = user[1:-1]
+                    
+                version_file = version_paths[(version-1)]
+                version_file = join_path(self.filepath, '%s/%s' % (self.version_folder_name, version_file))
+                
+                file_size = get_filesize(version_file)
+                modified = get_last_modified_date(version_file)
+                
+                datas.append([version, comment, user, file_size, modified, version_file])
+                
+        return datas
+        
+    
     def get_version_data(self, version_int):
         """
         Get the version data.  Comment and user.
@@ -478,6 +555,7 @@ class VersionFile(object):
             return None, None
         
         if is_file(filepath):
+            
             read = ReadFile(filepath)
             lines = read.read()
             
@@ -496,9 +574,7 @@ class VersionFile(object):
                     subpart = subpart.replace('"', '\\"')
                     
                     line = line[:start_index+1] + subpart + line[end_index:]
-                
-                
-                
+                    
                 exec(line)
                 
                 if version == version_int:
@@ -506,8 +582,35 @@ class VersionFile(object):
                     return comment, user
                 
         return None, None
-                
-    def get_versions(self):
+    
+    def get_version_numbers(self):
+        
+        version_folder = self._get_version_folder()
+        
+        files = get_files_and_folders(version_folder)
+        
+        if not files:
+            return
+        
+        number_list = []
+            
+        for filepath in files: 
+            
+            if not filepath.startswith(self.version_name):
+                continue
+            
+            split_name = filepath.split('.')
+            
+            if not len(split_name) == 2:
+                continue
+            
+            number = int(split_name[1])
+            
+            number_list.append(number)
+            
+        return number_list
+    
+    def get_versions(self, return_version_numbers_also = False):
         """
         Get filepaths of all versions.
         
@@ -547,9 +650,12 @@ class VersionFile(object):
         quick_sort.set_follower_list(pass_files)
         pass_files = quick_sort.run()
         
-        pass_files = pass_files[1]
         
-        return pass_files
+        
+        if not return_version_numbers_also:
+            return pass_files[1]
+        if return_version_numbers_also:
+            return pass_files[1], pass_files[0]
     
     def get_latest_version(self):
         """
