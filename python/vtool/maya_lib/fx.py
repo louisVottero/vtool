@@ -435,14 +435,51 @@ def connect_follicle_to_hair(follicle, hair_system):
     if not indices:
         current_index = 0
     
-    cmds.connectAttr('%s.outHair' % follicle, '%s.inputHair[%s]' % (hair_system, current_index))
+    cmds.connectAttr('%s.outHair' % follicle, '%s.inputHair[%s]' % (hair_system, current_index), f = True)
     indices = attr.get_indices('%s.inputHair' % hair_system)
     
-    cmds.connectAttr('%s.outputHair[%s]' % (hair_system, current_index), '%s.currentPosition' % follicle)
+    cmds.connectAttr('%s.outputHair[%s]' % (hair_system, current_index), '%s.currentPosition' % follicle, f = True)
     
     cmds.refresh()
     
-def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attribute_name = 'dynamic'):
+def make_curve_dynamic(curve, hair_system = None):
+    """
+    Replace a curve with a dynamic curve in a follicle. Good for attaching to a spline ik, to make it dynamic.
+    It will make a duplicate of the curve so that the dynamics of the follicle can be switched on/off.
+    
+    Args:
+        curve (str): The name of a curve.
+        hair_system(str): The name of a hair system, that the created follicle should attach to.
+        
+    Returns:
+        str: The name of the follicle.
+        
+    """
+    parent = cmds.listRelatives(curve, p = True)
+    
+    follicle, follicle_shape = create_follicle(curve, hair_system)
+
+    new_curve = cmds.duplicate(curve)[0]
+    new_curve = cmds.rename(new_curve, 'input_%s' % curve)
+    cmds.hide(new_curve)
+    
+    cmds.setAttr('%s.inheritsTransform' % curve, 0)
+    
+    cmds.connectAttr('%s.worldMatrix' % new_curve, '%s.startPositionMatrix' % follicle_shape)
+    cmds.connectAttr('%s.local' % new_curve, '%s.startPosition' % follicle_shape)
+    
+    cmds.parent(curve, new_curve, follicle)
+    
+    
+
+    cmds.connectAttr('%s.outCurve' % follicle, '%s.create' % curve)
+            
+    if parent:
+        cmds.parent(follicle, parent)
+        
+    return follicle
+
+def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attribute_name = 'dynamic', blendshape = True):
     """
     Add a follicle to a curve. Good for attaching to a spline ik, to make it dynamic.
     It will make a duplicate of the curve so that the dynamics of the follicle can be switched on/off.
@@ -463,7 +500,7 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     
     cmds.connectAttr('%s.worldMatrix' % curve, '%s.startPositionMatrix' % follicle_shape)
     cmds.connectAttr('%s.local' % curve, '%s.startPosition' % follicle_shape)
-    
+        
     new_curve_shape = cmds.createNode('nurbsCurve')
     new_curve = cmds.listRelatives(new_curve_shape, p = True)
     
@@ -475,39 +512,30 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     cmds.parent(curve, new_curve, follicle)
     cmds.hide(curve)
     
+
     cmds.connectAttr('%s.outCurve' % follicle, '%s.create' % new_curve)
     
-    blend_curve= cmds.duplicate(new_curve, n = 'blend_%s' % curve)[0]
-    
-    outputs = attr.get_attribute_outputs('%s.worldSpace' % curve)
-    
-    if outputs:
-        for output in outputs:
-            cmds.connectAttr('%s.worldSpace' % blend_curve, output, f = True)
-    
+    if blendshape:
+        
+        blend_curve= cmds.duplicate(new_curve, n = 'blend_%s' % curve)[0]
+        
+        outputs = attr.get_attribute_outputs('%s.worldSpace' % curve)
+        
+        if outputs:
+            for output in outputs:
+                cmds.connectAttr('%s.worldSpace' % blend_curve, output, f = True)
+                
+        blendshape_node = cmds.blendShape(curve, new_curve, blend_curve, w = [0,1],n = 'blendShape_%s' % follicle)[0]
+        
+        if switch_control:
+            
+            remap = attr.RemapAttributesToAttribute(switch_control, attribute_name)
+            remap.create_attributes(blendshape_node, [curve, new_curve])
+            remap.create()
+            
     if parent:
         cmds.parent(follicle, parent)
-    
-    blendshape_node = cmds.blendShape(curve, new_curve, blend_curve, w = [0,1],n = 'blendShape_%s' % follicle)[0]
-    
-    if switch_control:
         
-        
-        
-        remap = attr.RemapAttributesToAttribute(switch_control, attribute_name)
-        remap.create_attributes(blendshape_node, [curve, new_curve])
-        remap.create()
-        """
-        variable = MayaNumberVariable('attract')
-        variable.set_variable_type(variable.TYPE_FLOAT)
-        variable.set_node(switch_control)
-        variable.set_min_value(0)
-        variable.set_max_value(1)
-        variable.set_keyable(True)
-        variable.create()
-    
-        variable.connect_out('%s.inputAttract' % follicle)
-        """
     return follicle
 
     
