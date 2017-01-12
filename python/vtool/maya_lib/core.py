@@ -421,13 +421,6 @@ def is_empty(node):
         if relatives:
             return False
     
-    connections = cmds.listConnections(node)
-    
-    if connections != ['defaultRenderGlobals']:
-    
-        if connections:
-            return False
-    
     attrs = cmds.listAttr(node, ud = True, k = True)
     
     if attrs:
@@ -437,9 +430,32 @@ def is_empty(node):
     if node in default_nodes:
         return False
     
+    connections = cmds.listConnections(node)
+    
+    if connections != ['defaultRenderGlobals']:
+    
+        if connections:
+            return False
+    
+    
+    
     
     
     return True
+
+def is_undeletable(node):
+    
+    try: #might fail in earlier versions of maya
+        nodes = cmds.ls(undeletable = True)
+        
+        if node in nodes:
+            return True
+    except:
+        return False
+    
+        
+        
+    return False
 
 def is_unique(name):
     
@@ -601,6 +617,18 @@ def get_top_dag_nodes(exclude_cameras = True, namespace = None):
     
     return top_transforms 
 
+def get_first_shape(transform):
+    """
+    returns first active shape
+    """
+    
+    shapes = get_shapes(transform)
+    
+    for shape in shapes:
+        
+        if not cmds.getAttr('%s.intermediateObject'):
+            return shape
+
     
 def get_shapes(transform, shape_type = None):
     """
@@ -670,6 +698,12 @@ def get_namespace(name):
     
     namespace = name.rpartition(':')[0]
     return namespace
+
+def get_dg_nodes():
+    
+    nodes = cmds.ls(dep = True)
+    
+    return nodes
 
 def remove_namespace_from_string(name):
     
@@ -1372,6 +1406,56 @@ def delete_garbage():
     
 def delete_empty_orig_nodes():
     
+    origs = get_empty_orig_nodes()
+    
+    for orig in origs:
+        cmds.delete(orig)
+            
+    print_help('Deleted Unused Intermediate Object or Orig nodes: %s' % origs)
+    
+#--- empty
+
+def get_empty_groups():
+    
+    groups = cmds.ls(type = 'transform')
+    
+    found = []
+    
+    for group in groups:
+        if is_empty(group):
+            found.append(group)
+            
+    return found
+
+def get_empty_nodes():
+
+    dg_nodes = get_dg_nodes()
+    
+    found = []
+    
+    undel_nodes = []
+    
+    try:
+        undel_nodes = cmds.ls(undeletable = True)
+                
+    except:
+        pass
+    
+    if undel_nodes:
+        node_set = set(dg_nodes)
+        undel_set = set(undel_nodes)
+        
+        dg_nodes = list(node_set - undel_set)
+    
+    for node in dg_nodes:
+        
+        if is_empty(node):
+            found.append(node)
+    
+    return found
+
+def get_empty_orig_nodes():
+    
     origs = get_orig_nodes()
     
     found = []
@@ -1381,8 +1465,5 @@ def delete_empty_orig_nodes():
         
         if not connections:
             found.append(orig)
-            cmds.delete(orig)
-            
-    print_help('Deleted Unused Intermediate Object or Orig nodes: %s' % found)
-    
-    
+
+    return found

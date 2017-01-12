@@ -3997,9 +3997,12 @@ def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints
     
     for relative in relatives:
         
-        shape = geo.get_mesh_shape(relative)
+        shape = core.get_shapes(relative)
         
-        if shape and cmds.nodeType(shape) == 'mesh':
+        
+        if shape and cmds.nodeType(shape[0]) == 'mesh':
+            skin_mesh_from_mesh(source_mesh, relative, include_joints = include_joints, exclude_joints = exclude_joints)
+        if shape and cmds.nodeType(shape[0]) == 'nurbsCurve':
             skin_mesh_from_mesh(source_mesh, relative, include_joints = include_joints, exclude_joints = exclude_joints)
             
     if old_selection:
@@ -4766,11 +4769,10 @@ def reset_tweaks_on_mesh(mesh):
 
 def match_geo_blendshape(source_geo, target_geo, attr_name):
     
-    blendshape = cmds.deformer(target_geo, type = 'blendShape')[0]
-    cmds.setAttr('%s.origin' % blendshape, 0)
+    matches = []
+    targets = []
     
     for inc in range(0, len(source_geo)):
-        
         
         if inc > (len(target_geo)-1):
             break
@@ -4779,7 +4781,17 @@ def match_geo_blendshape(source_geo, target_geo, attr_name):
             vtool.util.warning('Skipping blendshape geo because incompatible:  %s   %s' % (source_geo[inc], target_geo[inc]))
             continue
         
-        cmds.connectAttr('%s.worldMesh' % source_geo[inc], 
+        matches.append([source_geo[inc], target_geo[inc]])
+        targets.append(target_geo[inc])
+    
+    if not matches:
+        return
+    
+    blendshape = cmds.deformer(targets, type = 'blendShape')[0]
+    cmds.setAttr('%s.origin' % blendshape, 0)
+        
+    for inc in range(0, len(matches)):
+        cmds.connectAttr('%s.worldMesh' % matches[inc][0], 
                          '%s.inputTarget[%s].inputTargetGroup[0].inputTargetItem[6000].inputGeomTarget' % (blendshape, inc))
         
         if not cmds.objExists('%s.%s' % (blendshape, attr_name)):
