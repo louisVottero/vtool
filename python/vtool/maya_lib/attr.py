@@ -1819,6 +1819,23 @@ def is_translate_rotate_connected(transform):
         
     return False
 
+def is_connected(node_and_attribute):
+    
+    input_value = get_attribute_input(node_and_attribute)
+    
+    if input_value:
+        return True
+    
+    return False
+
+def is_locked(node_and_attribute):
+    
+    if cmds.getAttr(node_and_attribute, l = True):
+        return True
+    
+    return False
+    
+
 def get_node_and_attribute(attribute):
     """
     Split a name between its node and its attribute.
