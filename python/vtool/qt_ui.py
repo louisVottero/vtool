@@ -1465,7 +1465,6 @@ class HistoryTreeWidget(FileTreeWidget):
         if is_pyside() or is_pyside2():
             self.sortByColumn(0, qt.QtCore.Qt.SortOrder.DescendingOrder)
         
-            
         self.setColumnWidth(0, 70)  
         self.setColumnWidth(1, 150)
         self.setColumnWidth(2, 50)
@@ -1485,33 +1484,26 @@ class HistoryTreeWidget(FileTreeWidget):
             
             version_tool = util_file.VersionFile(self.directory)
             
-            files = version_tool.get_versions()
+            version_data = version_tool.get_organized_version_data()
             
-            if not files:
+            #files = version_tool.get_versions()
+            
+            if not version_data:
                 return
             
-            if files:
-                self.padding = len(str(len(files)))
-                return files
+            if version_data:
+                self.padding = len(str(len(version_data)))
+                return version_data
     
-    def _add_item(self, filename):
+    def _add_items(self, version_list):
         
-        split_name = filename.split('.')
-        if len(split_name) == 1:
-            return
+        for version_data in version_list:
+            self._add_item(version_data)
+    
+    def _add_item(self, version_data):
         
-        try:
-            version_int = int(split_name[-1])
-        except:
-            return
-        
-        version_tool = util_file.VersionFile(self.directory)
-        version_file = version_tool.get_version_path(version_int)
-        comment, user = version_tool.get_version_data(version_int)
-        file_size = util_file.get_filesize(version_file)
-        file_date = util_file.get_last_modified_date(version_file)
-        
-        version_str = str(version_int).zfill(self.padding)
+        version, comment, user, file_size, file_date, version_file = version_data
+        version_str = str(version).zfill(self.padding)
         
         item = qt.QTreeWidgetItem()
         item.setText(0, version_str)
