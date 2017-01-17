@@ -1034,37 +1034,38 @@ def check_render_stats_are_default(node_name):
         value = stats[inc][1]
         
         if stat == 'castsShadows':
-            if value == RENDER_DEFAULT_CAST_SHADOWS:
+            if not value == RENDER_DEFAULT_CAST_SHADOWS:
                 return False
         if stat == 'receiveShadows':
-            if value == RENDER_DEFAULT_RECEIVE_SHADOWS:
+            if not value == RENDER_DEFAULT_RECEIVE_SHADOWS:
                 return False
         if stat == 'holdOut':
-            if value == RENDER_DEFAULT_HOLD_OUT:
+            if not value == RENDER_DEFAULT_HOLD_OUT:
                 return False
         if stat == 'motionBlur':
-            if value == RENDER_DEFAULT_MOTION_BLUR:
+            if not value == RENDER_DEFAULT_MOTION_BLUR:
                 return False
         if stat == 'primaryVisibility':
-            if value == RENDER_DEFAULT_PRIMARY_VISIBILITY:
+            if not value == RENDER_DEFAULT_PRIMARY_VISIBILITY:
                 return False
         if stat == 'smoothShading':
-            if value == RENDER_DEFAULT_SMOOTH_SHADING:
+            if not value == RENDER_DEFAULT_SMOOTH_SHADING:
                 return False   
         if stat == 'visibleInReflections':
-            if value == RENDER_DEFAULT_VISIBLE_IN_REFLECTIONS:
+            if not value == RENDER_DEFAULT_VISIBLE_IN_REFLECTIONS:
                 return False    
         if stat == 'visibleInRefractions':
-            if value == RENDER_DEFAULT_VISIBLE_IN_REFRACTIONS:
+            if not value == RENDER_DEFAULT_VISIBLE_IN_REFRACTIONS:
                 return False
         if stat == 'doubleSided':
-            if value == RENDER_DEFAULT_DOUBLE_SIDED:
+            if not value == RENDER_DEFAULT_DOUBLE_SIDED:
                 return False
         if stat == 'opposite':
-            if value == RENDER_DEFAULT_OPPOSITE:
+            if not value == RENDER_DEFAULT_OPPOSITE:
                 return False
             
     return True
+
 
 def set_default_render_stats(node_name):
     """

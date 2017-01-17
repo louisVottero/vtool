@@ -33,6 +33,7 @@ class CheckView(qt_ui.BasicWidget):
         self.check_buttons.setAlignment(qt.QtCore.Qt.AlignBottom)
         
         self.title = qt.QLabel(self.title_name, alignment = qt.QtCore.Qt.AlignTop) 
+        self.title.setMinimumWidth(235)
         
         
         buttons.addWidget(self.title)
@@ -60,8 +61,6 @@ class CheckView(qt_ui.BasicWidget):
         check_ui.checked.connect(self._update_list)
         
     def _update_list(self, check_list, check_name):
-        
-        print 'update list!'
         
         self.list.clear()
         self.list.setEnabled(True)
@@ -101,18 +100,21 @@ class Check(qt_ui.BasicWidget):
         
         self.button = qt.QPushButton(self.check_name)
         self.button.setMinimumWidth(200)
+        self.button.setMaximumWidth(200)
+        
+        self.orig_palette = self.button.palette()
         
         self.fix = qt.QPushButton('Fix')
         self.fix.setMaximumWidth(30)
         self.fix.setMinimumWidth(30)
         fix_palette = self.fix.palette()
-        
         fix_palette.setColor(qt.QPalette.Button, qt.QColor(qt.QtCore.Qt.red))
         self.fix.setAutoFillBackground(True)
         self.fix.setPalette(fix_palette);
         self.fix.update()
         
-        self.main_layout.addWidget(self.button)
+        
+        self.main_layout.addWidget(self.button, alignment = qt.QtCore.Qt.AlignLeft)
         self.main_layout.addWidget(self.fix)
         
         self.button.clicked.connect(self._run_check)
@@ -141,7 +143,20 @@ class Check(qt_ui.BasicWidget):
         self.checked.emit(self.check_list, self.check_name)
         
         if self._has_fix() and self.check_list:
+            
+            self.button.setAutoFillBackground(False)
+            self.button.setPalette(self.orig_palette);
+            self.button.update()
+            
+            
             self.fix.show()
+            
+        if not self.check_list:
+            palette = self.button.palette()
+            palette.setColor(qt.QPalette.Button, qt.QColor(qt.QtCore.Qt.darkGreen))
+            self.button.setAutoFillBackground(True)
+            self.button.setPalette(palette);
+            self.button.update()
         
     def _run_fix(self):
         
@@ -254,3 +269,4 @@ class Check_Non_Unique(Check):
                 found.append(dag_node)
         
         return found
+    
