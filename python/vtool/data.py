@@ -1020,6 +1020,9 @@ class SkinWeightData(MayaCustomData):
         
         for thing in selection:
             
+            if maya_lib.core.is_a_shape(thing):
+                thing = cmds.listRelatives(thing, p = True)[0]
+            
             util.show('Exporting weights on %s' % thing)
             
             split_thing = thing.split('|')

@@ -9,6 +9,7 @@ import vtool.util
 
 if vtool.util.is_in_maya():
     from vtool.maya_lib import core
+    from vtool.maya_lib import attr
     import maya.cmds as cmds
     import maya.mel as mel
 
@@ -155,7 +156,9 @@ def set_nurbs_data_mel(curve, mel_curve_data):
     create_input = get_attribute_input('%s.create' % curve)
     
     if create_input:
-        vtool.util.warning('%s has history.  Importing cv data may fail to change the shape.' % curve)
+        
+        vtool.util.warning('%s has history.  Disconnecting create attribute on curve. This will allow cv position change.' % curve)
+        cmds.disconnectAttr(create_input, '%s.create' % curve)
     
     for inc in range(0, data_count):
             
