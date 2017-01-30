@@ -776,7 +776,7 @@ def get_mesh_shape(mesh, shape_index = 0):
     
     if cmds.nodeType(mesh) == 'mesh':
         
-        mesh = cmds.listRelatives(mesh, p = True)[0]
+        mesh = cmds.listRelatives(mesh, p = True, f = True)[0]
         
     shapes = core.get_shapes(mesh)
     if not shapes:
@@ -945,6 +945,46 @@ def get_edge_path(edges = []):
     cmds.polySelectSp(edges, loop = True )
     
     return cmds.ls(sl = True, l = True)
+
+def get_triangles(mesh):
+    
+    mesh = get_mesh_shape(mesh)
+    
+    meshes = core.get_shapes(mesh, 'mesh', no_intermediate=True)
+    
+    found = []
+    
+    for mesh in meshes:
+        mesh_fn = api.MeshFunction(mesh)
+        
+        triangles = mesh_fn.get_triangle_ids()
+        
+        faces = convert_indices_to_mesh_faces(triangles, mesh)
+        
+        if faces:
+            found += faces
+    
+    return found
+
+def get_non_triangle_non_quad(mesh):
+    
+    mesh = get_mesh_shape(mesh)
+    
+    meshes = core.get_shapes(mesh, 'mesh')
+    
+    found = []
+    
+    for mesh in meshes:
+        mesh_fn = api.MeshFunction(mesh)
+        
+        ids = mesh_fn.get_non_tri_quad_ids()
+        
+        faces = convert_indices_to_mesh_faces(ids, mesh)
+        
+        if faces:
+            found += faces
+    
+    return found
 
 def get_face_center(mesh, face_id):
     """
@@ -2452,6 +2492,15 @@ def convert_indices_to_mesh_vertices(indices, mesh):
         verts.append('%s.vtx[%s]' % (mesh, index))
         
     return verts
+
+def convert_indices_to_mesh_faces(indices, mesh):
+    
+    faces = []
+    
+    for index in indices:
+        faces.append('%s.f[%s]' % (mesh, index))
+        
+    return faces
 
 def get_vertex_normal(vert_name):
     """

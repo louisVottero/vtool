@@ -3,7 +3,8 @@
 from vtool import qt_ui, qt
 from vtool import util
 from vtool.maya_lib import core
-
+from vtool.maya_lib import api
+from vtool.maya_lib import geo
 
 
 import maya.cmds as cmds
@@ -45,6 +46,7 @@ class CheckView(qt_ui.BasicWidget):
         self.list = qt.QListWidget()
         self.list.addItem('None')
         self.list.setDisabled(True)
+        self.list.setSelectionMode(self.list.ExtendedSelection)
         
         self.list.itemSelectionChanged.connect(self._selection_change)
         
@@ -65,9 +67,32 @@ class CheckView(qt_ui.BasicWidget):
         self.list.clear()
         self.list.setEnabled(True)
         
+        self.sub_list = {}
+        found_items = []
+        
         if check_list:
             for name in check_list:
-                self.list.addItem(name)
+                
+                if name.find('[') > -1:
+                
+                    split_name = name.split('.')
+                    object_name = split_name[0]
+                    
+                    parent = cmds.listRelatives(object_name, p = True, f = True)[0]
+                    
+                    if not self.sub_list.has_key(parent):
+                        self.sub_list[parent] = []
+                        
+                    self.sub_list[parent].append(name)
+                    
+                    #make the parent the main item
+                    name = parent
+                
+                if name.find('[') == -1:
+                    
+                    if not name in found_items:
+                        found_items.append(name)
+                        self.list.addItem(name)
                 
             self.list_label.show()
             self.list_label.setText(check_name)
@@ -83,10 +108,24 @@ class CheckView(qt_ui.BasicWidget):
         
         found = []
         
+        sub_selection = []
+        
         for item in items:
-            found.append(str(item.text()))
             
+            name = str(item.text())
+            
+            if cmds.objExists(name):
+                found.append(name)
+            
+                if self.sub_list.has_key(name):
+                    for thing in self.sub_list[name]:
+                        if cmds.objExists(thing):
+                            sub_selection.append(thing)
+        
         cmds.select(found)
+        cmds.select(sub_selection, add = True)
+        
+        cmds.viewFit()
     
 class Check(qt_ui.BasicWidget):
     
@@ -108,7 +147,7 @@ class Check(qt_ui.BasicWidget):
         self.fix.setMaximumWidth(30)
         self.fix.setMinimumWidth(30)
         fix_palette = self.fix.palette()
-        fix_palette.setColor(qt.QPalette.Button, qt.QColor(qt.QtCore.Qt.red))
+        fix_palette.setColor(qt.QPalette.Button, qt.QColor(qt.QtCore.Qt.darkYellow))
         self.fix.setAutoFillBackground(True)
         self.fix.setPalette(fix_palette);
         self.fix.update()
@@ -142,14 +181,18 @@ class Check(qt_ui.BasicWidget):
         
         self.checked.emit(self.check_list, self.check_name)
         
-        if self._has_fix() and self.check_list:
+        if self.check_list:
             
             self.button.setAutoFillBackground(False)
-            self.button.setPalette(self.orig_palette);
+            palette = self.button.palette()
+            palette.setColor(qt.QPalette.Button, qt.QColor(qt.QtCore.Qt.darkRed))
+            #self.button.setPalette(self.orig_palette)
+            self.button.setPalette(palette)
             self.button.update()
+        
+            if self._has_fix():
             
-            
-            self.fix.show()
+                self.fix.show()
             
         if not self.check_list:
             palette = self.button.palette()
@@ -270,3 +313,44 @@ class Check_Non_Unique(Check):
         
         return found
     
+class Check_Triangles(Check):
+    
+    check_name = 'Triangles'
+    
+    def _check(self):
+        
+        meshes = cmds.ls(type = 'mesh', l = True)
+        
+        found = []
+        
+        print meshes
+        
+        for mesh in meshes:
+            
+            if cmds.getAttr('%s.intermediateObject' % mesh):
+                continue
+            
+            triangles = geo.get_triangles(mesh)
+            found += triangles
+            
+        return found
+        
+class Check_NSided(Check):
+    
+    check_name = 'NSided Greater Than 4'
+    
+    def _check(self):
+        
+        meshes = cmds.ls(type = 'mesh', l = True)
+        
+        found = []
+        
+        for mesh in meshes:
+        
+            if cmds.getAttr('%s.intermediateObject' % mesh):
+                continue
+            
+            nsided = geo.get_non_triangle_non_quad(mesh)
+            found += nsided
+            
+        return found

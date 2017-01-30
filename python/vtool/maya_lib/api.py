@@ -405,7 +405,63 @@ class MeshFunction(MayaFunction):
     def get_number_of_uvs(self):
         
         return self.api_object.nunUVs()
+    
+    def get_number_of_triangles(self):
         
+        triangles, triangle_verts = OpenMaya.MIntArray(), OpenMaya.MIntArray()
+        
+        self.api_object.getTriangles(triangles, triangle_verts)
+        
+        count = 0
+        
+        for triangle in triangles:
+            if triangle == 1:
+                count += 1
+                
+        return count
+    
+    def get_triangle_ids(self):
+        
+        triangles, triangle_verts = OpenMaya.MIntArray(), OpenMaya.MIntArray()
+        
+        self.api_object.getTriangles(triangles, triangle_verts)
+        
+        id_list = []
+        
+        for inc in range(0, len(triangles)):
+            if triangles[inc] == 1:
+                id_list.append(inc)
+                
+        return id_list
+    
+    def get_quad_ids(self):
+        
+        triangles, triangle_verts = OpenMaya.MIntArray(), OpenMaya.MIntArray()
+        
+        self.api_object.getTriangles(triangles, triangle_verts)
+        
+        id_list = []
+        
+        for inc in range(0, len(triangles)):
+            if triangles[inc] == 2:
+                id_list.append(inc)
+                
+        return id_list
+    
+    def get_non_tri_quad_ids(self):
+    
+        triangles, triangle_verts = OpenMaya.MIntArray(), OpenMaya.MIntArray()
+        
+        self.api_object.getTriangles(triangles, triangle_verts)
+        
+        id_list = []
+        
+        for inc in range(0, len(triangles)):
+            if triangles[inc] > 2:
+                id_list.append(inc)
+                
+        return id_list
+    
 class NurbsSurfaceFunction(MayaFunction):
     def _define_api_object(self, mobject):
         return OpenMaya.MFnNurbsSurface(mobject)

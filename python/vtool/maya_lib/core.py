@@ -630,7 +630,7 @@ def get_first_shape(transform):
             return shape
 
     
-def get_shapes(transform, shape_type = None):
+def get_shapes(transform, shape_type = None, no_intermediate = False):
     """
     Get all the shapes under a transform.
     
@@ -642,13 +642,13 @@ def get_shapes(transform, shape_type = None):
     """
     if is_a_shape(transform):
         parent = cmds.listRelatives(transform, p = True, f = True)
-        return cmds.listRelatives(parent, s = True, f = True)
+        return cmds.listRelatives(parent, s = True, f = True, ni = no_intermediate)
     
     
     if shape_type:
-        return cmds.listRelatives(transform, s = True, f = True, type = shape_type)
+        return cmds.listRelatives(transform, s = True, f = True, type = shape_type, ni = no_intermediate)
     if not shape_type:
-        return cmds.listRelatives(transform, s = True, f = True)
+        return cmds.listRelatives(transform, s = True, f = True, ni = no_intermediate)
     
 def get_node_types(nodes, return_shape_type = True):
     """
