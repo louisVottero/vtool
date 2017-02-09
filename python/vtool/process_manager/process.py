@@ -127,6 +127,7 @@ class Process(object):
         self.option_values = {}
         self.runtime_values = {}
         self.option_settings = None
+        self.settings = None
         
         
     def _setup_options(self):
@@ -137,6 +138,12 @@ class Process(object):
             
         self.option_settings.set_directory(self.get_path(), 'options.txt')
         
+    def _setup_settings(self):
+        if not self.settings:
+            settings = util_file.SettingsFile()
+            self.settings = settings
+            
+        self.settings.set_directory(self.get_path(), 'settings.txt')
         
     def _set_name(self, new_name):
         
@@ -958,13 +965,35 @@ class Process(object):
         option_file = self.get_option_file()
         option_name = util_file.get_basename_no_extension(option_file)
         
-        return [option_name]
+        settings_file = self.get_settings_file()
+        settings_name = util_file.get_basename_no_extension(settings_file)
+        
+        return [settings_name, option_name]
     
     def get_setting_file(self, name):
         
         if name == 'options':
             return self.get_option_file()
+        
+        if name == 'settings':
+            return self.get_settings_file()
     
+    #--- settings
+    
+    def get_settings_file(self):
+        
+        self._setup_settings()
+        return self.settings.get_file()
+    
+    def set_setting(self, name, value):
+        self._setup_settings()
+        
+        self.settings.set(name, value)
+            
+    def get_setting(self, name):
+        self._setup_settings()
+        return self.settings.get(name)
+        
     #--- options
     
     def has_options(self):

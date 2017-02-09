@@ -591,10 +591,12 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.setSortingEnabled(False)
         
-        self.setAlternatingRowColors(False)
+        self.setAlternatingRowColors(True)
         
         self.edit_state = False
-        self.setBackgroundRole(qt.QPalette.Light)
+        #self.setBackgroundRole(qt.QPalette.Light)
+        
+
         
         self.setSelectionMode(self.ExtendedSelection)
         
@@ -636,18 +638,37 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         
         
-        if vtool.util.is_in_maya():
-            palette = self.palette()
+        #if vtool.util.is_in_maya():
+            #palette = self.palette()
             
-            palette.setColor(qt.QPalette.Base, qt.QColor(60,60,60,255) )
-            palette.setColor(qt.QPalette.AlternateBase, qt.QColor(70,70,70,255) )
+            #palette.setColor(qt.QPalette.Base, qt.QColor(50,50,50,255) )
+            #palette.setColor(qt.QPalette.AlternateBase, qt.QColor(70,70,70,255) )
         
-            self.setPalette(palette)
-            
+            #self.setPalette(palette)
+        
+        
         self.break_index = None
         self.break_item = None
     
+        if vtool.util.is_in_maya():
+            
+            directory = util_file.get_vetala_directory()
+            icon_on = util_file.join_path(directory, 'icons/box_on.png')
+            icon_off = util_file.join_path(directory, 'icons/box_off.png')
+            
+            lines = 'QTreeWidget::indicator:unchecked {image: url(%s);}' % icon_off
+            lines += ' QTreeWidget::indicator:checked {image: url(%s);}' % icon_on
+            
+            
+            self.setStyleSheet( lines)
+    
+    """
     def drawRow(self, painter, option, index):
+        
+        if vtool.util.is_in_maya():
+            brush = qt.QBrush( qt.QColor(70,70,70))
+            painter.fillRect( option.rect, brush)
+        
         
         if index.internalId() == self.break_index:
             painter.save()
@@ -658,10 +679,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 brush = qt.QBrush( qt.QColor(240,230,230))
             
             painter.fillRect( option.rect, brush)
-            painter.restore()
+        
+        #painter.restore()
         
         super(CodeManifestTree, self).drawRow(painter, option, index)
-    
+    """
     def resizeEvent(self, event = None):
         super(CodeManifestTree, self).resizeEvent(event)
         
@@ -1698,6 +1720,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def set_breakpoint(self, item = None):
         
+        self.cancel_breakpoint()
+        
         if not item:
             items = self.selectedItems()
             
@@ -1706,6 +1730,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             item = items[0]
             
+        
         self.clearSelection()
         
         item_index = self.indexFromItem(item)
@@ -1718,6 +1743,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.break_index = None
         self.break_item = None
         
+        self.repaint()
         
 class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     
@@ -1738,10 +1764,10 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         maya_version = vtool.util.get_maya_version()
         
         if maya_version > 2015 or maya_version == 0:
-            self.status_icon = self._square_fill_icon(0.6, 0.6, 0.6)
+            self.status_icon = self._square_fill_icon(0, 0, 0)
             
         if maya_version < 2016 and maya_version != 0:
-            self.status_icon = self._radial_fill_icon(0.6, 0.6, 0.6)
+            self.status_icon = self._radial_fill_icon(0, 0, 0)
         
         self.setCheckState(0, qt.QtCore.Qt.Unchecked)
         
@@ -1750,19 +1776,31 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     
     def _square_fill_icon(self, r,g,b):
         
+        alpha = 1
+        
+        if r == 0 and g == 0 and b == 0:
+            alpha = 0
+        
         pixmap = qt.QPixmap(20, 20)
-        pixmap.fill(qt.QColor.fromRgbF(r, g, b, 1))
+        pixmap.fill(qt.QColor.fromRgbF(r, g, b, alpha))
         
         painter = qt.QPainter(pixmap)
-        painter.fillRect(0, 0, 100, 100, qt.QColor.fromRgbF(r, g, b, 1))
+        painter.fillRect(0, 0, 100, 100, qt.QColor.fromRgbF(r, g, b, alpha))
         painter.end()
         
         icon = qt.QIcon(pixmap)
+        
         
         self.setIcon(0, icon)
         
     
     def _radial_fill_icon(self, r,g,b):
+        
+        alpha = 1
+        
+        if r == 0 and g == 0 and b == 0:
+            alpha = 0
+        
         
         self._square_fill_icon(r, g, b)
         
@@ -1770,7 +1808,7 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         pixmap = qt.QPixmap(20, 20)
         pixmap.fill(qt.QtCore.Qt.transparent)
         gradient = qt.QRadialGradient(10, 10, 10)
-        gradient.setColorAt(0, qt.QColor.fromRgbF(r, g, b, 1))
+        gradient.setColorAt(0, qt.QColor.fromRgbF(r, g, b, alpha))
         gradient.setColorAt(1, qt.QColor.fromRgbF(0, 0, 0, 0))
         
         painter = qt.QPainter(pixmap)
@@ -1832,7 +1870,8 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
             if state == 1:
                 self._square_fill_icon(0.0, 1.0, 0.0)
             if state == -1:
-                self._square_fill_icon(0.6, 0.6, 0.6)
+                self._square_fill_icon(0, 0, 0)
+                #self._square_fill_icon(0.6, 0.6, 0.6)
             if state == 2:
                 self._square_fill_icon(1.0, 1.0, 0.0)
                 
@@ -1859,69 +1898,3 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     
     def setText(self, index, text):
         return self.set_text(text)
-    
-class ManifestItemWidget(vtool.qt_ui.TreeItemWidget):
-    
-    # no longer in use.
-    
-    def __init__(self):
-        super(ManifestItemWidget, self).__init__()
-        
-        self.setSizePolicy(qt.QSizePolicy(10, 40))
-    
-
-    
-    def _build_widgets(self):
-        
-        #check_box.setIcon(qt.QIcon())
-        self.status_icon = qt.QLabel()
-        self.status_icon.setMaximumSize(20,20)
-        self._radial_fill_icon(0.6, 0.6, 0.6)
-        #check_box.setIcon(qt.QIcon(pixmap))
-        
-        self.check_box = qt.QCheckBox()
-        self.check_box.setCheckState(qt.QtCore.Qt.Checked)
-        
-        #self.palette = qt.QPalette()
-        #self.palette.setColor(self.palette.Background, qt.QColor(.5,.5,.5))
-        
-        #self.check_box.setPalette(self.palette)
-        
-        #self.label = qt.QLabel()
-        #self.label = qt.QLineEdit()
-        #self.label.setReadOnly(True)
-        
-        
-        self.main_layout.addWidget(self.status_icon)
-        self.main_layout.addSpacing(5)
-        self.main_layout.addWidget(self.check_box)
-        self.main_layout.addSpacing(5)
-        #self.main_layout.addWidget(self.label)
-        self.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
-        
-    def set_text(self, text):
-        pass
-        #self.label.setText(text)
-        
-    def set_state(self, state):
-        
-        if state == 0:
-            self._radial_fill_icon(1.0, 0.0, 0.0)    
-        if state == 1:
-            self._radial_fill_icon(0.0, 1.0, 0.0)
-        if state == -1:
-            self._radial_fill_icon(0.6, 0.6, 0.6)
-        if state == 2:
-            self._radial_fill_icon(0.0, 1.0, 1.0) 
-              
-    def get_check_state(self):
-        return self.check_box.isChecked()
-    
-    def set_check_state(self, bool_value):
-        
-        if bool_value:
-            self.check_box.setCheckState(qt.QtCore.Qt.Checked)
-        if not bool_value:
-            self.check_box.setCheckState(qt.QtCore.Qt.Unchecked)
-        
-    

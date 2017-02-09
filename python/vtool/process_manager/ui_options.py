@@ -13,8 +13,6 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
     def __init__(self):
         super(ProcessOptionsWidget, self).__init__()
         
-        
-        
         policy = self.sizePolicy()
         policy.setHorizontalPolicy(policy.Expanding)
         policy.setVerticalPolicy(policy.Expanding)

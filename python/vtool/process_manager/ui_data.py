@@ -205,7 +205,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self._create_context_menu()
         
-        
+        self.setAlternatingRowColors(True)
         
     def _item_menu(self, position):
         

@@ -10,6 +10,7 @@ import process
 
 
 
+
 class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
     description = 'Process'
@@ -18,6 +19,8 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
     def __init__(self):
         
+
+            
         self.settings = None
         
         super(ViewProcessWidget, self).__init__()
@@ -29,6 +32,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         self.setSizePolicy(policy)
         
         self.setMinimumWidth(200)
+        
         
     def _define_tree_widget(self):
         return ProcessTreeWidget()
@@ -189,14 +193,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         super(ProcessTreeWidget, self).__init__()
         
+        
         self.text_edit = False
         
         self.setDragDropMode(self.InternalMove)
         self.setDragEnabled(True)
         self.setAcceptDrops(True)   
         self.setDropIndicatorShown(True) 
-           
-        self.setColumnWidth(0, 250)
+        
         
         self.setTabKeyNavigation(True)
         self.setHeaderHidden(True)
@@ -208,7 +212,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self._create_context_menu()
         self.paste_item = None
                 
-        self.setColumnWidth(1, 20)
                 
         self.setSelectionBehavior(self.SelectItems)
         
@@ -216,6 +219,31 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.setMinimumWidth(300)
         
+        self.setAlternatingRowColors(True)
+        
+
+
+        if util.is_in_maya():
+            
+            directory = util_file.get_vetala_directory()
+            icon_on = util_file.join_path(directory, 'icons/box_on.png')
+            icon_off = util_file.join_path(directory, 'icons/box_off.png')
+            
+            lines = 'QTreeWidget::indicator:unchecked {image: url(%s);}' % icon_off
+            lines += ' QTreeWidget::indicator:checked {image: url(%s);}' % icon_on
+            
+            self.setStyleSheet( lines)
+    """
+    def drawRow(self, painter, option, index):
+        
+        if util.is_in_maya():
+            brush = qt.QBrush( qt.QColor(70,70,70))
+            painter.fillRect( option.rect, brush)
+        
+        #painter.restore()
+        
+        super(ProcessTreeWidget, self).drawRow(painter, option, index)
+    """
     def dropEvent(self, event):
         
         directory = self.directory
@@ -671,12 +699,30 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         
         item = ProcessItem(self.directory, name)
+        #item.setFlags( qt.QtCore.Qt.ItemIsUserCheckable )
+        
+        process_inst = process.Process(name)
+        process_inst.set_directory(self.directory)
+        
+        if parent_item:
+            enable = process_inst.get_setting('enable')
+            if not enable:
+                item.setCheckState(0, qt.QtCore.Qt.Unchecked )
+            if enable:
+                item.setCheckState(0, qt.QtCore.Qt.Checked )
+        
+        
+
         
         if create:
             item.create()
         
+        self.setItemWidget(item, 0, qt.QCheckBox())
+        
         if not parent_item:
             self.addTopLevelItem(item)
+        
+        
         
         if parent_item:
             parent_item.addChild(item)
@@ -686,6 +732,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         #has parts takes time because it needs to check children folders
         if item.has_parts():
             qt.QTreeWidgetItem(item)
+        
+
         
         return item
 
@@ -897,6 +945,56 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.settings = settings
       
+class ProcessTreeView(qt.QTreeView):
+    
+    def __init__(self, directory, name):
+        
+        super(ProcessTreeView, self).__init__()
+        
+        items = [1,2,3,4,5]
+        
+        self.setModel(ProcessTreeModel(items))
+        self.setItemDelegate(ProcessTreeDelegate())
+        
+        
+    
+class ProcessTreeModel(qt.QtCore.QAbstractListModel):
+    
+    def __init__(self, items, parent = None):
+        super(ProcessTreeModel, self).__init__(parent)
+        
+        self.items = items
+        
+    def rowCount(self, parent):
+        #parent is for hierarchal lists
+        return len(self.items)
+    
+    def data(self, index, role):
+        
+        #index.row()
+        #index.column()
+        #index.parent() #hierarchal
+        
+        if role == qt.QtCore.Qt.DisplayRole:
+            return self.items[index.row()]
+        
+class ProcessTreeDelegate(qt.QItemDelegate):
+    
+    def paint(self, painter, option, index):
+        
+        #rect = qt.QtCore.QRect(20,20,10,10)
+        
+        self.drawCheck(painter, option, option.rect, qt.QtCore.Qt.Checked)
+        self.drawFocus(painter, option, option.rect)
+        painter.drawText(option.rect, 'goobers')
+        
+        #super(ProcessTreeDelegate, self).paint(painter, option, index)
+    
+    def sizeHint(self, option, index):
+        
+        return qt.QtCore.QSize(100,26)
+        
+        
 class ProcessItem(qt.QTreeWidgetItem):
     
     def __init__(self, directory, name):
@@ -914,6 +1012,31 @@ class ProcessItem(qt.QTreeWidgetItem):
         self.detail = False
         
         self.setSizeHint(0, qt.QtCore.QSize(100,26))
+        
+    def setData(self, column, role, value):
+        super(ProcessItem, self).setData(column, role, value)
+        
+        process = self._get_process()
+        
+        if not process:
+            return
+        
+        """
+        if value == 0:
+            check_state = qt.QtCore.Qt.Unchecked
+        if value == 2:
+            check_state = qt.QtCore.Qt.Checked
+        """
+        
+        if role == qt.QtCore.Qt.CheckStateRole:
+            
+            if value == 0:
+                process.set_setting('enable', False)
+            if value == 2:
+                process.set_setting('enable', True)
+            
+
+        
         
     def _add_process(self, directory, name):
         
@@ -946,7 +1069,19 @@ class ProcessItem(qt.QTreeWidgetItem):
             self.name = name
         
         return state
-                
+        
+    def setText(self, column, text):
+        
+        text = '   ' + text 
+        super(ProcessItem, self).setText(column, text)
+        
+    def text(self, column):
+        
+        text = super(ProcessItem, self).text(column)
+        
+        text.strip()
+        return text
+        
     def set_name(self, name):
         
         self.name = name
@@ -999,7 +1134,7 @@ class ProcessItem(qt.QTreeWidgetItem):
         
         if item.name == self.name and item.directory == self.directory:
             return True
-
+        
 class CopyWidget(qt_ui.BasicWidget):
     
     canceled = qt_ui.create_signal()
