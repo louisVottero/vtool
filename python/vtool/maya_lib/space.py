@@ -1303,6 +1303,16 @@ def has_constraint(transform):
     editor = ConstraintEditor()
     return editor.has_constraint(transform)
     
+def zero_out_transform_channels(transform):
+    
+    cmds.setAttr('%s.translateX' % transform, 0)
+    cmds.setAttr('%s.translateY' % transform, 0)
+    cmds.setAttr('%s.translateZ' % transform, 0)
+    cmds.setAttr('%s.rotateX' % transform, 0)
+    cmds.setAttr('%s.rotateY' % transform, 0)
+    cmds.setAttr('%s.rotateZ' % transform, 0)
+    
+
 def get_center(transform):
     """
     Get the center of a selection. Selection can be component or transform.

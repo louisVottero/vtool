@@ -480,7 +480,61 @@ def make_curve_dynamic(curve, hair_system = None):
         
     return follicle
 
-def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attribute_name = 'dynamic', blendshape = True):
+def create_follicle_from_curve(curve, hair_system = None, attach_mesh = None, out_curve_parent = None):
+    
+    parent = cmds.listRelatives(curve, p = True)
+    
+    follicle, follicle_shape = create_follicle(curve, hair_system)
+    
+    if attach_mesh:
+        cmds.connectAttr('%s.outMesh' % attach_mesh, '%s.inputMesh' % follicle_shape)
+        cmds.connectAttr('%s.worldMatrix' % attach_mesh, '%s.inputWorldMatrix' % follicle_shape)
+        
+        cmds.connectAttr('%s.outTranslate' % follicle_shape, '%s.translate' % follicle )
+        cmds.connectAttr('%s.outRotate' % follicle_shape, '%s.rotate' % follicle )
+        
+        u,v = geo.get_uv_on_mesh_at_curve_base(attach_mesh, curve)
+        
+        cmds.setAttr('%s.parameterU' % follicle, u)
+        cmds.setAttr('%s.parameterV' % follicle, v)
+    
+    start_curve = cmds.duplicate(curve)[0]
+    start_curve = cmds.rename(start_curve, 'start_%s' % curve)
+    
+    sets = cmds.listSets(object = start_curve)
+    for set in sets:
+        cmds.sets(start_curve, remove = set)
+    
+    cmds.connectAttr('%s.worldMatrix' % start_curve, '%s.startPositionMatrix' % follicle_shape)
+    cmds.connectAttr('%s.local' % start_curve, '%s.startPosition' % follicle_shape)
+        
+    new_curve_shape = cmds.createNode('nurbsCurve')
+    new_curve = cmds.listRelatives(new_curve_shape, p = True)
+    
+    new_curve = cmds.rename(new_curve, core.inc_name('curve_%s' % follicle))
+    new_curve_shape = cmds.listRelatives(new_curve, shapes = True)[0]
+    
+    cmds.setAttr('%s.inheritsTransform' % new_curve, 0)
+    
+    cmds.parent(start_curve, new_curve, follicle)
+    cmds.hide(start_curve)
+    
+    cmds.connectAttr('%s.outCurve' % follicle, '%s.create' % new_curve)
+    
+            
+    if parent:
+        cmds.parent(follicle, parent)
+        
+    if out_curve_parent and cmds.objExists(out_curve_parent):
+        new_curve = cmds.rename(new_curve, 'out_%s' % curve)
+        cmds.parent(new_curve, out_curve_parent)
+        
+        space.zero_out_transform_channels(new_curve)
+        
+        
+    return follicle
+
+def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attribute_name = 'dynamic', blendshape = True, out_curve_parent = None, attach_mesh = None):
     """
     Add a follicle to a curve. Good for attaching to a spline ik, to make it dynamic.
     It will make a duplicate of the curve so that the dynamics of the follicle can be switched on/off.
@@ -499,6 +553,10 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     
     follicle, follicle_shape = create_follicle(curve, hair_system)
     
+    if attach_mesh:
+        cmds.connectAttr('%s.outMesh' % attach_mesh, '%s.inputMesh' % follicle_shape)
+        cmds.connectAttr('%s.worldMatrix' % attach_mesh, '%s.inputWorldMatrix' % follicle_shape)
+        
     cmds.connectAttr('%s.worldMatrix' % curve, '%s.startPositionMatrix' % follicle_shape)
     cmds.connectAttr('%s.local' % curve, '%s.startPosition' % follicle_shape)
         
@@ -511,9 +569,7 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     cmds.setAttr('%s.inheritsTransform' % new_curve, 0)
     
     cmds.parent(curve, new_curve, follicle)
-    cmds.hide(curve)
     
-
     cmds.connectAttr('%s.outCurve' % follicle, '%s.create' % new_curve)
     
     if blendshape:
@@ -536,6 +592,11 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
             
     if parent:
         cmds.parent(follicle, parent)
+        
+    if out_curve_parent and cmds.objExists(out_curve_parent):
+        new_curve = cmds.rename(new_curve, 'out_%s' % curve)
+        cmds.parent(new_curve, out_curve_parent)
+        
         
     return follicle
 
@@ -976,6 +1037,9 @@ def create_yeti_texture_reference(mesh):
         cmds.parent(new_mesh, parent[0])
     
     return new_mesh
+
+def set_yeti_guide_rest(curve):
+    cmds.pgYetiCommand(curve, saveGuidesRestPosition = True)
 
 #--- Ziva
 

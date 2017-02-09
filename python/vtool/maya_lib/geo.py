@@ -2015,7 +2015,61 @@ def get_closest_uv_on_mesh(mesh, three_value_list):
     found = mesh.get_uv_at_point(three_value_list)
     
     return found
+
+def get_uv_on_mesh_at_curve_base(mesh, curve):
+    """
+    Looks for the closest uv on mesh at the base of the curve
+    """
     
+    cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
+    
+    cv = cvs[0]
+    
+    cv_position = cmds.xform(cv, q = True, t = True, ws = True)
+    closest_position = get_closest_position_on_mesh(mesh, cv_position)
+    
+    u,v = get_closest_uv_on_mesh(mesh, closest_position)
+    
+    return u,v
+
+def get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 50):
+    """
+    Looks at the curve and tries to find the closest uv on mesh where the curve intersects or has its nearest point
+    """
+    temp_curve = cmds.duplicate(curve)[0]
+    rebuild_curve(temp_curve, samples, degree = 1)
+    
+    cvs = cmds.ls('%s.cv[*]' % temp_curve, flatten = True)
+    
+    closest_distance = None
+    closest_position = None
+    
+    for cv in cvs:
+        
+        cv_position = cmds.xform(cv, q = True, t = True, ws = True)
+        closest_position = get_closest_position_on_mesh(mesh, cv_position)
+        distance = vtool.util.get_distance(cv_position, closest_position)
+        
+        if not closest_distance:
+            
+            closest_distance = distance
+            closest_position = cv_position
+            
+        
+        print distance, closest_distance
+        
+        if distance < closest_distance:
+            closest_distance = distance
+            closest_position = cv_position
+            
+        if distance == 0.00001:
+            break
+    
+    cmds.delete(temp_curve)
+    
+    u,v = get_closest_uv_on_mesh(mesh, closest_position)
+    
+    return u,v
 
 def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis = 'X', accuracy = 100, angle_range = 180):
     """
@@ -2130,6 +2184,14 @@ def get_closest_parameter_on_surface(surface, vector):
         uv[1] = 0.001
     
     return uv
+
+def get_closest_position_on_mesh(mesh, three_value_list):
+    
+    mesh_fn = api.MeshFunction(mesh)
+    
+    position = mesh_fn.get_closest_position(three_value_list)
+    
+    return position
 
 def get_closest_position_on_curve(curve, three_value_list):
     """
@@ -2275,7 +2337,7 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None):
     #    space.create_spline_ik_stretch(curve, new_joint, curve, create_stretch_on_off = False)    
     #    return new_joint, ik_handle
     
-def rebuild_curve(curve, spans):
+def rebuild_curve(curve, spans, degree = 3):
     
     cmds.rebuildCurve( curve, ch = False,
                        rpo = 1,
@@ -2286,7 +2348,7 @@ def rebuild_curve(curve, spans):
                        kep = 1, 
                        kt = 0,
                        s = spans,
-                       d = 3,
+                       d = degree,
                        tol = 0.01)
     
 def evenly_position_curve_cvs(curve, match_curve = None):
