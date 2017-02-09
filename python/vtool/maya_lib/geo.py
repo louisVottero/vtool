@@ -776,7 +776,7 @@ def get_mesh_shape(mesh, shape_index = 0):
     
     if cmds.nodeType(mesh) == 'mesh':
         
-        mesh = cmds.listRelatives(mesh, p = True)[0]
+        mesh = cmds.listRelatives(mesh, p = True, f = True)[0]
         
     shapes = core.get_shapes(mesh)
     if not shapes:
@@ -946,6 +946,46 @@ def get_edge_path(edges = []):
     
     return cmds.ls(sl = True, l = True)
 
+def get_triangles(mesh):
+    
+    mesh = get_mesh_shape(mesh)
+    
+    meshes = core.get_shapes(mesh, 'mesh', no_intermediate=True)
+    
+    found = []
+    
+    for mesh in meshes:
+        mesh_fn = api.MeshFunction(mesh)
+        
+        triangles = mesh_fn.get_triangle_ids()
+        
+        faces = convert_indices_to_mesh_faces(triangles, mesh)
+        
+        if faces:
+            found += faces
+    
+    return found
+
+def get_non_triangle_non_quad(mesh):
+    
+    mesh = get_mesh_shape(mesh)
+    
+    meshes = core.get_shapes(mesh, 'mesh')
+    
+    found = []
+    
+    for mesh in meshes:
+        mesh_fn = api.MeshFunction(mesh)
+        
+        ids = mesh_fn.get_non_tri_quad_ids()
+        
+        faces = convert_indices_to_mesh_faces(ids, mesh)
+        
+        if faces:
+            found += faces
+    
+    return found
+
 def get_face_center(mesh, face_id):
     """
     Get the center position of a face.
@@ -1034,37 +1074,38 @@ def check_render_stats_are_default(node_name):
         value = stats[inc][1]
         
         if stat == 'castsShadows':
-            if value == RENDER_DEFAULT_CAST_SHADOWS:
+            if not value == RENDER_DEFAULT_CAST_SHADOWS:
                 return False
         if stat == 'receiveShadows':
-            if value == RENDER_DEFAULT_RECEIVE_SHADOWS:
+            if not value == RENDER_DEFAULT_RECEIVE_SHADOWS:
                 return False
         if stat == 'holdOut':
-            if value == RENDER_DEFAULT_HOLD_OUT:
+            if not value == RENDER_DEFAULT_HOLD_OUT:
                 return False
         if stat == 'motionBlur':
-            if value == RENDER_DEFAULT_MOTION_BLUR:
+            if not value == RENDER_DEFAULT_MOTION_BLUR:
                 return False
         if stat == 'primaryVisibility':
-            if value == RENDER_DEFAULT_PRIMARY_VISIBILITY:
+            if not value == RENDER_DEFAULT_PRIMARY_VISIBILITY:
                 return False
         if stat == 'smoothShading':
-            if value == RENDER_DEFAULT_SMOOTH_SHADING:
+            if not value == RENDER_DEFAULT_SMOOTH_SHADING:
                 return False   
         if stat == 'visibleInReflections':
-            if value == RENDER_DEFAULT_VISIBLE_IN_REFLECTIONS:
+            if not value == RENDER_DEFAULT_VISIBLE_IN_REFLECTIONS:
                 return False    
         if stat == 'visibleInRefractions':
-            if value == RENDER_DEFAULT_VISIBLE_IN_REFRACTIONS:
+            if not value == RENDER_DEFAULT_VISIBLE_IN_REFRACTIONS:
                 return False
         if stat == 'doubleSided':
-            if value == RENDER_DEFAULT_DOUBLE_SIDED:
+            if not value == RENDER_DEFAULT_DOUBLE_SIDED:
                 return False
         if stat == 'opposite':
-            if value == RENDER_DEFAULT_OPPOSITE:
+            if not value == RENDER_DEFAULT_OPPOSITE:
                 return False
             
     return True
+
 
 def set_default_render_stats(node_name):
     """
@@ -2513,6 +2554,15 @@ def convert_indices_to_mesh_vertices(indices, mesh):
         verts.append('%s.vtx[%s]' % (mesh, index))
         
     return verts
+
+def convert_indices_to_mesh_faces(indices, mesh):
+    
+    faces = []
+    
+    for index in indices:
+        faces.append('%s.f[%s]' % (mesh, index))
+        
+    return faces
 
 def get_vertex_normal(vert_name):
     """

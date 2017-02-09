@@ -3550,10 +3550,12 @@ class PoseCone(PoseBase):
         cmds.setAttr('%s.maxTwist' % other_pose_instance.pose_control, maxTwist_value)
         
         for mesh in other_target_meshes:
+            
             index = other_pose_instance.get_target_mesh_index(mesh)
-                        
-            if index == None:    
-                other_pose_instance.add_mesh(other_target_mesh, toggle_vis = False)
+            
+            if index == None:
+                
+                other_pose_instance.add_mesh(mesh, toggle_vis = False)
                 
         for mesh in other_target_meshes:
             
