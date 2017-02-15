@@ -5,6 +5,7 @@ from vtool import util
 from vtool.maya_lib import core
 from vtool.maya_lib import api
 from vtool.maya_lib import geo
+from vtool.maya_lib import space
 
 
 import maya.cmds as cmds
@@ -57,10 +58,7 @@ class CheckView(qt_ui.BasicWidget):
         
         
         
-    def _add_check(self, check_ui):
-        
-        self.check_buttons.addWidget(check_ui, alignment = qt.QtCore.Qt.AlignBottom)
-        check_ui.checked.connect(self._update_list)
+
         
     def _update_list(self, check_list, check_name):
         
@@ -126,6 +124,11 @@ class CheckView(qt_ui.BasicWidget):
         cmds.select(sub_selection, add = True)
         
         cmds.viewFit()
+
+    def add_check(self, check_ui):
+        
+        self.check_buttons.addWidget(check_ui, alignment = qt.QtCore.Qt.AlignBottom)
+        check_ui.checked.connect(self._update_list)
     
 class Check(qt_ui.BasicWidget):
     
@@ -224,6 +227,20 @@ class CheckMayaAsset(CheckView):
         self._add_check(Check_Empty_Nodes())
         self._add_check(Check_Empty_Intermediate_Objects())
         
+
+class Check_Non_Default_Transforms(Check):
+
+    check_name = 'Non Default Transforms'
+    
+    def _has_fix(self):
+        return False
+    
+    def _check(self):
+        
+        nodes = space.get_non_default_transforms()
+        
+        return nodes
+
 
 class Check_Empty_Groups(Check):
     
