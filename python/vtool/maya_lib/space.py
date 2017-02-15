@@ -1303,6 +1303,38 @@ def has_constraint(transform):
     editor = ConstraintEditor()
     return editor.has_constraint(transform)
     
+def is_transform_default(transform):
+    
+    attributes = ['translate', 'rotate']
+    
+    for attribute in attributes:
+        
+        for axis in ['X','Y','Z']:
+            if cmds.getAttr('%s.%s%s' % (transform, attribute, axis)) != 0:
+                return False
+            
+    for axis in ['X','Y','Z']:
+        if cmds.getAttr('%s.scale%s' % (transform, axis)) != 1:
+            return False
+    
+    return True
+        
+    
+def get_non_default_transforms():
+    
+    transforms = cmds.ls(type = 'transform')
+    
+    found = []
+    
+    for transform in transforms:
+        if core.has_shape_of_type(transform, 'camera'):
+            continue
+        
+        if not is_transform_default(transform):
+            found.append(transform)
+            
+    return found
+    
 def zero_out_transform_channels(transform):
     
     cmds.setAttr('%s.translateX' % transform, 0)
