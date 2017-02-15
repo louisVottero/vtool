@@ -143,6 +143,8 @@ def import_maya_cache(geo, name = 'maya_cache', dirpath = '', source_namespace =
         
 def export_alembic(root_node, name, dirpath = None, auto_sub_folders = True, min_value = None, max_value = None):
     
+    root_node = vtool.util.convert_to_sequence(root_node)
+    
     if not cmds.pluginInfo('AbcExport', query = True, loaded = True):
         cmds.loadPlugin('AbcExport')
     
@@ -158,7 +160,55 @@ def export_alembic(root_node, name, dirpath = None, auto_sub_folders = True, min
     
     filename = '%s/%s.abc' % (folder, name)
     
-    mel.eval('AbcExport -j "-frameRange %s %s -stripNamespaces -uvWrite -worldSpace -writeVisibility -dataFormat ogawa -root %s -file %s";' % (min_value, max_value, root_node, filename))
+    if not cmds.objExists(root_node):
+        vtool.util.show('Unable to export %s. It does not exist.' % root_node)
+        return
+    
+    attr_node_str = ''
+    visited_attrs = []
+    visited_nodes = []
+    
+    root_node_str = ''
+    
+    
+    for node in root_node:
+        
+        
+        
+        
+        if not cmds.objExists(node):
+            vtool.util.show('Unable to export %s. It does not exist.' % node)
+            continue
+        
+        #get long path to node
+        node_test = cmds.ls(node)
+        
+        if len(node_test) > 1:
+            node = node_test[0]
+        
+        if node in visited_nodes:
+            continue
+        
+        visited_nodes.append(node)
+        
+        root_node_str += ("-root " + node + ' ')
+        
+        user_attrs = cmds.listAttr(node, ud = True)
+        if user_attrs:
+            for attr in user_attrs:
+                
+                if attr in visited_attrs:
+                    continue
+                
+                attr_node_str += ('-attr ' + attr + ' ')
+                visited_attrs.append(attr)
+    
+    alembic_command = 'AbcExport -j "-frameRange %s %s -stripNamespaces -uvWrite -worldSpace -writeVisibility -dataFormat ogawa %s %s -file %s";' % (min_value, max_value, root_node_str, attr_node_str, filename)
+    
+    vtool.util.show('Alembic export: %s' % alembic_command)
+    
+    mel.eval(alembic_command)
+    
 
 def import_alembic(root_node, name, dirpath = None, auto_sub_folders = True):
     
