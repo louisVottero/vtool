@@ -35,7 +35,7 @@ class CharacterTree(qt.QTreeWidget):
         
         selected = self.selectedItems()
         
-        cmds.select(cl = True)
+        #cmds.select(cl = True)
         
         self.current_characters = []
         
@@ -43,9 +43,10 @@ class CharacterTree(qt.QTreeWidget):
             
             namespace = select.text(0)
             
-            top_nodes = core.get_top_dag_nodes(namespace = namespace)
+            #selection ruined the workflow
+            #top_nodes = core.get_top_dag_nodes(namespace = namespace)
             
-            cmds.select(top_nodes, add = True)
+            #cmds.select(top_nodes, add = True)
             
             
             
