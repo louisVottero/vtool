@@ -2270,10 +2270,27 @@ class MayaFileData(MayaCustomData):
         
         self._clean_scene()
         
-        saved = maya_lib.core.save(self.filepath)
+        filepath = self.filepath
+        
+        #not sure if this ever gets used?...
+        if not filepath.endswith('.mb') and not filepath.endswith('.ma'):
+            
+            filepath = cmds.workspace(q = True, rd = True)
+            
+            if self.maya_file_type == self.maya_ascii:
+                #cmds.file(renameToSave = True)
+                filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Ascii (*.ma)", dir = filepath)
+            
+            if self.maya_file_type == self.maya_binary:
+                filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Binary (*.mb)", dir = filepath)
+            
+            if filepath:
+                filepath = filepath[0]
+        
+        saved = maya_lib.core.save(filepath)
         
         if saved:
-            version = util_file.VersionFile(self.filepath)
+            version = util_file.VersionFile(filepath)
             
             if maya_lib.core.is_batch() or not version.has_versions():
                 

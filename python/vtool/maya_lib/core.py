@@ -1070,20 +1070,18 @@ def save(filepath):
     
     vtool.util.show('Saving:  %s' % filepath)
     
-    if not filepath.endswith('.mb') and not filepath.endswith('.ma'):
-        
-        filepath = cmds.workspace(q = True, rd = True)
-        #cmds.file(renameToSave = True)
-        filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Ascii (*.ma)", dir = filepath)
-        
-        if filepath:
-            filepath = filepath[0]
-        
+    
+    
+    file_type = 'mayaAscii'
+    
+    if filepath.endswith('.mb'):
+        file_type = 'mayaBinary'
+    
     if filepath:
         
         try:
             cmds.file(rename = filepath)
-            cmds.file(save = True)
+            cmds.file(save = True, type = file_type)
             
             saved = True
         except:
