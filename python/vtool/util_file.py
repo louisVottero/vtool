@@ -1998,6 +1998,8 @@ def create_file(name, directory, make_unique = False):
         open_file = open(full_path, 'a')
         open_file.close()
     except:
+        #turn on when troubleshooting
+        #util.warning( traceback.format_exc() )
         return False
     
     return full_path
