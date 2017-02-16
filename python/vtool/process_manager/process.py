@@ -147,6 +147,8 @@ class Process(object):
         
     def _set_name(self, new_name):
         
+        new_name = new_name.strip()
+        
         self.process_name = new_name
             
     def _handle_old_folders(self, path):
