@@ -484,14 +484,15 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         return new_name
     
-    def _rename_process(self):
+    def _rename_process(self, item = None):
         
-        items = self.selectedItems()
+        if not item:
+            items = self.selectedItems()
         
-        if not items:
-            return
+            if not items:
+                return
         
-        item = items[0]
+            item = items[0]
         
         old_name = item.get_name()
         
@@ -687,7 +688,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 
                 item_path = self.get_item_path_string(parent_item)
                 
-                if item_path:            
+                if item_path:
                     name = string.join([item_path, name], '/')
                 
                     if self._child_exists(name, parent_item):
@@ -696,14 +697,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 if not item_path:
                     parent_item = None
         
-        
-        
         item = ProcessItem(self.directory, name)
-        #item.setFlags( qt.QtCore.Qt.ItemIsUserCheckable )
         
         process_inst = process.Process(name)
         process_inst.set_directory(self.directory)
         
+        if create:
+            item.create()
+
         if parent_item:
             enable = process_inst.get_setting('enable')
             if not enable:
@@ -711,18 +712,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             if enable:
                 item.setCheckState(0, qt.QtCore.Qt.Checked )
         
-        
-
-        
-        if create:
-            item.create()
-        
-        self.setItemWidget(item, 0, qt.QCheckBox())
-        
         if not parent_item:
             self.addTopLevelItem(item)
-        
-        
         
         if parent_item:
             parent_item.addChild(item)
@@ -732,8 +723,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         #has parts takes time because it needs to check children folders
         if item.has_parts():
             qt.QTreeWidgetItem(item)
-        
-
         
         return item
 
@@ -822,8 +811,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         #if not item.parent():
         self.setCurrentItem(item)
+        self.setItemSelected(item, True)
             
-        self._rename_process()
+        self._rename_process(item)
         
     def delete_process(self):
         
@@ -1021,6 +1011,9 @@ class ProcessItem(qt.QTreeWidgetItem):
         if not process:
             return
         
+        if hasattr(process, 'filepath') and not process.filepath:
+            return
+        
         """
         if value == 0:
             check_state = qt.QtCore.Qt.Unchecked
@@ -1079,7 +1072,7 @@ class ProcessItem(qt.QTreeWidgetItem):
         
         text = super(ProcessItem, self).text(column)
         
-        text.strip()
+        text = text.strip()
         return text
         
     def set_name(self, name):
