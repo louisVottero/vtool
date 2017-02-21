@@ -2095,9 +2095,6 @@ def get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 50):
             
             closest_distance = distance
             closest_position = cv_position
-            
-        
-        print distance, closest_distance
         
         if distance < closest_distance:
             closest_distance = distance
