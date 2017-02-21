@@ -198,7 +198,9 @@ class TreeWidget(qt.QTreeWidget):
     
     def __init__(self):
         super(TreeWidget, self).__init__()
-
+        
+        self._auto_add_sub_items = True
+        
         self.title_text_index = 0
         self.itemExpanded.connect(self._item_expanded)
         self.itemCollapsed.connect(self._item_collapsed)
@@ -473,8 +475,8 @@ class TreeWidget(qt.QTreeWidget):
             return
             
     def _item_expanded(self, item):
-        
-        self._add_sub_items(item) 
+        if self._auto_add_sub_items == True:
+            self._add_sub_items(item) 
         
         #self.resizeColumnToContents(self.title_text_index)
         
@@ -1917,38 +1919,6 @@ class Group(qt.QGroupBox):
         
         self.setLayout(manager_layout)
         
-        #self.label_expand = QLabel('Expand')
-        
-        #self.main_layout.addWidget(self.label_expand)
-    
-    """
-    def mousePressEvent(self, event):
-        
-        print 'mouse Click!!!'
-        
-        super(Group, self).mousePressEvent(event)
-        
-        if not event.button() == QtCore.Qt.LeftButton:
-            return
-        
-        half = self.width()/2
-        
-        if event.y() < 25 and event.x() > (half - 50) and event.x() < (half + 50):
-            
-            print 'here I am!', self.height(), self.close_height
-            
-            height = self.height()
-            
-            if height == self.close_height:
-                self.expand_group()
-                return
-                    
-            if height >= self.close_height:
-                self.collapse_group()
-                return
-            
-        print 'nope did not make it'
-    """     
     def collapse_group(self):
         
         self.setVisible(False)
@@ -4389,13 +4359,13 @@ class TimelineWidget(qt.QWidget):
         self.values = value_list
         
   
-def get_comment(parent = None,text_message = 'add comment', title = 'save'):
+def get_comment(parent = None,text_message = 'add comment', title = 'save', comment_text = ''):
     
     dialogue = qt.QInputDialog()
     
     flags = dialogue.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     
-    comment, ok = dialogue.getText(parent, title,text_message, flags = flags)
+    comment, ok = dialogue.getText(parent, title,text_message, flags = flags, text = comment_text)
     comment = comment.replace('\\', '_')  
     
     if ok:
