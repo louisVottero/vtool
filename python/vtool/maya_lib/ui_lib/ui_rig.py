@@ -8,6 +8,7 @@ from vtool import util_file
 import maya.cmds as cmds
 
 from vtool.maya_lib import ui_core
+import ui_check
 import ui_presets
 import ui_picker
 
@@ -31,6 +32,20 @@ def shape_combo():
     
     from vtool.maya_lib.ui_lib import ui_shape_combo
     window = ui_shape_combo.ComboManager()
+    
+    return window
+    
+def checker():
+    
+    window = ui_check.CheckView()
+    window.add_check(ui_check.Check_Empty_Groups())
+    window.add_check(ui_check.Check_Empty_Intermediate_Objects())
+    window.add_check(ui_check.Check_Empty_Nodes())
+    window.add_check(ui_check.Check_Non_Default_Transforms())
+    window.add_check(ui_check.Check_Non_Unique())
+    window.add_check(ui_check.Check_Triangles())
+    window.add_check(ui_check.Check_NSided())
+    
     
     return window
     
@@ -114,6 +129,10 @@ class RigManager(qt_ui.DirectoryWidget):
         
         manager_layout.addSpacing(15)
         
+        check_button = qt.QPushButton('Checks - ALPHA')
+        check_button.clicked.connect(self._checker)
+        check_button.setMinimumWidth(button_width)
+        manager_layout.addWidget(check_button)
         
         picker_button = qt.QPushButton('Picker - ALPHA')
         picker_button.clicked.connect(self._picker)
@@ -313,6 +332,10 @@ class RigManager(qt_ui.DirectoryWidget):
 
     def _shape_combo(self):
         window = shape_combo()
+        ui_core.emit_new_tool_signal(window)
+
+    def _checker(self):
+        window = checker()
         ui_core.emit_new_tool_signal(window)
 
     def _picker(self):
