@@ -627,6 +627,9 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.file_changed.emit()
         
     def _import_data(self):
+        if not vtool.util_file.is_file(self.data_class.filepath):
+            vtool.qt_ui.warning('No data to import.', self)
+            return
         self.data_class.import_data()
         
 class MayaDataHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
@@ -684,13 +687,22 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         if not parent:
             parent = self
         
+        if not self.text_widget.is_modified():
+            vtool.qt_ui.warning('No changes to save.', self)
+            return
+        
+        text = self.text_widget.toPlainText()
+        
         if comment == None or comment == False:
             comment = vtool.qt_ui.get_comment(parent, title = 'Save %s' % self.data_class.name)
         
         if comment == None:
             return
         
-        text = self.text_widget.toPlainText()
+        
+        
+        
+        
         lines= vtool.util_file.get_text_lines(text)
         
         self.data_class.save(lines,comment)
@@ -1180,6 +1192,10 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
     def _open_file(self):
         
+        if not vtool.util_file.is_file(self.data_class.filepath):
+            vtool.qt_ui.warning('No data to open. Please save once.', self)
+            return
+        
         if vtool.util.is_in_maya():
             import maya.cmds as cmds
             if cmds.file(q = True, mf = True):
@@ -1203,9 +1219,16 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.data_class.open()
         
     def _import_file(self):
+        if not vtool.util_file.is_file(self.data_class.filepath):
+            vtool.qt_ui.warning('No data to import. Please save once.', self)
+            return
         self.data_class.import_data()
         
     def _reference_file(self):
+        
+        if not vtool.util_file.is_file(self.data_class.filepath):
+            vtool.qt_ui.warning('No data to reference. Please save once.', self)
+            return
         self.data_class.maya_reference_data()
         
         
