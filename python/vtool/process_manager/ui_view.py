@@ -7,6 +7,7 @@ from vtool import util_file
 from vtool import qt_ui, qt
 
 import process
+from PySide.QtGui import QTreeWidgetItem
 
 
 
@@ -486,6 +487,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
     def _rename_process(self, item = None):
         
+
+        
         if not item:
             items = self.selectedItems()
         
@@ -519,8 +522,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if rename_worked:
             self.item_renamed.emit(item)
-            
-        
         
     def _copy_process(self):
         
@@ -614,6 +615,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         return path
         
+        
     def _child_exists(self, child_name, item):
         
         children = self.get_tree_item_children(item)
@@ -674,10 +676,12 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.setUpdatesEnabled(True)
         
     def _add_process_item(self, name, parent_item = None, create = False, find_parent_path = True):
-
+        
         expand_to = False
         
         current_item = self.currentItem()
+        
+        
         
         if not parent_item and current_item:
             parent_item = current_item
@@ -716,10 +720,13 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.addTopLevelItem(item)
         
         if parent_item:
-            parent_item.addChild(item)
+            
             if expand_to:
+                self._auto_add_sub_items = False
                 self.expandItem(parent_item)
-        
+                self._auto_add_sub_items = True
+            parent_item.addChild(item)
+            
         #has parts takes time because it needs to check children folders
         if item.has_parts():
             qt.QTreeWidgetItem(item)
@@ -758,9 +765,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self._delete_children(item)
         
-        process_name = item.get_name()
+        path = ''
         
-        path = util_file.join_path(self.directory, process_name)
+        if hasattr(item, 'get_name'):
+            process_name = item.get_name()
+            path = util_file.join_path(self.directory, process_name)
         
         self._add_process_items(item, path)
         
@@ -809,10 +818,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         item = self._add_process_item(name, parent_item = parent_item, create = True)
         
-        #if not item.parent():
         self.setCurrentItem(item)
         self.setItemSelected(item, True)
-            
+        
+        parent_item = item.parent()
+        
         self._rename_process(item)
         
     def delete_process(self):
