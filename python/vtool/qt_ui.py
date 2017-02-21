@@ -3338,6 +3338,13 @@ class CodeTextEdit(qt.QPlainTextEdit):
         
         self.last_modified = util_file.get_last_modified_date(self.filepath)
       
+    def is_modified(self):
+        if not self.document().isModified():
+            return False
+        if self.document().isModified():
+            return True
+        
+        
 class FindTextWidget(BasicDialog):
     
     closed = create_signal()
