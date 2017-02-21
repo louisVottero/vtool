@@ -649,7 +649,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.break_index = None
         self.break_item = None
-    
+        
         if vtool.util.is_in_maya():
             
             directory = util_file.get_vetala_directory()
@@ -662,16 +662,19 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             self.setStyleSheet( lines)
     
+    
     """
     def drawRow(self, painter, option, index):
+        #this changes checkboxes to default........
+        #if vtool.util.is_in_maya():
+        #    brush = qt.QBrush( qt.QColor(70,70,70))
+        #    painter.fillRect( option.rect, brush)
         
-        if vtool.util.is_in_maya():
-            brush = qt.QBrush( qt.QColor(70,70,70))
-            painter.fillRect( option.rect, brush)
+        painter.save()
         
         
         if index.internalId() == self.break_index:
-            painter.save()
+            #painter.save()
             
             if vtool.util.is_in_maya():
                 brush = qt.QBrush( qt.QColor(70,0,0))
@@ -680,10 +683,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             painter.fillRect( option.rect, brush)
         
-        #painter.restore()
-        
+        painter.restore()
         super(CodeManifestTree, self).drawRow(painter, option, index)
     """
+    
+    
     def resizeEvent(self, event = None):
         super(CodeManifestTree, self).resizeEvent(event)
         
@@ -1738,12 +1742,27 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.break_index = item_index.internalId()
         self.break_item = item
         
+        if vtool.util.is_in_maya():
+            brush = qt.QBrush( qt.QColor(70,0,0))
+        if not vtool.util.is_in_maya():
+            brush = qt.QBrush( qt.QColor(240,230,230))
+        
+        item.setBackground(0, brush)
+        
     def cancel_breakpoint(self):
+        
+        if self.break_item:
+            try:
+                self.break_item.setBackground(0, qt.QBrush())
+            except:
+                pass
         
         self.break_index = None
         self.break_item = None
         
         self.repaint()
+        
+        
         
 class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     
