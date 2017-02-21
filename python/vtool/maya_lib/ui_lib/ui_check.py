@@ -6,14 +6,14 @@ from vtool.maya_lib import core
 from vtool.maya_lib import api
 from vtool.maya_lib import geo
 from vtool.maya_lib import space
-
+from vtool.maya_lib import ui_core
 
 import maya.cmds as cmds
 
 
-class CheckView(qt_ui.BasicWidget):
+class CheckView(ui_core.MayaWindow):
     
-    title_name = ''
+    title = 'Check'
     
     
     def _define_main_layout(self):
@@ -34,11 +34,11 @@ class CheckView(qt_ui.BasicWidget):
         self.check_buttons = qt.QVBoxLayout()
         self.check_buttons.setAlignment(qt.QtCore.Qt.AlignBottom)
         
-        self.title = qt.QLabel(self.title_name, alignment = qt.QtCore.Qt.AlignTop) 
-        self.title.setMinimumWidth(235)
+        self.title_label = qt.QLabel(self.title, alignment = qt.QtCore.Qt.AlignTop) 
+        self.title_label.setMinimumWidth(235)
         
         
-        buttons.addWidget(self.title)
+        buttons.addWidget(self.title_label)
         buttons.addLayout(self.check_buttons)
         
         self.list_label = qt.QLabel()
@@ -339,8 +339,6 @@ class Check_Triangles(Check):
         meshes = cmds.ls(type = 'mesh', l = True)
         
         found = []
-        
-        print meshes
         
         for mesh in meshes:
             
