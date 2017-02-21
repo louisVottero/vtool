@@ -596,6 +596,86 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         return saved
         
+    def _get_checked_children(self, tree_item):
+        
+        if not tree_item:
+            return 
+        
+        expand_state = tree_item.isExpanded()
+        
+        tree_item.setExpanded(True)
+        
+        children = self.view_widget.tree_widget.get_tree_item_children(tree_item)
+        
+        checked_children = []
+        
+        for child in children:
+            check_state = child.checkState(0)
+                    
+            if check_state == qt.QtCore.Qt.Checked:
+                checked_children.append(child)
+                
+        levels = []
+        if checked_children:
+            levels.append(checked_children)
+        
+        while children:
+            
+            new_children = []
+            checked_children = []
+            
+            for child in children:
+                
+                child.setExpanded(True)
+                sub_children = self.view_widget.tree_widget.get_tree_item_children(child)
+                
+                checked = []
+                
+                for sub_child in sub_children:
+                    check_state = sub_child.checkState(0)
+                    
+                    if check_state == qt.QtCore.Qt.Checked:
+                        checked.append(sub_child)
+                
+                if sub_children:
+                    new_children += sub_children
+                    
+                if checked:
+                    checked_children += checked
+            
+            children = new_children
+            
+            if checked_children:
+                levels.append(checked_children)
+        
+        tree_item.setExpanded(expand_state)
+        
+        levels.reverse()
+        return levels
+        
+    def _process_item(self, item, comment):
+        
+
+        
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            cmds.file(new = True, f = True)
+        
+        process_inst = item.get_process()
+        process_inst.run()
+        
+        
+        
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            
+            build_comment = 'auto built'
+            
+            if comment:
+                build_comment = comment
+            
+            process_inst.save_data('build', build_comment)
+        
     def _process(self, last_inc = None):
         
         if util.is_in_maya():
@@ -610,19 +690,33 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
                 result = qt_ui.get_permission('Continue?', self, cancel = False, title = 'Changes not saved.')
                 
-                """
-                result = qt_ui.get_save_permission('Save before processing?', self, filepath)
-                
-                if result:
-                    saved = self._auto_save()
-                    
-                    if not saved:
-                        return
-                """ 
                 if result == None or result == False:
                     return
                 
             cmds.file(renameToSave = True)
+            
+        item = self.view_widget.tree_widget.currentItem()
+        children = self._get_checked_children(item)
+                
+        if children:
+            
+            result = qt_ui.get_comment(self, 'Found children checked. Add comment to the auto build?', 'Children Checked', comment_text='Auto Build' )
+            if result == None:
+                result2 = qt_ui.get_permission('Continue Main Process?', self, title = 'Sub process build cancelled.')
+                
+                if not result2:
+                    return
+            
+            
+            for level in children:
+                for level_item in level:
+                    self.view_widget.tree_widget.setCurrentItem(level_item)
+                    self._process_item(level_item, comment = result)
+            
+            import time
+            self.view_widget.tree_widget.setCurrentItem(item)
+            self.view_widget.tree_widget.repaint()
+            time.sleep(1)
             
         self.continue_button.hide()
         
@@ -741,9 +835,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     
                     break
         
-        
-        
-            
         util.set_env('VETALA_RUN', False)
         util.set_env('VETALA_STOP', False)
             
