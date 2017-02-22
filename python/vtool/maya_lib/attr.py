@@ -2187,6 +2187,12 @@ def unlock_attributes(node, attributes = [], only_keyable = False):
         for attr in attrs:
             cmds.setAttr('%s.%s' % (node, attr), l = False, k = True)
 
+def lock_translate_attributes(node):
+    lock_attributes(node, attributes = ['translateX','translateY','translateZ'], hide = True)
+    
+def lock_rotate_attributes(node):
+    lock_attributes(node, attributes = ['rotateX','rotateY','rotateZ'], hide = True)
+
 def lock_scale_attributes(node):
     lock_attributes(node, attributes = ['scaleX','scaleY','scaleZ'], hide = True)
 
