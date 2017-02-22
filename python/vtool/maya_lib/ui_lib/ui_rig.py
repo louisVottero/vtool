@@ -188,8 +188,13 @@ class RigManager(qt_ui.DirectoryWidget):
         subdivide_joint_button.setToolTip('select parent and child joint')
         
         add_orient = qt.QPushButton('Add Orient')
-        add_orient.setMaximumWidth(80)
+        add_orient.setMaximumWidth(140)
         add_orient.setToolTip('select joints')
+        
+        add_joint_orient = qt.QPushButton('Convert to Orient Joint')
+        add_joint_orient.setMaximumWidth(140)
+        
+        
         orient_joints = qt.QPushButton('Orient Joints')
         orient_joints.setMinimumHeight(40)
         
@@ -215,6 +220,12 @@ class RigManager(qt_ui.DirectoryWidget):
         
         add_orient.clicked.connect(self._add_orient)
         orient_joints.clicked.connect(self._orient)
+        
+        
+        add_joint_orient.clicked.connect(self._add_joint_orient)
+        
+        
+        
         mirror.clicked.connect(self._mirror)
         #match_joints.clicked.connect(self._match_joints)
         joints_on_curve.clicked.connect(self._joints_on_curve)
@@ -226,8 +237,14 @@ class RigManager(qt_ui.DirectoryWidget):
         main_layout = parent.main_layout
         
         orient_layout = qt.QHBoxLayout()
+        
+        sub_orient_layout = qt.QVBoxLayout()
         orient_layout.addWidget(orient_joints)
-        orient_layout.addWidget(add_orient)
+        orient_layout.addSpacing(10)
+        orient_layout.addLayout(sub_orient_layout)
+        
+        sub_orient_layout.addWidget(add_orient)
+        sub_orient_layout.addWidget(add_joint_orient)
         
         main_layout.addSpacing(20)
         #main_layout.addWidget(add_orient)
@@ -369,6 +386,12 @@ class RigManager(qt_ui.DirectoryWidget):
         selection = cmds.ls(sl = True, type = 'joint')
         
         attr.add_orient_attributes(selection)
+    
+    def _add_joint_orient(self):
+        selection = cmds.ls(sl = True, type = 'joint')
+        
+        for thing in selection:
+            space.add_orient_joint(thing)
         
     def _orient(self):
         space.orient_attributes()
