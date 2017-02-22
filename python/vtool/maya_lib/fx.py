@@ -160,9 +160,6 @@ def export_alembic(root_node, name, dirpath = None, auto_sub_folders = True, min
     
     filename = '%s/%s.abc' % (folder, name)
     
-    if not cmds.objExists(root_node):
-        vtool.util.show('Unable to export %s. It does not exist.' % root_node)
-        return
     
     attr_node_str = ''
     visited_attrs = []
