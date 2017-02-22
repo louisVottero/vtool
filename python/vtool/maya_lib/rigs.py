@@ -298,6 +298,26 @@ class Rig(object):
         
         self._parent_custom_default_group(self.setup_group, self.setup_parent)
         
+    def set_control_offset_axis(self, axis_letter):
+        """
+        This sets the axis that the control curve cvs will offset to. This happens by rotating the control in 90 degrees on the axi.
+        This is good for lining up the control cvs to a different axis than its default. 
+        
+        Args:
+            axis_letter (str): The letter of the axis to offste the control cvs around. 'x', 'y' or 'z'
+        
+        """
+        self.control_offset_axis = axis_letter.lower()
+        
+    def set_sub_visibility(self, bool_value):
+        """
+        This controls wether sub controls are visible by default after building the rig.
+        
+        Args:
+            bool_value (bool)
+        """
+        self.sub_visibility = bool_value
+    
     def get_control_entries(self, title):
         """
         Get entries for every control. 
@@ -326,26 +346,6 @@ class Rig(object):
                 entries.append(self.control_dict[control][title])
         
         return entries
-        
-    def set_control_offset_axis(self, axis_letter):
-        """
-        This sets the axis that the control curve cvs will offset to. This happens by rotating the control in 90 degrees on the axi.
-        This is good for lining up the control cvs to a different axis than its default. 
-        
-        Args:
-            axis_letter (str): The letter of the axis to offste the control cvs around. 'x', 'y' or 'z'
-        
-        """
-        self.control_offset_axis = axis_letter.lower()
-        
-    def set_sub_visibility(self, bool_value):
-        """
-        This controls wether sub controls are visible by default after building the rig.
-        
-        Args:
-            bool_value (bool)
-        """
-        self.sub_visibility = bool_value
         
     def create(self):
         """
@@ -706,7 +706,8 @@ class SparseRig(JointRig):
                 const = cmds.scaleConstraint(joint, xform)
                 cmds.delete(const)
             
-            cmds.parentConstraint(control_name, joint)
+            if not self.attach_joints:
+                cmds.parentConstraint(control_name, joint)
 
             if self.is_scalable:
                 scale_constraint = cmds.scaleConstraint(control.get(), joint)[0]
@@ -811,37 +812,40 @@ class SparseLocalRig(SparseRig):
                     self.controls[-1] = control_name
                     
             if not self.local_constraint:
-                xform_joint = space.create_xform_group(joint)
-                
-                if self.local_parent:
-                    cmds.parent(xform_joint, self.local_xform)
-                
-                attr.connect_translate(control.get(), joint)
-                attr.connect_rotate(control.get(), joint)
-                
-                attr.connect_translate(driver, joint)
-                attr.connect_rotate(driver, joint)
+                if not self.attach_joints:
+                    xform_joint = space.create_xform_group(joint)
+                    
+                    if self.local_parent:
+                        cmds.parent(xform_joint, self.local_xform)
+                    
+                    attr.connect_translate(control.get(), joint)
+                    attr.connect_rotate(control.get(), joint)
+                    
+                    attr.connect_translate(driver, joint)
+                    attr.connect_rotate(driver, joint)
             
             if self.local_constraint:
-                local_group, local_xform = space.constrain_local(control.get(), joint, use_duplicate = True)
+                if self.attach_joints:
+                    local_group, local_xform = space.constrain_local(control.get(), joint, use_duplicate = True)
                 
-                if self.local_xform:
-                    cmds.parent(local_xform, self.local_xform)
+                    if self.local_xform:
+                        cmds.parent(local_xform, self.local_xform)
+                    
+                    local_driver = space.create_xform_group(local_group, 'driver')
+                    
+                    attr.connect_translate(driver, local_driver)
+                    attr.connect_rotate(driver, local_driver)
+                    attr.connect_scale(driver, local_driver)
                 
-                local_driver = space.create_xform_group(local_group, 'driver')
                 
-                attr.connect_translate(driver, local_driver)
-                attr.connect_rotate(driver, local_driver)
-                attr.connect_scale(driver, local_driver)
+                    if self.connect_xform:
+                        attr.connect_transforms(xform, local_xform)
                 
+                    if not self.local_xform:
+                        cmds.parent(local_xform, self.setup_group)
                 
-                if self.connect_xform:
-                    attr.connect_transforms(xform, local_xform)
-                
-                if not self.local_xform:
-                    cmds.parent(local_xform, self.setup_group)
-                
-            attr.connect_scale(control.get(), joint)
+            if not self.attach_joints:
+                attr.connect_scale(control.get(), joint)
             
             cmds.parent(xform, self.control_group)
 
@@ -1003,7 +1007,8 @@ class GroundRig(JointRig):
             space.MatchSpace(self.joints[0], xform).translation_rotation()
         
         if self.joints:   
-            cmds.parentConstraint(control.get(), self.joints[0])
+            if self.attach_joints:
+                cmds.parentConstraint(control.get(), self.joints[0])
         
 
 
@@ -1042,6 +1047,7 @@ class FkRig(BufferRig):
         self.skip_controls = []
         self.offset_rotation = []
         self.inc_offset_rotation = {}
+        
 
     def _create_control(self, sub = False):
         
@@ -1214,6 +1220,9 @@ class FkRig(BufferRig):
             
     def _attach(self, control, target_transform):
         
+        if not self.attach_joints:
+            return
+        
         if self.create_sub_controls:
             control = self.control_dict[control]['subs'][-1]
         
@@ -1341,6 +1350,9 @@ class FkLocalRig(FkRig):
         
     def _attach(self, source_transform, target_transform):
         
+        if not self.attach_joints:
+            return
+        
         local_group, local_xform = space.constrain_local(source_transform, target_transform, scale_connect = self.rig_scale)
         
         if not self.local_parent:
@@ -1441,6 +1453,9 @@ class FkScaleRig(FkRig):
             cmds.parent(offset_scale_offset, parent[0])
           
     def _attach(self, control, target_transform):
+        
+        if not self.attach_joints:
+            return
         
         if self.create_sub_controls:
             control = self.control_dict[control]['subs'][-1]
