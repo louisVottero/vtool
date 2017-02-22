@@ -7,7 +7,6 @@ from vtool import util_file
 from vtool import qt_ui, qt
 
 import process
-from PySide.QtGui import QTreeWidgetItem
 
 
 
