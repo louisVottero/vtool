@@ -18,11 +18,15 @@ class PinXform(object):
     def __init__(self, xform_name):
         self.xform = xform_name
         self.delete_later = []
+        self.lock_state = {}
 
     def pin(self):
         """
         Create the pin constraints on parent and children.
         """
+        
+        self.lock_state = {}
+        
         parent = cmds.listRelatives(self.xform, p = True, f = True)
         
         if parent:
@@ -52,12 +56,19 @@ class PinXform(object):
         
         for child in children:
             
+            if not core.is_transform(child):
+                continue
+            
             pin = cmds.duplicate(child, po = True, n = core.inc_name('pin1'))[0]
             
             try:
                 cmds.parent(pin, w = True)
             except:
                 pass
+            
+            lock_state_inst = attr.LockNodeState(child)
+            self.lock_state[child] = lock_state_inst
+            lock_state_inst.unlock()
             
             constraint = cmds.parentConstraint(pin, child, mo = True)[0]
             self.delete_later.append(constraint)
@@ -69,6 +80,10 @@ class PinXform(object):
         """
         if self.delete_later:
             cmds.delete(self.delete_later)
+            
+            for lock_state in self.lock_state:
+                self.lock_state[lock_state].restore_initial()
+                
         
     def get_pin_nodes(self):
         """
@@ -604,11 +619,21 @@ class OrientJoint(object):
             
             if grand_parent:
                 self.grand_parent = grand_parent[0]
+        
+        children = []
                 
-        children = cmds.listRelatives(self.joint, f = True)
+        children_joints = cmds.listRelatives(self.joint, f = True, type = 'joint')
+        children_transforms = cmds.listRelatives(self.joint, f = True, type = 'transform')
+        
+        if children_joints:
+            children += children_joints 
+        if children_transforms:
+            children += children_transforms
         
         if children:
             self.child = children[0]
+            if len(children) > 1:
+                self.child2 = children[1]
             
             grand_children = cmds.listRelatives(self.child, f = True)
             
@@ -688,7 +713,9 @@ class OrientJoint(object):
             return plane_group
         
         if index == 5:
-            self.up_space_type = 'none'
+            self.up_space_type = 'object'
+            child_group = self._get_position_group(self.child2)
+            return child_group
             
     def _get_local_group(self, transform):
         
@@ -774,14 +801,19 @@ class OrientJoint(object):
     def _freeze(self):
         children = cmds.listRelatives(self.joint, f = True)
         
+        found_children = []
+        
         if children:
-            
-            children = cmds.parent(children, w = True)
+            for child in children:
+                if core.is_transform(child):
+                    
+                    child_parented = cmds.parent(child, w = True)[0]
+                    found_children.append(child_parented)
         
         cmds.makeIdentity(self.joint, apply = True, r = True, s = True)
         
         if children:
-            cmds.parent(children, self.joint)
+            cmds.parent(found_children, self.joint)
         
       
     def set_aim_vector(self, vector_list):
@@ -877,6 +909,7 @@ class OrientJoint(object):
             
             if type(self.aim_up_at) == int: 
                 self.aim_up_at = self._get_aim_up_at(self.aim_up_at)
+                
         
         self._create_aim()
         
@@ -1292,7 +1325,7 @@ class TranslateSpaceScale(object):
             
             cmds.setAttr('%s.colorIfTrueR' % condition, self.z_space[0] * negate)
             cmds.setAttr('%s.colorIfFalseR' % condition, self.z_space[1] * negate) 
-    
+
 def has_constraint(transform):
     """
     Find out if a constraint is affecting the transform.
@@ -1602,6 +1635,7 @@ def get_group_in_plane(transform1, transform2, transform3):
     cmds.parent(pole_group2, pole_group)
     cmds.makeIdentity(pole_group2, apply = True, t = True, r = True )
     cmds.parent(pole_group2, w = True)
+    
     cmds.delete(pole_group)
     
     return pole_group2
@@ -2374,6 +2408,10 @@ def orient_attributes(scope = None):
         scope = core.get_top_dag_nodes()
     
     for transform in scope:
+        
+        if not core.is_transform(transform):
+            continue
+        
         relatives = cmds.listRelatives(transform, f = True)
         
         if not cmds.objExists('%s.ORIENT_INFO' % transform):
@@ -2534,9 +2572,20 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
        
         if cmds.objExists(other):
             
+            translateX_lock = attr.LockState('%s.translateX' % other)
+            translateY_lock = attr.LockState('%s.translateY' % other)
+            translateZ_lock = attr.LockState('%s.translateZ' % other)
+            
+            translateX_lock.unlock()
+            translateY_lock.unlock()
+            translateZ_lock.unlock()
+            
+            
             xform = cmds.xform(transform, q = True, ws = True, t = True)
             
             if cmds.nodeType(other) == 'joint':
+                
+                
                 
                 radius = cmds.getAttr('%s.radius' % transform)
                 
@@ -2566,6 +2615,10 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
                     cmds.setAttr('%s.localPositionX' % transform, (local_position[0] * -1))
                     cmds.setAttr('%s.localPositionY' % transform, local_position[1])
                     cmds.setAttr('%s.localPositionZ' % transform, local_position[2])
+                    
+            translateX_lock.restore_initial()
+            translateY_lock.restore_initial()
+            translateZ_lock.restore_initial()
                     
 def mirror_invert(transform, other = None):
     """
