@@ -587,7 +587,25 @@ class Process(object):
         
         if hasattr(instance, 'import_data'):
             instance.import_data()
+    
+    def open_data(self, name):
+        path = self.get_data_path()
+        
+        data_folder_name = self.get_data_folder(name)
+        
+        if not util_file.is_dir(data_folder_name):
+            util.show('%s data does not exist in %s' % (name, self.get_name()) )
+            return
             
+        data_folder = data.DataFolder(name, path)
+        
+        instance = data_folder.get_folder_data_instance()
+        
+        if hasattr(instance, 'open'):
+            instance.open()
+        if not hasattr(instance, 'open'):
+            util.warning('Could not open data %s in process %s.  No open option.' % (name, self.process_name))
+    
     def save_data(self, name, comment = ''):
         """
         Convenience function that tries to run the save function function found on the data_type instance for the specified data folder. Not all data type instances have a save function. 
