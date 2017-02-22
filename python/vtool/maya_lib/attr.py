@@ -393,6 +393,61 @@ class LockState(object):
         """
         cmds.setAttr( self.attribute, l = self.lock_state)
 
+class LockNodeState(LockState):
+    """
+    This saves the lock state of the node, so that all attributes lock state can be reset after editing.
+    
+    Args:
+        attribute (str): "node.attribute"
+    """
+    def __init__(self, node):
+        
+        self.node = node
+        self.attributes = cmds.listAttr(node)
+        
+        self.lock_state = {}
+        
+        for attribute in self.attributes:
+            try:
+                self.lock_state[attribute] = cmds.getAttr('%s.%s' % (node, attribute), l = True)
+            except:
+                pass
+        
+    def unlock(self):
+        """
+        Unlock the attribute.
+        """
+        
+        for attribute in self.attributes:
+            try:
+                attribute_name = '%s.%s' % (self.node, attribute)
+                cmds.setAttr( attribute_name, l = False)
+            except:
+                pass
+        
+    def lock(self):
+        """
+        Lock the attribute.
+        """
+        for attribute in self.attributes:
+            try:
+                attribute_name = '%s.%s' % (self.node, attribute)
+                cmds.setAttr( attribute_name, l = True)
+            except:
+                pass
+        
+    def restore_initial(self):
+        """
+        Restore the initial lock state.
+        """
+        
+        for attribute in self.attributes:
+            try:
+                attribute_name = '%s.%s' % (self.node, attribute)
+                cmds.setAttr( attribute_name, l = self.lock_state[attribute])
+            except:
+                pass
+
 class RemapAttributesToAttribute(object):
     """
     Create a slider switch between multiple attributes.
@@ -597,7 +652,8 @@ class OrientJointAttributes(object):
                              'parent_rotate',
                              'child_position',
                              'parent_position',
-                             'triangle_plane'])
+                             'triangle_plane',
+                             '2nd_child_position'])
         
         enum.set_locked(False)
         enum.create(self.joint)
