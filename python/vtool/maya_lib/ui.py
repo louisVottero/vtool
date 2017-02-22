@@ -105,20 +105,7 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         super(ToolManager, self).__init__()
         
     def _build_widgets(self):
-        
-        #self.tab_widget = qt.QTabWidget()
-        #self.tab_widget.setTabPosition(self.tab_widget.West)
-        
-        
-        
-        #self.setDockOptions( self.AnimatedDocks | self.AllowNestedDocks | self.AllowTabbedDocks)
-        
-        
-        
-        #self.setAnimated(True)
-        #self.setDockNestingEnabled(True)
-        #self.setTabPosition(qt.QtCore.Qt.DockWidgetArea, qt.QTabWidget.West)
-        
+
         self.main_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
         
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
@@ -148,34 +135,6 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         self.add_tab(self.fx_widget, 'FX')
         
         self.default_docks[1].raise_()
-        
-        
-        
-        #self.tab_widget.setCurrentIndex(1)
-        
-        #self.tab_widget.setMovable(True)
-        #self.tab_widget.setTabsClosable(True)
-        
-        
-        
-        
-        #self.main_layout.addWidget(self.tab_widget)
-        
-        #self.tab_widget.tabBar().tabButton(0, qt.QTabBar.RightSide).hide()
-        #self.tab_widget.tabBar().tabButton(1, qt.QTabBar.RightSide).hide()
-        #self.tab_widget.tabBar().tabButton(2, qt.QTabBar.RightSide).hide()
-        #self.tab_widget.tabBar().tabButton(3, qt.QTabBar.RightSide).hide()
-        
-        ###temporary
-        ##self.tab_widget.tabBar().tabButton(1, qt.QTabBar.RightSide).hide()
-        
-        #self.tab_widget.tabCloseRequested.connect(self._close_tab)
-        
-
-            
-                #child.setMovable(True)
-                #child.currentChanged.connect(self._current_tab_changed)
-                #child.tabMoved.connect(self._tab_moved)
         
     def _get_tab_bar(self):
         return self.dock_window._get_tab_bar()
@@ -208,23 +167,6 @@ class ToolManager(ui_core.MayaDirectoryWindow):
     def add_tab(self, widget, name):
         
         dock = self.add_dock(widget, name)
-        
-        """
-        tab_count = self.tab_widget.count()
-        
-        for inc in range(0, tab_count):
-            tab_title = self.tab_widget.tabText(inc)
-            
-            if tab_title == name:
-                self.tab_widget.removeTab(inc)
-                break
-                
-        self.tab_widget.addTab(widget, name)
-        
-        tab_count = self.tab_widget.count()
-            
-        self.tab_widget.setCurrentIndex( (tab_count-1) )
-        """
         
         dock.setFeatures(dock.DockWidgetMovable| dock.DockWidgetFloatable)
         self.default_docks.append(dock)
