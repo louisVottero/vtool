@@ -9,6 +9,8 @@ if vtool.util.is_in_maya():
 import core
 import attr
 
+import re
+
 #do not import geo
 
 class PinXform(object):
@@ -1378,6 +1380,42 @@ def zero_out_transform_channels(transform):
     cmds.setAttr('%s.rotateZ' % transform, 0)
     
 
+def get_hierarchy_path(top_transform, btm_transform):
+    
+    
+    parent = cmds.listRelatives(btm_transform, p = True)
+    if parent:
+        parent = parent[0]
+            
+    path = []
+    path.append(btm_transform)
+    
+    parent_found = False
+    
+    while parent:
+        
+        path.append(parent)
+        
+        if parent_found:
+            break
+        
+        parent = cmds.listRelatives(parent, p = True)
+        
+        
+        
+        if parent:
+            parent = parent[0]
+            
+        if parent == top_transform:
+            parent_found = True
+    
+    if not parent_found:
+        return
+    
+    if parent_found:
+        path.reverse()
+        return path
+
 def get_center(transform):
     """
     Get the center of a selection. Selection can be component or transform.
@@ -2426,6 +2464,58 @@ def orient_attributes(scope = None):
             
             if relatives:
                 orient_attributes(relatives)
+
+def add_orient_joint(joint):
+    
+    if not cmds.nodeType(joint) == 'joint':
+        return
+    
+    
+    found = re.search('(\w+)_(\w+)', joint)
+    
+    aim_name = 'aim_%s' % joint
+    up_name = 'up_%s' % joint
+    
+    if found:
+        if len(found.groups()) == 2:
+            aim_name = joint[:-2] + '_aim' + joint[-2:]
+            up_name = joint[:-2] + '_up' + joint[-2:] 
+            
+    attr.add_orient_attributes(joint)
+    
+    current_radius = cmds.getAttr('%s.radius' % joint)
+    
+    cmds.select(cl = True)
+    aim_joint = cmds.joint(n = aim_name)
+    cmds.select(cl = True)
+    up_joint = cmds.joint(n = up_name)
+    
+    MatchSpace(joint, aim_joint).translation()
+    MatchSpace(joint, up_joint).translation()
+    
+    cmds.parent(aim_joint, up_joint, joint)
+    
+    cmds.makeIdentity(aim_joint, apply = True, r = True, jo = True)
+    cmds.makeIdentity(up_joint, apply = True, r = True, jo = True)
+    
+    attr.set_color(aim_joint, 18)
+    attr.set_color(up_joint, 14)
+    
+    cmds.move(0.1, 0,0, aim_joint, r = True, os = True)
+    cmds.move(0, 0.1,0, up_joint, r = True, os = True)
+    
+    attr.lock_rotate_attributes(aim_joint)
+    attr.lock_scale_attributes(aim_joint)
+    
+    attr.lock_rotate_attributes(up_joint)
+    attr.lock_scale_attributes(up_joint)
+    
+    cmds.setAttr('%s.radius' % aim_joint, (current_radius/2.0))
+    cmds.setAttr('%s.radius' % up_joint, (current_radius/2.0))
+    
+    cmds.setAttr('%s.aimUpAt' % joint, 5)
+    
+    
 
 def find_transform_right_side(transform):
     """
