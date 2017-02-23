@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from random import uniform
+
 import vtool.util
 import api
 
@@ -10,285 +12,16 @@ import core
 import space
 import attr
 
-class Octree(object):
-        
-    def _get_bounding_box(self, mesh):
-        bounding_box = cmds.exactWorldBoundingBox(mesh)
-        center = cmds.objectCenter(mesh, gl = True)
-                
-        large_value = -1
-                
-        inc = 0
-                
-        for box_value in bounding_box:
-            
-            value = box_value - center[inc]
-            
-            if value > 0:
-                if value > large_value:
-                    large_value = value
-                        
-            inc += 1
-            if inc >= 3:
-                inc = 0
-        
-        max_value = [large_value] * 3
-        min_value = [large_value*-1] * 3
-        
-        max_value = [max_value[0] + center[0],max_value[1] + center[1],max_value[2] + center[2]]
-        min_value = [min_value[0] + center[0],min_value[1] + center[1],min_value[2] + center[2]]
-                
-        return min_value + max_value + center
-                    
-    def create(self, mesh):
-        bounding_box = self._get_bounding_box(mesh)
-        
-        self.top_node = OctreeNode(bounding_box)
-        
-        mesh_fn = api.IterateGeometry(mesh)
-        points = mesh_fn.get_points_as_list()
-        
-        for inc in range(0, len(points)):
-            vertex_position = points[inc]
-            self.add_vertex('%s.vtx[%s]' % (mesh, inc), vertex_position)
-            
-        self.top_node.sort_mesh_vertex()        
-            
-    def add_vertex(self, vertex_name, vertex_position):    
-        self.top_node.add_vertex(vertex_name, vertex_position)
-        
-                
-class OctreeNode(object):
-    
-    #sortMeshDepth = 50 
-    #sortMeshIncrement = 0
-    
-    def __init__(self, boundingBoxData):
-        self.min = boundingBoxData[0:3]
-        self.max = boundingBoxData[3:6]
-        self.center = boundingBoxData[6:9]
-        self.children = []
-        self.parent = None
-        self.verts = []
-        self.child_verts = []
-        
-    def _snap_to_bounding_box(self, vector):
-        new_vector = list(vector)
-        
-        min_value = self.min
-        max_value = self.max
-        
-        for inc in range(0,3):
-            if vector[inc] < min_value[inc]:
-                new_vector[inc] = min_value[inc]
-            if vector[inc] > max_value[inc]:
-                new_vector[inc] = max_value[inc]
-                
-        return new_vector
-            
-        
-    def _is_vector_in_range(self, min_value, max_value, vector):
-        
-        for inc in range(0,3):
-        
-            if vector[inc] < min_value[inc] or vector[inc] > max_value[inc]:
-                return False
-          
-        return True
-        
-    def _get_verts_in_range(self, min_value, max_value):
-        found = []
-        
-        if self.verts:
-            for vertex in self.verts:
-                vector = vertex[1] 
-                
-                if self._is_vector_in_range(min_value, max_value, vector):
-                    
-                    found_vert = False
-                    for child_vert in self.child_verts:
-                    
-                        if vertex[0] == child_vert:
-                            found_vert = True
-                            break
-                        
-                    if not found_vert:
-                        found.append(vertex)        
-        
-        return found
-        
-    def _create_child(self, min_value, max_value, verts):
-        
-        mid_point = vtool.util.get_midpoint(min_value, max_value)
-        
-        bounding_box = min_value + max_value + mid_point
-        
-        self.children.append( OctreeNode(bounding_box) )
-                               
-        for vertex in verts:            
-            self.children[-1].add_vertex(vertex[0], vertex[1])
-            self.child_verts.append(vertex[0])
-            
-        if len(self.child_verts) == 1:
-            if self.child_verts[0][0] == 'body_C.vtx[7916]':
-                goo = self.createCube()
-                cmds.rename(goo, 'panzy')
-    
-    def create_cube(self):
-        cube = cmds.polyCube(ch = 0)[0]
-        min_value = self.min
-        max_value = self.max
-                
-        cmds.move(min_value[0], min_value[1], min_value[2], '%s.vtx[0]' % cube , ws = True)
-        cmds.move(min_value[0], min_value[1], max_value[2], '%s.vtx[1]' % cube , ws = True )
-        cmds.move(min_value[0], max_value[1], min_value[2], '%s.vtx[2]' % cube , ws = True)
-        cmds.move(min_value[0], max_value[1], max_value[2], '%s.vtx[3]' % cube , ws = True)
-        cmds.move(max_value[0], max_value[1], min_value[2], '%s.vtx[4]' % cube , ws = True)
-        cmds.move(max_value[0], max_value[1], max_value[2], '%s.vtx[5]' % cube , ws = True)        
-        cmds.move(max_value[0], min_value[1], min_value[2], '%s.vtx[6]' % cube , ws = True)
-        cmds.move(max_value[0], min_value[1], max_value[2], '%s.vtx[7]' % cube , ws = True)
-        
-        
-        return cube
-        #cluster = cmds.cluster( self.get_verts() )
-        #cmds.parent(cluster[1], cube)
-        
-    def subdivide(self):
-                
-        top_row1 = self.center + self.max
-        
-        top_row2 = [self.min[0], self.center[1], self.center[2], 
-                   self.center[0], self.max[1], self.max[2]]
-        
-        top_row3 = [self.min[0], self.center[1], self.min[2], 
-                   self.center[0], self.max[1], self.center[2]]
-                   
-        top_row4 = [self.center[0], self.center[1], self.min[2], 
-                   self.max[0], self.max[1], self.center[2]]
-                   
-        btm_row1 = self.min + self.center
-        
-        btm_row2 = [self.center[0], self.min[1], self.min[2],
-                   self.max[0], self.center[1], self.center[2]]
-        
-        btm_row3 = [self.min[0], self.min[1], self.center[2],
-                   self.center[0], self.center[1], self.max[2]]
-        
-        btm_row4 = [self.center[0], self.min[1], self.center[2],
-                   self.max[0], self.center[1], self.max[2]]
-        
-        boundings = []
-        boundings.append(top_row1)
-        boundings.append(top_row2)
-        boundings.append(top_row3)
-        boundings.append(top_row4)
-        boundings.append(btm_row1)
-        boundings.append(btm_row2)
-        boundings.append(btm_row3)
-        boundings.append(btm_row4)
-                
-        for bounding in boundings:
-        
-            min_value = bounding[0:3]
-            max_value = bounding[3:6]
-            
-            verts = self._get_verts_in_range(min_value, max_value)
-            
-            if verts:
-                self._create_child(bounding[0:3],bounding[3:6], verts)      
-        
-    def set_parent(self, parent_octree):
-        self.parent = parent_octree
-        
-    def get_verts(self):
-        found = []
-        
-        for vert in self.verts:
-            found.append(vert[0])
-            
-        return found
-    
-    def add_vertex(self, vertex_name, vertex_position):
-        self.verts.append([vertex_name, vertex_position])
-    
-    def has_verts(self):
-        if self.verts:
-            return True
-        
-        if not self.verts:
-            return False
-        
-    def vert_count(self):
-        return len( self.verts )
-        
-    def has_children(self):
-        if self.children:
-            return True
-        
-        if not self.children:
-            return False
-        
-    def find_closest_child(self, three_number_list):
-        
-        closest_distance = 1000000000000000000000000000000
-        found_child = None
-        
-        if self.has_children():
-            for child in self.children:
-                if self._is_vector_in_range(child.min, child.max, three_number_list):
-                    return child
-                    
-                if child.has_children():
-                    distance = vtool.util.get_distance(child.center, three_number_list)            
-                
-                    if distance < 0.001:
-                        return child
-                
-                    if distance < closest_distance:
-                        closest_distance = distance
-                    
-                        found_child = child
-                    
-        return found_child
-        
-    def find_closest_vertex(self, three_number_list):
-        if self.vert_count() == 1:
-            return self
-        
-        child = None
-        inc = 0
-        last_found = self
-        vector = self._snap_to_bounding_box(three_number_list)
-        
-        while not child:
-            
-            if last_found == None:
-                break
-            
-            child = last_found.find_closest_child(vector)
-            
-            if not child:
-                break
-            
-            if child:
-                last_found = child
-                child = None
-            
-            if inc > 100:
-                break
-            
-            inc += 1
-            
-        return last_found.verts[0][0]
-      
-    def sort_mesh_vertex(self):
-        
-        if self.has_verts():
-            self.subdivide()
-            
-            if self.vert_count() > 1:
-                for child in self.children:
-                    child.sort_mesh_vertex()
+RENDER_DEFAULT_CAST_SHADOWS = True
+RENDER_DEFAULT_RECEIVE_SHADOWS = True
+RENDER_DEFAULT_HOLD_OUT = False
+RENDER_DEFAULT_MOTION_BLUR = True
+RENDER_DEFAULT_PRIMARY_VISIBILITY = True
+RENDER_DEFAULT_SMOOTH_SHADING = True
+RENDER_DEFAULT_VISIBLE_IN_REFLECTIONS = True
+RENDER_DEFAULT_VISIBLE_IN_REFRACTIONS = True
+RENDER_DEFAULT_DOUBLE_SIDED = True
+RENDER_DEFAULT_OPPOSITE = False
 
 class MeshTopologyCheck(object):
     
@@ -946,6 +679,23 @@ def get_edge_path(edges = []):
     
     return cmds.ls(sl = True, l = True)
 
+def get_vertices(mesh):
+    
+    mesh = get_mesh_shape(mesh)
+    
+    meshes = core.get_shapes(mesh, 'mesh', no_intermediate=True)
+    
+    found = []
+    
+    for mesh in meshes:
+        
+        verts = cmds.ls('%s.vtx[*]' % mesh)
+        
+        if verts:
+            found += verts
+    
+    return found
+
 def get_triangles(mesh):
     
     mesh = get_mesh_shape(mesh)
@@ -1046,17 +796,6 @@ def get_render_stats(node_name):
             render_list.append( [stat, value])
     
     return render_list
-
-RENDER_DEFAULT_CAST_SHADOWS = True
-RENDER_DEFAULT_RECEIVE_SHADOWS = True
-RENDER_DEFAULT_HOLD_OUT = False
-RENDER_DEFAULT_MOTION_BLUR = True
-RENDER_DEFAULT_PRIMARY_VISIBILITY = True
-RENDER_DEFAULT_SMOOTH_SHADING = True
-RENDER_DEFAULT_VISIBLE_IN_REFLECTIONS = True
-RENDER_DEFAULT_VISIBLE_IN_REFRACTIONS = True
-RENDER_DEFAULT_DOUBLE_SIDED = True
-RENDER_DEFAULT_OPPOSITE = False
 
 def check_render_stats_are_default(node_name):
     """
@@ -1167,6 +906,22 @@ def set_render_stats_double_sided_default(node_name):
         if stat == 'opposite':
             cmds.setAttr(attr, RENDER_DEFAULT_OPPOSITE)
 
+def create_mesh_from_bounding_box(min_vector, max_vector, name):
+    
+    cube = cmds.polyCube(ch = 0)[0]
+    cmds.rename(cube, name)
+            
+    cmds.move(min_vector[0], min_vector[1], min_vector[2], '%s.vtx[0]' % cube , ws = True)
+    cmds.move(min_vector[0], min_vector[1], max_vector[2], '%s.vtx[1]' % cube , ws = True )
+    cmds.move(min_vector[0], max_vector[1], min_vector[2], '%s.vtx[2]' % cube , ws = True)
+    cmds.move(min_vector[0], max_vector[1], max_vector[2], '%s.vtx[3]' % cube , ws = True)
+    cmds.move(max_vector[0], max_vector[1], min_vector[2], '%s.vtx[4]' % cube , ws = True)
+    cmds.move(max_vector[0], max_vector[1], max_vector[2], '%s.vtx[5]' % cube , ws = True)
+    cmds.move(max_vector[0], min_vector[1], min_vector[2], '%s.vtx[6]' % cube , ws = True)
+    cmds.move(max_vector[0], min_vector[1], max_vector[2], '%s.vtx[7]' % cube , ws = True)
+    
+    return cube
+
 def create_shape_from_shape(shape, name = 'new_shape'):
     """
     Duplication in maya can get slow in reference files. 
@@ -1216,10 +971,380 @@ def create_texture_reference_object(mesh):
     cmds.setAttr( '%s.template' % shapes[0],  True )
     return new_mesh
 
-
-
-              
+def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
+    """
+    Create joints on the given faces.
+    
+    Args:
+        mesh (str): The name of a mesh.
+        faces (list): A list of face ids to create joints on.
+        follow (bool): Wether the joints should follow.
+        name (str): The name to applied to created nodes
+        
+    Returns: 
+        list: Either the list of created joints, or if follow = True then [joints, follicles] 
+    """
+    mesh = get_mesh_shape(mesh)
+    
+    centers = []
+    face_ids = []
+     
+    if faces:
+        for face in faces:
             
+            if type(face) == str or type(face) == unicode:
+                sub_faces = cmds.ls(face, flatten = True)
+                
+                
+                
+                for sub_face in sub_faces:
+                    id_value = vtool.util.get_last_number(sub_face)
+                    
+                    face_ids.append(id_value) 
+        
+        if type(face) == int:
+            face_ids.append(face)
+           
+    if face_ids:
+        centers = []
+        
+        for face_id in face_ids:
+            
+            center = get_face_center(mesh, face_id)
+            centers.append(center)
+    
+    if not face_ids:
+        centers = get_face_centers(mesh)
+    
+    
+    joints = []
+    follicles = []
+    
+    for center in centers:
+        cmds.select(cl = True)
+        
+        if not name:
+            name = 'joint_mesh_1'
+        
+        joint = cmds.joint(p = center, n = core.inc_name(name))
+        joints.append(joint)
+        
+        if follow:
+            follicle = attach_to_mesh(joint, mesh, hide_shape = True, constrain = False, rotate_pivot = True)
+            
+            follicles.append(follicle)
+    
+    if follicles:
+        return joints, follicles
+    if not follicles:
+        return joints
+
+
+def create_empty_follicle(description, uv = [0,0]):
+    """
+    Create a follicle
+    
+    Args:
+        description (str): The description of the follicle.
+        uv (list): eg. [0,0]
+        
+    Returns:
+        str: The name of the created follicle.
+    """
+
+    follicleShape = cmds.createNode('follicle')
+    cmds.hide(follicleShape)
+    
+    follicle = cmds.listRelatives(follicleShape, p = True)[0]
+    
+    cmds.setAttr('%s.inheritsTransform' % follicle, 0)
+    
+    if not description:
+        follicle = cmds.rename(follicle, core.inc_name('follicle_1'))
+    if description:
+        follicle = cmds.rename(follicle, core.inc_name('follicle_%s' % description))
+    
+    cmds.setAttr('%s.parameterU' % follicle, uv[0])
+    cmds.setAttr('%s.parameterV' % follicle, uv[1])
+    
+    return follicle   
+
+def create_mesh_follicle(mesh, description = None, uv = [0,0]):
+    """
+    Create a follicle on a mesh
+    
+    Args:
+        mesh (str): The name of the mesh to attach to.
+        description (str): The description of the follicle.
+        uv (list): eg. [0,0] This corresponds to the uvs of the mesh.
+        
+    Returns:
+        str: The name of the created follicle.
+    """
+
+    
+    follicle = create_empty_follicle(description, uv)
+    
+    shape = cmds.listRelatives(follicle, shapes = True)[0]
+        
+    cmds.connectAttr('%s.outMesh' % mesh, '%s.inputMesh' % follicle)
+    cmds.connectAttr('%s.worldMatrix' % mesh, '%s.inputWorldMatrix' % follicle)
+    
+    cmds.connectAttr('%s.outTranslate' % shape, '%s.translate' % follicle)
+    cmds.connectAttr('%s.outRotate' % shape, '%s.rotate' % follicle)
+    
+    return follicle
+    
+def create_surface_follicle(surface, description = None, uv = [0,0]):
+    """
+    Create a follicle on a surface
+    
+    Args:
+        surface (str): The name of the surface to attach to.
+        description (str): The description of the follicle.
+        uv (list): eg. [0,0] This corresponds to the uvs of the mesh.
+        
+    Returns:
+        str: The name of the created follicle.
+    """    
+    
+    follicle = create_empty_follicle(description, uv)
+    
+    shape = cmds.listRelatives(follicle, shapes = True)[0]
+        
+    cmds.connectAttr('%s.local' % surface, '%s.inputSurface' % follicle)
+    cmds.connectAttr('%s.worldMatrix' % surface, '%s.inputWorldMatrix' % follicle)
+    
+    cmds.connectAttr('%s.outTranslate' % shape, '%s.translate' % follicle)
+    cmds.connectAttr('%s.outRotate' % shape, '%s.rotate' % follicle)
+    
+    return follicle
+
+@core.undo_chunk
+def create_oriented_joints_on_curve(curve, count = 20, description = None):
+    """
+    Create joints on curve that are oriented to aim at child.
+    
+    Args:
+        curve (str): The name of a curve
+        count (int): The number of joints.
+        description (str): The description to give the joints.
+        rig (bool): Wether to rig the joints to the curve.
+        
+    Returns:
+        list: The names of the joints created. If rig = True, than return [joints, ik_handle] 
+    """
+    if not description:
+        description = 'curve'
+    
+    if count < 2:
+        return
+    
+    length = cmds.arclen(curve, ch = False)
+    cmds.select(cl = True)
+    start_joint = cmds.joint(n = 'joint_%sStart' % description)
+    
+    end_joint = cmds.joint(p = [length,0,0], n = 'joint_%sEnd' % description)
+    
+    if count > 3:
+        count = count -2
+    
+    joints = space.subdivide_joint(start_joint, end_joint, count, 'joint', description)
+    
+    joints.insert(0, start_joint)
+    joints.append(end_joint)
+    
+    new_joint = []
+    
+    for joint in joints:
+        new_joint.append( cmds.rename(joint, core.inc_name('joint_%s_1' % curve)) )
+    
+    ik = space.IkHandle(curve)
+    ik.set_start_joint(new_joint[0])
+    ik.set_end_joint(new_joint[-1])
+    ik.set_solver(ik.solver_spline)
+    ik.set_curve(curve)
+    
+    ik_handle = ik.create()
+    cmds.setAttr( '%s.dTwistControlEnable' % ik_handle, 1)
+    cmds.refresh()
+    cmds.delete(ik_handle)
+    
+    cmds.makeIdentity(new_joint[0], apply = True, r = True)
+    
+    return new_joint
+
+def transforms_to_nurb_surface(transforms, description = 'from_transforms', spans = -1, offset_axis = 'Y', offset_amount = 1):
+    """
+    Create a nurbs surface from a list of joints.  
+    Good for creating a nurbs surface that follows a spine or a tail.
+    
+    Args:
+        transforms (list): List of transforms
+        description (str): The description of the surface. Eg. 'spine', 'tail'
+        spans (int): The number of spans to give the final surface. If -1 the surface will have spans based on the number of transforms.
+        offset_axis (str): The axis to offset the surface relative to the transform.  Can be 'X','Y', or 'Z'
+        offset_amount (int): The amount the surface offsets from the transforms.
+        
+    Returns:
+        str: The name of the nurbs surface.
+    """
+    
+    
+    transform_positions_1 = []
+    transform_positions_2 = []
+    
+    for transform in transforms:
+        
+        transform_1 = cmds.group(em = True)
+        transform_2 = cmds.group(em = True)
+        
+        space.MatchSpace(transform, transform_1).translation_rotation()
+        space.MatchSpace(transform, transform_2).translation_rotation()
+        
+        vector = vtool.util.get_axis_vector(offset_axis)
+        
+        
+        cmds.move(vector[0]*offset_amount, 
+                  vector[1]*offset_amount, 
+                  vector[2]*offset_amount, transform_1, relative = True, os = True)
+        
+        cmds.move(vector[0]*-offset_amount, 
+                  vector[1]*-offset_amount, 
+                  vector[2]*-offset_amount, transform_2, relative = True, os = True)
+        
+        pos_1 = cmds.xform(transform_1, q = True, ws = True, t = True)
+        pos_2 = cmds.xform(transform_2, q = True, ws = True, t = True)
+        
+        transform_positions_1.append(pos_1)
+        transform_positions_2.append(pos_2)
+        
+        cmds.delete(transform_1, transform_2)
+    
+    curve_1 = cmds.curve(p = transform_positions_1, degree = 1)
+    curve_2 = cmds.curve(p = transform_positions_2, degree = 1)  
+    
+    curves = [curve_1, curve_2]
+    
+    if not spans == -1:
+    
+        for curve in curves:
+            cmds.rebuildCurve(curve, ch = False, 
+                                        rpo = True,  
+                                        rt = 0, 
+                                        end = 1, 
+                                        kr = False, 
+                                        kcp = False, 
+                                        kep = True,  
+                                        kt = False, 
+                                        spans = spans, 
+                                        degree = 3, 
+                                        tol =  0.01)
+        
+    loft = cmds.loft(curve_1, curve_2, n ='nurbsSurface_%s' % description, ss = 1, degree = 1, ch = False)
+    
+    #cmds.rebuildSurface(loft,  ch = True, rpo = 1, rt = 0, end = 1, kr = 0, kcp = 0, kc = 0, su = 1, du = 1, sv = spans, dv = 3, fr = 0, dir = 2)
+      
+    cmds.delete(curve_1, curve_2)
+    
+    return loft[0]
+
+def transforms_to_curve(transforms, spans = None, description = 'from_transforms'):
+    """
+    Create a curve from a list of transforms.  Good for create the curve for a spine joint chain or a tail joint chain.
+    
+    Args:
+        transforms (list): A list of transforms to generate the curve from. Their positions will be used to place cvs.
+        spans (int): The number of spans the final curve should have.
+        description (str): The description to give the curve, eg. 'spine', 'tail'
+        
+    Returns:
+        str: The name of the curve.
+    """
+    transform_positions = []
+        
+    for joint in transforms:
+        joint_position = cmds.xform(joint, q = True, ws = True, t = True)
+        
+        transform_positions.append( joint_position )
+    
+    curve = cmds.curve(p = transform_positions, degree = 1)
+    
+    if spans:
+        cmds.rebuildCurve(curve, ch = False, 
+                                    rpo = True,  
+                                    rt = 0, 
+                                    end = 1, 
+                                    kr = False, 
+                                    kcp = False, 
+                                    kep = True,  
+                                    kt = False, 
+                                    spans = spans, 
+                                    degree = 3, 
+                                    tol =  0.01)
+        
+    
+    curve = cmds.rename( curve, core.inc_name('curve_%s' % description) )
+    
+    cmds.setAttr('%s.inheritsTransform' % curve, 0)
+    
+    return curve
+    
+def transform_to_polygon_plane(transform, size = 1, axis = 'Y'):
+    """
+    Create a single polygon face from the position and orientation of a transform.
+    
+    Args:
+        transform (str): The name of the transform where the plane should be created.
+        size (float): The size of the plane.
+        
+    Returns:
+        str: The name of the new plane.
+    """
+    
+    if type(axis) == type(str):
+        axis.upper()
+    
+    if axis == 'X':
+        axis_vector = [1,0,0]
+    if axis == 'Y':
+        axis_vector = [0,1,0]
+    if axis == 'Z':
+        axis_vector = [0,0,1]
+    
+    plane = cmds.polyPlane( w = size, h = size, sx = 1, sy = 1, ax = axis_vector, ch = 0)
+    
+    plane = cmds.rename(plane, core.inc_name('%s_plane' % transform))
+    
+    space.MatchSpace(transform, plane).translation_rotation()
+    
+    return plane
+
+def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
+    
+    meshes = []
+    
+    transforms = vtool.util.convert_to_sequence(transforms)
+    
+    for transform in transforms:
+        mesh = transform_to_polygon_plane(transform, size, axis = axis)
+        meshes.append(mesh)
+        
+    new_mesh = None
+        
+    if merge:
+        if len(transforms) > 1:
+            new_mesh = cmds.polyUnite(meshes, ch = False, mergeUVSets = True, name = name)
+            new_mesh = new_mesh[0]
+            
+        if len(transforms) == 1:
+            new_mesh = cmds.rename(meshes[0], name)
+        cmds.polyLayoutUV(new_mesh, lm = 1)
+        
+    if new_mesh:
+        return new_mesh
+    
+
 
 def expand_selected_edge_loop():
     
@@ -1594,80 +1719,7 @@ def follicle_to_mesh(transform, mesh, u = None, v = None, constrain = False, con
             
     
     return follicle
-
-def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
-    """
-    Create joints on the given faces.
     
-    Args:
-        mesh (str): The name of a mesh.
-        faces (list): A list of face ids to create joints on.
-        follow (bool): Wether the joints should follow.
-        name (str): The name to applied to created nodes
-        
-    Returns: 
-        list: Either the list of created joints, or if follow = True then [joints, follicles] 
-    """
-    mesh = get_mesh_shape(mesh)
-    
-    centers = []
-    face_ids = []
-     
-    if faces:
-        for face in faces:
-            
-            if type(face) == str or type(face) == unicode:
-                sub_faces = cmds.ls(face, flatten = True)
-                
-                
-                
-                for sub_face in sub_faces:
-                    id_value = vtool.util.get_last_number(sub_face)
-                    
-                    face_ids.append(id_value) 
-        
-        if type(face) == int:
-            face_ids.append(face)
-           
-    if face_ids:
-        centers = []
-        
-        for face_id in face_ids:
-            
-            center = get_face_center(mesh, face_id)
-            centers.append(center)
-    
-    if not face_ids:
-        centers = get_face_centers(mesh)
-    
-    
-    joints = []
-    follicles = []
-    
-    for center in centers:
-        cmds.select(cl = True)
-        
-        if not name:
-            name = 'joint_mesh_1'
-        
-        joint = cmds.joint(p = center, n = core.inc_name(name))
-        joints.append(joint)
-        
-        if follow:
-            follicle = attach_to_mesh(joint, mesh, hide_shape = True, constrain = False, rotate_pivot = True)
-            
-            
-            
-            #follicle = follicle_to_mesh(joint, mesh)
-            follicles.append(follicle)
-            #cmds.makeIdentity(joint, jo = True, apply = True, t = True, r = True, s = True)
-    
-    if follicles:
-        return joints, follicles
-    if not follicles:
-        return joints
-    
-
 def follicle_to_surface(transform, surface, u = None, v = None, constrain = False):
     """
     Follicle the transform to a nurbs surface.
@@ -1699,271 +1751,6 @@ def follicle_to_surface(transform, surface, u = None, v = None, constrain = Fals
     
     return follicle
 
-def create_empty_follicle(description, uv = [0,0]):
-    """
-    Create a follicle
-    
-    Args:
-        description (str): The description of the follicle.
-        uv (list): eg. [0,0]
-        
-    Returns:
-        str: The name of the created follicle.
-    """
-
-    follicleShape = cmds.createNode('follicle')
-    cmds.hide(follicleShape)
-    
-    follicle = cmds.listRelatives(follicleShape, p = True)[0]
-    
-    cmds.setAttr('%s.inheritsTransform' % follicle, 0)
-    
-    if not description:
-        follicle = cmds.rename(follicle, core.inc_name('follicle_1'))
-    if description:
-        follicle = cmds.rename(follicle, core.inc_name('follicle_%s' % description))
-    
-    cmds.setAttr('%s.parameterU' % follicle, uv[0])
-    cmds.setAttr('%s.parameterV' % follicle, uv[1])
-    
-    return follicle   
-
-def create_mesh_follicle(mesh, description = None, uv = [0,0]):
-    """
-    Create a follicle on a mesh
-    
-    Args:
-        mesh (str): The name of the mesh to attach to.
-        description (str): The description of the follicle.
-        uv (list): eg. [0,0] This corresponds to the uvs of the mesh.
-        
-    Returns:
-        str: The name of the created follicle.
-    """
-
-    
-    follicle = create_empty_follicle(description, uv)
-    
-    shape = cmds.listRelatives(follicle, shapes = True)[0]
-        
-    cmds.connectAttr('%s.outMesh' % mesh, '%s.inputMesh' % follicle)
-    cmds.connectAttr('%s.worldMatrix' % mesh, '%s.inputWorldMatrix' % follicle)
-    
-    cmds.connectAttr('%s.outTranslate' % shape, '%s.translate' % follicle)
-    cmds.connectAttr('%s.outRotate' % shape, '%s.rotate' % follicle)
-    
-    return follicle
-    
-def create_surface_follicle(surface, description = None, uv = [0,0]):
-    """
-    Create a follicle on a surface
-    
-    Args:
-        surface (str): The name of the surface to attach to.
-        description (str): The description of the follicle.
-        uv (list): eg. [0,0] This corresponds to the uvs of the mesh.
-        
-    Returns:
-        str: The name of the created follicle.
-    """    
-    
-    follicle = create_empty_follicle(description, uv)
-    
-    shape = cmds.listRelatives(follicle, shapes = True)[0]
-        
-    cmds.connectAttr('%s.local' % surface, '%s.inputSurface' % follicle)
-    cmds.connectAttr('%s.worldMatrix' % surface, '%s.inputWorldMatrix' % follicle)
-    
-    cmds.connectAttr('%s.outTranslate' % shape, '%s.translate' % follicle)
-    cmds.connectAttr('%s.outRotate' % shape, '%s.rotate' % follicle)
-    
-    return follicle
-
-def transforms_to_nurb_surface(transforms, description = 'from_transforms', spans = -1, offset_axis = 'Y', offset_amount = 1):
-    """
-    Create a nurbs surface from a list of joints.  
-    Good for creating a nurbs surface that follows a spine or a tail.
-    
-    Args:
-        transforms (list): List of transforms
-        description (str): The description of the surface. Eg. 'spine', 'tail'
-        spans (int): The number of spans to give the final surface. If -1 the surface will have spans based on the number of transforms.
-        offset_axis (str): The axis to offset the surface relative to the transform.  Can be 'X','Y', or 'Z'
-        offset_amount (int): The amount the surface offsets from the transforms.
-        
-    Returns:
-        str: The name of the nurbs surface.
-    """
-    
-    
-    transform_positions_1 = []
-    transform_positions_2 = []
-    
-    for transform in transforms:
-        
-        transform_1 = cmds.group(em = True)
-        transform_2 = cmds.group(em = True)
-        
-        space.MatchSpace(transform, transform_1).translation_rotation()
-        space.MatchSpace(transform, transform_2).translation_rotation()
-        
-        vector = vtool.util.get_axis_vector(offset_axis)
-        
-        
-        cmds.move(vector[0]*offset_amount, 
-                  vector[1]*offset_amount, 
-                  vector[2]*offset_amount, transform_1, relative = True, os = True)
-        
-        cmds.move(vector[0]*-offset_amount, 
-                  vector[1]*-offset_amount, 
-                  vector[2]*-offset_amount, transform_2, relative = True, os = True)
-        
-        pos_1 = cmds.xform(transform_1, q = True, ws = True, t = True)
-        pos_2 = cmds.xform(transform_2, q = True, ws = True, t = True)
-        
-        transform_positions_1.append(pos_1)
-        transform_positions_2.append(pos_2)
-        
-        cmds.delete(transform_1, transform_2)
-    
-    curve_1 = cmds.curve(p = transform_positions_1, degree = 1)
-    curve_2 = cmds.curve(p = transform_positions_2, degree = 1)  
-    
-    curves = [curve_1, curve_2]
-    
-    if not spans == -1:
-    
-        for curve in curves:
-            cmds.rebuildCurve(curve, ch = False, 
-                                        rpo = True,  
-                                        rt = 0, 
-                                        end = 1, 
-                                        kr = False, 
-                                        kcp = False, 
-                                        kep = True,  
-                                        kt = False, 
-                                        spans = spans, 
-                                        degree = 3, 
-                                        tol =  0.01)
-        
-    loft = cmds.loft(curve_1, curve_2, n ='nurbsSurface_%s' % description, ss = 1, degree = 1, ch = False)
-    
-    #cmds.rebuildSurface(loft,  ch = True, rpo = 1, rt = 0, end = 1, kr = 0, kcp = 0, kc = 0, su = 1, du = 1, sv = spans, dv = 3, fr = 0, dir = 2)
-      
-    cmds.delete(curve_1, curve_2)
-    
-    return loft[0]
-
-def transforms_to_curve(transforms, spans = None, description = 'from_transforms'):
-    """
-    Create a curve from a list of transforms.  Good for create the curve for a spine joint chain or a tail joint chain.
-    
-    Args:
-        transforms (list): A list of transforms to generate the curve from. Their positions will be used to place cvs.
-        spans (int): The number of spans the final curve should have.
-        description (str): The description to give the curve, eg. 'spine', 'tail'
-        
-    Returns:
-        str: The name of the curve.
-    """
-    transform_positions = []
-        
-    for joint in transforms:
-        joint_position = cmds.xform(joint, q = True, ws = True, t = True)
-        
-        transform_positions.append( joint_position )
-    
-    curve = cmds.curve(p = transform_positions, degree = 1)
-    
-    """
-    if not spans:
-        cmds.rebuildCurve(curve, ch = False, 
-                                    rpo = True,  
-                                    rt = 0, 
-                                    end = 1, 
-                                    kr = False, 
-                                    kcp = False, 
-                                    kep = True,  
-                                    kt = False,  
-                                    degree = 3, 
-                                    tol =  0.01)
-    """
-    if spans:
-        cmds.rebuildCurve(curve, ch = False, 
-                                    rpo = True,  
-                                    rt = 0, 
-                                    end = 1, 
-                                    kr = False, 
-                                    kcp = False, 
-                                    kep = True,  
-                                    kt = False, 
-                                    spans = spans, 
-                                    degree = 3, 
-                                    tol =  0.01)
-        
-    
-    curve = cmds.rename( curve, core.inc_name('curve_%s' % description) )
-    
-    cmds.setAttr('%s.inheritsTransform' % curve, 0)
-    
-    return curve
-    
-
-
-def transform_to_polygon_plane(transform, size = 1, axis = 'Y'):
-    """
-    Create a single polygon face from the position and orientation of a transform.
-    
-    Args:
-        transform (str): The name of the transform where the plane should be created.
-        size (float): The size of the plane.
-        
-    Returns:
-        str: The name of the new plane.
-    """
-    
-    if type(axis) == type(str):
-        axis.upper()
-    
-    if axis == 'X':
-        axis_vector = [1,0,0]
-    if axis == 'Y':
-        axis_vector = [0,1,0]
-    if axis == 'Z':
-        axis_vector = [0,0,1]
-    
-    plane = cmds.polyPlane( w = size, h = size, sx = 1, sy = 1, ax = axis_vector, ch = 0)
-    
-    plane = cmds.rename(plane, core.inc_name('%s_plane' % transform))
-    
-    space.MatchSpace(transform, plane).translation_rotation()
-    
-    return plane
-
-def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
-    
-    meshes = []
-    
-    transforms = vtool.util.convert_to_sequence(transforms)
-    
-    for transform in transforms:
-        mesh = transform_to_polygon_plane(transform, size, axis = axis)
-        meshes.append(mesh)
-        
-    new_mesh = None
-        
-    if merge:
-        if len(transforms) > 1:
-            new_mesh = cmds.polyUnite(meshes, ch = False, mergeUVSets = True, name = name)
-            new_mesh = new_mesh[0]
-            
-        if len(transforms) == 1:
-            new_mesh = cmds.rename(meshes[0], name)
-        cmds.polyLayoutUV(new_mesh, lm = 1)
-        
-    if new_mesh:
-        return new_mesh
-    
 
 def curve_to_nurb_surface(curve):
     pass
@@ -2303,78 +2090,6 @@ def get_point_from_curve_parameter(curve, parameter):
     """
     return cmds.pointOnCurve(curve, pr = parameter, ch = False)
 
-@core.undo_chunk
-def create_oriented_joints_on_curve(curve, count = 20, description = None):
-    """
-    Create joints on curve that are oriented to aim at child.
-    
-    Args:
-        curve (str): The name of a curve
-        count (int): The number of joints.
-        description (str): The description to give the joints.
-        rig (bool): Wether to rig the joints to the curve.
-        
-    Returns:
-        list: The names of the joints created. If rig = True, than return [joints, ik_handle] 
-    """
-    if not description:
-        description = 'curve'
-    
-    if count < 2:
-        return
-    
-    length = cmds.arclen(curve, ch = False)
-    cmds.select(cl = True)
-    start_joint = cmds.joint(n = 'joint_%sStart' % description)
-    
-    end_joint = cmds.joint(p = [length,0,0], n = 'joint_%sEnd' % description)
-    
-    if count > 3:
-        count = count -2
-    
-    joints = space.subdivide_joint(start_joint, end_joint, count, 'joint', description)
-    
-    joints.insert(0, start_joint)
-    joints.append(end_joint)
-    
-    new_joint = []
-    
-    for joint in joints:
-        new_joint.append( cmds.rename(joint, core.inc_name('joint_%s_1' % curve)) )
-    
-    ik = space.IkHandle(curve)
-    ik.set_start_joint(new_joint[0])
-    ik.set_end_joint(new_joint[-1])
-    ik.set_solver(ik.solver_spline)
-    ik.set_curve(curve)
-    
-    ik_handle = ik.create()
-    cmds.setAttr( '%s.dTwistControlEnable' % ik_handle, 1)
-    cmds.refresh()
-    cmds.delete(ik_handle)
-    
-    cmds.makeIdentity(new_joint[0], apply = True, r = True)
-    """
-    ik = space.IkHandle(curve)
-    ik.set_start_joint(new_joint[0])
-    ik.set_end_joint(new_joint[-1])
-    ik.set_solver(ik.solver_spline)
-    ik.set_curve(curve)
-    
-    ik_handle = ik.create()  
-    
-    #if not rig:
-    
-    cmds.refresh()
-    
-    cmds.delete(ik_handle)
-    """
-    return new_joint
-        
-    #if rig:
-    #    space.create_spline_ik_stretch(curve, new_joint, curve, create_stretch_on_off = False)    
-    #    return new_joint, ik_handle
-    
 def rebuild_curve(curve, spans, degree = 3):
     
     cmds.rebuildCurve( curve, ch = False,
@@ -2640,3 +2355,12 @@ def smooth_preview_all(bool_value = True):
          
         if intermediate == 0:
             smooth_preview(mesh, bool_value)
+            
+            
+def randomize_mesh_vertices(mesh, range_min = 0.0, range_max = 0.1):
+    #not tested
+    verts = get_vertices(mesh)
+    
+    for vert in verts:
+        cmds.move(uniform(range_min, range_max),uniform(range_min, range_max),uniform(range_min, range_max), vert, r = True)
+        
