@@ -527,8 +527,10 @@ class VersionFile(object):
                 if line_info_dict.has_key('user'):
                     user = line_info_dict['user']
                     user = user[1:-1]
-                    
-                version_file = version_paths[(version-1)]
+                
+                keys = version_paths.keys()
+                
+                version_file = version_paths[(version)]
                 version_file = join_path(self.filepath, '%s/%s' % (self.version_folder_name, version_file))
                 
                 file_size = get_filesize(version_file)
@@ -650,12 +652,15 @@ class VersionFile(object):
         quick_sort.set_follower_list(pass_files)
         pass_files = quick_sort.run()
         
+        pass_dict = {}
         
+        for inc in range(0, len(number_list)):
+            pass_dict[number_list[inc]] = pass_files[1][inc]
         
         if not return_version_numbers_also:
-            return pass_files[1]
+            return pass_dict
         if return_version_numbers_also:
-            return pass_files[1], pass_files[0]
+            return pass_dict, pass_files[0]
     
     def get_latest_version(self):
         """
@@ -1308,13 +1313,14 @@ def get_files_with_extension(extension, directory, fullpath = False):
     
     
     objects = os.listdir(directory)
-    for directory in objects:
-        filename, found_extension = os.path.splitext(directory)
+    
+    for filename_and_extension in objects:
+        filename, found_extension = os.path.splitext(filename_and_extension)
         if found_extension == '.%s' % extension:
             if not fullpath:
-                found.append(os.path.basename(directory))
+                found.append(filename_and_extension)
             if fullpath:
-                found.append(directory)
+                found.append(join_path(directory, filename_and_extension))
             
     return found
 
