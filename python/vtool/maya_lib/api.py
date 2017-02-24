@@ -172,6 +172,14 @@ class PointArray(ApiObject):
             values.append(part)
             
         return values
+    
+    def set(self, positions):
+        
+        for inc in range(0, len(positions)):
+            self.api_object.set(inc, positions[inc][0], positions[inc][1], positions[inc][2])
+            
+    def length(self):
+        return self.api_object.length()
 
 class Point(ApiObject):
     def __init__(self, x = 0, y = 0, z = 0, w = 1):
@@ -503,10 +511,28 @@ class NurbsCurveFunction(MayaFunction):
         
     def get_cv_positions(self):
         point = PointArray()
+        point = point.get_api_object()
         
-        self.api_object.getCVs( point.get_api_object() )
+        self.api_object.getCVs( point )
         
-        return point.get()
+        found = []
+        
+        for inc in xrange(0, point.length()):
+        
+            x = point[inc][0]
+            y = point[inc][1]
+            z = point[inc][2]
+            
+            found.append([x,y,z])
+        
+        return found
+    
+    def set_cv_positions(self, positions):
+        
+        point_array = PointArray()
+        point_array.set(positions)
+        
+        self.api_object.setCVs(point_array)
         
     def get_form(self):
         return self.api_object.form()
@@ -675,6 +701,10 @@ class SkinClusterFunction(MayaFunction):
                     pass
                 
         return weights   
+
+class IterateCurveCV(MayaIterator):
+    def _define_api_object(self, mobject):
+        return OpenMaya.MItCurveCV 
 
 class IterateGeometry(MayaIterator):
     def _define_api_object(self, mobject):
