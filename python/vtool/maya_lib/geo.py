@@ -5,6 +5,7 @@ from random import uniform
 import vtool.util
 import api
 
+
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     
@@ -333,6 +334,8 @@ def match_point_position( source_mesh, target_mesh):
     target_fn = api.MeshFunction(target_object)
     target_fn.set_vertex_positions(point1)
 
+
+
 def get_position_different(mesh1, mesh2, tolerance = 0.00001):
     """
     Get a list of vertex indices that do not match.
@@ -425,6 +428,26 @@ def get_meshes_in_list(list_of_things):
                 found.append(thing)
      
     return found   
+
+def match_cv_position( source_curve, target_curve ):
+    
+    source_cvs = cmds.ls('%s.cv[*]' % source_curve, flatten = True)
+    target_cvs = cmds.ls('%s.cv[*]' % target_curve, flatten = True)
+    
+    for inc in range(0, len(source_cvs)):
+        
+        pos = cmds.xform(source_cvs[inc], q= True, t = True, ws = True)
+        cmds.xform(target_cvs[inc], t = pos, ws = True)
+        
+def is_cv_count_same(source_curve, target_curve):
+    
+    source_length = len(cmds.ls('%s.cv[*]' % source_curve, flatten = True))
+    target_length = len(cmds.ls('%s.cv[*]' % target_curve, flatten = True))
+    
+    if not source_length == target_length:
+        return False
+    
+    return True
 
 def get_curves_in_list(list_of_things):     
 
