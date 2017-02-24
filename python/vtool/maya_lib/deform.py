@@ -456,21 +456,6 @@ class SplitMeshTarget(object):
         fade_distance = fade_distance/2.0
         inc = 0
         for vert in verts:
-            """
-            space_source = cmds.xform('%s.vtx[%s]' % (mesh,inc), q = True, t = True, )
-            space_other = cmds.xform('%s.vtx[%s]' % (other_mesh,inc), q = True, t = True, )
-            
-            found_difference = False
-            
-            for inc in range(0, 3):
-                if abs(space_source[inc])-abs(space_other[inc]) < 0.0001:
-                    found_difference = True
-                    break
-               
-            if not found_difference:
-                values.append(1.0)
-                continue
-            """
             
             if fade_distance == 0:
                 values.append(1.0)
@@ -4665,6 +4650,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
         
     if not cmds.objExists(blendshape_node):
         
+        print source_mesh, target_mesh
         cmds.blendShape(source_mesh, target_mesh, tc = False, weight =[0,weight], n = blendshape_node, foc = True)
         
     try:
