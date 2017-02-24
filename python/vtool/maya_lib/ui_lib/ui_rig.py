@@ -521,6 +521,7 @@ class RigManager(qt_ui.DirectoryWidget):
     def _reset_scale_slider(self):
         
         self.scale_controls = []
+        self.last_scale_value = None
         
         cmds.undoInfo(closeChunk = True)
 
@@ -546,9 +547,11 @@ class RigManager(qt_ui.DirectoryWidget):
         
         if self.last_scale_value == None:
             self.last_scale_value = 0
+            
             cmds.undoInfo(openChunk = True)
         
         if value == self.last_scale_value:
+            self.last_scale_value = None
             return
         
         if value > self.last_scale_value:
@@ -582,6 +585,7 @@ class RigManager(qt_ui.DirectoryWidget):
             cmds.undoInfo(openChunk = True)
         
         if value == self.last_scale_center_value:
+            self.last_scale_center_value = None
             return
         
         if value > self.last_scale_center_value:
