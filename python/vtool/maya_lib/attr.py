@@ -2113,9 +2113,17 @@ def hide_attributes(node, attributes):
         attributes (list): A list of attributes on node to lock and hide. Just the name of the attribute.
     """
     
+    attributes = vtool.util.convert_to_sequence(attributes)
+    
     for attribute in attributes:
         
         current_attribute = '%s.%s' % (node, attribute)
+        
+        if cmds.getAttr(current_attribute, type = True) == 'double3':
+            
+            attributes.append('%sX' % attribute)
+            attributes.append('%sY' % attribute)
+            attributes.append('%sZ' % attribute)
         
         cmds.setAttr(current_attribute, l = True, k = False)
         
