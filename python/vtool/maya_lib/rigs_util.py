@@ -2534,11 +2534,15 @@ def fix_sub_controls(controls = None):
                 continue
             
             for inc in range(0, len(control_shapes)):
-                deform.quick_blendshape(control_shapes[inc], shapes[inc])
-                cmds.delete(shapes[inc], ch = True)
+                
+                if not geo.is_cv_count_same(control_shapes[inc], shapes[inc]):
+                    continue
+                
+                geo.match_cv_position(control_shapes[inc], shapes[inc])
+                
                 control_inst = Control(transform)
                 control_inst.scale_shape(scale_offset, scale_offset, scale_offset, use_pivot= False)
-            
+                
             scale_offset -= .1
             
 
