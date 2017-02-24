@@ -687,10 +687,11 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         if not parent:
             parent = self
         
+        """
         if not self.text_widget.is_modified():
             vtool.qt_ui.warning('No changes to save.', self)
             return
-        
+        """
         text = self.text_widget.toPlainText()
         
         if comment == None or comment == False:
