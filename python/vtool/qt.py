@@ -58,11 +58,16 @@ def is_pyside2():
 if is_pyqt():
     from PyQt4 import QtCore, Qt, uic
     from PyQt4.QtGui import *
+    
 if is_pyside():
     from PySide import QtCore
     from PySide.QtGui import *
+    
 if is_pyside2():
     from PySide2 import QtCore
     from PySide2.QtGui import *
     from PySide2.QtWidgets import *
+    
+    QItemSelection = QtCore.QItemSelection
+    QItemSelectionModel = QtCore.QItemSelectionModel
     
