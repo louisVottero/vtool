@@ -446,6 +446,7 @@ class SplitMeshTarget(object):
         self.base_mesh = None
         self.split_parts = []
         self.skip_target_rename = []
+        self.search_children_meshes = False
         
     def _get_center_fade_weights(self, mesh, other_mesh, fade_distance, positive):
         
@@ -499,7 +500,11 @@ class SplitMeshTarget(object):
         
         return values
     
-    def _get_joint_weights(self, joint):
+    def _get_joint_weights(self, joint, weighted_mesh = None):
+        
+        if not weighted_mesh:
+            weighted_mesh = self.weighted_mesh
+        
         skin_cluster = find_deformer_by_type(self.weighted_mesh, 'skinCluster')
         
         if not skin_cluster:
@@ -512,6 +517,124 @@ class SplitMeshTarget(object):
             return []
         
         return weights
+    
+    def _get_split_name(self, part):
+        
+        replace = part[1]
+        suffix = part[2]
+        prefix = part[3]
+        split_index = part[4]
+        split_name_option = part[5]
+        
+        if not split_index:
+            split_index = [0,'']
+        
+        target_name = self.target_mesh
+        
+        if self.target_mesh.endswith('N'):
+            target_name = self.target_mesh[:-1]
+            
+        last_number = vtool.util.get_trailing_number(target_name, as_string = True, number_count = 2)
+        
+        if last_number:
+            target_name = target_name[:-2]
+            
+        new_name = target_name
+            
+        if replace and type(replace) == list:
+            
+            new_name = re.sub(replace[0], replace[1], new_name)
+            
+        if suffix:
+            new_name = '%s%s' % (new_name, suffix)
+        if prefix:
+            sub_new_name = '%s%s' % (prefix, new_name[0].upper() + new_name[1:])
+        
+        if last_number:
+            new_name += last_number
+        
+        if self.target_mesh.endswith('N'):
+            new_name += 'N'
+        
+        if split_name_option:
+            
+            split_name = self.target_mesh.split('_')
+            
+            if len(split_name) < 2:
+                split_name = [self.target_mesh] 
+            
+            new_names = []
+            
+            for name in split_name:
+                
+                if name in self.skip_target_rename:
+                    
+                    new_names.append(name)
+                    
+                if not name in self.skip_target_rename:
+                    sub_name = name
+                    if name.endswith('N'):
+                        sub_name = name[:-1]
+                    
+                    last_number = vtool.util.get_trailing_number(sub_name, as_string = True, number_count = 2)
+                    
+                    if last_number:
+                        sub_name = sub_name[:-2]
+                    
+                    sub_new_name = sub_name
+                    
+                    if suffix:
+                        sub_new_name = '%s%s' % (sub_new_name, suffix)
+                    if prefix:
+                        sub_new_name = '%s%s' % (prefix, sub_new_name[0].upper() + sub_new_name[1:])
+                    
+                    if last_number:
+                        sub_new_name += last_number 
+                    
+                    if name.endswith('N'):
+                        sub_new_name += 'N'
+                    
+                    if split_index == 'camel_start':
+                        
+                        search = re.search('[A-Z]', sub_new_name)
+                        
+                        if search:
+                            camel_insert_index = search.start(0)
+                            sub_new_name = sub_new_name[:camel_insert_index] + replace + sub_new_name[camel_insert_index:]
+                            
+                        if not search:
+                            sub_new_name = sub_new_name + replace
+                            
+                    new_names.append(sub_new_name)
+                    
+            new_name = string.join(new_names, '_')
+        
+        if not split_name_option:
+            
+            if type(split_index) == list:
+                new_name = new_name[:split_index[0]] + split_index[1] + new_name[split_index[0]:]
+            
+            if split_index == 'camel_start':
+                search = re.search('[A-Z]', new_name)
+                        
+                if search:
+                    camel_insert_index = search.start(0)
+                    new_name = new_name[:camel_insert_index] + replace + new_name[camel_insert_index:]
+                    
+                if not search:
+                    sub_new_name = sub_new_name + replace
+                    
+        return new_name
+    
+    def _weight_target(self, base_target, target, weights):
+        
+        import blendshape
+        
+        blendshape_node = cmds.blendShape(base_target, target, w = [0,1])[0]
+        blend = blendshape.BlendShape(blendshape_node)
+        blend.set_weights(weights)
+        
+        cmds.delete(target, ch = True)
     
     def set_weight_joint(self, joint, suffix = None, prefix = None, split_name = True):
         """
@@ -588,6 +711,12 @@ class SplitMeshTarget(object):
         """
         self.base_mesh = base_mesh
     
+    def set_search_for_children_meshes(self, bool_value):
+        
+        self.search_children_meshes = bool_value
+
+            
+    
     @core.undo_off
     def create(self):
         """
@@ -596,9 +725,6 @@ class SplitMeshTarget(object):
         Returns:
             list: The names of the new targets.
         """
-        
-        import blendshape
-        
         
         if not core.is_unique(self.target_mesh):
             vtool.util.warning('%s target is not unique. Target not split.' % self.target_mesh)
@@ -613,7 +739,7 @@ class SplitMeshTarget(object):
             return
         
         if self.weighted_mesh and not cmds.objExists(self.weighted_mesh):
-            vtool.util.warning('%s weight mesh does not exist for splitting' % self.weighted_mesh)
+            vtool.util.warning('Weight mesh specified. %s weight mesh does not exist for splitting' % self.weighted_mesh)
             return
 
         parent = cmds.listRelatives( self.target_mesh, p = True )
@@ -624,143 +750,69 @@ class SplitMeshTarget(object):
         
         vtool.util.show('Splitting target: %s' % self.target_mesh)
         
-        
         bar = core.ProgressBar('Splitting target: %s' % self.target_mesh, len(self.split_parts) )
         
         for part in self.split_parts:
-                        
+            
+            new_target = cmds.duplicate(self.base_mesh)[0]
+            
+            new_name = self._get_split_name(part)
+            
+            new_target = cmds.rename(new_target, new_name)    
+            
+            weights = []
+            
             joint = part[0]
-            replace = part[1]
-            suffix = part[2]
-            prefix = part[3]
-            split_index = part[4]
-            split_name_option = part[5]
             center_fade, positive_negative = part[6]
             
             if center_fade == None and not self.weighted_mesh:
                 vtool.util.warning('Splitting with joints specified, but no weighted mesh specified.')
                 continue
             
-            if not split_index:
-                split_index = [0,'']
-            
-            new_target = cmds.duplicate(self.base_mesh)[0]
-            
-            target_name = self.target_mesh
-            
-            if self.target_mesh.endswith('N'):
-                target_name = self.target_mesh[:-1]
+            if not self.search_children_meshes:
+                base_meshes = [self.base_mesh]
+                target_meshes = [self.target_mesh]
+                new_target_meshes = [new_target]
+                if center_fade == None:
+                    weight_meshes = [self.weighted_mesh]
                 
-            last_number = vtool.util.get_trailing_number(target_name, as_string = True, number_count = 2)
-            
-            if last_number:
-                target_name = target_name[:-2]
+            if self.search_children_meshes:
+                base_meshes = core.get_shapes_in_hierarchy(self.base_mesh, 'mesh', return_parent = True)
+                target_meshes = core.get_shapes_in_hierarchy(self.target_mesh, 'mesh', return_parent = True)
+                new_target_meshes = core.get_shapes_in_hierarchy(new_target, 'mesh', return_parent = True)
+                if center_fade == None:
+                    weight_meshes = core.get_shapes_in_hierarchy(self.weighted_mesh, 'mesh')
                 
-            new_name = target_name
+            base_mesh_count = len(base_meshes)
                 
-            if replace and type(replace) == list:
-                
-                new_name = re.sub(replace[0], replace[1], new_name)
-                
-            if suffix:
-                new_name = '%s%s' % (new_name, suffix)
-            if prefix:
-                sub_new_name = '%s%s' % (prefix, new_name[0].upper() + new_name[1:])
-            
-            if last_number:
-                new_name += last_number
-            
-            if self.target_mesh.endswith('N'):
-                new_name += 'N'
-            
-            if split_name_option:
-                
-                split_name = self.target_mesh.split('_')
-                
-                if len(split_name) < 2:
-                    split_name = [self.target_mesh] 
-                
-                new_names = []
-                
-                for name in split_name:
-                    
-                    if name in self.skip_target_rename:
-                        
-                        new_names.append(name)
-                        
-                    if not name in self.skip_target_rename:
-                        sub_name = name
-                        if name.endswith('N'):
-                            sub_name = name[:-1]
-                        
-                        last_number = vtool.util.get_trailing_number(sub_name, as_string = True, number_count = 2)
-                        
-                        if last_number:
-                            sub_name = sub_name[:-2]
-                        
-                        sub_new_name = sub_name
-                        
-                        if suffix:
-                            sub_new_name = '%s%s' % (sub_new_name, suffix)
-                        if prefix:
-                            sub_new_name = '%s%s' % (prefix, sub_new_name[0].upper() + sub_new_name[1:])
-                        
-                        if last_number:
-                            sub_new_name += last_number 
-                        
-                        if name.endswith('N'):
-                            sub_new_name += 'N'
-                        
-                        if split_index == 'camel_start':
-                            
-                            search = re.search('[A-Z]', sub_new_name)
-                            
-                            if search:
-                                camel_insert_index = search.start(0)
-                                sub_new_name = sub_new_name[:camel_insert_index] + replace + sub_new_name[camel_insert_index:]
-                                
-                            if not search:
-                                sub_new_name = sub_new_name + replace
-                                
-                        new_names.append(sub_new_name)
-                        
-                new_name = string.join(new_names, '_')
-            
-            if not split_name_option:
-                
-                if type(split_index) == list:
-                    new_name = new_name[:split_index[0]] + split_index[1] + new_name[split_index[0]:]
-                
-                if split_index == 'camel_start':
-                    search = re.search('[A-Z]', new_name)
-                            
-                    if search:
-                        camel_insert_index = search.start(0)
-                        new_name = new_name[:camel_insert_index] + replace + new_name[camel_insert_index:]
-                        
-                    if not search:
-                        sub_new_name = sub_new_name + replace
-            
-            new_target = cmds.rename(new_target, new_name)    
-            
-            weights = []
-            
-            if center_fade != None:
-                
-                weights = self._get_center_fade_weights(self.base_mesh, self.target_mesh, center_fade, positive_negative)
-                
-            if center_fade == None:
-                
-                weights = self._get_joint_weights(joint)
-                
-            if not weights:
+            if not base_mesh_count == len(target_meshes):
+                vtool.util.warning('Searching children, but children of base mesh and children of target mesh have different count.')
                 continue
             
-            blendshape_node = cmds.blendShape(self.target_mesh, new_target, w = [0,1])[0]
-            blend = blendshape.BlendShape(blendshape_node)
-            blend.set_weights(weights)
-            
-            cmds.delete(new_target, ch = True)
+            if center_fade == None:
+                if not base_mesh_count == len(weight_meshes):
+                    vtool.util.warning('Searching children, but children of base mesh and children of weight mesh have different count.')
+                    continue
+        
+            for inc in range(0, base_mesh_count):
+                
+                base_mesh = base_meshes[inc]
+                target_mesh = target_meshes[inc]
+                new_target_mesh = new_target_meshes[inc]
+                
+                if center_fade != None:
+                    
+                    weights = self._get_center_fade_weights(base_mesh, target_mesh, center_fade, positive_negative)
+                    
+                if center_fade == None:
+                    
+                    weight_mesh = weight_meshes[inc]
+                    weights = self._get_joint_weights(joint, weight_mesh)
+                    
+                if not weights:
+                    continue
+                
+                self._weight_target(target_mesh, new_target_mesh, weights)
         
             current_parent = cmds.listRelatives(new_target, p = True)
         
@@ -4326,7 +4378,7 @@ def map_blend_target_alias_to_index(blendshape_node):
         index = vtool.util.get_end_number(weight)
         
         alias_map[index] = alias
-        
+    
     return alias_map
 
 def map_blend_index_to_target_alias(blendshape_node):
@@ -4509,7 +4561,9 @@ def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = Tr
     cmds.delete(offset)
     cmds.delete(new_sources)
     
-    corrective = cmds.rename(orig, 'delta_%s' % corrective_mesh)
+    nice_name = core.get_basename(corrective_mesh, remove_namespace = True)
+    
+    corrective = cmds.rename(orig, 'delta_%s' % nice_name)
 
     if replace:
         parent = cmds.listRelatives(corrective_mesh, p = True)
@@ -4650,7 +4704,6 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
         
     if not cmds.objExists(blendshape_node):
         
-        print source_mesh, target_mesh
         cmds.blendShape(source_mesh, target_mesh, tc = False, weight =[0,weight], n = blendshape_node, foc = True)
         
     try:
