@@ -779,7 +779,7 @@ def rename_shapes(transform):
         cmds.rename(shape, '%sShape%s' % (transform, inc))
         inc += 1
 
-def get_shapes_in_hierarchy(transform, shape_type = ''):
+def get_shapes_in_hierarchy(transform, shape_type = '', return_parent = False, skip_first_relative = False):
     """
     Get all the shapes in the child hierarchy excluding intermediates.
     This is good when calculating bounding box of a group.
@@ -799,6 +799,9 @@ def get_shapes_in_hierarchy(transform, shape_type = ''):
     
     shapes = []
     
+    if skip_first_relative:
+        hierarchy = hierarchy[1:]
+    
     for child in hierarchy:
         
         found_shapes = get_shapes(child, shape_type)
@@ -812,6 +815,8 @@ def get_shapes_in_hierarchy(transform, shape_type = ''):
             if cmds.getAttr('%s.intermediateObject' % found_shape):
                 continue
             
+            if return_parent:
+                found_shape = child
             sifted_shapes.append( found_shape )
             
         if sifted_shapes:
