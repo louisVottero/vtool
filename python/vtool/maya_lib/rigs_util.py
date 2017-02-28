@@ -1370,6 +1370,80 @@ class RigSwitch(object):
             for group in groups:
                 attr.connect_equal_condition(attribute_name, '%s.visibility' % group, key) 
         
+class MirrorControlKeyframes():
+    def __init__(self, node):
+        self.node = node
+        
+    def _get_output_keyframes(self):
+        
+        found = anim.get_output_keyframes(self.node)
+                
+        return found
+         
+    def _map_connections(self, connections):
+        new_connections = []
+        
+        if not connections:
+            return new_connections
+        
+        for connection in connections:
+            node, attribute = connection.split('.')
+            
+            new_node = node
+            
+            if node.endswith('_L'):
+                new_node = node[:-2] + '_R' 
+                
+            if node.endswith('_R'):
+                new_node = node[:-2] + '_L'  
+               
+            new_connections.append('%s.%s' % (new_node, attribute))
+                
+        return new_connections
+
+                
+    def mirror_outputs(self, fix_translates = False):
+        
+        found_keyframes = self._get_output_keyframes()
+        
+        for keyframe in found_keyframes:
+            
+            new_keyframe = cmds.duplicate(keyframe)[0]
+            
+            connections = attr.Connections(keyframe)
+            outputs = connections.get_outputs()
+            inputs = connections.get_inputs()
+            
+            mapped_output = self._map_connections(outputs)
+            mapped_input = self._map_connections(inputs)
+
+            for inc in range(0, len(mapped_output), 2):
+                
+                output = mapped_output[inc]
+                split_output = output.split('.')
+                new_output = '%s.%s' % (new_keyframe, split_output[1])
+
+                do_fix_translates = False
+
+                if mapped_output[inc+1].find('.translate') > -1 and fix_translates:
+                    do_fix_translates = True
+                
+                if not attr.get_inputs(mapped_output[inc+1]):
+                    
+                    if not do_fix_translates:
+                        cmds.connectAttr(new_output, mapped_output[inc+1])
+                    if do_fix_translates:
+                        attr.connect_multiply(new_output, mapped_output[inc+1], -1)
+                
+            for inc in range(0, len(mapped_input), 2):
+                
+                input_connection = mapped_input[inc+1]
+                split_input = input_connection.split('.')
+                new_input = '%s.%s' % (new_keyframe, split_input[1])
+                
+                if not attr.get_inputs(new_input):
+                    cmds.connectAttr(mapped_input[inc], new_input)
+
 
 def rename_control(old_name, new_name):
     
