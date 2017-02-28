@@ -306,28 +306,28 @@ class ComboManager(ui_core.MayaWindow):
         self.shape_widget.tree.clear()
         self.combo_widget.tree.clear()
         
-        meshes = geo.get_selected_meshes()
+        #meshes = geo.get_selected_meshes()
+        selected = cmds.ls(sl = True, type = 'transform')
         
-        if not meshes:
-            selected = cmds.ls(sl = True, type = 'transform')
-            
-            if selected:
-                if self.manager.is_shape_combo_manager(selected[0]):
-                    self.manager.load(selected[0])
-                    mesh = self.manager.get_mesh()
-                    self.current_base.setText('    Base: ' + mesh)
-                
-                if not self.manager.setup_group:
-                    self.current_base.setText('    Base: -')
+        base = None
         
-        if meshes:
-            mesh = None
-            if meshes:
-                mesh = meshes[0]
+        if selected:
+            if self.manager.is_shape_combo_manager(selected[0]):
+                self.manager.load(selected[0])
+                manager = self.manager.setup_group
+                base = self.manager.get_mesh()
+        
+            else:
+                manager = self.manager.create(selected[0])
+                if manager:
+                    base = selected[0]
             
-            self.manager.create(mesh)
+        if base:
             
-            self.current_base.setText('    Base: ' + mesh)
+            self.current_base.setText('    Base: ' + base)
+        
+        if not manager:
+            self.current_base.setText('    Base: -')
 
         self.shape_widget.tree.set_manager(self.manager)
         self.combo_widget.tree.set_manager(self.manager)
@@ -383,14 +383,12 @@ class ComboManager(ui_core.MayaWindow):
             self._add_meshes([mesh])
             
     def _add_meshes(self, meshes, preserve, ui_only = False):
-        
+        """
         for mesh in meshes:
             if mesh.find('|') > -1:
                 nice_name = core.get_basename(mesh)
-                qt_ui.warning('%s is not unique. Aborting ADD.' % nice_name, self)
-                return
-                
-                
+                qt_ui.warning('%s is not unique. Aborting adding in the mesh.' % nice_name, self)
+        """        
         shapes = None
         
         if ui_only:
@@ -412,14 +410,15 @@ class ComboManager(ui_core.MayaWindow):
         
         meshes = geo.get_selected_meshes()
         
-        #mesh_count = len(meshes)
-        
-        #if mesh_count == 1:
+        if not meshes:
             
-        #    self._add_mesh(meshes[0])
+            meshes = []
             
-        #if mesh_count > 1:
-        #    self._add_meshes(meshes)
+            selection = cmds.ls(sl = True, l = True)
+            for thing in selection:
+                sub_meshes = core.get_shapes_in_hierarchy(thing, 'mesh')
+                if sub_meshes:
+                    meshes.append(thing)
         
         state = self.preserve_check.checkState()
         
@@ -577,12 +576,18 @@ class ShapeTree(qt_ui.TreeWidget):
             
             child_item = self._create_child_item(name)
             
-            if not self.manager.blendshape.is_target(name):
-                self._highlight_child(child_item, False)
+            for key in self.manager.blendshape:
                 
-            if self.manager.blendshape.is_target(name):
-                self._highlight_child(child_item, True)
-                existing.append(name)
+                blend_inst = self.manager.blendshape[key]
+                
+                if not blend_inst.is_target(name):
+                    self._highlight_child(child_item, False)
+                
+                if blend_inst.is_target(name):
+                    self._highlight_child(child_item, True)
+                    existing.append(name)
+                
+                break
                 
             child_dict[name] = child_item
             children.append(name)
@@ -666,7 +671,7 @@ class ShapeTree(qt_ui.TreeWidget):
     def selectionCommand(self, index, event):
         
         if not self.update_selection:
-            return
+            return qt.QItemSelectionModel.NoUpdate
         
         self.update_selection = False
         
@@ -685,8 +690,8 @@ class ShapeTree(qt_ui.TreeWidget):
             
             self.update_selection = True
             
-            return
-            #return qt.QItemSelectionModel.NoUpdate
+            #return
+            return qt.QItemSelectionModel.NoUpdate
             
         if event.button() == qt.QtCore.Qt.LeftButton:
             
@@ -714,25 +719,26 @@ class ShapeTree(qt_ui.TreeWidget):
                         self.setItemSelected(item, True)
                         self.update_selection = True
                         
-                        return
-                        #return qt.QItemSelectionModel.Select
+                        #return
+                        return qt.QItemSelectionModel.Select
                     
                     if item.isSelected():    
                         
                         self.setItemSelected(item, False)
                         self.update_selection = True
                         
-                        return
-                        #return qt.QItemSelectionModel.Deselect
+                        #return
+                        #return qt.QtGui.QItemSelectionModel.Deselect
+                        return qt.QItemSelectionModel.Deselect
                 
             if not self.left_press:
                 self.update_selection = True
             
-                return
-                #return qt.QItemSelectionModel.NoUpdate
+                #return
+                return qt.QItemSelectionModel.NoUpdate
         
         self.update_selection = True
-        
+        return qt.QItemSelectionModel.NoUpdate
     
     def recreate(self):
         
