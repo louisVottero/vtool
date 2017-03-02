@@ -246,17 +246,20 @@ class ComboManager(ui_core.MayaWindow):
         shapes = self._get_selected_shapes()
         
         if self.refresh_combo_list:
+            
             if shapes:
-                
-                self.update_on_select = False
-                self.refresh_combo_list = False
-                
-                self.combo_widget.tree.clearSelection()
                 shapes.sort()
+            if not shapes:
+                shapes = []
                 
-                self._update_combo_selection(shapes)
-                self.update_on_select = True
-                self.refresh_combo_list = True
+            self.update_on_select = False
+            self.refresh_combo_list = False
+            
+            self.combo_widget.tree.clearSelection()
+            
+            self._update_combo_selection(shapes)
+            self.update_on_select = True
+            self.refresh_combo_list = True
                 
         self._update_slider_for_shapes(shapes)
         
@@ -287,6 +290,8 @@ class ComboManager(ui_core.MayaWindow):
         self.update_on_select = True
         
     def _update_combo_selection(self, shapes):
+        
+        print 'update combo selection'
         
         if not self.combo_select_update:
             return
@@ -1047,6 +1052,8 @@ class ComboTree(qt_ui.TreeWidget):
     
     def load(self, combos = None, possible_combos = None, current_shapes = None):
         
+        print 'loading combos', current_shapes
+        
         if not combos:
             combos = self.manager.get_combos()
         
@@ -1062,6 +1069,11 @@ class ComboTree(qt_ui.TreeWidget):
             
             current_combo = None
             if current_shapes:
+                for shape in current_shapes:
+                    if not combo.find(shape) > -1:
+                        item.setHidden(True)
+                        break
+                    
                 current_combo = string.join(current_shapes, '_')
             
             if current_combo == item.text(0):
@@ -1083,10 +1095,7 @@ class ComboTree(qt_ui.TreeWidget):
                 
                 self.highlight_item(item, False)
                 
-                
                 self.addTopLevelItem(item)
-                
-        
     
     def set_manager(self, manager):
         self.manager = manager
