@@ -904,9 +904,6 @@ class ShapeComboManager(object):
         
         new_meshes = core.get_shapes_in_hierarchy(self.home, return_parent = True, skip_first_relative=True)
         
-        print 'home', self.home
-        print 'children', new_meshes
-        
         if new_meshes:
             for mesh in new_meshes:
                 
@@ -1471,8 +1468,6 @@ class ShapeComboManager(object):
         shapes = self.get_shapes()
         combos = self.get_combos()
         
-        inbetweens = []
-        
         for shape in shapes:
             
             if self.is_negative(shape):
@@ -1507,11 +1502,15 @@ class ShapeComboManager(object):
                 
             
             shape_inbetweens = self.get_inbetweens(shape)
-            inbetweens += shape_inbetweens
             
             negative = self.get_negative_name(shape)
+            
             if self.is_negative(negative):
                 shape_inbetweens.append(negative)
+                negative_inbetweens = self.get_inbetweens(negative)
+                if negative_inbetweens:
+                    shape_inbetweens += negative_inbetweens
+                
             
             new_inbetweens = []
             shape_gr = new_shape
@@ -1576,7 +1575,7 @@ class ShapeComboManager(object):
                 cmds.parent(new_combo, combos_gr)
                 
             cmds.parent(combos_gr, targets_gr)
-            
+        
         return targets_gr
     
     def get_shapes_in_group(self, group_name):
@@ -1923,7 +1922,10 @@ class ShapeComboManager(object):
             inbetweens = self.get_inbetweens(name)
             if inbetweens:
                 for inbetween in inbetweens:
-                    self.blendshape.remove_target(inbetween)
+                    
+                    for key in self.blendshape:
+                        blend_inst = self.blendshape[key]
+                        blend_inst.remove_target(inbetween)
                     
                     combos = self.get_associated_combos(inbetween)
                     
@@ -1941,14 +1943,17 @@ class ShapeComboManager(object):
         if negative_parent:
             delete_attr = False
             
-        target = '%s.%s' % (self.blendshape.blendshape, name)
-        
-        input_node = attr.get_attribute_input(target, node_only=True)
-        
-        if input_node and input_node != self.setup_group:
-            cmds.delete(input_node)
-        
-        self.blendshape.remove_target(name)
+        for key in self.blendshape:
+            blend_inst = self.blendshape[key]
+            
+            target = '%s.%s' % (blend_inst, name)
+            
+            input_node = attr.get_attribute_input(target, node_only=True)
+            
+            if input_node and input_node != self.setup_group:
+                cmds.delete(input_node)
+            
+            blend_inst.remove_target(name)
         
         if inbetween_parent:
             self._setup_shape_connections(inbetween_parent)
@@ -1972,13 +1977,21 @@ class ShapeComboManager(object):
         
         return False
     
-    def is_combo_valid(self, name):
+    def is_combo_valid(self, name, return_invalid_shapes = False):
         
         shapes = self.get_shapes_in_combo(name)
         
+        found = []
+        
         for shape in shapes:
             if not self._is_target(shape):
-                return False
+                if not return_invalid_shapes:
+                    return False
+                found.append(shape)
+                
+        if found and return_invalid_shapes:
+            return found
+        
         
         return True
     
@@ -2000,9 +2013,11 @@ class ShapeComboManager(object):
             mesh = name
         
         nice_name = core.get_basename(name, remove_namespace = True)
-                
-        if not self.is_combo_valid(nice_name):
-            vtool.util.warning('Could not add combo %s, a target is missing.' % name)
+        
+        result = self.is_combo_valid(nice_name, return_invalid_shapes = True)
+        
+        if type(result) == list:
+            vtool.util.warning('Could not add combo %s, targets missing: %s' % (name,result))
             return
         
         home = self._get_mesh()
@@ -2052,7 +2067,7 @@ class ShapeComboManager(object):
         
         inbetween_combo_parent = self.get_inbetween_combo_parent(name)
         
-        if inbetween_combo_parent and self.blendshape.is_target(inbetween_combo_parent):
+        if inbetween_combo_parent and self._is_target(inbetween_combo_parent):
             self._setup_combo_connections(name)
             
         inbetweens = self.get_inbetween_combos(name)
@@ -2189,7 +2204,7 @@ class ShapeComboManager(object):
             
             nice_name = core.get_basename(mesh, remove_namespace = True)
             
-            split_shape = nice_name.split('_')
+            
             
             if nice_name.count('_') == 0:
                 
@@ -2202,6 +2217,10 @@ class ShapeComboManager(object):
                 
                 if not inbetween_parent:
                     shapes.append(mesh)
+                    
+                continue
+            
+            split_shape = nice_name.split('_')
                 
             if len(split_shape) > 1:
                 
