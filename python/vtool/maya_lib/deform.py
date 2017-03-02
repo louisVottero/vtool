@@ -531,13 +531,16 @@ class SplitMeshTarget(object):
         
         target_name = self.target_mesh
         
-        if self.target_mesh.endswith('N'):
-            target_name = self.target_mesh[:-1]
-            
+        negative = False
+        
         last_number = vtool.util.get_trailing_number(target_name, as_string = True, number_count = 2)
         
         if last_number:
             target_name = target_name[:-2]
+        
+        if target_name.endswith('N'):
+            negative = True
+            target_name = target_name[:-1]
             
         new_name = target_name
             
@@ -550,11 +553,11 @@ class SplitMeshTarget(object):
         if prefix:
             sub_new_name = '%s%s' % (prefix, new_name[0].upper() + new_name[1:])
         
+        if negative:
+            new_name += 'N'
+        
         if last_number:
             new_name += last_number
-        
-        if self.target_mesh.endswith('N'):
-            new_name += 'N'
         
         if split_name_option:
             
@@ -567,19 +570,23 @@ class SplitMeshTarget(object):
             
             for name in split_name:
                 
+                negative = False
+                
                 if name in self.skip_target_rename:
                     
                     new_names.append(name)
                     
                 if not name in self.skip_target_rename:
                     sub_name = name
-                    if name.endswith('N'):
-                        sub_name = name[:-1]
                     
                     last_number = vtool.util.get_trailing_number(sub_name, as_string = True, number_count = 2)
                     
                     if last_number:
                         sub_name = sub_name[:-2]
+                    
+                    if sub_name.endswith('N'):
+                        negative = True
+                        sub_name = sub_name[:-1]
                     
                     sub_new_name = sub_name
                     
@@ -588,11 +595,11 @@ class SplitMeshTarget(object):
                     if prefix:
                         sub_new_name = '%s%s' % (prefix, sub_new_name[0].upper() + sub_new_name[1:])
                     
+                    if negative:
+                        sub_new_name += 'N'
+                    
                     if last_number:
                         sub_new_name += last_number 
-                    
-                    if name.endswith('N'):
-                        sub_new_name += 'N'
                     
                     if split_index == 'camel_start':
                         
