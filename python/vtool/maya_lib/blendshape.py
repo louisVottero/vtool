@@ -1166,7 +1166,7 @@ class ShapeComboManager(object):
     def _setup_combo_connections(self, combo, skip_update_others = False):
         
         for key in self.blendshape:
-        
+            
             blend_inst = self.blendshape[key]
             blendshape = blend_inst.blendshape
         
@@ -1178,12 +1178,19 @@ class ShapeComboManager(object):
             
             inbetween_combo_parent = self.get_inbetween_combo_parent(combo)
             
+            target_combo = '%s.%s' % (blendshape, combo)
+            
+            if not cmds.objExists(target_combo):
+                continue
+            
             if not inbetween_combo_parent:
                 
                 for sub_shape in sub_shapes:
                     
+                    
                     source = '%s.%s' % (blendshape , sub_shape)
-                    target_combo = '%s.%s' % (blendshape, combo)
+                    if not cmds.objExists(source):
+                        continue
                     
                     if not last_multiply:
                         multiply = attr.connect_multiply(source, target_combo, 1)
@@ -1195,10 +1202,14 @@ class ShapeComboManager(object):
                     
                     
             if inbetween_combo_parent:
+
                 for sub_shape in sub_shapes:
                     
                     source = '%s.%s' % (blendshape, sub_shape)
-                    target_combo = '%s.%s' % (blendshape, combo)
+                    
+                    
+                    if not cmds.objExists(source):
+                        continue
                     
                     if not last_multiply:
                         multiply = attr.connect_multiply(source, target_combo, 1)
@@ -1209,7 +1220,7 @@ class ShapeComboManager(object):
                     multiply = cmds.rename(multiply, core.inc_name('multiply_combo_%s_1' % combo))
                     
                     last_multiply = multiply
-                    
+                        
     def _remove_combo_multiplies(self, combo, blendshape):
         
         input_node = attr.get_attribute_input('%s.%s' % (blendshape, combo), node_only = True)
@@ -1963,6 +1974,7 @@ class ShapeComboManager(object):
             if cmds.objExists(attr_name):
                 cmds.deleteAttr( attr_name )
             
+        
         combos = self.get_associated_combos(name)
         
         for combo in combos:
