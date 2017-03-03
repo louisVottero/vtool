@@ -505,7 +505,7 @@ class SplitMeshTarget(object):
         if not weighted_mesh:
             weighted_mesh = self.weighted_mesh
         
-        skin_cluster = find_deformer_by_type(self.weighted_mesh, 'skinCluster')
+        skin_cluster = find_deformer_by_type(weighted_mesh, 'skinCluster')
         
         if not skin_cluster:
             return
@@ -815,29 +815,37 @@ class SplitMeshTarget(object):
                     
                     weight_mesh = weight_meshes[inc]
                     weights = self._get_joint_weights(joint, weight_mesh)
-                    
+                
                 if not weights:
-                    continue
+                    vtool.util.warning('No weights found! Could not extract target on %s' % target_mesh)
+                    break
+                
+                
                 
                 self._weight_target(target_mesh, new_target_mesh, weights)
         
-            current_parent = cmds.listRelatives(new_target, p = True)
+            if not weights:
+                cmds.delete(new_target)
+                new_target = None
         
-            if current_parent:
-                current_parent = current_parent[0]
-        
-            if parent and current_parent:
-                if parent != current_parent:
-                    cmds.parent(new_target, parent)
+            if new_target:
+                current_parent = cmds.listRelatives(new_target, p = True)
             
-            targets.append(new_target)
+                if current_parent:
+                    current_parent = current_parent[0]
             
+                if parent and current_parent:
+                    if parent != current_parent:
+                        cmds.parent(new_target, parent)
+                
+                targets.append(new_target)
+                
             if vtool.util.break_signaled():
                 break
-            
+                
             if bar.break_signaled():
                 break
-            
+                
             bar.inc()
                 
         bar.end()
