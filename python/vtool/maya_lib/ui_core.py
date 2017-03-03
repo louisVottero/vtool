@@ -1,3 +1,6 @@
+
+import traceback
+
 from vtool import qt_ui, qt
 from vtool import util
 
@@ -116,6 +119,7 @@ def create_window(ui, dock_area = 'right'):
     except:
         #do not remove
         util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
+        util.error( traceback.format_exc() )
             
     
 class MayaWindow(qt_ui.BasicWindow):

@@ -2438,6 +2438,16 @@ def connect_scale(source_transform, target_transform):
     """
     connect_vector_attribute(source_transform, target_transform, 'scale')
 
+def connect_translate_into_pivots(source_transform, target_transform):
+    
+    cmds.connectAttr('%s.translateX' % source_transform, '%s.rotatePivotX' % target_transform)
+    cmds.connectAttr('%s.translateY' % source_transform, '%s.rotatePivotY' % target_transform)
+    cmds.connectAttr('%s.translateZ' % source_transform, '%s.rotatePivotZ' % target_transform)
+
+    cmds.connectAttr('%s.translateX' % source_transform, '%s.scalePivotX' % target_transform)
+    cmds.connectAttr('%s.translateY' % source_transform, '%s.scalePivotY' % target_transform)
+    cmds.connectAttr('%s.translateZ' % source_transform, '%s.scalePivotZ' % target_transform)
+
 def connect_translate_plus(source_transform, target_transform):
     """
     Connect translate attributes. If target_transform already has input connections, reconnect with plusMinusAverage to accomodate both.

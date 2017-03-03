@@ -706,7 +706,7 @@ class SparseRig(JointRig):
                 const = cmds.scaleConstraint(joint, xform)
                 cmds.delete(const)
             
-            if not self.attach_joints:
+            if self.attach_joints:
                 cmds.parentConstraint(control_name, joint)
 
             if self.is_scalable:

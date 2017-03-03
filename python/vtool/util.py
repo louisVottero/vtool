@@ -1331,8 +1331,11 @@ def clean_name_string(string_value, clean_chars = '_', remove_char = '_'):
 def show_list_to_string(*args):
 
     try:
+        if args == None:
+            return 'None'
+        
         if not args:
-            return
+            return ''
             
         new_args = []
         
@@ -1343,7 +1346,7 @@ def show_list_to_string(*args):
         args = new_args
         
         if not args:
-            return
+            return ''
         
         string_value = string.join(args)
         
