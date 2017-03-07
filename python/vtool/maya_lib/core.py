@@ -469,6 +469,8 @@ def is_unique(name):
     if count == 1:
         return True
     
+    return True
+    
 def inc_name(name, inc_last_number = True):
     """
     Finds a unique name by adding a number to the end.
