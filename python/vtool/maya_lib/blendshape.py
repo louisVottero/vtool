@@ -1046,6 +1046,10 @@ class ShapeComboManager(object):
         if not blendshape_dict:
             return
         
+        shape_keyframe = None
+        inbetween_keyframe = None
+        parent_inbetween_keframe = None
+        
         for key in blendshape_dict:
             
             blend_inst = blendshape_dict[key]
@@ -1089,15 +1093,21 @@ class ShapeComboManager(object):
                 if negative_parent:
                     infinite_value = 'pre_only'
                 
-                anim.quick_driven_key(setup_attr, blend_attr, [0,value], [0,1], tangent_type = 'clamped', infinite = infinite_value)
+                if shape_keyframe:
+                    cmds.connectAttr('%s.output' % shape_keyframe, blend_attr)
                 
-                if negative_parent:
-                    
-                    keyframe = self._get_target_keyframe(negative_parent, blendshape)
-                    
-                    if keyframe:
-                        key = api.KeyframeFunction(keyframe)
-                        key.set_pre_infinity(key.constant)
+                if not shape_keyframe:
+                    shape_keyframe = anim.quick_driven_key(setup_attr, blend_attr, [0,value], [0,1], tangent_type = 'clamped', infinite = infinite_value)
+                
+                    if negative_parent:
+                        
+                        keyframe = self._get_target_keyframe(negative_parent, blendshape)
+                        
+                        if keyframe:
+                            key = api.KeyframeFunction(keyframe)
+                            key.set_pre_infinity(key.constant)
+                        
+                
                 
             if inbetweens:
                 
@@ -1109,59 +1119,70 @@ class ShapeComboManager(object):
                 
                 first_value = None
                 
-                for inc in xrange(0, value_count):
-                    
-                    inbetween = value_dict[values[inc]]
-                    
-                    blend_attr = '%s.%s' % (blendshape, inbetween)
-                    
-                    self._remove_target_keyframe(inbetween, blendshape)
-                    
-                    control_value = values[inc] *.01 * negative_value
-                    
-                    if inc == 0:
-                        
-                        pre_value = 'pre_only'
-                        
-                        if not has_negative:
-                            pre_value = False
-                        if negative_parent:
-                            pre_value = False
-                        
-                        anim.quick_driven_key(setup_attr, blend_attr, [last_control_value, control_value], [0, 1], tangent_type='linear', infinite = pre_value)
-                        first_value = last_control_value
-                        second_value = control_value
-                    
-                    if inc > 0:
-                        anim.quick_driven_key(setup_attr, blend_attr, [last_control_value, control_value], [0, 1], tangent_type= 'linear')
-                        
-                    
-                    if value_count > inc+1:
-    
-                        future_control_value = values[inc+1] *.01 * negative_value
-                        anim.quick_driven_key(setup_attr, blend_attr, [control_value, future_control_value], [1, 0], tangent_type= 'linear')
-    
-                    last_control_value = control_value
+                if inbetween_keyframe:
+                    cmds.connectAttr('%s.output' % inbetween_keyframe, blend_attr)
                 
-                value = 1*negative_value
-                
-                anim.quick_driven_key(setup_attr, blend_attr, [control_value, value], [1, 0], tangent_type= 'linear', infinite = False)
-                
-                if first_value == 0:
-                    if not has_negative and not negative_parent:
-                        cmds.keyTangent( blendshape, edit=True, float = (first_value,first_value) , attribute= inbetween, absolute = True, itt = 'clamped', ott = 'linear' )
-                        cmds.keyTangent( blendshape, edit=True, float = (second_value,second_value) , attribute= inbetween, absolute = True, itt = 'linear', ott = 'linear' )
-                
+                if not inbetween_keyframe:
+                    for inc in xrange(0, value_count):
+                        
+                        inbetween = value_dict[values[inc]]
+                        
+                        blend_attr = '%s.%s' % (blendshape, inbetween)
+                        
+                        self._remove_target_keyframe(inbetween, blendshape)
+                        
+                        control_value = values[inc] *.01 * negative_value
+                        
+                        if inc == 0:
+                            
+                            pre_value = 'pre_only'
+                            
+                            if not has_negative:
+                                pre_value = False
+                            if negative_parent:
+                                pre_value = False
+                            
+                            inbetween_keyframe = anim.quick_driven_key(setup_attr, blend_attr, [last_control_value, control_value], [0, 1], tangent_type='linear', infinite = pre_value)
+                            first_value = last_control_value
+                            second_value = control_value
+                        
+                        if inc > 0:
+                            inbetween_keyframe = anim.quick_driven_key(setup_attr, blend_attr, [last_control_value, control_value], [0, 1], tangent_type= 'linear')
+                            
+                        
+                        if value_count > inc+1:
+        
+                            future_control_value = values[inc+1] *.01 * negative_value
+                            inbetween_keyframe = anim.quick_driven_key(setup_attr, blend_attr, [control_value, future_control_value], [1, 0], tangent_type= 'linear')
+        
+                        last_control_value = control_value
+                    
+                    value = 1*negative_value
+                    
+                    inbetween_keyframe = anim.quick_driven_key(setup_attr, blend_attr, [control_value, value], [1, 0], tangent_type= 'linear', infinite = False)
+                    
+                    if first_value == 0:
+                        if not has_negative and not negative_parent:
+                            cmds.keyTangent( blendshape, edit=True, float = (first_value,first_value) , attribute= inbetween, absolute = True, itt = 'clamped', ott = 'linear' )
+                            cmds.keyTangent( blendshape, edit=True, float = (second_value,second_value) , attribute= inbetween, absolute = True, itt = 'linear', ott = 'linear' )
+                            
                 #switching to parent shape
                 blend_attr = '%s.%s' % (blendshape, name)
+
+                if parent_inbetween_keframe:
+                    cmds.connectAttr('%s.output' % parent_inbetween_keframe, blend_attr)
                 
-                if not negative_parent:
-                    anim.quick_driven_key(setup_attr, blend_attr, [control_value, value], [0, 1], tangent_type = 'linear', infinite = 'post_only')
-                    cmds.keyTangent( blendshape, edit=True, float = (value, value) , absolute = True, attribute= name, itt = 'linear', ott = 'clamped', lock = False, ox = 1, oy = 1)
-                    
-                if negative_parent:
-                    anim.quick_driven_key(setup_attr, blend_attr, [control_value, value], [0, 1], tangent_type = 'linear', infinite = 'pre_only')
-                    cmds.keyTangent( blendshape, edit=True, float = (value, value) , absolute = True, attribute= name, itt = 'clamped', ott = 'linear', lock = False, ix = 1, iy = -1 )    
+                if not parent_inbetween_keframe:
+                
+                    if not negative_parent:
+                        parent_inbetween_keframe = anim.quick_driven_key(setup_attr, blend_attr, [control_value, value], [0, 1], tangent_type = 'linear', infinite = 'post_only')
+                        cmds.keyTangent( blendshape, edit=True, float = (value, value) , absolute = True, attribute= name, itt = 'linear', ott = 'clamped', lock = False, ox = 1, oy = 1)
+                        
+                    if negative_parent:
+                        parent_inbetween_keframe = anim.quick_driven_key(setup_attr, blend_attr, [control_value, value], [0, 1], tangent_type = 'linear', infinite = 'pre_only')
+                        cmds.keyTangent( blendshape, edit=True, float = (value, value) , absolute = True, attribute= name, itt = 'clamped', ott = 'linear', lock = False, ix = 1, iy = -1 )
+                
+    
        
     def _setup_combo_connections(self, combo, skip_update_others = False):
         
@@ -1183,43 +1204,53 @@ class ShapeComboManager(object):
             if not cmds.objExists(target_combo):
                 continue
             
-            if not inbetween_combo_parent:
-                
-                for sub_shape in sub_shapes:
+            target_multiply = None 
+            
+            if target_multiply:
+                cmds.connectAttr('%s.outputX' % target_multiply, target_combo)
+            
+            if not target_multiply:
+            
+                if not inbetween_combo_parent:
                     
-                    
-                    source = '%s.%s' % (blendshape , sub_shape)
-                    if not cmds.objExists(source):
-                        continue
-                    
-                    if not last_multiply:
-                        multiply = attr.connect_multiply(source, target_combo, 1)
+                    for sub_shape in sub_shapes:
                         
-                    if last_multiply:
-                        multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
-                    
-                    last_multiply = multiply
-                    
-                    
-            if inbetween_combo_parent:
-
-                for sub_shape in sub_shapes:
-                    
-                    source = '%s.%s' % (blendshape, sub_shape)
-                    
-                    
-                    if not cmds.objExists(source):
-                        continue
-                    
-                    if not last_multiply:
-                        multiply = attr.connect_multiply(source, target_combo, 1)
                         
-                    if last_multiply:
-                        multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
-                    
-                    multiply = cmds.rename(multiply, core.inc_name('multiply_combo_%s_1' % combo))
-                    
-                    last_multiply = multiply
+                        source = '%s.%s' % (blendshape , sub_shape)
+                        if not cmds.objExists(source):
+                            continue
+                        
+                        if not last_multiply:
+                            
+                            multiply = attr.connect_multiply(source, target_combo, 1)
+                            target_multiply = multiply
+                            
+                        if last_multiply:
+                            multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
+                        
+                        last_multiply = multiply
+                        
+                        
+                if inbetween_combo_parent:
+    
+                    for sub_shape in sub_shapes:
+                        
+                        source = '%s.%s' % (blendshape, sub_shape)
+                        
+                        
+                        if not cmds.objExists(source):
+                            continue
+                        
+                        if not last_multiply:
+                            multiply = attr.connect_multiply(source, target_combo, 1)
+                            target_multiply = multiply
+                            
+                        if last_multiply:
+                            multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
+                        
+                        multiply = cmds.rename(multiply, core.inc_name('multiply_combo_%s_1' % combo))
+                        
+                        last_multiply = multiply
                         
     def _remove_combo_multiplies(self, combo, blendshape):
         
