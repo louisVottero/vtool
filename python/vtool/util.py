@@ -461,6 +461,11 @@ class BoundingBox(object):
             list: [0,0,0] vector
         """
         return get_midpoint(self.min_vector, self.opposite_min_vector)
+    
+    def get_size(self):
+        
+        return get_distance(self.min_vector, self.max_vector)
+    
 
 class Variable(object):
     """
