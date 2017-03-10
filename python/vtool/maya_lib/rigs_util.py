@@ -2582,6 +2582,7 @@ def fix_sub_controls(controls = None):
         
         
         outputs = attr.get_attribute_outputs('%s.subVisibility' % control, node_only=True)
+        outputs.sort()
         
         scale_offset = .9
         
@@ -2601,7 +2602,7 @@ def fix_sub_controls(controls = None):
                 
                 shapes = core.get_shapes(transform, 'nurbsCurve')
                 
-                
+            
             control_shapes = core.get_shapes(control)
             
             if len(shapes) != len(control_shapes):
