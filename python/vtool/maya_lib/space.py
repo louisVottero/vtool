@@ -1661,7 +1661,9 @@ def zero_out_transform_channels(transform):
     
 
 def get_hierarchy_path(top_transform, btm_transform):
-    
+    """
+    Gets relatives in the hierarchy between top_transform and btm_transform
+    """
     
     parent = cmds.listRelatives(btm_transform, p = True)
     if parent:
@@ -1695,6 +1697,17 @@ def get_hierarchy_path(top_transform, btm_transform):
     if parent_found:
         path.reverse()
         return path
+
+def get_bounding_box_size(transform):
+    
+    components = core.get_components_in_hierarchy(transform)
+    
+    if components:
+        transform = components
+        
+    bounding_box = BoundingBox(transform)
+    
+    return bounding_box.get_size()
 
 def get_center(transform):
     """

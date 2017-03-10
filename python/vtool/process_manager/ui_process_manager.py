@@ -24,7 +24,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     
     def __init__(self, parent = None):
         
-        
+        util.show('VETALA_PATH: %s' % util.get_env('VETALA_PATH'))
         
         self.settings = None
         self.template_settings = None
