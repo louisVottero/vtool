@@ -190,7 +190,54 @@ class Point(ApiObject):
             
     def get(self):
         return [self.api_object.x, self.api_object.y, self.api_object.z, self.api_object.w]
+
+class Matrix(ApiObject):
+    def __init__(self, matrix_list):
+        self.api_object = self._define_api_object(matrix_list)
     
+    def _define_api_object(self, matrix_list = []):
+        matrix = OpenMaya.MMatrix()
+        
+        if matrix_list:
+            OpenMaya.MScriptUtil.createMatrixFromList(matrix_list, matrix)
+        
+        return matrix
+    
+    def set_matrix_from_list(self, matrix_list):
+        
+        OpenMaya.MScriptUtil.createMatrixFromList(matrix_list, self.api_object)
+        
+
+class TransformationMatrix(ApiObject):
+    def __init__(self, matrix):
+        self.api_object = self._define_api_object(matrix)
+    
+    def _define_api_object(self, matrix = None):
+        
+        if matrix:
+            tmatrix = OpenMaya.MTransformationMatrix(matrix)
+        
+        if not matrix:
+            tmatrix = OpenMaya.MTransformationMatrix()
+            
+        return tmatrix
+    
+    def translation(self, open_maya_space = None):
+        
+        if not open_maya_space:
+            space = OpenMaya.MSpace.kWorld
+        if open_maya_space:
+            space = open_maya_space
+            
+        translation = self.api_object.getTranslation(space)
+        
+        return [translation[0],translation[1],translation[2]]
+        
+    def rotation(self):
+        
+        rotation = self.api_object.rotation().asEulerRotation()
+        return [rotation[0], rotation[1], rotation[2]]
+        
 class SelectionList(ApiObject):
     def _define_api_object(self):
         return OpenMaya.MSelectionList()
