@@ -2361,3 +2361,39 @@ class MayaAsciiFileData(MayaFileData):
     def _set_maya_file_type(self):
         return self.maya_ascii
     
+def read_ldr_file(filepath):
+    
+    lines = util_file.get_file_lines(filepath)
+    
+    found = []
+    
+    for line in lines:
+        split_line = line.split()
+        
+        print len(split_line)
+        
+        if not len(split_line) == 15:
+            continue
+        
+        line_type = split_line[0]
+        color = split_line[1]
+        matrix_values = split_line[2:14]
+        id_value = split_line[14]
+        
+        matrix_list = [float(matrix_values[3]), float(matrix_values[4]), float(matrix_values[5]), 0, 
+                       float(matrix_values[6]), float(matrix_values[7]), float(matrix_values[8]), 0, 
+                       float(matrix_values[9]), float(matrix_values[10]), float(matrix_values[11]), 0, 
+                       float(matrix_values[0]), float(matrix_values[1]), float(matrix_values[2]), 1]
+        
+        matrix = maya_lib.api.Matrix(matrix_list)
+        
+        tmatrix = maya_lib.api.TransformationMatrix(matrix.api_object)
+        
+        translate = tmatrix.translation()
+        rotate = tmatrix.rotation()
+        
+        id_value = util.get_first_number(id_value)
+        
+        found.append( [color, translate, rotate, id_value] )
+        
+    return found
