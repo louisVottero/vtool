@@ -210,6 +210,38 @@ class Matrix(ApiObject):
         OpenMaya.MScriptUtil.createMatrixFromList(matrix_list, self.api_object)
         
 
+class Quaternion(ApiObject):
+    
+    def __init__(self, angle = None, vector = []):
+        
+        self.api_object = self._define_api_object(angle, vector)
+        
+         
+    
+    def _define_api_object(self, angle = None,vector = []):
+        
+        angle = math.radians(angle)
+        
+        if angle and vector:
+            
+            api_vector = OpenMaya.MVector()
+            api_vector.x = vector[0]
+            api_vector.y = vector[1]
+            api_vector.z = vector[2]
+            
+            return OpenMaya.MQuaternion(angle, api_vector)
+        
+        if not angle and vector:
+            return OpenMaya.MQuaternion()
+    
+    def rotation(self):
+        
+        rot = self.api_object.asEulerRotation()
+        
+        rotation = [math.degrees(rot[0]), math.degrees(rot[1]), math.degrees(rot[2])]
+        
+        return rotation
+
 class TransformationMatrix(ApiObject):
     def __init__(self, matrix):
         self.api_object = self._define_api_object(matrix)
