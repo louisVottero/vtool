@@ -1453,6 +1453,13 @@ def get_permission(filepath):
         os.chmod(filepath, 0777)
     except:
         pass
+
+def exists(directory):
+    
+    if os.path.exists(directory):
+        return True
+    else:
+        return False
     
 def is_dir(directory):
     """

@@ -749,6 +749,8 @@ def is_the_same_number(number1, number2, tolerance = 0.00001):
     
     return False
 
+
+
 def convert_to_sequence(variable, sequence_type = list):
     """
     Easily convert to a sequence. 
