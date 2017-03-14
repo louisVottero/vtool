@@ -333,6 +333,11 @@ class FileData(Data):
         self.settings.set_directory(self.directory, 'data.type')
         self.name = self.settings.get('name')
         
+        if self.data_extension:
+            self.filepath = util_file.join_path(directory, '%s.%s' % (self.name, self.data_extension))
+        if not self.data_extension:
+            self.filepath = util_file.join_path(directory, self.name)
+        
     def create(self):
         name = self.name
         
@@ -2367,6 +2372,10 @@ def read_ldr_file(filepath):
     
     found = []
     
+    matrix_scale = maya_lib.api.Matrix([0.1, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.0, 1.0])
+    #matrix_180 = maya_lib.api.Matrix( [0.1, 0.0, 0.0, 0.0, 0.0, -0.1, 1.2246467991473533e-17, 0.0, 0.0, -1.2246467991473533e-17, -0.1, 0.0, 0.0, 0.0, 0.0, 1.0] )
+    #matrix_180 = maya_lib.api.Matrix( [1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.2246467991473532e-16, 0.0, 0.0, -1.2246467991473532e-16, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0])
+    
     for line in lines:
         split_line = line.split()
         
@@ -2387,9 +2396,13 @@ def read_ldr_file(filepath):
         
         matrix = maya_lib.api.Matrix(matrix_list)
         
-        tmatrix = maya_lib.api.TransformationMatrix(matrix.api_object)
+        matrix_scaled = matrix.api_object * matrix_scale.api_object
+        
+        tmatrix = maya_lib.api.TransformationMatrix(matrix_scaled)
         
         translate = tmatrix.translation()
+        
+        translate = [translate[0], translate[1] * -1, translate[2]]
         rotate = tmatrix.rotation()
         
         id_value = util.get_first_number(id_value)
