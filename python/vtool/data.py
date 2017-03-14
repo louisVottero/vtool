@@ -1,6 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import os
 import traceback
 import threading
 
@@ -2410,3 +2409,49 @@ def read_ldr_file(filepath):
         found.append( [color, translate, rotate, id_value] )
         
     return found
+
+def read_lxfml_file(filepath):
+    
+    from xml.etree import cElementTree as tree
+
+    dom = tree.parse(filepath)
+    root = dom.getroot()
+    scenes = root.findall('Scene')
+    
+    found_parts = []
+    
+    for scene in scenes:
+        models = scene.findall('Model')
+        
+        for model in models:
+            
+            groups = model.findall('Group')
+            
+            for group in groups:
+                print group
+                
+                parts = group.findall('Part')
+                
+                for part in parts:
+                    print part
+                    
+                    position = [0,0,0]
+                    angle_vector = [0,0,0]
+                    
+                    id = int(part.get('designID'))
+                    
+                    position[0] = float(part.get('tx'))
+                    position[1] = float(part.get('ty'))
+                    position[2] = float(part.get('tz'))                
+                    
+                    angle = float(part.get('angle'))
+                    angle_vector[0] = float(part.get('ax'))
+                    angle_vector[1] = float(part.get('ay'))
+                    angle_vector[2] = float(part.get('az'))
+                    
+                    rotation = maya_lib.api.Quaternion(angle, angle_vector)
+                    rotate = rotation.rotation()
+                    
+                    found_parts.append( (id, position, rotate) )
+    
+    return found_parts
