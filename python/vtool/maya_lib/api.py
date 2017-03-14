@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import math
+
 import vtool.util
 
 if vtool.util.is_in_maya():
@@ -192,7 +194,7 @@ class Point(ApiObject):
         return [self.api_object.x, self.api_object.y, self.api_object.z, self.api_object.w]
 
 class Matrix(ApiObject):
-    def __init__(self, matrix_list):
+    def __init__(self, matrix_list = []):
         self.api_object = self._define_api_object(matrix_list)
     
     def _define_api_object(self, matrix_list = []):
@@ -236,7 +238,7 @@ class TransformationMatrix(ApiObject):
     def rotation(self):
         
         rotation = self.api_object.rotation().asEulerRotation()
-        return [rotation[0], rotation[1], rotation[2]]
+        return [math.degrees(rotation[0]), math.degrees(rotation[1]), math.degrees(rotation[2])]
         
 class SelectionList(ApiObject):
     def _define_api_object(self):
