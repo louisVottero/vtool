@@ -588,6 +588,7 @@ class DataFileWidget(vtool.qt_ui.FileManagerWidget):
 class MayaDataFileWidget(DataFileWidget):
 
     def _define_main_tab_name(self):
+        
         return 'data file'
     
     def _define_save_widget(self):
@@ -627,9 +628,14 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.file_changed.emit()
         
     def _import_data(self):
-        if not vtool.util_file.is_file(self.data_class.filepath):
+        
+        
+        
+        if not vtool.util_file.exists(self.data_class.filepath):
             vtool.qt_ui.warning('No data to import.', self)
             return
+        
+        
         self.data_class.import_data()
         
 class MayaDataHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
