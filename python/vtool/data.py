@@ -1548,6 +1548,12 @@ class AnimationData(MayaCustomData):
             
     def export_data(self, comment):
         
+        unknown = cmds.ls(type = 'unknown')
+        
+        if unknown:
+            util.warning('Could not export keyframes. Unknown nodes found. Please remove unknowns first')
+            return
+        
         keyframes = self._get_keyframes()
         blend_weighted = self._get_blend_weighted()
         
@@ -1584,7 +1590,7 @@ class AnimationData(MayaCustomData):
                 
             outputs = maya_lib.attr.get_attribute_outputs('%s.output' % keyframe)
                         
-            if not inputs and not outputs:
+            if not inputs or not outputs:
                 continue
                         
             cmds.select(keyframe, add = True)
@@ -1680,6 +1686,8 @@ class AnimationData(MayaCustomData):
                     if locked:
                         cmds.setAttr(output, l = False)
             
+            
+            
             input_attr = keyframes['input']
             
             if input_attr:
@@ -1711,7 +1719,6 @@ class ControlAnimationData(AnimationData):
         controls = maya_lib.rigs_util.get_controls()
         
         keyframes = []
-        
         
         for control in controls:
             
@@ -2378,8 +2385,6 @@ def read_ldr_file(filepath):
     
     for line in lines:
         split_line = line.split()
-        
-        print len(split_line)
         
         if not len(split_line) == 15:
             continue
