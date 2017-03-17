@@ -830,9 +830,18 @@ class ShapeComboManager(object):
         base = self._get_mesh()
         home = self._get_home_mesh()
         
+        if not base or not cmds.objExists(base):
+            vtool.util.warning('No base mesh found')
+            return
+        
+        if not home or not cmds.objExists(home):
+            vtool.util.warning('No home mesh found')
+            return
+        
         meshes = core.get_shapes_in_hierarchy(base, 'mesh')
         
         home_meshes = core.get_shapes_in_hierarchy(home, 'mesh')
+        
         
         
         
@@ -861,10 +870,16 @@ class ShapeComboManager(object):
         blendshaped_meshes_list = []
         home_dict = self._get_home_dict()
         
+        if not home_dict:
+            return
+        
         for mesh in meshes:
             
             
             blendshape = deform.find_deformer_by_type(mesh, 'blendShape')
+
+            if not blendshape:
+                return
             
             blendshaped_meshes_list.append(mesh)
             
@@ -875,8 +890,7 @@ class ShapeComboManager(object):
             if self._prune_distance > -1:
                 blend_inst.set_prune_distance(self._prune_distance, home_dict[mesh])
             
-            if not blendshape:
-                return None
+
         
         self.blendshape = blendshape_dict
         self.blendshaped_meshes_list = blendshaped_meshes_list
@@ -1391,8 +1405,13 @@ class ShapeComboManager(object):
         manager = self._find_manager_for_mesh(base)
         
         if manager:
-            self.load(manager)
-            return
+            status = self.load(manager)
+            
+            if not status:
+                vtool.util.warning('Error loading manager: %s     Creating new one.  Please delete %s.' % (manager, manager))
+            
+            if status:
+                return
         
         name = self.setup_prefix + '_' + base
 
@@ -1420,7 +1439,12 @@ class ShapeComboManager(object):
         if self.is_shape_combo_manager(manager_group):
             self.setup_group = manager_group
             
-        self._get_blendshape()
+        blendshape = self._get_blendshape()
+        
+        if blendshape == None:
+            return False
+        
+        return True
         
     @core.undo_chunk
     def zero_out(self):
@@ -1802,7 +1826,10 @@ class ShapeComboManager(object):
             var.set_max_value(1)
             var.create(self.setup_group)
         
-        cmds.setAttr('%s.%s' % (self.setup_group, name), value)
+        if cmds.objExists('%s.%s' % (self.setup_group, name)):
+            cmds.setAttr('%s.%s' % (self.setup_group, name), value)
+        if not cmds.objExists('%s.%s' % (self.setup_group, name)):    
+            vtool.util.warning('Could not turn on shape %s' % name)
     
     def set_prune_distance(self, distance):
         self._prune_distance = distance
@@ -1904,12 +1931,12 @@ class ShapeComboManager(object):
         
         
         if target != name:
-                target = cmds.rename(target, name )
-                target = '|%s' % target
+            target = cmds.rename(target, name )
+            target = '|%s' % target
             
         parent = cmds.listRelatives(target, p = True)
         if parent:
-            cmds.parent(target, w = True)
+            target = cmds.parent(target, w = True)[0]
             
         if cmds.objExists(target):
             attr.unlock_attributes(target)

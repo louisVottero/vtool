@@ -21,7 +21,7 @@ if vtool.util.is_in_maya():
     
     import maya.OpenMaya as OpenMaya
 
-print 'Warning!!! vtool.maya_lib.util deprecated. It should no longer be used. Warning!!!'
+vtool.util.warning('This module: vtool.maya_lib.util, is deprecated. It should no longer be used.')
  
 undo_chunk_active = False
 current_progress_bar = None
@@ -56,9 +56,6 @@ def undo_off(function):
             
             if undo_state:
                 cmds.undoInfo( state = True )
-                    
-                # do not remove
-                print traceback.format_exc()
                 
             raise(RuntimeError)
         
@@ -112,9 +109,6 @@ def undo_chunk(function):
                 closed = True
                 
                 undo_chunk_active = False
-            
-                # do not remove
-                print traceback.format_exc()
             
             raise(RuntimeError)
 

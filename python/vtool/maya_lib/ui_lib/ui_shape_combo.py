@@ -291,8 +291,6 @@ class ComboManager(ui_core.MayaWindow):
         
     def _update_combo_selection(self, shapes):
         
-        print 'update combo selection'
-        
         if not self.combo_select_update:
             return
         #if not shapes:
@@ -1051,8 +1049,6 @@ class ComboTree(qt_ui.TreeWidget):
         self.setItemSelected(items[0], False)
     
     def load(self, combos = None, possible_combos = None, current_shapes = None):
-        
-        print 'loading combos', current_shapes
         
         if not combos:
             combos = self.manager.get_combos()

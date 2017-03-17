@@ -1407,7 +1407,7 @@ class MirrorControlKeyframes():
         found_keyframes = self._get_output_keyframes()
         
         for keyframe in found_keyframes:
-            
+            cmds.dgeval(keyframe)
             new_keyframe = cmds.duplicate(keyframe)[0]
             
             connections = attr.Connections(keyframe)
@@ -1416,7 +1416,12 @@ class MirrorControlKeyframes():
             
             mapped_output = self._map_connections(outputs)
             mapped_input = self._map_connections(inputs)
-
+            
+            if not mapped_output:
+                cmds.delete(new_keyframe)
+                vtool.util.warning('Keyframe %s has no outputs to mirror. Skipping' % keyframe)
+                continue
+            
             for inc in range(0, len(mapped_output), 2):
                 
                 output = mapped_output[inc]
@@ -1428,21 +1433,32 @@ class MirrorControlKeyframes():
                 if mapped_output[inc+1].find('.translate') > -1 and fix_translates:
                     do_fix_translates = True
                 
+                no_output = True
+                
                 if not attr.get_inputs(mapped_output[inc+1]):
                     
                     if not do_fix_translates:
-                        cmds.connectAttr(new_output, mapped_output[inc+1])
+                        cmds.connectAttr(new_output, mapped_output[inc+1], f = True)
                     if do_fix_translates:
+                        
                         attr.connect_multiply(new_output, mapped_output[inc+1], -1)
-                
+                    
+                    no_output = False
+            
+                if attr.get_inputs(mapped_output[inc+1]):
+                    vtool.util.warning('Could not output mirrored keyframe into %s. An input already exists for that attribute.' % mapped_output[inc+1] )
+            
+            if no_output:
+                cmds.delete(new_keyframe)
+                continue
+            
             for inc in range(0, len(mapped_input), 2):
                 
                 input_connection = mapped_input[inc+1]
                 split_input = input_connection.split('.')
                 new_input = '%s.%s' % (new_keyframe, split_input[1])
                 
-                if not attr.get_inputs(new_input):
-                    cmds.connectAttr(mapped_input[inc], new_input)
+                cmds.connectAttr(mapped_input[inc], new_input, f = True)
 
 
 def rename_control(old_name, new_name):

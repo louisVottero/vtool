@@ -629,12 +629,9 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
     def _import_data(self):
         
-        
-        
         if not vtool.util_file.exists(self.data_class.filepath):
             vtool.qt_ui.warning('No data to import.', self)
             return
-        
         
         self.data_class.import_data()
         
