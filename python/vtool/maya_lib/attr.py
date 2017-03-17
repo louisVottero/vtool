@@ -2193,7 +2193,8 @@ def unlock_attributes(node, attributes = [], only_keyable = False):
     
     if attrs:
         for attr in attrs:
-            cmds.setAttr('%s.%s' % (node, attr), l = False, k = True)
+            cmds.setAttr('%s.%s' % (node, attr), l = False, k = True, cb = True)
+            
 
 def lock_translate_attributes(node):
     lock_attributes(node, attributes = ['translateX','translateY','translateZ'], hide = True)
