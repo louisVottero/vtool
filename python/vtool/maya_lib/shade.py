@@ -1,6 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import vtool.util
+import vtool.util_file
 import api
 
 if vtool.util.is_in_maya():
@@ -229,9 +230,54 @@ def apply_transparent_lambert(mesh):
     if cmds.objExists(name):
         apply_shader(name, mesh)
         
-def create_ramp_texture_node(name):
+def create_texture_ramp(name):
     
     ramp = cmds.createNode('ramp', n = name)
 
     return ramp
 
+def create_texture_file(name, filepath = ''):
+    
+    file_node = cmds.createNode('file', n = name)
+    
+    if filepath:
+        
+        vtool.util_file.fix_slashes(filepath)
+        
+        cmds.setAttr('%s.fileTextureName' % file_node, filepath, type = 'string')
+    
+    return file_node
+    
+
+def add_2d_placement(texture_node, name = ''):
+    
+    node = None
+    
+    if name:
+        node = cmds.createNode('place2dTexture', name = name)
+    if not name:
+        node = cmds.createNode('place2dTexture')
+    
+    if not node:
+        return
+    
+    cmds.connectAttr('%s.outUV' % node, '%s.uvCoord' % texture_node)
+    cmds.connectAttr('%s.outUvFilterSize' % node, '%s.uvFilterSize' % texture_node)
+    cmds.connectAttr('%s.vertexCameraOne' % node, '%s.vertexCameraOne' % texture_node)
+    cmds.connectAttr('%s.vertexUvOne' % node, '%s.vertexUvOne' % texture_node)
+    cmds.connectAttr('%s.vertexUvTwo' % node, '%s.vertexUvTwo' % texture_node)
+    cmds.connectAttr('%s.vertexUvThree' % node, '%s.vertexUvThree' % texture_node)
+    cmds.connectAttr('%s.coverage' % node, '%s.coverage' % texture_node)
+    cmds.connectAttr('%s.mirrorU' % node, '%s.mirrorU' % texture_node)
+    cmds.connectAttr('%s.mirrorV' % node, '%s.mirrorV' % texture_node)
+    cmds.connectAttr('%s.noiseUV' % node, '%s.noiseUV' % texture_node)
+    cmds.connectAttr('%s.offset' % node, '%s.offset' % texture_node)
+    cmds.connectAttr('%s.repeatUV' % node, '%s.repeatUV' % texture_node)
+    cmds.connectAttr('%s.rotateFrame' % node, '%s.rotateFrame' % texture_node)
+    cmds.connectAttr('%s.rotateUV' % node, '%s.rotateUV' % texture_node)
+    cmds.connectAttr('%s.stagger' % node, '%s.stagger' % texture_node)
+    cmds.connectAttr('%s.translateFrame' % node, '%s.translateFrame' % texture_node)
+    cmds.connectAttr('%s.wrapU' % node, '%s.wrapU' % texture_node)
+    cmds.connectAttr('%s.wrapV' % node, '%s.wrapV' % texture_node)
+    
+    return node
