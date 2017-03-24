@@ -3222,6 +3222,9 @@ def get_slots(attribute):
         
     found_slots = []
     
+    if not slots:
+        return found_slots
+    
     for slot in slots:
         index = re.findall('\d+', slot)
         
