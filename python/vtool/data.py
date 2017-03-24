@@ -2443,7 +2443,8 @@ def read_lxfml_file(filepath):
                     position = [0,0,0]
                     angle_vector = [0,0,0]
                     
-                    id = int(part.get('designID'))
+                    id_value = int(part.get('designID'))
+                    shader_id = int(part.get('materialID'))
                     
                     position[0] = float(part.get('tx'))
                     position[1] = float(part.get('ty'))
@@ -2457,6 +2458,6 @@ def read_lxfml_file(filepath):
                     rotation = maya_lib.api.Quaternion(angle, angle_vector)
                     rotate = rotation.rotation()
                     
-                    found_parts.append( (id, position, rotate) )
+                    found_parts.append( (id_value, shader_id, position, rotate) )
     
     return found_parts
