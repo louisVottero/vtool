@@ -4821,6 +4821,9 @@ def reset_tweaks_on_mesh(mesh):
         reset_tweak(tweak)
         
 
+
+
+
 def match_geo_blendshape(source_geo, target_geo, attr_name):
     
     matches = []
@@ -4831,9 +4834,20 @@ def match_geo_blendshape(source_geo, target_geo, attr_name):
         if inc > (len(target_geo)-1):
             break
         
-        if not geo.is_mesh_compatible(source_geo[inc], target_geo[inc]):
-            vtool.util.warning('Skipping blendshape geo because incompatible:  %s   %s' % (source_geo[inc], target_geo[inc]))
+        if geo.is_a_curve(source_geo[inc]) and geo.is_a_mesh(target_geo[inc]):
             continue
+        if geo.is_a_mesh(source_geo[inc]) and geo.is_a_curve(target_geo[inc]):
+            continue
+        
+        if geo.is_a_curve(source_geo[inc]) and geo.is_a_curve(target_geo[inc]):
+            if not geo.is_cv_count_same(source_geo[inc], target_geo[inc]):
+                vtool.util.warning('Skipping blendshape curve because incompatible:  %s   %s' % (source_geo[inc], target_geo[inc]))
+                continue
+        
+        if geo.is_a_mesh(source_geo[inc]) and geo.is_a_mesh(target_geo[inc]):
+            if not geo.is_mesh_compatible(source_geo[inc], target_geo[inc]):
+                vtool.util.warning('Skipping blendshape mesh because incompatible:  %s   %s' % (source_geo[inc], target_geo[inc]))
+                continue
         
         matches.append([source_geo[inc], target_geo[inc]])
         targets.append(target_geo[inc])
@@ -4845,7 +4859,13 @@ def match_geo_blendshape(source_geo, target_geo, attr_name):
     cmds.setAttr('%s.origin' % blendshape, 0)
         
     for inc in range(0, len(matches)):
-        cmds.connectAttr('%s.worldMesh' % matches[inc][0], 
+        
+        if geo.is_a_mesh(matches[inc][0]):
+            out_connect = '%s.worldMesh' % matches[inc][0]
+        if geo.is_a_curve(matches[inc][0]):
+            out_connect = '%s.worldSpace' % matches[inc][0]
+        
+        cmds.connectAttr(out_connect, 
                          '%s.inputTarget[%s].inputTargetGroup[0].inputTargetItem[6000].inputGeomTarget' % (blendshape, inc))
         
         if not cmds.objExists('%s.%s' % (blendshape, attr_name)):
