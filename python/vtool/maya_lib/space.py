@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import random
+
 import vtool.util
 import api
 
@@ -3446,4 +3448,33 @@ def connect_inverse_scale(transform, joint):
     cmds.setAttr('%s.input2Y' % multiply, invert_y)
     cmds.setAttr('%s.input2Z' % multiply, invert_z)
     
-  
+def randomize(translate = [.1,.1,.1], rotate = [1,1,1], scale = [.1,.1,.1], transforms = None):
+
+    if transforms:
+        sel = transforms
+        
+    if not transforms:
+        sel = cmds.ls(sl = True, type = 'transform')
+
+    for thing in sel:
+        
+        cmds.move(  random.uniform(-translate[0], translate[0]), 
+                    random.uniform(-translate[1], translate[1]), 
+                    random.uniform(-translate[2], translate[2]), 
+                    thing, 
+                    relative = True)
+                    
+        cmds.rotate(  random.uniform(-rotate[0], rotate[0]), 
+                    random.uniform(-rotate[1], rotate[1]), 
+                    random.uniform(-rotate[2], rotate[2]), 
+                    thing,
+                    ocp = True,
+                    relative = True)
+                    
+        scale_x_invert = 1 - scale[0]
+        scale_y_invert = 1 - scale[1]
+        scale_z_invert = 1 - scale[2]
+                    
+        cmds.scale(random.uniform(scale_x_invert, 1),
+                    random.uniform(scale_y_invert, 1),
+                    random.uniform(scale_z_invert, 1))
