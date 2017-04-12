@@ -472,7 +472,6 @@ class VersionFile(object):
     
     def get_organized_version_data(self):
         
-        
         version_paths, version_numbers = self.get_versions(return_version_numbers_also = True)
         
         filepath = self._get_comment_path()
@@ -619,6 +618,7 @@ class VersionFile(object):
         Returns:
             list: List of version filepaths.
         """
+        
         version_folder = self._get_version_folder()
         
         files = get_files_and_folders(version_folder)
@@ -652,10 +652,13 @@ class VersionFile(object):
         quick_sort.set_follower_list(pass_files)
         pass_files = quick_sort.run()
         
+        
+        
+        
         pass_dict = {}
         
         for inc in range(0, len(number_list)):
-            pass_dict[number_list[inc]] = pass_files[1][inc]
+            pass_dict[pass_files[0][inc]] = pass_files[1][inc]
         
         if not return_version_numbers_also:
             return pass_dict
