@@ -2187,9 +2187,12 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False, copy_
     
     if copy_scale:
         orig_scale = cmds.getAttr('%s.scale' % transform)[0]
-        cmds.setAttr('%s.scaleX' % transform, 1)
-        cmds.setAttr('%s.scaleY' % transform, 1)
-        cmds.setAttr('%s.scaleZ' % transform, 1)
+        try:
+            cmds.setAttr('%s.scaleX' % transform, 1)
+            cmds.setAttr('%s.scaleY' % transform, 1)
+            cmds.setAttr('%s.scaleZ' % transform, 1)
+        except:
+            pass
             
     if not use_duplicate:    
         xform_group = cmds.group(em = True, n = core.inc_name( name ))
@@ -2198,7 +2201,7 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False, copy_
         
         if copy_scale: 
             match_space.scale()
-
+        
         
         if parent:
             cmds.parent(xform_group, parent[0])    
@@ -2221,9 +2224,6 @@ def create_xform_group(transform, prefix = 'xform', use_duplicate = False, copy_
         cmds.setAttr('%s.scaleX' % xform_group, orig_scale[0])
         cmds.setAttr('%s.scaleY' % xform_group, orig_scale[1])
         cmds.setAttr('%s.scaleZ' % xform_group, orig_scale[2])
-        
-
-        
         
     
     attr.connect_group_with_message(xform_group, transform, prefix)
@@ -2579,31 +2579,34 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
         
         if dup_parent:
             cmds.parent(local_group, w = True)
-            
+        
+        
         xform_group = create_xform_group(local_group, use_duplicate = True)
     
     if not use_duplicate:
         local_group = cmds.group(em = True, n = core.inc_name('local_%s' % source_transform))
         
-        xform_group = create_xform_group(local_group)
+        MatchSpace(target_transform, local_group).translation_rotation()
+        MatchSpace(target_transform, local_group).scale()
+        
+        xform_group = create_xform_group(local_group, copy_scale=True)
+        
         
         
         parent_world = cmds.listRelatives(source_transform, p = True)
         
         
-        
-        if target_transform.endswith('R'):
-            match = MatchSpace(target_transform, local_group).scale()
+        #In the past the xform used to get a scale copy of target transform ended with R. 
+        #This was stupid
+        #Its now changed so that all xforms copy the scale and 
+        #if target_transform.endswith('R'):
+        #    match = MatchSpace(target_transform, xform_local_group).scale()
         
         if parent_world:
             parent_world = parent_world[0]
             
             match = MatchSpace(parent_world, xform_group)
             match.translation_rotation()
-    
-    match = MatchSpace(source_transform, local_group)
-    
-    match.translation_rotation()
     
     attr.connect_translate(source_transform, local_group)
     attr.connect_rotate(source_transform, local_group)
