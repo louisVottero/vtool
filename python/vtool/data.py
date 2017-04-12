@@ -2378,7 +2378,9 @@ def read_ldr_file(filepath):
     
     found = []
     
-    matrix_scale = maya_lib.api.Matrix([0.1, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.0, 1.0])
+    scale = 0.001
+    
+    matrix_scale = maya_lib.api.Matrix([scale, 0.0, 0.0, 0.0, 0.0, scale, 0.0, 0.0, 0.0, 0.0, scale, 0.0, 0.0, 0.0, 0.0, 1.0])
     #matrix_180 = maya_lib.api.Matrix( [0.1, 0.0, 0.0, 0.0, 0.0, -0.1, 1.2246467991473533e-17, 0.0, 0.0, -1.2246467991473533e-17, -0.1, 0.0, 0.0, 0.0, 0.0, 1.0] )
     #matrix_180 = maya_lib.api.Matrix( [1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.2246467991473532e-16, 0.0, 0.0, -1.2246467991473532e-16, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0])
     
@@ -2399,6 +2401,7 @@ def read_ldr_file(filepath):
                        float(matrix_values[0]), float(matrix_values[1]), float(matrix_values[2]), 1]
         
         matrix = maya_lib.api.Matrix(matrix_list)
+        
         
         matrix_scaled = matrix.api_object * matrix_scale.api_object
         
@@ -2433,17 +2436,16 @@ def read_lxfml_file(filepath):
             groups = model.findall('Group')
             
             for group in groups:
-                print group
                 
                 parts = group.findall('Part')
                 
                 for part in parts:
-                    print part
                     
                     position = [0,0,0]
                     angle_vector = [0,0,0]
                     
-                    id = int(part.get('designID'))
+                    id_value = int(part.get('designID'))
+                    shader_id = int(part.get('materialID'))
                     
                     position[0] = float(part.get('tx'))
                     position[1] = float(part.get('ty'))
@@ -2457,6 +2459,6 @@ def read_lxfml_file(filepath):
                     rotation = maya_lib.api.Quaternion(angle, angle_vector)
                     rotate = rotation.rotation()
                     
-                    found_parts.append( (id, position, rotate) )
+                    found_parts.append( (id_value, shader_id, position, rotate) )
     
     return found_parts

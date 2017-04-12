@@ -287,7 +287,14 @@ def is_a_surface(node):
     Returns:
         bool
     """
-    if cmds.objExists('%s.v[0]' % node):
+    if cmds.objExists('%s.cv[0][0]' % node):
+        return True
+    
+    return False
+
+def is_a_curve(node):
+    
+    if cmds.objExists('%s.cv[0]' % node) and not cmds.objExists('%s.cv[0][0]' % node):
         return True
     
     return False

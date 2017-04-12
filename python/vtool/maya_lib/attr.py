@@ -2193,7 +2193,9 @@ def unlock_attributes(node, attributes = [], only_keyable = False):
     
     if attrs:
         for attr in attrs:
-            cmds.setAttr('%s.%s' % (node, attr), l = False, k = True)
+            cmds.setAttr('%s.%s' % (node, attr), l = False, k = True, cb = True)
+            cmds.setAttr('%s.%s' % (node,attr), k = True)
+            
 
 def lock_translate_attributes(node):
     lock_attributes(node, attributes = ['translateX','translateY','translateZ'], hide = True)
@@ -3220,6 +3222,9 @@ def get_slots(attribute):
     slots = cmds.listAttr(attribute, multi = True)
         
     found_slots = []
+    
+    if not slots:
+        return found_slots
     
     for slot in slots:
         index = re.findall('\d+', slot)

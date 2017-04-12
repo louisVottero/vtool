@@ -111,7 +111,7 @@ class MayaObject(ApiObject):
 
         if type(mobject) == str or type(mobject) == unicode:
             mobject = nodename_to_mobject(mobject)
-            self.api_object = self._define_api_object(mobject)
+            #self.api_object = self._define_api_object(mobject)
         
         if mobject:
             self.api_object = self._define_api_object(mobject)
@@ -920,17 +920,65 @@ class IteratePolygonFaces(MayaIterator):
         self.api_object.reset()
         return int_array
     
-    def get_center(self, face_id):
+    def get_center(self, face_id = None):
         
-        #point = OpenMaya.MPoint()
-        script_util = OpenMaya.MScriptUtil()
-        prev = script_util.asIntPtr()
+        space = OpenMaya.MSpace.kWorld
         
-        self.api_object.setIndex(face_id, prev)
+        if face_id:
+            script_util = OpenMaya.MScriptUtil()
+            prev = script_util.asIntPtr()
+            
+            self.api_object.setIndex(face_id, prev)
         
-        point = self.api_object.center()
+        point = self.api_object.center(space)
         
         return point.x, point.y, point.z
+    
+    def get_normal(self, face_id = None):
+    
+        if face_id:
+            script_util = OpenMaya.MScriptUtil()
+            prev = script_util.asIntPtr()
+            print self.api_object
+            self.api_object.setIndex(face_id, prev)
+    
+        space = OpenMaya.MSpace.kWorld
+    
+        vector = OpenMaya.MVector()
+        
+        self.api_object.getNormal(vector, space)
+        
+        return (vector.x,vector.y,vector.z)
+    
+    def get_normal_tangent(self, face_id = None):
+        
+        if face_id:
+            script_util = OpenMaya.MScriptUtil()
+            prev = script_util.asIntPtr()
+            
+            self.api_object.setIndex(face_id, prev)
+        
+        space = OpenMaya.MSpace.kWorld
+        
+        normal_vector = OpenMaya.MVector()
+        position_vector = OpenMaya.MVector()
+        #position_vector = OpenMaya.MVector()
+        
+        position = self.api_object.center(space)
+        self.api_object.getNormal(normal_vector, space)
+        
+        position_vector.x = 0
+        position_vector.y = 0
+        position_vector.z = 0
+        
+        
+        
+        tangent = position_vector * normal_vector
+        
+        print tangent
+        
+        print tangent.x, tangent.y, tangent.z
+        
     
 class KeyframeFunction(MayaFunction):
     
