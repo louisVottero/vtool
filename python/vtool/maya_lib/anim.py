@@ -9,6 +9,28 @@ if vtool.util.is_in_maya():
 import core
 import attr
 
+def bake_to_animation(nodes, min_time = None, max_time = None):
+    
+    if not min_time or not max_time:
+        min_time, max_time = get_min_max_time()
+    
+    
+    cmds.bakeResults( simulation = True,
+                      t = (min_time, max_time),
+                      sampleBy = 1,
+                      oversamplingRate = 1,
+                      disableImplicitControl = True,
+                      preserveOutsideKeys = True,
+                      sparseAnimCurveBake = False,
+                      removeBakedAttributeFromLayer = False,
+                      removeBakedAnimFromLayer = False,
+                      bakeOnOverrideLayer = False,
+                      minimizeRotation = True,
+                      controlPoints = False,
+                      shape = False)
+    
+    cmds.filterCurve(nodes)
+
 def get_min_max_time():
     
     min_value = cmds.playbackOptions(query = True, minTime = True)
