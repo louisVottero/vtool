@@ -193,6 +193,8 @@ class Process(object):
     
     def _prep_maya(self):
         
+        
+        
         if util.is_in_maya():
         
             cmds.select(cl = True)
@@ -622,6 +624,7 @@ class Process(object):
         instance = data_folder.get_folder_data_instance()
         
         if hasattr(instance, 'open'):
+            
             instance.open()
         if not hasattr(instance, 'open'):
             util.warning('Could not open data %s in process %s.  No open option.' % (name, self.process_name))
@@ -1465,7 +1468,7 @@ class Process(object):
             
         return False
     
-    def run_script(self, script, hard_error = True):
+    def run_script(self, script, hard_error = True, settings = None):
         """
         Run a script in the process.
         
@@ -1518,7 +1521,14 @@ class Process(object):
                 self._reset_builtin(old_process, old_cmds, old_show, old_warning)
                 return
             
-            self._prep_maya()
+            auto_focus = True
+            
+            if settings:
+                if settings.has_key('auto_focus_scene'):
+                    auto_focus = settings['auto_focus_scene']
+            
+            if auto_focus:
+                self._prep_maya()
             
             name = util_file.get_basename(script)
             
