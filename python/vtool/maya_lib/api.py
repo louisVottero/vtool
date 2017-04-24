@@ -467,6 +467,53 @@ class MeshFunction(MayaFunction):
                                             hit_bary1_ptr, hit_bary2_ptr)
         
         return [hit_point.x, hit_point.y, hit_point.z]
+    
+    def get_closest_intersection_face(self, source_vector, direction_vector, max_distance = 10000):
+        
+        point_base = OpenMaya.MFloatPoint()
+        point_base.x = source_vector[0]
+        point_base.y = source_vector[1]
+        point_base.z = source_vector[2]
+        
+        float_base = OpenMaya.MFloatVector()
+        float_base.x = source_vector[0]
+        float_base.y = source_vector[1]
+        float_base.z = source_vector[2]
+        
+        point_direction = OpenMaya.MFloatVector()
+        point_direction.x = direction_vector[0]
+        point_direction.y = direction_vector[1]
+        point_direction.z = direction_vector[2]
+        
+        point_direction = point_direction - float_base
+        
+        accelerator = self.api_object.autoUniformGridParams()
+        space = OpenMaya.MSpace.kWorld
+        
+        
+        hit_point = OpenMaya.MFloatPoint()
+        
+        hit_double = OpenMaya.MScriptUtil()   
+        hit_param_ptr = hit_double.asFloatPtr()
+               
+        hit_face = OpenMaya.MScriptUtil()
+        hit_face_ptr = hit_face.asIntPtr()
+        
+        hit_triangle = OpenMaya.MScriptUtil()
+        hit_triangle_ptr = hit_triangle.asIntPtr()
+        
+        hit_bary1 = OpenMaya.MScriptUtil()   
+        hit_bary1_ptr = hit_bary1.asFloatPtr()
+        
+        hit_bary2 = OpenMaya.MScriptUtil()   
+        hit_bary2_ptr = hit_bary2.asFloatPtr()
+                        
+        self.api_object.closestIntersection(point_base, point_direction, None, None, False, space, max_distance, False, accelerator, 
+                                            hit_point, hit_param_ptr, hit_face_ptr, hit_triangle_ptr,
+                                            hit_bary1_ptr, hit_bary2_ptr)
+        
+        face_index = OpenMaya.MScriptUtil.getInt(hit_face_ptr)
+        return face_index
    
     def refresh_mesh(self):
         
@@ -869,6 +916,39 @@ class IteratePolygonFaces(MayaIterator):
     def _define_api_object(self, mobject):
         return OpenMaya.MItMeshPolygon(mobject)
     
+    def is_done(self):
+        return self.api_object.isDone()
+    
+    def index(self):
+        return self.api_object.index()
+    
+    def next(self):
+        self.api_object.next()
+        
+    def reset(self):
+        self.api_object.reset()
+        
+    def count(self):
+        count = self.api_object.count()
+        return count
+    
+    def get_area(self, face_id = None):
+        
+        script_util = OpenMaya.MScriptUtil()   
+        area_ptr = script_util.asDoublePtr()
+        OpenMaya.MScriptUtil.setDouble(area_ptr, 0.0)
+        
+        if face_id != None:
+            script_util = OpenMaya.MScriptUtil()
+            prev = script_util.asIntPtr()
+            self.api_object.setIndex(face_id, prev)
+        
+        self.api_object.getArea(area_ptr)
+        
+        area_value = OpenMaya.MScriptUtil.getDouble(area_ptr)
+        
+        return area_value
+    
     def get_face_center_vectors(self):
         center_vectors = []
         
@@ -924,7 +1004,7 @@ class IteratePolygonFaces(MayaIterator):
         
         space = OpenMaya.MSpace.kWorld
         
-        if face_id:
+        if face_id != None:
             script_util = OpenMaya.MScriptUtil()
             prev = script_util.asIntPtr()
             
@@ -936,10 +1016,9 @@ class IteratePolygonFaces(MayaIterator):
     
     def get_normal(self, face_id = None):
     
-        if face_id:
+        if face_id != None:
             script_util = OpenMaya.MScriptUtil()
             prev = script_util.asIntPtr()
-            print self.api_object
             self.api_object.setIndex(face_id, prev)
     
         space = OpenMaya.MSpace.kWorld
@@ -951,7 +1030,7 @@ class IteratePolygonFaces(MayaIterator):
         return (vector.x,vector.y,vector.z)
     
     def get_normal_tangent(self, face_id = None):
-        
+        #not finished
         if face_id:
             script_util = OpenMaya.MScriptUtil()
             prev = script_util.asIntPtr()

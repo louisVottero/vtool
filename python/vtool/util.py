@@ -195,7 +195,10 @@ class StopWatch(object):
             if minutes == None:
                 show('%send timer: %s seconds' % (tabs,seconds))
             if minutes != None:
-                show('%send timer: %s minutes, %s seconds' % (tabs,minutes, seconds))
+                if minutes > 1:
+                    show('%send timer: %s minutes, %s seconds' % (tabs,minutes, seconds))
+                if minutes == 1:
+                    show('%send timer: %s minute, %s seconds' % (tabs,minutes, seconds))
             self.__class__.running -= 1
         
         return minutes, seconds
@@ -535,6 +538,74 @@ class Part(object):
 #    
 #    value = percent1 < 128 ? ( 2 * percent2 * percent1 ) / 255 
 #                 : 255 - ( ( 2 * ( 255 - percent2 ) * ( 255 - percent1 ) ) / 255
+
+def vector_multiply(vector, value):
+    
+    result = [vector[0] * value, vector[1] * value, vector[2] * value]
+    
+    return result
+
+def vector_divide(vector, value):
+    
+    result = [vector[0] / value, vector[1] / value, vector[2] / value]
+    
+    return result
+
+def vector_magnitude(vector):
+    
+    magnitude = math.sqrt(vector[0]**2 + vector[1]**2 + vector[2] ** 2)
+    
+    return magnitude
+
+def vector_add(vector1, vector2):
+    
+    return [ vector1[0] + vector2[0], vector1[1] + vector2[1], vector1[2] + vector2[2] ]
+
+def vector_cross(vector1, vector2, normalize = True):
+    
+    result = [vector1[1]*vector2[2] - vector1[2]*vector2[1],
+              vector1[2]*vector2[0] - vector1[0]*vector2[2],
+              vector1[0]*vector2[1] - vector1[1]*vector2[0]]
+
+    if normalize == True:
+        result = vector_divide(result, vector_magnitude(result))
+
+    return result
+
+def rotate_x_at_origin(vector, value, value_in_radians = False):
+    
+    if not value_in_radians:
+        value = math.radians(value)
+    
+    x = vector[0]
+    y = ( vector[1]*math.cos(value) ) - ( vector[2]*math.sin(value) )
+    z = ( vector[1]*math.sin(value) ) + ( vector[2]*math.cos(value) )
+    
+    
+    return [x,y,z]
+
+def rotate_y_at_origin(vector, value, value_in_radians = False):
+    
+    if not value_in_radians:
+        value = math.radians(value)
+    
+    x = ( vector[0]*math.cos(value) ) + ( vector[2]*math.sin(value) )
+    y = vector[1]
+    z = ( -(vector[0]*math.sin(value)) ) + ( vector[2]*math.cos(value) )
+    
+    
+    return [x,y,z]
+
+def rotate_z_at_origin(vector, value, value_in_radians = False):
+    
+    if not value_in_radians:
+        value = math.radians(value)
+    
+    x = ( vector[0]*math.cos(value) ) - ( vector[1]*math.sin(value) )
+    y = ( vector[0]*math.sin(value) ) + ( vector[1]*math.cos(value) )
+    z = vector[2]
+    
+    return [x,y,z]
 
 def get_axis_vector(axis_name):
     """
