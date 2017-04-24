@@ -719,10 +719,27 @@ def get_vertices(mesh):
     
     for mesh in meshes:
         
-        verts = cmds.ls('%s.vtx[*]' % mesh)
+        verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
         
         if verts:
             found += verts
+    
+    return found
+
+def get_faces(mesh):
+    
+    mesh = get_mesh_shape(mesh)
+    
+    meshes = core.get_shapes(mesh, 'mesh', no_intermediate=True)
+    
+    found = []
+    
+    for mesh in meshes:
+        
+        faces = cmds.ls('%s.f[*]' % mesh, flatten = True)
+        
+        if faces:
+            found += faces
     
     return found
 
@@ -2394,3 +2411,114 @@ def randomize_mesh_vertices(mesh, range_min = 0.0, range_max = 0.1):
     for vert in verts:
         cmds.move(uniform(range_min, range_max),uniform(range_min, range_max),uniform(range_min, range_max), vert, r = True)
         
+        
+def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = -1):
+    
+    iter_face = api.IteratePolygonFaces(mesh)
+    mesh_fn = api.MeshFunction(mesh)
+    
+    occluded_faces = []
+    
+    def get_face_hit_id(mesh_fn, source_vector, normal_vector):
+        
+        source_normal = vtool.util.vector_add(source_vector, normal_vector)
+        face_id = mesh_fn.get_closest_intersection_face(source_normal, source_vector)
+        
+        return face_id
+    
+    while not iter_face.is_done():
+    
+        index = iter_face.index()
+        
+        skip_face = False
+        
+        if skip_with_area_greater_than > 0:
+            area = iter_face.get_area()
+            if area > skip_with_area_greater_than:
+                skip_face = True
+        
+        if skip_face:
+            iter_face.next()
+            continue
+        
+        center = iter_face.get_center()
+        
+        normal = iter_face.get_normal()
+        normal = vtool.util.vector_multiply(normal, within_distance)
+        
+        tangent = [0,0,0]
+        
+        found_space = False
+        
+        for inc in range(0, 5):
+            
+            if inc == 0:
+                
+                face_id = get_face_hit_id(mesh_fn, center, normal)
+                
+            
+            if inc == 1:
+                if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
+                    tangent = [1,.1,0]
+                else:
+                    tangent = vtool.util.vector_cross(normal, [0,1,0])
+                    tangent = vtool.util.get_inbetween_vector(tangent, normal, .1)
+                
+                tangent = vtool.util.vector_multiply(tangent, within_distance)
+                
+                face_id = get_face_hit_id(mesh_fn, center, tangent)
+            
+            if inc == 2:
+                
+                if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
+                    neg_tangent = [-1,.1,0]
+                    
+                else:
+                    
+                    neg_tangent = vtool.util.vector_cross(normal, [0,-1,0])
+                    neg_tangent = vtool.util.get_inbetween_vector(neg_tangent, normal, .1)
+                
+                neg_tangent = vtool.util.vector_multiply(neg_tangent, within_distance)
+                
+                face_id = get_face_hit_id(mesh_fn, center, neg_tangent)
+            
+            if inc == 3:
+                if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
+                    binormal = [0,.1,1]
+                else:
+                    
+                    binormal = vtool.util.vector_cross(normal, tangent)
+                    binormal = vtool.util.get_inbetween_vector(binormal, normal, .1)
+                    
+                binormal = vtool.util.vector_multiply(binormal, within_distance)
+                    
+                face_id = get_face_hit_id(mesh_fn, center, binormal)
+                
+            if inc == 4:
+                if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
+                    neg_binormal = [0,.1,-1]
+                else:
+                    
+                    neg_binormal = vtool.util.vector_cross(normal, neg_tangent)
+                    neg_binormal = vtool.util.get_inbetween_vector(neg_binormal, normal, .1)
+                    
+                neg_binormal = vtool.util.vector_multiply(neg_binormal, within_distance)
+                    
+                face_id = get_face_hit_id(mesh_fn, center, neg_binormal)
+            
+            
+            
+            if face_id == index:
+                found_space = True
+                break
+        
+        if found_space:
+            iter_face.next()
+            continue
+        
+        face = '%s.f[%s]' % (mesh, iter_face.index())
+        occluded_faces.append(face)
+        
+        iter_face.next()
+        
+    return occluded_faces

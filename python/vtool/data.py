@@ -2461,7 +2461,7 @@ def read_lxfml_file(filepath):
                     
                     position[0] = float(part.get('tx'))
                     position[1] = float(part.get('ty'))
-                    position[2] = float(part.get('tz'))                
+                    position[2] = float(part.get('tz'))
                     
                     angle = float(part.get('angle'))
                     angle_vector[0] = float(part.get('ax'))
