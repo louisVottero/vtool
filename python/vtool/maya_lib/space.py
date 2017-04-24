@@ -2793,6 +2793,9 @@ def add_orient_joint(joint):
     
     cmds.parent(aim_joint, up_joint, joint)
     
+    cmds.reorder(up_joint, front = True)
+    cmds.reorder(aim_joint, front = True)
+    
     cmds.makeIdentity(aim_joint, apply = True, r = True, jo = True)
     cmds.makeIdentity(up_joint, apply = True, r = True, jo = True)
     
