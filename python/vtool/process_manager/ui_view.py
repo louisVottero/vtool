@@ -1672,7 +1672,7 @@ class ProcessTreeModel(qt.QtCore.QAbstractListModel):
         return qt.QtCore.Qt.ItemIsEditable | qt.QtCore.Qt.ItemIsEnabled | qt.QtCore.Qt.ItemIsSelectable
     
     def parent(self, index):
-        print 'parent!!!'
+        
         if not index.isValid():
             return qt.QtCore.QModelIndex()
 
@@ -1686,7 +1686,7 @@ class ProcessTreeModel(qt.QtCore.QAbstractListModel):
         return self.createIndex(parent_process.get_sub_process_count(), 0, parent_process)
     
     def getItem(self, index):
-        print 'get item!!!!'
+        
         if index.isValid():
             item = index.internalPointer()
             if item:
@@ -1723,8 +1723,6 @@ class ProcessTreeModel(qt.QtCore.QAbstractListModel):
     
     def index(self, row, column, parent):
         
-        print 'get index!!!', row, column, parent
-        
         #if not self.hasIndex(row, column, parent):
         #    return qt.QtCore.QModelIndex()
         if not parent.isValid():
@@ -1734,10 +1732,6 @@ class ProcessTreeModel(qt.QtCore.QAbstractListModel):
         
         
         child_process = parent_process.get_sub_process_by_index(row)
-        
-        print 'found in index!!!!'
-        print parent_process, parent_process.get_basename()
-        print child_process, child_process.get_basename()
         
         if child_process:
             
@@ -1752,12 +1746,7 @@ class ProcessTreeModel(qt.QtCore.QAbstractListModel):
     
     def rowCount(self, parent=qt.QtCore.QModelIndex()):
         
-        print 'row count!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-        #parent is for hierarchal lists
-        
         parent_process = self.getItem(parent)
-        
-        print 'sub processes count!', parent_process.get_sub_process_count()
         
         return parent_process.get_sub_process_count()
     
