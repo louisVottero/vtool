@@ -10,7 +10,10 @@ if vtool.util.is_in_maya():
     import maya.OpenMaya as OpenMaya
     import maya.OpenMayaAnim as OpenMayaAnim
     import maya.OpenMayaUI as OpenMayaUI
-    
+
+
+
+
 allow_save = False
     
 def start_check_after_save(function):

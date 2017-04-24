@@ -26,7 +26,8 @@ import vtool.util
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
-    import maya.OpenMaya as om
+    import maya.OpenMaya as OpenMaya
+    import maya.OpenMayaUI as OpenMayaUI
     
 undo_chunk_active = False
 current_progress_bar = None
@@ -255,6 +256,33 @@ class ProgressBar(object):
         
         return False
     
+
+def get_current_camera():
+    view = OpenMayaUI.M3dView.active3dView()
+    cam = OpenMaya.MDagPath()
+    view.getCamera(cam)
+    camera = cam.fullPathName()
+    
+    return camera
+        
+class StoreDisplaySettings(object):
+    
+    def __init__(self):
+        
+        self.style = None
+        self.setting_id = None
+        self.view = OpenMayaUI.M3dView.active3dView()
+    
+    def store(self):
+        
+        self.setting_id = self.view.objectDisplay()
+        self.style = self.view.displayStyle()
+        
+    def restore(self):
+        
+        self.view.setObjectDisplay(self.setting_id)
+        self.view.setDisplayStyle(self.style)
+        
 
 def undo_off(function):
     @wraps(function)
@@ -1008,7 +1036,7 @@ def print_help(string_value):
     
     string_value = string_value.replace('\n', '\nV:\t\t')
     
-    om.MGlobal.displayInfo('V:\t\t' + string_value) 
+    OpenMaya.MGlobal.displayInfo('V:\t\t' + string_value) 
 
 #--- file
 
@@ -1117,6 +1145,8 @@ def save(filepath):
     return saved
     
 #--- ui
+
+
 
 def get_under_cursor(use_qt = True):
     """
