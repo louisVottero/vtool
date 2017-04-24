@@ -747,7 +747,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         start_new_scene = self.settings.get('start_new_scene_on_process')
         
         if util.is_in_maya() and start_new_scene and last_inc == None:
+            
+            
+            display = maya_lib.core.StoreDisplaySettings()
+            display.store()
             cmds.file(new = True, f = True)
+            display.restore()
         
         scripts, states = self.process.get_manifest()
         
@@ -813,7 +818,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.code_widget.set_process_script_state(scripts[inc], 2)
             
-            status = self.process.run_script(script_name, False)
+            status = self.process.run_script(script_name, False, self.settings.settings_dict)
             
             if not status == 'Success':
                 
