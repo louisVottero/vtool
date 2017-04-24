@@ -32,8 +32,8 @@ class DataManager(object):
                                ControlCvData(),
                                ControlColorData(),
                                SkinWeightData(),
-                               BlendshapeWeightData(),
                                DeformerWeightData(),
+                               BlendshapeWeightData(),
                                PoseData(),
                                MayaAttributeData(),
                                AnimationData(),
@@ -1577,22 +1577,32 @@ class AnimationData(MayaCustomData):
         
         cmds.select(cl = True)
         
+        select_keyframes = []
+        
         for keyframe in keyframes:
+            
+            node_type = cmds.nodeType(keyframe)
+            
             
             if not cmds.objExists(keyframe):
                 continue
             
             inputs = []
             
-            if not cmds.nodeType(keyframe) == 'blendWeighted':
+            if not node_type == 'blendWeighted':
                 inputs = maya_lib.attr.get_attribute_input('%s.input' % keyframe)
                 
             outputs = maya_lib.attr.get_attribute_outputs('%s.output' % keyframe)
-                        
-            if not inputs or not outputs:
-                continue
-                        
-            cmds.select(keyframe, add = True)
+            
+            if node_type.find('animCurveT') > -1:
+                if not outputs:
+                    continue
+            if not node_type.find('animCurveT') > -1:
+                if not outputs or not inputs:
+                    continue
+            
+            select_keyframes.append(keyframe)
+            
             
             connections = maya_lib.attr.Connections(keyframe)
             connections.disconnect()
@@ -1600,7 +1610,9 @@ class AnimationData(MayaCustomData):
             all_connections.append(connections)
             
             info_lines.append("{'%s' : {'output': %s, 'input': '%s'}}" % (keyframe, outputs, inputs))
-            
+        
+        cmds.select(select_keyframes)
+        
         filepath = util_file.join_path(path, 'keyframes.ma')
         cmds.file(rename = filepath)
             
@@ -1787,7 +1799,7 @@ class PoseData(MayaCustomData):
     maya_ascii = 'mayaAscii'
 
     def _data_name(self):
-        return 'pose'
+        return 'correctives'
 
     def _data_extension(self):
         return ''
