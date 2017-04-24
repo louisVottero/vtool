@@ -18,6 +18,7 @@ def main(directory = None):
     if not util.is_in_maya():
         window = ui_process_manager.ProcessManagerWindow()   
         window.show()
+        
         return window
         
     if util.is_in_maya():

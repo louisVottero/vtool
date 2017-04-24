@@ -407,6 +407,16 @@ class Process(object):
         
         return process
     
+    def get_sub_process_count(self):
+        """
+        Returns:
+            int: The number of sub processes under the current.
+        """
+        found = self.get_sub_processes()
+        
+        if found:
+            return len(found)
+    
     def get_sub_processes(self):
         """
         Returns:
@@ -415,7 +425,7 @@ class Process(object):
         process_path = self.get_path()
         
         found = find_processes(process_path)
-                                
+        
         return found
     
     def get_sub_process(self, part_name):
@@ -432,6 +442,16 @@ class Process(object):
         part_process.set_directory(self.get_path())  
         
         return part_process    
+        
+    def get_sub_process_by_index(self, index):
+        
+        found = self.get_sub_processes()
+        
+        if index < len(found):
+            
+            sub_process = Process(found[index])
+            sub_process.set_directory(self.get_path())
+            return sub_process
         
     def get_parent_process(self):
         

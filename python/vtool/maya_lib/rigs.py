@@ -1355,6 +1355,7 @@ class FkLocalRig(FkRig):
         
         local_group, local_xform = space.constrain_local(source_transform, target_transform, scale_connect = self.rig_scale)
         
+        
         if not self.local_parent:
             self.local_xform = local_xform
             cmds.parent(local_xform, self.setup_group)
@@ -1394,7 +1395,7 @@ class FkLocalRig(FkRig):
 
     def set_control_scale(self, bool_value):
         """
-        Set the size of each control.
+        Set whether the fk setup should be scalable at each control.
         """
         self.rig_scale = bool_value
         
