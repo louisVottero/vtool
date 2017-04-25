@@ -669,6 +669,12 @@ class OrientJointAttributes(object):
         attr = self._create_triangle_attribute('triangleBtm')
         self.attributes.append(attr)
         
+        attr = MayaNumberVariable('active')
+        attr.set_variable_type('bool')
+        attr.set_keyable(True)
+        attr.create(self.joint)
+        self.attributes.append(attr)
+        
 
     def _delete_attributes(self):
         
@@ -702,6 +708,7 @@ class OrientJointAttributes(object):
         self.attributes[5].set_value(1)
         self.attributes[6].set_value(2)
         self.attributes[7].set_value(3)
+        self.attributes[8].set_value(1)
     
     def set_joint(self, joint):
         """
@@ -3365,3 +3372,12 @@ def add_orient_attributes(transform):
         
         orient = OrientJointAttributes(thing)
         orient.set_default_values()
+        
+def remove_orient_attributes(transform):
+    if type(transform) != list:
+        transform = [transform]
+    
+    for thing in transform:
+        
+        orient = OrientJointAttributes(thing)
+        orient.delete()
