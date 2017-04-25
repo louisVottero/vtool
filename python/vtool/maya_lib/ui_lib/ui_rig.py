@@ -333,6 +333,7 @@ class RigManager(qt_ui.DirectoryWidget):
         parent.main_layout.addWidget(mirror_controls)
         
         parent.main_layout.addWidget(self.fix_sub_controls)
+        parent.main_layout.addSpacing(15)
         parent.main_layout.addWidget(number_button)
         parent.main_layout.addWidget(size_slider)
         parent.main_layout.addWidget(size_center_slider)
