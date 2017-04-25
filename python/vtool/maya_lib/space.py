@@ -1162,6 +1162,10 @@ class OrientJoint(object):
         
     def run(self):
         
+        if cmds.objExists('%s.active' % self.joint):
+            if not cmds.getAttr('%s.active' % self.joint):
+                vtool.util.warning('%s has orientation attributes but is not active.  Skipping.' % self.joint)
+                return
         
         self._freeze()
                 
