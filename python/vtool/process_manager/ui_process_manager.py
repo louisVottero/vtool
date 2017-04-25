@@ -177,8 +177,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.set_directory(data_path)
         self.build_widget.show()
         
-    def sizeHint(self):
-        return qt.QtCore.QSize(600,650)
+    #def sizeHint(self):
+        #return qt.QtCore.QSize(600,650)
         
     def _setup_settings_file(self):
         
@@ -290,34 +290,34 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #process_button_layout = qt.QVBoxLayout()
         self.process_button = qt.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
-        self.process_button.setMinimumWidth(150)
+        self.process_button.setMinimumWidth(120)
         self.process_button.setMinimumHeight(30)
         
         self.batch_button = qt.QPushButton('BATCH')
         self.batch_button.setDisabled(True)
         self.batch_button.setMinimumHeight(30)
-        self.batch_button.setMinimumWidth(150)
+        self.batch_button.setMinimumWidth(120)
         #self.process_button.setMinimumWidth(150)
         #self.process_button.setMinimumHeight(40)
         
         self.stop_button = qt.QPushButton('STOP (Esc key)')
-        self.stop_button.setMaximumWidth(140)
+        self.stop_button.setMaximumWidth(110)
         self.stop_button.setMinimumHeight(30)
         self.stop_button.hide()
         
         self.continue_button = qt.QPushButton('CONTINUE')
-        self.continue_button.setMaximumWidth(150)
+        self.continue_button.setMaximumWidth(120)
         self.continue_button.setMinimumHeight(30)
         self.continue_button.hide()
         
         self.run_selected_button = qt.QPushButton('RUN SELECTED')
-        self.run_selected_button.setMaximumWidth(150)
+        self.run_selected_button.setMaximumWidth(125)
         self.run_selected_button.setMinimumHeight(30)
         self.run_selected_button.hide()
         
         self.browser_button = qt.QPushButton('Browse')
         self.browser_button.setMaximumWidth(120)
-        help_button = qt.QPushButton('Help')
+        help_button = qt.QPushButton('?')
         help_button.setMaximumWidth(100)       
         
         btm_layout = qt.QVBoxLayout()
@@ -333,13 +333,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         left_button_layout.addWidget(self.continue_button)
         #left_button_layout.addSpacing(10)
         #left_button_layout.addWidget(self.batch_button)
-        left_button_layout.addSpacing(20)
+        left_button_layout.addSpacing(10)
         left_button_layout.addWidget(self.run_selected_button)
         
         right_button_layout.setAlignment(qt.QtCore.Qt.AlignRight)
         
         right_button_layout.addWidget(self.batch_button)
-        right_button_layout.addSpacing(10)
+        right_button_layout.addSpacing(5)
         right_button_layout.addWidget(self.browser_button)
         right_button_layout.addWidget(help_button)
         

@@ -348,7 +348,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             
             group = group.capitalize()
             
-            nice_name = nice_name + ' ' + group
+            nice_name = nice_name#  maybe add back in when data exists outside maya + '   - ' + group 
             
             item.setText(1, nice_name)
             
