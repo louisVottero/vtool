@@ -958,12 +958,16 @@ class GroundRig(JointRig):
         self.control_shape = 'square_point'
         self.control_size = 1
         self.sub_control_size = .9
+        self.scalable = False
 
     def set_joints(self, joints = None):
         super(GroundRig, self).set_joints(joints)
         
     def set_control_size(self, float_value):
         super(GroundRig, self).set_control_size(float_value * 40)
+    
+    def set_scalable(self, bool_value):
+        self.scalable = bool_value
     
     def create(self):
         super(GroundRig, self).create()
@@ -1000,7 +1004,11 @@ class GroundRig(JointRig):
             last_control = control.get()
             
             
-            control.hide_scale_and_visibility_attributes()
+            if not self.scalable:
+                control.hide_scale_and_visibility_attributes()
+            if self.scalable:
+                control.hide_visibility_attribute()
+                
         
         if self.joints and self.description != 'ground':
             xform = space.create_xform_group(controls[0])
@@ -1009,8 +1017,9 @@ class GroundRig(JointRig):
         if self.joints:   
             if self.attach_joints:
                 cmds.parentConstraint(control.get(), self.joints[0])
+                if self.scalable:
+                    cmds.scaleConstraint(control.get(), self.joints[0])
         
-
 
 #--- FK
 
