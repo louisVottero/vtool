@@ -10,6 +10,7 @@ from vtool import util_file
 from vtool import data
 import __builtin__
 import os
+from multiprocessing import process
 
 if util.is_in_maya():
     import maya.cmds as cmds
@@ -301,7 +302,29 @@ class Process(object):
             
         return False
         
+    def get_non_process_parts(self):
         
+        process_path = self.get_path()
+        
+        if not process_path:
+            return
+        
+        folders = util_file.get_folders(process_path)
+        
+        found = []
+        
+        for folder in folders:
+            
+            full_path = util_file.join_path(process_path, folder)
+            
+            if not is_process(full_path):
+                continue
+            
+            found.append(full_path)
+            
+        return found
+            
+            
     def get_path(self):
         """
         Returns:
