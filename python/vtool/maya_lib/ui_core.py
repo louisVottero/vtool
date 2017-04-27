@@ -113,7 +113,7 @@ def create_window(ui, dock_area = 'right'):
     mel.eval('updateRendererUI;')
     
     try:
-        cmds.dockControl(dock_name,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name, w=350, fl = False, visible = True)
+        cmds.dockControl(dock_name,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name,  fl = False, visible = True)
         ui.show()
     
     except:
