@@ -106,7 +106,7 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         
     def _build_widgets(self):
 
-        self.setMinimumWidth(625)
+        self.setMinimumWidth(300)
         
         self.main_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
         
@@ -125,11 +125,11 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         
         self.main_layout.addWidget(self.dock_window)
         
-        self.modeling_widget = ui_model.ModelManager()
+        #self.modeling_widget = ui_model.ModelManager()
         self.rigging_widget = ui_rig.RigManager()
-        self.animation_widget = ui_anim.AnimationManager()
+        #self.animation_widget = ui_anim.AnimationManager()
         ##self.shot_widget = qt.QWidget()
-        self.fx_widget = ui_fx.FxManager()
+        #self.fx_widget = ui_fx.FxManager()
         
         #self.add_tab(self.modeling_widget, 'MODEL')
         self.add_tab(self.rigging_widget, 'RIG')
