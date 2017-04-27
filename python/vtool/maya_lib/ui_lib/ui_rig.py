@@ -86,7 +86,11 @@ class RigManager(qt_ui.DirectoryWidget):
         self.scale_controls = []
         self.last_scale_value = None
         self.last_scale_center_value = None
-    
+        
+        
+    def sizeHint(self):
+        return qt.QtCore.QSize(400,400)
+
     def _build_widgets(self):
         
         self.main_layout.setContentsMargins(10,10,10,10)
@@ -110,11 +114,19 @@ class RigManager(qt_ui.DirectoryWidget):
         manager_layout.addLayout(h_layout)
         
         
-        process_button = qt.QPushButton('VETALA')
+        vetala_directory = util_file.get_vetala_directory()
+        icon_path = util_file.join_path(vetala_directory, 'icons/vetala.png')
+    
+        icon = qt.QIcon(icon_path)
+        
+        process_button = qt.QPushButton(icon, 'VETALA')
+        process_button.setIconSize(qt.QtCore.QSize(48,48))
+        process_button.setFlat(True)
+        process_button.setMinimumHeight(48)
         process_button.clicked.connect(self._process_manager)
         process_button.setMinimumWidth(button_width)
         process_button.setToolTip('Manage and rebuild rigs.')
-        manager_layout.addWidget(process_button)
+        #manager_layout.addWidget(process_button)
         
         h_layout.addWidget(process_button)
         h_layout.addSpacing(15)
@@ -177,6 +189,8 @@ class RigManager(qt_ui.DirectoryWidget):
         deformation_widget.main_layout.setContentsMargins(10,10,10,10)
         structure_widget.main_layout.setContentsMargins(10,10,10,10)
         control_widget.main_layout.setContentsMargins(10,10,10,10)
+        
+        structure_widget.setMaximumWidth(450)
         
         tool_tab.addTab(structure_widget, 'Structure')
         tool_tab.addTab(control_widget, 'Controls')
