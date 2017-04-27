@@ -177,8 +177,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.set_directory(data_path)
         self.build_widget.show()
         
-    #def sizeHint(self):
-        #return qt.QtCore.QSize(600,650)
+    def sizeHint(self):
+        return qt.QtCore.QSize(450,450)
         
     def _setup_settings_file(self):
         
@@ -264,6 +264,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         #splitter stuff
         self.process_splitter = qt.QSplitter()
+        self.process_splitter.setContentsMargins(1,1,1,1)
         self.process_splitter.addWidget(self.view_widget)
         self.process_splitter.addWidget(self.option_tabs)
         self.process_splitter.setSizes([1,0])
