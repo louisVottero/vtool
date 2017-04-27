@@ -197,8 +197,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.setSizePolicy(policy)
         
-        self.setColumnWidth(0, 150)
-        self.setColumnWidth(1, 150)
+        self.setColumnWidth(0, 250)
+        self.setColumnWidth(1, 75)
         
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
@@ -409,16 +409,16 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         
         policy = self.sizePolicy()
         
-        policy.setHorizontalPolicy(policy.MinimumExpanding)
+        policy.setHorizontalPolicy(policy.Expanding)
         policy.setHorizontalStretch(0)
         
         self.setSizePolicy(policy)
-        self.setMinimumWidth(140)
-        self.setMaximumWidth(140)
+        self.setMinimumWidth(150)
+        self.setMaximumWidth(170)
         
     def sizeHint(self):
         
-        return qt.QtCore.QSize(0,20)
+        return qt.QtCore.QSize(0,50)
                 
     def _build_widgets(self):
         self.data_type_tree_widget = DataTypeTreeWidget()
