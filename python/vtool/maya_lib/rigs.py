@@ -826,7 +826,7 @@ class SparseLocalRig(SparseRig):
             
             if self.local_constraint:
                 if self.attach_joints:
-                    local_group, local_xform = space.constrain_local(control.get(), joint, use_duplicate = True)
+                    local_group, local_xform = space.constrain_local(control.get(), joint, use_duplicate = True, scale_connect = self.is_scalable)
                 
                     if self.local_xform:
                         cmds.parent(local_xform, self.local_xform)
