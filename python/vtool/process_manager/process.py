@@ -16,7 +16,9 @@ if util.is_in_maya():
     import maya.cmds as cmds
     from vtool.maya_lib import core
 
-def find_processes(directory = None):
+
+
+def find_processes(directory = None, return_also_non_process_list = False):
     """
     This will try to find the processes in the supplied directory. If no directory supplied, it will search the current working directory.
     
@@ -31,6 +33,7 @@ def find_processes(directory = None):
         directory = util_file.get_cwd()
     
     found = []
+    found_non = []
     
     for root, dirs, files in os.walk(directory):
         
@@ -39,12 +42,17 @@ def find_processes(directory = None):
             
             if is_process(full_path):
                 found.append(folder)
-                
+                continue
+            else:
+                if return_also_non_process_list:
+                    if not folder.startswith('.'):
+                        found_non.append(folder)
         break
-                
-    found.sort()
-
-    return found
+    
+    if not return_also_non_process_list:
+        return found
+    if return_also_non_process_list:
+        return [found, found_non]
 
 def is_process(directory):
     
