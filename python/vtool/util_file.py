@@ -1915,14 +1915,17 @@ def create_dir(name, directory, make_unique = False):
         str: The folder name with path. False if create_dir failed.
     """
     
+    if directory == None:
+        full_path = name
+    
     if not name:
         full_path = directory
     
     if name:    
         full_path = join_path(directory, name)
          
-        if make_unique:
-            full_path = inc_path_name(full_path)   
+    if make_unique:
+        full_path = inc_path_name(full_path)   
     
     if is_dir(full_path):
         return full_path
