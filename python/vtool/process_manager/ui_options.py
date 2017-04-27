@@ -16,11 +16,12 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         policy = self.sizePolicy()
         policy.setHorizontalPolicy(policy.Expanding)
         policy.setVerticalPolicy(policy.Expanding)
-        
+        self.main_layout.setContentsMargins(1,1,1,1)
         self.setSizePolicy(policy)
         
         self.directory = None
         
+
     def _build_widgets(self):
         
         self.edit_mode_button = qt.QPushButton('Edit')
@@ -116,7 +117,7 @@ class ProcessOptionScroll(qt.QScrollArea):
         super(ProcessOptionScroll, self).__init__()
         
         self.setWidgetResizable(True)
-        self.setMinimumWidth(350)
+        self.setMinimumWidth(300)
         self.setFocusPolicy(qt.QtCore.Qt.NoFocus)
     
 class EditOptions(qt_ui.BasicWidget):
@@ -153,7 +154,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     def __init__(self):
         super(ProcessOptionPalette, self).__init__()
         
-        self.main_layout.setContentsMargins(5,10,5,0)
+        self.main_layout.setContentsMargins(1,1,1,0)
         self.main_layout.setSpacing(1)
         self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
         
@@ -1048,7 +1049,7 @@ class OptionGroup(qt.QFrame):
             
         self.layout = qt.QVBoxLayout()
         self.child_layout = qt.QVBoxLayout()
-        self.child_layout.setContentsMargins(0,4,0,10)
+        self.child_layout.setContentsMargins(0,2,0,3)
         self.child_layout.setSpacing(0)
         
         self.setLayout(self.layout)
@@ -1383,7 +1384,7 @@ class ProcessTitle(ProcessOption):
     def __init__(self, name):
         super(ProcessTitle, self).__init__(name)
 
-        self.main_layout.setContentsMargins(0,5,0,10)
+        self.main_layout.setContentsMargins(0,2,0,2)
         
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignRight)
         
@@ -1496,7 +1497,7 @@ class ProcessOptionBoolean(ProcessOptionNumber):
     def __init__(self, name):
         super(ProcessOptionBoolean, self).__init__(name)
 
-        self.main_layout.setContentsMargins(0,5,0,5)
+        self.main_layout.setContentsMargins(0,2,0,2)
     
     def _define_option_widget(self):
         return qt_ui.GetBoolean(self.name)

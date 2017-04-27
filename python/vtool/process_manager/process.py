@@ -10,12 +10,15 @@ from vtool import util_file
 from vtool import data
 import __builtin__
 import os
+from multiprocessing import process
 
 if util.is_in_maya():
     import maya.cmds as cmds
     from vtool.maya_lib import core
 
-def find_processes(directory = None):
+
+
+def find_processes(directory = None, return_also_non_process_list = False):
     """
     This will try to find the processes in the supplied directory. If no directory supplied, it will search the current working directory.
     
@@ -30,6 +33,7 @@ def find_processes(directory = None):
         directory = util_file.get_cwd()
     
     found = []
+    found_non = []
     
     for root, dirs, files in os.walk(directory):
         
@@ -38,12 +42,17 @@ def find_processes(directory = None):
             
             if is_process(full_path):
                 found.append(folder)
-                
+                continue
+            else:
+                if return_also_non_process_list:
+                    if not folder.startswith('.'):
+                        found_non.append(folder)
         break
-                
-    found.sort()
-
-    return found
+    
+    if not return_also_non_process_list:
+        return found
+    if return_also_non_process_list:
+        return [found, found_non]
 
 def is_process(directory):
     
@@ -193,6 +202,8 @@ class Process(object):
     
     def _prep_maya(self):
         
+        
+        
         if util.is_in_maya():
         
             cmds.select(cl = True)
@@ -299,7 +310,29 @@ class Process(object):
             
         return False
         
+    def get_non_process_parts(self):
         
+        process_path = self.get_path()
+        
+        if not process_path:
+            return
+        
+        folders = util_file.get_folders(process_path)
+        
+        found = []
+        
+        for folder in folders:
+            
+            full_path = util_file.join_path(process_path, folder)
+            
+            if not is_process(full_path):
+                continue
+            
+            found.append(full_path)
+            
+        return found
+            
+            
     def get_path(self):
         """
         Returns:
@@ -622,6 +655,7 @@ class Process(object):
         instance = data_folder.get_folder_data_instance()
         
         if hasattr(instance, 'open'):
+            
             instance.open()
         if not hasattr(instance, 'open'):
             util.warning('Could not open data %s in process %s.  No open option.' % (name, self.process_name))
@@ -1465,7 +1499,7 @@ class Process(object):
             
         return False
     
-    def run_script(self, script, hard_error = True):
+    def run_script(self, script, hard_error = True, settings = None):
         """
         Run a script in the process.
         
@@ -1518,7 +1552,14 @@ class Process(object):
                 self._reset_builtin(old_process, old_cmds, old_show, old_warning)
                 return
             
-            self._prep_maya()
+            auto_focus = True
+            
+            if settings:
+                if settings.has_key('auto_focus_scene'):
+                    auto_focus = settings['auto_focus_scene']
+            
+            if auto_focus:
+                self._prep_maya()
             
             name = util_file.get_basename(script)
             

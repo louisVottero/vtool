@@ -32,8 +32,8 @@ class DataManager(object):
                                ControlCvData(),
                                ControlColorData(),
                                SkinWeightData(),
-                               BlendshapeWeightData(),
                                DeformerWeightData(),
+                               BlendshapeWeightData(),
                                PoseData(),
                                MayaAttributeData(),
                                AnimationData(),
@@ -527,13 +527,17 @@ class ControlCvData(MayaCustomData):
              
         self._center_view()
         
-        util.show('Imported %s data.' % self.name)
+        maya_lib.core.print_help('Imported %s data.' % self.name)
     
     def export_data(self, comment):
         
         library = self._initialize_library()
         
         controls = maya_lib.rigs_util.get_controls()
+        
+        if not controls:
+            util.warning('No controls found to export.')
+            return
         
         library.set_directory(self.directory)
         library.set_active_library(self.name)
@@ -547,7 +551,7 @@ class ControlCvData(MayaCustomData):
         version = util_file.VersionFile(filepath)
         version.save(comment)
         
-        util.show('Exported %s data.' % self.name)
+        maya_lib.core.print_help('Exported %s data.' % self.name)
         
     def get_curves(self, filename = None):
         
@@ -702,6 +706,10 @@ class ControlColorData(MayaCustomData):
         
         controls = maya_lib.rigs_util.get_controls()
         
+        if not controls:
+            util.warning('No controls found to export colors.')
+            return
+        
         for control in controls:
             
             color_dict = self._get_color_dict(control)
@@ -710,6 +718,8 @@ class ControlColorData(MayaCustomData):
                 orig_controls[control] = color_dict
         
         self._store_all_dict(orig_controls, filepath, comment)   
+        
+        maya_lib.core.print_help('Exported %s data.' % self.name)
         
     def import_data(self, filename = None):
         
@@ -762,7 +772,7 @@ class SkinWeightData(MayaCustomData):
         Import available skin cluster weights for geo, or only the weights on selected geo.
     """
     def _data_name(self):
-        return 'skin_weights'
+        return 'weights_skinCluster'
 
     def _data_extension(self):
         return ''
@@ -1002,7 +1012,7 @@ class SkinWeightData(MayaCustomData):
                         
                         cmds.setAttr('%s.skinningMethod' % skin_cluster, value)
 
-        util.show('Imported %s data' % self.name)
+        maya_lib.core.print_help('Imported %s data' % self.name)
                 
         self._center_view()
         
@@ -1021,6 +1031,11 @@ class SkinWeightData(MayaCustomData):
         path = util_file.join_path(self.directory, self.name)
         
         selection = cmds.ls(sl = True)
+        
+        if not selection:
+            util.warning('Nothing selected to export skin weights. Please select a mesh, curve, nurb surface or lattice with skin weights.')
+        
+        found_one = False
         
         for thing in selection:
             
@@ -1041,6 +1056,8 @@ class SkinWeightData(MayaCustomData):
                 util.warning('Skin export failed. No skinCluster found on %s.' % thing)
             
             if skin:
+                
+                found_one = True
                 
                 geo_path = util_file.join_path(path, thing)
                 
@@ -1100,6 +1117,9 @@ class SkinWeightData(MayaCustomData):
                 write_settings = util_file.WriteFile(settings_file)
                 write_settings.write(settings_lines)
                 
+        
+        if not found_one:
+            util.warning('No skin weights found on selected. Please select a mesh, curve, nurb surface or lattice with skin weights.')
         
         version = util_file.VersionFile(path)
         version.save(comment)
@@ -1178,7 +1198,7 @@ class ReadWeightFileThread(threading.Thread):
 class BlendshapeWeightData(MayaCustomData):
     
     def _data_name(self):
-        return 'blend_weights'
+        return 'weights_blendShape'
 
     def _data_extension(self):
         return ''
@@ -1204,6 +1224,7 @@ class BlendshapeWeightData(MayaCustomData):
             blendshapes += blendshape
             
         if not blendshapes:
+            util.warning('No blendshapes to export')
             return    
         
         for blendshape in blendshapes:
@@ -1233,7 +1254,7 @@ class BlendshapeWeightData(MayaCustomData):
                 filename = util_file.create_file('base_%s.weights' % inc, blendshape_path)
                 util_file.write_lines(filename, [weights])
             
-        util.show('Exported %s data' % self.name)
+        maya_lib.core.print_help('Exported %s data' % self.name)
     
     def import_data(self):
         
@@ -1285,7 +1306,7 @@ class BlendshapeWeightData(MayaCustomData):
                                 blend.set_weights(weights, target, mesh_index = index)
                                 
                             
-        util.show('Imported %s data' % self.name)
+        maya_lib.core.print_help('Imported %s data' % self.name)
     
 class DeformerWeightData(MayaCustomData):
     """
@@ -1294,7 +1315,7 @@ class DeformerWeightData(MayaCustomData):
     Will not work if cluster or wire deformer is affecting more than one piece of geo.
     """
     def _data_name(self):
-        return 'deform_weights'
+        return 'weights_deformer'
 
     def _data_extension(self):
         return ''
@@ -1311,6 +1332,11 @@ class DeformerWeightData(MayaCustomData):
         
         
         meshes = maya_lib.geo.get_selected_meshes()
+        
+        if not meshes:
+            util.warning('No meshes found with deformers.')
+        
+        found_one = False
         
         for mesh in meshes:
             
@@ -1346,14 +1372,22 @@ class DeformerWeightData(MayaCustomData):
                 
                 write_info.write(info_lines)
                 util.show('Exported weights on %s.' % deformer)
+                found_one = True
     
-        util.show('Exported %s data' % self.name)
+    
+        if not found_one:
+            util.warning('Found no deformers to export weights.')
+        if found_one:
+            maya_lib.core.print_help('Exported %s data' % self.name)
     
     def import_data(self):
         
         path = util_file.join_path(self.directory, self.name)
         
         files = util_file.get_files(path)
+        
+        if not files:
+            util.warning('Found nothing to import.')
         
         for filename in files:
             
@@ -1375,7 +1409,7 @@ class DeformerWeightData(MayaCustomData):
             if not cmds.objExists(deformer):
                 util.warning('Import failed: Deformer %s does not exist.' % deformer)    
                  
-        util.show('Imported %s data' % self.name)
+        maya_lib.core.print_help('Imported %s data' % self.name)
         
 class MayaShadersData(CustomData):
     """
@@ -1480,6 +1514,9 @@ class MayaShadersData(CustomData):
         
         skip_shaders = ['initialParticleSE', 'initialShadingGroup']
         
+        if not shaders:
+            util.warning('No shaders found to export.')
+        
         for shader in shaders:
 
             if shader in skip_shaders:
@@ -1512,6 +1549,8 @@ class MayaShadersData(CustomData):
         version = util_file.VersionFile(path)
         version.save(comment)    
         
+        maya_lib.core.print_help('Exported %s data' % self.name)
+        
 class AnimationData(MayaCustomData):
     """
     maya.animation
@@ -1520,7 +1559,7 @@ class AnimationData(MayaCustomData):
     """
     
     def _data_name(self):
-        return 'animation'
+        return 'keyframes'
     
     def _data_type(self):
         return 'maya.animation'
@@ -1529,6 +1568,13 @@ class AnimationData(MayaCustomData):
         return ''
         
     def _get_keyframes(self):
+        
+        selection = cmds.ls(sl = True, type = 'animCurve')
+        
+        if selection:
+            self.selection = True
+            return selection
+        
         keyframes = cmds.ls(type = 'animCurve')
         return keyframes
 
@@ -1547,6 +1593,8 @@ class AnimationData(MayaCustomData):
             
     def export_data(self, comment):
         
+        self.selection = False
+        
         unknown = cmds.ls(type = 'unknown')
         
         if unknown:
@@ -1557,6 +1605,7 @@ class AnimationData(MayaCustomData):
         blend_weighted = self._get_blend_weighted()
         
         if not keyframes:
+            util.warning('No keyframes found to export.')
             return
         
         if blend_weighted:
@@ -1577,22 +1626,32 @@ class AnimationData(MayaCustomData):
         
         cmds.select(cl = True)
         
+        select_keyframes = []
+        
         for keyframe in keyframes:
+            
+            node_type = cmds.nodeType(keyframe)
+            
             
             if not cmds.objExists(keyframe):
                 continue
             
             inputs = []
             
-            if not cmds.nodeType(keyframe) == 'blendWeighted':
+            if not node_type == 'blendWeighted':
                 inputs = maya_lib.attr.get_attribute_input('%s.input' % keyframe)
                 
             outputs = maya_lib.attr.get_attribute_outputs('%s.output' % keyframe)
-                        
-            if not inputs or not outputs:
-                continue
-                        
-            cmds.select(keyframe, add = True)
+            
+            if node_type.find('animCurveT') > -1:
+                if not outputs:
+                    continue
+            if not node_type.find('animCurveT') > -1:
+                if not outputs or not inputs:
+                    continue
+            
+            select_keyframes.append(keyframe)
+            
             
             connections = maya_lib.attr.Connections(keyframe)
             connections.disconnect()
@@ -1600,7 +1659,9 @@ class AnimationData(MayaCustomData):
             all_connections.append(connections)
             
             info_lines.append("{'%s' : {'output': %s, 'input': '%s'}}" % (keyframe, outputs, inputs))
-            
+        
+        cmds.select(select_keyframes)
+        
         filepath = util_file.join_path(path, 'keyframes.ma')
         cmds.file(rename = filepath)
             
@@ -1614,7 +1675,10 @@ class AnimationData(MayaCustomData):
         version = util_file.VersionFile(path)
         version.save(comment)
         
-        util.show('Exported %s data.' % self.name)
+        maya_lib.core.print_help('Exported %s data.' % self.name)
+        
+        if self.selection:
+            util.warning('Keyframes selected. Exporting only selected.')
         
     def import_data(self):
         
@@ -1698,7 +1762,7 @@ class AnimationData(MayaCustomData):
                 except:
                     cmds.warning('\tCould not connect %s to %s.input' % (input_attr,key))
                     
-        util.show('Imported %s data.' % self.name)
+        maya_lib.core.print_help('Imported %s data.' % self.name)
 
     
 class ControlAnimationData(AnimationData):
@@ -1708,7 +1772,7 @@ class ControlAnimationData(AnimationData):
     Good for saving out poses. 
     """
     def _data_name(self):
-        return 'control_animation'
+        return 'keyframes_control'
     
     def _data_type(self):
         return 'maya.control_animation'
@@ -1787,7 +1851,7 @@ class PoseData(MayaCustomData):
     maya_ascii = 'mayaAscii'
 
     def _data_name(self):
-        return 'pose'
+        return 'correctives'
 
     def _data_extension(self):
         return ''
@@ -1891,18 +1955,20 @@ class PoseData(MayaCustomData):
             util_file.delete_dir(self.name, self.directory)
         
         dir_path = util_file.create_dir(self.name, self.directory)
-        
+
         pose_manager = maya_lib.corrective.PoseManager()
-        pose_manager.set_pose_to_default()
-        pose_manager.detach_poses()
-        
         poses = pose_manager.get_poses()
         
-        poses.append('pose_gr')
+        
         
         if not poses:
             util.warning('Found no poses to export.')
             return
+        
+        poses.append('pose_gr')
+        
+        pose_manager.set_pose_to_default()
+        pose_manager.detach_poses()
         
         for pose in poses:
             
@@ -1950,7 +2016,7 @@ class PoseData(MayaCustomData):
         version = util_file.VersionFile(dir_path)
         version.save(comment)
                 
-        util.show('Exported %s data.' % self.name)
+        maya_lib.core.print_help('Exported %s data.' % self.name)
     
     
     def import_data(self):
@@ -2010,7 +2076,7 @@ class PoseData(MayaCustomData):
         
         pose_manager.set_pose_to_default()
                 
-        util.show('Imported %s data.' % self.name)
+        maya_lib.core.print_help('Imported %s data.' % self.name)
         
         cmds.dgdirty(a = True)
         cmds.renderThumbnailUpdate( True )
@@ -2098,7 +2164,7 @@ class MayaAttributeData(MayaCustomData):
         
         for thing in selection:
             
-            util.show('Exporting attributes on %s' % thing)
+            maya_lib.core.print_help('Exporting attributes on %s' % thing)
             
             filename = util_file.create_file('%s.data' % thing, path)
 
@@ -2126,13 +2192,18 @@ class MayaAttributeData(MayaCustomData):
             
             write_file = util_file.WriteFile(filename)
             write_file.write(lines)
+            
+        maya_lib.core.print_help('Exported %s data' % self.name)
 
         
 class MayaFileData(MayaCustomData):
     
     maya_binary = 'mayaBinary'
     maya_ascii = 'mayaAscii'
-        
+
+    def _data_name(self):
+        return 'maya_file'
+
     def __init__(self, name = None):
         super(MayaFileData, self).__init__(name)
         
@@ -2267,6 +2338,7 @@ class MayaFileData(MayaCustomData):
             util.error(traceback.format_exc())
             
         self._after_open()
+        
 
     def save(self, comment):
         
@@ -2307,10 +2379,12 @@ class MayaFileData(MayaCustomData):
                 
                 version.save(comment)
             
-            
+            maya_lib.core.print_help('Saved %s data.' % self.name)
             return True
         
         return False
+    
+        
         
     def export_data(self, comment):
         
@@ -2337,6 +2411,8 @@ class MayaFileData(MayaCustomData):
         
         version = util_file.VersionFile(self.filepath)
         version.save(comment)
+        
+        maya_lib.core.print_help('Exported %s data.' % self.name)
 
     def maya_reference_data(self, filepath = None):
         

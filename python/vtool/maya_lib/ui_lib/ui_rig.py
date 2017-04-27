@@ -11,7 +11,8 @@ from vtool.maya_lib import ui_core
 import ui_check
 import ui_presets
 import ui_picker
-
+import ui_model
+import ui_anim
 
 from vtool.maya_lib import core
 from vtool.maya_lib import geo
@@ -85,7 +86,11 @@ class RigManager(qt_ui.DirectoryWidget):
         self.scale_controls = []
         self.last_scale_value = None
         self.last_scale_center_value = None
-    
+        
+        
+    def sizeHint(self):
+        return qt.QtCore.QSize(400,400)
+
     def _build_widgets(self):
         
         self.main_layout.setContentsMargins(10,10,10,10)
@@ -99,46 +104,65 @@ class RigManager(qt_ui.DirectoryWidget):
         
         manager_group.setLayout(manager_layout)
         
-        button_width = 200        
+        button_width = 150        
         
         manager_layout.addSpacing(15)
         
-        process_button = qt.QPushButton('VETALA')
+        h_layout = qt.QHBoxLayout()
+        other_buttons_layout = qt.QVBoxLayout()
+        
+        manager_layout.addLayout(h_layout)
+        
+        
+        vetala_directory = util_file.get_vetala_directory()
+        icon_path = util_file.join_path(vetala_directory, 'icons/vetala.png')
+    
+        icon = qt.QIcon(icon_path)
+        
+        process_button = qt.QPushButton(icon, 'VETALA')
+        process_button.setIconSize(qt.QtCore.QSize(48,48))
+        process_button.setFlat(True)
+        process_button.setMinimumHeight(48)
         process_button.clicked.connect(self._process_manager)
         process_button.setMinimumWidth(button_width)
         process_button.setToolTip('Manage and rebuild rigs.')
-        manager_layout.addWidget(process_button)
+        #manager_layout.addWidget(process_button)
         
-
+        h_layout.addWidget(process_button)
+        h_layout.addSpacing(15)
+        h_layout.addLayout(other_buttons_layout)
         
         pose_button = qt.QPushButton('Correctives')
         pose_button.clicked.connect(self._pose_manager)
         pose_button.setMinimumWidth(button_width)
         pose_button.setToolTip('Create correctives on meshes deformed by a rig.')
-        manager_layout.addWidget(pose_button)
+        other_buttons_layout.addWidget(pose_button)
+        
         
         
         shape_combo_button = qt.QPushButton('Shape Combos')
         shape_combo_button.clicked.connect(self._shape_combo)
         shape_combo_button.setMinimumWidth(button_width)
         shape_combo_button.setToolTip('Create combo shapes for use in facial setups.')
-        manager_layout.addWidget(shape_combo_button)
+        other_buttons_layout.addWidget(shape_combo_button)
         
         
         
         
-        manager_layout.addSpacing(15)
+        #manager_layout.addSpacing(15)
         
         check_button = qt.QPushButton('Checks - ALPHA')
         check_button.clicked.connect(self._checker)
         check_button.setMinimumWidth(button_width)
-        manager_layout.addWidget(check_button)
+        
+        other_buttons_layout.addWidget(check_button)
         
         picker_button = qt.QPushButton('Picker - ALPHA')
         picker_button.clicked.connect(self._picker)
         picker_button.setMinimumWidth(button_width)
         picker_button.setToolTip('Create a picker for the character that gets stored on "picker_gr" node.')
-        manager_layout.addWidget(picker_button)
+        #removed indefinitly
+        #manager_layout.addWidget(picker_button)
         
         
         
@@ -146,7 +170,8 @@ class RigManager(qt_ui.DirectoryWidget):
         presets_button.clicked.connect(self._presets)
         presets_button.setMinimumWidth(button_width)
         presets_button.setToolTip('Presets creates a node in Maya called "presets" that stores attribute values. Values can be read from referenced assets in the FX tab.')
-        manager_layout.addWidget(presets_button)
+        #removed indefinitly
+        #manager_layout.addWidget(presets_button)
         
         
         manager_layout.addSpacing(15)
@@ -165,9 +190,13 @@ class RigManager(qt_ui.DirectoryWidget):
         structure_widget.main_layout.setContentsMargins(10,10,10,10)
         control_widget.main_layout.setContentsMargins(10,10,10,10)
         
+        structure_widget.setMaximumWidth(450)
+        
         tool_tab.addTab(structure_widget, 'Structure')
         tool_tab.addTab(control_widget, 'Controls')
         tool_tab.addTab(deformation_widget, 'Deform')
+        tool_tab.addTab(ui_model.ModelManager(), 'Model')
+        tool_tab.addTab(ui_anim.AnimationManager(), 'Animate')
         
         self._create_structure_widgets(structure_widget)
         self._create_control_widgets(control_widget)
@@ -182,17 +211,17 @@ class RigManager(qt_ui.DirectoryWidget):
         
     def _create_structure_widgets(self, parent):
         
-        subdivide_joint_button =  qt_ui.GetIntNumberButton('subdivide joint')
+        subdivide_joint_button =  qt_ui.GetIntNumberButton('Subdivide Joint')
         subdivide_joint_button.set_value(1)
         subdivide_joint_button.clicked.connect(self._subdivide_joint)
         subdivide_joint_button.setToolTip('select parent and child joint')
         
         add_orient = qt.QPushButton('Add Orient')
-        add_orient.setMaximumWidth(140)
+        #add_orient.setMaximumWidth(140)
         add_orient.setToolTip('select joints')
         
         add_joint_orient = qt.QPushButton('Convert to Orient Joint')
-        add_joint_orient.setMaximumWidth(140)
+        #add_joint_orient.setMaximumWidth(140)
         
         
         orient_joints = qt.QPushButton('Orient Joints')
@@ -204,27 +233,26 @@ class RigManager(qt_ui.DirectoryWidget):
         #match_joints = qt.QPushButton('Match')
         #match_joints.setMinimumHeight(40)
         
-        joints_on_curve = qt_ui.GetIntNumberButton('create joints on curve')
+        joints_on_curve = qt_ui.GetIntNumberButton('Create Joints On Curve')
         joints_on_curve.set_value(10)
         
-        snap_to_curve = qt_ui.GetIntNumberButton('snap joints to curve')
+        snap_to_curve = qt_ui.GetIntNumberButton('Snap Joints to Curve')
         
-        transfer_joints = qt.QPushButton('transfer joints')
+        transfer_joints = qt.QPushButton('Transfer Joints  ( Mesh to Mesh with same topology )')
         transfer_process = qt.QPushButton('transfer process weights to parent')
         
-        self.joint_axis_check = qt.QCheckBox('joint axis visibility')
+        self.joint_axis_check = qt.QCheckBox('Joint Axis Visibility')
         
         mirror_invert = qt.QPushButton('Mirror Invert')
         mirror_invert.clicked.connect(self._mirror_invert)
         
+        remove_orient = qt.QPushButton('Remove Orient')
+        remove_orient.clicked.connect(self._remove_orient)
         
         add_orient.clicked.connect(self._add_orient)
         orient_joints.clicked.connect(self._orient)
         
-        
         add_joint_orient.clicked.connect(self._add_joint_orient)
-        
-        
         
         mirror.clicked.connect(self._mirror)
         #match_joints.clicked.connect(self._match_joints)
@@ -245,12 +273,17 @@ class RigManager(qt_ui.DirectoryWidget):
         
         sub_orient_layout.addWidget(add_orient)
         sub_orient_layout.addWidget(add_joint_orient)
+        sub_orient_layout.addWidget(mirror_invert)
+        sub_orient_layout.addWidget(remove_orient)
+        
+        
         
         main_layout.addSpacing(20)
         #main_layout.addWidget(add_orient)
         main_layout.addWidget(mirror)
+        main_layout.addSpacing(15)
         main_layout.addLayout(orient_layout)
-        main_layout.addWidget(mirror_invert)
+        #main_layout.addWidget(mirror_invert)
         main_layout.addSpacing(20)
         main_layout.addWidget(self.joint_axis_check)
         
@@ -260,10 +293,12 @@ class RigManager(qt_ui.DirectoryWidget):
         main_layout.addWidget(subdivide_joint_button)
         main_layout.addWidget(joints_on_curve)
         main_layout.addWidget(snap_to_curve)
+        main_layout.addSpacing(15)
         main_layout.addWidget(transfer_joints)
-        main_layout.addWidget(transfer_process)
         
         
+        #removed, no longer used that much
+        #main_layout.addWidget(transfer_process)
         
     def _match_joints(self):
         space.match_joint_xform('joint_', 'guideJoint_')
@@ -312,6 +347,7 @@ class RigManager(qt_ui.DirectoryWidget):
         parent.main_layout.addWidget(mirror_controls)
         
         parent.main_layout.addWidget(self.fix_sub_controls)
+        parent.main_layout.addSpacing(15)
         parent.main_layout.addWidget(number_button)
         parent.main_layout.addWidget(size_slider)
         parent.main_layout.addWidget(size_center_slider)
@@ -322,12 +358,12 @@ class RigManager(qt_ui.DirectoryWidget):
     def _create_deformation_widgets(self, parent):
         corrective_button = qt.QPushButton('Create Corrective')
         corrective_button.setToolTip('Select deformed mesh then sculpted mesh.')
-        corrective_button.setMaximumWidth(200)
+        #corrective_button.setMaximumWidth(200)
         corrective_button.clicked.connect(self._create_corrective)
         
         skin_mesh_from_mesh = qt.QPushButton('Skin Mesh From Mesh')
         skin_mesh_from_mesh.setToolTip('Select skinned mesh then mesh without skin cluster.')
-        skin_mesh_from_mesh.setMaximumWidth(200)
+        #skin_mesh_from_mesh.setMaximumWidth(200)
         skin_mesh_from_mesh.clicked.connect(self._skin_mesh_from_mesh)
         
         cluster_mesh = qt.QPushButton('Create Tweak Cluster')
@@ -386,6 +422,12 @@ class RigManager(qt_ui.DirectoryWidget):
         selection = cmds.ls(sl = True, type = 'joint')
         
         attr.add_orient_attributes(selection)
+    
+    def _remove_orient(self):
+        
+        selection = cmds.ls(sl = True, type = 'joint')
+        
+        attr.remove_orient_attributes(selection)
     
     def _add_joint_orient(self):
         selection = cmds.ls(sl = True, type = 'joint')

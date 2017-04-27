@@ -10,7 +10,10 @@ if vtool.util.is_in_maya():
     import maya.OpenMaya as OpenMaya
     import maya.OpenMayaAnim as OpenMayaAnim
     import maya.OpenMayaUI as OpenMayaUI
-    
+
+
+
+
 allow_save = False
     
 def start_check_after_save(function):
@@ -1054,11 +1057,6 @@ class IteratePolygonFaces(MayaIterator):
         
         tangent = position_vector * normal_vector
         
-        print tangent
-        
-        print tangent.x, tangent.y, tangent.z
-        
-    
 class KeyframeFunction(MayaFunction):
     
     constant = None

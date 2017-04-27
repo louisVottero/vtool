@@ -178,7 +178,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.show()
         
     def sizeHint(self):
-        return qt.QtCore.QSize(600,650)
+        return qt.QtCore.QSize(450,450)
         
     def _setup_settings_file(self):
         
@@ -264,6 +264,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         #splitter stuff
         self.process_splitter = qt.QSplitter()
+        self.process_splitter.setContentsMargins(1,1,1,1)
         self.process_splitter.addWidget(self.view_widget)
         self.process_splitter.addWidget(self.option_tabs)
         self.process_splitter.setSizes([1,0])
@@ -290,34 +291,34 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #process_button_layout = qt.QVBoxLayout()
         self.process_button = qt.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
-        self.process_button.setMinimumWidth(150)
+        self.process_button.setMinimumWidth(120)
         self.process_button.setMinimumHeight(30)
         
         self.batch_button = qt.QPushButton('BATCH')
         self.batch_button.setDisabled(True)
         self.batch_button.setMinimumHeight(30)
-        self.batch_button.setMinimumWidth(150)
+        self.batch_button.setMinimumWidth(120)
         #self.process_button.setMinimumWidth(150)
         #self.process_button.setMinimumHeight(40)
         
         self.stop_button = qt.QPushButton('STOP (Esc key)')
-        self.stop_button.setMaximumWidth(140)
+        self.stop_button.setMaximumWidth(110)
         self.stop_button.setMinimumHeight(30)
         self.stop_button.hide()
         
         self.continue_button = qt.QPushButton('CONTINUE')
-        self.continue_button.setMaximumWidth(150)
+        self.continue_button.setMaximumWidth(120)
         self.continue_button.setMinimumHeight(30)
         self.continue_button.hide()
         
         self.run_selected_button = qt.QPushButton('RUN SELECTED')
-        self.run_selected_button.setMaximumWidth(150)
+        self.run_selected_button.setMaximumWidth(125)
         self.run_selected_button.setMinimumHeight(30)
         self.run_selected_button.hide()
         
         self.browser_button = qt.QPushButton('Browse')
         self.browser_button.setMaximumWidth(120)
-        help_button = qt.QPushButton('Help')
+        help_button = qt.QPushButton('?')
         help_button.setMaximumWidth(100)       
         
         btm_layout = qt.QVBoxLayout()
@@ -333,13 +334,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         left_button_layout.addWidget(self.continue_button)
         #left_button_layout.addSpacing(10)
         #left_button_layout.addWidget(self.batch_button)
-        left_button_layout.addSpacing(20)
+        left_button_layout.addSpacing(10)
         left_button_layout.addWidget(self.run_selected_button)
         
         right_button_layout.setAlignment(qt.QtCore.Qt.AlignRight)
         
         right_button_layout.addWidget(self.batch_button)
-        right_button_layout.addSpacing(10)
+        right_button_layout.addSpacing(5)
         right_button_layout.addWidget(self.browser_button)
         right_button_layout.addWidget(help_button)
         
@@ -747,7 +748,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         start_new_scene = self.settings.get('start_new_scene_on_process')
         
         if util.is_in_maya() and start_new_scene and last_inc == None:
+            
+            
+            display = maya_lib.core.StoreDisplaySettings()
+            display.store()
             cmds.file(new = True, f = True)
+            display.restore()
         
         scripts, states = self.process.get_manifest()
         
@@ -813,7 +819,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.code_widget.set_process_script_state(scripts[inc], 2)
             
-            status = self.process.run_script(script_name, False)
+            status = self.process.run_script(script_name, False, self.settings.settings_dict)
             
             if not status == 'Success':
                 

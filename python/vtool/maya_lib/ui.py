@@ -106,6 +106,8 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         
     def _build_widgets(self):
 
+        self.setMinimumWidth(300)
+        
         self.main_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
         
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
@@ -123,18 +125,21 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         
         self.main_layout.addWidget(self.dock_window)
         
-        self.modeling_widget = ui_model.ModelManager()
+        #self.modeling_widget = ui_model.ModelManager()
         self.rigging_widget = ui_rig.RigManager()
-        self.animation_widget = ui_anim.AnimationManager()
+        #self.animation_widget = ui_anim.AnimationManager()
         ##self.shot_widget = qt.QWidget()
-        self.fx_widget = ui_fx.FxManager()
+        #self.fx_widget = ui_fx.FxManager()
         
-        self.add_tab(self.modeling_widget, 'MODEL')
+        #self.add_tab(self.modeling_widget, 'MODEL')
         self.add_tab(self.rigging_widget, 'RIG')
-        self.add_tab(self.animation_widget, 'ANIMATE')
-        self.add_tab(self.fx_widget, 'FX')
+        #self.add_tab(self.animation_widget, 'ANIMATE')
+        #self.add_tab(self.fx_widget, 'FX')
         
-        self.default_docks[1].raise_()
+        self.default_docks[0].raise_()
+        
+        #this was one when there was a model dock before rig
+        #self.default_docks[1].raise_()
         
     def _get_tab_bar(self):
         return self.dock_window._get_tab_bar()

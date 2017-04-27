@@ -197,8 +197,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.setSizePolicy(policy)
         
-        self.setColumnWidth(0, 150)
-        self.setColumnWidth(1, 150)
+        self.setColumnWidth(0, 250)
+        self.setColumnWidth(1, 75)
         
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
@@ -343,7 +343,14 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             
             data_type = process_tool.get_data_type(foldername)
             
-            item.setText(1, data_type)
+            nice_name = data_name_map[data_type]
+            group = data_type.split('.')[0]
+            
+            group = group.capitalize()
+            
+            nice_name = nice_name#  maybe add back in when data exists outside maya + '   - ' + group 
+            
+            item.setText(1, nice_name)
             
             item.folder = foldername
             item.setSizeHint(0, qt.QtCore.QSize(100,25))
@@ -402,16 +409,16 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         
         policy = self.sizePolicy()
         
-        policy.setHorizontalPolicy(policy.MinimumExpanding)
+        policy.setHorizontalPolicy(policy.Expanding)
         policy.setHorizontalStretch(0)
         
         self.setSizePolicy(policy)
-        self.setMinimumWidth(140)
-        self.setMaximumWidth(140)
+        self.setMinimumWidth(150)
+        self.setMaximumWidth(170)
         
     def sizeHint(self):
         
-        return qt.QtCore.QSize(0,20)
+        return qt.QtCore.QSize(0,50)
                 
     def _build_widgets(self):
         self.data_type_tree_widget = DataTypeTreeWidget()
@@ -474,7 +481,6 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         if not data_type or not data_group:
             return
         
-        data_type = data_group + '.' + data_type
         manager = vtool.data.DataManager()
         data_instance = manager.get_type_instance(data_type)
         data_name = data_instance._data_name()
@@ -522,6 +528,11 @@ class DataTypeTreeWidget(qt.QTreeWidget):
         
         split_type = data_type.split('.')
         
+        nice_name = split_type[1]
+        
+        if data_name_map.has_key(data_type):
+            nice_name = data_name_map[data_type]
+        
         group_type = split_type[0].capitalize()
         
         
@@ -534,10 +545,14 @@ class DataTypeTreeWidget(qt.QTreeWidget):
             item = qt.QTreeWidgetItem()
             item.setText(0, group_type)
             item.setSizeHint(0, qt.QtCore.QSize(100, 25))
+            
             self.addTopLevelItem(item)    
             group_item = item
         
-        new_item = self._add_data_item(split_type[1], group_item)
+        
+        
+        new_item = self._add_data_item(nice_name, group_item)
+        new_item.data_type = data_type
         
         return new_item
         
@@ -545,7 +560,7 @@ class DataTypeTreeWidget(qt.QTreeWidget):
     def get_data_type(self):
         
         item = self.currentItem()
-        return item.text(0)
+        return item.data_type
     
     def get_data_group(self):
         item = self.currentItem()
@@ -1347,7 +1362,19 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
         self.main_layout.addWidget(save_button)
         self.main_layout.addWidget(open_button)
 
-        
+data_name_map = {'maya.binary': 'Binary File',
+                 'maya.ascii' : 'Ascii File',
+                 'maya.control_cvs' : 'Control Cv Positions',
+                 'maya.control_colors' : 'Control Colors',
+                 'maya.skin_weights' : 'Weights Skin Cluster',
+                 'maya.deform_weights' : 'Weights Deformer',
+                 'maya.blend_weights' : 'Weights Blendshape',
+                 'maya.shaders' : 'Shaders',
+                 'maya.attributes' : 'Attributes',
+                 'maya.pose' : 'Correctives',
+                 'maya.animation' : 'Keyframes',
+                 'maya.control_animation' : 'Keyframes Control'}
+
 file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.ascii' : MayaAsciiFileWidget,
                  'maya.control_cvs' : ControlCvFileWidget,
