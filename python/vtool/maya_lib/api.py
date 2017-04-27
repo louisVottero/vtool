@@ -1057,11 +1057,6 @@ class IteratePolygonFaces(MayaIterator):
         
         tangent = position_vector * normal_vector
         
-        print tangent
-        
-        print tangent.x, tangent.y, tangent.z
-        
-    
 class KeyframeFunction(MayaFunction):
     
     constant = None

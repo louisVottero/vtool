@@ -772,7 +772,7 @@ class SkinWeightData(MayaCustomData):
         Import available skin cluster weights for geo, or only the weights on selected geo.
     """
     def _data_name(self):
-        return 'skin_weights'
+        return 'weights_skinCluster'
 
     def _data_extension(self):
         return ''
@@ -1198,7 +1198,7 @@ class ReadWeightFileThread(threading.Thread):
 class BlendshapeWeightData(MayaCustomData):
     
     def _data_name(self):
-        return 'blend_weights'
+        return 'weights_blendShape'
 
     def _data_extension(self):
         return ''
@@ -1315,7 +1315,7 @@ class DeformerWeightData(MayaCustomData):
     Will not work if cluster or wire deformer is affecting more than one piece of geo.
     """
     def _data_name(self):
-        return 'deform_weights'
+        return 'weights_deformer'
 
     def _data_extension(self):
         return ''
@@ -2200,7 +2200,10 @@ class MayaFileData(MayaCustomData):
     
     maya_binary = 'mayaBinary'
     maya_ascii = 'mayaAscii'
-        
+
+    def _data_name(self):
+        return 'maya_file'
+
     def __init__(self, name = None):
         super(MayaFileData, self).__init__(name)
         
