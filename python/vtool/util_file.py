@@ -1921,7 +1921,7 @@ def create_dir(name, directory, make_unique = False):
     if not name:
         full_path = directory
     
-    if name:    
+    if name and directory:    
         full_path = join_path(directory, name)
          
     if make_unique:
