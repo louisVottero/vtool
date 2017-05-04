@@ -100,7 +100,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
                 self.restrain_move = False
                 width = self.splitter.width()
                 
-                section = width/3
+                section = width/2.5
                 
                 self.splitter.setSizes([section, section])
             
@@ -656,9 +656,13 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             icon_on = util_file.join_path(directory, 'icons/box_on.png')
             icon_off = util_file.join_path(directory, 'icons/box_off.png')
             
+            icon_folder = util_file.join_path(directory, 'icons/folder.png')
+            icon_folder_open = util_file.join_path(directory, 'icons/folder_open.png')
+            
             lines = 'QTreeWidget::indicator:unchecked {image: url(%s);}' % icon_off
             lines += ' QTreeWidget::indicator:checked {image: url(%s);}' % icon_on
-            
+            lines += ' QTreeView::branch:open {image: url(%s);}' % icon_folder_open
+            lines += ' QTreeView::branch:closed:has-children {image: url(%s);}' % icon_folder
             
             self.setStyleSheet( lines)
     

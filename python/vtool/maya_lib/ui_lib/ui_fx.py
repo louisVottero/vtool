@@ -10,7 +10,7 @@ from vtool.maya_lib import fx
 from vtool.maya_lib import anim
 
 #this will need a function to check for deadline
-if util.has_shotgun():
+if util.has_shotgun_tank():
     from vtool.render_farm import deadline
 
 
@@ -53,7 +53,7 @@ class FxTabWidget(qt_ui.BasicWidget):
         
         self.tabs.addTab(self.settings_widget,'Presets')
         
-        if util.has_shotgun():
+        if util.has_shotgun_tank():
             self.tabs.addTab(self.cache_widget, 'Cache')
         
         self.main_layout.addWidget(self.tabs)
@@ -73,7 +73,7 @@ class CacheWidget(qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
-        if util.has_shotgun():
+        if util.has_shotgun_tank():
         
             self.min_value = qt_ui.GetInteger('Start Frame')
             self.max_value = qt_ui.GetInteger('End Frame')

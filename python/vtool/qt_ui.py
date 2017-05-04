@@ -58,7 +58,7 @@ class BasicWindow(qt.QMainWindow):
     title = 'BasicWindow'
     _last_instance = None
 
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, use_scroll = False):
         
         self.main_layout = self._define_main_layout()
         
@@ -71,11 +71,21 @@ class BasicWindow(qt.QMainWindow):
         
         main_widget = qt.QWidget()
         
+        if use_scroll:
+            scroll = qt.QScrollArea()
+            scroll.setWidgetResizable(True)
+            
+            scroll.setWidget(main_widget)
+            self._scroll_widget = scroll
+        
+            main_widget.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
+            self.setCentralWidget( scroll )
         #util.show('Main layout: %s' % self.main_layout)
         
-        main_widget.setLayout(self.main_layout)
+        if not use_scroll:
+            self.setCentralWidget(main_widget)
         
-        self.setCentralWidget( main_widget )
+        main_widget.setLayout(self.main_layout)
         
         self.main_widget = main_widget
         
@@ -1607,6 +1617,7 @@ class GetString(BasicWidget):
         
         self.text_entry = qt.QLineEdit()
         
+        
         self.label = qt.QLabel(self.name)
         self.label.setAlignment(qt.QtCore.Qt.AlignLeft)
         self.label.setMinimumWidth(100)
@@ -1624,6 +1635,9 @@ class GetString(BasicWidget):
         
     def set_text(self, text):
         self.text_entry.setText(text)
+        
+    def set_placeholder(self, text):
+        self.text_entry.setPlaceholderText(text)
         
     def get_text(self):
         return self.text_entry.text()

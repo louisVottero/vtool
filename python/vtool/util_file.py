@@ -714,6 +714,7 @@ class SettingsFile(object):
             if not value:
                 continue
             
+            
             value = fix_slashes(value)
             
             try:
@@ -1722,8 +1723,11 @@ def fix_slashes(directory):
     Returns:
         str: The new directory path.
     """
+    
     directory = directory.replace('\\','/')
-    directory = directory.replace('//', '/')
+    
+    if not directory.find('https://') > -1:
+        directory = directory.replace('//', '/')
     
     return directory
 

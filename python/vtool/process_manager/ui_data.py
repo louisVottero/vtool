@@ -129,8 +129,9 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                         self.file_widget = file_widgets[key]()
                         
                         path_to_data = vtool.util_file.join_path(process_tool.get_data_path(), str( item.text(0) ) )
-                           
-                        self.file_widget.set_directory(path_to_data)
+                        
+                        if hasattr(self.file_widget, 'set_directory'):
+                            self.file_widget.set_directory(path_to_data)
                         self.main_layout.addWidget(self.file_widget)
                         self.label.setText( str( item.text(0)) )
                         self.label.show()
@@ -197,7 +198,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.setSizePolicy(policy)
         
-        self.setColumnWidth(0, 250)
+        self.setColumnWidth(0, 150)
         self.setColumnWidth(1, 75)
         
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
@@ -579,6 +580,123 @@ class GroupWidget(vtool.qt_ui.BasicWidget):
         group.setMaximumWidth(200)
         group.setMinimumHeight(50)
         self.main_layout.addWidget(group)
+
+class DataLinkWidget(vtool.qt_ui.BasicWidget):
+    
+    def __init__(self):
+        
+        self.data_class = self._define_data_class()
+        
+        super(DataLinkWidget, self).__init__()
+        
+        
+        
+    def _build_widgets(self):
+        super(DataLinkWidget, self)._build_widgets()
+        
+        h_layout = qt.QHBoxLayout()
+        
+        projects = self.data_class.get_projects()
+        
+        self.combo_project = qt.QComboBox()
+        
+        for project in projects:
+            self.combo_project.addItem(project)
+        self.combo_project.currentIndexChanged.connect(self._project_current_changed)
+        self.combo_project.setMaximumWidth(160)
+        
+        
+        
+        
+        
+        self.combo_asset_type = qt.QComboBox()
+        self.combo_asset_type.setMaximumWidth(160)
+        
+        self.assets = self.data_class.get_assets(self.combo_project.itemText(0))
+        print self.assets
+        if self.assets:
+            keys = self.assets.keys()
+            keys.sort()
+        
+            for key in keys:
+                self.combo_asset_type.addItem(key)
+        
+        self.combo_asset = qt.QComboBox()
+        self.combo_asset.setMaximumWidth(200)
+    
+        current_text = self.combo_asset_type.currentText()
+        if self.assets.has_key(current_text):
+        
+            for asset in self.assets[current_text]:
+                self.combo_asset.addItem(asset)
+        
+        h_layout_2 = qt.QHBoxLayout()
+        
+        self.combo_asset_type.currentIndexChanged.connect(self._asset_type_current_changed)
+        
+        steps = self.data_class.get_asset_steps()
+        
+        self.combo_asset_step = qt.QComboBox()
+        self.combo_asset_step.setMaximumWidth(160)
+        
+        for step in steps:
+            self.combo_asset_step.addItem(step[0])
+        
+        h_layout.addWidget(self.combo_project)
+        h_layout.addWidget(self.combo_asset_type)
+        h_layout.addWidget(self.combo_asset)
+        
+        h_layout_2.addWidget(self.combo_asset_step)
+        
+        self.main_layout.addLayout(h_layout)
+        self.main_layout.addLayout(h_layout_2)
+    
+    def _project_current_changed(self):
+        
+        project = self.combo_project.currentText()
+        
+        self.assets = self.data_class.get_assets(project)
+        print self.assets
+        
+        self.combo_asset_type.clear()
+        self.combo_asset.clear()
+        
+        keys = self.assets.keys()
+        keys.sort()
+        
+        print 'keys!', keys
+        
+        for key in keys:
+            self.combo_asset_type.addItem(key)
+        
+        current_text = self.combo_asset_type.currentText()
+        if self.assets.has_key(current_text):
+        
+            for asset in self.assets[current_text]:
+                self.combo_asset.addItem(asset)
+    
+    def _asset_type_current_changed(self):
+        print 'changed!!!'
+        self.combo_asset.clear()
+        
+        current_text = self.combo_asset_type.currentText()
+        if self.assets.has_key(current_text):
+        
+            for asset in self.assets[current_text]:
+                self.combo_asset.addItem(asset)
+    
+    def _define_main_tab_name(self):
+        return 'data link'
+    
+    def _define_data_class(self):
+        return None
+    
+class MayaShotgunLinkWidget(DataLinkWidget):
+    def _define_main_tab_name(self):
+        return 'Maya Shotgun Link'
+    
+    def _define_data_class(self):
+        return vtool.data.MayaShotgunFileData()
 
 class DataFileWidget(vtool.qt_ui.FileManagerWidget):
     
@@ -1364,6 +1482,7 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
 
 data_name_map = {'maya.binary': 'Binary File',
                  'maya.ascii' : 'Ascii File',
+                 'maya.shotgun' : 'Shotgun Link',
                  'maya.control_cvs' : 'Control Cv Positions',
                  'maya.control_colors' : 'Control Colors',
                  'maya.skin_weights' : 'Weights Skin Cluster',
@@ -1373,10 +1492,12 @@ data_name_map = {'maya.binary': 'Binary File',
                  'maya.attributes' : 'Attributes',
                  'maya.pose' : 'Correctives',
                  'maya.animation' : 'Keyframes',
-                 'maya.control_animation' : 'Keyframes Control'}
+                 'maya.control_animation' : 'Keyframes Control',
+                 }
 
 file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.ascii' : MayaAsciiFileWidget,
+                 'maya.shotgun' : MayaShotgunLinkWidget,
                  'maya.control_cvs' : ControlCvFileWidget,
                  'maya.control_colors' : ControlColorFileWidget,
                  'maya.skin_weights' : SkinWeightFileWidget,

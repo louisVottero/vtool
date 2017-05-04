@@ -229,8 +229,15 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             icon_on = util_file.join_path(directory, 'icons/plus.png')
             icon_off = util_file.join_path(directory, 'icons/minus_alt.png')
             
-            lines = 'QTreeWidget::indicator:unchecked {image: url(%s);}' % icon_off
-            lines += ' QTreeWidget::indicator:checked {image: url(%s);}' % icon_on
+            icon_folder = util_file.join_path(directory, 'icons/folder.png')
+            icon_folder_open = util_file.join_path(directory, 'icons/folder_open.png')
+            
+            lines = 'QTreeView::indicator:unchecked {image: url(%s);}' % icon_off
+            lines += ' QTreeView::indicator:checked {image: url(%s);}' % icon_on
+            lines += ' QTreeView::branch:open {image: url(%s);}' % icon_folder_open
+            lines += ' QTreeView::branch:closed:has-children {image: url(%s);}' % icon_folder
+            #lines += ' QTreeWidget::branch:closed:has-children:has-siblings, QTreeWidget::branch:closed:has-children:!has-siblings {image: url(%s);}' % icon_folder
+            #lines += ' QTreeWidget::branch:opened:has-children:has-siblings, QTreeWidget::branch:opened:has-children:!has-siblings {image: url(%s);}' % icon_folder_open
             
             self.setStyleSheet( lines)
     """
@@ -1031,6 +1038,7 @@ class ProcessItem(qt.QTreeWidgetItem):
         self.setSizeHint(0, qt.QtCore.QSize(50,26))
         
         self._folder = False
+        
         
     def setData(self, column, role, value):
         super(ProcessItem, self).setData(column, role, value)
@@ -1855,6 +1863,8 @@ class ProcessTreeItem(object):
         self.parentItem = parent
         self.itemData = data
         self.childItems = []
+        
+        
 
     def child(self, row):
         return self.childItems[row]

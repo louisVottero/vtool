@@ -47,7 +47,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.runtime_values = {}
         self.handle_selection_change = True
         
-        super(ProcessManagerWindow, self).__init__(parent = parent) 
+        super(ProcessManagerWindow, self).__init__(parent = parent, use_scroll = True) 
         
         shortcut = qt.QShortcut(qt.QKeySequence(qt.QtCore.Qt.Key_Escape), self)
         shortcut.activated.connect(self._set_kill_process)
@@ -68,6 +68,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._set_default_project_directory()
         self._set_default_template_directory()
         
+        if self.settings.has_setting('process_split_alignment'):
+            alignment = self.settings.get('process_split_alignment')
+        
+            if alignment:
+                if alignment == 'horizontal':
+                    self.process_splitter.setOrientation(qt.QtCore.Qt.Horizontal)
+                if alignment == 'vertical':
+                    self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
+                
         code_directory = self.settings.get('code_directory')
         if code_directory:
             self.set_code_directory(code_directory)
@@ -174,6 +183,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         #return after
         self.build_widget.update_data(data_dir)
+        self.build_widget.tab_widget.setTabPosition(qt.QTabWidget.South)
         self.build_widget.set_directory(data_path)
         self.build_widget.show()
         
@@ -221,6 +231,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #version = QLabel('%s' % util_file.get_vetala_version())
         #self.main_layout.addWidget(version)
         
+        
+        
         self.header_layout = qt.QHBoxLayout()
         
         self.active_title = qt.QLabel('-')
@@ -236,8 +248,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.option_tabs = qt.QTabWidget()
         
         option_layout = qt.QVBoxLayout()
+        option_layout.setContentsMargins(1,1,1,1)
         self.option_widget = ui_options.ProcessOptionsWidget()
         option_layout.addWidget(self.option_widget)
+        self.option_widget.toggle_alignment.connect(self._toggle_alignment)
         
         option_widget = qt.QWidget()
         option_widget.setLayout(option_layout)
@@ -264,6 +278,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         #splitter stuff
         self.process_splitter = qt.QSplitter()
+        self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
+        
         self.process_splitter.setContentsMargins(1,1,1,1)
         self.process_splitter.addWidget(self.view_widget)
         self.process_splitter.addWidget(self.option_tabs)
@@ -291,13 +307,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #process_button_layout = qt.QVBoxLayout()
         self.process_button = qt.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
-        self.process_button.setMinimumWidth(120)
+        self.process_button.setMinimumWidth(80)
         self.process_button.setMinimumHeight(30)
         
         self.batch_button = qt.QPushButton('BATCH')
         self.batch_button.setDisabled(True)
         self.batch_button.setMinimumHeight(30)
-        self.batch_button.setMinimumWidth(120)
+        self.batch_button.setMinimumWidth(80)
         #self.process_button.setMinimumWidth(150)
         #self.process_button.setMinimumHeight(40)
         
@@ -351,7 +367,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.hide()
         
         btm_layout.addLayout(button_layout)
-        btm_layout.addSpacing(20)
+        btm_layout.addSpacing(5)
         btm_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
         
         self.browser_button.clicked.connect(self._browser)
@@ -364,6 +380,20 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.main_layout.addLayout(btm_layout)
         
         self.build_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
+        
+    def _toggle_alignment(self):
+        
+        orientation = self.process_splitter.orientation()
+        
+        if orientation == qt.QtCore.Qt.Horizontal:
+            self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
+            self.settings.set('process_split_alignment', 'vertical')
+        
+        if orientation == qt.QtCore.Qt.Vertical:
+            self.process_splitter.setOrientation(qt.QtCore.Qt.Horizontal)
+            self.settings.set('process_split_alignment', 'horizontal')
+            
+        
         
     def _add_template(self, process_name, directory):
         

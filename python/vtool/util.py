@@ -23,6 +23,14 @@ def get_env(name):
     if os.environ.has_key(name):
         return os.environ[name]
 
+def add_to_PYTHONPATH(path):
+    
+    if not path:
+        return
+    
+    if not path in sys.path:
+        sys.path.append(path)
+
 def profiler_event(frame, event, arg, indent = [0]):
     if event == "call":
         indent[0] += 2
@@ -67,10 +75,18 @@ def is_in_maya():
     except:
         return False
 
-def has_shotgun():
+def has_shotgun_api():
     
     try:
-        import tank
+        import shotgun_api3
+        return True
+    except:
+        return False
+    
+def has_shotgun_tank():
+    
+    try:
+        #import tank
         import sgtk
         return True
     except:

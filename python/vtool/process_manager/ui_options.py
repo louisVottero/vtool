@@ -10,6 +10,8 @@ from vtool.process_manager import process
 
 class ProcessOptionsWidget(qt_ui.BasicWidget):
     
+    toggle_alignment = qt_ui.create_signal()
+    
     def __init__(self):
         super(ProcessOptionsWidget, self).__init__()
         
@@ -24,9 +26,19 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
 
     def _build_widgets(self):
         
+        button_layout = qt.QHBoxLayout()
+        
+        self.orientation_button = qt.QPushButton('Toggle Alignment')
+        self.orientation_button.setMaximumWidth(100)
+        self.orientation_button.setMaximumHeight(20)
+        self.orientation_button.setMaximumWidth(120)
+        self.orientation_button.clicked.connect(self._emit_alignment_toggle)
+        
         self.edit_mode_button = qt.QPushButton('Edit')
         self.edit_mode_button.setCheckable(True)
         self.edit_mode_button.setMaximumWidth(100)
+        self.edit_mode_button.setMaximumHeight(20)
+        self.edit_mode_button.setMaximumWidth(40)
         
         
         self.option_scroll = ProcessOptionScroll()
@@ -42,7 +54,12 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
         self.edit_mode_button.toggled.connect(self._edit_click)
         
-        self.main_layout.addWidget(self.edit_mode_button, alignment = qt.QtCore.Qt.AlignRight)
+        
+        
+        button_layout.addWidget(self.orientation_button, alignment = qt.QtCore.Qt.AlignLeft)
+        button_layout.addWidget(self.edit_mode_button, alignment = qt.QtCore.Qt.AlignRight)
+        
+        self.main_layout.addLayout(button_layout)
         self.main_layout.addWidget(self.option_scroll)
         self.main_layout.addWidget(self.edit_options)
     
@@ -51,6 +68,7 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
         self._edit_activate(bool_value)
         
+    
         
     def _edit_activate(self, bool_value):
         
@@ -60,6 +78,9 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
         if bool_value == False:
             self.option_palette.clear_selection()
+    
+    def _emit_alignment_toggle(self):
+        self.toggle_alignment.emit()
         
     def set_directory(self, directory):
         

@@ -22,11 +22,14 @@ if util.is_in_maya():
     
     import maya_lib.api
 
+from vtool import util_shotgun
+
 class DataManager(object):
     
     def __init__(self):
         self.available_data = [MayaAsciiFileData(), 
-                               MayaBinaryFileData(), 
+                               MayaBinaryFileData(),
+                               MayaShotgunFileData(), 
                                ScriptManifestData(),
                                ScriptPythonData(),
                                ControlCvData(),
@@ -2447,6 +2450,57 @@ class MayaAsciiFileData(MayaFileData):
     
     def _set_maya_file_type(self):
         return self.maya_ascii
+    
+class MayaShotgunFileData(MayaFileData):
+    
+    def __init__(self, name = None):
+        super(MayaShotgunFileData, self).__init__(name)
+        
+        
+            
+        
+    
+    def _data_name(self):
+        return 'link'
+    
+    def _data_type(self):
+        return 'maya.shotgun'
+    
+    def get_projects(self):
+        projects = util_shotgun.get_projects()
+        
+        found = []
+        
+        for project in projects:
+            found.append(project['name'])
+            
+        return found
+    
+    def get_assets(self, project):
+        assets = util_shotgun.get_assets(project)
+        
+        found = {}
+        
+        for asset in assets:
+            
+            if not found.has_key(asset['sg_asset_type']):
+                found[asset['sg_asset_type']] = []
+                
+            found[asset['sg_asset_type']].append(asset['code'])
+            
+        return found
+    
+    def get_asset_steps(self):
+        
+        steps = util_shotgun.get_asset_steps()
+        
+        found = []
+        
+        for step in steps:
+            found.append([step['code'], step['short_name']])
+            
+        return found
+        
     
 def read_ldr_file(filepath):
     
