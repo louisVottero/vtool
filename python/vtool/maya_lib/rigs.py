@@ -8584,3 +8584,160 @@ class JawRig(FkLocalRig):
         
         self.jaw_slide_translate_axis = axis_letter.capitalize()
         
+        
+class FeatherStripRig(CurveRig):
+    
+    def __init__(self, description, side = ''):
+        
+        super(FeatherStripRig, self).__init__(description, side)
+        
+        self.feather_count = 10
+        self.feather_joint_sections = 3
+        
+        self.feather_tilt = 1
+        
+        self.object_rotation_up = None
+        
+        self.top_broad_joint = None
+        self.btm_broad_joint = None
+    
+    def set_feather_count(self, value):
+        self.feather_count = value
+        
+    def set_feather_joint_sections(self, value):
+        self.feather_joint_sections = value
+    
+    def set_feather_tilt(self, value):
+        
+        self.feather_tilt = value
+    
+    def set_curve_skin_joints(self, top_joint, btm_joint):
+        self.top_curve_skin_joint = top_joint
+        self.btm_curve_skin_joint = btm_joint
+    
+    def _create_joint_strips(self):
+
+        strip1_name = self._get_name(description = 'strip')
+        strip2_name = self._get_name(description = 'stripEnd')
+        
+        joints1 = rigs_util.create_joints_on_curve(self.curves[0],self.feather_count,strip1_name)
+        joints2 = rigs_util.create_joints_on_curve(self.curves[1],self.feather_count,strip2_name)
+    
+        joints1_group = joints1[1]
+        joints1 = joints1[0]
+    
+        joints2_group = joints2[1]
+        joints2 = joints2[0]
+        
+        cmds.parent(joints1_group, self.setup_group)
+        cmds.parent(joints2_group, self.setup_group)
+        
+        return joints1, joints2
+        
+    def _skin_curves(self):
+        
+        #cmds.skinCluster([self.top_curve_skin_joint, self.btm_curve_skin_joint], self.curves[0], tsb = True)
+        cmds.skinCluster([self.top_curve_skin_joint, self.btm_curve_skin_joint], self.curves[1], tsb = True)
+    
+    def _create_inc_control(self, sub, inc, joint):
+        control_inst = self._create_control(description = 'feather%s' % (inc+1), sub = sub, curve_type = 'pin_round')
+        control_inst.rotate_shape(90, 0, 0)
+        
+        if inc == 0:
+            control_inst.scale_shape(2, 2, 2)
+        
+        control = control_inst.control
+        
+        control_xform = space.create_xform_group(control)
+        
+        space.MatchSpace(joint, control_xform).translation_rotation()
+        
+        cmds.parentConstraint(control, joint)
+        
+        driver3 = space.create_xform_group(control, 'driver3')
+        tilt_driver = space.create_xform_group(control, 'driver2')
+        space.create_xform_group(control, 'driver')
+        
+        if inc == 0:
+            cmds.setAttr('%s.rotateX' % tilt_driver, self.feather_tilt)
+        
+        return control, control_xform, driver3
+    
+    def create(self):
+        super(FeatherStripRig, self).create()
+        
+        self._skin_curves()
+        
+        if not len(self.curves) == 2:
+            vtool.util.warning('Feather rig must have exactly two curves')
+            return
+        
+        joints1, joints2 = self._create_joint_strips()
+        
+        joint_section_name = self._get_name('section')
+        
+        geo_group = self._create_group('geo')
+        
+        for inc in range(0, len(joints1)):
+            
+            geo_name = geo.create_two_transforms_mesh_strip(joints1[inc],joints2[inc],offset_axis='Y')
+            nice_geo_name = self._get_name(description = 'geo')
+            geo_name = cmds.rename(geo_name, core.inc_name(nice_geo_name))
+            
+            if self.side == 'L':
+                cmds.polyNormal(geo_name, normalMode = 0, userNormalMode = 0, ch = False)
+            
+            cmds.parent(geo_name, geo_group)
+            
+            aim_group = cmds.group(em = True, n = 'aim_%s' % geo_name)
+            
+            joints = space.transforms_to_joint_chain([joints1[inc], joints2[inc]],joint_section_name)
+            
+            space.MatchSpace(joints1[inc], aim_group).translation_rotation()
+            cmds.parent(aim_group, joints1[inc])
+            
+            cmds.aimConstraint(joints2[inc], aim_group, worldUpObject = self.control_group, wut = 'objectrotation', wu = [0,0,0])
+                
+            xform_group = space.create_xform_group(aim_group)
+            
+            cmds.parent(joints[0], aim_group)
+            cmds.makeIdentity(joints[0], apply = True, t = True, r = True, jo = True)
+            sub_joints = space.subdivide_joint(joints[0], joints[-1], self.feather_joint_sections)
+            cmds.parent(joints[0], self.setup_group)
+            #cmds.parent(xform_group, joints1[inc])
+            cmds.parent(joints1[inc], self.control_group)
+            cmds.setAttr('%s.drawStyle' % joints1[inc], 2)
+            
+            control_joints = []
+            control_joints.append(joints[0])
+            control_joints += sub_joints
+            control_joints.append(joints[1])
+            
+            last_control = None
+            
+            for inc in range(0, (len(control_joints)-1)):
+                
+                sub = True
+                
+                if inc == 0:
+                    sub = False
+                    cmds.skinCluster(control_joints, geo_name, tsb = True)
+                
+                joint = control_joints[inc]
+                
+                control, control_xform, driver3 = self._create_inc_control(sub, inc, joint)
+                
+                
+                
+                if inc == 0:
+                    
+                    cmds.parent(control_xform, aim_group)
+                    anim.quick_driven_key('%s.rotateY' % aim_group, '%s.rotateX' % driver3, [-90,0,90], [-45,0,-45], infinite = True, tangent_type = 'linear')
+                    
+                
+                
+                if last_control:
+                    cmds.parent(control_xform, last_control)
+                
+                last_control = control
+                
