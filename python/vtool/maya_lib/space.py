@@ -860,6 +860,7 @@ class IkHandle(object):
             self._create_regular_ik()
         
         if self.curve or self.solver_type == self.solver_spline:
+            self.solver_type = self.solver_spline
             self._create_spline_ik()
 
         
