@@ -953,6 +953,64 @@ def set_render_stats_double_sided_default(node_name):
         if stat == 'opposite':
             cmds.setAttr(attr, RENDER_DEFAULT_OPPOSITE)
 
+def create_two_transforms_curve(transform1, transform2, name = ''):
+    if not name:
+        name = '%s_to_%s_curve' % (transform1, transform2)
+    
+    pos1 = cmds.xform(transform1, q = True, ws = True, t = True)
+    pos2 = cmds.xform(transform2, q = True, ws = True, t = True)
+    
+    curve = cmds.curve(d = 1, p = [pos1,pos2], name = name)
+    
+    return curve
+
+def create_two_transforms_mesh_strip(transform1, transform2, offset_axis = 'X', u_spans = 10, v_spans = 3):
+    
+    curve = create_two_transforms_curve(transform1, transform2)
+    
+    if type(offset_axis) == type(str):
+        offset_axis.upper()
+    
+    if offset_axis == 'X':
+        
+        axis_vector = [1,0,0]
+    if offset_axis == 'Y':
+        axis_vector = [0,1,0]
+    if offset_axis == 'Z':
+        axis_vector = [0,0,1]
+    
+    dup1 = cmds.duplicate(curve)
+    cmds.xform(dup1, os = True, t = axis_vector)
+    
+    dup2 = cmds.duplicate(curve)
+    cmds.xform(dup2, os = True, t = [axis_vector[0]*-1, axis_vector[1]*-1, axis_vector[2]*-1])
+    
+    
+    
+    loft = cmds.loft(dup1, dup2, ch = True, u = True, c = 0, ar = 1, d = 3, ss = 10, rn = 0, po = 1, rsn = True)
+    
+    surface = loft[0]
+    
+    input_value = attr.get_attribute_input('%s.inMesh' % surface, node_only=True)
+    
+    if input_value:
+        cmds.setAttr('%s.uNumber' % input_value, u_spans)
+        cmds.setAttr('%s.vNumber' % input_value, v_spans)
+        
+        cmds.delete(surface, ch = True)
+    
+    new_name = cmds.rename(surface, '%s_to_%s_mesh' % (transform1, transform2))
+    
+    cmds.delete(dup1, dup2, curve)
+    
+    pos = cmds.xform(transform1, q = True, ws = True, t = True)
+    
+    cmds.xform(new_name, rp = pos, sp = pos)
+    
+    return new_name
+    
+    
+
 def create_mesh_from_bounding_box(min_vector, max_vector, name):
     
     cube = cmds.polyCube(ch = 0)[0]
