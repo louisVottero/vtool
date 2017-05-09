@@ -1461,6 +1461,7 @@ class MirrorControlKeyframes():
                 cmds.connectAttr(mapped_input[inc], new_input, f = True)
 
 
+
 def rename_control(old_name, new_name):
     
     Control(old_name).rename(new_name)
@@ -1861,7 +1862,7 @@ def create_spline_ik_stretch(curve, joints, node_for_attribute = None, create_st
         
         percent += segment
 
-def create_simple_spline_ik_stretch(curve, joints):
+def create_simple_spline_ik_stretch(curve, joints, stretch_axis = 'Y'):
     """
     Stretch joints on curve. Joints must be attached to a spline ik. This is a much simpler setup than create_spline_ik_stretch.
     
@@ -1895,7 +1896,7 @@ def create_simple_spline_ik_stretch(curve, joints):
         
         attribute = '%s.outputX' % multiply
 
-        cmds.connectAttr(attribute, '%s.scaleY' % joint)
+        cmds.connectAttr(attribute, '%s.scale%s' % (joint, stretch_axis))
         
         percent += segment
 
