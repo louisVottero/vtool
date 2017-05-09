@@ -123,12 +123,8 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.get_shotgun_url = qt_ui.GetString('Webpage')
         self.get_shotgun_name = qt_ui.GetString('Script Name')
         self.get_shotgun_code = qt_ui.GetString('Application Key')
-        self.get_shotgun_asset_path_code = qt_ui.GetString('Asset Path Code')
-        self.get_shotgun_asset_path_code.set_text('C:/projects/{project}/assets/{sg_asset_type}/{asset_name}/{step}')
-        
-        
-        api_warning = qt.QLabel('If the shotgun API is not in your PYTHONPATH,\nload the path to python-api below:')
-        self.get_shotgun_api = ShotgunAPIWidget()
+        self.get_shotgun_asset_path_code = qt_ui.GetString('Tank Asset Template')
+        self.get_shotgun_asset_path_code.set_text('maya_asset_publish')
         
         toolkit_warning = qt.QLabel('If the shotgun toolkit is not in your PYTHONPATH,\nload the path to tk-core/python below:')
         self.get_shotgun_toolkit = ShotgunToolkitWidget()
@@ -143,8 +139,6 @@ class SettingsWidget(qt_ui.BasicWidget):
         shotgun_group_layout.addWidget(self.get_shotgun_code)
         shotgun_group_layout.addWidget(self.get_shotgun_asset_path_code)
         shotgun_group_layout.addSpacing(10)
-        shotgun_group_layout.addWidget(api_warning)
-        shotgun_group_layout.addWidget(self.get_shotgun_api)
         
         shotgun_group_layout.addSpacing(10)
         shotgun_group_layout.addWidget(toolkit_warning)
@@ -274,7 +268,6 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.project_directory_widget.set_settings(settings)
         self.editor_directory_widget.set_settings(settings)
         self.get_shotgun_toolkit.set_settings(settings)
-        self.get_shotgun_api.set_settings(settings)
         
         self._get_stop_on_error()
         self._get_start_new_scene_on_process()
@@ -324,58 +317,6 @@ class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
         
         if util_file.is_file(str(filename)):
             self.set_directory_text(filename)
-
-class ShotgunAPIWidget(qt_ui.GetDirectoryWidget):
-    
-    def __init__(self, parent = None):
-           
-        super(ShotgunAPIWidget, self).__init__(parent)
-        
-        self.set_label('Shotgun API Path')
-        self.settings = None
-    
-    def _build_widgets(self):
-        super(ShotgunAPIWidget, self)._build_widgets()
-        
-        self.api_passed = qt.QLabel(' Works ')
-        self.api_passed.setStyleSheet("QLabel { background-color : lightGreen; color : black; }")
-        self.api_passed.hide()
-        self.main_layout.addWidget(self.api_passed)
-    
-    def _test_python_path(self, path):
-        util.add_to_PYTHONPATH(path)
-        if util.has_shotgun_api():
-            self.api_passed.show()
-        if not util.has_shotgun_api():
-            self.api_passed.hide()
-    
-    def _browser(self):
-        
-        filename = qt_ui.get_folder(self.get_directory() , self)
-        
-        if filename:
-        
-            if util_file.is_dir(filename):
-                filename = util_file.fix_slashes(filename)
-                self.directory_edit.setText(filename)
-                self.directory_changed.emit(filename)
-                self.settings.set('shotgun_api', str(filename))
-                
-                self._test_python_path(filename)
-                
-
-            
-    def set_settings(self, settings):
-        
-        self.settings = settings
-        
-        filename = self.settings.get('shotgun_api')
-        
-        if util_file.is_dir(str(filename)):
-            self.set_directory_text(filename)
-            
-            self._test_python_path(filename)
-    
         
 class ShotgunToolkitWidget(qt_ui.GetDirectoryWidget):
     
