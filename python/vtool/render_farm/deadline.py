@@ -28,9 +28,9 @@ class Job(object):
         self.version = ''
         self.submit_file = ''
         
-        self.deadline_path = os.environ['DEADLINE_PATH']
+        #self.deadline_path = os.environ['DEADLINE_PATH']
         
-        self.deadline_path = 'C:\\Program Files\\Thinkbox\\Deadline8\\bin\\deadlinecommand.exe'
+        self.deadline_path = 'C:\\Program Files\\Thinkbox\\Deadline9\\bin\\deadlinecommand.exe'
         
     def _get_temp_dir(self):
         return os.environ["TEMP"]
