@@ -2768,6 +2768,7 @@ def orient_attributes(scope = None):
             if relatives:
                 orient_attributes(relatives)
 
+
 def add_orient_joint(joint):
     
     if not cmds.nodeType(joint) == 'joint':
@@ -2820,6 +2821,23 @@ def add_orient_joint(joint):
     cmds.setAttr('%s.radius' % up_joint, (current_radius/2.0))
     
     cmds.setAttr('%s.aimUpAt' % joint, 5)
+    
+
+def orient_x_to_child(joint, invert = False):
+    
+    aim_axis = [1,0,0]
+    up_axis = [0,1,0]
+    
+    if invert:
+        aim_axis = [-1,0,0]
+        up_axis = [0,-1,0]
+    
+    orient = OrientJoint(joint)
+    orient.set_aim_at(3)
+    orient.set_aim_up_at(0)
+    orient.set_aim_vector(aim_axis)
+    orient.set_up_vector(up_axis)
+    orient.run()
     
     
 
