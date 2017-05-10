@@ -994,8 +994,16 @@ def create_two_transforms_mesh_strip(transform1, transform2, offset_axis = 'X', 
     input_value = attr.get_attribute_input('%s.inMesh' % surface, node_only=True)
     
     if input_value:
+        cmds.setAttr('%s.format' % input_value, 2)
+        cmds.setAttr('%s.uType' % input_value, 1)
+        cmds.setAttr('%s.vType' % input_value, 1)
         cmds.setAttr('%s.uNumber' % input_value, u_spans)
         cmds.setAttr('%s.vNumber' % input_value, v_spans)
+        cmds.setAttr('%s.polygonType' % input_value, 1)
+        cmds.setAttr('%s.chordHeightRatio' % input_value, 0.1)
+        cmds.setAttr('%s.useChordHeight' % input_value, False)
+        cmds.setAttr('%s.chordHeight' % input_value, .2)
+        
         
         cmds.delete(surface, ch = True)
     
@@ -1009,8 +1017,6 @@ def create_two_transforms_mesh_strip(transform1, transform2, offset_axis = 'X', 
     
     return new_name
     
-    
-
 def create_mesh_from_bounding_box(min_vector, max_vector, name):
     
     cube = cmds.polyCube(ch = 0)[0]
