@@ -8600,6 +8600,22 @@ class FeatherStripRig(CurveRig):
         
         self.top_broad_joint = None
         self.btm_broad_joint = None
+        
+        self.u_spans = 10
+        self.v_spans = 2
+        
+        self.up_parent = None
+        
+        self.skin_mesh = None
+        self.wrap_mesh = None
+    
+    def set_feather_up_parent(self, parent):
+        self.up_parent = parent
+    
+    def set_feather_u_v_spans(self, u_spans, v_spans):
+        
+        self.u_spans = u_spans
+        self.v_spans = v_spans
     
     def set_feather_count(self, value):
         self.feather_count = value
@@ -8614,6 +8630,13 @@ class FeatherStripRig(CurveRig):
     def set_curve_skin_joints(self, top_joint, btm_joint):
         self.top_curve_skin_joint = top_joint
         self.btm_curve_skin_joint = btm_joint
+    
+    def set_first_curve_skin_mesh(self, mesh):
+        
+        self.skin_mesh = mesh
+        
+    def set_first_curve_wrap_mesh(self, mesh):
+        self.wrap_mesh = mesh
     
     def _create_joint_strips(self):
 
@@ -8638,6 +8661,13 @@ class FeatherStripRig(CurveRig):
         
         #cmds.skinCluster([self.top_curve_skin_joint, self.btm_curve_skin_joint], self.curves[0], tsb = True)
         cmds.skinCluster([self.top_curve_skin_joint, self.btm_curve_skin_joint], self.curves[1], tsb = True)
+        
+        if self.skin_mesh and not self.wrap_mesh:
+            print 'here!!!!!'
+            deform.skin_mesh_from_mesh(self.skin_mesh, self.curves[0])
+            
+        if self.wrap_mesh:
+            deform.create_wrap(self.skin_mesh, self.curves[0])
     
     def _create_inc_control(self, sub, inc, joint):
         control_inst = self._create_control(description = 'feather%s' % (inc+1), sub = sub, curve_type = 'pin_round')
@@ -8645,6 +8675,9 @@ class FeatherStripRig(CurveRig):
         
         if inc == 0:
             control_inst.scale_shape(2, 2, 2)
+        
+        if self.side == 'R':
+            control_inst.scale_shape(-1, -1, -1)
         
         control = control_inst.control
         
@@ -8678,9 +8711,18 @@ class FeatherStripRig(CurveRig):
         
         geo_group = self._create_group('geo')
         
+        object_up = cmds.group(n = core.inc_name(self._get_name('up')), em = True)
+        
+        if self.up_parent:
+            cmds.parent(object_up, self.up_parent)
+        
+        cmds.parent(object_up, self.control_group)
+        
         for inc in range(0, len(joints1)):
             
-            geo_name = geo.create_two_transforms_mesh_strip(joints1[inc],joints2[inc],offset_axis='Y')
+            cmds.setAttr('%s.inheritsTransform' % joints1[inc], 0)
+            
+            geo_name = geo.create_two_transforms_mesh_strip(joints1[inc],joints2[inc],offset_axis='Y', u_spans=self.u_spans, v_spans = self.v_spans)
             nice_geo_name = self._get_name(description = 'geo')
             geo_name = cmds.rename(geo_name, core.inc_name(nice_geo_name))
             
@@ -8693,15 +8735,27 @@ class FeatherStripRig(CurveRig):
             
             joints = space.transforms_to_joint_chain([joints1[inc], joints2[inc]],joint_section_name)
             
+            
+            
             space.MatchSpace(joints1[inc], aim_group).translation_rotation()
             cmds.parent(aim_group, joints1[inc])
             
-            cmds.aimConstraint(joints2[inc], aim_group, worldUpObject = self.control_group, wut = 'objectrotation', wu = [0,0,0])
+            cmds.aimConstraint(joints2[inc], aim_group, worldUpObject = object_up, wut = 'objectrotation', wu = [0,0,0])
                 
             xform_group = space.create_xform_group(aim_group)
             
+            
+            
             cmds.parent(joints[0], aim_group)
             cmds.makeIdentity(joints[0], apply = True, t = True, r = True, jo = True)
+            
+            invert = False
+            
+            if self.side == 'R':
+                invert = True
+            
+            space.orient_x_to_child(joints[0], invert = invert)
+            
             sub_joints = space.subdivide_joint(joints[0], joints[-1], self.feather_joint_sections)
             cmds.parent(joints[0], self.setup_group)
             #cmds.parent(xform_group, joints1[inc])
