@@ -2086,6 +2086,7 @@ class MayaWrap(object):
         Args:
             meshes (list): List of meshes and nurbSurfaces to influence the wrap. 
         """
+        
         if meshes:
             
             meshes = vtool.util.convert_to_sequence(meshes)

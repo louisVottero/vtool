@@ -8667,7 +8667,7 @@ class FeatherStripRig(CurveRig):
             deform.skin_mesh_from_mesh(self.skin_mesh, self.curves[0])
             
         if self.wrap_mesh:
-            deform.create_wrap(self.skin_mesh, self.curves[0])
+            deform.create_wrap(self.wrap_mesh, self.curves[0])
     
     def _create_inc_control(self, sub, inc, joint):
         control_inst = self._create_control(description = 'feather%s' % (inc+1), sub = sub, curve_type = 'pin_round')
@@ -8720,18 +8720,36 @@ class FeatherStripRig(CurveRig):
         
         for inc in range(0, len(joints1)):
             
+            invert = False
+            
+            if self.side == 'R':
+                invert = True
+            
             cmds.setAttr('%s.inheritsTransform' % joints1[inc], 0)
             
-            geo_name = geo.create_two_transforms_mesh_strip(joints1[inc],joints2[inc],offset_axis='Y', u_spans=self.u_spans, v_spans = self.v_spans)
+            loc1 = cmds.spaceLocator(n = core.inc_name(self._get_name('temp')))[0]
+            loc2 = cmds.spaceLocator(n = core.inc_name(self._get_name('temp')))[0]
+            
+            distance = space.get_distance(joints1[inc], joints2[inc])
+            
+            if not invert:
+                cmds.move(distance, 0, 0, loc2)
+            if invert:
+                cmds.move((distance*-1), 0, 0, loc2)
+            
+            geo_name = geo.create_two_transforms_mesh_strip(loc1,loc2,offset_axis='Y', u_spans=self.u_spans, v_spans = self.v_spans)
             nice_geo_name = self._get_name(description = 'geo')
             geo_name = cmds.rename(geo_name, core.inc_name(nice_geo_name))
             
             if self.side == 'L':
                 cmds.polyNormal(geo_name, normalMode = 0, userNormalMode = 0, ch = False)
             
-            cmds.parent(geo_name, geo_group)
+            cmds.delete(loc1, loc2)
             
             aim_group = cmds.group(em = True, n = 'aim_%s' % geo_name)
+            
+            
+            
             
             joints = space.transforms_to_joint_chain([joints1[inc], joints2[inc]],joint_section_name)
             
@@ -8740,19 +8758,20 @@ class FeatherStripRig(CurveRig):
             space.MatchSpace(joints1[inc], aim_group).translation_rotation()
             cmds.parent(aim_group, joints1[inc])
             
-            cmds.aimConstraint(joints2[inc], aim_group, worldUpObject = object_up, wut = 'objectrotation', wu = [0,0,0])
+            
+            aim_const = cmds.aimConstraint(joints2[inc], aim_group, worldUpObject = object_up, wut = 'objectrotation', wu = [0,0,0])[0]
                 
             xform_group = space.create_xform_group(aim_group)
             
+
             
             
             cmds.parent(joints[0], aim_group)
-            cmds.makeIdentity(joints[0], apply = True, t = True, r = True, jo = True)
             
-            invert = False
             
-            if self.side == 'R':
-                invert = True
+            
+            
+
             
             space.orient_x_to_child(joints[0], invert = invert)
             
@@ -8762,6 +8781,8 @@ class FeatherStripRig(CurveRig):
             cmds.parent(joints1[inc], self.control_group)
             cmds.setAttr('%s.drawStyle' % joints1[inc], 2)
             
+            
+            
             control_joints = []
             control_joints.append(joints[0])
             control_joints += sub_joints
@@ -8769,21 +8790,21 @@ class FeatherStripRig(CurveRig):
             
             last_control = None
             
-            for inc in range(0, (len(control_joints)-1)):
+            for inc2 in range(0, (len(control_joints)-1)):
                 
                 sub = True
                 
-                if inc == 0:
+                if inc2 == 0:
                     sub = False
-                    cmds.skinCluster(control_joints, geo_name, tsb = True)
+                    
                 
-                joint = control_joints[inc]
+                joint = control_joints[inc2]
                 
-                control, control_xform, driver3 = self._create_inc_control(sub, inc, joint)
+                control, control_xform, driver3 = self._create_inc_control(sub, inc2, joint)
                 
                 
                 
-                if inc == 0:
+                if inc2 == 0:
                     
                     cmds.parent(control_xform, aim_group)
                     anim.quick_driven_key('%s.rotateY' % aim_group, '%s.rotateX' % driver3, [-90,0,90], [-45,0,-45], infinite = True, tangent_type = 'linear')
@@ -8794,4 +8815,26 @@ class FeatherStripRig(CurveRig):
                     cmds.parent(control_xform, last_control)
                 
                 last_control = control
-                
+            
+            
+            
+            cmds.parent(geo_name, joints[0])
+            space.zero_out_transform_channels(geo_name)
+            cmds.parent(geo_name, w = True)
+            
+            
+            scale_amount = cmds.getAttr('%s.translateX' % joints[1])
+            
+            cmds.setAttr('%s.scaleX' % joints[0], scale_amount)
+            #cmds.setAttr('%s.translateX' % joints[1], 2)
+            
+            
+            cmds.parent(geo_name, joints[0])
+            cmds.makeIdentity(apply = True, s = True)
+            
+            cmds.parent(geo_name, geo_group)
+            
+            cmds.setAttr('%s.scaleX' % joints[0], 1)
+            #cmds.setAttr('%s.translateX' % joints[1], scale_amount)
+            
+            cmds.skinCluster(control_joints[0], geo_name, tsb = True)
