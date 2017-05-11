@@ -2007,6 +2007,62 @@ def get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 50):
     
     return u,v
 
+def transfer_uvs_from_mesh_to_group(mesh, group):
+    """
+    currently only works with map1 uv set
+    mesh and group need to have the same topology and point position.
+    Also this deletes history
+    """
+    
+    if not is_a_mesh(mesh):
+        vtool.util.warning('%s is not a mesh. Transfer uvs could not continue' % mesh)
+        return
+    
+    temp_mesh = cmds.duplicate(mesh)[0]
+    
+    destination_meshes = cmds.polySeparate( temp_mesh )
+    
+    source_meshes = core.get_shapes_in_hierarchy(group, 'mesh', return_parent = True)
+    
+    if not source_meshes:
+        vtool.util.warning('Found no meshes in group. Transfer uvs could not continue.')
+        return
+    
+    for destination_mesh in destination_meshes:
+        
+        if not is_a_mesh(destination_mesh):
+            continue
+        
+        destination_count = len(cmds.ls('%s.vtx[*]' % destination_mesh, flatten = True))
+        
+        found = False
+        
+        for source_mesh in source_meshes:
+            
+            source_count = len(cmds.ls('%s.vtx[*]' % source_mesh, flatten = True))
+            
+            if destination_count == source_count:
+                
+                pos1 = space.get_center(destination_mesh)
+                pos2 = space.get_center(source_mesh)
+                
+                dist = vtool.util.get_distance(pos1, pos2)
+                
+                if dist < 0.0001:
+                    try:
+                        cmds.transferAttributes(destination_mesh, source_mesh, transferPositions =  0, transferNormals = 0, transferUVs = 1, sourceUvSet = "map1", targetUvSet = "map1", transferColors = 0, sampleSpace = 5, sourceUvSpace = "map1",  targetUvSpace = "map1", searchMethod = 3, searchScaleX = -1.0, flipUVs = 0, colorBorders = 1 )
+                        cmds.delete(source_mesh, ch = True)
+                        vtool.util.show('Transfer worked on %s' % source_mesh )
+                        found = True
+                    except:
+                        pass
+                    continue
+        
+        if not found:
+            vtool.util.warning('Found no geometry match for %s' % destination_mesh)
+        
+    cmds.delete(temp_mesh)
+    
 def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis = 'X', accuracy = 100, angle_range = 180):
     """
     This will find the closest intersection on a mesh by rotating incrementally on a rotate axis.
