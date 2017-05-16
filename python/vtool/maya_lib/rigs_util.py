@@ -235,7 +235,6 @@ class Control(object):
         
         attr.set_color_rgb(shapes, r,g,b)
         
-        
     
     def show_rotate_attributes(self):
         """
@@ -409,6 +408,60 @@ class Control(object):
         
         cmds.delete(self.shapes)
         self.shapes = []
+        
+    def copy_shapes(self, transform):
+        
+        print 'copy shapes!!!'
+        
+        if not core.has_shape_of_type(transform, 'nurbsCurve'):
+            return
+        
+        orig_shapes = core.get_shapes(self.control, shape_type='nurbsCurve')
+        
+        
+        temp = cmds.duplicate(transform)[0]
+        
+        cmds.parent(temp, self.control)
+        cmds.makeIdentity(temp, apply = True, t = True, r = True, s = True)
+        
+        shapes = core.get_shapes(temp, shape_type='nurbsCurve')
+        
+        color = None
+        
+        colors = {}
+        
+        if shapes:
+            
+            inc = 0
+            
+            for shape in shapes:
+                
+                if inc < len(orig_shapes) and inc < len(shapes):
+                    
+                    
+                    
+                    color = attr.get_color(orig_shapes[inc])
+                    
+                    print 'shape!!!', orig_shapes[inc], color
+                
+                colors[shape] = color
+                
+                print shape, color
+                
+                if color:
+                    if type(color) != list:
+                        attr.set_color(shape, color)
+                    if type(color) == list:
+                        attr.set_color_rgb(shape, color[0], color[1], color[2])
+               
+                cmds.parent(shape, self.control, r = True, shape = True)
+                        
+                inc += 1
+        
+        cmds.delete(orig_shapes)        
+        cmds.delete(temp)
+        
+        curve.rename_shapes(self.control)
         
 class StoreControlData(attr.StoreData):
     
