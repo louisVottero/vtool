@@ -542,6 +542,26 @@ class CurveRig(Rig):
         """
         self.curves = vtool.util.convert_to_sequence(curve_list)
 
+class SurfaceRig(Rig):
+    """
+        A rig class that accepts curves instead of joints as the base structure.
+    """
+    
+    def __init__(self, description, side=None):
+        super(SurfaceRig, self).__init__(description, side)
+        
+        self.curves = None
+    
+    def set_surface(self, surface_list):
+        """
+        Set the curve to rig with.
+        
+        Args:
+            curve_list (str): The name of a curve.
+        """
+        self.surfaces = vtool.util.convert_to_sequence(surface_list)
+
+
 #--- Rigs
 
 class SparseRig(JointRig):
@@ -7427,8 +7447,6 @@ class EyeLidAimRig(JointRig):
             
             if type(self.scale_space) == list:
             
-                if self.side == 'R':
-                    raise
                 
                 scale_value = [current_scale[0] * self.scale_space[0],
                                current_scale[1] * self.scale_space[1],
@@ -8591,6 +8609,8 @@ class FeatherStripRig(CurveRig):
         
         super(FeatherStripRig, self).__init__(description, side)
         
+        self.curve_controls = []
+        
         self.feather_count = 10
         self.feather_joint_sections = 3
         
@@ -8615,62 +8635,83 @@ class FeatherStripRig(CurveRig):
         self._btm_feather_mesh = None
         self._feather_mesh = None
         
-        self._feather_base_width = 1
-        self._feather_tip_width = 1
+        self._feather_width_scale = 1
         
         self._distance_falloff = 2
         
-    
-    def set_attribute_control(self, transform):
-        self.attribute_control = transform
-    
-    def set_feather_up_parent(self, parent):
-        self.up_parent = parent
-    
-    def set_feather_u_v_spans(self, u_spans, v_spans):
         
-        self.u_spans = u_spans
-        self.v_spans = v_spans
-    
-    def set_feather_count(self, value):
-        self.feather_count = value
+        self.curve_skin_joints = []
+
+        self.tweak_controls = []
+        self.tweak_joints = []
         
-    def set_feather_joint_sections(self, value):
-        self.feather_joint_sections = value
-    
-    def set_feather_tilt(self, value):
+        self._internal_skin_curve_joints = True
         
-        self.feather_tilt = value
-    
-    def set_curve_skin_joints(self, top_joint, btm_joint, distance_falloff = 2):
-        self.top_curve_skin_joint = top_joint
-        self.btm_curve_skin_joint = btm_joint
+        self._attribute_description = ''
         
-        self._distance_falloff = distance_falloff
+        self.color = None
     
-    def set_first_curve_skin_mesh(self, mesh):
+    def _add_attributes(self):
         
-        self.skin_mesh = mesh
+        attribute_control = self._get_attribute_control()
         
-    def set_first_curve_wrap_mesh(self, mesh):
-        self.wrap_mesh = mesh
+        
+        if self._attribute_description:
+            attr.create_title(attribute_control, 'FEATHER_%s' % self._attribute_description.upper())
+        if not self._attribute_description:
+            attr.create_title(attribute_control, 'FEATHER')
+        
+        self._add_attribute('liftTop')
+        self._add_attribute('liftBtm')
+        self._add_attribute('tiltTop')
+        self._add_attribute('tiltBtm')
+        self._add_attribute('curlX')
+        self._add_attribute('curlY')
+        self._add_attribute('curlZ')
+            
+        
     
-    def set_feather_blend(self, feather_mesh):
-        self._feather_mesh = feather_mesh
+    def _get_attribute_name(self, name):
     
-    def set_feather_blend_top_btm(self, top_feather_mesh, btm_feather_mesh):
-        self._top_feather_mesh = top_feather_mesh
-        self._btm_feather_mesh = btm_feather_mesh
+        description = self._attribute_description
+        if description:
+            description = str(description)
+            description = description.capitalize()
     
-    def set_feather_base_tip_width(self, base_width, tip_width):
+        return name + description
+    
+    def _get_attribute(self, name):
+        """
+        returns attribute_control.attribute
+        """
+        attribute = self._get_attribute_name(name)
         
-        self._feather_base_width = base_width
-        self._feather_tip_width = tip_width
+        control = self._get_attribute_control()
         
+        full_name = control + '.' + attribute
+        
+        return full_name
+    
+    def _add_attribute(self, name, attribute_control = None):
+        
+        if not attribute_control:
+            attribute_control = self._get_attribute_control()
+        
+        attribute = self._get_attribute_name(name)
+        
+        if not cmds.objExists('%s.%s' % (attribute_control, attribute)):
+            cmds.addAttr(attribute_control, ln = attribute, k = True, at = 'float')
     
     def _get_attribute_control(self, ):
         
+        
+        
         control = self.control_group
+        
+        
+        
+        if self.tweak_controls:
+            control = self.tweak_controls[0]
         
         if self.attribute_control:
             control = self.attribute_control
@@ -8694,13 +8735,21 @@ class FeatherStripRig(CurveRig):
         cmds.parent(joints1_group, self.setup_group)
         cmds.parent(joints2_group, self.setup_group)
         
+        
+        
         return joints1, joints2
         
     def _skin_curves(self):
         
-        if self.btm_curve_skin_joint:
+        if self.curve_skin_joints and not self._internal_skin_curve_joints:
         
-            cmds.skinCluster([self.top_curve_skin_joint, self.btm_curve_skin_joint], self.curves[1], tsb = True, dr = self._distance_falloff)
+            cmds.skinCluster(self.curve_skin_joints, self.curves[1], tsb = True, dr = self._distance_falloff)
+        
+        if self.curve_skin_joints and self._internal_skin_curve_joints:
+        
+            cmds.skinCluster(self.get_tweak_joint_ends(), self.curves[1], tsb = True, dr = self._distance_falloff)
+        
+        print self.skin_mesh, self.curves[0]
         
         if self.skin_mesh and not self.wrap_mesh:
             deform.skin_mesh_from_mesh(self.skin_mesh, self.curves[0])
@@ -8708,24 +8757,27 @@ class FeatherStripRig(CurveRig):
         if self.wrap_mesh:
             deform.create_wrap(self.wrap_mesh, self.curves[0])
     
-    def _create_inc_control(self, sub, inc, joint):
-        control_inst = self._create_control(description = 'feather%s' % (inc+1), sub = sub, curve_type = 'pin_round')
-        control_inst.rotate_shape(90, 0, 0)
-        
-        if inc == 0:
-            control_inst.scale_shape(2, 2, 2)
-        
-        if self.side == 'R':
-            control_inst.scale_shape(-1, -1, -1)
+    def _create_inc_control(self, geo_name, sub, inc, joint):
+        control_inst = self._create_control(description = 'feather%s' % (inc+1), sub = sub)
         
         control = control_inst.control
         
         control_xform = space.create_xform_group(control)
         
+        
+        
+        if inc == 0:
+            
+            control_inst.scale_shape(2, 2, 2)
+        
+        if self.side == 'R':
+            control_inst.scale_shape(-1, -1, -1)
+        
         space.MatchSpace(joint, control_xform).translation_rotation()
         
         cmds.parentConstraint(control, joint)
         
+        space.create_xform_group(control, 'offset')
         driver_tilt = space.create_xform_group(control, 'driver_tilt')
         driver3 = space.create_xform_group(control, 'driver3')
         driver2 = space.create_xform_group(control, 'driver2')
@@ -8736,8 +8788,130 @@ class FeatherStripRig(CurveRig):
         
         return control, control_xform, driver3, driver2
     
+    def _create_curve_control(self):
+        
+        inc = 1
+        
+        for curve_control in self.curve_controls:
+            
+            pos1 = cmds.pointOnCurve( self.curves[0], pr=curve_control[0], p=True, top = True)
+            pos2 = cmds.pointOnCurve( self.curves[1], pr=curve_control[1], p=True, top = True)
+            
+            cmds.select(cl = True)
+            joint1 = cmds.joint(n = core.inc_name(self._get_name('joint', 'tweak%s' % inc)), p = pos1)
+            joint2 = cmds.joint(n = core.inc_name(self._get_name('joint', 'tweak%s' % inc)), p = pos2)
+            
+            inc+=1
+    
+            invert = False
+            if self.side == 'R':
+                invert = True
+            
+            space.orient_x_to_child(joint1, invert = invert)
+            
+            control = self._create_control('tweak', sub = False)
+            control.rotate_shape(0,0,-90)
+            control.scale_shape(15,15,15)
+            
+            if invert:
+                control.scale_shape(-1,-1,-1)
+            
+            control.hide_scale_and_visibility_attributes()
+            
+            control = control.control
+            xform = space.create_xform_group(control)
+            driver = space.create_xform_group(control, 'driver')
+            
+            space.MatchSpace(joint1, xform).translation_rotation()
+            cmds.parentConstraint(control, joint1)
+            self.tweak_controls.append(control)
+            self.curve_skin_joints.append(joint1)
+            self.tweak_joints.append([joint1, joint2])
+            
+            cmds.parent(joint1, self.setup_group)
+            cmds.parent(xform, self.control_group)
+    
+    def set_attribute_control(self, transform):
+        self.attribute_control = transform
+    
+    def set_attribute_description(self, description):
+        self._attribute_description = description
+    
+    def set_feather_up_parent(self, parent):
+        self.up_parent = parent
+    
+    def set_feather_u_v_spans(self, u_spans, v_spans):
+        
+        self.u_spans = u_spans
+        self.v_spans = v_spans
+    
+    def set_feather_count(self, value):
+        self.feather_count = value
+        
+    def set_feather_joint_sections(self, value):
+        self.feather_joint_sections = value
+    
+    def set_feather_tilt(self, value):
+        
+        self.feather_tilt = value
+    
+    def set_curve_skin_joints(self, joints, distance_falloff = 2):
+        
+        joints = vtool.util.convert_to_sequence(joints)
+        
+        self.curve_skin_joints = joints
+        
+        self._internal_skin_curve_joints = False
+        
+        self._distance_falloff = distance_falloff
+    
+    def set_curve_skin_falloff(self, value):
+        self._distance_falloff = value
+    
+    def set_first_curve_skin_mesh(self, mesh):
+        
+        self.skin_mesh = mesh
+        
+    def set_first_curve_wrap_mesh(self, mesh):
+        self.wrap_mesh = mesh
+    
+    def set_feather_blend(self, feather_mesh):
+        self._feather_mesh = feather_mesh
+    
+    def set_feather_blend_top_btm(self, top_feather_mesh, btm_feather_mesh):
+        self._top_feather_mesh = top_feather_mesh
+        self._btm_feather_mesh = btm_feather_mesh
+    
+    def set_feather_width_scale(self, value):
+        
+        self._feather_width_scale = value
+        
+    def set_color(self, r,g,b):
+        self.color = [r,g,b]
+        
+    def add_curve_control(self, percent_curve1, percent_curve2):
+        self.curve_controls.append([percent_curve1, percent_curve2])
+    
+    def get_tweak_joints(self):
+        found = []
+        
+        for tweak_joint in self.tweak_joints:
+            found.append(tweak_joint[0])
+            
+        return found
+            
+    def get_tweak_joint_ends(self):
+        found =[]
+        
+        for tweak_joint in self.tweak_joints:
+            found.append(tweak_joint[1])
+        
+        return found
+    
     def create(self):
         super(FeatherStripRig, self).create()
+        
+        self._create_curve_control()
         
         self._skin_curves()
         
@@ -8762,21 +8936,12 @@ class FeatherStripRig(CurveRig):
         offset_accum = 0
         
         
-        
-        attribute_control = self._get_attribute_control()
-        attr.create_title(attribute_control, 'FEATHER')
-        if not cmds.objExists('%s.tiltTop' % attribute_control):
-            cmds.addAttr(attribute_control, ln = 'tiltTop', k = True, at = 'float')
-        if not cmds.objExists('%s.tiltBtm' % attribute_control):
-            cmds.addAttr(attribute_control, ln = 'tiltBtm', k = True, at = 'float')
-        if not cmds.objExists('%s.curlX' % attribute_control):
-            cmds.addAttr(attribute_control, ln = 'curlX', k = True, at = 'float')
-        if not cmds.objExists('%s.curlY' % attribute_control):
-            cmds.addAttr(attribute_control, ln = 'curlY', k = True, at = 'float')
-        if not cmds.objExists('%s.curlZ' % attribute_control):
-            cmds.addAttr(attribute_control, ln = 'curlZ', k = True, at = 'float')
+        color_flip = False
+                
         
         for inc in range(0, len(joints1)):
+            
+            point_node = attr.get_attribute_input('%s.translateX' % joints2[inc], node_only = True)
             
             invert = False
             
@@ -8795,14 +8960,11 @@ class FeatherStripRig(CurveRig):
             if invert:
                 cmds.move((distance*-1), 0, 0, loc2)
             
-            geo_name = geo.create_two_transforms_mesh_strip(loc1,loc2,offset_axis='Y', u_spans=self.u_spans, v_spans = self.v_spans)
+            geo_name = geo.create_two_transforms_mesh_strip(loc1,loc2,offset_axis='Z', u_spans=self.u_spans, v_spans = self.v_spans)
             nice_geo_name = self._get_name(description = 'geo')
             geo_name = cmds.rename(geo_name, core.inc_name(nice_geo_name))
             
-            if self.side == 'L':
-                cmds.polyNormal(geo_name, normalMode = 0, userNormalMode = 0, ch = False)
-            
-            
+            cmds.polyNormal(geo_name, normalMode = 0, userNormalMode = 0, ch = False)
             
             cmds.delete(loc1, loc2)
             
@@ -8814,24 +8976,32 @@ class FeatherStripRig(CurveRig):
             cmds.parent(aim_group, joints1[inc])
             
             
-            aim_const = cmds.aimConstraint(joints2[inc], aim_group, worldUpObject = object_up, wut = 'objectrotation', wu = [0,0,0])[0]
+            #aim_const = cmds.aimConstraint(joints2[inc], aim_group, worldUpObject = object_up, wut = 'objectrotation', wu = [0,0,0])[0]
+            aim_const = cmds.aimConstraint(joints2[inc], aim_group, wu = [0,1,0])[0]
+            cmds.connectAttr('%s.tangent' % point_node, '%s.worldUpVector' % aim_const)
                 
             xform_group = space.create_xform_group(aim_group)
             
             cmds.parent(joints[0], aim_group)
             
+            
             space.orient_x_to_child(joints[0], invert = invert)
+            cmds.makeIdentity(joints[1], jo = True, apply = True)
             
             scale_amount = cmds.getAttr('%s.translateX' % joints[1])
             scale_amount = scale_amount/4
             
+            
+            
             sub_joints = space.subdivide_joint(joints[0], joints[-1], self.feather_joint_sections)
+            
+            for sub_joint in sub_joints:
+                space.orient_x_to_child(sub_joint, invert = invert)
+            
             cmds.parent(joints[0], self.setup_group)
-            #cmds.parent(xform_group, joints1[inc])
+            
             cmds.parent(joints1[inc], self.control_group)
             cmds.setAttr('%s.drawStyle' % joints1[inc], 2)
-            
-            
             
             control_joints = []
             control_joints.append(joints[0])
@@ -8846,16 +9016,39 @@ class FeatherStripRig(CurveRig):
             if normal_offset_accum > 1:
                 normal_offset_accum = 1 
             
-            attr.connect_blend('%s.tiltBtm' % attribute_control, '%s.tiltTop' % attribute_control, 
-                               '%s.rotateX' % aim_group, normal_offset_accum)
             
+            attribute_control = self._get_attribute_control()
+            self._add_attributes()
             
             offset_accum += offset_amount
             
             controls = []
+            control_xforms = []
             
             feather_top_btm_blends = []
             
+            
+            
+            if self.color:
+                
+                r = self.color[0]
+                g = self.color[1]
+                b = self.color[2]
+                
+                if color_flip:
+                    r = r * .75
+                    g = g * .75
+                    b = b * .75
+                
+                print r,g,b
+                
+                cmds.polyColorPerVertex(geo_name, colorRGB = [r, g, b], cdo = True)
+                
+                if color_flip:
+                    color_flip = False
+                else:
+                    color_flip = True
+                
             for inc2 in range(0, (len(control_joints)-1)):
                 
                 sub = True
@@ -8865,12 +9058,18 @@ class FeatherStripRig(CurveRig):
                     
                     
                 
+                
+                
                 joint = control_joints[inc2]
                 
-                control, control_xform, driver3, driver2 = self._create_inc_control(sub, inc2, joint)
+                control, control_xform, driver3, driver2 = self._create_inc_control(geo_name, sub, inc2, joint)
 
                 controls.append(control)
+                control_xforms.append(control_xform)
 
+                
+
+                
                 if inc2 == 0:
                     attr.create_title(control, 'FEATHER')
                     
@@ -8879,8 +9078,529 @@ class FeatherStripRig(CurveRig):
                     cmds.addAttr(control, ln = 'curlZ', k = True, at = 'float')
                     
                     cmds.parent(control_xform, aim_group)
+                    
+                    #cmds.connectAttr(self._get_attribute('lift'), '%s.rotateZ' % driver3)
+                    
+                    attr.connect_blend(self._get_attribute('liftBtm'), 
+                                       self._get_attribute('liftTop'), 
+                                       '%s.rotateZ' % driver3, normal_offset_accum)
+                    
+                    attr.connect_blend(self._get_attribute('tiltBtm'), 
+                                       self._get_attribute('tiltTop'), 
+                                       '%s.rotateX' % driver3, normal_offset_accum)
                 
                 if inc2 != 0:
+                    
+                    self._get_attribute_name('curlX')
+                    
+                    
+                    cmds.connectAttr(self._get_attribute('curlX'), '%s.rotateX' % driver3)
+                    cmds.connectAttr(self._get_attribute('curlY'), '%s.rotateY' % driver3)
+                    cmds.connectAttr(self._get_attribute('curlZ'), '%s.rotateZ' % driver3)
+                    
+                
+                    cmds.connectAttr('%s.curlX' % controls[0], '%s.rotateX' % driver2)
+                    cmds.connectAttr('%s.curlY' % controls[0], '%s.rotateY' % driver2)
+                    cmds.connectAttr('%s.curlZ' % controls[0], '%s.rotateZ' % driver2)
+                    
+                if last_control:
+                    cmds.parent(control_xform, last_control)
+                
+                if self._top_feather_mesh and self._btm_feather_mesh and inc2 == 0:
+                    
+                    
+                    other_offset_accum = 1 - normal_offset_accum
+                    
+                    feather_top_btm_blends.append([[self._top_feather_mesh, other_offset_accum],[self._btm_feather_mesh, normal_offset_accum]])
+                    
+                
+                last_control = control
+            
+            
+            
+            
+            
+            
+            
+            cmds.parent(geo_name, joints[0])
+            space.zero_out_transform_channels(geo_name)
+            
+            
+            cmds.parent(geo_name, w = True)
+            
+            
+            
+
+            
+            cmds.setAttr('%s.scaleX' % joints[0], scale_amount)
+            
+            cmds.parent(geo_name, joints[0])
+            cmds.makeIdentity(geo_name, apply = True, t = True, r = True, s = True)
+            
+            cmds.parent(geo_name, geo_group)
+            
+            cmds.setAttr('%s.scaleX' % joints[0], 1)
+            
+            if self.side == 'R':
+                
+                cmds.setAttr('%s.scaleY' % geo_name, -1)
+                cmds.setAttr('%s.scaleZ' % geo_name, 1)
+                
+            cmds.setAttr('%s.scaleZ' % geo_name, self._feather_width_scale)
+            
+            
+ 
+                
+            cmds.skinCluster(control_joints, geo_name, tsb = True, dr = 4)
+            
+            if self._feather_mesh and not self._btm_feather_mesh and not self._top_feather_mesh:
+                
+                deform.quick_blendshape(self._feather_mesh, geo_name)
+                
+            if feather_top_btm_blends:
+                for blend in feather_top_btm_blends:
+                    deform.quick_blendshape(blend[0][0], geo_name, blend[0][1])
+                    deform.quick_blendshape(blend[1][0], geo_name, blend[1][1])
+                    
+            new_curve = geo.create_curve_from_mesh_border(geo_name, -.5)
+            control_inst = rigs_util.Control(controls[0])
+            control_inst.copy_shapes(new_curve)
+            cmds.delete(new_curve)
+"""
+class FeatherSurfaceRig(SurfaceRig):
+    
+    def __init__(self, description, side = ''):
+        
+        super(FeatherSurfaceRig, self).__init__(description, side)
+        
+        self.curve_controls = []
+        
+        self.feather_count = 10
+        self.feather_joint_sections = 3
+        
+        self.feather_tilt = 1
+        
+        self.object_rotation_up = None
+        
+        self.top_broad_joint = None
+        self.btm_broad_joint = None
+        
+        self.u_spans = 10
+        self.v_spans = 2
+        
+        self.up_parent = None
+        
+        self.skin_mesh = None
+        self.wrap_mesh = None
+        
+        self.attribute_control = None
+        
+        self._top_feather_mesh = None
+        self._btm_feather_mesh = None
+        self._feather_mesh = None
+        
+        self._feather_width_scale = 1
+        
+        self._distance_falloff = 2
+        
+        
+        self.curve_skin_joints = []
+
+        self.tweak_controls = []
+        self.tweak_joints = []
+        
+        self._internal_skin_curve_joints = True
+        
+        
+        self.color = None
+    
+    def _get_attribute_control(self, ):
+        
+        
+        
+        control = self.control_group
+        
+        
+        
+        if self.tweak_controls:
+            control = self.tweak_controls[0]
+        
+        if self.attribute_control:
+            control = self.attribute_control
+        
+        return control
+        
+    def _create_joint_strips(self):
+
+        strip1_name = self._get_name(description = 'strip')
+        strip2_name = self._get_name(description = 'stripEnd')
+        
+        joints1 = geo.create_joint_v_strip_on_surface(self.surfaces[0], self.feather_count, strip1_name, v_offset = 0)
+        joints2 = geo.create_joint_v_strip_on_surface(self.surfaces[0], self.feather_count, strip1_name, v_offset = 1)
+        
+        #joints1 = rigs_util.create_joints_on_curve(self.curves[0],self.feather_count,strip1_name)
+        #joints2 = rigs_util.create_joints_on_curve(self.curves[1],self.feather_count,strip2_name)
+        
+        
+        
+        return joints1, joints2
+        
+    def _skin_surface(self):
+        
+        if self.curve_skin_joints and not self._internal_skin_curve_joints:
+        
+            cmds.skinCluster(self.curve_skin_joints, self.surfaces[0], tsb = True, dr = self._distance_falloff)
+        
+        if self.curve_skin_joints and self._internal_skin_curve_joints:
+        
+            cmds.skinCluster(self.get_tweak_joint_ends(), self.surfaces[0], tsb = True, dr = self._distance_falloff)
+        
+        
+        if self.skin_mesh and not self.wrap_mesh:
+            deform.skin_mesh_from_mesh(self.skin_mesh, self.surfaces[0])
+            
+        if self.wrap_mesh:
+            deform.create_wrap(self.wrap_mesh, self.surfaces[0])
+    
+    def _create_inc_control(self, sub, inc, joint):
+        control_inst = self._create_control(description = 'feather%s' % (inc+1), sub = sub)
+        
+        control = control_inst.control
+        
+        control_xform = space.create_xform_group(control)
+        
+        
+        
+        if inc == 0:
+            control_inst.scale_shape(2, 2, 2)
+        
+        if self.side == 'R':
+            control_inst.scale_shape(-1, -1, -1)
+        
+        space.MatchSpace(joint, control_xform).translation_rotation()
+        
+        cmds.parentConstraint(control, joint)
+        
+        space.create_xform_group(control, 'offset')
+        driver_tilt = space.create_xform_group(control, 'driver_tilt')
+        driver3 = space.create_xform_group(control, 'driver3')
+        driver2 = space.create_xform_group(control, 'driver2')
+        space.create_xform_group(control, 'driver')
+        
+        if inc == 0:
+            cmds.setAttr('%s.rotateX' % driver_tilt, self.feather_tilt)
+        
+        return control, control_xform, driver3, driver2
+    
+    def _create_curve_control(self):
+        
+        inc = 1
+        
+        for curve_control in self.curve_controls:
+            
+            pos1 = geo.get_point_from_surface_parameter(self.surfaces[0], u_value = 0, v_value = curve_control[1])
+            pos2 = geo.get_point_from_surface_parameter(self.surfaces[0], u_value = 1, v_value = curve_control[1])
+            
+            cmds.select(cl = True)
+            joint1 = cmds.joint(n = core.inc_name(self._get_name('joint', 'tweak%s' % inc)), p = pos1)
+            joint2 = cmds.joint(n = core.inc_name(self._get_name('joint', 'tweak%s' % inc)), p = pos2)
+            
+            inc+=1
+    
+            invert = False
+            if self.side == 'R':
+                invert = True
+            
+            space.orient_x_to_child(joint1, invert = invert)
+            
+            control = self._create_control('tweak', sub = False)
+            control.rotate_shape(0,0,-90)
+            control.scale_shape(15,15,15)
+            
+            if invert:
+                control.scale_shape(-1,-1,-1)
+            
+            control.hide_scale_and_visibility_attributes()
+            
+            control = control.control
+            xform = space.create_xform_group(control)
+            driver = space.create_xform_group(control, 'driver')
+            
+            space.MatchSpace(joint1, xform).translation_rotation()
+            cmds.parentConstraint(control, joint1)
+            self.tweak_controls.append(control)
+            self.curve_skin_joints.append(joint1)
+            self.tweak_joints.append([joint1, joint2])
+            
+            cmds.parent(joint1, self.setup_group)
+            cmds.parent(xform, self.control_group)
+    
+    def set_attribute_control(self, transform):
+        self.attribute_control = transform
+    
+    def set_feather_up_parent(self, parent):
+        self.up_parent = parent
+    
+    def set_feather_u_v_spans(self, u_spans, v_spans):
+        
+        self.u_spans = u_spans
+        self.v_spans = v_spans
+    
+    def set_feather_count(self, value):
+        self.feather_count = value
+        
+    def set_feather_joint_sections(self, value):
+        self.feather_joint_sections = value
+    
+    def set_feather_tilt(self, value):
+        
+        self.feather_tilt = value
+    
+    def set_curve_skin_joints(self, joints, distance_falloff = 2):
+        
+        joints = vtool.util.convert_to_sequence(joints)
+        
+        self.curve_skin_joints = joints
+        
+        self._internal_skin_curve_joints = False
+        
+        self._distance_falloff = distance_falloff
+    
+    def set_curve_skin_falloff(self, value):
+        self._distance_falloff = value
+    
+    def set_first_curve_skin_mesh(self, mesh):
+        
+        self.skin_mesh = mesh
+        
+    def set_first_curve_wrap_mesh(self, mesh):
+        self.wrap_mesh = mesh
+    
+    def set_feather_blend(self, feather_mesh):
+        self._feather_mesh = feather_mesh
+    
+    def set_feather_blend_top_btm(self, top_feather_mesh, btm_feather_mesh):
+        self._top_feather_mesh = top_feather_mesh
+        self._btm_feather_mesh = btm_feather_mesh
+    
+    def set_feather_width_scale(self, value):
+        
+        self._feather_width_scale = value
+        
+    def set_color(self, r,g,b):
+        self.color = [r,g,b]
+        
+    def add_curve_control(self, percent_curve1, percent_curve2):
+        self.curve_controls.append([percent_curve1, percent_curve2])
+    
+    def get_tweak_joints(self):
+        found = []
+        
+        for tweak_joint in self.tweak_joints:
+            found.append(tweak_joint[0])
+            
+        return found
+            
+    def get_tweak_joint_ends(self):
+        found =[]
+        
+        for tweak_joint in self.tweak_joints:
+            found.append(tweak_joint[1])
+        
+        return found
+    
+    def create(self):
+        super(FeatherSurfaceRig, self).create()
+        
+        if not len(self.surfaces) == 1:
+            vtool.util.warning('Feather rig must have exactly one surface')
+            return
+        
+        self._create_curve_control()
+        
+        #self._skin_surface()
+        
+        
+        
+        joints1, joints2 = self._create_joint_strips()
+        
+        joint_section_name = self._get_name('section')
+        
+        geo_group = self._create_group('geo')
+        
+        
+        offset_amount = (1.0/(self.feather_count-1))
+        offset_accum = 0
+        
+        attribute_control = self._get_attribute_control()
+        attr.create_title(attribute_control, 'FEATHER')
+        if not cmds.objExists('%s.tiltTop' % attribute_control):
+            cmds.addAttr(attribute_control, ln = 'tiltTop', k = True, at = 'float')
+        if not cmds.objExists('%s.tiltBtm' % attribute_control):
+            cmds.addAttr(attribute_control, ln = 'tiltBtm', k = True, at = 'float')
+        if not cmds.objExists('%s.curlX' % attribute_control):
+            cmds.addAttr(attribute_control, ln = 'curlX', k = True, at = 'float')
+        if not cmds.objExists('%s.curlY' % attribute_control):
+            cmds.addAttr(attribute_control, ln = 'curlY', k = True, at = 'float')
+        if not cmds.objExists('%s.curlZ' % attribute_control):
+            cmds.addAttr(attribute_control, ln = 'curlZ', k = True, at = 'float')
+        
+        color_flip = False
+                
+        
+        for inc in range(0, len(joints1)):
+        
+            follicle1 = cmds.listRelatives(joints1[inc], p = True)[0]
+            follicle2 = cmds.listRelatives(joints2[inc], p = True)[0]
+        
+            cmds.parent(follicle1, self.control_group)
+            cmds.parent(joints2[inc], joints1[inc])
+            cmds.delete(follicle2)
+            
+            
+            
+            #point_node = attr.get_attribute_input('%s.translateX' % joints1[inc], node_only = True)
+            
+            invert = False
+            
+            if self.side == 'R':
+                invert = True
+            
+            #cmds.setAttr('%s.inheritsTransform' % joints1[inc], 0)
+            
+            loc1 = cmds.spaceLocator(n = core.inc_name(self._get_name('temp')))[0]
+            loc2 = cmds.spaceLocator(n = core.inc_name(self._get_name('temp')))[0]
+            
+            distance = space.get_distance(joints1[inc], joints2[inc])
+            
+            if not invert:
+                cmds.move(distance, 0, 0, loc2)
+            if invert:
+                cmds.move((distance*-1), 0, 0, loc2)
+            
+            geo_name = geo.create_two_transforms_mesh_strip(loc1,loc2,offset_axis='Z', u_spans=self.u_spans, v_spans = self.v_spans)
+            nice_geo_name = self._get_name(description = 'geo')
+            geo_name = cmds.rename(geo_name, core.inc_name(nice_geo_name))
+            
+            cmds.polyNormal(geo_name, normalMode = 0, userNormalMode = 0, ch = False)
+            
+            cmds.delete(loc1, loc2)
+            
+            aim_group = cmds.group(em = True, n = 'aim_%s' % geo_name)
+            
+            joints = space.transforms_to_joint_chain([joints1[inc], joints2[inc]],joint_section_name)
+            
+            space.MatchSpace(joints1[inc], aim_group).translation_rotation()
+            cmds.parent(aim_group, joints1[inc])
+            
+            
+            #aim_const = cmds.aimConstraint(joints2[inc], aim_group, worldUpObject = object_up, wut = 'objectrotation', wu = [0,0,0])[0]
+            #aim_const = cmds.aimConstraint(joints2[inc], aim_group, wu = [0,1,0])[0]
+            #cmds.connectAttr('%s.tangent' % point_node, '%s.worldUpVector' % aim_const)
+                
+            xform_group = space.create_xform_group(aim_group)
+            
+            
+            cmds.parent(joints[0], aim_group)
+            
+            
+            space.orient_x_to_child(joints[0], invert = invert)
+            cmds.makeIdentity(joints[1], jo = True, apply = True)
+            
+            scale_amount = cmds.getAttr('%s.translateX' % joints[1])
+            scale_amount = scale_amount/4
+            
+            
+            
+            sub_joints = space.subdivide_joint(joints[0], joints[-1], self.feather_joint_sections)
+            
+            for sub_joint in sub_joints:
+                space.orient_x_to_child(sub_joint, invert = invert)
+            
+            cmds.parent(joints[0], self.setup_group)
+            
+            #cmds.parent(joints1[inc], self.control_group)
+            cmds.setAttr('%s.drawStyle' % joints1[inc], 2)
+            
+            control_joints = []
+            control_joints.append(joints[0])
+            control_joints += sub_joints
+            control_joints.append(joints[1])
+            
+            last_control = None
+            
+            
+            normal_offset_accum = offset_accum
+            
+            if normal_offset_accum > 1:
+                normal_offset_accum = 1 
+            
+            
+            
+            
+            offset_accum += offset_amount
+            
+            controls = []
+            control_xforms = []
+            
+            feather_top_btm_blends = []
+            
+            
+            
+            if self.color:
+                
+                r = self.color[0]
+                g = self.color[1]
+                b = self.color[2]
+                
+                if color_flip:
+                    r = r * .75
+                    g = g * .75
+                    b = b * .75
+                
+                print r,g,b
+                
+                cmds.polyColorPerVertex(geo_name, colorRGB = [r, g, b], cdo = True)
+                
+                if color_flip:
+                    color_flip = False
+                else:
+                    color_flip = True
+                
+            for inc2 in range(0, (len(control_joints)-1)):
+                
+                sub = True
+                
+                if inc2 == 0:
+                    sub = False
+                    
+                    
+                
+                
+                
+                joint = control_joints[inc2]
+                
+                control, control_xform, driver3, driver2 = self._create_inc_control(sub, inc2, joint)
+
+                controls.append(control)
+                control_xforms.append(control_xform)
+
+                ""
+                if inc2 == 0:
+                    attr.create_title(control, 'FEATHER')
+                    
+                    cmds.addAttr(control, ln = 'curlX', k = True, at = 'float')
+                    cmds.addAttr(control, ln = 'curlY', k = True, at = 'float')
+                    cmds.addAttr(control, ln = 'curlZ', k = True, at = 'float')
+                    
+                    cmds.parent(control_xform, aim_group)
+                    
+                    attr.connect_blend('%s.tiltBtm' % attribute_control, '%s.tiltTop' % attribute_control, 
+                                       '%s.rotateX' % driver2, normal_offset_accum)
+                
+                if inc2 != 0:
+                    pass
+                    
                     cmds.connectAttr('%s.curlX' % attribute_control, '%s.rotateX' % driver3)
                     cmds.connectAttr('%s.curlY' % attribute_control, '%s.rotateY' % driver3)
                     cmds.connectAttr('%s.curlZ' % attribute_control, '%s.rotateZ' % driver3)
@@ -8902,28 +9622,39 @@ class FeatherStripRig(CurveRig):
                 
                 last_control = control
             
-            #if self.description == 'tail':
-            #    raise
+            
+            
+            
+            
+            
             
             cmds.parent(geo_name, joints[0])
             space.zero_out_transform_channels(geo_name)
+            
+            
             cmds.parent(geo_name, w = True)
             
             
             
+
             
             cmds.setAttr('%s.scaleX' % joints[0], scale_amount)
-            #cmds.setAttr('%s.translateX' % joints[1], 2)
-            
             
             cmds.parent(geo_name, joints[0])
-            cmds.makeIdentity(apply = True, t = True, r = True, s = True)
+            cmds.makeIdentity(geo_name, apply = True, t = True, r = True, s = True)
             
             cmds.parent(geo_name, geo_group)
             
             cmds.setAttr('%s.scaleX' % joints[0], 1)
-            #cmds.setAttr('%s.translateX' % joints[1], scale_amount)
             
+            if self.side == 'R':
+                
+                cmds.setAttr('%s.scaleY' % geo_name, -1)
+                cmds.setAttr('%s.scaleZ' % geo_name, 1)
+                
+            cmds.setAttr('%s.scaleZ' % geo_name, self._feather_width_scale)
+                
+                
             cmds.skinCluster(control_joints, geo_name, tsb = True, dr = 4)
             
             if self._feather_mesh and not self._btm_feather_mesh and not self._top_feather_mesh:
@@ -8934,3 +9665,4 @@ class FeatherStripRig(CurveRig):
                 for blend in feather_top_btm_blends:
                     deform.quick_blendshape(blend[0][0], geo_name, blend[0][1])
                     deform.quick_blendshape(blend[1][0], geo_name, blend[1][1])
+"""                 
