@@ -4,6 +4,7 @@ from random import uniform
 
 import vtool.util
 import api
+from vtool.maya_lib.fx import create_follicle
 
 
 if vtool.util.is_in_maya():
@@ -953,6 +954,27 @@ def set_render_stats_double_sided_default(node_name):
         if stat == 'opposite':
             cmds.setAttr(attr, RENDER_DEFAULT_OPPOSITE)
 
+def create_curve_from_mesh_border(mesh, offset = -0.1, name = None):
+    
+    cmds.select(cl = True)
+    
+    cmds.polySelect(mesh, eb = True)
+    orig_curve = cmds.polyToCurve( form = 2, degree = 1)
+    
+    
+    curve = cmds.offsetCurve(orig_curve[0],  ch = False, rn = False, cb = 2, st = True, cl = True, cr = 0, d = offset, tol = 3.28084e-006, sd = 5, ugn =  False)
+    
+    cmds.delete(orig_curve)
+    
+    curve = cmds.rename(curve, core.inc_name('curve_%s' % mesh))
+    
+    if name:
+        curve = cmds.rename(curve, core.inc_name(name))
+        
+    
+        
+    return curve
+    
 def create_two_transforms_curve(transform1, transform2, name = ''):
     if not name:
         name = '%s_to_%s_curve' % (transform1, transform2)
@@ -980,10 +1002,10 @@ def create_two_transforms_mesh_strip(transform1, transform2, offset_axis = 'X', 
         axis_vector = [0,0,1]
     
     dup1 = cmds.duplicate(curve)
-    cmds.xform(dup1, os = True, t = axis_vector)
+    cmds.xform(dup1, os = True, t = [axis_vector[0]*-1, axis_vector[1]*-1, axis_vector[2]*-1])
     
     dup2 = cmds.duplicate(curve)
-    cmds.xform(dup2, os = True, t = [axis_vector[0]*-1, axis_vector[1]*-1, axis_vector[2]*-1])
+    cmds.xform(dup2, os = True, t = axis_vector)
     
     
     
@@ -1081,6 +1103,130 @@ def create_texture_reference_object(mesh):
     
     cmds.setAttr( '%s.template' % shapes[0],  True )
     return new_mesh
+
+def create_joint_u_strip_on_surface(surface, u_count, description, u_offset = 0, attach = True):
+    
+    u_percent = 0
+    
+    u_joints =[]
+    
+    if u_count:
+        u_segment = 1.00/(u_count-1)
+    
+    if u_count:
+        for inc in range(0, u_count):
+            
+            follicle = create_surface_follicle(surface, description, uv = [u_percent, u_offset])
+            cmds.select(cl = True)
+            joint = cmds.joint(n = core.inc_name('joint_%s' % description) )
+            
+            cmds.parent(joint, follicle)
+            cmds.makeIdentity(apply = True, jo = True)
+            
+            if not attach:
+                cmds.parent(joint, w = True)
+                cmds.delete(follicle)
+            
+            u_joints.append(joint)
+            
+            u_percent += u_segment
+            
+    return u_joints
+
+def create_joint_v_strip_on_surface(surface, v_count, description, v_offset = 0, attach = True):
+    
+    v_percent = 0
+    
+    v_joints =[]
+
+    if v_count:
+        v_segment = 1.00/(v_count-1)
+
+    if v_count:
+        for inc in range(0, v_count):
+            
+            follicle = create_surface_follicle(surface, description, uv = [v_offset, v_percent])
+            cmds.select(cl = True)
+            joint = cmds.joint(n = core.inc_name('joint_%s' % description) )
+            
+            cmds.parent(joint, follicle)
+            space.zero_out_transform_channels(joint)
+            #space.MatchSpace(follicle, joint).translation_rotation()
+            cmds.makeIdentity(apply = True, jo = True)
+            
+            if not attach:
+                cmds.parent(joint, w = True)
+                cmds.delete(follicle)
+            
+            v_joints.append(joint)
+            
+            v_percent += v_segment
+
+    
+    return v_joints
+
+@core.undo_chunk
+def create_joints_on_curve(curve, joint_count, description, attach = True):
+    """
+    Create joints on curve that do not aim at child.
+    
+    Args:
+        curve (str): The name of a curve.
+        joint_count (int): The number of joints to create.
+        description (str): The description to give the joints.
+        attach (bool): Wether to attach the joints to the curve.
+        create_controls (bool): Wether to create controls on the joints.
+        
+    Returns:
+        list: [ joints, group, control_group ] joints is a list of joinst, group is the main group for the joints, control_group is the main group above the controls. 
+        If create_controls = False then control_group = None
+        
+    """
+    
+    cmds.select(cl = True)
+    
+    total_length = cmds.arclen(curve)
+    
+    part_length = total_length/(joint_count-1)
+    current_length = 0
+    
+    joints = []
+    
+    cmds.select(cl = True)
+    
+    percent = 0
+    
+    segment = 1.00/joint_count
+    
+    for inc in range(0, joint_count):
+        
+        param = get_parameter_from_curve_length(curve, current_length)
+        
+        position = get_point_from_curve_parameter(curve, param)
+        if attach:
+            cmds.select(cl = True)
+            
+        joint = cmds.joint(p = position, n = core.inc_name('joint_%s' % description) )
+        
+        cmds.addAttr(joint, ln = 'param', at = 'double', dv = param)
+        
+        if joints:
+            cmds.joint(joints[-1], 
+                       e = True, 
+                       zso = True, 
+                       oj = "xyz", 
+                       sao = "yup")
+        
+        if attach:
+            attach_to_curve( joint, curve, parameter = param )
+        
+        current_length += part_length
+                 
+        joints.append(joint)
+    
+        percent += segment
+    
+    return joints
 
 def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
     """
@@ -2256,6 +2402,13 @@ def get_point_from_curve_parameter(curve, parameter):
         list: [0,0,0] the vector found at the parameter on the curve.
     """
     return cmds.pointOnCurve(curve, pr = parameter, ch = False)
+
+def get_point_from_surface_parameter(surface, u_value, v_value):
+    
+    surface_fn = api.NurbsSurfaceFunction(surface)
+    position = surface_fn.get_position_from_parameter(u_value, v_value)
+    
+    return position
 
 def rebuild_curve(curve, spans, degree = 3):
     
