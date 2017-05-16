@@ -195,6 +195,9 @@ class Point(ApiObject):
             
     def get(self):
         return [self.api_object.x, self.api_object.y, self.api_object.z, self.api_object.w]
+    
+    def get_as_vector(self):
+        return [self.api_object.x, self.api_object.y, self.api_object.z]
 
 class Matrix(ApiObject):
     def __init__(self, matrix_list = []):
@@ -629,6 +632,16 @@ class NurbsSurfaceFunction(MayaFunction):
         v = OpenMaya.MScriptUtil.getDouble(vPtr)
         
         return u,v
+    
+    def get_position_from_parameter(self, u_value, v_value):
+        
+        point = Point()
+        
+        space = OpenMaya.MSpace.kWorld
+        
+        self.api_object.getPointAtParam(u_value, v_value, point.api_object, space )
+        
+        return point.get_as_vector()
             
 class NurbsCurveFunction(MayaFunction):
     def _define_api_object(self, mobject):
