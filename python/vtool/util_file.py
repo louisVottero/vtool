@@ -1909,7 +1909,7 @@ def write_lines(filepath, lines, append = False):
 
 #---- create
 
-def create_dir(name, directory, make_unique = False):
+def create_dir(name, directory = None, make_unique = False):
     """
     Args:
         name (str): The name of the new directory.
