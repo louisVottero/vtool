@@ -615,6 +615,11 @@ class ControlColorData(MayaCustomData):
         
         if cmds.getAttr('%s.overrideEnabled' % curve):
             main_color = cmds.getAttr('%s.overrideColor' % curve)
+            if cmds.objExists('%s.overrideColorRGB' % curve):
+                curve_rgb = cmds.getAttr('%s.overrideColorRGB' % curve)
+                curve_rgb_state = cmds.getAttr('%s.overrideRGBColors' % curve)
+                main_color = [main_color, curve_rgb, curve_rgb_state]
+
         
         shapes = maya_lib.core.get_shapes(curve)
         one_passed = False
@@ -624,8 +629,12 @@ class ControlColorData(MayaCustomData):
                     one_passed = True
                 
                 curve_color = cmds.getAttr('%s.overrideColor' % shape)
-                sub_colors.append(curve_color)
-                    
+                if cmds.objExists('%s.overrideColorRGB' % shape):
+                    curve_rgb = cmds.getAttr('%s.overrideColorRGB' % shape)
+                    curve_rgb_state = cmds.getAttr('%s.overrideRGBColors' % shape)
+                    sub_colors.append([curve_color, curve_rgb, curve_rgb_state])
+                else:
+                    sub_colors.append(curve_color)                
         if not one_passed and main_color == None:
             return
                 
@@ -665,8 +674,13 @@ class ControlColorData(MayaCustomData):
                 if not current_color == main_color:
                 
                     cmds.setAttr('%s.overrideEnabled' % curve, 1 )
-                    cmds.setAttr('%s.overrideColor' % curve, main_color)
-                    
+                    if type(main_color) != list:
+                        cmds.setAttr('%s.overrideColor' % curve, main_color)
+                    if type(main_color) == list:
+                        cmds.setAttr('%s.overrideColor' % curve, main_color[0])
+                        cmds.setAttr('%s.overrideRGBColors' % curve, main_color[2])
+                        cmds.setAttr('%s.overrideColorRGB' % curve, main_color[1])
+                        
                     util.show('Set color of %s on %s' % (main_color, maya_lib.core.get_basename(curve)))
                     
             if sub_color:
@@ -687,7 +701,13 @@ class ControlColorData(MayaCustomData):
                     cmds.setAttr('%s.overrideEnabled' % shape, 1 )
                                         
                     if inc < len(sub_color):
-                        cmds.setAttr('%s.overrideColor' % shape, sub_color[inc])
+                        if type(sub_color[inc]) != list:
+                            cmds.setAttr('%s.overrideColor' % shape, sub_color[inc])
+                        if type(sub_color[inc]) == list:
+                            cmds.setAttr('%s.overrideColor' % shape, sub_color[0][0])
+                            cmds.setAttr('%s.overrideRGBColors' % shape, sub_color[0][2])
+                            cmds.setAttr('%s.overrideColorRGB' % shape, sub_color[0][1])
+                            
                         util.show('Set color of %s on %s' % (sub_color[inc], maya_lib.core.get_basename(shape)))
                     
                     inc+=1
