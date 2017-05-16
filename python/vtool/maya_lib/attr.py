@@ -2273,50 +2273,26 @@ def set_color_rgb(nodes, r = 0, g = 0, b = 0):
             cmds.setAttr(overrideColor, r,g,b)
             
         
-def get_color(node, rgb = False):
+def get_color(node):
+    
     
     
     if not cmds.objExists('%s.overrideColor' % node):
-        if not rgb:
-            return 0
-        if rgb:
-            return [0,0,0]
+        return 0
     
     if not cmds.getAttr('%s.overrideRGBColors' % node) or not cmds.objExists('%s.overrideRGBColors' % node): 
         color = cmds.getAttr('%s.overrideColor' % node)
         
-        if not rgb:
-            return color
-        if rgb:
-            
-            if color == 0:
-                color = 5
-            
-            color = cmds.colorIndex(color, q = True)
-            
-            
-            
-            color = vtool.util.convert_to_sequence(color, list)
-            
-            color[0] = color[0] * 255
-            color[1] = color[1] * 255
-            color[2] = color[2] * 255
-            
-            
-            return color
+        return color
             
     if cmds.getAttr('%s.overrideRGBColors' % node): 
         color = cmds.getAttr('%s.overrideColorRGB' % node)
-        color = color[0]
-        color = vtool.util.convert_to_sequence(color, list)
-        if not rgb:
-            return color
-        if rgb:
-            color[0] = color[0] * 255
-            color[1] = color[1] * 255
-            color[2] = color[2] * 255
-    
-            return color
+        
+        color[0] = color[0] * 255
+        color[1] = color[1] * 255
+        color[2] = color[2] * 255
+        
+        return color
 
 def get_color_of_side(side = 'C', sub_color = False):
     """
