@@ -661,8 +661,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             lines = 'QTreeWidget::indicator:unchecked {image: url(%s);}' % icon_off
             lines += ' QTreeWidget::indicator:checked {image: url(%s);}' % icon_on
-            lines += ' QTreeView::branch:open {image: url(%s);}' % icon_folder_open
-            lines += ' QTreeView::branch:closed:has-children {image: url(%s);}' % icon_folder
+            #lines += ' QTreeView::branch:open {image: url(%s);}' % icon_folder_open
+            #lines += ' QTreeView::branch:closed:has-children {image: url(%s);}' % icon_folder
             
             self.setStyleSheet( lines)
     
