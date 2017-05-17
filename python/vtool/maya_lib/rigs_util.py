@@ -411,8 +411,6 @@ class Control(object):
         
     def copy_shapes(self, transform):
         
-        print 'copy shapes!!!'
-        
         if not core.has_shape_of_type(transform, 'nurbsCurve'):
             return
         
@@ -438,15 +436,9 @@ class Control(object):
                 
                 if inc < len(orig_shapes) and inc < len(shapes):
                     
-                    
-                    
                     color = attr.get_color(orig_shapes[inc])
-                    
-                    print 'shape!!!', orig_shapes[inc], color
                 
                 colors[shape] = color
-                
-                print shape, color
                 
                 if color:
                     if type(color) != list:
