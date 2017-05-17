@@ -232,10 +232,13 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             icon_folder = util_file.join_path(directory, 'icons/folder.png')
             icon_folder_open = util_file.join_path(directory, 'icons/folder_open.png')
             
+            
             lines = 'QTreeView::indicator:unchecked {image: url(%s);}' % icon_off
             lines += ' QTreeView::indicator:checked {image: url(%s);}' % icon_on
-            lines += ' QTreeView::branch:open {image: url(%s);}' % icon_folder_open
-            lines += ' QTreeView::branch:closed:has-children {image: url(%s);}' % icon_folder
+            
+            #lines += ' QTreeView::branch:open {image: url(%s);}' % icon_folder_open
+            #lines += ' QTreeView::branch:closed:has-children {image: url(%s);}' % icon_folder
+            
             #lines += ' QTreeWidget::branch:closed:has-children:has-siblings, QTreeWidget::branch:closed:has-children:!has-siblings {image: url(%s);}' % icon_folder
             #lines += ' QTreeWidget::branch:opened:has-children:has-siblings, QTreeWidget::branch:opened:has-children:!has-siblings {image: url(%s);}' % icon_folder_open
             
