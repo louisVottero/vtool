@@ -2426,12 +2426,28 @@ def mirror_controls():
         mirrored_controls.append(other_control)
         
 
-def mirror_curve(prefix):
+def mirror_curve(prefix = None):
     """
     Mirror curves in a scene if the end in _L and _R
     """
     
-    curves = cmds.ls('%s*' % prefix, type = 'transform')
+    curves = None
+    
+    if prefix:
+        curves = cmds.ls('%s*' % prefix, type = 'transform')
+    if not prefix:
+        found = []
+        
+        curve_shapes = cmds.ls(type = 'nurbsCurve')
+        
+        for shape in curve_shapes:
+            parent = cmds.listRelatives(shape, type = 'transform', p = True)[0]
+            
+            if not parent in found:
+                found.append(parent)
+        
+        if found:
+            curves =   found
     
     if not curves:
         return
