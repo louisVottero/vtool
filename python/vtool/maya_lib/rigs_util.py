@@ -109,7 +109,7 @@ class Control(object):
                 
             joint_given = False
         
-        shapes = self.shapes
+        shapes = core.get_shapes(self.control, shape_type = 'nurbsCurve')
         
         for shape in shapes:
             cmds.parent(shape, joint, r = True, s = True)
@@ -159,6 +159,8 @@ class Control(object):
         var = attr.MayaStringVariable('curveType')
         var.create(joint)
         var.set_value(curve_type_value)
+        
+        
         
     def translate_shape(self, x,y,z):
         """
@@ -398,7 +400,10 @@ class Control(object):
                 new_constraint = constraint.replace(self.control, new_name)
                 cmds.rename(constraint, new_constraint)
         
+        
+        
         self.control = new_name
+        core.rename_shapes(self.control)
         
     def delete_shapes(self):
         """
@@ -453,7 +458,7 @@ class Control(object):
         cmds.delete(orig_shapes)        
         cmds.delete(temp)
         
-        curve.rename_shapes(self.control)
+        core.rename_shapes(self.control)
         
 class StoreControlData(attr.StoreData):
     
