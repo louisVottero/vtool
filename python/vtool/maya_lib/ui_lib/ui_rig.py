@@ -230,6 +230,9 @@ class RigManager(qt_ui.DirectoryWidget):
         mirror = qt.QPushButton('Mirror Transforms')
         mirror.setMinimumHeight(40)
         
+        mirror_curves = qt.QPushButton('Mirror Curves')
+        mirror_curves.setMinimumHeight(40)
+        
         #match_joints = qt.QPushButton('Match')
         #match_joints.setMinimumHeight(40)
         
@@ -255,6 +258,7 @@ class RigManager(qt_ui.DirectoryWidget):
         add_joint_orient.clicked.connect(self._add_joint_orient)
         
         mirror.clicked.connect(self._mirror)
+        mirror_curves.clicked.connect(self._mirror_curves)
         #match_joints.clicked.connect(self._match_joints)
         joints_on_curve.clicked.connect(self._joints_on_curve)
         snap_to_curve.clicked.connect(self._snap_joints_to_curve)
@@ -281,6 +285,7 @@ class RigManager(qt_ui.DirectoryWidget):
         main_layout.addSpacing(20)
         #main_layout.addWidget(add_orient)
         main_layout.addWidget(mirror)
+        main_layout.addWidget(mirror_curves)
         main_layout.addSpacing(15)
         main_layout.addLayout(orient_layout)
         #main_layout.addWidget(mirror_invert)
@@ -442,8 +447,21 @@ class RigManager(qt_ui.DirectoryWidget):
     def _mirror(self, *args ):
         #*args is for probably python 2.6, which doesn't work unless you have a key argument.
         
-        rigs_util.mirror_curve('curve_')
+        
         space.mirror_xform()
+        #util.mirror_xform('guideJoint_')
+        #util.mirror_xform('process_')
+        #util.mirror_xform(string_search = 'lf_')
+        
+        #not sure when this was implemented... but couldn't find it, needs to be reimplemented.
+        #util.mirror_curve(suffix = '_wire')
+
+    @core.undo_chunk
+    def _mirror_curves(self, *args ):
+        #*args is for probably python 2.6, which doesn't work unless you have a key argument.
+        
+        rigs_util.mirror_curve()
+        
         #util.mirror_xform('guideJoint_')
         #util.mirror_xform('process_')
         #util.mirror_xform(string_search = 'lf_')
