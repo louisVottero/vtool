@@ -1,6 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import string
+import random
 
 #import util
 import api
@@ -8637,7 +8638,8 @@ class FeatherStripRig(CurveRig):
         self._feather_mesh = None
         
         self._feather_width_scale = 1
-        self._feather_lenght_scale = 1
+        self._feather_length_scale = 1
+        self._feather_length_random = None
         
         self._distance_falloff = 3
         
@@ -8789,12 +8791,17 @@ class FeatherStripRig(CurveRig):
             control_inst.scale_shape(-1, -1, -1)
         
         space.MatchSpace(joint, control_xform).translation_rotation()
+                
         
-        cmds.parentConstraint(control, joint)
+        cmds.parent(joint, control)
+        cmds.hide(joint)
+        #cmds.parentConstraint(control, joint)
+        
+        driver3 = None
         
         if inc == 0:
             driver_tilt = space.create_xform_group(control, 'driver_tilt')
-        driver3 = space.create_xform_group(control, 'driver3')
+            driver3 = space.create_xform_group(control, 'driver3')
         driver2 = space.create_xform_group(control, 'driver2')
         space.create_xform_group(control, 'driver')
         
@@ -8979,7 +8986,10 @@ class FeatherStripRig(CurveRig):
         self._feather_width_scale = value
         
     def set_feather_length_scale(self, value):
-        self._feather_lenght_scale = value
+        self._feather_length_scale = value
+    
+    def set_feather_length_random(self, min_value, max_value):
+        self._feather_length_random = [min_value, max_value]
         
     def set_color(self, r,g,b):
         self.color = [r,g,b]
@@ -9101,8 +9111,15 @@ class FeatherStripRig(CurveRig):
             space.orient_x_to_child(joints[0], invert = invert)
             cmds.makeIdentity(joints[1], jo = True, apply = True)
             
-            cmds.setAttr('%s.scaleX' % joints[0], self._feather_lenght_scale)
-            cmds.makeIdentity(joints[0], apply = True, s = True)
+            scale_offset = self._feather_length_scale
+            
+            if self._feather_length_random:
+                scale_offset = self._feather_length_scale * random.uniform(self._feather_length_random[0], self._feather_length_random[1])
+                
+            
+            if scale_offset != 1:
+                cmds.setAttr('%s.scaleX' % joints[0], scale_offset)
+                cmds.makeIdentity(joints[0], apply = True, s = True)
             
             scale_amount = cmds.getAttr('%s.translateX' % joints[1])
             scale_amount = scale_amount/4
@@ -9178,9 +9195,9 @@ class FeatherStripRig(CurveRig):
                 
                 if inc2 != 0:
                                         
-                    cmds.connectAttr(self._get_attribute('xCurl'), '%s.rotateX' % driver3)
-                    cmds.connectAttr(self._get_attribute('yCurl'), '%s.rotateY' % driver3)
-                    cmds.connectAttr(self._get_attribute('zCurl'), '%s.rotateZ' % driver3)
+                    cmds.connectAttr(self._get_attribute('xCurl'), '%s.rotateX' % control_xform)
+                    cmds.connectAttr(self._get_attribute('yCurl'), '%s.rotateY' % control_xform)
+                    cmds.connectAttr(self._get_attribute('zCurl'), '%s.rotateZ' % control_xform)
                     
                 
                     cmds.connectAttr('%s.xCurl' % controls[0], '%s.rotateX' % driver2)
