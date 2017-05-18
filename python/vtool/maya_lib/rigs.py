@@ -8615,6 +8615,7 @@ class FeatherStripRig(CurveRig):
         self.feather_joint_sections = 3
         
         self.feather_tilt = 1
+        self._feather_lift = 0
         
         self.object_rotation_up = None
         
@@ -8636,8 +8637,9 @@ class FeatherStripRig(CurveRig):
         self._feather_mesh = None
         
         self._feather_width_scale = 1
+        self._feather_lenght_scale = 1
         
-        self._distance_falloff = 2
+        self._distance_falloff = 3
         
         
         self.curve_skin_joints = []
@@ -8654,9 +8656,16 @@ class FeatherStripRig(CurveRig):
         self.color = None
         self.color_flip = False
     
+        self._feather_tangent_first_curve = False
+    
     def _add_attributes(self):
         
         attribute_control = self._get_attribute_control()
+        
+        if not cmds.objExists('%s.featherVisibility' % attribute_control):
+            cmds.addAttr(attribute_control, ln = 'featherVisibility', at = 'bool', dv = 1, k = True)
+        if not cmds.objExists('%s.subVisibility' % attribute_control):
+            cmds.addAttr(attribute_control, ln = 'subVisibility', at = 'bool', dv = 0, k = True)
         
         
         if self._attribute_description:
@@ -8664,6 +8673,9 @@ class FeatherStripRig(CurveRig):
         if not self._attribute_description:
             attr.create_title(attribute_control, 'FEATHER')
         
+        
+        #self._add_attribute('featherVisibility', bool = True)
+        #self._add_attribute('subVisibility', bool = True)
         self._add_attribute('liftTop')
         self._add_attribute('liftBtm')
         self._add_attribute('tiltTop')
@@ -8679,7 +8691,8 @@ class FeatherStripRig(CurveRig):
         description = self._attribute_description
         if description:
             description = str(description)
-            description = description.capitalize()
+            description = description[0].upper() + description[1:]
+            
     
         return name + description
     
@@ -8695,7 +8708,7 @@ class FeatherStripRig(CurveRig):
         
         return full_name
     
-    def _add_attribute(self, name, attribute_control = None):
+    def _add_attribute(self, name, attribute_control = None, bool = False):
         
         if not attribute_control:
             attribute_control = self._get_attribute_control()
@@ -8703,15 +8716,15 @@ class FeatherStripRig(CurveRig):
         attribute = self._get_attribute_name(name)
         
         if not cmds.objExists('%s.%s' % (attribute_control, attribute)):
-            cmds.addAttr(attribute_control, ln = attribute, k = True, at = 'float')
-    
+            if not bool:
+                cmds.addAttr(attribute_control, ln = attribute, k = True, at = 'float')
+            if bool:
+                cmds.addAttr(attribute_control, ln = attribute, k = True, at = 'bool', dv = 1)
+                
+                
     def _get_attribute_control(self, ):
         
-        
-        
         control = self.control_group
-        
-        
         
         if self.tweak_controls:
             control = self.tweak_controls[0]
@@ -8744,7 +8757,8 @@ class FeatherStripRig(CurveRig):
         
         if self.curve_skin_joints and not self._internal_skin_curve_joints:
         
-            cmds.skinCluster(self.curve_skin_joints, self.curves[1], tsb = True, dr = self._distance_falloff)
+            skin = cmds.skinCluster(self.curve_skin_joints, self.curves[1], tsb = True, dr = self._distance_falloff, n = 'skin_%s' % self.curves[1], rui = True)[0]
+            cmds.setAttr('%s.skinningMethod' % skin, 1)
         
         if self.curve_skin_joints and self._internal_skin_curve_joints:
         
@@ -8753,8 +8767,8 @@ class FeatherStripRig(CurveRig):
             
             ends = tweak_ends + skin_ends
         
-            cmds.skinCluster(ends, self.curves[1], tsb = True, dr = self._distance_falloff)
-        
+            skin = cmds.skinCluster(ends, self.curves[1], tsb = True, dr = self._distance_falloff, n = 'skin_%s' % self.curves[1], rui = True)[0]
+            cmds.setAttr('%s.skinningMethod' % skin, 1)
         if self.skin_mesh and not self.wrap_mesh:
             deform.skin_mesh_from_mesh(self.skin_mesh, self.curves[0])
             
@@ -8778,14 +8792,16 @@ class FeatherStripRig(CurveRig):
         
         cmds.parentConstraint(control, joint)
         
-        space.create_xform_group(control, 'offset')
-        driver_tilt = space.create_xform_group(control, 'driver_tilt')
+        if inc == 0:
+            driver_tilt = space.create_xform_group(control, 'driver_tilt')
         driver3 = space.create_xform_group(control, 'driver3')
         driver2 = space.create_xform_group(control, 'driver2')
         space.create_xform_group(control, 'driver')
         
         if inc == 0:
             cmds.setAttr('%s.rotateX' % driver_tilt, self.feather_tilt)
+            if self._feather_lift:
+                cmds.setAttr('%s.rotateZ' % driver_tilt, self._feather_lift)
         
         return control, control_xform, driver3, driver2
     
@@ -8926,6 +8942,12 @@ class FeatherStripRig(CurveRig):
         
         self.feather_tilt = value
     
+    def set_feather_lift(self, value):
+        self._feather_lift = value
+    
+    def set_feather_tangent_first_curve(self, bool_value):
+        self._feather_tangent_first_curve = bool_value
+    
     def set_curve_skin_joints(self, joints, distance_falloff = 2):
         
         joints = vtool.util.convert_to_sequence(joints)
@@ -8954,8 +8976,10 @@ class FeatherStripRig(CurveRig):
         self._btm_feather_mesh = btm_feather_mesh
     
     def set_feather_width_scale(self, value):
-        
         self._feather_width_scale = value
+        
+    def set_feather_length_scale(self, value):
+        self._feather_lenght_scale = value
         
     def set_color(self, r,g,b):
         self.color = [r,g,b]
@@ -8994,8 +9018,14 @@ class FeatherStripRig(CurveRig):
     def create(self):
         super(FeatherStripRig, self).create()
         
+        
+        
         self._create_skin_joint()
         self._create_curve_control()
+        
+        
+        attribute_control = self._get_attribute_control()
+        self._add_attributes()
         
         self._skin_curves()
         
@@ -9009,18 +9039,11 @@ class FeatherStripRig(CurveRig):
         
         geo_group = self._create_group('geo')
         self.geo_group = geo_group
-        
-        object_up = cmds.group(n = core.inc_name(self._get_name('up')), em = True)
-        
-        if self.up_parent:
-            cmds.parent(object_up, self.up_parent)
-        
-        cmds.parent(object_up, self.control_group)
+
+        cmds.connectAttr('%s.featherVisibility' % attribute_control, '%s.visibility' % geo_group)
         
         offset_amount = (1.0/(self.feather_count-1))
         offset_accum = 0
-        
-        
         
         color_dict = {}
         
@@ -9047,10 +9070,29 @@ class FeatherStripRig(CurveRig):
             space.MatchSpace(joints1[inc], aim_group).translation_rotation()
             cmds.parent(aim_group, joints1[inc])
             
-            point_node = attr.get_attribute_input('%s.translateX' % joints1[inc], node_only = True)
+            world_up_vector = [0,1,0]
+            point_node = None
             
-            aim_const = cmds.aimConstraint(joints2[inc], aim_group, wu = [0,1,0])[0]
-            cmds.connectAttr('%s.tangent' % point_node, '%s.worldUpVector' % aim_const)
+            
+            if not self._feather_tangent_first_curve:
+                point_node = attr.get_attribute_input('%s.translateX' % joints2[inc], node_only = True)
+            if self._feather_tangent_first_curve:
+                point_node = attr.get_attribute_input('%s.translateX' % joints1[inc], node_only = True)
+            
+            if self.up_parent:
+                world_up_vector = [0,0,0]
+                point_node = None
+                
+            
+            if not self.up_parent:
+                aim_const = cmds.aimConstraint(joints2[inc], aim_group, wu = world_up_vector)[0]
+            if self.up_parent:
+                object_up = cmds.group(n = core.inc_name(self._get_name('up')), em = True)
+                cmds.parent(object_up, self.up_parent)
+                aim_const = cmds.aimConstraint(joints2[inc], aim_group, wu = world_up_vector, worldUpObject = self.up_parent, worldUpType = 'objectrotation')[0]
+            
+            if point_node:
+                cmds.connectAttr('%s.tangent' % point_node, '%s.worldUpVector' % aim_const)
                 
             space.create_xform_group(aim_group)
             
@@ -9058,6 +9100,9 @@ class FeatherStripRig(CurveRig):
             
             space.orient_x_to_child(joints[0], invert = invert)
             cmds.makeIdentity(joints[1], jo = True, apply = True)
+            
+            cmds.setAttr('%s.scaleX' % joints[0], self._feather_lenght_scale)
+            cmds.makeIdentity(joints[0], apply = True, s = True)
             
             scale_amount = cmds.getAttr('%s.translateX' % joints[1])
             scale_amount = scale_amount/4
@@ -9084,7 +9129,7 @@ class FeatherStripRig(CurveRig):
             if normal_offset_accum > 1:
                 normal_offset_accum = 1 
             
-            self._add_attributes()
+            
             
             offset_accum += offset_amount
             
@@ -9093,9 +9138,6 @@ class FeatherStripRig(CurveRig):
             
             feather_top_btm_blends = []
             
-            
-            
-                
             for inc2 in range(0, (len(control_joints)-1)):
                 
                 sub = True
@@ -9106,17 +9148,20 @@ class FeatherStripRig(CurveRig):
                 joint = control_joints[inc2]
                 
                 control, control_xform, driver3, driver2 = self._create_inc_control(geo_name, sub, inc2, joint)
-
+                
+                
+                
                 controls.append(control)
                 control_xforms.append(control_xform)
                 
                 if inc2 == 0:
+                    cmds.connectAttr('%s.featherVisibility' % attribute_control, '%s.visibility' % control_xform)
+                    
                     attr.create_title(control, 'FEATHER')
                     
                     cmds.addAttr(control, ln = 'xCurl', k = True, at = 'float')
                     cmds.addAttr(control, ln = 'yCurl', k = True, at = 'float')
                     cmds.addAttr(control, ln = 'zCurl', k = True, at = 'float')
-                    cmds.addAttr(control, ln = 'subVisibility', k = True, at = 'bool')
                     
                     cmds.parent(control_xform, aim_group)
                     
@@ -9129,7 +9174,7 @@ class FeatherStripRig(CurveRig):
                                        '%s.rotateX' % driver3, normal_offset_accum)
                 
                 if inc2 == 1:
-                    cmds.connectAttr('%s.subVisibility' % last_control, '%s.visibility' % control_xform)
+                    cmds.connectAttr('%s.subVisibility' % attribute_control, '%s.visibility' % control_xform)
                 
                 if inc2 != 0:
                                         
@@ -9176,7 +9221,7 @@ class FeatherStripRig(CurveRig):
                 
             cmds.setAttr('%s.scaleZ' % geo_name, self._feather_width_scale)
             
-            cmds.skinCluster(control_joints, geo_name, tsb = True, dr = 4)
+            cmds.skinCluster(control_joints, geo_name, tsb = True, dr = 4, rui = True, n = 'skin_%s' % geo_name) 
             
             if self._feather_mesh and not self._btm_feather_mesh and not self._top_feather_mesh:
                 
@@ -9187,10 +9232,19 @@ class FeatherStripRig(CurveRig):
                     deform.quick_blendshape(blend[0][0], geo_name, blend[0][1])
                     deform.quick_blendshape(blend[1][0], geo_name, blend[1][1])
                     
-            new_curve = geo.create_curve_from_mesh_border(geo_name, -.5)
+            new_curve = geo.create_curve_from_mesh_border(geo_name, -.25)
             control_inst = rigs_util.Control(controls[0])
             control_inst.copy_shapes(new_curve)
             r,g,b = color_dict[geo_name]
+            r = r * 1.3
+            g = g * 1.3
+            b = b * 1.3
+            if r > 1:
+                r = 1
+            if g > 1:
+                g = 1
+            if b> 1:
+                b = 1
             control_inst.color_rgb(r,g,b)
             
             cmds.delete(new_curve)
