@@ -4021,6 +4021,13 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                                  uvSpace = ['map1','map1'], 
                                  normalize = True)
 
+        skinned = influences = cmds.skinCluster(other_skin, query = True, wi = True)
+
+        unskinned = set(influences) ^ set(skinned)
+        
+        for joint in unskinned:
+            cmds.skinCluster(other_skin, e = True, ri = joint)
+
 def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints = []):
     ''' 
     This skins a group of meshes based on the skinning of the source mesh.  
