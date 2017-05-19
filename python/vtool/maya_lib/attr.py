@@ -3006,12 +3006,21 @@ def connect_blend(source_attribute1, source_attribute2, target_attribute, value 
     Returns:
         str: The name of the blendColors node
     """
-    blend = cmds.createNode('blendColors', n = 'blendColors_%s' % source_attribute1)
+    
+    source_attr_name = source_attribute1.replace('.', '_')
+    
+    blend = cmds.createNode('blendColors', n = 'blendColors_%s' % source_attr_name)
     
     cmds.connectAttr(source_attribute1, '%s.color1R' % blend)
     cmds.connectAttr(source_attribute2, '%s.color2R' % blend)
     
-    connect_plus('%s.outputR' % blend, target_attribute)
+    input_attr = get_attribute_input('%s.outputR' % blend)
+    
+    if input_attr:
+        connect_plus()
+        
+    if not input_attr:
+        cmds.connectAttr('%s.outputR' % blend, target_attribute)
     
     cmds.setAttr('%s.blender' % blend, value)
     
