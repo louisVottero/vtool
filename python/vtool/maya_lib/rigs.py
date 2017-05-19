@@ -9059,8 +9059,6 @@ class FeatherStripRig(CurveRig):
         
         for inc in range(0, len(joints1)):
             
-            
-            
             cmds.setAttr('%s.inheritsTransform' % joints1[inc], 0)
             
             invert = False
@@ -9164,12 +9162,16 @@ class FeatherStripRig(CurveRig):
                 
                 joint = control_joints[inc2]
                 
+                
+                
                 control, control_xform, driver3, driver2 = self._create_inc_control(geo_name, sub, inc2, joint)
                 
                 
                 
                 controls.append(control)
                 control_xforms.append(control_xform)
+                
+                
                 
                 if inc2 == 0:
                     cmds.connectAttr('%s.featherVisibility' % attribute_control, '%s.visibility' % control_xform)
@@ -9189,7 +9191,7 @@ class FeatherStripRig(CurveRig):
                     attr.connect_blend(self._get_attribute('tiltBtm'), 
                                        self._get_attribute('tiltTop'), 
                                        '%s.rotateX' % driver3, normal_offset_accum)
-                
+                    
                 if inc2 == 1:
                     cmds.connectAttr('%s.subVisibility' % attribute_control, '%s.visibility' % control_xform)
                 
@@ -9241,17 +9243,19 @@ class FeatherStripRig(CurveRig):
             cmds.skinCluster(control_joints, geo_name, tsb = True, dr = 4, rui = True, n = 'skin_%s' % geo_name) 
             
             if self._feather_mesh and not self._btm_feather_mesh and not self._top_feather_mesh:
-                
                 deform.quick_blendshape(self._feather_mesh, geo_name)
                 
             if feather_top_btm_blends:
                 for blend in feather_top_btm_blends:
                     deform.quick_blendshape(blend[0][0], geo_name, blend[0][1])
                     deform.quick_blendshape(blend[1][0], geo_name, blend[1][1])
-                    
+            
             new_curve = geo.create_curve_from_mesh_border(geo_name, -.25)
             control_inst = rigs_util.Control(controls[0])
             control_inst.copy_shapes(new_curve)
+            
+            
+            
             r,g,b = color_dict[geo_name]
             r = r * 1.3
             g = g * 1.3
