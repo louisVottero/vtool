@@ -120,14 +120,42 @@ class DirectoryWindow(BasicWindow):
        
 class BasicWidget(qt.QWidget):
 
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, scroll = False):
         super(BasicWidget, self).__init__(parent)
         
         self.main_layout = self._define_main_layout() 
         self.main_layout.setContentsMargins(2,2,2,2)
         self.main_layout.setSpacing(2)
         
-        self.setLayout(self.main_layout)
+        
+        if scroll:
+            
+            layout = qt.QHBoxLayout()
+            self.setLayout(layout)
+            
+            
+            scroll = qt.QScrollArea()
+            scroll.setWidgetResizable(True)
+            
+            layout.addWidget(scroll)
+            
+            widget = qt.QWidget()
+                
+            scroll.setWidget(widget)
+            self._scroll_widget = scroll
+            
+            widget.setLayout(self.main_layout)
+            
+            widget.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
+            self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
+            
+            
+            
+            #self.setLayout(self.main_layout)
+        
+        if not scroll:
+            self.setLayout(self.main_layout)
+        
         
         self._build_widgets()
         
@@ -1606,6 +1634,8 @@ class GetString(BasicWidget):
     def __init__(self, name, parent = None):
         self.name = name
         super(GetString, self).__init__(parent)
+        
+        self._use_button = False
     
     def _define_main_layout(self):
         return qt.QHBoxLayout()
@@ -1627,11 +1657,42 @@ class GetString(BasicWidget):
         self.main_layout.addSpacing(5)
         self.main_layout.addWidget(self.text_entry)
         
+        
+        insert_button = qt.QPushButton('<')
+        insert_button.setMaximumWidth(20)
+        insert_button.clicked.connect(self._button_command)
+        self.main_layout.addWidget(insert_button)
+        insert_button.hide()
+        
+        self.button = insert_button
+        
     def _setup_text_widget(self):
         self.text_entry.textChanged.connect(self._text_changed)
                     
     def _text_changed(self):
         self.text_changed.emit(self.text_entry.text())
+        
+    def _button_command(self):
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            
+            selection = cmds.ls(sl = True)
+            
+            if len(selection) > 1:
+                selection = self._remove_unicode(selection)
+                selection = str(selection)
+            
+            if len(selection) == 1:
+                selection = str(selection[0])
+                
+            self.set_text(selection)
+            
+    def _remove_unicode(self, list_or_tuple):
+            new_list = []
+            for sub in list_or_tuple:
+                new_list.append(str(sub))
+                
+            return new_list
         
     def set_text(self, text):
         self.text_entry.setText(text)
@@ -1655,9 +1716,29 @@ class GetString(BasicWidget):
         if not bool_value:
             self.text_entry.setEchoMode(self.text_entry.Normal) 
     
+    def set_use_button(self, bool_value):
+        
+        if bool_value:
+            self.button.show()
+        else:
+            self.button.hide()
+        
+    def get_text_as_list(self):
+        
+        text = self.text_entry.text()
+        
+        text = str(text)
+        
+        if text.find('[') > -1:
+            try:
+                text = eval(text)
+                return text
+            except:
+                pass
+        
+        if text:
+            return [text]
     
-
-
 class GetDirectoryWidget(DirectoryWidget):
     
     directory_changed = create_signal(object)
@@ -1918,44 +1999,61 @@ class Group(qt.QGroupBox):
     def __init__(self, name):
         super(Group, self).__init__()
         
-        self.close_height = 20
         
         self.setTitle(name)
+        
+        layout = qt.QHBoxLayout()
+        
+        self._widget = qt.QWidget()
         
         manager_layout = qt.QVBoxLayout()
         manager_layout.setContentsMargins(10,10,10,10)
         manager_layout.setSpacing(2)
         manager_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
         
-        
+        self._widget.setLayout(manager_layout)
+        layout.addWidget(self._widget)
         
         self.main_layout = manager_layout
         
-        self.setLayout(manager_layout)
+        self.setLayout(layout)
+        
+        self._build_widgets()
+        
+
+    def mousePressEvent(self, event):
+        
+        super(Group, self).mousePressEvent(event)
+        
+        if not event.button() == qt.QtCore.Qt.LeftButton:
+            return
+        
+        #half = self.width()/2
+        
+        if event.y() < 15:
+            
+            if self._widget.isHidden():
+                self._widget.setVisible(True)
+            elif not self._widget.isHidden():
+                self._widget.setVisible(False)
+            
+    def _build_widgets(self):
+        
+        pass
         
     def collapse_group(self):
         
-        self.setVisible(False)
-        self.setMaximumHeight(self.close_height)
-        self.label_expand.setText('Expand')
-        self.setVisible(True)
-        
+        self._widget.setVisible(False)
         
     def expand_group(self):
         
-        self.setVisible(False)
         self.setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX)
-        self.label_expand.setText('Collapse')
         self.setVisible(True)
         
     def set_title(self, titlename):
         
         self.setTitle(titlename)
         
-        
-        
-
-
 class Slider(BasicWidget):
     
     value_changed = create_signal(object)
