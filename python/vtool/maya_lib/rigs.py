@@ -8605,6 +8605,11 @@ class JawRig(FkLocalRig):
         
         
 class FeatherStripRig(CurveRig):
+    """
+    New feather building class. 
+    Try giving it two curves using set_curve(['curve1', 'curve2']) and see what happens.
+    This will need an example rig to show how it works. 
+    """
     
     def __init__(self, description, side = ''):
         
