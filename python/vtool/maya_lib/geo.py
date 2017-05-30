@@ -294,7 +294,15 @@ def is_a_surface(node):
     return False
 
 def is_a_curve(node):
+    """
+    Test whether the node is a curve or has a shape that is a curve.
     
+    Args:
+        node (str): The name of a node.
+        
+    Returns:
+        bool
+    """
     if cmds.objExists('%s.cv[0]' % node) and not cmds.objExists('%s.cv[0][0]' % node):
         return True
     
@@ -330,6 +338,25 @@ def is_mesh_position_same(mesh1, mesh2, tolerance = .00001):
     
     return True
 
+def is_cv_count_same(source_curve, target_curve):
+    """
+    Check if the cv count is the shame
+    
+    Args:
+        source_curve (str): The name of the source curve
+        target_curve (str): The name of the target curve
+        
+    Returns:
+        bool
+    """
+    source_length = len(cmds.ls('%s.cv[*]' % source_curve, flatten = True))
+    target_length = len(cmds.ls('%s.cv[*]' % target_curve, flatten = True))
+    
+    if not source_length == target_length:
+        return False
+    
+    return True
+
 def match_point_position( source_mesh, target_mesh):
     """
     Source and target must have the same topology.
@@ -343,6 +370,29 @@ def match_point_position( source_mesh, target_mesh):
     target_fn.set_vertex_positions(point1)
 
 
+
+
+
+def match_cv_position( source_curve, target_curve ):
+    """
+    Match cv positions.
+    
+    Args:
+        source_curve (str)
+        target_curve (str)
+        
+    """
+    source_cvs = cmds.ls('%s.cv[*]' % source_curve, flatten = True)
+    target_cvs = cmds.ls('%s.cv[*]' % target_curve, flatten = True)
+    
+    for inc in range(0, len(source_cvs)):
+        
+        pos = cmds.xform(source_cvs[inc], q= True, t = True, ws = True)
+        cmds.xform(target_cvs[inc], t = pos, ws = True)
+        
+
+
+#--- get
 
 def get_position_different(mesh1, mesh2, tolerance = 0.00001):
     """
@@ -437,26 +487,6 @@ def get_meshes_in_list(list_of_things):
      
     return found   
 
-def match_cv_position( source_curve, target_curve ):
-    
-    source_cvs = cmds.ls('%s.cv[*]' % source_curve, flatten = True)
-    target_cvs = cmds.ls('%s.cv[*]' % target_curve, flatten = True)
-    
-    for inc in range(0, len(source_cvs)):
-        
-        pos = cmds.xform(source_cvs[inc], q= True, t = True, ws = True)
-        cmds.xform(target_cvs[inc], t = pos, ws = True)
-        
-def is_cv_count_same(source_curve, target_curve):
-    
-    source_length = len(cmds.ls('%s.cv[*]' % source_curve, flatten = True))
-    target_length = len(cmds.ls('%s.cv[*]' % target_curve, flatten = True))
-    
-    if not source_length == target_length:
-        return False
-    
-    return True
-
 def get_curves_in_list(list_of_things):     
 
     found = []
@@ -495,7 +525,10 @@ def get_surfaces_in_list(list_of_things):
     return found    
 
 def get_selected_edges():
-    
+    """
+    Returns:
+        list: Any edges in the selection list.
+    """
     selection = cmds.ls(sl = True, flatten = True)
     found = get_edges_in_list(selection)
     
@@ -512,13 +545,19 @@ def get_selected_meshes():
     return found
 
 def get_selected_curves():
-    
+    """
+    Returns:
+        list: Any curves in the selection list.
+    """
     selection = cmds.ls(sl = True)
     found = get_curves_in_list(selection)
     return found
 
 def get_selected_surfaces():
-    
+    """
+    Returns:
+        list: Any surfaces in the selection list.
+    """
     selection = cmds.ls(sl = True)
     found = get_surfaces_in_list(selection)
     return found
@@ -560,7 +599,13 @@ def get_mesh_shape(mesh, shape_index = 0):
     return shapes[shape_index]
 
 def get_curve_shape(curve, shape_index = 0):
+    """
+    Get the shape for a curve transform
     
+    Args:
+        curve (str): The name of a transform above nurbsCurve shapes
+        shape_index (int): The index of the shape. 
+    """
     if curve.find('.vtx'):
         curve = curve.split('.')[0]
     
@@ -586,7 +631,13 @@ def get_curve_shape(curve, shape_index = 0):
     return shapes[shape_index]
 
 def get_surface_shape(surface, shape_index = 0):
+    """
+    Get the shape for a surface transform
     
+    Args:
+        surface (str): The name of a transform above nurbsSurface shapes
+        shape_index (int): The index of the shape. 
+    """
     if surface.find('.vtx'):
         surface = surface.split('.')[0]
     
@@ -711,7 +762,12 @@ def get_edge_path(edges = []):
     return cmds.ls(sl = True, l = True)
 
 def get_vertices(mesh):
+    """
+    Get the vertices of a mesh.
     
+    Returns
+        list
+    """
     mesh = get_mesh_shape(mesh)
     
     meshes = core.get_shapes(mesh, 'mesh', no_intermediate=True)
@@ -728,7 +784,12 @@ def get_vertices(mesh):
     return found
 
 def get_faces(mesh):
+    """
+    Get the faces of a mesh.
     
+    Returns:
+        list
+    """
     mesh = get_mesh_shape(mesh)
     
     meshes = core.get_shapes(mesh, 'mesh', no_intermediate=True)
@@ -745,7 +806,12 @@ def get_faces(mesh):
     return found
 
 def get_triangles(mesh):
+    """
+    Get the triangles of a mesh.
     
+    Returns:
+        list
+    """
     mesh = get_mesh_shape(mesh)
     
     meshes = core.get_shapes(mesh, 'mesh', no_intermediate=True)
@@ -765,7 +831,12 @@ def get_triangles(mesh):
     return found
 
 def get_non_triangle_non_quad(mesh):
+    """
+    Get faces that are neither quads or triangles.
     
+    Returns:
+        list
+    """
     mesh = get_mesh_shape(mesh)
     
     meshes = core.get_shapes(mesh, 'mesh')
@@ -820,7 +891,15 @@ def get_face_centers(mesh):
     return face_iter.get_face_center_vectors()
     
 def get_render_stats(node_name):
+    """
+    Get the render stat values from a node
     
+    Args
+        node_name (str)
+    
+    Returns:
+        list
+    """
     render_stats = ['castsShadows',
                     'receiveShadows',
                     'holdOut',
@@ -844,6 +923,465 @@ def get_render_stats(node_name):
             render_list.append( [stat, value])
     
     return render_list
+
+def get_intersection_on_mesh(mesh, ray_source_vector, ray_direction_vector ):
+    """
+    Given a ray vector with source and direction, find the closest intersection on a mesh.
+    
+    Args:
+        mesh (str): The name of the mesh to intersect with.
+        ray_source_vector (list): eg. [0,0,0], the source of the ray as a vector.
+        ray_directrion_vector (list): eg [0,0,0], The end point of the ray that starts at ray_source_vector.
+        
+    Returns:
+        list: eg [0,0,0] the place where the ray intersects with the mesh.
+        
+    """
+    mesh_fn = api.MeshFunction(mesh)
+    
+    intersection = mesh_fn.get_closest_intersection(ray_source_vector, ray_direction_vector)
+    
+    return intersection
+    
+def get_closest_uv_on_mesh(mesh, three_value_list):
+    """
+    Find the closest uv on a mesh given a vector.
+    
+    Args:
+        mesh (str): The name of the mesh with uvs.
+        three_value_list (list): eg. [0,0,0], the position vector from which to find the closest uv.
+        
+    Returns:
+        uv: The uv of that is closest to three_value_list
+    """
+    
+    mesh = api.MeshFunction(mesh)
+    found = mesh.get_uv_at_point(three_value_list)
+    
+    return found
+
+def get_uv_on_mesh_at_curve_base(mesh, curve):
+    """
+    Looks for the closest uv on mesh at the base of the curve
+    """
+    
+    cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
+    
+    cv = cvs[0]
+    
+    cv_position = cmds.xform(cv, q = True, t = True, ws = True)
+    closest_position = get_closest_position_on_mesh(mesh, cv_position)
+    
+    u,v = get_closest_uv_on_mesh(mesh, closest_position)
+    
+    return u,v
+
+def get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 50):
+    """
+    Looks at the curve and tries to find the closest uv on mesh where the curve intersects or has its nearest point
+    """
+    temp_curve = cmds.duplicate(curve)[0]
+    rebuild_curve(temp_curve, samples, degree = 1)
+    
+    cvs = cmds.ls('%s.cv[*]' % temp_curve, flatten = True)
+    
+    closest_distance = None
+    closest_position = None
+    
+    for cv in cvs:
+        
+        cv_position = cmds.xform(cv, q = True, t = True, ws = True)
+        closest_position = get_closest_position_on_mesh(mesh, cv_position)
+        distance = vtool.util.get_distance(cv_position, closest_position)
+        
+        if not closest_distance:
+            
+            closest_distance = distance
+            closest_position = cv_position
+        
+        if distance < closest_distance:
+            closest_distance = distance
+            closest_position = cv_position
+            
+        if distance == 0.00001:
+            break
+    
+    cmds.delete(temp_curve)
+    
+    u,v = get_closest_uv_on_mesh(mesh, closest_position)
+    
+    return u,v
+
+
+    
+def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis = 'X', accuracy = 100, angle_range = 180):
+    """
+    This will find the closest intersection on a mesh by rotating incrementally on a rotate axis.
+    
+    Args:
+        mesh (str): The name of a mesh.
+        transform (str): The name of a transform.
+        rotate_axis (str): 'X', 'Y', 'Z' axis of the transform to rotate.
+        opposite_axis (str): 'X', 'Y', 'Z' The axis of the transform to point at the mesh while rotating. Should not be the same axis as rotate axis.
+        accuracy (int): The number of increments in the angle range.
+        angle_range (float): How far to rotate along the rotate_axis.
+    
+    
+    Returns:
+        list: eg. [0,0,0] The vector of the clostest intersection
+    """
+    closest = None
+    found = None
+    
+    dup = cmds.duplicate(transform, po = True)[0]
+    
+    space1 = cmds.xform(dup, q = True, t = True)
+    
+    inc_value = (angle_range*1.0)/accuracy
+        
+    if rotate_axis == 'X':
+        rotate_value = [inc_value,0,0]
+    if rotate_axis == 'Y':
+        rotate_value = [0,inc_value,0]
+    if rotate_axis == 'Z':
+        rotate_value = [0,0,inc_value]
+
+    if opposite_axis == 'X':
+        axis_vector = [1,0,0]
+    if opposite_axis == 'Y':
+        axis_vector = [0,1,0]
+    if opposite_axis == 'Z':
+        axis_vector = [0,0,1]
+                
+    for inc in range(0, accuracy+1):
+        
+        space2 = space.get_axis_vector(dup, axis_vector)
+        
+        cmds.rotate(rotate_value[0], rotate_value[1], rotate_value[2], dup, r = True)
+        
+        mesh_api = api.MeshFunction(mesh)    
+        intersect = mesh_api.get_closest_intersection(space1, space2)
+        
+        distance = vtool.util.get_distance(space1, list(intersect))
+        
+        if closest == None:
+            closest = distance
+            found = intersect
+        
+        if distance < closest:
+            closest = distance
+            found = intersect
+        
+    cmds.delete(dup)
+            
+    return found
+    
+def get_closest_parameter_on_curve(curve, three_value_list):
+    """
+    Find the closest parameter value on the curve given a vector.
+    
+    Args:
+        curve (str): The name of a curve.
+        three_value_list (list): eg. [0,0,0] The vector from which to search for closest parameter
+        
+    Returns:
+        float: The closest parameter.
+    """
+    curve_shapes = core.get_shapes(curve)
+    
+    if curve_shapes:
+        curve = curve_shapes[0]
+    
+    curve = api.NurbsCurveFunction(curve)
+        
+    newPoint = curve.get_closest_position( three_value_list )
+    
+    return curve.get_parameter_at_position(newPoint)
+
+def get_closest_parameter_on_surface(surface, vector):
+    """
+    Find the closest parameter value on the surface given a vector.
+    
+    Args:
+        surface (str): The name of the surface.
+        vector (list): eg [0,0,0] The position from which to check for closest parameter on surface. 
+    
+    Returns:
+        list: [0,0] The parameter coordinates of the closest point on the surface.
+    """
+    shapes = core.get_shapes(surface)
+    
+    if shapes:
+        surface = shapes[0]
+    
+    surface = api.NurbsSurfaceFunction(surface)
+        
+    uv = surface.get_closest_parameter(vector)
+    
+    uv = list(uv)
+    
+    if uv[0] == 0:
+        uv[0] = 0.001
+    
+    if uv[1] == 0:
+        uv[1] = 0.001
+    
+    return uv
+
+def get_closest_position_on_mesh(mesh, three_value_list):
+    """
+    Get the closes position on a mesh from the given point.
+    
+    Args:
+        mesh (str): The name of a mesh.
+        three_value_list (list): The position to search from.
+    
+    Returns:
+        list: The value list, the position on the mesh that's closest.
+    """
+    mesh_fn = api.MeshFunction(mesh)
+    
+    position = mesh_fn.get_closest_position(three_value_list)
+    
+    return position
+
+def get_closest_position_on_curve(curve, three_value_list):
+    """
+    Given a vector, find the closest position on a curve.
+    
+    Args:
+        curve (str): The name of a curve.
+        three_value_list (list): eg [0,0,0] a vector find the closest position from.
+        
+    Returns:
+        list: eg [0,0,0] The closest position on the curve as vector.
+    """
+    
+    curve_shapes = core.get_shapes(curve)
+    
+    if curve_shapes:
+        curve = curve_shapes[0]
+    
+    curve = api.NurbsCurveFunction(curve)
+        
+    return curve.get_closest_position( three_value_list )
+
+def get_parameter_from_curve_length(curve, length_value):
+    
+    """
+    Find the parameter value given the length section of a curve.
+    
+    Args:
+        curve (str): The name of a curve.
+        length_value (float): The length along a curve.
+        
+    Returns:
+        float: The parameter value at the length.
+    """
+    
+    curve_shapes = core.get_shapes(curve)
+    
+    if curve_shapes:
+        curve = curve_shapes[0]
+        
+    curve = api.NurbsCurveFunction(curve)
+    
+    return curve.get_parameter_at_length(length_value)
+
+def get_curve_length_from_parameter(curve, parameter_value):
+    """
+    Given a parameter return the curve length to that parameter.
+    
+    """
+    
+    arc_node = cmds.arcLengthDimension( '%s.u[%s]' % (curve, parameter_value))
+    
+    length = cmds.getAttr('%s.arcLength' % arc_node)
+    
+    parent = cmds.listRelatives(arc_node, p = True)
+    if parent:
+        cmds.delete(parent[0])
+    
+    return length
+
+def get_point_from_curve_parameter(curve, parameter):
+    """
+    Find a position on a curve by giving a parameter value.
+    
+    Args:
+        curve (str): The name of a curve.
+        parameter (float): The parameter value on a curve.
+        
+    Returns: 
+        list: [0,0,0] the vector found at the parameter on the curve.
+    """
+    return cmds.pointOnCurve(curve, pr = parameter, ch = False)
+
+def get_point_from_surface_parameter(surface, u_value, v_value):
+    """
+    Given a u and v value find the closest position on the surface.
+    """
+    surface_fn = api.NurbsSurfaceFunction(surface)
+    position = surface_fn.get_position_from_parameter(u_value, v_value)
+    
+    return position
+
+def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = -1):
+    """
+    Find all the faces occluded by other faces. Good for finding internal geometry.
+    """
+    iter_face = api.IteratePolygonFaces(mesh)
+    mesh_fn = api.MeshFunction(mesh)
+    
+    occluded_faces = []
+    
+    def get_face_hit_id(mesh_fn, source_vector, normal_vector):
+        
+        source_normal = vtool.util.vector_add(source_vector, normal_vector)
+        face_id = mesh_fn.get_closest_intersection_face(source_normal, source_vector)
+        
+        return face_id
+    
+    while not iter_face.is_done():
+    
+        index = iter_face.index()
+        
+        skip_face = False
+        
+        if skip_with_area_greater_than > 0:
+            area = iter_face.get_area()
+            if area > skip_with_area_greater_than:
+                skip_face = True
+        
+        if skip_face:
+            iter_face.next()
+            continue
+        
+        center = iter_face.get_center()
+        
+        normal = iter_face.get_normal()
+        normal = vtool.util.vector_multiply(normal, within_distance)
+        
+        tangent = [0,0,0]
+        
+        found_space = False
+        
+        for inc in range(0, 5):
+            
+            if inc == 0:
+                
+                face_id = get_face_hit_id(mesh_fn, center, normal)
+                
+            
+            if inc == 1:
+                if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
+                    tangent = [1,.1,0]
+                else:
+                    tangent = vtool.util.vector_cross(normal, [0,1,0])
+                    tangent = vtool.util.get_inbetween_vector(tangent, normal, .1)
+                
+                tangent = vtool.util.vector_multiply(tangent, within_distance)
+                
+                face_id = get_face_hit_id(mesh_fn, center, tangent)
+            
+            if inc == 2:
+                
+                if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
+                    neg_tangent = [-1,.1,0]
+                    
+                else:
+                    
+                    neg_tangent = vtool.util.vector_cross(normal, [0,-1,0])
+                    neg_tangent = vtool.util.get_inbetween_vector(neg_tangent, normal, .1)
+                
+                neg_tangent = vtool.util.vector_multiply(neg_tangent, within_distance)
+                
+                face_id = get_face_hit_id(mesh_fn, center, neg_tangent)
+            
+            if inc == 3:
+                if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
+                    binormal = [0,.1,1]
+                else:
+                    
+                    binormal = vtool.util.vector_cross(normal, tangent)
+                    binormal = vtool.util.get_inbetween_vector(binormal, normal, .1)
+                    
+                binormal = vtool.util.vector_multiply(binormal, within_distance)
+                    
+                face_id = get_face_hit_id(mesh_fn, center, binormal)
+                
+            if inc == 4:
+                if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
+                    neg_binormal = [0,.1,-1]
+                else:
+                    
+                    neg_binormal = vtool.util.vector_cross(normal, neg_tangent)
+                    neg_binormal = vtool.util.get_inbetween_vector(neg_binormal, normal, .1)
+                    
+                neg_binormal = vtool.util.vector_multiply(neg_binormal, within_distance)
+                    
+                face_id = get_face_hit_id(mesh_fn, center, neg_binormal)
+            
+            
+            
+            if face_id == index:
+                found_space = True
+                break
+        
+        if found_space:
+            iter_face.next()
+            continue
+        
+        face = '%s.f[%s]' % (mesh, iter_face.index())
+        occluded_faces.append(face)
+        
+        iter_face.next()
+        
+    return occluded_faces
+
+def get_vertex_normal(vert_name):
+    """
+    Get the position of a normal of a vertex.
+    
+    Args:
+        vert_name (str): The name of a vertex.
+    
+    Returns: 
+        list: eg [0,0,0] The vector where the normal points.
+    """
+    normal = cmds.polyNormalPerVertex(vert_name, q = True, normalXYZ = True)
+    normal = normal[:3]
+    return vtool.util.Vector(normal)
+
+def get_y_intersection(curve, vector):
+    """
+    Given a vector in space, find out the closest intersection on the y axis to the curve. This is usefull for eye blink setups.
+    
+    Args:
+        curve (str): The name of a curve that could represent the btm eyelid.
+        vector (vector list): A list that looks like [0,0,0] that could represent a position on the top eyelid.
+        
+    Returns:
+        float: The parameter position on the curve.
+    """
+    
+    duplicate_curve = cmds.duplicate(curve)
+    curve_line = cmds.curve( p=[(vector[0], vector[1]-100000, vector[2]), 
+                                (vector[0],vector[1]+100000, vector[2]) ], d = 1 )
+    
+    parameter = cmds.curveIntersect(duplicate_curve, curve_line, ud = True, d = [0, 0, 1])
+    
+    if parameter:
+        parameter = parameter.split()
+        
+        parameter = float(parameter[0])
+        
+    if not parameter:
+        parameter =  get_closest_parameter_on_curve(curve, vector)
+        
+    cmds.delete(duplicate_curve, curve_line)
+    
+    return parameter
 
 def check_render_stats_are_default(node_name):
     """
@@ -941,6 +1479,9 @@ def set_default_render_stats(node_name):
             
 
 def set_render_stats_double_sided_default(node_name):
+    """
+    Set renders stats on a node to be double sided on and opposite off.
+    """
     stats = get_render_stats(node_name)
     
     for inc in range(0, len(stats)):
@@ -955,7 +1496,9 @@ def set_render_stats_double_sided_default(node_name):
             cmds.setAttr(attr, RENDER_DEFAULT_OPPOSITE)
 
 def create_curve_from_mesh_border(mesh, offset = -0.1, name = None):
-    
+    """
+    Create a curve from the border of a mesh.  Good for creating controls on feathers.
+    """
     cmds.select(cl = True)
     
     cmds.polySelect(mesh, eb = True)
@@ -976,6 +1519,9 @@ def create_curve_from_mesh_border(mesh, offset = -0.1, name = None):
     return curve
     
 def create_two_transforms_curve(transform1, transform2, name = ''):
+    """
+    Create a curve between two transforms.
+    """
     if not name:
         name = '%s_to_%s_curve' % (transform1, transform2)
     
@@ -987,7 +1533,9 @@ def create_two_transforms_curve(transform1, transform2, name = ''):
     return curve
 
 def create_two_transforms_mesh_strip(transform1, transform2, offset_axis = 'X', u_spans = 10, v_spans = 3):
-    
+    """
+    Create a mesh between two transforms.  Not that useful.
+    """
     curve = create_two_transforms_curve(transform1, transform2)
     
     if type(offset_axis) == type(str):
@@ -1040,7 +1588,9 @@ def create_two_transforms_mesh_strip(transform1, transform2, offset_axis = 'X', 
     return new_name
     
 def create_mesh_from_bounding_box(min_vector, max_vector, name):
-    
+    """
+    Given a min and max vector create a mesh cube.
+    """
     cube = cmds.polyCube(ch = 0)[0]
     cmds.rename(cube, name)
             
@@ -1090,7 +1640,9 @@ def create_shape_from_shape(shape, name = 'new_shape'):
     
 
 def create_texture_reference_object(mesh):
-    
+    """
+    Good for working with Yeti
+    """
     shape = get_mesh_shape(mesh, 0)
     
     name = core.get_basename(mesh, remove_namespace = True)
@@ -1105,7 +1657,9 @@ def create_texture_reference_object(mesh):
     return new_mesh
 
 def create_joint_u_strip_on_surface(surface, u_count, description, u_offset = 0, attach = True):
-    
+    """
+    Create joints that go along the u direction of a surface.
+    """
     u_percent = 0
     
     u_joints =[]
@@ -1134,7 +1688,9 @@ def create_joint_u_strip_on_surface(surface, u_count, description, u_offset = 0,
     return u_joints
 
 def create_joint_v_strip_on_surface(surface, v_count, description, v_offset = 0, attach = True):
-    
+    """
+    Create joints that go along the v direction of a surface.
+    """
     v_percent = 0
     
     v_joints =[]
@@ -1578,7 +2134,9 @@ def transform_to_polygon_plane(transform, size = 1, axis = 'Y'):
     return plane
 
 def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
-    
+    """
+    Create polygons on each transform.  The mesh is good to rivet to and then deform.
+    """
     meshes = []
     
     transforms = vtool.util.convert_to_sequence(transforms)
@@ -1604,7 +2162,9 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
 
 
 def expand_selected_edge_loop():
-    
+    """
+    Select edges and then expand the selection on the edge loop.
+    """
     edges = get_selected_edges()
     
     found_new_edges = []
@@ -1654,7 +2214,9 @@ def expand_edge_loop(mesh, edge_id):
     
     
 def snap_to_mesh(transform, mesh, face = None):
-    
+    """
+    Snap a transform to the nearest position on the mesh.
+    """
     shape = get_mesh_shape(mesh)
     
     if not is_a_mesh(transform):
@@ -2008,10 +2570,6 @@ def follicle_to_surface(transform, surface, u = None, v = None, constrain = Fals
     
     return follicle
 
-
-def curve_to_nurb_surface(curve):
-    pass
-    
 def edges_to_curve(edges, description):
     """
     Given a list of edges create a curve.
@@ -2064,354 +2622,11 @@ def edge_to_vertex(edges):
         if not vert2 in verts:
             verts.append('%s.vtx[%s]' % (mesh, vert2))
             
-    
-def get_intersection_on_mesh(mesh, ray_source_vector, ray_direction_vector ):
-    """
-    Given a ray vector with source and direction, find the closest intersection on a mesh.
-    
-    Args:
-        mesh (str): The name of the mesh to intersect with.
-        ray_source_vector (list): eg. [0,0,0], the source of the ray as a vector.
-        ray_directrion_vector (list): eg [0,0,0], The end point of the ray that starts at ray_source_vector.
-        
-    Returns:
-        list: eg [0,0,0] the place where the ray intersects with the mesh.
-        
-    """
-    mesh_fn = api.MeshFunction(mesh)
-    
-    intersection = mesh_fn.get_closest_intersection(ray_source_vector, ray_direction_vector)
-    
-    return intersection
-    
-def get_closest_uv_on_mesh(mesh, three_value_list):
-    """
-    Find the closest uv on a mesh given a vector.
-    
-    Args:
-        mesh (str): The name of the mesh with uvs.
-        three_value_list (list): eg. [0,0,0], the position vector from which to find the closest uv.
-        
-    Returns:
-        uv: The uv of that is closest to three_value_list
-    """
-    
-    mesh = api.MeshFunction(mesh)
-    found = mesh.get_uv_at_point(three_value_list)
-    
-    return found
-
-def get_uv_on_mesh_at_curve_base(mesh, curve):
-    """
-    Looks for the closest uv on mesh at the base of the curve
-    """
-    
-    cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
-    
-    cv = cvs[0]
-    
-    cv_position = cmds.xform(cv, q = True, t = True, ws = True)
-    closest_position = get_closest_position_on_mesh(mesh, cv_position)
-    
-    u,v = get_closest_uv_on_mesh(mesh, closest_position)
-    
-    return u,v
-
-def get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 50):
-    """
-    Looks at the curve and tries to find the closest uv on mesh where the curve intersects or has its nearest point
-    """
-    temp_curve = cmds.duplicate(curve)[0]
-    rebuild_curve(temp_curve, samples, degree = 1)
-    
-    cvs = cmds.ls('%s.cv[*]' % temp_curve, flatten = True)
-    
-    closest_distance = None
-    closest_position = None
-    
-    for cv in cvs:
-        
-        cv_position = cmds.xform(cv, q = True, t = True, ws = True)
-        closest_position = get_closest_position_on_mesh(mesh, cv_position)
-        distance = vtool.util.get_distance(cv_position, closest_position)
-        
-        if not closest_distance:
-            
-            closest_distance = distance
-            closest_position = cv_position
-        
-        if distance < closest_distance:
-            closest_distance = distance
-            closest_position = cv_position
-            
-        if distance == 0.00001:
-            break
-    
-    cmds.delete(temp_curve)
-    
-    u,v = get_closest_uv_on_mesh(mesh, closest_position)
-    
-    return u,v
-
-def transfer_uvs_from_mesh_to_group(mesh, group):
-    """
-    currently only works with map1 uv set
-    mesh and group need to have the same topology and point position.
-    Also this deletes history
-    """
-    
-    if not is_a_mesh(mesh):
-        vtool.util.warning('%s is not a mesh. Transfer uvs could not continue' % mesh)
-        return
-    
-    temp_mesh = cmds.duplicate(mesh)[0]
-    
-    destination_meshes = cmds.polySeparate( temp_mesh )
-    
-    source_meshes = core.get_shapes_in_hierarchy(group, 'mesh', return_parent = True)
-    
-    if not source_meshes:
-        vtool.util.warning('Found no meshes in group. Transfer uvs could not continue.')
-        return
-    
-    for destination_mesh in destination_meshes:
-        
-        if not is_a_mesh(destination_mesh):
-            continue
-        
-        destination_count = len(cmds.ls('%s.vtx[*]' % destination_mesh, flatten = True))
-        
-        found = False
-        
-        for source_mesh in source_meshes:
-            
-            source_count = len(cmds.ls('%s.vtx[*]' % source_mesh, flatten = True))
-            
-            if destination_count == source_count:
-                
-                pos1 = space.get_center(destination_mesh)
-                pos2 = space.get_center(source_mesh)
-                
-                dist = vtool.util.get_distance(pos1, pos2)
-                
-                if dist < 0.0001:
-                    try:
-                        cmds.transferAttributes(destination_mesh, source_mesh, transferPositions =  0, transferNormals = 0, transferUVs = 1, sourceUvSet = "map1", targetUvSet = "map1", transferColors = 0, sampleSpace = 5, sourceUvSpace = "map1",  targetUvSpace = "map1", searchMethod = 3, searchScaleX = -1.0, flipUVs = 0, colorBorders = 1 )
-                        cmds.delete(source_mesh, ch = True)
-                        vtool.util.show('Transfer worked on %s' % source_mesh )
-                        found = True
-                    except:
-                        pass
-                    continue
-        
-        if not found:
-            vtool.util.warning('Found no geometry match for %s' % destination_mesh)
-        
-    cmds.delete(temp_mesh)
-    
-def get_axis_intersect_on_mesh(mesh, transform, rotate_axis = 'Z', opposite_axis = 'X', accuracy = 100, angle_range = 180):
-    """
-    This will find the closest intersection on a mesh by rotating incrementally on a rotate axis.
-    
-    Args:
-        mesh (str): The name of a mesh.
-        transform (str): The name of a transform.
-        rotate_axis (str): 'X', 'Y', 'Z' axis of the transform to rotate.
-        opposite_axis (str): 'X', 'Y', 'Z' The axis of the transform to point at the mesh while rotating. Should not be the same axis as rotate axis.
-        accuracy (int): The number of increments in the angle range.
-        angle_range (float): How far to rotate along the rotate_axis.
-    
-    
-    Returns:
-        list: eg. [0,0,0] The vector of the clostest intersection
-    """
-    closest = None
-    found = None
-    
-    dup = cmds.duplicate(transform, po = True)[0]
-    
-    space1 = cmds.xform(dup, q = True, t = True)
-    
-    inc_value = (angle_range*1.0)/accuracy
-        
-    if rotate_axis == 'X':
-        rotate_value = [inc_value,0,0]
-    if rotate_axis == 'Y':
-        rotate_value = [0,inc_value,0]
-    if rotate_axis == 'Z':
-        rotate_value = [0,0,inc_value]
-
-    if opposite_axis == 'X':
-        axis_vector = [1,0,0]
-    if opposite_axis == 'Y':
-        axis_vector = [0,1,0]
-    if opposite_axis == 'Z':
-        axis_vector = [0,0,1]
-                
-    for inc in range(0, accuracy+1):
-        
-        space2 = space.get_axis_vector(dup, axis_vector)
-        
-        cmds.rotate(rotate_value[0], rotate_value[1], rotate_value[2], dup, r = True)
-        
-        mesh_api = api.MeshFunction(mesh)    
-        intersect = mesh_api.get_closest_intersection(space1, space2)
-        
-        distance = vtool.util.get_distance(space1, list(intersect))
-        
-        if closest == None:
-            closest = distance
-            found = intersect
-        
-        if distance < closest:
-            closest = distance
-            found = intersect
-        
-    cmds.delete(dup)
-            
-    return found
-    
-def get_closest_parameter_on_curve(curve, three_value_list):
-    """
-    Find the closest parameter value on the curve given a vector.
-    
-    Args:
-        curve (str): The name of a curve.
-        three_value_list (list): eg. [0,0,0] The vector from which to search for closest parameter
-        
-    Returns:
-        float: The closest parameter.
-    """
-    curve_shapes = core.get_shapes(curve)
-    
-    if curve_shapes:
-        curve = curve_shapes[0]
-    
-    curve = api.NurbsCurveFunction(curve)
-        
-    newPoint = curve.get_closest_position( three_value_list )
-    
-    return curve.get_parameter_at_position(newPoint)
-
-def get_closest_parameter_on_surface(surface, vector):
-    """
-    Find the closest parameter value on the surface given a vector.
-    
-    Args:
-        surface (str): The name of the surface.
-        vector (list): eg [0,0,0] The position from which to check for closest parameter on surface. 
-    
-    Returns:
-        list: [0,0] The parameter coordinates of the closest point on the surface.
-    """
-    shapes = core.get_shapes(surface)
-    
-    if shapes:
-        surface = shapes[0]
-    
-    surface = api.NurbsSurfaceFunction(surface)
-        
-    uv = surface.get_closest_parameter(vector)
-    
-    uv = list(uv)
-    
-    if uv[0] == 0:
-        uv[0] = 0.001
-    
-    if uv[1] == 0:
-        uv[1] = 0.001
-    
-    return uv
-
-def get_closest_position_on_mesh(mesh, three_value_list):
-    
-    mesh_fn = api.MeshFunction(mesh)
-    
-    position = mesh_fn.get_closest_position(three_value_list)
-    
-    return position
-
-def get_closest_position_on_curve(curve, three_value_list):
-    """
-    Given a vector, find the closest position on a curve.
-    
-    Args:
-        curve (str): The name of a curve.
-        three_value_list (list): eg [0,0,0] a vector find the closest position from.
-        
-    Returns:
-        list: eg [0,0,0] The closest position on the curve as vector.
-    """
-    
-    curve_shapes = core.get_shapes(curve)
-    
-    if curve_shapes:
-        curve = curve_shapes[0]
-    
-    curve = api.NurbsCurveFunction(curve)
-        
-    return curve.get_closest_position( three_value_list )
-
-def get_parameter_from_curve_length(curve, length_value):
-    
-    """
-    Find the parameter value given the length section of a curve.
-    
-    Args:
-        curve (str): The name of a curve.
-        length_value (float): The length along a curve.
-        
-    Returns:
-        float: The parameter value at the length.
-    """
-    
-    curve_shapes = core.get_shapes(curve)
-    
-    if curve_shapes:
-        curve = curve_shapes[0]
-        
-    curve = api.NurbsCurveFunction(curve)
-    
-    return curve.get_parameter_at_length(length_value)
-
-def get_curve_length_from_parameter(curve, parameter_value):
-    """
-    Given a parameter return the curve length to that parameter.
-    
-    """
-    
-    arc_node = cmds.arcLengthDimension( '%s.u[%s]' % (curve, parameter_value))
-    
-    length = cmds.getAttr('%s.arcLength' % arc_node)
-    
-    parent = cmds.listRelatives(arc_node, p = True)
-    if parent:
-        cmds.delete(parent[0])
-    
-    return length
-
-def get_point_from_curve_parameter(curve, parameter):
-    """
-    Find a position on a curve by giving a parameter value.
-    
-    Args:
-        curve (str): The name of a curve.
-        parameter (float): The parameter value on a curve.
-        
-    Returns: 
-        list: [0,0,0] the vector found at the parameter on the curve.
-    """
-    return cmds.pointOnCurve(curve, pr = parameter, ch = False)
-
-def get_point_from_surface_parameter(surface, u_value, v_value):
-    
-    surface_fn = api.NurbsSurfaceFunction(surface)
-    position = surface_fn.get_position_from_parameter(u_value, v_value)
-    
-    return position
 
 def rebuild_curve(curve, spans, degree = 3):
-    
+    """
+    Rebuild a curve with fewer arguments
+    """
     cmds.rebuildCurve( curve, ch = False,
                        rpo = 1,
                        rt = 0,
@@ -2425,7 +2640,9 @@ def rebuild_curve(curve, spans, degree = 3):
                        tol = 0.01)
     
 def evenly_position_curve_cvs(curve, match_curve = None):
-        
+    """
+    Given a curve, evenly position the cvs along the curve.
+    """
     cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
     
     if not match_curve:
@@ -2434,7 +2651,9 @@ def evenly_position_curve_cvs(curve, match_curve = None):
     snap_transforms_to_curve(cvs, curve)
         
 def snap_transforms_to_curve(transforms, curve):
-    
+    """
+    Snap the transform to the nearest position on the curve.
+    """
     count = len(transforms)
         
     total_length = cmds.arclen(curve)
@@ -2530,7 +2749,9 @@ def snap_joints_to_curve(joints, curve = None, count = 10):
         cmds.delete(delete_after)    
 
 def snap_curve_to_surface(curve, surface, offset = 1):
-    
+    """
+    Snap curve cvs on a surface.
+    """
     shapes = core.get_shapes(curve)
     
     for shape in shapes:
@@ -2550,7 +2771,9 @@ def snap_curve_to_surface(curve, surface, offset = 1):
         cmds.scale(offset,offset,offset, cvs, r = True)
             
 def snap_project_curve_to_surface(curve, surface, offset = 1):
-    
+    """
+    Project curve cvs on a surface
+    """
     center = cmds.xform(curve, q = True, ws = True, rp = True)
     shapes = core.get_shapes(curve)
     
@@ -2588,7 +2811,9 @@ def convert_indices_to_mesh_vertices(indices, mesh):
     return verts
 
 def convert_indices_to_mesh_faces(indices, mesh):
-    
+    """
+    Given a list of indices convert them to the names of faces.
+    """
     faces = []
     
     for index in indices:
@@ -2596,49 +2821,7 @@ def convert_indices_to_mesh_faces(indices, mesh):
         
     return faces
 
-def get_vertex_normal(vert_name):
-    """
-    Get the position of a normal of a vertex.
-    
-    Args:
-        vert_name (str): The name of a vertex.
-    
-    Returns: 
-        list: eg [0,0,0] The vector where the normal points.
-    """
-    normal = cmds.polyNormalPerVertex(vert_name, q = True, normalXYZ = True)
-    normal = normal[:3]
-    return vtool.util.Vector(normal)
 
-def get_y_intersection(curve, vector):
-    """
-    Given a vector in space, find out the closest intersection on the y axis to the curve. This is usefull for eye blink setups.
-    
-    Args:
-        curve (str): The name of a curve that could represent the btm eyelid.
-        vector (vector list): A list that looks like [0,0,0] that could represent a position on the top eyelid.
-        
-    Returns:
-        float: The parameter position on the curve.
-    """
-    
-    duplicate_curve = cmds.duplicate(curve)
-    curve_line = cmds.curve( p=[(vector[0], vector[1]-100000, vector[2]), 
-                                (vector[0],vector[1]+100000, vector[2]) ], d = 1 )
-    
-    parameter = cmds.curveIntersect(duplicate_curve, curve_line, ud = True, d = [0, 0, 1])
-    
-    if parameter:
-        parameter = parameter.split()
-        
-        parameter = float(parameter[0])
-        
-    if not parameter:
-        parameter =  get_closest_parameter_on_curve(curve, vector)
-        
-    cmds.delete(duplicate_curve, curve_line)
-    
-    return parameter
 
 def add_poly_smooth(mesh):
     """
@@ -2655,7 +2838,9 @@ def add_poly_smooth(mesh):
     return poly_smooth
 
 def smooth_preview(mesh, bool_value = True):
-    
+    """
+    Turn off and on smooth preview.
+    """
     if bool_value == True:
         cmds.setAttr('%s.displaySmoothMesh' % mesh, 2)
         
@@ -2663,7 +2848,9 @@ def smooth_preview(mesh, bool_value = True):
         cmds.setAttr('%s.displaySmoothMesh' % mesh, 0)
         
 def smooth_preview_all(bool_value = True):
-    
+    """
+    Turn off and on smooth preview on every mesh.
+    """
     if core.is_batch():
         return
     
@@ -2678,120 +2865,76 @@ def smooth_preview_all(bool_value = True):
             
             
 def randomize_mesh_vertices(mesh, range_min = 0.0, range_max = 0.1):
-    #not tested
-    verts = get_vertices(mesh)
+    """
+    Randomize the positions of vertices on a mesh.
+    """
+    vtool.util.convert_to_sequence(mesh)
     
-    for vert in verts:
+    all_verts = []
+    
+    for thing in mesh:
+        if is_a_mesh(thing):
+            verts = get_vertices(mesh)
+            all_verts += verts
+        if thing.find('.vtx') > -1:
+            all_verts.append(thing)
+    
+    for vert in all_verts:
         cmds.move(uniform(range_min, range_max),uniform(range_min, range_max),uniform(range_min, range_max), vert, r = True)
         
         
-def get_occluded_faces(mesh, within_distance = 1, skip_with_area_greater_than = -1):
+def transfer_uvs_from_mesh_to_group(mesh, group):
+    """
+    currently only works with map1 uv set
+    mesh and group need to have the same topology and point position.
+    Also this deletes history
+    """
     
-    iter_face = api.IteratePolygonFaces(mesh)
-    mesh_fn = api.MeshFunction(mesh)
+    if not is_a_mesh(mesh):
+        vtool.util.warning('%s is not a mesh. Transfer uvs could not continue' % mesh)
+        return
     
-    occluded_faces = []
+    temp_mesh = cmds.duplicate(mesh)[0]
     
-    def get_face_hit_id(mesh_fn, source_vector, normal_vector):
-        
-        source_normal = vtool.util.vector_add(source_vector, normal_vector)
-        face_id = mesh_fn.get_closest_intersection_face(source_normal, source_vector)
-        
-        return face_id
+    destination_meshes = cmds.polySeparate( temp_mesh )
     
-    while not iter_face.is_done():
+    source_meshes = core.get_shapes_in_hierarchy(group, 'mesh', return_parent = True)
     
-        index = iter_face.index()
+    if not source_meshes:
+        vtool.util.warning('Found no meshes in group. Transfer uvs could not continue.')
+        return
+    
+    for destination_mesh in destination_meshes:
         
-        skip_face = False
-        
-        if skip_with_area_greater_than > 0:
-            area = iter_face.get_area()
-            if area > skip_with_area_greater_than:
-                skip_face = True
-        
-        if skip_face:
-            iter_face.next()
+        if not is_a_mesh(destination_mesh):
             continue
         
-        center = iter_face.get_center()
+        destination_count = len(cmds.ls('%s.vtx[*]' % destination_mesh, flatten = True))
         
-        normal = iter_face.get_normal()
-        normal = vtool.util.vector_multiply(normal, within_distance)
+        found = False
         
-        tangent = [0,0,0]
-        
-        found_space = False
-        
-        for inc in range(0, 5):
+        for source_mesh in source_meshes:
             
-            if inc == 0:
-                
-                face_id = get_face_hit_id(mesh_fn, center, normal)
-                
+            source_count = len(cmds.ls('%s.vtx[*]' % source_mesh, flatten = True))
             
-            if inc == 1:
-                if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
-                    tangent = [1,.1,0]
-                else:
-                    tangent = vtool.util.vector_cross(normal, [0,1,0])
-                    tangent = vtool.util.get_inbetween_vector(tangent, normal, .1)
+            if destination_count == source_count:
                 
-                tangent = vtool.util.vector_multiply(tangent, within_distance)
+                pos1 = space.get_center(destination_mesh)
+                pos2 = space.get_center(source_mesh)
                 
-                face_id = get_face_hit_id(mesh_fn, center, tangent)
-            
-            if inc == 2:
+                dist = vtool.util.get_distance(pos1, pos2)
                 
-                if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
-                    neg_tangent = [-1,.1,0]
-                    
-                else:
-                    
-                    neg_tangent = vtool.util.vector_cross(normal, [0,-1,0])
-                    neg_tangent = vtool.util.get_inbetween_vector(neg_tangent, normal, .1)
-                
-                neg_tangent = vtool.util.vector_multiply(neg_tangent, within_distance)
-                
-                face_id = get_face_hit_id(mesh_fn, center, neg_tangent)
-            
-            if inc == 3:
-                if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
-                    binormal = [0,.1,1]
-                else:
-                    
-                    binormal = vtool.util.vector_cross(normal, tangent)
-                    binormal = vtool.util.get_inbetween_vector(binormal, normal, .1)
-                    
-                binormal = vtool.util.vector_multiply(binormal, within_distance)
-                    
-                face_id = get_face_hit_id(mesh_fn, center, binormal)
-                
-            if inc == 4:
-                if normal[0] < 0.000001 and normal[0] > -0.000001 and normal[2] < 0.000001 and normal[2] > -0.000001:
-                    neg_binormal = [0,.1,-1]
-                else:
-                    
-                    neg_binormal = vtool.util.vector_cross(normal, neg_tangent)
-                    neg_binormal = vtool.util.get_inbetween_vector(neg_binormal, normal, .1)
-                    
-                neg_binormal = vtool.util.vector_multiply(neg_binormal, within_distance)
-                    
-                face_id = get_face_hit_id(mesh_fn, center, neg_binormal)
-            
-            
-            
-            if face_id == index:
-                found_space = True
-                break
+                if dist < 0.0001:
+                    try:
+                        cmds.transferAttributes(destination_mesh, source_mesh, transferPositions =  0, transferNormals = 0, transferUVs = 1, sourceUvSet = "map1", targetUvSet = "map1", transferColors = 0, sampleSpace = 5, sourceUvSpace = "map1",  targetUvSpace = "map1", searchMethod = 3, searchScaleX = -1.0, flipUVs = 0, colorBorders = 1 )
+                        cmds.delete(source_mesh, ch = True)
+                        vtool.util.show('Transfer worked on %s' % source_mesh )
+                        found = True
+                    except:
+                        pass
+                    continue
         
-        if found_space:
-            iter_face.next()
-            continue
+        if not found:
+            vtool.util.warning('Found no geometry match for %s' % destination_mesh)
         
-        face = '%s.f[%s]' % (mesh, iter_face.index())
-        occluded_faces.append(face)
-        
-        iter_face.next()
-        
-    return occluded_faces
+    cmds.delete(temp_mesh)
