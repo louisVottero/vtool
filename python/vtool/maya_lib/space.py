@@ -65,9 +65,6 @@ class VertexOctree(object):
                 
 class VertexOctreeNode(object):
     
-    #sortMeshDepth = 50 
-    #sortMeshIncrement = 0
-    
     def __init__(self, boundingBoxData):
         self.min = boundingBoxData[0:3]
         self.max = boundingBoxData[3:6]
@@ -1626,7 +1623,20 @@ def has_constraint(transform):
     return editor.has_constraint(transform)
     
 def is_transform_default(transform):
+    """
+    Check if a transform has the default values (identity matrix).
     
+    For example:
+    
+    transate = [0,0,0]
+    
+    rotate = [0,0,0]
+    
+    scale = [1,1,1]
+    
+    Returns:
+        bool
+    """
     attributes = ['translate', 'rotate']
     
     for attribute in attributes:
@@ -1643,7 +1653,12 @@ def is_transform_default(transform):
         
     
 def get_non_default_transforms():
+    """
+    Get transforms in the scene that don't have default values.
     
+    Returns:
+        list
+    """
     transforms = cmds.ls(type = 'transform')
     
     found = []
@@ -1658,6 +1673,9 @@ def get_non_default_transforms():
     return found
     
 def zero_out_transform_channels(transform):
+    """
+    Zero out the translate and rotate on a transform.
+    """
     
     cmds.setAttr('%s.translateX' % transform, 0)
     cmds.setAttr('%s.translateY' % transform, 0)
@@ -1670,6 +1688,10 @@ def zero_out_transform_channels(transform):
 def get_hierarchy_path(top_transform, btm_transform):
     """
     Gets relatives in the hierarchy between top_transform and btm_transform
+    
+    Args:
+        top_transform (str): The name of the top transform.
+        btm_transform (str): The name of the btm transform. Needs to be a child of top_transform.
     """
     
     parent = cmds.listRelatives(btm_transform, p = True)
@@ -1706,7 +1728,12 @@ def get_hierarchy_path(top_transform, btm_transform):
         return path
 
 def get_bounding_box_size(transform):
+    """
+    Get the size of the bounding box.
     
+    Returns:
+        float
+    """
     components = core.get_components_in_hierarchy(transform)
     
     if components:
@@ -2770,7 +2797,12 @@ def orient_attributes(scope = None):
 
 
 def add_orient_joint(joint):
+    """
+    Add orient joint. This will create an up and an aim joint.
     
+    Args:
+        joint (str): The name of the joint to add the up and the aim to.
+    """
     if not cmds.nodeType(joint) == 'joint':
         return
     
@@ -2824,7 +2856,13 @@ def add_orient_joint(joint):
     
 
 def orient_x_to_child(joint, invert = False):
+    """
+    Helper function to quickly orient a joint to its child.
     
+    Args:
+        joint (str): The name of the joint to orient. Must have a child.
+        invert (bool): Wether to mirror the orient for right side.
+    """
     aim_axis = [1,0,0]
     up_axis = [0,1,0]
     
@@ -3478,7 +3516,15 @@ def connect_inverse_scale(transform, joint):
     cmds.setAttr('%s.input2Z' % multiply, invert_z)
     
 def randomize(translate = [.1,.1,.1], rotate = [1,1,1], scale = [.1,.1,.1], transforms = None):
-
+    """
+    Good for giving subtle randomness to many transforms.
+    
+    Args
+        translate (list): 3 value list. The values work as the amount it can deviate in positive and negative.
+        rotate (list): 3 value list. The values work as the amount it can deviate in positive and negative.
+        scale (list): 3 value list. How much the scale can deviate from 1.
+    """
+    
     if transforms:
         sel = transforms
         
@@ -3504,6 +3550,6 @@ def randomize(translate = [.1,.1,.1], rotate = [1,1,1], scale = [.1,.1,.1], tran
         scale_y_invert = 1 - scale[1]
         scale_z_invert = 1 - scale[2]
                     
-        cmds.scale(random.uniform(scale_x_invert, 1),
-                    random.uniform(scale_y_invert, 1),
-                    random.uniform(scale_z_invert, 1))
+        cmds.scale(random.uniform(scale_x_invert, (1+scale[0])),
+                    random.uniform(scale_y_invert, (1+scale[1])),
+                    random.uniform(scale_z_invert, (1+scale[2])))
