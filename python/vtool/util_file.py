@@ -1724,7 +1724,10 @@ def fix_slashes(directory):
         str: The new directory path.
     """
     
+    
+    
     directory = directory.replace('\\','/')
+    
     
     if not directory.find('https://') > -1:
         directory = directory.replace('//', '/')
