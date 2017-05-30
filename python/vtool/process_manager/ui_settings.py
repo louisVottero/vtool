@@ -116,6 +116,14 @@ class SettingsWidget(qt_ui.BasicWidget):
         group_layout.addWidget(self.error_stop)
         group_layout.addWidget(process_maya_group)
         
+        
+        
+        self.options_widget.main_layout.addWidget(process_group)
+        
+        """
+        
+        !!!! Code still good!!!!
+        
         shotgun_group = qt.QGroupBox('Shotgun Settings')
         shotgun_group_layout = qt.QVBoxLayout()
         shotgun_group.setLayout(shotgun_group_layout)
@@ -144,8 +152,9 @@ class SettingsWidget(qt_ui.BasicWidget):
         shotgun_group_layout.addWidget(toolkit_warning)
         shotgun_group_layout.addWidget(self.get_shotgun_toolkit)
         
-        self.options_widget.main_layout.addWidget(process_group)
         self.options_widget.main_layout.addWidget(shotgun_group)
+        """
+        
         
         scroll.setWidget(self.options_widget)
         
@@ -267,16 +276,22 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.settings = settings
         self.project_directory_widget.set_settings(settings)
         self.editor_directory_widget.set_settings(settings)
-        self.get_shotgun_toolkit.set_settings(settings)
+        
+        
         
         self._get_stop_on_error()
         self._get_start_new_scene_on_process()
         self._get_auto_focus_scene()
         
+        
+        """
+        !!! Code still good!!!
+        self.get_shotgun_toolkit.set_settings(settings)
         self._get_shotgun_url()
         self._get_shotgun_name()
         self._get_shotgun_code()
         self._get_shotgun_asset_path_code()
+        """
         
     def set_template_settings(self, settings):
         
