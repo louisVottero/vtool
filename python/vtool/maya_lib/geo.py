@@ -4,7 +4,6 @@ from random import uniform
 
 import vtool.util
 import api
-from vtool.maya_lib.fx import create_follicle
 
 
 if vtool.util.is_in_maya():
