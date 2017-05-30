@@ -10,21 +10,48 @@ import platform
 import os
 
 def initialize_env(name):
+    """
+    Initialize a new environment variable.
+    If the variable already exists, does nothing, no environment variable is initialized.
+    
+    Args:
+        name (str): Name of the new environment variable.
+    """
     if not os.environ.has_key(name):
         os.environ[name] = ''
 
 def set_env(name, value):
+    """
+    Set the value of an environment variable.
+    
+    Args:
+        name (str): Name of the environment variable to set.
+        value (str): If a number is supplied it will automatically be converted to str.
+    """
     
     if os.environ.has_key(name):
         os.environ[name] = str(value)
         
 def get_env(name):
+    """
+    Get the value of an environment variable.
     
+    Args:
+        name (str): Name of an environment variable.
+        
+    Returns
+        str:
+    """
     if os.environ.has_key(name):
         return os.environ[name]
 
 def add_to_PYTHONPATH(path):
+    """
+    Add a path to the python path, only if it isn't present in the python path.
     
+    Args:
+        path (str): The path to add to the python path.
+    """
     if not path:
         return
     
@@ -42,11 +69,20 @@ def profiler_event(frame, event, arg, indent = [0]):
     return profiler_event
 
 def activate_profiler():
-    
+    """
+    Activating the profiler will give extremely detailed information about what functions are running and in what order.
+    """
     sys.setprofile(profiler_event)
 
 #decorators
 def try_pass(function):
+    """
+    Try a function and if it fails pass.  Used as a decorator.
+    Usage:
+    @try_pass
+    def myFunction():
+        print 'something'
+    """
     def wrapper(*args, **kwargs):
         
         return_value = None
@@ -76,7 +112,12 @@ def is_in_maya():
         return False
 
 def has_shotgun_api():
+    """
+    Check if the shotgun api is available.
     
+    Returns:
+        bool:
+    """
     try:
         import shotgun_api3
         return True
@@ -84,7 +125,12 @@ def has_shotgun_api():
         return False
     
 def has_shotgun_tank():
+    """
+    Check if the shotgun tank api is available.
     
+    Returns:
+        bool:
+    """
     try:
         #import tank
         import sgtk
@@ -96,17 +142,15 @@ def has_shotgun_tank():
 
 
 def get_current_maya_location():
-    
+    """
+    Get where maya is currently running from.
+    """
     location = ''
     
     if os.environ.has_key('MAYA_LOCATION'):
         location = os.environ['MAYA_LOCATION']
     
     return location
-
-def get_maya_py_installs():
-    
-    pass
 
 def is_in_nuke():
     """
@@ -122,12 +166,25 @@ def is_in_nuke():
         return False
 
 def is_linux():
+    """
+    Check to see if running in linux
+    
+    Returns:
+        bool:
+    """
     if platform.system() == 'Linux':
         return True
     
     return False
     
 def is_windows():
+    """
+    Check to see if running in windows
+    
+    Returns:
+        bool:
+    """
+    
     if platform.system() == 'Windows':
         return True
     
@@ -156,6 +213,12 @@ def get_maya_version():
         return 0
 
 def break_signaled():
+    """
+    Check to see if Vetala break was signalled.
+    
+    Returns:
+        bool:
+    """
     if get_env('VETALA_RUN') == 'True':
         if get_env('VETALA_STOP') == 'True':
             return True
@@ -556,29 +619,70 @@ class Part(object):
 #                 : 255 - ( ( 2 * ( 255 - percent2 ) * ( 255 - percent1 ) ) / 255
 
 def vector_multiply(vector, value):
+    """
     
+    Args:
+        vector (list): 3 value list
+        value (float): value to multiply the vector by
+        
+    Return:
+        list: 3 value list
+    """
     result = [vector[0] * value, vector[1] * value, vector[2] * value]
     
     return result
 
 def vector_divide(vector, value):
+    """
     
+    Args:
+        vector (list): 3 value list
+        value (float): value to divide the vector by
+        
+    Return:
+        list: 3 value list
+    """
     result = [vector[0] / value, vector[1] / value, vector[2] / value]
     
     return result
 
 def vector_magnitude(vector):
+    """
+    Get the magnitude of a vector.  
+    Good to see if there is any distance before doing a full distance calculation.
     
+    Args:
+        vector (list): 3 value list
+        value (float): value to divide the vector by
+    
+    Return:
+        float:
+    """    
     magnitude = math.sqrt(vector[0]**2 + vector[1]**2 + vector[2] ** 2)
     
     return magnitude
 
 def vector_add(vector1, vector2):
-    
+    """
+    Args:
+        vector1 (list): 3 value list
+        vector2 (list): 3 value list
+        
+    Return:
+        list: 3 value list
+    """
     return [ vector1[0] + vector2[0], vector1[1] + vector2[1], vector1[2] + vector2[2] ]
 
 def vector_cross(vector1, vector2, normalize = True):
-    
+    """
+    Args:
+        vector1 (list): 3 value list
+        vector2 (list): 3 value list
+        normalize (bool): make the result a unit vector that has values from 0 - 1
+        
+    Return:
+        list: 3 value list
+    """
     result = [vector1[1]*vector2[2] - vector1[2]*vector2[1],
               vector1[2]*vector2[0] - vector1[0]*vector2[2],
               vector1[0]*vector2[1] - vector1[1]*vector2[0]]
@@ -589,7 +693,17 @@ def vector_cross(vector1, vector2, normalize = True):
     return result
 
 def rotate_x_at_origin(vector, value, value_in_radians = False):
+    """
+    Rotate a vector around its x axis.
     
+    Args:
+        vector (list): 3 value list
+        value (float): amount to rotate
+        value_in_radians (bool): If the value is in radians, if not in degrees.
+        
+    Return:
+        list: 3 value list that is the result of the rotation.
+    """
     if not value_in_radians:
         value = math.radians(value)
     
@@ -601,7 +715,17 @@ def rotate_x_at_origin(vector, value, value_in_radians = False):
     return [x,y,z]
 
 def rotate_y_at_origin(vector, value, value_in_radians = False):
+    """
+    Rotate a vector around its y axis.
     
+    Args:
+        vector (list): 3 value list
+        value (float): amount to rotate
+        value_in_radians (bool): If the value is in radians, if not in degrees.
+        
+    Return:
+        list: 3 value list that is the result of the rotation.
+    """
     if not value_in_radians:
         value = math.radians(value)
     
@@ -613,7 +737,17 @@ def rotate_y_at_origin(vector, value, value_in_radians = False):
     return [x,y,z]
 
 def rotate_z_at_origin(vector, value, value_in_radians = False):
+    """
+    Rotate a vector around its z axis.
     
+    Args:
+        vector (list): 3 value list
+        value (float): amount to rotate
+        value_in_radians (bool): If the value is in radians, if not in degrees.
+        
+    Return:
+        list: 3 value list that is the result of the rotation.
+    """
     if not value_in_radians:
         value = math.radians(value)
     
@@ -1234,23 +1368,6 @@ def replace_last_number(input_string, replace_string):
     
     #if replace_count:
     return input_string[:search.start()] + replace_string + input_string[search.end():]
-    
-"""
-def replace_last_number(input_string, replace_string):
-
-    expression = re.compile('(\d+)(?=(\D+)?$)')
-    search = expression.search(input_string)
-
-    if not search:
-        return
-    
-    count = len(search.group())
-    
-    replace_count = len(replace_string)
-    
-    if replace_count == 1:
-        replace_string *= count
-"""
 
 
 def increment_first_number(input_string):
@@ -1545,7 +1662,9 @@ def find_possible_combos(names, sort = False, one_increment = False):
 
 
 class QuickSort(object):
-    
+    """
+    Really fast method for sorting.
+    """
     def __init__(self, list_of_numbers):
         
         self.list_of_numbers = list_of_numbers
