@@ -21,6 +21,7 @@ from vtool.maya_lib import space
 from vtool.maya_lib import deform
 from vtool.maya_lib import rigs_util
 from vtool.process_manager import ui_process_manager
+from vtool.maya_lib.deform import skin_mesh_from_mesh
 
 def pose_manager(shot_sculpt_only = False):
     from vtool.maya_lib.ui_lib import ui_corrective
@@ -181,9 +182,9 @@ class RigManager(qt_ui.DirectoryWidget):
         
         tool_tab = qt.QTabWidget()
         
-        deformation_widget = qt_ui.BasicWidget()
-        structure_widget = qt_ui.BasicWidget()
-        control_widget = qt_ui.BasicWidget()
+        deformation_widget = qt_ui.BasicWidget(scroll = True)
+        structure_widget = qt_ui.BasicWidget(scroll = True)
+        control_widget = qt_ui.BasicWidget(scroll = True)
         tool_group.main_layout.addWidget(tool_tab)
         
         deformation_widget.main_layout.setContentsMargins(10,10,10,10)
@@ -195,7 +196,7 @@ class RigManager(qt_ui.DirectoryWidget):
         tool_tab.addTab(structure_widget, 'Structure')
         tool_tab.addTab(control_widget, 'Controls')
         tool_tab.addTab(deformation_widget, 'Deform')
-        tool_tab.addTab(ui_model.ModelManager(), 'Model')
+        tool_tab.addTab(ui_model.ModelManager(scroll = True), 'Model')
         tool_tab.addTab(ui_anim.AnimationManager(), 'Animate')
         
         self._create_structure_widgets(structure_widget)
@@ -366,19 +367,26 @@ class RigManager(qt_ui.DirectoryWidget):
         #corrective_button.setMaximumWidth(200)
         corrective_button.clicked.connect(self._create_corrective)
         
+        skin_mesh_from_mesh = SkinMeshFromMesh()
+        skin_mesh_from_mesh.collapse_group()
+        
+        
+        """
         skin_mesh_from_mesh = qt.QPushButton('Skin Mesh From Mesh')
         skin_mesh_from_mesh.setToolTip('Select skinned mesh then mesh without skin cluster.')
         #skin_mesh_from_mesh.setMaximumWidth(200)
         skin_mesh_from_mesh.clicked.connect(self._skin_mesh_from_mesh)
-        
+        """
         cluster_mesh = qt.QPushButton('Create Tweak Cluster')
         cluster_mesh.setToolTip('Go into cluster creation context.  Click on a mesh to add cluster at point and start paint weighting.')
         cluster_mesh.clicked.connect(self._cluster_tweak_mesh)
         
         parent.main_layout.addWidget(corrective_button)
-        parent.main_layout.addWidget(skin_mesh_from_mesh)
+        
         parent.main_layout.addSpacing(10)
         parent.main_layout.addWidget(cluster_mesh)
+        parent.main_layout.addSpacing(10)
+        parent.main_layout.addWidget(skin_mesh_from_mesh)
             
     def _pose_manager(self):
         window = pose_manager()
@@ -691,3 +699,45 @@ class RigManager(qt_ui.DirectoryWidget):
         
         for curve in curves:
             geo.snap_curve_to_surface(curve, meshes[0], value)
+            
+class SkinMeshFromMesh(qt_ui.Group):
+    def __init__(self):
+        
+        name = 'Skin Mesh From Mesh'
+        super(SkinMeshFromMesh, self).__init__(name)
+        
+    def _build_widgets(self):
+        
+        self.exclude = qt_ui.GetString('Exclude Joints')
+        self.exclude.set_use_button(True)
+        self.exclude.set_placeholder('Optional')
+        self.include = qt_ui.GetString('Include Joints')
+        self.include.set_use_button(True)
+        self.include.set_placeholder('Optional')
+        
+        self.uv = qt_ui.GetBoolean('At UV')
+        
+        label = qt.QLabel('Select source and target mesh.')
+        
+        run = qt.QPushButton('Run')
+        run.clicked.connect(self._run)
+        
+        self.main_layout.addWidget(self.exclude)
+        self.main_layout.addWidget(self.include)
+        self.main_layout.addWidget(self.uv)
+        self.main_layout.addWidget(label)
+        self.main_layout.addSpacing(5)
+        self.main_layout.addWidget(run)
+    
+    def _run(self):
+        
+        exclude = self.exclude.get_text_as_list()
+        include = self.include.get_text_as_list()
+        
+        uv = self.uv.get_value()
+        
+        selection = cmds.ls(sl = True)
+        
+        if selection:
+            if geo.is_a_mesh(selection[0]) and geo.is_a_mesh(selection[1]):
+                deform.skin_mesh_from_mesh(selection[0], selection[1], exclude_joints = exclude, include_joints = include, uv_space = uv)
