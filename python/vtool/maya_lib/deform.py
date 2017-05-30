@@ -2672,7 +2672,14 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
     return found
 
 def set_envelopes(mesh, value, exclude_type = []):
+    """
+    Set envelopse of deformers on the mesh to the given value
     
+    Args:
+        mesh (str): The name of a mesh
+        value (float): The value to set the envelopes to.
+        exclude_type (list): Exlude deformers of type ex. skinCluster
+    """
     history = get_history(mesh)
     
     if not history:
@@ -3987,9 +3994,12 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
     
     influences = get_non_zero_influences(skin)
     
-    for exclude in exclude_joints:
-        if exclude in influences:
-            influences.remove(exclude)
+    if exclude_joints:
+        for exclude in exclude_joints:
+            
+            if exclude in influences:
+                
+                influences.remove(exclude)
     
     if include_joints:
         found = []
@@ -4021,7 +4031,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
                                  uvSpace = ['map1','map1'], 
                                  normalize = True)
 
-        skinned = influences = cmds.skinCluster(other_skin, query = True, wi = True)
+        skinned = cmds.skinCluster(other_skin, query = True, wi = True)
 
         unskinned = set(influences) ^ set(skinned)
         
@@ -4822,7 +4832,9 @@ def reset_tweak(tweak_node):
     return
 
 def reset_tweaks_on_mesh(mesh):
-        
+    """
+    Reset the tweak nodes found on deformers on the given mesh.
+    """
     tweaks = find_deformer_by_type(mesh, 'tweak', return_all = True)
     
     for tweak in tweaks:
@@ -4833,6 +4845,15 @@ def reset_tweaks_on_mesh(mesh):
 
 
 def match_geo_blendshape(source_geo, target_geo, attr_name):
+    """
+    Create a blendshape between the source_geo hierarchy and target_geo hierarchy.
+    
+    Args:
+        source_geo (list): The names of geo in a hierarchy
+        target_geo (list): The names of geo in a hierarchy
+        attr_name (str): The name to give the blendshape weight.
+        
+    """
     
     matches = []
     targets = []
