@@ -1428,11 +1428,8 @@ class ProcessOptionText(ProcessOption):
     
     def __init__(self, name):
         super(ProcessOptionText, self).__init__(name)
-    
-        insert_button = qt.QPushButton('<')
-        insert_button.setMaximumWidth(20)
-        insert_button.clicked.connect(self._insert)
-        self.main_layout.addWidget(insert_button)
+        
+        self.option_widget.set_use_button(True)
     
     def _define_type(self):
         return 'text'
@@ -1440,33 +1437,11 @@ class ProcessOptionText(ProcessOption):
     def _define_option_widget(self):
         return qt_ui.GetString(self.name)
         
-    def _insert(self):
-        
-        if util.is_in_maya():
-            import maya.cmds as cmds
-            
-            selection = cmds.ls(sl = True)
-            
-            if len(selection) > 1:
-                selection = self._remove_unicode(selection)
-                selection = str(selection)
-            
-            if len(selection) == 1:
-                selection = str(selection[0])
-                
-            self.set_value(selection)
-            
-        
     def _setup_value_change(self):
         
         self.option_widget.text_changed.connect(self._value_change)
         
-    def _remove_unicode(self, list_or_tuple):
-            new_list = []
-            for sub in list_or_tuple:
-                new_list.append(str(sub))
-                
-            return new_list
+
         
     def set_value(self, value):
         value = str(value)
