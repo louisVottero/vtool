@@ -29,7 +29,7 @@ class DataManager(object):
     def __init__(self):
         self.available_data = [MayaAsciiFileData(), 
                                MayaBinaryFileData(),
-                               MayaShotgunFileData(), 
+                               #MayaShotgunFileData(), 
                                ScriptManifestData(),
                                ScriptPythonData(),
                                ControlCvData(),
