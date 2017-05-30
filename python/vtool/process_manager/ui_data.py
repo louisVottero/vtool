@@ -1482,7 +1482,7 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
 
 data_name_map = {'maya.binary': 'Binary File',
                  'maya.ascii' : 'Ascii File',
-                 'maya.shotgun' : 'Shotgun Link',
+                 #'maya.shotgun' : 'Shotgun Link',
                  'maya.control_cvs' : 'Control Cv Positions',
                  'maya.control_colors' : 'Control Colors',
                  'maya.skin_weights' : 'Weights Skin Cluster',
@@ -1497,7 +1497,7 @@ data_name_map = {'maya.binary': 'Binary File',
 
 file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.ascii' : MayaAsciiFileWidget,
-                 'maya.shotgun' : MayaShotgunLinkWidget,
+                 #'maya.shotgun' : MayaShotgunLinkWidget,
                  'maya.control_cvs' : ControlCvFileWidget,
                  'maya.control_colors' : ControlColorFileWidget,
                  'maya.skin_weights' : SkinWeightFileWidget,
