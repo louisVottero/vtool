@@ -53,7 +53,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         shortcut.activated.connect(self._set_kill_process)
             
         self.view_widget.tree_widget.itemChanged.connect(self._item_changed)
-        self.view_widget.tree_widget.item_renamed.connect(self._item_changed)
+        self.view_widget.tree_widget.item_renamed.connect(self._item_renamed)
+        
         self.view_widget.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
         self.view_widget.copy_done.connect(self._copy_done)
         self.view_widget.tree_widget.itemDoubleClicked.connect(self._item_double_clicked)
@@ -111,7 +112,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
           
     def _item_double_clicked(self):
         
-        self.tab_widget.setCurrentIndex(3)
+        pass
+        #self.tab_widget.setCurrentIndex(3)
                 
     def _item_changed(self, item):
         
@@ -124,6 +126,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._set_title(name)
         
         self._update_build_widget(name)
+        
+        #if hasattr(item, 'get_path'):
+        #    self._load_options(item.get_path())
+        
+    def _item_renamed(self, item):
+        
+        self._item_changed(item)
         
         if hasattr(item, 'get_path'):
             self._load_options(item.get_path())
@@ -147,6 +156,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         item = items[0]
         
+        if item.matches(self.last_item):
+            return
+        
         name = item.get_name()
         
         self._update_build_widget(name)
@@ -158,6 +170,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         path = item.get_path()
         
         self._load_options(path)
+        
+        self.view_widget.setFocus()
         
     def _load_options(self, directory):
         
@@ -780,10 +794,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if util.is_in_maya() and start_new_scene and last_inc == None:
             
             
-            display = maya_lib.core.StoreDisplaySettings()
-            display.store()
+            #display = maya_lib.core.StoreDisplaySettings()
+            #display.store()
             cmds.file(new = True, f = True)
-            display.restore()
+            #display.restore()
         
         scripts, states = self.process.get_manifest()
         
