@@ -613,7 +613,7 @@ class DataLinkWidget(vtool.qt_ui.BasicWidget):
         self.combo_asset_type.setMaximumWidth(160)
         
         self.assets = self.data_class.get_assets(self.combo_project.itemText(0))
-        print self.assets
+        
         if self.assets:
             keys = self.assets.keys()
             keys.sort()
@@ -656,15 +656,12 @@ class DataLinkWidget(vtool.qt_ui.BasicWidget):
         project = self.combo_project.currentText()
         
         self.assets = self.data_class.get_assets(project)
-        print self.assets
         
         self.combo_asset_type.clear()
         self.combo_asset.clear()
         
         keys = self.assets.keys()
         keys.sort()
-        
-        print 'keys!', keys
         
         for key in keys:
             self.combo_asset_type.addItem(key)
@@ -676,7 +673,6 @@ class DataLinkWidget(vtool.qt_ui.BasicWidget):
                 self.combo_asset.addItem(asset)
     
     def _asset_type_current_changed(self):
-        print 'changed!!!'
         self.combo_asset.clear()
         
         current_text = self.combo_asset_type.currentText()

@@ -90,7 +90,6 @@ def get_asset(project, sg_asset_type, name, step):
     code.replace('{asset_name}', name)
     code.replace('{step}', step)
     
-    print code
 
 """
 import tank
