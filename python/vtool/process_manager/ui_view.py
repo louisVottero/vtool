@@ -1054,13 +1054,6 @@ class ProcessItem(qt.QTreeWidgetItem):
         if hasattr(process, 'filepath') and not process.filepath:
             return
         
-        """
-        if value == 0:
-            check_state = qt.QtCore.Qt.Unchecked
-        if value == 2:
-            check_state = qt.QtCore.Qt.Checked
-        """
-        
         if role == qt.QtCore.Qt.CheckStateRole:
             
             if value == 0:
