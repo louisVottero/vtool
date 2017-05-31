@@ -130,6 +130,8 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                         
                         path_to_data = vtool.util_file.join_path(process_tool.get_data_path(), str( item.text(0) ) )
                         
+                        print 'path to data', path_to_data, self.file_widget, self.file_widget.set_directory
+                        
                         if hasattr(self.file_widget, 'set_directory'):
                             self.file_widget.set_directory(path_to_data)
                         self.main_layout.addWidget(self.file_widget)
@@ -345,6 +347,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             data_type = process_tool.get_data_type(foldername)
             
             nice_name = data_name_map[data_type]
+            
+            
             group = data_type.split('.')[0]
             
             group = group.capitalize()
@@ -488,6 +492,7 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
+        print data_name, data_type
         data_path = process_tool.create_data(data_name, data_type)
         
         data_name = vtool.util_file.get_basename(data_path)
@@ -589,10 +594,39 @@ class DataLinkWidget(vtool.qt_ui.BasicWidget):
         
         super(DataLinkWidget, self).__init__()
         
-        
+        self.directory = None
         
     def _build_widgets(self):
         super(DataLinkWidget, self)._build_widgets()
+        
+
+    
+    def _define_main_tab_name(self):
+        return 'data link'
+    
+    def _define_data_class(self):
+        return None
+    
+    def set_directory(self, directory):
+        if self.data_class:
+            self.data_class.set_directory(directory)
+        self.directory = directory
+    
+class MayaShotgunLinkWidget(DataLinkWidget):
+    def _define_main_tab_name(self):
+        return 'Maya Shotgun Link'
+    
+    def _create_button(self, name):
+        
+        button = qt.QPushButton(name)
+        
+        button.setMaximumWidth(150)
+        button.setMinimumWidth(100)
+        
+        return button
+    
+    def _build_widgets(self):
+        super(MayaShotgunLinkWidget, self)._build_widgets()
         
         h_layout = qt.QHBoxLayout()
         
@@ -602,18 +636,14 @@ class DataLinkWidget(vtool.qt_ui.BasicWidget):
         
         for project in projects:
             self.combo_project.addItem(project)
-        self.combo_project.currentIndexChanged.connect(self._project_current_changed)
-        self.combo_project.setMaximumWidth(160)
         
-        
-        
-        
+        #self.combo_project.setMaximumWidth(160)
         
         self.combo_asset_type = qt.QComboBox()
-        self.combo_asset_type.setMaximumWidth(160)
+        #self.combo_asset_type.setMaximumWidth(160)
         
         self.assets = self.data_class.get_assets(self.combo_project.itemText(0))
-        print self.assets
+        
         if self.assets:
             keys = self.assets.keys()
             keys.sort()
@@ -622,7 +652,7 @@ class DataLinkWidget(vtool.qt_ui.BasicWidget):
                 self.combo_asset_type.addItem(key)
         
         self.combo_asset = qt.QComboBox()
-        self.combo_asset.setMaximumWidth(200)
+        #self.combo_asset.setMaximumWidth(200)
     
         current_text = self.combo_asset_type.currentText()
         if self.assets.has_key(current_text):
@@ -630,41 +660,148 @@ class DataLinkWidget(vtool.qt_ui.BasicWidget):
             for asset in self.assets[current_text]:
                 self.combo_asset.addItem(asset)
         
-        h_layout_2 = qt.QHBoxLayout()
-        
-        self.combo_asset_type.currentIndexChanged.connect(self._asset_type_current_changed)
-        
         steps = self.data_class.get_asset_steps()
         
         self.combo_asset_step = qt.QComboBox()
-        self.combo_asset_step.setMaximumWidth(160)
+        #self.combo_asset_step.setMaximumWidth(160)
+        
+        self.update_current_changed = True
         
         for step in steps:
             self.combo_asset_step.addItem(step[0])
         
-        h_layout.addWidget(self.combo_project)
-        h_layout.addWidget(self.combo_asset_type)
-        h_layout.addWidget(self.combo_asset)
+        v_layout1 = qt.QVBoxLayout()
+        v_layout2 = qt.QVBoxLayout()
         
-        h_layout_2.addWidget(self.combo_asset_step)
         
+        v_layout1.addWidget(self.combo_project)
+        v_layout1.addWidget(self.combo_asset)
+        
+        v_layout2.addWidget(self.combo_asset_type)
+        v_layout2.addWidget(self.combo_asset_step)
+        
+        h_layout.addLayout(v_layout1)
+        h_layout.addLayout(v_layout2)
+        
+        #h_layout.setAlignment(qt.QtCore.Qt.AlignHCenter)
         self.main_layout.addLayout(h_layout)
-        self.main_layout.addLayout(h_layout_2)
+        
+    
+        self.combo_project.currentIndexChanged.connect(self._project_current_changed)
+        self.combo_asset_type.currentIndexChanged.connect(self._asset_type_current_changed)
+        self.combo_asset.currentIndexChanged.connect(self._write_out_state)
+        self.combo_asset_step.currentIndexChanged.connect(self._write_out_state)
+        
+        self._build_save_widget()
+    
+    def _build_save_widget(self):
+        
+        h_layout = qt.QHBoxLayout()
+        v_layout1 = qt.QVBoxLayout()
+        v_layout2 = qt.QVBoxLayout()
+        
+        save_button = self._create_button('Save')
+        
+        save_button.setMinimumHeight(50)
+        
+        #export_button = self._create_button('Export')
+        open_button = self._create_button('Open')
+        import_button = self._create_button('Import')
+        reference_button = self._create_button('Reference')
+        
+        save_button.clicked.connect( self._save_file )
+        #export_button.clicked.connect( self._export_file )
+        open_button.clicked.connect( self._open_file )
+        import_button.clicked.connect( self._import_file )
+        reference_button.clicked.connect( self._reference_file )
+        
+        v_layout1.addWidget(save_button)
+        #v_layout1.addWidget(export_button)
+        
+        v_layout2. addWidget(open_button)
+        v_layout2.addWidget(import_button)
+        v_layout2.addWidget(reference_button)
+        
+        h_layout.addLayout(v_layout1)
+        h_layout.addStretch(20)
+        
+        h_layout.addLayout(v_layout2)
+        h_layout.addStretch(40)
+        
+        self.main_layout.addSpacing(10)
+        self.main_layout.addLayout(h_layout)
+        
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
+    
+    def _write_out_state(self):
+        
+        
+        
+        project = str(self.combo_project.currentText())
+        asset_type = str(self.combo_asset_type.currentText())
+        asset = str(self.combo_asset.currentText())
+        step = str(self.combo_asset_step.currentText())
+        
+        self.data_class.write_state(project, asset_type, asset, step)
+    
+    def _read_state(self):
+        
+        self.update_current_changed = False
+        project, asset_type, asset, step = self.data_class.read_state()
+        
+        print project, asset_type, asset, step
+        
+        if project:
+            project_index = self.combo_project.findText(project)
+            if project_index != None:
+                self.combo_project.setCurrentIndex(project_index)
+            
+        if asset_type:
+            asset_type_index = self.combo_asset_type.findText(asset_type)
+            if asset_type_index != None:
+                self.combo_asset_type.setCurrentIndex(asset_type_index)
+            
+        if asset:
+            asset_index = self.combo_asset.findText(asset)
+            if asset_index != None:
+                self.combo_asset.setCurrentIndex(asset_index)
+            
+        if step:
+            step_index = self.combo_asset_step.findText(step)
+            if step_index != None:
+                self.combo_asset_step.setCurrentIndex(step_index)
+        
+        self.update_current_changed = True
+    
+    def _open_file(self):
+        
+        self.data_class.open()
+    
+    def _import_file(self):
+        self.data_class.import_data()
+        
+    def _save_file(self):
+        
+        permission = vtool.qt_ui.get_permission('Save to Shotgun as next work version?', self)
+        
+        if permission:
+            self.data_class.save()
+
+    def _reference_file(self):
+        
+        self.data_class.reference()
     
     def _project_current_changed(self):
         
         project = self.combo_project.currentText()
         
         self.assets = self.data_class.get_assets(project)
-        print self.assets
         
         self.combo_asset_type.clear()
         self.combo_asset.clear()
         
         keys = self.assets.keys()
         keys.sort()
-        
-        print 'keys!', keys
         
         for key in keys:
             self.combo_asset_type.addItem(key)
@@ -674,9 +811,11 @@ class DataLinkWidget(vtool.qt_ui.BasicWidget):
         
             for asset in self.assets[current_text]:
                 self.combo_asset.addItem(asset)
+                
+        self._write_out_state()
     
     def _asset_type_current_changed(self):
-        print 'changed!!!'
+        
         self.combo_asset.clear()
         
         current_text = self.combo_asset_type.currentText()
@@ -684,19 +823,16 @@ class DataLinkWidget(vtool.qt_ui.BasicWidget):
         
             for asset in self.assets[current_text]:
                 self.combo_asset.addItem(asset)
-    
-    def _define_main_tab_name(self):
-        return 'data link'
-    
-    def _define_data_class(self):
-        return None
-    
-class MayaShotgunLinkWidget(DataLinkWidget):
-    def _define_main_tab_name(self):
-        return 'Maya Shotgun Link'
+                
+        self._write_out_state()
     
     def _define_data_class(self):
         return vtool.data.MayaShotgunFileData()
+    
+    def set_directory(self, directory):
+        super(MayaShotgunLinkWidget, self).set_directory(directory)
+        
+        self._read_state()
 
 class DataFileWidget(vtool.qt_ui.FileManagerWidget):
     
@@ -1216,10 +1352,15 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         button = qt.QPushButton(name)
         
         button.setMaximumWidth(100)
+        button.setMinimumWidth(100)
         
         return button
     
     def _build_widgets(self):
+        
+        h_layout = qt.QHBoxLayout()
+        v_layout1 = qt.QVBoxLayout()
+        v_layout2 = qt.QVBoxLayout()
         
         save_button = self._create_button('Save')
         
@@ -1230,37 +1371,26 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         import_button = self._create_button('Import')
         reference_button = self._create_button('Reference')
         
-        out_box = qt.QGroupBox('File Out')
-        in_box = qt.QGroupBox('File In')
-        
-        out_box_layout = qt.QVBoxLayout()
-        in_box_layout = qt.QVBoxLayout()
-        
-        out_box_layout.setContentsMargins(2,2,2,2)
-        out_box_layout.setSpacing(2)
-        
-        in_box_layout.setContentsMargins(2,2,2,2)
-        in_box_layout.setSpacing(2)
-                
-        
-        out_box_layout.addWidget(save_button)
-        out_box_layout.addWidget(export_button)
-        
-        in_box_layout.addWidget(open_button)
-        in_box_layout.addWidget(import_button)
-        in_box_layout.addWidget(reference_button)
-        
-        out_box.setLayout(out_box_layout)
-        in_box.setLayout(in_box_layout)
-        
         save_button.clicked.connect( self._save_file )
         export_button.clicked.connect( self._export_file )
         open_button.clicked.connect( self._open_file )
         import_button.clicked.connect( self._import_file )
         reference_button.clicked.connect( self._reference_file )
         
-        self.main_layout.addWidget(out_box)
-        self.main_layout.addWidget(in_box)
+        v_layout1.addWidget(save_button)
+        v_layout1.addWidget(export_button)
+        
+        v_layout2. addWidget(open_button)
+        v_layout2.addWidget(import_button)
+        v_layout2.addWidget(reference_button)
+        
+        h_layout.addLayout(v_layout1)
+        h_layout.addStretch(20)
+        
+        h_layout.addLayout(v_layout2)
+        h_layout.addStretch(40)
+        
+        self.main_layout.addLayout(h_layout)
         
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
 
@@ -1482,7 +1612,7 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
 
 data_name_map = {'maya.binary': 'Binary File',
                  'maya.ascii' : 'Ascii File',
-                 #'maya.shotgun' : 'Shotgun Link',
+                 'maya.shotgun' : 'Shotgun Link',
                  'maya.control_cvs' : 'Control Cv Positions',
                  'maya.control_colors' : 'Control Colors',
                  'maya.skin_weights' : 'Weights Skin Cluster',
@@ -1497,7 +1627,7 @@ data_name_map = {'maya.binary': 'Binary File',
 
 file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.ascii' : MayaAsciiFileWidget,
-                 #'maya.shotgun' : MayaShotgunLinkWidget,
+                 'maya.shotgun' : MayaShotgunLinkWidget,
                  'maya.control_cvs' : ControlCvFileWidget,
                  'maya.control_colors' : ControlColorFileWidget,
                  'maya.skin_weights' : SkinWeightFileWidget,
@@ -1509,3 +1639,4 @@ file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.pose' : PoseFileWidget,
                  'maya.animation': AnimationFileWidget,
                  'maya.control_animation': ControlAnimationFileWidget}
+
