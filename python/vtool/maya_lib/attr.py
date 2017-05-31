@@ -673,7 +673,9 @@ class OrientJointAttributes(object):
         attr.set_variable_type('bool')
         attr.set_keyable(True)
         attr.create(self.joint)
+        attr.set_value(1)
         self.attributes.append(attr)
+        
         
 
     def _delete_attributes(self):
@@ -700,6 +702,7 @@ class OrientJointAttributes(object):
         return enum
     
     def _set_default_values(self):
+        
         self.attributes[0].set_value(0)
         self.attributes[1].set_value(1)
         self.attributes[2].set_value(1)
@@ -709,6 +712,7 @@ class OrientJointAttributes(object):
         self.attributes[6].set_value(2)
         self.attributes[7].set_value(3)
         self.attributes[8].set_value(1)
+        self.attributes[9].set_value(1)
     
     def set_joint(self, joint):
         """

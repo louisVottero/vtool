@@ -22,6 +22,7 @@ from functools import wraps
 
 import vtool.util
 
+import api
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
@@ -258,13 +259,13 @@ class ProgressBar(object):
     
 
 def get_current_camera():
-    view = OpenMayaUI.M3dView.active3dView()
-    cam = OpenMaya.MDagPath()
-    view.getCamera(cam)
-    camera = cam.fullPathName()
+    camera = api.get_current_camera()
     
     return camera
-        
+
+def set_current_camera(camera_name):
+    api.set_current_camera(camera_name)
+
 class StoreDisplaySettings(object):
     
     def __init__(self):

@@ -84,6 +84,23 @@ def get_current_camera():
     
     return camera.fullPathName()
     
+def set_current_camera(camera_name):
+    
+    view = OpenMayaUI.M3dView.active3dView()
+    
+    if cmds.nodeType(camera_name) == 'transform':
+        shapes = cmds.listRelatives(camera_name, shapes = True)
+        
+        if shapes and cmds.nodeType(shapes[0]) == 'camera':
+            camera_name = shapes[0]
+    
+    mobject = nodename_to_mobject(camera_name)
+    
+    cam = OpenMaya.MDagPath(mobject)
+    
+    view.setCamera(cam)
+    
+    cmds.refresh()
 
 class ApiObject(object):
     """
