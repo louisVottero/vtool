@@ -1,46 +1,48 @@
 from vtool import util_file
 from vtool import util
 
+
+
 sg = None
+local_sgtk = None
+
 
 def get_sg():
     
-    settings = util.get_env('VETALA_SETTINGS')
+    if not util.has_shotgun_tank():
+        return
     
     global sg
+    global local_sgtk
+    
+    settings = util.get_env('VETALA_SETTINGS')
     
     if settings and sg == None:
         
+        
         settings_inst = util_file.SettingsFile()
         settings_inst.set_directory(settings)
+
+        api_path = settings_inst.get('shotgun_api')
+        util.add_to_PYTHONPATH(api_path)
         url = settings_inst.get('shotgun_url')
         name = settings_inst.get('shotgun_name')
         code = settings_inst.get('shotgun_code')
         
         
-        api_path = settings_inst.get('shotgun_api')
-        tank_path = settings_inst.get('shotgun_tank')
-        util.add_to_PYTHONPATH(api_path)
-        util.add_to_PYTHONPATH(tank_path)
+        if util.has_shotgun_tank():
+            import sgtk
+            local_sgtk = sgtk
+            shotgun_api3 = sgtk.util.shotgun.shotgun_api3
+            
         
-        if util.has_shotgun_api():
-            import shotgun_api3
-
         if url and name and code:
             sg = shotgun_api3.Shotgun(url,
                                       script_name=name,
                                       api_key=code)
         
-        
-    
-    
-    
         if sg != None:
             util.show('Using Shotgun')
-    
-    util.add_to_PYTHONPATH('D:/dev/git/python-api')
-    import shotgun_api3
-    sg = shotgun_api3.Shotgun('https://cryptidfx.shotgunstudio.com', script_name = 'Vetala', api_key = 'f976bb4f830b34f71605a9cdb0056c9e9968d5336932ad80e64b7ff7e0c95ec8')
     
     return sg
 
@@ -53,6 +55,23 @@ def get_projects():
     projects = sg.find('Project', [['sg_status','is','Active']], ['name'])
     
     return projects
+
+def get_project_tank(project_name):
+    sg = get_sg()
+    entity = sg.find_one('Project', [['name', 'is',project_name]])
+    
+    global local_sgtk
+    
+    if entity:
+        
+        tank = None
+        
+        try:
+            tank = local_sgtk.sgtk_from_entity('Project', entity['id'])
+        except:
+            util.warning('Could not get path for project "%s" using sgtk.sgtk_from_entity. Check that folders have been created for this project.' % project_name)
+        
+        return tank
 
 def get_assets(project_name = None, asset_type = None):
     sg = get_sg()
@@ -79,38 +98,59 @@ def get_asset_steps():
     steps = sg.find('Step', filters, fields = ['code','short_name'])
     
     return steps
-def get_asset(project, sg_asset_type, name, step):
+
+def get_asset_step(name):
+    
+    sg = get_sg()
+    if not sg:
+        return
+    
+    filters = []
+    
+    filters.append(['entity_type', 'is', 'Asset'])
+    filters.append(['code', 'is', name])
+    
+    steps = sg.find_one('Step', filters, fields = ['code','short_name'])
+    
+    return steps
+    
+
+def get_asset_path(project, sg_asset_type, name, step, publish_path = False):
+    
+    tank = get_project_tank(project)
+    
+    if not tank:
+        return
     
     settings = util.get_env('VETALA_SETTINGS')
     
-    code = settings.get('shotgun_asset_path_code')
+    settings_inst = util_file.SettingsFile()
+    settings_inst.set_directory(settings)
     
-    code.replace('{project}', project)
-    code.replace('{sg_asset_type}', sg_asset_type)
-    code.replace('{asset_name}', name)
-    code.replace('{step}', step)
+    if publish_path:
+        code = settings_inst.get('shotgun_asset_publish_template')
+    if not publish_path:
+        code = settings_inst.get('shotgun_asset_work_template')
     
-
-"""
-import tank
-import sgtk
-
-
-
-def login():
+    step_entity = get_asset_step(step)
     
-    from tank_vendor.shotgun_authentication import ShotgunAuthenticator
-    cdm = sgtk.util.CoreDefaultsManager()
-    authenticator = ShotgunAuthenticator(cdm)
-    authenticator.clear_default_user()
-    user = authenticator.get_user()
-    sgtk.set_authenticated_user(user)
+    
+    fields = {}
+    fields['sg_asset_type'] = sg_asset_type
+    fields['Asset'] = name
+    fields['Step'] = step_entity['short_name']
+    fields['name'] = name
+    fields['version'] = 1
+    publish_template =  tank.templates[code]
+    
+    publish_path = publish_template.apply_fields(fields)
+    
+    publish_dir = util_file.get_dirname(publish_path)
+    
+    if not util_file.is_dir(publish_dir):
+        fields['Step'] = step_entity['code']
+        publish_path = publish_template.apply_fields(fields)
+        publish_dir = util_file.get_dirname(publish_path)
+    
+    return publish_dir
 
-def get_file_info(filepath):
-    
-    tk = sgtk.sgtk_from_path(filepath)
-    template = tk.template_from_path(filepath) #template
-    fields = template.get_fields(filepath)
-    
-    return fields
-"""

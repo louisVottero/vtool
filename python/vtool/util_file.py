@@ -1300,6 +1300,15 @@ def get_files_date_sorted(directory, extension = None):
     return list(sorted(files, key = mtime))
         
 
+def get_latest_file_at_path(path):
+    
+    files = get_files_date_sorted(path)
+    
+    filepath = join_path(path, files[-1])
+    
+    return filepath
+
+
 def get_files_with_extension(extension, directory, fullpath = False):
     """
     Get files that have the extensions.
@@ -1369,7 +1378,7 @@ def get_folder_size(path, round_value = 2):
 
 def get_last_modified_date(filepath):
     """
-    Get the last data a file was modifief.
+    Get the last date a file was modified.
     
     Args:
         filepath (str)

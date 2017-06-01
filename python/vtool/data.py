@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+import string
+
 import traceback
 import threading
 
@@ -29,7 +31,7 @@ class DataManager(object):
     def __init__(self):
         self.available_data = [MayaAsciiFileData(), 
                                MayaBinaryFileData(),
-                               #MayaShotgunFileData(), 
+                               MayaShotgunFileData(), 
                                ScriptManifestData(),
                                ScriptPythonData(),
                                ControlCvData(),
@@ -2350,6 +2352,8 @@ class MayaFileData(MayaCustomData):
             
             open_file = self.filepath
         
+        
+        
         try:
             cmds.file(open_file, 
                       f = True, 
@@ -2476,16 +2480,130 @@ class MayaShotgunFileData(MayaFileData):
     def __init__(self, name = None):
         super(MayaShotgunFileData, self).__init__(name)
         
-        
-            
-        
-    
     def _data_name(self):
-        return 'link'
+        return 'shotgun_link'
     
     def _data_type(self):
         return 'maya.shotgun'
     
+    def _get_filepath(self, publish_path = False):
+        
+        
+        project, asset_type, asset, step = self.read_state()
+        dirpath = util_shotgun.get_asset_path(project, asset_type, asset, step, publish_path)
+        
+        filepath = None
+        
+        if dirpath:
+            filepath = util_file.get_latest_file_at_path(dirpath)
+        
+        self.filepath = filepath
+    
+    def write_state(self, project, asset_type, asset, step):
+        
+        filepath = util_file.create_file('shotgun.info', self.directory)
+        
+        lines = ['project=%s' % project,
+                 'asset_type=%s' % asset_type,
+                 'asset=%s' % asset,
+                 'step=%s' % step]
+        
+        util_file.write_lines(filepath, lines)
+    
+    def read_state(self):
+        
+        filepath = util_file.join_path(self.directory, 'shotgun.info')
+        
+        if not util_file.is_file(filepath):
+            return None, None, None, None
+        
+        lines = util_file.get_file_lines(filepath)
+        
+        found = [None,None,None,None]
+        
+        for line in lines:
+            split_line = line.split('=')
+            
+            if split_line[0] == 'project':
+                found[0] = split_line[1]
+            if split_line[0] == 'asset_type':
+                found[1] = split_line[1]
+            if split_line[0] == 'asset':
+                found[2] = split_line[1]
+            if split_line[0] == 'step':
+                found[3] = split_line[1]
+                
+        return found
+    
+    def reference(self):
+        
+        self._get_filepath(publish_path = True)
+        super(MayaShotgunFileData, self).maya_reference_data()
+    
+    def open(self):
+        
+        self._get_filepath(publish_path = True)
+        super(MayaShotgunFileData, self).open()
+    
+    def import_data(self, filepath = None):
+        self._get_filepath(publish_path=True)
+        
+        super(MayaShotgunFileData, self).import_data()
+        
+    def save(self):
+        
+        self._get_filepath()
+        
+        util_file.get_permission(self.filepath)
+        
+        self._handle_unknowns()
+        
+        self._clean_scene()
+        
+        filepath = self.filepath
+        
+        dirname = util_file.get_dirname(filepath)
+        name = util_file.get_basename(filepath)
+        version = util.get_last_number(filepath)
+        
+        split_name = name.split('.')
+        
+        sub_name = string.join(split_name[:-2])
+        
+        version = int(version)
+        version += 1
+        version = str(version)
+        
+        version = version.zfill(3)
+        
+        filename = '%s.%s.%s' % (sub_name, version, split_name[-1])
+        
+        filepath = util_file.join_path(dirname, filename)
+        
+        #not sure if this ever gets used?...
+        if not filepath.endswith('.mb') and not filepath.endswith('.ma'):
+            
+            filepath = cmds.workspace(q = True, rd = True)
+            
+            if self.maya_file_type == self.maya_ascii:
+                #cmds.file(renameToSave = True)
+                filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Ascii (*.ma)", dir = filepath)
+            
+            if self.maya_file_type == self.maya_binary:
+                filepath = cmds.fileDialog2(ds=1, fileFilter="Maya Binary (*.mb)", dir = filepath)
+            
+            if filepath:
+                filepath = filepath[0]
+        
+        saved = maya_lib.core.save(filepath)
+        
+        if saved:
+            
+            maya_lib.core.print_help('Saved %s data.' % self.name)
+            return True
+        
+        return False
+        
     def get_projects(self):
         projects = util_shotgun.get_projects()
         
@@ -2520,7 +2638,6 @@ class MayaShotgunFileData(MayaFileData):
             found.append([step['code'], step['short_name']])
             
         return found
-        
     
 def read_ldr_file(filepath):
     

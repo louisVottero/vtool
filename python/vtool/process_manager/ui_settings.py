@@ -116,44 +116,12 @@ class SettingsWidget(qt_ui.BasicWidget):
         group_layout.addWidget(self.error_stop)
         group_layout.addWidget(process_maya_group)
         
-        
-        
         self.options_widget.main_layout.addWidget(process_group)
         
-        """
+        self.shotgun_group = ShotgunGroup()
         
-        !!!! Code still good!!!!
+        self.options_widget.main_layout.addWidget(self.shotgun_group)
         
-        shotgun_group = qt.QGroupBox('Shotgun Settings')
-        shotgun_group_layout = qt.QVBoxLayout()
-        shotgun_group.setLayout(shotgun_group_layout)
-        
-        self.get_shotgun_url = qt_ui.GetString('Webpage')
-        self.get_shotgun_name = qt_ui.GetString('Script Name')
-        self.get_shotgun_code = qt_ui.GetString('Application Key')
-        self.get_shotgun_asset_path_code = qt_ui.GetString('Tank Asset Template')
-        self.get_shotgun_asset_path_code.set_text('maya_asset_publish')
-        
-        toolkit_warning = qt.QLabel('If the shotgun toolkit is not in your PYTHONPATH,\nload the path to tk-core/python below:')
-        self.get_shotgun_toolkit = ShotgunToolkitWidget()
-        
-        self.get_shotgun_name.text_changed.connect(self._set_shotgun_name)
-        self.get_shotgun_code.text_changed.connect(self._set_shotgun_code)
-        self.get_shotgun_url.text_changed.connect(self._set_shotgun_url)
-        self.get_shotgun_asset_path_code.text_changed.connect(self._set_shotgun_asset_path_code)
-        
-        shotgun_group_layout.addWidget(self.get_shotgun_url)
-        shotgun_group_layout.addWidget(self.get_shotgun_name)
-        shotgun_group_layout.addWidget(self.get_shotgun_code)
-        shotgun_group_layout.addWidget(self.get_shotgun_asset_path_code)
-        shotgun_group_layout.addSpacing(10)
-        
-        shotgun_group_layout.addSpacing(10)
-        shotgun_group_layout.addWidget(toolkit_warning)
-        shotgun_group_layout.addWidget(self.get_shotgun_toolkit)
-        
-        self.options_widget.main_layout.addWidget(shotgun_group)
-        """
         
         
         scroll.setWidget(self.options_widget)
@@ -175,37 +143,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         self.settings.set('auto_focus_scene', self.auto_focus_scene.get_state())
         
-    def _set_shotgun_name(self):
-        self.settings.set('shotgun_name', str(self.get_shotgun_name.get_text()))
     
-    def _set_shotgun_code(self):
-        self.settings.set('shotgun_code', str(self.get_shotgun_code.get_text()))
-        
-    def _set_shotgun_url(self):
-        self.settings.set('shotgun_url', str(self.get_shotgun_url.get_text()))
-        
-    def _set_shotgun_asset_path_code(self):
-        self.settings.set('shotgun_asset_path_code', str(self._set_shotgun_asset_path_code.get_text()))
-        
-    def _get_shotgun_name(self):
-        value = self.settings.get('shotgun_name')
-        if value:
-            self.get_shotgun_name.set_text(value)
-    
-    def _get_shotgun_code(self):
-        value = self.settings.get('shotgun_code')
-        if value:
-            self.get_shotgun_code.set_text(value)
-            
-    def _get_shotgun_url(self):
-        value = self.settings.get('shotgun_url')
-        if value:
-            self.get_shotgun_url.set_text(value)
-        
-    def _get_shotgun_asset_path_code(self):
-        value = self.settings.get('shotgun_asset_path_code')
-        if value:
-            self.get_shotgun_url.set_text(value)
         
     def _get_stop_on_error(self):
         value = self.settings.get('stop_on_error')
@@ -277,21 +215,11 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.project_directory_widget.set_settings(settings)
         self.editor_directory_widget.set_settings(settings)
         
-        
-        
         self._get_stop_on_error()
         self._get_start_new_scene_on_process()
         self._get_auto_focus_scene()
         
-        
-        """
-        !!! Code still good!!!
-        self.get_shotgun_toolkit.set_settings(settings)
-        self._get_shotgun_url()
-        self._get_shotgun_name()
-        self._get_shotgun_code()
-        self._get_shotgun_asset_path_code()
-        """
+        self.shotgun_group.set_settings(settings)
         
     def set_template_settings(self, settings):
         
@@ -303,6 +231,108 @@ class SettingsWidget(qt_ui.BasicWidget):
         history = self.settings.get('template_history')
         
         self.template_directory_widget.list.refresh_list(current, history)
+        
+class ShotgunGroup(qt_ui.Group):
+    
+    def __init__(self):
+        super(ShotgunGroup, self).__init__('Shotgun Settings')
+        
+        
+    
+    def _build_widgets(self):
+        super(ShotgunGroup,self)._build_widgets()
+        
+        shotgun_group = qt.QGroupBox('Shotgun Settings')
+        shotgun_group_layout = qt.QVBoxLayout()
+        shotgun_group.setLayout(shotgun_group_layout)
+        
+        self.get_shotgun_url = qt_ui.GetString('Webpage')
+        self.get_shotgun_name = qt_ui.GetString('Script Name')
+        self.get_shotgun_code = qt_ui.GetString('Application Key')
+        self.get_shotgun_asset_publish_code = qt_ui.GetString('Tank Asset Publish Template')
+        self.get_shotgun_asset_publish_code.set_text('maya_asset_publish')
+        self.get_shotgun_asset_work_code = qt_ui.GetString('Tank Asset Work Template')
+        self.get_shotgun_asset_work_code.set_text('maya_asset_work')
+        
+        toolkit_warning = qt.QLabel('If "import sgtk" is not in your PYTHONPATH,\nload the path above the folder sgtk:')
+        self.get_shotgun_toolkit = ShotgunToolkitWidget()
+        
+        self.get_shotgun_name.text_changed.connect(self._set_shotgun_name)
+        self.get_shotgun_code.text_changed.connect(self._set_shotgun_code)
+        self.get_shotgun_url.text_changed.connect(self._set_shotgun_url)
+        self.get_shotgun_asset_publish_code.text_changed.connect(self._set_shotgun_asset_publish_code)
+        self.get_shotgun_asset_work_code.text_changed.connect(self._set_shotgun_asset_work_code)
+        
+        self.main_layout.addWidget(self.get_shotgun_url)
+        self.main_layout.addWidget(self.get_shotgun_name)
+        self.main_layout.addWidget(self.get_shotgun_code)
+        self.main_layout.addWidget(self.get_shotgun_asset_publish_code)
+        self.main_layout.addWidget(self.get_shotgun_asset_work_code)
+        self.main_layout.addSpacing(10)
+        
+        self.main_layout.addSpacing(10)
+        self.main_layout.addWidget(toolkit_warning)
+        self.main_layout.addWidget(self.get_shotgun_toolkit)
+
+    def _set_shotgun_name(self):
+        self.settings.set('shotgun_name', str(self.get_shotgun_name.get_text()))
+    
+    def _set_shotgun_code(self):
+        self.settings.set('shotgun_code', str(self.get_shotgun_code.get_text()))
+        
+    def _set_shotgun_url(self):
+        self.settings.set('shotgun_url', str(self.get_shotgun_url.get_text()))
+        
+    def _set_shotgun_asset_publish_code(self):
+        self.settings.set('shotgun_asset_publish_template', str(self.get_shotgun_asset_publish_code.get_text()))
+    
+    def _set_shotgun_asset_work_code(self):
+        self.settings.set('shotgun_asset_work_template', str(self.get_shotgun_asset_work_code.get_text()))
+        
+    def _get_shotgun_name(self):
+        value = self.settings.get('shotgun_name')
+        if value:
+            self.get_shotgun_name.set_text(value)
+    
+    def _get_shotgun_code(self):
+        value = self.settings.get('shotgun_code')
+        if value:
+            self.get_shotgun_code.set_text(value)
+            
+    def _get_shotgun_url(self):
+        value = self.settings.get('shotgun_url')
+        if value:
+            self.get_shotgun_url.set_text(value)
+        
+    def _get_shotgun_asset_publish_code(self):
+        value = self.settings.get('shotgun_asset_publish_template')
+        
+        if not value:
+            value = 'maya_asset_publish'
+            self.settings.set('shotgun_asset_publish_template', value)
+        
+        if value:
+            self.get_shotgun_asset_publish_code.set_text(value)
+        
+    def _get_shotgun_asset_work_code(self):
+        value = self.settings.get('shotgun_asset_work_template')
+        
+        if not value:
+            value = 'maya_asset_work'
+            self.settings.set('shotgun_asset_work_template', value)
+        
+        if value:
+            self.get_shotgun_asset_publish_code.set_text(value)
+        
+    def set_settings(self, settings):
+        
+        self.settings = settings
+        self.get_shotgun_toolkit.set_settings(settings)
+        self._get_shotgun_url()
+        self._get_shotgun_name()
+        self._get_shotgun_code()
+        self._get_shotgun_asset_publish_code()
+        self._get_shotgun_asset_work_code()
         
 class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
     
@@ -348,12 +378,14 @@ class ShotgunToolkitWidget(qt_ui.GetDirectoryWidget):
         self.main_layout.addWidget(self.api_passed)
 
     def _test_python_path(self, path):
+        
         util.add_to_PYTHONPATH(path)
+        
         if util.has_shotgun_tank():
             self.api_passed.show()
-        if not util.has_shotgun_tank():
+        else:
             self.api_passed.hide()
-
+            
     def _browser(self):
         
         filename = qt_ui.get_folder(self.get_directory() , self)
@@ -368,6 +400,8 @@ class ShotgunToolkitWidget(qt_ui.GetDirectoryWidget):
                 
                 self._test_python_path(filename)
     
+    
+    
     def set_settings(self, settings):
         
         self.settings = settings
@@ -378,7 +412,8 @@ class ShotgunToolkitWidget(qt_ui.GetDirectoryWidget):
             self.set_directory_text(filename)
             self._test_python_path(filename)
             
-   
+        
+        
 class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
     
     def __init__(self, parent = None):

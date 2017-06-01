@@ -1217,6 +1217,10 @@ class FindUniqueString(object):
             
             scope = self._get_scope_list()
             
+            if not scope:
+                unique = True
+                continue
+            
             if not self.increment_string in scope:
                 unique = True
                 continue
