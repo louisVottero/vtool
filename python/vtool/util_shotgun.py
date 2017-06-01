@@ -33,13 +33,19 @@ def get_sg():
         if util.has_shotgun_tank():
             import sgtk
             local_sgtk = sgtk
-            shotgun_api3 = sgtk.util.shotgun.shotgun_api3
             
-        
-        if url and name and code:
-            sg = shotgun_api3.Shotgun(url,
+            
+            try:
+                shotgun_api3 = sgtk.util.shotgun.shotgun_api3
+                if url and name and code:
+                    sg = shotgun_api3.Shotgun(url,
                                       script_name=name,
                                       api_key=code)
+                
+            except:
+                util.error('Could not get shotgun_api3 from sgtk.util.shotgun.shotgun_api3')
+        
+        
         
         if sg != None:
             util.show('Using Shotgun')
