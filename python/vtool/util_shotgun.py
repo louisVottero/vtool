@@ -22,30 +22,35 @@ def get_sg():
         
         settings_inst = util_file.SettingsFile()
         settings_inst.set_directory(settings)
-
-        api_path = settings_inst.get('shotgun_api')
-        util.add_to_PYTHONPATH(api_path)
-        url = settings_inst.get('shotgun_url')
+        if not util.has_shotgun_tank():
+            api_path = settings_inst.get('shotgun_api')
+            util.add_to_PYTHONPATH(api_path)
+        
+        #url = settings_inst.get('shotgun_url')
         name = settings_inst.get('shotgun_name')
         code = settings_inst.get('shotgun_code')
         
-        
         if util.has_shotgun_tank():
+            
             import sgtk
             local_sgtk = sgtk
-            
-            
+                
+                
             try:
-                shotgun_api3 = sgtk.util.shotgun.shotgun_api3
-                if url and name and code:
-                    sg = shotgun_api3.Shotgun(url,
-                                      script_name=name,
-                                      api_key=code)
+                from tank_vendor.shotgun_authentication import ShotgunAuthenticator
+                cdm = sgtk.util.CoreDefaultsManager()    
+                authenticator = ShotgunAuthenticator(cdm)
+                user = authenticator.create_script_user(
+                                                        api_script=name,
+                                                        api_key=code
+                                                        )
+                
+                sgtk.set_authenticated_user(user)
+                
+                sg = sgtk.Sgtk.shotgun.fget(1)
                 
             except:
-                util.error('Could not get shotgun_api3 from sgtk.util.shotgun.shotgun_api3')
-        
-        
+                util.error('Could not get shotgun api.  Check that your shotgun api script and key code are correct.')
         
         if sg != None:
             util.show('Using Shotgun')
