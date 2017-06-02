@@ -251,12 +251,12 @@ class ShotgunGroup(qt_ui.Group):
         self.get_shotgun_name = qt_ui.GetString('Script Name')
         self.get_shotgun_code = qt_ui.GetString('Application Key')
         
-        self.get_shotgun_asset_publish_code = qt_ui.GetString('Tank Asset Publish Template')
+        self.get_shotgun_asset_publish_code = qt_ui.GetString('Publish Template')
         self.get_shotgun_asset_publish_code.set_text('maya_asset_publish')
-        self.get_shotgun_asset_work_code = qt_ui.GetString('Tank Asset Work Template')
+        self.get_shotgun_asset_work_code = qt_ui.GetString('Work Template')
         self.get_shotgun_asset_work_code.set_text('maya_asset_work')
         
-        toolkit_warning = qt.QLabel('If "import sgtk" is not in your PYTHONPATH,\nload the path above the folder sgtk:')
+        toolkit_warning = qt.QLabel('If "import sgtk" is not in your PYTHONPATH,\nload the folder above the python module sgtk:')
         self.get_shotgun_toolkit = ShotgunToolkitWidget()
         
         
@@ -271,12 +271,11 @@ class ShotgunGroup(qt_ui.Group):
         #self.main_layout.addWidget(self.get_shotgun_url)
         self.main_layout.addWidget(self.get_shotgun_name)
         self.main_layout.addWidget(self.get_shotgun_code)
-        
+        self.main_layout.addSpacing(20)
         self.main_layout.addWidget(self.get_shotgun_asset_publish_code)
         self.main_layout.addWidget(self.get_shotgun_asset_work_code)
-        self.main_layout.addSpacing(10)
+        self.main_layout.addSpacing(20)
         
-        self.main_layout.addSpacing(10)
         self.main_layout.addWidget(toolkit_warning)
         self.main_layout.addWidget(self.get_shotgun_toolkit)
 
