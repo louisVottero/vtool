@@ -675,10 +675,10 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         
         
         v_layout1.addWidget(self.combo_project)
-        v_layout1.addWidget(self.combo_asset)
+        v_layout1.addWidget(self.combo_asset_step)
         
         v_layout2.addWidget(self.combo_asset_type)
-        v_layout2.addWidget(self.combo_asset_step)
+        v_layout2.addWidget(self.combo_asset)
         
         h_layout.addLayout(v_layout1)
         h_layout.addLayout(v_layout2)
