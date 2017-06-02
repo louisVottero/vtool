@@ -2609,9 +2609,11 @@ class MayaShotgunFileData(MayaFileData):
         
         found = []
         
-        for project in projects:
-            found.append(project['name'])
-            
+        if projects:
+            for project in projects:
+                found.append(project['name'])
+        if not projects:
+            found = ['No projects found']
         return found
     
     def get_assets(self, project):
@@ -2619,12 +2621,16 @@ class MayaShotgunFileData(MayaFileData):
         
         found = {}
         
-        for asset in assets:
-            
-            if not found.has_key(asset['sg_asset_type']):
-                found[asset['sg_asset_type']] = []
+        if assets:
+            for asset in assets:
                 
-            found[asset['sg_asset_type']].append(asset['code'])
+                if not found.has_key(asset['sg_asset_type']):
+                    found[asset['sg_asset_type']] = []
+                    
+                found[asset['sg_asset_type']].append(asset['code'])
+        
+        if not assets:
+            found['No asset_type'] = ['No assets found']
             
         return found
     
@@ -2634,10 +2640,22 @@ class MayaShotgunFileData(MayaFileData):
         
         found = []
         
-        for step in steps:
-            found.append([step['code'], step['short_name']])
+        if steps:
+            for step in steps:
+                found.append([step['code'], step['short_name']])
+        if not steps:
+            found = [['No steps found']]
+            
             
         return found
+    
+    def has_api(self):
+        
+        if not util_shotgun.sg:
+            return False
+        
+        return True
+    
     
 def read_ldr_file(filepath):
     
