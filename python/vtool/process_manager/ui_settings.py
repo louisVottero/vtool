@@ -246,9 +246,11 @@ class ShotgunGroup(qt_ui.Group):
         shotgun_group_layout = qt.QVBoxLayout()
         shotgun_group.setLayout(shotgun_group_layout)
         
-        self.get_shotgun_url = qt_ui.GetString('Webpage')
+        
+        #self.get_shotgun_url = qt_ui.GetString('Webpage')
         self.get_shotgun_name = qt_ui.GetString('Script Name')
         self.get_shotgun_code = qt_ui.GetString('Application Key')
+        
         self.get_shotgun_asset_publish_code = qt_ui.GetString('Tank Asset Publish Template')
         self.get_shotgun_asset_publish_code.set_text('maya_asset_publish')
         self.get_shotgun_asset_work_code = qt_ui.GetString('Tank Asset Work Template')
@@ -257,15 +259,19 @@ class ShotgunGroup(qt_ui.Group):
         toolkit_warning = qt.QLabel('If "import sgtk" is not in your PYTHONPATH,\nload the path above the folder sgtk:')
         self.get_shotgun_toolkit = ShotgunToolkitWidget()
         
+        
         self.get_shotgun_name.text_changed.connect(self._set_shotgun_name)
         self.get_shotgun_code.text_changed.connect(self._set_shotgun_code)
-        self.get_shotgun_url.text_changed.connect(self._set_shotgun_url)
+        #self.get_shotgun_url.text_changed.connect(self._set_shotgun_url)
+        
         self.get_shotgun_asset_publish_code.text_changed.connect(self._set_shotgun_asset_publish_code)
         self.get_shotgun_asset_work_code.text_changed.connect(self._set_shotgun_asset_work_code)
         
-        self.main_layout.addWidget(self.get_shotgun_url)
+        
+        #self.main_layout.addWidget(self.get_shotgun_url)
         self.main_layout.addWidget(self.get_shotgun_name)
         self.main_layout.addWidget(self.get_shotgun_code)
+        
         self.main_layout.addWidget(self.get_shotgun_asset_publish_code)
         self.main_layout.addWidget(self.get_shotgun_asset_work_code)
         self.main_layout.addSpacing(10)
@@ -322,15 +328,17 @@ class ShotgunGroup(qt_ui.Group):
             self.settings.set('shotgun_asset_work_template', value)
         
         if value:
-            self.get_shotgun_asset_publish_code.set_text(value)
+            self.get_shotgun_asset_work_code.set_text(value)
         
     def set_settings(self, settings):
         
         self.settings = settings
         self.get_shotgun_toolkit.set_settings(settings)
-        self._get_shotgun_url()
+        
+        #self._get_shotgun_url()
         self._get_shotgun_name()
         self._get_shotgun_code()
+        
         self._get_shotgun_asset_publish_code()
         self._get_shotgun_asset_work_code()
         
