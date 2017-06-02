@@ -130,8 +130,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                         
                         path_to_data = vtool.util_file.join_path(process_tool.get_data_path(), str( item.text(0) ) )
                         
-                        print 'path to data', path_to_data, self.file_widget, self.file_widget.set_directory
-                        
                         if hasattr(self.file_widget, 'set_directory'):
                             self.file_widget.set_directory(path_to_data)
                         self.main_layout.addWidget(self.file_widget)
@@ -492,7 +490,7 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
-        print data_name, data_type
+        
         data_path = process_tool.create_data(data_name, data_type)
         
         data_name = vtool.util_file.get_basename(data_path)
@@ -637,10 +635,7 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         for project in projects:
             self.combo_project.addItem(project)
         
-        #self.combo_project.setMaximumWidth(160)
-        
         self.combo_asset_type = qt.QComboBox()
-        #self.combo_asset_type.setMaximumWidth(160)
         
         self.assets = self.data_class.get_assets(self.combo_project.itemText(0))
         
@@ -652,8 +647,7 @@ class MayaShotgunLinkWidget(DataLinkWidget):
                 self.combo_asset_type.addItem(key)
         
         self.combo_asset = qt.QComboBox()
-        #self.combo_asset.setMaximumWidth(200)
-    
+        
         current_text = self.combo_asset_type.currentText()
         if self.assets.has_key(current_text):
         
@@ -673,6 +667,11 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         v_layout1 = qt.QVBoxLayout()
         v_layout2 = qt.QVBoxLayout()
         
+        self.warning = qt.QLabel('No Shotgun Found!')
+        
+        self.main_layout.addWidget(self.warning)
+        
+        self.warning.hide()
         
         v_layout1.addWidget(self.combo_project)
         v_layout1.addWidget(self.combo_asset_step)
@@ -693,6 +692,9 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         self.combo_asset_step.currentIndexChanged.connect(self._write_out_state)
         
         self._build_save_widget()
+        
+        if not self.data_class.has_api():
+            self.warning.show()
     
     def _build_save_widget(self):
         
@@ -700,27 +702,27 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         v_layout1 = qt.QVBoxLayout()
         v_layout2 = qt.QVBoxLayout()
         
-        save_button = self._create_button('Save')
+        self.save_button = self._create_button('Save')
         
-        save_button.setMinimumHeight(50)
+        self.save_button.setMinimumHeight(50)
         
         #export_button = self._create_button('Export')
-        open_button = self._create_button('Open')
-        import_button = self._create_button('Import')
-        reference_button = self._create_button('Reference')
+        self.open_button = self._create_button('Open')
+        self.import_button = self._create_button('Import')
+        self.reference_button = self._create_button('Reference')
         
-        save_button.clicked.connect( self._save_file )
+        self.save_button.clicked.connect( self._save_file )
         #export_button.clicked.connect( self._export_file )
-        open_button.clicked.connect( self._open_file )
-        import_button.clicked.connect( self._import_file )
-        reference_button.clicked.connect( self._reference_file )
+        self.open_button.clicked.connect( self._open_file )
+        self.import_button.clicked.connect( self._import_file )
+        self.reference_button.clicked.connect( self._reference_file )
         
-        v_layout1.addWidget(save_button)
+        v_layout1.addWidget(self.save_button)
         #v_layout1.addWidget(export_button)
         
-        v_layout2. addWidget(open_button)
-        v_layout2.addWidget(import_button)
-        v_layout2.addWidget(reference_button)
+        v_layout2. addWidget(self.open_button)
+        v_layout2.addWidget(self.import_button)
+        v_layout2.addWidget(self.reference_button)
         
         h_layout.addLayout(v_layout1)
         h_layout.addStretch(20)
@@ -748,8 +750,6 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         
         self.update_current_changed = False
         project, asset_type, asset, step = self.data_class.read_state()
-        
-        print project, asset_type, asset, step
         
         if project:
             project_index = self.combo_project.findText(project)
@@ -832,6 +832,31 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         super(MayaShotgunLinkWidget, self).set_directory(directory)
         
         self._read_state()
+        
+        if self.data_class.has_api():
+            self.warning.hide()
+            
+            self.combo_asset.setEnabled(True)
+            self.combo_asset_step.setEnabled(True)
+            self.combo_asset_type.setEnabled(True)
+            self.combo_project.setEnabled(True)
+            
+            self.save_button.setEnabled(True)
+            self.open_button.setEnabled(True)
+            self.import_button.setEnabled(True)
+            self.reference_button.setEnabled(True)
+            
+        if not self.data_class.has_api():
+            self.warning.show()
+            self.save_button.setDisabled(True)
+            self.open_button.setDisabled(True)
+            self.import_button.setDisabled(True)
+            self.reference_button.setDisabled(True)
+            
+            self.combo_asset.setEnabled(False)
+            self.combo_asset_step.setEnabled(False)
+            self.combo_asset_type.setEnabled(False)
+            self.combo_project.setEnabled(False)
 
 class DataFileWidget(vtool.qt_ui.FileManagerWidget):
     
