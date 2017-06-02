@@ -377,12 +377,15 @@ class ShotgunToolkitWidget(qt_ui.GetDirectoryWidget):
         super(ShotgunToolkitWidget, self).__init__(parent)
         
         self.set_label('Shotgun Toolkit Path')
+        
         self.settings = None
         
         self.api_passed = qt.QLabel(' Works ')
         self.api_passed.setStyleSheet("QLabel { background-color : lightGreen; color : black; }")
         self.api_passed.hide()
         self.main_layout.addWidget(self.api_passed)
+        
+        self.directory_edit.setPlaceholderText('example: C:/shotgun_install_name/install/core/python')
 
     def _test_python_path(self, path):
         
