@@ -50,7 +50,8 @@ def get_sg():
                 sg = sgtk.Sgtk.shotgun.fget(1)
                 
             except:
-                util.error('Could not get shotgun api.  Check that your shotgun api script and key code are correct.')
+                util.error('Could not get shotgun api.  Check that your shotgun api script and key code are correct. Also shotgun toolkit might not be installed correctly.')
+                
         
         if sg != None:
             util.show('Using Shotgun')
