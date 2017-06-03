@@ -16,7 +16,6 @@ import process
 
 from vtool import qt_ui, qt
 from vtool import util_file
-from multiprocessing.dummy import current_process
     
 class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     """
@@ -85,7 +84,10 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
     def _script_focus(self, code_path):
         
-        self.code_widget.code_edit.show_window(code_path)
+        name = code_path + '.py'
+        
+        self.code_widget.code_edit.goto_tab(name)
+        self.code_widget.code_edit.goto_floating_tab(name)
         
     def _code_change(self, code, open_in_window = False):
         
@@ -331,7 +333,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         folder_path = vtool.util_file.get_dirname(path)
         
-        self.directory = path
+        self.directory = folder_path
         
         self.save_file.set_directory(folder_path)
         
@@ -483,11 +485,12 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
             code_folder = self._get_current_code()
             self.script_open_external.emit(code_folder)
     
-    def _script_focus(self, code_name):
+    def _script_focus(self):
         
         if self.code_manifest_tree.handle_selection_change:
             
             code_folder = self._get_current_code()
+            
             self.script_focus.emit(code_folder)
             
     def _get_current_code(self, item = None):
@@ -506,7 +509,6 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         if path:
             name = util_file.join_path(path, name)
-            
         
         return name
         
@@ -578,7 +580,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     item_renamed = vtool.qt_ui.create_signal(object, object)
     script_open = vtool.qt_ui.create_signal(object, object)
     script_open_external = vtool.qt_ui.create_signal()
-    script_focus = vtool.qt_ui.create_signal(object)
+    script_focus = vtool.qt_ui.create_signal()
     item_removed = vtool.qt_ui.create_signal(object)
 
     def __init__(self):
@@ -594,9 +596,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.setAlternatingRowColors(True)
         
         self.edit_state = False
-        #self.setBackgroundRole(qt.QPalette.Light)
-        
-
         
         self.setSelectionMode(self.ExtendedSelection)
         
@@ -636,17 +635,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
 
         self.allow_manifest_update = True
         
-        
-        
-        #if vtool.util.is_in_maya():
-            #palette = self.palette()
-            
-            #palette.setColor(qt.QPalette.Base, qt.QColor(50,50,50,255) )
-            #palette.setColor(qt.QPalette.AlternateBase, qt.QColor(70,70,70,255) )
-        
-            #self.setPalette(palette)
-        
-        
         self.break_index = None
         self.break_item = None
         
@@ -661,36 +649,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             lines = 'QTreeWidget::indicator:unchecked {image: url(%s);}' % icon_off
             lines += ' QTreeWidget::indicator:checked {image: url(%s);}' % icon_on
-            #lines += ' QTreeView::branch:open {image: url(%s);}' % icon_folder_open
-            #lines += ' QTreeView::branch:closed:has-children {image: url(%s);}' % icon_folder
             
             self.setStyleSheet( lines)
-    
-    
-    """
-    def drawRow(self, painter, option, index):
-        #this changes checkboxes to default........
-        #if vtool.util.is_in_maya():
-        #    brush = qt.QBrush( qt.QColor(70,70,70))
-        #    painter.fillRect( option.rect, brush)
-        
-        painter.save()
-        
-        
-        if index.internalId() == self.break_index:
-            #painter.save()
-            
-            if vtool.util.is_in_maya():
-                brush = qt.QBrush( qt.QColor(70,0,0))
-            if not vtool.util.is_in_maya():
-                brush = qt.QBrush( qt.QColor(240,230,230))
-            
-            painter.fillRect( option.rect, brush)
-        
-        painter.restore()
-        super(CodeManifestTree, self).drawRow(painter, option, index)
-    """
-    
     
     def resizeEvent(self, event = None):
         super(CodeManifestTree, self).resizeEvent(event)
@@ -719,7 +679,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.dragged_item = item
         
+        
+        
         super(CodeManifestTree, self).mousePressEvent(event)
+        self.script_focus.emit()
         
     def keyPressEvent(self, event):
         
@@ -780,16 +743,18 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         get the script name with path, eg script/script/script.py
         """
         
-        name = item.text(0)
+        extension_name = item.text(0)
         
-        if not keep_extension:
-            name = util_file.remove_extension(name)
+        name = util_file.remove_extension(extension_name)
             
         path = self._get_item_path(item)
         if path:
             name = util_file.join_path(path, name)
-            
-        return name
+        
+        if not keep_extension:
+            return name
+        if keep_extension:
+            return util_file.join_path(name, extension_name)
     
     def _get_entered_item(self, event):
         
@@ -1500,6 +1465,22 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             if item:
                 self.set_breakpoint(item)
+
+    def get_current_item_file(self):
+        
+        items = self.selectedItems()
+        
+        if not items:
+            return
+        item = items[0]
+        
+        
+        
+        name = self._get_item_path_name(item, keep_extension=True)
+        
+        path = util_file.join_path(self.directory, name)
+        
+        return path
 
     def set_directory(self, directory, refresh = True):
         
