@@ -89,7 +89,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.code_widget.code_edit.goto_tab(name)
         self.code_widget.code_edit.goto_floating_tab(name)
         
-    def _code_change(self, code, open_in_window = False):
+    def _code_change(self, code, open_in_window = False, open_in_external = False):
         
         if not code:
             
@@ -97,7 +97,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
             
             return
         
-        if not open_in_window:
+        if not open_in_window and not open_in_external:
             if self.restrain_move == True:
                 self.restrain_move = False
                 width = self.splitter.width()
@@ -113,9 +113,13 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         code_file = process_tool.get_code_file(code_name)
         
-        self.code_widget.set_code_path(code_file, open_in_window, name = code)
+        if not open_in_external:
+            self.code_widget.set_code_path(code_file, open_in_window, name = code)
+        if open_in_external:
+            self._open_external(code)
         
-        if not open_in_window:
+        
+        if not open_in_window and not open_in_external:
             if self.sizes[1] != 0:
                 self.splitter.setSizes(self.sizes)
         
@@ -434,7 +438,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
         
 class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     
-    script_open = vtool.qt_ui.create_signal(object, object)
+    script_open = vtool.qt_ui.create_signal(object, object, object)
     script_open_external = vtool.qt_ui.create_signal(object)
     script_focus = vtool.qt_ui.create_signal(object)
     script_rename = vtool.qt_ui.create_signal(object, object)
@@ -472,12 +476,12 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         self.main_layout.addLayout(buttons_layout)
     
         
-    def _script_open(self, item, open_in_window):
+    def _script_open(self, item, open_in_window, open_external = False):
         
         if self.code_manifest_tree.handle_selection_change:
         
             code_folder = self._get_current_code(item)
-            self.script_open.emit(code_folder, open_in_window)
+            self.script_open.emit(code_folder, open_in_window, open_external)
             
     def _script_open_external(self):
         
@@ -578,7 +582,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
 class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     
     item_renamed = vtool.qt_ui.create_signal(object, object)
-    script_open = vtool.qt_ui.create_signal(object, object)
+    script_open = vtool.qt_ui.create_signal(object, object, object)
     script_open_external = vtool.qt_ui.create_signal()
     script_focus = vtool.qt_ui.create_signal()
     item_removed = vtool.qt_ui.create_signal(object)
@@ -662,9 +666,29 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         items = self.selectedItems()
         if items:
             item = items[0]
+                
+        settings_file = vtool.util.get_env('VETALA_SETTINGS')
         
-            self.script_open.emit(item, False)
-    
+        settings = vtool.util_file.SettingsFile()
+        settings.set_directory(settings_file)
+        
+        double_click_option = settings.get('manifest_double_click')
+        
+        if double_click_option:
+            
+            
+                
+                if double_click_option == 'open tab':
+                    self.script_open.emit(item, False, False)
+                if double_click_option == 'open new':
+                    self.script_open.emit(item, True, False)
+                if double_click_option == 'open external':
+                    self.script_open.emit(item, False, True)
+                
+                return
+            
+        self.script_open.emit(item, False, False)
+                
     def mousePressEvent(self, event):
         
         self.handle_selection_change = True
@@ -1149,7 +1173,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         items = self.selectedItems()
         item = items[0]
         
-        self.script_open.emit(item, True)
+        self.script_open.emit(item, True, False)
         
     def _open_in_external(self):
         
