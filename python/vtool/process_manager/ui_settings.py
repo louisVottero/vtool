@@ -97,8 +97,11 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         self.options_widget.main_layout.addWidget(process_group)
         
+        self.code_tab_group = CodeTabGroup()
+        
         self.shotgun_group = ShotgunGroup()
         
+        self.options_widget.main_layout.addWidget(self.code_tab_group)
         self.options_widget.main_layout.addWidget(self.shotgun_group)
         
         
@@ -196,6 +199,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         self._get_auto_focus_scene()
         
         self.shotgun_group.set_settings(settings)
+        self.code_tab_group.set_settings(settings)
         
     def set_template_settings(self, settings):
         
@@ -208,6 +212,60 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         self.template_directory_widget.list.refresh_list(current, history)
         
+class CodeTabGroup(qt_ui.Group):
+    
+    def __init__(self):
+        super(CodeTabGroup, self).__init__('Code Tab Settings')
+        
+    def _build_widgets(self):
+        
+        label = qt.QLabel('Manifest Double Click')
+        self.open_tab = qt.QRadioButton("Open In Tab")
+        self.open_new = qt.QRadioButton("Open In New Window")
+        self.open_external = qt.QRadioButton("Open In External")
+        
+        self.open_tab.setChecked(True)
+        
+        self.open_tab.setAutoExclusive(True)
+        self.open_new.setAutoExclusive(True)
+        self.open_external.setAutoExclusive(True)
+        
+        self.open_tab.toggled.connect(self._set_manifest_double_click)
+        self.open_new.toggled.connect(self._set_manifest_double_click)
+        self.open_external.toggled.connect(self._set_manifest_double_click)
+        
+        self.main_layout.addWidget(label)
+        self.main_layout.addWidget(self.open_tab)
+        self.main_layout.addWidget(self.open_new)
+        self.main_layout.addWidget(self.open_external)
+        
+    def _get_manifest_double_click(self):
+        value = self.settings.get('manifest_double_click')
+        if value:
+            if value == 'open tab':
+                self.open_tab.setChecked(True)
+            if value == 'open new':
+                self.open_new.setChecked(True)
+            if value == 'open external':
+                self.open_external.setChecked(True)
+        
+    def _set_manifest_double_click(self):
+        
+        value = 'open tab'
+        
+        if self.open_new.isChecked():
+            value = 'open new'
+        if self.open_external.isChecked():
+            value = 'open external'
+            
+        self.settings.set('manifest_double_click', value)
+        
+    def set_settings(self, settings):
+        
+        self.settings = settings
+        
+        self._get_manifest_double_click()
+        
 class ShotgunGroup(qt_ui.Group):
     
     def __init__(self):
@@ -217,11 +275,6 @@ class ShotgunGroup(qt_ui.Group):
     
     def _build_widgets(self):
         super(ShotgunGroup,self)._build_widgets()
-        
-        shotgun_group = qt.QGroupBox('Shotgun Settings')
-        shotgun_group_layout = qt.QVBoxLayout()
-        shotgun_group.setLayout(shotgun_group_layout)
-        
         
         #self.get_shotgun_url = qt_ui.GetString('Webpage')
         self.get_shotgun_name = qt_ui.GetString('Script Name')
