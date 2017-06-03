@@ -4617,3 +4617,10 @@ def get_pick(list_values, text_message, parent = None):
     if ok:
         return picked
     
+def get_icon(icon_name_including_extension):
+    
+    vetala_directory = util_file.get_vetala_directory()
+    icon_path = util_file.join_path(vetala_directory, 'icons/%s' % icon_name_including_extension)
+    icon = qt.QIcon(icon_path)
+    
+    return icon
