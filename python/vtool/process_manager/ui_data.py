@@ -962,9 +962,11 @@ class ScriptFileWidget(DataFileWidget):
     def set_text_widget(self, widget):
         self.text_widget = widget
         
+        
+        
         self.save_widget.set_text_widget(widget)
-        self.history_widget.set_text_widget(widget)   
-
+        self.history_widget.set_text_widget(widget)
+        
 class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     def __init__(self, parent = None):
         super(ScriptSaveFileWidget, self).__init__(parent)
@@ -996,10 +998,6 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
         if comment == None:
             return
-        
-        
-        
-        
         
         lines= vtool.util_file.get_text_lines(text)
         
