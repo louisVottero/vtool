@@ -1239,11 +1239,6 @@ class FileManagerWidget(DirectoryWidget):
             self.save_widget.set_io_tip(save_tip)
         
         self.data_class = self._define_data_class()
-        #self.save_widget.set_data_class(self.data_class)
-        #self.history_widget.set_data_class(self.data_class)
-        
-        #if self.option_widget:
-        #    self.option_widget.set_data_class(self.data_class)
         
         self.history_attached = False
         
@@ -1386,7 +1381,7 @@ class FileManagerWidget(DirectoryWidget):
         self.history_attached = True
         
         self._activate_history_tab()
-        
+            
     def set_directory(self, directory):
         super(FileManagerWidget, self).set_directory(directory)
         
@@ -1526,16 +1521,17 @@ class HistoryTreeWidget(FileTreeWidget):
             
             version_data = version_tool.get_organized_version_data()
             
-            #files = version_tool.get_versions()
-            
             if not version_data:
-                return
+                return []
             
             if version_data:
                 self.padding = len(str(len(version_data)))
                 return version_data
     
     def _add_items(self, version_list):
+        
+        if not version_list:
+            self.clear()
         
         for version_data in version_list:
             self._add_item(version_data)
@@ -1603,7 +1599,7 @@ class HistoryFileWidget(DirectoryWidget):
         if self.isVisible():
             self.version_list.set_directory(directory, refresh = True)
         if not self.isVisible():    
-            self.version_list.set_directory(directory, refresh = False)    
+            self.version_list.set_directory(directory, refresh = False)
 
 class OptionFileWidget(DirectoryWidget):
     
@@ -2385,12 +2381,28 @@ class CodeEditTabs(BasicWidget):
         self.code_tab_map = {}
         
     def goto_tab(self, name):
-        
+        widget = None
         if self.code_tab_map.has_key(name):
-        
+            
             widget = self.code_tab_map[name]
                 
             self.tabs.setCurrentWidget(widget)
+            widget.text_edit.setFocus()
+        
+        return widget
+        
+    def goto_floating_tab(self, name):
+        
+        widget = None
+        if self.code_floater_map.has_key(name):
+            
+            widget = self.code_floater_map[name]
+            widget.show()
+            widget.activateWindow()
+            widget.raise_()
+            widget.text_edit.setFocus()
+        
+        return widget
         
     def add_floating_tab(self, filepath, name):
         
