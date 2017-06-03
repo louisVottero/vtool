@@ -22,7 +22,7 @@ class SettingsWidget(qt_ui.BasicWidget):
     
     def _define_main_layout(self):
         layout = qt.QVBoxLayout()
-        #layout.setAlignment(qt.QtCore.Qt.AlignTop)
+        
         return layout 
     
     def _build_widgets(self):
@@ -34,50 +34,29 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.dir_widget = qt_ui.BasicWidget()
         
         
-        
-        #self.tab_widget.addTab(self.dir_widget, 'Paths')
-        
-        #self.tab_widget.setTabPosition(self.tab_widget.West)
-        
-        self._build_dir_widgets()
-        option_scroll_widget = self._build_option_widgets()
-        
-        self.tab_widget.addTab(option_scroll_widget, 'Options')
-        
-        self.main_layout.addWidget(self.tab_widget)
-        
-    def _build_dir_widgets(self):
-        
         self.project_directory_widget = ProjectDirectoryWidget()
         self.project_directory_widget.directory_changed.connect(self._project_directory_changed)
         
-        #tabs = qt.QTabWidget()
-                             
         self.code_directory_widget = CodeDirectoryWidget()
         self.code_directory_widget.directory_changed.connect(self._code_directory_changed)
 
         self.template_directory_widget  = TemplateDirectoryWidget()
         self.template_directory_widget.directory_changed.connect(self._template_directory_changed)
 
-        self.tab_widget.addTab(self.project_directory_widget, 'Project')
-        self.tab_widget.addTab(self.code_directory_widget, 'Code')
-        self.tab_widget.addTab(self.template_directory_widget, 'Template')
+        option_scroll_widget = self._build_option_widgets()
 
-        #self.editor_directory_widget = ExternalEditorWidget()
-        #self.editor_directory_widget.set_label('External Editor')
+        self.tab_widget.addTab(self.project_directory_widget, 'Project')
+        self.tab_widget.addTab(option_scroll_widget, 'Options')
+        self.tab_widget.addTab(self.code_directory_widget, 'External Code')
+        self.tab_widget.addTab(self.template_directory_widget, 'Template')
         
-        #self.dir_widget.main_layout.addWidget(tabs)
-        
-        #self.dir_widget.main_layout.addSpacing(10)
-        #self.dir_widget.main_layout.addWidget(self.editor_directory_widget)
-        #self.dir_widget.main_layout.addSpacing(10)
+        self.main_layout.addWidget(self.tab_widget)
         
     def _build_option_widgets(self):
         
         self.options_widget = qt_ui.BasicWidget()
         self.options_widget.main_layout.setSpacing(5)
         self.options_widget.main_layout.setContentsMargins(10,10,10,10)
-        #self.options_widget.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Maximum, qt.QSizePolicy.Maximum))
         
         scroll = qt.QScrollArea()
         scroll.setWidgetResizable(True)
@@ -128,9 +107,6 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         
         return scroll
-        
-        #self.options_widget.main_layout.addWidget(self.error_stop)
-        #self.options_widget.main_layout.addWidget(self.process_start_new_scene)
         
     def _set_stop_on_error(self):
         self.settings.set('stop_on_error', self.error_stop.get_state())
