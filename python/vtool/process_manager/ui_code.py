@@ -494,7 +494,6 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         if self.code_manifest_tree.handle_selection_change:
             
             code_folder = self._get_current_code()
-            
             self.script_focus.emit(code_folder)
             
     def _get_current_code(self, item = None):
@@ -762,24 +761,31 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         return parent_path
         
-    def _get_item_path_name(self, item, keep_extension = False):
+    def _get_item_path_name(self, item, keep_extension = False, remove_folder = True):
         """
         get the script name with path, eg script/script/script.py
         """
         
-        extension_name = item.text(0)
-        
-        name = util_file.remove_extension(extension_name)
-            
-        path = self._get_item_path(item)
-        if path:
-            name = util_file.join_path(path, name)
+        name = item.text(0)
+        folder_name = util_file.remove_extension(name)
         
         if not keep_extension:
+            name = folder_name
+            
+        path = self._get_item_path(item)
+        
+        if not remove_folder:
+            if path:
+                path = util_file.join_path(path, folder_name)
+            if not path:
+                path = folder_name
+            name = util_file.join_path(path, name)
+            
+        if remove_folder:
+            if path:
+                util_file.join_path(path, name)
+                
             return name
-        if keep_extension:
-            return util_file.join_path(name, extension_name)
-    
     def _get_entered_item(self, event):
         
         position = event.pos()
@@ -804,6 +810,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 check_name = util_file.join_path(path, check_name)
             
             check_name = self._get_item_path_name(item, keep_extension=True)
+            
+            print check_name, name
             
             if check_name == name:
                 return item
@@ -1500,7 +1508,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         
         
-        name = self._get_item_path_name(item, keep_extension=True)
+        name = self._get_item_path_name(item, keep_extension=True, remove_folder=False)
         
         path = util_file.join_path(self.directory, name)
         
@@ -1525,12 +1533,14 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         script_name = directory
         
         item = self._get_item_by_name(script_name)
-
-        if state > -1:
-            self.scrollToItem(item)
-
+        
+        print 'item found ', item
+        
         if not item:
             return
+        
+        if state > -1:
+            self.scrollToItem(item)
         
         item.set_state(state)
         

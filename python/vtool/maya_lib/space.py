@@ -3058,10 +3058,12 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
                 pivot = cmds.xform(transform, q = True, ws = True, rp = True)
                 cmds.move((pivot[0]*-1), pivot[1], pivot[2], '%s.scalePivot' % other, 
                                                              '%s.rotatePivot' % other, a = True)
-                
+
                 if cmds.objExists('%s.localPosition' % transform):
-                    
                     fix_locator_shape_position(transform)
+                
+                if cmds.objExists('%s.localPosition' % other):
+                    fix_locator_shape_position(other)
                     
             translateX_lock.restore_initial()
             translateY_lock.restore_initial()
