@@ -1308,6 +1308,32 @@ def get_latest_file_at_path(path):
     
     return filepath
 
+def get_latest_file(file_paths, only_return_one_match = True):
+    
+    last_time = 0
+    times = {}
+    
+    for file_path in file_paths:
+        
+        mtime = os.stat(file_path).st_mtime
+        
+        if not times.has_key(mtime):
+            times[mtime] = []
+            
+        times[mtime].append(file_path)
+        
+        if mtime > last_time:
+            last_time = mtime
+    
+    if not times.keys():
+        return
+    
+    if only_return_one_match:
+        return times[mtime][0]
+    
+    if not only_return_one_match:
+        return times[mtime]
+
 
 def get_files_with_extension(extension, directory, fullpath = False):
     """
