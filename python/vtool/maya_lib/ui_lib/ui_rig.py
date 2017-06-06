@@ -76,6 +76,9 @@ class ProcessMayaWindow(ui_process_manager.ProcessManagerWindow):
     
     def __init__(self):
         super(ProcessMayaWindow, self).__init__( ui_core.get_maya_window() )
+        
+        icon = qt_ui.get_icon('vetala.png')
+        self.setWindowIcon(icon)
     
 vetala_version = util_file.get_vetala_version()
     
@@ -114,11 +117,7 @@ class RigManager(qt_ui.DirectoryWidget):
         
         manager_layout.addLayout(h_layout)
         
-        
-        vetala_directory = util_file.get_vetala_directory()
-        icon_path = util_file.join_path(vetala_directory, 'icons/vetala.png')
-    
-        icon = qt.QIcon(icon_path)
+        icon = qt_ui.get_icon('vetala.png')
         
         process_button = qt.QPushButton(icon, 'VETALA')
         process_button.setIconSize(qt.QtCore.QSize(48,48))

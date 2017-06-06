@@ -472,7 +472,14 @@ class VersionFile(object):
     
     def get_organized_version_data(self):
         
-        version_paths, version_numbers = self.get_versions(return_version_numbers_also = True)
+        versions = self.get_versions(return_version_numbers_also = True)
+        
+        if not versions:
+            return
+        
+        if versions:
+            version_paths = versions[0]
+            version_numbers = versions[1] 
         
         filepath = self._get_comment_path()
 
@@ -624,7 +631,7 @@ class VersionFile(object):
         files = get_files_and_folders(version_folder)
         
         if not files:
-            return
+            return None
         
         number_list = []
         pass_files = []

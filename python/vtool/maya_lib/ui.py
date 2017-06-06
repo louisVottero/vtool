@@ -76,6 +76,7 @@ def process_manager(directory = None):
     window = ui_rig.process_manager()
     
     if ToolManager._last_instance:
+        
         ToolManager._last_instance.add_tab(window, 'VETALA')
     
     if not ToolManager._last_instance:
@@ -123,6 +124,8 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         
         self.dock_window = DockWindow()
         
+        
+        
         self.main_layout.addWidget(self.dock_window)
         
         #self.modeling_widget = ui_model.ModelManager()
@@ -133,8 +136,9 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         
         #self.add_tab(self.modeling_widget, 'MODEL')
         self.add_tab(self.rigging_widget, 'RIG')
-        #self.add_tab(self.animation_widget, 'ANIMATE')
-        #self.add_tab(self.fx_widget, 'FX')
+        
+        #icon = qt_ui.get_icon('vetala.png')
+        #tab_bar.setTabIcon(0, icon)
         
         self.default_docks[0].raise_()
         
@@ -230,7 +234,6 @@ class DockWindow(qt_ui.BasicWindow):
         
         self.setTabPosition(qt.QtCore.Qt.TopDockWidgetArea, qt.QTabWidget.West)
         self.setDockOptions( self.AnimatedDocks | self.AllowTabbedDocks)
-        #self.setSizePolicy(qt.QSizePolicy.Maximum, qt.QSizePolicy.Maximum)
         
     def _tab_changed(self, index):
         
@@ -255,6 +258,8 @@ class DockWindow(qt_ui.BasicWindow):
         dock_widget.setWidget(widget)
         
         self.addDockWidget(qt.QtCore.Qt.TopDockWidgetArea, dock_widget)
+        
+        
         
         if docks:
             self.tabifyDockWidget( docks[-1], dock_widget)

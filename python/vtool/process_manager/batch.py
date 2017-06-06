@@ -7,11 +7,8 @@ import traceback
 
 def main():
     
-    filepath = __file__
-    
-    process_path = os.path.dirname(filepath)
-    vetala_path = os.path.dirname(process_path)
-    source_path = os.path.dirname(vetala_path)
+    source_path = os.environ['VETALA_PATH']
+    source_path = os.path.dirname(source_path)
     
     sys.path.append(source_path)
     
@@ -19,10 +16,21 @@ def main():
     
     #importing from vetala resets all the paths
     import vtool.util
+    import vtool.util_file
     
     os.environ = env
     
     process_path = vtool.util.get_env('VETALA_CURRENT_PROCESS')
+    settings = vtool.util.get_env('VETALA_SETTINGS')
+    
+    if settings:
+        settings_inst = vtool.util_file.SettingsFile()
+        settings_inst.set_directory(settings)
+        
+        codes = settings_inst.get('code_directory')
+        for code in codes:
+            vtool.util.show('Adding code path: %s' % code)
+            sys.path.append(code)
     
     if vtool.util.is_in_maya():
         import maya.standalone

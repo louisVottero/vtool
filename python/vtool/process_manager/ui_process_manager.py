@@ -26,6 +26,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         util.show('VETALA_PATH: %s' % util.get_env('VETALA_PATH'))
         
+        
+        
         self.settings = None
         self.template_settings = None
         
@@ -48,6 +50,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.handle_selection_change = True
         
         super(ProcessManagerWindow, self).__init__(parent = parent, use_scroll = True) 
+        
+        icon = qt_ui.get_icon('vetala.png')
+        self.setWindowIcon(icon)
         
         shortcut = qt.QShortcut(qt.QKeySequence(qt.QtCore.Qt.Key_Escape), self)
         shortcut.activated.connect(self._set_kill_process)
@@ -299,11 +304,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter.addWidget(self.option_tabs)
         self.process_splitter.setSizes([1,0])
         
-        self.tab_widget.addTab(self.settings_widget, 'Settings')       
+        settings_icon = qt_ui.get_icon('gear.png')
+        
+        if util.is_in_maya():
+            self.tab_widget.addTab(self.settings_widget, settings_icon, '')
+        else:
+            self.tab_widget.addTab(self.settings_widget, 'Settings')
+            
         self.tab_widget.addTab(self.process_splitter, 'View')
-        #self.tab_widget.addTab(self.view_widget, 'View')
         self.tab_widget.addTab(self.data_widget, 'Data')
         self.tab_widget.addTab(self.code_widget, 'Code')
+        
         
         self.tab_widget.setTabEnabled(2, False)
         self.tab_widget.setTabEnabled(3, False)
@@ -318,7 +329,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         left_button_layout = qt.QHBoxLayout()
         right_button_layout = qt.QHBoxLayout()
         
-        #process_button_layout = qt.QVBoxLayout()
         self.process_button = qt.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
         self.process_button.setMinimumWidth(80)
@@ -328,8 +338,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.batch_button.setDisabled(True)
         self.batch_button.setMinimumHeight(30)
         self.batch_button.setMinimumWidth(80)
-        #self.process_button.setMinimumWidth(150)
-        #self.process_button.setMinimumHeight(40)
         
         self.stop_button = qt.QPushButton('STOP (Esc key)')
         self.stop_button.setMaximumWidth(110)
@@ -349,7 +357,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.browser_button = qt.QPushButton('Browse')
         self.browser_button.setMaximumWidth(120)
         help_button = qt.QPushButton('?')
-        help_button.setMaximumWidth(100)       
+        help_button.setMaximumWidth(100)
         
         btm_layout = qt.QVBoxLayout()
         
@@ -357,13 +365,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         left_button_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         left_button_layout.addWidget(self.process_button)
-        #process_button_layout.addWidget(self.process_button)
-        #process_button_layout.addWidget(self.batch_button, alignment = QtCore.Qt.AlignCenter)
+        
         left_button_layout.addSpacing(10)
         left_button_layout.addWidget(self.stop_button)
         left_button_layout.addWidget(self.continue_button)
-        #left_button_layout.addSpacing(10)
-        #left_button_layout.addWidget(self.batch_button)
+        
         left_button_layout.addSpacing(10)
         left_button_layout.addWidget(self.run_selected_button)
         
@@ -555,16 +561,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if self.tab_widget.currentIndex() == 0:
             if self.build_widget:
-                self.build_widget.hide()     
+                self.build_widget.hide()
+                
+            self.last_tab = 0
              
         if self.tab_widget.currentIndex() == 1:
-            #if self.build_widget:
-            #    self.build_widget.show()
-                
-            self.set_template_directory()
             
-                
+            self.set_template_directory()
+            self.last_tab = 1
+            
         if self.tab_widget.currentIndex() > 1:
+            
             item = self.view_widget.tree_widget.currentItem()
             
             if not item:
@@ -908,7 +915,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _batch(self):
         
-        dirpath = os.environ['MAYA_LOCATION']
+        dirpath = None
+        
+        if util.is_in_maya():
+            dirpath = os.environ['MAYA_LOCATION']
+        
+        if not dirpath:
+            util.warning('Could not find Maya.')
+            
         import subprocess
         
         filepath = __file__
