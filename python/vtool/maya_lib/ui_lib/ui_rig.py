@@ -458,7 +458,7 @@ class RigManager(qt_ui.DirectoryWidget):
         space.mirror_xform()
         #util.mirror_xform('guideJoint_')
         #util.mirror_xform('process_')
-        #util.mirror_xform(string_search = 'lf_')
+        #space.mirror_xform(string_search = 'lf_')
         
         #not sure when this was implemented... but couldn't find it, needs to be reimplemented.
         #util.mirror_curve(suffix = '_wire')

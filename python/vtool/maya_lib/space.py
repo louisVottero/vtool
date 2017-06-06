@@ -3037,8 +3037,6 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
             
             if cmds.nodeType(other) == 'joint':
                 
-                
-                
                 radius = cmds.getAttr('%s.radius' % transform)
                 
                 if not core.is_referenced(other):
@@ -3053,7 +3051,7 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
                                                              '%s.rotatePivot' % other, a = True)
             
             if cmds.nodeType(other) == 'transform':
-                        
+                
                 pos = [ (xform[0]*-1), xform[1],xform[2] ]
                                 
                 cmds.xform(other, ws = True, t = pos)
@@ -3062,11 +3060,8 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
                                                              '%s.rotatePivot' % other, a = True)
                 
                 if cmds.objExists('%s.localPosition' % transform):
-                    local_position = cmds.getAttr('%s.localPosition' % transform)[0]
                     
-                    cmds.setAttr('%s.localPositionX' % transform, (local_position[0] * -1))
-                    cmds.setAttr('%s.localPositionY' % transform, local_position[1])
-                    cmds.setAttr('%s.localPositionZ' % transform, local_position[2])
+                    fix_locator_shape_position(transform)
                     
             translateX_lock.restore_initial()
             translateY_lock.restore_initial()
@@ -3553,3 +3548,11 @@ def randomize(translate = [.1,.1,.1], rotate = [1,1,1], scale = [.1,.1,.1], tran
         cmds.scale(random.uniform(scale_x_invert, (1+scale[0])),
                     random.uniform(scale_y_invert, (1+scale[1])),
                     random.uniform(scale_z_invert, (1+scale[2])))
+
+def fix_locator_shape_position(locator_name):
+    
+    pivot_pos = cmds.xform(locator_name, q =True, os = True, rp = True)
+    
+    cmds.setAttr('%s.localPositionX' % locator_name, pivot_pos[0])
+    cmds.setAttr('%s.localPositionY' % locator_name, pivot_pos[1])
+    cmds.setAttr('%s.localPositionZ' % locator_name, pivot_pos[2])
