@@ -811,8 +811,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             check_name = self._get_item_path_name(item, keep_extension=True)
             
-            print check_name, name
-            
             if check_name == name:
                 return item
         
@@ -1533,8 +1531,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         script_name = directory
         
         item = self._get_item_by_name(script_name)
-        
-        print 'item found ', item
         
         if not item:
             return
