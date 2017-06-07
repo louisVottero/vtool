@@ -1288,7 +1288,7 @@ class FkRig(BufferRig):
     def set_match_to_rotation(self, bool_value):
         """
         Wether to match control to closest joint orientation or not. If not just match to translate. Control stays oriented to world.
-        Default is True.
+        Default is True.   This is only used in Fk rigs not FkCurve rigs.
         """
         self.match_to_rotation = bool_value
     
@@ -2473,6 +2473,12 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         """
         self.orient_joint = joint
     
+    def set_match_to_rotation(self):
+        """
+        Not used in FkCurve Rigs. Use set_orient_controls_to_joints instead.
+        """
+        pass
+    
     def set_orient_controls_to_joints(self, bool_value):
         """
         Wether to match the control's orientation to the nearest joint.
@@ -2602,6 +2608,8 @@ class FkCurveRig(SimpleFkCurveRig):
         Wether the first and last clusters should aim at the mid controls 
         """
         self.aim_end_vectors = bool_value
+        
+
         
     def create(self):
         super(FkCurveRig, self).create()
