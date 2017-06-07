@@ -651,7 +651,10 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         current_text = self.combo_asset_type.currentText()
         if self.assets.has_key(current_text):
         
-            for asset in self.assets[current_text]:
+            assets = self.assets[current_text]
+            assets.sort()
+        
+            for asset in assets:
                 self.combo_asset.addItem(asset)
         
         steps = self.data_class.get_asset_steps()
@@ -808,8 +811,11 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         
         current_text = self.combo_asset_type.currentText()
         if self.assets.has_key(current_text):
-        
-            for asset in self.assets[current_text]:
+            assets = self.assets[current_text]
+            
+            assets.sort()
+            
+            for asset in assets:
                 self.combo_asset.addItem(asset)
                 
         self._write_out_state()
@@ -820,7 +826,10 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         current_text = self.combo_asset_type.currentText()
         if self.assets.has_key(current_text):
         
-            for asset in self.assets[current_text]:
+            assets = self.assets[current_text]
+            assets.sort()
+        
+            for asset in assets:
                 self.combo_asset.addItem(asset)
                 
         self._write_out_state()

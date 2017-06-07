@@ -2494,8 +2494,11 @@ class MayaShotgunFileData(MayaFileData):
         
         filepath = None
         
-        if dirpath:
+        if dirpath and util_file.is_dir(dirpath):
             filepath = util_file.get_latest_file_at_path(dirpath)
+        
+        if not filepath:
+            util.warning('Shotgun had trouble finding the file. Check script editor for more info.')
         
         self.filepath = filepath
     
@@ -2614,6 +2617,8 @@ class MayaShotgunFileData(MayaFileData):
                 found.append(project['name'])
         if not projects:
             found = ['No projects found']
+            
+        found.sort()
         return found
     
     def get_assets(self, project):
@@ -2631,7 +2636,7 @@ class MayaShotgunFileData(MayaFileData):
         
         if not assets:
             found['No asset_type'] = ['No assets found']
-            
+        
         return found
     
     def get_asset_steps(self):
@@ -2645,7 +2650,6 @@ class MayaShotgunFileData(MayaFileData):
                 found.append([step['code'], step['short_name']])
         if not steps:
             found = [['No steps found']]
-            
             
         return found
     

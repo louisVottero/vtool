@@ -1311,9 +1311,9 @@ def get_latest_file_at_path(path):
     
     files = get_files_date_sorted(path)
     
-    filepath = join_path(path, files[-1])
-    
-    return filepath
+    if files:
+        filepath = join_path(path, files[-1])
+        return filepath
 
 def get_latest_file(file_paths, only_return_one_match = True):
     

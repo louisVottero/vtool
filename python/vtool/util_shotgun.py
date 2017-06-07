@@ -50,7 +50,7 @@ def get_sg():
                 sg = sgtk.Sgtk.shotgun.fget(1)
                 
             except:
-                util.error('Could not get shotgun api.  Check that your shotgun api script and key code are correct. Also shotgun toolkit might not be installed correctly.')
+                util.error('Could not get shotgun api.  Check that your shotgun api script and key code are correct. \nShotgun toolkit might not be installed correctly. \nShotgun may have been initialized to a different project.')
                 
         
         if sg != None:
@@ -81,7 +81,10 @@ def get_project_tank(project_name):
         try:
             tank = local_sgtk.sgtk_from_entity('Project', entity['id'])
         except:
-            util.warning('Could not get path for project "%s" using sgtk.sgtk_from_entity. Check that folders have been created for this project.' % project_name)
+            if not util.is_in_maya():
+                util.warning('Could not get path for project "%s" using sgtk.sgtk_from_entity. \n Shotgun may have been initialized to a different project.' % project_name)
+            if util.is_in_maya():
+                util.warning('Could not get path for project %s. Maya was probably loaded with a different project through Shotgun Desktop.' % project_name)
         
         return tank
 
