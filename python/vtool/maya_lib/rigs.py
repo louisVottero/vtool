@@ -477,6 +477,7 @@ class BufferRig(JointRig):
                 duplicate_hierarchy = space.DuplicateHierarchy( self.joints[0] )
                 
                 duplicate_hierarchy.stop_at(self.joints[-1])
+                duplicate_hierarchy.only_these(self.joints)
                 duplicate_hierarchy.replace('joint', 'buffer')
                 
                 self.buffer_joints = duplicate_hierarchy.create()
@@ -7599,6 +7600,8 @@ class StickyRig(JointRig):
         self.tweaker_space = 1
         
         self.use_joint = True
+        
+        self._right_side_fix = True
             
         #self.sticky_control_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'sticky_controls')))
         #cmds.parent(self.sticky_control_group, self.control_group)
@@ -7691,6 +7694,8 @@ class StickyRig(JointRig):
         space.MatchSpace(top_joint, self.top_locator[1]).translation()
         space.MatchSpace(btm_joint, self.btm_locator[1]).translation()
         
+        
+        
         midpoint = space.get_midpoint(top_joint, btm_joint)
         
         cmds.xform(self.mid_top_locator[1], t = midpoint, ws = True)
@@ -7722,9 +7727,6 @@ class StickyRig(JointRig):
         cmds.setAttr('%s.stick' % self.mid_top_locator[0], 0.5)
         cmds.setAttr('%s.stick' % self.mid_btm_locator[0], 0.5)
         
-        
-        
-        
     def _create_follow(self, source_list, target, target_control ):
         
         constraint = cmds.parentConstraint(source_list, target, mo = True)[0]
@@ -7735,8 +7737,17 @@ class StickyRig(JointRig):
     def _create_sticky_xform(self, control):
         
         xform = space.create_xform_group(control)
+        
+        
+        cmds.makeIdentity(control, apply = True, r = True)
+        
+        
         xform_driver = space.create_xform_group(control, 'xform_driver')
+        
+        
         driver = space.create_xform_group(control, 'driver')
+        
+        
         
         space.create_xform_group(control, 'xform_space')
         scale = space.create_xform_group(control, 'scale')
@@ -7751,7 +7762,8 @@ class StickyRig(JointRig):
         cmds.xform(driver, ws = True, ro = [0,0,0])
         pin.unpin()
         
-        if self.side == 'R':
+        
+        if self.side == 'R' and self._right_side_fix:
             cmds.setAttr('%s.rotateY' % scale, 180)
             cmds.setAttr('%s.scaleZ' % scale, -1)
             
@@ -7775,6 +7787,9 @@ class StickyRig(JointRig):
         
         xform, driver, scale = self._create_sticky_xform(control)
         cmds.parent(xform, self.sticky_control_group)
+        
+        if not self._right_side_fix:
+            space.MatchSpace(transform, scale).scale()
         
         if not self.local:
             cmds.parentConstraint(control, transform)
@@ -7890,6 +7905,9 @@ class StickyRig(JointRig):
     
     def set_use_joint_controls(self, bool_value):
         self.use_joint = bool_value
+    
+    def set_right_side_fix(self, bool_value):
+        self._right_side_fix = bool_value
     
     def create(self):
         super(StickyRig, self).create()

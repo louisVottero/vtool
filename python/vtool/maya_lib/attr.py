@@ -712,7 +712,7 @@ class OrientJointAttributes(object):
         self.attributes[6].set_value(2)
         self.attributes[7].set_value(3)
         self.attributes[8].set_value(1)
-        self.attributes[9].set_value(1)
+        #self.attributes[9].set_value(1)
     
     def set_joint(self, joint):
         """

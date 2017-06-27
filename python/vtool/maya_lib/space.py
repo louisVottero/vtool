@@ -3086,6 +3086,7 @@ def mirror_invert(transform, other = None):
     if not node_type == 'joint':
         dup = cmds.duplicate(transform, po = True)[0]
     if node_type == 'joint':
+        cmds.makeIdentity(transform, apply = True, jo = True)
         dup = cmds.group(em = True)
     
     match = MatchSpace(transform, dup)
