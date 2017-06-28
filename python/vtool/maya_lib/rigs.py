@@ -8588,10 +8588,14 @@ class JawRig(FkLocalRig):
         self.jaw_slide_attribute = True
         self.jaw_slide_rotate_axis = 'X'
         self.jaw_slide_translate_axis = 'Z'
+        self.follow_world = False
     
     def _attach(self, source_transform, target_transform):
         
-        local_group, local_xform = super(JawRig, self)._attach(source_transform, target_transform)
+        if not self.follow_world:
+            local_group, local_xform = super(JawRig, self)._attach(source_transform, target_transform)
+        if self.follow_world:
+            cmds.parentConstraint(source_transform, target_transform)
         
         control = self.controls[-1]
                 
@@ -8606,14 +8610,17 @@ class JawRig(FkLocalRig):
         var.create(control)
         
         driver = space.create_xform_group(control, 'driver')
-        driver_local = space.create_xform_group(local_group, 'driver')
-        
+        if not self.follow_world:
+            driver_local = space.create_xform_group(local_group, 'driver')
+            attr.connect_translate(driver, driver_local)
+            
         multi = attr.connect_multiply('%s.rotate%s' % (control, self.jaw_slide_rotate_axis), '%s.translate%s' % (driver, self.jaw_slide_translate_axis))
-        attr.connect_translate(driver, driver_local)
+        
         #cmds.connectAttr('%s.outputX' % multi, '%s.translate%s' % (driver_local, self.jaw_slide_translate_axis))
         var.connect_out('%s.input2X' % multi)
         
-        return local_group, local_xform  
+        if not self.follow_world:
+            return local_group, local_xform  
     
     def set_jaw_slide_offset(self, value):
         self.jaw_slide_offset = value
@@ -8629,6 +8636,11 @@ class JawRig(FkLocalRig):
         
         self.jaw_slide_translate_axis = axis_letter.capitalize()
         
+    def set_follow_world(self, bool_value):
+        """
+        If you need the rig to not stay at the origin but move with the rig.
+        """
+        self.follow_world = bool_value
         
 class FeatherStripRig(CurveRig):
     """
