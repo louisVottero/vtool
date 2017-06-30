@@ -1020,7 +1020,9 @@ class TransferWeight(object):
                     continue 
                 
                 value = source_value_map[influence_index][vert_index]
-                value *= destination_value
+                #value *= destination_value
+                if value > destination_value:
+                    value = destination_value
                 value *= percent
                 
                 if value > 1:
