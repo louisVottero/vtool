@@ -1054,6 +1054,10 @@ def start_new_scene():
 
     cmds.file(new = True, f = True)
 
+def open_file(filepath):
+    
+    cmds.file(filepath, f = True, o = True)
+
 def import_file(filepath):
     """
     Import a maya file in a generic vtool way.
