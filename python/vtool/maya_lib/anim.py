@@ -15,7 +15,7 @@ def bake_to_animation(nodes, min_time = None, max_time = None):
         min_time, max_time = get_min_max_time()
     
     
-    cmds.bakeResults( simulation = True,
+    cmds.bakeResults( nodes, simulation = True,
                       t = (min_time, max_time),
                       sampleBy = 1,
                       oversamplingRate = 1,
