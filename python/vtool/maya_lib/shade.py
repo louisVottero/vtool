@@ -78,6 +78,11 @@ def get_shading_engines_by_geo(geo):
     
     return found
     
+def get_materials():
+    materials = cmds.ls(mat = True)
+    
+    return materials
+    
 def has_shading_engine(geo):
     
     engines = get_shading_engines_by_geo(geo)
@@ -281,3 +286,4 @@ def add_2d_placement(texture_node, name = ''):
     cmds.connectAttr('%s.wrapV' % node, '%s.wrapV' % texture_node)
     
     return node
+
