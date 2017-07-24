@@ -21,6 +21,7 @@ import traceback
 from functools import wraps
 
 import vtool.util
+import vtool.util_file
 
 import api
 
@@ -455,7 +456,7 @@ def is_empty(node):
     if attrs:
         return False
     
-    default_nodes = ['defaultLightSet', 'defaultObjectSet', 'initialShadingGroup']
+    default_nodes = ['defaultLightSet', 'defaultObjectSet', 'initialShadingGroup', 'uiConfigurationScriptNode', 'sceneConfigurationScriptNode']
     if node in default_nodes:
         return False
     
@@ -1064,46 +1065,6 @@ def import_file(filepath):
     """
     cmds.file(filepath, f = True, i = True, iv = True)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
 
-def reference_file(filepath, namespace = None):
-    """
-    Reference a maya file in a generic vtool way.
-    
-    Args:
-        filepath (str): The full path and filename.
-        namespace (str): The namespace to add to the nodes in maya.  Default is the name of the file. 
-    """
-    if not namespace:
-        namespace = os.path.basename(filepath)
-        split_name = namespace.split('.')
-        
-        if split_name:
-            namespace = string.join(split_name[:-1], '_')
-        
-    cmds.file( filepath,
-           reference = True, 
-           gl = True, 
-           mergeNamespacesOnClash = False, 
-           namespace = namespace, 
-           options = "v=0;")
-    
-def replace_reference(reference_node, new_path):
-    """
-    Not tested
-    """
-    rn_node = cmds.referenceQuery(reference_node, rfn = True)
-    
-    cmds.file(new_path,loadReference = rn_node)
-    
-    #file -loadReference "TyrannosaurusRexRN" -type "mayaAscii" -options "v=0;" "N:/projects/dinodana/assets/Character/TyrannosaurusRex/SURF/publish/maya/TyrannosaurusRex.v024.ma";
-    
-def reload_reference(reference_node):
-    
-    rn_node = cmds.referenceQuery(reference_node, rfn = True)
-    
-    filepath = cmds.referenceQuery(rn_node, filename = True)
-    
-    cmds.file(filepath, loadReference = rn_node) 
-    
 def save(filepath):
     
     saved = False
@@ -1148,10 +1109,107 @@ def save(filepath):
         return False
     
     return saved
+
+#--- reference
+
+def reference_file(filepath, namespace = None):
+    """
+    Reference a maya file in a generic vtool way.
     
+    Args:
+        filepath (str): The full path and filename.
+        namespace (str): The namespace to add to the nodes in maya.  Default is the name of the file. 
+    """
+    if not namespace:
+        namespace = os.path.basename(filepath)
+        split_name = namespace.split('.')
+        
+        if split_name:
+            namespace = string.join(split_name[:-1], '_')
+        
+    cmds.file( filepath,
+           reference = True, 
+           gl = True, 
+           mergeNamespacesOnClash = False, 
+           namespace = namespace, 
+           options = "v=0;")
+    
+def replace_reference(reference_node, new_path):
+    """
+    Not tested
+    """
+    rn_node = cmds.referenceQuery(reference_node, rfn = True)
+    
+    cmds.file(new_path,loadReference = rn_node)
+    
+    #file -loadReference "TyrannosaurusRexRN" -type "mayaAscii" -options "v=0;" "N:/projects/dinodana/assets/Character/TyrannosaurusRex/SURF/publish/maya/TyrannosaurusRex.v024.ma";
+    
+def reload_reference(reference_node):
+    
+    rn_node = cmds.referenceQuery(reference_node, rfn = True)
+    
+    filepath = cmds.referenceQuery(rn_node, filename = True)
+    
+    cmds.file(filepath, loadReference = rn_node) 
+    
+def get_reference_filepath(reference_node):
+    
+    if not reference_node:
+        return
+    
+    filepath = cmds.referenceQuery(reference_node, filename = True)
+    
+    if filepath[-3] == '{' and filepath[-1] == '}':
+        filepath = filepath[:-3]
+    
+    filepath = vtool.util_file.fix_slashes(filepath)
+    
+    return filepath
+    
+def remove_reference(reference_node):
+    
+    namespace = None
+    
+    if not cmds.objExists(reference_node):
+        return
+    
+    #try getting the namespace
+    try:
+        namespace = cmds.referenceQuery(reference_node, ns = True)
+    except:
+        #if you can't get the namespace then something is wrong with the reference node, try deleting.
+        cmds.lockNode(reference_node, l = False)
+        try:
+            cmds.delete(reference_node)
+            return
+        except:
+            vtool.util.warning('Could not remove %s' % reference_node)
+        return
+    
+    #try removing the good way after finding namespace
+    try:
+        cmds.file( removeReference = True, referenceNode = reference_node)
+    except:
+        #if it can't be removed the good way with a namespace then something is wrong, try deleting.
+        cmds.lockNode(reference_node, l = False)
+        try:
+            cmds.delete(reference_node)
+            return
+        except:
+            vtool.util.warning('Could not remove %s' % reference_node)
+        return
+    
+    #try to remove the namespace incase it gets left behind.
+    try:
+        if namespace:
+            cmds.namespace(dnc = True, rm = namespace)
+    except:
+        pass
+
+    
+    return
+
 #--- ui
-
-
 
 def get_under_cursor(use_qt = True):
     """
@@ -1319,7 +1377,8 @@ def get_current_audio_node():
     
     return cmds.timeControl(play_slider, q = True, s = True)
 
-#--- garbage cleanup
+
+#--- garbage
 
 def remove_unused_plugins():
     
@@ -1506,4 +1565,31 @@ def get_empty_orig_nodes():
         if not connections:
             found.append(orig)
 
+    return found
+
+def get_empty_reference_nodes():
+    
+    references = cmds.ls(type = 'reference')
+    
+    found = []
+    
+    for reference in references:
+        try:
+            cmds.referenceQuery(reference, filename = True)
+        except:
+            found.append(found)
+            
+    return found()
+
+def get_non_unique_names():
+    dag_nodes = cmds.ls(type = 'dagNode')
+        
+    found = []
+        
+    for dag_node in dag_nodes:
+        
+        if dag_node.find('|') > -1:
+            
+            found.append(dag_node)
+            
     return found
