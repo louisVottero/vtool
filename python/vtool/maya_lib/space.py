@@ -907,6 +907,17 @@ class OrientJoint(object):
         children_joints = cmds.listRelatives(self.joint, f = True, type = 'joint')
         children_transforms = cmds.listRelatives(self.joint, f = True, type = 'transform')
         
+        found_transforms = []
+        
+        if children_transforms:
+            for transform in children_transforms:
+                
+                if not cmds.nodeType(transform) == 'joint':
+                    found_transforms.append(transform)
+                
+        children_transforms = found_transforms
+            
+        
         if children_joints:
             children += children_joints 
         if children_transforms:
@@ -950,7 +961,9 @@ class OrientJoint(object):
             return world_aim
             
         if index == 3:
+            
             child_aim = self._get_position_group(self.child)
+            
             return child_aim
             
         if index == 4:
@@ -1642,10 +1655,15 @@ def is_transform_default(transform):
     for attribute in attributes:
         
         for axis in ['X','Y','Z']:
+            if cmds.getAttr('%s.%s%s' % (transform, attribute, axis), l = True):
+                continue
             if cmds.getAttr('%s.%s%s' % (transform, attribute, axis)) != 0:
                 return False
             
     for axis in ['X','Y','Z']:
+        if cmds.getAttr('%s.scale%s' % (transform, axis), l = True):
+            continue
+        
         if cmds.getAttr('%s.scale%s' % (transform, axis)) != 1:
             return False
     
@@ -1664,6 +1682,11 @@ def get_non_default_transforms():
     found = []
     
     for transform in transforms:
+        
+        
+        
+        if cmds.nodeType(transform) == 'joint':
+            continue
         if core.has_shape_of_type(transform, 'camera'):
             continue
         
@@ -3372,7 +3395,7 @@ def transforms_to_joint_chain(transforms, name = ''):
     joints = []
     
     for transform in transforms:
-    
+        
         if not name:
             name = transform     
             
@@ -3382,6 +3405,33 @@ def transforms_to_joint_chain(transforms, name = ''):
         
         joints.append(joint)
         
+    return joints
+
+def positions_to_joint_chain(positions, name = ''):
+    """
+    Args:
+        positions (list): List of vectors. [[0,0,0],[0,0,0],...]
+        name (str): Description to give the joints
+    """
+    
+    cmds.select(cl = True)
+    joints = []
+
+    inc = 1
+
+    for position in positions:
+        
+        if not name:
+            name = 'joint_pos_%s' % inc
+        
+        joint = cmds.joint(n = core.inc_name(name), p = position)
+        
+        joints.append(joint)
+            
+        inc += 1
+        
+    cmds.joint(joints[0],  e = True, zso = True, oj = 'xyz', sao = 'yup')
+    
     return joints
 
 def attach_to_closest_transform(source_transform, target_transforms):
