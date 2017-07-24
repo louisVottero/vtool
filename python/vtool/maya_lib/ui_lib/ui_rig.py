@@ -40,6 +40,8 @@ def shape_combo():
 def checker():
     
     window = ui_check.CheckView()
+    window.setWindowTitle('Checks')
+    window.add_check(ui_check.Check_References())
     window.add_check(ui_check.Check_Empty_Groups())
     window.add_check(ui_check.Check_Empty_Intermediate_Objects())
     window.add_check(ui_check.Check_Empty_Nodes())
@@ -47,6 +49,8 @@ def checker():
     window.add_check(ui_check.Check_Non_Unique())
     window.add_check(ui_check.Check_Triangles())
     window.add_check(ui_check.Check_NSided())
+    
+    
     
     
     return window
