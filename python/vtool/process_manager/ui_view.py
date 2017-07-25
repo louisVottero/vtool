@@ -184,6 +184,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     process_deleted = qt_ui.create_signal()
     item_renamed = qt_ui.create_signal(object)
     show_options = qt_ui.create_signal()
+    show_notes = qt_ui.create_signal()
     show_templates = qt_ui.create_signal()
     selection_changed = qt_ui.create_signal()
     
@@ -456,6 +457,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.remove_action = self.context_menu.addAction('Delete')
         self.context_menu.addSeparator()
         self.show_options_action = self.context_menu.addAction('Show Options')
+        self.show_notes_action = self.context_menu.addAction('Show Notes')
         self.show_templates_action = self.context_menu.addAction('Show Templates')
         self.context_menu.addSeparator()
         browse_action = self.context_menu.addAction('Browse')
@@ -475,10 +477,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.copy_special_action.triggered.connect(self._copy_special_process)
         self.remove_action.triggered.connect(self._remove_current_item)
         self.show_options_action.triggered.connect(self._show_options)
+        self.show_notes_action.triggered.connect(self._show_notes)
         self.show_templates_action.triggered.connect(self._show_templates)
         
     def _show_options(self):
         self.show_options.emit()
+        
+    def _show_notes(self):
+        self.show_notes.emit()
         
     def _show_templates(self):
         self.show_templates.emit()
@@ -1038,7 +1044,7 @@ class ProcessItem(qt.QTreeWidgetItem):
         
         self.detail = False
         
-        self.setSizeHint(0, qt.QtCore.QSize(50,26))
+        self.setSizeHint(0, qt.QtCore.QSize(50,20))
         
         self._folder = False
         
@@ -1859,9 +1865,7 @@ class ProcessTreeItem(object):
         self.parentItem = parent
         self.itemData = data
         self.childItems = []
-        
-        
-
+    
     def child(self, row):
         return self.childItems[row]
 
