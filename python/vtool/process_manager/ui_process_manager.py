@@ -331,8 +331,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process_button = qt.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
-        self.process_button.setMinimumWidth(80)
-        self.process_button.setMinimumHeight(30)
+        self.process_button.setMinimumWidth(100)
+        self.process_button.setMinimumHeight(50)
         
         self.batch_button = qt.QPushButton('BATCH')
         self.batch_button.setDisabled(True)
