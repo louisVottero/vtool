@@ -2576,13 +2576,16 @@ class MayaShotgunFileData(MayaFileData):
         
         sub_name = string.join(split_name[:-2])
         
-        version = int(version)
-        version += 1
+        if version == None:
+            version = 1
+        else:
+            version = int(version)
+            version += 1
+            
         version = str(version)
-        
         version = version.zfill(3)
         
-        filename = '%s.%s.%s' % (sub_name, version, split_name[-1])
+        filename = '%s.v%s.%s' % (sub_name, version, split_name[-1])
         
         filepath = util_file.join_path(dirname, filename)
         

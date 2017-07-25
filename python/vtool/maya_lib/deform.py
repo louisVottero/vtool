@@ -2001,7 +2001,7 @@ class MayaWrap(object):
         
         self.wrap = cmds.deformer(self.mesh, type = 'wrap', n = 'wrap_%s' % basename)[0]
         cmds.setAttr('%s.exclusiveBind' % self.wrap, 1)
-        cmds.setAttr('%s.maxDistance' % self.wrap, 1)
+        cmds.setAttr('%s.maxDistance' % self.wrap, 0)
         return self.wrap                 
     
     def _add_driver_meshes(self):
@@ -4876,7 +4876,7 @@ def match_geo_blendshape(source_geo, target_geo, attr_name):
                 continue
         
         if geo.is_a_mesh(source_geo[inc]) and geo.is_a_mesh(target_geo[inc]):
-            if not geo.is_mesh_compatible(source_geo[inc], target_geo[inc]):
+            if not geo.is_mesh_blend_compatible(source_geo[inc], target_geo[inc]):
                 vtool.util.warning('Skipping blendshape mesh because incompatible:  %s   %s' % (source_geo[inc], target_geo[inc]))
                 continue
         

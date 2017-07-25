@@ -74,8 +74,17 @@ class MeshTopologyCheck(object):
         if self.mesh1_face_count == self.mesh2_face_count:
             return True
         
-        return False
+        return False    
+    
+    def check_vert_face_count(self):
+    
+        if not self.check_face_count():
+            return False
+    
+        if not self.check_vert_count():
+            return False
         
+        return True
     
     def check_vert_edge_face_count(self):
         
@@ -262,6 +271,8 @@ class Rivet(object):
         
         return self.rivet
 
+#--- is
+
 def is_a_mesh(node):
     """
     Test whether the node is a mesh or has a shape that is a mesh.
@@ -313,6 +324,13 @@ def is_mesh_compatible(mesh1, mesh2):
     """
     check = MeshTopologyCheck(mesh1, mesh2)
     return check.check_vert_edge_face_count()
+
+def is_mesh_blend_compatible(mesh1, mesh2):
+    """
+    Check the two meshes to see if they have the same vert, edge and face count.
+    """
+    check = MeshTopologyCheck(mesh1, mesh2)
+    return check.check_vert_face_count()
 
 def is_mesh_position_same(mesh1, mesh2, tolerance = .00001):
     """
@@ -471,6 +489,9 @@ def get_edges_in_list(list_of_things):
 def get_meshes_in_list(list_of_things):
     
     found = []
+    
+    if not list_of_things:
+        return
     
     for thing in list_of_things:
         if cmds.nodeType(thing) == 'mesh':

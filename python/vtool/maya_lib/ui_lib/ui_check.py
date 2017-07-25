@@ -13,8 +13,9 @@ import maya.cmds as cmds
 
 class CheckView(ui_core.MayaWindow):
     
-    title = 'Check'
-    
+    title_name = 'Check'
+        
+        
     
     def _define_main_layout(self):
         return qt.QHBoxLayout()
@@ -25,21 +26,29 @@ class CheckView(ui_core.MayaWindow):
         
         self.setWindowFlags(self.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint)
         
-        buttons = qt.QVBoxLayout()
+        scroll = qt.QScrollArea()
+        
+        scroll.setWidgetResizable(True)
+        scroll_widget = qt_ui.BasicWidget()
+        scroll_widget.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding))
+        
         view = qt.QVBoxLayout()
         
-        self.main_layout.addLayout(buttons)
-        self.main_layout.addLayout(view)
+        
         
         self.check_buttons = qt.QVBoxLayout()
         self.check_buttons.setAlignment(qt.QtCore.Qt.AlignBottom)
         
-        self.title_label = qt.QLabel(self.title, alignment = qt.QtCore.Qt.AlignTop) 
+        self.title_label = qt.QLabel(self.title_name, alignment = qt.QtCore.Qt.AlignTop) 
         self.title_label.setMinimumWidth(235)
         
+        scroll_widget.main_layout.addWidget(self.title_label)
+        scroll_widget.main_layout.addLayout(self.check_buttons)
         
-        buttons.addWidget(self.title_label)
-        buttons.addLayout(self.check_buttons)
+        scroll.setWidget(scroll_widget)
+        
+        self.main_layout.addWidget(scroll)
+        self.main_layout.addLayout(view)
         
         self.list_label = qt.QLabel()
         self.list_label.hide()
@@ -226,6 +235,7 @@ class CheckMayaAsset(CheckView):
         self._add_check(Check_Empty_Groups())
         self._add_check(Check_Empty_Nodes())
         self._add_check(Check_Empty_Intermediate_Objects())
+        self._add_check(Check_References())
         
 
 class Check_Non_Default_Transforms(Check):
@@ -276,6 +286,8 @@ class Check_Empty_Nodes(Check):
         
         nodes = core.get_empty_nodes()
         
+        
+        
         return nodes
     
     def _fix(self):
@@ -308,6 +320,28 @@ class Check_Empty_Intermediate_Objects(Check):
         
         for item in self.fix_list:
             cmds.delete(item)
+            
+class Check_References(Check):
+    
+    check_name = 'References'
+    
+    def _has_fix(self):
+        return True
+    
+    def _check(self):
+        nodes = cmds.ls(type = 'reference')
+        
+        return nodes
+    
+    def _fix(self):
+        fix_it = qt_ui.get_permission('Remove references?', self)
+        if not fix_it:
+            return
+        
+        for item in self.fix_list:
+            
+            core.remove_reference(item)
+            
             
 class Check_Non_Unique(Check):
     

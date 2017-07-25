@@ -1568,8 +1568,38 @@ def create_joint_buffer(joint, connect_inverse = True):
     
     return fix_joint
     
+def create_distance_reader(xform1, xform2, on_distance = 1, off_distance = -1):
+    """
+    Create a distance reader between 2 transforms.  
+    The command will create an attribute from 0 to one. 
+    0 when the distance is greater than off_distance. 
+    1 when the distance is less than on_distance.
+    -1 off distance uses the current distance between xform1 and xform2 as the off_distance.
     
-                    
+    
+    Returns:
+        str: distance node name
+    """
+    
+    distance = cmds.createNode('distanceBetween', n = core.inc_name('distanceBetween_%s' % xform1))
+    
+    cmds.connectAttr('%s.worldMatrix' % xform1, '%s.inMatrix1' % distance)
+    cmds.connectAttr('%s.worldMatrix' % xform2, '%s.inMatrix2' % distance)
+    
+    distance_value = cmds.getAttr('%s.distance' % distance)
+    
+    cmds.addAttr(distance, ln = 'currentDistance', k = True)
+    cmds.addAttr(distance, ln = 'activate', min = 0, max = 1, dv = 0, k = True)
+    
+    if off_distance < 0:
+        off_distance = distance_value
+    
+    cmds.connectAttr('%s.distance' % distance, '%s.currentDistance' % distance)
+    
+    anim.quick_driven_key('%s.distance' % distance, '%s.activate' % distance, [off_distance, on_distance], [0,1], infinite = True, tangent_type = 'linear')
+        
+    return distance
+
 def create_distance_scale(xform1, xform2, axis = 'X', offset = 1):
     """
     Create a stretch effect on a transform by changing the scale when the distance changes between xform1 and xform2.
