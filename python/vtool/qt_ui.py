@@ -2740,9 +2740,6 @@ class CodeTabWindow(BasicWindow):
         
         self.code_edit = None
         
-        self.setMinimumWidth(400)
-        self.setMinimumHeight(400)
-    
     def closeEvent(self, event):
         
         permission = False
