@@ -217,24 +217,84 @@ class RigManager(qt_ui.DirectoryWidget):
         subdivide_joint_button.setToolTip('select parent and child joint')
         
         add_orient = qt.QPushButton('Add Orient')
-        #add_orient.setMaximumWidth(140)
-        add_orient.setToolTip('select joints')
+        add_orient.clicked.connect(self._add_orient)
         
-        add_joint_orient = qt.QPushButton('Convert to Orient Joint')
+        remove_orient = qt.QPushButton('Remove Orient')
+        remove_orient.clicked.connect(self._remove_orient)
+        
+        add_joint_orient = qt.QPushButton('Add Joint Aim and Up')
+        add_joint_orient.clicked.connect(self._add_joint_orient)
         #add_joint_orient.setMaximumWidth(140)
         
+        skip_orient = qt.QPushButton('Set Skip Orient')
+        unskip_orient = qt.QPushButton('Set Unskip Orient')
+        skip_orient.clicked.connect(self._skip_orient)
+        unskip_orient.clicked.connect(self._unskip_orient)
+        
+        orient_button_layout = qt.QVBoxLayout()
         
         orient_joints = qt.QPushButton('Orient Joints')
         orient_joints.setMinimumHeight(40)
+        orient_joints.clicked.connect(self._orient)
+        
+        self.joint_axis_check = qt.QCheckBox('Joint Axis Visibility')
+        
+        orient_button_layout.addWidget(orient_joints)
+        orient_button_layout.addWidget(self.joint_axis_check)
+        
+        orient_layout = qt.QHBoxLayout()
+        
+        sub_orient_layout = qt.QVBoxLayout()
+        orient_layout.addLayout(orient_button_layout)
+        orient_layout.addSpacing(10)
+        orient_layout.addLayout(sub_orient_layout)
+        
+        sub_orient_layout.addWidget(add_orient)
+        sub_orient_layout.addWidget(remove_orient)
+        sub_orient_layout.addSpacing(3)
+        sub_orient_layout.addWidget(add_joint_orient)
+        sub_orient_layout.addSpacing(3)
+        sub_orient_layout.addWidget(skip_orient)
+        sub_orient_layout.addWidget(unskip_orient)
+        
+        mirror_translate_layout = qt.QHBoxLayout()
         
         mirror = qt.QPushButton('Mirror Transforms')
         mirror.setMinimumHeight(40)
         
-        mirror_curves = qt.QPushButton('Mirror Curves')
-        mirror_curves.setMinimumHeight(40)
+        on_off_mirror_layout = qt.QVBoxLayout()
         
-        #match_joints = qt.QPushButton('Match')
-        #match_joints.setMinimumHeight(40)
+        mirror_off = qt.QPushButton('Set Skip Mirror')
+        mirror_off.clicked.connect(self._mirror_off)
+        mirror_on = qt.QPushButton('Set Unskip Mirror')
+        mirror_on.clicked.connect(self._mirror_on)
+        
+        mirror_create = qt.QPushButton('Mirror Create')
+        mirror_create.clicked.connect(self._mirror_create)
+        
+        
+        mirror_right_left = qt.QPushButton('Mirror R to L')
+        mirror_right_left.clicked.connect(self._mirror_r_l)
+        
+        mirror_curves = qt.QPushButton('Mirror Curves')
+        
+        mirror_invert = qt.QPushButton('Mirror Invert')
+        mirror_invert.clicked.connect(self._mirror_invert)
+        
+        mirror_translate_layout.addWidget(mirror)
+        mirror_translate_layout.addSpacing(10)
+        mirror_translate_layout.addLayout(on_off_mirror_layout)
+        
+        on_off_mirror_layout.addWidget(mirror_create)
+        on_off_mirror_layout.addWidget(mirror_right_left)
+        on_off_mirror_layout.addWidget(mirror_curves)
+        on_off_mirror_layout.addWidget(mirror_invert)
+        on_off_mirror_layout.addSpacing(3)
+        on_off_mirror_layout.addWidget(mirror_off)
+        on_off_mirror_layout.addWidget(mirror_on)
+        
+        
+        
         
         joints_on_curve = qt_ui.GetIntNumberButton('Create Joints On Curve')
         joints_on_curve.set_value(10)
@@ -244,22 +304,12 @@ class RigManager(qt_ui.DirectoryWidget):
         transfer_joints = qt.QPushButton('Transfer Joints  ( Mesh to Mesh with same topology )')
         transfer_process = qt.QPushButton('transfer process weights to parent')
         
-        self.joint_axis_check = qt.QCheckBox('Joint Axis Visibility')
         
-        mirror_invert = qt.QPushButton('Mirror Invert')
-        mirror_invert.clicked.connect(self._mirror_invert)
         
-        remove_orient = qt.QPushButton('Remove Orient')
-        remove_orient.clicked.connect(self._remove_orient)
-        
-        add_orient.clicked.connect(self._add_orient)
-        orient_joints.clicked.connect(self._orient)
-        
-        add_joint_orient.clicked.connect(self._add_joint_orient)
         
         mirror.clicked.connect(self._mirror)
         mirror_curves.clicked.connect(self._mirror_curves)
-        #match_joints.clicked.connect(self._match_joints)
+        
         joints_on_curve.clicked.connect(self._joints_on_curve)
         snap_to_curve.clicked.connect(self._snap_joints_to_curve)
         transfer_joints.clicked.connect(self._transfer_joints)
@@ -268,37 +318,23 @@ class RigManager(qt_ui.DirectoryWidget):
         
         main_layout = parent.main_layout
         
-        orient_layout = qt.QHBoxLayout()
-        
-        sub_orient_layout = qt.QVBoxLayout()
-        orient_layout.addWidget(orient_joints)
-        orient_layout.addSpacing(10)
-        orient_layout.addLayout(sub_orient_layout)
-        
-        sub_orient_layout.addWidget(add_orient)
-        sub_orient_layout.addWidget(add_joint_orient)
-        sub_orient_layout.addWidget(mirror_invert)
-        sub_orient_layout.addWidget(remove_orient)
         
         
         
-        main_layout.addSpacing(20)
-        #main_layout.addWidget(add_orient)
-        main_layout.addWidget(mirror)
-        main_layout.addWidget(mirror_curves)
-        main_layout.addSpacing(15)
+        
+        main_layout.addSpacing(5)
+        
+        main_layout.addLayout(mirror_translate_layout)
+        
+        main_layout.addSpacing(10)
         main_layout.addLayout(orient_layout)
-        #main_layout.addWidget(mirror_invert)
-        main_layout.addSpacing(20)
-        main_layout.addWidget(self.joint_axis_check)
         
-        main_layout.addSpacing(20)
-        #main_layout.addWidget(orient_joints)
-        #main_layout.addWidget(match_joints)
+        main_layout.addSpacing(10)
+        
         main_layout.addWidget(subdivide_joint_button)
         main_layout.addWidget(joints_on_curve)
         main_layout.addWidget(snap_to_curve)
-        main_layout.addSpacing(15)
+        main_layout.addSpacing(10)
         main_layout.addWidget(transfer_joints)
         
         
@@ -433,35 +469,148 @@ class RigManager(qt_ui.DirectoryWidget):
     def _add_orient(self):
         selection = cmds.ls(sl = True, type = 'joint')
         
+        if not selection:
+            core.print_warning('Please select joints to add orient to.')
+            
+        
+        
         attr.add_orient_attributes(selection)
+        core.print_help('Added orient attributes to the selected joints.')
     
     def _remove_orient(self):
         
         selection = cmds.ls(sl = True, type = 'joint')
         
+        if not selection:
+            core.print_warning('Please select joints to remove orient from.')
+        
+        
+        
         attr.remove_orient_attributes(selection)
+        core.print_help('Removed orient attributes from the selected joints.')
     
+    @core.undo_chunk
     def _add_joint_orient(self):
         selection = cmds.ls(sl = True, type = 'joint')
         
+        if not selection:
+            core.print_warning('Please select joints to add aim and up to.')
+        
         for thing in selection:
             space.add_orient_joint(thing)
+            
+        core.print_help('Added aim and up to selected joints.')
         
+    @core.undo_chunk
     def _orient(self):
-        space.orient_attributes()
         
+        selected = cmds.ls(sl = True, type = 'joint')
+        
+        oriented = space.orient_attributes(selected)
+        
+        if selected and oriented:
+            core.print_warning('Only oriented selected')
+        if not selected and oriented:
+            core.print_help('Oriented joints')
+        
+        if selected:
+            cmds.select(selected)
+        if not selected:
+            cmds.select(cl = True)
+    
+    def _unskip_orient(self):
+        
+        selection = cmds.ls(sl = True, type = 'joint')
+        
+        for thing in selection:
+            if cmds.objExists('%s.active' % thing):
+                cmds.setAttr('%s.active' % thing, 1)
+        
+        if not selection:
+            core.print_help('Please select joints to unskip running orient.')
+    
+    def _skip_orient(self):
+        
+        selection = cmds.ls(sl = True, type = 'joint')
+        
+        for thing in selection:
+            if cmds.objExists('%s.active' % thing):
+                cmds.setAttr('%s.active' % thing, 0)
+        
+        if not selection:
+            core.print_help('Please select joints to skip running orient.')
+            
     @core.undo_chunk
     def _mirror(self, *args ):
         #*args is for probably python 2.6, which doesn't work unless you have a key argument.
         
+        selected = cmds.ls(sl = True, type = 'transform')
         
-        space.mirror_xform()
-        #util.mirror_xform('guideJoint_')
-        #util.mirror_xform('process_')
-        #space.mirror_xform(string_search = 'lf_')
+        fixed = space.mirror_xform(transforms = selected)
         
-        #not sure when this was implemented... but couldn't find it, needs to be reimplemented.
-        #util.mirror_curve(suffix = '_wire')
+        
+        if selected and fixed:
+            core.print_warning('Only mirrored selected left to right')
+        if not selected and fixed:
+            core.print_help('Mirrored transforms left to right')
+        if not fixed:
+            core.print_warning('No joints mirrored. Check there are joints on the left that can mirror right.  Check your selected transform is not on the right.')
+            
+    def _mirror_on(self):
+        
+        transforms = cmds.ls(sl = True, type = 'transform')
+        
+        if not transforms:
+            core.print_warning('Please select some joints or transforms to unskip.')
+            return
+        
+        for transform in transforms:
+            space.mirror_toggle(transform, True)
+    
+        if transforms:
+            core.print_help('mirror attribute set on. This transform will be affected by mirror transforms.')
+
+        
+    def _mirror_off(self):
+        
+        transforms = cmds.ls(sl = True, type = 'transform')
+        
+        if not transforms:
+            core.print_warning('Please select some joints or transforms to unskip.')
+            return
+        
+        for transform in transforms:
+            space.mirror_toggle(transform, False)
+            
+        if transforms:
+            core.print_help('mirror attribute set off. This transform will no longer be affected by mirror transforms.')
+    
+    @core.undo_chunk        
+    def _mirror_r_l(self):
+        
+        selected = cmds.ls(sl = True, type = 'transform')
+        fixed = space.mirror_xform(transforms = selected, left_to_right = False)
+        
+        if selected and fixed:
+            core.print_warning('Only mirrored selected right to left')
+        if not selected and fixed:
+            core.print_help('Mirrored transforms right to left')
+        if not fixed:
+            core.print_warning('No joints mirrored. Check there are joints on the right that can mirror left.  Check your selected transform is not on the left.')
+            
+    @core.undo_chunk
+    def _mirror_create(self):
+        
+        selected = cmds.ls(sl = True, type = 'transform')
+        
+        created = space.mirror_xform(transforms = selected, create_if_missing=True)
+        
+        if created and selected:
+            core.print_warning('Only created transforms on the right side that were selected on the left.')
+        if created and not selected:
+            core.print_help('Created transforms on the right side that were on the left.')
+        if not created:
+            core.print_warning('No transforms created. Check that there are missing transforms on the right. Check your selected transform is on the left.')
 
     @core.undo_chunk
     def _mirror_curves(self, *args ):
@@ -469,12 +618,6 @@ class RigManager(qt_ui.DirectoryWidget):
         
         rigs_util.mirror_curve()
         
-        #util.mirror_xform('guideJoint_')
-        #util.mirror_xform('process_')
-        #util.mirror_xform(string_search = 'lf_')
-        
-        #not sure when this was implemented... but couldn't find it, needs to be reimplemented.
-        #util.mirror_curve(suffix = '_wire')
         
     @core.undo_chunk
     def _mirror_invert(self):
@@ -494,6 +637,8 @@ class RigManager(qt_ui.DirectoryWidget):
     def _mirror_controls(self):
         
         rigs_util.mirror_controls()
+    
+
     
         
     def _joints_on_curve(self, count):
@@ -699,6 +844,8 @@ class RigManager(qt_ui.DirectoryWidget):
         for curve in curves:
             geo.snap_curve_to_surface(curve, meshes[0], value)
             
+
+                    
 class SkinMeshFromMesh(qt_ui.Group):
     def __init__(self):
         
