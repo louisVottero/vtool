@@ -903,30 +903,8 @@ class OrientJoint(object):
             if grand_parent:
                 self.grand_parent = grand_parent[0]
         
-<<<<<<< HEAD
+        
         children = cmds.listRelatives(self.joint, f = True, type = 'transform')
-=======
-        children = []
-                
-        children_joints = cmds.listRelatives(self.joint, f = True, type = 'joint')
-        children_transforms = cmds.listRelatives(self.joint, f = True, type = 'transform')
-        
-        found_transforms = []
-        
-        if children_transforms:
-            for transform in children_transforms:
-                
-                if not cmds.nodeType(transform) == 'joint':
-                    found_transforms.append(transform)
-                
-        children_transforms = found_transforms
-            
-        
-        if children_joints:
-            children += children_joints 
-        if children_transforms:
-            children += children_transforms
->>>>>>> branch 'master' of https://gitlab.com/Vottero/vtool.git
         
         if children:
             self.child = children[0]
