@@ -107,7 +107,7 @@ class ToolManager(ui_core.MayaDirectoryWindow):
         
     def _build_widgets(self):
 
-        self.setMinimumWidth(300)
+        #self.setMinimumWidth(300)
         
         self.main_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
         
