@@ -880,6 +880,7 @@ class OrientJoint(object):
         self.aim_up_at = 0
         
         self.child = None
+        self.child2 = None
         self.grand_child = None
         self.parent = None
         self.grand_parent = None
@@ -902,15 +903,7 @@ class OrientJoint(object):
             if grand_parent:
                 self.grand_parent = grand_parent[0]
         
-        children = []
-                
-        children_joints = cmds.listRelatives(self.joint, f = True, type = 'joint')
-        children_transforms = cmds.listRelatives(self.joint, f = True, type = 'transform')
-        
-        if children_joints:
-            children += children_joints 
-        if children_transforms:
-            children += children_transforms
+        children = cmds.listRelatives(self.joint, f = True, type = 'transform')
         
         if children:
             self.child = children[0]
@@ -996,8 +989,17 @@ class OrientJoint(object):
         
         if index == 5:
             self.up_space_type = 'object'
-            child_group = self._get_position_group(self.child2)
+            
+            child_group = None
+            
+            if self.child2 and cmds.objExists(self.child2):
+                child_group = self._get_position_group(self.child2)
+            
+            if not self.child2 or not cmds.objExists(self.child2):
+                vtool.util.warning('Child 2 specified as up in orient attributes but %s has no 2nd child.' % self.joint)
             return child_group
+        
+            
             
     def _get_local_group(self, transform):
         
@@ -2775,16 +2777,16 @@ def orient_attributes(scope = None):
     if not scope:
         scope = core.get_top_dag_nodes()
     
+    oriented = False
+    
     for transform in scope:
-        
-        if not core.is_transform(transform):
-            continue
         
         relatives = cmds.listRelatives(transform, f = True)
         
         if not cmds.objExists('%s.ORIENT_INFO' % transform):
             if relatives:
                 orient_attributes(relatives)
+                oriented = True
                 
             continue
         
@@ -2794,6 +2796,9 @@ def orient_attributes(scope = None):
             
             if relatives:
                 orient_attributes(relatives)
+                oriented = True
+                
+    return oriented
 
 
 def add_orient_joint(joint):
@@ -2806,25 +2811,17 @@ def add_orient_joint(joint):
     if not cmds.nodeType(joint) == 'joint':
         return
     
+    aim_name = 'locator_aim_%s' % joint
+    up_name = 'locator_up_%s' % joint
     
-    found = re.search('(\w+)_(\w+)', joint)
-    
-    aim_name = 'aim_%s' % joint
-    up_name = 'up_%s' % joint
-    
-    if found:
-        if len(found.groups()) == 2:
-            aim_name = joint[:-2] + '_aim' + joint[-2:]
-            up_name = joint[:-2] + '_up' + joint[-2:] 
-            
     attr.add_orient_attributes(joint)
     
     current_radius = cmds.getAttr('%s.radius' % joint)
     
     cmds.select(cl = True)
-    aim_joint = cmds.joint(n = aim_name)
+    aim_joint = cmds.spaceLocator(n = core.inc_name(aim_name))[0]
     cmds.select(cl = True)
-    up_joint = cmds.joint(n = up_name)
+    up_joint = cmds.spaceLocator(n = core.inc_name(up_name))[0]
     
     MatchSpace(joint, aim_joint).translation()
     MatchSpace(joint, up_joint).translation()
@@ -2849,8 +2846,15 @@ def add_orient_joint(joint):
     attr.lock_rotate_attributes(up_joint)
     attr.lock_scale_attributes(up_joint)
     
-    cmds.setAttr('%s.radius' % aim_joint, (current_radius/2.0))
-    cmds.setAttr('%s.radius' % up_joint, (current_radius/2.0))
+    scale_value = current_radius/2.0
+    
+    cmds.setAttr('%s.localScaleX' % aim_joint, scale_value)
+    cmds.setAttr('%s.localScaleY' % aim_joint, scale_value)
+    cmds.setAttr('%s.localScaleZ' % aim_joint, scale_value)
+    
+    cmds.setAttr('%s.localScaleX' % up_joint, scale_value)
+    cmds.setAttr('%s.localScaleY' % up_joint, scale_value)
+    cmds.setAttr('%s.localScaleZ' % up_joint, scale_value)
     
     cmds.setAttr('%s.aimUpAt' % joint, 5)
     
@@ -2879,7 +2883,7 @@ def orient_x_to_child(joint, invert = False):
     
     
 
-def find_transform_right_side(transform):
+def find_transform_right_side(transform, check_if_exists = True):
     """
     Try to find the right side of a transform.
     *_L will be converted to *_R 
@@ -2901,7 +2905,10 @@ def find_transform_right_side(transform):
         
         other = vtool.util.replace_string_at_end(transform, '_L', '_R')
         
-        if cmds.objExists(other):
+        if cmds.objExists(other) and check_if_exists:
+            return other
+        
+        if not check_if_exists:
             return other
     
     other = ''
@@ -2910,20 +2917,24 @@ def find_transform_right_side(transform):
         
         other = vtool.util.replace_string_at_start(transform, 'L_', 'R_')
         
-        if cmds.objExists(other):
+        if cmds.objExists(other) and check_if_exists:
             return other 
+        if not check_if_exists:
+            return other
         
     other = ''
         
     if transform.find('lf_') > -1 and not transform.endswith('_R') and not transform.startswith('R_'):
         other = transform.replace('lf_', 'rt_')
         
-        if cmds.objExists(other):
+        if cmds.objExists(other) and check_if_exists:
+            return other
+        if not check_if_exists:
             return other
         
     return ''
 
-def find_transform_left_side(transform):
+def find_transform_left_side(transform,check_if_exists = True):
     """
     Try to find the right side of a transform.
     *_R will be converted to *_L 
@@ -2945,7 +2956,9 @@ def find_transform_left_side(transform):
         
         other = vtool.util.replace_string_at_end(transform, '_R', '_L')
         
-        if cmds.objExists(other):
+        if cmds.objExists(other) and check_if_exists:
+            return other
+        if not check_if_exists:
             return other
     
     other = ''
@@ -2954,20 +2967,32 @@ def find_transform_left_side(transform):
         
         other = vtool.util.replace_string_at_start(transform, 'R_', 'L_')
         
-        if cmds.objExists(other):
+        if cmds.objExists(other) and check_if_exists:
             return other 
+        if not check_if_exists:
+            return other
         
     other = ''
         
     if transform.find('rt_') > -1 and not transform.endswith('_L') and not transform.startswith('L_'):
         other = transform.replace('rt_', 'lf_')
         
-        if cmds.objExists(other):
+        if cmds.objExists(other) and check_if_exists:
+            return other
+        if not check_if_exists:
             return other
         
     return ''
 
-def mirror_xform(prefix = None, suffix = None, string_search = None):
+def mirror_toggle(transform, bool_value):
+    
+    if not cmds.objExists('%s.mirror' % transform):
+        cmds.addAttr(transform, ln = 'mirror', at = 'bool', k = True)
+    
+    cmds.setAttr('%s.mirror' % transform, bool_value)
+    
+
+def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_missing = False, transforms = [], left_to_right = True):
     """
     Mirror the positions of all transforms that match the search strings.
     If search strings left at None, search all transforms and joints. 
@@ -2982,29 +3007,46 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
     scope_transforms = []
     
     joints = []
-    transforms = []
     
-    if not prefix and not suffix and not string_search:
-        joints = cmds.ls(type ='joint')
-        transforms = cmds.ls(type = 'transform')
+    skip_search = False
     
-    if prefix:
-        joints = cmds.ls('%s*' % prefix, type = 'joint')
-        transforms = cmds.ls('%s*' % prefix, type = 'transform')
+    if transforms:
+        skip_search = True
         
-    scope_joints += joints
-    scope_transforms += transforms
+        temp_transforms = list(transforms)
         
-    if suffix:    
-        joints = cmds.ls('*%s' % suffix, type = 'joint')
-        transforms = cmds.ls('*%s' % suffix, type = 'transform')
+        transforms = []
+        
+        for thing in temp_transforms:
+            node_type = cmds.nodeType(thing)
+            
+            if node_type == 'joint':
+                joints.append(thing)
+            if node_type == 'trasnform':
+                transforms.append(thing)
     
-    scope_joints += joints
-    scope_transforms += transforms
+    if not skip_search:
+        if not prefix and not suffix and not string_search:
+            joints = cmds.ls(type ='joint')
+            transforms = cmds.ls(type = 'transform')
         
-    if string_search:
-        joints = cmds.ls('*%s*' % string_search, type = 'joint')
-        transforms = cmds.ls('*%s*' % string_search, type = 'transform')
+        if prefix:
+            joints = cmds.ls('%s*' % prefix, type = 'joint')
+            transforms = cmds.ls('%s*' % prefix, type = 'transform')
+            
+        scope_joints += joints
+        scope_transforms += transforms
+            
+        if suffix:    
+            joints = cmds.ls('*%s' % suffix, type = 'joint')
+            transforms = cmds.ls('*%s' % suffix, type = 'transform')
+    
+        scope_joints += joints
+        scope_transforms += transforms
+            
+        if string_search:
+            joints = cmds.ls('*%s*' % string_search, type = 'joint')
+            transforms = cmds.ls('*%s*' % string_search, type = 'transform')
         
     scope_joints += joints
     scope_transforms += transforms
@@ -3014,15 +3056,52 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
     if not scope:
         return
     
+    other_parents = {}
+    fixed = []
+    created = False
+    
     for transform in scope:
         
         other = ''
-        other = find_transform_right_side(transform)
+        if left_to_right:
+            other = find_transform_right_side(transform, check_if_exists=False)
+        if not left_to_right:
+            other = find_transform_left_side(transform, check_if_exists=False)
+        
+        if not other:
+            continue
+        
+        if transform in fixed:
+            continue
         
         if attr.is_translate_rotate_connected(other):
             continue
+        
+        if not cmds.objExists(other) and create_if_missing:
+            
+            other = cmds.duplicate(transform, po = True, n = other)[0]
+            
+            created = True
+            
+            parent = cmds.listRelatives(transform, p = True)
+            
+            if parent:
+                if left_to_right:
+                    other_parent = find_transform_right_side(parent[0], check_if_exists=False)
+                if not left_to_right:
+                    other_parent = find_transform_left_side(parent[0], check_if_exists=False)
+                    
+                if other_parent:
+                    other_parents[other] = other_parent
+            
        
         if cmds.objExists(other):
+            
+            if cmds.objExists('%s.mirror' % other):
+                mirror = cmds.getAttr('%s.mirror' % other)
+                if not mirror:
+                    vtool.util.show('%s was not mirrored because its mirror attribute is set off.' % other)
+                    continue
             
             translateX_lock = attr.LockState('%s.translateX' % other)
             translateY_lock = attr.LockState('%s.translateY' % other)
@@ -3031,7 +3110,6 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
             translateX_lock.unlock()
             translateY_lock.unlock()
             translateZ_lock.unlock()
-            
             
             xform = cmds.xform(transform, q = True, ws = True, t = True)
             
@@ -3049,7 +3127,6 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
                     
                 cmds.move((xform[0]*-1), xform[1], xform[2], '%s.scalePivot' % other, 
                                                              '%s.rotatePivot' % other, a = True)
-            
             if cmds.nodeType(other) == 'transform':
                 
                 pos = [ (xform[0]*-1), xform[1],xform[2] ]
@@ -3068,7 +3145,28 @@ def mirror_xform(prefix = None, suffix = None, string_search = None):
             translateX_lock.restore_initial()
             translateY_lock.restore_initial()
             translateZ_lock.restore_initial()
-                    
+            
+            fixed.append(other)
+            
+    if create_if_missing:
+        for other in other_parents.keys():
+            parent = other_parents[other]
+            
+            if cmds.objExists(parent):
+                
+                cmds.parent(other, parent)
+                
+    if not create_if_missing:
+        if fixed:
+            return True
+        if not fixed:
+            return False
+    if create_if_missing:
+        if created:
+            return True
+        if not created:
+            return False
+
 def mirror_invert(transform, other = None):
     """
     If transform is joint_lip_L and there is a corresponding joint_lip_R, this will change joint_lip_R to have space that mirrors joint_lip_L.
