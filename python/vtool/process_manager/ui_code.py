@@ -1799,7 +1799,7 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         
         super(ManifestItem, self).__init__()
         
-        self.setSizeHint(0, qt.QtCore.QSize(10, 28))
+        self.setSizeHint(0, qt.QtCore.QSize(10, 20))
         
         #if vtool.util.is_in_maya():
         #    brush = qt.QBrush(qt.QColor(100,100,100))
