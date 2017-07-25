@@ -64,6 +64,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.copy_done.connect(self._copy_done)
         self.view_widget.tree_widget.itemDoubleClicked.connect(self._item_double_clicked)
         self.view_widget.tree_widget.show_options.connect(self._show_options)
+        self.view_widget.tree_widget.show_notes.connect(self._show_notes)
         self.view_widget.tree_widget.show_templates.connect(self._show_templates)
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
         
@@ -96,11 +97,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter.setSizes([1,1])
         self.option_tabs.setCurrentIndex(0)
         
+    def _show_notes(self):
+        self._load_notes()
+        self.option_tabs.setCurrentIndex(1)
         
     def _show_templates(self):
         
         self.process_splitter.setSizes([1,1])
-        self.option_tabs.setCurrentIndex(1)
+        self.option_tabs.setCurrentIndex(2)
         
     def _process_deleted(self):
         self._clear_code(close_windows=True)
@@ -114,6 +118,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.sync_code = True
         
         self._load_options(self.process.get_path())
+        self._load_notes()
           
     def _item_double_clicked(self):
         
@@ -141,6 +146,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if hasattr(item, 'get_path'):
             self._load_options(item.get_path())
+            self._load_notes()
         
     def _item_selection_changed(self):
         
@@ -175,6 +181,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         path = item.get_path()
         
         self._load_options(path)
+        self._load_notes()
         
         self.view_widget.setFocus()
         
@@ -188,6 +195,25 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_splitter.setSizes([1,1])
         if not has_options and self.option_tabs.currentIndex() == 0:
             self.process_splitter.setSizes([1,0])
+            
+    def _load_notes(self):
+        notes = self.process.get_setting('notes')
+        
+        if notes:
+            self.process_splitter.setSizes([1,1])
+            self.notes.setText(notes)
+            
+        has_options = self.option_widget.has_options()
+        
+        if self.option_tabs.currentIndex() == 1:
+            if not notes:
+                if not has_options:
+                    self.process_splitter.setSizes([1,0])
+                if has_options:
+                    self.process_splitter.setSizes([1,1])
+                    self.option_tabs.setCurrentIndex(0)
+            
+        
         
     def _update_build_widget(self, process_name):
         
@@ -202,7 +228,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         #return after
         self.build_widget.update_data(data_dir)
-        self.build_widget.tab_widget.setTabPosition(qt.QTabWidget.South)
+        #self.build_widget.tab_widget.setTabPosition(qt.QTabWidget.South)
         self.build_widget.set_directory(data_path)
         self.build_widget.show()
         
@@ -282,10 +308,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.template_widget.merge_template.connect(self._merge_template)
         self.template_widget.match_template.connect(self._match_template)
         
+        self.notes = qt.QTextEdit()
+        self.notes.textChanged.connect(self._save_notes)
+        
         self.option_tabs.addTab(option_widget, 'Options')
+        self.option_tabs.addTab(self.notes, 'Notes')
         self.option_tabs.addTab(self.template_widget, 'Templates')
         
+        
         self.option_tabs.currentChanged.connect(self._option_changed)
+        
         
         self.data_widget = ui_data.DataProcessWidget()
         
@@ -331,13 +363,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process_button = qt.QPushButton('PROCESS')
         self.process_button.setDisabled(True)
-        self.process_button.setMinimumWidth(100)
-        self.process_button.setMinimumHeight(50)
-        
+        self.process_button.setMinimumWidth(140)
+        self.process_button.setMinimumHeight(30)
+            
         self.batch_button = qt.QPushButton('BATCH')
         self.batch_button.setDisabled(True)
         self.batch_button.setMinimumHeight(30)
-        self.batch_button.setMinimumWidth(80)
+        self.batch_button.setMinimumWidth(70)
         
         self.stop_button = qt.QPushButton('STOP (Esc key)')
         self.stop_button.setMaximumWidth(110)
@@ -349,15 +381,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.continue_button.setMinimumHeight(30)
         self.continue_button.hide()
         
-        self.run_selected_button = qt.QPushButton('RUN SELECTED')
-        self.run_selected_button.setMaximumWidth(125)
-        self.run_selected_button.setMinimumHeight(30)
-        self.run_selected_button.hide()
-        
         self.browser_button = qt.QPushButton('Browse')
-        self.browser_button.setMaximumWidth(120)
+        self.browser_button.setMaximumWidth(70)
         help_button = qt.QPushButton('?')
-        help_button.setMaximumWidth(100)
+        help_button.setMaximumWidth(20)
         
         btm_layout = qt.QVBoxLayout()
         
@@ -371,9 +398,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         left_button_layout.addWidget(self.continue_button)
         
         left_button_layout.addSpacing(10)
-        left_button_layout.addWidget(self.run_selected_button)
         
-        right_button_layout.setAlignment(qt.QtCore.Qt.AlignRight)
+        right_button_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         
         right_button_layout.addWidget(self.batch_button)
         right_button_layout.addSpacing(5)
@@ -381,6 +407,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         right_button_layout.addWidget(help_button)
         
         button_layout.addLayout(left_button_layout)
+        #button_layout.addSpacing(10)
         button_layout.addLayout(right_button_layout)
         
         self.build_widget = ui_data.ProcessBuildDataWidget()
@@ -439,6 +466,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.template_widget.set_active(False)
         
         if self.option_tabs.currentIndex() == 1:
+            self.template_widget.set_active(False)
+            notes = self.process.get_setting('notes')
+            self.notes.setText(notes)
+        
+        if self.option_tabs.currentIndex() == 2:
             self.template_widget.set_active(True)
             
     def _clear_code(self, close_windows = False):
@@ -957,6 +989,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _template_current_changed(self):
         
         self.settings_widget.refresh_template_list()        
+        
+    
+    def _save_notes(self):
+        
+        
+        
+        text = str(self.notes.toPlainText())
+        
+        self.process.set_setting('notes', text )
+        
         
     def set_directory(self, directory):
         
