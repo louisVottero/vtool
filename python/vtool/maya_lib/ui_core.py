@@ -91,8 +91,6 @@ def get_maya_window():
 
 def create_window(ui, dock_area = 'right'): 
     
-    
-    
     ui_name = str(ui.objectName())
     dock_name = '%sDock' % ui_name
     dock_name = dock_name.replace(' ', '_')

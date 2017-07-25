@@ -356,7 +356,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             item.setText(1, nice_name)
             
             item.folder = foldername
-            item.setSizeHint(0, qt.QtCore.QSize(100,25))
+            item.setSizeHint(0, qt.QtCore.QSize(100,20))
             self.addTopLevelItem(item)
             
             if foldername == new_data:
