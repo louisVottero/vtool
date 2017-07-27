@@ -354,6 +354,7 @@ class TreeWidget(qt.QTreeWidget):
         if index != root:
 
             dropIndicatorPosition = self.position(event.pos(), self.visualRect(index), index)
+            
             if self.dropIndicatorPosition == self.AboveItem:
                 #'dropon above'
                 row = index.row()
@@ -385,7 +386,7 @@ class TreeWidget(qt.QTreeWidget):
     def position(self, pos, rect, index):
         r = qt.QAbstractItemView.OnViewport
         # margin*2 must be smaller than row height, or the drop onItem rect won't show
-        margin = 10
+        margin = 5
         if pos.y() - rect.top() < margin:
             r = qt.QAbstractItemView.AboveItem
         elif rect.bottom() - pos.y() < margin:

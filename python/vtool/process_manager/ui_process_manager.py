@@ -99,6 +99,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _show_notes(self):
         self._load_notes()
+        self.process_splitter.setSizes([1,1])
         self.option_tabs.setCurrentIndex(1)
         
     def _show_templates(self):
@@ -189,31 +190,42 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.option_widget.set_directory(directory)
         
-        has_options = self.option_widget.has_options()
         
-        if has_options:
-            self.process_splitter.setSizes([1,1])
-        if not has_options and self.option_tabs.currentIndex() == 0:
-            self.process_splitter.setSizes([1,0])
+        if self.option_tabs.currentIndex() == 0:
+            has_options = self.option_widget.has_options()
+            
+            if has_options:
+                self.process_splitter.setSizes([1,1])
+            if not has_options:
+                self.process_splitter.setSizes([1,0])
             
     def _load_notes(self):
-        notes = self.process.get_setting('notes')
+        note_lines = self.process.get_setting('notes')
         
-        if notes:
-            self.process_splitter.setSizes([1,1])
-            self.notes.setText(notes)
-            
-        has_options = self.option_widget.has_options()
+        self.notes.setText('')
+        
+        notes = ''
+        
+        if note_lines:
+            for line in note_lines:
+                notes += '%s\n' % line
+        
+        self.notes.setText(notes)
         
         if self.option_tabs.currentIndex() == 1:
-            if not notes:
-                if not has_options:
-                    self.process_splitter.setSizes([1,0])
-                if has_options:
-                    self.process_splitter.setSizes([1,1])
-                    self.option_tabs.setCurrentIndex(0)
+            if note_lines:
+                self.process_splitter.setSizes([1,1])
+                self.option_tabs.setCurrentIndex(1)
+                
+            if not note_lines:
+                self.process_splitter.setSizes([1,0])
+                
+        if self.option_tabs.currentIndex() == 0:
+            has_options = self.option_widget.has_options()
             
-        
+            if not has_options and note_lines:
+                self.option_tabs.setCurrentIndex(1)
+                self.process_splitter.setSizes([1,1])
         
     def _update_build_widget(self, process_name):
         
@@ -226,9 +238,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not util_file.is_dir(data_dir):
             return
         
-        #return after
         self.build_widget.update_data(data_dir)
-        #self.build_widget.tab_widget.setTabPosition(qt.QTabWidget.South)
+        
         self.build_widget.set_directory(data_path)
         self.build_widget.show()
         
@@ -272,11 +283,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.template_widget.set_settings(settings)
         
     def _build_widgets(self):
-        
-        #version = QLabel('%s' % util_file.get_vetala_version())
-        #self.main_layout.addWidget(version)
-        
-        
         
         self.header_layout = qt.QHBoxLayout()
         
@@ -407,7 +413,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         right_button_layout.addWidget(help_button)
         
         button_layout.addLayout(left_button_layout)
-        #button_layout.addSpacing(10)
+        
         button_layout.addLayout(right_button_layout)
         
         self.build_widget = ui_data.ProcessBuildDataWidget()
@@ -467,9 +473,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if self.option_tabs.currentIndex() == 1:
             self.template_widget.set_active(False)
-            notes = self.process.get_setting('notes')
-            self.notes.setText(notes)
-        
+            
         if self.option_tabs.currentIndex() == 2:
             self.template_widget.set_active(True)
             
@@ -778,30 +782,32 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     return
                 
             cmds.file(renameToSave = True)
-            
+        
         item = self.view_widget.tree_widget.currentItem()
-        children = self._get_checked_children(item)
+        
+        if self.tab_widget.currentIndex() == 1:
+            children = self._get_checked_children(item)
+                    
+            if children:
                 
-        if children:
-            
-            result = qt_ui.get_comment(self, 'Found children checked. Add comment to the auto build?', 'Children Checked', comment_text='Auto Build' )
-            if result == None:
-                result2 = qt_ui.get_permission('Continue Main Process?', self, title = 'Sub process build cancelled.')
+                result = qt_ui.get_comment(self, 'Found children checked. Add comment to the auto build?', 'Children Checked', comment_text='Auto Build' )
+                if result == None:
+                    result2 = qt_ui.get_permission('Continue Main Process?', self, title = 'Sub process build cancelled.')
+                    
+                    if not result2:
+                        return
                 
-                if not result2:
-                    return
-            
-            
-            for level in children:
-                for level_item in level:
-                    self.view_widget.tree_widget.setCurrentItem(level_item)
-                    self._process_item(level_item, comment = result)
-            
-            import time
-            self.view_widget.tree_widget.setCurrentItem(item)
-            self.view_widget.tree_widget.repaint()
-            time.sleep(1)
-            
+                
+                for level in children:
+                    for level_item in level:
+                        self.view_widget.tree_widget.setCurrentItem(level_item)
+                        self._process_item(level_item, comment = result)
+                
+                import time
+                self.view_widget.tree_widget.setCurrentItem(item)
+                self.view_widget.tree_widget.repaint()
+                time.sleep(1)
+                
         self.continue_button.hide()
         
         watch = util.StopWatch()
@@ -993,12 +999,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     
     def _save_notes(self):
         
-        
-        
         text = str(self.notes.toPlainText())
         
-        self.process.set_setting('notes', text )
+        lines = text.splitlines()
         
+        self.process.set_setting('notes', lines)
         
     def set_directory(self, directory):
         
