@@ -1324,20 +1324,40 @@ def show_channel_box():
     
     docks = mel.eval('global string $gUIComponentDockControlArray[]; string $goo[] = $gUIComponentDockControlArray;')
     
-    if 'Channel Box / Layer Editor' in docks:
-        index = docks.index('Channel Box / Layer Editor')
-        dock = docks[index + 1]
-        
-        if cmds.dockControl(dock, q = True, visible = True):
-            cmds.dockControl(dock, edit = True, visible = False)
-            cmds.dockControl(dock, edit = True, visible = True)
+    if vtool.util.get_maya_version() < 2017:
+    
+        if 'Channel Box / Layer Editor' in docks:
+            index = docks.index('Channel Box / Layer Editor')
+            dock = docks[index + 1]
+            
+            if cmds.dockControl(dock, q = True, visible = True):
+                cmds.dockControl(dock, edit = True, visible = False)
+                cmds.dockControl(dock, edit = True, visible = True)
         
         index = docks.index('Channel Box')
         dock = docks[index + 1]
-            
+        
         if cmds.dockControl(dock, q = True, visible = True):
             cmds.dockControl(dock, edit = True, visible = False)
             cmds.dockControl(dock, edit = True, visible = True)
+            
+    if vtool.util.get_maya_version() > 2016:
+        if 'Channel Box / Layer Editor' in docks:
+            index = docks.index('Channel Box / Layer Editor')
+            dock = docks[index + 1]
+            
+            print 'dock'
+            
+            if cmds.workspaceControl(dock, q = True, visible = True):
+                cmds.workspaceControl(dock, edit = True, visible = False)
+                cmds.workspaceControl(dock, edit = True, visible = True)
+        
+        index = docks.index('Channel Box')
+        dock = docks[index + 1]
+                
+        if cmds.workspaceControl( dock, q = True, visible = True):
+            cmds.workspaceControl(dock, edit = True, visible = False)
+            cmds.workspaceControl(dock, edit = True, visible = True)
 
 def add_to_isolate_select(nodes):
     """
