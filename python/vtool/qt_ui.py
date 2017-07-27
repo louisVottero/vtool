@@ -4529,9 +4529,7 @@ def get_folder(directory, parent = None):
 
 def get_permission(message = None, parent = None, cancel = True, title = 'Permission'):
     
-    
-    
-    message_box = qt.QMessageBox(parent)
+    message_box = qt.QMessageBox()
 
     flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
 
@@ -4557,10 +4555,13 @@ def get_permission(message = None, parent = None, cancel = True, title = 'Permis
         return None
 
 def get_save_permission(message, parent = None, path = None):
+    parent = None
     message_box = qt.QMessageBox(parent)
     
-    #flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     
+    #flags = message_box.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint | QtCore.Qt.WindowStaysOnTopHint
+    message_box.setWindowFlags(flags)
     message_box.setText(message)
     message_box.setWindowTitle('Permission')
     if path:
@@ -4586,6 +4587,9 @@ def get_save_permission(message, parent = None, path = None):
     
 def get_new_name(message, parent = None, old_name = None):
     
+    #this is to make the dialog always on top.
+    parent = None
+    
     dialog = qt.QInputDialog()
     
     flags = dialog.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
@@ -4602,28 +4606,30 @@ def get_new_name(message, parent = None, old_name = None):
         return str(comment)
     
 def critical(message, parent = None):
-    
+    #this is to make the dialog always on top.
+    parent = None
     message_box = qt.QMessageBox(parent)
     flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     message_box.setWindowFlags(flags)
     message_box.critical(parent, 'Critical Error', message)
     
 def warning(message, parent = None):
-    
+    #this is to make the dialog always on top.
     message_box = qt.QMessageBox(parent)
+    parent = None
     flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     message_box.setWindowFlags(flags)
     message_box.warning(parent, 'Warning', message)
 
 def about(message, parent = None):
-    
+    parent = None
     message_box = qt.QMessageBox(parent)
     flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
     message_box.setWindowFlags(flags)
     message_box.about(parent, 'About', message)
 
 def get_pick(list_values, text_message, parent = None):
-    
+    parent = None
     input_dialog = qt.QInputDialog(parent)
     input_dialog.setComboBoxItems(list_values)
     
