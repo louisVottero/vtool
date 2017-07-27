@@ -18,6 +18,8 @@ import _winreg
 
 import util
 
+import time
+
 def get_vetala_version():
     
     filepath = get_vetala_directory()
@@ -751,7 +753,12 @@ class SettingsFile(object):
         
         write = WriteFile(self.filepath)
         
-        write.write(lines)
+        try:
+            write.write(lines)
+        except:
+            
+            time.sleep(.1)
+            write.write(lines)
     
     def set(self, name, value):
         
