@@ -750,7 +750,7 @@ class PoseTreeWidget(BaseTreeWidget):
     def _add_item(self, pose, parent):
         
         item = qt.QTreeWidgetItem(parent)
-        item.setSizeHint(0, qt.QtCore.QSize(100, 26))
+        item.setSizeHint(0, qt.QtCore.QSize(100, 20))
         item.setText(0, pose)
         
         if cmds.objExists('%s.type' % pose):
@@ -812,7 +812,7 @@ class PoseTreeWidget(BaseTreeWidget):
     def _select_joint(self):
         name = self._current_pose()
         pose = corrective.get_pose_instance(name)
-        transform = pose.get_transform(name)
+        transform = pose.get_transform()
         
         core.show_channel_box()
         
