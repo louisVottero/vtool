@@ -5516,6 +5516,7 @@ class IkBackLegRig(IkFrontLegRig):
         
         self.offset_control_to_locator = False
         self.right_side_fix = False
+        self._offset_ankle_axis = 'Z'
     
     def _duplicate_joints(self):
         
@@ -5618,7 +5619,8 @@ class IkBackLegRig(IkFrontLegRig):
         offset = attr.MayaNumberVariable('offsetAnkle')
         
         offset.create(self.btm_control)
-        offset.connect_out('%s.rotateZ' % driver_group)
+        
+        offset.connect_out('%s.rotate%s' % (driver_group, self._offset_ankle_axis))
         
         follow_group = space.create_follow_group(self.ik_chain[-2], xform_group)
         
@@ -5659,6 +5661,10 @@ class IkBackLegRig(IkFrontLegRig):
         
     def set_offset_control_to_locator(self, bool_value):
         self.offset_control_to_locator = bool_value
+    
+    def set_offset_ankle_axis(self, axis_letter):
+        axis_letter = axis_letter.capitalize()
+        self._offset_ankle_axis = axis_letter
     
     def create(self):
         

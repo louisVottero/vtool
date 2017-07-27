@@ -1801,10 +1801,6 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         
         self.setSizeHint(0, qt.QtCore.QSize(10, 20))
         
-        #if vtool.util.is_in_maya():
-        #    brush = qt.QBrush(qt.QColor(100,100,100))
-        #    self.setBackground(0, brush)
-        
         maya_version = vtool.util.get_maya_version()
         
         if maya_version > 2015 or maya_version == 0:
