@@ -2107,8 +2107,12 @@ class MayaWrap(object):
         """
         
         if not self.meshes:
-            
+            vtool.util.warning('No meshes to wrap given. No wrap built.')
             return
+        if not self.driver_meshes:
+            vtool.util.warning('No source meshs to drive wrap given. No wrap built.')
+            return
+        
         
         wraps = []
         
@@ -4240,6 +4244,11 @@ def create_wrap(source_mesh, target_mesh):
     Returns:
         list: A list of base meshes.
     """
+    
+    if not source_mesh:
+        vtool.util.error('No source mesh given.')
+    if not target_mesh:
+        vtool.util.error('No target mesh given.')
     
     source_mesh = vtool.util.convert_to_sequence(source_mesh)
     

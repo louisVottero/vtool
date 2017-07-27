@@ -242,7 +242,7 @@ class TreeWidget(qt.QTreeWidget):
         self.title_text_index = 0
         self.itemExpanded.connect(self._item_expanded)
         self.itemCollapsed.connect(self._item_collapsed)
-        self.setIndentation(15)
+        self.setIndentation(25)
         self.setExpandsOnDoubleClick(False)
         
         version = util.get_maya_version()
@@ -4528,7 +4528,11 @@ def get_folder(directory, parent = None):
 
 def get_permission(message = None, parent = None, cancel = True, title = 'Permission'):
     
+    
+    
     message_box = qt.QMessageBox(parent)
+
+    flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
 
     if message:
         message_box.setText(message)
@@ -4537,6 +4541,8 @@ def get_permission(message = None, parent = None, cancel = True, title = 'Permis
         message_box.setStandardButtons(qt.QMessageBox.Yes | qt.QMessageBox.No | qt.QMessageBox.Cancel)
     if not cancel:
         message_box.setStandardButtons(qt.QMessageBox.Yes | qt.QMessageBox.No)
+    
+    message_box.setWindowFlags(flags)
     
     message = message_box.exec_()
     
