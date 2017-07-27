@@ -1875,6 +1875,11 @@ class PoseBase(PoseGroup):
             deformed_mesh = self.get_mesh(inc)
             original_mesh = self.get_target_mesh(deformed_mesh)
             
+            if not deformed_mesh:
+                continue
+            if not original_mesh:
+                continue
+            
             if geo.is_mesh_position_same(deformed_mesh, original_mesh, 0.0001):
                 continue
             
@@ -1949,14 +1954,17 @@ class PoseBase(PoseGroup):
         sculpt_mesh = self.get_mesh(index)
         target_mesh = self.get_target_mesh(sculpt_mesh)
         
-        #primary_vis = cmds.getAttr('%s.visibility' % mesh)
-        secondary_vis = cmds.getAttr('%s.lodVisibility' % target_mesh)
         
-        if secondary_vis:
-            return False
+        if target_mesh:
+            secondary_vis = cmds.getAttr('%s.lodVisibility' % target_mesh)
         
-        if not secondary_vis:
-            return True
+            if secondary_vis:
+                return False
+        
+            if not secondary_vis:
+                return True
+        
+        return False
     
     def visibility_off(self, mesh, view_only = False):
         """
