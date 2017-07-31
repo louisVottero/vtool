@@ -4855,7 +4855,7 @@ def reset_tweaks_on_mesh(mesh):
 
 
 
-def match_geo_blendshape(source_geo, target_geo, attr_name):
+def match_geo_blendshape(source_geo, target_geo, attr_name, target_group = 0):
     """
     Create a blendshape between the source_geo hierarchy and target_geo hierarchy.
     
@@ -4906,10 +4906,10 @@ def match_geo_blendshape(source_geo, target_geo, attr_name):
             out_connect = '%s.worldSpace' % matches[inc][0]
         
         cmds.connectAttr(out_connect, 
-                         '%s.inputTarget[%s].inputTargetGroup[0].inputTargetItem[6000].inputGeomTarget' % (blendshape, inc))
+                         '%s.inputTarget[%s].inputTargetGroup[%s].inputTargetItem[6000].inputGeomTarget' % (blendshape, inc, target_group))
         
         if not cmds.objExists('%s.%s' % (blendshape, attr_name)):
-            cmds.setAttr('%s.weight[%s]' % (blendshape, 0), 1)
-            cmds.aliasAttr(attr_name, '%s.weight[0]' % blendshape)
+            cmds.setAttr('%s.weight[%s]' % (blendshape, target_group), 1)
+            cmds.aliasAttr(attr_name, '%s.weight[%s]' % (blendshape, target_group))
         
     return blendshape
