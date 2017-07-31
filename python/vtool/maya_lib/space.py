@@ -473,7 +473,7 @@ class MatchSpace(object):
         Match translation of target to the rotate_pivot of source.
         """
         
-        translate_vector = self._get_rotate_pivot()
+        translate_vector = self._get_world_rotate_pivot()
         self._set_translation(translate_vector)
         
     def rotate_scale_pivot_to_translation(self):
@@ -708,6 +708,20 @@ class ConstraintEditor(object):
         remap = attr.RemapAttributesToAttribute(node, attribute)
         remap.create_attributes(constraint, attributes)
         remap.create()
+        
+    def delete_constraints(self, transform, constraint_type = 'None'):
+        
+        if not constraint_type:
+            for constraint_type in self.editable_constraints:
+                constraint = self.get_constraint(transform, constraint_type)
+                if constraint:
+                    cmds.delete(constraint)
+        
+        if constraint_type:
+            constraint = self.get_constraint(transform, constraint_type)
+            if constraint:
+                cmds.delete(constraint)
+        
 
 class IkHandle(object):
     """
@@ -1020,7 +1034,7 @@ class OrientJoint(object):
     def _get_position_group(self, transform):
         position_group = cmds.group(em = True, n = 'position_group')
         
-        MatchSpace(transform, position_group).translation()
+        MatchSpace(transform, position_group).translation_to_rotate_pivot()
         
         self.delete_later.append(position_group)
         
@@ -1626,6 +1640,14 @@ def has_constraint(transform):
     """
     editor = ConstraintEditor()
     return editor.has_constraint(transform)
+    
+def delete_constraints(transform, constraint_type = None):
+    """
+    Delete constraints on transform.
+    """
+    editor = ConstraintEditor()
+    editor.delete_constraints(transform, constraint_type)
+    
     
 def is_transform_default(transform):
     """

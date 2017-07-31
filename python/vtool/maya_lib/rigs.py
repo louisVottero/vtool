@@ -3876,6 +3876,8 @@ class TweakCurveRig(BufferRig):
         self.ribbon_offset_axis = 'Z'
         
         self.follicle_ribbon = False
+        
+        
     
     def _create_control(self, sub = False):
         
@@ -3928,7 +3930,9 @@ class TweakCurveRig(BufferRig):
         cluster_curve.set_join_both_ends(self.join_both_ends)
         cluster_curve.create()
         
+        self.cluster_handles = cluster_curve.handles
         self.cluster_deformers = cluster_curve.clusters
+        
         
         return cluster_curve.get_cluster_handle_list()
         
