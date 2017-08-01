@@ -2082,6 +2082,8 @@ def transforms_to_nurb_surface(transforms, description = 'from_transforms', span
     
     return loft[0]
 
+
+
 def transforms_to_curve(transforms, spans = None, description = 'from_transforms'):
     """
     Create a curve from a list of transforms.  Good for create the curve for a spine joint chain or a tail joint chain.
@@ -2179,7 +2181,68 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
     if new_mesh:
         return new_mesh
     
+def nurb_surface_u_to_transforms(surface, count = 4, value = 0.5, orient_example = None):
+    
+    max_value_u = cmds.getAttr('%s.maxValueU' % surface)
+    max_value_v = cmds.getAttr('%s.maxValueV' % surface)
+    
+    mid_value = max_value_v*value*1.0
+    
+    section = max_value_u / (count * 1.0)
+    section_value = 0
+    
+    last_joint = None
+    
+    joints = []
+    
+    for inc in range(0, (count+1)):
+        
+        pos = cmds.pointPosition('%s.uv[%s][%s]' % (surface, section_value, mid_value))
+        
+        joint = cmds.createNode('joint', n = 'joint_%s_%s' % ((inc + 1), surface))
+        cmds.xform(joint, ws = True, t = pos)
+        
+        if last_joint:
+            cmds.parent(joint, last_joint)
+        
+        joints.append(joint)
+        
+        section_value += section
+        last_joint = joint
+    
+    return joints
+    
 
+def nurb_surface_v_to_transforms(surface, count = 4, value = 0.5, orient_example = None):
+    
+    max_value_u = cmds.getAttr('%s.maxValueU' % surface)
+    max_value_v = cmds.getAttr('%s.maxValueV' % surface)
+    
+    mid_value = max_value_u*value *1.
+        
+    section = max_value_v / (count * 1.0)
+    section_value = 0
+    
+    last_joint = None
+    
+    joints = []
+    
+    for inc in range(0, (count+1)):
+        
+        pos = cmds.pointPosition('%s.uv[%s][%s]' % (surface, mid_value, section_value))
+        
+        joint = cmds.createNode('joint', n = 'joint_%s_%s' % ((inc + 1), surface))
+        cmds.xform(joint, ws = True, t = pos)
+        
+        if last_joint:
+            cmds.parent(joint, last_joint)
+        
+        joints.append(joint)
+        
+        section_value += section
+        last_joint = joint
+    
+    return joints
 
 def expand_selected_edge_loop():
     """
