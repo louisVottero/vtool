@@ -405,6 +405,8 @@ class Control(object):
         self.control = new_name
         core.rename_shapes(self.control)
         
+        return self.control
+        
     def delete_shapes(self):
         """
         Delete the shapes beneath the control.
@@ -1514,7 +1516,9 @@ class MirrorControlKeyframes():
 
 def rename_control(old_name, new_name):
     
-    Control(old_name).rename(new_name)
+    new_name = Control(old_name).rename(new_name)
+    
+    return new_name
 
 def rename_message_groups(search_name, replace_name):
     
