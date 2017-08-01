@@ -340,7 +340,10 @@ class TransformFunction(MayaFunction):
         return transform_matrix.asMatrix()
     
     def get_vector_matrix_product(self, vector):
-        
+        """
+        Not working as expected, need to work on it.
+        """
+        vtool.util.warning('get_vector_matrix_product does not work... yet')
         vector_api = OpenMaya.MVector()
         vector_api.x = vector[0]
         vector_api.y = vector[1]
