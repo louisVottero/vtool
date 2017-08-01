@@ -480,7 +480,6 @@ class MatchSpace(object):
         """
         Match the rotate and scale pivot of target to the translation of source.
         """
-        
         position = self._get_translation()
         
         cmds.move(position[0], 
@@ -1335,11 +1334,11 @@ class DuplicateHierarchy(object):
         return found
         
     def _duplicate(self, transform):
-        
         new_name = transform
         
         if self.replace_old and self.replace_new:
             new_name = transform.replace(self.replace_old, self.replace_new)
+            new_name = core.get_basename(new_name)
         
         duplicate = cmds.duplicate(transform, po = True)[0]
         
@@ -1348,11 +1347,11 @@ class DuplicateHierarchy(object):
         duplicate = cmds.rename(duplicate, core.inc_name(new_name))
         
         self.duplicates.append( duplicate )
-
+        
         return duplicate
     
     def _duplicate_hierarchy(self, transform):
-            
+        
         if transform == self.stop_at_transform:
             self.stop = True
         
@@ -2139,10 +2138,65 @@ def get_axis_vector(transform, axis_vector):
     Returns:
         list: The result of multiplying the vector by the matrix. Good to get an axis in relation to the matrix.
     """
-    t_func = api.TransformFunction(transform)
-    new_vector = t_func.get_vector_matrix_product(axis_vector)
+    
+    node = cmds.createNode('vectorProduct')
+    group = cmds.group(em = True)
+    cmds.connectAttr('%s.worldMatrix' % transform, '%s.matrix' % node)
+    cmds.setAttr('%s.input1X' % node, axis_vector[0])
+    cmds.setAttr('%s.input1Y' % node, axis_vector[1])
+    cmds.setAttr('%s.input1Z' % node, axis_vector[2])
+    
+    #not working, need to test
+    #t_func = api.TransformFunction(transform)
+    #new_vector = t_func.get_vector_matrix_product(axis_vector)
+    cmds.setAttr( '%s.operation' % node, 4)
+    
+    
+    cmds.connectAttr('%s.output' % node, '%s.translate' % group)
+    
+    new_vector = cmds.getAttr('%s.translate' % group)[0] 
+    
+    cmds.delete(node)
+    cmds.delete(group)
     
     return new_vector
+
+def get_axis_aimed_at_child(transform):
+    
+    children = cmds.listRelatives(transform, type = 'transform')
+    
+    if not children:
+        return
+    
+    pos1 = cmds.xform(transform, q = True, ws = True, t = True)
+    pos2 = cmds.xform(children[0], q = True, ws = True, t = True)
+    
+    pos2 = vtool.util.vector_sub(pos2, pos1)
+    
+    all_axis = [[1,0,0], [-1,0,0], [0,1,0], [0,-1,0], [0,0,1], [0,0,-1]]
+    
+    good_axis = [0,0,0]
+    
+    current_result = 0
+    
+    for axis in all_axis:
+        axis_vector = get_axis_vector(transform, axis_vector = axis)
+        axis_vector = vtool.util.vector_sub(axis_vector, pos1)
+        
+        vector1 = vtool.util.Vector(axis_vector)
+        vector2 = vtool.util.Vector(pos2)
+        
+        
+        result = vtool.util.get_dot_product(vector1, vector2)
+        
+        print axis, result
+        
+        if result > current_result:
+            good_axis = axis
+            current_result = result
+            
+    
+    return good_axis
 
 def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
     """
@@ -2915,8 +2969,6 @@ def orient_x_to_child(joint, invert = False):
     orient.set_aim_vector(aim_axis)
     orient.set_up_vector(up_axis)
     orient.run()
-    
-    
 
 def find_transform_right_side(transform, check_if_exists = True):
     """
