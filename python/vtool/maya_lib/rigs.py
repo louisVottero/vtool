@@ -42,6 +42,7 @@ class Rig(object):
         self.setup_parent = None
         
         self._create_default_groups()
+        self._delete_setup = False
         
         self.control_shape = 'circle'
         self.sub_control_shape = None
@@ -70,7 +71,7 @@ class Rig(object):
                     
                     class_name = self.__class__.__name__
                     
-                    vtool.util.warning('Unused setup group in class: %s with description %s %s' % (class_name, self.description, self.side))
+                    vtool.util.warning('Empyt setup group in class: %s with description %s %s.' % (class_name, self.description, self.side))
     
     
     def _create_group(self,  prefix = None, description = None):
@@ -100,10 +101,19 @@ class Rig(object):
         if not group or not custom_parent:
             return
         
-        if not cmds.objExists(group) or not cmds.objExists(custom_parent):
+        if not cmds.objExists(group):
+            return
+        if not cmds.objExists(custom_parent):
+            vtool.util.warning('%s does not exist to be a parent.' % custom_parent)
             return
         
+        parent = cmds.listRelatives(group, p = True)
+        if parent:
+            if custom_parent == parent[0]:
+                return
+        
         try:    
+            
             cmds.parent(group, custom_parent)
         except:
             pass
@@ -354,22 +364,35 @@ class Rig(object):
         """
         
         vtool.util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
-        
         self._parent_default_groups()
+        if self._delete_setup:
+            self.delete_setup()
         
     def delete_setup(self):
-
+        
+        
+        
         if cmds.objExists(self.setup_group):
         
             if core.is_empty(self.setup_group):
                 parent = cmds.listRelatives(self.setup_group, p = True)
                 
+                if parent:
+                    vtool.util.warning('Setup group was parented. Skipping deletion.')
+                
                 if not parent:
                     cmds.delete(self.setup_group)
                     return
-                
-        vtool.util.warning('Could not delete setup group. rig: %s %s of class %s' % (self.description, self.side, self.__class__.__name__ ))
+            if core.is_empty(self.setup_group) and self._delete_setup:
+                    vtool.util.warning('Setup group is not empty. Skipping deletion.')
         
+        if not cmds.objExists(self.setup_group) and self._delete_setup:
+            vtool.util.warning('Setup group does not exist. Skipping deletion.')
+        
+        if self._delete_setup:
+            vtool.util.warning('Could not delete setup group. rig: %s side: %s of class: %s' % (self.description, self.side, self.__class__.__name__ ))
+        
+        self._delete_setup = True
         
 class JointRig(Rig):
     """
@@ -523,6 +546,13 @@ class BufferRig(JointRig):
         if self.create_buffer_joints:
             self._attach_joints(self.buffer_joints, self.joints)
         
+    def delete_setup(self):
+        
+        if self.create_buffer_joints:
+            vtool.util.warning('Skipping setup group deletion. The buffer is set to True and duplicate joints need to be stored under the setup.')
+            return
+        
+        super(BufferRig, self).delete_setup()
         
 
 class CurveRig(Rig):
@@ -992,7 +1022,9 @@ class GroundRig(JointRig):
         self.scalable = bool_value
     
     def create(self):
+        
         super(GroundRig, self).create()
+        
         
         scale = self.sub_control_size
         last_control = None
@@ -2823,7 +2855,6 @@ class FkCurveLocalRig(FkCurveRig):
         """
 
 
-#---IK
 
 class IkSplineNubRig(BufferRig):
     """
@@ -3632,21 +3663,11 @@ class IkAppendageRig(BufferRig):
         
         if self.create_twist:
             
-            self.pole_follow_transform = vtool.util.convert_to_sequence(self.pole_follow_transform)
             
-            pole_locator = cmds.spaceLocator(n = self._get_name('locator', 'pole'))[0]
-            
-            space.MatchSpace(self.poleControl, pole_locator).translation_rotation()
-            cmds.parent(pole_locator, self.setup_group)
-            
-            self.pole_follow_transform.append(self.top_control)
-            
-            if len(self.pole_follow_transform) == 1:
-                space.create_follow_group(self.pole_follow_transform[0], pole_locator)
-            if len(self.pole_follow_transform) > 1:
-                space.create_multi_follow(self.pole_follow_transform, pole_locator, self.poleControl, value = 0)
+            pole_locator = self._create_pole_follow()
             
             follow_group = space.create_follow_group(pole_locator, xform_group)
+            xform_group = space.create_xform_group( control.get() )
             
             constraint = cmds.parentConstraint(self.twist_guide, follow_group, mo = True)[0]
             constraint_editor = space.ConstraintEditor()
@@ -3661,7 +3682,6 @@ class IkAppendageRig(BufferRig):
             
             if not self.pole_follow_transform:
                 follow_group = xform_group
-            #    follow_group = space.create_follow_group(self.top_control, xform_group)
         
         if follow_group:
             cmds.parent(follow_group,  self.control_group )
@@ -3676,7 +3696,24 @@ class IkAppendageRig(BufferRig):
         
         self.pole_vector_xform = xform_group
         
-
+    def _create_pole_follow(self):
+        
+        self.pole_follow_transform = vtool.util.convert_to_sequence(self.pole_follow_transform)
+            
+        pole_locator = cmds.spaceLocator(n = self._get_name('locator', 'pole'))[0]
+        
+        space.MatchSpace(self.poleControl, pole_locator).translation_rotation()
+        cmds.parent(pole_locator, self.setup_group)
+        
+        self.pole_follow_transform.append(self.top_control)
+        
+        if len(self.pole_follow_transform) == 1:
+            space.create_follow_group(self.pole_follow_transform[0], pole_locator)
+        if len(self.pole_follow_transform) > 1:
+            space.create_multi_follow(self.pole_follow_transform, pole_locator, self.poleControl, value = 0)
+        
+        return pole_locator
+        
     def _create_stretchy(self, top_transform, btm_transform, control):
         stretchy = rigs_util.StretchyChain()
         
@@ -4264,8 +4301,13 @@ class ConvertJointToNub(object):
     def set_control_parent(self, name):
         self.control_parent = name
         
+        print 'setting control parent!'
+        
         if cmds.objExists(self.control_group) and cmds.objExists(name):
+            print 'about to parent', name
             cmds.parent(self.control_group, name)
+        else:
+            print self.control_group, name
         
     def set_setup_parent(self, name):
         self.setup_parent = name
@@ -5255,7 +5297,13 @@ class IkFrontLegRig(IkAppendageRig):
         
         if self.create_twist:
             
-            cmds.parentConstraint(self.twist_guide, xform_group, mo = True)[0]
+            if not self.pole_follow_transform:
+                cmds.parentConstraint(self.twist_guide, xform_group, mo = True)[0]
+            if self.pole_follow_transform:
+                sequence = vtool.util.convert_to_sequence(self.pole_follow_transform)
+                sequence.append(self.twist_guide)
+                
+                space.create_multi_follow_direct(sequence, xform_group, self.poleControl)
             
             follow_group = xform_group
             
@@ -5574,7 +5622,7 @@ class IkBackLegRig(IkFrontLegRig):
         cmds.parent(self.lower_offset_chain[1], self.setup_group)
         self.lower_offset_chain.reverse()
         
-        cmds.connectAttr('%s.scaleX' % self.offset_chain[-2], '%s.scaleX' % self.lower_offset_chain[0])
+        cmds.connectAttr('%s.scale%s' % (self.offset_chain[-2], self.stretch_axis), '%s.scale%s' % (self.lower_offset_chain[0], self.stretch_axis))
         
         cmds.delete(self.offset_chain[-1])
         self.offset_chain.pop(-1)
@@ -5687,6 +5735,7 @@ class RollRig(JointRig):
         
         self.create_roll_controls = True
         self.attribute_control = None
+        self.attribute_control_shape = 'square'
         
         self.ik_chain = []
         self.fk_chain = []
@@ -5781,7 +5830,7 @@ class RollRig(JointRig):
     
     def _create_roll_control(self, transform):
         
-        roll_control = self._create_control('roll', curve_type= 'square') 
+        roll_control = self._create_control('roll', curve_type= self.attribute_control_shape) 
         
         self.roll_control = roll_control
         
@@ -5854,6 +5903,9 @@ class RollRig(JointRig):
         
     def set_attribute_control(self, control_name):
         self.attribute_control = control_name
+    
+    def set_attribute_control_shape(self, shape_name):
+        self.attribute_control_shape = shape_name
     
     def set_control_shape(self, shape_name):
         self.control_shape = shape_name
@@ -6180,6 +6232,8 @@ class BaseFootRig(BufferRig):
         self.side_roll_axis = 'Z'
         self.top_roll_axis = 'Y'
         
+        self.attribute_control_shape = 'square'
+        
         self.locators = []
             
     def _get_attribute_control(self):
@@ -6245,7 +6299,7 @@ class BaseFootRig(BufferRig):
     
     def _create_roll_control(self, transform):
         
-        roll_control = self._create_control('roll', curve_type = 'square') 
+        roll_control = self._create_control('roll', curve_type = self.attribute_control_shape) 
         
         self.roll_control = roll_control
         
@@ -6283,6 +6337,9 @@ class BaseFootRig(BufferRig):
     
     def set_control_shape(self, shape_name):
         self.control_shape = shape_name
+    
+    def set_attribute_control_shape(self, shape_name):
+        self.attribute_control_shape = shape_name
     
     def set_forward_roll_axis(self, axis_letter):
         self.forward_roll_axis = axis_letter
@@ -6345,7 +6402,6 @@ class FootRig(BaseFootRig):
             self.joints[0] = joint
         
     def _create_ik_chain(self):
-        
         
         duplicate = space.DuplicateHierarchy(self.buffer_joints[0])
         duplicate.only_these(self.buffer_joints)
@@ -6870,7 +6926,7 @@ class QuadFootRig(FootRig):
     
     def _create_roll_control(self, transform):
         
-        roll_control = self._create_control('roll', curve_type='square') 
+        roll_control = self._create_control('roll', curve_type = self.attribute_control_shape) 
         
         self.roll_control = roll_control
         
@@ -7008,10 +7064,13 @@ class QuadFootRig(FootRig):
                     
     def create(self):
         
+        
         if self.extra_ball:
             self.joints.insert(2, self.extra_ball)
         
         super(FootRig,self).create()
+        
+        
         
         if len(self.joints) < 3:
             vtool.util.warning('Please set three joints. set_joints([joint_ankle, joint_ball, joint_toe])')
@@ -7021,6 +7080,7 @@ class QuadFootRig(FootRig):
             return
         
         self._create_ik_chain()
+        
         self._attach_ik_chain()
         
         self.ankle = self.ik_joints[0]
