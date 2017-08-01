@@ -674,6 +674,17 @@ def vector_add(vector1, vector2):
     """
     return [ vector1[0] + vector2[0], vector1[1] + vector2[1], vector1[2] + vector2[2] ]
 
+def vector_sub(vector1, vector2):
+    """
+    Args:
+        vector1 (list): 3 value list
+        vector2 (list): 3 value list
+        
+    Return:
+        list: 3 value list
+    """
+    return [ vector1[0] - vector2[0], vector1[1] - vector2[1], vector1[2] - vector2[2] ]
+
 def vector_cross(vector1, vector2, normalize = True):
     """
     Args:
