@@ -1512,6 +1512,90 @@ class MirrorControlKeyframes():
                 
                 cmds.connectAttr(mapped_input[inc], new_input, f = True)
 
+class TwistRibbon(object):
+    
+    def __init__(self, joint):
+        
+        self.joints = []
+        self.rivets = []
+        self.surface = None
+        self.top_locator = None
+        self.btm_locator = None
+        self.joint_count = 5
+        self.group = None
+        self._joint = joint
+        self._description = 'section'
+        self._offset_axis = 'Y'
+        
+    def set_description(self, description):
+        self._description = description
+        
+    def set_joint_count(self, int_value):
+        self.joint_count = int_value 
+        
+    def set_joints(self, joint_list):
+        self.joints = joint_list
+        
+    def set_ribbon_offset_axis(self, axis_letter):
+        self._offset_axis = axis_letter
+        
+    def create(self):
+    
+        children = cmds.listRelatives(self._joint, type = 'joint')
+        
+        top_loc = cmds.spaceLocator(n = core.inc_name('locator_twistRibbonTop_%s' % self._description))[0]
+        btm_loc = cmds.spaceLocator(n = core.inc_name('locator_twistRibbonBtm_%s' % self._description))[0]
+        
+        
+        if not children:
+            vtool.util.warning('No child found for %s. Could not create strip' % self._joint)
+            return
+        
+        ribbon_gr = cmds.group(em = True, n = core.inc_name('twistRibbon_%s' % self._description))
+        self.group = ribbon_gr
+        
+        #temp_group = cmds.group(em = True)
+        #space.MatchSpace(children[0], temp_group).translation()
+        #space.MatchSpace(self._joint, temp_group).rotation()
+        temp_group = children[0]
+        
+        self.surface = geo.transforms_to_nurb_surface([self._joint, temp_group], description = self._description, offset_axis=self._offset_axis)
+        
+        #cmds.delete(temp_group)
+        
+        cmds.parent(self.surface, ribbon_gr)
+        if not self.joints:
+            self.joints = geo.nurb_surface_v_to_transforms(self.surface, count=self.joint_count)
+            cmds.parent(self.joints, ribbon_gr)
+        
+        rivet_gr = cmds.group(em = True, n = core.inc_name('twistRibbon_rivets_%s' % self._description))
+        cmds.parent(rivet_gr, ribbon_gr)
+        
+        for joint in self.joints:
+            
+            rivet = geo.attach_to_surface(joint, self.surface, constrain=False)
+            shapes = core.get_shapes(rivet)
+            cmds.hide(shapes)
+            cmds.parent(rivet, rivet_gr)
+            cmds.makeIdentity(joint, apply = True, jo = True)
+            
+        cluster_surface = deform.ClusterSurface(self.surface, self._description)
+        cluster_surface.set_cluster_u(True)
+        cluster_surface.create()
+        handles = cluster_surface.get_cluster_handle_list()
+        
+        space.MatchSpace(handles[0], top_loc).translation_to_rotate_pivot()
+        space.MatchSpace(handles[1], btm_loc).translation_to_rotate_pivot()
+        
+        cmds.parent(handles[0], top_loc)
+        cmds.parent(handles[1], btm_loc)
+        
+        cmds.hide(handles)
+        
+        self.top_locator = top_loc
+        self.btm_locator = btm_loc
+        
+        return [top_loc, btm_loc]
 
 
 def rename_control(old_name, new_name):
@@ -2270,6 +2354,7 @@ def create_offset_sequence(attribute, target_transforms, target_attributes):
         
         inc += 1
         offset += section
+
 
 def get_controls(namespace = ''):
     """
