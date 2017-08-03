@@ -1974,6 +1974,7 @@ def get_distances(sources, target):
         distance = get_distance(source, target)
         distances.append(distance)
     
+    
     return distances
         
 def get_polevector(transform1, transform2, transform3, offset = 1):
@@ -3271,7 +3272,7 @@ def mirror_invert(transform, other = None):
     if not node_type == 'joint':
         dup = cmds.duplicate(transform, po = True)[0]
     if node_type == 'joint':
-        cmds.makeIdentity(transform, apply = True, jo = True)
+        cmds.makeIdentity(transform, apply = True, r = True)
         dup = cmds.group(em = True)
     
     match = MatchSpace(transform, dup)
