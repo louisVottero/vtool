@@ -5533,17 +5533,17 @@ class IkScapulaRig(BufferRig):
         rig_line = rigs_util.RiggedLine(control, self.joints[-1], self._get_name()).create()
         cmds.parent(rig_line, self.control_group)
         
+        attr.create_title(self.shoulder_control, 'Scapula')
+        
+        cmds.addAttr(self.shoulder_control, ln = 'aimVisibility', at = 'bool', k = True)
+        
         
         if self.create_rotate_control:
             
             self._create_rotate_control()
-            
         
-        
-        
-        
-        
-        
+        cmds.connectAttr('%s.aimVisibility' % self.shoulder_control, '%s.visibility' % rig_line)
+        cmds.connectAttr('%s.aimVisibility' % self.shoulder_control, '%sShape.visibility' % control)
         
         if self.create_rotate_control:
             cmds.parent(self.xform_rotate, self.shoulder_control)
