@@ -2074,7 +2074,7 @@ def transforms_to_nurb_surface(transforms, description = 'from_transforms', span
                                         degree = 3, 
                                         tol =  0.01)
         
-    loft = cmds.loft(curve_1, curve_2, n ='nurbsSurface_%s' % description, ss = 1, degree = 1, ch = False)
+    loft = cmds.loft(curve_1, curve_2, n =core.inc_name('nurbsSurface_%s' % description), ss = 1, degree = 1, ch = False)
     
     #cmds.rebuildSurface(loft,  ch = True, rpo = 1, rt = 0, end = 1, kr = 0, kcp = 0, kc = 0, su = 1, du = 1, sv = spans, dv = 3, fr = 0, dir = 2)
       
@@ -2204,14 +2204,15 @@ def nurb_surface_u_to_transforms(surface, count = 4, value = 0.5, orient_example
         
         if last_joint:
             cmds.parent(joint, last_joint)
+            space.orient_x_to_child(last_joint)
         
         joints.append(joint)
         
         section_value += section
         last_joint = joint
         
-        
-    
+        if inc == count:
+            cmds.makeIdentity(joint, apply = True, jo = True)
     
     return joints
     
@@ -2239,11 +2240,15 @@ def nurb_surface_v_to_transforms(surface, count = 4, value = 0.5, orient_example
         
         if last_joint:
             cmds.parent(joint, last_joint)
+            space.orient_x_to_child(last_joint)
         
         joints.append(joint)
         
         section_value += section
         last_joint = joint
+        
+        if inc == count:
+            cmds.makeIdentity(joint, apply = True, jo = True)
     
     return joints
 

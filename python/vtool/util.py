@@ -1757,7 +1757,7 @@ class QuickSort(object):
         if not self.list_of_numbers:
             return
         
-        if not len(self.follower_list) == len(self.list_of_numbers):
+        if self.follower_list and len(self.follower_list) != len(self.list_of_numbers):
             return
         
         return self._sort(self.list_of_numbers, self.follower_list)
