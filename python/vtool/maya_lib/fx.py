@@ -432,8 +432,9 @@ def connect_hair_to_nucleus(hair_system, nucleus):
     cmds.setAttr('%s.active' % hair_system_shape, 1)
     
     cmds.refresh()
+    
 
-def create_follicle(name = None, hair_system = None):
+def create_follicle(name = None, hair_system = None, uv = []):
     """
     Create a follicle.
     
@@ -460,9 +461,17 @@ def create_follicle(name = None, hair_system = None):
     cmds.setAttr('%s.restPose' % follicle_shape, 1)
     cmds.setAttr('%s.degree' % follicle_shape, 3)
     
+    if uv:
+        cmds.setAttr('%s.parameterU' % follicle, uv[0])
+        cmds.setAttr('%s.parameterV' % follicle, uv[1])
+        
+    
     if hair_system:
         connect_follicle_to_hair(follicle, hair_system)
-            
+    
+    cmds.connectAttr('%s.outTranslate' % follicle_shape, '%s.translate' % follicle)
+    cmds.connectAttr('%s.outRotate' % follicle_shape, '%s.rotate' % follicle)
+    
     return follicle, follicle_shape    
         
 def connect_follicle_to_hair(follicle, hair_system):
@@ -490,7 +499,7 @@ def connect_follicle_to_hair(follicle, hair_system):
     
     cmds.refresh()
     
-def make_curve_dynamic(curve, hair_system = None):
+def make_curve_dynamic(curve, hair_system = None, mesh = None):
     """
     Replace a curve with a dynamic curve in a follicle. Good for attaching to a spline ik, to make it dynamic.
     It will make a duplicate of the curve so that the dynamics of the follicle can be switched on/off.
@@ -505,13 +514,24 @@ def make_curve_dynamic(curve, hair_system = None):
     """
     parent = cmds.listRelatives(curve, p = True)
     
-    follicle, follicle_shape = create_follicle(curve, hair_system)
+    uv = []
+    
+    if mesh:
+        uv = geo.get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 10)
+    
+    follicle, follicle_shape = create_follicle(curve, hair_system, uv = uv)
+    
+    if mesh:
+        mesh_shape = geo.get_mesh_shape(mesh, shape_index = 0)
+        cmds.connectAttr('%s.worldMatrix' % mesh_shape, '%s.inputWorldMatrix' % follicle_shape )
+        cmds.connectAttr('%s.outMesh' % mesh_shape, '%s.inputMesh' % follicle_shape )
 
     new_curve = cmds.duplicate(curve)[0]
     new_curve = cmds.rename(new_curve, 'input_%s' % curve)
     cmds.hide(new_curve)
     
-    cmds.setAttr('%s.inheritsTransform' % curve, 0)
+    if not mesh:
+        cmds.setAttr('%s.inheritsTransform' % curve, 0)
     
     cmds.connectAttr('%s.worldMatrix' % new_curve, '%s.startPositionMatrix' % follicle_shape)
     cmds.connectAttr('%s.local' % new_curve, '%s.startPosition' % follicle_shape)
@@ -524,6 +544,8 @@ def make_curve_dynamic(curve, hair_system = None):
             
     if parent:
         cmds.parent(follicle, parent)
+    
+    
         
     return follicle
 
@@ -646,6 +668,10 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
         
         
     return follicle
+
+def get_output_curve(follicle):
+    
+    return attr.get_outputs('%s.outCurve' % follicle, node_only = True)
 
     
 #--- Cloth
