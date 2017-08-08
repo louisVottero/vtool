@@ -2217,7 +2217,7 @@ def nurb_surface_u_to_transforms(surface, count = 4, value = 0.5, orient_example
         
         section_value += section
         last_joint = joint
-    
+        
         if inc == count:
             cmds.makeIdentity(joint, apply = True, jo = True)
     
