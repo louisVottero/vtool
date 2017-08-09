@@ -1039,7 +1039,7 @@ class StretchyChain:
             
         damp = attr.MayaNumberVariable(self.damp_name)
         damp.set_node(self.attribute_node)
-        damp.set_variable_type(dampen.TYPE_DOUBLE)
+        damp.set_variable_type(damp.TYPE_DOUBLE)
         damp.set_min_value(0)
         damp.set_max_value(1)
         damp.create()
