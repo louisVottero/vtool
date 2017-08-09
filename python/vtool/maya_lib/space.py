@@ -758,7 +758,7 @@ class IkHandle(object):
                                        endEffector = self.end_joint,
                                        sol = self.solver_type )
                            
-        cmds.rename(effector, 'effector_%s' % ik_handle)
+        cmds.rename(effector, core.inc_name('effector_%s' % ik_handle))
         self.ik_handle = ik_handle
         
     def _create_spline_ik(self):
