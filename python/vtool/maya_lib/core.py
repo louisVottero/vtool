@@ -710,7 +710,7 @@ def get_node_types(nodes, return_shape_type = True):
         
     return found_type
      
-def get_basename(name, remove_namespace = True):
+def get_basename(name, remove_namespace = True, remove_attribute = False):
     """
     Get the basename in a hierarchy name.
     If top|model|face is supplied, face will be returned.
@@ -718,11 +718,18 @@ def get_basename(name, remove_namespace = True):
     
     split_name = name.split('|')
     
+    
     basename = split_name[-1]
+    
+    if remove_attribute:
+        basename_split = basename.split('.')
+        basename = basename_split[0]
     
     if remove_namespace:
         split_basename = basename.split(':')
         return split_basename[-1]
+    
+    
     
     return split_name[-1]
 
@@ -1345,8 +1352,6 @@ def show_channel_box():
         if 'Channel Box / Layer Editor' in docks:
             index = docks.index('Channel Box / Layer Editor')
             dock = docks[index + 1]
-            
-            print 'dock'
             
             if cmds.workspaceControl(dock, q = True, visible = True):
                 cmds.workspaceControl(dock, edit = True, visible = False)

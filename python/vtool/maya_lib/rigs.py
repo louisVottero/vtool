@@ -59,6 +59,7 @@ class Rig(object):
         self.control_dict = {}
         
         self.sub_visibility = False
+        self._connect_sub_vis_attr = None
         
     def __del__(self):
         
@@ -242,7 +243,27 @@ class Rig(object):
         self.control_dict[control.get()] = {}
         
         return control
+    
+    def _connect_sub_visibility(self, control_and_attr, sub_control):
+        
+        shapes = cmds.listRelatives(sub_control, shapes = True)
             
+        for shape in shapes:
+            
+            attr.connect_visibility(control_and_attr, shape, self.sub_visibility)
+            
+            if self._connect_sub_vis_attr:
+                
+                if not cmds.objExists(self._connect_sub_vis_attr):
+                    node = core.get_basename(self._connect_sub_vis_attr, remove_attribute = True)
+                    attribute = attr.get_attribute_name(self._connect_sub_vis_attr)
+                    
+                    cmds.addAttr(node, ln = attribute, at = 'bool', k = True, dv = self.sub_visibility)
+                
+                if not attr.is_connected(control_and_attr):
+                    cmds.connectAttr(self._connect_sub_vis_attr, control_and_attr)
+                
+    
     def set_control_shape(self, shape_name):
         """
         Sets the look of the controls, based on predifined names.
@@ -329,7 +350,13 @@ class Rig(object):
         """
         self.sub_visibility = bool_value
     
-    def get_control_entries(self, title):
+    def connect_sub_visibility(self, attr_name):
+        """
+        This connects the subVisibility attribute to the specified attribute.  Good when centralizing the sub control visibility. 
+        """
+        self._connect_sub_vis_attr = attr_name
+    
+    def get_controls(self, title):
         """
         Get entries for every control. 
         For example, title could be "xform".  It would return all the xform nodes.
@@ -343,7 +370,7 @@ class Rig(object):
         
         return entries
         
-    def get_sub_control_entries(self, title):
+    def get_sub_controls(self, title):
         """
         Get entries for every sub control. 
         For example, title could be "xform".  It would return all the xform nodes.
@@ -1044,7 +1071,10 @@ class GroundRig(JointRig):
                 
             if inc > 0:
                 control = self._create_control(sub =  True)
-                attr.connect_visibility('%s.subVisibility' % first_control, '%sShape' % control.get(), self.sub_visibility)
+
+                self._connect_sub_visibility('%s.subVisibility' % first_control, control.get())
+                    
+                
                 
             controls.append(control.get())
             
@@ -1161,7 +1191,7 @@ class FkRig(BufferRig):
                 
                 space.MatchSpace(control.get(), sub_control.get()).translation_rotation()
                 
-                attr.connect_visibility('%s.subVisibility' % control.get(), '%sShape' % sub_control.get(), self.sub_visibility)
+                self._connect_sub_visibility('%s.subVisibility' % control.get(), sub_control.get())
                 
                 subs.append(sub_control.get())
                 
@@ -2315,21 +2345,7 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
     def _create_sub_control(self):
             
         sub_control = self._create_control( sub = True)
-        
-        #sub_control = rigs_util.Control( self._get_control_name(sub = True) )
-        #sub_control.color( attr.get_color_of_side( self.side , True)  )
-        
-        #if self.sub_control_color:
-        #    sub_control.color( self.sub_control_color )    
-        
-        #if self.control_shape:
-            
-        #    sub_control.set_curve_type(self.control_shape)
-        """
-        sub_control.scale_shape(self.control_size * .9 * self.sub_control_size, 
-                                self.control_size * .9 * self.sub_control_size,
-                                self.control_size * .9 * self.sub_control_size)
-        """
+
         return sub_control
 
     def _first_increment(self, control, current_transform):
@@ -2408,21 +2424,13 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
 
             match = space.MatchSpace(control, xform_sub_control)
             match.translation_rotation()
-        
-            #xform_sub_control = space.create_xform_group(sub_control)
-            #self.sub_drivers.append( space.create_xform_group(sub_control, 'driver') )
             
             self.sub_drivers.append( self.control_dict[sub_control]['driver'])
             
             cmds.parent(xform_sub_control, self.control.get())
             
-            #self.sub_controls.append(sub_control)
+            self._connect_sub_visibility('%s.subVisibility' % control, sub_control)
             
-            sub_vis = attr.MayaNumberVariable('subVisibility')
-            sub_vis.set_variable_type(sub_vis.TYPE_BOOL)
-            sub_vis.set_value(self.sub_visibility)
-            sub_vis.create(control)
-            sub_vis.connect_out('%sShape.visibility' % sub_control)
                 
             sub_control_object.hide_scale_and_visibility_attributes()
             
@@ -3450,7 +3458,7 @@ class IkAppendageRig(BufferRig):
         
             cmds.parent(xform_group, control.get())
             
-            attr.connect_visibility('%s.subVisibility' % self.btm_control, '%sShape' % self.sub_control, self.sub_visibility)
+            self._connect_sub_visibility('%s.subVisibility' % self.btm_control, self.sub_control)
         
         return control.get()
     
@@ -4301,13 +4309,8 @@ class ConvertJointToNub(object):
     def set_control_parent(self, name):
         self.control_parent = name
         
-        print 'setting control parent!'
-        
         if cmds.objExists(self.control_group) and cmds.objExists(name):
-            print 'about to parent', name
             cmds.parent(self.control_group, name)
-        else:
-            print self.control_group, name
         
     def set_setup_parent(self, name):
         self.setup_parent = name
@@ -4722,10 +4725,8 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
                 
             self.tweak_controls.append(control)
             
-            shapes = cmds.listRelatives(control, shapes = True)
             
-            for shape in shapes:
-                attr.connect_visibility('%s.tweakVisibility' % self.top_control, shape, self.sub_visibility)
+            self._connect_sub_visibility('%s.tweakVisibility' % self.top_control, control)
             
             follow += sub_follow
         
@@ -4754,7 +4755,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             
             space.MatchSpace(control, sub_control.get()).translation_rotation()
             
-            attr.connect_visibility('%s.subVisibility' % control, '%sShape' % sub_control.get(), self.sub_visibility)
+            self._connect_sub_visibility('%s.subVisibility' % control, sub_control.get())
             
             if not subs:
                 cmds.parent(sub_control.get(), control)
