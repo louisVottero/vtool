@@ -1032,7 +1032,7 @@ class StretchyChain:
         multiply.input2X_in(self.distance_offset_attribute)
         multiply.outputX_out(plug)
         
-    def _create_dampen(self, distance_node, plugs):
+    def _create_damp(self, distance_node, plugs):
         
         min_length = space.get_distance(self.joints[0], self.joints[-1])
         #max_length = self._get_length()
