@@ -1975,6 +1975,20 @@ def get_outputs(node, node_only = True):
                                 plugs = plugs,
                                 skipConversionNodes = True)    
 
+def get_attribute_name(node_and_attribute):
+    """
+    For a string node.attribute, return the attribute portion
+    """
+    
+    split = node_and_attribute.split('.')
+    
+    attribute = ''
+    
+    if split and len(split) > 1:
+        attribute = string.join(split[1:], '.')
+    
+    return attribute
+
 def get_attribute_input(node_and_attribute, node_only = False):
     """
     Get the input into the specified attribute.
