@@ -1553,6 +1553,10 @@ def get_empty_groups():
     found = []
     
     for group in groups:
+        
+        if cmds.nodeType(group) == 'joint':
+            continue
+        
         if is_empty(group):
             found.append(group)
             
