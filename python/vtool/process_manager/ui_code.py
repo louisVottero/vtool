@@ -1502,6 +1502,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         code_file = process_tool.get_code_file(name)
         
         status = process_tool.run_script(code_file, False)
+        log = vtool.util.get_env('VETALA_LAST_TEMP_LOG')
+        
+        item.set_log(log)
         
         if status == 'Success':
             item.set_state(1)
