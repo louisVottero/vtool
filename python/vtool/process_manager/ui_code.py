@@ -192,6 +192,9 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     def set_process_script_state(self, directory, state):
         self.script_widget.set_process_script_state(directory, state)
         
+    def set_process_script_log(self, directory, log):
+        self.script_widget.set_process_script_log(directory, log)
+        
     def refresh_manifest(self):
         self.script_widget.code_manifest_tree.refresh()
         
@@ -574,6 +577,9 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
     def set_process_script_state(self, directory, state):
         self.code_manifest_tree.set_process_script_state(directory, state)
+    
+    def set_process_script_log(self, directory, log):
+        self.code_manifest_tree.set_process_script_log(directory, log)
         
     def set_external_code_library(self, code_directory):
         self.exteranl_code_libarary = code_directory
@@ -627,6 +633,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         header = self.header()
         
+        self.expand_collapse = qt.QPushButton('Collapse')
         self.checkbox = qt.QCheckBox(header)
         self.checkbox.stateChanged.connect(self._set_all_checked)
         
@@ -1098,7 +1105,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         rename_action = self.context_menu.addAction(self.tr('Rename'))
         delete_action = self.context_menu.addAction('Delete')
         
+        
         self.context_menu.addSeparator()
+        log_window = self.context_menu.addAction('Show Log')
         new_window_action = self.context_menu.addAction('Open In New Window')
         external_window_action = self.context_menu.addAction('Open In External')
         browse_action = self.context_menu.addAction('Browse')
@@ -1121,6 +1130,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         rename_action.triggered.connect(self._activate_rename)
         delete_action.triggered.connect(self.remove_current_item)
         
+        log_window.triggered.connect(self._open_log_window)
         new_window_action.triggered.connect(self._open_in_new_window)
         external_window_action.triggered.connect(self._open_in_external)
         browse_action.triggered.connect(self._browse_to_code)
@@ -1180,6 +1190,29 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             return
         
         self._rename_item(item, new_name)
+        
+    def _open_log_window(self):
+        text_window = qt_ui.BasicWindow(self)
+        
+        
+        items = self.selectedItems()
+        item = items[0]
+        log = item.log
+        
+        text_window.setWindowTitle('%s log' % item.get_text())
+        
+        
+        log_text = qt.QPlainTextEdit()
+        log_text.setReadOnly(True)
+        log_text.setPlainText(log)
+        log_text.setLineWrapMode(log_text.NoWrap)
+        log_text.setMinimumHeight(300)
+        log_text.setMinimumWidth(400)
+        #log_text.setText(log)
+        
+        text_window.main_layout.addWidget(log_text)
+        
+        text_window.show()
         
     def _open_in_new_window(self):
         
@@ -1547,6 +1580,16 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         item.set_state(state)
         
+    def set_process_script_log(self, directory, log):
+        script_name = directory
+        
+        item = self._get_item_by_name(script_name)
+        
+        if not item:
+            return
+        
+        item.set_log(log)
+        
     def is_process_script_breakpoint(self, directory):
         
         item = self._get_item_by_name(directory)
@@ -1812,6 +1855,7 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         self.setCheckState(0, qt.QtCore.Qt.Unchecked)
         
         self.run_state = -1
+        self.log = ''
         
     
     def _square_fill_icon(self, r,g,b):
@@ -1938,3 +1982,6 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     
     def setText(self, index, text):
         return self.set_text(text)
+    
+    def set_log(self, log):
+        self.log = log
