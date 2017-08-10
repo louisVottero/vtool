@@ -1007,28 +1007,35 @@ def get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 50):
     
     closest_distance = None
     closest_position = None
+    out_closest_position = None
     
     for cv in cvs:
         
-        cv_position = cmds.xform(cv, q = True, t = True, ws = True)
+        cv_position = cmds.pointPosition(cv, w = True)
         closest_position = get_closest_position_on_mesh(mesh, cv_position)
         distance = vtool.util.get_distance(cv_position, closest_position)
         
         if not closest_distance:
             
             closest_distance = distance
-            closest_position = cv_position
+            out_closest_position = cv_position
         
         if distance < closest_distance:
-            closest_distance = distance
-            closest_position = cv_position
             
-        if distance == 0.00001:
+            closest_distance = distance
+            out_closest_position = cv_position
+            
+        if distance < 0.00001:
+            
+            closest_distance = distance
+            out_closest_position = cv_position
+            
+            
             break
     
     cmds.delete(temp_curve)
     
-    u,v = get_closest_uv_on_mesh(mesh, closest_position)
+    u,v = get_closest_uv_on_mesh(mesh, out_closest_position)
     
     return u,v
 
@@ -1954,7 +1961,7 @@ def create_surface_follicle(surface, description = None, uv = [0,0]):
     return follicle
 
 @core.undo_chunk
-def create_oriented_joints_on_curve(curve, count = 20, description = None):
+def create_oriented_joints_on_curve(curve, count = 20, description = None, attach = False):
     """
     Create joints on curve that are oriented to aim at child.
     
@@ -2001,9 +2008,9 @@ def create_oriented_joints_on_curve(curve, count = 20, description = None):
     ik_handle = ik.create()
     cmds.setAttr( '%s.dTwistControlEnable' % ik_handle, 1)
     cmds.refresh()
-    cmds.delete(ik_handle)
-    
-    cmds.makeIdentity(new_joint[0], apply = True, r = True)
+    if not attach:
+        cmds.delete(ik_handle)
+        cmds.makeIdentity(new_joint[0], apply = True, r = True)
     
     return new_joint
 

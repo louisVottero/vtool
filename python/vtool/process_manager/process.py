@@ -1510,7 +1510,7 @@ class Process(object):
         Returns:
             str: The status from running the script. This includes error messages.
         """
-
+        util.start_temp_log()
         builtins = dir(__builtin__)
         
         old_process = None
@@ -1656,7 +1656,7 @@ class Process(object):
         message = '\nEND\t%s\n\n' % name
                 
         util.show(message)
-            
+        util.end_temp_log()
         return status
                
     def run(self):
