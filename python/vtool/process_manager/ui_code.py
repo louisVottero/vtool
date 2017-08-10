@@ -278,6 +278,7 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
                 self.save_file.hide()
 
     def _collapse(self):
+        
         self.collapse.emit()
         
     def _load_file_text(self, path, open_in_window, name):
@@ -1207,7 +1208,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         log_text.setPlainText(log)
         log_text.setLineWrapMode(log_text.NoWrap)
         log_text.setMinimumHeight(300)
-        log_text.setMinimumWidth(400)
+        log_text.setMinimumWidth(600)
         #log_text.setText(log)
         
         text_window.main_layout.addWidget(log_text)
