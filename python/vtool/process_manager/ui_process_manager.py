@@ -320,9 +320,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.option_tabs.addTab(option_widget, 'Options')
         self.option_tabs.addTab(self.notes, 'Notes')
         self.option_tabs.addTab(self.template_widget, 'Templates')
-        
+        self.option_tabs.setCurrentIndex(1)
         
         self.option_tabs.currentChanged.connect(self._option_changed)
+        
         
         
         self.data_widget = ui_data.DataProcessWidget()
@@ -743,7 +744,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _process_item(self, item, comment):
         
-
+        
         
         if util.is_in_maya():
             import maya.cmds as cmds
@@ -797,7 +798,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     if not result2:
                         return
                 
-                
                 for level in children:
                     for level_item in level:
                         self.view_widget.tree_widget.setCurrentItem(level_item)
@@ -837,12 +837,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         start_new_scene = self.settings.get('start_new_scene_on_process')
         
         if util.is_in_maya() and start_new_scene and last_inc == None:
-            
-            
-            #display = maya_lib.core.StoreDisplaySettings()
-            #display.store()
             cmds.file(new = True, f = True)
-            #display.restore()
         
         scripts, states = self.process.get_manifest()
         
@@ -885,49 +880,51 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.kill_process = False
                 break
             
+            skip = False
+            
             if states:
                 state = states[inc]
                 
                 if not state:
                     self.code_widget.set_process_script_state(scripts[inc], -1)
                     skip_scripts.append(script_name)
-                    continue
-            
-            skip = False
-            
-            for skip_script in skip_scripts:
-                common_path = util_file.get_common_path(script, skip_script)
-                if common_path == skip_script:
-                    if script.startswith(skip_script):
-                        skip = True
-            
-            if skip:
-                continue
+                    skip = True
             
             
+            if not skip:
+                #this checks if the current script is a child of a skipped scipt.
+                for skip_script in skip_scripts:
+                    common_path = util_file.get_common_path(script, skip_script)
+                    if common_path == skip_script:
+                        if script.startswith(skip_script):
+                            skip = True
             
-            self.code_widget.set_process_script_state(scripts[inc], 2)
-            
-            status = self.process.run_script(script_name, False, self.settings.settings_dict)
-            
-            if not status == 'Success':
+            if not skip:
+                self.code_widget.set_process_script_state(scripts[inc], 2)
                 
-                self.code_widget.set_process_script_state(scripts[inc], 0)
+                status = self.process.run_script(script_name, False, self.settings.settings_dict)
+                temp_log = util.get_env('VETALA_LAST_TEMP_LOG')
                 
-                if stop_on_error:
-                    break
+                self.code_widget.set_process_script_log(scripts[inc], temp_log)
                 
-            if status == 'Success':
-                self.code_widget.set_process_script_state(scripts[inc], 1)
-            
-            if inc == script_count-1:
-                finished = True
+                if not status == 'Success':
+                    
+                    self.code_widget.set_process_script_state(scripts[inc], 0)
+                    
+                    if stop_on_error:
+                        break
+                    
+                if status == 'Success':
+                    self.code_widget.set_process_script_state(scripts[inc], 1)
+                
+                if inc == script_count-1:
+                    finished = True
             
             if code_manifest_tree.break_index:
                 if code_manifest_tree.is_process_script_breakpoint(scripts[inc]):
                     self.continue_button.show()
                     self.last_process_script_inc = inc
-                    
+                    finished = True
                     break
         
         util.set_env('VETALA_RUN', False)
