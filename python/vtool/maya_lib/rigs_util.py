@@ -2766,7 +2766,7 @@ def scale_controls(value):
 @core.undo_chunk
 def fix_sub_controls(controls = None):
     
-    vtool.util.convert_to_sequence(controls)
+    controls = vtool.util.convert_to_sequence(controls)
     
     if not controls:
         scope = cmds.ls(sl = True)
