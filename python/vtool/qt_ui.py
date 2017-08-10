@@ -2737,7 +2737,7 @@ class CodeTabWindow(BasicWindow):
         super(CodeTabWindow, self).__init__()
         
         self.installEventFilter(CodeTabWindow_ActiveFilter(self))
-        self.setWindowFlags(qt.QtCore.Qt.WindowStaysOnTopHint)
+        #self.setWindowFlags(qt.QtCore.Qt.WindowStaysOnTopHint)
         
         self.code_edit = None
         
