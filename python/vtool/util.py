@@ -46,6 +46,36 @@ def get_env(name):
     if os.environ.has_key(name):
         return os.environ[name]
 
+def append_env(name, value):
+    """
+    Append string value to the end of the environment variable
+    """
+    
+    env_value = get_env(name)
+    
+    env_value += str(value) 
+    
+    set_env(name, env_value)
+    
+def start_temp_log():
+    set_env('VETALA_KEEP_TEMP_LOG', 'True')
+    set_env('VETALA_TEMP_LOG', '')
+
+def record_temp_log(value):
+    
+    if get_env('VETALA_KEEP_TEMP_LOG') == 'True':
+        value = value.replace('\t', '  ')
+        append_env('VETALA_TEMP_LOG', value)
+
+def end_temp_log():
+    set_env('VETALA_KEEP_TEMP_LOG', 'False')
+    value = get_env('VETALA_TEMP_LOG')
+    set_env('VETAL_TEMP_LOG', '')
+    
+    set_env('VETALA_LAST_TEMP_LOG', value)
+    
+    return value
+
 def add_to_PYTHONPATH(path):
     """
     Add a path to the python path, only if it isn't present in the python path.
@@ -1589,13 +1619,20 @@ def show(*args):
     try:
         
         string_value = show_list_to_string(*args)
-        string_value = string_value.replace('\n', '\nV:\t\t')
+        log_value = string_value
         #do not remove
-        print 'V:\t\t%s' % string_value
+        string_value = string_value.replace('\n', '\nV:\t\t')
+        text = 'V:\t\t%s' % string_value
+         
+        print text
+        
+        record_temp_log('\n%s' % log_value)
     
     except:
         #do not remove
-        print 'V:\t\tCould not show %s' % args
+        text = 'V:\t\tCould not show %s' % args
+        print text
+        record_temp_log('\n%s' % log_value)
         raise(RuntimeError)
         
         
@@ -1604,13 +1641,18 @@ def warning(*args):
     try:    
         string_value = show_list_to_string(*args)
         string_value = string_value.replace('\n', '\nV:\t\t')
+        
+        text = 'V: Warning!\t%s' % string_value
         #do not remove
         if not is_in_maya():
-            print 'V: Warning!\t%s' % string_value
+             
+            print text 
         if is_in_maya():
             import maya.cmds as cmds
             cmds.warning('V: \t%s' % string_value)
-    
+        
+        record_temp_log('\n%s' % string_value)
+        
     except:
         raise(RuntimeError)
         
@@ -1620,11 +1662,15 @@ def error(*args):
         string_value = show_list_to_string(*args)
         string_value = string_value.replace('\n', '\nV:\t\t')
         #do not remove
-        print 'V: Error!\t%s' % string_value
-    
+        
+        text = 'V: Error!\t%s' % string_value 
+        print text
+        
+        record_temp_log('\n%s' % string_value)
+        
     except:
         raise(RuntimeError)
-
+    
 
 def find_possible_combos(names, sort = False, one_increment = False):
         
