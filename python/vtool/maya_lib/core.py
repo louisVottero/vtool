@@ -1039,7 +1039,7 @@ def print_help(string_value):
     string_value = string_value.replace('\n', '\nV:\t\t')
     
     OpenMaya.MGlobal.displayInfo('V:\t\t' + string_value)
-    vtool.util.record_temp_log('\n%s' % string_value) 
+    vtool.util.record_temp_log('\n%s' % string_value)
     
 def print_warning(string_value):
     
