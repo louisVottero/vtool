@@ -303,7 +303,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
     
     def _define_header(self):
-        return ['Name','Type']
+        return ['Name','Type','Size']
         
     def _item_renamed(self, item, old_name):
         
@@ -324,7 +324,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         return True
         
     def _load_data(self, preserve_selected = True, new_data = None):
-
+        
         self.clear()
 
         process_tool = process.Process()
@@ -336,6 +336,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             return
         
         select_item = None
+        
+        data_dir = process_tool.get_data_path()
         
         for foldername in folders:
             
@@ -356,6 +358,32 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             item.setText(1, nice_name)
             
             item.folder = foldername
+            
+            
+            
+            data_folder = vtool.util_file.join_path(data_dir, foldername)
+            
+            size_thread = DataSizeThread()
+            size_thread.run(data_dir, foldername, item)
+            
+            
+            stuff = vtool.util_file.get_files_and_folders(data_folder)
+            
+            size = '-'
+            
+            if foldername in stuff:
+                
+                sub_data_folder = vtool.util_file.join_path(data_folder, foldername)
+                size = vtool.util_file.get_folder_size(sub_data_folder)
+            
+            else:
+                for thing in stuff:
+                    if thing.find(foldername + '.') > -1:
+                        sub_data_file = vtool.util_file.join_path(data_folder, thing)
+                        size = vtool.util_file.get_filesize(sub_data_file)
+            
+            item.setText(2, str(size))
+            
             item.setSizeHint(0, qt.QtCore.QSize(100,20))
             self.addTopLevelItem(item)
             
@@ -389,7 +417,35 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
                 
     def refresh(self):
         self._load_data()
+
+class DataSizeThread(qt.QtCore.QThread):
+    def __init__(self, parent = None):
+        super(DataSizeThread, self).__init__(parent)
         
+    def run(self, data_path, data_name, item):
+        
+        data_folder = vtool.util_file.join_path(data_path, data_name)
+        stuff = vtool.util_file.get_files_and_folders(data_folder)
+        
+        item.setText(2, '...')
+        
+        size = '-'
+        
+        if data_name in stuff:
+            
+            sub_data_folder = vtool.util_file.join_path(data_folder, data_name)
+            size = vtool.util_file.get_folder_size(sub_data_folder)
+        
+        else:
+            for thing in stuff:
+                if thing.find(data_name + '.') > -1:
+                    sub_data_file = vtool.util_file.join_path(data_folder, thing)
+                    size = vtool.util_file.get_filesize(sub_data_file)
+        
+        item.setText(2, str(size))
+        
+        
+
 class DataTreeItem(vtool.qt_ui.TreeWidgetItem):
     pass
 
