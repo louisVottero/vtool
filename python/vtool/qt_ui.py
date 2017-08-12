@@ -2377,11 +2377,11 @@ class CodeEditTabs(BasicWidget):
         code_widget = self.code_tab_map[title]
         filepath = code_widget.text_edit.filepath
         
-        if util.get_maya_version() > 2016:
+        #if util.get_maya_version() > 2016:
             #there is a bug in maya 2017 and on that would crash maya when closing the tab.
             #this avoids the crash but leaves the tab open...
-            util.warning('Could not open floating code window %s in Maya 2017 and 2018... hopefully this can be fixed in the future.' % title)
-            return
+            #util.warning('Could not open floating code window %s in Maya 2017 and 2018... hopefully this can be fixed in the future.' % title)
+            #return
         
         self.add_floating_tab(filepath, title)
         
@@ -2422,13 +2422,19 @@ class CodeEditTabs(BasicWidget):
         
         basename = name
         
-        code_widget = None
-        
-        tab_index = -1
-        
         if self.code_tab_map.has_key(basename):
             code_widget = self.code_tab_map[basename]
-            tab_index = self.tabs.indexOf(code_widget)
+            index = self.tabs.indexOf(code_widget)
+        
+            if index > -1:
+                self.suppress_tab_close_save = True
+                self._close_tab(index)
+                self.suppress_tab_close_save = False
+        
+        if self.code_tab_map.has_key(basename):
+            #do something
+            return
+        
         code_edit_widget = CodeEdit()
         if self.__class__.completer:
             code_edit_widget.set_completer(self.__class__.completer)
@@ -2465,28 +2471,14 @@ class CodeEditTabs(BasicWidget):
         window.show()
         window.setFocus()
         
-        document = None
-
         if self.code_tab_map.has_key(basename):
-    
             tab_widget = self.code_tab_map[basename]
-                
-            if tab_widget:
-                document = tab_widget.text_edit.document()
-    
-        
-        if document:
-            code_edit_widget.set_document(document)
-            code_widget.setDocument(document)
-
-        if tab_index > -1:
             
-                
-            self.suppress_tab_close_save = True
-            self._close_tab(tab_index)
-            self.suppress_tab_close_save = False
+            if tab_widget:
+                code_widget.setDocument(tab_widget.text_edit.document())
             
         return code_edit_widget
+        
         
         
     def add_tab(self, filepath, name):

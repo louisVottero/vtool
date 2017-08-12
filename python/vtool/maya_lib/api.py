@@ -447,7 +447,23 @@ class MeshFunction(MayaFunction):
         self.api_object.getClosestPoint(point_base,new_point,space, None, accelerator )
         
         return [new_point.x, new_point.y, new_point.z]
+
+    def get_closest_normal(self, source_vector):
+    
+        new_point = OpenMaya.MVector()
+    
+        point_base = OpenMaya.MPoint()
+        point_base.x = source_vector[0]
+        point_base.y = source_vector[1]
+        point_base.z = source_vector[2]
         
+        accelerator = self.api_object.autoUniformGridParams()
+        space = OpenMaya.MSpace.kWorld
+                        
+        self.api_object.getClosestNormal(point_base,new_point,space, None, accelerator )
+        
+        return [new_point.x, new_point.y, new_point.z]
+            
     def get_closest_intersection(self, source_vector, direction_vector):
         
         point_base = OpenMaya.MFloatPoint()
