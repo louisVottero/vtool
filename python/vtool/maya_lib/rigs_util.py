@@ -805,7 +805,7 @@ class StretchyChain:
         self.inputs = []
         self.attribute_node = None
         self.distance_offset_attribute = None
-        self.add_dampen = False
+        self.add_damp = False
         self.stretch_offsets = []
         self.distance_offset = None
         self.scale_axis = 'X'
@@ -1032,17 +1032,17 @@ class StretchyChain:
         multiply.input2X_in(self.distance_offset_attribute)
         multiply.outputX_out(plug)
         
-    def _create_dampen(self, distance_node, plugs):
+    def _create_damp(self, distance_offset, plugs):
         
         min_length = space.get_distance(self.joints[0], self.joints[-1])
         #max_length = self._get_length()
             
-        dampen = attr.MayaNumberVariable(self.damp_name)
-        dampen.set_node(self.attribute_node)
-        dampen.set_variable_type(dampen.TYPE_DOUBLE)
-        dampen.set_min_value(0)
-        dampen.set_max_value(1)
-        dampen.create()
+        damp = attr.MayaNumberVariable(self.damp_name)
+        damp.set_node(self.attribute_node)
+        damp.set_variable_type(damp.TYPE_DOUBLE)
+        damp.set_min_value(0)
+        damp.set_max_value(1)
+        damp.create()
         
         remap = cmds.createNode( "remapValue" , n = "%s_remapValue_%s" % (self.damp_name, self.name) )
         cmds.setAttr("%s.value[2].value_Position" % remap, 0.4);
@@ -1056,7 +1056,7 @@ class StretchyChain:
         multi = cmds.createNode ( "multiplyDivide", n = "%s_offset_%s" % (self.damp_name, self.name))
         add_double = cmds.createNode( "addDoubleLinear", n = "%s_addDouble_%s" % (self.damp_name, self.name))
 
-        dampen.connect_out('%s.input2X' % multi)
+        damp.connect_out('%s.input2X' % multi)
         
         cmds.connectAttr('%s.outputX' % self.orig_distance, '%s.input1X' % multi)
         
@@ -1071,7 +1071,7 @@ class StretchyChain:
         cmds.setAttr("%s.inputMin" % remap, min_length)
         cmds.setAttr("%s.outputMin" % remap, min_length)
         
-        cmds.connectAttr( "%s.distance" % distance_node, "%s.inputValue" % remap)
+        cmds.connectAttr( "%s.outputX" % distance_offset, "%s.inputValue" % remap)
         
         for plug in plugs:
                 cmds.connectAttr( "%s.outValue" % remap, plug)
@@ -1141,7 +1141,7 @@ class StretchyChain:
         self.set_add_damp(bool_value, damp_name)
         
     def set_add_damp(self, bool_value, damp_name = None):
-        self.add_dampen = bool_value
+        self.add_damp = bool_value
         
         if damp_name:
             self.damp_name = damp_name
@@ -1204,8 +1204,8 @@ class StretchyChain:
                 if self.extra_joint:
                     self._add_joint(self.extra_joint)
                 
-                if self.add_dampen:
-                    self._create_dampen(stretch_distance, ['%s.firstTerm' % stretch_condition,
+                if self.add_damp:
+                    self._create_damp(distance_offset, ['%s.firstTerm' % stretch_condition,
                                                            '%s.colorIfTrueR' % stretch_condition,
                                                            '%s.color2R' % stretch_on_off,
                                                            '%s.input2X' % divide_distance])
