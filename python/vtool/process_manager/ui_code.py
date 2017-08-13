@@ -1108,7 +1108,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         
         self.context_menu.addSeparator()
-        log_window = self.context_menu.addAction('Show Log')
+        log_window = self.context_menu.addAction('Show Last Log')
         new_window_action = self.context_menu.addAction('Open In New Window')
         external_window_action = self.context_menu.addAction('Open In External')
         browse_action = self.context_menu.addAction('Browse')
@@ -1200,8 +1200,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         item = items[0]
         log = item.log
         
-        text_window.setWindowTitle('%s log' % item.get_text())
+        if not log:
+            qt_ui.message('No log. Please process first', self)
+            return
         
+        text_window.setWindowTitle('%s log' % item.get_text())
         
         log_text = qt.QPlainTextEdit()
         log_text.setReadOnly(True)
@@ -1209,7 +1212,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         log_text.setLineWrapMode(log_text.NoWrap)
         log_text.setMinimumHeight(300)
         log_text.setMinimumWidth(600)
-        #log_text.setText(log)
         
         text_window.main_layout.addWidget(log_text)
         
