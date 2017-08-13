@@ -517,8 +517,6 @@ class TreeWidget(qt.QTreeWidget):
         if self._auto_add_sub_items == True:
             self._add_sub_items(item) 
         
-        #self.resizeColumnToContents(self.title_text_index)
-        
     def _item_collapsed(self, item):
         
         pass
@@ -851,7 +849,7 @@ class FileTreeWidget(TreeWidget):
         return 'new_folder'  
         
     def _define_header(self):
-        return ['name','size','date']
+        return ['Name','Size MB','Date']
 
     def _define_item(self):
         return qt.QTreeWidgetItem()
@@ -1512,7 +1510,7 @@ class HistoryTreeWidget(FileTreeWidget):
         return
         
     def _define_header(self):
-        return ['version','comment','size','user','date']
+        return ['Version','Comment','Size MB','User','Date']
     
     def _get_files(self):
 
@@ -2751,7 +2749,6 @@ class CodeTabWindow(BasicWindow):
         super(CodeTabWindow, self).__init__(parent)
         
         self.installEventFilter(CodeTabWindow_ActiveFilter(self))
-        #self.setWindowFlags(qt.QtCore.Qt.WindowStaysOnTopHint)
         
         self.code_edit = None
         
@@ -2788,6 +2785,10 @@ class CodeEdit(BasicWidget):
         
         self.text_edit.cursorPositionChanged.connect(self._cursor_changed)
         self.fullpath = None
+        self.filepath = None
+        self._last_version_action = None
+        self._current_text = None
+        self._suppress_code_changed_signal = False
         
     def _build_widgets(self):
         
@@ -2823,8 +2824,17 @@ class CodeEdit(BasicWidget):
         
         browse_action = file_menu.addAction('Browse')
         
+        self.version_menu = file_menu.addMenu('Versions')
+        self.version_menu.hide()
+        
+        self.version_menu.hovered.connect(self._version_hovered)
         save_action.triggered.connect(self.text_edit._save)
         browse_action.triggered.connect(self._open_browser)
+    
+    def _version_hovered(self, action):
+        
+        self._last_version_action = action
+        
         
     def _build_process_title(self, title):
         
@@ -2849,13 +2859,21 @@ class CodeEdit(BasicWidget):
     
     def _text_changed(self):
         
+        if self._suppress_code_changed_signal:
+            return
+        
         self.save_state.setText('Unsaved Changes')
+        
+        self._clear_current_text()
     
     def _save_done(self, bool_value):
         
         if bool_value:
             self.save_state.setText('No Changes')
             self.save_done.emit(self)
+        
+        self._clear_current_text()
+            
             
     def _find(self, text_edit):
         
@@ -2866,6 +2884,20 @@ class CodeEdit(BasicWidget):
             
     def _close_find(self):
         self.find = None
+    
+    def _clear_current_text(self):
+        self._current_text = None
+        
+    def _store_current_text(self):
+        self._current_text = self.text_edit.toPlainText()
+        
+    def _restore_current_text(self):
+        self._suppress_code_changed_signal = True
+        
+        self.text_edit.setPlainText(self._current_text)
+        self._clear_current_text()
+        
+        self._suppress_code_changed_signal = False
     
     def _text_file_set(self):
         self.save_state.setText('No Changes')
@@ -2880,6 +2912,57 @@ class CodeEdit(BasicWidget):
     def set_file(self, filepath):
         
         self.save_state.setText('No Changes')
+        
+        self.filepath = filepath
+        
+        version = util_file.VersionFile(filepath)
+        versions, version_numbers = version.get_versions(return_version_numbers_also = True)
+        
+        current_version = self.version_menu.addAction('Current')
+        current_version.triggered.connect(self._load_version)
+        
+        
+        if versions:
+            for version_number in version_numbers:
+                comment, user = version.get_version_data(version_number)
+                
+                version_action = self.version_menu.addAction('%s %s %s' % (versions[version_number], comment, user))
+                version_action.triggered.connect(self._load_version)
+    
+    def _load_version(self):
+        
+        if not self.filepath:
+            warning('Could not load version.', self)
+        
+        text = str( self._last_version_action.text() )
+        
+        if text == 'Current':
+            if self._current_text:
+                self.text_edit.setPlainText(self._current_text)
+                self._clear_current_text()
+            return
+        
+        if not self._current_text:
+            self._store_current_text()
+        
+        split_version = text.split()
+        
+        split_version = split_version[0].split('.')
+        
+        version = int(split_version[1])
+        
+        version_tool = util_file.VersionFile(util_file.get_dirname(self.filepath))
+        version_file = version_tool.get_version_path(version)
+        
+        in_file = qt.QtCore.QFile(version_file)
+        
+        if in_file.open(qt.QtCore.QFile.ReadOnly | qt.QtCore.QFile.Text):
+            text = in_file.readAll()
+            
+            text = str(text)
+            self._suppress_code_changed_signal = True
+            self.text_edit.setPlainText(text)
+            self._suppress_code_changed_signal = False
         
     def set_no_changes(self):
         
@@ -3155,7 +3238,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
         
         if not self.document().isModified():
             util.warning('No changes to save in %s.' % self.filepath)
-            return
         
         old_last_modified = self.last_modified
         
