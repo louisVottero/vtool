@@ -4635,6 +4635,15 @@ def warning(message, parent = None):
     message_box.setWindowFlags(flags)
     message_box.warning(parent, 'Warning', message)
 
+def message(message, parent = None):
+    #this is to make the dialog always on top.
+    message_box = qt.QMessageBox(parent)
+    parent = None
+    flags = message_box.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
+    message_box.setWindowFlags(flags)
+    message_box.setText(message)
+    message_box.exec_()
+
 def about(message, parent = None):
     parent = None
     message_box = qt.QMessageBox(parent)
