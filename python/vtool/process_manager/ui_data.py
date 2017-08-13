@@ -346,6 +346,10 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             
             data_type = process_tool.get_data_type(foldername)
             
+            if not data_type or data_type == 'None':
+                vtool.util.warning('Data folder %s has no data type.' % foldername)
+                continue
+            
             nice_name = data_name_map[data_type]
             
             
