@@ -849,7 +849,7 @@ class FileTreeWidget(TreeWidget):
         return 'new_folder'  
         
     def _define_header(self):
-        return ['Name','Size MB','Date']
+        return ['Name','Size MB','Time']
 
     def _define_item(self):
         return qt.QTreeWidgetItem()
@@ -1510,7 +1510,7 @@ class HistoryTreeWidget(FileTreeWidget):
         return
         
     def _define_header(self):
-        return ['Version','Comment','Size MB','User','Date']
+        return ['Version','Comment','Size MB','User','Time']
     
     def _get_files(self):
 
@@ -2789,6 +2789,7 @@ class CodeEdit(BasicWidget):
         self._last_version_action = None
         self._current_text = None
         self._suppress_code_changed_signal = False
+        self._orig_window_title = None
         
     def _build_widgets(self):
         
@@ -2862,6 +2863,7 @@ class CodeEdit(BasicWidget):
         if self._suppress_code_changed_signal:
             return
         
+        self._revert_window_title()
         self.save_state.setText('Unsaved Changes')
         
         self._clear_current_text()
@@ -2872,8 +2874,10 @@ class CodeEdit(BasicWidget):
             self.save_state.setText('No Changes')
             self.save_done.emit(self)
         
+        self._revert_window_title()
         self._clear_current_text()
-            
+        
+        self._load_version_actions()
             
     def _find(self, text_edit):
         
@@ -2899,35 +2903,41 @@ class CodeEdit(BasicWidget):
         
         self._suppress_code_changed_signal = False
     
+    def _store_current_window_title(self):
+        parent_widget = self.parentWidget()
+        if parent_widget:
+            top_parent_widget = parent_widget.parentWidget()
+            
+            if top_parent_widget:
+        
+                if not self._orig_window_title:
+                    self._orig_window_title = top_parent_widget.windowTitle()
+                    
+    def _set_window_title(self, text):
+        
+        parent_widget = self.parentWidget()
+        if parent_widget:
+            top_parent_widget = parent_widget.parentWidget()
+            
+            if top_parent_widget:
+        
+                if not self._orig_window_title:
+                    self._orig_window_title = top_parent_widget.windowTitle()
+            
+            
+                top_parent_widget.setWindowTitle(text)
+        
+    def _revert_window_title(self):
+        
+        parent_widget = self.parentWidget()
+        if parent_widget:
+            top_parent_widget = parent_widget.parentWidget()
+            if top_parent_widget:
+                top_parent_widget.setWindowTitle(self._orig_window_title)
+        
+        
     def _text_file_set(self):
         self.save_state.setText('No Changes')
-    
-    def add_process_title(self, title):
-        self._build_process_title(title)
-        
-    def add_menu_bar(self):
-        
-        self._build_menu_bar()
-        
-    def set_file(self, filepath):
-        
-        self.save_state.setText('No Changes')
-        
-        self.filepath = filepath
-        
-        version = util_file.VersionFile(filepath)
-        versions, version_numbers = version.get_versions(return_version_numbers_also = True)
-        
-        current_version = self.version_menu.addAction('Current')
-        current_version.triggered.connect(self._load_version)
-        
-        
-        if versions:
-            for version_number in version_numbers:
-                comment, user = version.get_version_data(version_number)
-                
-                version_action = self.version_menu.addAction('%s %s %s' % (versions[version_number], comment, user))
-                version_action.triggered.connect(self._load_version)
     
     def _load_version(self):
         
@@ -2940,10 +2950,14 @@ class CodeEdit(BasicWidget):
             if self._current_text:
                 self.text_edit.setPlainText(self._current_text)
                 self._clear_current_text()
+                
+                self._revert_window_title()
             return
         
         if not self._current_text:
             self._store_current_text()
+        
+        print text
         
         split_version = text.split()
         
@@ -2963,6 +2977,53 @@ class CodeEdit(BasicWidget):
             self._suppress_code_changed_signal = True
             self.text_edit.setPlainText(text)
             self._suppress_code_changed_signal = False
+        
+        self._store_current_window_title()
+        
+        self._set_window_title('%s   --   Version %s' % (self._orig_window_title, version))
+    
+    def _load_version_actions(self):
+        
+        self.version_menu.clear()
+        
+        self.version_menu.setStyleSheet("QMenu { menu-scrollable: 1; }");
+        
+        version = util_file.VersionFile(util_file.get_dirname(self.filepath))
+        result = version.get_versions(return_version_numbers_also = True)
+        
+        if result:
+            current_version = self.version_menu.addAction('Current')
+            current_version.triggered.connect(self._load_version)
+            
+            versions = version.get_organized_version_data()
+            
+            versions.reverse()
+            
+            if versions:
+                for version in versions:
+                    version, comment, user, file_size, modified, version_file = version
+                    
+                    comment = comment[:75] + (comment[75:] and '...')
+                    
+                    version_action = self.version_menu.addAction('V.%s Comment: %s, User: %s, Time: %s' % (version, comment, user, modified))
+                    version_action.triggered.connect(self._load_version)
+                
+    def add_process_title(self, title):
+        self._build_process_title(title)
+        
+    def add_menu_bar(self):
+        
+        self._build_menu_bar()
+        
+    def set_file(self, filepath):
+        
+        self.save_state.setText('No Changes')
+        
+        self._load_version_actions()
+        
+
+    
+
         
     def set_no_changes(self):
         
