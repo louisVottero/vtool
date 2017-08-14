@@ -2564,6 +2564,179 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     
     return follow_group
 
+def create_ghost_follow_chain(transforms):
+    
+    last_ghost = None
+    
+    ghosts = []
+    
+    parent = cmds.listRelatives(transforms[0], parent = True)
+    if parent:
+        parent = cmds.duplicate(parent[0], po = True, n = 'ghost_%s' % parent[0])
+        cmds.parent(parent, w = True)
+        
+        attr.remove_user_defined(parent)
+        
+        last_ghost = parent
+    
+    for transform in transforms:
+        
+        ghost = cmds.duplicate(transform, po = True, n = 'ghost_%s' % transform)[0]
+        
+        attr.remove_user_defined(ghost)
+        
+        cmds.parent(ghost, w = True)
+        
+        MatchSpace(transform, ghost).translation_rotation()
+        
+        attr.connect_translate(transform, ghost)
+        attr.connect_rotate(transform, ghost)
+        attr.connect_scale(transform, ghost)
+        
+        if last_ghost:
+            cmds.parent(ghost, last_ghost )
+        
+        last_ghost = ghost
+        
+        ghosts.append(ghost)
+
+    return ghosts, parent[0]
+
+
+def create_ghost_chain(transforms):
+    """
+    A ghost chain has the same hierarchy has the supplied transforms.
+    It connects into the an xform group above the transform.  
+    This allows for setups that follow a nurbs surface, and then work like an fk hierarchy after.
+    
+    Args:
+        transforms (list): A list of transforms.
+        
+    Returns:
+        list: A list of ghost transforms corresponding to transforms.
+    """
+    last_ghost = None
+    
+    ghosts = []
+    
+    for transform in transforms:
+        ghost = cmds.duplicate(transform, po = True, n = 'ghost_%s' % transform)[0]
+        
+        attr.remove_user_defined(ghost)
+        
+        cmds.parent(ghost, w = True)
+        
+        MatchSpace(transform, ghost).translation_rotation()
+        
+        xform = create_xform_group(ghost)
+        
+        target_offset = create_xform_group(transform)
+        
+        attr.connect_translate(ghost, target_offset)
+        attr.connect_rotate(ghost, target_offset)
+        
+        if last_ghost:
+            cmds.parent(xform, last_ghost )
+        
+        last_ghost = ghost
+        
+        ghosts.append(ghost)
+
+    return ghosts
+
+def create_no_twist_aim(source_transform, target_transform, parent, move_vector = [0,0,1]):
+    """
+    Aim target transform at the source transform, trying to rotate only on one axis.
+    Constrains the target_transform.
+    
+    Args:
+        source_transform (str): The name of a transform.
+        target_transform (str): The name of a transform.
+        parent (str): The parent for the setup.
+    """
+    
+    
+    top_group = cmds.group(em = True, n = core.inc_name('no_twist_%s' % source_transform))
+    cmds.parent(top_group, parent)
+    cmds.pointConstraint(source_transform, top_group)
+
+    #axis aim
+    aim = cmds.group(em = True, n = core.inc_name('aim_%s' % target_transform))
+    target = cmds.group(em = True, n = core.inc_name('target_%s' % target_transform))
+        
+    MatchSpace(source_transform, aim).translation_rotation()
+    MatchSpace(source_transform, target).translation_rotation()
+    
+    xform_target = create_xform_group(target)
+    #cmds.setAttr('%s.translateX' % target, 1)
+    cmds.move(1,0,0, target, r = True, os = True)
+    
+    cmds.parentConstraint(source_transform, target, mo = True)
+    
+    cmds.aimConstraint(target, aim, wuo = parent, wut = 'objectrotation', wu = [0,0,0])
+    
+    cmds.parent(aim, xform_target, top_group)
+    
+    #pin up to axis
+    pin_aim = cmds.group(em = True, n = core.inc_name('aim_pin_%s' % target_transform))
+    pin_target = cmds.group(em = True, n = core.inc_name('target_pin_%s' % target_transform))
+    
+    MatchSpace(source_transform, pin_aim).translation_rotation()
+    MatchSpace(source_transform, pin_target).translation_rotation()
+    
+    xform_pin_target = create_xform_group(pin_target)
+    cmds.move(move_vector[0], move_vector[1], move_vector[2], pin_target, r = True)
+    
+    cmds.aimConstraint(pin_target, pin_aim, wuo = aim, wut = 'objectrotation')
+    
+    cmds.parent(xform_pin_target, pin_aim, top_group)
+       
+    #twist_aim
+    #tool_maya.create_follow_group('CNT_SPINE_2_C', 'xform_CNT_TWEAK_ARM_1_%s' % side)
+    cmds.pointConstraint(source_transform, target_transform, mo = True)
+    
+    cmds.parent(pin_aim, aim)
+    
+    cmds.orientConstraint(pin_aim, target_transform, mo = True)
+
+def create_pole_chain(top_transform, btm_transform, name, solver = IkHandle.solver_sc):
+    """
+    Create a two joint chain with an ik handle.
+    
+    Args:
+        top_transform (str): The name of a transform.
+        btm_transform (str): The name of a transform.
+        name (str): The name to give the new joints.
+        
+    Returns:
+        tuple: (joint1, joint2, ik_pole)
+    """
+    
+    cmds.select(cl =True)
+    
+    joint1 = cmds.joint(n = core.inc_name( name ) )
+    joint2 = cmds.joint(n = core.inc_name( name ) )
+
+    MatchSpace(top_transform, joint1).translation()
+    MatchSpace(btm_transform, joint2).translation()
+    
+    cmds.joint(joint1, e = True, oj = 'xyz', secondaryAxisOrient = 'xup', zso = True)
+    cmds.makeIdentity(joint2, jo = True, apply = True)
+
+    ik_handle = IkHandle( name )
+    
+    ik_handle.set_start_joint( joint1 )
+    ik_handle.set_end_joint( joint2 )
+    ik_handle.set_solver(solver)
+    ik_pole = ik_handle.create()
+    
+    if solver == IkHandle.solver_rp:
+        cmds.setAttr('%s.poleVectorX' % ik_pole, 0)
+        cmds.setAttr('%s.poleVectorY' % ik_pole, 0)
+        cmds.setAttr('%s.poleVectorZ' % ik_pole, 0)
+
+    return joint1, joint2, ik_pole
+
 def get_xform_group(transform, xform_group_prefix = 'xform'):
     """
     This returns an xform group above the control.
@@ -3367,98 +3540,7 @@ def match_orient(prefix, other_prefix):
     
 
 
-def create_no_twist_aim(source_transform, target_transform, parent, move_vector = [0,0,1]):
-    """
-    Aim target transform at the source transform, trying to rotate only on one axis.
-    Constrains the target_transform.
-    
-    Args:
-        source_transform (str): The name of a transform.
-        target_transform (str): The name of a transform.
-        parent (str): The parent for the setup.
-    """
-    
-    
-    top_group = cmds.group(em = True, n = core.inc_name('no_twist_%s' % source_transform))
-    cmds.parent(top_group, parent)
-    cmds.pointConstraint(source_transform, top_group)
 
-    #axis aim
-    aim = cmds.group(em = True, n = core.inc_name('aim_%s' % target_transform))
-    target = cmds.group(em = True, n = core.inc_name('target_%s' % target_transform))
-        
-    MatchSpace(source_transform, aim).translation_rotation()
-    MatchSpace(source_transform, target).translation_rotation()
-    
-    xform_target = create_xform_group(target)
-    #cmds.setAttr('%s.translateX' % target, 1)
-    cmds.move(1,0,0, target, r = True, os = True)
-    
-    cmds.parentConstraint(source_transform, target, mo = True)
-    
-    cmds.aimConstraint(target, aim, wuo = parent, wut = 'objectrotation', wu = [0,0,0])
-    
-    cmds.parent(aim, xform_target, top_group)
-    
-    #pin up to axis
-    pin_aim = cmds.group(em = True, n = core.inc_name('aim_pin_%s' % target_transform))
-    pin_target = cmds.group(em = True, n = core.inc_name('target_pin_%s' % target_transform))
-    
-    MatchSpace(source_transform, pin_aim).translation_rotation()
-    MatchSpace(source_transform, pin_target).translation_rotation()
-    
-    xform_pin_target = create_xform_group(pin_target)
-    cmds.move(move_vector[0], move_vector[1], move_vector[2], pin_target, r = True)
-    
-    cmds.aimConstraint(pin_target, pin_aim, wuo = aim, wut = 'objectrotation')
-    
-    cmds.parent(xform_pin_target, pin_aim, top_group)
-       
-    #twist_aim
-    #tool_maya.create_follow_group('CNT_SPINE_2_C', 'xform_CNT_TWEAK_ARM_1_%s' % side)
-    cmds.pointConstraint(source_transform, target_transform, mo = True)
-    
-    cmds.parent(pin_aim, aim)
-    
-    cmds.orientConstraint(pin_aim, target_transform, mo = True)
-
-def create_pole_chain(top_transform, btm_transform, name, solver = IkHandle.solver_sc):
-    """
-    Create a two joint chain with an ik handle.
-    
-    Args:
-        top_transform (str): The name of a transform.
-        btm_transform (str): The name of a transform.
-        name (str): The name to give the new joints.
-        
-    Returns:
-        tuple: (joint1, joint2, ik_pole)
-    """
-    
-    cmds.select(cl =True)
-    
-    joint1 = cmds.joint(n = core.inc_name( name ) )
-    joint2 = cmds.joint(n = core.inc_name( name ) )
-
-    MatchSpace(top_transform, joint1).translation()
-    MatchSpace(btm_transform, joint2).translation()
-    
-    cmds.joint(joint1, e = True, oj = 'xyz', secondaryAxisOrient = 'xup', zso = True)
-    cmds.makeIdentity(joint2, jo = True, apply = True)
-
-    ik_handle = IkHandle( name )
-    
-    ik_handle.set_start_joint( joint1 )
-    ik_handle.set_end_joint( joint2 )
-    ik_handle.set_solver(solver)
-    ik_pole = ik_handle.create()
-    
-    if solver == IkHandle.solver_rp:
-        cmds.setAttr('%s.poleVectorX' % ik_pole, 0)
-        cmds.setAttr('%s.poleVectorY' % ik_pole, 0)
-        cmds.setAttr('%s.poleVectorZ' % ik_pole, 0)
-
-    return joint1, joint2, ik_pole
 
 def scale_constraint_to_local(scale_constraint):
     """
@@ -3608,86 +3690,6 @@ def attach_to_closest_transform(source_transform, target_transforms):
     closest_transform = get_closest_transform(source_transform, target_transforms)
     
     create_follow_group(closest_transform, source_transform)
-
-def create_ghost_follow_chain(transforms):
-    
-    last_ghost = None
-    
-    ghosts = []
-    
-    parent = cmds.listRelatives(transforms[0], parent = True)
-    if parent:
-        parent = cmds.duplicate(parent[0], po = True, n = 'ghost_%s' % parent[0])
-        cmds.parent(parent, w = True)
-        
-        attr.remove_user_defined(parent)
-        
-        last_ghost = parent
-    
-    for transform in transforms:
-        
-        ghost = cmds.duplicate(transform, po = True, n = 'ghost_%s' % transform)[0]
-        
-        attr.remove_user_defined(ghost)
-        
-        cmds.parent(ghost, w = True)
-        
-        MatchSpace(transform, ghost).translation_rotation()
-        
-        attr.connect_translate(transform, ghost)
-        attr.connect_rotate(transform, ghost)
-        attr.connect_scale(transform, ghost)
-        
-        if last_ghost:
-            cmds.parent(ghost, last_ghost )
-        
-        last_ghost = ghost
-        
-        ghosts.append(ghost)
-
-    return ghosts, parent[0]
-
-
-def create_ghost_chain(transforms):
-    """
-    A ghost chain has the same hierarchy has the supplied transforms.
-    It connects into the an xform group above the transform.  
-    This allows for setups that follow a nurbs surface, and then work like an fk hierarchy after.
-    
-    Args:
-        transforms (list): A list of transforms.
-        
-    Returns:
-        list: A list of ghost transforms corresponding to transforms.
-    """
-    last_ghost = None
-    
-    ghosts = []
-    
-    for transform in transforms:
-        ghost = cmds.duplicate(transform, po = True, n = 'ghost_%s' % transform)[0]
-        
-        attr.remove_user_defined(ghost)
-        
-        cmds.parent(ghost, w = True)
-        
-        MatchSpace(transform, ghost).translation_rotation()
-        
-        xform = create_xform_group(ghost)
-        
-        target_offset = create_xform_group(transform)
-        
-        attr.connect_translate(ghost, target_offset)
-        attr.connect_rotate(ghost, target_offset)
-        
-        if last_ghost:
-            cmds.parent(xform, last_ghost )
-        
-        last_ghost = ghost
-        
-        ghosts.append(ghost)
-
-    return ghosts
 
 def set_space_scale(scale_x,scale_y,scale_z, transform):
     

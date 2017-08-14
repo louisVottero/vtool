@@ -1172,6 +1172,14 @@ def get_closest_position_on_mesh(mesh, three_value_list):
     
     return position
 
+def get_closest_normal_on_mesh(mesh, three_value_list):
+    
+    mesh_fn = api.MeshFunction(mesh)
+    
+    normal = mesh_fn.get_closest_normal(three_value_list)
+    
+    return normal
+
 def get_closest_position_on_curve(curve, three_value_list):
     """
     Given a vector, find the closest position on a curve.
@@ -1243,6 +1251,21 @@ def get_point_from_curve_parameter(curve, parameter):
         list: [0,0,0] the vector found at the parameter on the curve.
     """
     return cmds.pointOnCurve(curve, pr = parameter, ch = False)
+
+def get_curve_position_from_parameter(curve, parameter):
+    """
+    Find a position on a curve by giving a parameter value.
+    
+    Args:
+        curve (str): The name of a curve.
+        parameter (float): The parameter value on a curve.
+        
+    Returns: 
+        list: [0,0,0] the vector found at the parameter on the curve.
+    """
+    position = get_point_from_curve_parameter(curve, parameter)
+    
+    return position
 
 def get_point_from_surface_parameter(surface, u_value, v_value):
     """
@@ -2259,6 +2282,52 @@ def nurb_surface_v_to_transforms(surface, count = 4, value = 0.5, orient_example
     
     return joints
 
+def polygon_plane_to_curves(plane, count = 5, u = True, description = ''):
+    
+    if not description:
+        description = plane
+    
+    if count == 0:
+        return
+    
+    work_plane = cmds.duplicate(plane)[0]
+    
+    cmds.polyToSubdiv(work_plane, ap = 0, ch = False, aut = True,  maxPolyCount = 1000,  maxEdgesPerVert = 32)
+    surface = cmds.subdToNurbs(work_plane, ch = False, aut = True,  ot = 0)[0]
+    surface = cmds.listRelatives(surface, type = 'transform')[0]
+
+    curves = []
+
+    letter = 'u'
+    if not u:
+        letter = 'v'
+        
+    cap_letter = letter.capitalize()
+    
+    max_value = cmds.getAttr('%s.maxValue%s' % (surface, cap_letter))
+    
+    count_float = ((count - 1) * 1.0)
+    if count_float == 0:
+        section = max_value/2.0
+    
+    if count_float > 0:
+        section = max_value / count_float 
+    section_value = 0
+    
+    for inc in range(0, (count+1)):
+        param = '%s.%s[%s]' % (surface, letter, section_value)
+        
+        duplicate_curve = cmds.duplicateCurve(param, ch = False, rn = 0, local = 0)[0]
+        
+        curve = cmds.rename(duplicate_curve, core.inc_name('curve_%s' % description))
+        curves.append(curve)
+        
+        section_value += section
+    
+    cmds.delete(work_plane)
+    
+    return curves
+
 def expand_selected_edge_loop():
     """
     Select edges and then expand the selection on the edge loop.
@@ -3036,3 +3105,93 @@ def transfer_uvs_from_mesh_to_group(mesh, group):
             vtool.util.warning('Found no geometry match for %s' % destination_mesh)
         
     cmds.delete(temp_mesh)
+    
+def create_quill(curve, radius, taper_tip = True, description = '' ):
+    
+    curve = cmds.duplicate(curve)[0]
+    
+    max_value = cmds.getAttr('%s.maxValue' % curve)
+    
+    circle = cmds.circle( c = [0,0,0], nr = [0, 1, 0], sw = 360, r = radius, d = 3, ut = 0, tol = 1.07639e-007, s = 8, ch = 0)
+    cmds.reverseCurve(circle[0], ch = False, rpo = 1)
+    
+    extrude = cmds.extrude(circle[0],curve, ch = False, rn = False, po = 1, et = 2, ucp = 1, fpt = 1, upn = 1, rotation = 0, scale = 1, rsp = 1)[0]
+    
+    wire_deformer, wire_curve = cmds.wire(extrude,  gw = False, w = curve, n = core.inc_name('wire_%s' % curve), dds = [0, 10000])
+    cmds.dropoffLocator( 1, 1, wire_deformer, '%s.u[0]' % curve,'%s.u[%s]' % (curve, max_value - (max_value/5.0)), '%s.u[%s]' % (curve,max_value))
+    
+    cmds.setAttr('%s.scale[0]' % wire_deformer, .25)
+    cmds.setAttr('%s.wireLocatorEnvelope[0]' % wire_deformer, 0)
+    cmds.setAttr('%s.wireLocatorEnvelope[1]' % wire_deformer, 0)
+    
+    cmds.delete(extrude, ch = True)
+    cmds.delete(curve)
+    cmds.delete(circle[0])
+    cmds.delete('%sBaseWire' % wire_curve)
+    
+    return extrude
+    
+def transfer_from_curve_to_curve(source_curve, destination_curve, transforms, reference_mesh_for_normal = None):
+    
+    destination_max = cmds.getAttr('%s.maxValue' % destination_curve)
+    
+    curves = []
+    
+    for transform in transforms:
+        
+        transform = cmds.duplicate(transform)[0]
+        
+        curves.append(transform)
+        
+        position = cmds.xform(transform, q = True, ws = True, rp = True)
+        if core.has_shape_of_type(transform, 'nurbsCurve'):
+            position = cmds.xform('%s.cv[0]' % transform, q = True, ws = True, t = True)
+        param = get_closest_parameter_on_curve(source_curve, position)
+        source_position = get_curve_position_from_parameter(source_curve, param)
+        
+        pos_group = cmds.group(em = True)
+        cmds.xform(pos_group, ws = True, t = source_position)
+        
+        cmds.parent(transform, pos_group) 
+        
+        destination = get_curve_position_from_parameter(destination_curve, param)
+        
+        cmds.xform(pos_group, ws = True, t = destination)
+        
+        neg_aim = False
+        
+        aim_param = param + param/100.0
+        if aim_param > destination_max:
+            aim_param = destination_max
+        if param == destination_max:
+            aim_param = param - param/100.0
+            neg_aim = True
+        aim_direction = [0,0,1]
+        if neg_aim:
+            aim_direction = [0,0,-1]
+        aim_vector = get_curve_position_from_parameter(destination_curve, aim_param)
+        
+        loc = cmds.spaceLocator()
+        cmds.xform(loc, ws = True, t = aim_vector)
+        
+        destination_base = destination
+        
+        if core.has_shape_of_type(transform, 'nurbsCurve'):
+            destination_base = cmds.xform('%s.cv[0]' % transform, q = True, ws = True, t = True)
+        
+        normal = get_closest_normal_on_mesh(reference_mesh_for_normal, destination_base)
+        loc_normal = cmds.spaceLocator()[0]
+        cmds.xform(loc_normal, ws = True, t = normal)
+        normal_offset = cmds.group(em = True, n = 'normal')
+        cmds.parent(loc_normal, normal_offset)
+        cmds.xform(normal_offset, ws = True, t = destination)
+        
+        
+        cmds.aimConstraint(loc, pos_group, aim = aim_direction, upVector = [0,1,0], wuo = loc_normal, worldUpType = 'object')
+        
+        cmds.parent(transform, w = True)
+        cmds.delete(loc)
+        cmds.delete(normal_offset)
+        
+        
+    return curves

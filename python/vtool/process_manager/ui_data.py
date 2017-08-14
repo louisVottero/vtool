@@ -187,6 +187,18 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         #this will be used for hierarcy
         #self.setSelectionMode(self.ExtendedSelection)
         
+        #self.header().setResizeMode(0, qt.QHeaderView.ResizeToContents)
+        #self.header()
+        if vtool.qt_ui.is_pyside():
+            self.header().setResizeMode(0, qt.QHeaderView.Stretch)
+            self.header().setResizeMode(1, qt.QHeaderView.Stretch)
+        if vtool.qt_ui.is_pyside2():
+            self.header().setSectionResizeMode(0, qt.QHeaderView.Stretch)
+            self.header().setSectionResizeMode(1, qt.QHeaderView.Stretch)
+        self.header().setStretchLastSection(False)
+        
+        #qt.QHeaderView.setResizeMode()
+        
         self.text_edit = False
         
         self.directory = None
@@ -198,8 +210,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.setSizePolicy(policy)
         
-        self.setColumnWidth(0, 150)
-        self.setColumnWidth(1, 75)
+        self.setColumnWidth(0, 140)
+        self.setColumnWidth(1, 110)
         
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
@@ -303,7 +315,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
     
     def _define_header(self):
-        return ['Name','Type']
+        return ['Name','Type','Size MB']
         
     def _item_renamed(self, item, old_name):
         
@@ -324,7 +336,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         return True
         
     def _load_data(self, preserve_selected = True, new_data = None):
-
+        
         self.clear()
 
         process_tool = process.Process()
@@ -337,6 +349,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         select_item = None
         
+        data_dir = process_tool.get_data_path()
+        
         for foldername in folders:
             
             item = qt.QTreeWidgetItem()
@@ -344,8 +358,12 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             
             data_type = process_tool.get_data_type(foldername)
             
-            nice_name = data_name_map[data_type]
-            
+            if not data_name_map.has_key(data_type):
+                vtool.util.warning('Data folder %s has no data type.' % foldername)
+                nice_name = '-non vetala folder-'
+                item.setDisabled(True)
+            else:
+                nice_name = data_name_map[data_type]
             
             group = data_type.split('.')[0]
             
@@ -356,6 +374,10 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             item.setText(1, nice_name)
             
             item.folder = foldername
+            
+            size_thread = DataSizeThread()
+            size_thread.run(data_dir, foldername, item)
+            
             item.setSizeHint(0, qt.QtCore.QSize(100,20))
             self.addTopLevelItem(item)
             
@@ -389,7 +411,35 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
                 
     def refresh(self):
         self._load_data()
+
+class DataSizeThread(qt.QtCore.QThread):
+    def __init__(self, parent = None):
+        super(DataSizeThread, self).__init__(parent)
         
+    def run(self, data_path, data_name, item):
+        
+        data_folder = vtool.util_file.join_path(data_path, data_name)
+        stuff = vtool.util_file.get_files_and_folders(data_folder)
+        
+        item.setText(2, '...')
+        
+        size = '-'
+        
+        if data_name in stuff:
+            
+            sub_data_folder = vtool.util_file.join_path(data_folder, data_name)
+            size = vtool.util_file.get_folder_size(sub_data_folder, 1)
+        
+        else:
+            for thing in stuff:
+                if thing.find(data_name + '.') > -1:
+                    sub_data_file = vtool.util_file.join_path(data_folder, thing)
+                    size = vtool.util_file.get_filesize(sub_data_file, 1)
+        
+        item.setText(2, str(size) )
+        
+        
+
 class DataTreeItem(vtool.qt_ui.TreeWidgetItem):
     pass
 
@@ -524,6 +574,7 @@ class DataTypeTreeWidget(qt.QTreeWidget):
         item = qt.QTreeWidgetItem(parent)
         item.setText(0, data_type)
         item.setSizeHint(0, qt.QtCore.QSize(100, 20))
+        
         #self.addTopLevelItem(item)
         
         return item

@@ -394,6 +394,9 @@ class VersionFile(object):
             str: The new version file name
         """
         
+        comment.replace('\n', '   ')
+        comment.replace('\r', '   ')
+        
         self._create_version_folder()
         self._create_comment_file()
         
@@ -473,7 +476,10 @@ class VersionFile(object):
         return comment
     
     def get_organized_version_data(self):
-        
+        """
+        Returns:
+            version, comment, user, file_size, modified, version_file
+        """
         versions = self.get_versions(return_version_numbers_also = True)
         
         if not versions:
@@ -584,8 +590,11 @@ class VersionFile(object):
                     subpart = subpart.replace('"', '\\"')
                     
                     line = line[:start_index+1] + subpart + line[end_index:]
-                    
-                exec(line)
+                
+                try:
+                    exec(line)
+                except:
+                    pass
                 
                 if version == version_int:
                     
