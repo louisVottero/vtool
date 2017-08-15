@@ -1500,9 +1500,15 @@ class HistoryTreeWidget(FileTreeWidget):
             self.sortByColumn(0, qt.QtCore.Qt.SortOrder.DescendingOrder)
         
         self.setColumnWidth(0, 70)  
-        self.setColumnWidth(1, 150)
-        self.setColumnWidth(2, 50)
-        self.setColumnWidth(3, 50)
+        self.setColumnWidth(1, 200)
+        self.setColumnWidth(2, 70)
+        self.setColumnWidth(3, 70)
+        self.setColumnWidth(4, 70)
+        #if is_pyside():
+        #    self.header().setResizeMode(1, qt.QHeaderView.Stretch)
+        #if is_pyside2():
+        #    self.header().setSectionResizeMode(1, qt.QHeaderView.Stretch)
+        #self.header().setStretchLastSection(False)
         
         self.padding = 1
     
@@ -1994,6 +2000,7 @@ class Group(qt.QGroupBox):
     def __init__(self, name):
         super(Group, self).__init__()
         
+        self._collapsable = True
         
         self.setTitle(name)
         
@@ -2023,15 +2030,15 @@ class Group(qt.QGroupBox):
         if not event.button() == qt.QtCore.Qt.LeftButton:
             return
         
-        #half = self.width()/2
+        if self._collapsable:
         
-        if event.y() < 15:
-            
-            if self._widget.isHidden():
-                self._widget.setVisible(True)
-            elif not self._widget.isHidden():
-                self._widget.setVisible(False)
-            
+            if event.y() < 30:
+                
+                if self._widget.isHidden():
+                    self._widget.setVisible(True)
+                elif not self._widget.isHidden():
+                    self._widget.setVisible(False)
+        
     def _build_widgets(self):
         
         pass
@@ -2048,6 +2055,9 @@ class Group(qt.QGroupBox):
     def set_title(self, titlename):
         
         self.setTitle(titlename)
+        
+    def set_collapsable(self, bool_value):
+        self._collapsable = bool_value
         
 class Slider(BasicWidget):
     
@@ -2371,9 +2381,11 @@ class CodeEditTabs(BasicWidget):
         
     def _tab_double_click(self, index):
         
-        title = str(self.tabs.tabText(index))
-        code_widget = self.code_tab_map[title]
-        filepath = code_widget.text_edit.filepath
+        #title = str(self.tabs.tabText(index))
+        #code_widget = self.code_tab_map[title]
+        #filepath = code_widget.text_edit.filepath
+        
+        util.warning('Double clicking a code tab was causing Maya to crash.  Please got to settings > Options and set Manifest Double Click > Open in New Window as default behavior.')
         
         #if util.get_maya_version() > 2016:
             #there is a bug in maya 2017 and on that would crash maya when closing the tab.
@@ -2381,7 +2393,7 @@ class CodeEditTabs(BasicWidget):
             #util.warning('Could not open floating code window %s in Maya 2017 and 2018... hopefully this can be fixed in the future.' % title)
             #return
         
-        self.add_floating_tab(filepath, title)
+        #self.add_floating_tab(filepath, title)
         
     def _window_close_requested(self, widget):
         
@@ -2420,6 +2432,7 @@ class CodeEditTabs(BasicWidget):
         
         basename = name
         
+        """
         if self.code_tab_map.has_key(basename):
             code_widget = self.code_tab_map[basename]
             index = self.tabs.indexOf(code_widget)
@@ -2428,10 +2441,13 @@ class CodeEditTabs(BasicWidget):
                 self.suppress_tab_close_save = True
                 self._close_tab(index)
                 self.suppress_tab_close_save = False
+        """
         
-        if self.code_tab_map.has_key(basename):
-            #do something
-            return
+        if self.code_floater_map.has_key(basename):
+            widget = self.code_floater_map[basename]
+            widget.show()
+            widget.setFocus()
+            return 
         
         code_edit_widget = CodeEdit()
         if self.__class__.completer:
@@ -2466,14 +2482,16 @@ class CodeEditTabs(BasicWidget):
         self.code_floater_map[basename] = code_edit_widget
         self.code_window_map[filepath] = window
         
-        window.show()
-        window.setFocus()
+        
         
         if self.code_tab_map.has_key(basename):
             tab_widget = self.code_tab_map[basename]
             
             if tab_widget:
                 code_widget.setDocument(tab_widget.text_edit.document())
+        
+        window.show()
+        window.setFocus()
             
         return code_edit_widget
         
@@ -2485,7 +2503,8 @@ class CodeEditTabs(BasicWidget):
         
         if self.code_tab_map.has_key(basename):
             self.goto_tab(basename)
-            return
+            
+            return self.code_tab_map[basename]
                 
         code_edit_widget = CodeEdit()
         if self.__class__.completer:
@@ -2791,9 +2810,25 @@ class CodeEdit(BasicWidget):
         self._suppress_code_changed_signal = False
         self._orig_window_title = None
         
+        self._store_current_window_title()
+        
     def _build_widgets(self):
         
         self.text_edit = CodeTextEdit()
+        
+        self._history_widget = HistoryTreeWidget()
+        self._history_widget.clicked.connect(self._history_clicked)
+        self._history_widget.itemSelectionChanged.connect(self._history_clicked)
+        self._history_widget.hideColumn(2)
+        
+        splitter = qt.QSplitter()
+        splitter.addWidget(self.text_edit)
+        splitter.addWidget( self._history_widget )
+        splitter.setOrientation(qt.QtCore.Qt.Vertical)
+        splitter.setSizes([1,0])
+        self.splitter = splitter
+        
+        self.main_layout.addWidget(splitter)
         
         self.status_layout = qt.QHBoxLayout()
         
@@ -2803,7 +2838,7 @@ class CodeEdit(BasicWidget):
         self.status_layout.addWidget(self.line_number)
         self.status_layout.addWidget(self.save_state)
         
-        self.main_layout.addWidget(self.text_edit)
+        #self.main_layout.addWidget(self.text_edit)
         self.main_layout.addLayout(self.status_layout)
         
         self.text_edit.save_done.connect(self._save_done)
@@ -2813,9 +2848,44 @@ class CodeEdit(BasicWidget):
         #completer on off... comment out to turn completer off.
         #self.text_edit.set_completer( PythonCompleter() )
         
+    def _history_clicked(self):
+        current_item = self._history_widget.selectedItems()
+        
+        
+        if current_item:
+            current_item = current_item[0]
+            version = int(current_item.text(0))
+            
+        if not current_item:
+            return
+        
+        if self.save_state.text() == 'Unsaved Changes':
+            result = get_permission('Unsaved changes.  Continue loading version?', self, 'Unsaved Changeds')
+            if not result:
+                return
+            
+        
+        version_tool = util_file.VersionFile(util_file.get_dirname(self.filepath))
+        version_file = version_tool.get_version_path(version)
+        
+        in_file = qt.QtCore.QFile(version_file)
+        
+        if in_file.open(qt.QtCore.QFile.ReadOnly | qt.QtCore.QFile.Text):
+            text = in_file.readAll()
+            
+            text = str(text)
+            self._suppress_code_changed_signal = True
+            self.text_edit.setPlainText(text)
+            self._suppress_code_changed_signal = False
+        
+        self._store_current_window_title()
+        self._set_window_title('%s   --   Version %s' % (self._orig_window_title, version))
+        
+        self.save_state.setText('No Changes')
+        
     def _build_menu_bar(self):
         
-        self.menu_bar = qt.QMenuBar()
+        self.menu_bar = qt.QMenuBar(self)
         
         self.main_layout.insertWidget(0, self.menu_bar)
         
@@ -2825,18 +2895,20 @@ class CodeEdit(BasicWidget):
         
         browse_action = file_menu.addAction('Browse')
         
-        self.version_menu = file_menu.addMenu('Versions')
-        self.version_menu.hide()
+        show_versions_action = file_menu.addAction('Toggle Versions')
         
-        self.version_menu.hovered.connect(self._version_hovered)
         save_action.triggered.connect(self.text_edit._save)
         browse_action.triggered.connect(self._open_browser)
+        show_versions_action.triggered.connect(self._show_versions)
     
-    def _version_hovered(self, action):
+    def _show_versions(self):
+        sizes = self.splitter.sizes()
         
-        self._last_version_action = action
-        
-        
+        if sizes[1] > 0:
+            self.splitter.setSizes([1,0])
+        else:
+            self.splitter.setSizes([1,1])
+    
     def _build_process_title(self, title):
         
         process_title = qt.QLabel('Process: %s' % title)
@@ -2865,8 +2937,6 @@ class CodeEdit(BasicWidget):
         
         self._revert_window_title()
         self.save_state.setText('Unsaved Changes')
-        
-        self._clear_current_text()
     
     def _save_done(self, bool_value):
         
@@ -2875,9 +2945,8 @@ class CodeEdit(BasicWidget):
             self.save_done.emit(self)
         
         self._revert_window_title()
-        self._clear_current_text()
         
-        self._load_version_actions()
+        self._history_widget.set_directory(util_file.get_dirname(self.filepath), refresh = True)
             
     def _find(self, text_edit):
         
@@ -2888,20 +2957,6 @@ class CodeEdit(BasicWidget):
             
     def _close_find(self):
         self.find = None
-    
-    def _clear_current_text(self):
-        self._current_text = None
-        
-    def _store_current_text(self):
-        self._current_text = self.text_edit.toPlainText()
-        
-    def _restore_current_text(self):
-        self._suppress_code_changed_signal = True
-        
-        self.text_edit.setPlainText(self._current_text)
-        self._clear_current_text()
-        
-        self._suppress_code_changed_signal = False
     
     def _store_current_window_title(self):
         parent_widget = self.parentWidget()
@@ -2923,11 +2978,14 @@ class CodeEdit(BasicWidget):
         
                 if not self._orig_window_title:
                     self._orig_window_title = top_parent_widget.windowTitle()
-            
-            
+                
+                
                 top_parent_widget.setWindowTitle(text)
         
     def _revert_window_title(self):
+        
+        if not self._orig_window_title:
+            return
         
         parent_widget = self.parentWidget()
         if parent_widget:
@@ -2938,75 +2996,7 @@ class CodeEdit(BasicWidget):
         
     def _text_file_set(self):
         self.save_state.setText('No Changes')
-    
-    def _load_version(self):
-        
-        if not self.filepath:
-            warning('Could not load version.', self)
-        
-        text = str( self._last_version_action.text() )
-        
-        if text == 'Current':
-            if self._current_text:
-                self.text_edit.setPlainText(self._current_text)
-                self._clear_current_text()
-                
-                self._revert_window_title()
-            return
-        
-        if not self._current_text:
-            self._store_current_text()
-        
-        print text
-        
-        split_version = text.split()
-        
-        split_version = split_version[0].split('.')
-        
-        version = int(split_version[1])
-        
-        version_tool = util_file.VersionFile(util_file.get_dirname(self.filepath))
-        version_file = version_tool.get_version_path(version)
-        
-        in_file = qt.QtCore.QFile(version_file)
-        
-        if in_file.open(qt.QtCore.QFile.ReadOnly | qt.QtCore.QFile.Text):
-            text = in_file.readAll()
-            
-            text = str(text)
-            self._suppress_code_changed_signal = True
-            self.text_edit.setPlainText(text)
-            self._suppress_code_changed_signal = False
-        
-        self._store_current_window_title()
-        
-        self._set_window_title('%s   --   Version %s' % (self._orig_window_title, version))
-    
-    def _load_version_actions(self):
-        
-        self.version_menu.clear()
-        
-        self.version_menu.setStyleSheet("QMenu { menu-scrollable: 1; }");
-        
-        version = util_file.VersionFile(util_file.get_dirname(self.filepath))
-        result = version.get_versions(return_version_numbers_also = True)
-        
-        if result:
-            current_version = self.version_menu.addAction('Current')
-            current_version.triggered.connect(self._load_version)
-            
-            versions = version.get_organized_version_data()
-            
-            versions.reverse()
-            
-            if versions:
-                for version in versions:
-                    version, comment, user, file_size, modified, version_file = version
-                    
-                    comment = comment[:75] + (comment[75:] and '...')
-                    
-                    version_action = self.version_menu.addAction('V.%s Comment: %s, User: %s, Time: %s' % (version, comment, user, modified))
-                    version_action.triggered.connect(self._load_version)
+
                 
     def add_process_title(self, title):
         self._build_process_title(title)
@@ -3019,10 +3009,8 @@ class CodeEdit(BasicWidget):
         
         self.save_state.setText('No Changes')
         
-        self._load_version_actions()
+        self._history_widget.set_directory(util_file.get_dirname(filepath), refresh = True)
         
-
-    
 
         
     def set_no_changes(self):
