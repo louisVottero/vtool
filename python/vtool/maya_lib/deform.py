@@ -3396,6 +3396,48 @@ def invert_blendshape_weight(blendshape_deformer, index = -1):
     """
     pass
 
+
+@core.undo_chunk
+def blend_into_intermediate(source_mesh = None, target_mesh = None):
+    
+    meshes = [source_mesh, target_mesh]
+    
+    if not source_mesh and not target_mesh:
+        meshes = geo.get_selected_meshes()
+        
+        if not len(meshes) == 2:
+            core.print_help('Please select two meshes of the same topology. The second mesh should have skin or blendshape deformation.')
+            return
+    
+    if not meshes[0] or not meshes[1]:
+        core.print_help('Please provide two meshes of the same topology. The second mesh should have skin or blendshape deformation.')
+        return
+    
+    if not geo.is_mesh_blend_compatible(meshes[0], meshes[1]):
+        core.print_help('Selected meshes are not blendshape compatible.')
+    
+    deformers = ['blendShape','cluster','skinCluster']
+    good_deformation = False
+    for deformer in deformers:
+        deformers = find_deformer_by_type(meshes[1], deformer_type = deformer)
+        
+        if deformers:
+            good_deformation = True
+            break
+    
+    if not good_deformation:
+        core.print_help('Second mesh does not have proper history. Needs a skinCluster, blendShape, or cluster.')
+        return
+    
+    intermediate = get_intermediate_object(meshes[1])
+    
+    cmds.setAttr('%s.intermediateObject' % intermediate, 0)
+    
+    quick_blendshape(meshes[0], intermediate)
+    cmds.delete(intermediate, ch = True)
+
+    cmds.setAttr('%s.intermediateObject' % intermediate, 1)
+
 def get_intermediate_object(transform):
     """
     Get the intermediate object in the list of shape nodes under transform.
@@ -3407,6 +3449,7 @@ def get_intermediate_object(transform):
     
     return shapes[-1]
     
+
 def set_all_weights_on_wire(wire_deformer, weight, slot = 0):
     """
     Set all the weights on a wire deformer.
