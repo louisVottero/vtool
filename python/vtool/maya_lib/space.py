@@ -2199,6 +2199,21 @@ def get_axis_aimed_at_child(transform):
     
     return good_axis
 
+def get_ik_from_joint(joint):
+    
+    outputs = attr.get_attribute_outputs('%s.message' % joint, True)
+    
+    iks = []
+    
+    for output in outputs:
+        
+        node_type = cmds.nodeType(output)
+        
+        if node_type == 'ikHandle':
+            iks.append(output)
+            
+    return iks
+        
 def create_follow_fade(source_guide, drivers, skip_lower = 0.0001):
     """
     Create a multiply divide for each transform in drivers with a weight value based on the distance from source_guide.
