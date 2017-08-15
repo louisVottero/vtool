@@ -1053,7 +1053,22 @@ def print_warning(string_value):
     string_value = string_value.replace('\n', '\nV:\t\t')
     OpenMaya.MGlobal.displayWarning('V:\t\t' + string_value)
     vtool.util.record_temp_log('\n%s' % string_value)
-     
+
+def add_to_set(nodes, set_name):
+    
+    nodes = vtool.util.convert_to_sequence(nodes)
+    
+    if not cmds.objExists(set_name):
+        object_set = cmds.createNode('objectSet')
+        cmds.rename(object_set, set_name)
+    
+    if not cmds.nodeType(set_name) == 'objectSet':
+        print_warning('%s is not an object set. Could not add to it.' % set_name)
+        
+    cmds.sets(nodes, add = set_name)
+    
+    
+
 #--- file
 
 def get_scene_file(directory = False):
