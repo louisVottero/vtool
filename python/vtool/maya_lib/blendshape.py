@@ -573,8 +573,6 @@ class BlendShape(object):
         
         new_name = core.inc_name(name)
         
-        
-        
         if not value == -1:
             self._disconnect_targets()
             self._zero_target_weights()
@@ -595,7 +593,6 @@ class BlendShape(object):
             self._restore_target_weights()
             self._restore_connections()
         
-        
         return new_mesh
         
     def recreate_all(self, mesh = None):
@@ -614,6 +611,7 @@ class BlendShape(object):
     
         self._disconnect_targets()
         self._zero_target_weights()
+        
         
         meshes = []
         
@@ -664,7 +662,7 @@ class BlendShape(object):
             
             attribute_name = self._get_target_attr(name)
             
-            if not cmds.getAttr(attribute_name, l = True):
+            if not cmds.getAttr(attribute_name, l = True) and not attr.is_connected(attribute_name):
                 
                 cmds.setAttr(attribute_name, value)
     
@@ -2475,4 +2473,46 @@ class ShapeComboManager(object):
         
         return values, value_dict
         
+@core.undo_chunk
+def recreate_blendshapes(blendshape_mesh = None, follow_mesh = None):
+    
+    if not blendshape_mesh and not follow_mesh:
+        meshes = geo.get_selected_meshes()
+        if len(meshes) == 0:
+            core.print_help('Please select at least one mesh.')
+            return
+        blendshape_mesh = meshes[0]
+        if len(meshes) > 1:
+            follow_mesh = meshes[1:]
+    
+    follow_mesh = vtool.util.convert_to_sequence(follow_mesh)
+    
+    blendshape = deform.find_deformer_by_type(blendshape_mesh, deformer_type = 'blendShape')
+    
+    if not blendshape:
+        core.print_help('No blendshape found on first mesh.')
+    
+    print follow_mesh
+    
+    if follow_mesh:
         
+        for fm in follow_mesh:
+            
+            fm_group = cmds.group(em = True, n = 'recreated_shapes_%s' % fm)
+            
+            wrap = deform.create_wrap(blendshape_mesh, fm)
+            
+            blend = BlendShape(blendshape)
+            shapes = blend.recreate_all(fm)
+            shapes.sort()
+            cmds.parent(shapes, fm_group)
+            
+            cmds.delete(wrap)
+    else:
+        group = cmds.group(em = True, n = 'recreated_shapes')
+        blend = BlendShape(blendshape)
+        shapes = blend.recreate_all()
+        shapes.sort()
+        cmds.parent(shapes, group)
+        
+    
