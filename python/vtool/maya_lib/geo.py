@@ -2314,7 +2314,7 @@ def polygon_plane_to_curves(plane, count = 5, u = True, description = ''):
         section = max_value / count_float 
     section_value = 0
     
-    for inc in range(0, (count+1)):
+    for inc in range(0, (count)):
         param = '%s.%s[%s]' % (surface, letter, section_value)
         
         duplicate_curve = cmds.duplicateCurve(param, ch = False, rn = 0, local = 0)[0]
@@ -3115,7 +3115,16 @@ def create_quill(curve, radius, taper_tip = True, description = '' ):
     circle = cmds.circle( c = [0,0,0], nr = [0, 1, 0], sw = 360, r = radius, d = 3, ut = 0, tol = 1.07639e-007, s = 8, ch = 0)
     cmds.reverseCurve(circle[0], ch = False, rpo = 1)
     
-    extrude = cmds.extrude(circle[0],curve, ch = False, rn = False, po = 1, et = 2, ucp = 1, fpt = 1, upn = 1, rotation = 0, scale = 1, rsp = 1)[0]
+    extrude = cmds.extrude(circle[0],curve, ch = True, rn = False, po = 1, et = 2, ucp = 1, fpt = 1, upn = 1, rotation = 0, scale = 1, rsp = 1, cch = False)
+    
+    out_surfaces = attr.get_attribute_outputs('%s.outputSurface' % extrude[1], node_only = True)
+    for out_surface in out_surfaces:
+        cmds.setAttr('%s.format' % out_surface, 3)
+    
+    extrude = extrude[0]
+    extrude = cmds.rename(extrude, 'quill_%s' % curve)
+    
+    
     
     wire_deformer, wire_curve = cmds.wire(extrude,  gw = False, w = curve, n = core.inc_name('wire_%s' % curve), dds = [0, 10000])
     cmds.dropoffLocator( 1, 1, wire_deformer, '%s.u[0]' % curve,'%s.u[%s]' % (curve, max_value - (max_value/5.0)), '%s.u[%s]' % (curve,max_value))
@@ -3131,7 +3140,7 @@ def create_quill(curve, radius, taper_tip = True, description = '' ):
     
     return extrude
     
-def transfer_from_curve_to_curve(source_curve, destination_curve, transforms, reference_mesh_for_normal = None):
+def transfer_from_curve_to_curve(source_curve, destination_curve, transforms, reference_mesh_for_normal = None, twist = 0):
     
     destination_max = cmds.getAttr('%s.maxValue' % destination_curve)
     
@@ -3140,6 +3149,8 @@ def transfer_from_curve_to_curve(source_curve, destination_curve, transforms, re
     for transform in transforms:
         
         transform = cmds.duplicate(transform)[0]
+        
+        cmds.rotate(0,0,twist, transform)
         
         curves.append(transform)
         
