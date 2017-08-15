@@ -421,7 +421,7 @@ class CurveDataInfo(object):
         
         return self.library_curves[self.active_library].keys()
         
-    def set_shape_to_curve(self, curve, curve_in_library, check_curve = False):
+    def set_shape_to_curve(self, curve, curve_in_library, check_curve = False, add_curve_type_attribute = True):
         
         if not self.active_library:
             vtool.util.warning('Must set active library before running this function.')
@@ -452,7 +452,8 @@ class CurveDataInfo(object):
             
         rename_shapes(curve)
         
-        self._set_curve_type(curve, curve_type_value)
+        if add_curve_type_attribute:
+            self._set_curve_type(curve, curve_type_value)
         
 
         
@@ -533,6 +534,12 @@ class CurveDataInfo(object):
         
         for key in keys:
             self.create_curve(key)
+
+def get_library_shape_names():
+    
+    curve_info = CurveDataInfo()
+    curve_info.set_active_library('default_curves')
+    return curve_info.get_curve_names()
             
 def get_shapes(transform):
     if is_a_shape(transform):
