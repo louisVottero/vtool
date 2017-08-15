@@ -77,10 +77,12 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         if not self.code_widget.code_edit.has_tabs():
         
-            self.code_widget.set_code_path(None)
+            
             self.restrain_move = True
             width = self.splitter.width()
             self.splitter.moveSplitter(width,1)
+            
+            self.code_widget.set_code_path(None)
         
     def _script_focus(self, code_path):
         
@@ -290,10 +292,14 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         name = name + '.py'
         
         if not open_in_window:
-            self.code_edit.add_tab(path, name)
+            tab = self.code_edit.add_tab(path, name)
+            #tab.setFocus()
+            
             
         if open_in_window:
-            self.code_edit.add_floating_tab(path, name)
+            floating_tab = self.code_edit.add_floating_tab(path, name)
+            #floating_tab.setFocus()
+            
         
                   
     def _code_saved(self, code_edit_widget):
@@ -346,12 +352,13 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         self.save_file.set_directory(folder_path)
         
-        if load_file:
-            self._load_file_text(path, open_in_window, name)
         
         if path:
             self.save_file.show()
             self.code_edit.show()
+            
+        if load_file:
+            self._load_file_text(path, open_in_window, name)
         
     def set_current_process(self, process_name):
         self.current_process = process_name
@@ -671,10 +678,15 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
     def mouseDoubleClickEvent(self, event):
         
+        item = None
+        
         items = self.selectedItems()
         if items:
             item = items[0]
-                
+        
+        if not item:
+            return
+        
         settings_file = vtool.util.get_env('VETALA_SETTINGS')
         
         settings = vtool.util_file.SettingsFile()
