@@ -7,7 +7,7 @@ from vtool import util_file
     
 import maya.cmds as cmds
 
-from vtool.maya_lib import ui_core
+from vtool.maya_lib import ui_core, blendshape
 import ui_check
 import ui_presets
 import ui_picker
@@ -21,7 +21,7 @@ from vtool.maya_lib import space
 from vtool.maya_lib import deform
 from vtool.maya_lib import rigs_util
 from vtool.process_manager import ui_process_manager
-from vtool.maya_lib.deform import skin_mesh_from_mesh
+from vtool.maya_lib import curve
 
 def pose_manager(shot_sculpt_only = False):
     from vtool.maya_lib.ui_lib import ui_corrective
@@ -181,6 +181,7 @@ class RigManager(qt_ui.DirectoryWidget):
         manager_layout.addSpacing(15)
         
         tool_group = qt_ui.Group('Utilities')
+        tool_group.set_collapsable(False)
         tool_group.setFlat(True)
         
         tool_tab = qt.QTabWidget()
@@ -193,13 +194,18 @@ class RigManager(qt_ui.DirectoryWidget):
         deformation_widget.main_layout.setContentsMargins(10,10,10,10)
         structure_widget.main_layout.setContentsMargins(10,10,10,10)
         control_widget.main_layout.setContentsMargins(10,10,10,10)
+        model_widget = ui_model.ModelManager(scroll = True)
+        structure_widget.setMaximumWidth(550)
+        control_widget.setMaximumWidth(550)
+        deformation_widget.setMaximumWidth(550)
+        model_widget.setMaximumWidth(550)
         
-        structure_widget.setMaximumWidth(450)
+        #structure_widget.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         
         tool_tab.addTab(structure_widget, 'Structure')
         tool_tab.addTab(control_widget, 'Controls')
         tool_tab.addTab(deformation_widget, 'Deform')
-        tool_tab.addTab(ui_model.ModelManager(scroll = True), 'Model')
+        tool_tab.addTab(model_widget, 'Model')
         tool_tab.addTab(ui_anim.AnimationManager(), 'Animate')
         
         self._create_structure_widgets(structure_widget)
@@ -210,7 +216,7 @@ class RigManager(qt_ui.DirectoryWidget):
         self.main_layout.addSpacing(15)
         self.main_layout.addWidget(tool_group)
         
-        self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
+        #self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
         
         
     def _create_structure_widgets(self, parent):
@@ -220,10 +226,10 @@ class RigManager(qt_ui.DirectoryWidget):
         subdivide_joint_button.clicked.connect(self._subdivide_joint)
         subdivide_joint_button.setToolTip('select parent and child joint')
         
-        add_orient = qt.QPushButton('Add Orient')
+        add_orient = qt.QPushButton('Add Orient Attributes')
         add_orient.clicked.connect(self._add_orient)
         
-        remove_orient = qt.QPushButton('Remove Orient')
+        remove_orient = qt.QPushButton('Remove Orient Attributes')
         remove_orient.clicked.connect(self._remove_orient)
         
         add_joint_orient = qt.QPushButton('Add Joint Aim and Up')
@@ -239,12 +245,21 @@ class RigManager(qt_ui.DirectoryWidget):
         
         orient_joints = qt.QPushButton('Orient Joints')
         orient_joints.setMinimumHeight(40)
+        orient_joints.setMinimumWidth(125)
         orient_joints.clicked.connect(self._orient)
+        
+        orient_sel_joints = qt.QPushButton('Orient Selected Joints Only')
+        orient_sel_joints.setMinimumHeight(40)
+        orient_sel_joints.setMinimumWidth(125)
+        orient_sel_joints.clicked.connect(self._orient_selected)
         
         self.joint_axis_check = qt.QCheckBox('Joint Axis Visibility')
         
         orient_button_layout.addWidget(orient_joints)
+        orient_button_layout.addWidget(orient_sel_joints)
         orient_button_layout.addWidget(self.joint_axis_check)
+        
+        orient_button_layout.setAlignment(qt.QtCore.Qt.AlignLeft | qt.QtCore.Qt.AlignCenter)
         
         orient_layout = qt.QHBoxLayout()
         
@@ -265,6 +280,11 @@ class RigManager(qt_ui.DirectoryWidget):
         
         mirror = qt.QPushButton('Mirror Transforms')
         mirror.setMinimumHeight(40)
+        mirror.setMinimumWidth(200)
+        
+        mirror_sel = qt.QPushButton('Mirror Selected Only')
+        mirror_sel.setMinimumHeight(20)
+        mirror_sel.setMinimumWidth(200)
         
         on_off_mirror_layout = qt.QVBoxLayout()
         
@@ -285,7 +305,12 @@ class RigManager(qt_ui.DirectoryWidget):
         mirror_invert = qt.QPushButton('Mirror Invert')
         mirror_invert.clicked.connect(self._mirror_invert)
         
-        mirror_translate_layout.addWidget(mirror)
+        main_mirror_layout = qt.QVBoxLayout()
+        main_mirror_layout.setAlignment(qt.QtCore.Qt.AlignCenter | qt.QtCore.Qt.AlignLeft)
+        main_mirror_layout.addWidget(mirror)
+        main_mirror_layout.addWidget(mirror_sel)
+        
+        mirror_translate_layout.addLayout(main_mirror_layout)
         mirror_translate_layout.addSpacing(10)
         mirror_translate_layout.addLayout(on_off_mirror_layout)
         
@@ -312,6 +337,7 @@ class RigManager(qt_ui.DirectoryWidget):
         
         
         mirror.clicked.connect(self._mirror)
+        mirror_sel.clicked.connect(self._mirror_selected)
         mirror_curves.clicked.connect(self._mirror_curves)
         
         joints_on_curve.clicked.connect(self._joints_on_curve)
@@ -358,6 +384,19 @@ class RigManager(qt_ui.DirectoryWidget):
         mirror_controls.clicked.connect(self._mirror_controls)
         mirror_controls.setMinimumHeight(40)
         
+        curve_names = curve.get_library_shape_names()
+        curve_names.sort()
+        self.curve_shape_combo = qt.QComboBox()
+        self.curve_shape_combo.addItems(curve_names)
+        
+        replace_curve_shape = qt.QPushButton('Replace Curve Shape')
+        replace_curve_shape.clicked.connect(self._replace_curve_shape)
+        
+        replace_curve_layout = qt.QHBoxLayout()
+        replace_curve_layout.addWidget(replace_curve_shape)
+        replace_curve_layout.addWidget(self.curve_shape_combo)
+        
+        
         size_slider = qt_ui.Slider('Scale Controls at Pivot')
         size_slider.value_changed.connect(self._scale_control)
         size_slider.slider.setRange(-200, 200)
@@ -388,8 +427,12 @@ class RigManager(qt_ui.DirectoryWidget):
         snap_curve.set_value_label('Offset')
         snap_curve.clicked.connect(self._snap_curve)
         
+        
         parent.main_layout.addWidget(mirror_control)
         parent.main_layout.addWidget(mirror_controls)
+        parent.main_layout.addSpacing(10)
+        parent.main_layout.addLayout(replace_curve_layout)
+        parent.main_layout.addSpacing(10)
         
         parent.main_layout.addWidget(self.fix_sub_controls)
         parent.main_layout.addSpacing(15)
@@ -401,28 +444,40 @@ class RigManager(qt_ui.DirectoryWidget):
         parent.main_layout.addWidget(snap_curve)
         
     def _create_deformation_widgets(self, parent):
+        
+        intermediate_button_info = qt.QLabel('This button is good for updating the intermediate object.\nSelect a mesh to be the new intermediate.\nAnd also a mesh that has a skinCluster and/or blendShape.')
+        intermediate_button = qt.QPushButton('Blend Into Intermediate')
+        #intermediate_button.setToolTip('Select a mesh and a mesh deformed by a skin or blendshape')
+        intermediate_button.clicked.connect(self._blend_into_intermediate)
+        
+        recreate_blends_info = qt.QLabel('Recreate all the targets on a blendshape.\nSelect a mesh with blendshape history\nAnd optionally meshes that should follow.')
+        recreate_blends = qt.QPushButton('Recreate Blendshapes')
+        #recreate_blends.setToolTip('Select a mesh with blendshape history and optionally meshes that should follow.')
+        recreate_blends.clicked.connect(self._recreate_blends)
+        
+        corrective_button_info = qt.QLabel('Select a mesh (in pose) deformed by a skinCluster and/or a blendShape\nAnd also the sculpted mesh to correct it.')
         corrective_button = qt.QPushButton('Create Corrective')
-        corrective_button.setToolTip('Select deformed mesh then sculpted mesh.')
-        #corrective_button.setMaximumWidth(200)
+        
         corrective_button.clicked.connect(self._create_corrective)
         
         skin_mesh_from_mesh = SkinMeshFromMesh()
         skin_mesh_from_mesh.collapse_group()
         
-        
-        """
-        skin_mesh_from_mesh = qt.QPushButton('Skin Mesh From Mesh')
-        skin_mesh_from_mesh.setToolTip('Select skinned mesh then mesh without skin cluster.')
-        #skin_mesh_from_mesh.setMaximumWidth(200)
-        skin_mesh_from_mesh.clicked.connect(self._skin_mesh_from_mesh)
-        """
+        cluster_mesh_info = qt.QLabel('This will add a cluster at the click point and go into paint weighting.\nPush button then click on a mesh.')
         cluster_mesh = qt.QPushButton('Create Tweak Cluster')
-        cluster_mesh.setToolTip('Go into cluster creation context.  Click on a mesh to add cluster at point and start paint weighting.')
         cluster_mesh.clicked.connect(self._cluster_tweak_mesh)
         
+        parent.main_layout.addWidget(recreate_blends_info)
+        parent.main_layout.addWidget(recreate_blends)
+        parent.main_layout.addSpacing(10)
+        parent.main_layout.addWidget(intermediate_button_info)
+        parent.main_layout.addWidget(intermediate_button)
+        parent.main_layout.addSpacing(10)
+        parent.main_layout.addWidget(corrective_button_info)
         parent.main_layout.addWidget(corrective_button)
         
         parent.main_layout.addSpacing(10)
+        parent.main_layout.addWidget(cluster_mesh_info)
         parent.main_layout.addWidget(cluster_mesh)
         parent.main_layout.addSpacing(10)
         parent.main_layout.addWidget(skin_mesh_from_mesh)
@@ -467,6 +522,13 @@ class RigManager(qt_ui.DirectoryWidget):
         ctx = deform.ClusterTweakCtx()
         ctx.run()
     
+    def _blend_into_intermediate(self):
+        
+        deform.blend_into_intermediate()
+    
+    def _recreate_blends(self):
+        blendshape.recreate_blendshapes()
+    
     def _subdivide_joint(self, number):
         space.subdivide_joint(count = number)
         
@@ -508,20 +570,32 @@ class RigManager(qt_ui.DirectoryWidget):
     @core.undo_chunk
     def _orient(self):
         
+        oriented = space.orient_attributes()
+        
+        if oriented:
+            core.print_help('Oriented joints with orient attributes.')
+        if not oriented:
+            core.print_warning('No joints oriented. Check that there are joints with orient attributes.')
+        
+        cmds.select(cl = True)
+    
+    @core.undo_chunk
+    def _orient_selected(self):
         selected = cmds.ls(sl = True, type = 'joint')
+        
+        for selection in selected:
+            attr.add_orient_attributes(selection)
+        
+        if not selected:
+            core.print_warning('Please select joints to orient.')
         
         oriented = space.orient_attributes(selected)
         
-        if selected and oriented:
-            core.print_warning('Only oriented selected')
-        if not selected and oriented:
-            core.print_help('Oriented joints')
+        if oriented:
+            core.print_help('Oriented selected joints')
         
-        if selected:
-            cmds.select(selected)
-        if not selected:
-            cmds.select(cl = True)
-    
+        cmds.select(selected)
+            
     def _unskip_orient(self):
         
         selection = cmds.ls(sl = True, type = 'joint')
@@ -548,17 +622,26 @@ class RigManager(qt_ui.DirectoryWidget):
     def _mirror(self, *args ):
         #*args is for probably python 2.6, which doesn't work unless you have a key argument.
         
+        fixed = space.mirror_xform()
+        
+        
+        if fixed:
+            core.print_help('Mirrored transforms left to right')
+        if not fixed:
+            core.print_warning('No joints mirrored. Check there are joints on the left that can mirror right.')
+    
+    @core.undo_chunk
+    def _mirror_selected(self, *args):
         selected = cmds.ls(sl = True, type = 'transform')
+        
+        if not selected:
+            core.print_warning('Please select joints to mirror.')
+            return
         
         fixed = space.mirror_xform(transforms = selected)
         
-        
-        if selected and fixed:
-            core.print_warning('Only mirrored selected left to right')
-        if not selected and fixed:
-            core.print_help('Mirrored transforms left to right')
-        if not fixed:
-            core.print_warning('No joints mirrored. Check there are joints on the left that can mirror right.  Check your selected transform is not on the right.')
+        if fixed:
+            core.print_warning('Mirrored selected left to right')
             
     def _mirror_on(self):
         
@@ -848,8 +931,20 @@ class RigManager(qt_ui.DirectoryWidget):
         for curve in curves:
             geo.snap_curve_to_surface(curve, meshes[0], value)
             
-
-                    
+    @core.undo_chunk
+    def _replace_curve_shape(self):
+        
+        shape = str(self.curve_shape_combo.currentText())
+        
+        curves = geo.get_selected_curves()
+        
+        for c in curves:
+            inst = curve.CurveDataInfo()
+            inst.set_active_library('default_curves')
+            inst.set_shape_to_curve(str(c), shape, add_curve_type_attribute=False)
+        
+        cmds.select(curves)
+        
 class SkinMeshFromMesh(qt_ui.Group):
     def __init__(self):
         
@@ -858,6 +953,8 @@ class SkinMeshFromMesh(qt_ui.Group):
         
     def _build_widgets(self):
         
+        info = qt.QLabel('Apply the skin from the source mesh to the target.\nThis will automatically skin the target mesh and copy skin weights.\n\nSet exclude and include joints\nThis helps control what joints get applied.')
+        
         self.exclude = qt_ui.GetString('Exclude Joints')
         self.exclude.set_use_button(True)
         self.exclude.set_placeholder('Optional')
@@ -865,13 +962,14 @@ class SkinMeshFromMesh(qt_ui.Group):
         self.include.set_use_button(True)
         self.include.set_placeholder('Optional')
         
-        self.uv = qt_ui.GetBoolean('At UV')
+        self.uv = qt_ui.GetBoolean('Copy weights using UVs')
         
         label = qt.QLabel('Select source and target mesh.')
         
         run = qt.QPushButton('Run')
         run.clicked.connect(self._run)
         
+        self.main_layout.addWidget(info)
         self.main_layout.addWidget(self.exclude)
         self.main_layout.addWidget(self.include)
         self.main_layout.addWidget(self.uv)
