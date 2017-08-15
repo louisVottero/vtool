@@ -241,7 +241,7 @@ def get_maya_version():
             show('Could not get maya version.')
 
     if not is_in_maya():
-        return 0
+        return None
 
 def break_signaled():
     """
@@ -1620,10 +1620,11 @@ def show(*args):
         
         string_value = show_list_to_string(*args)
         log_value = string_value
-        #do not remove
+        
         string_value = string_value.replace('\n', '\nV:\t\t')
         text = 'V:\t\t%s' % string_value
-         
+        
+        #do not remove 
         print text
         
         record_temp_log('\n%s' % log_value)
