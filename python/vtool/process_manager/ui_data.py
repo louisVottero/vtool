@@ -184,11 +184,6 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     def __init__(self):     
         super(DataTreeWidget, self).__init__()
         
-        #this will be used for hierarcy
-        #self.setSelectionMode(self.ExtendedSelection)
-        
-        #self.header().setResizeMode(0, qt.QHeaderView.ResizeToContents)
-        #self.header()
         if vtool.qt_ui.is_pyside():
             self.header().setResizeMode(0, qt.QHeaderView.Stretch)
             self.header().setResizeMode(1, qt.QHeaderView.Stretch)
@@ -196,8 +191,6 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             self.header().setSectionResizeMode(0, qt.QHeaderView.Stretch)
             self.header().setSectionResizeMode(1, qt.QHeaderView.Stretch)
         self.header().setStretchLastSection(False)
-        
-        #qt.QHeaderView.setResizeMode()
         
         self.text_edit = False
         
@@ -1399,7 +1392,14 @@ class MayaAttributesFileWidget(MayaDataFileWidget):
 
     def _define_main_tab_name(self):
         return 'Maya Attributes'
-        
+
+class MayaControlAttributesFileWidget(MayaDataFileWidget):
+    def _define_data_class(self):
+        return vtool.data.MayaControlAttributeData()
+
+    def _define_main_tab_name(self):
+        return 'Maya Control Values'
+                
 
 class MayaFileWidget(vtool.qt_ui.FileManagerWidget):
     
@@ -1702,6 +1702,7 @@ data_name_map = {'maya.binary': 'Binary File',
                  'maya.blend_weights' : 'Weights Blendshape',
                  'maya.shaders' : 'Shaders',
                  'maya.attributes' : 'Attributes',
+                 'maya.control_values' : 'Control Values',
                  'maya.pose' : 'Correctives',
                  'maya.animation' : 'Keyframes',
                  'maya.control_animation' : 'Keyframes Control',
@@ -1718,6 +1719,7 @@ file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.atom' :  AtomFileWidget,
                  'maya.shaders' : MayaShadersFileWidget,
                  'maya.attributes' : MayaAttributesFileWidget,
+                 'maya.control_values' : MayaControlAttributesFileWidget,
                  'maya.pose' : PoseFileWidget,
                  'maya.animation': AnimationFileWidget,
                  'maya.control_animation': ControlAnimationFileWidget}
