@@ -646,7 +646,7 @@ class RigManager(qt_ui.DirectoryWidget):
         fixed = space.mirror_xform(transforms = selected)
         
         if fixed:
-            core.print_warning('Mirrored selected left to right')
+            core.print_help('Mirrored selected left to right')
             
     def _mirror_on(self):
         
