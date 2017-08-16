@@ -248,7 +248,7 @@ class RigManager(qt_ui.DirectoryWidget):
         orient_joints.setMinimumWidth(125)
         orient_joints.clicked.connect(self._orient)
         
-        orient_sel_joints = qt.QPushButton('Orient Selected Joints Only')
+        orient_sel_joints = qt.QPushButton('Orient Selected Only')
         orient_sel_joints.setMinimumHeight(40)
         orient_sel_joints.setMinimumWidth(125)
         orient_sel_joints.clicked.connect(self._orient_selected)
@@ -280,11 +280,11 @@ class RigManager(qt_ui.DirectoryWidget):
         
         mirror = qt.QPushButton('Mirror Transforms')
         mirror.setMinimumHeight(40)
-        mirror.setMinimumWidth(200)
+        mirror.setMinimumWidth(125)
         
         mirror_sel = qt.QPushButton('Mirror Selected Only')
         mirror_sel.setMinimumHeight(20)
-        mirror_sel.setMinimumWidth(200)
+        mirror_sel.setMinimumWidth(125)
         
         on_off_mirror_layout = qt.QVBoxLayout()
         
@@ -388,12 +388,17 @@ class RigManager(qt_ui.DirectoryWidget):
         curve_names.sort()
         self.curve_shape_combo = qt.QComboBox()
         self.curve_shape_combo.addItems(curve_names)
+        self.curve_shape_combo.setMaximumWidth(110)
+        
+        curve_shape_label = qt.QLabel('Curve Type') 
         
         replace_curve_shape = qt.QPushButton('Replace Curve Shape')
         replace_curve_shape.clicked.connect(self._replace_curve_shape)
         
         replace_curve_layout = qt.QHBoxLayout()
         replace_curve_layout.addWidget(replace_curve_shape)
+        replace_curve_layout.addSpacing(5)
+        replace_curve_layout.addWidget(curve_shape_label, alignment = qt.QtCore.Qt.AlignRight)
         replace_curve_layout.addWidget(self.curve_shape_combo)
         
         
@@ -445,17 +450,17 @@ class RigManager(qt_ui.DirectoryWidget):
         
     def _create_deformation_widgets(self, parent):
         
-        intermediate_button_info = qt.QLabel('This button is good for updating the intermediate object.\nSelect a mesh to be the new intermediate.\nAnd also a mesh that has a skinCluster and/or blendShape.')
+        intermediate_button_info = qt.QLabel('This button updates the intermediate object.\nSelect a mesh to be the new intermediate.\nAnd also a mesh with\nskinCluster and/or blendShape.')
         intermediate_button = qt.QPushButton('Blend Into Intermediate')
         #intermediate_button.setToolTip('Select a mesh and a mesh deformed by a skin or blendshape')
         intermediate_button.clicked.connect(self._blend_into_intermediate)
         
-        recreate_blends_info = qt.QLabel('Recreate all the targets on a blendshape.\nSelect a mesh with blendshape history\nAnd optionally meshes that should follow.')
+        recreate_blends_info = qt.QLabel('Recreate all the targets of a blendshape.\nSelect a mesh with blendshape history\nAnd optionally meshes that should follow.')
         recreate_blends = qt.QPushButton('Recreate Blendshapes')
         #recreate_blends.setToolTip('Select a mesh with blendshape history and optionally meshes that should follow.')
         recreate_blends.clicked.connect(self._recreate_blends)
         
-        corrective_button_info = qt.QLabel('Select a mesh (in pose) deformed by a skinCluster and/or a blendShape\nAnd also the sculpted mesh to correct it.')
+        corrective_button_info = qt.QLabel('Select a mesh (in pose) deformed by a \nskinCluster and/or a blendShape\nAnd also the sculpted mesh to correct it.')
         corrective_button = qt.QPushButton('Create Corrective')
         
         corrective_button.clicked.connect(self._create_corrective)
@@ -463,7 +468,7 @@ class RigManager(qt_ui.DirectoryWidget):
         skin_mesh_from_mesh = SkinMeshFromMesh()
         skin_mesh_from_mesh.collapse_group()
         
-        cluster_mesh_info = qt.QLabel('This will add a cluster at the click point and go into paint weighting.\nPush button then click on a mesh.')
+        cluster_mesh_info = qt.QLabel('This will add a cluster at the click point\nand go into paint weighting.\nPush button then click on a mesh.')
         cluster_mesh = qt.QPushButton('Create Tweak Cluster')
         cluster_mesh.clicked.connect(self._cluster_tweak_mesh)
         
@@ -953,7 +958,7 @@ class SkinMeshFromMesh(qt_ui.Group):
         
     def _build_widgets(self):
         
-        info = qt.QLabel('Apply the skin from the source mesh to the target.\nThis will automatically skin the target mesh and copy skin weights.\n\nSet exclude and include joints\nThis helps control what joints get applied.')
+        info = qt.QLabel('Apply the skin from the source to the target.\nThis will automatically skin the target\nand copy skin weights.\n\nSet exclude and include joints\nThis helps control what joints get applied.')
         
         self.exclude = qt_ui.GetString('Exclude Joints')
         self.exclude.set_use_button(True)
@@ -974,7 +979,7 @@ class SkinMeshFromMesh(qt_ui.Group):
         self.main_layout.addWidget(self.include)
         self.main_layout.addWidget(self.uv)
         self.main_layout.addWidget(label)
-        self.main_layout.addSpacing(5)
+        self.main_layout.addSpacing(10)
         self.main_layout.addWidget(run)
     
     def _run(self):
