@@ -724,6 +724,8 @@ class RigManager(qt_ui.DirectoryWidget):
     def _mirror_control(self):
         
         selection = cmds.ls(sl = True)
+        if not selection:
+            return
         rigs_util.mirror_control(selection[0])
         
     def _mirror_controls(self):
