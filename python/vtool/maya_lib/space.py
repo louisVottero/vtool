@@ -1670,13 +1670,21 @@ def is_transform_default(transform):
         for axis in ['X','Y','Z']:
             if cmds.getAttr('%s.%s%s' % (transform, attribute, axis), l = True):
                 continue
-            if cmds.getAttr('%s.%s%s' % (transform, attribute, axis)) != 0:
+            if not cmds.getAttr('%s.%s%s' % (transform, attribute, axis), k = True):
+                continue
+            if attr.is_connected('%s.%s%s' % (transform, attribute, axis)):
+                continue
+            if cmds.getAttr('%s.%s%s' % (transform, attribute, axis)) > 0.0000001:
+                print 'value!', '%s.%s%s' % (transform, attribute, axis)
                 return False
             
     for axis in ['X','Y','Z']:
         if cmds.getAttr('%s.scale%s' % (transform, axis), l = True):
             continue
-        
+        if attr.is_connected('%s.scale%s' % (transform, axis)):
+            continue
+        if not cmds.getAttr('%s.scale%s' % (transform, axis), k = True):
+            continue
         if cmds.getAttr('%s.scale%s' % (transform, axis)) != 1:
             return False
     
@@ -1701,6 +1709,16 @@ def get_non_default_transforms():
         if cmds.nodeType(transform) == 'joint':
             continue
         if core.has_shape_of_type(transform, 'camera'):
+            continue
+        if cmds.nodeType(transform) == 'aimConstraint':
+            continue
+        if cmds.nodeType(transform) =='pointConstraint':
+            continue
+        if cmds.nodeType(transform) == 'orientConstraint':
+            continue
+        if cmds.nodeType(transform) == 'parentConstraint':
+            continue
+        if cmds.nodeType(transform) == 'ikHandle':
             continue
         
         if not is_transform_default(transform):
