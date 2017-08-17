@@ -2766,14 +2766,14 @@ def scale_controls(value):
 @core.undo_chunk
 def fix_sub_controls(controls = None):
     
-    controls = vtool.util.convert_to_sequence(controls)
-    
     if not controls:
         scope = cmds.ls(sl = True)
         if scope:
             controls = scope
     if not controls:
         return
+    
+    controls = vtool.util.convert_to_sequence(controls)
     
     for control in controls:
         if not core.has_shape_of_type(control, 'nurbsCurve'):
