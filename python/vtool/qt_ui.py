@@ -4524,6 +4524,16 @@ class AddRemoveList(BasicWidget):
         
         self._create_context_menu()
         
+        defaults = self._define_defaults()
+        
+        if defaults:
+            for default in defaults:
+                self.list.addItem(default)
+        
+        
+    def _define_defaults(self):
+        return ['-default-']
+        
     def _define_main_layout(self):
         return qt.QVBoxLayout()
     
@@ -4533,12 +4543,17 @@ class AddRemoveList(BasicWidget):
         self.list = qt.QListWidget()
         
         self.main_layout.addWidget(self.list)
-        
+    
     def _item_menu(self, position):
         
         item = self.list.itemAt(position)
-            
+        
+        
         if item:
+            name = item.text()
+            if name in self._define_defaults():
+                return
+            
             self.remove_action.setVisible(True)
         if not item:
             self.remove_action.setVisible(False)
@@ -4559,17 +4574,29 @@ class AddRemoveList(BasicWidget):
         self.remove_action.triggered.connect(self._remove_item)
         self.refresh_action.triggered.connect(self.refresh)
     
-    def _create_item(self):
-        item = qt.QListWidgetItem('new')
+    def _create_item(self, name = 'folder'):
+        
+        
+        item = qt.QListWidgetItem(name)
         return item
     
-    def _add_item(self):
+    def _add_item(self, name = None):
         
-        item = self._create_item()
+        item = None
+        
+        if not name:
+            item = self._create_item()
+        if name:
+            item = self._create_item(name)
+        
+        if not item:
+            return
         
         self.list.addItem(item)
         
         self.item_added.emit(item)
+        
+        return item
         
     def _remove_item(self):
         
@@ -4578,6 +4605,10 @@ class AddRemoveList(BasicWidget):
         removed_items = []
         
         for item in items:
+            folder = str(item.text())
+            if folder in self._define_defaults():
+                continue
+            
             index = self.list.indexFromItem(item)
             self.list.takeItem(index.row())
             
@@ -4589,21 +4620,141 @@ class AddRemoveList(BasicWidget):
         
         items = self.list.selectedItems()
         
+        if not items:
+            return [None,None]
+        
         item = items[0]
         old_name = str(item.text())
         
+        if old_name in self._define_defaults():
+            return
+            
         new_name = get_new_name('Rename item', self, old_name)
         
         if not new_name:
-            return
+            return [None,None]
         
         item.setText(new_name)
         
         self.item_renamed.emit([old_name, new_name])
         
+        return old_name, new_name
+    
     def refresh(self):
-        pass
+        defaults = self._define_defaults()
         
+        for default in defaults:
+            item = self._add_item(default)
+            if item:
+                qt.QListWidgetItem.setDisabled(True)
+    
+class AddRemoveDirectoryList(AddRemoveList):
+    
+    def __init__(self, parent = None, scroll = False):
+        super(AddRemoveDirectoryList, self).__init__(parent, scroll)
+        
+        self.directory = None
+
+    def _create_item(self, name = 'folder'):
+        item = super(AddRemoveDirectoryList, self)._create_item(name)
+        
+        if not self.directory:
+            return
+        
+        sub_path = self._get_path()
+        
+        
+        name = str(item.text())
+        
+        if name in self._define_defaults():
+            return item
+        
+        util_file.create_dir(name, sub_path)
+        
+        return item
+    
+    def _remove_item(self):
+        removed = super(AddRemoveDirectoryList, self)._remove_item()
+        
+        if not self.directory:
+            return
+        
+        for name in removed:
+            
+            folder = name
+            if folder in self._define_defaults():
+                return
+            
+            folder = name
+        
+            self._remove_folder(folder)
+    
+    def _remove_folder(self, name):
+        
+        sub_path = self._get_path()
+        folder = util_file.join_path(sub_path, name)
+        
+        if util_file.is_dir(folder):
+            util_file.delete_dir(folder)
+    
+    def _rename_item(self):
+        
+        old_name, new_name = super(AddRemoveDirectoryList, self)._rename_item()
+        
+
+        
+        if not self.directory:
+            return
+        
+        if not old_name or not new_name:
+            return
+        
+        self._rename_folder(old_name, new_name)
+    
+    def _rename_folder(self, old_name, new_name):
+        
+        sub_path = self._get_path()
+        old_folder = util_file.join_path(sub_path, old_name)
+        
+        if util_file.is_dir(old_folder):
+            util_file.rename(old_folder, new_name)
+    
+    def _get_path(self):
+        
+        sub_path = util_file.join_path(self.directory, '.sub')
+        return sub_path
+        
+    def _get_folders(self):
+        
+        sub_path = self._get_path()
+        
+        sub_folders = util_file.get_folders(sub_path)
+        
+        return sub_folders
+        
+    def refresh(self):
+
+        self.list.clear()
+
+        defaults = self._define_defaults()
+        
+        for default in defaults:
+            self._add_item(default)
+        
+        if not self.directory:
+            return
+        
+        folders = self._get_folders()
+        
+        for folder in folders:
+            item = qt.QListWidgetItem(folder)
+            self.list.addItem(item)
+    
+    def set_directory(self, dirpath):
+        
+        self.directory = dirpath
+        self.refresh()
+    
 #--- Custom Painted Widgets
 
 class TimelineWidget(qt.QWidget):
