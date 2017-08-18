@@ -28,9 +28,10 @@ def main():
         settings_inst.set_directory(settings)
         
         codes = settings_inst.get('code_directory')
-        for code in codes:
-            vtool.util.show('Adding code path: %s' % code)
-            sys.path.append(code)
+        if codes:
+            for code in codes:
+                vtool.util.show('Adding code path: %s' % code)
+                sys.path.append(code)
     
     if vtool.util.is_in_maya():
         import maya.standalone

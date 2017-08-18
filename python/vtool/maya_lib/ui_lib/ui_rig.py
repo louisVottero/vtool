@@ -588,8 +588,9 @@ class RigManager(qt_ui.DirectoryWidget):
     def _orient_selected(self):
         selected = cmds.ls(sl = True, type = 'joint')
         
-        for selection in selected:
-            attr.add_orient_attributes(selection)
+        #for selection in selected:
+            
+            #attr.add_orient_attributes(selection)
         
         if not selected:
             core.print_warning('Please select joints to orient.')
