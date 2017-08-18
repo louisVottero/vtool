@@ -1104,19 +1104,6 @@ class EditFileTreeWidget(DirectoryWidget):
         
         self.main_layout.addWidget(self.manager_widget)
         
-        
-    """
-    def _item_clicked(self, item, column):
-        
-        if not item:
-            name = ''
-        
-        if item:
-            name = item.text(column)
-        
-        self.item_clicked.emit(name, item)
-    """
-        
     def _item_selection_changed(self):
                
         items = self.tree_widget.selectedItems()
@@ -4523,8 +4510,100 @@ class PythonCompleter(qt.QCompleter):
             return
         
         self.filepath = filepath
-     
-   
+
+class AddRemoveList(BasicWidget):
+    item_removed = create_signal(object)
+    item_added = create_signal(object)
+    item_renamed = create_signal(object)
+    
+    def __init__(self, parent = None, scroll = False):
+        super(AddRemoveList, self).__init__(parent, scroll)
+        
+        self.list.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
+        self.list.customContextMenuRequested.connect(self._item_menu)
+        
+        self._create_context_menu()
+        
+    def _define_main_layout(self):
+        return qt.QVBoxLayout()
+    
+    def _build_widgets(self):
+        
+        
+        self.list = qt.QListWidget()
+        
+        self.main_layout.addWidget(self.list)
+        
+    def _item_menu(self, position):
+        
+        item = self.list.itemAt(position)
+            
+        if item:
+            self.remove_action.setVisible(True)
+        if not item:
+            self.remove_action.setVisible(False)
+        self.context_menu.exec_(self.list.viewport().mapToGlobal(position))
+        
+    def _create_context_menu(self):
+        
+        self.context_menu = qt.QMenu()
+        
+        self.add_action = self.context_menu.addAction('Add')
+        self.rename_action = self.context_menu.addAction('Rename')
+        self.remove_action = self.context_menu.addAction('Delete')
+        self.context_menu.addSeparator()
+        self.refresh_action = self.context_menu.addAction('Refresh')
+        
+        self.add_action.triggered.connect(self._add_item)
+        self.rename_action.triggered.connect(self._rename_item)
+        self.remove_action.triggered.connect(self._remove_item)
+        self.refresh_action.triggered.connect(self.refresh)
+    
+    def _create_item(self):
+        item = qt.QListWidgetItem('new')
+        return item
+    
+    def _add_item(self):
+        
+        item = self._create_item()
+        
+        self.list.addItem(item)
+        
+        self.item_added.emit(item)
+        
+    def _remove_item(self):
+        
+        items = self.list.selectedItems()
+        
+        removed_items = []
+        
+        for item in items:
+            index = self.list.indexFromItem(item)
+            self.list.takeItem(index.row())
+            
+            removed_items.append(str(item.text()))
+        
+        return removed_items
+    
+    def _rename_item(self):
+        
+        items = self.list.selectedItems()
+        
+        item = items[0]
+        old_name = str(item.text())
+        
+        new_name = get_new_name('Rename item', self, old_name)
+        
+        if not new_name:
+            return
+        
+        item.setText(new_name)
+        
+        self.item_renamed.emit([old_name, new_name])
+        
+    def refresh(self):
+        pass
+        
 #--- Custom Painted Widgets
 
 class TimelineWidget(qt.QWidget):
