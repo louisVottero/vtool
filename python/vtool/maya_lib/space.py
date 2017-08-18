@@ -1675,7 +1675,6 @@ def is_transform_default(transform):
             if attr.is_connected('%s.%s%s' % (transform, attribute, axis)):
                 continue
             if cmds.getAttr('%s.%s%s' % (transform, attribute, axis)) > 0.0000001:
-                print 'value!', '%s.%s%s' % (transform, attribute, axis)
                 return False
             
     for axis in ['X','Y','Z']:
@@ -2207,8 +2206,6 @@ def get_axis_aimed_at_child(transform):
         
         
         result = vtool.util.get_dot_product(vector1, vector2)
-        
-        print axis, result
         
         if result > current_result:
             good_axis = axis
