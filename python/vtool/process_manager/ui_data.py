@@ -16,13 +16,13 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
     
     def __init__(self):
         
-        self.data_widget = None
+        self.data_tree_widget = None
         self.last_directory = None
         
         super(DataProcessWidget, self).__init__()
         
         self.setMouseTracking(True)
-        self.data_widget.setMouseTracking(True)
+        self.data_tree_widget.setMouseTracking(True)
           
     def _define_main_layout(self):
         return qt.QVBoxLayout()
@@ -31,9 +31,9 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         splitter = qt.QSplitter()
         
-        self.data_widget = DataTreeWidget()
-        self.data_widget.itemSelectionChanged.connect(self._data_item_selection_changed)
-        self.data_widget.active_folder_changed.connect(self._update_file_widget)
+        self.data_tree_widget = DataTreeWidget()
+        self.data_tree_widget.itemSelectionChanged.connect(self._data_item_selection_changed)
+        self.data_tree_widget.active_folder_changed.connect(self._update_file_widget)
         
         self.datatype_widget = DataTypeWidget()
         self.datatype_widget.data_added.connect(self._add_data)
@@ -41,7 +41,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)   
         self.main_layout.addWidget(splitter, stretch = 1)
                 
-        splitter.addWidget(self.data_widget)
+        splitter.addWidget(self.data_tree_widget)
         splitter.addWidget(self.datatype_widget)
         
         splitter.setSizes([1,1])
@@ -49,11 +49,11 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.label = qt.QLabel('-')
         
-        self.file_widget = qt.QWidget()
-        self.file_widget.hide()
+        self.data_widget = DataWidget()
+        self.data_widget.hide()
         
         self.main_layout.addWidget(self.label, alignment = qt.QtCore.Qt.AlignCenter)
-        self.main_layout.addWidget(self.file_widget)
+        self.main_layout.addWidget(self.data_widget)
         
     def mouse_move(self, event):
         
@@ -74,34 +74,22 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self._refresh_data(data_name)
         
-        self.data_widget._rename_data()
+        self.data_tree_widget._rename_data()
         
     def _refresh_data(self, data_name):
-        self.data_widget._load_data(new_data = data_name)
+        self.data_tree_widget._load_data(new_data = data_name)
         
         self.data_created.emit(data_name)
         
     def _data_item_selection_changed(self):
         
-        items = self.data_widget.selectedItems()
+        items = self.data_tree_widget.selectedItems()
         
         item = None
         
         if items:
             if len(items) == 1:
                 item = items[0]
-                
-            if len(items) > 1:
-                item = 'group'
-                if self.file_widget:
-                    self.label.hide()
-                    self.file_widget.close()
-                    self.file_widget.deleteLater()
-                    del self.file_widget
-                    self.file_widget = None
-                
-                self.file_widget = GroupWidget()
-                self.main_layout.addWidget(self.file_widget)
             
         if item and not type(item) == str:
             
@@ -119,33 +107,35 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                     
                     if key == data_type:
                         
-                        if self.file_widget:
-                            self.file_widget.close()
-                            self.file_widget.deleteLater()
-                            del self.file_widget
-                            self.file_widget = None
+                        if self.data_widget.file_widget:
+                            self.data_widget.file_widget.close()
+                            self.data_widget.file_widget.deleteLater()
+                            del self.data_widget.file_widget
+                            self.data_widget.file_widget = None
                             
                         
-                        self.file_widget = file_widgets[key]()
+                        self.data_widget.file_widget = file_widgets[key]()
                         
                         path_to_data = vtool.util_file.join_path(process_tool.get_data_path(), str( item.text(0) ) )
                         
-                        if hasattr(self.file_widget, 'set_directory'):
-                            self.file_widget.set_directory(path_to_data)
-                        self.main_layout.addWidget(self.file_widget)
+                        if hasattr(self.data_widget.file_widget, 'set_directory'):
+                            self.data_widget.file_widget.set_directory(path_to_data)
+                            
+                        self.data_widget.main_layout.insertWidget(0, self.data_widget.file_widget)
+                        self.data_widget.show()
                         self.label.setText( str( item.text(0)) )
                         self.label.show()
             if not is_data:
                 item = None
             
         if not item:
-            if not self.file_widget:
+            if not self.data_widget.file_widget:
                 return
                 
-            if self.file_widget:
-                self.file_widget.hide()
-                self.file_widget.deleteLater()
-                self.file_widget = None
+            if self.data_widget.file_widget:
+                self.data_widget.file_widget.hide()
+                self.data_widget.file_widget.deleteLater()
+                self.data_widget.file_widget = None
                 self.label.setText('')
                 
                 
@@ -156,7 +146,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         if not directory:
             return
         
-        self.file_widget.set_directory(directory)
+        self.data_widget.file_widget.set_directory(directory)
         
         basename = vtool.util_file.get_basename(directory)
         
@@ -168,7 +158,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         if directory == self.last_directory:
             return
 
-        self.data_widget.set_directory(directory)
+        self.data_tree_widget.set_directory(directory)
         
         self.datatype_widget.set_directory( directory )
         
@@ -176,7 +166,31 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
     def clear_data(self):
         self.set_directory('')
+
+class DataWidget(vtool.qt_ui.BasicWidget):
+    
+    def __init__(self,parent = None, scroll = False):
+        self.file_widget = None
+        super(DataWidget, self).__init__(parent, scroll)
         
+    
+    def _define_main_layout(self):
+        return vtool.qt.QHBoxLayout()
+        
+    def _build_widgets(self):
+        
+        #self.list = vtool.qt_ui.AddRemoveList()
+        self.file_widget = vtool.qt_ui.BasicWidget()
+        
+        self.main_layout.addWidget(self.file_widget)
+        #self.main_layout.addWidget(self.list)
+        
+    def remove_file_widget(self):
+        pass
+    
+    def add_file_widget(self):
+        pass
+
 class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     
     active_folder_changed = vtool.qt_ui.create_signal(object)
@@ -617,16 +631,6 @@ class DataTypeTreeWidget(qt.QTreeWidget):
             return str(parent.text(0))
 
 #--- data widgets
-
-class GroupWidget(vtool.qt_ui.BasicWidget):
-    
-    def _build_widgets(self):
-        super(GroupWidget, self)._build_widgets()
-        
-        group = qt.QPushButton('Group Data')
-        group.setMaximumWidth(200)
-        group.setMinimumHeight(50)
-        self.main_layout.addWidget(group)
 
 class DataLinkWidget(vtool.qt_ui.BasicWidget):
     
@@ -1387,6 +1391,14 @@ class MayaShadersFileWidget(MayaDataFileWidget):
         return 'Maya Shaders'
     
 class MayaAttributesFileWidget(MayaDataFileWidget):
+    
+    def _build_widgets(self):
+        super(MayaAttributesFileWidget, self)._build_widgets()
+        
+        self.list = vtool.qt_ui.AddRemoveList()
+        self.save_widget.main_layout.addWidget(self.list)
+        
+    
     def _define_data_class(self):
         return vtool.data.MayaAttributeData()
 
