@@ -120,8 +120,9 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                         
                         if hasattr(self.data_widget.file_widget, 'set_directory'):
                             self.data_widget.file_widget.set_directory(path_to_data)
+                            self.data_widget.set_directory(path_to_data)
                             
-                        self.data_widget.main_layout.insertWidget(0, self.data_widget.file_widget)
+                        self.data_widget.main_layout.addWidget(self.data_widget.file_widget)
                         self.data_widget.show()
                         self.label.setText( str( item.text(0)) )
                         self.label.show()
@@ -147,6 +148,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
             return
         
         self.data_widget.file_widget.set_directory(directory)
+        self.data_widget.set_directory(directory)
         
         basename = vtool.util_file.get_basename(directory)
         
@@ -173,23 +175,29 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         self.file_widget = None
         super(DataWidget, self).__init__(parent, scroll)
         
+        self.setMinimumHeight(300)
     
     def _define_main_layout(self):
-        return vtool.qt.QHBoxLayout()
+        return vtool.qt.QVBoxLayout()
         
     def _build_widgets(self):
         
-        #self.list = vtool.qt_ui.AddRemoveList()
+        self.list = vtool.qt_ui.AddRemoveDirectoryList()
+        self.list.setMaximumHeight(100)
         self.file_widget = vtool.qt_ui.BasicWidget()
         
+        self.main_layout.addWidget(self.list)
         self.main_layout.addWidget(self.file_widget)
-        #self.main_layout.addWidget(self.list)
+        
         
     def remove_file_widget(self):
         pass
     
     def add_file_widget(self):
         pass
+    
+    def set_directory(self, directory):
+        self.list.set_directory(directory)
 
 class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     
@@ -210,15 +218,16 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.directory = None
         
-        policy = self.sizePolicy()
+        #policy = self.sizePolicy()
         
-        policy.setHorizontalPolicy(policy.Maximum)
-        policy.setHorizontalStretch(1)
+        #policy.setHorizontalPolicy(policy.Maximum)
+        #policy.setHorizontalStretch(1)
         
-        self.setSizePolicy(policy)
+        #self.setSizePolicy(policy)
         
         self.setColumnWidth(0, 140)
         self.setColumnWidth(1, 110)
+        self.setColumnWidth(2, 50)
         
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
@@ -227,6 +236,32 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.setAlternatingRowColors(True)
         
+        self.setIndentation(2)
+    
+    def resizeEvent(self, event):
+        super(DataTreeWidget, self).resizeEvent(event)
+        
+        col_size = self.columnWidth(0)
+        
+        if  col_size >= 110:
+            
+            for inc in range(0, self.topLevelItemCount()):
+                
+                item = self.topLevelItem(inc)
+                item_font = qt.QFont()
+                item_font.setPixelSize(11)
+                item.setFont(0, item_font)
+                item.setFont(1, item_font)
+        
+        if col_size < 110:
+            for inc in range(0, self.topLevelItemCount()):
+                
+                item = self.topLevelItem(inc)
+                item_font = qt.QFont()
+                item_font.setPixelSize(10)
+                item.setFont(0, item_font)
+                item.setFont(1, item_font)  
+    
     def _item_menu(self, position):
         
         item = self.itemAt(position)
@@ -322,7 +357,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
     
     def _define_header(self):
-        return ['Name','Type','Size MB']
+        return ['Name','Type','Size']
         
     def _item_renamed(self, item, old_name):
         
@@ -362,6 +397,14 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             
             item = qt.QTreeWidgetItem()
             item.setText(0, foldername)
+            
+            
+            item_font = qt.QFont()
+            item_font.setPixelSize(10)
+            item_font2 = qt.QFont()
+            item_font2.setPixelSize(10)
+            item.setFont(0, item_font)
+            item.setFont(1, item_font2)
             
             data_type = process_tool.get_data_type(foldername)
             
