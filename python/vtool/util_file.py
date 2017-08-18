@@ -2002,12 +2002,12 @@ def create_dir(name, directory = None, make_unique = False):
     
     return full_path           
     
-def delete_dir(name, directory):
+def delete_dir(name, directory = None):
     """
     Delete the folder by name in the directory.
     
     Args:
-        name (str): The name of the folder to delete.
+        name (str): The name of the folder to delete.  Name can also be the full path, with no need to supply directory.
         directory (str): The dirpath where the folder lives.
         
     Returns:
@@ -2020,13 +2020,14 @@ def delete_dir(name, directory):
     
     if not is_dir(full_path):
         
+        #in case a directory was passed to the name
+        if is_dir(name):
+            shutil.rmtree(name, onerror = delete_read_only_error)  
+            return name
+            
         util.show('%s was not deleted. It is not a folder.' % full_path)
         
         return full_path
-    
-    #read-only error fix
-    #if not os.access(full_path, os.W_OK):
-    #    os.chmod(full_path, stat.S_IWUSR)
     
     shutil.rmtree(full_path, onerror = delete_read_only_error)  
     
