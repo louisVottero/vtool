@@ -14,7 +14,7 @@ import maya.cmds as cmds
 class CheckView(ui_core.MayaWindow):
     
     title_name = 'Check'
-        
+    title = 'Check'
         
     
     def _define_main_layout(self):
@@ -64,7 +64,6 @@ class CheckView(ui_core.MayaWindow):
         view.addWidget(self.list_label)
         view.addSpacing(5)
         view.addWidget(self.list)
-        
         
         
 

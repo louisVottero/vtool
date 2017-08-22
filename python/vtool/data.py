@@ -36,6 +36,7 @@ class DataManager(object):
                                ScriptPythonData(),
                                ControlCvData(),
                                ControlColorData(),
+                               MayaControlAttributeData(),
                                SkinWeightData(),
                                DeformerWeightData(),
                                BlendshapeWeightData(),
@@ -2126,6 +2127,28 @@ class MayaAttributeData(MayaCustomData):
     def _data_extension(self):
         return ''
     
+    def _get_scope(self):
+        selection = cmds.ls(sl = True)
+        
+        if not selection:
+            util.warning('Nothing selected. Please select at least one node to export attributes.')
+            return
+        
+        return selection
+    
+    def _get_attributes(self, node):
+        attributes = cmds.listAttr(node, scalar = True, m = True, k = True)
+        attributes.append('rotateOrder')
+         
+        return attributes
+    
+    def _get_shapes(self, node):
+        shapes = maya_lib.core.get_shapes(node)
+        return shapes
+    
+    def _get_shape_attributes(self, shape):
+        self._get_attributes(shape)
+    
     def import_data(self):
         """
         This will import all nodes saved to the data folder.
@@ -2168,10 +2191,20 @@ class MayaAttributeData(MayaCustomData):
                 
                 line_list = eval(line)
                 
+                attribute = '%s.%s' % (node_name, line_list[0])
+                
+                if maya_lib.attr.is_locked(attribute):
+                    continue
+                if maya_lib.attr.is_connected(attribute):
+                    continue
+                if not cmds.objExists(attribute):
+                    util.warning('%s does not exists. Could not set value.' % attribute)
+                    continue
+                
                 try:
-                    cmds.setAttr('%s.%s' % (node_name, line_list[0]), line_list[1])    
+                    cmds.setAttr(attribute, line_list[1])    
                 except:
-                    util.warning('\tCould not set %s to %s. Maybe it is locked or connected.' % (line_list[0], line_list[1]))
+                    util.warning('\tCould not set %s to %s.' % (attribute, line_list[1]))
             
         self._center_view()
 
@@ -2184,13 +2217,12 @@ class MayaAttributeData(MayaCustomData):
         if not util_file.is_dir(path):
             util_file.create_dir(self.name, self.directory)
         
-        selection = cmds.ls(sl = True)
+        scope = self._get_scope()
         
-        if not selection:
-            util.warning('Nothing selected. Please select at least one node to export attributes.')
+        if not scope:
             return
-        
-        for thing in selection:
+                
+        for thing in scope:
             
             maya_lib.core.print_help('Exporting attributes on %s' % thing)
             
@@ -2198,12 +2230,13 @@ class MayaAttributeData(MayaCustomData):
 
             lines = []
             
-            attributes = cmds.listAttr(thing, scalar = True, m = True)
+            attributes = self._get_attributes(thing)
             
-            shapes = maya_lib.core.get_shapes(thing)
+            shapes = self._get_shapes(thing)
+            
             if shapes:
                 shape = shapes[0]
-                shape_attributes = cmds.listAttr(shape, scalar = True, m = True)
+                shape_attributes = self._get_shape_attributes(shape)
                 
                 if shape_attributes:
                     new_set = set(attributes).union(shape_attributes)
@@ -2223,6 +2256,30 @@ class MayaAttributeData(MayaCustomData):
             
         maya_lib.core.print_help('Exported %s data' % self.name)
 
+class MayaControlAttributeData(MayaAttributeData):
+    
+    def _data_name(self):
+        return 'control values'
+        
+    def _data_type(self):
+        return 'maya.control_values' 
+
+    def _data_extension(self):
+        return ''
+    
+    def _get_scope(self):
+        
+        controls = maya_lib.rigs_util.get_controls()
+        
+        if not controls:
+            util.warning('No controls found to export attributes.')
+            return
+        
+        return controls
+    
+    def _get_shapes(self, node):
+        return []
+    
         
 class MayaFileData(MayaCustomData):
     
