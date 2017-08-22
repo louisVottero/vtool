@@ -1459,7 +1459,7 @@ class ShapeComboManager(object):
                 pass
     
     @core.undo_chunk
-    def add_meshes(self, meshes, preserve = False):
+    def add_meshes(self, meshes, preserve_combos = False, preserve_inbetweens = False):
         
         shapes, combos, inbetweens = self.get_shape_and_combo_lists(meshes)
         
@@ -1478,7 +1478,7 @@ class ShapeComboManager(object):
                 vtool.util.warning('Cannot add home into the system.')
                 continue
             
-            self.add_shape(shape, preserve_combos = preserve)    
+            self.add_shape(shape, preserve_combos = preserve_combos, preserve_inbetweens=preserve_inbetweens)    
         
         vtool.util.show('Adding inbetweens.')
         
@@ -1663,15 +1663,55 @@ class ShapeComboManager(object):
             
         return shapes, combos, inbetweens
     
+    
     #--- shapes
     
     @core.undo_chunk
-    def add_shape(self, name, mesh = None, preserve_combos = False):
+    def add_shape(self, name, mesh = None, preserve_combos = False, preserve_inbetweens = False):
+        #inbetween shouldn't be true by default.
         
         name = core.get_basename(name, remove_namespace = True)
         #name can be a group of meshes
         
         is_negative = False
+        
+        home_dict = self._get_home_dict()
+        
+        if not preserve_inbetweens:
+            
+            inbetweens = self.get_inbetweens(name)
+            
+            if inbetweens:
+                orig_shape = self.recreate_shape(name)
+                
+                mesh_count = len(self.blendshaped_meshes_list)
+                for inc in range(0,mesh_count):
+                    
+                    base_mesh = self.blendshaped_meshes_list[inc]
+                    
+                    
+                    home = home_dict[base_mesh]
+                    home = cmds.listRelatives(home, p = True)[0]
+                    
+                    delta = deform.get_blendshape_delta(home, orig_shape, name, replace = False)
+                    
+                    for inbetween in inbetweens:
+                        
+                        temp_home = cmds.duplicate(home)[0]
+                        
+                        inbetween_value = self.get_inbetween_value(inbetween)
+                        
+                        inbetween_mesh = self.blendshape[base_mesh].recreate_target(inbetween)
+                        
+                        deform.quick_blendshape(delta, temp_home, inbetween_value*.01)
+                        deform.quick_blendshape(inbetween_mesh, temp_home, 1)
+                        
+                        self.blendshape[base_mesh].replace_target(inbetween, temp_home)
+                        
+                        cmds.delete([temp_home, inbetween_mesh])
+                    
+                    cmds.delete(delta)
+                cmds.delete(orig_shape)
         
         if preserve_combos:
             combos = self.get_associated_combos(name)
@@ -1685,7 +1725,6 @@ class ShapeComboManager(object):
         
         shape = name
         
-        #working here
         negative_parent = self.get_negative_parent(name)
         
         if negative_parent:
@@ -1696,8 +1735,6 @@ class ShapeComboManager(object):
         
         if mesh == self._get_mesh():
             mesh = name
-        
-        home_dict = self._get_home_dict()
         
         blendshape = self._get_blendshape()
         
@@ -1711,7 +1748,6 @@ class ShapeComboManager(object):
             
             blend_inst = blendshape[self.blendshaped_meshes_list[inc]]
             target_mesh = target_meshes[inc]
-            
             
             mesh_is_home = False
             
@@ -1728,7 +1764,6 @@ class ShapeComboManager(object):
             
             if is_target:
                 blend_inst.replace_target(name, target_mesh)
-            
             if not is_target:
                 
                 blend_inst.create_target(name, target_mesh)
@@ -1759,7 +1794,9 @@ class ShapeComboManager(object):
                 
                 self.add_combo(combo, preserve_these[combo])
                 cmds.delete(preserve_these[combo])
-            
+        
+
+        
                     
     def turn_on_shape(self, name, value = 1):
         
