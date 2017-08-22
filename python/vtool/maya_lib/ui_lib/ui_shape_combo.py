@@ -58,7 +58,13 @@ class ComboManager(ui_core.MayaWindow):
         header_layout.addWidget(self.slider)
         header_layout.addSpacing(5)
         
+        preserve_layout = qt.QVBoxLayout()
+        
         self.preserve_check = qt.QCheckBox('Preserve Combos')
+        self.preserve_inbetweens = qt.QCheckBox('Preserve Inbetweens')
+        
+        preserve_layout.addWidget(self.preserve_check)
+        preserve_layout.addWidget(self.preserve_inbetweens)
         
         recreate_all = qt.QPushButton('Recreate All')
         recreate_all.setMaximumWidth(100)
@@ -78,7 +84,7 @@ class ComboManager(ui_core.MayaWindow):
         button_layout.addSpacing(10)
         button_layout.addLayout(layout_1)
         button_layout.addSpacing(10)
-        button_layout.addWidget(self.preserve_check)
+        button_layout.addLayout(preserve_layout)
         
         self.preserve_check.stateChanged.connect(self._preserve_state_change)
                 
@@ -145,8 +151,14 @@ class ComboManager(ui_core.MayaWindow):
         if state > 0:
             preserve = True
         
+        inbetween_state = self.preserve_inbetweens.checkState()
+        
+        preserve_inbetweens = False
+        if inbetween_state > 0:
+            preserve_inbetweens = True
+        
         if shapes:
-            self._add_meshes(shapes, preserve, ui_only = True)
+            self._add_meshes(shapes, preserve, preserve_inbetweens, ui_only = True)
 
     def _get_selected_shapes(self):
         
@@ -385,7 +397,7 @@ class ComboManager(ui_core.MayaWindow):
         if not combo_items and not shape_items and not inbetween_items:
             self._add_meshes([mesh])
             
-    def _add_meshes(self, meshes, preserve, ui_only = False):
+    def _add_meshes(self, meshes, preserve_combos, preserve_inbetweens, ui_only = False):
         """
         for mesh in meshes:
             if mesh.find('|') > -1:
@@ -397,7 +409,7 @@ class ComboManager(ui_core.MayaWindow):
         if ui_only:
             inbetweens = self.manager.get_inbetweens()
         if not ui_only:
-            shapes, combos, inbetweens = self.manager.add_meshes(meshes, preserve)
+            shapes, combos, inbetweens = self.manager.add_meshes(meshes, preserve_combos, preserve_inbetweens)
         
         self.shape_widget.tree.load(inbetweens = inbetweens)
         self.combo_widget.tree.load() 
@@ -423,13 +435,21 @@ class ComboManager(ui_core.MayaWindow):
                 if sub_meshes:
                     meshes.append(thing)
         
+        
+        
         state = self.preserve_check.checkState()
         
         preserve = False
         if state > 0:
             preserve = True
+        
+        inbetween_state = self.preserve_inbetweens.checkState()
+        
+        preserve_inbetweens = False
+        if inbetween_state > 0:
+            preserve_inbetweens = True
             
-        self._add_meshes(meshes, preserve)
+        self._add_meshes(meshes, preserve, preserve_inbetweens)
         
     def _shape_renamed(self, shape):
         
