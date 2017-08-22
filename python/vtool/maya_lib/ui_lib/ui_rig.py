@@ -452,12 +452,12 @@ class RigManager(qt_ui.DirectoryWidget):
         
         intermediate_button_info = qt.QLabel('This button updates the intermediate object.\nSelect a mesh to be the new intermediate.\nAnd also a mesh with\nskinCluster and/or blendShape.')
         intermediate_button = qt.QPushButton('Blend Into Intermediate')
-        #intermediate_button.setToolTip('Select a mesh and a mesh deformed by a skin or blendshape')
+        
         intermediate_button.clicked.connect(self._blend_into_intermediate)
         
         recreate_blends_info = qt.QLabel('Recreate all the targets of a blendshape.\nSelect a mesh with blendshape history\nAnd optionally meshes that should follow.')
         recreate_blends = qt.QPushButton('Recreate Blendshapes')
-        #recreate_blends.setToolTip('Select a mesh with blendshape history and optionally meshes that should follow.')
+        
         recreate_blends.clicked.connect(self._recreate_blends)
         
         corrective_button_info = qt.QLabel('Select a mesh (in pose) deformed by a \nskinCluster and/or a blendShape\nAnd also the sculpted mesh to correct it.')
@@ -472,6 +472,17 @@ class RigManager(qt_ui.DirectoryWidget):
         cluster_mesh = qt.QPushButton('Create Tweak Cluster')
         cluster_mesh.clicked.connect(self._cluster_tweak_mesh)
         
+
+        mirror_mesh = MirrorMesh()
+        mirror_mesh.collapse_group()
+        
+        parent.main_layout.addWidget(skin_mesh_from_mesh)
+        parent.main_layout.addSpacing(10)
+        parent.main_layout.addWidget(mirror_mesh)
+        parent.main_layout.addSpacing(10)
+        parent.main_layout.addWidget(cluster_mesh_info)
+        parent.main_layout.addWidget(cluster_mesh)
+        parent.main_layout.addSpacing(10)
         parent.main_layout.addWidget(recreate_blends_info)
         parent.main_layout.addWidget(recreate_blends)
         parent.main_layout.addSpacing(10)
@@ -481,11 +492,11 @@ class RigManager(qt_ui.DirectoryWidget):
         parent.main_layout.addWidget(corrective_button_info)
         parent.main_layout.addWidget(corrective_button)
         
-        parent.main_layout.addSpacing(10)
-        parent.main_layout.addWidget(cluster_mesh_info)
-        parent.main_layout.addWidget(cluster_mesh)
-        parent.main_layout.addSpacing(10)
-        parent.main_layout.addWidget(skin_mesh_from_mesh)
+        
+        
+        
+        
+        
             
     def _pose_manager(self):
         window = pose_manager()
@@ -950,7 +961,11 @@ class RigManager(qt_ui.DirectoryWidget):
             inst.set_shape_to_curve(str(c), shape, add_curve_type_attribute=False)
         
         cmds.select(curves)
+    
+    def _mirror_target_shape(self):
         
+        pass
+    
 class SkinMeshFromMesh(qt_ui.Group):
     def __init__(self):
         
@@ -995,3 +1010,32 @@ class SkinMeshFromMesh(qt_ui.Group):
         if selection:
             if geo.is_a_mesh(selection[0]) and geo.is_a_mesh(selection[1]):
                 deform.skin_mesh_from_mesh(selection[0], selection[1], exclude_joints = exclude, include_joints = include, uv_space = uv)
+                
+class MirrorMesh(qt_ui.Group):
+    def __init__(self):
+        
+        name = 'Mirror Mesh'
+        super(MirrorMesh, self).__init__(name)
+        
+    def _build_widgets(self):
+        mirror_shape_info = qt.QLabel('Mirror a shape from left to right.')
+        self.base_mesh = qt_ui.GetString('Base Mesh')
+        self.base_mesh.set_use_button(True)
+        self.base_mesh.set_placeholder('Original Shape')
+        mirror = qt.QPushButton('Mirror Selected')
+        
+        self.main_layout.addWidget(mirror_shape_info)
+        self.main_layout.addWidget(self.base_mesh)
+        self.main_layout.addSpacing(10)
+        self.main_layout.addWidget(mirror)
+        
+        mirror.clicked.connect(self._run)
+        
+    def _run(self):
+        
+        base_mesh = self.base_mesh.get_text()
+        
+        meshes = geo.get_selected_meshes()
+        
+        for mesh in meshes:
+            deform.mirror_mesh(mesh, base_mesh)
