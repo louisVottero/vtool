@@ -5149,3 +5149,26 @@ def match_geo_blendshape(source_geo, target_geo, attr_name, target_group = 0):
             cmds.aliasAttr(attr_name, '%s.weight[%s]' % (blendshape, target_group))
         
     return blendshape
+
+@core.undo_chunk
+def mirror_mesh(mesh_to_mirror, base_mesh):
+    
+    temp_mirror = cmds.duplicate(mesh_to_mirror)[0]
+    new_base = cmds.duplicate(base_mesh)[0]
+    
+    const = cmds.pointConstraint(mesh_to_mirror, new_base, mo = False)
+    cmds.delete(const)
+    
+    attr.unlock_attributes(new_base)
+    cmds.setAttr('%s.scaleX' % new_base, -1)
+    
+    wrap = create_wrap(new_base, mesh_to_mirror)
+    
+    quick_blendshape(temp_mirror, new_base)
+    
+    cmds.delete(mesh_to_mirror, ch = True)
+    cmds.delete([new_base, temp_mirror])
+    
+    
+    
+    
