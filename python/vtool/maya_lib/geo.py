@@ -475,6 +475,19 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
             
     return not_found
 
+def get_mesh_from_vertex(vertex):
+        
+        mesh = None
+        
+        if vertex.find('.vtx') > -1:
+            split_selected = vertex.split('.vtx')
+            if split_selected > 1:
+                mesh = split_selected[0]
+                
+                return mesh
+        
+        return mesh
+
 def get_edges_in_list(list_of_things):
     
     found = []
@@ -3141,20 +3154,31 @@ def create_quill(curve, radius, taper_tip = True, description = '' ):
     return extrude
     
 def transfer_from_curve_to_curve(source_curve, destination_curve, transforms, reference_mesh_for_normal = None, twist = 0):
+    """
+    transforms can be either transform nodes or vertices
+    """
+    
     
     destination_max = cmds.getAttr('%s.maxValue' % destination_curve)
     
     curves = []
     
+    is_component = True
+    
     for transform in transforms:
         
-        transform = cmds.duplicate(transform)[0]
+        if not transform.find('.vtx[') > -1:
+            transform = cmds.duplicate(transform)[0]
+            is_component = False
         
-        cmds.rotate(0,0,twist, transform)
+        
         
         curves.append(transform)
         
-        position = cmds.xform(transform, q = True, ws = True, rp = True)
+        if not is_component:
+            position = cmds.xform(transform, q = True, ws = True, rp = True)
+        if is_component:
+            position = cmds.xform(transform, q = True, ws = True, t = True)
         if core.has_shape_of_type(transform, 'nurbsCurve'):
             position = cmds.xform('%s.cv[0]' % transform, q = True, ws = True, t = True)
         param = get_closest_parameter_on_curve(source_curve, position)
@@ -3163,8 +3187,14 @@ def transfer_from_curve_to_curve(source_curve, destination_curve, transforms, re
         pos_group = cmds.group(em = True)
         cmds.xform(pos_group, ws = True, t = source_position)
         
-        cmds.parent(transform, pos_group) 
+        cmds.rotate(0,0,twist, transform)
         
+        if not is_component:
+            cmds.parent(transform, pos_group)
+        if is_component:
+            cluster = cmds.cluster(transform)
+            cmds.parent(cluster, pos_group) 
+                
         destination = get_curve_position_from_parameter(destination_curve, param)
         
         cmds.xform(pos_group, ws = True, t = destination)
@@ -3200,9 +3230,33 @@ def transfer_from_curve_to_curve(source_curve, destination_curve, transforms, re
         
         cmds.aimConstraint(loc, pos_group, aim = aim_direction, upVector = [0,1,0], wuo = loc_normal, worldUpType = 'object')
         
-        cmds.parent(transform, w = True)
+        if is_component:
+            mesh = get_mesh_from_vertex(transform)
+            if mesh:
+                cmds.delete(mesh, ch = True)
+        
+        if not is_component:
+            cmds.parent(transform, w = True)
         cmds.delete(loc)
         cmds.delete(normal_offset)
+        if cmds.objExists(pos_group):
+            cmds.delete(pos_group)
         
         
+    
     return curves
+
+def move_cvs(curves, position):
+    """
+    This will move the cvs together and maintain their offset and put them at a world position, not local
+    """
+    
+    curves = vtool.util.convert_to_sequence(curves)
+    
+    for curve in curves:
+        
+        curve_position = cmds.xform(curve, q = True, ws = True, t = True)
+        
+        offset = vtool.util.vector_sub(position, curve_position)
+        
+        cmds.move(offset[0],offset[1],offset[2], '%s.cv[*]' % curve, ws = True, r = True)
