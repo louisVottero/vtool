@@ -2305,7 +2305,8 @@ def polygon_plane_to_curves(plane, count = 5, u = True, description = ''):
     
     work_plane = cmds.duplicate(plane)[0]
     
-    cmds.polyToSubdiv(work_plane, ap = 0, ch = False, aut = True,  maxPolyCount = 1000,  maxEdgesPerVert = 32)
+    add_poly_smooth(work_plane, divisions = 2)
+    cmds.polyToSubdiv(work_plane, ap = 0, ch = False, aut = True,  maxPolyCount = 5000,  maxEdgesPerVert = 32)
     surface = cmds.subdToNurbs(work_plane, ch = False, aut = True,  ot = 0)[0]
     surface = cmds.listRelatives(surface, type = 'transform')[0]
 
@@ -3003,7 +3004,7 @@ def convert_indices_to_mesh_faces(indices, mesh):
 
 
 
-def add_poly_smooth(mesh):
+def add_poly_smooth(mesh, divisions = 1):
     """
     create a polySmooth node on the mesh.
     
@@ -3013,7 +3014,7 @@ def add_poly_smooth(mesh):
     Returns:
         str: The name of the poly smooth node.
     """
-    poly_smooth = cmds.polySmooth(mesh, mth = 0, dv = 1, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
+    poly_smooth = cmds.polySmooth(mesh, mth = 0, dv = divisions, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
     
     return poly_smooth
 
@@ -3119,9 +3120,11 @@ def transfer_uvs_from_mesh_to_group(mesh, group):
         
     cmds.delete(temp_mesh)
     
-def create_quill(curve, radius, taper_tip = True, description = '' ):
+def create_quill(curve, radius, taper_tip = True, spans = 10, description = '' ):
     
     curve = cmds.duplicate(curve)[0]
+    
+    rebuild_curve(curve, spans = spans)
     
     max_value = cmds.getAttr('%s.maxValue' % curve)
     
@@ -3150,6 +3153,13 @@ def create_quill(curve, radius, taper_tip = True, description = '' ):
     cmds.delete(curve)
     cmds.delete(circle[0])
     cmds.delete('%sBaseWire' % wire_curve)
+    
+    occluded = get_occluded_faces(extrude, within_distance = 10000)
+    faces = cmds.ls('%s.f[*]' % extrude, flatten = True)
+    
+    if len(occluded) > (len(faces)/2):
+        cmds.polyNormal(extrude, normalMode = 0, userNormalMode = 0, ch = 0)
+    
     
     return extrude
     
