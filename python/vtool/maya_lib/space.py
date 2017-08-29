@@ -3167,12 +3167,19 @@ def orient_x_to_child(joint, invert = False):
         aim_axis = [-1,0,0]
         up_axis = [0,-1,0]
     
-    orient = OrientJoint(joint)
-    orient.set_aim_at(3)
-    orient.set_aim_up_at(0)
-    orient.set_aim_vector(aim_axis)
-    orient.set_up_vector(up_axis)
-    orient.run()
+    children = cmds.listRelatives(joint)
+    
+    if children:
+    
+        orient = OrientJoint(joint)
+        orient.set_aim_at(3)
+        orient.set_aim_up_at(0)
+        orient.set_aim_vector(aim_axis)
+        orient.set_up_vector(up_axis)
+        orient.run()
+
+    if not children:
+        cmds.makeIdentity(joint, jo = True, apply = True)
 
 def find_transform_right_side(transform, check_if_exists = True):
     """
