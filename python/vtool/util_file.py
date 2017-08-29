@@ -1861,10 +1861,12 @@ def rename(directory, name, make_unique = False):
         
         os.rename(directory, renamepath)
     except:
-        
-        util.error(traceback.format_exc())
-        
-        return False
+        time.sleep(.1)
+        try:
+            os.rename(directory, renamepath)
+        except:
+            util.error(traceback.format_exc())
+            return False
     
     return renamepath
 
