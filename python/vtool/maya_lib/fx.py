@@ -669,10 +669,15 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
         
     return follicle
 
-def get_output_curve(follicle):
+def get_follicle_output_curve(follicle):
     
     return attr.get_outputs('%s.outCurve' % follicle, node_only = True)
 
+def get_follicle_input_curve(follicle):
+    input_value = attr.get_inputs('%s.startPosition' % follicle, node_only = True)
+    
+    if input:
+        return input_value[0]
     
 #--- Cloth
 
