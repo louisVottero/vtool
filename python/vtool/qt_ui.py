@@ -1406,6 +1406,7 @@ class SaveFileWidget(DirectoryWidget):
         
         self.data_class = None
         
+        self.setContentsMargins(10,10,10,10)
         
     def _define_tip(self):
         
@@ -4539,9 +4540,10 @@ class AddRemoveList(BasicWidget):
     
     def _build_widgets(self):
         
-        
+        self.label = qt.QLabel()
         self.list = qt.QListWidget()
         
+        self.main_layout.addWidget(self.label)
         self.main_layout.addWidget(self.list)
     
     def _item_menu(self, position):
@@ -4639,6 +4641,9 @@ class AddRemoveList(BasicWidget):
         self.item_renamed.emit([old_name, new_name])
         
         return old_name, new_name
+    
+    def set_title(self, title):
+        self.label.setText(title)
     
     def refresh(self):
         defaults = self._define_defaults()
