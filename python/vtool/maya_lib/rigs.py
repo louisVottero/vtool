@@ -19,6 +19,7 @@ import curve
 import geo
 import deform
 import rigs_util
+import fx
     
 
 #--- rigs
@@ -600,6 +601,25 @@ class CurveRig(Rig):
             curve_list (str): The name of a curve.
         """
         self.curves = vtool.util.convert_to_sequence(curve_list)
+
+class PolyPlaneRig(Rig):
+    """
+        A rig class that accepts curves instead of joints as the base structure.
+    """
+    
+    def __init__(self, description, side=None):
+        super(PolyPlaneRig, self).__init__(description, side)
+        
+        self.poly_plane = None
+    
+    def set_poly_plane(self, poly_plane):
+        """
+        Set the curve to rig with.
+        
+        Args:
+            curve_list (str): The name of a curve.
+        """
+        self.poly_plane = poly_plane
 
 class SurfaceRig(Rig):
     """
@@ -9384,3 +9404,230 @@ class FeatherStripRig(CurveRig):
             
             cmds.delete(new_curve)
             
+class FeatherOnPlaneRig(PolyPlaneRig):
+    def __init__(self, description, side):
+        super(FeatherOnPlaneRig, self).__init__(description, side)
+        
+        self._quill_radius = 0.5
+        self._follow_u = True
+        self._feather_count = 5
+        
+        self._nucleus_name = ''
+        self._hair_system_name = ''
+        self._guide_geo = None
+        self._quill_geo_group = None
+        
+        self._combine_quills = False
+        
+        self._tilt = 10
+        
+    def _convert_plane_to_curves(self, plane, count, u):
+        
+        model_group = self._create_group('model')
+        curve_group = self._create_group('curve')
+        dynamic_curve_group = self._create_group('dynamicCurves')
+        feather_curve_group = self._create_group('featherCurves')
+        self._model_group = model_group
+        guide_group = self._create_group('guides')
+        cmds.parent(guide_group, model_group)
+        
+        curves = geo.polygon_plane_to_curves(plane, count = count, u = u)
+        
+        quill_group = self._create_group('quill')
+        quill_geo_group = self._create_group('quill_geo')
+        cmds.parent(quill_geo_group, model_group)
+        quill_dynamic_group = self._create_group('quill_dynamic')
+        cmds.parent(quill_group, self.setup_group)
+        cmds.parent(quill_dynamic_group, self.setup_group)
+        cmds.parent(curves, quill_group)
+        cmds.parent(curve_group, model_group)
+        cmds.parent(feather_curve_group, curve_group)
+        cmds.parent(dynamic_curve_group, curve_group)
+    
+        quill_ik_group = cmds.group(em = True, n = 'quill_ik_%s' % plane)
+        cmds.parent(quill_ik_group, self.setup_group)
+    
+        feather_groups = []
+        
+        inc = 1
+            
+        for curve in curves:
+            
+            dynamic_curves = self._create_group('dynamicCurves', inc)
+            cmds.parent(dynamic_curves, dynamic_curve_group)
+        
+            cmds.reverseCurve(curve, ch = False, rpo = 1)
+            cmds.smoothCurve('%s.cv[*]' % curve, ch = False, rpo = 1, s = 1)
+            geo.rebuild_curve(curve,10,degree=3)
+            
+            quill_geo = geo.create_quill(curve, self._quill_radius, spans = 20)
+            
+            feather_group = self._create_group('featherCurves', inc)
+            cmds.parent(feather_group, feather_curve_group)
+            
+            
+            feather_curves = geo.get_of_type_in_hierarchy('curves','nurbsCurve')
+            
+            guide_geo = cmds.duplicate('guide_feather_1', n = 'guideGeo_%s' % curve)[0]
+            guide_geo_cvs = cmds.ls('%s.vtx[*]' % guide_geo, flatten = True)
+            cmds.parent(guide_geo, guide_group)
+            
+            feather_curves = geo.transfer_from_curve_to_curve('quill_curve', curve, feather_curves, plane, twist = self._tilt)        
+            self._guide_geo = geo.transfer_from_curve_to_curve('quill_curve', curve, guide_geo_cvs, plane, twist = self._tilt) 
+            
+            temp_curves = []
+            
+            for sub_curve in feather_curves:
+                new_name = cmds.rename(sub_curve, core.inc_name(self._get_name('sub_curve', inc)))
+                temp_curves.append(new_name)
+            
+            feather_curves = temp_curves
+            
+            cmds.makeIdentity(feather_curves, apply=True, t = True, r = True)
+            cmds.parent(feather_curves, feather_group)
+            dynamic_quill = self._follicle(quill_geo, curve, feather_curves, dynamic_curves, quill_ik_group, inc)
+            cmds.parent(dynamic_quill, quill_dynamic_group)
+            cmds.parent(quill_geo, quill_geo_group)
+            
+            inc += 1
+        
+        self._quill_geo_group = quill_geo_group
+        
+        
+        
+    
+    def _follicle(self, mesh, quill_curve, curves, dynamic_curve_group, ik_group, inc):
+        
+        nucleus_quill = 'nucleus_quill'
+        nucleus_strand = 'nucleus_strand'
+        nucleus_quill_name = 'quill'
+        nucleus_strand_name = 'strand'
+        
+        
+        if self._nucleus_name:
+            nucleus_quill = 'nucleus_%s_quill' % self._nucleus_name
+            nucleus_strand = 'nucleus_%s_strand' % self._nucleus_name 
+            nucleus_quill_name = '%s_quill' % self._nucleus_name
+            nucleus_strand_name = '%s_strand' % self._nucleus_name
+        
+        quill_hair_system = 'hairSystem_quill'
+        strand_hair_system = 'hairSystem_strands'
+        hair_system_quill_name = 'quill'
+        hair_system_strand_name = 'strands'
+        
+        if self._hair_system_name:
+            quill_hair_system = 'hairSystem_%s_quill' % self._hair_system_name
+            strand_hair_system = 'hairSystem_%s_strands' % self._hair_system_name
+            hair_system_quill_name = '%s_quill' % self._hair_system_name
+            hair_system_strand_name = '%s_strands' % self._hair_system_name
+        
+        if not cmds.objExists(nucleus_quill):
+            nucleus_quill = fx.create_nucleus(name=nucleus_quill_name)
+        if not cmds.objExists(nucleus_strand):
+            nucleus_strand = fx.create_nucleus(name=nucleus_strand_name)
+        
+        if not cmds.objExists(quill_hair_system):
+            quill_hair_system = fx.create_hair_system(hair_system_quill_name,nucleus_quill)[0]
+        if not cmds.objExists(strand_hair_system):
+            strand_hair_system = fx.create_hair_system(hair_system_strand_name,nucleus_strand)[0]
+        
+        follicle = fx.make_curve_dynamic(quill_curve, quill_hair_system)
+        
+        
+        joints = geo.create_oriented_joints_on_curve(quill_curve,25, description = 'quill', attach = True)
+        
+        cmds.skinCluster(mesh, joints, tsb = True)
+        
+        ik = space.get_ik_from_joint(joints[0])
+        
+        cmds.parent(joints[0], ik_group)
+        cmds.parent(ik, ik_group)
+    
+        quill_output = fx.get_follicle_output_curve(follicle)
+        input_curve = fx.get_follicle_input_curve(follicle)
+         
+        self._rig_curve(input_curve, inc)
+        
+        quill_output = cmds.rename(quill_output, 'dynamic_%s' % quill_curve)   
+        
+        for curve in curves:
+            follicle = fx.make_curve_dynamic(curve,hair_system=strand_hair_system, mesh= mesh)
+            outputs = fx.get_follicle_output_curve(follicle)
+    
+            cmds.parent(outputs, dynamic_curve_group)
+            
+            for output in outputs:
+                cmds.rename(output, 'dynamic_%s' % curve)                
+    
+        return quill_output
+    
+    def _rig_curve(self, curve, inc):
+        
+        joints = geo.create_joints_on_curve(curve, 4, '%s_%s_1_%s' % (self.description, inc, self.side), attach=False)
+        
+        invert = False
+        if self.side == 'R':
+            invert = True
+        
+        for joint in joints:
+            space.orient_x_to_child(joint, invert)
+        
+        last_control = None    
+        for joint in joints:
+            if joint == joints[-1]:
+                continue
+            
+            control = self._create_control(description = inc)
+            control.rotate_shape(0, 0, 90)
+            xform = space.create_xform_group(control.control)
+            
+            space.MatchSpace(joint, xform).translation_rotation()
+            control.control, joint
+            cmds.parentConstraint(control.control, joint, mo = True)
+            
+            if not last_control:
+                cmds.parent(xform, self.control_group)
+            
+            if last_control:
+                cmds.parent(xform, last_control)
+            
+            last_control = control.control
+        
+        cmds.skinCluster(curve, joints, tsb = True)
+        cmds.skinCluster(self._guide_geo, joints, tsb = True)
+        cmds.parent(joints[0], self.setup_group)
+    
+    def _combine_quill_geo(self):
+        
+        result = cmds.polyUnite(self._quill_geo_group, ch = True, mergeUVSets = 1, name = core.inc_name(self._get_name('quills')))
+        cmds.parent(result, self._model_group)
+        
+        cmds.parent(self._quill_geo_group, self.setup_group)
+        
+        
+    
+    def set_nucleus_name(self, name):
+        self._nucleus_name = name
+        
+    def set_hair_system_name(self, name):
+        self._hair_system_name = name
+    
+    def set_follow_u(self, bool_value):
+        self._follow_u = bool_value
+        
+    def set_feather_count(self, int_value):
+        self._feather_count = int_value
+    
+    def set_combine_quills(self, bool_value):
+        self._combine_quills = bool_value
+        
+    def set_tilt(self, float_value):
+        self._tilt = float_value
+    
+    def create(self):
+        super(FeatherOnPlaneRig, self).create()
+        
+        self._convert_plane_to_curves(self.poly_plane, self._feather_count, self._follow_u)
+        
+        if self._combine_quills:
+            self._combine_quill_geo()
