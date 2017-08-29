@@ -2137,8 +2137,8 @@ class MayaAttributeData(MayaCustomData):
         return selection
     
     def _get_attributes(self, node):
-        attributes = cmds.listAttr(node, scalar = True, m = True, k = True)
-        attributes.append('rotateOrder')
+        attributes = cmds.listAttr(node, scalar = True, m = True)
+        
          
         return attributes
     
@@ -2147,7 +2147,7 @@ class MayaAttributeData(MayaCustomData):
         return shapes
     
     def _get_shape_attributes(self, shape):
-        self._get_attributes(shape)
+        return self._get_attributes(shape)
     
     def import_data(self):
         """
@@ -2266,6 +2266,10 @@ class MayaControlAttributeData(MayaAttributeData):
 
     def _data_extension(self):
         return ''
+
+    def _get_attributes(self, node):
+        attributes = cmds.listAttr(node, scalar = True, m = True, k = True)
+        attributes.append('rotateOrder')
     
     def _get_scope(self):
         
