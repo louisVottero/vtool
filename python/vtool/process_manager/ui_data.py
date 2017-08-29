@@ -122,7 +122,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                             self.data_widget.file_widget.set_directory(path_to_data)
                             self.data_widget.set_directory(path_to_data)
                             
-                        self.data_widget.main_layout.addWidget(self.data_widget.file_widget)
+                        self.data_widget.main_layout.insertWidget(0, self.data_widget.file_widget)
                         self.data_widget.show()
                         self.label.setText( str( item.text(0)) )
                         self.label.show()
@@ -175,19 +175,21 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         self.file_widget = None
         super(DataWidget, self).__init__(parent, scroll)
         
-        self.setMinimumHeight(300)
+        self.setMinimumHeight(100)
     
     def _define_main_layout(self):
-        return vtool.qt.QVBoxLayout()
+        return vtool.qt.QHBoxLayout()
         
     def _build_widgets(self):
         
+        
         self.list = vtool.qt_ui.AddRemoveDirectoryList()
-        self.list.setMaximumHeight(100)
+        self.list.set_title('Use Folder')
+        self.list.setMaximumWidth(125)
         self.file_widget = vtool.qt_ui.BasicWidget()
         
-        self.main_layout.addWidget(self.list)
         self.main_layout.addWidget(self.file_widget)
+        self.main_layout.addWidget(self.list)
         
         
     def remove_file_widget(self):
@@ -518,6 +520,8 @@ class DataTypeWidget(vtool.qt_ui.BasicWidget):
         self.setSizePolicy(policy)
         self.setMinimumWidth(150)
         self.setMaximumWidth(170)
+        
+        
         
     def sizeHint(self):
         
@@ -980,6 +984,9 @@ class DataFileWidget(vtool.qt_ui.FileManagerWidget):
 
 class MayaDataFileWidget(DataFileWidget):
 
+
+        
+
     def _define_main_tab_name(self):
         
         return 'data file'
@@ -993,6 +1000,8 @@ class MayaDataFileWidget(DataFileWidget):
     
 class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
+
+        
     def _create_button(self, name):
         
         button = qt.QPushButton(name)
