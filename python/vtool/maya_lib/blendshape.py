@@ -1499,7 +1499,7 @@ class ShapeComboManager(object):
                 vtool.util.warning('Cannot add home mesh into the system.')
                 continue
             
-            self.add_shape(inbetween, preserve_combos = preserve)
+            self.add_shape(inbetween, preserve_combos = preserve_combos, preserve_inbetweens = preserve_inbetweens)
         
         vtool.util.show('Adding combos.')
         
