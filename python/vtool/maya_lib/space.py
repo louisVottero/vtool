@@ -2226,6 +2226,27 @@ def get_axis_aimed_at_child(transform):
     
     return good_axis
 
+def get_axis_letter_aimed_at_child(transform):
+    
+    vector = get_axis_aimed_at_child(transform)
+    return get_vector_axis_letter(vector)
+
+def get_vector_axis_letter(vector):
+    
+    if vector == [1,0,0]:
+        return 'X'
+    if vector == [0,1,0]:
+        return 'Y'
+    if vector == [0,0,1]:
+        return 'Z'
+    if vector == [-1,0,0]:
+        return '-X'
+    if vector == [0,-1,0]:
+        return '-Y'
+    if vector == [0,0,-1]:
+        return '-Z'
+    
+
 def get_ik_from_joint(joint):
     
     outputs = attr.get_attribute_outputs('%s.message' % joint, True)

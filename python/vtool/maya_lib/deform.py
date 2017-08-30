@@ -1584,6 +1584,7 @@ class AutoWeight2D(object):
         
         self.prune_weights = []
         self.auto_joint_order = True
+        self._orientation_vector = [1,0,0]
         
     def _create_offset_group(self):
         
@@ -1592,8 +1593,11 @@ class AutoWeight2D(object):
         attr.unlock_attributes(duplicate_mesh)
         
         self.offset_group = cmds.group(em = True, n = core.inc_name('offset_%s' % self.mesh))
-            
-        space.MatchSpace(self.orientation_transform, self.offset_group).translation_rotation()
+        
+        if self.orientation_transform:
+            space.MatchSpace(self.orientation_transform, self.offset_group).translation_rotation()
+        if not self.orientation_transform:
+            cmds.rotate(self._orientation_vector[0],self._orientation_vector[1],self._orientation_vector[2], self.offset_group)
         
         cmds.parent(duplicate_mesh, self.offset_group)
         
@@ -1858,7 +1862,11 @@ class AutoWeight2D(object):
         Transform to use to define the orientation of joints.
         """
         self.orientation_transform = transform
+    
+    def set_orientation_vector(self, vector):
         
+        self._orientation_vector = vector
+    
     def set_fade_cosine(self, bool_value):
         self.fade_smoothstep = False
         self.fade_cosine = bool_value
@@ -1875,7 +1883,7 @@ class AutoWeight2D(object):
         self.orig_mesh = self.mesh
         self.orig_joints = self.joints
         
-        if self.orientation_transform:
+        if self.orientation_transform or self._orientation_vector != [1,0,0]:
             self._create_offset_group()
             
         self._store_verts()
@@ -2162,20 +2170,23 @@ class MultiJointShape(object):
                 
                 if off_joint_values and self.create_hookup:
                     off_value = off_joint_values[self.locators[inc]]
-                    
-                if start_joint_values and self.create_hookup:
-                    
-                    start_value = start_joint_values[self.locators[inc]]
                 
                 if not self.hook_to_empty_group:
                     blendshape = quick_blendshape(split, self.base_mesh)
+                
+                if start_joint_values and self.create_hookup:
+                    
+                    start_value = start_joint_values[self.locators[inc]]
+                    
+
+                
                     
                 hookup_attribute = split
                     
                 number = vtool.util.get_trailing_number(split, number_count=2)
                 if number:
                     inbetween = True
-                    hookup_attribute = split[:-2]
+                    #hookup_attribute = split[:-2]
                     between_value = (number * 0.01)
                     
                 if self.hook_to_empty_group:
@@ -2207,26 +2218,25 @@ class MultiJointShape(object):
                         
                     if start_value != None:
                         pass_start_value = start_value
-                    
+
                     anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
                                             '%s.%s' % (blendshape, hookup_attribute),
                                             [pass_start_value, value, pass_off_value], 
                                             [0, 1, dest_off_value])        
                     
-                    """
+
+                    
+                if inbetween:
+                    if not off_value:
+                        anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
+                                                    '%s.%s' % (blendshape, hookup_attribute),
+                                                    [0, value], 
+                                                    [0, between_value])
                     if off_value:
                         anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
                                                 '%s.%s' % (blendshape, hookup_attribute),
                                                 [0, value, off_value], 
                                                 [0, 1, 0])
-                    """
-                    
-                if inbetween:
-                    
-                    anim.quick_driven_key('%s.translate%s' % (self.locators[inc], self.read_axis),
-                                                '%s.%s' % (blendshape, hookup_attribute),
-                                                [value], 
-                                                [between_value])
                 inc+=1
     
         
