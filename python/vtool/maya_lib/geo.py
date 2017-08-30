@@ -2781,6 +2781,7 @@ def edge_to_vertex(edges):
         list: The names of vertices on an edge. eg. ['mesh_name.vtx[0]']
     
     """
+    
     edges = cmds.ls(edges, flatten = True)
     
     verts = []
@@ -2802,6 +2803,8 @@ def edge_to_vertex(edges):
             
         if not vert2 in verts:
             verts.append('%s.vtx[%s]' % (mesh, vert2))
+    
+    return verts
             
 
 def rebuild_curve(curve, spans, degree = 3):
