@@ -1959,16 +1959,28 @@ def get_midpoint( source, target):
     Returns: 
         vector list: The midpoint as [0,0,0] vector between source and target transform.
     """
-    vector1 = cmds.xform(source, 
-                         query = True, 
-                         worldSpace = True, 
-                         rp = True)
     
+    if cmds.nodeType(source) == 'transform':
+        vector1 = cmds.xform(source, 
+                             query = True, 
+                             worldSpace = True, 
+                             rp = True)
+    else:
+        vector1 = cmds.xform(source, 
+                             query = True, 
+                             worldSpace = True, 
+                             t = True)
     
-    vector2 = cmds.xform(target, 
-                            query = True, 
-                            worldSpace = True, 
-                            rp = True)
+    if cmds.nodeType(source) == 'transform':
+        vector2 = cmds.xform(target, 
+                                query = True, 
+                                worldSpace = True, 
+                                rp = True)
+    else:
+        vector2 = cmds.xform(target, 
+                                query = True, 
+                                worldSpace = True, 
+                                t = True)
     
     return vtool.util.get_midpoint(vector1, vector2)
 
