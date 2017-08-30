@@ -17,6 +17,76 @@ import space
 import geo
 import anim
 
+class SkinCluster(object):
+    
+    def __init__(self, geometry):
+        
+        self._geometry = geometry
+        self._skin_cluster = None
+        
+        skin = find_deformer_by_type(geometry, deformer_type = 'skinCluster', return_all = False)
+        
+        if skin:
+            self._skin_cluster = skin
+            self._load_influences()
+            
+        if not skin:
+            self._skin_cluster = cmds.deformer(self._geometry, type = 'skinCluster')[0]
+        
+        self._influence_dict = {}
+                                           
+    def _load_influences(self):
+        
+        self._influence_dict = {}
+        
+        influences = get_influences_on_skin(self._skin_cluster, short_name = False)
+        
+        for influence in influences:
+            index = get_index_at_skin_influence(influence, self._skin_cluster)
+            
+            self._influence_dict[index] = influence
+    
+    def get_influence_index(self, influence_name):
+        index = get_index_at_skin_influence(influence_name, self._skin_cluster)
+        return index
+    
+    def add_influence(self, transform_name):
+        
+        
+        
+        if not cmds.objExists('%s.lockInfluenceWeights' % transform_name):
+            cmds.addAttr(transform_name, ln = 'lockInfluenceWeights', at = 'bool', dv = 0)
+
+            
+        slot = attr.get_available_slot('%s.matrix' % self._skin_cluster)
+        matrix = cmds.getAttr('%s.worldInverseMatrix' % transform_name)
+        cmds.setAttr('%s.bindPreMatrix[%s]' % (self._skin_cluster, slot), matrix, type = 'matrix')
+        
+        cmds.connectAttr('%s.worldMatrix' % transform_name, '%s.matrix[%s]' % (self._skin_cluster, slot))
+        cmds.connectAttr('%s.lockInfluenceWeights' % transform_name, '%s.lockWeights[%s]' % (self._skin_cluster, slot))
+        cmds.connectAttr('%s.objectColorRGB' % transform_name, '%s.influenceColor[%s]' % (self._skin_cluster, slot))
+        
+        
+        
+        
+        #self.normalize(True)
+        
+    def set_influence_weights(self, influence, weight, vertex_indices):
+        
+        vertex_indices = vtool.util.convert_to_sequence(vertex_indices)
+        
+        index = self.get_influence_index(influence)
+        
+        for vert_index in vertex_indices:
+            cmds.setAttr('%s.weightList[%s].weights[%s]' % (self._skin_cluster, vert_index, index), weight)
+        
+    def normalize(self, bool_value):
+        
+        print self._skin_cluster
+        cmds.skinPercent(self._skin_cluster, self._geometry, normalize = True)
+        cmds.setAttr('%s.normalizeWeights' % self._skin_cluster, bool_value)
+        
+
 class XformTransfer(object):
     """
     Wrap deform joints from one mesh to another.
@@ -2670,6 +2740,67 @@ class ZipWire(object):
             self._setup_wire_deformers()
         
         self._setup_zip_controls()
+
+class WeightFromMesh(object):
+    """
+    Given a mesh, create joints a specified verts or edges, skin the mesh and weight a target mesh.
+    Good for placing a mesh on another and through this class weighting a target mesh.
+    This is useful for splitting blendshapes. 
+    """
+    def __init__(self, mesh):
+        super(WeightFromMesh, self).__init__()
+    
+        self._mesh = mesh
+        self._target_mesh = None
+        
+        self._edge_bones = {}
+        self._vert_bones = {}
+    
+    def add_vert_bone(self, joint_name, vertex_index):
+        self._vert_bones[str(vertex_index)] = joint_name
+    
+    def add_edge_bone(self, joint_name, edge_index):
+        
+        self._edge_bones[str(edge_index)] = joint_name
+    
+    def set_target_mesh(self, mesh):
+        self._target_mesh = mesh
+        
+    def run(self):
+        
+        
+        skin_mesh = cmds.duplicate(self._mesh)[0]
+        skin = SkinCluster(skin_mesh)
+        
+        edges = cmds.ls('%s.e[*]' % self._mesh, flatten = True)
+        joints = []
+        for edge in edges:
+            
+            edge_index = str(vtool.util.get_last_number(edge))
+            
+            vertices = geo.edge_to_vertex(edge)
+            
+            vrt1_index = str(vtool.util.get_last_number(vertices[0]))
+            vrt2_index = str(vtool.util.get_last_number(vertices[1]))
+            
+            if self._edge_bones.has_key(edge_index):
+                edge_joint_name = self._edge_bones[edge_index]
+                
+                edge_joint = cmds.createNode('joint', n = edge_joint_name)
+                midpoint = space.get_midpoint(vertices[0], vertices[1])
+                cmds.xform(edge_joint, ws = True, t = midpoint)
+                
+                skin.add_influence(edge_joint)
+                skin.set_influence_weights(edge_joint, 1,[vrt1_index, vrt2_index])
+                
+                joints.append(edge_joint)
+                
+        skin.normalize(True)
+        
+        skin_mesh_from_mesh(skin_mesh, self._target_mesh)
+        cmds.delete(skin_mesh)
+        
+        return joints
         
 def cluster_curve(curve, description, join_ends = False, join_start_end = False, last_pivot_end = False):
     """
