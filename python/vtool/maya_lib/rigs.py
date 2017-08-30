@@ -8482,6 +8482,8 @@ class EyeRig(JointRig):
         self.rotate_value = 25
         self.limit = 1
         self.skip_ik = False
+        self._create_fk = False
+        self._fk_control_shape_offset = 1
         
     def _create_ik(self):
 
@@ -8493,15 +8495,6 @@ class EyeRig(JointRig):
         self.ik_chain = duplicate_hierarchy.create()
         
         cmds.parent(self.ik_chain[0], self.setup_group)
-        """
-        if self.extra_control:
-            duplicate_hierarchy = util.DuplicateHierarchy( self.joints[0] )
-        
-            duplicate_hierarchy.stop_at(self.joints[-1])
-            duplicate_hierarchy.replace('joint', 'extra_ik')
-            self.extra_ik_chain = duplicate_hierarchy.create()
-            cmds.parent(self.extra_ik_chain[0], self.setup_group)
-        """
         
         if not self.skip_ik:
             ik = space.IkHandle(self.description)
@@ -8565,64 +8558,103 @@ class EyeRig(JointRig):
             
             cmds.orientConstraint(group1, self.joints[0])
         
+        
+        
+        
         if self.extra_control:
-            
-            parent_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'extra')))
-            aim_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'aim_extra')))
-            
-            space.MatchSpace(self.joints[0], aim_group).translation_rotation()
-            space.MatchSpace(self.joints[0], parent_group).translation_rotation()
-            
-            xform_parent_group = space.create_xform_group(parent_group)
-            xform_aim_group = space.create_xform_group(aim_group)
-            
-            cmds.parent(xform_aim_group, group1)
-            
-            attr.connect_rotate(group1, parent_group)
-            #cmds.orientConstraint(group2, parent_group, mo = True)
-            cmds.parent(xform_parent_group, self.setup_group)
-            
-            #attr.connect_rotate(aim_group, self.joints[0])
-            cmds.orientConstraint(aim_group, self.joints[0])
-            
-            control2 = self._create_control(sub = True)
-            control2.hide_scale_and_visibility_attributes()
-            control2 = control2.get()
+            self._rig_extra_control(group1)
         
-            match = space.MatchSpace(self.joints[0], control2)
-            match.translation_rotation()
-        
-            axis = self.eye_control_move[0]
-            axis_value = self.eye_control_move[1]
-                        
-            if axis == 'X':
-                cmds.move(axis_value, 0,0 , control2, os = True, relative = True)
-                attr.connect_multiply('%s.translateZ' % control2, '%s.rotateY' % aim_group, -self.rotate_value )
-                attr.connect_multiply('%s.translateY' % control2, '%s.rotateZ' % aim_group, self.rotate_value )
-            if axis == 'Y':
-                cmds.move(0,axis_value, 0, control2, os = True, relative = True)
-                attr.connect_multiply('%s.translateZ' % control2, '%s.rotateX' % aim_group, -self.rotate_value )
-                attr.connect_multiply('%s.translateY' % control2, '%s.rotateZ' % aim_group, self.rotate_value )
-            if axis == 'Z':
-                cmds.move(0,0,axis_value, control2, os = True, relative = True)
-                attr.connect_multiply('%s.translateX' % control2, '%s.rotateY' % aim_group, self.rotate_value )
-                attr.connect_multiply('%s.translateY' % control2, '%s.rotateX' % aim_group, -self.rotate_value )
-            
-            xform2 = space.create_xform_group(control2)            
-            cmds.parent(xform2, parent_group)
-            cmds.parent(xform_parent_group, self.control_group)
-            
-            
-            
-            if axis == 'X':
-                cmds.transformLimits(control2,  tx =  (0, 0), etx = (1,1) )
-            if axis == 'Y':
-                cmds.transformLimits(control2,  ty =  (0, 0), ety = (1,1) )
-            if axis == 'Z':
-                cmds.transformLimits(control2,  tz =  (0, 0), etz = (1,1) )
+        if self._create_fk:
+            self._rig_fk(group1, group2)
             
         return control
     
+    def _rig_fk(self, aim_transform, transform):
+        
+        control = self._create_control(sub = True)
+        
+        if self._fk_control_shape:
+            control.set_curve_type(self._fk_control_shape)
+        
+        xform = space.create_xform_group(control.control)
+        drive = space.create_xform_group(control.control,'driver')
+                
+        space.MatchSpace(transform, xform).translation_rotation()
+        
+        letter = space.get_axis_letter_aimed_at_child(self.joints[0])
+        
+        offset = self._fk_control_shape_offset
+        
+        if letter.find('-') > -1:
+            offset = self._fk_control_shape_offset * -1 
+        
+        if letter.find('X') > -1:
+            control.translate_shape(offset, 0, 0)
+        if letter.find('Y') > -1:
+            control.translate_shape(0, offset, 0)
+        if letter.find('Z') > -1:
+            control.translate_shape(0,0, offset)
+        
+        attr.connect_rotate(control.control, transform)
+        
+        cmds.parent(xform, self.control_group)
+        
+        attr.connect_rotate(aim_transform, drive)
+        
+    
+    def _rig_extra_control(self, group1):
+        
+        parent_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'extra')))
+        aim_group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'aim_extra')))
+        
+        space.MatchSpace(self.joints[0], aim_group).translation_rotation()
+        space.MatchSpace(self.joints[0], parent_group).translation_rotation()
+        
+        xform_parent_group = space.create_xform_group(parent_group)
+        xform_aim_group = space.create_xform_group(aim_group)
+        
+        cmds.parent(xform_aim_group, group1)
+        
+        attr.connect_rotate(group1, parent_group)
+        
+        cmds.parent(xform_parent_group, self.setup_group)
+        
+        cmds.orientConstraint(aim_group, self.joints[0])
+        
+        control2 = self._create_control(sub = True)
+        control2.hide_scale_and_visibility_attributes()
+        control2 = control2.get()
+    
+        match = space.MatchSpace(self.joints[0], control2)
+        match.translation_rotation()
+    
+        axis = self.eye_control_move[0]
+        axis_value = self.eye_control_move[1]
+                    
+        if axis == 'X':
+            cmds.move(axis_value, 0,0 , control2, os = True, relative = True)
+            attr.connect_multiply('%s.translateZ' % control2, '%s.rotateY' % aim_group, -self.rotate_value )
+            attr.connect_multiply('%s.translateY' % control2, '%s.rotateZ' % aim_group, self.rotate_value )
+        if axis == 'Y':
+            cmds.move(0,axis_value, 0, control2, os = True, relative = True)
+            attr.connect_multiply('%s.translateZ' % control2, '%s.rotateX' % aim_group, -self.rotate_value )
+            attr.connect_multiply('%s.translateY' % control2, '%s.rotateZ' % aim_group, self.rotate_value )
+        if axis == 'Z':
+            cmds.move(0,0,axis_value, control2, os = True, relative = True)
+            attr.connect_multiply('%s.translateX' % control2, '%s.rotateY' % aim_group, self.rotate_value )
+            attr.connect_multiply('%s.translateY' % control2, '%s.rotateX' % aim_group, -self.rotate_value )
+        
+        xform2 = space.create_xform_group(control2)            
+        cmds.parent(xform2, parent_group)
+        cmds.parent(xform_parent_group, self.control_group)
+        
+        if axis == 'X':
+            cmds.transformLimits(control2,  tx =  (0, 0), etx = (1,1) )
+        if axis == 'Y':
+            cmds.transformLimits(control2,  ty =  (0, 0), ety = (1,1) )
+        if axis == 'Z':
+            cmds.transformLimits(control2,  tz =  (0, 0), etz = (1,1) )
+
     def set_parent(self, parent):
         self.parent = parent
     
@@ -8634,6 +8666,11 @@ class EyeRig(JointRig):
         self.eye_control_move = [axis, value]
         self.extra_control = True
         self.rotate_value = rotate_value
+    
+    def set_create_fk_control(self, bool_value, offset_control_shape = 1, control_shape = None):
+        self._fk_control_shape = control_shape
+        self._fk_control_shape_offset = offset_control_shape
+        self._create_fk = bool_value
     
     def set_skip_ik_control(self, bool_value):
         self.skip_ik = bool_value
@@ -8671,6 +8708,7 @@ class EyeRig(JointRig):
         cmds.setAttr('%s.rotateY' % locator, l = True)
         cmds.setAttr('%s.rotateZ' % locator, l = True)
         cmds.hide(locator)
+        
         
 class JawRig(FkLocalRig):
     def __init__(self, description, side = None):
