@@ -2715,6 +2715,7 @@ def follicle_to_mesh(transform, mesh, u = None, v = None, constrain = False, con
         if not local:
             eval('cmds.%s("%s", "%s", mo = True)' % (constraint_type, follicle, transform))
         if local:
+            
             space.constrain_local(follicle, transform, constraint = constraint_type)
             
     

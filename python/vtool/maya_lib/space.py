@@ -2926,6 +2926,7 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
     Returns:
         (str, str) : The local group that constrains the target_transform, and the xform group above the local group.
     """
+    local_group = None
     
     if use_duplicate:
         local_group = cmds.duplicate(source_transform, n = 'local_%s' % source_transform)[0]
@@ -2951,9 +2952,11 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
         MatchSpace(target_transform, local_group).translation_rotation()
         MatchSpace(target_transform, local_group).scale()
         
-        xform_group = create_xform_group(local_group, copy_scale=True)
-        
-        
+        if core.has_shape_of_type(source_transform, 'follicle'):
+            xform_group = cmds.group(em = True, n = 'xform_%s' % local_group)
+            cmds.parent(local_group, xform_group)
+        else:
+            xform_group = create_xform_group(local_group, copy_scale=True)
         
         parent_world = cmds.listRelatives(source_transform, p = True)
         
@@ -2965,11 +2968,16 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
         #    match = MatchSpace(target_transform, xform_local_group).scale()
         
         if parent_world:
-            parent_world = parent_world[0]
-            
-            match = MatchSpace(parent_world, xform_group)
-            match.translation_rotation()
+            if not core.has_shape_of_type(source_transform, 'follicle'):
+                parent_world = parent_world[0]
+                
+                match = MatchSpace(parent_world, xform_group)
+                match.translation_rotation()
     
+    if not local_group:
+        return
+    
+
     attr.connect_translate(source_transform, local_group)
     attr.connect_rotate(source_transform, local_group)
     
@@ -2978,6 +2986,8 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
             
     if parent:
         cmds.parent(target_transform, local_group)
+    
+    
         
     if not parent:
         if constraint == 'parentConstraint':
@@ -3844,3 +3854,106 @@ def fix_locator_shape_position(locator_name):
     cmds.setAttr('%s.localPositionX' % locator_name, pivot_pos[0])
     cmds.setAttr('%s.localPositionY' % locator_name, pivot_pos[1])
     cmds.setAttr('%s.localPositionZ' % locator_name, pivot_pos[2])
+    
+def set_translateX_limit(transform, min_value = None, max_value = None):
+    min_bool = 0
+    max_bool = 0
+    
+    if min_value:
+        min_bool = 1
+    if max_value:
+        max_bool = 1
+    
+    if not min_value:
+        min_value = -1
+    if not max_value:
+        max_value = 1
+    
+    cmds.transformLimits(transform, tx = [min_value, max_value],etx= [min_bool, max_bool])
+
+def set_translateY_limit(transform, min_value = None, max_value = None):
+    min_bool = 0
+    max_bool = 0
+    
+    if min_value:
+        min_bool = 1
+    if max_value:
+        max_bool = 1
+    
+    if not min_value:
+        min_value = -1
+    if not max_value:
+        max_value = 1
+    
+    cmds.transformLimits(transform, ty = [min_value, max_value],ety= [min_bool, max_bool])
+    
+def set_translateZ_limit(transform, min_value = None, max_value = None):
+    min_bool = 0
+    max_bool = 0
+    
+    if min_value:
+        min_bool = 1
+    if max_value:
+        max_bool = 1
+    
+    if not min_value:
+        min_value = -1
+    if not max_value:
+        max_value = 1
+    
+    cmds.transformLimits(transform, tz = [min_value, max_value],etz= [min_bool, max_bool])
+
+        
+        
+def set_rotateX_limit(transform, min_value = None, max_value = None):
+    
+    min_bool = 0
+    max_bool = 0
+    
+    if min_value:
+        min_bool = 1
+    if max_value:
+        max_bool = 1
+    
+    if not min_value:
+        min_value = -45
+    if not max_value:
+        max_value = 45
+    
+    print min_value, max_value, min_bool, max_bool
+    
+    cmds.transformLimits(transform, rx = [min_value, max_value],erx= [min_bool, max_bool])
+    
+def set_rotateY_limit(transform, min_value, max_value):
+    
+    min_bool = 0
+    max_bool = 0
+    
+    if min_value:
+        min_bool = 1
+    if max_value:
+        max_bool = 1
+    
+    if not min_value:
+        min_value = -45
+    if not max_value:
+        max_value = 45
+    
+    cmds.transformLimits(transform, ry = [min_value, max_value],ery= [min_bool, max_bool])
+        
+def set_rotateZ_limit(transform, min_value, max_value):
+    
+    min_bool = 0
+    max_bool = 0
+    
+    if min_value:
+        min_bool = 1
+    if max_value:
+        max_bool = 1
+    
+    if not min_value:
+        min_value = -45
+    if not max_value:
+        max_value = 45
+    
+    cmds.transformLimits(transform, rz = [min_value, max_value],erz= [min_bool, max_bool])
