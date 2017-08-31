@@ -791,8 +791,11 @@ class SparseRig(JointRig):
                     control_data = self.control_dict[control_name]
                     self.control_dict.pop(control_name)
                     
-                    control_name = cmds.rename(control_name, core.inc_name(control_name[0:-1] + side))
-                    
+                    if control_name[-1].isalpha():
+                        control_name = cmds.rename(control_name, core.inc_name( control_name[0:-1] + side) )
+                    else:
+                        control_name = cmds.rename(control_name, core.inc_name( control_name + '1_' + side) )
+                        
                     control = rigs_util.Control(control_name)
                     
                     self.control_dict[control_name] = control_data
@@ -902,7 +905,10 @@ class SparseLocalRig(SparseRig):
                     control_data = self.control_dict[control_name]
                     self.control_dict.pop(control_name)
                     
-                    control_name = cmds.rename(control_name, core.inc_name(control_name[0:-1] + side))
+                    if control_name[-1].isalpha():
+                        control_name = cmds.rename(control_name, core.inc_name( control_name[0:-1] + side) )
+                    else:
+                        control_name = cmds.rename(control_name, core.inc_name( control_name[0:-1] + '1_' + side) )
                     
                     self.control_dict[control_name] = control_data
                     
