@@ -1097,8 +1097,8 @@ class OrientJoint(object):
         
         nodes = pin.get_pin_nodes()
         self.delete_later += nodes
-        
-    def _freeze(self):
+    
+    def _freeze(self, scale = True):
         children = cmds.listRelatives(self.joint, f = True)
         
         found_children = []
@@ -1110,12 +1110,30 @@ class OrientJoint(object):
                     child_parented = cmds.parent(child, w = True)[0]
                     found_children.append(child_parented)
         
-        cmds.makeIdentity(self.joint, apply = True, r = True, s = True)
+        cmds.makeIdentity(self.joint, apply = True, r = True, s = scale)
         
         if children:
             cmds.parent(found_children, self.joint)
-        
-      
+    
+    def _invert_scale(self):
+        invert_scale = self.orient_values['invertScale']
+            
+        if invert_scale == 1:
+            cmds.setAttr('%s.scaleX' % self.joint, -1)
+        if invert_scale == 2:
+            cmds.setAttr('%s.scaleY' % self.joint, -1)
+        if invert_scale == 3:
+            cmds.setAttr('%s.scaleZ' % self.joint, -1)
+        if invert_scale == 4:
+            cmds.setAttr('%s.scaleX' % self.joint, -1)
+            cmds.setAttr('%s.scaleY' % self.joint, -1)
+        if invert_scale == 5:
+            cmds.setAttr('%s.scaleX' % self.joint, -1)
+            cmds.setAttr('%s.scaleZ' % self.joint, -1)
+        if invert_scale == 6:
+            cmds.setAttr('%s.scaleY' % self.joint, -1)
+            cmds.setAttr('%s.scaleZ' % self.joint, -1)
+            
     def set_aim_vector(self, vector_list):
         """
         Args:
@@ -1217,9 +1235,14 @@ class OrientJoint(object):
         
         self._create_aim()
         
+        if self.orient_values:
+            self._invert_scale()
+        
         self._cleanup()
         
-        self._freeze()
+        self._freeze(scale = False)
+        
+        
         
 
 class BoundingBox(vtool.util.BoundingBox):
