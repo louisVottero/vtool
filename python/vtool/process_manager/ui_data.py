@@ -74,7 +74,9 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self._refresh_data(data_name)
         
+        
         self.data_tree_widget._rename_data()
+        self.data_widget.show()
         
     def _refresh_data(self, data_name):
         self.data_tree_widget._load_data(new_data = data_name)
@@ -82,6 +84,8 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.data_created.emit(data_name)
         
     def _data_item_selection_changed(self):
+        
+        self.data_widget.hide()
         
         items = self.data_tree_widget.selectedItems()
         
@@ -134,7 +138,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                 return
                 
             if self.data_widget.file_widget:
-                #self.data_widget.file_widget.hide()
+                self.data_widget.file_widget.hide()
                 self.data_widget.hide()
                 self.data_widget.file_widget.deleteLater()
                 self.data_widget.file_widget = None
@@ -222,13 +226,6 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         self.text_edit = False
         
         self.directory = None
-        
-        #policy = self.sizePolicy()
-        
-        #policy.setHorizontalPolicy(policy.Maximum)
-        #policy.setHorizontalStretch(1)
-        
-        #self.setSizePolicy(policy)
         
         self.setColumnWidth(0, 140)
         self.setColumnWidth(1, 110)

@@ -3943,8 +3943,6 @@ def set_rotateX_limit(transform, min_value = None, max_value = None):
     if not max_value:
         max_value = 45
     
-    print min_value, max_value, min_bool, max_bool
-    
     cmds.transformLimits(transform, rx = [min_value, max_value],erx= [min_bool, max_bool])
     
 def set_rotateY_limit(transform, min_value, max_value):

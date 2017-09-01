@@ -2265,7 +2265,7 @@ class MayaAttributeData(MayaCustomData):
 class MayaControlAttributeData(MayaAttributeData):
     
     def _data_name(self):
-        return 'control values'
+        return 'control_values'
         
     def _data_type(self):
         return 'maya.control_values' 
@@ -2293,7 +2293,7 @@ class MayaControlAttributeData(MayaAttributeData):
 class MayaControlRotateOrderData(MayaAttributeData):
     
     def _data_name(self):
-        return 'control rotateOrder'
+        return 'control_rotateOrder'
         
     def _data_type(self):
         return 'maya.control_rotateorder' 

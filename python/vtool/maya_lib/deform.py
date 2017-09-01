@@ -82,7 +82,6 @@ class SkinCluster(object):
         
     def normalize(self, bool_value):
         
-        print self._skin_cluster
         cmds.skinPercent(self._skin_cluster, self._geometry, normalize = True)
         cmds.setAttr('%s.normalizeWeights' % self._skin_cluster, bool_value)
         

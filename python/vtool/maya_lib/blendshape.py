@@ -2529,8 +2529,6 @@ def recreate_blendshapes(blendshape_mesh = None, follow_mesh = None):
     if not blendshape:
         core.print_help('No blendshape found on first mesh.')
     
-    print follow_mesh
-    
     if follow_mesh:
         
         for fm in follow_mesh:
