@@ -8579,6 +8579,9 @@ class EyeRig(JointRig):
         
         control = self._create_control(sub = True)
         
+        control.hide_translate_attributes()
+        control.hide_scale_and_visibility_attributes()
+        
         if self._fk_control_shape:
             control.set_curve_type(self._fk_control_shape)
         
@@ -8606,6 +8609,7 @@ class EyeRig(JointRig):
         cmds.parent(xform, self.control_group)
         
         attr.connect_rotate(aim_transform, drive)
+        
         
     
     def _rig_extra_control(self, group1):
