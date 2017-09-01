@@ -2130,6 +2130,8 @@ class MayaAttributeData(MayaCustomData):
     def _get_scope(self):
         selection = cmds.ls(sl = True)
         
+        
+        
         if not selection:
             util.warning('Nothing selected. Please select at least one node to export attributes.')
             return
@@ -2243,6 +2245,9 @@ class MayaAttributeData(MayaCustomData):
 
                     attributes = list(new_set)
             
+            if not attributes:
+                continue
+            
             for attribute in attributes:
                 
                 attribute_name = '%s.%s' % (thing, attribute)
@@ -2270,6 +2275,7 @@ class MayaControlAttributeData(MayaAttributeData):
     def _get_attributes(self, node):
         attributes = cmds.listAttr(node, scalar = True, m = True, k = True)
         attributes.append('rotateOrder')
+        return attributes
     
     def _get_scope(self):
         
