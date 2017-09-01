@@ -37,6 +37,7 @@ class DataManager(object):
                                ControlCvData(),
                                ControlColorData(),
                                MayaControlAttributeData(),
+                               MayaControlRotateOrderData(),
                                SkinWeightData(),
                                DeformerWeightData(),
                                BlendshapeWeightData(),
@@ -2269,7 +2270,35 @@ class MayaControlAttributeData(MayaAttributeData):
 
     def _get_attributes(self, node):
         attributes = cmds.listAttr(node, scalar = True, m = True, k = True)
-        attributes.append('rotateOrder')
+        return attributes
+    def _get_scope(self):
+        
+        controls = maya_lib.rigs_util.get_controls()
+        
+        if not controls:
+            util.warning('No controls found to export attributes.')
+            return
+        
+        return controls
+    
+    def _get_shapes(self, node):
+        return []
+
+
+class MayaControlRotateOrderData(MayaAttributeData):
+    
+    def _data_name(self):
+        return 'control rotateOrder'
+        
+    def _data_type(self):
+        return 'maya.control_rotateorder' 
+
+    def _data_extension(self):
+        return ''
+
+    def _get_attributes(self, node):
+        attributes = ['rotateOrder']
+        return attributes
     
     def _get_scope(self):
         
