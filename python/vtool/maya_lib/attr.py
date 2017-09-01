@@ -669,12 +669,27 @@ class OrientJointAttributes(object):
         attr = self._create_triangle_attribute('triangleBtm')
         self.attributes.append(attr)
         
+        attr = MayaEnumVariable('invertScale')
+        attr.set_enum_names(['none',
+                             'X',
+                             'Y',
+                             'Z',
+                             'XY',
+                             'XZ',
+                             'YZ'])
+        attr.set_locked(False)
+        attr.create(self.joint)
+        self.attributes.append(attr)
+        
+        
         attr = MayaNumberVariable('active')
         attr.set_variable_type('bool')
         attr.set_keyable(True)
         attr.create(self.joint)
         attr.set_value(1)
         self.attributes.append(attr)
+        
+        
         
         
 
@@ -711,8 +726,8 @@ class OrientJointAttributes(object):
         self.attributes[5].set_value(1)
         self.attributes[6].set_value(2)
         self.attributes[7].set_value(3)
-        self.attributes[8].set_value(1)
-        #self.attributes[9].set_value(1)
+        self.attributes[8].set_value(0)
+        self.attributes[9].set_value(1)
     
     def set_joint(self, joint):
         """
