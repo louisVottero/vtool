@@ -24,9 +24,10 @@ def apply_shading_engine(shader_name, mesh):
     
 def get_shading_engine_geo(shader_name):
     """
-    Not implemented
+    Given a shading engine, get the members
     """
-    pass
+    members = cmds.sets(shader_name, q = True)
+    return members
 
 
 def get_shading_engines(shader_name):
