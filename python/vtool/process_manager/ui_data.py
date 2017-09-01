@@ -134,7 +134,8 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                 return
                 
             if self.data_widget.file_widget:
-                self.data_widget.file_widget.hide()
+                #self.data_widget.file_widget.hide()
+                self.data_widget.hide()
                 self.data_widget.file_widget.deleteLater()
                 self.data_widget.file_widget = None
                 self.label.setText('')
@@ -186,6 +187,8 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         self.list = vtool.qt_ui.AddRemoveDirectoryList()
         self.list.set_title('Use Folder')
         self.list.setMaximumWidth(125)
+        #this is a new feature. Hidden for now
+        self.list.hide()
         self.file_widget = vtool.qt_ui.BasicWidget()
         
         self.main_layout.addWidget(self.file_widget)
@@ -1465,6 +1468,13 @@ class MayaControlAttributesFileWidget(MayaDataFileWidget):
         return 'Maya Control Values'
                 
 
+class MayaControlRotateOrderFileWidget(MayaDataFileWidget):
+    def _define_data_class(self):
+        return vtool.data.MayaControlRotateOrderData()
+
+    def _define_main_tab_name(self):
+        return 'Maya Control RotateOrder'
+
 class MayaFileWidget(vtool.qt_ui.FileManagerWidget):
     
     def _define_main_tab_name(self):
@@ -1770,6 +1780,7 @@ data_name_map = {'maya.binary': 'Binary File',
                  'maya.pose' : 'Correctives',
                  'maya.animation' : 'Keyframes',
                  'maya.control_animation' : 'Keyframes Control',
+                 'maya.control_rotateorder' : 'Control RotateOrder'
                  }
 
 file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
@@ -1777,6 +1788,7 @@ file_widgets = { 'maya.binary' : MayaBinaryFileWidget,
                  'maya.shotgun' : MayaShotgunLinkWidget,
                  'maya.control_cvs' : ControlCvFileWidget,
                  'maya.control_colors' : ControlColorFileWidget,
+                 'maya.control_rotateorder' : MayaControlRotateOrderFileWidget,
                  'maya.skin_weights' : SkinWeightFileWidget,
                  'maya.deform_weights' : DeformerWeightFileWidget,
                  'maya.blend_weights' : BlendShapeWeightFileWidget,
