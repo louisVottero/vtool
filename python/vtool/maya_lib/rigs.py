@@ -679,6 +679,8 @@ class SparseRig(JointRig):
             control = rigs_util.Control(control)
             control.set_to_joint(scale_compensate= self.use_joint_controls_scale_compensate)
         
+    
+        
     def set_scalable(self, bool_value):
         """
         Turn off/on the ability for controls to scale the joints.
@@ -851,6 +853,24 @@ class SparseLocalRig(SparseRig):
         self.local_parent = None
         self.local_xform = None
         self.connect_xform = False
+        self._read_locators = False
+
+    def _create_read_locators(self):
+            
+        if not self._read_locators:
+            return
+        
+        group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'read_locator')))
+        cmds.parent(group, self.setup_group)
+        
+        for joint in self.joints:
+            loc = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'read')))[0]
+            
+            cmds.pointConstraint(joint, loc)
+            
+            xform = space.create_xform_group(loc)
+            
+            cmds.parent(xform, group)
 
     def set_local_constraint(self, bool_value):
         self.local_constraint = bool_value
@@ -862,13 +882,23 @@ class SparseLocalRig(SparseRig):
         
         self.connect_xform = bool_value
 
+    def set_create_position_read_locators(self, bool_value):
+        """
+        Good to hookup of blendshapes to the translation.
+        """
+        
+        self._read_locators = bool_value
+
     def create(self):
         
         super(SparseRig, self).create()
         
-        if self.local_parent:
-            self.local_xform = cmds.group(em = True, n = 'localParent_%s' % self._get_name())
-            cmds.parent(self.local_xform, self.setup_group)
+        if self._read_locators:
+            self._create_read_locators()
+        
+        
+        self.local_xform = cmds.group(em = True, n = 'localParent_%s' % self._get_name())
+        cmds.parent(self.local_xform, self.setup_group)
         
         self.current_inc = 0
         inc = 0
