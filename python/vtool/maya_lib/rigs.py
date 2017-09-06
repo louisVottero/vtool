@@ -3589,9 +3589,13 @@ class IkAppendageRig(BufferRig):
         
         cmds.addAttr(control, ln = 'world', min = 0, max = 1, dv = 0, at = 'double', k = True)
         
-        local_group = self._create_group('IkLocal')
-        match = space.MatchSpace(control, local_group)
-        match.translation_rotation()
+        #local_group = self._create_group('IkLocal')
+        local_group = cmds.duplicate(control, po = True, n = self._get_name('IkLocal'))[0]
+        attr.remove_user_defined(local_group)
+        shapes = cmds.listRelatives(local_group)
+        if shapes:
+            cmds.delete(shapes)
+        
         
         world_group = self._create_group('IkWorld')
         match = space.MatchSpace(control, world_group)
@@ -3599,8 +3603,14 @@ class IkAppendageRig(BufferRig):
             
         if not self.right_side_fix and self.side == 'R':
             cmds.rotate(180,0,0, world_group)
+            
+            if cmds.getAttr('%s.scaleZ' % xform_group) < 0:
+                #vtool.util.show( 'here setting scaleZ!')
+                cmds.setAttr('%s.scaleZ' % world_group, -1)
+                #cmds.duplicate(world_group)
         
-        cmds.parent([local_group,world_group], xform_group)
+        world_xform_group = space.create_xform_group(world_group)
+        cmds.parent([local_group,world_xform_group], xform_group)
         
         cmds.orientConstraint(local_group, driver_group)
         cmds.orientConstraint(world_group, driver_group)
@@ -3921,8 +3931,8 @@ class IkAppendageRig(BufferRig):
     def set_stretch_scale_attribute_offset(self, value):
         self.stretch_scale_attribute_offset = value
     
-    def create(self):
-        super(IkAppendageRig, self).create()
+    def _create_before_attach_joints(self):
+        super(IkAppendageRig, self)._create_before_attach_joints()
         
         self._create_ik_handle()
         
@@ -5415,9 +5425,8 @@ class IkFrontLegRig(IkAppendageRig):
         cmds.pointConstraint(btm_transform, btm_locator)
         """
         
-    def create(self):
-        super(IkFrontLegRig, self).create()
-        #turn me back on right away
+    def _create_before_attach_joints(self):
+        super(IkFrontLegRig, self)._create_before_attach_joints()
         
         cmds.setAttr('%s.translateY' % self.pole_vector_xform, 0)
         
@@ -5775,9 +5784,8 @@ class IkBackLegRig(IkFrontLegRig):
         axis_letter = axis_letter.capitalize()
         self._offset_ankle_axis = axis_letter
     
-    def create(self):
-        
-        super(IkBackLegRig, self).create()
+    def _create_before_attach_joints(self):
+        super(IkBackLegRig, self)._create_before_attach_joints()
         
         self._create_offset_control()
         
