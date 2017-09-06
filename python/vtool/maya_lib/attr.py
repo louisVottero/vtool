@@ -2251,6 +2251,8 @@ def remove_user_defined(node):
     Removes user defined attributes from a node.
     """
     
+    unlock_attributes(node)
+    
     attrs = cmds.listAttr(node, ud = True)
     
     if not attrs:
