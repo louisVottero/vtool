@@ -484,15 +484,15 @@ class ShapeWidget(qt_ui.BasicWidget):
         header_layout = qt.QVBoxLayout()
         
         info_layout = qt.QHBoxLayout()
-        info_widget = qt.QLabel('Shape')
-        info_widget.setAlignment(qt.QtCore.Qt.AlignCenter)
+        #info_widget = qt.QLabel('Shape')
+        #info_widget.setAlignment(qt.QtCore.Qt.AlignCenter)
         
-        info_layout.addWidget(info_widget)
+        #info_layout.addWidget(info_widget)
         
         header_layout.addLayout(info_layout)
                 
         self.tree = ShapeTree()
-        self.tree.setHeaderHidden(True)
+        
         
         self.main_layout.addLayout(header_layout)
         self.main_layout.addWidget(self.tree)
@@ -513,6 +513,14 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self.setSortingEnabled(False)
         
+        #self.setColumnCount(2)
+        self.setHeaderHidden(False)
+        self.setHeaderLabels(['Shape', 'Tag'])
+        self.header().setResizeMode(0, qt.QHeaderView.Stretch)
+        #self.header().setResizeMode(qt.QHeaderView.ResizeToContents)
+        self.header().setStretchLastSection(False)
+        
+        
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
@@ -523,14 +531,16 @@ class ShapeTree(qt_ui.TreeWidget):
         self.ctrl_active = False
         
         self.doubleClicked.connect(self.recreate)
+        
+        self._item_menu_item = None
 
         self.left_press = False
-        
-        
         
     def _item_menu(self, position):
                 
         item = self.itemAt(position)
+        
+        self._item_menu_item = item
         
         parent = item.parent()
         
@@ -556,11 +566,15 @@ class ShapeTree(qt_ui.TreeWidget):
         self.rename_action = self.context_menu.addAction('Rename')
         
         self.remove_action = self.context_menu.addAction('Remove')
+        
+        self.tag_action = self.context_menu.addAction('Tag')
+        
         self.context_menu.addSeparator()
         
         self.recreate_action.triggered.connect(self.recreate)
         self.rename_action.triggered.connect(self.rename)
         self.remove_action.triggered.connect(self.remove)
+        self.tag_action.triggered.connect(self.tag)
         
     def _create_item(self, shape, inbetweens = None):
         
@@ -572,6 +586,10 @@ class ShapeTree(qt_ui.TreeWidget):
         self.addTopLevelItem(item)
         
         self._create_children(item, inbetweens)
+        
+        tag_value = self.manager.get_tag(item.text(0))
+        
+        item.setText(1, tag_value)
         
         return item
         
@@ -847,6 +865,8 @@ class ShapeTree(qt_ui.TreeWidget):
         
         items = self.selectedItems()
         
+        self.itemBelow()
+        
         if not items:
             return
         
@@ -863,7 +883,23 @@ class ShapeTree(qt_ui.TreeWidget):
             if not self.manager.is_inbetween(name):
                 index = self.indexFromItem(item)
                 self.takeTopLevelItem(index.row())
-                
+    
+    def tag(self):
+        
+        item = self._item_menu_item
+        
+        tag_comment = qt_ui.get_comment(self, '', 'tag name', '')
+        
+        if not tag_comment:
+            return
+        
+        item.setText(1, tag_comment)
+    
+        name = item.text(0)
+        
+        self.manager.set_tag(name, tag_comment)
+        
+    
     def select_shape(self, shape):
         
         for inc in range(0, self.topLevelItemCount()):
@@ -957,15 +993,15 @@ class ComboWidget(qt_ui.BasicWidget):
         header_layout = qt.QVBoxLayout()
         
         info_layout = qt.QHBoxLayout()
-        info_widget = qt.QLabel('Combo')
-        info_widget.setAlignment(qt.QtCore.Qt.AlignCenter)
+        #info_widget = qt.QLabel('Combo')
+        #info_widget.setAlignment(qt.QtCore.Qt.AlignCenter)
         
-        info_layout.addWidget(info_widget)
+        #info_layout.addWidget(info_widget)
         
         header_layout.addLayout(info_layout)
         
         self.tree = ComboTree()
-        self.tree.setHeaderHidden(True)
+        #self.tree.setHeaderHidden(True)
         
         self.main_layout.addLayout(header_layout)
         self.main_layout.addWidget(self.tree)
@@ -979,14 +1015,23 @@ class ComboTree(qt_ui.TreeWidget):
         
         self.setSortingEnabled(False)
         
+        self.setHeaderHidden(False)
+        self.setHeaderLabels(['Combo', 'Tag'])
+        self.header().setResizeMode(0, qt.QHeaderView.Stretch)
+        #self.header().setResizeMode(qt.QHeaderView)
+        self.header().setStretchLastSection(False)
+        
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
         
         self.doubleClicked.connect(self.recreate)
+        self._item_menu_item = None
         
     def _item_menu(self, position):
+        item = self.itemAt(position)
+        self._item_menu_item = item
         
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
         
@@ -996,10 +1041,38 @@ class ComboTree(qt_ui.TreeWidget):
         
         self.recreate_action = self.context_menu.addAction('Recreate')
         self.remove_action = self.context_menu.addAction('Remove')
+        self.tag_action = self.context_menu.addAction('Tag')
         
         self.recreate_action.triggered.connect(self.recreate)
         self.remove_action.triggered.connect(self.remove)
+        self.tag_action.triggered.connect(self.tag)
+
+    def _create_item(self, name):
+        item = qt.QTreeWidgetItem()
+        item.setText(0, name)
         
+        tag_value = self.manager.get_tag(name)
+        
+        item.setText(1, tag_value)
+        
+        return item
+    
+
+    def tag(self):
+        
+        item = self._item_menu_item
+        
+        tag_comment = qt_ui.get_comment(self, '', 'tag name', '')
+        
+        if not tag_comment:
+            return
+        
+        item.setText(1, tag_comment)
+    
+        name = item.text(0)
+        
+        self.manager.set_tag(name, tag_comment)
+
     def highlight_item(self, item, bool_value = True):
         
         brush = None
@@ -1076,9 +1149,9 @@ class ComboTree(qt_ui.TreeWidget):
         self.clear()
         
         for combo in combos:
-            item = qt.QTreeWidgetItem()
+            item = self._create_item(combo)
+            
             item.setSizeHint(0, qt.QtCore.QSize(100, 20))
-            item.setText(0, combo)
             self.highlight_item(item)
             
             self.addTopLevelItem(item)
@@ -1105,9 +1178,9 @@ class ComboTree(qt_ui.TreeWidget):
         if possible_combos:
             for combo in possible_combos:
                 
-                item = qt.QTreeWidgetItem()
+                item = self._create_item(combo)
                 item.setSizeHint(0, qt.QtCore.QSize(100, 18))
-                item.setText(0, combo)
+                
                 
                 self.highlight_item(item, False)
                 
