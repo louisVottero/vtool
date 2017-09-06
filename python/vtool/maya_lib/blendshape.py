@@ -1663,7 +1663,74 @@ class ShapeComboManager(object):
             
         return shapes, combos, inbetweens
     
+    def set_tag(self, target_name, tag_value):
+        
+        store = attr.StoreData(self.setup_group)
+        
+        data_dict = store.eval_data()
+        
+        if not data_dict:
+            data_dict = {}
+        
+        data_dict[target_name] = tag_value
+        
+        store.set_data(data_dict)
+        
+    def get_tag(self, target_name):
+        
+        target_name = str(target_name)
+        
+        store = attr.StoreData(self.setup_group)
+        
+        data_dict = store.eval_data()
+        
+        if not data_dict:
+            return
+        
+        
+        if data_dict.has_key(target_name):
+            return data_dict[target_name]
     
+    def get_shapes_with_tag(self, tag_value):
+        
+        tag_value = str(tag_value)
+        
+        store = attr.StoreData(self.setup_group)
+        
+        data_dict = store.eval_data()
+        
+        if not data_dict:
+            return
+        
+        shapes = self.get_shapes()
+        combos = self.get_combos()
+        
+        found = []
+        
+        for shape in shapes:
+            if data_dict.has_key(shape):
+                shape_tag = data_dict[shape]
+                if shape_tag == tag_value:
+                    found.append(shape)
+                
+                inbetweens = self.get_inbetweens(shape)
+                
+                if inbetweens:
+                    for inbetween in inbetweens:
+                        if not data_dict.has_key(inbetween):
+                            found.append(inbetween)
+                        
+                    
+        for combo in combos:
+            if data_dict.has_key(combo):
+                combo_tag = data_dict[combo]
+                if combo_tag == tag_value:
+                    found.append(combo)        
+        
+        
+        return found
+        
+        
     #--- shapes
     
     @core.undo_chunk
