@@ -3199,12 +3199,6 @@ def add_orient_joint(joint):
     cmds.move(0.1, 0,0, aim_joint, r = True, os = True)
     cmds.move(0, 0.1,0, up_joint, r = True, os = True)
     
-    #attr.lock_rotate_attributes(aim_joint)
-    #attr.lock_scale_attributes(aim_joint)
-    
-    #attr.lock_rotate_attributes(up_joint)
-    #attr.lock_scale_attributes(up_joint)
-    
     scale_value = current_radius/2.0
     
     cmds.setAttr('%s.localScaleX' % aim_joint, scale_value)
