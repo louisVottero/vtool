@@ -5,6 +5,7 @@ import string
 from vtool import qt_ui, qt
 import vtool.util
 from vtool.maya_lib import ui_core
+from PySide.QtGui import QTreeWidgetItem
 
 if vtool.util.is_in_maya():
 
@@ -58,6 +59,8 @@ class ComboManager(ui_core.MayaWindow):
         header_layout.addWidget(self.slider)
         header_layout.addSpacing(5)
         
+        
+        
         preserve_layout = qt.QVBoxLayout()
         
         self.preserve_check = qt.QCheckBox('Preserve Combos')
@@ -65,6 +68,16 @@ class ComboManager(ui_core.MayaWindow):
         
         preserve_layout.addWidget(self.preserve_check)
         preserve_layout.addWidget(self.preserve_inbetweens)
+        
+        tag_layout = qt.QVBoxLayout()
+        
+        tag_button = qt.QPushButton('Tags')
+        tag_button.setMinimumHeight(50)
+        tag_button.setMinimumWidth(50)
+        
+        tag_button.clicked.connect(self._launch_tags)
+        
+        tag_layout.addWidget(tag_button)
         
         recreate_all = qt.QPushButton('Recreate All')
         recreate_all.setMaximumWidth(100)
@@ -85,6 +98,8 @@ class ComboManager(ui_core.MayaWindow):
         button_layout.addLayout(layout_1)
         button_layout.addSpacing(10)
         button_layout.addLayout(preserve_layout)
+        button_layout.addSpacing(10)
+        button_layout.addLayout(tag_layout)
         
         self.preserve_check.stateChanged.connect(self._preserve_state_change)
                 
@@ -476,6 +491,15 @@ class ComboManager(ui_core.MayaWindow):
         for shape in shapes:
             
             self.manager.turn_on_shape(shape, value)
+            
+    def _launch_tags(self):
+        
+        
+        
+        self.tag_widget = TagManager(self)
+        
+        self.tag_widget.show()
+        self.tag_widget.set_manager(self.manager)
             
 class ShapeWidget(qt_ui.BasicWidget):
     
@@ -1271,4 +1295,254 @@ class WeightSlider(qt_ui.BasicWidget):
         self.slider.setValue(value*1000)
         
         self.value_change.emit( value )
+        
+class TagManager(qt_ui.BasicDialog):
+    
+    def _define_main_layout(self):
+        return qt.QHBoxLayout()
+    
+    def __init__(self, parent):
+        super(TagManager, self).__init__(parent)
+        
+        self.setMinimumHeight(600)
+        self.setMinimumWidth(400)
+        
+        
+        shapes_layout = qt.QVBoxLayout()
+        tags_layout = qt.QVBoxLayout()
+        
+        self.shape_list = qt.QTreeWidget()
+        self.shape_list.setHeaderLabels(['Shape', 'Tags'])
+        self.shape_list.setSelectionMode(self.shape_list.SingleSelection)
+        self.shape_list.itemSelectionChanged.connect(self._update_selected_shape)
+        self.tag_list = qt.QListWidget()
+        self.tag_list.itemSelectionChanged.connect(self._update_selected_tag)
+        self.tag_list.setSelectionMode(self.shape_list.MultiSelection)
+        
+        shapes_layout.addWidget(self.shape_list)
+        tags_layout.addWidget(self.tag_list)
+        
+        refresh_button = qt.QPushButton('Refresh')
+        refresh_button.clicked.connect(self._refresh)
+        
+        add_tag = qt.QPushButton('Add Tag')
+        add_tag.clicked.connect(self.add_tag)
+        
+        remove_tag = qt.QPushButton('Remove Tag')
+        remove_tag.clicked.connect(self.remove_tag)
+        
+        shapes_layout.addWidget(refresh_button)
+        
+        tags_layout.addWidget(add_tag)
+        tags_layout.addWidget(remove_tag)
+        
+        
+        
+        self.main_layout.addLayout(shapes_layout)
+        self.main_layout.addLayout(tags_layout)
+        
+        self._setup_group = None
+        self._shapes = []
+        
+        self._tags = []
+        
+        self._supress_tag_update = False
+    
+    def _update_selected_shape(self):
+        
+        items = self.shape_list.selectedItems()
+        
+        shape_item = items[0]
+        shape = str(shape_item.text(0))
+    
+        tags = self.manager.get_tags_from_shape(shape)
+        
+        self._select_tags(tags)
+        
+    
+    def _update_selected_tag(self):
+        
+        if self._supress_tag_update:
+            return
+        
+        selected_tag_items = self.tag_list.selectedItems()
+        unselected_tag_items = self._get_unselected_tag_items()
+        
+        self._remove_tags_from_shapes(unselected_tag_items)
+        self._add_tags_to_shapes(selected_tag_items)
+        
+    def _select_tags(self, tags):
+        
+        
+        
+        self._supress_tag_update = True
+        
+        for inc in range(0, self.tag_list.count()):
+                
+            tag_item = self.tag_list.item(inc)
+            tag_item.setSelected(False)
+        
+        for tag in tags:
+        
+            for inc in range(0, self.tag_list.count()):
+                
+                tag_item = self.tag_list.item(inc)
+                
+                tag_name = str(tag_item.text())
+                
+                if tag_name == tag:
+                    tag_item.setSelected(True)
+                    break
+        
+        self._supress_tag_update = False
+        
+    def _get_unselected_tag_items(self):
+        
+        found = []
+        
+        for inc in range(0, self.tag_list.count()):
+            item = self.tag_list.item(inc)
+            if not item.isSelected():
+                found.append(item)
+        
+        return found
+    
+    def _remove_tags_from_shapes(self, tag_items):
+        shape_items = self.shape_list.selectedItems()
+        
+        shapes = []
+        
+        for shape in shape_items:
+            shape_text = str(shape.text(0))
+            shapes.append(shape_text)
+        
+        for tag_item in tag_items:
+            
+            tag_text = str(tag_item.text())
+            
+            self.manager.remove_tag_shapes(tag_text, shapes)
+            
+    def _add_tags_to_shapes(self, tag_items):
+        shape_items = self.shape_list.selectedItems()
+        
+        shapes = []
+        
+        for shape in shape_items:
+            shape_text = str(shape.text(0))
+            shapes.append(shape_text)
+        
+        for tag_item in tag_items:
+            
+            tag_text = str(tag_item.text())
+            
+            tag_shapes = self.manager.get_tag(tag_text)
+            
+            if tag_shapes:
+                for shape in shapes:
+                    if not shape in tag_shapes:
+                        tag_shapes.append(shape)
+            
+            if not tag_shapes:
+                tag_shapes = shapes
+            
+            print tag_text, tag_shapes
+            
+            self.manager.set_tag(tag_text, tag_shapes)
+        
+            
+    def _add_shape_tags(self, shape_item):
+        
+        shape = shape_item.text(0)
+        
+        tags = self.manager.get_tags_from_shape(shape)
+        
+        if not tags:
+            tags = 'No tags'
+        
+        if not tags == 'No tags':
+            tags = [str(i).strip() for i in tags]
+        
+        shape_item.setText(1, str(tags))
+        if tags and not tags == 'No tags':
+            for tag in tags:
+                sub_item = QTreeWidgetItem()
+                sub_item.setText(1, tag)
+                
+                shape_item.addChild(sub_item)
+            
+    def _set_tags(self, tags):
+        self.tag_list.clear()
+        
+        if not tags:
+            return
+        
+        tags.sort()
+        
+        for tag in tags:
+            self.tag_list.addItem(tag)
+    
+    def _set_shapes(self, shapes):
+        
+        self.shape_list.clear()
+        
+        for shape in shapes:
+            
+            item = qt.QTreeWidgetItem()
+            item.setText(0, shape)
+            self.shape_list.addTopLevelItem(item)
+            
+    def _get_shape_item_by_name(self, name):
+        
+        count = self.shape_list.topLevelItemCount()
+        
+        for inc in range(0, count):
+            item = self.shape_list.topLevelItem(inc)
+            item_name = str(item.text(0))
+            
+            if item_name == name:
+                return item
+    
+    def _refresh(self):
+        
+        shapes = self.manager.get_all_shape_names()
+        
+        self._set_shapes(shapes)
+        
+        tags = self.manager.get_tags()
+        
+        self._set_tags(tags)
+    
+    def set_manager(self, manager_obj):
+        
+        self.manager = manager_obj
+        
+        
+        shapes = self.manager.get_all_shape_names()
+        
+        self._set_shapes(shapes)
+        
+        tags = self.manager.get_tags()
+        
+        self._set_tags(tags)
+        
+    def add_tag(self, name = None):
+        
+        if not name:
+            name = qt_ui.get_comment(self, 'Add a tag to the list', 'Add Tag')
+        
+        if not name:
+            return
+        
+        self._tags.append(name)
+        self.tag_list.addItem(name)
+        
+    def remove_tag(self):
+        
+        items = self.tag_list.selectedItems()
+        
+        for item in items:
+            index = self.tag_list.indexFromItem(item)
+            self.tag_list.takeItem(index.row())
+            
+            
         
