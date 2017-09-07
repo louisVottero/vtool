@@ -1317,7 +1317,17 @@ def get_last_number(input_string):
     
     return number
         
-                
+def get_last_letter(input_string):
+    
+    search = search_last_letter(input_string)
+    
+    if not search:
+        return None
+    
+    found_string = search.group()
+    
+    return found_string
+
 def get_end_number(input_string, as_string = False):
     """
     Get the number at the end of a string.
@@ -1364,7 +1374,9 @@ def get_trailing_number(input_string, as_string = False, number_count = -1):
         
         if not as_string:
             return int(number)
-   
+
+
+
 def search_first_number(input_string):
 
     
@@ -1381,9 +1393,24 @@ def search_last_number(input_string):
     Returns:
         int: The last number in the string.
     """
-    
     expression = re.compile('(\d+)(?=(\D+)?$)')
     return expression.search( input_string)
+
+
+def search_last_letter(input_string):
+    """
+    Get the last letter in a string.
+    
+    Args:
+        input_string (str): The string to search for a number.
+    
+    Returns:
+        int: The last number in the string.
+    """
+    
+    match = re.findall('[_a-zA-Z]+', input_string)
+    if match:
+        return match[-1][-1]
 
 def replace_last_number(input_string, replace_string):
     """
@@ -1720,6 +1747,8 @@ def find_possible_combos(names, sort = False, one_increment = False):
                         return found
                 
                 return found
+
+
 
 #--- sorting
 
