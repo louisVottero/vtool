@@ -854,6 +854,11 @@ class SparseLocalRig(SparseRig):
         self.local_xform = None
         self.connect_xform = False
         self._read_locators = False
+        self._read_locators_max = None
+        self._read_locators_min = None
+        self._read_locators_min_max_axis = 'Y'
+        self._read_locators_dict = {}
+        self.read_locators = []
 
     def _create_read_locators(self):
             
@@ -863,14 +868,21 @@ class SparseLocalRig(SparseRig):
         group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'read_locator')))
         cmds.parent(group, self.setup_group)
         
+        self.read_locators = []
+        
         for joint in self.joints:
             loc = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'read')))[0]
+            
+            self.read_locators.append(loc)
+            self._read_locators_dict[joint] = loc
             
             cmds.pointConstraint(joint, loc)
             
             xform = space.create_xform_group(loc)
             
             cmds.parent(xform, group)
+            
+            
 
     def set_local_constraint(self, bool_value):
         self.local_constraint = bool_value
@@ -882,12 +894,15 @@ class SparseLocalRig(SparseRig):
         
         self.connect_xform = bool_value
 
-    def set_create_position_read_locators(self, bool_value):
+    def set_create_position_read_locators(self, bool_value, min = None, max = None, axis = 'Y'):
         """
         Good to hookup of blendshapes to the translation.
         """
         
         self._read_locators = bool_value
+        self._read_locators_max = max
+        self._read_locators_min = min
+        self._read_locators_min_max_axis = axis
 
     def create(self):
         
@@ -982,6 +997,18 @@ class SparseLocalRig(SparseRig):
             if not self.attach_joints:
                 attr.connect_scale(control.get(), joint)
             
+            if self.read_locators:
+                locator = self._read_locators_dict[joint]
+                control = self.controls[inc]
+                attr.connect_message(locator, self.controls[inc], 'readLocator')
+                axis = self._read_locators_min_max_axis.upper()
+                if self._read_locators_max != None or self._read_locators_min != None:
+                    cmds.addAttr(control, ln = 'weight', at = 'float', dv = 0)
+                if self._read_locators_max != None:
+                    anim.quick_driven_key('%s.translate%s' % (locator, axis), '%s.weight' % control, [0, self._read_locators_max], [0, -1])
+                if self._read_locators_min != None:
+                    anim.quick_driven_key('%s.translate%s' % (locator, axis), '%s.weight' % control, [0, self._read_locators_min], [0, 1])
+                    
             cmds.parent(xform, self.control_group)
 
             if self.run_function:
