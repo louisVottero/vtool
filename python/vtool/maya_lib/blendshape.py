@@ -1663,7 +1663,23 @@ class ShapeComboManager(object):
             
         return shapes, combos, inbetweens
     
-    def set_tag(self, target_name, tag_value):
+    def get_all_shape_names(self):
+        print 'get all shapes!'
+        shapes = self.get_shapes()
+        
+                
+            
+        combos = self.get_combos()
+        
+        shapes = shapes + combos
+        
+        print 'end shapes', shapes
+        
+        return shapes
+    
+    def set_tag(self, tag_name, tag_value):
+        
+        print 'storing data', tag_name, tag_value
         
         store = attr.StoreData(self.setup_group)
         
@@ -1672,13 +1688,16 @@ class ShapeComboManager(object):
         if not data_dict:
             data_dict = {}
         
-        data_dict[target_name] = tag_value
+        data_dict[tag_name] = tag_value
+        
+        if type(data_dict) == list:
+            raise
         
         store.set_data(data_dict)
         
-    def get_tag(self, target_name):
+    def get_tag(self, tag_name):
         
-        target_name = str(target_name)
+        tag_name = str(tag_name)
         
         store = attr.StoreData(self.setup_group)
         
@@ -1687,14 +1706,10 @@ class ShapeComboManager(object):
         if not data_dict:
             return
         
-        
-        if data_dict.has_key(target_name):
-            return data_dict[target_name]
+        if data_dict.has_key(tag_name):
+            return data_dict[tag_name]
     
-    def get_shapes_with_tag(self, tag_value):
-        
-        tag_value = str(tag_value)
-        
+    def get_tags(self):
         store = attr.StoreData(self.setup_group)
         
         data_dict = store.eval_data()
@@ -1702,34 +1717,93 @@ class ShapeComboManager(object):
         if not data_dict:
             return
         
-        shapes = self.get_shapes()
-        combos = self.get_combos()
+        return data_dict.keys()
+        
+    
+    def get_tags_from_shape(self, shape):
+        
+        store = attr.StoreData(self.setup_group)
+        
+        data_dict = store.eval_data()
+        
+        if not data_dict:
+            return
         
         found = []
         
-        for shape in shapes:
-            if data_dict.has_key(shape):
-                shape_tag = data_dict[shape]
-                if shape_tag == tag_value:
-                    found.append(shape)
-                
-                inbetweens = self.get_inbetweens(shape)
-                
-                if inbetweens:
-                    for inbetween in inbetweens:
-                        if not data_dict.has_key(inbetween):
-                            found.append(inbetween)
-                        
-                    
-        for combo in combos:
-            if data_dict.has_key(combo):
-                combo_tag = data_dict[combo]
-                if combo_tag == tag_value:
-                    found.append(combo)        
-        
-        
+        for key in data_dict:
+            shapes = data_dict[key]
+            
+            shapes = vtool.util.convert_to_sequence(shapes)
+            
+            if shape in shapes:
+                found.append(key)
+            
         return found
         
+    def get_tag_shapes(self, tag_name):
+        
+        tag_name = str(tag_name)
+        
+        store = attr.StoreData(self.setup_group)
+        
+        data_dict = store.eval_data()
+        
+        if not data_dict:
+            return
+        
+        if not data_dict.has_key(tag_name):
+            return
+        
+        shapes = data_dict[tag_name]
+        
+        return shapes
+        
+    def remove_tag(self, tag_name):
+        
+        store = attr.StoreData(self.setup_group)
+        data_dict = store.eval_data()
+        
+        if not data_dict:
+            return
+        
+        shapes = data_dict[tag_name]
+        
+        data_dict.pop(tag_name)
+        
+        store.set_data(data_dict)
+        
+        return shapes
+        
+    def remove_tag_shapes(self, tag_name, shapes):
+        
+        shapes = vtool.util.convert_to_sequence(shapes)
+        
+        store = attr.StoreData(self.setup_group)
+        
+        data_dict = store.eval_data()
+        
+        if not data_dict:
+            return
+        
+        if not data_dict.has_key(tag_name):
+            return
+        
+        tag_shapes = data_dict[tag_name]
+        result_shapes = list(tag_shapes)
+        
+        for tag_shape in tag_shapes:
+            #this could use a pythong set instead
+            for shape in shapes:
+                if tag_shape == shape:
+                    result_shapes.remove(shape)
+        
+        if result_shapes:
+            data_dict[tag_name] = result_shapes
+        if not result_shapes:
+            data_dict.pop(tag_name)
+        
+        store.set_data(data_dict)
         
     #--- shapes
     
@@ -2617,4 +2691,21 @@ def recreate_blendshapes(blendshape_mesh = None, follow_mesh = None):
         shapes.sort()
         cmds.parent(shapes, group)
         
+
+def find_possible_combos(shapes):
     
+    return vtool.util.find_possible_combos(shapes)
+
+def find_increment_value(shape):
+    
+    return vtool.util.get_trailing_number(shape, as_string = True, number_count = 2)
+
+def is_negative(shape):
+    
+    last_letter = vtool.util.search_last_letter(shape)
+    
+    if last_letter == 'N':
+        return True
+    
+    return False
+

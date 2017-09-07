@@ -1349,6 +1349,9 @@ class StoreData(object):
     def __init__(self, node = None):
         self.node = node
         
+        if not node:
+            return
+        
         if not cmds.objExists(node):
             return
         
@@ -1357,14 +1360,23 @@ class StoreData(object):
         if not node:
             return
         
+        self._setup_node(node)
+        
+    def _setup_node(self, node):
+        
         self.data = MayaStringVariable('DATA')
         self.data.set_node(self.node)
         
         if not cmds.objExists('%s.DATA' % node):
             self.data.create(node)
+            
+    def set_node(self, node):
+        self.node = node
+        self._setup_node(node)
         
     def set_data(self, data):
-        
+        if not self.node:
+            return
         if not cmds.objExists(self.node):
             return
         
@@ -1373,11 +1385,17 @@ class StoreData(object):
         self.data.set_value(str_value)
         
     def get_data(self):
+        if not self.node:
+            return
         if not cmds.objExists(self.node):
             return
         return self.data.get_value()
     
     def eval_data(self):
+        
+        if not self.node:
+            return
+        
         if not cmds.objExists(self.node):
             return
         data = self.get_data()
