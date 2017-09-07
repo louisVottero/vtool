@@ -454,9 +454,6 @@ class JointRig(Rig):
                     switch.add_groups_to_index((weight_count-1), self.control_group)
                 switch.create()
                 
-        
-        
-    
     def _check_joints(self, joints):
         
         for joint in joints:
@@ -3936,6 +3933,13 @@ class IkAppendageRig(BufferRig):
         
         self._create_ik_handle()
         
+        
+        
+        
+        
+    def create(self):
+        super(IkAppendageRig, self).create()
+        
         if self.create_top_control:
             top_control = self._create_top_control()
         if not self.create_top_control:
@@ -3950,7 +3954,6 @@ class IkAppendageRig(BufferRig):
         
         if self.create_twist:
             self._create_twist_joint(top_control)
-        
         
         self._create_pole_vector()
         
@@ -5428,6 +5431,9 @@ class IkFrontLegRig(IkAppendageRig):
     def _create_before_attach_joints(self):
         super(IkFrontLegRig, self)._create_before_attach_joints()
         
+    def create(self):
+        super(IkFrontLegRig, self).create()
+        
         cmds.setAttr('%s.translateY' % self.pole_vector_xform, 0)
         
         ik_xform = cmds.listRelatives(self.ik_handle, p = True)
@@ -5786,6 +5792,9 @@ class IkBackLegRig(IkFrontLegRig):
     
     def _create_before_attach_joints(self):
         super(IkBackLegRig, self)._create_before_attach_joints()
+        
+    def create(self):
+        super(IkBackLegRig, self).create()
         
         self._create_offset_control()
         
