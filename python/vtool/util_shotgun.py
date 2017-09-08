@@ -50,8 +50,15 @@ def get_sg():
                 sg = sgtk.Sgtk.shotgun.fget(1)
                 
             except:
-                util.error('Could not get shotgun api.  Check that your shotgun api script and key code are correct. \nShotgun toolkit might not be installed correctly. \nShotgun may have been initialized to a different project.')
                 
+                try:
+                    #for awesome town
+                    from bsp.common.db import shotgun_access
+                    sg = shotgun_access._getShotgunHandle(name, code)
+                    util.show("Using bsp's shotgun_access to get the shotgun handle")
+                    #end of for awesome town
+                except:
+                    util.error('Could not get shotgun api.  Check that your shotgun api script and key code are correct. \nShotgun toolkit might not be installed correctly. \nShotgun may have been initialized to a different project.')
         
         if sg != None:
             util.show('Using Shotgun')
