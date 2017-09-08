@@ -996,15 +996,15 @@ class SparseLocalRig(SparseRig):
             
             if self.read_locators:
                 locator = self._read_locators_dict[joint]
-                control = self.controls[inc]
+                
                 attr.connect_message(locator, self.controls[inc], 'readLocator')
                 axis = self._read_locators_min_max_axis.upper()
                 if self._read_locators_max != None or self._read_locators_min != None:
-                    cmds.addAttr(control, ln = 'weight', at = 'float', dv = 0)
+                    cmds.addAttr(joint, ln = 'weight', at = 'float', dv = 0)
                 if self._read_locators_max != None:
-                    anim.quick_driven_key('%s.translate%s' % (locator, axis), '%s.weight' % control, [0, self._read_locators_max], [0, -1])
+                    anim.quick_driven_key('%s.translate%s' % (locator, axis), '%s.weight' % joint, [0, self._read_locators_max], [0, -1])
                 if self._read_locators_min != None:
-                    anim.quick_driven_key('%s.translate%s' % (locator, axis), '%s.weight' % control, [0, self._read_locators_min], [0, 1])
+                    anim.quick_driven_key('%s.translate%s' % (locator, axis), '%s.weight' % joint, [0, self._read_locators_min], [0, 1])
                     
             cmds.parent(xform, self.control_group)
 
@@ -5675,6 +5675,7 @@ class IkBackLegRig(IkFrontLegRig):
         
         duplicate = space.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-1])
+        duplicate.only_these(self.joints)
         duplicate.replace('joint', 'ik')
         self.ik_chain = duplicate.create()
         
@@ -5706,7 +5707,8 @@ class IkBackLegRig(IkFrontLegRig):
         
         duplicate = space.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-1])
-        duplicate.replace('joint', 'offset')        
+        duplicate.replace('joint', 'offset') 
+        duplicate.only_these(self.joints)      
         self.offset_chain = duplicate.create()
         
         cmds.parent(self.offset_chain[0], self.setup_group)
