@@ -1341,6 +1341,7 @@ class DuplicateHierarchy(object):
         self.stop_at_transform = None
         
         self.only_these_transforms = None
+        self._only_joints = False
         
             
     def _get_children(self, transform):
@@ -1357,6 +1358,7 @@ class DuplicateHierarchy(object):
         return found
         
     def _duplicate(self, transform):
+        
         new_name = transform
         
         if self.replace_old and self.replace_new:
@@ -1394,6 +1396,10 @@ class DuplicateHierarchy(object):
                 if self.only_these_transforms and not child in self.only_these_transforms:
                     continue
                 
+                if self._only_joints:
+                    if not cmds.nodeType(child) == 'joint':
+                        continue
+                
                 duplicate = self._duplicate_hierarchy(child)
                 
                 if not duplicate:
@@ -1420,7 +1426,10 @@ class DuplicateHierarchy(object):
             list_of_transforms (list): Names of transforms in the hierarchy.
         """
         self.only_these_transforms = list_of_transforms
-        
+    
+    def only_joints(self, bool_value):
+        self._only_joints = bool_value
+    
     def stop_at(self, transform):
         """
         The transform at which to stop the duplication.
