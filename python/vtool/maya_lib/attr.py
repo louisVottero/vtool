@@ -653,7 +653,8 @@ class OrientJointAttributes(object):
                              'child_position',
                              'parent_position',
                              'triangle_plane',
-                             '2nd_child_position'])
+                             '2nd_child_position',
+                             'surface'])
         
         enum.set_locked(False)
         enum.create(self.joint)
@@ -689,7 +690,9 @@ class OrientJointAttributes(object):
         attr.set_value(1)
         self.attributes.append(attr)
         
-        
+        attr = MayaStringVariable('surface')
+        attr.create(self.joint)
+        self.attributes.append(attr)
         
         
 
@@ -700,6 +703,7 @@ class OrientJointAttributes(object):
         
         for attribute in self.attributes:
             attribute.delete()
+            
     def _create_axis_attribute(self, name):
         enum = MayaEnumVariable(name)
         enum.set_enum_names(['X','Y','Z','-X','-Y','-Z','none'])
@@ -764,6 +768,7 @@ class OrientJointAttributes(object):
         Reset the attributes to default.
         """
         self._set_default_values()
+
 
     def delete(self):
         """
