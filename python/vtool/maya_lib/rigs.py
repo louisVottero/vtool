@@ -9161,28 +9161,6 @@ class FeatherStripRig(CurveRig):
         
         return geo_name
     
-    def _set_geo_color(self, geo_name):
-        
-        if self.color:
-            
-            r = self.color[0]
-            g = self.color[1]
-            b = self.color[2]
-            
-            if self.color_flip:
-                r = r * .75
-                g = g * .75
-                b = b * .75
-            
-            cmds.polyColorPerVertex(geo_name, colorRGB = [r, g, b], cdo = True)
-            
-            if self.color_flip:
-                self.color_flip = False
-            else:
-                self.color_flip = True
-    
-            return [r,g,b]
-    
     def set_attribute_control(self, transform):
         self.attribute_control = transform
     
@@ -9324,8 +9302,17 @@ class FeatherStripRig(CurveRig):
             if self.side == 'R':
                 invert = True
             
+            
             geo_name = self._create_geo(joints1[inc], joints2[inc], invert)
-            color = self._set_geo_color(geo_name)
+            
+            if self.color:
+                color = geo.set_geo_color(geo_name, self.color, self.color_flip)
+            
+            if self.color_flip == True:
+                self.color_flip = False
+            else:
+                self.color_flip = True
+            
             color_dict[geo_name] = color
             
             
@@ -9545,6 +9532,17 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         
         self._tilt = 10
         
+        self.color = None
+        self.flip_color = False
+        
+        self._color_dict = {}
+        
+        self._guide_feather = None
+        self._feather_curve_group = None
+        self._feather_curve_quill = None
+        
+        self._main_control_offset = -.25
+        
     def _convert_plane_to_curves(self, plane, count, u):
         
         model_group = self._create_group('model')
@@ -9577,6 +9575,10 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             
         for curve in curves:
             
+            if vtool.util.is_stopped():
+                return
+            
+            
             dynamic_curves = self._create_group('dynamicCurves', inc)
             cmds.parent(dynamic_curves, dynamic_curve_group)
         
@@ -9590,14 +9592,28 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             cmds.parent(feather_group, feather_curve_group)
             
             
-            feather_curves = geo.get_of_type_in_hierarchy('curves','nurbsCurve')
+            feather_curves = geo.get_of_type_in_hierarchy(self._feather_curve_group,'nurbsCurve')
             
-            guide_geo = cmds.duplicate('guide_feather_1', n = 'guideGeo_%s' % curve)[0]
+            guide_geo = cmds.duplicate(self._guide_feather, n = 'guideGeo_%s' % curve)[0]
+            self._guide_geo = guide_geo
+            
+            if self.color:
+                color = geo.set_geo_color(guide_geo, self.color, flip_color = self.flip_color)
+                geo.set_geo_color(quill_geo, self.color, flip_color= self.flip_color)
+                
+                self._color_dict[self._guide_geo] = color
+                
+                if self.flip_color:
+                    self.flip_color = False
+                else:
+                    self.flip_color = True
+            
             guide_geo_cvs = cmds.ls('%s.vtx[*]' % guide_geo, flatten = True)
             cmds.parent(guide_geo, guide_group)
             
-            feather_curves = geo.transfer_from_curve_to_curve('quill_curve', curve, feather_curves, plane, twist = self._tilt)        
-            self._guide_geo = geo.transfer_from_curve_to_curve('quill_curve', curve, guide_geo_cvs, plane, twist = self._tilt) 
+            feather_curves = geo.transfer_from_curve_to_curve(self._feather_curve_quill, curve, feather_curves, plane, twist = self._tilt)
+            geo.transfer_from_curve_to_curve(self._feather_curve_quill, curve, guide_geo_cvs, plane, twist = self._tilt)
+            
             
             temp_curves = []
             
@@ -9694,7 +9710,14 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             invert = True
         
         for joint in joints:
-            space.orient_x_to_child(joint, invert)
+            
+            surface = cmds.duplicate(self._guide_geo)[0]
+            geo.add_poly_smooth(surface, divisions = 2)
+            
+            space.orient_x_to_child_up_to_surface(joint, invert, surface)
+            
+            cmds.delete(surface)
+            
         
         last_control = None    
         for joint in joints:
@@ -9709,6 +9732,22 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             control.control, joint
             cmds.parentConstraint(control.control, joint, mo = True)
             
+            if joint == joints[0]:
+                new_curve = geo.create_curve_from_mesh_border(self._guide_geo, self._main_control_offset)
+                control.copy_shapes(new_curve)
+                cmds.delete(new_curve)
+            
+            color = self._color_dict[self._guide_geo]
+            color[0] = color[0] * 1.3
+            color[1] = color[1] * 1.3
+            color[2] = color[2] * 1.3
+            
+            control.color_rgb(color[0], color[1], color[2])
+            
+            
+        
+        
+            
             if not last_control:
                 cmds.parent(xform, self.control_group)
             
@@ -9719,6 +9758,10 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         
         cmds.skinCluster(curve, joints, tsb = True)
         cmds.skinCluster(self._guide_geo, joints, tsb = True)
+        
+        
+        
+        
         cmds.parent(joints[0], self.setup_group)
     
     def _combine_quill_geo(self):
@@ -9727,9 +9770,29 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         cmds.parent(result, self._model_group)
         
         cmds.parent(self._quill_geo_group, self.setup_group)
-        
-        
     
+    def set_guide_feather(self, guide_feather_geo_name):
+        """
+        polygon geo that represents the curve
+        """
+        self._guide_feather = guide_feather_geo_name
+    
+    def set_feather_curve_group(self, feather_curve_group_name):
+        """
+        Group with curves in it, that represents the feather
+        """
+        self._feather_curve_group = feather_curve_group_name
+        
+    def set_feather_curve_quill(self, feather_curve_quill):
+        """
+        Curve to be the quill for feathers created on the surface.
+        """
+        
+        self._feather_curve_quill = feather_curve_quill
+        
+    def set_main_control_offset(self, offset_value):
+        self._main_control_offset = offset_value
+        
     def set_nucleus_name(self, name):
         self._nucleus_name = name
         
@@ -9747,6 +9810,9 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         
     def set_tilt(self, float_value):
         self._tilt = float_value
+    
+    def set_color(self, r,g,b):
+        self.color = [r,g,b]
     
     def create(self):
         super(FeatherOnPlaneRig, self).create()
