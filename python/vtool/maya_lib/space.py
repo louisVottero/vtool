@@ -898,11 +898,19 @@ class OrientJoint(object):
         self.parent = None
         self.grand_parent = None
         
+        self.surface = None
+        
         self.delete_later =[]
         self.world_up_vector = self._get_vector_from_axis(1)
         self.up_space_type = 'vector'
         
         self._get_relatives()
+        self._get_surface()
+        
+    def _get_surface(self):
+        
+        if cmds.objExists('%s.surface' % self.joint):
+            self.surface = cmds.getAttr('%s.surface' % self.joint)
         
     def _get_relatives(self):
         
@@ -974,7 +982,6 @@ class OrientJoint(object):
         
         if index == 1:
             self.up_space_type = 'objectrotation'
-            
             return self._get_local_group(self.parent)
         
         if index == 2:
@@ -1015,7 +1022,22 @@ class OrientJoint(object):
                 vtool.util.warning('Child 2 specified as up in orient attributes but %s has no 2nd child.' % self.joint)
             return child_group
         
+        if index == 6:
+            self.up_space_type = 'object'
             
+            space_group = None
+            
+            if self.surface:
+                space_group = self._get_position_group(self.joint)
+                space_group_xform = cmds.xform(space_group, q = True, t = True, ws = True)
+                
+                if core.has_shape_of_type(self.surface, 'mesh'):
+                    mesh_fn = api.MeshFunction(self.surface)
+                    normal = mesh_fn.get_closest_normal(space_group_xform, True)
+                    
+                    cmds.xform(space_group, ws = True, t = normal)
+                
+            return space_group
             
     def _get_local_group(self, transform):
         
@@ -1185,8 +1207,20 @@ class OrientJoint(object):
                                 2 child position,
                                 3 parent position,
                                 4 triangle plane, which need to be configured to see which joints in the hierarchy it calculates with.
+                                5 child 2
+                                6 surface
         """
         self.aim_up_at = self._get_aim_up_at(int_value)
+        
+    def set_surface(self, surface_name):
+        
+        self.set_aim_up_at(6)
+        if cmds.objExists('%s.surface' % self.joint):
+            try:
+                cmds.setAttr('%s.surface' % self.joint, surface_name, type = 'string')
+            except:
+                pass
+        self.surface = surface_name
         
     def set_aim_up_at_object(self, name):
         self.aim_up_at = self._get_local_group(name)
@@ -3221,7 +3255,30 @@ def add_orient_joint(joint):
     cmds.setAttr('%s.aimUpAt' % joint, 5)
     
 
-def orient_x_to_child(joint, invert = False):
+def orient_x_to_child_up_to_surface(joint, invert = False, surface = None):
+    aim_axis = [1,0,0]
+    up_axis = [0,1,0]
+    
+    if invert:
+        aim_axis = [-1,0,0]
+        up_axis = [0,-1,0]
+    
+    children = cmds.listRelatives(joint)
+    
+    if children:
+    
+        orient = OrientJoint(joint)
+        orient.set_aim_at(3)
+        orient.set_aim_up_at(0)
+        orient.set_aim_vector(aim_axis)
+        orient.set_up_vector(up_axis)
+        orient.set_surface(surface)
+        orient.run()
+
+    if not children:
+        cmds.makeIdentity(joint, jo = True, apply = True)
+        
+def orient_x_to_child(joint, invert = False, surface = None):
     """
     Helper function to quickly orient a joint to its child.
     
