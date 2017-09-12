@@ -448,8 +448,11 @@ class MeshFunction(MayaFunction):
         
         return [new_point.x, new_point.y, new_point.z]
 
-    def get_closest_normal(self, source_vector):
-    
+    def get_closest_normal(self, source_vector, at_source_position = False):
+        """
+        source_vector is the position to find the normal closest
+        at_source_position just means to add that source_vector to the normal vector so it is returned relative to the source vector
+        """
         new_point = OpenMaya.MVector()
     
         point_base = OpenMaya.MPoint()
@@ -462,7 +465,12 @@ class MeshFunction(MayaFunction):
                         
         self.api_object.getClosestNormal(point_base,new_point,space, None, accelerator )
         
-        return [new_point.x, new_point.y, new_point.z]
+        
+        if not at_source_position:
+            return [new_point.x, new_point.y, new_point.z]
+        if at_source_position:
+            position = vtool.util.vector_add(source_vector, new_point)
+            return position
             
     def get_closest_intersection(self, source_vector, direction_vector):
         
