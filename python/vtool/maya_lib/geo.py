@@ -3274,3 +3274,17 @@ def move_cvs(curves, position):
         offset = vtool.util.vector_sub(position, curve_position)
         
         cmds.move(offset[0],offset[1],offset[2], '%s.cv[*]' % curve, ws = True, r = True)
+        
+        
+def set_geo_color(geo_name, rgb = [1,0,0], flip_color = False):
+
+    rgb = list(rgb)
+
+    if flip_color:
+        rgb[0] = rgb[0] * (1 - rgb[0] * 0.5)
+        rgb[1] = rgb[1] * (1 - rgb[1] * 0.5)
+        rgb[2] = rgb[2] * (1 - rgb[2] * 0.5)
+    
+    cmds.polyColorPerVertex(geo_name, colorRGB = rgb, cdo = True)
+    
+    return rgb
