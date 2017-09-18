@@ -2823,6 +2823,8 @@ def rebuild_curve(curve, spans, degree = 3):
                        s = spans,
                        d = degree,
                        tol = 0.01)
+
+    return curve
     
 def evenly_position_curve_cvs(curve, match_curve = None):
     """
