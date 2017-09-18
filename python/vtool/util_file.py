@@ -1588,7 +1588,7 @@ def is_file_in_dir(filename, directory):
 
 def is_same_date(file1, file2):
     """
-    Check if 2 files have the same data.
+    Check if 2 files have the same date.
     
     Args:
         file1 (str): Filename including path.
@@ -1597,16 +1597,35 @@ def is_same_date(file1, file2):
     Returns: 
         bool
     """
+    
+    if file1 == None and file2 != None:
+        return False
+    
+    if file1 == None and file2 == None:
+        return True
+    
+    if file1 != None and file == None:
+        return False
+    
     date1 = os.path.getmtime(file1)
     date2 = os.path.getmtime(file2)
     
-    
-    value = date1 - date2
-    
-    if abs(value) < 0.01:
+    if date1 == None and date2 == None:
         return True
+    
+    if date1 != None and date2 != None:
+        value = date1 - date2
         
-    return False
+        if abs(value) < 0.01:
+            return True
+    
+    if date1 == None and date2 != None:    
+        return False
+    
+    if date1 != None and date2 == None:
+        return False
+    
+
 
 def is_same_text_content(file1, file2):
     
