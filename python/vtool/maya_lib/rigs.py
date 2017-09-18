@@ -9543,6 +9543,8 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         
         self._main_control_offset = -.25
         
+        self._rig_info = [] 
+        
     def _convert_plane_to_curves(self, plane, count, u):
         
         model_group = self._create_group('model')
@@ -9568,8 +9570,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
     
         quill_ik_group = cmds.group(em = True, n = 'quill_ik_%s' % plane)
         cmds.parent(quill_ik_group, self.setup_group)
-    
-        feather_groups = []
         
         inc = 1
             
@@ -9635,6 +9635,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         
         
         
+        
     
     def _follicle(self, mesh, quill_curve, curves, dynamic_curve_group, ik_group, inc):
         
@@ -9678,7 +9679,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         
         cmds.skinCluster(mesh, joints, tsb = True)
         
-        ik = space.get_ik_from_joint(joints[0])
+        ik = space.get_ik_from_joint(joints[0])[0]
         
         cmds.parent(joints[0], ik_group)
         cmds.parent(ik, ik_group)
@@ -9686,7 +9687,10 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         quill_output = fx.get_follicle_output_curve(follicle)
         input_curve = fx.get_follicle_input_curve(follicle)
          
-        self._rig_curve(input_curve, inc)
+        self._rig_curve(input_curve, inc, ik)
+        
+        
+        
         
         quill_output = cmds.rename(quill_output, 'dynamic_%s' % quill_curve)   
         
@@ -9701,7 +9705,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
     
         return quill_output
     
-    def _rig_curve(self, curve, inc):
+    def _rig_curve(self, curve, inc, ik):
         
         joints = geo.create_joints_on_curve(curve, 4, '%s_%s_1_%s' % (self.description, inc, self.side), attach=False)
         
@@ -9720,6 +9724,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             
         
         last_control = None    
+        controls = []
         for joint in joints:
             if joint == joints[-1]:
                 continue
@@ -9729,7 +9734,9 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             xform = space.create_xform_group(control.control)
             
             space.MatchSpace(joint, xform).translation_rotation()
-            control.control, joint
+            
+            controls.append(control.control)
+            
             cmds.parentConstraint(control.control, joint, mo = True)
             
             if joint == joints[0]:
@@ -9738,15 +9745,26 @@ class FeatherOnPlaneRig(PolyPlaneRig):
                 cmds.delete(new_curve)
             
             color = self._color_dict[self._guide_geo]
-            color[0] = color[0] * 1.3
-            color[1] = color[1] * 1.3
-            color[2] = color[2] * 1.3
-            
-            control.color_rgb(color[0], color[1], color[2])
             
             
-        
-        
+            if joint == joints[0]:
+                if self.flip_color:
+                    color_r = color[0] * 1.5 + .15
+                    color_g = color[1] * 1.5 + .15
+                    color_b = color[2] * 1.5 + .15
+                        
+                if not self.flip_color:
+                    color_r = color[0] * (1 - color[0] * 0.5) * 1.5 + .15
+                    color_g = color[1] * (1 - color[1] * 0.5) * 1.5 + .15
+                    color_b = color[2] * (1 - color[2] * 0.5) * 1.5 + .15
+                
+            if joint != joints[0]:
+                color_r = color[0] * 1.5 + .15
+                color_g = color[1] * 1.5 + .15
+                color_b = color[2] * 1.5 + .15
+                
+            control.color_rgb(color_r, color_g, color_b)
+            
             
             if not last_control:
                 cmds.parent(xform, self.control_group)
@@ -9756,6 +9774,13 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             
             last_control = control.control
         
+        cmds.setAttr('%s.dTwistControlEnable' % ik, 1)
+        cmds.setAttr('%s.dWorldUpType' % ik, 4)
+        cmds.connectAttr('%s.worldMatrix' % controls[0], '%s.dWorldUpMatrix' % ik)
+        cmds.connectAttr('%s.worldMatrix' % controls[-1], '%s.dWorldUpMatrixEnd' % ik)
+
+        self._rig_info.append([controls[0], joints[-1]])
+        
         cmds.skinCluster(curve, joints, tsb = True)
         cmds.skinCluster(self._guide_geo, joints, tsb = True)
         
@@ -9763,6 +9788,71 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         
         
         cmds.parent(joints[0], self.setup_group)
+    
+    def _rig_curve_aim(self):
+        
+        joints = []
+        controls = []
+        
+        
+        for info in self._rig_info:
+            
+            controls.append(info[0])
+            joints.append(info[1])
+            
+        curve = geo.transforms_to_curve(joints, 1, '%s_%s' % (self.description, self.side))
+        cmds.setAttr('%s.inheritsTransform' % curve, 0)
+        cmds.parent(curve, self.setup_group)
+        geo.rebuild_curve(curve, 1, 1)
+        
+        joints = geo.create_joints_on_curve(curve, self._feather_count, '%s_%s' % (self.description, self.side), attach=True)
+        
+        joints_move = geo.create_joints_on_curve(curve, 2, 'move_%s_%s' % (self.description, self.side), attach=False)
+        
+        cmds.parent(joints_move, self.setup_group)
+        cmds.parent(joints, self.setup_group)
+        
+        cmds.skinCluster(curve, joints_move, tsb = True)
+        
+        control_group = cmds.group(em = True, n = core.inc_name(self._get_name('controls', 'tweak')))
+        cmds.parent(control_group, self.control_group)
+        
+        for inc in range(0, len(joints)):
+            aim_group = cmds.group(em = True, n = core.inc_name(self._get_name('aim')))
+            
+            
+            
+            cmds.aimConstraint(joints[inc], aim_group)
+            
+            
+            
+            xform = space.get_xform_group(controls[inc])
+            
+            
+            space.MatchSpace(xform, aim_group).translation_rotation()
+            
+            cmds.parent(aim_group, self.control_group)
+            cmds.parent(xform, aim_group)
+            
+            aim_xform = space.create_xform_group(aim_group)
+            
+            
+        
+        for joint in joints_move:
+            control = self._create_control(sub = True)
+            
+            control.set_curve_type('sphere')
+            control.scale_shape(10, 10, 10)
+            
+            xform = space.create_xform_group(control.control)
+            space.MatchSpace(joint, xform).translation()
+            
+            cmds.pointConstraint(control.control, joint)
+            
+            cmds.parent(xform, control_group)
+            
+            if self.color:
+                control.color_rgb(self.color[0]*1.8, self.color[1]*1.8, self.color[2]*1.8)
     
     def _combine_quill_geo(self):
         
@@ -9821,3 +9911,5 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         
         if self._combine_quills:
             self._combine_quill_geo()
+            
+        self._rig_curve_aim()
