@@ -5242,25 +5242,35 @@ def match_geo_blendshape(source_geo, target_geo, attr_name, target_group = 0):
         
     """
     
+    
+    
     matches = []
     targets = []
     
     for inc in range(0, len(source_geo)):
         
+        
+        
         if inc > (len(target_geo)-1):
             break
         
-        if geo.is_a_curve(source_geo[inc]) and geo.is_a_mesh(target_geo[inc]):
+        is_source_a_curve = geo.is_a_curve(source_geo[inc])
+        is_target_a_curve = geo.is_a_curve(target_geo[inc])
+        
+        is_source_a_mesh = geo.is_a_mesh(source_geo[inc])
+        is_target_a_mesh = geo.is_a_mesh(target_geo[inc])
+        
+        if is_source_a_curve and is_target_a_mesh:
             continue
-        if geo.is_a_mesh(source_geo[inc]) and geo.is_a_curve(target_geo[inc]):
+        if is_source_a_mesh and is_target_a_curve:
             continue
         
-        if geo.is_a_curve(source_geo[inc]) and geo.is_a_curve(target_geo[inc]):
+        if is_source_a_curve and is_target_a_curve:
             if not geo.is_cv_count_same(source_geo[inc], target_geo[inc]):
                 vtool.util.warning('Skipping blendshape curve because incompatible:  %s   %s' % (source_geo[inc], target_geo[inc]))
                 continue
         
-        if geo.is_a_mesh(source_geo[inc]) and geo.is_a_mesh(target_geo[inc]):
+        if is_source_a_mesh and is_target_a_mesh:
             if not geo.is_mesh_blend_compatible(source_geo[inc], target_geo[inc]):
                 vtool.util.warning('Skipping blendshape mesh because incompatible:  %s   %s' % (source_geo[inc], target_geo[inc]))
                 continue
