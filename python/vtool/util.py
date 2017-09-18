@@ -128,9 +128,8 @@ def try_pass(function):
     return wrapper
 
 def is_stopped():
-    if get_env('VETALA_RUN') == 'True':
-        if get_env('VETALA_STOP') == 'True':
-            return True
+    if get_env('VETALA_STOP') == 'True':
+        return True
         
     return False
 
