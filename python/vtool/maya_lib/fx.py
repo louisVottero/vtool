@@ -681,7 +681,7 @@ def get_follicle_input_curve(follicle):
     
 #--- Cloth
 
-def add_passive_collider_to_mesh(mesh):
+def add_passive_collider_to_mesh(mesh, nucleus = None):
     """
     Make mesh into a passive collider.
     
@@ -691,7 +691,12 @@ def add_passive_collider_to_mesh(mesh):
     Returns:
         list: List of nodes in the passive collider.
     """
+    
     cmds.select(mesh, r = True)
+    
+    if nucleus:
+        set_active_nucleus(nucleus)
+    
     nodes = mel.eval('makeCollideNCloth;')
     
     parent = cmds.listRelatives(nodes[0], p = True)
@@ -712,6 +717,38 @@ def add_passive_collider_to_duplicate_mesh(mesh):
     
     return nodes 
 
+def add_passive_to_nucleus(passive_mesh, nucleus):
+    """
+    """
+    if not core.is_a_shape(passive_mesh):
+        passive_mesh = core.get_shapes(passive_mesh, shape_type = 'mesh', no_intermediate = True)
+        
+        if passive_mesh:
+            passive_mesh = passive_mesh[0]
+    
+    print passive_mesh
+    
+    outs = attr.get_outputs(passive_mesh, node_only = True)
+    
+    if not outs:
+        return
+    
+    for out in outs:
+        
+        print out
+        
+        if not core.is_a_shape(out):
+            shapes = core.get_shapes(out)
+            if shapes:
+                print shapes
+                out = shapes[0]
+        
+        if cmds.nodeType(out) == 'nRigid':
+            slot = attr.get_available_slot('%s.inputPassive' % nucleus)
+            
+            cmds.connectAttr('%s.currentState' % out, '%s.inputPassive[%s]' % (nucleus, slot))
+            cmds.connectAttr('%s.startState' % out, '%s.inputPassiveStart[%s]' % (nucleus, slot))
+
 def add_nCloth_to_mesh(mesh):
     cmds.select(mesh, r = True)
     
@@ -723,6 +760,14 @@ def add_nCloth_to_mesh(mesh):
     cmds.setAttr('%s.thickness' % parent, 0.02)
     
     return [parent]
+
+
+def set_active_nucleus(nucleus_name):
+    """
+    This sets a global variable that is used by maya to know what nucleus to perform commands on.
+    """
+    
+    mel.eval('global string $gActiveNucleusNode;$gActiveNucleusNode = "%s";' % nucleus_name)
 
 def nConstrain_to_mesh(verts, mesh, name = None, force_passive = False,):
     """
