@@ -9677,7 +9677,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         
         joints = geo.create_oriented_joints_on_curve(quill_curve,25, description = 'quill', attach = True)
         
-        cmds.skinCluster(mesh, joints, tsb = True)
+        
         
         ik = space.get_ik_from_joint(joints[0])[0]
         
@@ -9689,7 +9689,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
          
         self._rig_curve(input_curve, inc, ik)
         
-        
+        cmds.skinCluster(mesh, joints, tsb = True)
         
         
         quill_output = cmds.rename(quill_output, 'dynamic_%s' % quill_curve)   
@@ -9783,8 +9783,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         
         cmds.skinCluster(curve, joints, tsb = True)
         cmds.skinCluster(self._guide_geo, joints, tsb = True)
-        
-        
         
         
         cmds.parent(joints[0], self.setup_group)
@@ -9912,4 +9910,5 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         if self._combine_quills:
             self._combine_quill_geo()
             
+        
         self._rig_curve_aim()
