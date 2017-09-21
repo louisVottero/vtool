@@ -1514,8 +1514,11 @@ class MirrorControlKeyframes():
 
 class TwistRibbon(object):
     
-    def __init__(self, joint):
-        
+    def __init__(self, joint, end_transform = None):
+        """
+        Takes a joint.  
+        If no end_transform given, the code will take the first child of the joint as the end of the ribbon.
+        """
         self.joints = []
         self.rivets = []
         self.surface = None
@@ -1524,6 +1527,7 @@ class TwistRibbon(object):
         self.joint_count = 5
         self.group = None
         self._joint = joint
+        self._end_transform = end_transform
         self._description = 'section'
         self._offset_axis = 'Y'
         
@@ -1541,23 +1545,22 @@ class TwistRibbon(object):
         
     def create(self):
     
-        children = cmds.listRelatives(self._joint, type = 'joint')
+        
         
         top_loc = cmds.spaceLocator(n = core.inc_name('locator_twistRibbonTop_%s' % self._description))[0]
         btm_loc = cmds.spaceLocator(n = core.inc_name('locator_twistRibbonBtm_%s' % self._description))[0]
         
-        
-        if not children:
-            vtool.util.warning('No child found for %s. Could not create strip' % self._joint)
-            return
-        
+        if not self._end_transform:
+            children = cmds.listRelatives(self._joint, type = 'joint')
+            if not children:
+                vtool.util.warning('No child found for %s. Could not create strip' % self._joint)
+                return
+            temp_group = children[0]
+        if self._end_transform:
+            temp_group = self._end_transform
         ribbon_gr = cmds.group(em = True, n = core.inc_name('twistRibbon_%s' % self._description))
         self.group = ribbon_gr
         
-        #temp_group = cmds.group(em = True)
-        #space.MatchSpace(children[0], temp_group).translation()
-        #space.MatchSpace(self._joint, temp_group).rotation()
-        temp_group = children[0]
         
         self.surface = geo.transforms_to_nurb_surface([self._joint, temp_group], description = self._description, offset_axis=self._offset_axis)
         
