@@ -5,7 +5,6 @@ import string
 from vtool import qt_ui, qt
 import vtool.util
 from vtool.maya_lib import ui_core
-from PySide.QtGui import QTreeWidgetItem
 
 if vtool.util.is_in_maya():
 
@@ -29,7 +28,35 @@ class ComboManager(ui_core.MayaWindow):
         self.shape_widget.tree.manager = self.manager
         self.update_on_select = True
         self.shape_widget.tree.shape_renamed.connect(self._shape_renamed)
+        ui_core.new_scene_signal.signal.connect(self._new_scene)
+        ui_core.open_scene_signal.signal.connect(self._opened_scene)
+        
         #self._refresh()
+    
+    def _new_scene(self):
+        self._clear_ui_data()
+    
+    def _opened_scene(self):
+        self._load_available()
+    
+    def _load_available(self):        
+        managers = blendshape.get_shape_combo_managers()
+        
+        print 'load aval!'
+        print managers
+        
+        if managers:
+            
+            self.manager.load(managers[0])
+            
+            base_mesh = blendshape.get_shape_combo_base(managers[0])
+            
+            
+            
+            print 'base!', base_mesh
+            self._set_base(base_mesh)
+            
+            
     
     def _define_main_layout(self):
         layout = qt.QVBoxLayout()
@@ -331,27 +358,40 @@ class ComboManager(ui_core.MayaWindow):
         self.combo_widget.tree.load(combos, possible_combos, shapes)
         self.combo_select_update = True
     
-    def _set_base(self):
+    def _clear_ui_data(self):
         
-        self.shape_widget.tree.clear()
-        self.combo_widget.tree.clear()
+        self.shape_widget.tree.set_manager(None)
+        self.combo_widget.tree.set_manager(None)
+        self.current_base.setText('    Base: -')
+    
+    def _set_base(self, base_mesh = None):
         
-        #meshes = geo.get_selected_meshes()
-        selected = cmds.ls(sl = True, type = 'transform')
+        self._clear_ui_data()
+        manager = None
         
-        base = None
-        
-        if selected:
-            if self.manager.is_shape_combo_manager(selected[0]):
-                self.manager.load(selected[0])
-                manager = self.manager.setup_group
-                base = self.manager.get_mesh()
-        
-            else:
-                manager = self.manager.create(selected[0])
-                if manager:
-                    base = selected[0]
+        if not base_mesh:
+            selected = cmds.ls(sl = True, type = 'transform')
             
+            base = None
+            
+            if selected:
+                if blendshape.is_shape_combo_manager(selected[0]):
+                    self.manager.load(selected[0])
+                    manager = self.manager.setup_group
+                    base = self.manager.get_mesh()
+            
+                else:
+                    manager = self.manager.create(selected[0])
+                    if manager:
+                        base = selected[0]
+        
+        if base_mesh:
+            base = base_mesh
+            manager = self.manager
+            
+        
+        print 'set base!', base
+        
         if base:
             
             self.current_base.setText('    Base: ' + base)
@@ -508,10 +548,10 @@ class ShapeWidget(qt_ui.BasicWidget):
         header_layout = qt.QVBoxLayout()
         
         info_layout = qt.QHBoxLayout()
-        #info_widget = qt.QLabel('Shape')
-        #info_widget.setAlignment(qt.QtCore.Qt.AlignCenter)
+        info_widget = qt.QLabel('Shape')
+        info_widget.setAlignment(qt.QtCore.Qt.AlignCenter)
         
-        #info_layout.addWidget(info_widget)
+        info_layout.addWidget(info_widget)
         
         header_layout.addLayout(info_layout)
                 
@@ -537,12 +577,7 @@ class ShapeTree(qt_ui.TreeWidget):
         
         self.setSortingEnabled(False)
         
-        #self.setColumnCount(2)
-        self.setHeaderHidden(False)
-        self.setHeaderLabels(['Shape', 'Tag'])
-        self.header().setResizeMode(0, qt.QHeaderView.Stretch)
-        #self.header().setResizeMode(qt.QHeaderView.ResizeToContents)
-        self.header().setStretchLastSection(False)
+        self.setHeaderHidden(True)
         
         
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
@@ -819,7 +854,7 @@ class ShapeTree(qt_ui.TreeWidget):
             new_shape = name
             
             if not cmds.objExists(name):
-                new_shape = self.manager.recreate_shape(name)
+                new_shape = self.manager.recreate_shape(name, from_shape_combo_channels=True)
             
             new_shape_list = cmds.ls(new_shape)
             match_count = len(new_shape_list)
@@ -1009,6 +1044,9 @@ class ShapeTree(qt_ui.TreeWidget):
             
     def set_manager(self, manager):
         self.manager = manager
+        
+        if not self.manager:
+            self.clear()
 
 class ComboWidget(qt_ui.BasicWidget):
     
@@ -1017,15 +1055,15 @@ class ComboWidget(qt_ui.BasicWidget):
         header_layout = qt.QVBoxLayout()
         
         info_layout = qt.QHBoxLayout()
-        #info_widget = qt.QLabel('Combo')
-        #info_widget.setAlignment(qt.QtCore.Qt.AlignCenter)
+        info_widget = qt.QLabel('Combo')
+        info_widget.setAlignment(qt.QtCore.Qt.AlignCenter)
         
-        #info_layout.addWidget(info_widget)
+        info_layout.addWidget(info_widget)
         
         header_layout.addLayout(info_layout)
         
         self.tree = ComboTree()
-        #self.tree.setHeaderHidden(True)
+        self.tree.setHeaderHidden(True)
         
         self.main_layout.addLayout(header_layout)
         self.main_layout.addWidget(self.tree)
@@ -1038,12 +1076,6 @@ class ComboTree(qt_ui.TreeWidget):
         self.text_edit = False
         
         self.setSortingEnabled(False)
-        
-        self.setHeaderHidden(False)
-        self.setHeaderLabels(['Combo', 'Tag'])
-        self.header().setResizeMode(0, qt.QHeaderView.Stretch)
-        #self.header().setResizeMode(qt.QHeaderView)
-        self.header().setStretchLastSection(False)
         
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
