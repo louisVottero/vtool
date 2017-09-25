@@ -32,7 +32,7 @@ def emit_new_scene_signal():
     new_scene_signal.signal.emit()
 
 def emit_open_scene_signal():
-    new_scene_signal.signal.emit()
+    open_scene_signal.signal.emit()
     
 def emit_read_scene_signal():
     read_scene_signal.signal.emit()
