@@ -2035,6 +2035,9 @@ def delete_dir(name, directory = None):
         str: The folder that was deleted with path.
     """
     
+    
+    
+    
     util.clean_file_string(name)
     
     full_path = join_path(directory, name)
