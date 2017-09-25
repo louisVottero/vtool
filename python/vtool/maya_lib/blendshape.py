@@ -773,14 +773,17 @@ class BlendShapeTarget(object):
         
 class ShapeComboManager(object):
     """
-    WIP. Convenience for editing blendshape combos. 
+    Convenience for editing blendshape combos. 
     """
+    
+    vetala_type = 'ShapeComboManager'
+    
     def __init__(self):
         
         
         self.setup_group = None
         self.setup_prefix = 'shapeCombo'
-        self.vetala_type = 'ShapeComboManager'
+        
         self.home = 'home'
         self.blendshape = {}
         self.blendshaped_meshes_list = []
@@ -1216,55 +1219,104 @@ class ShapeComboManager(object):
             if not cmds.objExists(target_combo):
                 continue
             
-            target_multiply = None 
-            
-            if target_multiply:
-                cmds.connectAttr('%s.outputX' % target_multiply, target_combo)
-            
-            if not target_multiply:
-            
-                if not inbetween_combo_parent:
+            if not inbetween_combo_parent:
+                
+                for sub_shape in sub_shapes:
                     
-                    for sub_shape in sub_shapes:
+                    
+                    source = '%s.%s' % (blendshape , sub_shape)
+                    
+                    if not cmds.objExists(source):
+                        continue
+                    
+                    if not last_multiply:
+                        multiply = attr.connect_multiply(source, target_combo, 1)
+                        
+                    if last_multiply:
+                        multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
+                    
+
+                    self._handle_special_case_combo(sub_shape, multiply)
                         
                         
-                        source = '%s.%s' % (blendshape , sub_shape)
-                        if not cmds.objExists(source):
-                            continue
+                    
+                    last_multiply = multiply
+                    
+                    
+            if inbetween_combo_parent:
+
+                for sub_shape in sub_shapes:
+                    
+                    source = '%s.%s' % (blendshape, sub_shape)
+                    
+                    
+                    if not cmds.objExists(source):
+                        continue
+                    
+                    if not last_multiply:
+                        multiply = attr.connect_multiply(source, target_combo, 1)
                         
-                        if not last_multiply:
-                            
-                            multiply = attr.connect_multiply(source, target_combo, 1)
-                            target_multiply = multiply
-                            
-                        if last_multiply:
-                            multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
+                    if last_multiply:
+                        multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
                         
-                        last_multiply = multiply
+                    multiply = cmds.rename(multiply, core.inc_name('multiply_combo_%s_1' % combo))
+                    
+                    last_multiply = multiply
+                
+                self._handle_special_case_parent_combo(inbetween_combo_parent, blendshape)
+
+    def _handle_special_case_parent_combo(self, combo, blendshape):
+        
+        print 'handle special combo parent', combo, blendshape
+        
+        multiplies = self._get_combo_multiplies(combo, blendshape)
+        print multiplies
+        
+        for multiply in multiplies:
+            input_node = attr.get_attribute_input('%s.input1X' % multiply, node_only = True)
+            
+            if input_node:
+                if cmds.nodeType(input_node).find('animCurve') > -1:
+                    values = cmds.keyframe(input_node,q = True, vc = True)
+                    
+                    input_node_attr = attr.get_attribute_input('%s.input' % input_node)
+                    
+                    shape = attr.get_attribute_name(input_node_attr)
+                    
+                    if values[-1] == -1:
+                        
+                        shape = self.get_negative_name(shape)
                         
                         
-                if inbetween_combo_parent:
+                    cmds.delete(input_node)
+                    
+                    cmds.connectAttr('%s.%s' % (blendshape, shape), '%s.input1X' % multiply)
+        
     
-                    for sub_shape in sub_shapes:
-                        
-                        source = '%s.%s' % (blendshape, sub_shape)
-                        
-                        
-                        if not cmds.objExists(source):
-                            continue
-                        
-                        if not last_multiply:
-                            multiply = attr.connect_multiply(source, target_combo, 1)
-                            target_multiply = multiply
-                            
-                        if last_multiply:
-                            multiply = attr.connect_multiply(source, '%s.input2X' % last_multiply, 1)
-                        
-                        multiply = cmds.rename(multiply, core.inc_name('multiply_combo_%s_1' % combo))
-                        
-                        last_multiply = multiply
-                        
-    def _remove_combo_multiplies(self, combo, blendshape):
+    def _handle_special_case_combo(self, shape, multiply):
+        """
+        handle combo with shapes that have inbetweens but no the combo has no combo inbetweens
+        """
+        if self.is_inbetween(shape):
+            return
+        
+        inbetweens = self.get_inbetweens(shape)
+        
+        if not inbetweens:
+            return
+        
+        offset = 1
+        
+        negative_parent = self.get_negative_parent(shape)
+        if negative_parent:
+            shape = negative_parent
+            offset = -1
+            
+        attr.disconnect_attribute('%s.input1X' % multiply)
+        
+        anim.quick_driven_key('%s.%s' % (self.setup_group, shape), '%s.input1X' % multiply, [0, offset], [0,1])
+
+    def _get_combo_multiplies(self, combo, blendshape):
         
         input_node = attr.get_attribute_input('%s.%s' % (blendshape, combo), node_only = True)
         
@@ -1276,16 +1328,23 @@ class ShapeComboManager(object):
         while input_node:
             
             if cmds.nodeType(input_node) == 'multiplyDivide':
-                input_node = attr.get_attribute_input('%s.input2X' % input_node)
+                input_node = attr.get_attribute_input('%s.input2X' % input_node, node_only = True)
                 mult_nodes.append(input_node)
                 
             
             if not cmds.nodeType(input_node) == 'multiplyDivide':
                 input_node = None
             
+        return mult_nodes
+        
+
+    def _remove_combo_multiplies(self, combo, blendshape):
+        
+        mult_nodes = self._get_combo_multiplies(combo, blendshape)
+        
         cmds.delete(mult_nodes)
                 
-
+    
         
     def _rename_shape_negative(self, old_name, new_name):
         
@@ -1394,8 +1453,7 @@ class ShapeComboManager(object):
     
     def is_shape_combo_manager(self, group):
         
-        if attr.get_vetala_type(group) == self.vetala_type:
-            return True
+        is_shape_combo_manager(group)
     
     @core.undo_chunk
     def create(self, base):
@@ -1434,7 +1492,7 @@ class ShapeComboManager(object):
         
     def load(self, manager_group):
         
-        if self.is_shape_combo_manager(manager_group):
+        if is_shape_combo_manager(manager_group):
             self.setup_group = manager_group
             
         blendshape = self._get_blendshape()
@@ -1859,11 +1917,15 @@ class ShapeComboManager(object):
             
             preserve_these = {}
             
+            print 'combos', combos
+            
             for combo in combos:
                 
+                print 'recreate', combo
                 new_combo = self.recreate_combo(combo)
                 preserve_these[combo] = new_combo
-        
+                print 'done recreate'
+                
         shape = name
         
         negative_parent = self.get_negative_parent(name)
@@ -2039,72 +2101,82 @@ class ShapeComboManager(object):
             #only need one shape list, meshes should have the same shapes
             return found
     
-    def recreate_shape(self, name):
-        #here
+    def recreate_shape(self, name, from_shape_combo_channels = False):
+        
+        print 'recreate shape', from_shape_combo_channels
+        
         target = self.turn_on_shape(name)
         
-        shape_group = None
-        mesh_count = len(self.blendshaped_meshes_list)
-        home_dict = self._get_home_dict()
+        if from_shape_combo_channels:
+            target = cmds.duplicate(self._get_mesh())[0]
+            
+        if not from_shape_combo_channels:
         
-        for inc in range(0, mesh_count):
+            shape_group = None
+            mesh_count = len(self.blendshaped_meshes_list)
+            home_dict = self._get_home_dict()
             
-            mesh = self.blendshaped_meshes_list[inc]
-            blend_inst = self.blendshape[mesh]
+            for inc in range(0, mesh_count):
+                
+                mesh = self.blendshaped_meshes_list[inc]
+                blend_inst = self.blendshape[mesh]
+                
+                if name.count('_') < 1:
+                    
+                    if blend_inst.is_target(target):
+                        target = blend_inst.recreate_target(target, -1)
+                        
+                    if not cmds.objExists(target):
+                        target = cmds.duplicate(mesh)[0]
+                        
+                if name.count('_') > 0:
+                    
+                    sub_shapes = self.get_shapes_in_combo(name, include_combos = True)
+                    sub_shapes.append(name)
+                    
+                    print 'recreate combo'
+                    print sub_shapes
+                    
+                    new_combo = cmds.duplicate(home_dict[mesh])[0]
+                    
+                    new_shapes = []
+                    
+                    for shape in sub_shapes:
+                        
+                        if not blend_inst.is_target(shape):
+                            continue
+                        
+                        new_shape = blend_inst.recreate_target(shape)
+                        
+                        deform.quick_blendshape(new_shape, new_combo)
+                        new_shapes.append(new_shape)
+                        
+                    cmds.delete(new_combo, ch = True)
+                    cmds.delete(new_shapes)
+                    
+                    if mesh_count == 1:
+                        new_combo = cmds.rename(new_combo, name)
+                    
+                    
+                    cmds.showHidden(new_combo)
+                    target = new_combo
+                
+                if mesh_count > 1:
+                    
+                    
+                    if not shape_group:
+                        shape_group = cmds.group(em = True, n = 'temp_%s' % name)
+                        shape_group = '|%s' % shape_group
+                        
+                    target = cmds.parent(target, shape_group)[0]
+                    mesh_nice_name = core.get_basename(cmds.listRelatives(mesh, p = True)[0], remove_namespace = True)
+                    
+                    cmds.rename(target, mesh_nice_name)
+                    
+                    
+                    
+                    target = shape_group
             
-            if name.count('_') < 1:
-                
-                if blend_inst.is_target(target):
-                    target = blend_inst.recreate_target(target, -1)
-                    
-                if not cmds.objExists(target):
-                    target = cmds.duplicate(mesh)[0]
-                    
-            if name.count('_') > 0:
-                
-                sub_shapes = self.get_shapes_in_combo(name, include_combos = True)
-                sub_shapes.append(name)
-                
-                new_combo = cmds.duplicate(home_dict[mesh])[0]
-                
-                new_shapes = []
-                
-                for shape in sub_shapes:
-                    
-                    if not blend_inst.is_target(shape):
-                        continue
-                    
-                    new_shape = blend_inst.recreate_target(shape)
-                    
-                    deform.quick_blendshape(new_shape, new_combo)
-                    new_shapes.append(new_shape)
-                    
-                cmds.delete(new_combo, ch = True)
-                cmds.delete(new_shapes)
-                
-                if mesh_count == 1:
-                    new_combo = cmds.rename(new_combo, name)
-                
-                
-                cmds.showHidden(new_combo)
-                target = new_combo
-            
-            if mesh_count > 1:
-                
-                
-                if not shape_group:
-                    shape_group = cmds.group(em = True, n = 'temp_%s' % name)
-                    shape_group = '|%s' % shape_group
-                    
-                target = cmds.parent(target, shape_group)[0]
-                mesh_nice_name = core.get_basename(cmds.listRelatives(mesh, p = True)[0], remove_namespace = True)
-                
-                cmds.rename(target, mesh_nice_name)
-                
-                
-                
-                target = shape_group
-        
         
         if target != name:
             target = cmds.rename(target, name )
@@ -2303,9 +2375,9 @@ class ShapeComboManager(object):
         
         self._setup_combo_connections(nice_name)
         
-    def recreate_combo(self, name):
+    def recreate_combo(self, name, from_shape_combo_channels = False):
         
-        shape = self.recreate_shape(name)
+        shape = self.recreate_shape(name, from_shape_combo_channels)
         
         return shape
         
@@ -2650,6 +2722,33 @@ class ShapeComboManager(object):
         values.sort()
         
         return values, value_dict
+
+def is_shape_combo_manager( group):
+        
+    if attr.get_vetala_type(group) == ShapeComboManager.vetala_type:
+        return True
+    
+def get_shape_combo_managers():
+    
+    transforms = cmds.ls(type = 'transform')
+    
+    found = []
+    
+    for transform in transforms:
+        if is_shape_combo_manager(transform):
+            found.append(transform)
+            
+    return found
+
+def get_shape_combo_base(shape_combo_group):
+    
+    mesh = attr.get_attribute_input( '%s.mesh' % shape_combo_group, node_only = True )
+    
+    if not mesh:
+        return
+    
+    return mesh
+    
         
 @core.undo_chunk
 def recreate_blendshapes(blendshape_mesh = None, follow_mesh = None):
