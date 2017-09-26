@@ -1564,8 +1564,6 @@ class TwistRibbon(object):
         
         self.surface = geo.transforms_to_nurb_surface([self._joint, temp_group], description = self._description, offset_axis=self._offset_axis)
         
-        #cmds.delete(temp_group)
-        
         cmds.parent(self.surface, ribbon_gr)
         if not self.joints:
             self.joints = geo.nurb_surface_v_to_transforms(self.surface, count=self.joint_count)
@@ -1580,7 +1578,8 @@ class TwistRibbon(object):
             shapes = core.get_shapes(rivet)
             cmds.hide(shapes)
             cmds.parent(rivet, rivet_gr)
-            cmds.makeIdentity(joint, apply = True, jo = True)
+            cmds.delete( cmds.orientConstraint(self._joint, joint)) 
+            cmds.makeIdentity(joint, apply = True, r = True)
             
         cluster_surface = deform.ClusterSurface(self.surface, self._description)
         cluster_surface.set_cluster_u(True)
