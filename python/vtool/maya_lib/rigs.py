@@ -3408,6 +3408,7 @@ class IkAppendageRig(BufferRig):
         self.stretch_axis = 'X'
         self.control_offset_axis = None
         self.negate_right_scale = False
+        self.negate_right_scale_values = [-1,-1,-1]
         #dampen for legacy...
         self.damp_name = 'dampen'
         
@@ -3506,17 +3507,15 @@ class IkAppendageRig(BufferRig):
         
         xform_group = space.create_xform_group(control)
         
+        cmds.parent(xform_group, self.control_group)
+
         if self.negate_right_scale and self.side == 'R':
             
-            cmds.setAttr('%s.scaleX' % xform_group, -1)
-            cmds.setAttr('%s.scaleY' % xform_group, -1)
-            cmds.setAttr('%s.scaleZ' % xform_group, -1)
-        
+            cmds.setAttr('%s.scaleX' % xform_group, self.negate_right_scale_values[0])
+            cmds.setAttr('%s.scaleY' % xform_group, self.negate_right_scale_values[1])
+            cmds.setAttr('%s.scaleZ' % xform_group, self.negate_right_scale_values[2])
+    
         cmds.parentConstraint(control, self.ik_chain[0], mo = True)
-        
-        
-        
-        cmds.parent(xform_group, self.control_group)
     
     def _create_btm_control(self):
         
@@ -3583,11 +3582,18 @@ class IkAppendageRig(BufferRig):
         
         
         
+        cmds.parent(xform_group, self.control_group)
+
+
+        
         if self.negate_right_scale and self.side == 'R':
+               
+            cmds.setAttr('%s.scaleX' % xform_group, self.negate_right_scale_values[0])
+            cmds.setAttr('%s.scaleY' % xform_group, self.negate_right_scale_values[1])
+            cmds.setAttr('%s.scaleZ' % xform_group, self.negate_right_scale_values[2])
             
-            cmds.setAttr('%s.scaleX' % xform_group, -1)
-            cmds.setAttr('%s.scaleY' % xform_group, -1)
-            cmds.setAttr('%s.scaleZ' % xform_group, -1)
+        if self.create_world_switch:
+            self._create_local_to_world_switch(control, xform_group, drv_group)
         
         ik_handle_parent = cmds.listRelatives(self.ik_handle, p = True)[0]
         
@@ -3595,11 +3601,8 @@ class IkAppendageRig(BufferRig):
             cmds.parent(ik_handle_parent, self.sub_control)
         if not self.sub_control:
             cmds.parent(ik_handle_parent, control)
+            
         
-        if self.create_world_switch:
-            self._create_local_to_world_switch(control, xform_group, drv_group)
-        
-        cmds.parent(xform_group, self.control_group)
         
         if self.orient_constrain:
             
@@ -3624,6 +3627,7 @@ class IkAppendageRig(BufferRig):
         world_group = self._create_group('IkWorld')
         match = space.MatchSpace(control, world_group)
         match.translation()
+        
             
         if not self.right_side_fix and self.side == 'R':
             cmds.rotate(180,0,0, world_group)
@@ -3633,8 +3637,14 @@ class IkAppendageRig(BufferRig):
                 cmds.setAttr('%s.scaleZ' % world_group, -1)
                 #cmds.duplicate(world_group)
         
-        world_xform_group = space.create_xform_group(world_group)
-        cmds.parent([local_group,world_xform_group], xform_group)
+        if self.negate_right_scale and self.side == 'R':
+               
+            cmds.setAttr('%s.scaleX' % world_group, self.negate_right_scale_values[0])
+            cmds.setAttr('%s.scaleY' % world_group, self.negate_right_scale_values[1])
+            cmds.setAttr('%s.scaleZ' % world_group, self.negate_right_scale_values[2])
+        
+        cmds.parent([local_group,world_group], xform_group)
+        
         
         cmds.orientConstraint(local_group, driver_group)
         cmds.orientConstraint(world_group, driver_group)
@@ -3703,11 +3713,14 @@ class IkAppendageRig(BufferRig):
             match.translation_rotation()
             
         if not self.sub_control:
+            
             offset_locator = cmds.spaceLocator(n = 'offset_%s' % self.btm_control)[0]
             cmds.parent(offset_locator, self.btm_control)
             
             match = space.MatchSpace(self.btm_control, offset_locator)
             match.translation_rotation()
+            
+        space.create_xform_group(offset_locator)
         
         cmds.hide(offset_locator)
         
@@ -3887,12 +3900,13 @@ class IkAppendageRig(BufferRig):
         """
         self.right_side_fix = bool_value
     
-    def set_negate_right_scale(self, bool_value):
+    def set_negate_right_scale(self, bool_value, scale_x = -1, scale_y = -1, scale_z = -1):
         """
         This will negate the scale of the right side making it better mirrored for cycles.
         """
         
         self.negate_right_scale = bool_value
+        self.negate_right_scale_values = [scale_x,scale_y,scale_z]
     
     def set_orient_constrain(self, bool_value):
         """
@@ -3978,6 +3992,8 @@ class IkAppendageRig(BufferRig):
         
         btm_control = self._create_btm_control()
         self._xform_btm_control(btm_control)
+        
+        
         
         if self.create_twist:
             self._create_twist_joint(top_control)
@@ -5222,6 +5238,12 @@ class IkLegRig(IkAppendageRig):
         xform_group = space.create_xform_group(control)
         
         cmds.parent(xform_group, self.control_group)
+        
+        if self.negate_right_scale and self.side == 'R':
+            
+            cmds.setAttr('%s.scaleX' % xform_group, self.negate_right_scale_values[0])
+            cmds.setAttr('%s.scaleY' % xform_group, self.negate_right_scale_values[1])
+            cmds.setAttr('%s.scaleZ' % xform_group, self.negate_right_scale_values[2])
             
     def _create_pole_vector(self):
         
@@ -5257,6 +5279,9 @@ class IkLegRig(IkAppendageRig):
         
         xform_group = space.create_xform_group( control.get() )
         
+        
+        
+        
         if self.create_twist:
             
             follow_group = space.create_follow_group(self.top_control, xform_group)
@@ -5275,10 +5300,16 @@ class IkLegRig(IkAppendageRig):
                 attr.connect_multiply('%s.autoTwistOffset' % self.btm_control, 
                                 '%s.rotateY' % self.offset_pole_locator, -1)
         
+        
+        
         if not self.create_twist:
             follow_group = space.create_follow_group(self.top_control, xform_group)
         
+        
+        
         cmds.parent(follow_group,  self.control_group )
+        
+        
         
         name = self._get_name()
         
@@ -5287,7 +5318,6 @@ class IkLegRig(IkAppendageRig):
         
         pole_vis.connect_out('%s.visibility' % xform_group)
         pole_vis.connect_out('%s.visibility' % rig_line) 
-    
 
 class IkFrontLegRig(IkAppendageRig):
     
@@ -6650,6 +6680,7 @@ class FootRig(BaseFootRig):
         if self.ik_leg:
             cmds.parent(self.ik_leg, control)
         
+        
         attribute_control = self._get_attribute_control()
         
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')        
@@ -6701,7 +6732,8 @@ class FootRig(BaseFootRig):
         return pivot_group
         
     def _create_pivot_groups(self):
-
+    
+        
         toe_control, toe_control_xform = self._create_toe_rotate_control()
         
         ball_pivot = self._create_pivot('ball', self.ball, self.control_group)
@@ -6790,7 +6822,6 @@ class FootRig(BaseFootRig):
         
         self._create_roll_attributes()
         
-        #ball_pivot = self._create_pivot_groups()
         self._create_pivot_groups()
         
 class QuadSpineRig(BufferRig):
