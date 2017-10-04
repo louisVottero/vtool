@@ -1813,6 +1813,9 @@ class GetNumberBase(BasicWidget):
         self.label = qt.QLabel(self.name)
         self.label.setAlignment(qt.QtCore.Qt.AlignRight)
         
+        if not self.name:
+            self.label.hide()
+        
         self.value_label = qt.QLabel('value')
         self.value_label.hide()
         
@@ -1836,6 +1839,7 @@ class GetNumberBase(BasicWidget):
         
     def set_label(self, label):
         self.label.setText(label)
+        self.label.show()
         
     def get_label(self):
         
@@ -1847,7 +1851,7 @@ class GetNumber(GetNumberBase):
     valueChanged = create_signal(object)
     enter_pressed = create_signal()
     
-    def __init__(self, name, parent = None):
+    def __init__(self, name = '', parent = None):
         super(GetNumber, self).__init__(name, parent)
         
         self._setup_spin_widget()
