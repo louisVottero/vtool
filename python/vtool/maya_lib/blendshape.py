@@ -1272,6 +1272,9 @@ class ShapeComboManager(object):
         multiplies = self._get_combo_multiplies(combo, blendshape)
         print multiplies
         
+        if not multiplies:
+            return
+        
         for multiply in multiplies:
             input_node = attr.get_attribute_input('%s.input1X' % multiply, node_only = True)
             
