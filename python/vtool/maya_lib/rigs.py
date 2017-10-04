@@ -4691,9 +4691,12 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         if self.ribbon:
             cluster_surface = deform.ClusterSurface(self.surface, self.description)
+            
         if not self.ribbon:
             cluster_surface = deform.ClusterCurve(self.curve, self.description)
-            
+        
+        
+        
         cluster_surface.set_join_ends(False)
         cluster_surface.create()
         
@@ -4915,8 +4918,11 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
                 self._create_sub_controls(control, 'mid_%s' % (inc+1), self.fk_curve_type)
                 
+        
                     
         self._snap_transforms_to_curve(xforms, self.curve)
+        
+        
         
         pivot_count = len(self.fk_pivots)
         xform_count = len(xforms)
@@ -4986,6 +4992,10 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
     def _snap_transforms_to_curve(self, transforms, curve):
         
+        if self.ribbon:
+            max_value_u = cmds.getAttr('%s.maxValueU' % self.surface)
+            curve = cmds.duplicateCurve('%s.u[%s]' % (self.surface, (max_value_u/2.0)), ch = False, rn = 0, local = 0 )[0]
+        
         count = len(transforms) + 2
             
         total_length = cmds.arclen(curve)
@@ -5017,6 +5027,9 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
             current_length += part_length  
         
         cmds.delete(temp_curve)
+        
+        if self.ribbon:
+            cmds.delete(curve)
         
     def _set_pivot_vector(self, transform, value):
         list_value = vtool.util.convert_to_sequence(value)
@@ -5145,18 +5158,19 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         
         self._create_mid_follow()
         
-        cmds.parent(self.end_locator, self.tweak_controls[-1])
-        cmds.parent(self.start_locator, self.tweak_controls[0])
+        if not self.ribbon:
+            cmds.parent(self.end_locator, self.tweak_controls[-1])
+            cmds.parent(self.start_locator, self.tweak_controls[0])
         
-        self._setup_stretchy(self.top_control)
+            self._setup_stretchy(self.top_control)
         
-        if self.stretch_on_off:
-            cmds.setAttr('%s.stretchOnOff' % self.top_control, 1)
-        
+            if self.stretch_on_off:
+                cmds.setAttr('%s.stretchOnOff' % self.top_control, 1)
+            
         if self.top_hold_locator:
             cmds.parent(self.top_hold_locator, self.top_control)
             
-            if self.stretch_on_off:
+            if self.stretch_on_off and not self.ribbon:
                 space.create_multi_follow([self.buffer_joints[-1], self.tweak_controls[-1]], self.top_hold_locator, constraint_type = 'pointConstraint')
                 cmds.orientConstraint(self.tweak_controls[-1], self.top_hold_locator, mo = True)
                 cmds.connectAttr('%s.stretchOnOff' % self.top_control, '%s.follow' % self.top_hold_locator)
@@ -5167,7 +5181,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
         if self.btm_hold_locator:
             cmds.parent(self.btm_hold_locator, self.btm_control)
             
-            if self.stretch_on_off:
+            if self.stretch_on_off and not self.ribbon:
                 space.create_multi_follow([self.buffer_joints[0], self.tweak_controls[0]], self.btm_hold_locator, constraint_type = 'pointConstraint')
                 cmds.orientConstraint(self.tweak_controls[0], self.btm_hold_locator, mo = True)
                 cmds.connectAttr('%s.stretchOnOff' % self.top_control, '%s.follow' % self.btm_hold_locator)
