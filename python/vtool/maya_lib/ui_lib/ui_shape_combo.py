@@ -31,19 +31,22 @@ class ComboManager(ui_core.MayaWindow):
         ui_core.new_scene_signal.signal.connect(self._new_scene)
         ui_core.open_scene_signal.signal.connect(self._opened_scene)
         
-        #self._refresh()
+        self.tag_widget = None
+        
+        self._load_available()
     
     def _new_scene(self):
         self._clear_ui_data()
+        if self.tag_widget:
+            self.tag_widget.set_manager(self.manager)
     
     def _opened_scene(self):
         self._load_available()
+        if self.tag_widget:
+            self.tag_widget.set_manager(self.manager)
     
     def _load_available(self):        
         managers = blendshape.get_shape_combo_managers()
-        
-        print 'load aval!'
-        print managers
         
         if managers:
             
@@ -51,9 +54,6 @@ class ComboManager(ui_core.MayaWindow):
             
             base_mesh = blendshape.get_shape_combo_base(managers[0])
             
-            
-            
-            print 'base!', base_mesh
             self._set_base(base_mesh)
             
             
@@ -633,7 +633,6 @@ class ShapeTree(qt_ui.TreeWidget):
         self.recreate_action.triggered.connect(self.recreate)
         self.rename_action.triggered.connect(self.rename)
         self.remove_action.triggered.connect(self.remove)
-        self.tag_action.triggered.connect(self.tag)
         
     def _create_item(self, shape, inbetweens = None):
         
@@ -942,21 +941,6 @@ class ShapeTree(qt_ui.TreeWidget):
             if not self.manager.is_inbetween(name):
                 index = self.indexFromItem(item)
                 self.takeTopLevelItem(index.row())
-    
-    def tag(self):
-        
-        item = self._item_menu_item
-        
-        tag_comment = qt_ui.get_comment(self, '', 'tag name', '')
-        
-        if not tag_comment:
-            return
-        
-        item.setText(1, tag_comment)
-    
-        name = item.text(0)
-        
-        self.manager.set_tag(name, tag_comment)
         
     
     def select_shape(self, shape):
@@ -1097,11 +1081,9 @@ class ComboTree(qt_ui.TreeWidget):
         
         self.recreate_action = self.context_menu.addAction('Recreate')
         self.remove_action = self.context_menu.addAction('Remove')
-        self.tag_action = self.context_menu.addAction('Tag')
         
         self.recreate_action.triggered.connect(self.recreate)
         self.remove_action.triggered.connect(self.remove)
-        self.tag_action.triggered.connect(self.tag)
 
     def _create_item(self, name):
         item = qt.QTreeWidgetItem()
@@ -1112,22 +1094,6 @@ class ComboTree(qt_ui.TreeWidget):
         item.setText(1, tag_value)
         
         return item
-    
-
-    def tag(self):
-        
-        item = self._item_menu_item
-        
-        tag_comment = qt_ui.get_comment(self, '', 'tag name', '')
-        
-        if not tag_comment:
-            return
-        
-        item.setText(1, tag_comment)
-    
-        name = item.text(0)
-        
-        self.manager.set_tag(name, tag_comment)
 
     def highlight_item(self, item, bool_value = True):
         
@@ -1336,6 +1302,8 @@ class TagManager(qt_ui.BasicDialog):
     def __init__(self, parent):
         super(TagManager, self).__init__(parent)
         
+        self.setWindowTitle('Tags - Shape Combo')
+        
         self.setMinimumHeight(600)
         self.setMinimumWidth(400)
         
@@ -1344,7 +1312,7 @@ class TagManager(qt_ui.BasicDialog):
         tags_layout = qt.QVBoxLayout()
         
         self.shape_list = qt.QTreeWidget()
-        self.shape_list.setHeaderLabels(['Shape', 'Tags'])
+        self.shape_list.setHeaderLabels(['Shape'])
         self.shape_list.setSelectionMode(self.shape_list.SingleSelection)
         self.shape_list.itemSelectionChanged.connect(self._update_selected_shape)
         self.tag_list = qt.QListWidget()
@@ -1363,10 +1331,15 @@ class TagManager(qt_ui.BasicDialog):
         remove_tag = qt.QPushButton('Remove Tag')
         remove_tag.clicked.connect(self.remove_tag)
         
+        rename_tag = qt.QPushButton('Rename Tag')
+        rename_tag.clicked.connect(self.rename_tag)
+        
         shapes_layout.addWidget(refresh_button)
         
         tags_layout.addWidget(add_tag)
+        tags_layout.addWidget(rename_tag)
         tags_layout.addWidget(remove_tag)
+        
         
         
         
@@ -1480,28 +1453,7 @@ class TagManager(qt_ui.BasicDialog):
             print tag_text, tag_shapes
             
             self.manager.set_tag(tag_text, tag_shapes)
-        
-            
-    def _add_shape_tags(self, shape_item):
-        
-        shape = shape_item.text(0)
-        
-        tags = self.manager.get_tags_from_shape(shape)
-        
-        if not tags:
-            tags = 'No tags'
-        
-        if not tags == 'No tags':
-            tags = [str(i).strip() for i in tags]
-        
-        shape_item.setText(1, str(tags))
-        if tags and not tags == 'No tags':
-            for tag in tags:
-                sub_item = QTreeWidgetItem()
-                sub_item.setText(1, tag)
-                
-                shape_item.addChild(sub_item)
-            
+    
     def _set_tags(self, tags):
         self.tag_list.clear()
         
@@ -1575,6 +1527,27 @@ class TagManager(qt_ui.BasicDialog):
         for item in items:
             index = self.tag_list.indexFromItem(item)
             self.tag_list.takeItem(index.row())
+        
+            tag_name = item.text()
+            self.manager.remove_tag(tag_name)
             
-            
+    def rename_tag(self):
+        
+        items = self.tag_list.selectedItems()
+        
+        item = items[0]
+        
+        tag_name = str(item.text())
+        
+        new_name = qt_ui.get_new_name('Rename Tag', self, tag_name)
+        
+        if not new_name:
+            return
+        
+        item.setText(new_name)
+        
+        tag_value = self.manager.get_tag(tag_name)
+        
+        self.manager.set_tag(new_name, tag_value)
+        self.manager.remove_tag(tag_name)
         
