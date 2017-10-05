@@ -78,7 +78,9 @@ class SkinCluster(object):
         index = self.get_influence_index(influence)
         
         for vert_index in vertex_indices:
+            
             cmds.setAttr('%s.weightList[%s].weights[%s]' % (self._skin_cluster, vert_index, index), weight)
+            
         
     def normalize(self, bool_value):
         
@@ -2764,13 +2766,21 @@ class WeightFromMesh(object):
         
         self._edge_bones = {}
         self._vert_bones = {}
+        
+        self._visited_verts = []
     
     def add_vert_bone(self, joint_name, vertex_index):
         self._vert_bones[str(vertex_index)] = joint_name
     
     def add_edge_bone(self, joint_name, edge_index):
+        """
+        edge index can be a single edge index or a list of edge indices
+        """
         
-        self._edge_bones[str(edge_index)] = joint_name
+        edge_indices = vtool.util.convert_to_sequence(edge_index)
+        
+        for index in edge_indices:
+            self._edge_bones[str(index)] = joint_name
     
     def set_target_mesh(self, mesh):
         self._target_mesh = mesh
@@ -2792,16 +2802,32 @@ class WeightFromMesh(object):
             vrt1_index = str(vtool.util.get_last_number(vertices[0]))
             vrt2_index = str(vtool.util.get_last_number(vertices[1]))
             
+            
+            
             if self._edge_bones.has_key(edge_index):
+                
+                
                 edge_joint_name = self._edge_bones[edge_index]
                 
-                edge_joint = cmds.createNode('joint', n = edge_joint_name)
-                midpoint = space.get_midpoint(vertices[0], vertices[1])
-                cmds.xform(edge_joint, ws = True, t = midpoint)
+                edge_joint = edge_joint_name
                 
-                skin.add_influence(edge_joint)
-                skin.set_influence_weights(edge_joint, 1,[vrt1_index, vrt2_index])
+                if not cmds.objExists(edge_joint_name):
+                    edge_joint = cmds.createNode('joint', n = edge_joint_name)
+                    midpoint = space.get_midpoint(vertices[0], vertices[1])
+                    cmds.xform(edge_joint, ws = True, t = midpoint)
                 
+                    skin.add_influence(edge_joint)
+                
+                if not vrt1_index in self._visited_verts:
+                    skin.set_influence_weights(edge_joint, 1,[vrt1_index])
+                    self._visited_verts.append(vrt1_index)
+                    
+                if not vrt2_index in self._visited_verts:
+                    
+                    skin.set_influence_weights(edge_joint, 1,[vrt2_index])
+                    self._visited_verts.append(vrt2_index)
+                    
+                    
                 joints.append(edge_joint)
                 
         skin.normalize(True)
