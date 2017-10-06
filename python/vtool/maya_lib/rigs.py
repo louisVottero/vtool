@@ -5712,6 +5712,7 @@ class IkBackLegRig(IkFrontLegRig):
         self.offset_control_to_locator = False
         self.right_side_fix = False
         self._offset_ankle_axis = 'Z'
+        self._offset_ankle_orient = None
     
     def _duplicate_joints(self):
         
@@ -5806,6 +5807,10 @@ class IkBackLegRig(IkFrontLegRig):
             match.translation()
             cmds.hide(self.offset_control)
         
+        if self._offset_ankle_orient:
+            space.MatchSpace(self._offset_ankle_orient, self.offset_control).rotation()
+            
+        
         cmds.parentConstraint(self.offset_control, self.lower_offset_chain[0], mo = True)
 
         xform_group = space.create_xform_group(self.offset_control)
@@ -5856,6 +5861,9 @@ class IkBackLegRig(IkFrontLegRig):
         cmds.parent(follow, self.setup_group)
         cmds.hide(ik_handle_btm)
         
+    def _create_before_attach_joints(self):
+        super(IkBackLegRig, self)._create_before_attach_joints()
+        
     def set_offset_control_to_locator(self, bool_value):
         self.offset_control_to_locator = bool_value
     
@@ -5863,9 +5871,9 @@ class IkBackLegRig(IkFrontLegRig):
         axis_letter = axis_letter.capitalize()
         self._offset_ankle_axis = axis_letter
     
-    def _create_before_attach_joints(self):
-        super(IkBackLegRig, self)._create_before_attach_joints()
-        
+    def set_offset_ankle_orientation(self, transform_example):
+        self._offset_ankle_orient = transform_example
+    
     def create(self):
         super(IkBackLegRig, self).create()
         
