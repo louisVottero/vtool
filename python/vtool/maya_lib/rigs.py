@@ -974,7 +974,7 @@ class SparseLocalRig(SparseRig):
             if self.local_constraint:
                 if self.attach_joints:
                     local_group, local_xform = space.constrain_local(control.get(), joint, use_duplicate = True, scale_connect = self.is_scalable)
-                
+                    
                     if self.local_xform:
                         cmds.parent(local_xform, self.local_xform)
                     
@@ -5813,7 +5813,7 @@ class IkBackLegRig(IkFrontLegRig):
         
         cmds.parentConstraint(self.offset_control, self.lower_offset_chain[0], mo = True)
 
-        xform_group = space.create_xform_group(self.offset_control)
+        space.create_xform_group(self.offset_control)
         driver_group = space.create_xform_group(self.offset_control, 'driver')
         
         attr.create_title(self.btm_control, 'OFFSET_ANKLE')
@@ -5824,16 +5824,7 @@ class IkBackLegRig(IkFrontLegRig):
         
         offset.connect_out('%s.rotate%s' % (driver_group, self._offset_ankle_axis))
         
-        follow_group = space.create_follow_group(self.ik_chain[-2], xform_group)
         
-        scale_constraint = cmds.scaleConstraint(self.ik_chain[-2], follow_group)[0]
-        space.scale_constraint_to_local(scale_constraint)
-        
-        if not self.negate_right_scale:
-            cmds.parent(follow_group, self.top_control)
-        if self.negate_right_scale:
-            xform = space.create_xform_group(follow_group)
-            cmds.parent(xform, self.top_control)
         
         if not self.offset_control_to_locator:
             control.hide_translate_attributes()
@@ -5857,9 +5848,27 @@ class IkBackLegRig(IkFrontLegRig):
         ik_handle_btm.set_solver(ik_handle_btm.solver_sc)
         ik_handle_btm = ik_handle_btm.create()
         
+        
+        
         follow = space.create_follow_group( self.offset_control, ik_handle_btm)
         cmds.parent(follow, self.setup_group)
         cmds.hide(ik_handle_btm)
+        
+        xform_group = space.get_xform_group(self.offset_control)
+        follow_group = space.create_follow_group(self.ik_chain[-2], xform_group)
+        
+        
+        
+        scale_constraint = cmds.scaleConstraint(self.ik_chain[-2], follow_group)[0]
+        
+        
+        space.scale_constraint_to_local(scale_constraint)
+        
+        if not self.negate_right_scale:
+            cmds.parent(follow_group, self.top_control)
+        if self.negate_right_scale:
+            xform = space.create_xform_group(follow_group)
+            cmds.parent(xform, self.top_control)
         
     def _create_before_attach_joints(self):
         super(IkBackLegRig, self)._create_before_attach_joints()
@@ -5877,6 +5886,7 @@ class IkBackLegRig(IkFrontLegRig):
     def create(self):
         super(IkBackLegRig, self).create()
         
+        cmds.dgdirty(a = True)
         self._create_offset_control()
         
         self._rig_offset_chain()
