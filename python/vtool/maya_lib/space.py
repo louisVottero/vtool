@@ -2977,7 +2977,7 @@ def transfer_relatives(source_node, target_node, reparent = False):
 
     
 
-def constrain_local(source_transform, target_transform, parent = False, scale_connect = False, constraint = 'parentConstraint', connect_xform = False, use_duplicate = False):
+def constrain_local(source_transform, target_transform, parent = False, scale_connect = False, constraint = 'parentConstraint', use_duplicate = False):
     """
     Constrain a target transform to a source transform in a way that allows for setups to remain local to the origin.
     This is good when a control needs to move with the rig, but move something at the origin only when the actually control moves.
@@ -3011,6 +3011,8 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
         
         
         xform_group = create_xform_group(local_group, use_duplicate = True)
+        
+                
     
     if not use_duplicate:
         local_group = cmds.group(em = True, n = core.inc_name('local_%s' % source_transform))
