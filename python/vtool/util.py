@@ -53,7 +53,10 @@ def append_env(name, value):
     
     env_value = get_env(name)
     
-    env_value += str(value) 
+    try:
+        env_value += str(value)
+    except:
+        pass 
     
     set_env(name, env_value)
     
