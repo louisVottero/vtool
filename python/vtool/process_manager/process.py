@@ -639,7 +639,9 @@ class Process(object):
         instance = data_folder.get_folder_data_instance()
         
         if hasattr(instance, 'import_data'):
-            instance.import_data()
+            return instance.import_data()
+        
+        
     
     def open_data(self, name):
         path = self.get_data_path()
