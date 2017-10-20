@@ -1424,7 +1424,18 @@ def get_current_audio_node():
     
     return cmds.timeControl(play_slider, q = True, s = True)
 
+def xray_joints(bool_value = True):
+    cmds.modelEditor('modelPanel1', e = True, jointXray = bool_value)
+    cmds.modelEditor('modelPanel2', e = True, jointXray = bool_value)
+    cmds.modelEditor('modelPanel3', e = True, jointXray = bool_value) 
+    cmds.modelEditor('modelPanel4', e = True, jointXray = bool_value)
 
+def display_textures(bool_value = True):
+    cmds.modelEditor('modelPanel1', e = True, displayTextures = bool_value)
+    cmds.modelEditor('modelPanel2', e = True, displayTextures = bool_value)
+    cmds.modelEditor('modelPanel3', e = True, displayTextures = bool_value) 
+    cmds.modelEditor('modelPanel4', e = True, displayTextures = bool_value)
+    
 #--- garbage
 
 def remove_unused_plugins():
