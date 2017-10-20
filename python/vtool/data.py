@@ -1793,7 +1793,8 @@ class AnimationData(MayaCustomData):
                     cmds.warning('\tCould not connect %s to %s.input' % (input_attr,key))
                     
         maya_lib.core.print_help('Imported %s data.' % self.name)
-
+        
+        return info_dict.keys()
     
 class ControlAnimationData(AnimationData):
     """
