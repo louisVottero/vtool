@@ -3310,6 +3310,10 @@ def create_title(node, name, name_list = []):
         node (str): The name of a node
         name (str): The title name.
     """
+    
+    if not cmds.objExists(node):
+        vtool.util.warning('%s does not exist to create title on.' % node)
+        
     title = MayaEnumVariable(name)
     
     if name_list:

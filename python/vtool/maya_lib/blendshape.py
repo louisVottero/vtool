@@ -245,7 +245,7 @@ class BlendShape(object):
                 
                 target_vtx_count = len(target_positions)
                 
-                bar = core.ProgressBar('pruning verts on %s' % target_mesh, target_vtx_count)
+                bar = core.ProgressBar('pruning verts on %s' % core.get_basename(target_mesh), target_vtx_count)
                 
                 
                 positions = target_positions
@@ -1267,10 +1267,7 @@ class ShapeComboManager(object):
 
     def _handle_special_case_parent_combo(self, combo, blendshape):
         
-        print 'handle special combo parent', combo, blendshape
-        
         multiplies = self._get_combo_multiplies(combo, blendshape)
-        print multiplies
         
         if not multiplies:
             return
@@ -1725,7 +1722,7 @@ class ShapeComboManager(object):
         return shapes, combos, inbetweens
     
     def get_all_shape_names(self):
-        print 'get all shapes!'
+        
         shapes = self.get_shapes()
         
                 
@@ -1734,13 +1731,9 @@ class ShapeComboManager(object):
         
         shapes = shapes + combos
         
-        print 'end shapes', shapes
-        
         return shapes
     
     def set_tag(self, tag_name, tag_value):
-        
-        print 'storing data', tag_name, tag_value
         
         store = attr.StoreData(self.setup_group)
         
@@ -1920,14 +1913,11 @@ class ShapeComboManager(object):
             
             preserve_these = {}
             
-            print 'combos', combos
-            
             for combo in combos:
                 
-                print 'recreate', combo
                 new_combo = self.recreate_combo(combo)
                 preserve_these[combo] = new_combo
-                print 'done recreate'
+                
                 
         shape = name
         
@@ -2106,8 +2096,6 @@ class ShapeComboManager(object):
     
     def recreate_shape(self, name, from_shape_combo_channels = False):
         
-        print 'recreate shape', from_shape_combo_channels
-        
         target = self.turn_on_shape(name)
         
         if from_shape_combo_channels:
@@ -2136,9 +2124,6 @@ class ShapeComboManager(object):
                     
                     sub_shapes = self.get_shapes_in_combo(name, include_combos = True)
                     sub_shapes.append(name)
-                    
-                    print 'recreate combo'
-                    print sub_shapes
                     
                     new_combo = cmds.duplicate(home_dict[mesh])[0]
                     

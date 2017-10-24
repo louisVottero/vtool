@@ -20,6 +20,7 @@ import geo
 import deform
 import rigs_util
 import fx
+from vtool import util_math
     
 
 #--- rigs
@@ -4093,6 +4094,10 @@ class TweakCurveRig(BufferRig):
         
         return cluster_curve.get_cluster_handle_list()
         
+    def _attach_cluster(self, control, cluster):
+        
+        cmds.parentConstraint(control, cluster, mo = True)
+        
     def set_control_count(self, int_value):
         
         self.control_count = int_value
@@ -4145,7 +4150,7 @@ class TweakCurveRig(BufferRig):
                 
                 space.MatchSpace(joint, xform).translation_rotation()
             
-            cmds.parentConstraint(control, cluster, mo = True)
+            self._attach_cluster(control, cluster)
             
             cmds.parent(xform, self.control_group)
         
@@ -4168,7 +4173,28 @@ class TweakCurveRig(BufferRig):
                 if self.maya_type == 'nurbsCurve':
                     geo.attach_to_curve(joint, self.surface)
                     cmds.orientConstraint(self.control_group, joint)
-                        
+
+class LocalTweakCurveRig(TweakCurveRig):
+    
+    def __init__(self, name, side=None):
+        super(LocalTweakCurveRig, self).__init__(name, side)
+        
+        self.local_groups = []
+        self.local_xform_groups = []
+        
+    
+    def _attach_cluster(self, control, cluster):
+        
+        
+        local, xform = space.constrain_local(control, cluster, use_duplicate=True)
+        
+        self.local_groups.append(local)
+        self.local_xform_groups.append(xform)
+        
+        cmds.parent(xform, self.setup_group)
+        
+        
+
 class RopeRig(CurveRig):
 
     def __init__(self, name, side=None):
@@ -9608,6 +9634,8 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         
         self._rig_info = [] 
         
+
+        
     def _convert_plane_to_curves(self, plane, count, u):
         
         model_group = self._create_group('model')
@@ -9778,22 +9806,24 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         
         for joint in joints:
             
-            surface = cmds.duplicate(self._guide_geo)[0]
-            geo.add_poly_smooth(surface, divisions = 2)
+            space.orient_x_to_child_up_to_surface(joint, invert, self.smooth_surface)
             
-            space.orient_x_to_child_up_to_surface(joint, invert, surface)
-            
-            cmds.delete(surface)
             
         
         last_control = None    
         controls = []
+        first_control = None
         for joint in joints:
             if joint == joints[-1]:
                 continue
             
             control = self._create_control(description = inc)
+            control.set_curve_type('square')
+            control.scale_shape(self.control_size, self.control_size, self.control_size)
             control.rotate_shape(0, 0, 90)
+            
+            
+            
             xform = space.create_xform_group(control.control)
             
             space.MatchSpace(joint, xform).translation_rotation()
@@ -9808,6 +9838,8 @@ class FeatherOnPlaneRig(PolyPlaneRig):
                 cmds.delete(new_curve)
             
             color = self._color_dict[self._guide_geo]
+            
+            
             
             
             if joint == joints[0]:
@@ -9830,10 +9862,34 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             
             
             if not last_control:
+                first_control = control.control
                 cmds.parent(xform, self.control_group)
+                
+                cmds.addAttr(control.control, ln = 'subVisibility', at = 'bool', k = True)
+                
+                attr.create_title(control.control, 'curl')
+                cmds.addAttr(control.control, ln = 'curlX', at = 'double',  k = True)
+                cmds.addAttr(control.control, ln = 'curlY', at = 'double',  k = True)
+                cmds.addAttr(control.control, ln = 'curlZ', at = 'double',  k = True)
+            
+                
+                
             
             if last_control:
                 cmds.parent(xform, last_control)
+                
+                driver = space.create_xform_group(control.control, 'driver')
+                
+                cmds.connectAttr('%s.curlX' % first_control, '%s.rotateX' % driver)
+                cmds.connectAttr('%s.curlY' % first_control, '%s.rotateY' % driver)
+                cmds.connectAttr('%s.curlZ' % first_control, '%s.rotateZ' % driver)
+                
+                
+                cmds.connectAttr('%s.subVisibility' % first_control, '%sShape.visibility' % control.control)
+                
+            
+            
+            
             
             last_control = control.control
         
@@ -9866,9 +9922,17 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         cmds.parent(curve, self.setup_group)
         geo.rebuild_curve(curve, 1, 1)
         
+        base_curve = geo.transforms_to_curve(controls, 1, '%s_%s' % (self.description, self.side))
+        geo.rebuild_curve(curve, 1, 1)
+        
+        
+        
         joints = geo.create_joints_on_curve(curve, self._feather_count, '%s_%s' % (self.description, self.side), attach=True)
         
+        
+        
         joints_move = geo.create_joints_on_curve(curve, 2, 'move_%s_%s' % (self.description, self.side), attach=False)
+        locators_base_move = geo.create_locators_on_curve(base_curve, 2, 'move_%s_%s' % (self.description, self.side), attach = False)
         
         cmds.parent(joints_move, self.setup_group)
         cmds.parent(joints, self.setup_group)
@@ -9878,42 +9942,135 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         control_group = cmds.group(em = True, n = core.inc_name(self._get_name('controls', 'tweak')))
         cmds.parent(control_group, self.control_group)
         
+        up_locator = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'orientUp')))[0]
+        cmds.parent(up_locator, self.setup_group)
+        
+        
+        up_vector = geo.get_closest_normal_on_mesh(self.smooth_surface, self.smooth_center)
+        
+        
+        aim_vector = [1,0,0]
+        custom_up_vector = [0,1,0]
+        
+        if self.side == 'R':
+            aim_vector = [-1,0,0]
+            custom_up_vector = [0,-1,0]
+            
+        top_controls = []
+        for inc in range(0, len(joints_move)):
+            
+            
+            
+            joint = joints_move[inc]
+            locator = locators_base_move[inc]
+            
+            distance = space.get_distance(joint, locator)
+            
+            
+            
+            cmds.delete(cmds.aimConstraint(joint, locator, wu = up_vector, aimVector = aim_vector, upVector = custom_up_vector))
+            
+            control = self._create_control(sub = True)
+            
+            control.set_curve_type('pin_round')
+            control.rotate_shape(0,0,90)
+            #control.rotate_shape(90,0,0)
+            #control.scale_shape(-10,-10,-10)
+            if self.side == 'L':
+                control.scale_shape(-2*distance, -2*distance, -2*distance)
+            if self.side == 'R':
+                control.scale_shape(2*distance, 2*distance, 2*distance)
+            
+            xform = space.create_xform_group(control.control)
+            space.MatchSpace(locator, xform).translation_rotation()
+            cmds.delete(locator)
+            
+            cmds.parent(joint, control.control)
+            cmds.hide(joint)
+            
+            cmds.parent(xform, control_group)
+            
+            top_controls.append(control)
+            
+            control.hide_scale_and_visibility_attributes()
+            
+            if self.color:
+                control.color_rgb(self.color[0]*2, self.color[1]*2, self.color[2]*2)
+    
         for inc in range(0, len(joints)):
-            aim_group = cmds.group(em = True, n = core.inc_name(self._get_name('aim')))
+            #aim_group = cmds.group(em = True, n = core.inc_name(self._get_name('aim')))
             
+            aim_vector = [1,0,0]
+            up_vector = [0,1,0]
             
-            
-            cmds.aimConstraint(joints[inc], aim_group)
-            
-            
+            if self.side == 'R':
+                aim_vector = [-1,0,0]
+                up_vector = [0,-1,0]
             
             xform = space.get_xform_group(controls[inc])
+                
+            joint1, joint2, ik_pole = space.create_pole_chain(xform, joints[inc], self._get_name('aim'), space.IkHandle.solver_rp)
+            
+            pole = cmds.group(em = True, n = self._get_name('pole'))
+            
+            space.MatchSpace(joint1, pole).translation()
+            
+            joint_xform = space.create_xform_group(joint1)
+            
+            cmds.parent(ik_pole, joints[inc])
+            
+            cmds.setAttr('%s.drawStyle' % joint1, 2)
+            cmds.setAttr('%s.drawStyle' % joint2, 2)
+            
+            cmds.rename(joint2, self._get_name('aimEnd'))
+            
+            #space.create_no_twist_aim(source_transform, target_transform, parent, move_vector)
+            
+            up_vector = geo.get_closest_normal_on_mesh(self.smooth_surface, self.smooth_center)
+            
+            up_vector = util_math.vector_add(cmds.xform(xform, q = True, ws = True, t = True), up_vector)
+            
+            cmds.xform(pole, ws = True, t = up_vector)
+            
+            cmds.poleVectorConstraint(pole, ik_pole)
+            cmds.parent(pole, joint_xform)
+            
+            #cmds.aimConstraint(joints[inc], aim_group, wuo = up_locator, wut = 'objectrotation', wu = up_vector, aimVector = aim_vector, upVector = up_vector)
             
             
+            
+            cmds.parent(joint_xform, self.control_group)
+            cmds.parent(xform, joint1)
+            
+            """
             space.MatchSpace(xform, aim_group).translation_rotation()
             
             cmds.parent(aim_group, self.control_group)
             cmds.parent(xform, aim_group)
             
-            aim_xform = space.create_xform_group(aim_group)
             
-            
+            """
         
-        for joint in joints_move:
-            control = self._create_control(sub = True)
+        offset_value = 1.0/5.0
+        
+        top_value = 1.0-offset_value
+        btm_value = 0
+        
+        attr.create_title(top_controls[0].control, 'twist')
+        cmds.addAttr(top_controls[0].control, ln = 'twistTop', at = 'double',k = True)
+        cmds.addAttr(top_controls[0].control, ln = 'twistBtm', at = 'double',k = True)
+        
+        for control in controls:
+            driver = space.create_xform_group(control, 'driver')
+            driver2 = space.create_xform_group(control, 'driver2')
+            attr.connect_multiply('%s.twistTop' % top_controls[0].control, '%s.rotateX' % driver, top_value)
+            attr.connect_multiply('%s.twistBtm' % top_controls[0].control, '%s.rotateX' % driver2, btm_value)
             
-            control.set_curve_type('sphere')
-            control.scale_shape(10, 10, 10)
+            top_value -= offset_value
+            btm_value += offset_value
             
-            xform = space.create_xform_group(control.control)
-            space.MatchSpace(joint, xform).translation()
-            
-            cmds.pointConstraint(control.control, joint)
-            
-            cmds.parent(xform, control_group)
-            
-            if self.color:
-                control.color_rgb(self.color[0]*1.8, self.color[1]*1.8, self.color[2]*1.8)
+    
+        cmds.delete(base_curve)
     
     def _combine_quill_geo(self):
         
@@ -9968,6 +10125,13 @@ class FeatherOnPlaneRig(PolyPlaneRig):
     def create(self):
         super(FeatherOnPlaneRig, self).create()
         
+        surface = cmds.duplicate(self.poly_plane)[0]
+        geo.add_poly_smooth(surface, divisions = 2)
+        center = space.get_center(self.poly_plane)
+        
+        self.smooth_surface = surface
+        self.smooth_center = center
+        
         self._convert_plane_to_curves(self.poly_plane, self._feather_count, self._follow_u)
         
         if self._combine_quills:
@@ -9975,3 +10139,5 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             
         
         self._rig_curve_aim()
+        
+        cmds.delete(self.smooth_surface)

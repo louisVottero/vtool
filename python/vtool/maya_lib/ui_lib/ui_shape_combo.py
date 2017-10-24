@@ -388,9 +388,6 @@ class ComboManager(ui_core.MayaWindow):
         if base_mesh:
             base = base_mesh
             manager = self.manager
-            
-        
-        print 'set base!', base
         
         if base:
             
@@ -923,8 +920,6 @@ class ShapeTree(qt_ui.TreeWidget):
         
         items = self.selectedItems()
         
-        self.itemBelow()
-        
         if not items:
             return
         
@@ -1328,16 +1323,12 @@ class TagManager(qt_ui.BasicDialog):
         add_tag = qt.QPushButton('Add Tag')
         add_tag.clicked.connect(self.add_tag)
         
-        remove_tag = qt.QPushButton('Remove Tag')
+        remove_tag = qt.QPushButton('Remove Tags')
         remove_tag.clicked.connect(self.remove_tag)
-        
-        rename_tag = qt.QPushButton('Rename Tag')
-        rename_tag.clicked.connect(self.rename_tag)
         
         shapes_layout.addWidget(refresh_button)
         
         tags_layout.addWidget(add_tag)
-        tags_layout.addWidget(rename_tag)
         tags_layout.addWidget(remove_tag)
         
         
@@ -1352,6 +1343,29 @@ class TagManager(qt_ui.BasicDialog):
         self._tags = []
         
         self._supress_tag_update = False
+    
+        self.tag_list.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
+        self.tag_list.customContextMenuRequested.connect(self._tag_item_menu)
+        
+        self._create_tag_context_menu()
+        
+        self._right_click_tag = None
+        
+        
+    def _tag_item_menu(self, position):
+        item = self.tag_list.itemAt(position)
+        self._right_click_tag = item
+        self.tag_context_menu.exec_(self.tag_list.viewport().mapToGlobal(position))
+        
+    def _create_tag_context_menu(self):
+        
+        self.tag_context_menu = qt.QMenu()
+        
+        self.tag_rename_action = self.tag_context_menu.addAction('Rename')
+        self.tag_remove_action = self.tag_context_menu.addAction('Remove')
+        
+        self.tag_rename_action.triggered.connect(self._right_click_rename_tag)
+        self.tag_remove_action.triggered.connect(self._right_click_remove_tag)
     
     def _update_selected_shape(self):
         
@@ -1450,8 +1464,6 @@ class TagManager(qt_ui.BasicDialog):
             if not tag_shapes:
                 tag_shapes = shapes
             
-            print tag_text, tag_shapes
-            
             self.manager.set_tag(tag_text, tag_shapes)
     
     def _set_tags(self, tags):
@@ -1496,6 +1508,14 @@ class TagManager(qt_ui.BasicDialog):
         
         self._set_tags(tags)
     
+    def _right_click_rename_tag(self):
+        
+        self.rename_tag(self._right_click_tag)
+    
+    def _right_click_remove_tag(self):
+        
+        self.remove_tag(self._right_click_tag)
+    
     def set_manager(self, manager_obj):
         
         self.manager = manager_obj
@@ -1520,9 +1540,13 @@ class TagManager(qt_ui.BasicDialog):
         self._tags.append(name)
         self.tag_list.addItem(name)
         
-    def remove_tag(self):
+    def remove_tag(self, items = []):
         
-        items = self.tag_list.selectedItems()
+        
+        items = vtool.util.convert_to_sequence(items)
+        
+        if not items:
+            items = self.tag_list.selectedItems()
         
         for item in items:
             index = self.tag_list.indexFromItem(item)
@@ -1531,11 +1555,12 @@ class TagManager(qt_ui.BasicDialog):
             tag_name = item.text()
             self.manager.remove_tag(tag_name)
             
-    def rename_tag(self):
+    def rename_tag(self, item = None):
         
-        items = self.tag_list.selectedItems()
         
-        item = items[0]
+        if not item:
+            items = self.tag_list.selectedItems()
+            item = items[0]
         
         tag_name = str(item.text())
         
@@ -1550,4 +1575,6 @@ class TagManager(qt_ui.BasicDialog):
         
         self.manager.set_tag(new_name, tag_value)
         self.manager.remove_tag(tag_name)
+        
+    
         

@@ -1686,27 +1686,50 @@ class Process(object):
         
         util.show(message)
         
-        scripts = self.get_manifest_scripts(False)
-        
         scripts, states = self.get_manifest()
         
         scripts_that_error = []
         
+        state_dict = {}
+        
         for inc in range(0, len(scripts)):
             
-            if states[inc]:
+            state = states[inc]
+            script = scripts[inc]
+            
+            check_script = script[:-3]
+            
+            state_dict[check_script] = state
+            
+            
+            
+            if state:
+                
+                parent_state = True
+                
+                for key in state_dict:
+                    
+                    if script.find(key) > -1:
+                        parent_state = state_dict[key]
+                        
+                        if parent_state == False:
+                            break
+                        
+                if not parent_state:
+                    util.show('\tSkipping: %s\n\n' % script)
+                    continue 
                 
                 try:
-                    status = self.run_script(scripts[inc], hard_error=False)
+                    status = self.run_script(script, hard_error=False)
                 except:
                     status = 'fail'
                 
                 if not status == 'Success':
-                    scripts_that_error.append(scripts[inc])
+                    scripts_that_error.append(script)
             
             if not states[inc]:
                 util.show('\n------------------------------------------------')
-                util.show('Skipping: %s\n\n' % scripts[inc])
+                util.show('Skipping: %s\n\n' % script)
         
         minutes, seconds = watch.stop()
         

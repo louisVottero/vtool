@@ -1784,6 +1784,62 @@ def create_joint_v_strip_on_surface(surface, v_count, description, v_offset = 0,
     
     return v_joints
 
+def create_locators_on_curve(curve, count, description, attach = True):
+    """
+    Create locators on curve that do not aim at child.
+    
+    Args:
+        curve (str): The name of a curve.
+        count (int): The number of joints to create.
+        description (str): The description to give the joints.
+        attach (bool): Wether to attach the joints to the curve.
+        create_controls (bool): Wether to create controls on the joints.
+        
+    Returns:
+        list: [ joints, group, control_group ] joints is a list of joinst, group is the main group for the joints, control_group is the main group above the controls. 
+        If create_controls = False then control_group = None
+        
+    """
+    
+    cmds.select(cl = True)
+    
+    total_length = cmds.arclen(curve)
+    
+    part_length = total_length/(count-1)
+    current_length = 0
+    
+    locators = []
+    
+    cmds.select(cl = True)
+    
+    percent = 0
+    
+    segment = 1.00/count
+    
+    for inc in range(0, count):
+        
+        param = get_parameter_from_curve_length(curve, current_length)
+        
+        position = get_point_from_curve_parameter(curve, param)
+        if attach:
+            cmds.select(cl = True)
+            
+        locator = cmds.spaceLocator(n = core.inc_name('locator_%s' % description) )
+        
+        cmds.xform(locator, ws = True, t = position)
+        
+        cmds.addAttr(locator, ln = 'param', at = 'double', dv = param)
+        
+        if attach:
+            attach_to_curve( locator, curve, parameter = param )
+        
+        current_length += part_length
+                 
+        locators.append(locator)
+    
+        percent += segment
+    
+    return locators
 @core.undo_chunk
 def create_joints_on_curve(curve, joint_count, description, attach = True):
     """
@@ -3125,7 +3181,50 @@ def transfer_uvs_from_mesh_to_group(mesh, group):
             vtool.util.warning('Found no geometry match for %s' % destination_mesh)
         
     cmds.delete(temp_mesh)
+
+def create_extrude(curve, radius, taper, spans, description = ''):
+
+    curve = cmds.duplicate(curve)[0]
     
+    rebuild_curve(curve, spans = spans)
+    
+    max_value = cmds.getAttr('%s.maxValue' % curve)
+    
+    circle = cmds.circle( c = [0,0,0], nr = [0, 1, 0], sw = 360, r = radius, d = 3, ut = 0, tol = 1.07639e-007, s = 8, ch = 0)
+    cmds.reverseCurve(circle[0], ch = False, rpo = 1)
+    
+    extrude = cmds.extrude(circle[0],curve, ch = True, rn = False, po = 1, et = 2, ucp = 1, fpt = 1, upn = 1, rotation = 0, scale = 1, rsp = 1, cch = False)
+    
+    out_surfaces = attr.get_attribute_outputs('%s.outputSurface' % extrude[1], node_only = True)
+    for out_surface in out_surfaces:
+        cmds.setAttr('%s.format' % out_surface, 3)
+    
+    extrude = extrude[0]
+    extrude = cmds.rename(extrude, 'extrude_%s' % curve)
+    
+    
+    
+    wire_deformer, wire_curve = cmds.wire(extrude,  gw = False, w = curve, n = core.inc_name('wire_%s' % curve), dds = [0, 10000])
+    if taper:
+        cmds.dropoffLocator( 1, 1, wire_deformer, '%s.u[0]' % curve, '%s.u[%s]' % (curve,max_value))
+        
+        cmds.setAttr('%s.scale[0]' % wire_deformer, taper)
+        cmds.setAttr('%s.wireLocatorEnvelope[0]' % wire_deformer, 0)
+    
+    cmds.delete(extrude, ch = True)
+    cmds.delete(curve)
+    cmds.delete(circle[0])
+    cmds.delete('%sBaseWire' % wire_curve)
+    
+    occluded = get_occluded_faces(extrude, within_distance = 10000)
+    faces = cmds.ls('%s.f[*]' % extrude, flatten = True)
+    
+    if len(occluded) > (len(faces)/2):
+        cmds.polyNormal(extrude, normalMode = 0, userNormalMode = 0, ch = 0)
+    
+    
+    return extrude
+
 def create_quill(curve, radius, taper_tip = True, spans = 10, description = '' ):
     
     curve = cmds.duplicate(curve)[0]
@@ -3149,11 +3248,12 @@ def create_quill(curve, radius, taper_tip = True, spans = 10, description = '' )
     
     
     wire_deformer, wire_curve = cmds.wire(extrude,  gw = False, w = curve, n = core.inc_name('wire_%s' % curve), dds = [0, 10000])
-    cmds.dropoffLocator( 1, 1, wire_deformer, '%s.u[0]' % curve,'%s.u[%s]' % (curve, max_value - (max_value/5.0)), '%s.u[%s]' % (curve,max_value))
-    
-    cmds.setAttr('%s.scale[0]' % wire_deformer, .25)
-    cmds.setAttr('%s.wireLocatorEnvelope[0]' % wire_deformer, 0)
-    cmds.setAttr('%s.wireLocatorEnvelope[1]' % wire_deformer, 0)
+    if taper_tip:
+        cmds.dropoffLocator( 1, 1, wire_deformer, '%s.u[0]' % curve,'%s.u[%s]' % (curve, max_value - (max_value/5.0)), '%s.u[%s]' % (curve,max_value))
+        
+        cmds.setAttr('%s.scale[0]' % wire_deformer, .25)
+        cmds.setAttr('%s.wireLocatorEnvelope[0]' % wire_deformer, 0)
+        cmds.setAttr('%s.wireLocatorEnvelope[1]' % wire_deformer, 0)
     
     cmds.delete(extrude, ch = True)
     cmds.delete(curve)
