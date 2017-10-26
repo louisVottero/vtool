@@ -10024,8 +10024,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             
             cmds.rename(joint2, self._get_name('aimEnd'))
             
-            #space.create_no_twist_aim(source_transform, target_transform, parent, move_vector)
-            
             up_vector = geo.get_closest_normal_on_mesh(self.smooth_surface, self.smooth_center)
             
             up_vector = util_math.vector_add(cmds.xform(xform, q = True, ws = True, t = True), up_vector)
@@ -10034,8 +10032,6 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             
             cmds.poleVectorConstraint(pole, ik_pole)
             cmds.parent(pole, joint_xform)
-            
-            #cmds.aimConstraint(joints[inc], aim_group, wuo = up_locator, wut = 'objectrotation', wu = up_vector, aimVector = aim_vector, upVector = up_vector)
             
             
             
