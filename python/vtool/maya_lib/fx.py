@@ -678,6 +678,50 @@ def get_follicle_input_curve(follicle):
     
     if input:
         return input_value[0]
+
+def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min_stiffness, max_stiffness):
+    """
+    at min_length, max_stiffness will be set
+    at max_length min_stiffness will be set
+    inbetween is interpolated
+    
+    stiffness is achieved by setting the input curve attract
+    
+    """
+    curve = get_follicle_input_curve(follicle)
+    
+    curve_length = cmds.arclen(curve, ch = False)
+    
+    cmds.setAttr('%s.overrideDynamics' % follicle, 1)
+    
+    cmds.setAttr('%s.stiffness' % follicle, 1)
+    
+    cmds.setAttr('%s.damp' % follicle, 0.5)
+    
+    weight = vtool.util.remap_value(curve_length, min_length, max_length, 0, 1)
+    
+    if weight < 0:
+        weight = 0
+        
+    if weight > 1:
+        weight = 1
+    
+    stiffness = vtool.util.lerp(min_stiffness, max_stiffness, weight)
+    
+    stiffness_weight = vtool.util.remap_value(stiffness, min_stiffness, max_stiffness, 0, 1)
+    
+    cmds.setAttr('%s.stiffnessScale[0].stiffnessScale_Position' % follicle, 0)
+    cmds.setAttr('%s.stiffnessScale[0].stiffnessScale_FloatValue' % follicle, 1)
+    
+    cmds.setAttr('%s.stiffnessScale[0].stiffnessScale_Position' % follicle, 1)
+    cmds.setAttr('%s.stiffnessScale[0].stiffnessScale_FloatValue' % follicle, stiffness_weight)
+    
+    cmds.setAttr('%s.attractionScale[0].attractionScale_Position' % follicle, 0)
+    cmds.setAttr('%s.attractionScale[0].attractionScale_FloatValue' % follicle, stiffness)
+    
+    cmds.setAttr('%s.attractionScale[0].attractionScale_Position' % follicle, 1)
+    cmds.setAttr('%s.attractionScale[0].attractionScale_FloatValue' % follicle, stiffness/2.0)
+    
     
 #--- Cloth
 
