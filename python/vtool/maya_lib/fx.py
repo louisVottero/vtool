@@ -497,7 +497,7 @@ def connect_follicle_to_hair(follicle, hair_system):
     
     cmds.connectAttr('%s.outputHair[%s]' % (hair_system, current_index), '%s.currentPosition' % follicle, f = True)
     
-    cmds.refresh()
+    #cmds.refresh()
     
 def make_curve_dynamic(curve, hair_system = None, mesh = None):
     """
@@ -537,7 +537,8 @@ def make_curve_dynamic(curve, hair_system = None, mesh = None):
     cmds.connectAttr('%s.local' % new_curve, '%s.startPosition' % follicle_shape)
     
     cmds.parent(curve, new_curve, follicle)
-    
+    cmds.setAttr('%s.inheritsTransform' % curve, 0)
+    attr.zero_xform_channels(curve)
     
 
     cmds.connectAttr('%s.outCurve' % follicle, '%s.create' % curve)
@@ -710,17 +711,25 @@ def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min
     
     stiffness_weight = vtool.util.remap_value(stiffness, min_stiffness, max_stiffness, 0, 1)
     
+    stiffness_weight = 1 - stiffness_weight
+    
+    cmds.setAttr('%s.startCurveAttract' % follicle, 1)
+    
+    cmds.setAttr('%s.damp' % follicle, stiffness_weight)
+    
+    
+    
     cmds.setAttr('%s.stiffnessScale[0].stiffnessScale_Position' % follicle, 0)
     cmds.setAttr('%s.stiffnessScale[0].stiffnessScale_FloatValue' % follicle, 1)
     
-    cmds.setAttr('%s.stiffnessScale[0].stiffnessScale_Position' % follicle, 1)
-    cmds.setAttr('%s.stiffnessScale[0].stiffnessScale_FloatValue' % follicle, stiffness_weight)
+    cmds.setAttr('%s.stiffnessScale[1].stiffnessScale_Position' % follicle, 1)
+    cmds.setAttr('%s.stiffnessScale[1].stiffnessScale_FloatValue' % follicle, stiffness_weight)
     
     cmds.setAttr('%s.attractionScale[0].attractionScale_Position' % follicle, 0)
     cmds.setAttr('%s.attractionScale[0].attractionScale_FloatValue' % follicle, stiffness)
     
-    cmds.setAttr('%s.attractionScale[0].attractionScale_Position' % follicle, 1)
-    cmds.setAttr('%s.attractionScale[0].attractionScale_FloatValue' % follicle, stiffness/2.0)
+    cmds.setAttr('%s.attractionScale[1].attractionScale_Position' % follicle, 1)
+    cmds.setAttr('%s.attractionScale[1].attractionScale_FloatValue' % follicle, stiffness/2.0)
     
     
 #--- Cloth
