@@ -497,7 +497,7 @@ def connect_follicle_to_hair(follicle, hair_system):
     
     cmds.connectAttr('%s.outputHair[%s]' % (hair_system, current_index), '%s.currentPosition' % follicle, f = True)
     
-    cmds.refresh()
+    #cmds.refresh()
     
 def make_curve_dynamic(curve, hair_system = None, mesh = None):
     """
@@ -537,7 +537,8 @@ def make_curve_dynamic(curve, hair_system = None, mesh = None):
     cmds.connectAttr('%s.local' % new_curve, '%s.startPosition' % follicle_shape)
     
     cmds.parent(curve, new_curve, follicle)
-    
+    cmds.setAttr('%s.inheritsTransform' % curve, 0)
+    attr.zero_xform_channels(curve)
     
 
     cmds.connectAttr('%s.outCurve' % follicle, '%s.create' % curve)
