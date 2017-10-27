@@ -10026,6 +10026,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             
             up_vector = geo.get_closest_normal_on_mesh(self.smooth_surface, self.smooth_center)
             
+            
             up_vector = util_math.vector_add(cmds.xform(xform, q = True, ws = True, t = True), up_vector)
             
             cmds.xform(pole, ws = True, t = up_vector)
