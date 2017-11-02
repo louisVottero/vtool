@@ -1535,8 +1535,8 @@ class FkLocalRig(FkRig):
             cmds.parent(local_xform, self.setup_group)
         
         if self.local_parent:
-            follow = space.create_follow_group(self.local_parent, local_xform)
-            cmds.parent(follow, self.control_group)
+            cmds.parent(local_xform, self.local_parent)
+
         
         if self.connect_driver:
             driver = space.create_xform_group(local_group, 'driver')
@@ -1593,7 +1593,8 @@ class FkLocalRig(FkRig):
         super(FkLocalRig, self).create()
         
         if self.main_local_parent:
-            space.create_follow_group(self.main_local_parent, self.local_xform)
+            space.create_local_follow_group(self.main_local_parent, self.local_xform)
+            #space.create_follow_group(self.main_local_parent, self.local_xform)
             
 class FkScaleRig(FkRig): 
     """
