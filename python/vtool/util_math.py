@@ -380,6 +380,16 @@ def set_percent_range(percent_value, new_min, new_max):
     
     return value
 
+def lerp(number1, number2, weight = 0.5):
+    """
+    interpolate between number1 and number2 based on a 0-1 weight value
+    """
+    return (1 - weight) * number1 + weight * number2;
+
+def remap_value(value, old_min, old_max, new_min, new_max):
+    
+    return new_min + (value - old_min) * (new_max - new_min)/(old_max - old_min )
+
 def get_distance(vector1, vector2):
     """
     Get the distance between two vectors.
