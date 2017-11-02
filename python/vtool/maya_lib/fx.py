@@ -1,8 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import re
-import string
-
 import vtool.util
 
 
@@ -22,9 +19,6 @@ import shade
 
 if vtool.util.get_maya_version() > 2014:
     import vtool.util_alembic
-    import alembic
-    from alembic import Abc
-    from alembic import AbcGeom
 
 #--- Cache
 
@@ -224,7 +218,7 @@ def import_alembic(root_node, name, dirpath = None, auto_sub_folders = True):
     top_alembic = vtool.util_alembic.get_top_in(filename)
     
     meshes = vtool.util_alembic.get_all_instances(top_alembic, 'polyMesh')
-    curves = vtool.util_alembic.get_all_instances(top_alembic, 'nurbsCurve')
+    #curves = vtool.util_alembic.get_all_instances(top_alembic, 'nurbsCurve')
     
     alembic_node = cmds.createNode('AlembicNode')
     cmds.connectAttr('time1.outTime', '%s.time' % alembic_node)
@@ -574,8 +568,8 @@ def create_follicle_from_curve(curve, hair_system = None, attach_mesh = None, ou
     start_curve = cmds.rename(start_curve, 'start_%s' % curve)
     
     sets = cmds.listSets(object = start_curve)
-    for set in sets:
-        cmds.sets(start_curve, remove = set)
+    for set_value in sets:
+        cmds.sets(start_curve, remove = set_value)
     
     cmds.connectAttr('%s.worldMatrix' % start_curve, '%s.startPositionMatrix' % follicle_shape)
     cmds.connectAttr('%s.local' % start_curve, '%s.startPosition' % follicle_shape)
