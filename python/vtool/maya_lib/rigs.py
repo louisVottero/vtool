@@ -9786,10 +9786,15 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         quill_output = cmds.rename(quill_output, 'dynamic_%s' % quill_curve)   
         
         for curve in curves:
-            follicle = fx.make_curve_dynamic(curve,hair_system=strand_hair_system, mesh= mesh)
+            
+            follicle = fx.make_curve_dynamic(curve,hair_system=strand_hair_system, mesh= mesh, curve_closest_samples=5)
+            
             outputs = fx.get_follicle_output_curve(follicle)
-    
+            
+            
+            
             cmds.parent(outputs, dynamic_curve_group)
+            
             
             for output in outputs:
                 cmds.rename(output, 'dynamic_%s' % curve)                
@@ -10011,7 +10016,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
                 
             joint1, joint2, ik_pole = space.create_pole_chain(xform, joints[inc], self._get_name('aim'), space.IkHandle.solver_rp)
             
-            pole = cmds.group(em = True, n = self._get_name('pole'))
+            pole = cmds.group(em = True, n = core.inc_name(self._get_name('pole')))
             
             space.MatchSpace(joint1, pole).translation()
             
@@ -10022,7 +10027,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
             cmds.setAttr('%s.drawStyle' % joint1, 2)
             cmds.setAttr('%s.drawStyle' % joint2, 2)
             
-            cmds.rename(joint2, self._get_name('aimEnd'))
+            cmds.rename(joint2, core.inc_name(self._get_name('aimEnd')))
             
             up_vector = geo.get_closest_normal_on_mesh(self.smooth_surface, self.smooth_center)
             
