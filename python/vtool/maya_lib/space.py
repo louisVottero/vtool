@@ -1803,6 +1803,10 @@ def zero_out_transform_channels(transform):
     cmds.setAttr('%s.rotateY' % transform, 0)
     cmds.setAttr('%s.rotateZ' % transform, 0)
     
+def zero_out_pivot(transform):
+    
+    cmds.xform(transform, ws = True, rp = [0,0,0])
+    cmds.xform(transform, ws = True, sp = [0,0,0])
 
 def get_hierarchy_path(top_transform, btm_transform):
     """
