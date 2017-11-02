@@ -499,7 +499,7 @@ def connect_follicle_to_hair(follicle, hair_system):
     
     #cmds.refresh()
     
-def make_curve_dynamic(curve, hair_system = None, mesh = None):
+def make_curve_dynamic(curve, hair_system = None, mesh = None, curve_closest_samples = 10):
     """
     Replace a curve with a dynamic curve in a follicle. Good for attaching to a spline ik, to make it dynamic.
     It will make a duplicate of the curve so that the dynamics of the follicle can be switched on/off.
@@ -517,7 +517,7 @@ def make_curve_dynamic(curve, hair_system = None, mesh = None):
     uv = []
     
     if mesh:
-        uv = geo.get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 10)
+        uv = geo.get_closest_uv_on_mesh_at_curve(mesh, curve, samples = curve_closest_samples)
     
     follicle, follicle_shape = create_follicle(curve, hair_system, uv = uv)
     

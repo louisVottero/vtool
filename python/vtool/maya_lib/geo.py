@@ -1038,12 +1038,10 @@ def get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 50):
             closest_distance = distance
             out_closest_position = cv_position
             
-        if distance < 0.00001:
+        if distance < 0.0001:
             
             closest_distance = distance
             out_closest_position = cv_position
-            
-            
             break
     
     cmds.delete(temp_curve)
@@ -2881,7 +2879,15 @@ def rebuild_curve(curve, spans, degree = 3):
                        tol = 0.01)
 
     return curve
+
+def rebuild_curve_at_distance(curve, min_value, max_value, min_length, max_length):
     
+    length = cmds.arclen(curve, ch = False)
+    
+    
+    
+    rebuild_curve(curve, spans, degree)
+
 def evenly_position_curve_cvs(curve, match_curve = None):
     """
     Given a curve, evenly position the cvs along the curve.
