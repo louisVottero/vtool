@@ -341,9 +341,9 @@ class Part(object):
 
 def fade_sine(percent_value):
     
-    input = math.pi * percent_value
+    input_value = math.pi * percent_value
     
-    return math.sin(input)
+    return math.sin(input_value)
 
 def fade_cosine(percent_value):
     
@@ -367,16 +367,16 @@ def fade_sigmoid(percent_value):
     if percent_value == 1:
         return 1
     
-    input = percent_value * 10 + 1
+    input_value = percent_value * 10 + 1
     
-    return ( 2 / (1 + (math.e**(-0.70258*input)) ) ) -1 
+    return ( 2 / (1 + (math.e**(-0.70258*input_value)) ) ) -1 
     
 def set_percent_range(percent_value, new_min, new_max):
 
-    min = 0
-    max = 1
+    min_value = 0
+    max_value = 1
 
-    value = ( (new_max-new_min) * (percent_value-min) / (max-min) ) + new_min
+    value = ( (new_max-new_min) * (percent_value-min_value) / (max_value-min_value) ) + new_min
     
     return value
 
