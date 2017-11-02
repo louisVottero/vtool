@@ -3,6 +3,7 @@
 from random import uniform
 
 import vtool.util
+import vtool.util_math
 import api
 
 
@@ -2880,13 +2881,13 @@ def rebuild_curve(curve, spans, degree = 3):
 
     return curve
 
-def rebuild_curve_at_distance(curve, min_value, max_value, min_length, max_length):
+def rebuild_curve_at_distance(curve, min_length, max_length, min_spans = 3, max_spans = 10,):
     
     length = cmds.arclen(curve, ch = False)
     
+    spans = vtool.util_math.remap_value(length, min_length, max_length, min_spans, max_spans)
     
-    
-    rebuild_curve(curve, spans, degree)
+    rebuild_curve(curve, spans, degree = 3)
 
 def evenly_position_curve_cvs(curve, match_curve = None):
     """
