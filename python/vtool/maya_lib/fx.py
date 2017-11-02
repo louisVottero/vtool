@@ -497,9 +497,8 @@ def connect_follicle_to_hair(follicle, hair_system):
     
     cmds.connectAttr('%s.outputHair[%s]' % (hair_system, current_index), '%s.currentPosition' % follicle, f = True)
     
-    #cmds.refresh()
     
-def make_curve_dynamic(curve, hair_system = None, mesh = None):
+def make_curve_dynamic(curve, hair_system = None, mesh = None, curve_closest_samples = 10):
     """
     Replace a curve with a dynamic curve in a follicle. Good for attaching to a spline ik, to make it dynamic.
     It will make a duplicate of the curve so that the dynamics of the follicle can be switched on/off.
@@ -517,7 +516,7 @@ def make_curve_dynamic(curve, hair_system = None, mesh = None):
     uv = []
     
     if mesh:
-        uv = geo.get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 10)
+        uv = geo.get_closest_uv_on_mesh_at_curve(mesh, curve, samples = curve_closest_samples)
     
     follicle, follicle_shape = create_follicle(curve, hair_system, uv = uv)
     
@@ -536,7 +535,10 @@ def make_curve_dynamic(curve, hair_system = None, mesh = None):
     cmds.connectAttr('%s.worldMatrix' % new_curve, '%s.startPositionMatrix' % follicle_shape)
     cmds.connectAttr('%s.local' % new_curve, '%s.startPosition' % follicle_shape)
     
+    
     cmds.parent(curve, new_curve, follicle)
+    
+    space.zero_out_pivot(curve)
     cmds.setAttr('%s.inheritsTransform' % curve, 0)
     attr.zero_xform_channels(curve)
     
@@ -680,7 +682,7 @@ def get_follicle_input_curve(follicle):
     if input:
         return input_value[0]
 
-def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min_stiffness, max_stiffness):
+def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min_stiffness, max_stiffness, damp_scale = 1):
     """
     at min_length, max_stiffness will be set
     at max_length min_stiffness will be set
@@ -715,7 +717,7 @@ def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min
     
     cmds.setAttr('%s.startCurveAttract' % follicle, 1)
     
-    cmds.setAttr('%s.damp' % follicle, stiffness_weight)
+    cmds.setAttr('%s.damp' % follicle, stiffness_weight * damp_scale)
     
     
     
@@ -729,7 +731,7 @@ def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min
     cmds.setAttr('%s.attractionScale[0].attractionScale_FloatValue' % follicle, stiffness)
     
     cmds.setAttr('%s.attractionScale[1].attractionScale_Position' % follicle, 1)
-    cmds.setAttr('%s.attractionScale[1].attractionScale_FloatValue' % follicle, stiffness/2.0)
+    cmds.setAttr('%s.attractionScale[1].attractionScale_FloatValue' % follicle, stiffness/(2 - stiffness_weight))
     
     
 #--- Cloth
