@@ -1,8 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-import re
-import string
-
 import vtool.util
 
 
@@ -22,9 +19,6 @@ import shade
 
 if vtool.util.get_maya_version() > 2014:
     import vtool.util_alembic
-    import alembic
-    from alembic import Abc
-    from alembic import AbcGeom
 
 #--- Cache
 
@@ -224,7 +218,7 @@ def import_alembic(root_node, name, dirpath = None, auto_sub_folders = True):
     top_alembic = vtool.util_alembic.get_top_in(filename)
     
     meshes = vtool.util_alembic.get_all_instances(top_alembic, 'polyMesh')
-    curves = vtool.util_alembic.get_all_instances(top_alembic, 'nurbsCurve')
+    #curves = vtool.util_alembic.get_all_instances(top_alembic, 'nurbsCurve')
     
     alembic_node = cmds.createNode('AlembicNode')
     cmds.connectAttr('time1.outTime', '%s.time' % alembic_node)
@@ -497,7 +491,6 @@ def connect_follicle_to_hair(follicle, hair_system):
     
     cmds.connectAttr('%s.outputHair[%s]' % (hair_system, current_index), '%s.currentPosition' % follicle, f = True)
     
-    #cmds.refresh()
     
 def make_curve_dynamic(curve, hair_system = None, mesh = None, curve_closest_samples = 10):
     """
@@ -536,7 +529,10 @@ def make_curve_dynamic(curve, hair_system = None, mesh = None, curve_closest_sam
     cmds.connectAttr('%s.worldMatrix' % new_curve, '%s.startPositionMatrix' % follicle_shape)
     cmds.connectAttr('%s.local' % new_curve, '%s.startPosition' % follicle_shape)
     
+    
     cmds.parent(curve, new_curve, follicle)
+    
+    space.zero_out_pivot(curve)
     cmds.setAttr('%s.inheritsTransform' % curve, 0)
     attr.zero_xform_channels(curve)
     
@@ -572,8 +568,8 @@ def create_follicle_from_curve(curve, hair_system = None, attach_mesh = None, ou
     start_curve = cmds.rename(start_curve, 'start_%s' % curve)
     
     sets = cmds.listSets(object = start_curve)
-    for set in sets:
-        cmds.sets(start_curve, remove = set)
+    for set_value in sets:
+        cmds.sets(start_curve, remove = set_value)
     
     cmds.connectAttr('%s.worldMatrix' % start_curve, '%s.startPositionMatrix' % follicle_shape)
     cmds.connectAttr('%s.local' % start_curve, '%s.startPosition' % follicle_shape)
@@ -680,7 +676,7 @@ def get_follicle_input_curve(follicle):
     if input:
         return input_value[0]
 
-def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min_stiffness, max_stiffness):
+def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min_stiffness, max_stiffness, damp_scale = 1):
     """
     at min_length, max_stiffness will be set
     at max_length min_stiffness will be set
@@ -715,7 +711,7 @@ def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min
     
     cmds.setAttr('%s.startCurveAttract' % follicle, 1)
     
-    cmds.setAttr('%s.damp' % follicle, stiffness_weight)
+    cmds.setAttr('%s.damp' % follicle, stiffness_weight * damp_scale)
     
     
     
@@ -729,7 +725,7 @@ def set_follicle_stiffness_based_on_length(follicle, min_length, max_length, min
     cmds.setAttr('%s.attractionScale[0].attractionScale_FloatValue' % follicle, stiffness)
     
     cmds.setAttr('%s.attractionScale[1].attractionScale_Position' % follicle, 1)
-    cmds.setAttr('%s.attractionScale[1].attractionScale_FloatValue' % follicle, stiffness/2.0)
+    cmds.setAttr('%s.attractionScale[1].attractionScale_FloatValue' % follicle, stiffness/(2 - stiffness_weight))
     
     
 #--- Cloth
