@@ -210,6 +210,8 @@ class ProgressBar(object):
         
         global current_progress_bar 
         current_progress_bar = self
+        
+        self.inc_value = 0
     
     def inc(self, inc = 1):
         """
@@ -219,6 +221,14 @@ class ProgressBar(object):
             return
         
         cmds.progressBar(self.progress_ui, edit=True, step=inc)
+        self.inc_value = inc
+    
+    def next(self):
+        if is_batch():
+            return
+        
+        self.inc_value += 1
+        cmds.progressBar(self.progress_ui, edit=True, step=self.inc_value)
         
             
     def end(self):
@@ -304,18 +314,19 @@ def undo_off(function):
         try:
             return_value = function(*args, **kwargs)
         except:
-            
             if undo_state:
                 cmds.undoInfo( state = True )
                     
                 # do not remove
                 vtool.util.error( traceback.format_exc() )
-                
-            raise(RuntimeError)
-        
+            
             if current_progress_bar:
                 current_progress_bar.end()
                 current_progress_bar = None
+                
+            raise(RuntimeError)
+        
+
         
         if undo_state:          
             cmds.undoInfo( state = True )
@@ -359,12 +370,14 @@ def undo_chunk(function):
             
                 # do not remove
                 vtool.util.error( traceback.format_exc() )
-            
-            raise(RuntimeError)
 
             if current_progress_bar:
                 current_progress_bar.end()
                 current_progress_bar = None
+            
+            raise(RuntimeError)
+
+
             
         if not closed:
             if undo_chunk_active:
