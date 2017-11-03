@@ -864,7 +864,7 @@ def set_percent_range(percent_value, new_min, new_max):
     min_value = 0
     max_value = 1
 
-    value = ( (new_max-new_min) * (percent_value-min) / (max_value-min_value) ) + new_min
+    value = ( (new_max-new_min) * (percent_value-min_value) / (max_value-min_value) ) + new_min
     
     return value
 
