@@ -1022,17 +1022,24 @@ def get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 50):
     closest_distance = None
     closest_position = None
     out_closest_position = None
-    
+    last_cv_position = None
     for cv in cvs:
         
         cv_position = cmds.pointPosition(cv, w = True)
         closest_position = get_closest_position_on_mesh(mesh, cv_position)
         distance = vtool.util.get_distance(cv_position, closest_position)
         
+        if closest_distance and last_cv_position:
+            if closest_distance < distance:
+                out_closest_position = last_cv_position
+                
+        
         if not closest_distance:
             
             closest_distance = distance
             out_closest_position = cv_position
+        
+        
         
         if distance < closest_distance:
             
@@ -1044,6 +1051,8 @@ def get_closest_uv_on_mesh_at_curve(mesh, curve, samples = 50):
             closest_distance = distance
             out_closest_position = cv_position
             break
+        
+        last_cv_position = cv_position
     
     cmds.delete(temp_curve)
     
