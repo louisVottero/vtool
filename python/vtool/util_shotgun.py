@@ -77,6 +77,10 @@ def get_projects():
 
 def get_project_tank(project_name):
     sg = get_sg()
+    
+    if not sg:
+        return
+    
     entity = sg.find_one('Project', [['name', 'is',project_name]])
     
     global local_sgtk
