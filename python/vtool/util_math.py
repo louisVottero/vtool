@@ -390,25 +390,6 @@ def remap_value(value, old_min, old_max, new_min, new_max):
     
     return new_min + (value - old_min) * (new_max - new_min)/(old_max - old_min )
 
-def get_distance(vector1, vector2):
-    """
-    Get the distance between two vectors.
-    
-    Args:
-        vector1 (list): eg. [0,0,0] vector
-        vector2 (list): eg. [0,0,0] vector
-        
-    Returns:
-        float: The distance between the two vectors.
-    """
-    vector1 = Vector(vector1)
-    vector2 = Vector(vector2)
-    
-    vector = vector1 - vector2
-    
-    dist = vector()
-    
-    return math.sqrt( (dist[0] * dist[0]) + (dist[1] * dist[1]) + (dist[2] * dist[2]) )
 
 def get_distance_2D(vector1_2D, vector2_2D):
     """
@@ -608,7 +589,39 @@ def vector_magnitude(vector):
     
     return magnitude
 
+def get_distance(vector1, vector2):
+    """
+    Get the distance between two vectors.
+    
+    Args:
+        vector1 (list): eg. [0,0,0] vector
+        vector2 (list): eg. [0,0,0] vector
+        
+    Returns:
+        float: The distance between the two vectors.
+    """
+    vector1 = Vector(vector1)
+    vector2 = Vector(vector2)
+    
+    vector = vector1 - vector2
+    
+    dist = vector()
+    
+    return math.sqrt( (dist[0] * dist[0]) + (dist[1] * dist[1]) + (dist[2] * dist[2]) )
 
+def get_distance_before_sqrt(vector1, vector2):
+    
+    vector1 = Vector(vector1)
+    vector2 = Vector(vector2)
+    
+    vector = vector1 - vector2
+    
+    dist = vector()
+    
+    value = (dist[0] * dist[0]) + (dist[1] * dist[1]) + (dist[2] * dist[2])
+    return value
+
+    
 def vector_add(vector1, vector2):
     """
     Args:
