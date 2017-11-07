@@ -2838,6 +2838,20 @@ def connect_visibility(attribute_name, target_node, value = 1):
             cmds.connectAttr(attribute_name, '%s.visibility' % thing)
         
 
+def connect_plus_and_value(source_attribute, target_attribute, value):
+    
+    target_attribute_name = target_attribute.replace('.', '_')
+    
+    plus = cmds.createNode('plusMinusAverage', n = 'plusMinusAverage_%s' % target_attribute_name)
+    
+    cmds.connectAttr( source_attribute , '%s.input1D[0]' % plus)
+    
+    cmds.setAttr('%s.input1D[1]' % plus, value)
+    
+    cmds.connectAttr('%s.output1D' % plus, target_attribute, f = True)
+    
+    return plus
+
 def connect_plus(source_attribute, target_attribute, respect_value = False):
     """
     Connect source_attribute into target_attribute with a plusMinusAverage inbetween.
