@@ -756,13 +756,21 @@ def add_passive_collider_to_mesh(mesh, nucleus = None):
 def add_passive_collider_to_duplicate_mesh(mesh):
     duplicate = cmds.duplicate(mesh, n = 'collide_%s' % mesh )[0]
     
-    cmds.parent(duplicate, w = True)
+    try:
+        cmds.parent(duplicate, w = True)
+    except:
+        pass
+    
+    cmds.blendShape(mesh, duplicate, w = [0,1], n = 'blendShape_collide_%s' % mesh)
+    
+    move_node = cmds.polyMoveVertex('%s.vtx[*]' % duplicate,  ch = 1)
+    cmds.rename(move_node, 'polyMoveVertex_%s' % duplicate)
+    cmds.select(cl = True)
     
     nodes = add_passive_collider_to_mesh(duplicate)
     cmds.setAttr('%s.thickness' % nodes[0], .02)
-    nodes.append(duplicate)
     
-    cmds.blendShape(mesh, duplicate, w = [0,1], n = 'blendShape_collide_%s' % mesh)
+    nodes.append(duplicate)
     
     return nodes 
 
@@ -797,7 +805,8 @@ def add_passive_to_nucleus(passive_mesh, nucleus):
             
             cmds.connectAttr('%s.currentState' % out, '%s.inputPassive[%s]' % (nucleus, slot))
             cmds.connectAttr('%s.startState' % out, '%s.inputPassiveStart[%s]' % (nucleus, slot))
-
+            
+ 
 def add_nCloth_to_mesh(mesh):
     cmds.select(mesh, r = True)
     
