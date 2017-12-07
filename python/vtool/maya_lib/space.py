@@ -3076,6 +3076,7 @@ def constrain_local(source_transform, target_transform, parent = False, scale_co
     
     return local_group, xform_group
 
+@core.undo_chunk
 def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', name = 'sub_1', duplicate = False):
     """
     Add evenly spaced joints inbetween joint1 and joint2.
@@ -3098,9 +3099,17 @@ def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', n
         if cmds.nodeType(selection[0]) == 'joint':
             joint1 = selection[0]
         
-        if cmds.nodeType(selection[1]) == 'joint':
-            joint2 = selection[1]
+        if len(selection) > 1:
+            if cmds.nodeType(selection[1]) == 'joint':
+                joint2 = selection[1]
             
+    if joint1 and not joint2:
+        joint_rels = cmds.listRelatives(joint1, type = 'joint')
+        
+        if joint_rels:
+            joint2 = joint_rels[0]
+        
+        
     if not joint1 or not joint2:
         return
     
@@ -3452,7 +3461,7 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
             
             if node_type == 'joint':
                 joints.append(thing)
-            if node_type == 'trasnform':
+            if node_type == 'transform':
                 transforms.append(thing)
     
     if not skip_search:
@@ -3509,7 +3518,19 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
         
         if not cmds.objExists(other) and create_if_missing:
             
-            other = cmds.duplicate(transform, po = True, n = other)[0]
+            node_type = cmds.nodeType(transform)
+            shape_type = core.get_shape_node_type(transform)
+            
+            if not node_type == 'joint':
+                other_node = cmds.createNode(shape_type)
+            
+                if core.is_a_shape(other_node):
+                    other_node = cmds.listRelatives(other_node, p = True, f = True)
+                
+                    other = cmds.rename(other_node, other)
+                    
+            if node_type == 'joint':
+                other = cmds.duplicate(transform, po = True, n = other)[0]
             
             created = True
             
