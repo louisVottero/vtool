@@ -279,7 +279,7 @@ class BlendShape(object):
                     
                     found = True
                     
-                    bar.inc()
+                    bar.next()
                     
                     if vtool.util.break_signaled():
                         break
