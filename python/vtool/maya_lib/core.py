@@ -92,12 +92,19 @@ class FindUniqueName(vtool.util.FindUniqueString):
         self.work_on_last_number = True
     
     def _get_scope_list(self):
-
+        
+        
+        if cmds.namespace(exists = self.increment_string):
+            return [self.increment_string]
+        
         if cmds.objExists(self.increment_string):
             return [self.increment_string]
         
         if not cmds.objExists(self.increment_string):
-            return []
+            if not cmds.namespace(exists = self.increment_string):
+                return []
+        
+        
     
     def _format_string(self, number):
         
@@ -525,12 +532,15 @@ def inc_name(name, inc_last_number = True):
         str: Modified name, number added if not unique..
     """
     
-    if not cmds.objExists(name):
+    print 'here!!!'
+    
+    if not cmds.objExists(name) and not cmds.namespace(exists = name):
         return name
     
     unique = FindUniqueName(name)
     unique.get_last_number(inc_last_number)
     return unique.get()
+
 
 def prefix_name(node, prefix, name, separator = '_'):
     """
@@ -1124,10 +1134,12 @@ def save(filepath):
     
     file_type = 'mayaAscii'
     
-    if filepath.endswith('.mb'):
-        file_type = 'mayaBinary'
+    
     
     if filepath:
+    
+        if filepath.endswith('.mb'):
+            file_type = 'mayaBinary'
         
         try:
             cmds.file(rename = filepath)

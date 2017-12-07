@@ -1314,6 +1314,8 @@ class TagManager(qt_ui.BasicDialog):
         self.tag_list.itemSelectionChanged.connect(self._update_selected_tag)
         self.tag_list.setSelectionMode(self.shape_list.MultiSelection)
         
+        
+        
         shapes_layout.addWidget(self.shape_list)
         tags_layout.addWidget(self.tag_list)
         
@@ -1351,6 +1353,7 @@ class TagManager(qt_ui.BasicDialog):
         
         self._right_click_tag = None
         
+        self._item_height = 20
         
     def _tag_item_menu(self, position):
         item = self.tag_list.itemAt(position)
@@ -1376,7 +1379,12 @@ class TagManager(qt_ui.BasicDialog):
     
         tags = self.manager.get_tags_from_shape(shape)
         
+        
+        
         self._select_tags(tags)
+        
+        if tags:
+            shape_item.setBackground(0, qt.QTreeWidgetItem().background(0))
         
     
     def _update_selected_tag(self):
@@ -1389,6 +1397,19 @@ class TagManager(qt_ui.BasicDialog):
         
         self._remove_tags_from_shapes(unselected_tag_items)
         self._add_tags_to_shapes(selected_tag_items)
+        
+        for tag_item in self._get_unselected_tag_items():
+            
+            tag_text = str(tag_item.text())
+            
+            
+            print tag_text
+            shapes = self.manager.get_tag_shapes(tag_text)
+            
+            
+            if not shapes:
+                print 'set red!'
+                tag_item.setBackground(qt.QBrush(qt.QColor('darkRed')))
         
     def _select_tags(self, tags):
         
@@ -1452,7 +1473,7 @@ class TagManager(qt_ui.BasicDialog):
         for shape in shape_items:
             shape_text = str(shape.text(0))
             shapes.append(shape_text)
-        
+            
         for tag_item in tag_items:
             
             tag_text = str(tag_item.text())
@@ -1463,12 +1484,28 @@ class TagManager(qt_ui.BasicDialog):
                 for shape in shapes:
                     if not shape in tag_shapes:
                         tag_shapes.append(shape)
+                        
+                tag_item.setBackground(qt.QBrush(qt.QColor('darkRed')))
             
             if not tag_shapes:
                 tag_shapes = shapes
+                
+                tag_item.setBackground(qt.QListWidgetItem().background())
             
             self.manager.set_tag(tag_text, tag_shapes)
     
+        for shape in shape_items:
+            
+            shape_text = str(shape.text(0))
+            
+            tags = self.manager.get_tags_from_shape(shape_text)
+            
+            if tags:
+                shape.setBackground(0, qt.QTreeWidgetItem().background(0) )
+                
+            if not tags:
+                shape.setBackground(0, qt.QBrush(qt.QColor('darkRed'))  )
+                
     def _set_tags(self, tags):
         self.tag_list.clear()
         
@@ -1478,8 +1515,22 @@ class TagManager(qt_ui.BasicDialog):
         tags.sort()
         
         for tag in tags:
-            self.tag_list.addItem(tag)
-    
+            
+            shapes = self.manager.get_tag_shapes(tag)
+            
+            item = qt.QListWidgetItem()
+            item.setText(tag)
+            item.setSizeHint(qt.QtCore.QSize(100, self._item_height))
+            
+            self.tag_list.addItem(item)
+            
+            if item:
+                if not shapes:
+                    item.setBackground(qt.QBrush(qt.QColor('darkRed')) )
+                if shapes:
+                    item.setBackground( qt.QListWidgetItem().background() )
+                
+                
     def _set_shapes(self, shapes):
         
         self.shape_list.clear()
@@ -1489,6 +1540,13 @@ class TagManager(qt_ui.BasicDialog):
             item = qt.QTreeWidgetItem()
             item.setText(0, shape)
             self.shape_list.addTopLevelItem(item)
+            
+            item.setSizeHint(0, qt.QtCore.QSize(100, self._item_height))
+            
+            tags = self.manager.get_tags_from_shape(shape)
+            
+            if not tags:
+                item.setBackground(0,qt.QBrush(qt.QColor('darkRed')) )
             
     def _get_shape_item_by_name(self, name):
         
@@ -1541,7 +1599,19 @@ class TagManager(qt_ui.BasicDialog):
             return
         
         self._tags.append(name)
-        self.tag_list.addItem(name)
+        
+        item = qt.QListWidgetItem()
+        item.setText(name)
+        item.setSizeHint(qt.QtCore.QSize(100, self._item_height))
+        
+        self.tag_list.addItem(item)
+        
+        shapes = self.manager.get_tag_shapes(name)
+        
+        if item:
+            if not shapes:
+                item.setBackground(qt.QBrush(qt.QColor('darkRed')) )
+        
         
     def remove_tag(self, items = []):
         
