@@ -4341,6 +4341,7 @@ def transfer_joint_weight_to_blendshape(blendshape_node, joint, mesh, index = 0,
     
     if target == -1:
         for weight in weight_values:
+            
             cmds.setAttr('%s.inputTarget[%s].baseWeights[%s]' % (blendshape_node, index, inc), weight)
             inc += 1
             
