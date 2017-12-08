@@ -49,6 +49,39 @@ def get_vetala_directory():
     filepath = fix_slashes(filepath)
     return filepath
 
+
+class ProcessLog(object):
+    
+    def __init__(self, path):
+        
+        self.log_path = path
+        
+        self.log_path = create_dir('.log', self.log_path)
+        
+        date_and_time = get_date_and_time()
+        
+        self.log_path = create_dir('log_' % date_and_time, self.log_path)
+    
+        temp_log_path = util.get_env('VETALA_TEMP_LOG')
+    
+        util.set_env('VETALA_KEEP_TEMP_LOG', 'True')
+        
+        if not temp_log_path:
+            util.set_env('VETALA_TEMP_LOG', self.log_path)
+        
+    def record_temp_log(self, name, value):
+    
+        if util.get_env('VETALA_KEEP_TEMP_LOG') == 'True':
+            value = value.replace('\t', '  ')
+            
+            create_file('%s.txt' % name, self.log_path)
+            
+
+    def end_temp_log(self):
+        util.set_env('VETALA_KEEP_TEMP_LOG', 'False')
+        util.set_env('VETAL_TEMP_LOG', '')
+        
+
 class WatchDirectoryThread(threading.Thread):
     """
     Not developed fully.
@@ -1424,6 +1457,36 @@ def get_folder_size(path, round_value = 2):
             size += get_filesize( join_path(root, name), round_value )
             
     return size
+
+def get_date():
+    
+    date_value = datetime.datetime.now()
+    year = date_value.year
+    month = date_value.month
+    day = date_value.day
+    
+    return '%s_%s_%s' % (year,month,day)
+
+def get_date_and_time():
+    date_value = datetime.datetime.now()
+    year = date_value.year
+    month = date_value.month
+    day = date_value.day
+    
+    hour = str(date_value.hour)
+    minute = str(date_value.minute)
+    second = date_value.second
+    
+    second = str( int(second) )
+    
+    if len(hour) == 1:
+        hour = '0'+hour
+    if len(minute) == 1:
+        minute = '0'+minute
+    if len(second) == 1:
+        second = second + '0'
+
+    return '%s_%s_%s__%s_%s_%s' % (year,month,day,hour,minute,second)
 
 def get_last_modified_date(filepath):
     """
