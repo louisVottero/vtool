@@ -7284,6 +7284,8 @@ class QuadFootRig(FootRig):
         
         self._create_pivot_groups()
         
+
+
 #---Face Rig
 
 class EyeLidCurveRig(JointRig):

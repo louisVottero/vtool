@@ -2780,6 +2780,7 @@ class WeightFromMesh(object):
         edge_indices = vtool.util.convert_to_sequence(edge_index)
         
         for index in edge_indices:
+            
             self._edge_bones[str(index)] = joint_name
     
     def set_target_mesh(self, mesh):
@@ -2793,6 +2794,8 @@ class WeightFromMesh(object):
         
         edges = cmds.ls('%s.e[*]' % self._mesh, flatten = True)
         joints = []
+        self._visited_verts = []
+        
         for edge in edges:
             
             edge_index = str(vtool.util.get_last_number(edge))
@@ -2801,8 +2804,6 @@ class WeightFromMesh(object):
             
             vrt1_index = str(vtool.util.get_last_number(vertices[0]))
             vrt2_index = str(vtool.util.get_last_number(vertices[1]))
-            
-            
             
             if self._edge_bones.has_key(edge_index):
                 
@@ -2819,6 +2820,7 @@ class WeightFromMesh(object):
                     skin.add_influence(edge_joint)
                 
                 if not vrt1_index in self._visited_verts:
+                    
                     skin.set_influence_weights(edge_joint, 1,[vrt1_index])
                     self._visited_verts.append(vrt1_index)
                     

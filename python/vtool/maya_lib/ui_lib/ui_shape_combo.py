@@ -1413,6 +1413,9 @@ class TagManager(qt_ui.BasicDialog):
         
     def _select_tags(self, tags):
         
+        if not tags:
+            self.tag_list.clearSelection()
+            return
         
         
         self._supress_tag_update = True

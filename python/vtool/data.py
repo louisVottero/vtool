@@ -1387,22 +1387,31 @@ class DeformerWeightData(MayaCustomData):
                 util.warning('Did not find a cluster or wire deformer on %s.' % mesh)
                 continue
             
+            info_lines = []
+            
             for deformer in deformers:
                 
-                weights = maya_lib.deform.get_deformer_weights(deformer)
                 
-                filepath = util_file.create_file('%s.weights' % deformer, path)
+                indices = maya_lib.attr.get_indices('%s.input' % deformer)
                 
-                if not filepath:
-                    return
                 
-                write_info = util_file.WriteFile(filepath)
+                for index in indices:
+                    weights = maya_lib.deform.get_deformer_weights(deformer, index)
+                    
+                    filepath = util_file.create_file('%s.weights' % deformer, path)
+                    
+                    if not filepath:
+                        return
+                    
+                    write_info = util_file.WriteFile(filepath)
+                    
+                    info_lines.append(weights)
                 
-                info_lines = [weights]
-                
+                    found_one = True
+                    
                 write_info.write(info_lines)
                 util.show('Exported weights on %s.' % deformer)
-                found_one = True
+                
     
     
         if not found_one:
@@ -1425,19 +1434,31 @@ class DeformerWeightData(MayaCustomData):
             
             lines = util_file.get_file_lines(file_path)
             
-            if lines:
-                weights = eval(lines[0])
+            
                 
             if not lines:
                 return
             
-            deformer = filename.split('.')[0]
-            
-            if cmds.objExists(deformer):
-                maya_lib.deform.set_deformer_weights(weights, deformer)
+            if lines:
                 
-            if not cmds.objExists(deformer):
-                util.warning('Import failed: Deformer %s does not exist.' % deformer)    
+                inc = 0
+                
+                for line in lines:
+                    if not line:
+                        continue
+                    try:
+                        weights = eval(line)
+                    except:
+                        continue
+                    deformer = filename.split('.')[0]
+            
+                    if cmds.objExists(deformer):
+                        maya_lib.deform.set_deformer_weights(weights, deformer, inc)
+                
+                    if not cmds.objExists(deformer):
+                        util.warning('Import failed: Deformer %s does not exist.' % deformer)    
+                 
+                    inc += 1
                  
         maya_lib.core.print_help('Imported %s data' % self.name)
         

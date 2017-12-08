@@ -702,7 +702,14 @@ def get_shapes(transform, shape_type = None, no_intermediate = False):
         return cmds.listRelatives(transform, s = True, f = True, type = shape_type, ni = no_intermediate)
     if not shape_type:
         return cmds.listRelatives(transform, s = True, f = True, ni = no_intermediate)
+
+def get_shape_node_type(node):
     
+    shapes = get_shapes(node)
+    
+    if shapes:
+        return cmds.nodeType(shapes[0])
+
 def get_node_types(nodes, return_shape_type = True):
     """
     Get the maya node types for the nodes supplied.
