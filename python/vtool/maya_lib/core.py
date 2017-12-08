@@ -532,8 +532,6 @@ def inc_name(name, inc_last_number = True):
         str: Modified name, number added if not unique..
     """
     
-    print 'here!!!'
-    
     if not cmds.objExists(name) and not cmds.namespace(exists = name):
         return name
     
