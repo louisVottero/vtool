@@ -34,6 +34,7 @@ def build_qt_application(*argv):
     return application
 
 def create_signal(*arg_list):
+    
     if is_pyqt():
         return qt.QtCore.pyqtSignal(*arg_list)
     if is_pyside() or is_pyside2():
