@@ -23,7 +23,7 @@ def bake_to_animation(nodes, min_time = None, max_time = None):
                       preserveOutsideKeys = True,
                       sparseAnimCurveBake = False,
                       removeBakedAttributeFromLayer = False,
-                      removeBakedAnimFromLayer = False,
+                      removeBakedAnimFromLayer = True,
                       bakeOnOverrideLayer = False,
                       minimizeRotation = True,
                       controlPoints = False,
