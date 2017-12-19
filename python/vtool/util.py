@@ -31,7 +31,15 @@ def set_env(name, value):
     """
     
     if os.environ.has_key(name):
-        os.environ[name] = str(value)
+        
+        value = str(value)
+        
+        size = sys.getsizeof(value)
+        if size > 32767:
+            value = value[:25000]
+            value = 'truncated... ' + value 
+        os.environ[name] = value
+        
         
 def get_env(name):
     """
@@ -60,7 +68,24 @@ def append_env(name, value):
     
     set_env(name, env_value)
     
+def start_temp_log():
+    set_env('VETALA_KEEP_TEMP_LOG', 'True')
+    set_env('VETALA_TEMP_LOG', '')
 
+def record_temp_log(value):
+    
+    if get_env('VETALA_KEEP_TEMP_LOG') == 'True':
+        value = value.replace('\t', '  ')
+        append_env('VETALA_TEMP_LOG', value)
+
+def end_temp_log():
+    set_env('VETALA_KEEP_TEMP_LOG', 'False')
+    value = get_env('VETALA_TEMP_LOG')
+    set_env('VETAL_TEMP_LOG', '')
+    
+    set_env('VETALA_LAST_TEMP_LOG', value)
+    
+    return value
 
 def add_to_PYTHONPATH(path):
     """
