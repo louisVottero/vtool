@@ -31,7 +31,15 @@ def set_env(name, value):
     """
     
     if os.environ.has_key(name):
-        os.environ[name] = str(value)
+        
+        value = str(value)
+        
+        size = sys.getsizeof(value)
+        if size > 32767:
+            value = value[:30000]
+            value = 'truncated... ' + value 
+        os.environ[name] = value
+        
         
 def get_env(name):
     """

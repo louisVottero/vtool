@@ -1512,10 +1512,6 @@ class Process(object):
         Returns:
             str: The status from running the script. This includes error messages.
         """
-        
-        process_path = self.get_path()
-        
-        #util.start_temp_log(process_path)
         util.start_temp_log()
         builtins = dir(__builtin__)
         
