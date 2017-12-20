@@ -520,7 +520,14 @@ def is_unique(name):
         return True
     
     return True
+
+def is_namespace(namespace):
     
+    if cmds.namespace(exists = namespace):
+        return True
+    
+    return False
+
 def inc_name(name, inc_last_number = True):
     """
     Finds a unique name by adding a number to the end.
