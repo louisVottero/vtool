@@ -1515,7 +1515,8 @@ class Process(object):
         
         process_path = self.get_path()
         
-        util.start_temp_log(process_path)
+        #util.start_temp_log(process_path)
+        util.start_temp_log()
         builtins = dir(__builtin__)
         
         old_process = None

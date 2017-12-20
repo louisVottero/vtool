@@ -31,6 +31,7 @@ def load_into_tool_manager(window):
     if not ToolManager._last_instance:
         ui_core.create_window(window)
 
+
 ui_core.new_tool_signal.signal.connect(load_into_tool_manager) 
 
 
