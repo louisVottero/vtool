@@ -265,7 +265,7 @@ def import_alembic(root_node, name, dirpath = None, auto_sub_folders = True):
         shade.set_shader_info(geo, shader_info_dict[geo])
         
 
-def import_alembic_geo(name, dirpath = None, auto_sub_folders = True):
+def import_alembic_geo(name, dirpath = None, auto_sub_folders = True, namespace = None):
 
     if not cmds.pluginInfo('AbcImport', query = True, loaded = True):
         cmds.loadPlugin('AbcImport')
@@ -283,6 +283,13 @@ def import_alembic_geo(name, dirpath = None, auto_sub_folders = True):
     cmds.select(cache_group, replace = True)
     
     mel.eval('AbcImport -mode "import" -reparent "%s" "%s"' % (cache_group, filename)) 
+    
+    if namespace:
+        if not cmds.namespace(ex = namespace):
+            cmds.namespace(add = namespace)
+        
+        cmds.rename(cache_group, '%s:%s' % (cache_group, namespace))
+            
     
     return cache_group
 

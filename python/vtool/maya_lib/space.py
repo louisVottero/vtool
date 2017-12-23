@@ -1796,12 +1796,16 @@ def zero_out_transform_channels(transform):
     Zero out the translate and rotate on a transform.
     """
     
-    cmds.setAttr('%s.translateX' % transform, 0)
-    cmds.setAttr('%s.translateY' % transform, 0)
-    cmds.setAttr('%s.translateZ' % transform, 0)
-    cmds.setAttr('%s.rotateX' % transform, 0)
-    cmds.setAttr('%s.rotateY' % transform, 0)
-    cmds.setAttr('%s.rotateZ' % transform, 0)
+    transforms = vtool.util.convert_to_sequence(transform)
+    
+    
+    for thing in transforms:
+        cmds.setAttr('%s.translateX' % thing, 0)
+        cmds.setAttr('%s.translateY' % thing, 0)
+        cmds.setAttr('%s.translateZ' % thing, 0)
+        cmds.setAttr('%s.rotateX' % thing, 0)
+        cmds.setAttr('%s.rotateY' % thing, 0)
+        cmds.setAttr('%s.rotateZ' % thing, 0)
     
 def zero_out_pivot(transform):
     
@@ -2510,7 +2514,7 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
     if not use_duplicate:
         follow_group = cmds.group( em = True, n = core.inc_name(name) )
     if use_duplicate:
-        follow_group = cmds.duplicate( target_transform, n = core.inc_name(name), po = True)
+        follow_group = cmds.duplicate( target_transform, n = core.inc_name(name), po = True)[0]
         
         attr.remove_user_defined(follow_group)
         
@@ -2519,16 +2523,21 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
     match = MatchSpace(source_transform, follow_group)
     match.translation_rotation()
     
+    
+    
+    if parent:
+        cmds.parent(follow_group, parent)
+    
+    zero_out_transform_channels(follow_group)
+        
+    if follow_scale:
+        attr.connect_scale(source_transform, follow_group)
+    
     cmds.parentConstraint(source_transform, follow_group, mo = True)
     
     cmds.parent(target_transform, follow_group)    
     
-    if parent:
-        cmds.parent(follow_group, parent)
-        
-    if follow_scale:
-        attr.connect_scale(source_transform, follow_group)
-        
+    
     return follow_group
 
 def create_local_follow_group(source_transform, target_transform, prefix = 'followLocal', orient_only = False, connect_scale = False):
