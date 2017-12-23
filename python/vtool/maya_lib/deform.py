@@ -871,7 +871,9 @@ class SplitMeshTarget(object):
                 if not base_mesh_count == len(weight_meshes):
                     vtool.util.warning('Searching children, but children of base mesh and children of weight mesh have different count.')
                     continue
-        
+            
+            one_weight = False
+            
             for inc in range(0, base_mesh_count):
                 
                 base_mesh = base_meshes[inc]
@@ -889,13 +891,13 @@ class SplitMeshTarget(object):
                 
                 if not weights:
                     vtool.util.warning('No weights found! Could not extract target on %s' % target_mesh)
-                    break
+                    continue
+                if weights:
+                    one_weight = True
                 
-                
-                
-                self._weight_target(target_mesh, new_target_mesh, weights)
+                    self._weight_target(target_mesh, new_target_mesh, weights)
         
-            if not weights:
+            if not one_weight:
                 cmds.delete(new_target)
                 new_target = None
         
@@ -2769,26 +2771,11 @@ class WeightFromMesh(object):
         
         self._visited_verts = []
     
-    def add_vert_bone(self, joint_name, vertex_index):
-        self._vert_bones[str(vertex_index)] = joint_name
+        self._skin = None
+        self._current_skin_mesh = None
     
-    def add_edge_bone(self, joint_name, edge_index):
-        """
-        edge index can be a single edge index or a list of edge indices
-        """
-        
-        edge_indices = vtool.util.convert_to_sequence(edge_index)
-        
-        for index in edge_indices:
-            
-            self._edge_bones[str(index)] = joint_name
+    def _skin_mesh(self):
     
-    def set_target_mesh(self, mesh):
-        self._target_mesh = mesh
-        
-    def run(self):
-        
-        
         skin_mesh = cmds.duplicate(self._mesh)[0]
         skin = SkinCluster(skin_mesh)
         
@@ -2834,8 +2821,34 @@ class WeightFromMesh(object):
                 
         skin.normalize(True)
         
-        skin_mesh_from_mesh(skin_mesh, self._target_mesh)
-        cmds.delete(skin_mesh)
+        self._current_skin_mesh = skin_mesh
+        self._skin = skin
+        
+        return joints
+    
+    def add_vert_bone(self, joint_name, vertex_index):
+        self._vert_bones[str(vertex_index)] = joint_name
+    
+    def add_edge_bone(self, joint_name, edge_index):
+        """
+        edge index can be a single edge index or a list of edge indices
+        """
+        
+        edge_indices = vtool.util.convert_to_sequence(edge_index)
+        
+        for index in edge_indices:
+            
+            self._edge_bones[str(index)] = joint_name
+    
+    def set_target_mesh(self, mesh):
+        self._target_mesh = mesh
+        
+    def run(self):
+        
+        joints = self._skin_mesh()
+    
+        skin_mesh_from_mesh(self._current_skin_mesh, self._target_mesh)
+        cmds.delete(self._current_skin_mesh)
         
         return joints
         
@@ -4259,6 +4272,10 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
         weights = get_skin_weights(skin_deformer)
         
         cmds.setAttr('%s.normalizeWeights' % skin_deformer, 0)
+        
+        print 'goobers', weights
+        print weights.keys()
+        print skin_deformer
         
         index_weights = weights[index]
         

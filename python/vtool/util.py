@@ -36,7 +36,7 @@ def set_env(name, value):
         
         size = sys.getsizeof(value)
         if size > 32767:
-            value = value[:25000]
+            value = value[:30000]
             value = 'truncated... ' + value 
         os.environ[name] = value
         
@@ -86,6 +86,7 @@ def end_temp_log():
     set_env('VETALA_LAST_TEMP_LOG', value)
     
     return value
+
 
 def add_to_PYTHONPATH(path):
     """

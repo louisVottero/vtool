@@ -873,6 +873,7 @@ class SkinClusterFunction(MayaFunction):
             weights_plug.getExistingArrayAttributeIndices(weight_influence_ids)
         
             influence_plug = OpenMaya.MPlug(weights_plug)
+            
             for influence_id in weight_influence_ids:
                 
                 influence_plug.selectAncestorLogicalIndex(influence_id, weights_attr)
