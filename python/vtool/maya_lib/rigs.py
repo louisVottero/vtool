@@ -9385,6 +9385,8 @@ class FeatherStripRig(CurveRig):
         
         color_dict = {}
         
+        previous_point_node = None
+        
         for inc in range(0, len(joints1)):
             
             cmds.setAttr('%s.inheritsTransform' % joints1[inc], 0)
@@ -9436,9 +9438,14 @@ class FeatherStripRig(CurveRig):
                 cmds.parent(object_up, self.up_parent)
                 aim_const = cmds.aimConstraint(joints2[inc], aim_group, wu = world_up_vector, worldUpObject = self.up_parent, worldUpType = 'objectrotation')[0]
             
-            if point_node:
-                cmds.connectAttr('%s.tangent' % point_node, '%s.worldUpVector' % aim_const)
-                
+            #if point_node:
+            #    cmds.connectAttr('%s.tangent' % point_node, '%s.worldUpVector' % aim_const)
+            if previous_point_node:
+                cmds.connectAttr('%s.position' % point_node, '%s.worldUpVector' % aim_const)
+            
+            
+            previous_point_node = point_node
+            
             space.create_xform_group(aim_group)
             
             cmds.parent(joints[0], aim_group)
