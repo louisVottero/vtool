@@ -321,6 +321,7 @@ class FileData(Data):
         
         self.settings = util_file.SettingsFile()
         self.file = None
+        self._sub_folder = None
         
     def _data_extension(self):
         return 'data'
@@ -329,11 +330,14 @@ class FileData(Data):
         
         name = self.name
         
+        if self._sub_folder:
+            name = self._sub_folder
+        
         if self.data_extension:
-            return '%s.%s' % (self.name, self.data_extension)
+            return '%s.%s' % (name, self.data_extension)
         if not self.data_extension:
-            return self.name
-           
+            return name
+
     def set_directory(self, directory):
         self.directory = directory
         self.settings.set_directory(self.directory, 'data.type')
@@ -343,6 +347,9 @@ class FileData(Data):
             self.filepath = util_file.join_path(directory, '%s.%s' % (self.name, self.data_extension))
         if not self.data_extension:
             self.filepath = util_file.join_path(directory, self.name)
+
+    def set_sub_folder(self, folder_name):
+        self._sub_folder = folder_name
         
     def create(self):
         name = self.name
@@ -351,13 +358,17 @@ class FileData(Data):
     
     def get_file(self):
         
-        filepath = util_file.join_path(self.directory, self._get_file_name())
+        directory = self.directory
         
-        if util_file.is_file(filepath):
-            return filepath
+        filename = self._get_file_name()
         
-        if util_file.is_dir(filepath):
-            return filepath
+        if self._sub_folder:
+            directory = util_file.join_path(self.directory, '.sub/%s' % self._sub_folder)
+        
+        
+        filepath = util_file.join_path(directory, filename)
+        
+        return filepath
         
     def rename(self, new_name):
         
@@ -2450,10 +2461,13 @@ class MayaFileData(MayaCustomData):
             import_file = filepath
             
         if not import_file:
-            if not util_file.is_file(self.filepath):
+            
+            filepath = self.get_file()
+            
+            if not util_file.is_file(filepath):
                 return
             
-            import_file = self.filepath
+            import_file = filepath
         
         maya_lib.core.import_file(import_file)
         
@@ -2467,10 +2481,13 @@ class MayaFileData(MayaCustomData):
             open_file = filepath
             
         if not open_file:
-            if not util_file.is_file(self.filepath):
+            
+            filepath = self.get_file()
+            
+            if not util_file.is_file(filepath):
                 return
             
-            open_file = self.filepath
+            open_file = filepath
         
         
         
@@ -2500,7 +2517,7 @@ class MayaFileData(MayaCustomData):
         
         self._clean_scene()
         
-        filepath = self.filepath
+        filepath = self.get_file()
         
         #not sure if this ever gets used?...
         if not filepath.endswith('.mb') and not filepath.endswith('.ma'):
@@ -2535,13 +2552,15 @@ class MayaFileData(MayaCustomData):
         
     def export_data(self, comment):
         
-        util_file.get_permission(self.filepath)
+        filepath = self.get_file()
+                
+        util_file.get_permission(filepath)
         
         self._handle_unknowns()
         
         self._clean_scene()
                 
-        cmds.file(rename = self.filepath)
+        cmds.file(rename = filepath)
         
         self._prep_scene_for_export()
         
@@ -2556,7 +2575,7 @@ class MayaFileData(MayaCustomData):
                   stx = 'always', 
                   type = self.maya_file_type)
         
-        version = util_file.VersionFile(self.filepath)
+        version = util_file.VersionFile(filepath)
         version.save(comment)
         
         maya_lib.core.print_help('Exported %s data.' % self.name)
@@ -2564,7 +2583,7 @@ class MayaFileData(MayaCustomData):
     def maya_reference_data(self, filepath = None):
         
         if not filepath:
-            filepath = self.filepath
+            filepath = self.get_file()
         
         maya_lib.core.reference_file(filepath)
         
