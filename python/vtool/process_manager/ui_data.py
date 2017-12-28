@@ -111,25 +111,18 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                     
                     if key == data_type:
                         
-                        if self.data_widget.file_widget:
-                            self.data_widget.file_widget.close()
-                            self.data_widget.file_widget.deleteLater()
-                            del self.data_widget.file_widget
-                            self.data_widget.file_widget = None
-                            
-                        
-                        self.data_widget.file_widget = file_widgets[key]()
+                        widget = file_widgets[key]()
                         
                         path_to_data = vtool.util_file.join_path(process_tool.get_data_path(), str( item.text(0) ) )
                         
-                        if hasattr(self.data_widget.file_widget, 'set_directory'):
-                            self.data_widget.file_widget.set_directory(path_to_data)
-                            self.data_widget.set_directory(path_to_data)
-                            
-                        self.data_widget.main_layout.insertWidget(0, self.data_widget.file_widget)
+                        self.data_widget.add_file_widget(widget)
+                        self.data_widget.set_directory(path_to_data)
+                        
                         self.data_widget.show()
+                        self.data_widget.list.set_selected(0)
                         self.label.setText( str( item.text(0)) )
                         self.label.show()
+                        
             if not is_data:
                 item = None
             
@@ -137,12 +130,8 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
             if not self.data_widget.file_widget:
                 return
                 
-            if self.data_widget.file_widget:
-                self.data_widget.file_widget.hide()
-                self.data_widget.hide()
-                self.data_widget.file_widget.deleteLater()
-                self.data_widget.file_widget = None
-                self.label.setText('')
+            self.data_widget.remove_file_widget()
+            self.label.setText('')
                 
                 
                 
@@ -152,7 +141,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         if not directory:
             return
         
-        self.data_widget.file_widget.set_directory(directory)
         self.data_widget.set_directory(directory)
         
         basename = vtool.util_file.get_basename(directory)
@@ -181,6 +169,7 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         super(DataWidget, self).__init__(parent, scroll)
         
         self.setMinimumHeight(100)
+        self.directory = None
     
     def _define_main_layout(self):
         return vtool.qt.QHBoxLayout()
@@ -189,24 +178,58 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         
         
         self.list = vtool.qt_ui.AddRemoveDirectoryList()
-        self.list.set_title('Use Folder')
+        self.list.set_title('Sub Folder')
         self.list.setMaximumWidth(125)
-        #this is a new feature. Hidden for now
-        self.list.hide()
+        self.list.set_selected(0)
+        
+                
         self.file_widget = vtool.qt_ui.BasicWidget()
         
-        self.main_layout.addWidget(self.file_widget)
-        self.main_layout.addWidget(self.list)
+        self.list.item_update.connect(self._set_file_widget_directory)
         
+        self.main_layout.addWidget(self.list)
+        self.main_layout.addWidget(self.file_widget)
+        
+    def _set_file_widget_directory(self):
+        
+        if not self.file_widget:
+            return
+        
+        folder = self.directory
+        
+        text = self.list.get_current_text()
+        
+        if text:
+            if text == '-default-':
+                text = None
+            self.file_widget.set_sub_folder(text)
+            #folder = vtool.util_file.join_path(self.directory, '.sub/%s' % text)
+        
+        self.file_widget.set_directory(folder)
         
     def remove_file_widget(self):
-        pass
+        if not self.file_widget:
+            return
+        self.file_widget.close()
+        self.file_widget.deleteLater()
+        del self.file_widget
+        self.file_widget = None
     
-    def add_file_widget(self):
-        pass
+    def add_file_widget(self, widget):
+        
+        self.remove_file_widget()
+        
+        self.main_layout.addWidget(widget)
+        self.file_widget = widget
+        if self.directory:
+            self._set_file_widget_directory()
     
     def set_directory(self, directory):
+        
+        self.directory = directory
+        
         self.list.set_directory(directory)
+        self._set_file_widget_directory()
 
 class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     
@@ -964,6 +987,14 @@ class MayaShotgunLinkWidget(DataLinkWidget):
 
 class DataFileWidget(vtool.qt_ui.FileManagerWidget):
     
+    def set_sub_folder(self, folder_name):
+        #be careful to also update MayaFileWidget
+        
+        if not self.data_class:
+            return
+        
+        self.data_class.set_sub_folder(folder_name)
+    
     def set_directory(self, directory):
         
         super(DataFileWidget, self).set_directory(directory)
@@ -974,6 +1005,8 @@ class DataFileWidget(vtool.qt_ui.FileManagerWidget):
         data_folder = vtool.data.DataFolder(name, parent_path)
                         
         instance = data_folder.get_folder_data_instance()
+        
+        self.data_class = instance
         
         self.save_widget.set_directory(directory)
         self.save_widget.set_data_class(instance)
@@ -1473,7 +1506,13 @@ class MayaControlRotateOrderFileWidget(MayaDataFileWidget):
         return 'Maya Control RotateOrder'
 
 class MayaFileWidget(vtool.qt_ui.FileManagerWidget):
+
+    def set_sub_folder(self, folder_name):
+        
+        print 'setting sub folder!', folder_name
+        self.data_class.set_sub_folder(folder_name)
     
+
     def _define_main_tab_name(self):
         return 'Maya File'
     
