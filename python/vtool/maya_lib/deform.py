@@ -87,6 +87,9 @@ class SkinCluster(object):
         cmds.skinPercent(self._skin_cluster, self._geometry, normalize = True)
         cmds.setAttr('%s.normalizeWeights' % self._skin_cluster, bool_value)
         
+    def get_skin(self):
+        return self._skin_cluster
+        
 
 class XformTransfer(object):
     """
@@ -2804,7 +2807,8 @@ class WeightFromMesh(object):
                     midpoint = space.get_midpoint(vertices[0], vertices[1])
                     cmds.xform(edge_joint, ws = True, t = midpoint)
                 
-                    skin.add_influence(edge_joint)
+                #if not has_influence(edge_joint, skin.get_skin()):
+                skin.add_influence(edge_joint)
                 
                 if not vrt1_index in self._visited_verts:
                     
@@ -3425,6 +3429,15 @@ def get_joint_index_map(joints, skin_cluster):
         joint_map[index] = joint    
         
     return joint_map
+
+def has_influence(joint, skin_cluster):
+    
+    influences = get_skin_influences(skin_cluster)
+    
+    if joint in influences:
+        return True
+    else:
+        return False
 
 #--- deformers
 
@@ -4969,10 +4982,11 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         cmds.rename(orig, offset)
         
         if replace:
-            parent = cmds.listRelatives(corrective, p = True)
+            parent = cmds.listRelatives(corrective, p = True, f = True)
             cmds.delete(corrective)
             
-            offset = cmds.rename(offset, corrective)
+            nice_name = core.get_basename(corrective, remove_namespace = True, remove_attribute = True)
+            offset = cmds.rename(offset, nice_name)
             
             if parent:
                 cmds.parent(offset, parent)

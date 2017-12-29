@@ -3092,7 +3092,11 @@ def add_poly_smooth(mesh, divisions = 1):
     Returns:
         str: The name of the poly smooth node.
     """
-    poly_smooth = cmds.polySmooth(mesh, mth = 0, dv = divisions, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
+    if vtool.util.get_maya_version() < 2017:
+        poly_smooth = cmds.polySmooth(mesh, mth = 0, dv = divisions, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
+    
+    if vtool.util.get_maya_version() == 2017:
+        poly_smooth = cmds.polySmooth(mesh, sdt = 2, mth = 0, dv = divisions, bnr = 1, c = 1, kb = 0, khe = 0, kt = 1, kmb = 1, suv = 1, peh = 0, sl = 1, dpe = 1, ps = 0.1, ro = 1, ch = 1)[0]
     
     return poly_smooth
 
