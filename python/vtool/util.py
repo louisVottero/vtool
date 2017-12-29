@@ -1729,6 +1729,26 @@ def error(*args):
         raise(RuntimeError)
     
 
+def split_side_negative_number(name):
+    
+    last_number = get_trailing_number(name, as_string = True, number_count = 2)
+    
+    negative = None
+    side = None
+    
+    if last_number:
+        name = name[:-2]
+    
+    if name.endswith('N'):
+        negative = 'N'
+        name = name[:-1]
+    
+    if name.endswith('L') or name.endswith('R'):
+        side = name[-1]
+        name = name[:-1]
+    
+    return name, side, negative, last_number 
+
 def find_possible_combos(names, sort = False, one_increment = False):
         
         if not names:

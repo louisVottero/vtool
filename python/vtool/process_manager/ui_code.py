@@ -224,6 +224,9 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.script_widget.code_manifest_tree.break_index = None
         self.script_widget.code_manifest_tree.break_item = None
         
+        self.script_widget.code_manifest_tree.start_index = None
+        self.script_widget.code_manifest_tree.start_item = None
+        
 class CodeWidget(vtool.qt_ui.BasicWidget):
     
     collapse = vtool.qt_ui.create_signal()
@@ -656,6 +659,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.break_index = None
         self.break_item = None
+        
+        self.start_index = None
+        self.start_item = None
         
         if vtool.util.is_in_maya():
             
@@ -1128,8 +1134,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         
         self.context_menu.addSeparator()
+        start_action = self.context_menu.addAction('Set Startpoint')
         break_action = self.context_menu.addAction('Set Breakpoint')
         self.cancel_break_action = self.context_menu.addAction('Cancel Breakpoint')
+        self.cancel_start_action = self.context_menu.addAction('Cancel Startpoint')
+        self.cancel_points_action = self.context_menu.addAction('Cancel Start/Breakpoint')
         
         self.edit_actions = [self.run_action, rename_action, delete_action]
         
@@ -1138,8 +1147,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         new_data_import.triggered.connect(self.create_import_code)
         
         self.run_action.triggered.connect(self.run_current_item)
+        start_action.triggered.connect(self.set_startpoint)
+        self.cancel_start_action.triggered.connect(self.cancel_startpoint)
         break_action.triggered.connect(self.set_breakpoint)
         self.cancel_break_action.triggered.connect(self.cancel_breakpoint)
+        self.cancel_points_action.triggered.connect(self.cancel_points)
         rename_action.triggered.connect(self._activate_rename)
         delete_action.triggered.connect(self.remove_current_item)
         
@@ -1540,6 +1552,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if self.break_item:
             break_item_path = self._get_item_path_name(self.break_item, keep_extension=True)
         
+        if self.start_item:
+            start_item_path = self._get_item_path_name(self.break_item, keep_extension=True)
         
         if sync:
             self.sync_manifest()
@@ -1547,6 +1561,12 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.allow_manifest_update = False
         super(CodeManifestTree, self).refresh()
         self.allow_manifest_update = True
+        
+        if self.start_item:
+            item = self._get_item_by_name(start_item_path)
+            
+            if item:
+                self.set_startpoint(item)            
         
         if self.break_item:
             item = self._get_item_by_name(break_item_path)
@@ -1617,6 +1637,28 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         index = model_index.internalId()
         
         if index == self.break_index:
+            return True
+        
+        return False
+    
+    def has_startpoint(self):
+        
+        if self.start_index != None:
+            return True
+        
+        return False
+    
+    def is_process_script_startpoint(self, directory):
+        item = self._get_item_by_name(directory)
+        
+        model_index = self.indexFromItem(item)
+        
+        index = model_index.internalId()
+        
+        print 'compare'
+        print directory, index, self.start_index
+        
+        if index == self.start_index:
             return True
         
         return False
@@ -1834,7 +1876,38 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             brush = qt.QBrush( qt.QColor(240,230,230))
         
         item.setBackground(0, brush)
+    
+    def set_startpoint(self, item = None):
+    
+        self.cancel_startpoint()
         
+        if not item:
+            items = self.selectedItems()
+            
+            if not items:
+                return
+            
+            item = items[0]
+            
+        
+        self.clearSelection()
+        
+        
+        
+        item_index = self.indexFromItem(item)
+        
+        self.start_index = item_index.internalId()
+        self.start_item = item
+        
+        print 'start item', item.text(0), self.start_index
+        
+        if vtool.util.is_in_maya():
+            brush = qt.QBrush( qt.QColor(0,70,20))
+        if not vtool.util.is_in_maya():
+            brush = qt.QBrush( qt.QColor(230,240,230))
+        
+        item.setBackground(0, brush)
+    
     def cancel_breakpoint(self):
         
         if self.break_item:
@@ -1848,7 +1921,22 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.repaint()
         
+    def cancel_startpoint(self):
         
+        if self.start_item:
+            try:
+                self.start_item.setBackground(0, qt.QBrush())
+            except:
+                pass
+        
+        self.start_index = None
+        self.start_item = None
+        
+        self.repaint()
+        
+    def cancel_points(self):
+        self.cancel_startpoint()
+        self.cancel_breakpoint()
         
 class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     

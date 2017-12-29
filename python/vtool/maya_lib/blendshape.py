@@ -2752,15 +2752,27 @@ def recreate_blendshapes(blendshape_mesh = None, follow_mesh = None):
     
     follow_mesh = vtool.util.convert_to_sequence(follow_mesh)
     
+    if follow_mesh == [None]:
+        follow_mesh = []
+    
     blendshape = deform.find_deformer_by_type(blendshape_mesh, deformer_type = 'blendShape')
     
     if not blendshape:
         core.print_help('No blendshape found on first mesh.')
+        return
+    
+    found_fm = False
     
     if follow_mesh:
         
+        
+        
         for fm in follow_mesh:
             
+            if not fm or not cmds.objExists(fm):
+                continue
+            
+            found_fm = True
             fm_group = cmds.group(em = True, n = 'recreated_shapes_%s' % fm)
             
             wrap = deform.create_wrap(blendshape_mesh, fm)
@@ -2771,12 +2783,22 @@ def recreate_blendshapes(blendshape_mesh = None, follow_mesh = None):
             cmds.parent(shapes, fm_group)
             
             cmds.delete(wrap)
-    else:
+            
+            wrap = deform.find_deformer_by_type(fm, deformer_type = wrap)
+            if wrap:
+                cmds.delete(wrap)
+    if not found_fm:
         group = cmds.group(em = True, n = 'recreated_shapes')
         blend = BlendShape(blendshape)
         shapes = blend.recreate_all()
-        shapes.sort()
-        cmds.parent(shapes, group)
+        
+        
+        if shapes:
+            shapes.sort()
+            cmds.parent(shapes, group)
+            
+        if not shapes:
+            cmds.delete(group)
         
 
 def find_possible_combos(shapes):

@@ -875,7 +875,7 @@ class SplitMeshTarget(object):
                     vtool.util.warning('Searching children, but children of base mesh and children of weight mesh have different count.')
                     continue
             
-            one_weight = False
+            was_split = False
             
             for inc in range(0, base_mesh_count):
                 
@@ -896,11 +896,11 @@ class SplitMeshTarget(object):
                     vtool.util.warning('No weights found! Could not extract target on %s' % target_mesh)
                     continue
                 if weights:
-                    one_weight = True
+                    was_split = True
                 
                     self._weight_target(target_mesh, new_target_mesh, weights)
         
-            if not one_weight:
+            if not was_split:
                 cmds.delete(new_target)
                 new_target = None
         
@@ -931,7 +931,55 @@ class SplitMeshTarget(object):
         
         return targets
             
+
+class SplitPatch(object):
+    """
+    
+    This will split the mesh in a way that a shape that doesn't need to be split can interact with shape combos.
+    This only works if there is a dominate shape in the combos that the combos can be split by.
+    Like if you are splitting blink, you could split the blink_smile with the same split as blink, but use this class on smile.
+    """
+    
+    def __init__(self):
+        super(SplitPatch, self).__init__()
+        
+        self._splits = []
+        
+        self.target_shape = None
+        self.base_shape = None
+        
+    def add_split(self, new_name):
+        
+        self._splits.append(new_name)
+        
+    def set_target_shape(self, mesh):
+        
+        self.target_shape = mesh
+    
+    def set_base_shape(self, mesh):
+        
+        self.base_shape = mesh
+        
+    def create(self):
+        
+        
+        shapes = []
+        
+        inc = 0
+        
+        for split in self._splits:
             
+            duplicate_shape = cmds.duplicate(self.target_shape, n = split)[0]
+            
+            if inc == 0:
+                quick_blendshape(self.target_shape, duplicate_shape)
+            
+            shapes.append(duplicate_shape)
+            
+            inc += 1
+
+        return shapes
+
 class TransferWeight(object):
     """
     Transfer weight has functions for dealing with moving weight from joints to other joints.
@@ -2855,6 +2903,8 @@ class WeightFromMesh(object):
         cmds.delete(self._current_skin_mesh)
         
         return joints
+        
+
         
 def cluster_curve(curve, description, join_ends = False, join_start_end = False, last_pivot_end = False):
     """

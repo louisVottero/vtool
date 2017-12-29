@@ -2685,6 +2685,10 @@ class MayaShotgunFileData(MayaFileData):
         
         filepath = self.filepath
         
+        if not filepath:
+            util.warning('Could not save shotgun link. Please save through shotgun ui.')
+            return
+        
         dirname = util_file.get_dirname(filepath)
         name = util_file.get_basename(filepath)
         version = util.get_last_number(filepath)

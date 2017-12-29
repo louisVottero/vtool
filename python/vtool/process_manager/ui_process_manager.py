@@ -866,6 +866,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if last_inc != None:
             start = last_inc + 1
             
+        found_start = False
         
         for inc in range(start, script_count):
         
@@ -899,7 +900,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                         if script.startswith(skip_script):
                             skip = True
             
+            
+            
             if not skip:
+                
+                if code_manifest_tree.has_startpoint() and not found_start:
+                    if not code_manifest_tree.is_process_script_startpoint(scripts[inc]):
+                        found_start = True
+                        continue
+                    
+                    
                 self.code_widget.set_process_script_state(scripts[inc], 2)
                 
                 status = self.process.run_script(script_name, False, self.settings.settings_dict)
@@ -920,7 +930,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 if inc == script_count-1:
                     finished = True
             
-            if code_manifest_tree.break_index:
+            if code_manifest_tree.break_index != None:
                 if code_manifest_tree.is_process_script_breakpoint(scripts[inc]):
                     self.continue_button.show()
                     self.last_process_script_inc = inc

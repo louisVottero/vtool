@@ -2528,7 +2528,7 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
     if parent:
         cmds.parent(follow_group, parent)
     
-    zero_out_transform_channels(follow_group)
+    #zero_out_transform_channels(follow_group)
         
     if follow_scale:
         attr.connect_scale(source_transform, follow_group)
