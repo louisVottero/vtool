@@ -4660,10 +4660,18 @@ class AddRemoveList(BasicWidget):
     
 class AddRemoveDirectoryList(AddRemoveList):
     
+    item_update = create_signal()
+    
     def __init__(self, parent = None, scroll = False):
         super(AddRemoveDirectoryList, self).__init__(parent, scroll)
         
         self.directory = None
+        
+        self.list.itemSelectionChanged.connect(self._item_update)
+
+    def _item_update(self):
+        
+        self.item_update.emit()
 
     def _create_item(self, name = 'folder'):
         item = super(AddRemoveDirectoryList, self)._create_item(name)
@@ -4741,7 +4749,14 @@ class AddRemoveDirectoryList(AddRemoveList):
         sub_folders = util_file.get_folders(sub_path)
         
         return sub_folders
+    
+    def get_current_text(self):
         
+        current_item = self.list.currentItem()
+        
+        if current_item:
+            return str(current_item.text())
+    
     def refresh(self):
 
         self.list.clear()
@@ -4764,6 +4779,17 @@ class AddRemoveDirectoryList(AddRemoveList):
         
         self.directory = dirpath
         self.refresh()
+    
+    def set_selected(self, index):
+        
+        item = self.list.item(index)
+        
+        print 'first item', index
+        print item
+        print item.text()
+        
+        if item:
+            item.setSelected(True)
     
 #--- Custom Painted Widgets
 
