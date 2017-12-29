@@ -16,6 +16,7 @@ import process
 
 from vtool import qt_ui, qt
 from vtool import util_file
+from __builtin__ import True
 
 class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     """
