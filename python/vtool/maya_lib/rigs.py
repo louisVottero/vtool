@@ -9594,7 +9594,7 @@ class FeatherStripRig(CurveRig):
                     deform.quick_blendshape(blend[0][0], geo_name, blend[0][1])
                     deform.quick_blendshape(blend[1][0], geo_name, blend[1][1])
             
-            new_curve = geo.create_curve_from_mesh_border(geo_name, -.25)
+            new_curve = geo.create_curve_from_mesh_border(geo_name, .25)
             control_inst = rigs_util.Control(controls[0])
             control_inst.copy_shapes(new_curve)
             
@@ -9640,7 +9640,7 @@ class FeatherOnPlaneRig(PolyPlaneRig):
         self._feather_curve_group = None
         self._feather_curve_quill = None
         
-        self._main_control_offset = -.25
+        self._main_control_offset = .25
         
         self._rig_info = [] 
         
