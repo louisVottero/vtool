@@ -14,7 +14,6 @@ import ui_data
 import ui_code
 import ui_settings
 import os
-from __builtin__ import False
         
 
 vetala_version = util_file.get_vetala_version()

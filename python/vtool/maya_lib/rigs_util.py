@@ -2841,4 +2841,10 @@ def set_control_space(x,y,z, control, compensate_cvs = True):
         control_inst = Control(control)
         control_inst.scale_shape(offset_x, offset_y, offset_z)
     
+def mesh_border_to_control_shape(mesh, control, offset = .1):
     
+    new_curve = geo.create_curve_from_mesh_border(mesh, offset)
+    control_inst = Control(control)
+    control_inst.copy_shapes(new_curve)
+    
+    cmds.delete(new_curve)

@@ -1023,6 +1023,7 @@ class OrientJoint(object):
             return child_group
         
         if index == 6:
+            
             self.up_space_type = 'object'
             
             space_group = None
@@ -1034,9 +1035,8 @@ class OrientJoint(object):
                 if core.has_shape_of_type(self.surface, 'mesh'):
                     mesh_fn = api.MeshFunction(self.surface)
                     normal = mesh_fn.get_closest_normal(space_group_xform, True)
-                    
                     cmds.xform(space_group, ws = True, t = normal)
-                
+            
             return space_group
             
     def _get_local_group(self, transform):
@@ -1081,7 +1081,6 @@ class OrientJoint(object):
         return self._get_position_group(transform)
               
     def _create_aim(self):
-                
         if not self.aim_up_at:
             aim = cmds.aimConstraint(self.aim_at, 
                                      self.joint, 
@@ -1212,7 +1211,10 @@ class OrientJoint(object):
         """
         self.aim_up_at = self._get_aim_up_at(int_value)
         
+        
     def set_surface(self, surface_name):
+        
+        self.surface = surface_name
         
         self.set_aim_up_at(6)
         if cmds.objExists('%s.surface' % self.joint):
@@ -1220,7 +1222,6 @@ class OrientJoint(object):
                 cmds.setAttr('%s.surface' % self.joint, surface_name, type = 'string')
             except:
                 pass
-        self.surface = surface_name
         
     def set_aim_up_at_object(self, name):
         self.aim_up_at = self._get_local_group(name)
@@ -3290,19 +3291,19 @@ def orient_x_to_child_up_to_surface(joint, invert = False, surface = None):
     children = cmds.listRelatives(joint)
     
     if children:
-    
+        
         orient = OrientJoint(joint)
+        orient.set_surface(surface)
         orient.set_aim_at(3)
-        orient.set_aim_up_at(0)
+        orient.set_aim_up_at(6)
         orient.set_aim_vector(aim_axis)
         orient.set_up_vector(up_axis)
-        orient.set_surface(surface)
         orient.run()
 
     if not children:
         cmds.makeIdentity(joint, jo = True, apply = True)
         
-def orient_x_to_child(joint, invert = False, surface = None):
+def orient_x_to_child(joint, invert = False):
     """
     Helper function to quickly orient a joint to its child.
     

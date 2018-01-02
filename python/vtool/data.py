@@ -2489,7 +2489,7 @@ class MayaFileData(MayaCustomData):
             
             open_file = filepath
         
-        
+        maya_lib.core.print_help('Opening: %s' % open_file)
         
         try:
             cmds.file(open_file, 

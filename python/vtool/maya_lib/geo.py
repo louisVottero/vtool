@@ -1566,26 +1566,32 @@ def set_render_stats_double_sided_default(node_name):
         if stat == 'opposite':
             cmds.setAttr(attr, RENDER_DEFAULT_OPPOSITE)
 
-def create_curve_from_mesh_border(mesh, offset = -0.1, name = None):
+def create_curve_from_mesh_border(mesh, offset = 0.1, name = None):
     """
     Create a curve from the border of a mesh.  Good for creating controls on feathers.
     """
     cmds.select(cl = True)
     
-    cmds.polySelect(mesh, eb = True)
-    orig_curve = cmds.polyToCurve( form = 2, degree = 1)
+    work_mesh = cmds.duplicate(mesh)[0]
     
     
-    curve = cmds.offsetCurve(orig_curve[0],  ch = False, rn = False, cb = 2, st = True, cl = True, cr = 0, d = offset, tol = 3.28084e-006, sd = 5, ugn =  False)
     
-    cmds.delete(orig_curve)
+    cmds.polySelect(work_mesh, eb = True)
     
-    curve = cmds.rename(curve, core.inc_name('curve_%s' % mesh))
+    cmds.polyMoveEdge(ch = False, random = 0, localCenter = 0, lty = offset)
+    
+    orig_curve = cmds.polyToCurve( form = 2, degree = 1)[0]
+    
+    #curve = cmds.offsetCurve(orig_curve[0],  ch = False, rn = False, cb = 2, st = True, cl = True, cr = 0, d = offset, tol = 3.28084e-006, sd = 5, ugn =  False)
+    
+    #cmds.delete(orig_curve)
+    
+    curve = cmds.rename(orig_curve, core.inc_name('curve_%s' % mesh))
     
     if name:
         curve = cmds.rename(curve, core.inc_name(name))
         
-    
+    cmds.delete(work_mesh)
         
     return curve
     
@@ -2405,6 +2411,7 @@ def polygon_plane_to_curves(plane, count = 5, u = True, description = ''):
     cmds.delete(work_plane)
     
     return curves
+
 
 def expand_selected_edge_loop():
     """

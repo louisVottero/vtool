@@ -16,7 +16,6 @@ import process
 
 from vtool import qt_ui, qt
 from vtool import util_file
-from __builtin__ import True
 
 class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     """
@@ -1554,7 +1553,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             break_item_path = self._get_item_path_name(self.break_item, keep_extension=True)
         
         if self.start_item:
-            start_item_path = self._get_item_path_name(self.break_item, keep_extension=True)
+            start_item_path = self._get_item_path_name(self.start_item, keep_extension=True)
         
         if sync:
             self.sync_manifest()

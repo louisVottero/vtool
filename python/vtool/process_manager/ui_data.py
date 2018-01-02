@@ -187,8 +187,9 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         
         self.list.item_update.connect(self._set_file_widget_directory)
         
-        self.main_layout.addWidget(self.list)
+        
         self.main_layout.addWidget(self.file_widget)
+        self.main_layout.addWidget(self.list)
         
     def _set_file_widget_directory(self):
         
@@ -203,7 +204,6 @@ class DataWidget(vtool.qt_ui.BasicWidget):
             if text == '-default-':
                 text = None
             self.file_widget.set_sub_folder(text)
-            #folder = vtool.util_file.join_path(self.directory, '.sub/%s' % text)
         
         self.file_widget.set_directory(folder)
         
@@ -219,7 +219,7 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         
         self.remove_file_widget()
         
-        self.main_layout.addWidget(widget)
+        self.main_layout.insertWidget(0, widget)
         self.file_widget = widget
         if self.directory:
             self._set_file_widget_directory()
