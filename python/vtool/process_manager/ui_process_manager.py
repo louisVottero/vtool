@@ -200,17 +200,29 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.process_splitter.setSizes([1,0])
             
     def _load_notes(self):
-        note_lines = self.process.get_setting('notes')
         
-        self.notes.setText('')
+        note_lines = self.process.get_setting('notes')
         
         notes = ''
         
         if note_lines:
             for line in note_lines:
                 notes += '%s\n' % line
+            
+            self.notes.clear()
+            self.notes.setText(notes)
+            self._save_notes()
+            
+        if not note_lines:
         
-        self.notes.setText(notes)
+            current_path = self._get_current_path()
+            
+            notes_path = util_file.join_path(current_path, 'notes.html')
+            
+            if util_file.is_file(notes_path):
+                note_lines = util_file.get_file_text(notes_path)
+                self.notes.setHtml(note_lines)
+                
         
         if self.option_tabs.currentIndex() == 1:
             if note_lines:
@@ -314,7 +326,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.template_widget.merge_template.connect(self._merge_template)
         self.template_widget.match_template.connect(self._match_template)
         
-        self.notes = qt.QTextEdit()
+        self.notes = NoteText()
+        
         self.notes.textChanged.connect(self._save_notes)
         
         self.option_tabs.addTab(option_widget, 'Options')
@@ -1005,12 +1018,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     
     def _save_notes(self):
+        current_path = self._get_current_path()
+        notes_path = util_file.join_path(current_path, 'notes.html')
+        util_file.write_replace(notes_path, self.notes.toHtml())
         
-        text = str(self.notes.toPlainText())
         
-        lines = text.splitlines()
-        
-        self.process.set_setting('notes', lines)
+        self.process.set_setting('notes', '')
         
     def set_directory(self, directory):
         
@@ -1118,4 +1131,48 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.active_title.setText('-')
         self.process_splitter.setSizes([1,0])
         self.build_widget.hide()
+
+class NoteText(qt.QTextEdit):
+    
+    def __init__(self):
+        super(NoteText, self).__init__()
         
+    def canInsertFromMimeData(self, source):
+        
+        urls = source.urls()
+        
+        for url in urls:
+            try:
+                path = url.path()
+                path = path[1:]
+                
+                image = qt.QImage(path)
+                
+                if not image.isNull():
+                    return True
+                
+            except:
+                pass
+        
+        return super(NoteText, self).canInsertFromMimeData(source)
+        
+    def insertFromMimeData(self, source):
+        urls = source.urls()
+        
+        for url in urls:
+            #try:
+            path = url.path()
+            path = str(path[1:])
+            
+            image = qt.QImage(path)
+            
+            if image.isNull():
+                continue
+            
+            cursor = self.textCursor()
+            document = self.document()
+            
+            document.addResource(qt.QTextDocument.ImageResource, qt.QtCore.QUrl(path), image)
+            cursor.insertImage(path)
+            #except:
+            #    util.show('Could not paste image')
