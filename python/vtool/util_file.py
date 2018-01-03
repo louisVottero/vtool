@@ -181,7 +181,7 @@ class FileManager(object):
         Check if path to file is invalid and raise error.
         """
         dirname = get_dirname(self.filepath)
-                
+        
         if not is_dir(dirname):
             raise UserWarning(warning_text)
 
@@ -858,6 +858,8 @@ class SettingsFile(object):
     def set_directory(self, directory, filename = 'settings.txt'):
         self.directory = directory
         
+        
+        
         self.filepath = create_file(filename, self.directory)
         
         self._read()
@@ -1446,13 +1448,25 @@ def get_filesize(filepath, round_value = 2):
 
     return size_format
 
-def get_folder_size(path, round_value = 2):
-    
+def get_folder_size(path, round_value = 2, skip_names = []):
+    """
+    skip_names will skip folders and files that have the same name specified in skip_names list.
+    """
     size = 0
+    
+    skip_names = util.convert_to_sequence(skip_names)
     
     for root, dirs, files in os.walk(path):
         
+        root_name = get_basename(root)
+        if root_name in skip_names:
+            continue
+        
         for name in files:
+            
+            if name in skip_names:
+                
+                continue
             
             size += get_filesize( join_path(root, name), round_value )
             
@@ -2050,6 +2064,21 @@ def write_lines(filepath, lines, append = False):
     write_file = WriteFile(filepath)
     write_file.set_append(append)
     write_file.write(lines)
+    
+
+def write_replace(filepath, stuff_to_write):
+    
+    open_file = open(filepath, 'w')
+    
+    try:
+        open_file.write(stuff_to_write)
+    except:
+        print 'could not write', stuff_to_write
+        pass
+    
+    
+    
+    open_file.close()
     
 
 #---- create
