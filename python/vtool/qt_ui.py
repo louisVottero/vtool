@@ -1218,6 +1218,8 @@ class FilterTreeWidget( DirectoryWidget ):
         
 class FileManagerWidget(DirectoryWidget):
     
+    data_updated = create_signal()
+    
     def __init__(self, parent = None):
         super(FileManagerWidget, self).__init__(parent)
         
@@ -1341,6 +1343,8 @@ class FileManagerWidget(DirectoryWidget):
             return
         
         self._activate_history_tab()
+        
+        self.data_updated.emit()
         
     def _activate_history_tab(self):
         
@@ -4587,7 +4591,7 @@ class AddRemoveList(BasicWidget):
         item = qt.QListWidgetItem(name)
         return item
     
-    def _add_item(self, name = None):
+    def _add_item(self, name = None, rename_popup = True):
         
         item = None
         
@@ -4600,6 +4604,11 @@ class AddRemoveList(BasicWidget):
             return
         
         self.list.addItem(item)
+        
+        self.list.clearSelection()
+        item.setSelected(True)
+        if rename_popup:
+            self._rename_item()
         
         self.item_added.emit(item)
         
@@ -4634,7 +4643,7 @@ class AddRemoveList(BasicWidget):
         old_name = str(item.text())
         
         if old_name in self._define_defaults():
-            return
+            return [None, None]
             
         new_name = get_new_name('Rename item', self, old_name)
         
@@ -4654,7 +4663,7 @@ class AddRemoveList(BasicWidget):
         defaults = self._define_defaults()
         
         for default in defaults:
-            item = self._add_item(default)
+            item = self._add_item(default, False)
             if item:
                 qt.QListWidgetItem.setDisabled(True)
     
@@ -4668,8 +4677,31 @@ class AddRemoveDirectoryList(AddRemoveList):
         self.directory = None
         
         self.list.itemSelectionChanged.connect(self._item_update)
+        self.list.itemChanged.connect(self._item_update)
+        self.emit_update = True
 
     def _item_update(self):
+        
+        if not self.emit_update:
+            return
+        
+        item = self.list.currentItem()
+        if item:
+            current_folder = str(item.text())
+            
+            
+            if current_folder == '-default-':
+                folder = ''
+            else:
+                folder = current_folder
+                
+            settings = util_file.SettingsFile()
+            settings.set_directory(self.directory, 'data.type')
+            settings.set('sub_folder', folder)
+            
+        
+        
+        
         
         self.item_update.emit()
 
@@ -4750,6 +4782,8 @@ class AddRemoveDirectoryList(AddRemoveList):
         
         return sub_folders
     
+
+    
     def get_current_text(self):
         
         current_item = self.list.currentItem()
@@ -4769,6 +4803,8 @@ class AddRemoveDirectoryList(AddRemoveList):
         if not self.directory:
             return
         
+        
+        
         folders = self._get_folders()
         
         for folder in folders:
@@ -4780,13 +4816,47 @@ class AddRemoveDirectoryList(AddRemoveList):
         self.directory = dirpath
         self.refresh()
     
+    def get_current_sub_folder(self):
+        
+        
+        settings = util_file.SettingsFile()
+        
+        settings.set_directory(self.directory, 'data.type')
+        
+        folder = str(settings.get('sub_folder'))
+        
+        return folder
+        
+    def select_current_sub_folder(self):
+        
+        found = False
+        
+        current_sub_folder = self.get_current_sub_folder()
+        current_text = self.list.currentItem()
+        if current_text:
+            current_text = str(current_text.text())
+        
+            if current_sub_folder == current_text:
+                return
+        
+        for inc in range(0, self.list.count()):
+            text = str(self.list.item(inc).text())
+            
+            if text == current_sub_folder:
+                self.emit_update = False
+                self.list.item(inc).setSelected(True)
+                self.emit_update = True
+                found = True
+                break
+        
+        if not found:
+            self.emit_update = False
+            self.list.item(0).setSelected(True)
+            self.emit_update = True
+    
     def set_selected(self, index):
         
         item = self.list.item(index)
-        
-        print 'first item', index
-        print item
-        print item.text()
         
         if item:
             item.setSelected(True)
