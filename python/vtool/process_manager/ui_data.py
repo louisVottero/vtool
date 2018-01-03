@@ -23,6 +23,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.setMouseTracking(True)
         self.data_tree_widget.setMouseTracking(True)
+        
           
     def _define_main_layout(self):
         return qt.QVBoxLayout()
@@ -52,8 +53,18 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.data_widget = DataWidget()
         self.data_widget.hide()
         
+        self.data_widget.data_updated.connect(self._data_updated)
+        
         self.main_layout.addWidget(self.label, alignment = qt.QtCore.Qt.AlignCenter)
         self.main_layout.addWidget(self.data_widget)
+        
+    def _data_updated(self):
+        item = self.data_tree_widget.currentItem()
+        
+        if not item:
+            return
+        
+        self.data_tree_widget.update_file_size(item)
         
     def mouse_move(self, event):
         
@@ -118,6 +129,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                         self.data_widget.add_file_widget(widget)
                         self.data_widget.set_directory(path_to_data)
                         
+                        
                         self.data_widget.show()
                         self.data_widget.list.set_selected(0)
                         self.label.setText( str( item.text(0)) )
@@ -164,6 +176,8 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
 
 class DataWidget(vtool.qt_ui.BasicWidget):
     
+    data_updated = vtool.qt_ui.create_signal()
+    
     def __init__(self,parent = None, scroll = False):
         self.file_widget = None
         super(DataWidget, self).__init__(parent, scroll)
@@ -179,17 +193,22 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         
         self.list = vtool.qt_ui.AddRemoveDirectoryList()
         self.list.set_title('Sub Folder')
-        self.list.setMaximumWidth(125)
-        self.list.set_selected(0)
+        self.list.select_current_sub_folder()
+        
         
                 
         self.file_widget = vtool.qt_ui.BasicWidget()
+        
+        
         
         self.list.item_update.connect(self._set_file_widget_directory)
         
         
         self.main_layout.addWidget(self.file_widget)
         self.main_layout.addWidget(self.list)
+        
+    def _data_updated(self):
+        self.data_updated.emit()
         
     def _set_file_widget_directory(self):
         
@@ -198,12 +217,20 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         
         folder = self.directory
         
-        text = self.list.get_current_text()
+        self.list.select_current_sub_folder()
         
-        if text:
-            if text == '-default-':
-                text = None
-            self.file_widget.set_sub_folder(text)
+        #text = self.list.get_current_text()
+        
+        #print 'sub folder!', text
+        
+
+        
+        
+        
+        #if text:
+        #    if text == '-default-':
+        #        text = None
+        #    self.file_widget.set_sub_folder(text)
         
         self.file_widget.set_directory(folder)
         
@@ -223,6 +250,8 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         self.file_widget = widget
         if self.directory:
             self._set_file_widget_directory()
+    
+        self.file_widget.data_updated.connect(self._data_updated)
     
     def set_directory(self, directory):
         
@@ -402,6 +431,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         return True
         
+    
+        
     def _load_data(self, preserve_selected = True, new_data = None):
         
         self.clear()
@@ -463,6 +494,18 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             self.setItemSelected(select_item, True)
             self.setCurrentItem(select_item)
         
+    def update_file_size(self, item):
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        data_dir = process_tool.get_data_path()
+        
+        size_thread = DataSizeThread()
+        
+        folder = str(item.text(0))
+        size_thread.run(data_dir, folder, item)
+        
     def get_item_path_string(self, item):
         
         parents = self.get_tree_item_path(item)
@@ -494,6 +537,11 @@ class DataSizeThread(qt.QtCore.QThread):
     def run(self, data_path, data_name, item):
         
         data_folder = vtool.util_file.join_path(data_path, data_name)
+        
+        
+        size = vtool.util_file.get_folder_size(data_folder, skip_names=['.version','.sub'])
+        
+        """
         stuff = vtool.util_file.get_files_and_folders(data_folder)
         
         item.setText(2, '...')
@@ -510,7 +558,7 @@ class DataSizeThread(qt.QtCore.QThread):
                 if thing.find(data_name + '.') > -1:
                     sub_data_file = vtool.util_file.join_path(data_folder, thing)
                     size = vtool.util_file.get_filesize(sub_data_file, 1)
-        
+        """
         item.setText(2, str(size) )
         
         
@@ -1508,8 +1556,7 @@ class MayaControlRotateOrderFileWidget(MayaDataFileWidget):
 class MayaFileWidget(vtool.qt_ui.FileManagerWidget):
 
     def set_sub_folder(self, folder_name):
-        
-        print 'setting sub folder!', folder_name
+        print 'here?>', self.data_class
         self.data_class.set_sub_folder(folder_name)
     
 
