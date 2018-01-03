@@ -351,6 +351,11 @@ class FileData(Data):
     def set_sub_folder(self, folder_name):
         self._sub_folder = folder_name
         
+        sub_folder = util_file.join_path(self.directory, '.sub/%s' % folder_name)
+        
+        if util_file.is_dir(sub_folder):
+            self.settings.set('sub_folder', folder_name)
+        
     def create(self):
         name = self.name
         
