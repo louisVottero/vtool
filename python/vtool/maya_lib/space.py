@@ -2613,7 +2613,7 @@ def create_multi_follow_direct(source_list, target_transform, node, constraint_t
 
     for source in source_list:
         
-        locator = cmds.spaceLocator(n = core.inc_name('follower_%s' % source))[0]
+        locator = cmds.spaceLocator(n = core.inc_name('follower_1_%s' % source, False))[0]
         
         cmds.hide(locator)
         
@@ -2676,7 +2676,7 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
 
     for source in source_list:
         
-        locator = cmds.spaceLocator(n = core.inc_name('follower_%s' % source))[0]
+        locator = cmds.spaceLocator(n = core.inc_name('follower_1_%s' % source, False))[0]
         
         cmds.hide(locator)
         
