@@ -1135,9 +1135,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.context_menu.addSeparator()
         start_action = self.context_menu.addAction('Set Startpoint')
+        self.cancel_start_action = self.context_menu.addAction('Cancel Startpoint')
+        self.context_menu.addSeparator()
         break_action = self.context_menu.addAction('Set Breakpoint')
         self.cancel_break_action = self.context_menu.addAction('Cancel Breakpoint')
-        self.cancel_start_action = self.context_menu.addAction('Cancel Startpoint')
+        self.context_menu.addSeparator()
         self.cancel_points_action = self.context_menu.addAction('Cancel Start/Breakpoint')
         
         self.edit_actions = [self.run_action, rename_action, delete_action]
@@ -1679,6 +1681,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         item = self._add_item(name, False)
         
+        item.setCheckState(0, qt.QtCore.Qt.Checked)
+        
         self._reparent_item('code', item, parent_item)
             
         self.scrollToItem(item)
@@ -1708,6 +1712,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         name = vtool.util_file.get_basename(code_path)
         item = self._add_item(name, False)
+        
+        item.setCheckState(0, qt.QtCore.Qt.Checked)
         
         self._reparent_item('import_%s' % picked, item, parent_item)
         
@@ -1866,7 +1872,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.clearSelection()
         
         item_index = self.indexFromItem(item)
-        
+
+        if item_index.internalId() == self.start_index:
+            self.cancel_startpoint()
+
         self.break_index = item_index.internalId()
         self.break_item = item
         
@@ -1896,10 +1905,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         item_index = self.indexFromItem(item)
         
+        if item_index.internalId() == self.break_index:
+            self.cancel_breakpoint()
+        
         self.start_index = item_index.internalId()
         self.start_item = item
-        
-        print 'start item', item.text(0), self.start_index
         
         if vtool.util.is_in_maya():
             brush = qt.QBrush( qt.QColor(0,70,20))
