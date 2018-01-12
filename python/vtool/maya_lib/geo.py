@@ -2212,7 +2212,7 @@ def transforms_to_curve(transforms, spans = None, description = 'from_transforms
     transform_positions = []
         
     for joint in transforms:
-        joint_position = cmds.xform(joint, q = True, ws = True, t = True)
+        joint_position = cmds.xform(joint, q = True, ws = True, rp = True)
         
         transform_positions.append( joint_position )
     
