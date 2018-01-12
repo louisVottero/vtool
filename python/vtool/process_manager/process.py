@@ -1976,6 +1976,8 @@ def copy_process_data(source_process, target_process, data_name, replace = False
 
     filepath = instance.get_file()
     
+    copied_path = None
+    
     if filepath:
         basename = util_file.get_basename(filepath)
     
@@ -1994,8 +1996,12 @@ def copy_process_data(source_process, target_process, data_name, replace = False
                 
             copied_path = util_file.copy_dir(filepath, destination_directory)
           
-        version = util_file.VersionFile(copied_path)
-        version.save('Copied from %s' % filepath)
+        if copied_path:
+            version = util_file.VersionFile(copied_path)
+            version.save('Copied from %s' % filepath)
+        if not copied_path:
+            util.warning('Error copying %s to %s' % (filepath, destination_directory))
+            return
         
     util.show('Finished copying data from %s' % filepath)          
             
@@ -2059,6 +2065,8 @@ def copy_process_code(source_process, target_process, code_name, replace = False
     
     filepath = instance.get_file()
     
+    copied_path = None
+    
     if filepath:
         destination_directory = code_folder_path
         
@@ -2067,8 +2075,13 @@ def copy_process_code(source_process, target_process, code_name, replace = False
         if util_file.is_dir(filepath):
             copied_path = util_file.copy_dir(filepath, destination_directory)
           
-        version = util_file.VersionFile(copied_path)
-        version.save('Copied from %s' % filepath)
+          
+        if copied_path:
+            version = util_file.VersionFile(copied_path)
+            version.save('Copied from %s' % filepath)
+        if not copied_path:
+            util.warning('Error copying %s to %s' % (filepath, destination_directory))
+            return
         
     util.show('Finished copying code from %s' % filepath)
     

@@ -81,10 +81,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
     def _add_data(self, data_name):
         
-        
-        
         self._refresh_data(data_name)
-        
         
         self.data_tree_widget._rename_data()
         self.data_widget.show()
@@ -131,7 +128,8 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                         
                         
                         self.data_widget.show()
-                        self.data_widget.list.set_selected(0)
+                        if self.data_widget.list:
+                            self.data_widget.list.set_selected(0)
                         self.label.setText( str( item.text(0)) )
                         self.label.show()
                         
@@ -144,10 +142,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                 
             self.data_widget.remove_file_widget()
             self.label.setText('')
-                
-                
-                
-                
+            
     def _update_file_widget(self, directory):
         
         if not directory:
@@ -190,22 +185,15 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         
     def _build_widgets(self):
         
+        self.list = None
         
-        self.list = vtool.qt_ui.AddRemoveDirectoryList()
-        self.list.set_title('Sub Folder')
-        self.list.select_current_sub_folder()
-        
-        
-                
         self.file_widget = vtool.qt_ui.BasicWidget()
         
         
         
-        self.list.item_update.connect(self._set_file_widget_directory)
-        
         
         self.main_layout.addWidget(self.file_widget)
-        self.main_layout.addWidget(self.list)
+        
         
     def _data_updated(self):
         self.data_updated.emit()
@@ -217,30 +205,41 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         
         folder = self.directory
         
-        self.list.select_current_sub_folder()
-        
-        #text = self.list.get_current_text()
-        
-        #print 'sub folder!', text
-        
-
-        
-        
-        
-        #if text:
-        #    if text == '-default-':
-        #        text = None
-        #    self.file_widget.set_sub_folder(text)
-        
+        if self.list:
+            self.list.select_current_sub_folder()
         self.file_widget.set_directory(folder)
+        
+    def _remove_widget(self, widget):
+        
+        widget.close()
+        widget.deleteLater()
+        del widget
         
     def remove_file_widget(self):
         if not self.file_widget:
             return
-        self.file_widget.close()
-        self.file_widget.deleteLater()
-        del self.file_widget
+        
+        self._remove_widget(self.file_widget)
+        
         self.file_widget = None
+    
+    def remove_list_widget(self):
+        if not self.list:
+            return
+        
+        self._remove_widget(self.list)
+        
+        self.list = None
+    
+    def add_list(self):
+        if not self.list:
+            self.list = vtool.qt_ui.AddRemoveDirectoryList()
+            self.list.set_title('Sub Folder')
+            self.list.select_current_sub_folder()
+            
+            self.main_layout.addWidget(self.list)
+            
+            self.list.item_update.connect(self._set_file_widget_directory)
     
     def add_file_widget(self, widget):
         
@@ -250,14 +249,21 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         self.file_widget = widget
         if self.directory:
             self._set_file_widget_directory()
-    
-        self.file_widget.data_updated.connect(self._data_updated)
+        
+        if widget.is_link_widget():
+            self.remove_list_widget()
+        if not widget.is_link_widget():
+            self.add_list()
+        
+        if hasattr(self.file_widget, 'data_updated'):
+            self.file_widget.data_updated.connect(self._data_updated)
     
     def set_directory(self, directory):
         
         self.directory = directory
         
-        self.list.set_directory(directory)
+        if self.list:
+            self.list.set_directory(directory)
         self._set_file_widget_directory()
 
 class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
@@ -752,6 +758,8 @@ class DataTypeTreeWidget(qt.QTreeWidget):
 
 class DataLinkWidget(vtool.qt_ui.BasicWidget):
     
+    
+    
     def __init__(self):
         
         self.data_class = self._define_data_class()
@@ -770,6 +778,9 @@ class DataLinkWidget(vtool.qt_ui.BasicWidget):
     
     def _define_data_class(self):
         return None
+    
+    def is_link_widget(self):
+        return True
     
     def set_directory(self, directory):
         if self.data_class:
@@ -1034,6 +1045,9 @@ class MayaShotgunLinkWidget(DataLinkWidget):
             self.combo_project.setEnabled(False)
 
 class DataFileWidget(vtool.qt_ui.FileManagerWidget):
+    
+    def is_link_widget(self):
+        return False
     
     def set_sub_folder(self, folder_name):
         #be careful to also update MayaFileWidget
@@ -1554,6 +1568,9 @@ class MayaControlRotateOrderFileWidget(MayaDataFileWidget):
         return 'Maya Control RotateOrder'
 
 class MayaFileWidget(vtool.qt_ui.FileManagerWidget):
+
+    def is_link_widget(self):
+        return False
 
     def set_sub_folder(self, folder_name):
         print 'here?>', self.data_class
