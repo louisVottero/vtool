@@ -370,7 +370,6 @@ class FileData(Data):
         if self._sub_folder:
             directory = util_file.join_path(self.directory, '.sub/%s' % self._sub_folder)
         
-        
         filepath = util_file.join_path(directory, filename)
         
         return filepath
@@ -2646,6 +2645,10 @@ class MayaShotgunFileData(MayaFileData):
         
         self.filepath = filepath
     
+    def get_file(self):
+        
+        return self.filepath
+    
     def write_state(self, project, asset_type, asset, step):
         
         filepath = util_file.create_file('shotgun.info', self.directory)
@@ -2699,7 +2702,10 @@ class MayaShotgunFileData(MayaFileData):
         
     def save(self):
         
-        self._get_filepath()
+        self._get_filepath(publish_path = False)
+        self.filepath = self.get_file()
+        
+        print self.filepath
         
         util_file.get_permission(self.filepath)
         
