@@ -759,6 +759,11 @@ class SparseRig(JointRig):
         inc = 0
         self.current_inc = 0
         
+        if not self.joints:
+            vtool.util.warning('No joints given.')
+            return
+        
+        
         for joint in self.joints:
             
             control = self._create_control()
@@ -906,6 +911,10 @@ class SparseLocalRig(SparseRig):
         
         super(SparseRig, self).create()
         
+        if not self.joints:
+            vtool.util.warning('No joints given.')
+            return
+        
         if self._read_locators:
             self._create_read_locators()
         
@@ -1018,7 +1027,7 @@ class SparseLocalRig(SparseRig):
             
         if self.local_parent:
             space.create_follow_group(self.local_parent, self.local_xform)
-            
+        
         self.control_dict[control_name]['xform'] = xform
         self.control_dict[control_name]['driver'] = driver
         
