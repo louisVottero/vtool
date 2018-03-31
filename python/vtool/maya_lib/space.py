@@ -3380,7 +3380,23 @@ def find_transform_right_side(transform, check_if_exists = True):
             return other
         if not check_if_exists:
             return other
+    
+    if transform.find('Left') > -1:
+        other = transform.replace('Left', 'Right')
+        if cmds.objExists(other) and check_if_exists:
+            return other
+        if not check_if_exists:
+            return other
+
+    if transform.find('left') > -1:
+        other = transform.replace('left', 'right')
+        if cmds.objExists(other) and check_if_exists:
+            return other
+        if not check_if_exists:
+            return other
+                
         
+    
     return ''
 
 def find_transform_left_side(transform,check_if_exists = True):
@@ -3430,7 +3446,21 @@ def find_transform_left_side(transform,check_if_exists = True):
             return other
         if not check_if_exists:
             return other
-        
+
+    if transform.find('Right') > -1:
+        other = transform.replace('Right', 'Left')
+        if cmds.objExists(other) and check_if_exists:
+            return other
+        if not check_if_exists:
+            return other
+
+    if transform.find('right') > -1:
+        other = transform.replace('right', 'left')
+        if cmds.objExists(other) and check_if_exists:
+            return other
+        if not check_if_exists:
+            return other
+
     return ''
 
 def mirror_toggle(transform, bool_value):
