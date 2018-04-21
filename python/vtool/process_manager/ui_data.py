@@ -64,7 +64,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         if not item:
             return
         
-        self.data_tree_widget.update_file_size(item)
+        self.data_tree_widget.update_item(item)
         
     def mouse_move(self, event):
         
@@ -188,12 +188,7 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         self.list = None
         
         self.file_widget = vtool.qt_ui.BasicWidget()
-        
-        
-        
-        
         self.main_layout.addWidget(self.file_widget)
-        
         
     def _data_updated(self):
         self.data_updated.emit()
@@ -234,6 +229,7 @@ class DataWidget(vtool.qt_ui.BasicWidget):
     def add_list(self):
         if not self.list:
             self.list = vtool.qt_ui.AddRemoveDirectoryList()
+            self.list.setMaximumWidth(200)
             self.list.set_title('Sub Folder')
             self.list.select_current_sub_folder()
             
@@ -287,7 +283,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.setColumnWidth(0, 140)
         self.setColumnWidth(1, 110)
-        self.setColumnWidth(2, 50)
+        self.setColumnWidth(2, 90)
+        self.setColumnWidth(3, 50)
         
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
@@ -303,8 +300,18 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         col_size = self.columnWidth(0)
         
-        if  col_size >= 110:
+        if  col_size >= 100:
             
+            for inc in range(0, self.topLevelItemCount()):
+                
+                item = self.topLevelItem(inc)
+                item_font = qt.QFont()
+                item_font.setPixelSize(16)
+                item.setFont(0, item_font)
+                item.setFont(1, item_font)
+                #item.setFont(2, item_font)
+        
+        if col_size < 100:
             for inc in range(0, self.topLevelItemCount()):
                 
                 item = self.topLevelItem(inc)
@@ -312,15 +319,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
                 item_font.setPixelSize(11)
                 item.setFont(0, item_font)
                 item.setFont(1, item_font)
-        
-        if col_size < 110:
-            for inc in range(0, self.topLevelItemCount()):
-                
-                item = self.topLevelItem(inc)
-                item_font = qt.QFont()
-                item_font.setPixelSize(10)
-                item.setFont(0, item_font)
-                item.setFont(1, item_font)  
+                #item.setFont(2, item_font)  
     
     def _item_menu(self, position):
         
@@ -417,7 +416,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
     
     def _define_header(self):
-        return ['Name','Type','Size']
+        return ['Name','Sub Name', 'Type','Size']
         
     def _item_renamed(self, item, old_name):
         
@@ -462,13 +461,12 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             
             
             item_font = qt.QFont()
-            item_font.setPixelSize(10)
-            item_font2 = qt.QFont()
-            item_font2.setPixelSize(10)
+            item_font.setPixelSize(11)
             item.setFont(0, item_font)
-            item.setFont(1, item_font2)
+            item.setFont(1, item_font)
+            #item.setFont(2, item_font)
             
-            data_type = process_tool.get_data_type(foldername)
+            sub_folder, data_type = process_tool.get_data_sub_and_type(foldername)
             
             if not data_name_map.has_key(data_type):
                 vtool.util.warning('Data folder %s has no data type.' % foldername)
@@ -481,9 +479,9 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             
             group = group.capitalize()
             
-            nice_name = nice_name#  maybe add back in when data exists outside maya + '   - ' + group 
             
-            item.setText(1, nice_name)
+            item.setText(1, sub_folder)
+            item.setText(2, nice_name)
             
             item.folder = foldername
             
@@ -511,6 +509,21 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         folder = str(item.text(0))
         size_thread.run(data_dir, folder, item)
+        
+    def update_item(self, item):
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        data_dir = process_tool.get_data_path()
+        
+        size_thread = DataSizeThread()
+        
+        folder = str(item.text(0))
+        size_thread.run(data_dir, folder, item)
+        
+        sub = process_tool.get_data_sub_folder(folder)
+        item.setText(1, sub)
         
     def get_item_path_string(self, item):
         
@@ -543,32 +556,10 @@ class DataSizeThread(qt.QtCore.QThread):
     def run(self, data_path, data_name, item):
         
         data_folder = vtool.util_file.join_path(data_path, data_name)
-        
-        
         size = vtool.util_file.get_folder_size(data_folder, skip_names=['.version','.sub'])
         
-        """
-        stuff = vtool.util_file.get_files_and_folders(data_folder)
+        item.setText(3, str(size) )
         
-        item.setText(2, '...')
-        
-        size = '-'
-        
-        if data_name in stuff:
-            
-            sub_data_folder = vtool.util_file.join_path(data_folder, data_name)
-            size = vtool.util_file.get_folder_size(sub_data_folder, 1)
-        
-        else:
-            for thing in stuff:
-                if thing.find(data_name + '.') > -1:
-                    sub_data_file = vtool.util_file.join_path(data_folder, thing)
-                    size = vtool.util_file.get_filesize(sub_data_file, 1)
-        """
-        item.setText(2, str(size) )
-        
-        
-
 class DataTreeItem(vtool.qt_ui.TreeWidgetItem):
     pass
 
@@ -1573,9 +1564,7 @@ class MayaFileWidget(vtool.qt_ui.FileManagerWidget):
         return False
 
     def set_sub_folder(self, folder_name):
-        print 'here?>', self.data_class
         self.data_class.set_sub_folder(folder_name)
-    
 
     def _define_main_tab_name(self):
         return 'Maya File'

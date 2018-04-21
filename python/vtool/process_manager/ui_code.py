@@ -1657,9 +1657,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         index = model_index.internalId()
         
-        print 'compare'
-        print directory, index, self.start_index
-        
         if index == self.start_index:
             return True
         
