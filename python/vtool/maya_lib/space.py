@@ -2510,7 +2510,9 @@ def create_follow_group(source_transform, target_transform, prefix = 'follow', f
     
     parent = cmds.listRelatives(target_transform, p = True, f = True)
     
-    name = '%s_%s' % (prefix, target_transform)
+    target_name = vtool.util.convert_to_sequence(target_transform) 
+    
+    name = '%s_%s' % (prefix, target_name[0])
     
     if not use_duplicate:
         follow_group = cmds.group( em = True, n = core.inc_name(name) )
