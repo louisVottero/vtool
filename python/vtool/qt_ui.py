@@ -4587,8 +4587,11 @@ class AddRemoveList(BasicWidget):
     
     def _create_item(self, name = 'folder'):
         
+        self._get_unique_name(name)
         
         item = qt.QListWidgetItem(name)
+        item.setSizeHint(qt.QtCore.QSize(100, 30))
+        item.setSelected(True)
         return item
     
     def _add_item(self, name = None, rename_popup = True):
@@ -4632,6 +4635,38 @@ class AddRemoveList(BasicWidget):
         
         return removed_items
     
+    def _name_exists(self, name):
+        
+        found = False
+        
+        for inc in range(0, self.list.count()):
+            
+            item = self.list.item(inc)
+            
+            test_name = str(item.text())
+            
+            if name == test_name:
+                found = True
+                break
+        
+        return found
+    
+    def _get_unique_name(self, name):
+        
+        while self._name_exists(name):
+            
+            number = util.get_last_number(name)
+            
+            if number:
+                number = int(number) + 1
+            
+            if not number:
+                number = 1
+                
+            name = util.replace_last_number(name, str(number))
+        
+        return name
+    
     def _rename_item(self):
         
         items = self.list.selectedItems()
@@ -4649,6 +4684,11 @@ class AddRemoveList(BasicWidget):
         
         if not new_name:
             return [None,None]
+        
+        if not old_name == new_name:
+            new_name = self._get_unique_name(new_name)
+            
+            
         
         item.setText(new_name)
         
@@ -4699,13 +4739,12 @@ class AddRemoveDirectoryList(AddRemoveList):
             settings.set_directory(self.directory, 'data.type')
             settings.set('sub_folder', folder)
             
-        
-        
-        
-        
         self.item_update.emit()
 
     def _create_item(self, name = 'folder'):
+        
+        name = self._get_unique_name(name)
+        
         item = super(AddRemoveDirectoryList, self)._create_item(name)
         
         if not self.directory:
@@ -4713,11 +4752,12 @@ class AddRemoveDirectoryList(AddRemoveList):
         
         sub_path = self._get_path()
         
-        
         name = str(item.text())
         
         if name in self._define_defaults():
             return item
+        
+        
         
         util_file.create_dir(name, sub_path)
         
@@ -4751,7 +4791,7 @@ class AddRemoveDirectoryList(AddRemoveList):
         
         old_name, new_name = super(AddRemoveDirectoryList, self)._rename_item()
         
-
+        
         
         if not self.directory:
             return
@@ -4809,6 +4849,7 @@ class AddRemoveDirectoryList(AddRemoveList):
         
         for folder in folders:
             item = qt.QListWidgetItem(folder)
+            item.setSizeHint(qt.QtCore.QSize(100, 30))
             self.list.addItem(item)
     
     def set_directory(self, dirpath):
