@@ -118,9 +118,9 @@ class DataFolder(util_file.FileManager):
         
         self.name = name
         self.settings.set('name', str(self.name))
-        
                 
     def get_data_type(self):
+        
         if not self.settings:
             self._load_folder()
         
@@ -133,6 +133,13 @@ class DataFolder(util_file.FileManager):
 
         self.data_type = data_type
         self.settings.set('data_type', str(data_type))
+        
+    def get_sub_folder(self):
+        
+        if not self.settings:
+            self._load_folder()
+        
+        return self.settings.get('sub_folder')
         
     def get_folder_data_instance(self):
         
@@ -162,6 +169,7 @@ class DataFolder(util_file.FileManager):
         if instance:
             instance.set_directory(self.folder_path)
             instance.set_name(self.name)
+            
         
         return instance
     
@@ -343,10 +351,17 @@ class FileData(Data):
         self.settings.set_directory(self.directory, 'data.type')
         self.name = self.settings.get('name')
         
+        self.get_sub_folder()
+        
         if self.data_extension:
             self.filepath = util_file.join_path(directory, '%s.%s' % (self.name, self.data_extension))
         if not self.data_extension:
             self.filepath = util_file.join_path(directory, self.name)
+
+    def get_sub_folder(self):
+        folder_name = self.settings.get('sub_folder')
+        
+        self._sub_folder = folder_name
 
     def set_sub_folder(self, folder_name):
         self._sub_folder = folder_name
@@ -473,6 +488,7 @@ class MayaCustomData(CustomData):
         auto_focus = settings.get('auto_focus_scene')
         
         if not auto_focus:
+            cmds.select(cl = True)
             return
         
         try:
@@ -2233,13 +2249,15 @@ class MayaAttributeData(MayaCustomData):
                 
                 attribute = '%s.%s' % (node_name, line_list[0])
                 
+                if not cmds.objExists(attribute):
+                    util.warning('%s does not exists. Could not set value.' % attribute)
+                    continue
+                
                 if maya_lib.attr.is_locked(attribute):
                     continue
                 if maya_lib.attr.is_connected(attribute):
                     continue
-                if not cmds.objExists(attribute):
-                    util.warning('%s does not exists. Could not set value.' % attribute)
-                    continue
+                
                 
                 try:
                     cmds.setAttr(attribute, line_list[1])    
@@ -2704,8 +2722,6 @@ class MayaShotgunFileData(MayaFileData):
         
         self._get_filepath(publish_path = False)
         self.filepath = self.get_file()
-        
-        print self.filepath
         
         util_file.get_permission(self.filepath)
         
