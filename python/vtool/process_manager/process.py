@@ -569,7 +569,23 @@ class Process(object):
         data_type = data_folder.get_data_type()
         
         return data_type
+    
+    def get_data_sub_folder(self, name):
+        data_folder = data.DataFolder(name, self.get_data_path())
+        sub_folder = data_folder.get_sub_folder()
         
+        return sub_folder
+    
+    def get_data_sub_and_type(self, name):
+        
+        data_folder = data.DataFolder(name, self.get_data_path())
+        data_type = data_folder.get_data_type()
+        sub_folder = data_folder.get_sub_folder()
+        
+        return sub_folder, data_type
+    
+    
+    
     def get_data_folders(self):
         """
         Returns:
@@ -579,7 +595,7 @@ class Process(object):
         
         return util_file.get_folders(directory)  
      
-    def get_data_instance(self, name):
+    def get_data_instance(self, name, sub_folder = None):
         """
         Args:
             name (str): The name of a data folder in the process. 
