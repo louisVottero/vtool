@@ -1788,7 +1788,6 @@ class ProcessTreeModel(qt.QtCore.QAbstractListModel):
         
         return True
         """
-        print 'has children!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!?'
         
         if not parent.isValid:
             parent_process = self.root_item

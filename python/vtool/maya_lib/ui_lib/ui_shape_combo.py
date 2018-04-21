@@ -1402,13 +1402,9 @@ class TagManager(qt_ui.BasicDialog):
             
             tag_text = str(tag_item.text())
             
-            
-            print tag_text
             shapes = self.manager.get_tag_shapes(tag_text)
             
-            
             if not shapes:
-                print 'set red!'
                 tag_item.setBackground(qt.QBrush(qt.QColor('darkRed')))
         
     def _select_tags(self, tags):
