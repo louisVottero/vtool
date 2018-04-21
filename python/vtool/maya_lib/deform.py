@@ -4336,10 +4336,6 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
         
         cmds.setAttr('%s.normalizeWeights' % skin_deformer, 0)
         
-        print 'goobers', weights
-        print weights.keys()
-        print skin_deformer
-        
         index_weights = weights[index]
         
         other_index_weights = None
