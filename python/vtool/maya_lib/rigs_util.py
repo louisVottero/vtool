@@ -1521,6 +1521,7 @@ class TwistRibbon(object):
         """
         self.joints = []
         self.rivets = []
+        self.rivet_gr = None
         self.surface = None
         self.top_locator = None
         self.btm_locator = None
@@ -1530,6 +1531,8 @@ class TwistRibbon(object):
         self._end_transform = end_transform
         self._description = 'section'
         self._offset_axis = 'Y'
+        self._attach_directly = False
+        
         
     def set_description(self, description):
         self._description = description
@@ -1542,6 +1545,9 @@ class TwistRibbon(object):
         
     def set_ribbon_offset_axis(self, axis_letter):
         self._offset_axis = axis_letter
+        
+    def set_attach_directly(self, bool_value):
+        self._attach_directly = bool_value
         
     def create(self):
     
@@ -1569,18 +1575,22 @@ class TwistRibbon(object):
             self.joints = geo.nurb_surface_v_to_transforms(self.surface, count=self.joint_count)
             cmds.parent(self.joints, ribbon_gr)
         
+        
         rivet_gr = cmds.group(em = True, n = core.inc_name('twistRibbon_rivets_%s' % self._description))
+        self.rivet_gr = rivet_gr
         cmds.parent(rivet_gr, ribbon_gr)
         
         for joint in self.joints:
             
-            rivet = geo.attach_to_surface(joint, self.surface, constrain=False)
-            shapes = core.get_shapes(rivet)
-            cmds.hide(shapes)
-            cmds.parent(rivet, rivet_gr)
             cmds.delete( cmds.orientConstraint(self._joint, joint)) 
             cmds.makeIdentity(joint, apply = True, r = True)
             
+            rivet = geo.attach_to_surface(joint, self.surface, constrain=self._attach_directly)
+            
+            shapes = core.get_shapes(rivet)
+            cmds.hide(shapes)
+            cmds.parent(rivet, rivet_gr)
+        
         cluster_surface = deform.ClusterSurface(self.surface, self._description)
         cluster_surface.set_cluster_u(True)
         cluster_surface.create()
@@ -1596,6 +1606,7 @@ class TwistRibbon(object):
         
         self.top_locator = top_loc
         self.btm_locator = btm_loc
+        
         
         return [top_loc, btm_loc]
 
