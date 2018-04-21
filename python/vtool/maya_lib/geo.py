@@ -2746,7 +2746,13 @@ def attach_to_surface(transform, surface, u = None, v = None, constrain = True):
     rivet.create()
     
     if constrain:
-        cmds.parentConstraint(rivet.rivet, transform, mo = True)
+        loc = cmds.spaceLocator(n = 'locator_%s' % rivet.rivet)[0]
+        
+        cmds.parent(loc, rivet.rivet)
+        space.MatchSpace(transform, loc).translation_rotation()
+        
+        cmds.parentConstraint(loc, transform, mo = True)
+        
     if not constrain:
         cmds.parent(transform, rivet.rivet)
     
