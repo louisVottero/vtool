@@ -3,6 +3,7 @@
 import sys
 
 from vtool import qt_ui, qt, maya_lib
+
 from vtool import util_file
 from vtool import util
 
@@ -26,7 +27,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         util.show('VETALA_PATH: %s' % util.get_env('VETALA_PATH'))
         
-        
+        self._current_tab = None
         
         self.settings = None
         self.template_settings = None
@@ -53,6 +54,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         icon = qt_ui.get_icon('vetala.png')
         self.setWindowIcon(icon)
+        
         
         shortcut = qt.QShortcut(qt.QKeySequence(qt.QtCore.Qt.Key_Escape), self)
         shortcut.activated.connect(self._set_kill_process)
@@ -90,17 +92,47 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.last_process_script_inc = 0
         
+    def keyReleaseEvent(self, event):
+        super(ProcessManagerWindow, self).keyPressEvent(event)
+        
     def _show_options(self):
         
-        
+        sizes = self.process_splitter.sizes()
         self._load_options(self.process.get_path())
-        self.process_splitter.setSizes([1,1])
-        self.option_tabs.setCurrentIndex(0)
+        
+        current_index = self.option_tabs.currentIndex()
+        
+        if current_index != 0:
+            self.option_tabs.setCurrentIndex(0)
+        
+        if sizes[1] == 0:
+            self.process_splitter.setSizes([1,1])
+        
+        if current_index == 0 and sizes[1] > 0:
+            self.process_splitter.setSizes([1,0])
+            self._current_tab = None
+            return
+        
+        self._current_tab = 0
         
     def _show_notes(self):
+        sizes = self.process_splitter.sizes()
         self._load_notes()
-        self.process_splitter.setSizes([1,1])
-        self.option_tabs.setCurrentIndex(1)
+        
+        current_index = self.option_tabs.currentIndex()
+        
+        if current_index != 1:
+            self.option_tabs.setCurrentIndex(1)
+        
+        if sizes[1] == 0:
+            self.process_splitter.setSizes([1,1])
+        
+        if current_index == 1 and sizes[1] > 0:
+            self.process_splitter.setSizes([1,0])
+            self._current_tab = None
+            return
+        
+        self._current_tab = 1
         
     def _show_templates(self):
         
@@ -187,58 +219,71 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.setFocus()
         
     def _load_options(self, directory):
-        
         self.option_widget.set_directory(directory)
         
+        has_options = self.option_widget.has_options()
+        
+        if self.option_tabs.currentIndex() == 1:
+            note_lines = self._get_note_lines()
+            
+            if not note_lines and has_options and self._current_tab == None:
+                self.option_tabs.setCurrentIndex(0)
         
         if self.option_tabs.currentIndex() == 0:
             has_options = self.option_widget.has_options()
             
             if has_options:
                 self.process_splitter.setSizes([1,1])
-            if not has_options:
+            if not has_options and self._current_tab == None:
                 self.process_splitter.setSizes([1,0])
+            return
+        
+    def _get_note_lines(self):
+        
+        current_path = self._get_current_path()
+        
+        notes_path = util_file.join_path(current_path, 'notes.html')
+        
+        if util_file.is_file(notes_path):
+            note_lines = util_file.get_file_text(notes_path)
+            
+            if note_lines.endswith('><br /></p></body></html>'):
+                return 
+
+            return note_lines
+
             
     def _load_notes(self):
         
-        note_lines = self.process.get_setting('notes')
+        note_lines = self._get_note_lines()
         
-        notes = ''
-        
-        if note_lines:
-            for line in note_lines:
-                notes += '%s\n' % line
+        if not note_lines:
             
             self.notes.clear()
-            self.notes.setText(notes)
+            
+
+        if note_lines:
+            
+            self.notes.clear()
+            
+            self.notes.setHtml(note_lines)
             self._save_notes()
-            
-        if not note_lines:
-        
-            current_path = self._get_current_path()
-            
-            notes_path = util_file.join_path(current_path, 'notes.html')
-            
-            if util_file.is_file(notes_path):
-                note_lines = util_file.get_file_text(notes_path)
-                self.notes.setHtml(note_lines)
                 
-        
         if self.option_tabs.currentIndex() == 1:
+            if not note_lines and self._current_tab == None:
+                self.process_splitter.setSizes([1,0])
             if note_lines:
                 self.process_splitter.setSizes([1,1])
-                self.option_tabs.setCurrentIndex(1)
-                
-            if not note_lines:
-                self.process_splitter.setSizes([1,0])
                 
         if self.option_tabs.currentIndex() == 0:
             has_options = self.option_widget.has_options()
             
-            if not has_options and note_lines:
-                self.option_tabs.setCurrentIndex(1)
-                self.process_splitter.setSizes([1,1])
-        
+            if not has_options and self._current_tab == None:
+                
+                if note_lines:
+                    self.option_tabs.setCurrentIndex(1)
+                    self.process_splitter.setSizes([1,1])
+                    
     def _update_build_widget(self, process_name):
         
         path = self.view_widget.tree_widget.directory
@@ -391,7 +436,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.batch_button.setMinimumHeight(30)
         self.batch_button.setMinimumWidth(70)
         
-        self.stop_button = qt.QPushButton('STOP (Esc key)')
+        self.stop_button = qt.QPushButton('STOP (Hold Esc)')
         self.stop_button.setMaximumWidth(110)
         self.stop_button.setMinimumHeight(30)
         self.stop_button.hide()
@@ -484,12 +529,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if self.option_tabs.currentIndex() == 0:
             self.template_widget.set_active(False)
+            self._current_tab = 0
         
         if self.option_tabs.currentIndex() == 1:
             self.template_widget.set_active(False)
+            self._current_tab = 1
             
         if self.option_tabs.currentIndex() == 2:
             self.template_widget.set_active(True)
+            self._current_tab = None
             
     def _clear_code(self, close_windows = False):
         
@@ -804,22 +852,33 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     
             if children:
                 
-                result = qt_ui.get_comment(self, 'Found children checked. Add comment to the auto build?', 'Children Checked', comment_text='Auto Build' )
-                if result == None:
-                    result2 = qt_ui.get_permission('Continue Main Process?', self, title = 'Sub process build cancelled.')
+                result = qt_ui.get_comment(self, 'Found process children checked on:\n\nHit Ok to auto build children first.\n\nHit Cancel to process only the current process.\n\n\nAdd comment to the auto build? ', 'Children Checked', comment_text='Auto Build' )
+                
+                if result:
                     
-                    if not result2:
-                        return
-                
-                for level in children:
-                    for level_item in level:
-                        self.view_widget.tree_widget.setCurrentItem(level_item)
-                        self._process_item(level_item, comment = result)
-                
+                    util.set_env('VETALA_RUN', True)
+                    util.set_env('VETALA_STOP', False)
+                    
+                    for level in children:
+                        for level_item in level:
+                            
+                            if util.get_env('VETALA_RUN') == 'True':
+                                if util.get_env('VETALA_STOP') == 'True':
+                                    return
+                                
+                            self.view_widget.tree_widget.setCurrentItem(level_item)
+                            self._process_item(level_item, comment = result)
+
+                    if util.get_env('VETALA_RUN') == 'True':
+                        if util.get_env('VETALA_STOP') == 'True':
+                            return
+
                 import time
                 self.view_widget.tree_widget.setCurrentItem(item)
                 self.view_widget.tree_widget.repaint()
                 time.sleep(1)
+
+
                 
         self.continue_button.hide()
         
@@ -881,17 +940,34 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         found_start = False
         
-        for inc in range(start, script_count):
+        progress_bar = None
         
+        if util.is_in_maya():
+            progress_bar = maya_lib.core.ProgressBar('Process', script_count)
+            progress_bar.status('Processing: getting ready...')
+        
+        for inc in range(start, script_count):
+            
             if util.get_env('VETALA_RUN') == 'True':
                 if util.get_env('VETALA_STOP') == 'True':
+                    if progress_bar:
+                        progress_bar.end()
                     break
             
             script = scripts[inc]
             script_name = util_file.remove_extension(script)
             
+            if progress_bar:
+                
+                progress_bar.status('Processing: %s' % script_name)
+                
+                if progress_bar.break_signaled():
+                    self._set_kill_process()
+            
             if self.kill_process:
                 self.kill_process = False
+                if progress_bar:
+                    progress_bar.end()
                 break
             
             skip = False
@@ -920,10 +996,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 if code_manifest_tree.has_startpoint() and not found_start:
                     if not code_manifest_tree.is_process_script_startpoint(scripts[inc]):
                         found_start = True
+                        if progress_bar:
+                            progress_bar.inc()
                         continue
                     
                     
                 self.code_widget.set_process_script_state(scripts[inc], 2)
+                
+                if progress_bar:
+                
+                    if progress_bar.break_signaled():
+                        self._set_kill_process()
                 
                 status = self.process.run_script(script_name, False, self.settings.settings_dict)
                 temp_log = util.get_env('VETALA_LAST_TEMP_LOG')
@@ -935,6 +1018,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     self.code_widget.set_process_script_state(scripts[inc], 0)
                     
                     if stop_on_error:
+                        if progress_bar:
+                            progress_bar.end()
                         break
                     
                 if status == 'Success':
@@ -948,8 +1033,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     self.continue_button.show()
                     self.last_process_script_inc = inc
                     finished = True
+                    if progress_bar:
+                        progress_bar.end()
                     break
-        
+            
+            if progress_bar:
+                progress_bar.inc()
+            
         util.set_env('VETALA_RUN', False)
         util.set_env('VETALA_STOP', False)
             
