@@ -1710,6 +1710,13 @@ class Process(object):
         
         state_dict = {}
         
+        progress_bar = None
+        
+        if util.is_in_maya():
+            
+            progress_bar = core.ProgressBar('Process', len(scripts))
+            progress_bar.status('Processing: getting ready...')
+            
         for inc in range(0, len(scripts)):
             
             state = states[inc]
@@ -1719,7 +1726,11 @@ class Process(object):
             
             state_dict[check_script] = state
             
-            
+            if progress_bar:
+                progress_bar.status('Processing: %s' % script)
+                
+                if progress_bar.break_signaled():
+                    break
             
             if state:
                 
@@ -1735,6 +1746,8 @@ class Process(object):
                         
                 if not parent_state:
                     util.show('\tSkipping: %s\n\n' % script)
+                    if progress_bar:
+                        progress_bar.inc()
                     continue 
                 
                 try:
@@ -1748,6 +1761,9 @@ class Process(object):
             if not states[inc]:
                 util.show('\n------------------------------------------------')
                 util.show('Skipping: %s\n\n' % script)
+                
+            if progress_bar:
+                progress_bar.inc()
         
         minutes, seconds = watch.stop()
         
