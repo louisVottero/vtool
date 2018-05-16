@@ -92,9 +92,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.last_process_script_inc = 0
         
-    def keyReleaseEvent(self, event):
-        super(ProcessManagerWindow, self).keyPressEvent(event)
-        
     def _show_options(self):
         
         sizes = self.process_splitter.sizes()
