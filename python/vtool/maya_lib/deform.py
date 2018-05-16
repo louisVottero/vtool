@@ -850,19 +850,12 @@ class SplitMeshTarget(object):
                 vtool.util.warning('Splitting with joints specified, but no weighted mesh specified.')
                 continue
             
-            if not self.search_children_meshes:
-                base_meshes = [self.base_mesh]
-                target_meshes = [self.target_mesh]
-                new_target_meshes = [new_target]
-                if center_fade == None:
-                    weight_meshes = [self.weighted_mesh]
-                
-            if self.search_children_meshes:
-                base_meshes = core.get_shapes_in_hierarchy(self.base_mesh, 'mesh', return_parent = True)
-                target_meshes = core.get_shapes_in_hierarchy(self.target_mesh, 'mesh', return_parent = True)
-                new_target_meshes = core.get_shapes_in_hierarchy(new_target, 'mesh', return_parent = True)
-                if center_fade == None:
-                    weight_meshes = core.get_shapes_in_hierarchy(self.weighted_mesh, 'mesh')
+
+            base_meshes = core.get_shapes_in_hierarchy(self.base_mesh, 'mesh', return_parent = True)
+            target_meshes = core.get_shapes_in_hierarchy(self.target_mesh, 'mesh', return_parent = True)
+            new_target_meshes = core.get_shapes_in_hierarchy(new_target, 'mesh', return_parent = True)
+            if center_fade == None:
+                weight_meshes = core.get_shapes_in_hierarchy(self.weighted_mesh, 'mesh')
                 
             base_mesh_count = len(base_meshes)
                 
@@ -880,6 +873,7 @@ class SplitMeshTarget(object):
             for inc in range(0, base_mesh_count):
                 
                 base_mesh = base_meshes[inc]
+                vtool.util.show('Splitting mesh: %s' % base_mesh)
                 target_mesh = target_meshes[inc]
                 new_target_mesh = new_target_meshes[inc]
                 
@@ -4586,10 +4580,12 @@ def skin_lattice_from_mesh(source_mesh, target, divisions = [10,10,10], falloff 
         include_joints (list): Include the named joint from the skin cluster.
     '''
     
-    group = cmds.group(em = True, n = 'lattice_%s_gr' % target)
+    target = vtool.util.convert_to_sequence(target)
     
     if not name:
-        name = target
+        name = target[0]
+    
+    group = cmds.group(em = True, n = 'lattice_%s_gr' % target[0])
     
     ffd, lattice, base = cmds.lattice(target, 
                                       divisions = divisions, 
