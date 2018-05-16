@@ -407,6 +407,7 @@ def is_batch():
         bool: True if Maya is in batch mode.
     """
     
+    
     return cmds.about(batch = True)
 
 def is_transform(node):

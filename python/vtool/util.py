@@ -30,6 +30,7 @@ def set_env(name, value):
         value (str): If a number is supplied it will automatically be converted to str.
     """
     
+    
     if os.environ.has_key(name):
         
         value = str(value)

@@ -1392,12 +1392,14 @@ class CopyWidget(qt_ui.BasicWidget):
                     if not target_file:
                         continue
                     
+                    if not util_file.is_file(target_file):
+                        target_file = None
                     
                     same_content = False
                     
                     same = False
                     
-                    if util_file.is_file(source_file) and util_file.is_file(target_file):
+                    if util_file.is_file(source_file) and target_file:
                         
                         same_content = util_file.is_same_text_content(source_file, target_file)
                         
@@ -1406,12 +1408,12 @@ class CopyWidget(qt_ui.BasicWidget):
                         
                     else:
                         
-
-                        same_date = util_file.is_same_date(source_file, target_file)
+                        if target_file:
+                            same_date = util_file.is_same_date(source_file, target_file)
+                            
+                            if same_date:
+                                same = True
                         
-                        if same_date:
-                            same = True
-                    
                         if same:
                             source_size = util_file.get_size(source_data.get_file())
                             target_size = util_file.get_size(target_data.get_file())
@@ -1650,6 +1652,8 @@ class CopyWidget(qt_ui.BasicWidget):
         
     def load_compare(self):
         
+        current_tab_index = self.tabs.currentIndex()
+        
         if not self.other_process:
             return
 
@@ -1688,7 +1692,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.progress_bar.setVisible(False)
         
-        self.tabs.setCurrentIndex(0)
+        self.tabs.setCurrentIndex(current_tab_index)
         
 class CopyTree(qt.QTreeWidget):
     
