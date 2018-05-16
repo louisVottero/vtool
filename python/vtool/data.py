@@ -139,7 +139,13 @@ class DataFolder(util_file.FileManager):
         if not self.settings:
             self._load_folder()
         
-        return self.settings.get('sub_folder')
+        folder = self.settings.get('sub_folder')
+        
+        if self.folder_path:
+            if not util_file.is_dir(util_file.join_path(self.folder_path, '.sub/%s' % folder)):
+                return
+        
+        return folder
         
     def get_folder_data_instance(self):
         
@@ -361,7 +367,14 @@ class FileData(Data):
     def get_sub_folder(self):
         folder_name = self.settings.get('sub_folder')
         
+        if self.directory:
+            if not util_file.is_dir(util_file.join_path(self.directory, '.sub/%s' % folder_name)):
+                self.set_sub_folder('')
+                return
+        
         self._sub_folder = folder_name
+        
+        return folder_name
 
     def set_sub_folder(self, folder_name):
         self._sub_folder = folder_name
