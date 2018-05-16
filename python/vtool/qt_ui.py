@@ -4563,10 +4563,14 @@ class AddRemoveList(BasicWidget):
         if item:
             name = item.text()
             if name in self._define_defaults():
+                self.rename_action.setVisible(False)
+                self.remove_action.setVisible(False)
                 return
             
+            self.rename_action.setVisible(True)
             self.remove_action.setVisible(True)
         if not item:
+            self.rename_action.setVisible(False)
             self.remove_action.setVisible(False)
         self.context_menu.exec_(self.list.viewport().mapToGlobal(position))
         
@@ -4726,6 +4730,13 @@ class AddRemoveDirectoryList(AddRemoveList):
             return
         
         item = self.list.currentItem()
+        items = self.list.selectedItems()
+        if not items:
+            return
+        else:
+            item = items[0]
+        
+        
         if item:
             current_folder = str(item.text())
             
@@ -4832,25 +4843,32 @@ class AddRemoveDirectoryList(AddRemoveList):
             return str(current_item.text())
     
     def refresh(self):
-
+        
+        self.emit_update = False
         self.list.clear()
-
+        
         defaults = self._define_defaults()
         
         for default in defaults:
+            
             self._add_item(default)
+            
         
         if not self.directory:
+            self.emit_update = True
             return
-        
-        
         
         folders = self._get_folders()
         
         for folder in folders:
             item = qt.QListWidgetItem(folder)
             item.setSizeHint(qt.QtCore.QSize(100, 30))
+            
             self.list.addItem(item)
+        
+        self.emit_update = True
+        self.select_current_sub_folder()
+        
     
     def set_directory(self, dirpath):
         
