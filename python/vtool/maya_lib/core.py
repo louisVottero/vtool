@@ -245,6 +245,9 @@ class ProgressBar(object):
         if is_batch():
             return
         
+        if vtool.util.get_env('VETALA_RUN') == 'True':
+            vtool.util.set_env('VETALA_STOP', True)
+        
         cmds.progressBar(self.progress_ui, edit=True, ep = True)
         
     def status(self, status_string):
@@ -269,8 +272,7 @@ class ProgressBar(object):
 
         if break_progress:
             self.end()
-            if vtool.util.get_env('VETALA_RUN') == 'True':
-                vtool.util.set_env('VETALA_STOP', True)
+            
             return True
         
         return False
@@ -837,6 +839,9 @@ def rename_shapes(transform):
     """
     
     shapes = get_shapes(transform)
+    
+    if not shapes:
+        return
     
     if shapes:
         cmds.rename(shapes[0], '%sShape' % transform)
