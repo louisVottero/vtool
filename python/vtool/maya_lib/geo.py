@@ -708,7 +708,8 @@ def get_of_type_in_hierarchy(transform, node_type):
         list: Nodes that match node_type in the hierarchy below transform.  
         If a shape matches, the transform above the shape will be added.
     """
-    relatives = cmds.listRelatives(transform, ad = True, type = node_type, f = True)
+    relatives = cmds.listRelatives(transform, ad = True, type = node_type, f = True, shapes = False)
+    
     
     found = []
     
@@ -1175,6 +1176,17 @@ def get_closest_parameter_on_surface(surface, vector):
         uv[1] = 0.001
     
     return uv
+
+def get_closest_normal_on_surface(surface, vector):
+    
+    shapes = core.get_shapes(surface)
+    
+    if shapes:
+        surface = shapes[0]
+    
+    surface = api.NurbsSurfaceFunction(surface)
+    return surface.get_closest_normal(vector)
+    
 
 def get_closest_position_on_mesh(mesh, three_value_list):
     """
@@ -1742,15 +1754,16 @@ def create_joint_u_strip_on_surface(surface, u_count, description, u_offset = 0,
     u_joints =[]
     
     if u_count:
-        u_segment = 1.00/(u_count-1)
+        u_segment = 1.00/(u_count)
     
     if u_count:
-        for inc in range(0, u_count):
+        for inc in range(0, u_count+1):
             
             follicle = create_surface_follicle(surface, description, uv = [u_percent, u_offset])
             cmds.select(cl = True)
             joint = cmds.joint(n = core.inc_name('joint_%s' % description) )
             
+            space.MatchSpace(follicle, joint).translation()
             cmds.parent(joint, follicle)
             cmds.makeIdentity(apply = True, jo = True)
             
@@ -1773,15 +1786,16 @@ def create_joint_v_strip_on_surface(surface, v_count, description, v_offset = 0,
     v_joints =[]
 
     if v_count:
-        v_segment = 1.00/(v_count-1)
+        v_segment = 1.00/(v_count)
 
     if v_count:
-        for inc in range(0, v_count):
+        for inc in range(0, v_count+1):
             
             follicle = create_surface_follicle(surface, description, uv = [v_offset, v_percent])
             cmds.select(cl = True)
             joint = cmds.joint(n = core.inc_name('joint_%s' % description) )
             
+            space.MatchSpace(follicle, joint).translation()
             cmds.parent(joint, follicle)
             space.zero_out_transform_channels(joint)
             #space.MatchSpace(follicle, joint).translation_rotation()
@@ -2560,6 +2574,11 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
     rivet.set_edges([edge1, edge2])
     rivet = rivet.create()
     
+    orig_rivet = rivet
+    rivet = cmds.group(em = True, n = 'offset_%s' % rivet, p = orig_rivet)
+    space.MatchSpace(orig_rivet, rivet).translation_rotation()
+    
+    
     if deform:
 
         for thing in transform:
@@ -2591,17 +2610,17 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
         
                     
     if not inherit_transform:
-        cmds.setAttr('%s.inheritsTransform' % rivet, 0)
+        cmds.setAttr('%s.inheritsTransform' % orig_rivet, 0)
     
     if parent and auto_parent:
         cmds.parent(rivet, parent)
         
         
     if hide_shape:
-        cmds.hide('%sShape' % rivet)
+        cmds.hide('%sShape' % orig_rivet)
         
     
-    return rivet
+    return orig_rivet
 
 def attach_to_curve(transform, curve, maintain_offset = False, parameter = None):
     """
@@ -2759,7 +2778,7 @@ def attach_to_surface(transform, surface, u = None, v = None, constrain = True):
     return rivet.rivet
 
 
-def follicle_to_mesh(transform, mesh, u = None, v = None, constrain = False, constraint_type = 'parentConstraint', local = False):
+def follicle_to_mesh(transform, mesh, u = None, v = None, constrain = True, constraint_type = 'parentConstraint', local = False):
     """
     Use a follicle to attach the transform to the mesh.
     If no u and v value are supplied, the command will try to find the closest position on the mesh. 
