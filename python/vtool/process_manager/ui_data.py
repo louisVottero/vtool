@@ -129,7 +129,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                         
                         self.data_widget.show()
                         if self.data_widget.list:
-                            self.data_widget.list.set_selected(0)
+                            self.data_widget.list.select_current_sub_folder()
                         self.label.setText( str( item.text(0)) )
                         self.label.show()
                         
@@ -200,8 +200,6 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         
         folder = self.directory
         
-        if self.list:
-            self.list.select_current_sub_folder()
         self.file_widget.set_directory(folder)
         
     def _remove_widget(self, widget):
@@ -231,7 +229,6 @@ class DataWidget(vtool.qt_ui.BasicWidget):
             self.list = vtool.qt_ui.AddRemoveDirectoryList()
             self.list.setMaximumWidth(200)
             self.list.set_title('Sub Folder')
-            self.list.select_current_sub_folder()
             
             self.main_layout.addWidget(self.list)
             
@@ -298,29 +295,29 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     def resizeEvent(self, event):
         super(DataTreeWidget, self).resizeEvent(event)
         
-        col_size = self.columnWidth(0)
-        
+        #col_size = self.columnWidth(0)
+        """
         if  col_size >= 100:
             
             for inc in range(0, self.topLevelItemCount()):
                 
                 item = self.topLevelItem(inc)
-                item_font = qt.QFont()
-                item_font.setPixelSize(16)
-                item.setFont(0, item_font)
-                item.setFont(1, item_font)
+                #item_font = qt.QFont()
+                #item_font.setPixelSize(16)
+                #item.setFont(0, item_font)
+                #item.setFont(1, item_font)
                 #item.setFont(2, item_font)
         
         if col_size < 100:
             for inc in range(0, self.topLevelItemCount()):
                 
                 item = self.topLevelItem(inc)
-                item_font = qt.QFont()
-                item_font.setPixelSize(11)
-                item.setFont(0, item_font)
-                item.setFont(1, item_font)
+                #item_font = qt.QFont()
+                #item_font.setPixelSize(11)
+                #item.setFont(0, item_font)
+                #item.setFont(1, item_font)
                 #item.setFont(2, item_font)  
-    
+        """
     def _item_menu(self, position):
         
         item = self.itemAt(position)
