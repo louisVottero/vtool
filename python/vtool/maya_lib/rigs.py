@@ -788,6 +788,8 @@ class SparseRig(JointRig):
             
             match.scale()
             
+            match.translation_to_rotate_pivot()
+            
             if self.respect_side:
                 side = control.color_respect_side(center_tolerance = self.respect_side_tolerance)
             
@@ -956,6 +958,7 @@ class SparseLocalRig(SparseRig):
                 match.translation_to_rotate_pivot()
             
             match.scale()
+            match.translation_to_rotate_pivot()
             
             if self.respect_side:
                 side = control.color_respect_side(center_tolerance = self.respect_side_tolerance)
@@ -966,9 +969,17 @@ class SparseLocalRig(SparseRig):
                     self.control_dict.pop(control_name)
                     
                     if control_name[-1].isalpha():
-                        control_name = cmds.rename(control_name, core.inc_name( control_name[0:-1] + side) )
+                        #ends with a side, strip the number and side and add new 1_side.
+                        
+                        new_name = core.inc_name( control_name[:-3] + '1_' + side)
                     else:
-                        control_name = cmds.rename(control_name, core.inc_name( control_name[0:-1] + '1_' + side) )
+                        #ends with a number, strip number and add the side
+                        new_name = core.inc_name( control_name[:-1] + '1_' + side)
+                    
+                    control_name = rigs_util.rename_control(control_name, new_name)
+                        
+                    xform = space.get_xform_group(control_name)
+                    driver = space.get_xform_group(control_name, 'driver')
                     
                     self.control_dict[control_name] = control_data
                     
@@ -1342,6 +1353,8 @@ class FkRig(BufferRig):
             match.translation()
             
         match.scale()
+        
+        match.translation_to_rotate_pivot()
         
             
     def _first_increment(self, control, current_transform):
