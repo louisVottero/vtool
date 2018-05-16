@@ -445,10 +445,12 @@ class MatchSpace(object):
         """
         Match just the translation
         """
+        
+        self._set_translation()
         self._set_scale_pivot()
         self._set_rotate_pivot()
         
-        self._set_translation()
+        
         
     def rotation(self):
         """
@@ -460,11 +462,13 @@ class MatchSpace(object):
         """
         Match translation and rotation.
         """
+        
+        self._set_translation()
                 
         self._set_scale_pivot()
         self._set_rotate_pivot()
         
-        self._set_translation()
+        
         
         self._set_rotation()
         
@@ -1036,6 +1040,12 @@ class OrientJoint(object):
                     mesh_fn = api.MeshFunction(self.surface)
                     normal = mesh_fn.get_closest_normal(space_group_xform, True)
                     cmds.xform(space_group, ws = True, t = normal)
+                if core.has_shape_of_type(self.surface, 'nurbsSurface'):
+                    surface_fn = api.NurbsSurfaceFunction(self.surface)
+                    
+                    normal = surface_fn.get_closest_normal(space_group_xform, True)
+                    cmds.xform(space_group, ws = True, t = normal)
+                    
             
             return space_group
             
@@ -2691,8 +2701,10 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     
     if constraint_type == 'parentConstraint':
         constraint = cmds.parentConstraint(locators,  follow_group, mo = True)[0]
+        cmds.setAttr('%s.interpType' % constraint, 2)
     if constraint_type == 'orientConstraint':
         constraint = cmds.orientConstraint(locators,  follow_group)[0]
+        cmds.setAttr('%s.interpType' % constraint, 2)
     if constraint_type == 'pointConstraint':
         constraint = cmds.pointConstraint(locators,  follow_group, mo = True)[0]
     
