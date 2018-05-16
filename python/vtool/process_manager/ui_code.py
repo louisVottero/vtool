@@ -740,7 +740,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             self.shift_activate = True
     
     def keyReleaseEvent(self, event):
-        
         if event.key() == qt.QtCore.Qt.Key_Shift:
             
             self.shift_activate = False
