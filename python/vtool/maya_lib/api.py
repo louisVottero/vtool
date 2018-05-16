@@ -677,6 +677,24 @@ class NurbsSurfaceFunction(MayaFunction):
         
         return u,v
     
+    def get_closest_normal(self, source_vector, at_source_position = False):
+        
+        space = OpenMaya.MSpace.kWorld
+        
+        uv = self.get_closest_parameter(source_vector)
+        
+        #point = self.api_object.normal(uv[0], uv[0], point.api_object, space )
+        mvector = self.api_object.normal(uv[0], uv[1], space )
+        
+        vector = [mvector.x,mvector.y,mvector.z]
+        
+        if not at_source_position:
+            return vector
+        if at_source_position:
+            position = vtool.util.vector_add(source_vector, vector)
+            return position
+        
+    
     def get_position_from_parameter(self, u_value, v_value):
         
         point = Point()
