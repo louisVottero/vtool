@@ -1005,6 +1005,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     if progress_bar.break_signaled():
                         self._set_kill_process()
                 
+                print script_name
+                print util.get_env('VETALA_STOP')
+                print util.get_env('VETALA_RUN')
                 status = self.process.run_script(script_name, False, self.settings.settings_dict)
                 temp_log = util.get_env('VETALA_LAST_TEMP_LOG')
                 

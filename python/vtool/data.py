@@ -1004,8 +1004,6 @@ class SkinWeightData(MayaCustomData):
             
             progress_ui = maya_lib.core.ProgressBar('import skin', len(influence_dict.keys()))
             
-
-            
             for influence in influences:
                 
                 if influence.count('|') > 1:
@@ -1037,8 +1035,6 @@ class SkinWeightData(MayaCustomData):
                         continue
                     
                     attr = '%s.weightList[%s].weights[%s]' % (skin_cluster, inc, index)
-                    #plug = maya_lib.api.attribute_to_plug()
-                    #plug.setFloat(weight)
                     
                     cmds.setAttr(attr, weight)
                                     
