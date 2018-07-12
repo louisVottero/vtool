@@ -1898,7 +1898,7 @@ def is_attribute_numeric(node_dot_attribute):
     if attr_type in numeric_types:
         return True
     
-def is_translate_rotate_connected(transform):
+def is_translate_rotate_connected(transform, ignore_keyframe = False):
     """
     Check if translate and rotate attributes are connected.
     
@@ -1919,10 +1919,18 @@ def is_translate_rotate_connected(transform):
             
             input_value = get_attribute_input(name)
             
+            if not input_value:
+                return
+            
+            if ignore_keyframe:
+                if cmds.nodeType(input_value).find('animCurve') > -1:
+                    return False
+            
             if input_value:
                 return True
         
     return False
+
 
 def is_connected(node_and_attribute):
     
