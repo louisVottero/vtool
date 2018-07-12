@@ -1,4 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+import traceback
 
 from vtool import qt
 
@@ -1630,16 +1631,22 @@ class GetString(BasicWidget):
         super(GetString, self).__init__(parent)
         
         self._use_button = False
+        self._suppress_button_command = False
     
     def _define_main_layout(self):
         return qt.QHBoxLayout()
-            
+
+    def _define_text_entry(self):
+        return qt.QLineEdit()
+
     def _build_widgets(self):
+        
+        
         
         self.main_layout.setContentsMargins(0,0,0,0)
         self.main_layout.setSpacing(0)
         
-        self.text_entry = qt.QLineEdit()
+        self.text_entry = self._define_text_entry()
         
         
         self.label = qt.QLabel(self.name)
@@ -1649,7 +1656,10 @@ class GetString(BasicWidget):
         
         self.main_layout.addWidget(self.label)
         self.main_layout.addSpacing(5)
+        
         self.main_layout.addWidget(self.text_entry)
+        
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
         
         
         insert_button = qt.QPushButton('<')
@@ -1667,6 +1677,9 @@ class GetString(BasicWidget):
         self.text_changed.emit(self.text_entry.text())
         
     def _button_command(self):
+        if self._suppress_button_command:
+            return 
+        
         if util.is_in_maya():
             import maya.cmds as cmds
             
@@ -1716,7 +1729,21 @@ class GetString(BasicWidget):
             self.button.show()
         else:
             self.button.hide()
+            
+    def set_button_text(self, text):
+        self.button.setText(text)
+    
+    def get_button_text(self):
+        return self.button.text()
+    
+    def set_button_to_first(self):
         
+        self.main_layout.insertWidget(0, self.button)
+        
+    def set_suppress_button_commaand(self, bool_value):
+        self._suppress_button_command = bool_value
+        
+    
     def get_text_as_list(self):
         
         text = self.text_entry.text()
@@ -1732,7 +1759,40 @@ class GetString(BasicWidget):
         
         if text:
             return [text]
+
+class GetCode(GetString):
+
+    def _define_main_layout(self):
+        return qt.QVBoxLayout()
+
+    def _define_text_entry(self):
+        code = CodeTextEdit()
+        code.setMaximumHeight(100)
+        code.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Minimum))
+        
+        return code
+
+    def _setup_text_widget(self):
+        
+        self.text_entry.textChanged.connect(self._text_changed)
+        
+    def _text_changed(self):
+        
+        self.text_changed.emit(self.text_entry.toPlainText())
+
+    def set_text(self, text):
+        
+        self.text_entry.setPlainText(text)
+        
+    def get_text(self):
+        return self.text_entry.toPlainText()
     
+    def set_process(self, process_inst):
+        self.text_entry.set_process(process_inst)
+
+    def set_completer(self, completer):
+        self.text_entry.set_completer(completer)
+
 class GetDirectoryWidget(DirectoryWidget):
     
     directory_changed = create_signal(object)
@@ -2254,7 +2314,6 @@ class CodeEditTabs(BasicWidget):
         self.previous_widget = None
         
         self.suppress_tab_close_save = False
-        self.current_process = None
         
         self.find_widget = None
         
@@ -2451,11 +2510,14 @@ class CodeEditTabs(BasicWidget):
             code_edit_widget.set_completer(self.__class__.completer)
         
         code_edit_widget.filepath = filepath
+        code_edit_widget.set_process(self._process_inst)
 
         code_edit_widget.add_menu_bar()
         
-        if self.current_process:
-            code_edit_widget.add_process_title(self.current_process)
+        if self._process_inst:
+            
+            process_name = self._process_inst.get_name()
+            code_edit_widget.add_process_title(process_name)
             
         code_edit_widget.set_file(filepath)
         
@@ -2507,6 +2569,7 @@ class CodeEditTabs(BasicWidget):
         if self.__class__.completer:
             code_edit_widget.set_completer(self.__class__.completer)
         code_edit_widget.filepath = filepath
+        code_edit_widget.set_process(self._process_inst)
         
         self.tabs.addTab(code_edit_widget, basename)
         
@@ -2673,6 +2736,9 @@ class CodeEditTabs(BasicWidget):
         
         if name in self.code_floater_map:
             self.code_floater_map.pop(name)
+    
+    def set_process(self, process_inst):
+        self._process_inst = process_inst
         
                 
     def close_tabs(self):
@@ -2797,6 +2863,9 @@ class CodeEdit(BasicWidget):
     save_done = create_signal(object)
     
     def __init__(self):
+        
+        self._process_inst = None
+        
         super(CodeEdit, self).__init__()
         
         self.text_edit.cursorPositionChanged.connect(self._cursor_changed)
@@ -3008,8 +3077,6 @@ class CodeEdit(BasicWidget):
         
         self._history_widget.set_directory(util_file.get_dirname(filepath), refresh = True)
         
-
-        
     def set_no_changes(self):
         
         self.save_state.setText('No Changes')
@@ -3021,6 +3088,11 @@ class CodeEdit(BasicWidget):
         
     def get_document(self):
         return self.text_edit.document()
+    
+    def set_process(self, process_inst):
+        
+        self._process_inst = process_inst
+        self.text_edit.set_process(process_inst)
     
     def set_document(self, document):
         modified = document.isModified()
@@ -3058,6 +3130,9 @@ class CodeTextEdit(qt.QPlainTextEdit):
     def __init__(self):
         
         self.filepath = None
+        
+        self._process_inst = None
+        
         
         super(CodeTextEdit, self).__init__()
         
@@ -3160,6 +3235,14 @@ class CodeTextEdit(qt.QPlainTextEdit):
 
         pass_on = True
         
+        if event.modifiers() and qt.QtCore.Qt.ControlModifier:
+            
+            if event.key() ==  qt.QtCore.Qt.Key_Enter or event.key() == qt.QtCore.Qt.Key_Return:
+                
+                pass_on = False
+                self._run()
+                return
+        
         if event.key() == qt.QtCore.Qt.Key_Backtab or event.key() == qt.QtCore.Qt.Key_Tab:
             self._handle_tab(event)
             pass_on = False
@@ -3167,7 +3250,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
         if event.key() == qt.QtCore.Qt.Key_Enter or event.key() == qt.QtCore.Qt.Key_Return:
             self._handle_enter(event)
             pass_on = False
-
+            
         if pass_on:
             super(CodeTextEdit, self).keyPressEvent(event)
         
@@ -3306,6 +3389,23 @@ class CodeTextEdit(qt.QPlainTextEdit):
         
         self.find_opened.emit(self)
     
+    def _run(self):
+        
+        cursor = self.textCursor()
+        text = cursor.selection().toPlainText()
+        
+        if util.is_in_maya():
+            util.show(text)
+            text = 'import maya.cmds as cmds\n' + text
+        
+        builtins = {'process':self._process_inst,'show':util.show, 'warning':util.warning}
+        
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            builtins['cmds'] = cmds
+        
+        exec(text, globals(), builtins)
+        
     def _goto_line(self):
         
         line = get_comment(self, '', 'Goto Line')
@@ -3582,6 +3682,8 @@ class CodeTextEdit(qt.QPlainTextEdit):
         
         self.file_set.emit()
     
+    def set_process(self, process_inst):
+        self._process_inst = process_inst
 
     def set_completer(self, completer):
         
@@ -4550,6 +4652,7 @@ class AddRemoveList(BasicWidget):
     def _build_widgets(self):
         
         self.label = qt.QLabel()
+        self.label.hide()
         self.list = qt.QListWidget()
         
         self.main_layout.addWidget(self.label)
@@ -4701,6 +4804,7 @@ class AddRemoveList(BasicWidget):
         return old_name, new_name
     
     def set_title(self, title):
+        self.label.show()
         self.label.setText(title)
     
     def refresh(self):
