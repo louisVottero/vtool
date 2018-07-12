@@ -55,6 +55,15 @@ class TemplateWidget(qt_ui.BasicWidget):
         if not self.handle_current_change:
             return
         
+        
+        self._set_template_directory()
+        
+        
+        
+        self.current_changed.emit()
+    
+    def _set_template_directory(self):
+        
         name = self.template_combo.currentText()
         name = str(name)
         
@@ -66,10 +75,8 @@ class TemplateWidget(qt_ui.BasicWidget):
         current_name = name
         if name == directory:
             current_name = ''
-        
         self.settings.set('template_directory', [current_name, directory])
-        self.current_changed.emit()
-        
+    
     def set_templates(self, template_list):
         
         self.template_list = template_list
@@ -110,6 +117,7 @@ class TemplateWidget(qt_ui.BasicWidget):
             
         
         self.template_combo.setCurrentIndex(current_inc)
+        self._set_template_directory()
         
         self.handle_current_change = True
             
@@ -160,24 +168,42 @@ class TemplateTree(ui_view.ProcessTreeWidget):
     def __init__(self):
         super(TemplateTree, self).__init__()
         
-        self.setDragEnabled(False)
+        #self.setDragEnabled(False)
     
-    def _item_menu(self, position):
-                
-        self.context_menu.exec_(self.viewport().mapToGlobal(position))
+    def _set_item_menu_vis(self, position):
+        
+        super(TemplateTree, self)._set_item_menu_vis(position)
+        
+        item = self.itemAt(position)
+        
+        if item and not item.is_folder():
+            self._copy_template_action.setVisible(True)
+            self._merge_template_action.setVisible(True)
+            self._match_template_action.setVisible(True)
+            
+        if not item or item.is_folder():
+            self._copy_template_action.setVisible(False)
+            self._merge_template_action.setVisible(False)
+            self._match_template_action.setVisible(False)
         
     def _create_context_menu(self):
         
-        self.context_menu = qt.QMenu()
-        
-        copy = self.context_menu.addAction('Paste under Current Process')
+        copy = self.context_menu.addAction('Paste This under Current Process')
         copy.triggered.connect(self._add_template)
+        self._copy_template_action = copy
         
-        merge = self.context_menu.addAction('Merge into Current Process')
+        merge = self.context_menu.addAction('Merge This into Current Process')
         merge.triggered.connect(self._merge_template)
+        self._merge_template_action = merge
         
-        match = self.context_menu.addAction('Copy Match with Current Process')
+        match = self.context_menu.addAction('Copy Match This with Current Process')
         match.triggered.connect(self._match_template)
+        self._match_template_action = match
+        
+        self.context_menu.addSeparator()
+        
+        super(TemplateTree, self)._create_context_menu()
+        
         
     def _get_item_parent_path(self):
         items = self.selectedItems()
