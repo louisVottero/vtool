@@ -3,14 +3,17 @@
 import string
 
 from vtool import qt_ui, qt
+from vtool.process_manager import ui_code
 from vtool import util
 
-from vtool.process_manager import process
+import vtool.process_manager.process as process_module
+#from vtool.process_manager import process
 
 
 class ProcessOptionsWidget(qt_ui.BasicWidget):
     
-    toggle_alignment = qt_ui.create_signal()
+    #toggle_alignment = qt_ui.create_signal()
+    edit_mode_change = qt_ui.create_signal(object)
     
     def __init__(self):
         super(ProcessOptionsWidget, self).__init__()
@@ -27,12 +30,6 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
     def _build_widgets(self):
         
         button_layout = qt.QHBoxLayout()
-        
-        self.orientation_button = qt.QPushButton('Toggle Alignment')
-        self.orientation_button.setMaximumWidth(100)
-        self.orientation_button.setMaximumHeight(20)
-        self.orientation_button.setMaximumWidth(120)
-        self.orientation_button.clicked.connect(self._emit_alignment_toggle)
         
         self.edit_mode_button = qt.QPushButton('Edit')
         self.edit_mode_button.setCheckable(True)
@@ -54,9 +51,6 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
         self.edit_mode_button.toggled.connect(self._edit_click)
         
-        
-        
-        button_layout.addWidget(self.orientation_button, alignment = qt.QtCore.Qt.AlignLeft)
         button_layout.addWidget(self.edit_mode_button, alignment = qt.QtCore.Qt.AlignRight)
         
         self.main_layout.addLayout(button_layout)
@@ -67,20 +61,22 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
         
         self._edit_activate(bool_value)
-        
-    
+        self.edit_mode_change.emit(bool_value)
         
     def _edit_activate(self, bool_value):
         
         self.edit_options.setVisible(bool_value)
+        
         ProcessOptionPalette.edit_mode_state = bool_value
         ProcessOption.edit_mode_state = bool_value
+        
+        self.option_palette.set_edit(bool_value)
         
         if bool_value == False:
             self.option_palette.clear_selection()
     
-    def _emit_alignment_toggle(self):
-        self.toggle_alignment.emit()
+    #def _emit_alignment_toggle(self):
+    #    self.toggle_alignment.emit()
         
     def set_directory(self, directory):
         
@@ -195,6 +191,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.disable_auto_expand = False
         self.has_first_group = False
         
+        self._auto_rename = True
+        
     def _item_menu(self, position):
         
         if not ProcessOptionPalette.edit_mode_state:
@@ -228,6 +226,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         add_group = create_menu.addAction('Add Group')
         add_group.triggered.connect(self.add_group)
         
+        add_script = create_menu.addAction('Add Script')
+        add_script.triggered.connect(self.add_script)
         
         add_title = create_menu.addAction('Add Title')
         add_title.triggered.connect(self.add_title)
@@ -385,11 +385,13 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             if item:
                 sub_widget = item.widget()
                 
+                sub_widget_type = sub_widget._define_type()
+                
                 name = self._get_path(sub_widget)
                 
                 value = sub_widget.get_value()
                 
-                self.process_inst.add_option(name, value, None)
+                self.process_inst.add_option(name, value, None, sub_widget_type)
                 
                 if hasattr(sub_widget, 'child_layout'):
                     self._write_widget_options(sub_widget)
@@ -401,7 +403,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         if clear == True:
             self._write_all()
-            
+        
         if clear == False:
             
             item_count = self.child_layout.count()
@@ -411,11 +413,13 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 item = self.child_layout.itemAt(inc)
                 widget = item.widget()
                 
+                widget_type = widget._define_type()
+                
                 name = self._get_path(widget)
                 
                 value = widget.get_value()
                 
-                self.process_inst.add_option(name, value, None)
+                self.process_inst.add_option(name, value, None, widget_type)
             
     def _write_all(self):
         
@@ -437,8 +441,20 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self.disable_auto_expand = True
         
+        self._auto_rename = False
+        
         for option in options:
             
+            name = option[0]
+            
+            option_type = None
+            
+            if type(option[1]) == list:
+                value = option[1][0]
+                option_type = option[1][1]
+            else:
+                value = option[1]
+                
             split_name = option[0].split('.')
             
             name = option[0]
@@ -466,7 +482,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
                 if not group:
                     
-                    self.add_group(name, widget)
+                    self.add_group(name, value, widget)
             
             if len(split_name) > 1 and split_name[-1] != '':
                 
@@ -479,52 +495,56 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 widget = self._find_group_widget(after_search_group)
                 
                 if not widget:
-                    self.add_group(group_name, group_widget)
+                    self.add_group(group_name, value, group_widget)
                     widget = self._find_group_widget(after_search_group)
+            
+            if not option_type and not is_group:
                 
-            if type(option[1]) == str:
-                self.add_string_option(name, str(option[1]), widget)
-                
-            if type(option[1]) == float:
-                self.add_number_option(name, option[1], widget)
-                
-            if type(option[1]) == int:
-                self.add_integer_option(name, option[1], widget)
-                
-            if type(option[1]) == bool:
-                self.add_boolean_option(name, option[1], widget)
-                
-            if option[1] == None and not is_group:
-                self.add_title(name, widget)
+                if type(value) == str:
+                    self.add_string_option(name, value, widget)
+                    
+                if type(value) == unicode:
+                    self.add_string_option(name, value, widget)
+                    
+                if type(value) == float:
+                    self.add_number_option(name, value, widget)
+                    
+                if type(option[1]) == int:
+                    self.add_integer_option(name, value, widget)
+                    
+                if type(option[1]) == bool:
+                    self.add_boolean_option(name, value, widget)
+                    
+                if option[1] == None:
+                    self.add_title(name, widget)
+                    
+            if option_type == 'script':
+                self.add_script(name, value, widget)
                 
         self.disable_auto_expand = False
         self.setVisible(True)    
         self.setUpdatesEnabled(True)
         self.supress_update = False
+        self._auto_rename = True
         
     def _handle_parenting(self, widget, parent):
         
         widget.widget_clicked.connect(self.update_current_widget)
         widget.edit_mode.connect(self._activate_edit_mode)
+        widget.process_inst = self.process_inst
         
         if not parent:
             self.child_layout.addWidget(widget)
             if hasattr(widget, 'update_values'):
                 widget.update_values.connect(self._write_options)
-                
-                if hasattr(self, 'expand_group'):
-                    if not self.disable_auto_expand:
-                        self.expand_group()
-                    
         
         if parent:
             parent.child_layout.addWidget(widget)
             if hasattr(widget, 'update_values'):
                 widget.update_values.connect(parent._write_options)
                 
-                if hasattr(parent, 'expand_group'):
-                    if not self.disable_auto_expand:
-                        parent.expand_group()
+        if self._auto_rename:
+            widget.rename()
         
     def _fill_background(self, widget):
         palette = widget.palette()
@@ -728,7 +748,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
         ProcessOptionPalette.current_widgets = []
             
-    def add_group(self, name = 'group', parent = None):
+    def add_group(self, name = 'group', value = True, parent = None):
         
         if type(name) == bool:
             name = 'group'
@@ -736,6 +756,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         name = self._get_unique_name(name, parent)
         
         group = ProcessOptionGroup(name)
+        
+        group.set_expanded(value)
+        
         if self.__class__ == ProcessOptionGroup or parent.__class__ == ProcessOptionGroup:
             if util.is_in_maya():
                 group.group.set_inset_dark()
@@ -745,16 +768,33 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         group.process_inst = self.process_inst
         self._write_options(False)
         
-        if not self.has_first_group:
-            group.expand_group()
+        #if not self.has_first_group:
+        #    group.expand_group()
         
-        if parent.__class__ == ProcessOptionPalette and self.has_first_group == True:
-            group.collapse_group()
+        #if parent.__class__ == ProcessOptionPalette and self.has_first_group == True:
+        #    group.collapse_group()
             
             
         self.has_first_group = True
             
         return group
+    
+    def add_script(self, name = 'script', value = '',  parent = None):
+        
+        if type(name) == bool:
+            name = 'script'
+        
+        name = self._get_unique_name(name, parent)
+        
+        button = ProcessScript(name)
+        
+        button.set_value(value)
+        
+        self._handle_parenting(button, parent)
+        
+        self._write_options(False)
+        
+        self.edit_mode.connect(button.set_edit)
         
     def add_title(self, name = 'title', parent = None):
         
@@ -768,6 +808,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._handle_parenting(title, parent)
         
         self._write_options(False)
+        
+    
         
     def add_number_option(self, name = 'number', value = 0, parent = None):
         
@@ -838,7 +880,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             self.directory = directory
             
-            process_inst = process.Process()
+            process_inst = process_module.Process()
             process_inst.set_directory(directory)
             
             self.process_inst = process_inst
@@ -860,10 +902,15 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
            
         return found
     
+    def set_edit(self, bool_value):
+        self.edit_mode_state = bool_value
+        
+        self.edit_mode.emit(bool_value)
 
 
 class ProcessOptionGroup(ProcessOptionPalette):
     
+    update_values = qt_ui.create_signal(object)
     widget_clicked = qt_ui.create_signal(object)
     
     def __init__(self, name):
@@ -939,8 +986,15 @@ class ProcessOptionGroup(ProcessOptionPalette):
         
         self.child_layout = self.group.child_layout
         
+        self.group.expand.connect(self._expand_updated)
+        
         self.main_layout.addSpacing(10)
         self.main_layout.addWidget(self.group)
+        
+    def _expand_updated(self, value):
+        
+        
+        self.update_values.emit(False)
         
     def _create_context_menu(self):
         
@@ -1042,7 +1096,16 @@ class ProcessOptionGroup(ProcessOptionPalette):
         self.group.setTitle(name)
         
     def get_value(self):
-        return None
+        expanded = self.group.expanded
+        return expanded
+    
+    def set_expanded(self, bool_value):
+        if bool_value:
+            self.expand_group()
+        else:
+            self.collapse_group()
+            
+        
     
     def copy_to(self, parent):
         
@@ -1059,10 +1122,12 @@ class ProcessOptionGroup(ProcessOptionPalette):
        
 class OptionGroup(qt.QFrame):
     
+    expand = qt_ui.create_signal(object)
+    
     def __init__(self, name):
         super(OptionGroup, self).__init__()
         
-        self.close_height = 40
+        self.close_height = 28
         if util.get_maya_version() < 2016:
             self.setFrameStyle(self.Panel | self.Raised)
         if util.get_maya_version() > 2015:    
@@ -1101,6 +1166,8 @@ class OptionGroup(qt.QFrame):
             palette.setColor(self.backgroundRole(), qt.QColor(80,80,80))
             self.setAutoFillBackground(True)
             self.setPalette(palette)
+            
+        self.expanded = True
         
     def mousePressEvent(self, event):
         
@@ -1111,16 +1178,18 @@ class OptionGroup(qt.QFrame):
         
         half = self.width()/2
         
-        if event.y() < 25 and event.x() > (half - 50) and event.x() < (half + 50):
+        if event.y() < 30 and event.x() > (half - 50) and event.x() < (half + 50):
             
             height = self.height()
             
             if height == self.close_height:
                 self.expand_group()
+                self.expand.emit(False)
                 return
                     
             if height >= self.close_height:
                 self.collapse_group()
+                self.expand.emit(False)
                 return
             
     def collapse_group(self):
@@ -1130,6 +1199,8 @@ class OptionGroup(qt.QFrame):
         self.label_expand.setText('+')
         self.setVisible(True)
         
+        self.expanded = False
+        
         
     def expand_group(self):
         
@@ -1137,6 +1208,9 @@ class OptionGroup(qt.QFrame):
         self.setFixedSize(qt_ui.QWIDGETSIZE_MAX, qt_ui.QWIDGETSIZE_MAX)
         self.label_expand.setText('--')
         self.setVisible(True)
+        
+        self.expanded = True
+        
         
            
     def title(self):
@@ -1165,6 +1239,9 @@ class ProcessOption(qt_ui.BasicWidget):
     edit_mode_state = False
     
     def __init__(self, name):
+        
+        self.process_inst = None
+        
         super(ProcessOption, self).__init__()
         
         self.name = name
@@ -1187,6 +1264,8 @@ class ProcessOption(qt_ui.BasicWidget):
         self.customContextMenuRequested.connect(self._item_menu)
         
         self._create_context_menu()
+        
+        
         
     def _item_menu(self, position):
         
@@ -1292,7 +1371,7 @@ class ProcessOption(qt_ui.BasicWidget):
             return parent
         
         return parent
-        
+    
     def create_right_click(self):
         
         move_up = qt.QAction(self)
@@ -1323,7 +1402,10 @@ class ProcessOption(qt_ui.BasicWidget):
     def _copy(self):
         
         ProcessOptionPalette.widget_to_copy = self
-        
+    
+    def rename(self):
+        self._rename()
+    
     def remove(self):
         parent = self.get_parent()
         
@@ -1399,7 +1481,86 @@ class ProcessOption(qt_ui.BasicWidget):
         new_instance.set_value(value)
         
         parent.child_layout.addWidget(new_instance)
+    
+    def set_edit(self, bool_value):
+        self.edit_mode_state = bool_value
+
+class ProcessScript(ProcessOption):
+    
+    def __init__(self, name):
+        super(ProcessScript, self).__init__(name)
+
+        self.main_layout.setContentsMargins(0,2,0,2)
+        self.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum))
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignCenter | qt.QtCore.Qt.AlignTop)
         
+    def _define_type(self):
+        return 'script'
+        
+    def _define_option_widget(self):
+        
+        button = qt_ui.GetCode('option script')
+        button.set_label('')
+        button.set_use_button(True)
+        button.set_button_text(self.name)
+        button.set_button_to_first()
+        button.button.setMinimumWidth(200)
+        #button.text_entry.setMinimumWidth(300)
+        button.label.hide()
+        button.button.clicked.connect(self.run_script)
+        button.set_suppress_button_commaand(True)
+        if self.edit_mode_state == False:
+            button.text_entry.hide()
+        
+        button.set_process(self.process_inst)
+        button.set_completer(ui_code.CodeCompleter)
+        
+        return button
+    
+    def get_name(self):
+        
+        name = self.option_widget.button.text()
+        return name
+    
+    def set_name(self, name):
+        
+        self.option_widget.set_button_text(name)
+
+    def _setup_value_change(self):
+        
+        self.option_widget.text_changed.connect(self._value_change)
+        
+    def set_value(self, value):
+        
+        value = str(value)
+        self.option_widget.set_process(self.process_inst)
+        self.option_widget.set_text(value)
+        
+    def get_value(self):
+        
+        value = self.option_widget.get_text()
+        
+        if not value:
+            value = ''
+        
+        return value
+    
+    def run_script(self):
+        
+        value = self.get_value()
+        
+        self.process_inst.run_code_snippet(value)
+        
+    def set_edit(self, bool_value):
+        super(ProcessScript, self).set_edit(bool_value)
+        
+        if bool_value:
+            self.option_widget.text_entry.show()
+        else:
+            self.option_widget.text_entry.hide()
+            
+        self.option_widget.set_process(self.process_inst)
+
 class ProcessTitle(ProcessOption):
     
     def __init__(self, name):
@@ -1407,7 +1568,7 @@ class ProcessTitle(ProcessOption):
 
         self.main_layout.setContentsMargins(0,2,0,2)
         
-        self.main_layout.setAlignment(qt.QtCore.Qt.AlignRight)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
         
     def _define_type(self):
         return 'title'
