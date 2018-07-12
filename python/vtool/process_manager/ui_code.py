@@ -23,6 +23,9 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     """
     
     def __init__(self):
+        
+        self._process_inst = None
+        
         super(CodeProcessWidget, self).__init__()
         
         self.sizes = self.splitter.sizes()
@@ -41,6 +44,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.script_widget.script_focus.connect(self._script_focus)
         self.script_widget.script_rename.connect(self._script_rename)
         self.script_widget.script_remove.connect(self._script_remove)
+        self.script_widget.script_duplicate.connect(self._script_duplicate)
         
         self.splitter.addWidget(self.script_widget)
         self.splitter.addWidget(self.code_widget)
@@ -53,7 +57,6 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.splitter.splitterMoved.connect(self._splitter_moved)
         self.settings = None
-        self.current_process = None
                 
     def _splitter_moved(self, pos, index):
         
@@ -173,17 +176,28 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         if not self.code_widget.code_edit.has_tabs():
             self._close_splitter()
          
+    def _script_duplicate(self):
+        if self.code_widget.code_edit.has_tabs():
+            self.code_widget.code_edit.close_tabs()
+            self._close_splitter()
+        
+            
+         
     def set_directory(self, directory, sync_code = False):
         
         super(CodeProcessWidget, self).set_directory(directory)
         
         self.script_widget.set_directory(directory, sync_code)
         
-        self._close_splitter()
+        process_path = vtool.util.get_env('VETALA_CURRENT_PROCESS')
         
-    def set_current_process(self, process_name):
-        self.current_process = process_name
-        self.code_widget.set_current_process(process_name)
+        if process_path:
+            process_inst = process.Process()
+            process_inst.set_directory(process_path)
+            self._process_inst = process_inst
+            self.code_widget.set_process(process_inst)
+        
+        self._close_splitter()
         
     def set_code_directory(self, directory):
         self.code_directory = directory
@@ -232,6 +246,9 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
     collapse = vtool.qt_ui.create_signal()
     
     def __init__(self, parent= None):
+        
+        self._process_inst = None
+        
         super(CodeWidget, self).__init__(parent)
         
         policy = self.sizePolicy()
@@ -242,7 +259,6 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.setSizePolicy(policy)
                
         self.directory = None
-        self.current_process = None
         
         
     def _build_widgets(self):
@@ -363,10 +379,9 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         if load_file:
             self._load_file_text(path, open_in_window, name)
         
-    def set_current_process(self, process_name):
-        self.current_process = process_name
-        
-        self.code_edit.current_process = process_name
+    def set_process(self, process_inst):
+        self._process_inst = process_inst
+        self.code_edit.set_process(self._process_inst)
         
 class CodeCompleter(qt_ui.PythonCompleter):
     
@@ -458,6 +473,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     script_focus = vtool.qt_ui.create_signal(object)
     script_rename = vtool.qt_ui.create_signal(object, object)
     script_remove = vtool.qt_ui.create_signal(object)
+    script_duplicate = vtool.qt_ui.create_signal()
         
     def __init__(self):
         super(ScriptWidget, self).__init__()
@@ -485,7 +501,8 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         self.code_manifest_tree.script_open_external.connect(self._script_open_external)
         self.code_manifest_tree.script_focus.connect(self._script_focus)
         self.code_manifest_tree.item_removed.connect(self._remove_code)
-                
+        self.code_manifest_tree.item_duplicated.connect(self._duplicate)
+        
         self.main_layout.addWidget(self.code_manifest_tree)
         
         self.main_layout.addLayout(buttons_layout)
@@ -567,6 +584,9 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         self.script_rename.emit(old_name, new_name)
         
+    def _duplicate(self):
+        
+        self.script_duplicate.emit()
         
     def set_directory(self, directory, sync_code = False):
         
@@ -603,7 +623,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     script_open_external = vtool.qt_ui.create_signal()
     script_focus = vtool.qt_ui.create_signal()
     item_removed = vtool.qt_ui.create_signal(object)
-
+    item_duplicated = vtool.qt_ui.create_signal()
+    
     def __init__(self):
         
         super(CodeManifestTree, self).__init__()
@@ -1121,7 +1142,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         self.run_action = self.context_menu.addAction('Run')
         rename_action = self.context_menu.addAction(self.tr('Rename'))
-        delete_action = self.context_menu.addAction('Delete')
+        duplicate_action = self.context_menu.addAction('Duplicate')
+        self.delete_action = self.context_menu.addAction('Delete')
         
         
         self.context_menu.addSeparator()
@@ -1141,7 +1163,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.context_menu.addSeparator()
         self.cancel_points_action = self.context_menu.addAction('Cancel Start/Breakpoint')
         
-        self.edit_actions = [self.run_action, rename_action, delete_action]
+        self.edit_actions = [self.run_action, rename_action, duplicate_action, self.delete_action]
         
         
         new_python.triggered.connect(self.create_python_code)
@@ -1154,7 +1176,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.cancel_break_action.triggered.connect(self.cancel_breakpoint)
         self.cancel_points_action.triggered.connect(self.cancel_points)
         rename_action.triggered.connect(self._activate_rename)
-        delete_action.triggered.connect(self.remove_current_item)
+        duplicate_action.triggered.connect(self._duplicate_current_item)
+        self.delete_action.triggered.connect(self.remove_current_item)
         
         log_window.triggered.connect(self._open_log_window)
         new_window_action.triggered.connect(self._open_in_new_window)
@@ -1182,6 +1205,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if len(items) > 1:
             self._edit_actions_visible(False)
             self.run_action.setVisible(True)
+            self.delete_action.setVisible(True)
+            
             
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
             
@@ -1541,6 +1566,50 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         item.setBackground(0, orig_background)
         
+    def _duplicate_current_item(self):
+        
+        self.setFocus(qt.QtCore.Qt.ActiveWindowFocusReason)
+        
+        items = self.selectedItems()
+        item = items[0]
+        
+        name = self._get_item_path_name(item)
+        
+        process_tool = process.Process()
+        process_tool.set_directory(self.directory)
+        
+        filepath = process_tool.get_code_file(name)
+        
+        parent_item = item.parent()
+        
+        code_path = process_tool.create_code(name, 'script.python', inc_name = True)
+        
+        file_lines = util_file.get_file_lines(filepath)
+        
+        util_file.write_lines(code_path, file_lines, append = False)
+
+        name = vtool.util_file.get_basename(code_path)
+
+        item = self._add_item(name, False)
+        
+        item.setCheckState(0, qt.QtCore.Qt.Checked)
+        
+        self._reparent_item(name, item, parent_item)
+        
+        self.item_duplicated.emit()
+        
+        self._activate_rename()
+        
+        self.scrollToItem(item)
+        self.setItemSelected(item, True)
+        self.setCurrentItem(item)
+        
+        
+        
+        
+        return item
+        
+        
     def sync_manifest(self):
         
         process_tool = process.Process()
@@ -1821,36 +1890,48 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         else:
             vtool.util.show('Processes run in %s seconds.' % seconds)
         
+
+        
     def remove_current_item(self):
         
         items = self.selectedItems()
-        item = items[0]
         
-        name = self._get_item_path_name(item)
+        delete_state = False
         
-        delete_state = vtool.qt_ui.get_permission('Delete %s?' % name)
-        
-        process_tool = process.Process()
-        process_tool.set_directory(self.directory)
-        
-        filepath = process_tool.get_code_file(name)
-        
-        if delete_state:
-        
-            index = self.indexFromItem(item)
+        if len(items) > 1:
+            delete_state = vtool.qt_ui.get_permission('Delete selected codes?')
             
-            parent = item.parent()
+            if not delete_state:
+                return
+        
+        for item in items:
+        
+            name = self._get_item_path_name(item)
             
-            if parent:
-                parent.removeChild(item)
-            if not parent:
-                self.takeTopLevelItem(index.row())
+            if len(items) == 1:
+                delete_state = vtool.qt_ui.get_permission('Delete %s?' % name)
             
-            process_tool.delete_code(name)
+            process_tool = process.Process()
+            process_tool.set_directory(self.directory)
             
-            self._update_manifest()
+            filepath = process_tool.get_code_file(name)
+            
+            if delete_state:
+            
+                index = self.indexFromItem(item)
                 
-        self.item_removed.emit(filepath)
+                parent = item.parent()
+                
+                if parent:
+                    parent.removeChild(item)
+                if not parent:
+                    self.takeTopLevelItem(index.row())
+                
+                process_tool.delete_code(name)
+                
+                self._update_manifest()
+                    
+            self.item_removed.emit(filepath)
         
     def set_breakpoint(self, item = None):
         
