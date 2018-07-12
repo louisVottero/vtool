@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from collections import OrderedDict
+import json
 import sys
 import os
 import shutil
@@ -260,8 +262,20 @@ class WriteFile(FileManager):
         
 
         self.write_file()
-        self.open_file.write('%s\n' % line)
+        try:
+            self.open_file.write('%s\n' % line)
+        except:
+            pass
         self.close_file()
+        
+    def write_json(self, data):
+        self.write_file()
+        try:
+            json.dump(data, self.open_file,indent=4, sort_keys=True)
+        except:
+            pass
+        self.close_file()
+        
                 
     def write(self, lines, last_line_empty = True):
         """
@@ -737,8 +751,36 @@ class SettingsFile(object):
         self.filepath = None
         
         self.settings_dict = {}
+        self.optional_dict = {}
         self.settings_order = []
         self.write = None 
+    
+    def _get_json_file(self):
+        directory = get_dirname(self.filepath)
+        
+        if not self.filepath:
+            return
+        
+        name = get_basename_no_extension(self.filepath)
+        
+        filepath = create_file(name+'.json', directory)
+        
+        return filepath
+    
+    def _has_json_file(self):
+        
+        if not self.filepath:
+            return False
+        
+        directory = get_dirname(self.filepath)
+        name = get_basename_no_extension(self.filepath)
+        
+        filepath = join_path(directory, name + '.json')
+        
+        if is_file(filepath):
+            return True
+        else:
+            return False
     
     def _read(self):
         
@@ -760,11 +802,11 @@ class SettingsFile(object):
             split_line = line.split('=')
             
             name = split_line[0].strip()
-            value = split_line[-1].strip()
+            
+            value = split_line[-1]
             
             if not value:
                 continue
-            
             
             value = fix_slashes(value)
             
@@ -776,9 +818,40 @@ class SettingsFile(object):
             self.settings_dict[name] = value
             self.settings_order.append(name)
             
+    def _read_json(self):
+        
+        if not self._has_json_file():
+            self._read()
+            self._write_json()
+        
+        filepath = self._get_json_file()
+        
+        if not filepath:
+            return
+        
+        self.filepath = filepath
+        
+        data = None
+        
+        try:
+            data = OrderedDict(get_json(filepath))
+        except:
+            self.settings_order = []
+            self.settings_dict = {}
+            return
+        
+        self.settings_order = data.keys()
+        self.settings_dict = data
+        
     def _write(self):
         
+        self._write_json()
+        
+        """
+        #this is now deprecated, writing to json takes over
         lines = []
+        
+        
         
         for key in self.settings_order:
             value = self.settings_dict[key]
@@ -801,6 +874,29 @@ class SettingsFile(object):
             
             time.sleep(.1)
             write.write(lines)
+        """
+
+    def _write_json(self):
+        
+        filepath = self._get_json_file()
+        
+        if not filepath:
+            return
+        
+        write = WriteFile(filepath)
+        
+        out_list = []
+        
+        for key in self.settings_order:
+            value = self.settings_dict[key]
+            
+            out_list.append([key, value])
+            
+        out_data = OrderedDict(out_list)
+        
+            
+        #write.write_json(out_list)
+        write.write_json(out_data.items())
     
     def set(self, name, value):
         
@@ -813,6 +909,7 @@ class SettingsFile(object):
         
         if not name in self.settings_order:
             self.settings_order.append(name)
+        
         
         self._write()
     
@@ -855,14 +952,37 @@ class SettingsFile(object):
         
         self._write()
     
-    def set_directory(self, directory, filename = 'settings.txt'):
+    def set_directory(self, directory, filename = 'settings.json'):
         self.directory = directory
         
+        #eventually after a lot of testing, can add a statement to delete old settings/data files
         
+        if filename == 'options.json':
+            old_options = join_path(directory, 'options.txt')
+            if is_file(old_options):
+                self.filepath = old_options
+                self._read_json()
+                return
+        
+        if filename == 'settings.json':
+            old_settings = join_path(directory, 'settings.txt')
+            if is_file(old_settings):
+                self.filepath = old_settings
+                self._read_json()
+                return
+            
+        if not filename.endswith('.json'):
+            old = join_path(directory, filename)
+            
+            if is_file(old):
+                self.filepath = old
+                self._read_json()
+                return
         
         self.filepath = create_file(filename, self.directory)
         
-        self._read()
+        self._read_json()
+        #self._read()
         
         return self.filepath
 
@@ -1570,6 +1690,12 @@ def get_file_lines(filepath):
     
     return read.read()
 
+def get_json(filepath):
+    
+    with open(filepath) as json_file:
+        data = json.load(json_file)
+        
+    return data
 
 def get_text_lines(text):
     """
@@ -2073,10 +2199,7 @@ def write_replace(filepath, stuff_to_write):
     try:
         open_file.write(stuff_to_write)
     except:
-        print 'could not write', stuff_to_write
-        pass
-    
-    
+        util.warning( 'Could not write: %s' %  stuff_to_write)
     
     open_file.close()
     
@@ -2176,7 +2299,7 @@ def refresh_dir(directory):
     if not is_dir(directory):
         create_dir(base_name, dir_name)
 
-def create_file(name, directory, make_unique = False):
+def create_file(name, directory = None, make_unique = False):
     """
     Args:
         name (str): The name of the new file. 
@@ -2185,6 +2308,10 @@ def create_file(name, directory, make_unique = False):
     Returns:
         str: The filename with path. False if create_dir failed.
     """
+    
+    if directory == None:
+        directory = get_dirname(name)
+        name = get_basename(name)
     
     name = util.clean_file_string(name)
     full_path = join_path(directory, name)
@@ -2200,7 +2327,7 @@ def create_file(name, directory, make_unique = False):
         open_file.close()
     except:
         #turn on when troubleshooting
-        #util.warning( traceback.format_exc() )
+        util.warning( traceback.format_exc() )
         return False
     
     return full_path
