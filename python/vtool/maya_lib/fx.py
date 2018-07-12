@@ -790,8 +790,6 @@ def add_passive_to_nucleus(passive_mesh, nucleus):
         if passive_mesh:
             passive_mesh = passive_mesh[0]
     
-    print passive_mesh
-    
     outs = attr.get_outputs(passive_mesh, node_only = True)
     
     if not outs:
@@ -799,12 +797,9 @@ def add_passive_to_nucleus(passive_mesh, nucleus):
     
     for out in outs:
         
-        print out
-        
         if not core.is_a_shape(out):
             shapes = core.get_shapes(out)
             if shapes:
-                print shapes
                 out = shapes[0]
         
         if cmds.nodeType(out) == 'nRigid':
