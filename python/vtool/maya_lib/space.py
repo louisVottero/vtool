@@ -911,6 +911,14 @@ class OrientJoint(object):
         self._get_relatives()
         self._get_surface()
         
+    def _update_locator_scale(self, locator):
+        
+        if cmds.objExists('%s.localScale' % locator):
+            radius = cmds.getAttr('%s.radius' % self.joint)
+            cmds.setAttr('%s.localScaleX' % locator, radius)
+            cmds.setAttr('%s.localScaleY' % locator, radius)
+            cmds.setAttr('%s.localScaleZ' % locator, radius)
+        
     def _get_surface(self):
         
         if cmds.objExists('%s.surface' % self.joint):
@@ -970,7 +978,11 @@ class OrientJoint(object):
             
         if index == 3:
             
-            child_aim = self._get_position_group(self.child)
+            child_aim = None
+            
+            if self.child and cmds.objExists(self.child):
+                self._update_locator_scale(self.child)
+                child_aim = self._get_position_group(self.child)
             
             return child_aim
             
@@ -989,11 +1001,20 @@ class OrientJoint(object):
             return self._get_local_group(self.parent)
         
         if index == 2:
-            child_group = self._get_position_group(self.child)
-            self.up_space_type = 'object'
+            
+            if self.child and cmds.objExists(self.child):
+                self._update_locator_scale(self.child)
+                child_group = self._get_position_group(self.child)
+                self.up_space_type = 'object'
+                
+            if not self.child or not cmds.objExists(self.child):
+                vtool.util.warning('Child specified as up in orient attributes but %s has no child.' % self.joint)
+                
+            
             return child_group
         
         if index == 3:
+            
             parent_group = self._get_position_group(self.parent)
             self.up_space_type = 'object'
             return parent_group
@@ -1015,12 +1036,16 @@ class OrientJoint(object):
             return plane_group
         
         if index == 5:
-            self.up_space_type = 'object'
+            
+            
+            
             
             child_group = None
             
             if self.child2 and cmds.objExists(self.child2):
+                self._update_locator_scale(self.child2)
                 child_group = self._get_position_group(self.child2)
+                self.up_space_type = 'object'
             
             if not self.child2 or not cmds.objExists(self.child2):
                 vtool.util.warning('Child 2 specified as up in orient attributes but %s has no 2nd child.' % self.joint)
@@ -1091,7 +1116,11 @@ class OrientJoint(object):
         return self._get_position_group(transform)
               
     def _create_aim(self):
+        if not self.aim_at:
+            return
+        
         if not self.aim_up_at:
+            
             aim = cmds.aimConstraint(self.aim_at, 
                                      self.joint, 
                                      aimVector = self.aim_vector, 
@@ -1141,7 +1170,10 @@ class OrientJoint(object):
                     child_parented = cmds.parent(child, w = True)[0]
                     found_children.append(child_parented)
         
-        cmds.makeIdentity(self.joint, apply = True, r = True, s = scale)
+        try:
+            cmds.makeIdentity(self.joint, apply = True, r = True, s = scale)
+        except:
+            pass
         
         if children:
             cmds.parent(found_children, self.joint)
@@ -3513,9 +3545,12 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
         for thing in temp_transforms:
             node_type = cmds.nodeType(thing)
             
+            
+            
             if node_type == 'joint':
                 joints.append(thing)
             if node_type == 'transform':
+                
                 transforms.append(thing)
     
     if not skip_search:
@@ -3564,10 +3599,14 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
         if not other:
             continue
         
+        if cmds.objExists('%s.inMesh' % transform):
+            continue
+        
         if transform in fixed:
             continue
         
-        if attr.is_translate_rotate_connected(other):
+        if attr.is_translate_rotate_connected(other, ignore_keyframe=True):
+            
             continue
         
         if not cmds.objExists(other) and create_if_missing:
