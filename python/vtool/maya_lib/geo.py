@@ -1754,7 +1754,7 @@ def create_joint_u_strip_on_surface(surface, u_count, description, u_offset = 0,
     u_joints =[]
     
     if u_count:
-        u_segment = 1.00/(u_count)
+        u_segment = 1.00/(u_count+1)
     
     if u_count:
         for inc in range(0, u_count+1):
