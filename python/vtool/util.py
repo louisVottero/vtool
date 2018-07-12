@@ -9,6 +9,39 @@ import traceback
 import platform
 import os
 import base64
+from HTMLParser import HTMLParser
+
+class VetalaHTMLParser(HTMLParser):
+
+    def __init__(self):
+        HTMLParser.__init__(self)
+        
+        self._in_body = False
+        self.all_body_data = []
+    
+    def handle_starttag(self, tag, attrs):
+        if tag == 'body':
+            self._in_body = True
+        
+    def handle_endtag(self, tag):
+        if tag == 'body':
+            self._in_body = False
+    
+    def handle_data(self, data):
+        
+        data = data.strip()
+        
+        if not data:
+            return
+        
+        if self._in_body:
+            
+            self.all_body_data.append(data.strip())
+            
+    def get_body_data(self):
+        return self.all_body_data
+        
+
 
 def initialize_env(name):
     """
