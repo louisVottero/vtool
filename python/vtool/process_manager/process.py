@@ -10,7 +10,6 @@ from vtool import util_file
 from vtool import data
 import __builtin__
 import os
-from multiprocessing import process
 
 if util.is_in_maya():
     import maya.cmds as cmds
@@ -145,14 +144,14 @@ class Process(object):
             options = util_file.SettingsFile()
             self.option_settings = options
             
-        self.option_settings.set_directory(self.get_path(), 'options.txt')
+        self.option_settings.set_directory(self.get_path(), 'options.json')
         
     def _setup_settings(self):
         if not self.settings:
             settings = util_file.SettingsFile()
             self.settings = settings
             
-        self.settings.set_directory(self.get_path(), 'settings.txt')
+        self.settings.set_directory(self.get_path(), 'settings.json')
         
     def _set_name(self, new_name):
         
@@ -350,6 +349,11 @@ class Process(object):
         Returns:
             str: The name of the process.
         """
+        
+        if not self.process_name:
+            return util_file.get_basename(self.directory)
+            
+        
         return self.process_name
     
     def get_basename(self):
@@ -649,7 +653,9 @@ class Process(object):
         if not util_file.is_dir(data_folder_name):
             util.show('%s data does not exist in %s' % (name, self.get_name()) )
             return
-            
+        
+        
+        
         data_folder = data.DataFolder(name, path)
         
         instance = data_folder.get_folder_data_instance()
@@ -1037,7 +1043,16 @@ class Process(object):
         name = new_name + '.py'
             
         return name
+    """
+    def duplicate_code(self, name):
         
+        source_path = util_file.join_path(self.get_code_path(), name)
+        destination_path = util_file.join_path(self.get_code_path(), '%s_copy' % name)
+        
+        util_file.copy_dir(source_path, destination_path)
+        
+        return destination_path
+    """
     def delete_code(self, name):
         """
         Deletes the specified data folder from the file system.
@@ -1093,7 +1108,7 @@ class Process(object):
         
         return self.option_settings.has_settings()
     
-    def add_option(self, name, value, group = None):
+    def add_option(self, name, value, group = None, option_type = None):
         
         self._setup_options()
         
@@ -1101,7 +1116,10 @@ class Process(object):
             name = '%s.%s' % (group,name)
         if not group:
             name = '%s' % name
-                
+        
+        if option_type == 'script':
+            value = [value, 'script']
+                 
         self.option_settings.set(name, value)
         
     def set_option(self, name, value):
@@ -1570,7 +1588,7 @@ class Process(object):
                 self._reset_builtin(old_process, old_cmds, old_show, old_warning)
                 return
             
-            auto_focus = True
+            auto_focus = False
             
             if settings:
                 if settings.has_key('auto_focus_scene'):
@@ -1578,6 +1596,7 @@ class Process(object):
             
             if auto_focus:
                 self._prep_maya()
+            
             
             name = util_file.get_basename(script)
             
@@ -1676,7 +1695,67 @@ class Process(object):
         util.show(message)
         util.end_temp_log()
         return status
-               
+    
+    def run_option_script(self, name, group = None, hard_error = True):
+        
+        script = self.get_option(name, group)
+        
+        self.run_code_snippet(script, hard_error)
+
+    
+    def run_code_snippet(self, code_snippet_string, hard_error = True):
+        
+        script = code_snippet_string
+        
+        if util.is_in_maya():
+            
+            import maya.cmds as cmds
+            
+        status = None
+        
+        if util.is_in_maya():
+            cmds.undoInfo(openChunk = True)
+        
+        try:
+            
+            
+            for external_code_path in self.external_code_paths:
+                if util_file.is_dir(external_code_path):
+                    if not external_code_path in sys.path:
+                        sys.path.append(external_code_path)
+                        
+            builtins = {'process': self, 'show':util.show, 'warning':util.warning}
+            
+            if util.is_in_maya():
+                
+                builtins['cmds'] = cmds
+            
+            
+            
+            exec(script, globals(), builtins)
+            status = 'Success'
+            
+        except Exception:
+            
+            util.warning('script error!\n %s' % script)
+            
+            status = traceback.format_exc()
+            
+            if hard_error:
+                if util.is_in_maya():
+                    cmds.undoInfo(closeChunk = True)
+                    
+                util.error('%s\n' % status)
+                raise
+        
+        if util.is_in_maya():
+            cmds.undoInfo(closeChunk = True)        
+        
+        if not status == 'Success':
+            util.show('%s\n' % status)
+        
+        return status
+
     def run(self):
         """
         Run all the scripts in the manifest, respecting their on/off state.
@@ -1692,9 +1771,6 @@ class Process(object):
             cmds.file(new = True, f = True)
             
         name = self.get_name()
-        if not name:
-            name = util_file.get_dirname(self.directory)
-        
         
         message = '\n\n\aRunning %s Scripts\t\a\n\n' % name
         
@@ -1716,6 +1792,8 @@ class Process(object):
             
             progress_bar = core.ProgressBar('Process', len(scripts))
             progress_bar.status('Processing: getting ready...')
+            
+        status_list = []
             
         for inc in range(0, len(scripts)):
             
@@ -1764,12 +1842,14 @@ class Process(object):
                 
             if progress_bar:
                 progress_bar.inc()
+                
+            status_list.append([script, status])
         
         minutes, seconds = watch.stop()
         
+        progress_bar.end()
+        
         if scripts_that_error:
-            
-            
             
             util.show('\n\n\nThe following scripts errored during build:\n')
             for script in scripts_that_error:
@@ -1782,6 +1862,12 @@ class Process(object):
         if minutes != None:
             util.show('\n\n\nProcess built in %s minutes, %s seconds.\n\n' % (minutes,seconds))
         
+        util.show('\n\n')
+        for status_entry in status_list:
+            util.show('%s : %s' % (status_entry[1], status_entry[0]))
+        util.show('\n\n') 
+            
+        return status_list
         
     def set_runtime_value(self, name, value):
         """
