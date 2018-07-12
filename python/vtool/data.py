@@ -21,6 +21,7 @@ if util.is_in_maya():
     import maya_lib.corrective
     import maya_lib.rigs_util
     import maya_lib.blendshape
+    import maya_lib.geo
     
     import maya_lib.api
 
@@ -101,9 +102,9 @@ class DataFolder(util_file.FileManager):
         self.settings = util_file.SettingsFile()
         self._set_settings_path(self.folder_path)
         
-        self.settings.set('name', str(self.name))
+        self.settings.set('name', self.name)
         data_type = self.settings.get('data_type')
-        self.settings.set('data_type', str(data_type))
+        #self.settings.set('data_type', str(data_type))
         self.data_type = data_type
         
     def _create_folder(self):
@@ -117,7 +118,7 @@ class DataFolder(util_file.FileManager):
             self._load_folder()
         
         self.name = name
-        self.settings.set('name', str(self.name))
+        self.settings.set('name', self.name)
                 
     def get_data_type(self):
         
@@ -897,7 +898,42 @@ class SkinWeightData(MayaCustomData):
                 return True
         
         return False
+    
+    def _export_ref_obj(self, mesh, data_path):
+        cmds.loadPlugin( 'objExport' )
         
+        #export mesh
+        cmds.select(mesh)
+        mesh_path = '%s/mesh.obj' % data_path
+        cmds.file(rename=mesh_path)
+        cmds.file(force = True,
+                   options = "groups=0;ptgroups=0;materials=0;smoothing=0;normals=0",
+                   typ = "OBJexport", 
+                   pr = False,
+                   es = True)
+        
+    def _import_ref_obj(self, data_path):
+        
+        mesh_path = "%s/mesh.obj" % data_path
+        
+        if not util_file.is_file(mesh_path):
+            return
+        
+        track = maya_lib.core.TrackNodes()
+        track.load('mesh')
+        cmds.file(mesh_path,
+                  i = True,
+                  type = "OBJ",
+                  ignoreVersion = True, 
+                  options = "mo=1")
+        delta = track.get_delta()
+        if delta:
+            #delta should be a single mesh
+            parent = cmds.listRelatives(delta, p = True)
+            delta = parent[0]
+            
+        return delta
+    
     def _import_maya_data(self, filepath = None):
         
         if not filepath:
@@ -922,6 +958,29 @@ class SkinWeightData(MayaCustomData):
             util.show('Importing weights on %s' % folder)
             
             mesh = folder
+
+            folder_path = util_file.join_path(path, folder)
+            orig_mesh = self._import_ref_obj(folder_path)
+            transfer_mesh = None
+            
+            if orig_mesh:# and cmds.objExists(orig_mesh):
+                if cmds.objExists(mesh):
+                    if maya_lib.core.has_shape_of_type(mesh, 'mesh'):
+                        mesh_match = maya_lib.geo.is_mesh_compatible(orig_mesh, mesh)
+                        
+                        if not mesh_match:
+                            transfer_mesh = mesh
+                            mesh = orig_mesh
+                        if mesh_match:
+                            cmds.delete(orig_mesh)
+            
+            
+                if not cmds.objExists(mesh):
+                
+                    if orig_mesh:
+                        cmds.delete(orig_mesh)
+                    #add a setting to make loading in the skinned mesh an option when one doesn't exist. Code below just needs to rename orig_mesh to mesh for this to work, and remove the 2 lines above
+                    #cmds.rename(orig_mesh, mesh)
             
             if not cmds.objExists(mesh):
                 util.warning('Skipping %s. It does not exist.' % mesh)
@@ -934,9 +993,11 @@ class SkinWeightData(MayaCustomData):
                 cmds.warning('%s does not have a supported shape node. Currently supported nodes include: %s.' % (mesh, shape_types))
                 continue
             
+            
+            
             skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
             
-            folder_path = util_file.join_path(path, folder)
+
             
             if not util_file.is_dir(folder_path):
                 continue
@@ -980,18 +1041,7 @@ class SkinWeightData(MayaCustomData):
             
             if skin_cluster:
                 cmds.delete(skin_cluster)
-            """
-            skin_cluster = cmds.deformer(mesh, type = 'skinCluster', n = 'skin_%s' % mesh)[0]
-            
-            for inc in xrange(0, len(influences)):
-                if not cmds.objExists('%s.lockInfluenceWeights' % influences[inc]):
-                    cmds.addAttr(influences[inc], ln = 'lockInfluenceWeights', at = 'bool', dv = True)
-                cmds.connectAttr('%s.worldMatrix' % influences[inc], '%s.matrix[%s]' % (skin_cluster, inc))
-                cmds.connectAttr('%s.lockInfluenceWeights' % influences[inc], '%s.lockWeights[%s]' % (skin_cluster, inc))
-                #cmds.connectAttr('%s.objectColorRGB' % influences[inc], '%s.influenceColor[%s]' % (skin_cluster, inc))
-                matrix = cmds.getAttr('%s.worldInverseMatrix' % influences[inc])
-                cmds.setAttr('%s.bindPreMatrix[%s]' % (skin_cluster, inc), matrix, type = 'matrix') 
-            """
+
             skin_cluster = cmds.skinCluster(influences, mesh,  tsb = True, n = 'skin_%s' % mesh)[0]
             
             cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
@@ -1078,6 +1128,12 @@ class SkinWeightData(MayaCustomData):
                     if attr_name == 'skinningMethod':
                         
                         cmds.setAttr('%s.skinningMethod' % skin_cluster, value)
+                        
+            if transfer_mesh:
+                maya_lib.deform.skin_mesh_from_mesh(mesh, transfer_mesh)
+                cmds.delete(mesh)
+            
+            
 
         maya_lib.core.print_help('Imported %s data' % self.name)
                 
@@ -1166,6 +1222,9 @@ class SkinWeightData(MayaCustomData):
                 skin_method_attr = '%s.skinningMethod' % skin
                 
                 settings_lines = []
+                
+                if maya_lib.core.has_shape_of_type(thing, 'mesh'):
+                    self._export_ref_obj(thing, geo_path)
                 
                 if cmds.objExists(blend_weights_attr):
                     blend_weights = maya_lib.deform.get_skin_blend_weights(skin)
