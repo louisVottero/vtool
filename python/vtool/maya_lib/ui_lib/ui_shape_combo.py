@@ -1481,7 +1481,7 @@ class TagManager(qt_ui.BasicDialog):
                     if not shape in tag_shapes:
                         tag_shapes.append(shape)
                         
-                tag_item.setBackground(qt.QBrush(qt.QColor('darkRed')))
+                #tag_item.setBackground(qt.QBrush(qt.QColor('darkRed')))
             
             if not tag_shapes:
                 tag_shapes = shapes
@@ -1498,10 +1498,9 @@ class TagManager(qt_ui.BasicDialog):
             
             if tags:
                 shape.setBackground(0, qt.QTreeWidgetItem().background(0) )
-                
-            if not tags:
+            else:
                 shape.setBackground(0, qt.QBrush(qt.QColor('darkRed'))  )
-                
+        
     def _set_tags(self, tags):
         self.tag_list.clear()
         
