@@ -205,6 +205,9 @@ class ProgressBar(object):
         
         self.progress_ui = None
         
+        if count == 0:
+            count +=1
+        
         if not is_batch():
             gMainProgressBar = mel.eval('$tmp = $gMainProgressBar');
         
@@ -915,6 +918,9 @@ def has_shape_of_type(node, maya_type):
         bool
     """
     test = None
+    
+    if not cmds.objExists(node):
+        return False
     
     if cmds.objectType(node, isAType = 'shape'):
         test = node
