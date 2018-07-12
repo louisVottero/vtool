@@ -645,7 +645,7 @@ class RigManager(qt_ui.DirectoryWidget):
         if fixed:
             core.print_help('Mirrored transforms left to right')
         if not fixed:
-            core.print_warning('No joints mirrored. Check there are joints on the left that can mirror right.')
+            core.print_warning('No joints mirrored. Check there are joints on the left that can mirror right.  Make sure translate rotate do not have connections.')
     
     @core.undo_chunk
     def _mirror_selected(self, *args):
@@ -700,7 +700,7 @@ class RigManager(qt_ui.DirectoryWidget):
         if not selected and fixed:
             core.print_help('Mirrored transforms right to left')
         if not fixed:
-            core.print_warning('No joints mirrored. Check there are joints on the right that can mirror left.  Check your selected transform is not on the left.')
+            core.print_warning('No joints mirrored. Check there are joints on the right that can mirror left.  Check your selected transform is not on the left. Make sure translate rotate do not have connections.')
             
     @core.undo_chunk
     def _mirror_create(self):
