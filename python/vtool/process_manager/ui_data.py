@@ -182,7 +182,9 @@ class DataWidget(vtool.qt_ui.BasicWidget):
     
     def _define_main_layout(self):
         return vtool.qt.QHBoxLayout()
-        
+
+
+
     def _build_widgets(self):
         
         self.list = None
@@ -226,9 +228,10 @@ class DataWidget(vtool.qt_ui.BasicWidget):
     
     def add_list(self):
         if not self.list:
-            self.list = vtool.qt_ui.AddRemoveDirectoryList()
+            self.list = SubFolders()
             self.list.setMaximumWidth(200)
-            self.list.set_title('Sub Folder')
+            #self.list.set_title('Folder')
+
             
             self.main_layout.addWidget(self.list)
             
@@ -258,6 +261,12 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         if self.list:
             self.list.set_directory(directory)
         self._set_file_widget_directory()
+
+class SubFolders(vtool.qt_ui.AddRemoveDirectoryList):
+    
+    def _define_defaults(self):
+        return ['-top folder-']
+
 
 class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     
@@ -413,7 +422,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
     
     def _define_header(self):
-        return ['Name','Sub Name', 'Type','Size']
+        return ['Name','Folder', 'Type','Size']
         
     def _item_renamed(self, item, old_name):
         
