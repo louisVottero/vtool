@@ -33,7 +33,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         #self.setMinimumWidth(200)
         
-        
     def _define_tree_widget(self):
         return ProcessTreeWidget()
     
@@ -87,14 +86,6 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         
         copy_widget = CopyWidget()
         self.copy_widget = copy_widget
-
-    def _add_branch(self):
-        
-        self.tree_widget.add_process('')
-      
-    def _add_top_branch(self):
-        
-        self.tree_widget.add_process(None)
         
     def _copy_match(self, process_name = None, directory = None):
         
@@ -169,8 +160,6 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
     def set_tree_widget(self, tree_widget):
         self.tree_widget = tree_widget
         
-        self.tree_widget.new_process.connect(self._add_branch)
-        self.tree_widget.new_top_process.connect(self._add_top_branch)
         self.tree_widget.copy_special_process.connect(self._copy_match)
         self.tree_widget.copy_process.connect(self._copy_done)
         
@@ -194,6 +183,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         super(ProcessTreeWidget, self).__init__()
         
+        self.setVerticalScrollMode(self.ScrollPerPixel)
+        
         
         self.text_edit = False
         
@@ -210,11 +201,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
+        self.context_menu = qt.QMenu()
         self._create_context_menu()
         self.paste_item = None
                 
                 
         self.setSelectionBehavior(self.SelectItems)
+        #self.setSelectionBehavior(self.SelectedClicked)
+        self.setSelectionMode(self.ContiguousSelection)
         
         self.dragged_item = None
         
@@ -223,6 +217,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.setAlternatingRowColors(True)
         
         self.current_folder = None
+        
         
         if util.is_in_maya():
             
@@ -255,6 +250,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         super(ProcessTreeWidget, self).drawRow(painter, option, index)
     """
+    
+
+    
     def dropEvent(self, event):
         
         directory = self.directory
@@ -312,8 +310,15 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             return
         
         if entered_name:
+            self.dragged_item.setFlags( qt.QtCore.Qt.ItemIsDragEnabled | qt.QtCore.Qt.ItemIsSelectable | qt.QtCore.Qt.ItemIsDropEnabled | qt.QtCore.Qt.ItemIsUserCheckable)
+            self.dragged_item.setCheckState(0, qt.QtCore.Qt.Unchecked)
             message = 'Parent %s under %s?' % (self.dragged_item.get_name(), entered_name)
         if not entered_name:
+            
+            self.dragged_item.setData(0, qt.QtCore.Qt.CheckStateRole, None)
+            self.dragged_item.setFlags(qt.QtCore.Qt.ItemIsDragEnabled | qt.QtCore.Qt.ItemIsSelectable | qt.QtCore.Qt.ItemIsDropEnabled )
+            self.dragged_item.setDisabled(True)
+            
             message = 'Unparent %s?' % self.dragged_item.get_name()
         
         move_result = qt_ui.get_permission( message , self)
@@ -371,6 +376,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if not item or model_index.column() == 1:
             self.clearSelection()
+            self.setCurrentItem(self.invisibleRootItem())
         
         if event.button() == qt.QtCore.Qt.RightButton:
             return
@@ -382,28 +388,51 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         item = self.itemAt(event.pos())
         
+        modifiers = qt.QApplication.keyboardModifiers()
+        if modifiers == qt.QtCore.Qt.ShiftModifier:
+            return
+        if modifiers == qt.QtCore.Qt.ControlModifier:
+            return
+        if modifiers == (qt.QtCore.Qt.ControlModifier | qt.QtCore.Qt.ShiftModifier):
+            return
+        
         parent = self.invisibleRootItem()
+
+        #self.clearSelection()
         
         if item:
+
+            
+            if item.is_folder():
+                self.setCurrentItem(self.invisibleRootItem())
+                return
+            
             if item.parent():
                 parent = item.parent()
-        
+        else:
+            self.setCurrentItem(self.invisibleRootItem())
+            return
+            
         self.drag_parent = parent
         
         self.dragged_item = item
         
         super(ProcessTreeWidget, self).mousePressEvent(event)
 
-    def _item_menu(self, position):
-        
-        self.current_folder = None
+
+    def _set_item_menu_vis(self, position):
         
         item = self.itemAt(position)
-            
+        
+        if not item:
+            self.clearSelection()
+            self.setCurrentItem(self.invisibleRootItem())
+        
         if item and not item.is_folder():
             self.new_process_action.setVisible(True)
             self.new_top_level_action.setVisible(True)
             self.rename_action.setVisible(True)
+            self.duplicate_action.setVisible(True)
             self.copy_action.setVisible(True)
             self.copy_special_action.setVisible(True)
             self.remove_action.setVisible(True)
@@ -416,6 +445,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.new_top_level_action.setVisible(True)
             self.new_process_action.setVisible(False)
             self.rename_action.setVisible(False)
+            self.duplicate_action.setVisible(False)
             self.copy_action.setVisible(False)
             self.copy_special_action.setVisible(False)
             self.remove_action.setVisible(False)
@@ -425,20 +455,40 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.new_top_level_action.setVisible(True)
             self.new_process_action.setVisible(False)
             self.rename_action.setVisible(False)
+            self.duplicate_action.setVisible(False)
             self.copy_action.setVisible(False)
             self.copy_special_action.setVisible(False)
             self.remove_action.setVisible(False)
-            self.show_options_action.setVisible(False)
+            #self.show_options_action.setVisible(False)
             self.convert_folder.setVisible(False)
+
+        copied = util.get_env('VETALA_COPIED_PROCESS')
+        
+        if copied:
+            process_inst = process.Process()
+            process_inst.set_directory(copied)
+            name = process_inst.get_name()
+            
+            self.paste_action.setText('Paste: %s' % name)
+            self.merge_action.setText('Merge In: %s' % name)
+            self.paste_action.setVisible(True)
+            self.merge_action.setVisible(True)
+
+    def _item_menu(self, position):
+        
+        self.current_folder = None
+        
+        
+        self._set_item_menu_vis(position)
         
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
         
-    def visualItemRect(self, item):
-        pass
+    #def visualItemRect(self, item):
+    #    pass
         
     def _create_context_menu(self):
         
-        self.context_menu = qt.QMenu()
+        
         
         self.new_process_action = self.context_menu.addAction('New Process')
         self.new_top_level_action = self.context_menu.addAction('New Top Level Process')
@@ -448,6 +498,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.context_menu.addSeparator()
         self.context_menu.addSeparator()
         self.rename_action = self.context_menu.addAction('Rename')
+        self.duplicate_action = self.context_menu.addAction('Duplicate')
         self.copy_action = self.context_menu.addAction('Copy')
         self.paste_action = self.context_menu.addAction('Paste')
         self.merge_action = self.context_menu.addAction('Merge')
@@ -471,6 +522,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         browse_action.triggered.connect(self._browse)
         refresh_action.triggered.connect(self.refresh)
         self.rename_action.triggered.connect(self._rename_process)
+        self.duplicate_action.triggered.connect(self._duplicate_process)
         self.copy_action.triggered.connect(self._copy_process)
         self.paste_action.triggered.connect(self.paste_process)
         self.merge_action.triggered.connect(self.merge_process)
@@ -490,13 +542,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.show_templates.emit()
         
     def _new_process(self):
-        self.new_process.emit()
+        self.add_process('')
     
     def _convert_folder(self):
         self.convert_current_process()
     
     def _new_top_process(self):
-        self.new_top_process.emit()
+        self.add_process(None)
+        #self.new_top_process.emit()
     
     def _inc_name(self, item, new_name):
         parent = item.parent()
@@ -567,17 +620,46 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         item = items[0]
         
-        self.paste_action.setVisible(True)
-        self.merge_action.setVisible(True)
+        item.get_process().get_path()
         
         self.paste_item = item
+        #path = self._get_parent_path(item)
+        name = item.get_name()
         
-        path = self._get_parent_path(item)
+        util.set_env('VETALA_COPIED_PROCESS', item.get_path())
         
-        self.paste_action.setText('Paste: %s' % path)
-        self.merge_action.setText('Merge With: %s' % path)
+        self.paste_action.setText('Paste: %s' % name)
+        self.merge_action.setText('Merge In: %s' % name)
         
-
+    def _duplicate_process(self):
+        
+        items = self.selectedItems()
+        if not items:
+            return
+        
+        item = items[0]
+        
+        
+        source_process = item.get_process()
+        target_process = item.get_parent_process()
+        
+        target_item = item.parent()
+        
+        if not target_process:
+            target_process = process.Process()
+            target_process.set_directory(self.directory)
+            target_item = self.invisibleRootItem()
+        
+        new_process = process.copy_process(source_process, target_process)
+        
+        if not new_process:
+            return
+        
+        new_item = self._add_process_item(new_process.get_name(), target_item)
+        
+        self.setCurrentItem(new_item)    
+        new_item.setSelected(True)
+        self.scrollToItem(new_item)
         
     def _copy_special_process(self):
         self.copy_special_process.emit()
@@ -623,6 +705,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         return state
         
+    def _item_clicked(self, item, column):
+        super(ProcessTreeWidget, self)._item_clicked(item, column)
         
     def _load_processes(self, process_paths, folders = []):
 
@@ -721,9 +805,15 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
     def _add_process_item(self, name, parent_item = None, create = False, find_parent_path = True, folder = False):
         
+        
         expand_to = False
         
-        current_item = self.currentItem()
+        items = self.selectedItems()
+        
+        current_item = None
+        
+        if items:
+            current_item = items[0]
         
         if not parent_item and current_item:
             parent_item = current_item
@@ -800,13 +890,20 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             if parent_item.matches(parent):
                 return True
 
+    
     def _item_collapsed(self, item):
         
-        current_item = self.currentItem()
+        items = self.selectedItems()
+        
+        current_item = None
+        
+        if items:
+            current_item = items[0]
         
         if self._has_item_parent(current_item, item):
             self.setCurrentItem(item)
-            
+            self.setItemSelected(item, True)
+    
     def _add_sub_items(self, item):
         
         self._delete_children(item)
@@ -821,23 +918,27 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
     def _browse(self):
         
+        path = None
         
         if self.current_folder:
             parent_path = self._get_parent_path(self.current_folder)
             path = util_file.join_path(self.directory, parent_path)
             
         if not self.current_folder:
-            current_item = self.currentItem()
-            process = current_item.get_process()
-            path = process.get_path()
+            items = self.selectedItems()
+            
+            if items:
+                process = items[0].get_process()
+                path = process.get_path()
         
-        util_file.open_browser(path)
+        if path:
+            util_file.open_browser(path)
 
     def refresh(self):
         
         
         
-        self.clearSelection()
+        
         
         processes, folders = process.find_processes(self.directory, return_also_non_process_list=True)
         
@@ -852,7 +953,12 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
     def add_process(self, name):
         
-        current_item = self.currentItem()
+        items = self.selectedItems()
+        
+        current_item = None
+        
+        if items:
+            current_item = items[0]
         
         parent_item = None
         
@@ -913,21 +1019,30 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
             self.takeTopLevelItem(index)
             self.clearSelection()
+            self.setCurrentItem(self.invisibleRootItem())
 
     def paste_process(self, source_process = None):
         
-        self.paste_action.setVisible(False)
+        #these were needed to remove the paste option.
+        #self.paste_action.setVisible(False)
+        #self.paste_item = None
         
         if not source_process:
             
-            if not self.paste_item:
-                return
+            copied = util.get_env('VETALA_COPIED_PROCESS')
             
-            source_process = self.paste_item.get_process()
+            if copied:
+                source_process = process.Process()
+                source_process.set_directory(copied)
+            else:
+                return
         
         target_process = None
         
         items = self.selectedItems()
+        
+        target_item = None
+        
         if items:
             target_item = items[0]
             target_process = target_item.get_process()            
@@ -938,25 +1053,28 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             target_process = process.Process()
             target_process.set_directory(self.directory)
             target_item = None 
-        
+            
         new_process = process.copy_process(source_process, target_process)
         
         if not new_process:
             return
         
-        self.paste_item = None
-        
         new_item = self._add_process_item(new_process.get_name(), target_item)
         
-        if target_process:
-            if target_item:
-                self.collapseItem(target_item)
-                self.expandItem(target_item)
-            
-        if not target_process:
-            self.scrollToItem(new_item)
+        #before here the item should expand. 
+        #However if the item wasn't expanded already it won't select properly the new_item
+        #this makes the next 3 lines seem to not do anything... not sure what qt is doing here.
+        
+        self.clearSelection()
+        self.setCurrentItem(self.invisibleRootItem())
+        new_item.setSelected(True)
+        self.scrollToItem(new_item)
+        
             
         self.copy_process.emit()
+        
+        #if target_process.get_path() == self.directory:
+        #    self.refresh()
         
     def merge_process(self, source_process = None):
         
@@ -973,6 +1091,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         qt_ui.get_permission('Are you sure you want to merge in %s?' % source_process_name)
             
         target_process = None
+        
+        target_item = None
         
         items = self.selectedItems()
         if items:
@@ -1026,8 +1146,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.settings = settings
       
 
-        
-        
 class ProcessItem(qt.QTreeWidgetItem):
     
     def __init__(self, directory, name, parent_item = None):
@@ -1084,6 +1202,14 @@ class ProcessItem(qt.QTreeWidgetItem):
         
         return process_instance
         
+    def _get_parent_process(self):
+        
+        process_instance = self._get_process()
+        parent_process = process_instance.get_parent_process()
+        
+        return parent_process
+        
+        
     def create(self):
         
         if not self._folder:
@@ -1125,7 +1251,10 @@ class ProcessItem(qt.QTreeWidgetItem):
            
     def get_process(self):
         return self._get_process()
-           
+    
+    def get_parent_process(self):
+        return self._get_parent_process()
+        
     def get_path(self):
         
         process_instance = self._get_process()
@@ -1797,8 +1926,6 @@ class ProcessTreeModel(qt.QtCore.QAbstractListModel):
             parent_process = self.root_item
         if parent.isValid:
             parent_process = parent.internalPointer()
-        
-        print parent_process
         
         if parent_process and parent_process.has_sub_parts():
             return True

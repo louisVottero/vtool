@@ -83,6 +83,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if alignment:
                 if alignment == 'horizontal':
                     self.process_splitter.setOrientation(qt.QtCore.Qt.Horizontal)
+                    
                 if alignment == 'vertical':
                     self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
                 
@@ -187,13 +188,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
         if not items:
             
-            if self.last_item:
-                self.view_widget.tree_widget.setCurrentItem(self.last_item)
-                return
-            if not self.last_item:
-                self._update_process(None)
-                self.build_widget.hide()
-                return
+            self._update_process(None)
+            self.build_widget.hide()
+            return
         
         item = items[0]
         
@@ -206,7 +203,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         #self._set_title(name)
         self._update_process(name)
-        self.last_item = item
+        
         
         path = item.get_path()
         
@@ -244,9 +241,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if util_file.is_file(notes_path):
             note_lines = util_file.get_file_text(notes_path)
             
-            if note_lines.endswith('><br /></p></body></html>'):
-                return 
-
+            parser = util.VetalaHTMLParser()
+            parser.feed(note_lines)
+            if not parser.get_body_data():
+                return
+            
             return note_lines
 
             
@@ -355,8 +354,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         option_layout = qt.QVBoxLayout()
         option_layout.setContentsMargins(1,1,1,1)
         self.option_widget = ui_options.ProcessOptionsWidget()
+        
+        
         option_layout.addWidget(self.option_widget)
-        self.option_widget.toggle_alignment.connect(self._toggle_alignment)
+        #self.option_widget.toggle_alignment.connect(self._toggle_alignment)
         
         option_widget = qt.QWidget()
         option_widget.setLayout(option_layout)
@@ -379,7 +380,36 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.option_tabs.currentChanged.connect(self._option_changed)
         
+        splitter_button_layout = qt.QHBoxLayout()
         
+        full_button = qt.QPushButton('Full')
+        full_button.setMaximumHeight(18)
+        full_button.setMaximumWidth(60)
+        full_button.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum,))
+        full_button.clicked.connect(self._toggle_full)
+        
+        close_button = qt.QPushButton('Close')
+        close_button.setMaximumHeight(18)
+        close_button.setMaximumWidth(60)
+        close_button.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum,))
+        close_button.clicked.connect(self._close_tabs)
+        
+        self.full_button = full_button
+        self.close_button = close_button
+        
+        orientation_button = qt.QPushButton('Alignment')
+        orientation_button.setMaximumHeight(18)
+        orientation_button.clicked.connect(self._toggle_alignment)
+        orientation_button.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Maximum,))
+        
+        splitter_button_layout.addWidget(full_button)
+        splitter_button_layout.addWidget(orientation_button)
+        splitter_button_layout.addWidget(close_button)
+        
+        
+        btm_tab_widget = qt_ui.BasicWidget()
+        btm_tab_widget.main_layout.addLayout(splitter_button_layout)
+        btm_tab_widget.main_layout.addWidget(self.option_tabs)
         
         self.data_widget = ui_data.DataProcessWidget()
         
@@ -393,9 +423,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter = qt.QSplitter()
         self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
         
+        
+        
         self.process_splitter.setContentsMargins(1,1,1,1)
         self.process_splitter.addWidget(self.view_widget)
-        self.process_splitter.addWidget(self.option_tabs)
+        
+        self.process_splitter.addWidget(btm_tab_widget)
+        #self.process_splitter.addWidget(self.option_tabs)
         self.process_splitter.setSizes([1,0])
         
         settings_icon = qt_ui.get_icon('gear.png')
@@ -502,6 +536,20 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_splitter.setOrientation(qt.QtCore.Qt.Horizontal)
             self.settings.set('process_split_alignment', 'horizontal')
             
+    def _toggle_full(self):
+        
+        sizes = self.process_splitter.sizes()
+        
+        if sizes[0] == 0 and sizes[1] > 0:
+            self.process_splitter.setSizes([1,1])
+            
+        if sizes[0] > 1 and sizes[1] >= 0:
+            self.process_splitter.setSizes([0,1])
+        
+    
+    def _close_tabs(self):
+        
+        self.process_splitter.setSizes([1, 0])
         
         
     def _add_template(self, process_name, directory):
@@ -703,15 +751,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 self.code_widget.set_external_code_library(code_directory)
                 
                 self.code_widget.set_settings(self.settings)
-                self.code_widget.set_current_process(self.process.get_name())
                 
                 self.last_tab = 3
                 
                 return
         
         self.last_tab = 1
-        
-
         
     def _get_current_path(self):
         items = self.view_widget.tree_widget.selectedItems()
@@ -726,6 +771,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process.load(process_name)
             
             return self.process.get_path()
+        if not item:
+            return self.directory
            
     def _set_kill_process(self):
         util.set_env('VETALA_STOP', True)
@@ -773,7 +820,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             for child in children:
                 
+                current_check_state = child.checkState(0)
+                
+                if current_check_state != qt.QtCore.Qt.Checked:
+                    continue
+                    
                 child.setExpanded(True)
+                
                 sub_children = self.view_widget.tree_widget.get_tree_item_children(child)
                 
                 checked = []
@@ -783,12 +836,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     
                     if check_state == qt.QtCore.Qt.Checked:
                         checked.append(sub_child)
+                        
                 
                 if sub_children:
                     new_children += sub_children
                     
                 if checked:
                     checked_children += checked
+                    
+                    
+            if not checked_children:
+                children = []
+                continue
             
             children = new_children
             
@@ -844,6 +903,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         item = self.view_widget.tree_widget.currentItem()
         
+        children_run_comment = ''
+        
         if self.tab_widget.currentIndex() == 1:
             children = self._get_checked_children(item)
                     
@@ -852,6 +913,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 result = qt_ui.get_comment(self, 'Found process children checked on:\n\nHit Ok to auto build children first.\n\nHit Cancel to process only the current process.\n\n\nAdd comment to the auto build? ', 'Children Checked', comment_text='Auto Build' )
                 
                 if result:
+                    
+                    children_run_comment = result
                     
                     util.set_env('VETALA_RUN', True)
                     util.set_env('VETALA_STOP', False)
@@ -869,7 +932,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     if util.get_env('VETALA_RUN') == 'True':
                         if util.get_env('VETALA_STOP') == 'True':
                             return
-
+                        
+                if not result:
+                    result2 = qt_ui.get_permission('Continue This Process?', self, title = 'Sub process build cancelled.')
+                    
+                    if not result2:
+                        return
+                    
                 import time
                 self.view_widget.tree_widget.setCurrentItem(item)
                 self.view_widget.tree_widget.repaint()
@@ -1005,9 +1074,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     if progress_bar.break_signaled():
                         self._set_kill_process()
                 
-                print script_name
-                print util.get_env('VETALA_STOP')
-                print util.get_env('VETALA_RUN')
                 status = self.process.run_script(script_name, False, self.settings.settings_dict)
                 temp_log = util.get_env('VETALA_LAST_TEMP_LOG')
                 
@@ -1039,7 +1105,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             if progress_bar:
                 progress_bar.inc()
-            
+        
+        progress_bar.end()
+        
         util.set_env('VETALA_RUN', False)
         util.set_env('VETALA_STOP', False)
             
@@ -1056,6 +1124,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 util.show('Process %s built in %s minutes, %s seconds\n\n' % (self.process.get_name(), minutes,seconds))
         if not finished:
             util.show('Process %s finished with errors.\n' % self.process.get_name())
+    
+        self.process.save_data('build', children_run_comment)
     
     def _continue(self):
         
@@ -1110,8 +1180,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _save_notes(self):
         current_path = self._get_current_path()
         notes_path = util_file.join_path(current_path, 'notes.html')
-        util_file.write_replace(notes_path, self.notes.toHtml())
+        notes_path = util_file.create_file(notes_path)
         
+        util_file.write_replace(notes_path, self.notes.toHtml())
         
         self.process.set_setting('notes', '')
         
@@ -1185,12 +1256,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             history = [['', current]]
             
         self.template_widget.set_templates(history)
-            
+        """ 
         if not current_name:
             for setting in history:
+                
                 if setting[1] == current:
                     current_name = setting[0]
-        
+        """
         if not current_name:
             current_name = current
                     
@@ -1266,3 +1338,5 @@ class NoteText(qt.QTextEdit):
             cursor.insertImage(path)
             #except:
             #    util.show('Could not paste image')
+            
+        super(NoteText, self).insertFromMimeData(source)
