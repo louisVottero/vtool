@@ -160,7 +160,7 @@ class DataFolder(util_file.FileManager):
         if not data_type:
             data_type = self.data_type
         
-        if data_type == 'None':
+        if data_type == None:
             test_file = util_file.join_path(self.folder_path, '%s.py' % self.name)
             
             if util_file.is_file(test_file):
