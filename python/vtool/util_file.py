@@ -16,7 +16,7 @@ import tempfile
 import threading
 import stat
 import ast
-import _winreg
+
 
 import util
 
@@ -1978,6 +1978,8 @@ def get_installed_programs():
     """
     if util.is_windows():
         #this is a hack for now.
+        
+        import _winreg
         uninstall_dir = 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall'
         
         uninstall  = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, uninstall_dir)
