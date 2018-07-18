@@ -1836,7 +1836,7 @@ class ProcessBuildDataWidget(MayaFileWidget):
         if data_type == 'maya.binary':
             self.set_data_type(self.binary_data)
         
-        if data_type == 'None':
+        if data_type == None:
             data_folder.set_data_type('maya.ascii')
             self.set_data_type(self.ascii_data)
 
