@@ -40,6 +40,9 @@ class Rig(object):
         self.description = description
         self.side = side
         
+        
+        self._handle_side_variations()
+        
         self.control_parent = None
         self.setup_parent = None
         
@@ -62,6 +65,28 @@ class Rig(object):
         
         self.sub_visibility = False
         self._connect_sub_vis_attr = None
+        
+    def _handle_side_variations(self):
+        
+        if self.side == 'L':
+            return
+        if self.side == 'R':
+            return
+        if self.side == 'C':
+            return
+        
+        if self.side == 'l':
+            self.side = 'L'
+        if self.side == 'r':
+            self.side = 'R'
+        if self.side == 'Left':
+            self.side = 'L'
+        if self.side == 'Right':
+            self.side = 'R'
+        if self.side == 'lf':
+            self.side = 'L'
+        if self.side == 'rt':
+            self.side = 'R'
         
     def __del__(self):
         
