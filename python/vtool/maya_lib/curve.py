@@ -406,7 +406,7 @@ class CurveDataInfo(object):
                 
             for curve_data in curve_data_lines:
                 lines.append('%s' % curve_data)
-          
+        
         writefile.write(lines)
         
         return path

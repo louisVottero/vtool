@@ -332,8 +332,10 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         item = self.itemAt(position)
             
         if item:
+            self.rename_action.setVisible(True)
             self.remove_action.setVisible(True)
         if not item:
+            self.rename_action.setVisible(False)
             self.remove_action.setVisible(False)
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
         

@@ -345,13 +345,15 @@ class FileData(Data):
         
         name = self.name
         
-        if self._sub_folder:
-            name = self._sub_folder
+        #if self._sub_folder:
+        #    name = self._sub_folder
         
         if self.data_extension:
             return '%s.%s' % (name, self.data_extension)
         if not self.data_extension:
             return name
+
+
 
     def set_directory(self, directory):
         self.directory = directory
@@ -543,15 +545,17 @@ class ControlCvData(MayaCustomData):
         return 'maya.control_cvs'
     
     def _initialize_library(self, filename = None):
-        if not filename:
-            directory = self.directory
-            name = self.name
         
         if filename:
             directory = util_file.get_dirname(filename)
             name = util_file.get_basename(filename)
         
-        
+        if not filename:
+            filename = self.get_file()
+            directory = util_file.get_dirname(filename)
+            name = self.name
+            #directory = self.directory
+            #name = self.name
         
         library = maya_lib.curve.CurveDataInfo()
         library.set_directory(directory)
@@ -566,6 +570,7 @@ class ControlCvData(MayaCustomData):
     def import_data(self, filename = None):
         
         library = self._initialize_library(filename)
+        library.set_active_library(self.name)
         controls = maya_lib.rigs_util.get_controls()
             
         for control in controls:
@@ -584,21 +589,18 @@ class ControlCvData(MayaCustomData):
     def export_data(self, comment):
         
         library = self._initialize_library()
-        
         controls = maya_lib.rigs_util.get_controls()
         
         if not controls:
             util.warning('No controls found to export.')
             return
         
-        library.set_directory(self.directory)
-        library.set_active_library(self.name)
-        
         for control in controls:
             
             library.add_curve(control)
             
         filepath = library.write_data_to_file()
+        
         
         version = util_file.VersionFile(filepath)
         version.save(comment)
@@ -608,6 +610,8 @@ class ControlCvData(MayaCustomData):
     def get_curves(self, filename = None):
         
         library = self._initialize_library(filename)
+        library.set_active_library(self.name)
+        
         curves = library.get_curve_names()
         
         return curves
@@ -617,6 +621,7 @@ class ControlCvData(MayaCustomData):
         curve_list = util.convert_to_sequence(curve_name)
         
         library = self._initialize_library(filename)
+        library.set_active_library(self.name)
         
         for curve in curve_list:
             library.remove_curve(curve)
@@ -626,6 +631,7 @@ class ControlCvData(MayaCustomData):
         return True
         
 class ControlColorData(MayaCustomData):
+    
     def _data_name(self):
         return 'control_colors'
         
@@ -652,7 +658,6 @@ class ControlColorData(MayaCustomData):
                 
         
         return all_control_dict
-                #self._set_color_dict(control, color_dict)
         
     def _get_color_dict(self, curve):
         
@@ -723,14 +728,16 @@ class ControlColorData(MayaCustomData):
                 if not current_color == main_color:
                 
                     cmds.setAttr('%s.overrideEnabled' % curve, 1 )
-                    if type(main_color) != list:
-                        cmds.setAttr('%s.overrideColor' % curve, main_color)
-                    if type(main_color) == list:
-                        cmds.setAttr('%s.overrideColor' % curve, main_color[0])
-                        cmds.setAttr('%s.overrideRGBColors' % curve, main_color[2])
-                        cmds.setAttr('%s.overrideColorRGB' % curve, main_color[1])
-                        
-                    util.show('Set color of %s on %s' % (main_color, maya_lib.core.get_basename(curve)))
+                    
+                    if main_color:
+                        if type(main_color) != list:
+                            cmds.setAttr('%s.overrideColor' % curve, main_color)
+                        if type(main_color) == list:
+                            cmds.setAttr('%s.overrideColor' % curve, main_color[0])
+                            cmds.setAttr('%s.overrideRGBColors' % curve, main_color[2])
+                            cmds.setAttr('%s.overrideColorRGB' % curve, main_color[1])
+                            
+                        util.show('Set color of %s on %s' % (main_color, maya_lib.core.get_basename(curve)))
                     
             if sub_color:
                 shapes = maya_lib.core.get_shapes(curve)
@@ -764,15 +771,31 @@ class ControlColorData(MayaCustomData):
             util.error(traceback.format_exc())
             util.show('Error applying color to %s.' % curve)
 
-    def export_data(self, comment):
+    def get_file(self):
         
         directory = self.directory
-        name = self.name + '.' + self._data_extension()
         
-        filepath = util_file.create_file(name, directory)
+        filename = self._get_file_name()
+        
+        if self._sub_folder:
+            directory = util_file.join_path(self.directory, '.sub/%s' % self._sub_folder)
+        
+        filepath = util_file.create_file(filename, directory)
+        
+        return filepath
+
+    def export_data(self, comment):
+        
+        #directory = self.directory
+        #name = self.name + '.' + self._data_extension()
+        
+        filepath = self.get_file()
+        #filepath = util_file.create_file(name, directory)
         
         if not filepath:
             return
+        
+        print filepath
         
         orig_controls = self._get_data(filepath)
         
@@ -796,9 +819,10 @@ class ControlColorData(MayaCustomData):
     def import_data(self, filename = None):
         
         if not filename:
-            directory = self.directory
-            name = self.name + '.' + self._data_extension()
-            filename = util_file.join_path(directory, name)
+            #directory = self.directory
+            #name = self.name + '.' + self._data_extension()
+            #filename = util_file.join_path(directory, name)
+            filename = self.get_file()
         
         all_control_dict = self._get_data(filename)
         
@@ -808,9 +832,10 @@ class ControlColorData(MayaCustomData):
     def remove_curve(self, curve_name, filename = None):
         
         if not filename:
-            directory = self.directory
-            name = self.name + '.' + self._data_extension()
-            filename = util_file.join_path(directory, name)
+            #directory = self.directory
+            #name = self.name + '.' + self._data_extension()
+            #filename = util_file.join_path(directory, name)
+            filename = self.get_file()
         
         curve_list = util.convert_to_sequence(curve_name)
         
@@ -826,9 +851,10 @@ class ControlColorData(MayaCustomData):
     
     def get_curves(self, filename = None):
         if not filename:
-            directory = self.directory
-            name = self.name + '.' + self._data_extension()
-            filename = util_file.join_path(directory, name)
+            #directory = self.directory
+            #name = self.name + '.' + self._data_extension()
+            #filename = util_file.join_path(directory, name)
+            filename = self.get_file()
             
         curve_dict = self._get_data(filename)
         
@@ -937,7 +963,8 @@ class SkinWeightData(MayaCustomData):
     def _import_maya_data(self, filepath = None):
         
         if not filepath:
-            path = util_file.join_path(self.directory, self.name)
+            path = self.get_file()
+            #path = util_file.join_path(self.directory, self.name)
         if filepath:
             path = filepath
         
@@ -1151,7 +1178,8 @@ class SkinWeightData(MayaCustomData):
       
     def export_data(self, comment):
         
-        path = util_file.join_path(self.directory, self.name)
+        path = self.get_file()
+        #path = util_file.join_path(self.directory, self.name)
         
         selection = cmds.ls(sl = True)
         
@@ -1255,7 +1283,8 @@ class SkinWeightData(MayaCustomData):
         
     def get_skin_meshes(self):
         
-        path = util_file.join_path(self.directory, self.name)
+        filepath = self.get_file()
+        path = util_file.join_path(util_file.get_dirname(filepath), self.name)
         
         meshes = None
         
@@ -1266,7 +1295,8 @@ class SkinWeightData(MayaCustomData):
     
     def remove_mesh(self, mesh):
         
-        path = util_file.join_path(self.directory, self.name)
+        filepath = self.get_file()
+        path = util_file.join_path(util_file.get_dirname(filepath), self.name)
         
         util_file.delete_dir(mesh, path)
         

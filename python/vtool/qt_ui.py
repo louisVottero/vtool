@@ -4915,6 +4915,8 @@ class AddRemoveDirectoryList(AddRemoveList):
             return
         
         self._rename_folder(old_name, new_name)
+        
+        self._item_update()
     
     def _rename_folder(self, old_name, new_name):
         
