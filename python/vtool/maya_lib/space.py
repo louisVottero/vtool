@@ -3422,9 +3422,6 @@ def find_transform_right_side(transform, check_if_exists = True):
     if transform.startswith('l_') and not transform.endswith('_R') and not transform.startswith('R_'):
         other = transform.replace('l_', 'r_')
         
-        if transform == 'persp':
-            print 'new other!', other
-        
         if cmds.objExists(other) and check_if_exists:
             return other
         if not check_if_exists:
@@ -3626,12 +3623,13 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
         if cmds.objExists('%s.inMesh' % transform):
             continue
         
-        if cmds.objExists('%s.nearClipPlane' % transform):
-            continue
+        #if cmds.objExists('%s.nearClipPlane' % transform):
+        #    continue
         
         other = ''
         if left_to_right:
             other = find_transform_right_side(transform, check_if_exists=False)
+            
         if not left_to_right:
             other = find_transform_left_side(transform, check_if_exists=False)
             
@@ -3645,6 +3643,9 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
         if attr.is_translate_rotate_connected(other, ignore_keyframe=True):
             
             continue
+        
+        if transform == 'persp':
+            print transform, other
         
         if not cmds.objExists(other) and create_if_missing:
             
