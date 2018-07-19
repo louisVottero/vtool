@@ -3416,9 +3416,22 @@ def find_transform_right_side(transform, check_if_exists = True):
             return other 
         if not check_if_exists:
             return other
-        
+    
     other = ''
+    
+    if transform.startswith('l_') and not transform.endswith('_R') and not transform.startswith('R_'):
+        other = transform.replace('l_', 'r_')
         
+        if transform == 'persp':
+            print 'new other!', other
+        
+        if cmds.objExists(other) and check_if_exists:
+            return other
+        if not check_if_exists:
+            return other
+    
+    other = ''
+     
     if transform.find('lf_') > -1 and not transform.endswith('_R') and not transform.startswith('R_'):
         other = transform.replace('lf_', 'rt_')
         
@@ -3427,12 +3440,16 @@ def find_transform_right_side(transform, check_if_exists = True):
         if not check_if_exists:
             return other
     
+    other = ''
+    
     if transform.find('Left') > -1:
         other = transform.replace('Left', 'Right')
         if cmds.objExists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
+
+    other = ''
 
     if transform.find('left') > -1:
         other = transform.replace('left', 'right')
@@ -3482,9 +3499,19 @@ def find_transform_left_side(transform,check_if_exists = True):
             return other 
         if not check_if_exists:
             return other
+
+    other = ''
+
+    if transform.startswith('r_') and not transform.endswith('_L') and not transform.startswith('L_'):
+        other = transform.replace('r_', 'l_')
+        
+        if cmds.objExists(other) and check_if_exists:
+            return other
+        if not check_if_exists:
+            return other
         
     other = ''
-        
+    
     if transform.find('rt_') > -1 and not transform.endswith('_L') and not transform.startswith('L_'):
         other = transform.replace('rt_', 'lf_')
         
@@ -3493,12 +3520,16 @@ def find_transform_left_side(transform,check_if_exists = True):
         if not check_if_exists:
             return other
 
+    other = ''
+
     if transform.find('Right') > -1:
         other = transform.replace('Right', 'Left')
         if cmds.objExists(other) and check_if_exists:
             return other
         if not check_if_exists:
             return other
+
+    other = ''
 
     if transform.find('right') > -1:
         other = transform.replace('right', 'left')
@@ -3590,16 +3621,22 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
     
     for transform in scope:
         
+        
+        
+        if cmds.objExists('%s.inMesh' % transform):
+            continue
+        
+        if cmds.objExists('%s.nearClipPlane' % transform):
+            continue
+        
         other = ''
         if left_to_right:
             other = find_transform_right_side(transform, check_if_exists=False)
         if not left_to_right:
             other = find_transform_left_side(transform, check_if_exists=False)
+            
         
         if not other:
-            continue
-        
-        if cmds.objExists('%s.inMesh' % transform):
             continue
         
         if transform in fixed:
