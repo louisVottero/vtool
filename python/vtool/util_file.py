@@ -122,7 +122,7 @@ class FileManager(object):
     def __init__(self, filepath, skip_warning = False):
         
         self.filepath = filepath
-        
+                
         if not skip_warning:
             self.warning_if_invlid_path('path is invalid')
                 
@@ -323,11 +323,43 @@ class VersionFile(object):
             self.version_name = 'version'
             self.version_folder = None
             self.updated_old = False
+            
+            #this isn't needed any more.
+            #self._handle_old_version()
         
-    def _prep_directories(self):
-        self._create_version_folder()
-        self._create_comment_file()
+    def _handle_old_version(self):
         
+        old_dir_name = join_path(self.filepath, 'version')
+        
+        if is_dir(old_dir_name):
+            
+            files = get_files(old_dir_name)
+            
+            found = False
+            
+            for filename in files:
+                if filename.startswith(self.version_name):
+                    found = True
+                    break
+            
+            if not found:
+                folders = get_folders(old_dir_name)
+                
+                for folder in folders:
+                    if folder.startswith(self.version_name):
+                        found = True
+                        break
+            
+            if found:
+                
+                version_folder = self._get_version_folder()
+                
+                if is_dir(version_folder):
+                    rename(old_dir_name, '.old.version')
+                if not is_dir(version_folder):
+                    rename(old_dir_name, self.version_folder_name)
+                    
+                self.updated_old = True
         
     def _create_version_folder(self):
         
@@ -341,14 +373,6 @@ class VersionFile(object):
         path = join_path(self.version_folder, self.version_name + '.1')
         
         return inc_path_name(path)
-        
-    def _default_version_file_name(self):
-        
-        print 'version info', self.version_folder, self.version_name
-        
-        path = join_path(self.version_folder, self.version_name + '.default')
-        
-        return path
         
     def _get_version_path(self, version_int):
         path = join_path(self._get_version_folder(), self.version_name + '.' + str(version_int))
@@ -380,18 +404,6 @@ class VersionFile(object):
             
         return filepath
             
-    def _save(self, filename):
-        
-        print 'current path', self.filepath
-        
-        self._create_version_folder()
-        self._create_comment_file()
-        
-        if is_dir(self.filepath):
-            copy_dir(self.filepath, filename)
-        if is_file(self.filepath):
-            copy_file(self.filepath, filename)
-  
     def save_comment(self, comment = None, version_file = None, ):
         """
         Save a comment to a log file.
@@ -429,33 +441,22 @@ class VersionFile(object):
             str: The new version file name
         """
         
-        self._prep_directories()
+        comment.replace('\n', '   ')
+        comment.replace('\r', '   ')
         
-        if not comment == None:
-            comment.replace('\n', '   ')
-            comment.replace('\r', '   ')
-        if comment == None:
-            comment = ' '
+        self._create_version_folder()
+        self._create_comment_file()
         
         inc_file_name = self._increment_version_file_name()
         
-        self._save(inc_file_name, comment)
+        if is_dir(self.filepath):
+            copy_dir(self.filepath, inc_file_name)
+        if is_file(self.filepath):
+            copy_file(self.filepath, inc_file_name)
             
         self.save_comment(comment, inc_file_name)
         
         return inc_file_name
-    
-    def save_default(self):
-        
-        self._prep_directories()
-        
-        filename = self._default_version_file_name()
-        
-        print 'default path', filename
-        
-        self._save(filename)
-        
-        return filename
     
     def has_versions(self):
         
@@ -466,17 +467,6 @@ class VersionFile(object):
         
         if is_dir(version_folder):
             return True
-        
-    def get_count(self):
-        
-        versions = self.get_version_numbers()
-        
-        if versions:
-            return len(versions)
-        else:
-            return 0
-        
-        
         
     def set_version_folder(self, folder_path):
         """
@@ -677,18 +667,13 @@ class VersionFile(object):
             
             split_name = filepath.split('.')
             
-            if split_name[1] == 'json':
-                continue
-            
             if not len(split_name) == 2:
                 continue
             
             number = int(split_name[1])
             
             number_list.append(number)
-        
-        number_list.sort()
-         
+            
         return number_list
     
     def get_versions(self, return_version_numbers_also = False):
@@ -757,11 +742,7 @@ class VersionFile(object):
         latest_version = versions[-1]
         
         return join_path(self.filepath, '%s/%s' % (self.version_folder_name, latest_version))
-
-    def get_default(self):
-        filename = self._default_version_file_name()
-        
-        return filename
+       
        
 class SettingsFile(object):
     
@@ -1004,6 +985,83 @@ class SettingsFile(object):
         #self._read()
         
         return self.filepath
+
+class ControlNameFromSettingsFile(util.ControlName):
+    
+    def __init__(self, directory = None):
+        
+        super(ControlNameFromSettingsFile, self).__init__()
+        
+        if directory:
+            self.set_directory(directory)
+        
+    
+    def set_directory(self, directory, filename = 'settings.json'):
+        
+        self.directory = directory
+         
+        
+        settings_inst = SettingsFile()
+        settings_inst.set_directory(directory, filename)
+        
+        self._settings_inst = settings_inst
+        
+        control_order = settings_inst.get('control_name_order')
+        
+        if control_order: 
+            self.control_order = control_order
+        
+        self.control_alias = settings_inst.get('control_alias')
+        self.left_alias = settings_inst.get('control_left')
+        self.right_alias = settings_inst.get('control_right')
+        self.center_alias = settings_inst.get('control_center')
+        
+        
+        if not self.control_alias:
+            self.control_alias = 'CNT'
+        if not self.left_alias:
+            self.left_alias = 'L'
+        if not self.right_alias:
+            self.right_alias = 'R'
+        if not self.center_alias:
+            self.center_alias = 'C'
+        
+        self.control_uppercase = settings_inst.get('control_uppercase')
+        
+        if self.control_uppercase == None:
+            self.control_uppercase = True
+         
+    def set(self, name, value):
+        
+        if name == 'control_name_order':
+            self.control_order = value
+            if self._settings_inst:
+                self._settings_inst[name] = value
+        
+        if name == 'control_alias':
+            self.control_alias = str(value)
+            if self._settings_inst:
+                self._settings_inst[name] = value
+                
+        if name == 'control_left':
+            self.left_alias = value
+            if self._settings_inst:
+                self._settings_inst[name] = value
+
+        if name == 'control_right':
+            self.right_alias = value
+            if self._settings_inst:
+                self._settings_inst[name] = value
+
+        if name == 'control_center':
+            self.center_alias = value
+            if self._settings_inst:
+                self._settings_inst[name] = value
+        
+        if name == 'control_uppercase':
+            self.control_uppercase = value
+            if self._settings_inst:
+                self._settings_inst[name] = value
 
 class FindUniquePath(util.FindUniqueString):
     
@@ -1735,8 +1793,9 @@ def get_permission(filepath):
     
     try:
         os.chmod(filepath, 0777)
+        #os.chmod(filepath, stat.S_IRWXG)
     except:
-        pass
+        util.warning('Failed to get elevated permission on %s' % filepath)
 
 def exists(directory):
     
@@ -2014,7 +2073,61 @@ def get_installed_programs():
             pass
         
         get_files(uninstall_dir)
+
+def get_comments(comment_directory, comment_filename = None):
+    """
+    Get the comments from a comments.txt file.
     
+    Args:
+        comment_directory (str): Directory where the comments.txt file lives.
+        comment_filename (str): The name of the comment file. By default comments.txt
+        
+    Returns:
+        dict: comment dict, keys are filename, and value is (comment, user) 
+    """
+    
+    if not comment_filename:
+        comment_file = join_path(comment_directory, 'comments.txt')
+    if comment_filename:
+        comment_file = join_path(comment_directory, comment_filename)
+    
+    if not comment_file:
+        return
+    
+    comments = {}
+    
+    if is_file(comment_file):
+        read = ReadFile(comment_file)
+        lines = read.read()
+        
+        filename = None
+        comment = None
+        user = None
+        
+        for line in lines:  
+
+            exec(line)                            
+            
+            if comment_filename:
+                if comment_filename == filename:
+                    return comment, user
+            
+            comments[ filename ] = [ comment, user ]
+
+    return comments
+
+def get_vetala_settings_inst():
+    
+    vetala_settings = util.get_env('VETALA_SETTINGS')
+    
+    print vetala_settings
+    
+    settings = SettingsFile()
+    settings.set_directory(vetala_settings)
+    
+    return settings
+
+  
 #---- edit
 
 def fix_slashes(directory):
@@ -2097,7 +2210,7 @@ def rename(directory, name, make_unique = False):
 
     try:
         
-        os.chmod(directory, 0777)
+        get_permission(directory)
         
         message = 'rename: ' + directory + '   to   ' + renamepath
         util.show( message)
@@ -2156,47 +2269,6 @@ def comment(filepath, comment, comment_directory):
     comment_file.write(['filename = "%s"; comment = "%s"; user = "%s"' % (version, comment, user)])
     comment_file.close_file()
     
-def get_comments(comment_directory, comment_filename = None):
-    """
-    Get the comments from a comments.txt file.
-    
-    Args:
-        comment_directory (str): Directory where the comments.txt file lives.
-        comment_filename (str): The name of the comment file. By default comments.txt
-        
-    Returns:
-        dict: comment dict, keys are filename, and value is (comment, user) 
-    """
-    
-    if not comment_filename:
-        comment_file = join_path(comment_directory, 'comments.txt')
-    if comment_filename:
-        comment_file = join_path(comment_directory, comment_filename)
-    
-    if not comment_file:
-        return
-    
-    comments = {}
-    
-    if is_file(comment_file):
-        read = ReadFile(comment_file)
-        lines = read.read()
-        
-        filename = None
-        comment = None
-        user = None
-        
-        for line in lines:  
-
-            exec(line)                            
-            
-            if comment_filename:
-                if comment_filename == filename:
-                    return comment, user
-            
-            comments[ filename ] = [ comment, user ]
-
-    return comments
 
 def write_lines(filepath, lines, append = False):
     """
@@ -2276,12 +2348,14 @@ def delete_dir(name, directory = None):
     
     util.clean_file_string(name)
     
-    full_path = name
-    
-    if directory:
-        full_path = join_path(directory, name)
+    full_path = join_path(directory, name)
     
     if not is_dir(full_path):
+        
+        #in case a directory was passed to the name
+        if is_dir(name):
+            shutil.rmtree(name, onerror = delete_read_only_error)  
+            return name
             
         util.show('%s was not deleted. It is not a folder.' % full_path)
         
@@ -2296,7 +2370,7 @@ def delete_read_only_error(action, name, exc):
     Helper to delete read only files.
     """
     
-    os.chmod(name, 0777)
+    get_permission(name)
     action(name)
     
 
@@ -2332,11 +2406,9 @@ def create_file(name, directory = None, make_unique = False):
         directory = get_dirname(name)
         name = get_basename(name)
     
+    
     name = util.clean_file_string(name)
     full_path = join_path(directory, name)
-        
-    #if is_file(full_path) and not make_unique:
-    #    return full_path
     
     if make_unique:
         full_path = inc_path_name(full_path)
@@ -2346,7 +2418,7 @@ def create_file(name, directory = None, make_unique = False):
         open_file.close()
     except:
         #turn on when troubleshooting
-        util.warning( traceback.format_exc() )
+        #util.warning( traceback.format_exc() )
         return False
     
     return full_path
@@ -2370,8 +2442,11 @@ def delete_file(name, directory):
         util.show('%s was not deleted.' % full_path)
         
         return full_path
-        
-    os.chmod(full_path, 0777)
+    
+    try:
+        get_permission(full_path)
+    except:
+        pass
     os.remove(full_path) 
     
     return full_path
@@ -2414,6 +2489,9 @@ def copy_file(filepath, filepath_destination):
     Returns:
         str: The destination directory
     """
+    
+    get_permission(filepath)
+    
     shutil.copy2(filepath, filepath_destination)
     
     return filepath_destination
@@ -2465,11 +2543,15 @@ def import_python_module(module_name, directory):
             
         module = eval(script_name)
         
+        get_permission(directory)
+        
         sys.path.remove(directory)
         
     return module
 
 def source_python_module(code_directory):
+    
+    get_permission(code_directory)
     
     try:
         try:
