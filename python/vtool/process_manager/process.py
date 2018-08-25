@@ -1250,6 +1250,29 @@ class Process(object):
         if self.option_settings:
             self.option_settings.clear()
         
+
+    def save_default_option_history(self):
+        option_file = self.get_option_file()
+        version_file = util_file.VersionFile(option_file)
+        version_file.set_version_folder_name('.backup/.option_versions')
+        return version_file
+        
+    def load_default_option_history(self):
+        option_file = self.get_option_file()
+        version_file = util_file.VersionFile(option_file)
+        version_file.set_version_folder_name('.backup/.option_versions')
+        return version_file
+
+
+    def get_option_history(self):
+        
+        option_file = self.get_option_file()
+        version_file = util_file.VersionFile(option_file)
+        version_file.set_version_folder_name('.backup/.option_versions')
+        return version_file
+        
+        
+    
     #--- manifest
         
     def get_manifest_folder(self):
