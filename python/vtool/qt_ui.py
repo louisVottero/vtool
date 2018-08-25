@@ -1,4 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
+import traceback
 
 from vtool import qt
 
@@ -3697,7 +3698,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
         
         self.find_widget.set_widget(widget)
         
-        
     
     def load_modification_date(self):
         
@@ -3708,6 +3708,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
             return False
         if self.document().isModified():
             return True
+        
         
         
 class FindTextWidget(BasicDialog):
@@ -5024,8 +5025,458 @@ class AddRemoveDirectoryList(AddRemoveList):
         
         if item:
             item.setSelected(True)
-    
 
+class CompactHistoryWidget(BasicWidget):
+    
+    forward_socket = create_signal(object)
+    back_socket = create_signal(object)
+    load_default_socket = create_signal(object)
+    
+    def __init__(self):
+        super(CompactHistoryWidget, self).__init__()
+        
+        self.current_number = None
+        self.version_inst = None
+
+    def _define_main_layout(self):
+        return qt.QHBoxLayout()
+        
+    def _build_widgets(self):
+        
+        self.load_default = qt.QPushButton('Default')
+        self.back_button = qt.QPushButton('<')
+        self.forward_button = qt.QPushButton('>')
+        save = qt.QPushButton('Save')
+        save_default = qt.QPushButton('Save Default')
+        
+        save.clicked.connect(self.save_command)
+        self.back_button.clicked.connect(self.back_command)
+        self.forward_button.clicked.connect(self.forward_command)
+        self.load_default.clicked.connect(self.load_default_command)
+        save_default.clicked.connect(self.save_default_command)
+        
+        self.back_button.setMaximumWidth(20)
+        self.forward_button.setMaximumWidth(20)
+        self.load_default.setMaximumWidth(50)
+        save.setMaximumWidth(40)
+        save_default.setMaximumWidth(50)
+        
+        self.setMaximumHeight(20)
+        self.setMaximumWidth(270)
+        self.main_layout.setContentsMargins(1,1,1,1)
+        
+        save_default.setMinimumWidth(80)
+        
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
+        
+        self.main_layout.addWidget(self.back_button)
+        self.main_layout.addWidget(self.forward_button)
+        self.main_layout.addWidget(self.load_default)
+        self.main_layout.addSpacing(30)
+        self.main_layout.addWidget(save)
+        self.main_layout.addWidget(save_default)
+        
+        self.back_button.hide()
+        self.forward_button.hide()
+        self.load_default.hide()
+    
+    def save_default(self):
+        self.load_default.show()
+    
+    def load_default(self):
+        pass
+        
+    def set_history(self, version_inst):
+        self.version_inst = version_inst
+        
+        if self.version_inst.has_versions():
+            self.set_at_end()
+            
+    def set_at_end(self):
+        self.back_button.show()
+        self.forward_button.hide()
+    
+    def set_at_start(self):
+        self.forward_button.show()
+        self.back_button.hide()
+        
+    def set_current_number(self, number):
+        self.current_number = number
+    
+    def save_command(self):
+        
+        self.back_button.show()
+        
+        self.version_inst.save() 
+        
+        self.save_history.emit()
+
+    def back_command(self):
+        
+        number_list = self.version_inst.get_version_numbers()
+        
+        if not number_list:
+            self.back_button.hide()
+            self.forward_button.hide()
+            return
+        
+        back_number = None
+        
+        if not self.current_number:
+            self.set_current_number(number_list[-1])
+            back_number = number_list[-1]
+            
+        else:
+            
+            if len(number_list) == 1:
+                back_number = number_list[0]
+            
+            if len(number_list) > 1:
+                
+                number_list.reverse()
+                
+                inc = 0
+                for inc in range(0, (len(number_list)-1)):
+                    if number_list[inc] == self.current_number:
+                        back_number = number_list[inc+1]
+                
+                if back_number != None:
+                    self.current_number = back_number
+                    self.forward_button.show()
+                if back_number == None:
+                    self.forward_button.show()
+                    self.back_button.hide()
+                    return
+        
+        version_file = self.version_inst.get_version_path(back_number)
+        
+        self.back_socket.emit(version_file)
+        
+        return version_file
+    
+    def forward_command(self):
+        
+        number_list = self.version_inst.get_version_numbers()
+        
+        if not number_list:
+            return
+        
+        if len(number_list) == 1:
+            self.forward_button.hide()
+            return
+        
+        if self.current_number != None and self.current_number != number_list[-1]:
+            number = self.current_number + 1
+            self.set_current_number(number)
+            self.back_button.show()
+        else:
+            self.forward_button.hide()
+            
+        version_file = self.version_inst.get_version_path(self.current_number)
+        
+        self.forward_socket.emit(version_file)
+        
+        return version_file       
+    
+    def load_default_command(self):
+        
+        filename = self.version_inst.get_default()
+        
+        self.load_default_socket.emit(filename)
+    
+    def save_default_command(self):
+        
+        self.version_inst.save_default()
+        
+        self.load_default.show()
+    
+class DefineControlNameWidget(Group):
+    
+    def __init__(self, settings_path):
+        
+        self._update_combos = True
+        self._last_combos = []
+        
+        self.settings_path = settings_path
+        self._control_inst = None
+        
+        self._active = False
+        
+        self._update_settings = True
+        
+        super(DefineControlNameWidget, self).__init__('Define Control Name')
+        
+    def _build_widgets(self):
+        
+        alias_group = Group('Aliases')
+        
+        self.control_alias = GetString('Control')        
+        
+        self.left_alias = GetString('Left')        
+        
+        self.right_alias = GetString('Right')
+        
+        self.center_alias = GetString('Center')
+        
+        
+        alias_group.main_layout.addWidget(self.control_alias)
+        alias_group.main_layout.addWidget(self.center_alias)
+        alias_group.main_layout.addWidget(self.left_alias)
+        alias_group.main_layout.addWidget(self.right_alias)
+        
+        
+        order_layout = qt.QHBoxLayout()
+        
+        self.combo1 = self._build_part_option_widget()
+        self.combo2 = self._build_part_option_widget()
+        self.combo3 = self._build_part_option_widget()
+        self.combo4 = self._build_part_option_widget()
+        
+        self.combo1.removeItem(2)
+        
+        self.combos = [self.combo1, self.combo2, self.combo3, self.combo4]
+        
+        self._last_combos = [0,1,2,3]
+        
+        
+        self.upper_check = GetCheckBox('Uppercase')
+        
+        
+        
+        
+        self._initialize_settings()
+        
+        self.upper_check.check_changed.connect(self._build_name)
+        self.combo1.currentIndexChanged.connect(self._update_combo1)
+        self.combo2.currentIndexChanged.connect(self._update_combo2)
+        self.combo3.currentIndexChanged.connect(self._update_combo3)
+        self.combo4.currentIndexChanged.connect(self._update_combo4)
+        
+        self.control_alias.text_changed.connect(self._update)
+        self.left_alias.text_changed.connect(self._update)
+        self.right_alias.text_changed.connect(self._update)
+        self.center_alias.text_changed.connect(self._update)
+        self.upper_check.check_changed.connect(self._update)
+        
+        
+        order_layout.addWidget(self.combo1)
+        order_layout.addWidget(qt.QLabel('_'))
+        order_layout.addWidget(self.combo2)
+        order_layout.addWidget(qt.QLabel('_'))
+        order_layout.addWidget(self.combo3)
+        order_layout.addWidget(qt.QLabel('_'))
+        order_layout.addWidget(self.combo4)
+        
+        self.label = qt.QLabel()
+        
+        self._build_name()
+        
+        order_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
+        
+        self.main_layout.addWidget(alias_group)
+        self.main_layout.addSpacing((12))
+        self.main_layout.addLayout(order_layout)
+        self.main_layout.addWidget(self.upper_check)
+        self.main_layout.addSpacing((12))
+        self.main_layout.addWidget(self.label)
+        self.main_layout.addSpacing((12))
+        
+    def _get_setting_inst(self):
+        
+        if self._control_inst:
+            return
+        
+        if not util_file.is_dir(self.settings_path):
+            return
+        
+        control_inst = util_file.ControlNameFromSettingsFile(self.settings_path)
+        
+        
+        self._control_inst = control_inst
+        
+        return control_inst
+        
+    def _initialize_settings(self):
+        
+        if not self._active:
+            self._update_settings = True
+            return
+        
+        self._update_settings = False
+        
+        self._get_setting_inst()
+        
+        if not self._control_inst:
+            self._update_settings = True
+            return
+        
+        self.upper_check.set_state(self._control_inst.control_uppercase)
+        self.control_alias.set_text(self._control_inst.control_alias)
+        self.left_alias.set_text(self._control_inst.left_alias)
+        self.right_alias.set_text(self._control_inst.right_alias)
+        self.center_alias.set_text(self._control_inst.center_alias)
+        
+        control_name_order = self._control_inst.control_order
+        
+        for inc in range(len(control_name_order)):
+
+            if inc == 0:
+                if control_name_order[inc] == 'Control Alias':
+                    self.combos[inc].setCurrentIndex(0)
+                if control_name_order[inc] == 'Description':
+                    self.combos[inc].setCurrentIndex(1)
+                if control_name_order[inc] == 'Side':
+                    self.combos[inc].setCurrentIndex(2)
+            
+            if inc > 0:
+                if control_name_order[inc] == 'Control Alias':
+                    self.combos[inc].setCurrentIndex(0)
+                if control_name_order[inc] == 'Description':
+                    self.combos[inc].setCurrentIndex(1)
+                if control_name_order[inc] == 'Number':
+                    self.combos[inc].setCurrentIndex(2)
+                if control_name_order[inc] == 'Side':
+                    self.combos[inc].setCurrentIndex(3)
+                    
+        self._build_name()
+        
+        self._update_settings = True
+            
+    def _store(self):
+        
+        if not self._active:
+            return
+        
+        self._get_setting_inst()
+        
+        if not self._control_inst:
+            return
+        
+        control_alias = self.control_alias.get_text()
+        left_alias = self.left_alias.get_text()
+        right_alias = self.right_alias.get_text()
+        center_alias = self.center_alias.get_text()
+        
+        combo1 = self.combo1.currentText()
+        combo2 = self.combo2.currentText()
+        combo3 = self.combo3.currentText()
+        combo4 = self.combo4.currentText()
+        
+        upper_state = self.upper_check.get_state()
+        
+        self._control_inst.set('control_name_order', [combo1,combo2,combo3,combo4])
+        self._control_inst.set('control_uppercase', upper_state)
+        self._control_inst.set('control_alias', control_alias)
+        self._control_inst.set('control_left', left_alias)
+        self._control_inst.set('control_right', right_alias)
+        self._control_inst.set('control_center', center_alias)
+        
+        
+    def _update_combo(self, combo_index, index):
+        
+        if not self._update_settings:
+            return
+        
+        
+        if not self._update_combos:
+            return
+        
+        self._update_combos = False
+        
+        current_text = str(self.combos[combo_index].currentText())
+        
+        last_index = self._last_combos[combo_index]
+        
+        if combo_index == 0:
+            if last_index == 2:
+                last_index = 3
+        
+        inc = 0
+        for combo in self.combos:
+            
+            if combo == self.combos[combo_index]:
+                continue
+            
+            test_combo_text = str(combo.currentText())
+            
+            if current_text == test_combo_text:
+                
+                if last_index == 2 and combo == self.combo1:
+                    self.combos[combo_index].setCurrentIndex(2)
+                    index = 2
+                    util.warning('Could not set first entry as a number.  Number at the start of the name is not supported.')
+                    break
+                
+                if combo == self.combo1:
+                    if last_index == 3:
+                        last_index = 2
+                    
+                combo.setCurrentIndex(last_index)
+                self._last_combos[inc] = last_index
+                
+                break
+            
+            inc += 1
+            
+        self._update_combos = True    
+        
+        self._last_combos[combo_index] = index
+        
+        self._update()
+        
+    def _update(self):
+        
+        if not self._update_settings:
+            return
+        
+        self._store()
+        self._build_name()
+        
+    def _update_combo1(self, index):
+        
+        self._update_combo(0, index)
+    
+    def _update_combo2(self, index):
+        
+        self._update_combo(1, index)
+        
+    def _update_combo3(self, index):
+        
+        self._update_combo(2, index)
+        
+    def _update_combo4(self, index):
+        
+        self._update_combo(3, index)
+        
+    def _build_name(self):
+        
+        control = util_file.ControlNameFromSettingsFile(self.settings_path)
+        name_center = control.get_name('description', 'C')
+        name_left = control.get_name('description', 'L')
+        name_right = control.get_name('description', 'R')
+        
+        full_name = '%s\n%s\n%s' % (name_center,name_left, name_right)
+        
+        self.label.setText(full_name)
+        
+    def _build_part_option_widget(self):
+        
+        combo = qt.QComboBox()
+        combo.addItem('Control Alias')
+        combo.addItem('Description')
+        combo.addItem('Number')
+        combo.addItem('Side')
+        
+        return combo
+    
+    def set_active(self, bool_value):
+        self._active = bool_value
+        
+    def set_directory(self, directory):
+        self.settings_path = directory
+        if self._control_inst:
+            self._control_inst.set_directory(directory)
+        self._initialize_settings()
     
 #--- Custom Painted Widgets
 
