@@ -9,7 +9,6 @@ import vtool.util
 import process
 
 from vtool import qt
-from vtool.qt_ui import BasicWidget
 
 class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
     
@@ -1166,8 +1165,6 @@ class ScriptFileWidget(DataFileWidget):
     def set_text_widget(self, widget):
         self.text_widget = widget
         
-        
-        
         self.save_widget.set_text_widget(widget)
         self.history_widget.set_text_widget(widget)
         
@@ -1197,11 +1194,21 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         """
         text = self.text_widget.toPlainText()
         
-        if comment == None or comment == False:
-            comment = vtool.qt_ui.get_comment(parent, title = 'Save %s' % self.data_class.name)
+        settings = vtool.util_file.get_vetala_settings_inst()
         
-        if comment == None:
-            return
+        popup_save = True
+        
+        if settings.has_setting('code popup save'):
+            popup_save = settings.get('code popup save')
+        
+        if popup_save:
+            if comment == None or comment == False:
+                comment = vtool.qt_ui.get_comment(parent, title = 'Save %s' % self.data_class.name)
+            
+            if comment == None:
+                return
+        if not popup_save:
+            comment = 'code update'
         
         lines= vtool.util_file.get_text_lines(text)
         
@@ -1542,7 +1549,8 @@ class MayaAttributesFileWidget(MayaDataFileWidget):
     def _build_widgets(self):
         super(MayaAttributesFileWidget, self)._build_widgets()
         
-        #self.save_widget.main_layout.addWidget(self.list)
+        self.list = vtool.qt_ui.AddRemoveList()
+        self.save_widget.main_layout.addWidget(self.list)
         
     
     def _define_data_class(self):
