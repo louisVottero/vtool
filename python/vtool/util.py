@@ -40,9 +40,74 @@ class VetalaHTMLParser(HTMLParser):
             
     def get_body_data(self):
         return self.all_body_data
+
+class ControlName(object):
+    
+    def __init__(self):
         
+        self.control_alias = 'CNT'
+        self.center_alias = 'C'
+        self.left_alias = 'L'
+        self.right_alias = 'R'
+        
+        self.control_order = ['Control Alias', 'Description', 'Number', 'Side']
+        
+        self.control_uppercase = True
+        
+    def set_control_alias(self, alias):
+        self.control_alias = str(alias)
+        
+    def set_left_alias(self, alias):    
+        self.left_alias = str(alias)
+    
+    def set_right_alias(self, alias):
+        self.right_alias = str(alias)
 
+    def set_center_alias(self, alias):
+        self.center_alias = str(alias)
+        
+    def set_uppercase(self, bool_value):
+        self.control_uppercase = bool_value
 
+    def set_control_order(self, list_value):
+        self.control_order = list_value
+        
+    def get_name(self, description, side = None):
+        
+        found = []
+        
+        if not self.control_order:
+            return
+        
+        for name in self.control_order:
+            
+            if name == 'Control Alias':
+                found.append( self.control_alias )
+            if name == 'Description':
+                found.append(description)
+            if name == 'Number':
+                found.append(str(1))
+            if name == 'Side':
+                
+                if is_left(side):
+                    found.append(self.left_alias)
+                    continue
+                if is_right(side):
+                    found.append(self.right_alias)
+                    continue
+                if is_center(side):
+                    found.append(self.center_alias)
+                    continue
+        
+        full_name = string.join(found, '_')
+        
+        
+        
+        if self.control_uppercase:
+            full_name = full_name.upper()
+        
+        return full_name
+        
 def initialize_env(name):
     """
     Initialize a new environment variable.
@@ -1761,6 +1826,30 @@ def error(*args):
         
     except:
         raise(RuntimeError)
+    
+
+#--- rigs
+
+def is_left(side):
+    
+    patterns = ['L','l','Left','left','lf']
+    
+    if str(side) in patterns:
+        return True
+    
+def is_right(side):
+    
+    patterns = ['R','r','Right','right','rt']
+    
+    if str(side) in patterns:
+        return True
+    
+    
+def is_center(side):
+    patterns = ['C','c','Center','ct', 'center', 'middle', 'm']
+    
+    if str(side) in patterns:
+        return True
     
 
 def split_side_negative_number(name):
