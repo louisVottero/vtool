@@ -1586,7 +1586,11 @@ class TransferWeight(object):
                 joint_value = joint_weight[joint]
                 value = weight_value * joint_value * weight_percent_change
                 
-                joint_index = joint_ids[joint]
+                
+                if joint_ids.has_key(joint):
+                    joint_index = joint_ids[joint]
+                else:
+                    vtool.util.warning('%s not used in new skin weights' % joint)
                 
                 cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
                 
@@ -3852,6 +3856,10 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
         str: If constrain = True, the name of the group above the sections. Otherwise return none.
     """
     
+    progress = core.ProgressBar('Split Mesh')
+    
+    progress.status('Split Mesh: Prepping for split.')
+    
     if constrain:
         group = cmds.group(em = True, n = core.inc_name('split_%s' % mesh))
     
@@ -3860,16 +3868,23 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
     
     index_face_map = get_faces_at_skin_influence(mesh, skin_deformer)
 
+    progress.set_count(len(index_face_map.keys()))
+
     cmds.hide(mesh)
     
     main_duplicate = cmds.duplicate(mesh)[0]
     attr.unlock_attributes(main_duplicate)
     
     #clean shapes
-    shapes = cmds.listRelatives(main_duplicate, shapes = True)
+    shapes = cmds.listRelatives(main_duplicate, shapes = True, f = True, ni = True)
     cmds.delete(shapes[1:])
-        
+    
+    
+    
+     
     for key in index_face_map:
+        
+        progress.status('Split Mesh: Working on face %s' % key)
         
         duplicate_mesh = cmds.duplicate(main_duplicate)[0]
         
@@ -3887,6 +3902,8 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
         
         influence = get_skin_influence_at_index(key, skin_deformer)
         
+        cmds.showHidden(duplicate_mesh)
+        
         if not constrain:
             cmds.parent(duplicate_mesh, influence)
         if constrain:
@@ -3897,6 +3914,12 @@ def split_mesh_at_skin(mesh, skin_deformer = None, vis_attribute = None, constra
         
         if vis_attribute:
             cmds.connectAttr(vis_attribute, '%s.visibility' % duplicate_mesh)
+    
+        progress.inc()
+    
+    cmds.delete(main_duplicate)
+    
+    progress.end()
     
     cmds.showHidden(mesh)
     
@@ -4458,7 +4481,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
         uv_space (bool): Wether to copy the skin weights in uv space rather than point space.
     '''
     
-    vtool.util.show('skinning %s' % target_mesh)
+    vtool.util.show('Skinning %s using weights from %s' % (target_mesh, source_mesh))
     
     skin = find_deformer_by_type(source_mesh, 'skinCluster')
     
@@ -5041,8 +5064,9 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
     except (RuntimeError):
         vtool.util.error( traceback.format_exc() )
-    
-    
+
+
+
 def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = True):
     """
     Create a delta following the equation:
