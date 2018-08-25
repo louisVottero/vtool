@@ -676,6 +676,9 @@ class VersionFile(object):
             if split_name[1] == 'json':
                 continue
             
+            if split_name[1] == 'default':
+                continue
+            
             if not len(split_name) == 2:
                 continue
             
@@ -1051,32 +1054,32 @@ class ControlNameFromSettingsFile(util.ControlName):
         if name == 'control_name_order':
             self.control_order = value
             if self._settings_inst:
-                self._settings_inst[name] = value
+                self._settings_inst.set(name, value)
         
         if name == 'control_alias':
             self.control_alias = str(value)
             if self._settings_inst:
-                self._settings_inst[name] = value
+                self._settings_inst.set(name, value)
                 
         if name == 'control_left':
             self.left_alias = value
             if self._settings_inst:
-                self._settings_inst[name] = value
+                self._settings_inst.set(name, value)
 
         if name == 'control_right':
             self.right_alias = value
             if self._settings_inst:
-                self._settings_inst[name] = value
+                self._settings_inst.set(name, value)
 
         if name == 'control_center':
             self.center_alias = value
             if self._settings_inst:
-                self._settings_inst[name] = value
+                self._settings_inst.set(name, value)
         
         if name == 'control_uppercase':
             self.control_uppercase = value
             if self._settings_inst:
-                self._settings_inst[name] = value
+                self._settings_inst.set(name, value)
 
 class FindUniquePath(util.FindUniqueString):
     
