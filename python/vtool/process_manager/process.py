@@ -642,7 +642,7 @@ class Process(object):
         
         return data_folder.folder_path
     
-    def import_data(self, name):
+    def import_data(self, name, sub_folder = None):
         """
         Convenience function which will run the import_data function found on the data_type instance for the specified data folder.
         
@@ -660,9 +660,12 @@ class Process(object):
             util.show('%s data does not exist in %s' % (name, self.get_name()) )
             return
         
-        
-        
+            
         data_folder = data.DataFolder(name, path)
+        
+        if sub_folder:
+            data_folder.set_sub_folder(sub_folder)
+        
         
         instance = data_folder.get_folder_data_instance()
         
@@ -671,7 +674,7 @@ class Process(object):
         
         
     
-    def open_data(self, name):
+    def open_data(self, name, sub_folder = None):
         path = self.get_data_path()
         
         data_folder_name = self.get_data_folder(name)
@@ -682,14 +685,37 @@ class Process(object):
             
         data_folder = data.DataFolder(name, path)
         
+        if sub_folder:
+            data_folder.set_sub_folder(sub_folder)
+        
         instance = data_folder.get_folder_data_instance()
         
         if hasattr(instance, 'open'):
-            
             instance.open()
-        if not hasattr(instance, 'open'):
-            util.warning('Could not open data %s in process %s.  No open option.' % (name, self.process_name))
+        else:
+            util.warning('Could not open data %s in process %s.  %s has no open function.' % (name, self.process_name, data_folder))
     
+    def reference_data(self, name, sub_folder = None):
+        path = self.get_data_path()
+        
+        data_folder_name = self.get_data_folder(name)
+        
+        if not util_file.is_dir(data_folder_name):
+            util.show('%s data does not exist in %s' % (name, self.get_name()) )
+            return
+            
+        data_folder = data.DataFolder(name, path)
+        
+        if sub_folder:
+            data_folder.set_sub_folder(sub_folder)
+        
+        instance = data_folder.get_folder_data_instance()
+        
+        if hasattr(instance, 'maya_reference_data'):
+            instance.maya_reference_data()
+        else:
+            util.warning('Could not reference data %s in process %s.  %s has no reference function.' % (name, self.process_name, data_folder))
+            
     def save_data(self, name, comment = ''):
         """
         Convenience function that tries to run the save function function found on the data_type instance for the specified data folder. Not all data type instances have a save function. 
@@ -876,6 +902,9 @@ class Process(object):
         path = util_file.join_path(self.get_code_path(), name)
         
         if not util_file.is_dir(path):
+            
+            util.warning('Could not find code file: %s' % name)
+            
             return
         
         code_name = util_file.get_basename(path)
@@ -1107,6 +1136,10 @@ class Process(object):
         self._setup_settings()
         return self.settings.get(name)
         
+    def get_control(self,description, side):
+        
+        pass
+        
     #--- options
     
     def has_options(self):
@@ -1153,7 +1186,13 @@ class Process(object):
         value = self.get_unformatted_option(name, group)
         
         if value == None:
-            util.warning('Option not accessed - Option: %s, Group: %s. Perhaps the option does not exist in the group.'  % (name, group))
+            
+            if self.has_option(name, group):
+                if not group:
+                    util.warning('Could not find option: %s' (name))
+                if group:
+                    util.warning('Could not find option: %s in group: %s' % (name, group))
+                        
         
         new_value = None
         
@@ -1173,6 +1212,21 @@ class Process(object):
         util.show('Accessed - Option: %s, Group: %s, value: %s' % (name, group, value))
         
         return value
+        
+    def has_option(self, name, group = None):
+        self._setup_options()
+        
+        if group:
+            name = '%s.%s' % (group, name)
+        if not group:
+            name = '%s' % name
+        
+        if self.option_settings.has_setting(name):
+            return True
+        else:
+            return False
+        
+        
         
     def get_options(self):
         
@@ -1196,29 +1250,6 @@ class Process(object):
         if self.option_settings:
             self.option_settings.clear()
         
-
-    def save_default_option_history(self):
-        option_file = self.get_option_file()
-        version_file = util_file.VersionFile(option_file)
-        version_file.set_version_folder_name('.backup/.option_versions')
-        return version_file
-        
-    def load_default_option_history(self):
-        option_file = self.get_option_file()
-        version_file = util_file.VersionFile(option_file)
-        version_file.set_version_folder_name('.backup/.option_versions')
-        return version_file
-
-
-    def get_option_history(self):
-        
-        option_file = self.get_option_file()
-        version_file = util_file.VersionFile(option_file)
-        version_file.set_version_folder_name('.backup/.option_versions')
-        return version_file
-        
-        
-    
     #--- manifest
         
     def get_manifest_folder(self):
@@ -1575,6 +1606,9 @@ class Process(object):
         Returns:
             str: The status from running the script. This includes error messages.
         """
+        
+        orig_script = script
+        
         util.start_temp_log()
         builtins = dir(__builtin__)
         
@@ -1607,14 +1641,13 @@ class Process(object):
         
         try:
             
-            if not script.find(':') > -1:
-                
+            if not util_file.is_file(script):
                 script = util_file.remove_extension(script)
-                
                 script = self.get_code_file(script)
-                
+            
             if not util_file.is_file(script):
                 self._reset_builtin(old_process, old_cmds, old_show, old_warning)
+                util.show('Could not find script: %s' % orig_script)
                 return
             
             auto_focus = False
@@ -1680,7 +1713,7 @@ class Process(object):
                     
                 util.error('%s\n' % status)
                 raise
-            
+        
         if init_passed:
             try:
                 
@@ -1785,7 +1818,7 @@ class Process(object):
         
         return status
 
-    def run(self):
+    def run(self, start_new = False):
         """
         Run all the scripts in the manifest, respecting their on/off state.
         
@@ -1796,8 +1829,9 @@ class Process(object):
         watch = util.StopWatch()
         watch.start(feedback = False)
         
-        if util.is_in_maya():
-            cmds.file(new = True, f = True)
+        if start_new:
+            if util.is_in_maya():
+                cmds.file(new = True, f = True)
             
         name = self.get_name()
         
@@ -1828,6 +1862,7 @@ class Process(object):
             
             state = states[inc]
             script = scripts[inc]
+            status = 'Skipped'
             
             check_script = script[:-3]
             
