@@ -9,6 +9,7 @@ import vtool.util
 import process
 
 from vtool import qt
+from vtool.qt_ui import BasicWidget
 
 class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
     
@@ -1541,8 +1542,7 @@ class MayaAttributesFileWidget(MayaDataFileWidget):
     def _build_widgets(self):
         super(MayaAttributesFileWidget, self)._build_widgets()
         
-        self.list = vtool.qt_ui.AddRemoveList()
-        self.save_widget.main_layout.addWidget(self.list)
+        #self.save_widget.main_layout.addWidget(self.list)
         
     
     def _define_data_class(self):
