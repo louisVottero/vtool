@@ -175,6 +175,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     show_options = qt_ui.create_signal()
     show_notes = qt_ui.create_signal()
     show_templates = qt_ui.create_signal()
+    show_settings = qt_ui.create_signal()
     selection_changed = qt_ui.create_signal()
     
     def __init__(self):
@@ -510,6 +511,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.show_options_action = self.context_menu.addAction('Show Options')
         self.show_notes_action = self.context_menu.addAction('Show Notes')
         self.show_templates_action = self.context_menu.addAction('Show Templates')
+        self.show_settings_action = self.context_menu.addAction('Show Settings')
         self.context_menu.addSeparator()
         browse_action = self.context_menu.addAction('Browse')
         refresh_action = self.context_menu.addAction('Refresh')
@@ -531,6 +533,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.show_options_action.triggered.connect(self._show_options)
         self.show_notes_action.triggered.connect(self._show_notes)
         self.show_templates_action.triggered.connect(self._show_templates)
+        self.show_settings_action.triggered.connect(self._show_settings)
         
     def _show_options(self):
         self.show_options.emit()
@@ -540,6 +543,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
     def _show_templates(self):
         self.show_templates.emit()
+    
+    def _show_settings(self):
+        self.show_settings.emit()
         
     def _new_process(self):
         self.add_process('')
