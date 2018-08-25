@@ -193,7 +193,7 @@ class ProgressBar(object):
         count (int): The number of items to iterate in the progress bar.
     """
     
-    def __init__(self, title, count):
+    def __init__(self, title, count = 0):
         if is_batch():
             self.title = title
             self.count = count
@@ -222,6 +222,9 @@ class ProgressBar(object):
         current_progress_bar = self
         
         self.inc_value = 0
+    
+    def set_count(self, int_value):
+        cmds.progressBar( self.progress_ui, edit = True, maxValue = int_value )
     
     def inc(self, inc = 1):
         """
@@ -664,10 +667,12 @@ def get_top_dag_nodes(exclude_cameras = True, namespace = None):
     
     if exclude_cameras:
         cameras = ['persp', 'top', 'front', 'side']
-        
+                
         for camera in cameras:
-            if camera in top_transforms:
+            try:
                 top_transforms.remove(camera)
+            except:
+                pass
     
     if namespace:
         
