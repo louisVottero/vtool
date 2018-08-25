@@ -164,6 +164,9 @@ class Process(object):
         
         #here temporarily until old paths are out of use... 
         #could take a long time.
+
+        if util_file.is_dir(self.get_code_path()):
+            return
         
         old_data_name = self.data_folder_name.replace('.', '_')
         old_code_name = self.code_folder_name.replace('.', '_')
@@ -171,8 +174,7 @@ class Process(object):
         old_data_path = util_file.join_path(path, old_data_name)
         old_code_path = util_file.join_path(path, old_code_name)
         
-        if util_file.is_dir(self.code_folder):
-            return
+
         
         if util_file.is_dir(old_data_path):
             util_file.rename(old_data_path, self.data_folder_name)
