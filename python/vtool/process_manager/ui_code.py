@@ -326,6 +326,8 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         if not code_edit_widget:
             return
         
+        
+        
         filepath = vtool.util_file.get_dirname(code_edit_widget.filepath)
         
         self.save_file.set_directory(filepath)
@@ -486,8 +488,6 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         self.setSizePolicy(policy)
         
         self.exteranl_code_libarary = None
-        
-        
         
     def _define_main_layout(self):
         return qt.QVBoxLayout()
@@ -1793,9 +1793,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
 
     def run_current_item(self, external_code_library = None):
         
-
-        
-        
         vtool.util.set_env('VETALA RUN', True)
         vtool.util.set_env('VETALA STOP', False)
         
@@ -1818,8 +1815,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     
                 if value == None:
                     return
-
-
+                
         watch = vtool.util.StopWatch()
         watch.start(feedback = False)
 
@@ -1878,12 +1874,15 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                                 child_item = item.child(inc)
                                 
                                 self._run_item(child_item, process_tool)
-
+                                
+                                
+                                
                             item.setExpanded(False)
                     
                     
                     if name == last_name:
                         set_end_states = True
+        
         
         vtool.util.set_env('VETALA RUN', False)
         vtool.util.set_env('VETALA STOP', False)
