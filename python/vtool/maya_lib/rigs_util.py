@@ -1458,7 +1458,12 @@ class MirrorControlKeyframes():
         
         found_keyframes = self._get_output_keyframes()
         
+        
+        
         for keyframe in found_keyframes:
+            
+            vtool.util.show('Working to mirror keyframe: %s' % keyframe)
+            
             cmds.dgeval(keyframe)
             new_keyframe = cmds.duplicate(keyframe)[0]
             
@@ -1473,6 +1478,8 @@ class MirrorControlKeyframes():
                 cmds.delete(new_keyframe)
                 vtool.util.warning('Keyframe %s has no outputs to mirror. Skipping' % keyframe)
                 continue
+            
+            
             
             for inc in range(0, len(mapped_output), 2):
                 
@@ -1490,7 +1497,10 @@ class MirrorControlKeyframes():
                 if not attr.get_inputs(mapped_output[inc+1]):
                     
                     if not do_fix_translates:
-                        cmds.connectAttr(new_output, mapped_output[inc+1], f = True)
+                        try:
+                            cmds.connectAttr(new_output, mapped_output[inc+1], f = True)
+                        except:
+                            vtool.util.warning('Could not connect %s into %s' % (new_output, mapped_output[inc+1]))
                     if do_fix_translates:
                         
                         attr.connect_multiply(new_output, mapped_output[inc+1], -1)
@@ -1789,6 +1799,7 @@ def create_sparse_joints_on_curve(curve, joint_count, description):
         percent += segment
 
     return joints
+
 @core.undo_chunk
 def create_joints_on_curve(curve, joint_count, description, attach = True, create_controls = False):
     """
@@ -2799,7 +2810,7 @@ def fix_sub_controls(controls = None):
         outputs = attr.get_attribute_outputs('%s.subVisibility' % control, node_only=True)
         outputs.sort()
         
-        scale_offset = .9
+        scale_offset = .85
         
         for output_node in outputs:
             
