@@ -327,7 +327,7 @@ class Connections(object):
     
 class TransferConnections(object):
     
-    def transfer_keyable(self, source_node, target_node, prefix = None):
+    def transfer_keyable(self, source_node, target_node, prefix = None, disconnect_source = False):
         """
         Create the keyable attributes on the target node found on source_node.
         
@@ -362,6 +362,9 @@ class TransferConnections(object):
             new_var.set_node(target_node)
             new_var.create()
             new_var.connect_in(output_attr)
+            
+            if disconnect_source:
+                disconnect_attribute(input_attr)
             
 class LockState(object):
     """
@@ -775,6 +778,7 @@ class OrientJointAttributes(object):
         Delete the attributes off of the joint set with set_joint.
         """
         self._delete_attributes()
+        
 
 def get_variable_instance(attribute):
     """
@@ -863,9 +867,9 @@ class MayaVariable(vtool.util.Variable):
         data_type = self._get_variable_data_type()
         return '%s = self.variable_type)' %  data_type
 
-    def _create_attribute(self):
+    def _create_attribute(self, exists = False):
         
-        if cmds.objExists(self._get_node_and_variable()):
+        if exists:
             return
         
         start_command = self._command_create_start()
@@ -954,7 +958,6 @@ class MayaVariable(vtool.util.Variable):
         
         self._set_keyable_state()
         self._set_lock_state()
-        self._set_value()
 
     def exists(self):
         """
@@ -1123,11 +1126,10 @@ class MayaVariable(vtool.util.Variable):
                 
                 value = self.get_value()
 
-        self._create_attribute()
+        self._create_attribute(exists = exists)
         self._update_states()
-        
-        if exists:            
-            self.set_value( value )
+               
+        self.set_value( value )
         
     def delete(self, node = None):
         """
@@ -2380,6 +2382,14 @@ def get_color_of_side(side = 'C', sub_color = False):
         int: A color index for override color.
     """
     
+    if vtool.util.is_left(side):
+        side = 'L'
+    if vtool.util.is_right(side):
+        side = 'R'
+    if vtool.util.is_center(side):
+        side = 'C'
+    
+    
     if side == None:
         side = 'C'
     
@@ -2847,12 +2857,48 @@ def connect_visibility(attribute_name, target_node, value = 1):
         
     for thing in nodes: 
         
-        if cmds.isConnected(attribute_name, '%s.visibility' % thing):
+        if not is_connected('%s.visibility' % thing):
+            cmds.connectAttr(attribute_name, '%s.visibility' % thing)
+        else:
             vtool.util.warning( attribute_name + ' and ' + thing + '.visibility are already connected')
         
-        if not cmds.isConnected(attribute_name, '%s.visibility' % thing):
-            cmds.connectAttr(attribute_name, '%s.visibility' % thing)
+            
+
+def connect_visibility_and_children(attribute_name, target_node, value = 1):
+    """
+    Connect the visibility into an attribute
+    
+    Args:
+        attribute_name (str): The node.attribute name of an attribute. Does not have to exists. Will be created if doesn't exist.
+        target_node (str): The target node to connect attribute_name into.
+        value (bool): 0 or 1 whether you want the visibility on or off by default.
+    """
+    nodes = vtool.util.convert_to_sequence(target_node)
+    
+    if not cmds.objExists(attribute_name):
+        split_name = attribute_name.split('.')
+        cmds.addAttr(split_name[0], ln = split_name[1], at = 'bool', dv = value,k = True)
         
+    for thing in nodes: 
+        
+        
+        
+        if not is_connected( '%s.visibility' % thing):
+            cmds.connectAttr(attribute_name, '%s.visibility' % thing)
+        else:
+            vtool.util.warning( attribute_name + ' and ' + thing + '.visibility are already connected')
+
+        rels = cmds.listRelatives(thing, ad = True, type = 'transform', f = True)
+
+        if not rels:
+            return
+
+        for rel in rels:
+            
+                try:
+                    cmds.connectAttr(attribute_name, '%s.visibility' % rel)
+                except:
+                    pass
 
 def connect_plus_and_value(source_attribute, target_attribute, value):
     
@@ -2865,6 +2911,8 @@ def connect_plus_and_value(source_attribute, target_attribute, value):
     cmds.setAttr('%s.input1D[1]' % plus, value)
     
     cmds.connectAttr('%s.output1D' % plus, target_attribute, f = True)
+    
+    
     
     return plus
 
@@ -3157,7 +3205,65 @@ def connect_equal_condition(source_attribute, target_attribute, equal_value):
     connect_plus('%s.outColorR' % condition, target_attribute)
     
     return condition
+
+def connect_greater_than_condition(source_attribute, target_attribute, greater_than_value):
+    """
+    Connect source_attribute into target_attribute with a condition node inbetween.
+    
+    Args:
+        source_attribute (str): The node.attribute name of an attribute.
+        target_attribute (str): The node.attribute name of an attribute.
+        equal_value (float): The value the condition should be equal to, in order to pass 1. 0 otherwise.
+        Good when hooking up enums to visibility.
         
+    Returns:
+        str: The name of the condition node
+    """
+    source_attribute_name = source_attribute.replace('.', '_')
+    condition = cmds.createNode('condition', n = 'condition_%s' % source_attribute_name)
+    
+    cmds.setAttr('%s.operation' % condition, 2)
+    
+    cmds.connectAttr(source_attribute, '%s.firstTerm' % condition)
+    cmds.setAttr('%s.secondTerm' % condition, greater_than_value)
+    
+    cmds.setAttr('%s.colorIfTrueR' % condition, 1)
+    cmds.setAttr('%s.colorIfFalseR' % condition, 0)
+    
+    connect_plus('%s.outColorR' % condition, target_attribute)
+    
+    return condition
+        
+
+def connect_less_than_condition(source_attribute, target_attribute, less_than_value):
+    """
+    Connect source_attribute into target_attribute with a condition node inbetween.
+    
+    Args:
+        source_attribute (str): The node.attribute name of an attribute.
+        target_attribute (str): The node.attribute name of an attribute.
+        equal_value (float): The value the condition should be equal to, in order to pass 1. 0 otherwise.
+        Good when hooking up enums to visibility.
+        
+    Returns:
+        str: The name of the condition node
+    """
+    source_attribute_name = source_attribute.replace('.', '_')
+    condition = cmds.createNode('condition', n = 'condition_%s' % source_attribute_name)
+    
+    cmds.setAttr('%s.operation' % condition, 4)
+    
+    cmds.connectAttr(source_attribute, '%s.firstTerm' % condition)
+    cmds.setAttr('%s.secondTerm' % condition, less_than_value)
+    
+    cmds.setAttr('%s.colorIfTrueR' % condition, 1)
+    cmds.setAttr('%s.colorIfFalseR' % condition, 0)
+    
+    connect_plus('%s.outColorR' % condition, target_attribute)
+    
+    return condition
+        
+
 def create_blend_attribute(source, target, min_value = 0, max_value = 10, value = 0):
     """
     Create an attribute to hook into a blendshape.
@@ -3241,6 +3347,13 @@ def disconnect_attribute(attribute):
     if connection:
         
         cmds.disconnectAttr(connection, attribute)
+
+def disconnect_scale(transform_node):
+    
+    disconnect_attribute('%s.scale' % transform_node)
+    disconnect_attribute('%s.scaleX' % transform_node)
+    disconnect_attribute('%s.scaleY' % transform_node)
+    disconnect_attribute('%s.scaleZ' % transform_node)
 
 def get_indices(attribute):
     """
