@@ -4,6 +4,7 @@ from vtool import qt_ui, qt
 from vtool import util_file
 from vtool import util
 
+import string
     
 class SettingsWidget(qt_ui.BasicWidget):
     
@@ -46,7 +47,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         option_scroll_widget = self._build_option_widgets()
 
         self.tab_widget.addTab(self.project_directory_widget, 'Project')
-        self.tab_widget.addTab(option_scroll_widget, 'Options')
+        self.tab_widget.addTab(option_scroll_widget, 'Settings')
         self.tab_widget.addTab(self.code_directory_widget, 'External Code')
         self.tab_widget.addTab(self.template_directory_widget, 'Template')
         
@@ -67,7 +68,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         self.options_widget.main_layout.addWidget(self.editor_directory_widget)
         
-        process_group = qt.QGroupBox('Process Settings')
+        process_group = qt.QGroupBox('Process')
         group_layout = qt.QVBoxLayout()
         process_group.setLayout(group_layout)
         
@@ -98,7 +99,6 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.options_widget.main_layout.addWidget(process_group)
         
         self.code_tab_group = CodeTabGroup()
-        
         self.shotgun_group = ShotgunGroup()
         
         self.options_widget.main_layout.addWidget(self.code_tab_group)
@@ -215,7 +215,7 @@ class SettingsWidget(qt_ui.BasicWidget):
 class CodeTabGroup(qt_ui.Group):
     
     def __init__(self):
-        super(CodeTabGroup, self).__init__('Code Tab Settings')
+        super(CodeTabGroup, self).__init__('Code Tab')
         
     def _build_widgets(self):
         
@@ -223,6 +223,12 @@ class CodeTabGroup(qt_ui.Group):
         self.open_tab = qt.QRadioButton("Open In Tab")
         self.open_new = qt.QRadioButton("Open In New Window")
         self.open_external = qt.QRadioButton("Open In External")
+        
+        
+        self.pop_save = qt_ui.GetCheckBox('Ctrl+S code save pop up for comment.')
+        self.pop_save.set_state(True)
+        self.pop_save.check_changed.connect(self._set_pop_save)
+        
         
         self.open_tab.setChecked(True)
         
@@ -238,6 +244,8 @@ class CodeTabGroup(qt_ui.Group):
         self.main_layout.addWidget(self.open_tab)
         self.main_layout.addWidget(self.open_new)
         self.main_layout.addWidget(self.open_external)
+        self.main_layout.addSpacing(12)
+        self.main_layout.addWidget(self.pop_save)
         
     def _get_manifest_double_click(self):
         value = self.settings.get('manifest_double_click')
@@ -248,6 +256,11 @@ class CodeTabGroup(qt_ui.Group):
                 self.open_new.setChecked(True)
             if value == 'open external':
                 self.open_external.setChecked(True)
+        
+    def _get_popup_save(self):
+        value = self.settings.get('code popup save')
+        
+        self.pop_save.set_state(value)
         
     def _set_manifest_double_click(self):
         
@@ -260,12 +273,17 @@ class CodeTabGroup(qt_ui.Group):
             
         self.settings.set('manifest_double_click', value)
         
+    def _set_pop_save(self):
+        
+        self.settings.set('code popup save', self.pop_save.get_state())
+        
     def set_settings(self, settings):
         
         self.settings = settings
         
         self._get_manifest_double_click()
-        
+        self._get_popup_save()        
+       
 class ShotgunGroup(qt_ui.Group):
     
     def __init__(self):
