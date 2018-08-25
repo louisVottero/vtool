@@ -1,5 +1,4 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
-import traceback
 
 from vtool import qt
 
@@ -5025,6 +5024,170 @@ class AddRemoveDirectoryList(AddRemoveList):
         
         if item:
             item.setSelected(True)
+    
+class CompactHistoryWidget(BasicWidget):
+    
+    forward_socket = create_signal(object)
+    back_socket = create_signal(object)
+    load_default_socket = create_signal(object)
+    
+    def __init__(self):
+        super(CompactHistoryWidget, self).__init__()
+        
+        self.current_number = None
+        self.version_inst = None
+
+    def _define_main_layout(self):
+        return qt.QHBoxLayout()
+        
+    def _build_widgets(self):
+        
+        self.load_default = qt.QPushButton('Default')
+        self.back_button = qt.QPushButton('<')
+        self.forward_button = qt.QPushButton('>')
+        save = qt.QPushButton('Save')
+        save_default = qt.QPushButton('Save Default')
+        
+        save.clicked.connect(self.save_command)
+        self.back_button.clicked.connect(self.back_command)
+        self.forward_button.clicked.connect(self.forward_command)
+        self.load_default.clicked.connect(self.load_default_command)
+        save_default.clicked.connect(self.save_default_command)
+        
+        self.back_button.setMaximumWidth(20)
+        self.forward_button.setMaximumWidth(20)
+        self.load_default.setMaximumWidth(50)
+        save.setMaximumWidth(40)
+        save_default.setMaximumWidth(50)
+        
+        self.setMaximumHeight(20)
+        self.setMaximumWidth(270)
+        self.main_layout.setContentsMargins(1,1,1,1)
+        
+        save_default.setMinimumWidth(80)
+        
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
+        
+        self.main_layout.addWidget(self.back_button)
+        self.main_layout.addWidget(self.forward_button)
+        self.main_layout.addWidget(self.load_default)
+        self.main_layout.addSpacing(30)
+        self.main_layout.addWidget(save)
+        self.main_layout.addWidget(save_default)
+        
+        self.back_button.hide()
+        self.forward_button.hide()
+        self.load_default.hide()
+    
+    def save_default(self):
+        self.load_default.show()
+    
+    def load_default(self):
+        pass
+        
+    def set_history(self, version_inst):
+        self.version_inst = version_inst
+        
+        if self.version_inst.has_versions():
+            self.set_at_end()
+            
+    def set_at_end(self):
+        self.back_button.show()
+        self.forward_button.hide()
+    
+    def set_at_start(self):
+        self.forward_button.show()
+        self.back_button.hide()
+        
+    def set_current_number(self, number):
+        self.current_number = number
+    
+    def save_command(self):
+        
+        self.back_button.show()
+        
+        self.version_inst.save() 
+        
+        self.save_history.emit()
+
+    def back_command(self):
+        
+        number_list = self.version_inst.get_version_numbers()
+        
+        if not number_list:
+            self.back_button.hide()
+            self.forward_button.hide()
+            return
+        
+        back_number = None
+        
+        if not self.current_number:
+            self.set_current_number(number_list[-1])
+            back_number = number_list[-1]
+            
+        else:
+            
+            if len(number_list) == 1:
+                back_number = number_list[0]
+            
+            if len(number_list) > 1:
+                
+                number_list.reverse()
+                
+                inc = 0
+                for inc in range(0, (len(number_list)-1)):
+                    if number_list[inc] == self.current_number:
+                        back_number = number_list[inc+1]
+                
+                if back_number != None:
+                    self.current_number = back_number
+                    self.forward_button.show()
+                if back_number == None:
+                    self.forward_button.show()
+                    self.back_button.hide()
+                    return
+        
+        version_file = self.version_inst.get_version_path(back_number)
+        
+        self.back_socket.emit(version_file)
+        
+        return version_file
+    
+    def forward_command(self):
+        
+        number_list = self.version_inst.get_version_numbers()
+        
+        if not number_list:
+            return
+        
+        if len(number_list) == 1:
+            self.forward_button.hide()
+            return
+        
+        if self.current_number != None and self.current_number != number_list[-1]:
+            number = self.current_number + 1
+            self.set_current_number(number)
+            self.back_button.show()
+        else:
+            self.forward_button.hide()
+            
+        version_file = self.version_inst.get_version_path(self.current_number)
+        
+        self.forward_socket.emit(version_file)
+        
+        return version_file       
+    
+    def load_default_command(self):
+        
+        filename = self.version_inst.get_default()
+        
+        self.load_default_socket.emit(filename)
+    
+    def save_default_command(self):
+        
+        self.version_inst.save_default()
+        
+        self.load_default.show()
     
 #--- Custom Painted Widgets
 
