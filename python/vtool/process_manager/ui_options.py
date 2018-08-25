@@ -5,19 +5,17 @@ import string
 from vtool import qt_ui, qt
 from vtool.process_manager import ui_code
 from vtool import util
-from vtool import util_file
 
 import vtool.process_manager.process as process_module
+#from vtool.process_manager import process
 
 
 class ProcessOptionsWidget(qt_ui.BasicWidget):
     
+    #toggle_alignment = qt_ui.create_signal()
     edit_mode_change = qt_ui.create_signal(object)
     
     def __init__(self):
-        self.directory = None
-        self.process_inst = None
-        
         super(ProcessOptionsWidget, self).__init__()
         
         policy = self.sizePolicy()
@@ -26,6 +24,9 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         self.main_layout.setContentsMargins(1,1,1,1)
         self.setSizePolicy(policy)
         
+        self.directory = None
+        
+
     def _build_widgets(self):
         
         button_layout = qt.QHBoxLayout()
@@ -35,7 +36,6 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         self.edit_mode_button.setMaximumWidth(100)
         self.edit_mode_button.setMaximumHeight(20)
         self.edit_mode_button.setMaximumWidth(40)
-        
         
         
         self.option_scroll = ProcessOptionScroll()
@@ -51,55 +51,14 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
         self.edit_mode_button.toggled.connect(self._edit_click)
         
-        history_widget = self._create_history_widget()
-        
-        button_layout.addWidget(history_widget)
-        button_layout.addSpacing(10)
         button_layout.addWidget(self.edit_mode_button, alignment = qt.QtCore.Qt.AlignRight)
         
         self.main_layout.addLayout(button_layout)
         self.main_layout.addWidget(self.option_scroll)
         self.main_layout.addWidget(self.edit_options)
     
-    def _create_history_widget(self):
-        
-        history_widget = qt_ui.CompactHistoryWidget()
-        
-        history_widget.back_socket.connect(self._set_current_option_history)
-        history_widget.forward_socket.connect(self._set_current_option_history)
-        history_widget.load_default_socket.connect(self._load_option_default)
-        
-        self.history_widget = history_widget
-        
-        if self.process_inst:
-            version_history = self.process_inst.get_option_history()
-            self.history_widget.set_history(version_history)
-        
-        
-        return history_widget
-    
-    def _set_histroy(self):
-        if self.process_inst:
-            version_history = self.process_inst.get_option_history()
-            self.history_widget.set_history(version_history)
-    
-    def _set_current_option_history(self, version_file):
-        
-        if not self.history_widget:
-            return
-        
-        if version_file:
-            self.option_palette.set_options_file(version_file)
-            
-    def _load_option_default(self, default_version_file):
-        
-        if not self.history_widget:
-            return
-        
-        if default_version_file:
-            self.option_palette.set_options_file(default_version_file)
-            
     def _edit_click(self, bool_value):
+        
         
         self._edit_activate(bool_value)
         self.edit_mode_change.emit(bool_value)
@@ -116,21 +75,16 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         if bool_value == False:
             self.option_palette.clear_selection()
     
+    #def _emit_alignment_toggle(self):
+    #    self.toggle_alignment.emit()
+        
     def set_directory(self, directory):
         
         if directory == None:
             raise
         
-        
-        process_inst = process_module.Process()
-        process_inst.set_directory(directory)
-        
-        self.process_inst = process_inst
-        
-        self._set_histroy()
-        
         self.directory = directory
-        self.option_palette.set_process(process_inst)
+        self.option_palette.set_directory(directory)
         
     def has_options(self):
         
@@ -914,39 +868,27 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self._write_options(False)
         
-    def set_process(self, process_inst):
+    def set_directory(self, directory):
         
-        if not process_inst:
+        if not directory:
             self.directory = None
             self.process_inst = None
             
             self.clear_widgets()
-        
-        if process_inst:
             
-            self.directory = process_inst.directory
+        if directory:
+            
+            self.directory = directory
+            
+            process_inst = process_module.Process()
+            process_inst.set_directory(directory)
             
             self.process_inst = process_inst
                         
             options = process_inst.get_options()
             
             self._load_widgets(options)
-    
-    def set_options_file(self, options_filename):
-        
-        path = util_file.get_dirname(options_filename)
-        filename = util_file.get_basename(options_filename)
-        
-        util_file.copy_file(options_filename, util_file.join_path(path, 'version.json'))
-        options = util_file.SettingsFile()
             
-        
-            
-        options.set_directory(path, filename)
-        
-        option_settings = options.get_settings()
-        
-        self._load_widgets(option_settings)
 
     def get_children(self):
         
