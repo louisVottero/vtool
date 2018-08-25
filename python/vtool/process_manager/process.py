@@ -123,6 +123,7 @@ class Process(object):
     description = 'process'
     data_folder_name = '.data'
     code_folder_name = '.code'
+    backup_folder_name = '.backup'
     process_data_filename = 'manifest.data'
     
     def __init__(self, name = None):
@@ -170,6 +171,9 @@ class Process(object):
         old_data_path = util_file.join_path(path, old_data_name)
         old_code_path = util_file.join_path(path, old_code_name)
         
+        if util_file.is_dir(self.code_folder):
+            return
+        
         if util_file.is_dir(old_data_path):
             util_file.rename(old_data_path, self.data_folder_name)
             
@@ -186,6 +190,7 @@ class Process(object):
             
             util_file.create_dir(self.data_folder_name, path)
             code_folder = util_file.create_dir(self.code_folder_name, path)
+            util_file.create_dir(self.backup_folder_name, path)
             
             manifest_folder = util_file.join_path(code_folder, 'manifest')
             if not util_file.is_dir(manifest_folder):
@@ -262,6 +267,7 @@ class Process(object):
         """ 
         self.directory = directory
         
+        util_file.create_dir(self.backup_folder_name ,self.get_path())
         
     def set_external_code_library(self, directory):
         """
@@ -1190,6 +1196,29 @@ class Process(object):
         if self.option_settings:
             self.option_settings.clear()
         
+
+    def save_default_option_history(self):
+        option_file = self.get_option_file()
+        version_file = util_file.VersionFile(option_file)
+        version_file.set_version_folder_name('.backup/.option_versions')
+        return version_file
+        
+    def load_default_option_history(self):
+        option_file = self.get_option_file()
+        version_file = util_file.VersionFile(option_file)
+        version_file.set_version_folder_name('.backup/.option_versions')
+        return version_file
+
+
+    def get_option_history(self):
+        
+        option_file = self.get_option_file()
+        version_file = util_file.VersionFile(option_file)
+        version_file.set_version_folder_name('.backup/.option_versions')
+        return version_file
+        
+        
+    
     #--- manifest
         
     def get_manifest_folder(self):
