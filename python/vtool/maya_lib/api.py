@@ -10,8 +10,8 @@ if vtool.util.is_in_maya():
     import maya.OpenMaya as OpenMaya
     import maya.OpenMayaAnim as OpenMayaAnim
     import maya.OpenMayaUI as OpenMayaUI
-
-
+    
+    import maya.api.OpenMaya as om
 
 
 allow_save = False
@@ -101,6 +101,17 @@ def set_current_camera(camera_name):
     view.setCamera(cam)
     
     cmds.refresh()
+
+
+def get_distance(three_value_list1, three_value_list2 ):
+    
+    vector1 = three_value_list1
+    vector2 = three_value_list2
+
+    mp1 = om.MPoint(vector1[0],vector1[1],vector1[2])
+    mp2 = om.MPoint(vector2[0],vector2[1],vector2[2])
+    
+    return mp1.distanceTo(mp2)
 
 class ApiObject(object):
     """
