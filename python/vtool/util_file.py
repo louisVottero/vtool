@@ -323,43 +323,11 @@ class VersionFile(object):
             self.version_name = 'version'
             self.version_folder = None
             self.updated_old = False
-            
-            #this isn't needed any more.
-            #self._handle_old_version()
         
-    def _handle_old_version(self):
+    def _prep_directories(self):
+        self._create_version_folder()
+        self._create_comment_file()
         
-        old_dir_name = join_path(self.filepath, 'version')
-        
-        if is_dir(old_dir_name):
-            
-            files = get_files(old_dir_name)
-            
-            found = False
-            
-            for filename in files:
-                if filename.startswith(self.version_name):
-                    found = True
-                    break
-            
-            if not found:
-                folders = get_folders(old_dir_name)
-                
-                for folder in folders:
-                    if folder.startswith(self.version_name):
-                        found = True
-                        break
-            
-            if found:
-                
-                version_folder = self._get_version_folder()
-                
-                if is_dir(version_folder):
-                    rename(old_dir_name, '.old.version')
-                if not is_dir(version_folder):
-                    rename(old_dir_name, self.version_folder_name)
-                    
-                self.updated_old = True
         
     def _create_version_folder(self):
         
@@ -373,6 +341,14 @@ class VersionFile(object):
         path = join_path(self.version_folder, self.version_name + '.1')
         
         return inc_path_name(path)
+        
+    def _default_version_file_name(self):
+        
+        print 'version info', self.version_folder, self.version_name
+        
+        path = join_path(self.version_folder, self.version_name + '.default')
+        
+        return path
         
     def _get_version_path(self, version_int):
         path = join_path(self._get_version_folder(), self.version_name + '.' + str(version_int))
@@ -404,6 +380,18 @@ class VersionFile(object):
             
         return filepath
             
+    def _save(self, filename):
+        
+        print 'current path', self.filepath
+        
+        self._create_version_folder()
+        self._create_comment_file()
+        
+        if is_dir(self.filepath):
+            copy_dir(self.filepath, filename)
+        if is_file(self.filepath):
+            copy_file(self.filepath, filename)
+  
     def save_comment(self, comment = None, version_file = None, ):
         """
         Save a comment to a log file.
@@ -441,22 +429,33 @@ class VersionFile(object):
             str: The new version file name
         """
         
-        comment.replace('\n', '   ')
-        comment.replace('\r', '   ')
+        self._prep_directories()
         
-        self._create_version_folder()
-        self._create_comment_file()
+        if not comment == None:
+            comment.replace('\n', '   ')
+            comment.replace('\r', '   ')
+        if comment == None:
+            comment = ' '
         
         inc_file_name = self._increment_version_file_name()
         
-        if is_dir(self.filepath):
-            copy_dir(self.filepath, inc_file_name)
-        if is_file(self.filepath):
-            copy_file(self.filepath, inc_file_name)
+        self._save(inc_file_name, comment)
             
         self.save_comment(comment, inc_file_name)
         
         return inc_file_name
+    
+    def save_default(self):
+        
+        self._prep_directories()
+        
+        filename = self._default_version_file_name()
+        
+        print 'default path', filename
+        
+        self._save(filename)
+        
+        return filename
     
     def has_versions(self):
         
@@ -467,6 +466,17 @@ class VersionFile(object):
         
         if is_dir(version_folder):
             return True
+        
+    def get_count(self):
+        
+        versions = self.get_version_numbers()
+        
+        if versions:
+            return len(versions)
+        else:
+            return 0
+        
+        
         
     def set_version_folder(self, folder_path):
         """
@@ -667,13 +677,18 @@ class VersionFile(object):
             
             split_name = filepath.split('.')
             
+            if split_name[1] == 'json':
+                continue
+            
             if not len(split_name) == 2:
                 continue
             
             number = int(split_name[1])
             
             number_list.append(number)
-            
+        
+        number_list.sort()
+         
         return number_list
     
     def get_versions(self, return_version_numbers_also = False):
@@ -742,7 +757,11 @@ class VersionFile(object):
         latest_version = versions[-1]
         
         return join_path(self.filepath, '%s/%s' % (self.version_folder_name, latest_version))
-       
+
+    def get_default(self):
+        filename = self._default_version_file_name()
+        
+        return filename
        
 class SettingsFile(object):
     
@@ -2257,14 +2276,12 @@ def delete_dir(name, directory = None):
     
     util.clean_file_string(name)
     
-    full_path = join_path(directory, name)
+    full_path = name
+    
+    if directory:
+        full_path = join_path(directory, name)
     
     if not is_dir(full_path):
-        
-        #in case a directory was passed to the name
-        if is_dir(name):
-            shutil.rmtree(name, onerror = delete_read_only_error)  
-            return name
             
         util.show('%s was not deleted. It is not a folder.' % full_path)
         
