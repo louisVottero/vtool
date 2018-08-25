@@ -147,7 +147,21 @@ class DataFolder(util_file.FileManager):
                 return
         
         return folder
+    
+    def set_sub_folder(self, name):
         
+        if not name:
+            return
+        
+        if not self.settings:
+            self._load_folder()
+        
+        self.settings.set('sub_folder', name)
+        
+        sub_folder = util_file.join_path(self.folder_path, '.sub/%s' % name)
+        
+        util_file.create_dir(sub_folder)
+            
     def get_folder_data_instance(self):
         
         if not self.settings:
@@ -561,7 +575,8 @@ class ControlCvData(MayaCustomData):
         library.set_directory(directory)
         
         if filename:
-            library.set_active_library(name, skip_extension= True)
+            
+            library.set_active_library(name, skip_extension= False)
         if not filename:
             library.set_active_library(name)
             
@@ -598,7 +613,7 @@ class ControlCvData(MayaCustomData):
         for control in controls:
             
             library.add_curve(control)
-            
+        
         filepath = library.write_data_to_file()
         
         
@@ -735,15 +750,10 @@ class ControlColorData(MayaCustomData):
                         if type(main_color) == list:
                             cmds.setAttr('%s.overrideColor' % curve, main_color[0])
                             cmds.setAttr('%s.overrideRGBColors' % curve, main_color[2])
-                            if len(main_color[1]) == 1:
-                                cmds.setAttr('%s.overrideColorRGB' % curve, *main_color[1][0])
-                            if len(main_color[1]) > 1:
-                                cmds.setAttr('%s.overrideColorRGB' % curve, *main_color[1])
-                                
-                        if main_color[2]:
-                            util.show('%s color of RGB %s' % (maya_lib.core.get_basename(curve), main_color[1][0]))
-                        else:
-                            util.show('%s color of Index %s' % (maya_lib.core.get_basename(curve), main_color[0]))
+                            cmds.setAttr('%s.overrideColorRGB' % curve, main_color[1])
+                            
+                        util.show('Set color of %s on %s' % (main_color, maya_lib.core.get_basename(curve)))
+                    
             if sub_color:
                 shapes = maya_lib.core.get_shapes(curve)
                 inc = 0
@@ -765,17 +775,11 @@ class ControlColorData(MayaCustomData):
                         if type(sub_color[inc]) != list:
                             cmds.setAttr('%s.overrideColor' % shape, sub_color[inc])
                         if type(sub_color[inc]) == list:
-                            cmds.setAttr('%s.overrideColor' % shape, sub_color[inc][0])
-                            cmds.setAttr('%s.overrideRGBColors' % shape, sub_color[inc][2])
-                            if len(sub_color[inc][1]) == 1:
-                                cmds.setAttr('%s.overrideColorRGB' % shape, *sub_color[inc][1][0])
-                            if len(sub_color[inc][1]) > 1:
-                                cmds.setAttr('%s.overrideColorRGB' % shape, *sub_color[inc][1])
+                            cmds.setAttr('%s.overrideColor' % shape, sub_color[0][0])
+                            cmds.setAttr('%s.overrideRGBColors' % shape, sub_color[0][2])
+                            cmds.setAttr('%s.overrideColorRGB' % shape, sub_color[0][1])
                             
-                        if sub_color[inc][2]:
-                            util.show('%s color of RGB %s' % (maya_lib.core.get_basename(shape), sub_color[inc][1][0]))
-                        else:
-                            util.show('%s color of Index %s' % (maya_lib.core.get_basename(shape), sub_color[inc][0]))
+                        util.show('Set color of %s on %s' % (sub_color[inc], maya_lib.core.get_basename(shape)))
                     
                     inc+=1
         except:
@@ -991,191 +995,250 @@ class SkinWeightData(MayaCustomData):
             util.warning('No mesh folders found in skin data.')
             return
         
+        mesh_dict = {}
+        found_meshes = {}
+        
+        print 'folders', folders
+        
         for folder in folders:
             
-            util.show('Importing weights on %s' % folder)
-            
             mesh = folder
-
-            folder_path = util_file.join_path(path, folder)
-            orig_mesh = self._import_ref_obj(folder_path)
-            transfer_mesh = None
             
-            if orig_mesh:# and cmds.objExists(orig_mesh):
-                if cmds.objExists(mesh):
-                    if maya_lib.core.has_shape_of_type(mesh, 'mesh'):
-                        mesh_match = maya_lib.geo.is_mesh_compatible(orig_mesh, mesh)
-                        
-                        if not mesh_match:
-                            transfer_mesh = mesh
-                            mesh = orig_mesh
-                        if mesh_match:
-                            cmds.delete(orig_mesh)
+            if folder.find('-') > -1:
+                mesh = mesh.replace('-', ':')
             
-            
-                if not cmds.objExists(mesh):
+            if folder.find('.') > -1:
+                mesh = folder.replace('.', '|')
                 
-                    if orig_mesh:
-                        cmds.delete(orig_mesh)
-                    #add a setting to make loading in the skinned mesh an option when one doesn't exist. Code below just needs to rename orig_mesh to mesh for this to work, and remove the 2 lines above
-                    #cmds.rename(orig_mesh, mesh)
-            
+                mesh = '|' + mesh
+                
             if not cmds.objExists(mesh):
-                util.warning('Skipping %s. It does not exist.' % mesh)
-                continue
-            
-            shape_types = ['mesh','nurbsSurface', 'nurbsCurve', 'lattice']
-            shape_is_good = self._test_shape(mesh, shape_types)
-            
-            if not shape_is_good:
-                cmds.warning('%s does not have a supported shape node. Currently supported nodes include: %s.' % (mesh, shape_types))
-                continue
-            
-            
-            
-            skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
-            
-
-            
-            if not util_file.is_dir(folder_path):
-                continue
-            
-            influence_dict = self._get_influences(folder_path)
-
-            if not influence_dict:
-                continue
-
-            influences = influence_dict.keys()
-            
-            if not influences:
-                continue
-            
-            influences.sort()
-            
-            add_joints = []
-            remove_entries = []
-            
-            for influence in influences:
                 
-                joints = cmds.ls(influence, l = True)
-                
-                if type(joints) == list and len(joints) > 1:
-                    add_joints.append(joints[0])
-                    
-                    conflicting_count = len(joints)
-                    
-                    util.warning('Found %s joints with name %s. Using only the first one. %s' % (conflicting_count, influence, joints[0]))
-                    remove_entries.append( influence )
-                    influence = joints[0]
-                
-                if not cmds.objExists(influence):
-                    cmds.select(cl = True)
-                    cmds.joint( n = influence, p = influence_dict[influence]['position'] )
-                    
-            for entry in remove_entries:
-                influences.remove(entry)
-                
-            influences += add_joints
-            
-            if skin_cluster:
-                cmds.delete(skin_cluster)
-
-            skin_cluster = cmds.skinCluster(influences, mesh,  tsb = True, n = 'skin_%s' % mesh)[0]
-            
-            cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
-            
-            maya_lib.deform.set_skin_weights_to_zero(skin_cluster)
-            
-            influence_inc = 0
-              
-            influence_index_dict = maya_lib.deform.get_skin_influences(skin_cluster, return_dict = True)
-            
-            progress_ui = maya_lib.core.ProgressBar('import skin', len(influence_dict.keys()))
-            
-            for influence in influences:
-                
-                if influence.count('|') > 1:
-                    split_influence = influence.split('|')
-                    
-                    if len(split_influence) > 1:
-                        influence = split_influence[-1]
-                
-                message = 'importing skin mesh: %s,  influence: %s' % (mesh, influence)
-                
-                progress_ui.status(message)                
-                    
-                if not influence_dict[influence].has_key('weights'):
-                    util.warning('Weights missing for influence %s' % influence)
-                    return 
-                
-                weights = influence_dict[influence]['weights']
-                
-                if not influence in influence_index_dict:
+                mesh = maya_lib.core.get_basename(mesh)
+                                      
+                if not cmds.objExists(mesh):
+                    util.show('Stripped namespace and fullpath from mesh name and could not find it.')
+                    util.warning('Skipping skinCluster weights import on: %s. It does not exist.' % mesh)
                     continue
-                
-                index = influence_index_dict[influence]
-                
-                for inc in xrange(0, len(weights)):
-                            
-                    weight = float(weights[inc])
-                    
-                    if weight == 0 or weight < 0.0001:
-                        continue
-                    
-                    attr = '%s.weightList[%s].weights[%s]' % (skin_cluster, inc, index)
-                    
-                    cmds.setAttr(attr, weight)
-                                    
-                progress_ui.inc()
-                
-                if util.break_signaled():
-                    break
-                                
-                if progress_ui.break_signaled():
-                            
-                    break
-                
-                influence_inc += 1
             
-            progress_ui.end()                    
-            
-            cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
-            cmds.skinCluster(skin_cluster, edit = True, forceNormalizeWeights = True)
+            found_meshes[mesh] = None
+            mesh_dict[folder] = mesh
         
-            file_path = util_file.join_path(folder_path, 'settings.info')
+        print 'first', mesh_dict
+        
+        for folder in folders:
             
-            if util_file.is_file(file_path):
+            if not cmds.objExists(folder):
+                continue
             
-                lines = util_file.get_file_lines(file_path)
-                for line in lines:
-                    
-                    test_line = line.strip()
-                    
-                    if not test_line:
+            if not mesh_dict.has_key(folder):
+                
+                meshes = cmds.ls(mesh, l = True)
+                
+                for mesh in meshes:
+                    if found_meshes.has_key(mesh):
                         continue
-                    
-                    line_list = eval(line)
+                    else:
+                        found_meshes[mesh] = None
+                        mesh_dict[folder] = mesh
+        
+        print 'second', mesh_dict
+        
+        for key in mesh_dict:
             
-                    attr_name = line_list[0]
-                    value = line_list[1]
+            mesh = mesh_dict[key]
             
-                    if attr_name == 'blendWeights':
-                        
-                        maya_lib.deform.set_skin_blend_weights(skin_cluster, value)
-                    
-                    if attr_name == 'skinningMethod':
-                        
-                        cmds.setAttr('%s.skinningMethod' % skin_cluster, value)
-                        
-            if transfer_mesh:
-                maya_lib.deform.skin_mesh_from_mesh(mesh, transfer_mesh)
-                cmds.delete(mesh)
+            meshes = cmds.ls(mesh, l = True)          
+                
+            folder_path = util_file.join_path(path, key)
             
-            
-
+            for mesh in meshes:
+                
+                self.import_skin_weights(folder_path, mesh)
+        
+           
+    
         maya_lib.core.print_help('Imported %s data' % self.name)
                 
         self._center_view()
+        
+    def import_skin_weights(self, directory, mesh):
+    
+        short_name = cmds.ls(mesh)
+        if short_name:
+            short_name = short_name[0]
+    
+        util.show('\nImporting skinCluster weights on: %s' % short_name)
+    
+        if not util_file.is_dir(directory):
+            return False
+        
+        influence_dict = self._get_influences(directory)
+
+        if not influence_dict:
+            return False
+
+        influences = influence_dict.keys()
+        
+        if not influences:
+            return False
+
+        shape_types = ['mesh','nurbsSurface', 'nurbsCurve', 'lattice']
+        shape_is_good = self._test_shape(mesh, shape_types)
+        
+        if not shape_is_good:
+            cmds.warning('%s does not have a supported shape node. Currently supported nodes include: %s.' % (short_name, shape_types))
+            return False
+        
+        mesh_description = maya_lib.core.get_basename(mesh)
+        
+        transfer_mesh = None
+        
+        if maya_lib.core.has_shape_of_type(mesh, 'mesh'):
+            
+            util.show('Importing reference mesh.')
+            
+            orig_mesh = self._import_ref_obj(directory)
+        
+            if orig_mesh:
+            
+                mesh_match = maya_lib.geo.is_mesh_compatible(orig_mesh, mesh)
+                
+                if not mesh_match:
+                    transfer_mesh = mesh
+                    mesh = orig_mesh
+                if mesh_match:
+                    cmds.delete(orig_mesh)
+                
+        skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
+        
+        influences.sort()
+        
+        add_joints = []
+        remove_entries = []
+        
+        for influence in influences:
+            
+            joints = cmds.ls(influence, l = True)
+            
+            if type(joints) == list and len(joints) > 1:
+                add_joints.append(joints[0])
+                
+                conflicting_count = len(joints)
+                
+                util.warning('Found %s joints with name %s. Using only the first one. %s' % (conflicting_count, influence, joints[0]))
+                remove_entries.append( influence )
+                influence = joints[0]
+            
+            if not cmds.objExists(influence):
+                cmds.select(cl = True)
+                cmds.joint( n = influence, p = influence_dict[influence]['position'] )
+                
+        for entry in remove_entries:
+            influences.remove(entry)
+            
+        influences += add_joints
+        
+        if skin_cluster:
+            cmds.delete(skin_cluster)
+
+        skin_cluster = cmds.skinCluster(influences, mesh,  tsb = True, n = maya_lib.core.inc_name('skin_%s' % mesh_description))[0]
+        
+        cmds.setAttr('%s.normalizeWeights' % skin_cluster, 0)
+        
+        maya_lib.deform.set_skin_weights_to_zero(skin_cluster)
+        
+        influence_inc = 0
+          
+        influence_index_dict = maya_lib.deform.get_skin_influences(skin_cluster, return_dict = True)
+        
+        progress_ui = maya_lib.core.ProgressBar('import skin', len(influence_dict.keys()))
+        
+        for influence in influences:
+            
+            if influence.count('|') > 1:
+                split_influence = influence.split('|')
+                
+                if len(split_influence) > 1:
+                    influence = split_influence[-1]
+            
+            message = 'importing skin mesh: %s,  influence: %s' % (mesh, influence)
+            
+            progress_ui.status(message)                
+                
+            if not influence_dict[influence].has_key('weights'):
+                util.warning('Weights missing for influence %s' % influence)
+                return 
+            
+            weights = influence_dict[influence]['weights']
+            
+            if not influence in influence_index_dict:
+                continue
+            
+            index = influence_index_dict[influence]
+            
+            for inc in xrange(0, len(weights)):
+                        
+                weight = float(weights[inc])
+                
+                if weight == 0 or weight < 0.0001:
+                    continue
+                
+                attr = '%s.weightList[%s].weights[%s]' % (skin_cluster, inc, index)
+                
+                cmds.setAttr(attr, weight)
+                                
+            progress_ui.inc()
+            
+            if util.break_signaled():
+                break
+                            
+            if progress_ui.break_signaled():
+                        
+                break
+            
+            influence_inc += 1
+        
+        progress_ui.end()                    
+        
+        cmds.skinCluster(skin_cluster, edit = True, normalizeWeights = 1)
+        cmds.skinCluster(skin_cluster, edit = True, forceNormalizeWeights = True)
+    
+        file_path = util_file.join_path(directory, 'settings.info')
+        
+        if util_file.is_file(file_path):
+        
+            lines = util_file.get_file_lines(file_path)
+            for line in lines:
+                
+                test_line = line.strip()
+                
+                if not test_line:
+                    continue
+                
+                line_list = eval(line)
+        
+                attr_name = line_list[0]
+                value = line_list[1]
+        
+                if attr_name == 'blendWeights':
+                    
+                    maya_lib.deform.set_skin_blend_weights(skin_cluster, value)
+                
+                if attr_name == 'skinningMethod':
+                    
+                    cmds.setAttr('%s.skinningMethod' % skin_cluster, value)
+                    
+        if transfer_mesh:
+            util.show('Mesh topology mismatch')
+            maya_lib.deform.skin_mesh_from_mesh(mesh, transfer_mesh)
+            cmds.delete(mesh)
+        
+        
+        util.show('Imported skinCluster weights: %s from %s' % (short_name, directory))
+        
+        return True
+        
         
     def import_data(self, filepath = None):
        
@@ -1204,13 +1267,18 @@ class SkinWeightData(MayaCustomData):
             if maya_lib.core.is_a_shape(thing):
                 thing = cmds.listRelatives(thing, p = True)[0]
             
+            thing_filename = thing
+            
+            if thing.find('|') > -1:
+                thing = cmds.ls(thing, l = True)[0]
+                
+                thing_filename = thing_filename.replace('|', '.')
+                thing_filename = thing_filename[1:]
+            
+            if thing.find(':') > -1:
+                thing_filename = thing.replace(':', '-')
+            
             util.show('Exporting weights on %s' % thing)
-            
-            split_thing = thing.split('|')
-            
-            if len(split_thing) > 1:
-                util.warning('Skin export failed. There is more than one %s.' % maya_lib.core.get_basename(thing))
-                continue
             
             skin = maya_lib.deform.find_deformer_by_type(thing, 'skinCluster')
             
@@ -1221,12 +1289,12 @@ class SkinWeightData(MayaCustomData):
                 
                 found_one = True
                 
-                geo_path = util_file.join_path(path, thing)
+                geo_path = util_file.join_path(path, thing_filename)
                 
                 if util_file.is_dir(geo_path):
-                    util_file.delete_dir(thing, path)
+                    util_file.delete_dir(thing_filename, path)
                 
-                geo_path = util_file.create_dir(thing, path)
+                geo_path = util_file.create_dir(thing_filename, path)
                 
                 weights = maya_lib.deform.get_skin_weights(skin)
                                 
@@ -1268,7 +1336,6 @@ class SkinWeightData(MayaCustomData):
                 if cmds.objExists(blend_weights_attr):
                     blend_weights = maya_lib.deform.get_skin_blend_weights(skin)
                     
-                    write = util_file.WriteFile(settings_file)
                     settings_lines.append("['blendWeights', %s]" % blend_weights)
                     
                 
@@ -1276,12 +1343,12 @@ class SkinWeightData(MayaCustomData):
                     
                     skin_method = cmds.getAttr(skin_method_attr)
                     
-                    
                     settings_lines.append("['skinningMethod', %s]" % skin_method)
                 
                 write_settings = util_file.WriteFile(settings_file)
                 write_settings.write(settings_lines)
                 
+                util.show('Skin weights exported: %s to %s' % (thing, geo_path))
         
         if not found_one:
             util.warning('No skin weights found on selected. Please select a mesh, curve, nurb surface or lattice with skin weights.')
@@ -1378,9 +1445,7 @@ class BlendshapeWeightData(MayaCustomData):
 
     def export_data(self, comment = None):
         
-        path = self.get_file()
-        
-        util_file.create_dir(path)
+        path = util_file.create_dir(self.name, self.directory)
         
         meshes = maya_lib.geo.get_selected_meshes()
         curves = maya_lib.geo.get_selected_curves()
@@ -1430,9 +1495,7 @@ class BlendshapeWeightData(MayaCustomData):
     
     def import_data(self):
         
-        #path = util_file.join_path(self.directory, self.name)
-        
-        path = self.get_file()
+        path = util_file.join_path(self.directory, self.name)
         
         folders = util_file.get_folders(path)
         
@@ -1500,11 +1563,9 @@ class DeformerWeightData(MayaCustomData):
     def export_data(self, comment = None):
         
         
-        #path = util_file.join_path(self.directory, self.name)
+        path = util_file.join_path(self.directory, self.name)
         
-        path = self.get_file()
-        
-        util_file.create_dir(path)
+        util_file.create_dir(self.name, self.directory)
         
         
         meshes = maya_lib.geo.get_selected_meshes()
@@ -1567,9 +1628,7 @@ class DeformerWeightData(MayaCustomData):
     
     def import_data(self):
         
-        #path = util_file.join_path(self.directory, self.name)
-        
-        path = self.get_file()
+        path = util_file.join_path(self.directory, self.name)
         
         files = util_file.get_files(path)
         
@@ -1785,8 +1844,6 @@ class AnimationData(MayaCustomData):
         
         test_dir = util_file.join_path(self.directory, 'keyframes')
         
-        
-        
         if util_file.is_dir(test_dir):
             util_file.rename(test_dir, self._get_file_name())
         
@@ -1813,8 +1870,7 @@ class AnimationData(MayaCustomData):
             keyframes = keyframes + blend_weighted
         
         #this could be replaced with self.get_file()
-        #path = util_file.join_path(self.directory, self.name)
-        path = self.get_file()
+        path = util_file.join_path(self.directory, self.name)
         
         util_file.refresh_dir(path)
         
@@ -1890,7 +1946,7 @@ class AnimationData(MayaCustomData):
             util_file.rename(test_path, self.name)
         
         #this could be replaced with self.get_file()
-        path = self.get_file()
+        path = util_file.join_path(self.directory, self.name)
         
         if not util_file.is_dir(path):
             return
@@ -2152,14 +2208,12 @@ class PoseData(MayaCustomData):
             if value == 'Yes':
                 maya_lib.core.delete_unknown_nodes()
         
-        #dirpath = util_file.join_path(self.directory, self.name)
-        
-        dirpath = self.get_file()
+        dirpath = util_file.join_path(self.directory, self.name)
         
         if util_file.is_dir(dirpath):
-            util_file.delete_dir(dirpath)
+            util_file.delete_dir(self.name, self.directory)
         
-        dir_path = util_file.create_dir(dirpath)
+        dir_path = util_file.create_dir(self.name, self.directory)
 
         pose_manager = maya_lib.corrective.PoseManager()
         poses = pose_manager.get_poses()
@@ -2226,9 +2280,7 @@ class PoseData(MayaCustomData):
     
     def import_data(self):
         
-        #path = util_file.join_path(self.directory, self.name)
-        
-        path = self.get_file()
+        path = util_file.join_path(self.directory, self.name)
         
         if not path:
             return
@@ -2335,9 +2387,7 @@ class MayaAttributeData(MayaCustomData):
         You may need to delete folders of nodes you no longer want to import.
         """
         
-        #path = util_file.join_path(self.directory, self.name)
-        
-        path = self.get_file()
+        path = util_file.join_path(self.directory, self.name)
         
         selection = cmds.ls(sl = True)
         
@@ -2382,32 +2432,24 @@ class MayaAttributeData(MayaCustomData):
                 if maya_lib.attr.is_locked(attribute):
                     continue
                 if maya_lib.attr.is_connected(attribute):
-                    
-                    if not maya_lib.attr.is_keyed(attribute):
-                        continue
+                    continue
                 
                 
                 try:
                     cmds.setAttr(attribute, line_list[1])    
                 except:
                     util.warning('\tCould not set %s to %s.' % (attribute, line_list[1]))
-                    
-                #util.show('Imported %s\t\t %s' % (attribute, line_list[1]))
-        
-        cmds.select(selection)
-        
-        #self._center_view()
+            
+        self._center_view()
 
     def export_data(self, comment):
         """
         This will export only the currently selected nodes.
         """
-        #path = util_file.join_path(self.directory, self.name)
-        
-        path = self.get_file()
+        path = util_file.join_path(self.directory, self.name)
         
         if not util_file.is_dir(path):
-            util_file.create_dir(path)
+            util_file.create_dir(self.name, self.directory)
         
         scope = self._get_scope()
         
@@ -2442,10 +2484,7 @@ class MayaAttributeData(MayaCustomData):
                 
                 attribute_name = '%s.%s' % (thing, attribute)
                 
-                try:
-                    value = cmds.getAttr(attribute_name)
-                except:
-                    continue
+                value = cmds.getAttr(attribute_name)
                 
                 lines.append("[ '%s', %s ]" % (attribute, value))
             
@@ -2722,7 +2761,7 @@ class MayaFileData(MayaCustomData):
         cmds.file(rename = filepath)
         
         self._prep_scene_for_export()
-        
+                
         cmds.file(exportSelected = True, 
                   prompt = False, 
                   force = True, 
@@ -2788,15 +2827,36 @@ class MayaShotgunFileData(MayaFileData):
         
         
         project, asset_type, asset, step = self.read_state()
+
+        if publish_path:
+            template = 'Publish Template'
+        else:
+            template = 'Work Template'
+        
+        util.show('Getting Shotgun directory at: %s %s %s %s' % (project, asset_type, asset, step))
+        util.show('Using Vetala setting: %s' % template)
+        
         dirpath = util_shotgun.get_asset_path(project, asset_type, asset, step, publish_path)
+        
+        util.show('Vetala got the following directory from Shotgun: %s' % dirpath)
         
         filepath = None
         
-        if dirpath and util_file.is_dir(dirpath):
-            filepath = util_file.get_latest_file_at_path(dirpath)
+        if dirpath:
+            if util_file.is_file(dirpath):
+                filepath = dirpath
+        
+            if util_file.is_dir(dirpath):
+                filepath = util_file.get_latest_file_at_path(dirpath)
+        
+        else:
+            util.warning('Shotgun did not return a valid directory: %s' % dirpath)
         
         if not filepath:
-            util.warning('Shotgun had trouble finding the file. Check script editor for more info.')
+            util.warning('Vetala had trouble finding a file')
+        
+        util.show('Final path Vetala found at Shtogun path: %s' % filepath)
+        
         
         self.filepath = filepath
     
