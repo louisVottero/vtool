@@ -575,7 +575,7 @@ class ControlCvData(MayaCustomData):
         library.set_directory(directory)
         
         if filename:
-            
+
             library.set_active_library(name, skip_extension= False)
         if not filename:
             library.set_active_library(name)
@@ -613,7 +613,7 @@ class ControlCvData(MayaCustomData):
         for control in controls:
             
             library.add_curve(control)
-        
+
         filepath = library.write_data_to_file()
         
         
@@ -750,10 +750,15 @@ class ControlColorData(MayaCustomData):
                         if type(main_color) == list:
                             cmds.setAttr('%s.overrideColor' % curve, main_color[0])
                             cmds.setAttr('%s.overrideRGBColors' % curve, main_color[2])
-                            cmds.setAttr('%s.overrideColorRGB' % curve, main_color[1])
-                            
-                        util.show('Set color of %s on %s' % (main_color, maya_lib.core.get_basename(curve)))
-                    
+                            if len(main_color[1]) == 1:
+                                cmds.setAttr('%s.overrideColorRGB' % curve, *main_color[1][0])
+                            if len(main_color[1]) > 1:
+                                cmds.setAttr('%s.overrideColorRGB' % curve, *main_color[1])
+                                
+                        if main_color[2]:
+                            util.show('%s color of RGB %s' % (maya_lib.core.get_basename(curve), main_color[1][0]))
+                        else:
+                            util.show('%s color of Index %s' % (maya_lib.core.get_basename(curve), main_color[0]))
             if sub_color:
                 shapes = maya_lib.core.get_shapes(curve)
                 inc = 0
@@ -775,11 +780,17 @@ class ControlColorData(MayaCustomData):
                         if type(sub_color[inc]) != list:
                             cmds.setAttr('%s.overrideColor' % shape, sub_color[inc])
                         if type(sub_color[inc]) == list:
-                            cmds.setAttr('%s.overrideColor' % shape, sub_color[0][0])
-                            cmds.setAttr('%s.overrideRGBColors' % shape, sub_color[0][2])
-                            cmds.setAttr('%s.overrideColorRGB' % shape, sub_color[0][1])
+                            cmds.setAttr('%s.overrideColor' % shape, sub_color[inc][0])
+                            cmds.setAttr('%s.overrideRGBColors' % shape, sub_color[inc][2])
+                            if len(sub_color[inc][1]) == 1:
+                                cmds.setAttr('%s.overrideColorRGB' % shape, *sub_color[inc][1][0])
+                            if len(sub_color[inc][1]) > 1:
+                                cmds.setAttr('%s.overrideColorRGB' % shape, *sub_color[inc][1])
                             
-                        util.show('Set color of %s on %s' % (sub_color[inc], maya_lib.core.get_basename(shape)))
+                        if sub_color[inc][2]:
+                            util.show('%s color of RGB %s' % (maya_lib.core.get_basename(shape), sub_color[inc][1][0]))
+                        else:
+                            util.show('%s color of Index %s' % (maya_lib.core.get_basename(shape), sub_color[inc][0]))
                     
                     inc+=1
         except:
@@ -809,8 +820,6 @@ class ControlColorData(MayaCustomData):
         
         if not filepath:
             return
-        
-        print filepath
         
         orig_controls = self._get_data(filepath)
         
@@ -998,8 +1007,6 @@ class SkinWeightData(MayaCustomData):
         mesh_dict = {}
         found_meshes = {}
         
-        print 'folders', folders
-        
         for folder in folders:
             
             mesh = folder
@@ -1024,8 +1031,6 @@ class SkinWeightData(MayaCustomData):
             found_meshes[mesh] = None
             mesh_dict[folder] = mesh
         
-        print 'first', mesh_dict
-        
         for folder in folders:
             
             if not cmds.objExists(folder):
@@ -1041,8 +1046,6 @@ class SkinWeightData(MayaCustomData):
                     else:
                         found_meshes[mesh] = None
                         mesh_dict[folder] = mesh
-        
-        print 'second', mesh_dict
         
         for key in mesh_dict:
             
@@ -1445,7 +1448,9 @@ class BlendshapeWeightData(MayaCustomData):
 
     def export_data(self, comment = None):
         
-        path = util_file.create_dir(self.name, self.directory)
+        path = self.get_file()
+        
+        util_file.create_dir(path)
         
         meshes = maya_lib.geo.get_selected_meshes()
         curves = maya_lib.geo.get_selected_curves()
@@ -1495,7 +1500,9 @@ class BlendshapeWeightData(MayaCustomData):
     
     def import_data(self):
         
-        path = util_file.join_path(self.directory, self.name)
+        #path = util_file.join_path(self.directory, self.name)
+        
+        path = self.get_file()
         
         folders = util_file.get_folders(path)
         
@@ -1563,9 +1570,11 @@ class DeformerWeightData(MayaCustomData):
     def export_data(self, comment = None):
         
         
-        path = util_file.join_path(self.directory, self.name)
+        #path = util_file.join_path(self.directory, self.name)
         
-        util_file.create_dir(self.name, self.directory)
+        path = self.get_file()
+        
+        util_file.create_dir(path)
         
         
         meshes = maya_lib.geo.get_selected_meshes()
@@ -1628,7 +1637,9 @@ class DeformerWeightData(MayaCustomData):
     
     def import_data(self):
         
-        path = util_file.join_path(self.directory, self.name)
+        #path = util_file.join_path(self.directory, self.name)
+        
+        path = self.get_file()
         
         files = util_file.get_files(path)
         
@@ -1870,7 +1881,8 @@ class AnimationData(MayaCustomData):
             keyframes = keyframes + blend_weighted
         
         #this could be replaced with self.get_file()
-        path = util_file.join_path(self.directory, self.name)
+        #path = util_file.join_path(self.directory, self.name)
+        path = self.get_file()
         
         util_file.refresh_dir(path)
         
@@ -1946,7 +1958,7 @@ class AnimationData(MayaCustomData):
             util_file.rename(test_path, self.name)
         
         #this could be replaced with self.get_file()
-        path = util_file.join_path(self.directory, self.name)
+        path = self.get_file()
         
         if not util_file.is_dir(path):
             return
@@ -2208,12 +2220,14 @@ class PoseData(MayaCustomData):
             if value == 'Yes':
                 maya_lib.core.delete_unknown_nodes()
         
-        dirpath = util_file.join_path(self.directory, self.name)
+        #dirpath = util_file.join_path(self.directory, self.name)
+        
+        dirpath = self.get_file()
         
         if util_file.is_dir(dirpath):
-            util_file.delete_dir(self.name, self.directory)
+            util_file.delete_dir(dirpath)
         
-        dir_path = util_file.create_dir(self.name, self.directory)
+        dir_path = util_file.create_dir(dirpath)
 
         pose_manager = maya_lib.corrective.PoseManager()
         poses = pose_manager.get_poses()
@@ -2280,7 +2294,9 @@ class PoseData(MayaCustomData):
     
     def import_data(self):
         
-        path = util_file.join_path(self.directory, self.name)
+        #path = util_file.join_path(self.directory, self.name)
+        
+        path = self.get_file()
         
         if not path:
             return
@@ -2387,7 +2403,9 @@ class MayaAttributeData(MayaCustomData):
         You may need to delete folders of nodes you no longer want to import.
         """
         
-        path = util_file.join_path(self.directory, self.name)
+        #path = util_file.join_path(self.directory, self.name)
+        
+        path = self.get_file()
         
         selection = cmds.ls(sl = True)
         
@@ -2432,24 +2450,32 @@ class MayaAttributeData(MayaCustomData):
                 if maya_lib.attr.is_locked(attribute):
                     continue
                 if maya_lib.attr.is_connected(attribute):
-                    continue
+                    
+                    if not maya_lib.attr.is_keyed(attribute):
+                        continue
                 
                 
                 try:
                     cmds.setAttr(attribute, line_list[1])    
                 except:
                     util.warning('\tCould not set %s to %s.' % (attribute, line_list[1]))
-            
-        self._center_view()
+                    
+                #util.show('Imported %s\t\t %s' % (attribute, line_list[1]))
+        
+        cmds.select(selection)
+        
+        #self._center_view()
 
     def export_data(self, comment):
         """
         This will export only the currently selected nodes.
         """
-        path = util_file.join_path(self.directory, self.name)
+        #path = util_file.join_path(self.directory, self.name)
+        
+        path = self.get_file()
         
         if not util_file.is_dir(path):
-            util_file.create_dir(self.name, self.directory)
+            util_file.create_dir(path)
         
         scope = self._get_scope()
         
@@ -2484,7 +2510,10 @@ class MayaAttributeData(MayaCustomData):
                 
                 attribute_name = '%s.%s' % (thing, attribute)
                 
-                value = cmds.getAttr(attribute_name)
+                try:
+                    value = cmds.getAttr(attribute_name)
+                except:
+                    continue
                 
                 lines.append("[ '%s', %s ]" % (attribute, value))
             
