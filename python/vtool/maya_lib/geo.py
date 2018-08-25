@@ -324,7 +324,9 @@ def is_mesh_compatible(mesh1, mesh2):
     Check the two meshes to see if they have the same vert, edge and face count.
     """
     check = MeshTopologyCheck(mesh1, mesh2)
-    return check.check_vert_edge_face_count()
+    check_count = check.check_vert_edge_face_count()
+    
+    return check_count
 
 def is_mesh_blend_compatible(mesh1, mesh2):
     """
@@ -1754,7 +1756,7 @@ def create_joint_u_strip_on_surface(surface, u_count, description, u_offset = 0,
     u_joints =[]
     
     if u_count:
-        u_segment = 1.00/(u_count+1)
+        u_segment = 1.00/(u_count)
     
     if u_count:
         for inc in range(0, u_count+1):
@@ -1930,6 +1932,39 @@ def create_joints_on_curve(curve, joint_count, description, attach = True):
         percent += segment
     
     return joints
+
+def create_joints_on_cvs(curve, parented = True):
+    
+    
+    cvs = cmds.ls('%s.cv[*]' % curve, flatten = True)
+    
+    cmds.select(cl = True)
+    
+    joints = []
+    
+    inc = 0
+    last_joint = None
+    for cv in cvs:
+        
+        position = cmds.pointPosition(cv)
+        
+        if not parented:
+            cmds.select(cl = True)
+        
+        joint = cmds.joint(n = core.inc_name('joint_%s' % (curve)), p = position)
+
+        joints.append(joint)
+
+        
+        if last_joint and parented:
+            cmds.joint(last_joint, e = True, zso = True, oj = 'xyz', sao = 'yup')
+
+        last_joint = joint
+        
+        inc += 1
+    
+    return joints
+    
 
 def create_joints_on_faces(mesh, faces = [], follow = True, name = None):
     """
@@ -2680,7 +2715,7 @@ def attach_to_curve(transform, curve, maintain_offset = False, parameter = None)
     
     return curve_info_node
 
-def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain = True, local = False):
+def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain = True, local = False, use_parameter = False):
     
     motion = cmds.createNode('motionPath', n = 'motionPath_%s' % transform )
     
@@ -2689,16 +2724,19 @@ def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain =
         cmds.connectAttr('%s.worldMatrix' % up_rotate_object, '%s.wum' % motion)
     
     
-    cmds.setAttr('%s.fractionMode' % motion, True)
+    if use_parameter:
+        cmds.setAttr('%s.fractionMode' % motion, False)
+    else:
+        cmds.setAttr('%s.fractionMode' % motion, True)
     
     position = cmds.xform(transform, q = True, ws = True, t = True)
     
     u_value = get_closest_parameter_on_curve(curve, position)
-    u_value = get_curve_length_from_parameter(curve, u_value)
     
-    curve_length = cmds.arclen(curve, ch = False)
-    
-    u_value = u_value/curve_length
+    if not use_parameter:
+        u_value = get_curve_length_from_parameter(curve, u_value)
+        curve_length = cmds.arclen(curve, ch = False)
+        u_value = u_value/curve_length
     
     cmds.setAttr('%s.uValue' % motion, u_value)
     
@@ -3422,12 +3460,16 @@ def move_cvs(curves, position):
     curves = vtool.util.convert_to_sequence(curves)
     
     for curve in curves:
-        
+        if curve.find('.cv[') > -1:
+            curve_cvs = curve
+        else:
+            curve_cvs = '%s.cv[*]' % curve
+            
         curve_position = cmds.xform(curve, q = True, ws = True, t = True)
         
         offset = vtool.util.vector_sub(position, curve_position)
         
-        cmds.move(offset[0],offset[1],offset[2], '%s.cv[*]' % curve, ws = True, r = True)
+        cmds.move(offset[0],offset[1],offset[2], curve_cvs, ws = True, r = True)
         
         
 def set_geo_color(geo_name, rgb = [1,0,0], flip_color = False):
