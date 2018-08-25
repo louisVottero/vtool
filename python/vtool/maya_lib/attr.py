@@ -1947,7 +1947,15 @@ def is_locked(node_and_attribute):
         return True
     
     return False
+
+def is_keyed(node_and_attribute):
+    input_value = get_attribute_input(node_and_attribute)
     
+    if cmds.nodeType(input_value).find('animCurve') > -1:
+        return True
+    
+    return False
+
 
 def get_node_and_attribute(attribute):
     """
