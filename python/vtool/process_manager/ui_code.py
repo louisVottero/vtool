@@ -487,10 +487,14 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         self.exteranl_code_libarary = None
         
+        
+        
     def _define_main_layout(self):
         return qt.QVBoxLayout()
         
     def _build_widgets(self):
+        
+        self.save_widget = qt_ui.CompactHistoryWidget()
         
         self.code_manifest_tree = CodeManifestTree()
         
@@ -503,6 +507,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         self.code_manifest_tree.item_removed.connect(self._remove_code)
         self.code_manifest_tree.item_duplicated.connect(self._duplicate)
         
+        self.main_layout.addWidget(self.save_widget)
         self.main_layout.addWidget(self.code_manifest_tree)
         
         self.main_layout.addLayout(buttons_layout)
