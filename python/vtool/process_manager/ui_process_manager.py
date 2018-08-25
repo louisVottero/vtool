@@ -11,6 +11,7 @@ import process
 import ui_view
 import ui_options
 import ui_templates
+import ui_process_settings
 import ui_data
 import ui_code
 import ui_settings
@@ -27,6 +28,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         util.show('VETALA_PATH: %s' % util.get_env('VETALA_PATH'))
         
+        self.directory = None
         self._current_tab = None
         
         self.settings = None
@@ -68,6 +70,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.show_options.connect(self._show_options)
         self.view_widget.tree_widget.show_notes.connect(self._show_notes)
         self.view_widget.tree_widget.show_templates.connect(self._show_templates)
+        self.view_widget.tree_widget.show_settings.connect(self._show_settings)
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
         
         
@@ -136,6 +139,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process_splitter.setSizes([1,1])
         self.option_tabs.setCurrentIndex(2)
+    
+    def _show_settings(self):
+        
+        self.process_splitter.setSizes([1,1])
+        self.option_tabs.setCurrentIndex(3)
         
     def _process_deleted(self):
         self._clear_code(close_windows=True)
@@ -207,8 +215,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         path = item.get_path()
         
-        self._load_options(path)
-        self._load_notes()
+        if self.option_tabs.currentIndex() == 0:
+            self._load_options(path)
+        if self.option_tabs.currentIndex() == 1:
+            self._load_notes()
+        if self.option_tabs.currentIndex() == 3:
+            self._load_process_settings()
         
         self.view_widget.setFocus()
         
@@ -279,7 +291,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 if note_lines:
                     self.option_tabs.setCurrentIndex(1)
                     self.process_splitter.setSizes([1,1])
-                    
+    
+    def _load_process_settings(self):
+        
+        self.process_settings.set_directory(self._get_current_path())
+        
+              
     def _update_build_widget(self, process_name):
         
         path = self.view_widget.tree_widget.directory
@@ -373,9 +390,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.notes.textChanged.connect(self._save_notes)
         
+        self.process_settings = ui_process_settings.ProcessSettings()
+        
         self.option_tabs.addTab(option_widget, 'Options')
         self.option_tabs.addTab(self.notes, 'Notes')
         self.option_tabs.addTab(self.template_widget, 'Templates')
+        self.option_tabs.addTab(self.process_settings, 'Settings')
         self.option_tabs.setCurrentIndex(1)
         
         self.option_tabs.currentChanged.connect(self._option_changed)
@@ -550,6 +570,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _close_tabs(self):
         
         self.process_splitter.setSizes([1, 0])
+
         
         
     def _add_template(self, process_name, directory):
@@ -574,15 +595,30 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if self.option_tabs.currentIndex() == 0:
             self.template_widget.set_active(False)
+            self.process_settings.set_active(False)
             self._current_tab = 0
+            self._load_options(self._get_current_path())
         
         if self.option_tabs.currentIndex() == 1:
             self.template_widget.set_active(False)
+            self.process_settings.set_active(False)
             self._current_tab = 1
+            self._load_notes()
             
         if self.option_tabs.currentIndex() == 2:
             self.template_widget.set_active(True)
+            self.process_settings.set_active(False)
             self._current_tab = None
+        
+        if self.option_tabs.currentIndex() == 3:
+            
+            self.template_widget.set_active(False)
+            self.process_settings.set_active(True)
+            self._current_tab = 3
+            
+            print self._get_current_path()
+            
+            self.process_settings.set_directory(self._get_current_path())
             
     def _clear_code(self, close_windows = False):
         
@@ -759,6 +795,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_tab = 1
         
     def _get_current_path(self):
+        
+        
+        
         items = self.view_widget.tree_widget.selectedItems()
         
         item = None
@@ -868,7 +907,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             cmds.file(new = True, f = True)
         
         process_inst = item.get_process()
-        process_inst.run()
+        process_inst.run(start_new = True)
         
         
         
@@ -1125,8 +1164,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if not finished:
             util.show('Process %s finished with errors.\n' % self.process.get_name())
     
-        self.process.save_data('build', children_run_comment)
-    
     def _continue(self):
         
         self._process(self.last_process_script_inc)
@@ -1207,6 +1244,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process.set_directory(None)
             self.view_widget.set_directory(None)
             self.handle_selection_change = True
+            self.settings_widget.set_directory(None)
             return
 
         self.handle_selection_change = True
@@ -1226,7 +1264,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.clear_stage()
             
             self.process.set_directory(self.project_directory)
-            self.view_widget.set_directory(self.project_directory)    
+            self.view_widget.set_directory(self.project_directory)
+            self.process_settings.set_directory(self.project_directory)    
         
         self.last_project = directory
         
