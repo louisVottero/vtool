@@ -21,6 +21,7 @@ import deform
 import rigs_util
 import fx
 from vtool import util_math
+from vtool import util_file
     
 
 #--- rigs
@@ -35,10 +36,14 @@ class Rig(object):
     
     def __init__(self, description, side = None):
         
+        self.side = side
+        
         cmds.refresh()
         
         self.description = description
-        self.side = side
+        
+        self._control_inst = None
+        
         
         
         self._handle_side_variations()
@@ -68,25 +73,12 @@ class Rig(object):
         
     def _handle_side_variations(self):
         
-        if self.side == 'L':
-            return
-        if self.side == 'R':
-            return
-        if self.side == 'C':
-            return
-        
-        if self.side == 'l':
+        if vtool.util.is_left(self.side):
             self.side = 'L'
-        if self.side == 'r':
+        if vtool.util.is_right(self.side):
             self.side = 'R'
-        if self.side == 'Left':
-            self.side = 'L'
-        if self.side == 'Right':
-            self.side = 'R'
-        if self.side == 'lf':
-            self.side = 'L'
-        if self.side == 'rt':
-            self.side = 'R'
+        if vtool.util.is_center(self.side):
+            self.side = 'C'
         
     def __del__(self):
         
@@ -164,8 +156,8 @@ class Rig(object):
             
         return group
             
-    def _get_name(self, prefix = None, description = None):
-        
+    def _get_name(self, prefix = None, description = None, sub = False):
+                
         if self.side:
             name_list = [prefix,self.description, description, '1', self.side]
         if not self.side:
@@ -183,15 +175,46 @@ class Rig(object):
         
     def _get_control_name(self, description = None, sub = False):
         
-        prefix = 'CNT'
-        if sub:
-            prefix = 'CNT_SUB'
+        current_process = vtool.util.get_env('VETALA_CURRENT_PROCESS')
+
+        if current_process:
+            control_inst = util_file.ControlNameFromSettingsFile(current_process)
             
-        control_name = self._get_name(prefix, description)
+            self._control_inst = control_inst
             
-        control_name = control_name.upper()
+            if description:
+                description = self.description + '_' + description
+            else:
+                description = self.description
+            
+            if sub == True:
+                description = 'sub_%s' % description
+            
+            control_name = control_inst.get_name(description, self.side)
+            
+            
+            
+            #if not control_name:
+            #    current_process = None
+            
+            
         
+        if not current_process:
+        
+            prefix = 'CNT'
+            if sub:
+                prefix = 'CNT_SUB'
+                
+            control_name = self._get_name(prefix, description, sub = sub)
+                
+            control_name = control_name.upper()
+        
+        
+            
         control_name = core.inc_name(control_name)
+            
+
+        
         
         return control_name
         
@@ -542,6 +565,7 @@ class BufferRig(JointRig):
         
         self.create_buffer_joints = False
         self.build_hierarchy = False
+        self._buffer_replace = ['joint', 'buffer']
     
     def _duplicate_joints(self):
         
@@ -552,7 +576,7 @@ class BufferRig(JointRig):
                 
                 duplicate_hierarchy.stop_at(self.joints[-1])
                 duplicate_hierarchy.only_these(self.joints)
-                duplicate_hierarchy.replace('joint', 'buffer')
+                duplicate_hierarchy.replace(self._buffer_replace[0], self._buffer_replace[1])
                 
                 self.buffer_joints = duplicate_hierarchy.create()
                 
@@ -560,7 +584,7 @@ class BufferRig(JointRig):
                 
                 build_hierarchy = space.BuildHierarchy()
                 build_hierarchy.set_transforms(self.joints)
-                build_hierarchy.set_replace('joint', 'buffer')
+                build_hierarchy.set_replace(self._buffer_replace[0], self._buffer_replace[1])
                 self.buffer_joints = build_hierarchy.create()
     
             cmds.parent(self.buffer_joints[0], self.setup_group)
@@ -572,6 +596,11 @@ class BufferRig(JointRig):
     
     def _create_before_attach_joints(self):
         return
+    
+    def set_buffer_replace(self, replace_this, with_this):
+        
+        self._buffer_replace = [replace_this, with_this]
+        
     
     def set_build_hierarchy(self, bool_value):
         
@@ -689,6 +718,9 @@ class SparseRig(JointRig):
         self.xform_scale = None
         
         self.control_to_pivot = False
+        self._control_to_boundingbox = False
+        self._control_to_boundingbox_bottom = False
+        self._control_to_boundingbox_top = False
         self.follow_parent = False
         self.control_compensate = False
         self.run_function = None
@@ -702,7 +734,25 @@ class SparseRig(JointRig):
             control = rigs_util.Control(control)
             control.set_to_joint(scale_compensate= self.use_joint_controls_scale_compensate)
         
-    
+    def _position_control(self, transform_source, transform_target):
+        
+        match = space.MatchSpace(transform_source, transform_target)
+        match.translation_rotation()
+        
+        if self.control_to_pivot:  
+            match.translation_to_rotate_pivot()
+        if self._control_to_boundingbox:
+            pos = space.get_center(transform_source)
+            cmds.xform(transform_target, ws = True, t = pos)
+        if self._control_to_boundingbox_bottom:
+            pos = space.get_btm_center(transform_source)
+            cmds.xform(transform_target, ws = True, t = pos)
+        if self._control_to_boundingbox_top:
+            pos = space.get_top_center(transform_source)
+            cmds.xform(transform_target, ws = True, t = pos)
+        
+        match.scale()
+
         
     def set_scalable(self, bool_value):
         """
@@ -759,6 +809,15 @@ class SparseRig(JointRig):
         """
         self.control_to_pivot = bool_value
         
+    def set_control_to_bounding_box_center(self, bool_value):
+        self._control_to_boundingbox = bool_value
+        
+    def set_control_to_bounding_box_bottom(self, bool_value):
+        self._control_to_boundingbox_bottom = bool_value
+        
+    def set_control_to_bounding_box_top(self, bool_value):
+        self._control_to_boundingbox_top = bool_value
+        
     def set_follow_parent(self, bool_value):
         
         self.follow_parent = bool_value
@@ -804,16 +863,7 @@ class SparseRig(JointRig):
                 
                 attr.connect_translate_multiply(control_name, offset, -1)
             
-            match = space.MatchSpace(joint, xform)
-                
-            if not self.control_to_pivot:    
-                match.translation_rotation()
-            if self.control_to_pivot:    
-                match.translation_to_rotate_pivot()
-            
-            match.scale()
-            
-            match.translation_to_rotate_pivot()
+            self._position_control(joint, xform)
             
             if self.respect_side:
                 side = control.color_respect_side(center_tolerance = self.respect_side_tolerance)
@@ -823,13 +873,7 @@ class SparseRig(JointRig):
                     control_data = self.control_dict[control_name]
                     self.control_dict.pop(control_name)
                     
-                    if control_name[-1].isalpha():
-                        #ends with a side, strip the number and side and add new 1_side.
-                        
-                        new_name = core.inc_name( control_name[:-3] + '1_' + side)
-                    else:
-                        #ends with a number, strip number and add the side
-                        new_name = core.inc_name( control_name[:-1] + '1_' + side)
+                    new_name = self._control_inst.get_name(self.description, side)
                     
                     control_name = rigs_util.rename_control(control_name, new_name)
                         
@@ -849,7 +893,7 @@ class SparseRig(JointRig):
                 cmds.delete(const)
             
             if self.attach_joints:
-                cmds.parentConstraint(control_name, joint)
+                cmds.parentConstraint(control_name, joint, mo = True)
 
             if self.is_scalable:
                 scale_constraint = cmds.scaleConstraint(control.get(), joint)[0]
@@ -974,16 +1018,8 @@ class SparseLocalRig(SparseRig):
             
                 attr.connect_translate_multiply(control_name, offset, -1)
             
-            match = space.MatchSpace(joint, xform)
             
-            if not self.control_to_pivot:
-                
-                match.translation_rotation()
-            if self.control_to_pivot:    
-                match.translation_to_rotate_pivot()
-            
-            match.scale()
-            match.translation_to_rotate_pivot()
+            self._position_control(joint, xform)
             
             if self.respect_side:
                 side = control.color_respect_side(center_tolerance = self.respect_side_tolerance)
@@ -993,13 +1029,7 @@ class SparseLocalRig(SparseRig):
                     control_data = self.control_dict[control_name]
                     self.control_dict.pop(control_name)
                     
-                    if control_name[-1].isalpha():
-                        #ends with a side, strip the number and side and add new 1_side.
-                        
-                        new_name = core.inc_name( control_name[:-3] + '1_' + side)
-                    else:
-                        #ends with a number, strip number and add the side
-                        new_name = core.inc_name( control_name[:-1] + '1_' + side)
+                    new_name = self._control_inst.get_name(self.description, side)
                     
                     control_name = rigs_util.rename_control(control_name, new_name)
                         
@@ -1806,8 +1836,12 @@ class FkCurlNoScaleRig(FkRig):
         
         self.attribute_control = None
         self.attribute_name =None
+        self.curl_description = self.description
         self.curl_axis = 'Z'
+        
         self.skip_increments = []
+        
+        self.create_curl = True
         
         self.title_description = None
         
@@ -1826,28 +1860,39 @@ class FkCurlNoScaleRig(FkRig):
         if not self.attribute_control:
             self.attribute_control = control.get()
             
-        title = 'CURL'
-        if self.title_description:
-            title = 'CURL_%s' % self.title_description
-            
-        if not cmds.objExists('%s.%s' % (self.attribute_control, title)):
-            title = attr.MayaEnumVariable(title)
-            title.create(self.attribute_control)
+
+                       
+                
+                
+        if self.create_curl:
         
-        driver = space.create_xform_group(control.get(), 'driver2')
-        self.control_dict[control.get()]['driver2'] = driver
+            title = 'CURL'
+            if self.title_description:
+                title = 'CURL_%s' % self.title_description
+                
+            if not cmds.objExists('%s.%s' % (self.attribute_control, title)):
+                title = attr.MayaEnumVariable(title)
+                title.create(self.attribute_control)
         
-        other_driver = self.drivers[-1]
-        self.drivers[-1] = [other_driver, driver]
         
-        if self.curl_axis != 'All':
-            self._attach_curl_axis(driver)
+            driver = space.create_xform_group(control.get(), 'driver2')
+            self.control_dict[control.get()]['driver2'] = driver
+        
+            other_driver = self.drivers[-1]
+            self.drivers[-1] = [other_driver, driver]
             
-        if self.curl_axis == 'All':
-            all_axis = ['x','y','z']
-            
-            for axis in all_axis:
-                self._attach_curl_axis(driver, axis)
+            if self.curl_axis != 'All':
+                self._attach_curl_axis(driver)
+                
+            if self.curl_axis == 'All':
+                all_axis = ['x','y','z']
+                
+                for axis in all_axis:
+                    self._attach_curl_axis(driver, axis)
+                
+                          
+                
+                
                 
         return control
     
@@ -1858,7 +1903,7 @@ class FkCurlNoScaleRig(FkRig):
 
 
         if not self.attribute_name:
-            description = self.description
+            description = self.curl_description
         if self.attribute_name:
             description = self.attribute_name
 
@@ -1934,6 +1979,12 @@ class FkCurlNoScaleRig(FkRig):
         """
         self.skip_increments = increments
         
+    def set_curl_title(self, name):
+        self.title_description = name.upper()
+        
+    def set_create_curl(self, bool_value):
+        self.create_curl = bool_value
+        
 class FkCurlRig(FkScaleRig):
     
     def __init__(self, description, side=None):
@@ -1944,6 +1995,7 @@ class FkCurlRig(FkScaleRig):
         self.curl_description = self.description
         self.skip_increments = []
         self.title = 'CURL'
+        self.create_curl = True
         
     def _create_control(self, sub = False):
         control = super(FkCurlRig, self)._create_control(sub)
@@ -1954,28 +2006,36 @@ class FkCurlRig(FkScaleRig):
         if not self.attribute_control:
             self.attribute_control = control.get()
             
-        attr.create_title(self.attribute_control, self.title)
-        
-        driver = space.create_xform_group(control.get(), 'driver2')
-        self.control_dict[control.get()]['driver2'] = driver
-        
-        other_driver = self.drivers[-1]
-        self.drivers[-1] = [other_driver, driver]
         
         
-    
-        if self.curl_axis != 'All':
-            self._attach_curl_axis(driver)
+        
+        
+        
+        
+        if self.create_curl:
+        
+            driver = space.create_xform_group(control.get(), 'driver2')
+            self.control_dict[control.get()]['driver2'] = driver
+        
+            other_driver = self.drivers[-1]
+            self.drivers[-1] = [other_driver, driver]
             
-        if self.curl_axis == 'All':
-            all_axis = ['x','y','z']
-            
-            for axis in all_axis:
-                self._attach_curl_axis(driver, axis)
-            
+            if self.curl_axis != 'All':
+                self._attach_curl_axis(driver)
+                
+            if self.curl_axis == 'All':
+                all_axis = ['x','y','z']
+                
+                for axis in all_axis:
+                    self._attach_curl_axis(driver, axis)
+                
+            attr.create_title(self.attribute_control, self.title)
+                
         return self.control
     
     def _attach_curl_axis(self, driver, axis = None):
+        
+        
         
         if self.current_increment in self.skip_increments:
             return
@@ -2050,6 +2110,9 @@ class FkCurlRig(FkScaleRig):
     def set_curl_title(self, name):
         self.title = name.upper()
         
+    def set_create_curl(self, bool_value):
+        self.create_curl = bool_value
+        
 class SplineRibbonBaseRig(JointRig):
     
     def __init__(self, description, side=None):
@@ -2074,6 +2137,7 @@ class SplineRibbonBaseRig(JointRig):
         self.closest_y = False
         self.stretch_axis = 'X'
         self.stretch_attribute_control = None
+        self._buffer_replace = ['joint', 'buffer']
         
         self.follicle_ribbon = False
         
@@ -2281,20 +2345,25 @@ class SplineRibbonBaseRig(JointRig):
         
             duplicate_hierarchy.stop_at(self.joints[-1])
             
-            prefix = 'joint'
+            prefix = self._buffer_replace[0]
             if self.create_buffer_joints:
-                prefix = 'buffer'
+                prefix = self._buffer_replace[1]
             
             duplicate_hierarchy.replace(prefix, 'xFix')
             x_joints = duplicate_hierarchy.create()
-            cmds.parent(x_joints[0], self.setup_group)
+            
+            try:
+                cmds.parent(x_joints[0], self.setup_group)
+            except:
+                pass
             
             #working here to add auto fix to joint orientation.
             
             for inc in range(0, len(x_joints)):
                 
                 orient = attr.OrientJointAttributes(x_joints[inc])
-                orient.delete()
+                orient.set_default_values()
+                #orient.delete()
                 
                 orient = space.OrientJoint(x_joints[inc])
                 
@@ -2786,8 +2855,6 @@ class FkCurveRig(SimpleFkCurveRig):
         Wether the first and last clusters should aim at the mid controls 
         """
         self.aim_end_vectors = bool_value
-        
-
         
     def create(self):
         super(FkCurveRig, self).create()
@@ -3471,6 +3538,8 @@ class IkAppendageRig(BufferRig):
         
         self.stretch_scale_attribute_offset = 1
         
+        self._duplicate_chain_replace = ['joint', 'ik']
+        
     
     def _attach_ik_joints(self, source_chain, target_chain):
         
@@ -3487,7 +3556,7 @@ class IkAppendageRig(BufferRig):
         
         duplicate = space.DuplicateHierarchy(self.joints[0])
         duplicate.stop_at(self.joints[-1])
-        duplicate.replace('joint', 'ik')
+        duplicate.replace(self._duplicate_chain_replace[0], self._duplicate_chain_replace[1])
         
         self.ik_chain = self.buffer_joints
                 
@@ -3911,6 +3980,10 @@ class IkAppendageRig(BufferRig):
         
     def _create_tweakers(self):
         pass
+    
+    def set_duplicate_chain_replace(self, replace_this, with_this):
+        
+        self._duplicate_chain_replace = [replace_this, with_this]
     
     def set_create_twist(self, bool_value):
         """
@@ -4675,7 +4748,7 @@ class SpineRig(BufferRig, SplineRibbonBaseRig):
 
         self.orient_controls_to_joints = False
         
-        self.create_buffer_joints = True
+        self.create_buffer_joints = False
         self.stretch_on_off = True
         self.create_single_fk_follows = True
         self.create_sub_fk_controls = False
@@ -5924,11 +5997,20 @@ class IkBackLegRig(IkFrontLegRig):
         
         cmds.parent(ik_handle, self.lower_offset_chain[-1])
         
+        cmds.setAttr('%s.poleVectorX' % ik_handle, 0)
+        cmds.setAttr('%s.poleVectorY' % ik_handle, 0)
+        cmds.setAttr('%s.poleVectorZ' % ik_handle, 0)
+        
         ik_handle_btm = space.IkHandle( self._get_name('offset_btm'))
         ik_handle_btm.set_start_joint(self.lower_offset_chain[0])
         ik_handle_btm.set_end_joint(self.lower_offset_chain[-1])
-        ik_handle_btm.set_solver(ik_handle_btm.solver_sc)
+        ik_handle_btm.set_solver(ik_handle_btm.solver_rp)
         ik_handle_btm = ik_handle_btm.create()
+        
+        cmds.setAttr('%s.poleVectorX' % ik_handle_btm, 0)
+        cmds.setAttr('%s.poleVectorY' % ik_handle_btm, 0)
+        cmds.setAttr('%s.poleVectorZ' % ik_handle_btm, 0)
+        
         
         
         
@@ -6256,7 +6338,7 @@ class FootRollRig(RollRig):
             control = cmds.spaceLocator(n = self._get_name('locator', 'toe_rotate'))[0]
             xform_group = space.create_xform_group(control)
             attribute_control = self._get_attribute_control()
-            
+            attr.create_title(attribute_control, 'TOE_ROTATE')
             cmds.addAttr(attribute_control, ln = 'toeRotate', at = 'double', k = True)  
             cmds.connectAttr('%s.toeRotate' % attribute_control, '%s.rotate%s' % (control, self.forward_roll_axis))  
             
@@ -6482,6 +6564,9 @@ class BaseFootRig(BufferRig):
         self.attribute_control_shape = 'square'
         
         self.locators = []
+        
+        self.main_control_follow = None
+        
             
     def _get_attribute_control(self):
         if not self.attribute_control:
@@ -6556,12 +6641,16 @@ class BaseFootRig(BufferRig):
         
         roll_control.hide_keyable_attributes()
         
+        print 'create roll', transform, xform_group
+        
         match = space.MatchSpace( transform, xform_group )
         match.translation_rotation()
         
         cmds.parent(xform_group, self.control_group)
         
         self.roll_control_xform = xform_group 
+        
+        
         
         return roll_control 
     
@@ -6574,6 +6663,9 @@ class BaseFootRig(BufferRig):
         ik_handle.set_start_joint(start_joint)
         ik_handle.set_end_joint(end_joint)
         return ik_handle.create()  
+    
+    def set_main_control_follow(self, transform):
+        self.main_control_follow = transform
     
     def set_create_roll_controls(self, bool_value):
         
@@ -6600,7 +6692,10 @@ class BaseFootRig(BufferRig):
     def create(self):
         super(BaseFootRig, self).create()
         
-        self._create_roll_control(self.joints[0])
+        if not self.main_control_follow:
+            self._create_roll_control(self.joints[0])
+        if self.main_control_follow:
+            self._create_roll_control(self.main_control_follow)
         
         attr.create_title(self._get_attribute_control(), 'FOOT_PIVOTS')
                 
@@ -6625,6 +6720,10 @@ class FootRig(BaseFootRig):
         self.heel = None
         self.yawIn = None
         self.yawOut = None
+        
+        self._duplicate_chain_replace = ['joint', 'guide']
+        self.locator_replace = 'locator'
+        
     
     def _duplicate_joints(self):
         
@@ -6636,11 +6735,11 @@ class FootRig(BaseFootRig):
         ankle_name = ankle_base
         
         if self.create_buffer_joints:
-            ankle_name = ankle_base.replace('locator', 'buffer')
+            ankle_name = ankle_base.replace(self.locator_replace, self._buffer_replace[1])
             
         if not self.create_buffer_joints:
-            ankle_name = ankle_base.replace('locator', 'guide')
-            
+            ankle_name = ankle_base.replace(self.locator_replace, self._duplicate_chain_replace[1])
+        
         joint = cmds.rename(ankle, ankle_name)
         
         self.buffer_joints[0] = joint
@@ -6654,9 +6753,9 @@ class FootRig(BaseFootRig):
         duplicate.only_these(self.buffer_joints)
         
         if not self.create_buffer_joints:
-            duplicate.replace('joint', 'guide')
+            duplicate.replace(self._duplicate_chain_replace[0], self._duplicate_chain_replace[1])
         if self.create_buffer_joints:
-            duplicate.replace('buffer', 'guide')
+            duplicate.replace(self._buffer_replace[0], self._duplicate_chain_replace[1])
         
         joints = duplicate.create()
         
@@ -6881,6 +6980,10 @@ class FootRig(BaseFootRig):
         
         self.build_hierarchy = True
 
+    def set_duplicate_chain_replace(self, replace_this, with_this):
+        
+        self._duplicate_chain_replace = [replace_this, with_this]
+
     
     def set_toe_rotate_as_locator(self, bool_value):
         self.toe_rotate_as_locator = bool_value
@@ -6906,8 +7009,7 @@ class FootRig(BaseFootRig):
         self.yawIn = yaw_in
         self.yawOut = yaw_out
         
-    def set_main_control_follow(self, transform):
-        self.main_control_follow = transform
+    
         
     def set_ik_parent(self, parent_name):
         self.ik_parent = parent_name
@@ -6915,7 +7017,7 @@ class FootRig(BaseFootRig):
     def set_ik_leg(self, ik_group_name):
         
         self.ik_leg =  ik_group_name
-                    
+    
     def create(self):
         
         super(FootRig,self).create()
@@ -6928,6 +7030,7 @@ class FootRig(BaseFootRig):
             return
         
         self._create_ik_chain()
+        
         self._attach_ik_chain()
         
         self.ankle = self.ik_joints[0]
@@ -6937,6 +7040,7 @@ class FootRig(BaseFootRig):
         self._create_roll_attributes()
         
         self._create_pivot_groups()
+        
         
 class QuadSpineRig(BufferRig):
     
