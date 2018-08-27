@@ -56,9 +56,9 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         button_layout.addSpacing(10)
         button_layout.addWidget(self.edit_mode_button, alignment = qt.QtCore.Qt.AlignRight)
         
-        self.main_layout.addLayout(button_layout)
         self.main_layout.addWidget(self.option_scroll)
         self.main_layout.addWidget(self.edit_options)
+        self.main_layout.addLayout(button_layout)
     
     def _create_history_widget(self):
         
