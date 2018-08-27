@@ -5043,15 +5043,26 @@ class CompactHistoryWidget(BasicWidget):
         
     def _build_widgets(self):
         
+        directory = util_file.get_vetala_directory()
+        save = util_file.join_path(directory, 'icons/save.png')
+        
+        
         self.load_default = qt.QPushButton('Default')
         self.back_button = qt.QPushButton('<')
+        self.history_number = qt.QLabel('')
+        self.history_number.setMinimumWidth(30)
+        self.history_number.setAlignment(qt.QtCore.Qt.AlignCenter)
         self.forward_button = qt.QPushButton('>')
-        save = qt.QPushButton('Save')
-        save_default = qt.QPushButton('Save Default')
+        
+        save_icon = get_icon('save.png')
+        
+        save = qt.QPushButton(save_icon, '')
+        
+        save_default = qt.QPushButton(save_icon, 'Default')
         
         save.clicked.connect(self.save_command)
-        self.back_button.clicked.connect(self.back_command)
-        self.forward_button.clicked.connect(self.forward_command)
+        self.back_button.pressed.connect(self.back_command)
+        self.forward_button.pressed.connect(self.forward_command)
         self.load_default.clicked.connect(self.load_default_command)
         save_default.clicked.connect(self.save_default_command)
         
@@ -5070,6 +5081,7 @@ class CompactHistoryWidget(BasicWidget):
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         
         self.main_layout.addWidget(self.back_button)
+        self.main_layout.addWidget(self.history_number)
         self.main_layout.addWidget(self.forward_button)
         self.main_layout.addWidget(self.load_default)
         self.main_layout.addSpacing(30)
@@ -5080,36 +5092,50 @@ class CompactHistoryWidget(BasicWidget):
         self.forward_button.hide()
         self.load_default.hide()
     
-    def save_default(self):
-        self.load_default.show()
-    
-    def load_default(self):
-        pass
         
     def set_history(self, version_inst):
         self.version_inst = version_inst
         
         if self.version_inst.has_versions():
             self.set_at_end()
+        
+        
             
     def set_at_end(self):
         self.back_button.show()
-        self.forward_button.hide()
+        number_list = self.version_inst.get_version_numbers()
+        self.history_number.setText(str(number_list[-1]))
+        self.current_number = number_list[-1]
+        self.forward_button.show()
+        self.forward_button.setEnabled(False)
+        self.back_button.setEnabled(True)
+        
+        
+        if self.version_inst.has_default():
+            self.load_default.show()
+        else:
+            self.load_default.hide()
     
     def set_at_start(self):
         self.forward_button.show()
-        self.back_button.hide()
+        self.forward_button.setEnabled(True)
+        self.back_button.setDisabled(True)
+        self.back_button.show()
+        
+        if self.version_inst.has_default():
+            self.load_default.show()
         
     def set_current_number(self, number):
         self.current_number = number
     
     def save_command(self):
         
+        self.back_button.setEnabled(True)
         self.back_button.show()
         
-        self.version_inst.save() 
+        self.version_inst.save()
         
-        self.save_history.emit()
+        self.set_at_end()
 
     def back_command(self):
         
@@ -5121,6 +5147,9 @@ class CompactHistoryWidget(BasicWidget):
             return
         
         back_number = None
+        
+        if self.current_number == 2:
+            self.back_button.setDisabled(True)
         
         if not self.current_number:
             self.set_current_number(number_list[-1])
@@ -5143,11 +5172,20 @@ class CompactHistoryWidget(BasicWidget):
                 if back_number != None:
                     self.current_number = back_number
                     self.forward_button.show()
+                    self.forward_button.setEnabled(True)
                 if back_number == None:
                     self.forward_button.show()
-                    self.back_button.hide()
+                    self.forward_button.setEnabled(True)
+                    self.back_button.setDisabled(True)
+                    
                     return
+            
+                if back_number == 1:
+                    self.forward_button.show()
+                    self.forward_button.setEnabled(True)
+                    self.back_button.setDisabled(True)
         
+        self.history_number.setText(str(back_number))
         version_file = self.version_inst.get_version_path(back_number)
         
         self.back_socket.emit(version_file)
@@ -5155,22 +5193,37 @@ class CompactHistoryWidget(BasicWidget):
         return version_file
     
     def forward_command(self):
-        
+        print 'forward----------'
         number_list = self.version_inst.get_version_numbers()
         
+        print 'at start', self.current_number
+        print number_list[-1]
         if not number_list:
             return
         
         if len(number_list) == 1:
-            self.forward_button.hide()
+            self.forward_button.setDisabled()
             return
         
-        if self.current_number != None and self.current_number != number_list[-1]:
-            number = self.current_number + 1
-            self.set_current_number(number)
-            self.back_button.show()
-        else:
-            self.forward_button.hide()
+        if self.current_number != None:
+                
+            if self.current_number != number_list[-1]:
+                print self.current_number, number_list[-1], 'here!'
+                number = self.current_number + 1
+                self.set_current_number(number)
+                self.back_button.show()
+                self.back_button.setEnabled(True)
+                self.forward_button.setEnabled(True)
+            else:
+                print 'here2'
+                self.forward_button.setDisabled(True)
+            
+        if self.current_number == number_list[-1]:
+            self.forward_button.setDisabled(True)
+            
+        print 'at end', self.current_number
+            
+        self.history_number.setText(str(self.current_number))
             
         version_file = self.version_inst.get_version_path(self.current_number)
         
@@ -5180,7 +5233,11 @@ class CompactHistoryWidget(BasicWidget):
     
     def load_default_command(self):
         
+        print 'load default'
+        
         filename = self.version_inst.get_default()
+        
+        print filename
         
         self.load_default_socket.emit(filename)
     
