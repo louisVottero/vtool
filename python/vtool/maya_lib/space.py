@@ -308,8 +308,8 @@ class PinXform(object):
         
         self.lock_state = {}
         
-        parent = cmds.listRelatives(self.xform, p = True, f = True)
-        
+        """
+        parent = cmds.listRelatives(self.xform, p = True, f = True, type = 'transform')
         if parent:
             
             parent = parent[0]
@@ -321,16 +321,12 @@ class PinXform(object):
             
             if pin_parent:
                 cmds.parent(pin, w = True)
-
-            
-            #pin = cmds.group(em = True, n = 'pin1')    
-            #MatchSpace(parent, pin).translation_rotation()
             
             constraint = cmds.parentConstraint(pin, parent, mo = True)[0]
             self.delete_later.append(constraint)
             self.delete_later.append(pin)
-        
-        children = cmds.listRelatives(self.xform, f = True)
+        """
+        children = cmds.listRelatives(self.xform, f = True, type = 'transform')
         
         if not children:
             return
@@ -741,11 +737,15 @@ class IkHandle(object):
     
     def __init__(self, name):
         
+        self.name = name
+        
         if not name:
-            name = core.inc_name('ikHandle')
+            self.name = core.inc_name('ikHandle')
         
         if not name.startswith('ikHandle'):
             self.name = 'ikHandle_%s' % name
+        
+        
             
         self.start_joint = None
         self.end_joint = None
@@ -885,7 +885,7 @@ class OrientJoint(object):
     This will orient the joint using the attributes created with OrientJointAttributes.
     """
     
-    def __init__(self, joint_name):
+    def __init__(self, joint_name, children = []):
         
         self.joint = joint_name
         self.orient_values = None
@@ -896,6 +896,7 @@ class OrientJoint(object):
         self.aim_at = 3
         self.aim_up_at = 0
         
+        self.children = children
         self.child = None
         self.child2 = None
         self.grand_child = None
@@ -909,7 +910,6 @@ class OrientJoint(object):
         self.up_space_type = 'vector'
         
         self._get_relatives()
-        self._get_surface()
         
     def _update_locator_scale(self, locator):
         
@@ -937,14 +937,15 @@ class OrientJoint(object):
                 self.grand_parent = grand_parent[0]
         
         
-        children = cmds.listRelatives(self.joint, f = True, type = 'transform')
+        if not self.children:
+            self.children = cmds.listRelatives(self.joint, f = True, type = 'transform')
         
-        if children:
-            self.child = children[0]
-            if len(children) > 1:
-                self.child2 = children[1]
+        if self.children:
+            self.child = self.children[0]
+            if len(self.children) > 1:
+                self.child2 = self.children[1]
             
-            grand_children = cmds.listRelatives(self.child, f = True)
+            grand_children = cmds.listRelatives(self.child, f = True, type = 'transform')
             
             if grand_children:
                 self.grand_child = grand_children[0]
@@ -1037,9 +1038,6 @@ class OrientJoint(object):
         
         if index == 5:
             
-            
-            
-            
             child_group = None
             
             if self.child2 and cmds.objExists(self.child2):
@@ -1053,25 +1051,29 @@ class OrientJoint(object):
         
         if index == 6:
             
-            self.up_space_type = 'object'
+            self._get_surface()
             
             space_group = None
-            
-            if self.surface:
-                space_group = self._get_position_group(self.joint)
-                space_group_xform = cmds.xform(space_group, q = True, t = True, ws = True)
+                        
+            if not self.surface:
+                return space_group
                 
-                if core.has_shape_of_type(self.surface, 'mesh'):
-                    mesh_fn = api.MeshFunction(self.surface)
-                    normal = mesh_fn.get_closest_normal(space_group_xform, True)
-                    cmds.xform(space_group, ws = True, t = normal)
-                if core.has_shape_of_type(self.surface, 'nurbsSurface'):
-                    surface_fn = api.NurbsSurfaceFunction(self.surface)
-                    
-                    normal = surface_fn.get_closest_normal(space_group_xform, True)
-                    cmds.xform(space_group, ws = True, t = normal)
-                    
+            self.up_space_type = 'object'
             
+            space_group = self._get_position_group(self.joint)
+            space_group_xform = cmds.xform(space_group, q = True, t = True, ws = True)
+            
+            if core.has_shape_of_type(self.surface, 'mesh'):
+                mesh_fn = api.MeshFunction(self.surface)
+                normal = mesh_fn.get_closest_normal(space_group_xform, True)
+                cmds.xform(space_group, ws = True, t = normal)
+            if core.has_shape_of_type(self.surface, 'nurbsSurface'):
+                surface_fn = api.NurbsSurfaceFunction(self.surface)
+                
+                normal = surface_fn.get_closest_normal(space_group_xform, True)
+                cmds.xform(space_group, ws = True, t = normal)
+                
+        
             return space_group
             
     def _get_local_group(self, transform):
@@ -1116,6 +1118,7 @@ class OrientJoint(object):
         return self._get_position_group(transform)
               
     def _create_aim(self):
+        
         if not self.aim_at:
             return
         
@@ -1148,7 +1151,8 @@ class OrientJoint(object):
         return orient_attributes.get_values()
         
     def _cleanup(self):
-        cmds.delete(self.delete_later)
+        if self.delete_later:
+            cmds.delete(self.delete_later)
 
     def _pin(self):
         
@@ -1156,27 +1160,30 @@ class OrientJoint(object):
         pin.pin()
         
         nodes = pin.get_pin_nodes()
-        self.delete_later += nodes
+        if nodes:
+            self.delete_later += nodes
     
     def _freeze(self, scale = True):
-        children = cmds.listRelatives(self.joint, f = True)
         
-        found_children = []
+        if scale:
+            if is_rotate_scale_default(self.joint):
+                return
+        if not scale:
+            if is_rotate_default(self.joint):
+                return
         
-        if children:
-            for child in children:
-                if core.is_transform(child):
-                    
-                    child_parented = cmds.parent(child, w = True)[0]
-                    found_children.append(child_parented)
+        children = cmds.listRelatives(self.joint, f = True, type = 'transform')
         
+        if children:    
+            children = cmds.parent(children, w = True)
+                
         try:
             cmds.makeIdentity(self.joint, apply = True, r = True, s = scale)
         except:
             pass
         
         if children:
-            cmds.parent(found_children, self.joint)
+            cmds.parent(children, self.joint)
     
     def _invert_scale(self):
         invert_scale = self.orient_values['invertScale']
@@ -1273,15 +1280,11 @@ class OrientJoint(object):
         
     def run(self):
         
-        if cmds.objExists('%s.active' % self.joint):
-            if not cmds.getAttr('%s.active' % self.joint):
-                vtool.util.warning('%s has orientation attributes but is not active.  Skipping.' % self.joint)
-                return
-        
-        self._freeze()
-                
+        self._freeze()        
         self._get_relatives()
         self._pin()
+        
+        
         
         try:
             cmds.setAttr('%s.rotateAxisX' % self.joint, 0)
@@ -1291,6 +1294,8 @@ class OrientJoint(object):
             vtool.util.show('Could not zero out rotateAxis on %s. This may cause rig errors.' % self.joint)
         
         self.orient_values = self._get_values()
+        
+        
         
         if self.orient_values:
         
@@ -1316,6 +1321,8 @@ class OrientJoint(object):
             self._invert_scale()
         
         self._cleanup()
+        
+        
         
         self._freeze(scale = False)
         
@@ -1777,28 +1784,46 @@ def is_transform_default(transform):
     for attribute in attributes:
         
         for axis in ['X','Y','Z']:
-            if cmds.getAttr('%s.%s%s' % (transform, attribute, axis), l = True):
-                continue
-            if not cmds.getAttr('%s.%s%s' % (transform, attribute, axis), k = True):
-                continue
-            if attr.is_connected('%s.%s%s' % (transform, attribute, axis)):
-                continue
-            if cmds.getAttr('%s.%s%s' % (transform, attribute, axis)) > 0.0000001:
+            value = cmds.getAttr('%s.%s%s' % (transform, attribute, axis)) 
+            if value < -0.00001 or value > 0.00001:
                 return False
             
     for axis in ['X','Y','Z']:
-        if cmds.getAttr('%s.scale%s' % (transform, axis), l = True):
-            continue
-        if attr.is_connected('%s.scale%s' % (transform, axis)):
-            continue
-        if not cmds.getAttr('%s.scale%s' % (transform, axis), k = True):
-            continue
         if cmds.getAttr('%s.scale%s' % (transform, axis)) != 1:
             return False
     
     return True
-        
+
+def is_rotate_default(transform):
     
+    attributes = ['rotate']
+    
+    for attribute in attributes:
+        
+        for axis in ['X','Y','Z']:
+            value = cmds.getAttr('%s.%s%s' % (transform, attribute, axis)) 
+            if value < -0.00001 or value > 0.00001:
+                return False
+            
+    return True
+        
+def is_rotate_scale_default(transform):
+    
+    attributes = ['rotate']
+    
+    for attribute in attributes:
+        
+        for axis in ['X','Y','Z']:
+            value = cmds.getAttr('%s.%s%s' % (transform, attribute, axis)) 
+            if value < -0.00001 or value > 0.00001:
+                return False
+            
+    for axis in ['X','Y','Z']:
+        if cmds.getAttr('%s.scale%s' % (transform, axis)) != 1:
+            return False
+    
+    return True
+
 def get_non_default_transforms():
     """
     Get transforms in the scene that don't have default values.
@@ -2063,7 +2088,7 @@ def get_distance(source, target):
                              worldSpace = True, 
                              rp = True)
     
-    return vtool.util.get_distance(vector1, vector2)
+    return api.get_distance(vector1, vector2)
 
 def get_midpoint( source, target):
     """
@@ -2926,6 +2951,31 @@ def create_pole_chain(top_transform, btm_transform, name, solver = IkHandle.solv
 
     return joint1, joint2, ik_pole
 
+def create_ik_on_joint(joint, name, solver = IkHandle.solver_sc):
+    
+    rels = cmds.listRelatives(joint, type = 'joint')
+    
+    if not rels:
+        return
+    
+    joint2 = rels[0]
+    
+
+    ik_handle = IkHandle( name )
+    
+    ik_handle.set_start_joint( joint )
+    ik_handle.set_end_joint( joint2 )
+    ik_handle.set_solver(solver)
+    ik_pole = ik_handle.create()
+    
+    if solver == IkHandle.solver_rp:
+        cmds.setAttr('%s.poleVectorX' % ik_pole, 0)
+        cmds.setAttr('%s.poleVectorY' % ik_pole, 0)
+        cmds.setAttr('%s.poleVectorZ' % ik_pole, 0)
+        
+    return ik_pole
+    
+
 def get_xform_group(transform, xform_group_prefix = 'xform'):
     """
     This returns an xform group above the control.
@@ -3247,29 +3297,37 @@ def orient_attributes(scope = None):
     Args:
         scope (list): List of transforms to orient.
     """
+    
     if not scope:
         scope = core.get_top_dag_nodes()
+    
+    progress_bar = core.ProgressBar('Orient Joints', len(scope))
     
     oriented = False
     
     for transform in scope:
         
-        relatives = cmds.listRelatives(transform, f = True)
+        if cmds.objExists('%s.active' % transform):
+            if not cmds.getAttr('%s.active' % transform):
+                vtool.util.warning('%s has orientation attributes but is not active.  Skipping.' % transform)
+                continue
         
-        if not cmds.objExists('%s.ORIENT_INFO' % transform):
-            if relatives:
-                orient_attributes(relatives)
-                oriented = True
+        progress_bar.status('Orienting: %s' % core.get_basename(transform))
+        
+        relatives = cmds.listRelatives(transform, f = True, type = 'transform')
                 
-            continue
-        
-        if cmds.nodeType(transform) == 'joint' or cmds.nodeType(transform) == 'transform':
-            orient = OrientJoint(transform)
-            orient.run()
+        if cmds.objExists('%s.ORIENT_INFO' % transform):
             
-            if relatives:
-                orient_attributes(relatives)
-                oriented = True
+            orient = OrientJoint(transform, relatives)
+            orient.run()
+        
+        if relatives:
+            orient_attributes(relatives)
+            oriented = True
+
+        progress_bar.next()
+    
+    progress_bar.end()
                 
     return oriented
 
@@ -3334,11 +3392,11 @@ def orient_x_to_child_up_to_surface(joint, invert = False, surface = None):
         aim_axis = [-1,0,0]
         up_axis = [0,-1,0]
     
-    children = cmds.listRelatives(joint)
+    children = cmds.listRelatives(joint, type = 'transform')
     
     if children:
         
-        orient = OrientJoint(joint)
+        orient = OrientJoint(joint, children)
         orient.set_surface(surface)
         orient.set_aim_at(3)
         orient.set_aim_up_at(6)
@@ -3364,11 +3422,11 @@ def orient_x_to_child(joint, invert = False):
         aim_axis = [-1,0,0]
         up_axis = [0,-1,0]
     
-    children = cmds.listRelatives(joint)
+    children = cmds.listRelatives(joint, type = 'transform')
     
     if children:
     
-        orient = OrientJoint(joint)
+        orient = OrientJoint(joint, children)
         orient.set_aim_at(3)
         orient.set_aim_up_at(0)
         orient.set_aim_vector(aim_axis)
@@ -3644,8 +3702,6 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
             
             continue
         
-        if transform == 'persp':
-            print transform, other
         
         if not cmds.objExists(other) and create_if_missing:
             
