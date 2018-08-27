@@ -437,7 +437,7 @@ class VersionFile(object):
         
         inc_file_name = self._increment_version_file_name()
         
-        self._save(inc_file_name, comment)
+        self._save(inc_file_name)
             
         self.save_comment(comment, inc_file_name)
         
@@ -452,6 +452,15 @@ class VersionFile(object):
         self._save(filename)
         
         return filename
+    
+    def has_default(self):
+        
+        filename = self._default_version_file_name()
+        
+        if is_file(filename):
+            return True
+        
+        return False
     
     def has_versions(self):
         
