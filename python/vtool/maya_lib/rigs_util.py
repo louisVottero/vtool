@@ -2410,6 +2410,7 @@ def get_controls(namespace = ''):
     found = []
     found_with_value = []
     
+    
     for transform_node in transforms:
         
         if cmds.objExists('%s.POSE' % transform_node):
@@ -2421,6 +2422,20 @@ def get_controls(namespace = ''):
             found.append(transform_node)
             continue
         
+        
+        #temprorary until I change the prefix behavior
+        if transform.startswith('xform'):
+            continue        
+        if transform.startswith('driver'):
+            continue
+        if transform.startswith('follow'):
+            continue
+        if transform.startswith('offset'):
+            continue
+        if transform.find('driver') > -1:
+            continue
+        
+       
         if transform.endswith('_CON'):
             found.append(transform_node)
             continue
@@ -2486,33 +2501,8 @@ def mirror_control(control):
     if not cmds.objExists('%s.cc' % shape):
         return
     
-    other_control = None
+    other_control = space.find_transform_right_side(control)
     
-    if control.endswith('_L') or control.endswith('_R'):
-                
-        if control.endswith('_L'):
-            other_control = control[0:-2] + '_R'
-            
-        if control.endswith('_R'):
-            other_control = control[0:-2] + '_L'
-            
-    if not other_control:
-        if control.startswith('L_'):
-            other_control = 'R_' + control[2:]
-            
-        if control.startswith('R_'):
-            other_control = 'L_' + control[2:]
-         
-    if not other_control:
-                
-        if control.find('lf') > -1 or control.find('rt') > -1:
-            
-            if control.find('lf') > -1:
-                other_control = control.replace('lf', 'rt')
-                
-            if control.find('rt') > -1:
-                other_control = control.replace('rt', 'lf') 
-           
     if not other_control or not cmds.objExists(other_control):
         return
                     
@@ -2799,6 +2789,8 @@ def fix_sub_controls(controls = None):
     
     controls = vtool.util.convert_to_sequence(controls)
     
+        
+    
     for control in controls:
         if not core.has_shape_of_type(control, 'nurbsCurve'):
             continue
@@ -2807,10 +2799,14 @@ def fix_sub_controls(controls = None):
             continue
         
         
+        
         outputs = attr.get_attribute_outputs('%s.subVisibility' % control, node_only=True)
         outputs.sort()
         
         scale_offset = .85
+        
+        if not outputs:
+            vtool.util.warning('No controls connected to subVisibility. Check that the subVisibility attribute was not edited.')
         
         for output_node in outputs:
             
