@@ -685,6 +685,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.set_project_directory(directory)
         
         self.set_project_directory(directory)
+        self.set_directory(directory[1])
         
     def _set_default_template_directory(self):
         
@@ -1191,7 +1192,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _browser(self):
         
         if self.tab_widget.currentIndex() == 0:
-            util_file.open_browser(self.directory)
+            util_file.open_browser(process.get_default_directory())
             return
         
         directory = self._get_current_path()
