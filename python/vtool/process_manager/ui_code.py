@@ -197,6 +197,8 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
             self._process_inst = process_inst
             self.code_widget.set_process(process_inst)
         
+            self.script_widget.set_process_inst(self._process_inst)
+        
         self._close_splitter()
         
     def set_code_directory(self, directory):
@@ -478,6 +480,9 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     script_duplicate = vtool.qt_ui.create_signal()
         
     def __init__(self):
+        
+        self._process_inst = None
+        
         super(ScriptWidget, self).__init__()
         
         policy = self.sizePolicy()
@@ -489,12 +494,14 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         self.exteranl_code_libarary = None
         
+        
+        
     def _define_main_layout(self):
         return qt.QVBoxLayout()
         
     def _build_widgets(self):
         
-        self.save_widget = qt_ui.CompactHistoryWidget()
+        self._create_history_widget()
         
         self.code_manifest_tree = CodeManifestTree()
         
@@ -507,10 +514,50 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         self.code_manifest_tree.item_removed.connect(self._remove_code)
         self.code_manifest_tree.item_duplicated.connect(self._duplicate)
         
-        self.main_layout.addWidget(self.save_widget)
+        
         self.main_layout.addWidget(self.code_manifest_tree)
+        self.main_layout.addWidget(self.history_widget)
+        
+        
         
         self.main_layout.addLayout(buttons_layout)
+    
+    def _create_history_widget(self):
+        
+        history_widget = qt_ui.CompactHistoryWidget()
+        
+        history_widget.back_socket.connect(self._set_current_manifest_history)
+        history_widget.forward_socket.connect(self._set_current_manifest_history)
+        history_widget.load_default_socket.connect(self._load_manifest_default)
+        
+        self.history_widget = history_widget
+        
+        if self._process_inst:
+            version_history = self.process_inst.get_option_history()
+            self.history_widget.set_history(version_history)
+        
+        
+        return history_widget
+    
+    def _set_current_manifest_history(self, version_file):
+        
+        if not self.history_widget:
+            return
+        
+        if version_file:
+            print version_file
+            #self.option_palette.set_options_file(version_file)
+            
+    def _load_manifest_default(self, default_version_file):
+        
+        
+        
+        if not self.history_widget:
+            return
+        
+        if default_version_file:
+            print default_version_file
+            #self.option_palette.set_options_file(default_version_file)
     
         
     def _script_open(self, item, open_in_window, open_external = False):
@@ -606,7 +653,14 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         self.code_manifest_tree.process = process_tool
         self.code_manifest_tree.set_directory(directory)
+    
+    def set_process_inst(self, process_inst):
         
+        self._process_inst = process_inst
+        
+        if self._process_inst:
+            version_history = self._process_inst.get_manifest_history()
+            self.history_widget.set_history(version_history)
         
     def reset_process_script_state(self):
         self.code_manifest_tree.reset_process_script_state()
