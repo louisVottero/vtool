@@ -137,6 +137,7 @@ class Process(object):
         self.runtime_values = {}
         self.option_settings = None
         self.settings = None
+        self._control_inst = None
         
         
     def _setup_options(self):
@@ -258,7 +259,11 @@ class Process(object):
         except Exception:
             status = traceback.format_exc()
             util.error(status)
-            
+    
+    def _get_control_inst(self):
+        
+        if not self._control_inst:
+            self._control_inst = util_file.ControlNameFromSettingsFile(self.get_path())   
 
         
             
@@ -270,6 +275,9 @@ class Process(object):
         self.directory = directory
         
         util_file.create_dir(self.backup_folder_name ,self.get_path())
+        
+        if self._control_inst:
+            self._control_inst.set_directory(self.get_path())
         
     def set_external_code_library(self, directory):
         """
@@ -1140,7 +1148,9 @@ class Process(object):
         
     def get_control(self,description, side):
         
-        pass
+        self._get_control_inst()
+        
+        return self._control_inst.get_name(description, side)
         
     #--- options
     
