@@ -230,8 +230,6 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         if not self.list:
             self.list = SubFolders()
             self.list.setMaximumWidth(200)
-            #self.list.set_title('Folder')
-
             
             self.main_layout.addWidget(self.list)
             
