@@ -3478,7 +3478,7 @@ def find_transform_right_side(transform, check_if_exists = True):
     other = ''
     
     if transform.startswith('l_') and not transform.endswith('_R') and not transform.startswith('R_'):
-        other = transform.replace('l_', 'r_')
+        other = transform = 'r_' + transform[2:]
         
         if cmds.objExists(other) and check_if_exists:
             return other
