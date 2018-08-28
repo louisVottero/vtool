@@ -352,7 +352,8 @@ class Process(object):
         """
         Returns:
             str: The full path to the process folder. 
-            If the process hasn't been created yet, this will return the directory set in set_directory.        """
+            If the process hasn't been created yet, this will return the directory set in set_directory.        
+        """
         
         if self.process_name:
             return util_file.join_path(self.directory, self.process_name)
