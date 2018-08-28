@@ -418,6 +418,15 @@ class FileData(Data):
         filepath = util_file.join_path(directory, filename)
         
         return filepath
+    
+    def get_folder(self):
+        
+        directory = self.directory
+        
+        if self._sub_folder:
+            directory = util_file.join_path(self.directory, '.sub/%s' % self._sub_folder)
+        
+        return directory
         
     def rename(self, new_name):
         
