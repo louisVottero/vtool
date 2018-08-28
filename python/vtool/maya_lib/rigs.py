@@ -2014,6 +2014,8 @@ class FkCurlRig(FkScaleRig):
         
         if self.create_curl:
         
+            attr.create_title(self.attribute_control, self.title)
+        
             driver = space.create_xform_group(control.get(), 'driver2')
             self.control_dict[control.get()]['driver2'] = driver
         
@@ -2029,7 +2031,7 @@ class FkCurlRig(FkScaleRig):
                 for axis in all_axis:
                     self._attach_curl_axis(driver, axis)
                 
-            attr.create_title(self.attribute_control, self.title)
+            
                 
         return self.control
     
