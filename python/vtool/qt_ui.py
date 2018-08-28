@@ -1352,7 +1352,12 @@ class FileManagerWidget(DirectoryWidget):
         if not self.directory:
             return
         
-        version_tool = util_file.VersionFile(self.directory)   
+        folder = self.data_class.get_folder()
+        
+        if not folder:
+            folder = self.directory
+        
+        version_tool = util_file.VersionFile(folder)   
          
         has_versions = version_tool.has_versions()
         
@@ -1366,9 +1371,14 @@ class FileManagerWidget(DirectoryWidget):
         
     def update_history(self):
         self.history_buffer_widget.main_layout.addWidget(self.history_widget)
-            
+        
+        folder = self.data_class.get_folder()
+        
+        if not folder:
+            folder = self.directory
+        
         self.history_widget.show()
-        self.history_widget.set_directory(self.directory)
+        self.history_widget.set_directory(folder)
         self.history_widget.refresh()
         self.history_attached = True
         
@@ -1379,6 +1389,7 @@ class FileManagerWidget(DirectoryWidget):
         
         if self.data_class:
             self.data_class.set_directory(directory)
+            directory = self.data_class.get_folder()
         
         if self.tab_widget.currentIndex() == 0:
             self.save_widget.set_directory(directory)
