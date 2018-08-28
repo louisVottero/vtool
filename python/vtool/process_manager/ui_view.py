@@ -924,7 +924,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
     def _browse(self):
         
-        path = None
+        path = self.directory
         
         if self.current_folder:
             parent_path = self._get_parent_path(self.current_folder)
