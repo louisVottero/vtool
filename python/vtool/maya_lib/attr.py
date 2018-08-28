@@ -3571,3 +3571,12 @@ def remove_orient_attributes(transform):
         
         orient = OrientJointAttributes(thing)
         orient.delete()
+        
+def show_rotate_order(transform, value = None):
+    
+    
+    if value == None:
+        cmds.setAttr('%s.rotateOrder' % transform, k = True)
+    else:
+        cmds.setAttr('%s.rotateOrder' % transform, value, k = True, )
+        
