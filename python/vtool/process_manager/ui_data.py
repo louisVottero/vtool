@@ -1721,7 +1721,7 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     
     def _open_file(self):
         
-        if not vtool.util_file.is_file(self.data_class.filepath):
+        if not vtool.util_file.is_file(self.data_class.get_file()):
             vtool.qt_ui.warning('No data to open. Please save once.', self)
             return
         
@@ -1748,14 +1748,14 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.data_class.open()
         
     def _import_file(self):
-        if not vtool.util_file.is_file(self.data_class.filepath):
+        if not vtool.util_file.is_file(self.data_class.get_file()):
             vtool.qt_ui.warning('No data to import. Please save once.', self)
             return
         self.data_class.import_data()
         
     def _reference_file(self):
         
-        if not vtool.util_file.is_file(self.data_class.filepath):
+        if not vtool.util_file.is_file(self.data_class.get_file()):
             vtool.qt_ui.warning('No data to reference. Please save once.', self)
             return
         self.data_class.maya_reference_data()
