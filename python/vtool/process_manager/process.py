@@ -1384,7 +1384,14 @@ class Process(object):
                 return True
         
         return False
+    
+    def get_manifest_history(self):
         
+        manifest_file = self.get_manifest_file()
+        
+        version_file = util_file.VersionFile(manifest_file)
+        #version_file.set_version_folder_name('.backup/.option_versions')
+        return version_file        
         
         
     
