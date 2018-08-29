@@ -161,7 +161,9 @@ class DataFolder(util_file.FileManager):
         sub_folder = util_file.join_path(self.folder_path, '.sub/%s' % name)
         
         util_file.create_dir(sub_folder)
-            
+
+        self.settings.set('data_type', str(self.data_type))
+ 
     def get_folder_data_instance(self):
         
         if not self.settings:
@@ -381,6 +383,28 @@ class FileData(Data):
         if not self.data_extension:
             self.filepath = util_file.join_path(directory, self.name)
 
+    def get_file(self):
+        
+        directory = self.directory
+        
+        filename = self._get_file_name()
+        
+        if self._sub_folder:
+            directory = util_file.join_path(self.directory, '.sub/%s' % self._sub_folder)
+        
+        filepath = util_file.join_path(directory, filename)
+        
+        return filepath
+    
+    def get_folder(self):
+        
+        directory = self.directory
+        
+        #if self._sub_folder:
+        #    directory = util_file.join_path(self.directory, '.sub/%s' % self._sub_folder)
+        
+        return directory
+
     def get_sub_folder(self):
         folder_name = self.settings.get('sub_folder')
         
@@ -404,29 +428,7 @@ class FileData(Data):
     def create(self):
         name = self.name
         
-        self.file = util_file.create_file('%s.%s' % (name, self.data_extension), self.directory)    
-    
-    def get_file(self):
-        
-        directory = self.directory
-        
-        filename = self._get_file_name()
-        
-        if self._sub_folder:
-            directory = util_file.join_path(self.directory, '.sub/%s' % self._sub_folder)
-        
-        filepath = util_file.join_path(directory, filename)
-        
-        return filepath
-    
-    def get_folder(self):
-        
-        directory = self.directory
-        
-        if self._sub_folder:
-            directory = util_file.join_path(self.directory, '.sub/%s' % self._sub_folder)
-        
-        return directory
+        self.file = util_file.create_file('%s.%s' % (name, self.data_extension), self.directory)        
         
     def rename(self, new_name):
         
@@ -2721,6 +2723,7 @@ class MayaFileData(MayaCustomData):
             filepath = self.get_file()
             
             if not util_file.is_file(filepath):
+                util.warning('Could not open file: %s' % filepath)
                 return
             
             open_file = filepath
