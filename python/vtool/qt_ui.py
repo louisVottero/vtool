@@ -1390,17 +1390,22 @@ class FileManagerWidget(DirectoryWidget):
         if self.data_class:
             self.data_class.set_directory(directory)
             directory = self.data_class.get_folder()
-        
+            sub_directory = self.data_class.get_sub_folder()
+            
+            if not sub_directory:
+                #no sub directory set so just use the default top directory
+                sub_directory = directory
+            
         if self.tab_widget.currentIndex() == 0:
             self.save_widget.set_directory(directory)
             self.save_widget.data_class = self.data_class
         
         if self.tab_widget.currentIndex() == 1:
-            self.history_widget.set_directory(directory)
+            self.history_widget.set_directory(sub_directory)
             self.history_widget.data_class = self.data_class
             
         if self.tab_widget.currentIndex() == 2:
-            self.option_widget.set_directory(directory)
+            self.option_widget.set_directory(sub_directory)
             self.option_widget.data_class = self.data_class
         
         
@@ -4862,7 +4867,7 @@ class AddRemoveDirectoryList(AddRemoveList):
                 folder = current_folder
                 
             settings = util_file.SettingsFile()
-            settings.set_directory(self.directory, 'data.type')
+            settings.set_directory(self.directory, 'data.json')
             settings.set('sub_folder', folder)
             
         self.item_update.emit()
@@ -4883,9 +4888,15 @@ class AddRemoveDirectoryList(AddRemoveList):
         if name in self._define_defaults():
             return item
         
-        
+        #settings = util_file.SettingsFile()
+        #settings.set_directory(self.directory, 'data.json')
+        #data_type = settings.get('data_type')
         
         util_file.create_dir(name, sub_path)
+        
+        #settings = util_file.SettingsFile()
+        #settings.set_directory(self.directory, 'data.type')
+        #settings.set('sub_folder', folder)
         
         return item
     
