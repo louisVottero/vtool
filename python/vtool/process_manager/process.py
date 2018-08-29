@@ -521,8 +521,13 @@ class Process(object):
             basename = util_file.get_basename(dir_name)
             path = util_file.get_dirname(dir_name)
             
+            
+            
+            
             parent_process = Process(basename)
             parent_process.set_directory(path)
+        
+            util.show('Parent process: %s' % parent_process.get_path())
         
             return parent_process
         
@@ -667,6 +672,8 @@ class Process(object):
         
         data_folder_name = self.get_data_folder(name)
         
+        util.show('Import data in: %s' % data_folder_name)
+        
         if not util_file.is_dir(data_folder_name):
             util.show('%s data does not exist in %s' % (name, self.get_name()) )
             return
@@ -690,6 +697,8 @@ class Process(object):
         
         data_folder_name = self.get_data_folder(name)
         
+        util.show('Open data in: %s' % data_folder_name)
+        
         if not util_file.is_dir(data_folder_name):
             util.show('%s data does not exist in %s' % (name, self.get_name()) )
             return
@@ -710,6 +719,8 @@ class Process(object):
         path = self.get_data_path()
         
         data_folder_name = self.get_data_folder(name)
+        
+        util.show('Reference data in: %s' % data_folder_name)
         
         if not util_file.is_dir(data_folder_name):
             util.show('%s data does not exist in %s' % (name, self.get_name()) )
