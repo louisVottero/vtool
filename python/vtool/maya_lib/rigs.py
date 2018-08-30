@@ -6643,8 +6643,6 @@ class BaseFootRig(BufferRig):
         
         roll_control.hide_keyable_attributes()
         
-        print 'create roll', transform, xform_group
-        
         match = space.MatchSpace( transform, xform_group )
         match.translation_rotation()
         
