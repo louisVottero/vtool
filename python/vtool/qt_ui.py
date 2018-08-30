@@ -1354,10 +1354,15 @@ class FileManagerWidget(DirectoryWidget):
         
         folder = self.data_class.get_folder()
         
-        if not folder:
-            folder = self.directory
+        history_directory = None
         
-        version_tool = util_file.VersionFile(folder)   
+        if folder:
+            history_directory = self.data_class.set_directory(folder)    
+        
+        if not history_directory:
+            history_directory = self.directory
+        
+        version_tool = util_file.VersionFile(history_directory)   
          
         has_versions = version_tool.has_versions()
         
@@ -1366,6 +1371,20 @@ class FileManagerWidget(DirectoryWidget):
         if not has_versions:
             self.tab_widget.setTabEnabled(1, False) 
         
+    def _get_history_directory(self, directory):
+        self.data_class.set_directory(directory)
+        
+        sub_directory = self.data_class.get_sub_folder()
+        
+        if sub_directory:
+            sub_directory = util_file.join_path(directory, '.sub/' + sub_directory)
+        
+        if not sub_directory:
+            #no sub directory set so just use the default top directory
+            sub_directory = directory
+    
+        return sub_directory
+    
     def add_option_widget(self):
         self._add_option_widget()
         
@@ -1374,11 +1393,16 @@ class FileManagerWidget(DirectoryWidget):
         
         folder = self.data_class.get_folder()
         
-        if not folder:
-            folder = self.directory
+        history_directory = None
         
+        if folder:
+            history_directory = self._get_history_directory(folder)
+        
+        if not history_directory:
+            history_directory = self.directory
+                
         self.history_widget.show()
-        self.history_widget.set_directory(folder)
+        self.history_widget.set_directory(history_directory)
         self.history_widget.refresh()
         self.history_attached = True
         
@@ -1390,22 +1414,19 @@ class FileManagerWidget(DirectoryWidget):
         if self.data_class:
             self.data_class.set_directory(directory)
             directory = self.data_class.get_folder()
-            sub_directory = self.data_class.get_sub_folder()
             
-            if not sub_directory:
-                #no sub directory set so just use the default top directory
-                sub_directory = directory
+            history_directory = self._get_history_directory(directory)
             
         if self.tab_widget.currentIndex() == 0:
             self.save_widget.set_directory(directory)
             self.save_widget.data_class = self.data_class
         
         if self.tab_widget.currentIndex() == 1:
-            self.history_widget.set_directory(sub_directory)
+            self.history_widget.set_directory(history_directory)
             self.history_widget.data_class = self.data_class
             
         if self.tab_widget.currentIndex() == 2:
-            self.option_widget.set_directory(sub_directory)
+            self.option_widget.set_directory(history_directory)
             self.option_widget.data_class = self.data_class
         
         
@@ -5215,11 +5236,9 @@ class CompactHistoryWidget(BasicWidget):
         return version_file
     
     def forward_command(self):
-        print 'forward----------'
+        
         number_list = self.version_inst.get_version_numbers()
         
-        print 'at start', self.current_number
-        print number_list[-1]
         if not number_list:
             return
         
@@ -5230,20 +5249,17 @@ class CompactHistoryWidget(BasicWidget):
         if self.current_number != None:
                 
             if self.current_number != number_list[-1]:
-                print self.current_number, number_list[-1], 'here!'
                 number = self.current_number + 1
                 self.set_current_number(number)
                 self.back_button.show()
                 self.back_button.setEnabled(True)
                 self.forward_button.setEnabled(True)
             else:
-                print 'here2'
+                
                 self.forward_button.setDisabled(True)
             
         if self.current_number == number_list[-1]:
             self.forward_button.setDisabled(True)
-            
-        print 'at end', self.current_number
             
         self.history_number.setText(str(self.current_number))
             
@@ -5255,11 +5271,7 @@ class CompactHistoryWidget(BasicWidget):
     
     def load_default_command(self):
         
-        print 'load default'
-        
         filename = self.version_inst.get_default()
-        
-        print filename
         
         self.load_default_socket.emit(filename)
     
