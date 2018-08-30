@@ -5994,24 +5994,24 @@ class IkBackLegRig(IkFrontLegRig):
         
         ik_handle.set_start_joint( self.offset_chain[0] )
         ik_handle.set_end_joint( self.offset_chain[-1] )
-        ik_handle.set_solver(ik_handle.solver_rp)
+        ik_handle.set_solver(ik_handle.solver_sc)
         ik_handle = ik_handle.create()
         
         cmds.parent(ik_handle, self.lower_offset_chain[-1])
         
-        cmds.setAttr('%s.poleVectorX' % ik_handle, 0)
-        cmds.setAttr('%s.poleVectorY' % ik_handle, 0)
-        cmds.setAttr('%s.poleVectorZ' % ik_handle, 0)
+        #cmds.setAttr('%s.poleVectorX' % ik_handle, 0)
+        #cmds.setAttr('%s.poleVectorY' % ik_handle, 0)
+        #cmds.setAttr('%s.poleVectorZ' % ik_handle, 0)
         
         ik_handle_btm = space.IkHandle( self._get_name('offset_btm'))
         ik_handle_btm.set_start_joint(self.lower_offset_chain[0])
         ik_handle_btm.set_end_joint(self.lower_offset_chain[-1])
-        ik_handle_btm.set_solver(ik_handle_btm.solver_rp)
+        ik_handle_btm.set_solver(ik_handle_btm.solver_sc)
         ik_handle_btm = ik_handle_btm.create()
         
-        cmds.setAttr('%s.poleVectorX' % ik_handle_btm, 0)
-        cmds.setAttr('%s.poleVectorY' % ik_handle_btm, 0)
-        cmds.setAttr('%s.poleVectorZ' % ik_handle_btm, 0)
+        #cmds.setAttr('%s.poleVectorX' % ik_handle_btm, 0)
+        #cmds.setAttr('%s.poleVectorY' % ik_handle_btm, 0)
+        #cmds.setAttr('%s.poleVectorZ' % ik_handle_btm, 0)
         
         
         
