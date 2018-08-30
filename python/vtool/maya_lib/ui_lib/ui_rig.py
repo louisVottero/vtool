@@ -792,20 +792,27 @@ class RigManager(qt_ui.DirectoryWidget):
         mesh_source = meshes[0]
         mesh_target = meshes[1]
         
-        locators = cmds.ls('*_locator', type = 'transform')
-        ac_joints = cmds.ls('ac_*', type = 'joint')
-        sk_joints = cmds.ls('sk_*', type = 'joint')
+        found = []
         
-        guideJoints = cmds.ls('guideJoint_*', type = 'joint')
-        joints = cmds.ls('joint_*', type = 'joint')
+        scope = cmds.ls(type = 'transform')
         
-        joints = guideJoints + joints + ac_joints + locators + sk_joints
+        for thing in scope:
+            
+            if cmds.nodeType(thing) == 'joint':
+                found.append( thing )
+                continue
+            
+            if core.has_shape_of_type(thing, 'locator'):
+                found.append( thing )
+                continue
+            
+            
         
-        if not joints:
+        if not found:
             return
         
         transfer = deform.XformTransfer()
-        transfer.set_scope(joints)
+        transfer.set_scope(found)
         transfer.set_source_mesh(mesh_source)
         transfer.set_target_mesh(mesh_target)
         
