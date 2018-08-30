@@ -2940,7 +2940,28 @@ def edge_to_vertex(edges):
             verts.append('%s.vtx[%s]' % (mesh, vert2))
     
     return verts
-            
+ 
+def cvs_to_transforms(nurbs, type = 'transform'):
+    
+    cvs = cmds.ls('%s.cv[*]' % nurbs, flatten = True)
+    
+    transforms = []
+    
+    
+    
+    for cv in cvs:
+        if type == 'transform':
+            transform = cmds.spaceLocator( n = 'transform_%s_1' % nurbs)
+        if type == 'joint':
+            cmds.select(cl = True)
+            transform = cmds.joint( n = 'transform_%s_1' % nurbs) 
+        pos = cmds.pointPosition(cv, w = True)
+        
+        cmds.xform(transform, ws = True, t = pos)
+        
+        transforms.append(transform)
+        
+    return transforms           
 
 def rebuild_curve(curve, spans, degree = 3):
     """
