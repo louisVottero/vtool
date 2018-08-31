@@ -44,7 +44,7 @@ class Rig(object):
         
         self._control_inst = None
         
-        
+        self._set_sub_control_color_only = False
         
         self._handle_side_variations()
         
@@ -230,7 +230,10 @@ class Rig(object):
         if not side:
             side = 'C'
         
-        control.color( attr.get_color_of_side( side , sub)  )
+        if not self._set_sub_control_color_only:
+            control.color( attr.get_color_of_side( side , sub)  )
+        if self._set_sub_control_color_only:
+            control.color( attr.get_color_of_side( side, True )  )
         
         if self.control_color >=0 and not sub:
             control.color( self.control_color )
@@ -312,7 +315,7 @@ class Rig(object):
                 
                 if not attr.is_connected(control_and_attr):
                     cmds.connectAttr(self._connect_sub_vis_attr, control_and_attr)
-                
+                    
     
     def set_control_shape(self, shape_name):
         """
@@ -342,6 +345,9 @@ class Rig(object):
         """
         
         self.sub_control_color = color
+        
+    def set_sub_control_color_only(self, bool_value):
+        self._set_sub_control_color_only = bool_value
         
     def set_control_size(self, float_value):
         """
@@ -3529,12 +3535,14 @@ class IkAppendageRig(BufferRig):
         self.create_world_switch = True
         self.create_top_control = True
         self.pole_follow_transform = []
+        self.pole_follow_transform_default = 0
         self.pole_angle_joints = []
         self.top_control_right_side_fix = True
         self.stretch_axis = 'X'
         self.control_offset_axis = None
         self.negate_right_scale = False
         self.negate_right_scale_values = [-1,-1,-1]
+        
         #dampen for legacy...
         self.damp_name = 'dampen'
         
@@ -3949,7 +3957,7 @@ class IkAppendageRig(BufferRig):
         if len(self.pole_follow_transform) == 1:
             space.create_follow_group(self.pole_follow_transform[0], pole_locator)
         if len(self.pole_follow_transform) > 1:
-            space.create_multi_follow(self.pole_follow_transform, pole_locator, self.poleControl, value = 0)
+            space.create_multi_follow(self.pole_follow_transform, pole_locator, self.poleControl, value = self.pole_follow_transform_default)
         
         return pole_locator
         
@@ -4079,7 +4087,7 @@ class IkAppendageRig(BufferRig):
         """
         self.create_top_control = bool_value
     
-    def set_pole_follow_transform(self, transform):
+    def set_pole_follow_transform(self, transform, default_value = 0):
         """
         Set a transform for the pole to follow with a on/off switch on the pole control.
         
@@ -4087,6 +4095,7 @@ class IkAppendageRig(BufferRig):
             transform (str): The name of a transform.s
         """
         self.pole_follow_transform = transform
+        self.pole_follow_transform_default = default_value
         
     def set_control_offset_axis(self, axis):
         """
