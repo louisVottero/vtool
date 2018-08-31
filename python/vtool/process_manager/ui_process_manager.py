@@ -927,6 +927,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if util.is_in_maya():
             import maya.cmds as cmds
             
+            cmds.select(cl = True)
+            
             if cmds.file(q = True, mf = True):
                 
                 filepath = cmds.file(q = True, sn = True)
