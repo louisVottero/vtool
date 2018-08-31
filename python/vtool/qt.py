@@ -17,38 +17,26 @@ try:
         if maya_version < 2017:
             try:
                 from PySide import QtCore
-                from PySide.QtGui import *
-                
                 type_QT = 'pyside'
-                util.show('using PySide')
+                
             except:
                 type_QT = None
                 
         if maya_version >= 2017:
             try:
                 from PySide2 import QtCore
-                from PySide2.QtGui import *
-                from PySide2.QtWidgets import *
-                
                 type_QT = 'pyside2'
-                util.show('using PySide2')
+                
             except:
                 type_QT = None
         
     if not is_in_maya:
-        try:
-            from PySide2 import QtCore
-            from PySide2.QtGui import *
-            from PySide2.QtWidgets import *
-            
+        try:    
+            from PySide2 import QtCore        
             type_QT = 'pyside2'
-            util.show('using PySide2')
         except:
             from PySide import QtCore
-            from PySide.QtGui import *
-            
             type_QT = 'pyside'
-            util.show('using PySide')
             
 except:
     type_QT = None
@@ -56,36 +44,60 @@ except:
 if type_QT == None:
     #if no pyside then try pyqt
     try:
-        from PyQt4 import QtCore, Qt, uic
-        from PyQt4.QtGui import *
+        from PyQt4 import QtCore
         type_QT = 'pyqt'
-        
-        util.show('using pyQT')
-        
     except:
         type_QT = None
     
 
 def is_pyqt():
+    
     global type_QT
     if type_QT == 'pyqt':
         return True
     return False
     
 def is_pyside():
+        
     global type_QT
     if type_QT == 'pyside':
         return True
     return False
 
 def is_pyside2():
+    
     global type_QT
     if type_QT == 'pyside2':
         return True
     return False
 
+if is_pyqt():
+
+    from PyQt4 import Qt, uic
+    from PyQt4.QtGui import *
+    
+if is_pyside():
+    
+    from PySide.QtGui import *
+    from PySide.QtCore import Qt
+
+    util.show('using PySide')
+
 if is_pyside2():
+    
+    from PySide2.QtGui import *
+    from PySide2.QtWidgets import *
+    from PySide2.QtCore import Qt
     
     QItemSelection = QtCore.QItemSelection
     QItemSelectionModel = QtCore.QItemSelectionModel
+    
+    util.show('using PySide2')
+    
+def create_signal(*arg_list):
+    
+    if is_pyqt():
+        return QtCore.pyqtSignal(*arg_list)
+    if is_pyside() or is_pyside2():
+        return QtCore.Signal(*arg_list)
     
