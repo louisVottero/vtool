@@ -1237,6 +1237,23 @@ class Process(object):
         
         return value
         
+    def get_option_match(self, name, return_first = True):
+        
+        dict = self.option_settings.settings_dict
+        
+        found = {}
+        
+        for key in dict:
+            if key.endswith(name):
+                
+                if return_first:
+                    return dict[key]
+                
+                found[name] = dict[key]
+                
+        return found
+        
+        
     def has_option(self, name, group = None):
         self._setup_options()
         
@@ -1660,6 +1677,10 @@ class Process(object):
         Returns:
             str: The status from running the script. This includes error messages.
         """
+        
+        if util.is_in_maya():
+            import maya.cmds as cmds
+            cmds.select(cl = True)
         
         orig_script = script
         
