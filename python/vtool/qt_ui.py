@@ -1,5 +1,4 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
-import traceback
 
 from vtool import qt
 
@@ -34,13 +33,18 @@ def build_qt_application(*argv):
     application = qt.QApplication(*argv)
     return application
 
-def create_signal(*arg_list):
+
+
     
+
+def create_signal(*arg_list):
+    return qt.create_signal(*arg_list)
+    """
     if is_pyqt():
         return qt.QtCore.pyqtSignal(*arg_list)
     if is_pyside() or is_pyside2():
         return qt.QtCore.Signal(*arg_list)
-    
+    """
 
 class BasicGraphicsView(qt.QGraphicsView):
     
@@ -3169,7 +3173,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
         self.filepath = None
         
         self._process_inst = None
-        
         
         super(CodeTextEdit, self).__init__()
         
