@@ -3080,21 +3080,48 @@ def connect_multiply(source_attribute, target_attribute, value = 0.1, skip_attac
     new_name = new_name.replace('[', '_')
     new_name = new_name.replace(']', '_')
 
+    source_attr_type = cmds.getAttr(source_attribute, type = True)
+    attr_type = cmds.getAttr(target_attribute, type = True)
+    
     multi = cmds.createNode('multiplyDivide', n = 'multiplyDivide_%s' % new_name)
 
-    cmds.connectAttr(source_attribute, '%s.input1X' % multi)
+    if attr_type == 'double3':
+        
+        if source_attr_type == 'double3':
+            
+            cmds.connectAttr(source_attribute, '%s.input1' % multi)
+        else:
+            cmds.connectAttr(source_attribute, '%s.input1X' % multi)
+            cmds.connectAttr(source_attribute, '%s.input1Y' % multi)
+            cmds.connectAttr(source_attribute, '%s.input1Z' % multi)
+        
+        cmds.setAttr('%s.input2X' % multi, value)
+        cmds.setAttr('%s.input2Y' % multi, value)
+        cmds.setAttr('%s.input2Z' % multi, value)
+        
+        if input_attribute and not skip_attach:
+            cmds.connectAttr(input_attribute, '%s.input2' % multi)
+        if plus:
+            connect_plus('%s.output' % multi, target_attribute)
+        if not plus:
+            if not cmds.isConnected('%s.output' % multi, target_attribute):
+                cmds.connectAttr('%s.output' % multi, target_attribute, f = True)
+        
+        
+    else:
+        cmds.connectAttr(source_attribute, '%s.input1X' % multi)
+        
+        cmds.setAttr('%s.input2X' % multi, value)
     
-    cmds.setAttr('%s.input2X' % multi, value)
-
-    if input_attribute and not skip_attach:
-        cmds.connectAttr(input_attribute, '%s.input2X' % multi)
-
-    if plus:
-        connect_plus('%s.outputX' % multi, target_attribute)
-    if not plus:
-        if not cmds.isConnected('%s.outputX' % multi, target_attribute):
-            cmds.connectAttr('%s.outputX' % multi, target_attribute, f = True)
-    
+        if input_attribute and not skip_attach:
+            cmds.connectAttr(input_attribute, '%s.input2X' % multi)
+            
+        if plus:
+            connect_plus('%s.outputX' % multi, target_attribute)
+        if not plus:
+            if not cmds.isConnected('%s.outputX' % multi, target_attribute):
+                cmds.connectAttr('%s.outputX' % multi, target_attribute, f = True)
+        
     lock_state.restore_initial()
     
     return multi
