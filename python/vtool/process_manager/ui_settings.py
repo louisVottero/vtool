@@ -4,8 +4,6 @@ from vtool import qt_ui, qt
 from vtool import util_file
 from vtool import util
 
-import string
-    
 class SettingsWidget(qt_ui.BasicWidget):
     
     project_directory_changed = qt_ui.create_signal(object)
@@ -219,6 +217,10 @@ class CodeTabGroup(qt_ui.Group):
         
     def _build_widgets(self):
         
+        self.code_text_size = qt_ui.GetInteger('Code Text Size')
+        self.code_text_size.set_value(8)
+        self.code_text_size.valueChanged.connect(self._set_code_text_size)
+        
         label = qt.QLabel('Manifest Double Click')
         self.open_tab = qt.QRadioButton("Open In Tab")
         self.open_new = qt.QRadioButton("Open In New Window")
@@ -240,6 +242,7 @@ class CodeTabGroup(qt_ui.Group):
         self.open_new.toggled.connect(self._set_manifest_double_click)
         self.open_external.toggled.connect(self._set_manifest_double_click)
         
+        self.main_layout.addWidget(self.code_text_size)
         self.main_layout.addWidget(label)
         self.main_layout.addWidget(self.open_tab)
         self.main_layout.addWidget(self.open_new)
@@ -260,7 +263,15 @@ class CodeTabGroup(qt_ui.Group):
     def _get_popup_save(self):
         value = self.settings.get('code popup save')
         
-        self.pop_save.set_state(value)
+        if value != None:
+            self.pop_save.set_state(value)
+        
+    def _get_code_text_size(self):
+        
+        value = self.settings.get('code text size')
+        if value != None:
+            self.code_text_size.set_value(value)
+            
         
     def _set_manifest_double_click(self):
         
@@ -277,12 +288,20 @@ class CodeTabGroup(qt_ui.Group):
         
         self.settings.set('code popup save', self.pop_save.get_state())
         
+    def _set_code_text_size(self):
+        
+        value =  self.code_text_size.get_value()
+        
+        self.settings.set('code text size',value)
+        
     def set_settings(self, settings):
         
         self.settings = settings
         
         self._get_manifest_double_click()
-        self._get_popup_save()        
+        self._get_popup_save() 
+        self._get_code_text_size()
+               
        
 class ShotgunGroup(qt_ui.Group):
     
