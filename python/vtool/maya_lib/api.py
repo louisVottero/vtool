@@ -103,15 +103,8 @@ def set_current_camera(camera_name):
     cmds.refresh()
 
 
-def get_distance(three_value_list1, three_value_list2 ):
-    
-    vector1 = three_value_list1
-    vector2 = three_value_list2
 
-    mp1 = om.MPoint(vector1[0],vector1[1],vector1[2])
-    mp2 = om.MPoint(vector2[0],vector2[1],vector2[2])
-    
-    return mp1.distanceTo(mp2)
+
 
 class ApiObject(object):
     """
@@ -220,6 +213,19 @@ class Point(ApiObject):
         
     def _define_api_object(self, x, y, z, w):
         return OpenMaya.MPoint(x,y,z,w)
+            
+    def get(self):
+        return [self.api_object.x, self.api_object.y, self.api_object.z, self.api_object.w]
+    
+    def get_as_vector(self):
+        return [self.api_object.x, self.api_object.y, self.api_object.z]
+
+class FloatPoint(ApiObject):
+    def __init__(self, x = 0, y = 0, z = 0, w = 1):
+        self.api_object = self._define_api_object(x,y,z,w)
+        
+    def _define_api_object(self, x, y, z, w):
+        return OpenMaya.MFloatPoint(x,y,z,w)
             
     def get(self):
         return [self.api_object.x, self.api_object.y, self.api_object.z, self.api_object.w]
@@ -658,7 +664,42 @@ class MeshFunction(MayaFunction):
                 id_list.append(inc)
                 
         return id_list
+
+class MeshIntersector(MayaFunction):
+    def _define_api_object(self, mobject):
+        
+        intersector = OpenMaya.MMeshIntersector()
+        matrix = mobject.inclusiveMatrix() 
+        node = mobject.node()
+        
+        
+        
+        intersector.create(node, matrix)
+        
+        return intersector
     
+    def get_closest_point_barycentric(self, source_vector):
+        
+        point = Point(source_vector[0],source_vector[1], source_vector[2])
+        
+        pointInfo = OpenMaya.MPointOnMesh()
+        uUtil = OpenMaya.MScriptUtil(0.0)
+        uPtr = uUtil.asFloatPtr()
+        vUtil = OpenMaya.MScriptUtil(0.0)
+        vPtr = vUtil.asFloatPtr()
+        
+        pointInfo.getBarycentricCoords(uPtr, vPtr)
+        self.api_object.getClosestPoint( point.api_object, pointInfo )
+        pointInfo.getBarycentricCoords(uPtr,vPtr)
+        
+        u = uUtil.getFloat(uPtr)
+        v = uUtil.getFloat(vPtr)
+        triangle_id = pointInfo.triangleIndex()
+        face_id = pointInfo.faceIndex()
+        
+        return u,v, face_id, triangle_id
+   
+   
 class NurbsSurfaceFunction(MayaFunction):
     def _define_api_object(self, mobject):
         return OpenMaya.MFnNurbsSurface(mobject)
@@ -1189,3 +1230,61 @@ class DagNode(MayaFunction):
     def get_long_name(self):
         pass
         
+
+#--- API 2
+
+def nodename_to_mobject(object_name):
+    """
+    Initialize an MObject of the named node.
+    """
+    
+    if not cmds.objExists(object_name):
+        return
+    
+    selection_list = SelectionList()
+    selection_list.create_by_name(object_name)
+        
+    if cmds.objectType(object_name, isAType = 'transform') or cmds.objectType(object_name, isAType = 'shape'):
+        return selection_list.get_deg_path(0)
+    
+    return selection_list.get_at_index(0) 
+
+
+def get_object(name):
+    
+    if not cmds.objExists(name):
+        return
+    
+    selection_list = om.MSelectionList()
+    selection_list.add(name)
+    
+    if cmds.objectType(name, isAType = 'transform') or cmds.objectType(name, isAType = 'shape'):
+        return selection_list.getDagPath(0)    
+    
+    return selection_list.getDependNode(0)
+    
+
+def get_distance(three_value_list1, three_value_list2 ):
+    
+    vector1 = three_value_list1
+    vector2 = three_value_list2
+
+    mp1 = om.MPoint(vector1[0],vector1[1],vector1[2])
+    mp2 = om.MPoint(vector2[0],vector2[1],vector2[2])
+    
+    return mp1.distanceTo(mp2)
+
+def get_triangle_ids(mesh, face_id, triangle_id):
+    
+    mobject = get_object(mesh)
+    
+    mit_mesh_polygon = om.MItMeshPolygon(mobject)
+    
+    mit_mesh_polygon.setIndex(face_id)
+    point_array, int_array = mit_mesh_polygon.getTriangle(triangle_id)
+    
+    return int_array
+    
+    
+    
+    
