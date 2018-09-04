@@ -3411,6 +3411,48 @@ def get_skin_blend_weights(skin_deformer):
 
     return values
 
+def get_closest_weight(influence, mesh, source_vector):
+    
+    shapes = core.get_shapes(mesh)
+    if not shapes:
+        return
+    
+    mesh = shapes[0]
+    
+    mobject = api.nodename_to_mobject(mesh)
+    
+    intersect = api.MeshIntersector(mobject)
+    u,v, face_id, triangle_id = intersect.get_closest_point_barycentric(source_vector)
+    
+    return get_skin_weight_at_barycentric(influence, mesh, face_id, triangle_id, u, v)
+    
+
+def get_skin_weight_at_barycentric(influence, mesh, face_id, triangle_id, bary_u, bary_v):
+    """
+    Given an influence, a triangle and bary_u and v values, find what the weight is.  
+    This was developed for sticky lips to be able to set the constraint W0 and W1 values from the joint_jaw weight.
+    """
+    
+    shapes = core.get_shapes(mesh)
+    if not shapes:
+        return
+    
+    skin_cluster = find_deformer_by_type(mesh, deformer_type = 'skinCluster', return_all = False)
+    
+    ids = api.get_triangle_ids(shapes[0], face_id, triangle_id)
+    
+    
+    
+    weights = get_skin_influence_weights(influence, skin_cluster)
+    
+    w1 = weights[ids[0]]
+    w2 = weights[ids[1]]
+    w3 = weights[ids[2]]
+
+    bary_weight = bary_u*w1 + bary_v*w2 + (1 - bary_u - bary_v)*w3
+    
+    return bary_weight
+
 def set_skin_blend_weights(skin_deformer, weights):
     """
     Set the blendWeights on the skin cluster given a list of weights.
