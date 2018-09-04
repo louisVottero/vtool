@@ -146,7 +146,7 @@ class Process(object):
             options = util_file.SettingsFile()
             self.option_settings = options
             
-            self.option_settings.set_directory(self.get_path(), 'options.json')
+        self.option_settings.set_directory(self.get_path(), 'options.json')
         
     def _setup_settings(self):
         if not self.settings:
@@ -1245,6 +1245,23 @@ class Process(object):
         util.show('Accessed - Option: %s, Group: %s, value: %s' % (name, group, value))
         
         return value
+        
+    def get_option_match(self, name, return_first = True):
+        
+        dict = self.option_settings.settings_dict
+        
+        found = {}
+        
+        for key in dict:
+            if key.endswith(name):
+                
+                if return_first:
+                    return dict[key]
+                
+                found[name] = dict[key]
+                
+        return found
+        
         
     def has_option(self, name, group = None):
         self._setup_options()
