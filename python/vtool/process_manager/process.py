@@ -146,7 +146,7 @@ class Process(object):
             options = util_file.SettingsFile()
             self.option_settings = options
             
-        self.option_settings.set_directory(self.get_path(), 'options.json')
+            self.option_settings.set_directory(self.get_path(), 'options.json')
         
     def _setup_settings(self):
         if not self.settings:
@@ -265,6 +265,15 @@ class Process(object):
         if not self._control_inst:
             self._control_inst = util_file.ControlNameFromSettingsFile(self.get_path())   
 
+    def _refresh_process(self):
+        
+        self._setup_options()
+        self._setup_settings()
+        
+        self.runtime_values = {}
+        
+        if self._control_inst:
+            self._control_inst.set_directory(self.get_path())
         
             
     def set_directory(self, directory):
@@ -275,9 +284,9 @@ class Process(object):
         self.directory = directory
         
         util_file.create_dir(self.backup_folder_name ,self.get_path())
+                    
+        self._refresh_process()
         
-        if self._control_inst:
-            self._control_inst.set_directory(self.get_path())
         
     def set_external_code_library(self, directory):
         """
@@ -1237,23 +1246,6 @@ class Process(object):
         
         return value
         
-    def get_option_match(self, name, return_first = True):
-        
-        dict = self.option_settings.settings_dict
-        
-        found = {}
-        
-        for key in dict:
-            if key.endswith(name):
-                
-                if return_first:
-                    return dict[key]
-                
-                found[name] = dict[key]
-                
-        return found
-        
-        
     def has_option(self, name, group = None):
         self._setup_options()
         
@@ -1594,7 +1586,8 @@ class Process(object):
             
         """
         self._set_name(name)
-        self._setup_options()
+        
+        self._refresh_process()
         
     def add_part(self, name):
         """
@@ -1910,13 +1903,17 @@ class Process(object):
             
         name = self.get_name()
         
-        message = '\n\n\aRunning %s Scripts\t\a\n\n' % name
+        message = '\n\n\n\aRunning %s Scripts\t\a\n\n' % name
         
         if util.is_in_maya():
             if core.is_batch():
-                message = '\n\nRunning %s Scripts\n\n' % name
+                message = '\n\n\nRunning %s Scripts\n\n' % name
         
         util.show(message)
+        
+        util.show('\n\nOption path: %s' % self.get_option_file())
+        util.show('Settings path: %s' % self.get_settings_file())
+        util.show('Runtime values: %s\n\n' % self.runtime_values)
         
         scripts, states = self.get_manifest()
         
