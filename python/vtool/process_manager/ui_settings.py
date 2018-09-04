@@ -293,6 +293,7 @@ class CodeTabGroup(qt_ui.Group):
         value =  self.code_text_size.get_value()
         
         self.settings.set('code text size',value)
+        #qt_ui.code_text_size_signal.emit(value)
         
     def set_settings(self, settings):
         
