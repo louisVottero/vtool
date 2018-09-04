@@ -370,6 +370,66 @@ def fade_sigmoid(percent_value):
     input_value = percent_value * 10 + 1
     
     return ( 2 / (1 + (math.e**(-0.70258*input_value)) ) ) -1 
+
+def easeInSine( percent_value ):
+    t = percent_value
+    return math.sin( 1.5707963 * t )
+
+
+def easeInExpo( percent_value ):
+    t = percent_value
+    return (pow( 2, 8 * t ) - 1) / 255
+
+def easeOutExpo(percent_value, power = 2):
+    
+    return 1 - pow( power, -8 * percent_value )
+
+def easeOutCirc(percent_value):
+    return math.sqrt(percent_value)
+
+def easeOutBack(percent_value):
+    return 1 + (--percent_value) * percent_value * (2.70158 * percent_value + 1.70158);
+
+def easeInOutSine(percent_value):
+    t = percent_value
+    return 0.5 * (1 + math.sin( math.pi * (t - 0.5) ) );
+
+def easeInOutQuart(percent_value):
+    t = percent_value
+    if t < 0.5:
+        t *= t
+        return 8 * t * t
+    else:
+        t -= 1
+        t *= t
+        return 1 - 8 * t * t
+
+def easeInOutExpo( percent_value ):
+    t = percent_value
+    
+    if t < 0.5 :
+        return (math.pow( 2, 16 * t ) - 1) / 510;
+    else: 
+        return 1 - 0.5 * math.pow( 2, -16 * (t - 0.5) );
+    
+
+
+def easeInOutCirc(percent_value ):
+    t = percent_value
+    if( t < 0.5 ):
+        return (1 - math.sqrt( 1 - 2 * t )) * 0.5;
+    else:
+        return (1 + math.sqrt( 2 * t - 1 )) * 0.5;
+
+def easeInOutBack( percent_value ):
+    t = percent_value
+    if t < 0.5:
+        return t * t * (7 * t - 2.5) * 2
+    else: 
+        return 1 + (t-1) * t * 2 * (7 * t + 2.5)
+    
+
+
     
 def set_percent_range(percent_value, new_min, new_max):
 
