@@ -356,7 +356,7 @@ class Control(object):
         """
         return self.control
     
-    def get_xform_group(self, name):
+    def get_xform_group(self, name = 'xform'):
         """
         This returns an xform group above the control.
         
@@ -1531,6 +1531,7 @@ class TwistRibbon(object):
         """
         self.joints = []
         self.rivets = []
+        self.control_xforms = []
         self.rivet_gr = None
         self.surface = None
         self.top_locator = None
@@ -1542,8 +1543,41 @@ class TwistRibbon(object):
         self._description = 'section'
         self._offset_axis = 'Y'
         self._attach_directly = False
+        self._top_parent = None
+        self._btm_parent = None
+        self._top_constraint = None
+        self._top_constraint_type = None
+        self._btm_constraint = None
+        self._btm_constraint_type = None
+        self._btm_twist_fix = False
+        self._top_twist_fix = False
+        self._dual_quat = False
         
+    def _create_top_twister_joint(self):
         
+        joint1, joint2, ik = space.create_pole_chain(self.top_locator, self.btm_locator, 'twist_topFix_%s' % self._description, space.IkHandle.solver_rp)
+        cmds.hide(joint1, joint2)
+        
+        xform = space.create_xform_group(joint1)
+        cmds.parent( xform, self.top_locator)
+        cmds.parent(self.top_joint, joint1)    
+        
+        cmds.parent( ik, self.btm_locator)
+        cmds.hide(joint1, ik)
+
+
+    def _create_btm_twister_joint(self):
+        joint1, joint2, ik = space.create_pole_chain(self.btm_locator, self.top_locator, 'twist_btmFix_%s' % self._description, space.IkHandle.solver_rp)
+        cmds.hide(joint1, joint2)
+        
+        xform = space.create_xform_group(joint1)
+        cmds.parent( xform, self.btm_locator)
+        cmds.parent(self.btm_joint, joint1)    
+        
+        cmds.parent( ik, self.top_locator)
+        
+        cmds.hide(joint1, ik)
+     
     def set_description(self, description):
         self._description = description
         
@@ -1559,9 +1593,33 @@ class TwistRibbon(object):
     def set_attach_directly(self, bool_value):
         self._attach_directly = bool_value
         
-    def create(self):
-    
+    def set_top_parent(self, transform):
+        self._top_parent = transform
         
+    def set_btm_parent(self, transform):
+        self._btm_parent = transform
+        
+    def set_top_constraint(self, transform, constraint_type = 'parentConstraint'):
+        self._top_constraint = transform
+        self._top_constraint_type = constraint_type
+    
+    def set_btm_constraint(self, transform, constraint_type = 'parentConstraint'):
+        self._btm_constraint = transform
+        self._btm_constraint_type = constraint_type
+        
+    def set_top_twist_fix(self, bool_value):
+        self._top_twist_fix = bool_value
+        
+    def set_btm_twist_fix(self, bool_value):
+        self._btm_twist_fix = bool_value
+    
+    def set_dual_quaternion(self, bool_value, turn_twist_fix_on = True):
+        self._dual_quat = bool_value
+        if turn_twist_fix_on:
+            self._top_twist_fix = True
+            self._btm_twist_fix = True
+
+    def create(self):
         
         top_loc = cmds.spaceLocator(n = core.inc_name('locator_twistRibbonTop_%s' % self._description))[0]
         btm_loc = cmds.spaceLocator(n = core.inc_name('locator_twistRibbonBtm_%s' % self._description))[0]
@@ -1578,7 +1636,25 @@ class TwistRibbon(object):
         self.group = ribbon_gr
         
         
+        print 'offset axis!!', self._offset_axis
+        
         self.surface = geo.transforms_to_nurb_surface([self._joint, temp_group], description = self._description, offset_axis=self._offset_axis)
+        if self._dual_quat:
+            cmds.rebuildSurface(self.surface, ch = False,
+                                            rpo = 1,
+                                            rt = 0,
+                                            end = 1,
+                                            kr = 0,
+                                            kcp = 0,
+                                            kc = 0,
+                                            su = 1,
+                                            du = 1,
+                                            sv = 2,
+                                            dv = 3,
+                                            tol = 0.01,
+                                            fr = 0,
+                                            dir = 2 )
+            
         
         cmds.parent(self.surface, ribbon_gr)
         if not self.joints:
@@ -1590,33 +1666,74 @@ class TwistRibbon(object):
         self.rivet_gr = rivet_gr
         cmds.parent(rivet_gr, ribbon_gr)
         
+        self.control_xforms = []
+        
         for joint in self.joints:
             
             cmds.delete( cmds.orientConstraint(self._joint, joint)) 
             cmds.makeIdentity(joint, apply = True, r = True)
             
+            
             rivet = geo.attach_to_surface(joint, self.surface, constrain=self._attach_directly)
+            
+            print rivet
+            
+            rel = cmds.listRelatives(rivet, type = 'transform')
+            
+            if rel:
+                self.control_xforms.append(rel[1])
             
             shapes = core.get_shapes(rivet)
             cmds.hide(shapes)
             cmds.parent(rivet, rivet_gr)
+            
+            self.rivets.append(rivet)
         
-        cluster_surface = deform.ClusterSurface(self.surface, self._description)
-        cluster_surface.set_cluster_u(True)
-        cluster_surface.create()
-        handles = cluster_surface.get_cluster_handle_list()
         
-        space.MatchSpace(handles[0], top_loc).translation_to_rotate_pivot()
-        space.MatchSpace(handles[1], btm_loc).translation_to_rotate_pivot()
+        skin_surface = deform.SkinJointSurface(self.surface, self._description)
+        skin_surface.set_joint_u(True)
+        skin_surface.create()
         
-        cmds.parent(handles[0], top_loc)
-        cmds.parent(handles[1], btm_loc)
+        joints = skin_surface.get_joint_list()
         
-        cmds.hide(handles)
+        if self._dual_quat:
+            cmds.delete(joints[1:-1])
+            joints = [joints[0], joints[-1]]
+        if not self._dual_quat:
+            cmds.setAttr('%s.skinningMethod' % skin_surface.skin_cluster, 0)
+            
+        self.top_joint = joints[0]
+        self.btm_joint = joints[1]
+        
+        space.MatchSpace(joints[0], top_loc).translation_to_rotate_pivot()
+        space.MatchSpace(joints[1], btm_loc).translation_to_rotate_pivot()
+        
+        cmds.parent(joints[0], top_loc)
+        cmds.parent(joints[-1], btm_loc)
+        
+        skin = skin_surface.get_skin()
+        cmds.skinPercent( skin, self.surface, normalize=True )
+        
+        cmds.hide(joints)
         
         self.top_locator = top_loc
         self.btm_locator = btm_loc
         
+        if self._top_parent and cmds.objExists(self._top_parent):
+            cmds.parent(self.top_locator, self._top_parent)
+        if self._btm_parent and cmds.objExists(self._btm_parent):
+            cmds.parent(self.btm_locator, self._btm_parent)
+        
+        if self._top_constraint and cmds.objExists(self._top_constraint):
+            eval('cmds.%s(%s,%s,mo = True)' % (self._top_constraint_type, self._top_constraint, top_loc))
+        
+        if self._btm_constraint and cmds.objExists(self._btm_constraint):
+            eval('cmds.%s(%s,%s,mo = True)' % (self._btm_constraint_type, self._btm_constraint, btm_loc))
+        
+        if self._top_twist_fix:
+            self._create_top_twister_joint()
+        if self._btm_twist_fix:
+            self._create_btm_twister_joint()
         
         return [top_loc, btm_loc]
 
