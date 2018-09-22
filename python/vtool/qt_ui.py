@@ -2327,6 +2327,7 @@ class CodeEditTabs(BasicWidget):
     no_tabs = create_signal()
     multi_save = create_signal(object, object)
     completer =  None
+    code_text_size_changed = create_signal(object)
     
     
     def __init__(self):
@@ -2350,7 +2351,7 @@ class CodeEditTabs(BasicWidget):
         
         
         self.installEventFilter(CodeEditTabs_ActiveFilter(self))
-        
+         
     def _find(self, text_edit):
         
         if not self.find_widget:
@@ -2557,6 +2558,7 @@ class CodeEditTabs(BasicWidget):
         code_widget.set_file(filepath)
         code_widget.save.connect(self._save)
         code_widget.find_opened.connect(self._find)
+        self.code_text_size_changed.connect(code_widget.code_text_size_changed)
         
         window = CodeTabWindow(self)
         window.resize(600, 800)
@@ -2610,6 +2612,7 @@ class CodeEditTabs(BasicWidget):
         
         code_widget.save.connect(self._save)
         code_widget.find_opened.connect(self._find)
+        self.code_text_size_changed.connect(code_widget.code_text_size_changed)
         
         self.code_tab_map[basename] = code_edit_widget
         
@@ -2893,6 +2896,7 @@ class CodeEdit(BasicWidget):
     
     save_done = create_signal(object)
     
+    
     def __init__(self):
         
         self._process_inst = None
@@ -2908,6 +2912,10 @@ class CodeEdit(BasicWidget):
         self._orig_window_title = None
         
         self._store_current_window_title()
+        
+        
+        
+
         
     def _build_widgets(self):
         
@@ -3157,6 +3165,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
     save_done = create_signal(object)
     file_set = create_signal()
     find_opened = create_signal(object)
+    code_text_size_changed = create_signal(object)
     
     def __init__(self):
         
@@ -3190,6 +3199,16 @@ class CodeTextEdit(qt.QPlainTextEdit):
         shortcut_zoom_out = qt.QShortcut(minus_seq, self)
         shortcut_zoom_out.activated.connect(self._zoom_out_text)
         
+        settings_dir = util.get_env('VETALA_SETTINGS')
+        
+        if util_file.is_dir(settings_dir):
+            settings = util_file.SettingsFile()
+            settings.set_directory(settings_dir)
+            font_size = settings.get('code text size')
+            self._set_text_size(font_size)
+            
+        
+        
         self._setup_highlighter()
         
         self.setWordWrapMode(qt.QTextOption.NoWrap)
@@ -3205,12 +3224,21 @@ class CodeTextEdit(qt.QPlainTextEdit):
         self.blockCountChanged.connect(self._update_number_width)
         self.updateRequest.connect(self._update_number_area)
         self.cursorPositionChanged.connect(self._line_number_highlight)
+        self.code_text_size_changed.connect(self._code_text_size_change)
         
         self._line_number_highlight()
         
         self.find_widget = None
         
         self.completer = None
+
+    def _set_text_size(self, value):
+        font = self.font()
+        font.setPixelSize(value)
+        self.setFont(font)
+
+    def _code_text_size_change(self, value):
+        self._set_text_size(value)
         
         
     def _activate(self, value):
