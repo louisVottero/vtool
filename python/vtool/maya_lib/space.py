@@ -1949,8 +1949,20 @@ def get_center(transform):
         vector list:  The center vector, eg [0,0,0]
     """
     
+    list = vtool.util.convert_to_sequence(transform)
     
-    components = core.get_components_in_hierarchy(transform)
+    components = []
+    
+    for thing in list:
+        if cmds.nodeType(transform) == 'transform' or cmds.nodeType(transform) == 'joint':
+            sub_components = core.get_components_in_hierarchy(transform)
+            if sub_components and type(sub_components) == list:
+                components += sub_components
+        
+        if thing.find('.') > -1:
+            components.append(thing)
+        
+    
     
     if components:
         transform = components
