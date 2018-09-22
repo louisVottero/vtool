@@ -115,6 +115,7 @@ class Rivet(object):
         self.surface_created = False
         
         self.percentOn = True
+        self._local = False
         
     def _create_surface(self):
         
@@ -185,8 +186,11 @@ class Rivet(object):
     def _connect(self):
         
         if cmds.objExists('%s.worldSpace' % self.surface):
-            cmds.connectAttr('%s.worldSpace' % self.surface, '%s.inputSurface' % self.point_on_surface)
-        
+            if not self._local:
+                cmds.connectAttr('%s.worldSpace' % self.surface, '%s.inputSurface' % self.point_on_surface)
+            if self._local:
+                cmds.connectAttr('%s.local' % self.surface, '%s.inputSurface' % self.point_on_surface)
+                
         if cmds.objExists('%s.outputSurface' % self.surface):
             cmds.connectAttr('%s.outputSurface' % self.surface, '%s.inputSurface' % self.point_on_surface)
         
@@ -254,6 +258,8 @@ class Rivet(object):
     def set_percent_on(self, bool_value):
         self.percentOn = bool_value
         
+    def set_local(self, bool_value):
+        self._local = bool_value
         
     def create(self):
         
@@ -1596,10 +1602,6 @@ def create_curve_from_mesh_border(mesh, offset = 0.1, name = None):
     
     orig_curve = cmds.polyToCurve( form = 2, degree = 1)[0]
     
-    #curve = cmds.offsetCurve(orig_curve[0],  ch = False, rn = False, cb = 2, st = True, cl = True, cr = 0, d = offset, tol = 3.28084e-006, sd = 5, ugn =  False)
-    
-    #cmds.delete(orig_curve)
-    
     curve = cmds.rename(orig_curve, core.inc_name('curve_%s' % mesh))
     
     if name:
@@ -2199,7 +2201,6 @@ def transforms_to_nurb_surface(transforms, description = 'from_transforms', span
         
         vector = vtool.util.get_axis_vector(offset_axis)
         
-        
         cmds.move(vector[0]*offset_amount, 
                   vector[1]*offset_amount, 
                   vector[2]*offset_amount, transform_1, relative = True, os = True)
@@ -2639,7 +2640,9 @@ def attach_to_mesh(transform, mesh, deform = False, priority = None, face = None
                     
                 if auto_parent:
                     cmds.parent(xform, parent)
-
+                    
+                attr.connect_transforms(orig_rivet, xform)
+                
     if not constrain:
         cmds.parent(transform, rivet)
         
@@ -2847,7 +2850,14 @@ def follicle_to_mesh(transform, mesh, u = None, v = None, constrain = True, cons
         cmds.parent(transform, follicle)
     if constrain:
         if not local:
-            eval('cmds.%s("%s", "%s", mo = True)' % (constraint_type, follicle, transform))
+            loc = cmds.spaceLocator(n = 'locator_%s' % follicle)[0]
+            
+            cmds.parent(loc, follicle)
+            space.MatchSpace(transform, loc).translation_rotation()
+            
+            #cmds.parentConstraint(loc, transform, mo = True)
+            
+            eval('cmds.%s("%s", "%s", mo = True)' % (constraint_type, loc, transform))
         if local:
             
             space.constrain_local(follicle, transform, constraint = constraint_type)
@@ -2882,7 +2892,13 @@ def follicle_to_surface(transform, surface, u = None, v = None, constrain = Fals
     if not constrain:
         cmds.parent(transform, follicle)
     if constrain:
-        cmds.parentConstraint(follicle, transform, mo = True)
+        loc = cmds.spaceLocator(n = 'locator_%s' % follicle)[0]
+            
+        cmds.parent(loc, follicle)
+        space.MatchSpace(transform, loc).translation_rotation()
+        
+        cmds.parentConstraint(loc, transform, mo = True)
+        #cmds.parentConstraint(follicle, transform, mo = True)
     
     return follicle
 
