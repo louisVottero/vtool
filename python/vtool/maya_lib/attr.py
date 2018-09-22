@@ -2165,11 +2165,8 @@ def transfer_output_connections(source_node, target_node):
         source_node (str): The node to take output connections from.
         target_node (str): The node to transfer output connections to.
     """
-    outputs  = cmds.listConnections(source_node, 
-                         plugs = True,
-                         connections = True,
-                         destination = True,
-                         source = False)
+    
+    outputs = get_outputs(source_node, node_only = False)
     
     if not outputs:
         return
@@ -2177,8 +2174,12 @@ def transfer_output_connections(source_node, target_node):
     for inc in range(0, len(outputs), 2):
         new_attr = outputs[inc].replace(source_node, target_node)
         
+        
         cmds.disconnectAttr(outputs[inc], outputs[inc+1])
-        cmds.connectAttr(new_attr, outputs[inc+1], f = True)
+        try:
+            cmds.connectAttr(new_attr, outputs[inc+1], f = True)
+        except:
+            vtool.util.warning('Could not connect %s to %s' % (new_attr, outputs[inc+1]))
 
 
 
