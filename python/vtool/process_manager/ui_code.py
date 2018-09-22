@@ -22,6 +22,8 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
     The main widget for code editing.
     """
     
+    code_text_size_changed = qt.create_signal(object)
+    
     def __init__(self):
         
         self._process_inst = None
@@ -45,6 +47,9 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.script_widget.script_rename.connect(self._script_rename)
         self.script_widget.script_remove.connect(self._script_remove)
         self.script_widget.script_duplicate.connect(self._script_duplicate)
+        self.code_text_size_changed.connect(self.script_widget.script_text_size_change)
+        self.script_widget.script_text_size_change.connect(self._code_size_changed)
+        
         
         self.splitter.addWidget(self.script_widget)
         self.splitter.addWidget(self.code_widget)
@@ -57,6 +62,14 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.splitter.splitterMoved.connect(self._splitter_moved)
         self.settings = None
+           
+    def _code_size_changed(self, value):
+        
+        print 'here!!!!'
+        self.code_text_size_changed.connect(self.code_widget.code_edit.code_text_size_changed)
+        
+        #self.code_widget.code_edit
+        
                 
     def _splitter_moved(self, pos, index):
         
@@ -478,6 +491,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     script_rename = vtool.qt_ui.create_signal(object, object)
     script_remove = vtool.qt_ui.create_signal(object)
     script_duplicate = vtool.qt_ui.create_signal()
+    script_text_size_change = vtool.qt.create_signal(object)
         
     def __init__(self):
         
