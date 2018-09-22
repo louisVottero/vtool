@@ -964,6 +964,9 @@ class SkinWeightData(MayaCustomData):
         cmds.loadPlugin( 'objExport' )
         
         #export mesh
+        value = maya_lib.deform.get_skin_envelope(mesh)
+        maya_lib.deform.set_skin_envelope(mesh, 0)
+        
         cmds.select(mesh)
         mesh_path = '%s/mesh.obj' % data_path
         cmds.file(rename=mesh_path)
@@ -972,6 +975,8 @@ class SkinWeightData(MayaCustomData):
                    typ = "OBJexport", 
                    pr = False,
                    es = True)
+        
+        maya_lib.deform.set_skin_envelope(mesh, value)
         
     def _import_ref_obj(self, data_path):
         
@@ -1033,6 +1038,12 @@ class SkinWeightData(MayaCustomData):
             if not cmds.objExists(mesh):
                 
                 mesh = maya_lib.core.get_basename(mesh)
+                            
+                if not cmds.objExists(mesh):
+                    search_meshes = cmds.ls('*:%s' % mesh, type = 'transform')
+                    
+                    if search_meshes:
+                        mesh = search_meshes[0]
                                       
                 if not cmds.objExists(mesh):
                     util.show('Stripped namespace and fullpath from mesh name and could not find it.')
@@ -1067,6 +1078,8 @@ class SkinWeightData(MayaCustomData):
             folder_path = util_file.join_path(path, key)
             
             for mesh in meshes:
+                
+                
                 
                 self.import_skin_weights(folder_path, mesh)
         
@@ -2865,7 +2878,6 @@ class MayaShotgunFileData(MayaFileData):
         return 'maya.shotgun'
     
     def _get_filepath(self, publish_path = False):
-        
         
         project, asset_type, asset, step = self.read_state()
 
