@@ -91,7 +91,7 @@ class Rig(object):
                     
                     class_name = self.__class__.__name__
                     
-                    vtool.util.warning('Empyt setup group in class: %s with description %s %s.' % (class_name, self.description, self.side))
+                    vtool.util.warning('Empty setup group in class: %s with description %s %s.' % (class_name, self.description, self.side))
     
     
     def _create_group(self,  prefix = None, description = None):
@@ -941,35 +941,59 @@ class SparseLocalRig(SparseRig):
         self.local_parent = None
         self.local_xform = None
         self.connect_xform = False
-        self._read_locators = False
-        self._read_locators_max = None
-        self._read_locators_min = None
-        self._read_locators_min_max_axis = 'Y'
+        self.connect_driver = False
+        self._read_locators = []
         self._read_locators_dict = {}
         self.read_locators = []
+        self._loc_group = None
 
     def _create_read_locators(self):
             
         if not self._read_locators:
             return
         
-        group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'read_locator')))
-        cmds.parent(group, self.setup_group)
+        self._temp_loc_dict = {}
         
-        self.read_locators = []
-        
-        for joint in self.joints:
-            loc = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'read')))[0]
+        for read_dict in self._read_locators:
+            if not self._loc_group:
+                group = cmds.group(em = True, n = core.inc_name(self._get_name('group', 'read_locator')))
+                cmds.parent(group, self.setup_group)
+                self._loc_group = group
+            else:
+                group = self._loc_group
             
-            self.read_locators.append(loc)
-            self._read_locators_dict[joint] = loc
+            self.read_locators = []
             
-            cmds.pointConstraint(joint, loc)
-            
-            xform = space.create_xform_group(loc)
-            
-            cmds.parent(xform, group)
-            
+            for joint in self.joints:
+                
+                
+                
+                if not self._temp_loc_dict.has_key(joint):
+                    loc = cmds.spaceLocator(n = core.inc_name(self._get_name('locator', 'read')))[0]
+                    self._temp_loc_dict[joint] = loc
+                    
+                    
+
+                    cmds.pointConstraint(joint, loc)
+                    
+                    xform = space.create_xform_group(loc)
+                    cmds.parent(xform, group)                    
+                    self._read_locators_dict[joint] = []
+                    
+                if self._temp_loc_dict.has_key(joint):
+                    loc = self._temp_loc_dict[joint]
+                
+                values = [loc, read_dict['min'], read_dict['max'], read_dict['axis']]
+                
+                self.read_locators.append(loc)
+                self._read_locators_dict[joint].append(values)
+                
+                
+                
+                
+                
+                
+                
             
 
     def set_local_constraint(self, bool_value):
@@ -982,15 +1006,23 @@ class SparseLocalRig(SparseRig):
         
         self.connect_xform = bool_value
 
-    def set_create_position_read_locators(self, bool_value, min = None, max = None, axis = 'Y'):
+    def set_connect_local_driver(self, bool_value):
+        
+        self.connect_driver = bool_value
+
+    def set_create_position_read_locators(self, bool_value, min_value = None, max_value = None, axis = 'Y'):
         """
         Good to hookup of blendshapes to the translation.
+        Weight attribute named weight if set_position_read_locators called once
+        if called for more than one axis = weightX or weightY or weightZ
         """
         
-        self._read_locators = bool_value
-        self._read_locators_max = max
-        self._read_locators_min = min
-        self._read_locators_min_max_axis = axis
+        read_dict = {}
+        read_dict['min'] = min_value
+        read_dict['max'] = max_value
+        read_dict['axis'] = axis
+        
+        self._read_locators.append(read_dict)
 
     def create(self):
         
@@ -1077,7 +1109,10 @@ class SparseLocalRig(SparseRig):
                 
                     if self.connect_xform:
                         attr.connect_transforms(xform, local_xform)
-                
+                    
+                    if self.connect_driver:
+                        attr.connect_transforms(driver, local_driver)
+                    
                     if not self.local_xform:
                         cmds.parent(local_xform, self.setup_group)
                 
@@ -1085,16 +1120,32 @@ class SparseLocalRig(SparseRig):
                 attr.connect_scale(control.get(), joint)
             
             if self.read_locators:
-                locator = self._read_locators_dict[joint]
+                #loc, read_dict['min'], read_dict['max'], read_dict['axis']
                 
-                attr.connect_message(locator, self.controls[inc], 'readLocator')
-                axis = self._read_locators_min_max_axis.upper()
-                if self._read_locators_max != None or self._read_locators_min != None:
-                    cmds.addAttr(joint, ln = 'weight', at = 'float', dv = 0)
-                if self._read_locators_max != None:
-                    anim.quick_driven_key('%s.translate%s' % (locator, axis), '%s.weight' % joint, [0, self._read_locators_max], [0, -1])
-                if self._read_locators_min != None:
-                    anim.quick_driven_key('%s.translate%s' % (locator, axis), '%s.weight' % joint, [0, self._read_locators_min], [0, 1])
+                for values in self._read_locators_dict[joint]:
+                    locator, read_min, read_max, read_axis = values
+                    
+                    print joint, values
+                    
+                    if not cmds.objExists('%s.readLocator' % self.controls[inc]):
+                        attr.connect_message(locator, self.controls[inc], 'readLocator')
+                    
+                    read_axis = read_axis.upper()
+                    
+                    attribute = 'weight%s' % read_axis
+                    
+                    if len(self._read_locators_dict[joint]) == 1:
+                        attribute = 'weight'
+                    
+                    if read_min != None and read_max != None:
+                        print 'creating attribute'
+                        cmds.addAttr(joint, ln = attribute, at = 'float', dv = 0, min = read_min, max = read_max)             
+                    
+                    
+                    if read_max != None:
+                        anim.quick_driven_key('%s.translate%s' % (locator, read_axis), '%s.%s' % (joint, attribute), [0, read_max], [0, -1])
+                    if read_min != None:
+                        anim.quick_driven_key('%s.translate%s' % (locator, read_axis), '%s.%s' % (joint, attribute), [0, read_min], [0, 1])
                     
             cmds.parent(xform, self.control_group)
 
@@ -4148,7 +4199,9 @@ class IkAppendageRig(BufferRig):
                 self._create_stretchy(top_control, self.btm_control, btm_control)
         
         
-            
+
+#--- Tweak
+         
 class TweakCurveRig(BufferRig):
     """
     TweakCurveRig is good for belts or straps that need to be riveted to a surface.
@@ -4723,7 +4776,206 @@ class ConvertJointToNub(object):
     def set_orient_to_first_transform(self, bool_value):
         
         self.orient_to_first_transform = bool_value
-                          
+
+class TwistRig(JointRig):
+    
+    def __init__(self, name, side = None):
+        super(TwistRig, self).__init__(name, side)
+        
+        self.control_count = 5
+        self._offset_axis = 'Y'
+        self._attach_directly = True
+        self._create_top_control = True
+        self._create_btm_control = True
+        self._btm_twist_fix = True
+        self._top_twist_fix = True
+        self.orient_example = None
+        self._create_controls = False
+        self.main_controls = []
+        self.parent_joints = True
+        
+        self.top_locator = None
+        self.btm_locator = None
+        
+        self.control_xforms = []
+        
+        
+        self.sub_joints = []
+
+
+
+    def _create_twister(self, top_xform, btm_xform):
+        top_joint1, top_joint2, top_ik = space.create_pole_chain(top_xform, btm_xform, 'twist_topFix_%s' % self.description, space.IkHandle.solver_sc)
+        cmds.hide(top_joint2)
+        
+        xform = space.create_xform_group(top_joint1)
+        cmds.parent( xform, self.setup_group)
+        cmds.parentConstraint(top_xform, top_joint1, mo = True)
+        cmds.parent( top_ik, btm_xform)
+        cmds.hide(top_ik)
+
+        btm_joint1, btm_joint2, btm_ik = space.create_pole_chain(btm_xform, top_xform, 'twist_btmFix_%s' % self.description, space.IkHandle.solver_sc)
+        cmds.hide(btm_joint2)
+        
+        xform = space.create_xform_group(btm_joint1)
+        cmds.parentConstraint(btm_xform, btm_joint1, mo = True)
+        cmds.parent( xform, self.setup_group)
+        cmds.parent( btm_ik, top_xform)
+        
+        cmds.hide(btm_ik)
+        
+        return top_joint1, btm_joint1
+
+    def _create_xform_controls(self, top_joint, btm_joint):
+
+        transforms = self.control_xforms
+        
+        if self.orient_example:
+            for transform in transforms:
+                
+                print 'control this', transform
+                
+                space.MatchSpace(self.orient_example, transform).rotation()
+            
+        for joint in self.sub_joints:
+            control = self._create_control(sub = True)
+            
+            xform = space.create_xform_group(control.control)
+            
+            self._connect_sub_visibility('%s.subVisibility' % self.controls[0], control.get())
+            
+            parent_constraint = cmds.parentConstraint(joint)
+            if not parent_constraint:
+                continue
+            
+            
+            transform = cmds.parentConstraint(parent_constraint, q = True, targetList = True)[0]
+            
+            space.MatchSpace(transform, xform).translation_rotation()
+            
+            parent = cmds.listRelatives(transform, p = True, f = True)
+            
+            cmds.parent(xform, parent)
+            
+            cmds.delete(transform)
+            
+            print self.parent_joints
+            
+            if self.parent_joints:
+                cmds.parent(joint, control.control)
+            if not self.parent_joints:
+                cmds.parentConstraint(control.control, joint, mo = True)
+        
+    def _create_main_control(self,joint, type_name = 'top'):
+            
+        control = self._create_control(type_name)
+        
+        control.scale_shape(1.33,1.33,1.33)
+        
+        control.hide_scale_and_visibility_attributes()
+        
+        self.main_controls.append(control)
+        
+        xform = space.create_xform_group(control.control)
+        
+        space.MatchSpace(joint, xform).translation_rotation()
+                    
+        cmds.parent(xform, self.control_group)  
+        
+        return control
+    
+    def set_orient_example(self, transform):
+        self.orient_example = transform
+                
+    def set_control_count(self, int_value):
+        self.control_count = (int_value-1) 
+        
+    def set_create_top_control(self, bool_value):
+        self._create_top_control = bool_value
+
+    def set_create_btm_control(self, bool_value):
+        self._create_btm_control = bool_value
+        
+    def set_top_twist_fix(self, bool_value):
+        self._top_twist_fix = bool_value
+        
+    def set_btm_twist_fix(self, bool_value):
+        self._btm_twist_fix = bool_value
+    
+    def set_create_controls(self, bool_value):
+        self._create_controls = bool_value
+        
+    def set_parent_sub_joints(self, bool_value):
+        
+        self.parent_joints = bool_value
+        
+    def create(self):
+        super(TwistRig, self).create()
+        
+        for joint in self.joints:
+            next_joint = cmds.listRelatives(joint, type = 'joint')
+            if next_joint:
+                next_joint = next_joint[0]
+            
+            if not next_joint:
+                continue
+            
+            if not self.orient_example:
+                self.orient_example = joint
+            
+            twist = rigs_util.TwistRibbon(joint)
+            twist.set_description(self.description)
+            twist.joint_count = self.control_count
+            twist._offset_axis = self._offset_axis
+            twist._attach_directly = self._attach_directly
+            twist._top_twist_fix = self._top_twist_fix
+            twist._btm_twist_fix = self._btm_twist_fix
+            twist.set_dual_quaternion(False)
+            
+            bad_axis = space.get_axis_letter_aimed_at_child(joint)
+            
+            if bad_axis == 'X' or bad_axis == '-X':
+                twist.set_ribbon_offset_axis('Z')
+            if bad_axis == 'Y' or bad_axis == '-Y':
+                twist.set_ribbon_offset_axis('X')
+            if bad_axis == 'Z' or bad_axis == '-Z':
+                twist.set_ribbon_offset_axis('X')    
+            
+            
+            twist.create()    
+        
+            self.twist_group = twist.group
+            self.sub_joints = twist.joints
+            
+            cmds.parent(self.sub_joints, joint)
+            
+            cmds.parent(twist.surface, self.setup_group)
+            cmds.parent(twist.group, self.control_group)
+            cmds.setAttr('%s.inheritsTransform' % twist.group, 0)
+            
+            self.control_count
+                
+            self.top_locator = twist.top_locator
+            self.btm_locator = twist.btm_locator
+            
+            cmds.hide(self.top_locator)
+            cmds.hide(self.btm_locator)
+            
+            cmds.parent(self.top_locator, self.setup_group)
+            cmds.parent(self.btm_locator, self.setup_group)
+            
+            if self._create_top_control:
+                top_control = self._create_main_control(joint, 'top')
+                cmds.parent(self.top_locator, top_control.control)
+                
+            if self._create_btm_control:
+                btm_control = self._create_main_control(next_joint, 'btm')
+                cmds.parent(self.btm_locator, btm_control.control)
+                
+            self._create_xform_controls(self.top_locator, self.btm_locator)
+            
+            
+                       
 #---Body Rig
 
 class SpineRig(BufferRig, SplineRibbonBaseRig):
