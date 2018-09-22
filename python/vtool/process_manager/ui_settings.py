@@ -9,6 +9,7 @@ class SettingsWidget(qt_ui.BasicWidget):
     project_directory_changed = qt_ui.create_signal(object)
     template_directory_changed = qt_ui.create_signal(object)
     code_directory_changed = qt_ui.create_signal(object)
+    code_text_size_changed = qt_ui.create_signal(object)
     
     def __init__(self):
         
@@ -97,6 +98,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.options_widget.main_layout.addWidget(process_group)
         
         self.code_tab_group = CodeTabGroup()
+        self.code_tab_group.code_text_size_changed.connect(self.code_text_size_changed)
         self.shotgun_group = ShotgunGroup()
         
         self.options_widget.main_layout.addWidget(self.code_tab_group)
@@ -212,6 +214,8 @@ class SettingsWidget(qt_ui.BasicWidget):
         
 class CodeTabGroup(qt_ui.Group):
     
+    code_text_size_changed = qt.create_signal(object)
+    
     def __init__(self):
         super(CodeTabGroup, self).__init__('Code Tab')
         
@@ -271,8 +275,7 @@ class CodeTabGroup(qt_ui.Group):
         value = self.settings.get('code text size')
         if value != None:
             self.code_text_size.set_value(value)
-            
-        
+                        
     def _set_manifest_double_click(self):
         
         value = 'open tab'
@@ -293,7 +296,7 @@ class CodeTabGroup(qt_ui.Group):
         value =  self.code_text_size.get_value()
         
         self.settings.set('code text size',value)
-        #qt_ui.code_text_size_signal.emit(value)
+        self.code_text_size_changed.emit(value)
         
     def set_settings(self, settings):
         
