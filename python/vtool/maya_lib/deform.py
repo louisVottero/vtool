@@ -492,6 +492,326 @@ class ClusterCurve(ClusterSurface):
         
         vtool.util.warning('Can not set cluster u, there is only one direction for spans on a curve. To many teenage girls there was only One Direction for their musical tastes.')
 
+class SkinJointObject(object):
+    """
+    Convenience class for skinning objects.
+    """
+    def __init__(self, geometry, name):
+        self.geometry = geometry
+        self.join_ends = False
+        self.name = name
+        self.cvs = []
+        self.cv_count = 0
+        self.skin_cluster = None
+        self.joints = []
+        self.cv_dict = {}
+        
+    def _create_joint(self, cvs):
+        joint =  create_joint_at_points(cvs, self.name)
+        
+        cvs = vtool.util.convert_to_sequence(cvs)
+        
+        if not self.cv_dict.has_key(joint):
+            self.cv_dict[joint] = []
+            
+        self.cv_dict[joint].append(cvs)
+        
+        return joint
+        
+    def get_joint_list(self):
+        """
+        Returns:
+            list: The names of joints.
+        """
+        return self.joints
+        
+    def get_skin(self):
+        return self.skin_cluster
+        
+    def create(self):
+        """
+        Create the joints.
+        """
+        self._create()
+
+class SkinJointSurface(SkinJointObject):
+    """
+    Convenience for skinning a surface.
+    """
+    def __init__(self, geometry, name):
+        super(SkinJointSurface, self).__init__(geometry, name)
+        
+        self.join_ends = False
+        self.join_both_ends = False
+        self.first_joint_pivot_at_start = True
+        self.last_joint_pivot_at_end = True
+        
+        self.maya_type = None
+        
+        if core.has_shape_of_type(self.geometry, 'nurbsCurve'):
+            self.maya_type = 'nurbsCurve'
+        if core.has_shape_of_type(self.geometry, 'nurbsSurface'):
+            self.maya_type = 'nurbsSurface'
+            
+        self.joint_u = True
+    
+    def _create_start_and_end_joints(self):
+        
+        start_cvs = None
+        end_cvs = None
+        start_position = None
+        end_position = None
+        
+        if self.maya_type == 'nurbsCurve':
+            
+            start_cvs = '%s.cv[0:1]' % self.geometry
+            end_cvs = '%s.cv[%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
+            
+            start_position = cmds.xform('%s.cv[0]' % self.geometry, q = True, ws = True, t = True)
+            end_position = cmds.xform('%s.cv[%s]' % (self.geometry,self.cv_count-1), q = True, ws = True, t = True)
+            
+            
+        if self.maya_type == 'nurbsSurface':
+        
+            if self.joint_u:
+                cv_count_u = len(cmds.ls('%s.cv[*][0]' % self.geometry, flatten = True))
+                index1 = '[0:*][0:1]'
+                index2 = '[0:*][%s:%s]' % (self.cv_count-2, self.cv_count-1)
+                index3 = '[%s][0]' % (cv_count_u - 1)
+                index4 = '[0][%s]' % (self.cv_count-1)
+                index5 = '[%s][%s]' % (cv_count_u, self.cv_count-1) 
+            if not self.joint_u:
+                cv_count_v = len(cmds.ls('%s.cv[0][*]' % self.geometry, flatten = True))
+                index1 = '[0:1][0:*]'
+                index2 = '[%s:%s][0:*]' % (self.cv_count-2, self.cv_count-1)
+                index3 = '[0][%s]' % (cv_count_v - 1)
+                index4 = '[%s][0]' % (self.cv_count-1)
+                index5 = '[%s][%s]' % (self.cv_count-1,cv_count_v)                
+            
+            
+            start_cvs = '%s.cv%s' % (self.geometry, index1)
+            end_cvs = '%s.cv%s' % (self.geometry,index2)
+            
+            p1 = cmds.xform('%s.cv[0][0]' % self.geometry, q = True, ws = True, t = True)
+            p2 = cmds.xform('%s.cv%s' % (self.geometry, index3), q = True, ws = True, t = True)
+            
+            start_position = vtool.util.get_midpoint(p1, p2)
+            
+            p1 = cmds.xform('%s.cv%s' % (self.geometry, index4), q = True, ws = True, t = True)
+            p2 = cmds.xform('%s.cv%s' % (self.geometry, index5), q = True, ws = True, t = True)
+            
+            end_position = vtool.util.get_midpoint(p1, p2)
+        
+        start_joint = self._create_joint(start_cvs)
+        
+        self.joints.append(start_joint)
+        
+        if self.first_cluster_pivot_at_start:
+            cmds.xform(start_joint, ws = True, rp = start_position, sp = start_position)
+        
+        end_joint = self._create_joint(end_cvs)
+        
+        if self.last_cluster_pivot_at_end:
+            cmds.xform(end_joint, ws = True, rp = end_position, sp = end_position)
+            
+        return end_joint
+    
+    def _create_start_and_end_joined_joint(self):
+        
+        start_cvs = None
+        end_cvs = None
+        
+        if self.maya_type == 'nurbsCurve':
+            start_cvs = '%s.cv[0:1]' % self.geometry
+            end_cvs = '%s.cv[%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1)
+            
+        if self.maya_type == 'nurbsSurface':
+            
+            if self.joint_u:
+                index1 = '[0:*][0]'
+                index2 = '[0:*][%s]' % (self.cv_count-1)
+
+            if not self.joint_u:
+                index1 = '[0][0:*]'
+                index2 = '[%s][0:*]' % (self.cv_count-1)
+            
+            start_cvs = '%s.cv%s' % (self.geometry, index1)
+            end_cvs = '%s.cv%s' % (self.geometry, index2)
+        
+        #cmds.select([start_cvs, end_cvs])
+        #cvs = cmds.ls(sl = True)
+        
+        cvs = start_cvs + end_cvs
+        
+        joint = self._create_joint(cvs)
+        self.joints.append(joint)
+        
+    def _skin(self):
+        
+        self.skin_cluster = cmds.skinCluster(self.joints, self.geometry, tsb = True)[0]
+        
+        for joint in self.cv_dict:
+            
+            cvs = self.cv_dict[joint]
+            
+            for cv in cvs:
+                cmds.skinPercent( self.skin_cluster, cv, transformValue=[(joint, 1)])
+
+        cmds.setAttr( '%s.skinningMethod' % self.skin_cluster, 1)
+        
+        
+    def _create(self):
+        
+        self.cvs = cmds.ls('%s.cv[*]' % self.geometry, flatten = True)
+        
+        if self.maya_type == 'nurbsCurve':
+            self.cv_count = len(self.cvs)
+        if self.maya_type == 'nurbsSurface':
+            
+            if self.joint_u:
+                index = '[0][*]'
+            if not self.joint_u:
+                index = '[*][0]'
+                            
+            self.cv_count = len(cmds.ls('%s.cv%s' % (self.geometry, index), flatten = True))
+        
+        start_inc = 0
+        
+        cv_count = self.cv_count
+        
+        if self.join_ends:
+            
+            if not self.join_both_ends:
+                
+                last_joint = self._create_start_and_end_joints()
+            
+            if self.join_both_ends:
+                
+                self._create_start_and_end_joined_joint()
+                
+            cv_count = len(self.cvs[2:self.cv_count])
+            start_inc = 2
+            
+        for inc in xrange(start_inc, cv_count):
+            
+            if self.maya_type == 'nurbsCurve':
+                cv = '%s.cv[%s]' % (self.geometry, inc)
+            if self.maya_type == 'nurbsSurface':
+                
+                if self.joint_u:
+                    index = '[*][%s]' % inc
+                if not self.joint_u:
+                    index = '[%s][*]' % inc
+                
+                cv = '%s.cv%s' % (self.geometry, index)
+            
+            joint = self._create_joint( cv )
+            
+            self.joints.append(joint)
+        
+        if self.join_ends and not self.join_both_ends:
+            self.joints.append(last_joint)
+        
+        self._skin()
+        
+        return self.joints
+    
+    def set_join_ends(self, bool_value):
+        """
+        Skin the ends of the surface take up 2 cvs.
+        
+         Args:
+            bool_value (bool): Wether 2 cvs at the start have one joint, and 2 cvs on the end have one joint.
+        """
+        self.join_ends = bool_value
+        
+    def set_join_both_ends(self, bool_value):
+        """
+        Skin the ends of the surface are joined together.
+        
+        Args:
+            bool_value (bool): Wether to join the ends of the surface.
+        """
+        self.join_both_ends = bool_value
+        
+    def set_last_joint_pivot_at_end(self, bool_value):
+        """
+        Set the last joint pivot to the end of the curve.
+        """
+        
+        self.last_joint_pivot_at_end = bool_value
+
+    def set_first_joint_pivot_at_start(self, bool_value):
+        """
+        Set the last joint pivot to the end of the curve.
+        """
+        
+        self.first_joint_pivot_at_start = bool_value
+        
+    def set_joint_u(self, bool_value):
+        """
+        Args:
+            bool_value (bool): Wether to skin the u instead of the v spans.
+        """
+        self.joint_u = bool_value
+    
+
+class SkinJointCurve(SkinJointSurface):
+    """
+    Convenience for clustering a curve. 
+    """
+    def _create_start_and_end_joints(self):
+        
+        joint = self._create_joint('%s.cv[0:1]' % self.geometry)
+        
+        self.joints.append(joint)
+        
+        position = cmds.xform('%s.cv[0]' % self.geometry, q = True, ws = True, t = True)
+        cmds.xform(joint, ws = True, rp = position, sp = position)
+        
+        last_joint = self._create_joint('%s.cv[%s:%s]' % (self.geometry,self.cv_count-2, self.cv_count-1) )
+        
+        position = cmds.xform('%s.cv[%s]' % (self.geometry,self.cv_count-1), q = True, ws = True, t = True)
+        cmds.xform(last_joint, ws = True, rp = position, sp = position)
+        
+        return last_joint
+        
+    def _create(self):
+        
+        
+        self.cvs = cmds.ls('%s.cv[*]' % self.geometry, flatten = True)
+        
+        self.cv_count = len(self.cvs)
+        
+        start_inc = 0
+        
+        cv_count = self.cv_count
+        
+        if self.join_ends:
+            last_joint = self._create_start_and_end_joints()
+            
+            cv_count = len(self.cvs[2:self.cv_count])
+            start_inc = 2
+            
+        for inc in xrange(start_inc, cv_count):
+            joint = self._create_joint('%s.cv[%s]' % (self.geometry, inc))
+            
+            self.joints.append(joint)
+    
+        if self.join_ends:
+            self.joints.append(last_joint)
+        
+        self._skin()
+        
+        return self.joints
+    
+    def set_joint_u(self, bool_value):
+        """
+        Not available on curves.
+        """
+        
+        vtool.util.warning('Can not set joint u, there is only one direction for spans on a curve. To many teenage girls there was only One Direction for their musical tastes.')
+
 
 
 class SplitMeshTarget(object):
@@ -1042,7 +1362,7 @@ class TransferWeight(object):
                 return
         
         if not self.skin_cluster:
-            vtool.util.show('No skinCluster found on %s. Could not transfer.' % self.mesh)
+            vtool.util.warning('No skinCluster found on %s. Could not transfer.' % self.mesh)
             return
         
         if not destination_joints:
@@ -1066,34 +1386,43 @@ class TransferWeight(object):
                 vtool.util.warning('%s and %s have different vert counts. Can not transfer weights.' % (self.mesh, source_mesh))
                 return
         
+        self._add_joints_to_skin(destination_joints)
+        
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         source_value_map = get_skin_weights(source_skin_cluster)
         destination_value_map = get_skin_weights(self.skin_cluster)
         
-        self._add_joints_to_skin(destination_joints)
+        
         
         joint_map = get_joint_index_map(source_joints, source_skin_cluster)
         destination_joint_map = get_joint_index_map(destination_joints, self.skin_cluster)
                             
         weighted_verts = []
+        found_one = False
         
         for influence_index in joint_map:
             
             if influence_index == None:
                 continue
+
+            if not source_value_map.has_key(influence_index):
+                    continue 
+            
+            found_one = True
             
             for vert_index in range(0, len(verts_source_mesh)):
-                
+              
                 int_vert_index = int(vtool.util.get_last_number(verts_source_mesh[vert_index]))
-                
-                if not source_value_map.has_key(influence_index):
-                    continue
                 
                 value = source_value_map[influence_index][int_vert_index]
                 
                 if value > 0.0001:
                     if not int_vert_index in weighted_verts:
                         weighted_verts.append(int_vert_index)
+        
+        if not found_one:
+            vtool.util.warning('Source mesh had no valid influences')
+            return
         
         self._add_joints_to_skin(source_joints)
         
@@ -1108,6 +1437,8 @@ class TransferWeight(object):
         bar = core.ProgressBar('transfer weight', vert_count)
         
         inc = 1
+        
+        found_one = False
         
         for vert_index in weighted_verts:
             
@@ -1138,7 +1469,7 @@ class TransferWeight(object):
                     continue 
                 
                 value = source_value_map[influence_index][vert_index]
-                #value *= destination_value
+                
                 if value > destination_value:
                     value = destination_value
                 value *= percent
@@ -1153,7 +1484,7 @@ class TransferWeight(object):
                 
             if segments:
                 cmds.skinPercent(self.skin_cluster, vert_name, r = False, transformValue = segments)
-
+                found_one = True
             bar.inc()
             
             bar.status('transfer new weight: %s of %s' % (inc, vert_count))
@@ -1167,6 +1498,9 @@ class TransferWeight(object):
             inc += 1
             
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
+        
+        if not found_one:
+            vtool.util.warning('Source mesh had no valid weight/joint associations for the given joints')
         
         vtool.util.show('Done: %s transfer joint to joint.' % self.mesh)
         
@@ -2822,6 +3156,8 @@ class WeightFromMesh(object):
     
         self._skin = None
         self._current_skin_mesh = None
+        
+        self._bake_delta_smooth = True
     
     def _skin_mesh(self):
     
@@ -2852,9 +3188,9 @@ class WeightFromMesh(object):
                     edge_joint = cmds.createNode('joint', n = edge_joint_name)
                     midpoint = space.get_midpoint(vertices[0], vertices[1])
                     cmds.xform(edge_joint, ws = True, t = midpoint)
-                
+                    skin.add_influence(edge_joint)
                 #if not has_influence(edge_joint, skin.get_skin()):
-                skin.add_influence(edge_joint)
+                
                 
                 if not vrt1_index in self._visited_verts:
                     
@@ -2893,11 +3229,35 @@ class WeightFromMesh(object):
     def set_target_mesh(self, mesh):
         self._target_mesh = mesh
         
+    def set_bake_delta_mush_smooth(self, bool_value):
+        self._bake_delta_smooth = bool_value
+        
     def run(self):
         
         joints = self._skin_mesh()
     
-        skin_mesh_from_mesh(self._current_skin_mesh, self._target_mesh)
+        temp_target = self._target_mesh
+    
+        if self._bake_delta_smooth:
+            cmds.select(cl = True)
+            top_joint = cmds.joint(n = 'temp_top_joint')
+            
+            cmds.parent(joints, top_joint)
+            
+            temp_target = cmds.duplicate(self._target_mesh, 'temp_target')[0]
+        
+        skin_mesh_from_mesh(self._current_skin_mesh, temp_target)
+        
+        if self._bake_delta_smooth:
+            cmds.deltaMush(temp_target) 
+        
+            cmds.bakeDeformer(sm = temp_target, dm = self._target_mesh, ss = top_joint, ds = top_joint, mi = 50)
+        
+            cmds.parent(joints, w = True)
+        
+            cmds.delete(temp_target)
+            cmds.delete(top_joint)
+        
         cmds.delete(self._current_skin_mesh)
         
         return joints
@@ -2986,6 +3346,24 @@ def create_cluster(points, name):
     cluster, handle = cmds.cluster(points, n = core.inc_name('cluster_%s' % name))
     
     return cluster, handle
+
+def create_joint_at_points(points, name):
+    """
+    Create a cluster on a bunch of points.
+    
+    Args::
+        points (list): The names of points to cluster.
+        name (str): The description of the cluster.
+        
+    Returns:
+        list: [cluster, handle]
+    """
+    
+    pos = space.get_center(points)
+    cmds.select(cl = True)
+    joint = cmds.joint(n = core.inc_name('joint_%s' % name), p = pos)
+    
+    return joint
 
 def create_cluster_bindpre(cluster, handle):
     """
@@ -3508,6 +3886,9 @@ def set_skin_weights_to_zero(skin_deformer):
 def get_joint_index_map(joints, skin_cluster):
     
     joint_map = {}
+    
+    if not cmds.objExists(skin_cluster):
+        vtool.util.warning('Skin cluster %s does not exist' % skin_cluster)
     
     for joint in joints:
         if not cmds.objExists(joint):
@@ -4584,7 +4965,7 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
         for joint in unskinned:
             cmds.skinCluster(other_skin, e = True, ri = joint)
 
-def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints = []):
+def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints = [], leave_existing_skins = False):
     ''' 
     This skins a group of meshes based on the skinning of the source mesh.  
     Source mesh must be skinned.  The target group will be skinned with the joints in the source.
@@ -4615,10 +4996,22 @@ def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints
         
         shape = core.get_shapes(relative)
         
+
         
         if shape and cmds.nodeType(shape[0]) == 'mesh':
+
+            skin = find_deformer_by_type(relative, deformer_type = 'skinCluster')
+            
+            if skin and leave_existing_skins:
+                continue
+            
             skin_mesh_from_mesh(source_mesh, relative, include_joints = include_joints, exclude_joints = exclude_joints)
         if shape and cmds.nodeType(shape[0]) == 'nurbsCurve':
+            skin = find_deformer_by_type(relative, deformer_type = 'skinCluster')
+            
+            if skin and leave_existing_skins:
+                continue
+            
             skin_mesh_from_mesh(source_mesh, relative, include_joints = include_joints, exclude_joints = exclude_joints)
             
     if old_selection:
