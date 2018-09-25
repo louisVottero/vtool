@@ -283,9 +283,8 @@ class Process(object):
         """ 
         self.directory = directory
         
-        util_file.create_dir(self.backup_folder_name ,self.get_path())
-                    
-        self._refresh_process()
+        #util_file.create_dir(self.backup_folder_name ,self.get_path())           
+        #self._refresh_process()
         
         
     def set_external_code_library(self, directory):
