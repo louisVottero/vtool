@@ -80,15 +80,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._set_default_project_directory()
         self._set_default_template_directory()
         
-        if self.settings.has_setting('process_split_alignment'):
-            alignment = self.settings.get('process_split_alignment')
-        
-            if alignment:
-                if alignment == 'horizontal':
-                    self.process_splitter.setOrientation(qt.QtCore.Qt.Horizontal)
-                    
-                if alignment == 'vertical':
-                    self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
                 
         code_directory = self.settings.get('code_directory')
         if code_directory:
@@ -352,6 +343,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.set_template_settings(settings)
         self.template_widget.set_settings(settings)
         
+        if self.settings.has_setting('process_split_alignment'):
+            alignment = self.settings.get('process_split_alignment')
+        
+            if alignment:
+                if alignment == 'horizontal':
+                    self.process_splitter.setOrientation(qt.QtCore.Qt.Horizontal)
+                    
+                if alignment == 'vertical':
+                    self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
+                
+        
+        
     def _build_widgets(self):
         
         self.header_layout = qt.QHBoxLayout()
@@ -438,6 +441,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.project_directory_changed.connect(self.set_project_directory)
         self.settings_widget.code_directory_changed.connect(self.set_code_directory)
         self.settings_widget.template_directory_changed.connect(self.set_template_directory)
+        self.settings_widget.code_text_size_changed.connect(self.code_widget.code_text_size_changed)
         
         #splitter stuff
         self.process_splitter = qt.QSplitter()
