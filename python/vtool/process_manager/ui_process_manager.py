@@ -630,6 +630,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _update_process(self, name):
         
+        self._set_vetala_current_process(name)
+        
         self._clear_code()
         
         items = self.view_widget.tree_widget.selectedItems()
@@ -705,8 +707,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.set_template_directory(directory)
             
-    
-    def _set_title(self, name = None):
+    def _set_vetala_current_process(self, name):
         
         if not name:
             self.active_title.setText('')
@@ -718,7 +719,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             fullpath = util_file.join_path(self.project_directory, name)
             
-            util.set_env('VETALA_CURRENT_PROCESS', fullpath)
+            util.set_env('VETALA_CURRENT_PROCESS', fullpath)    
+            
+    def _set_title(self, name = None):
         
         name = name.replace('/', '  /  ')
         
