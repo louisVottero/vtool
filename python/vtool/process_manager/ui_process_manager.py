@@ -620,8 +620,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_settings.set_active(True)
             self._current_tab = 3
             
-            print self._get_current_path()
-            
             self.process_settings.set_directory(self._get_current_path())
             
     def _clear_code(self, close_windows = False):

@@ -196,19 +196,16 @@ class MyTreeWidget(QtGui.QTreeWidget, MyTreeView):
 
             dropIndicatorPosition = self.position(event.pos(), self.visualRect(index), index)
             if self.dropIndicatorPosition == self.AboveItem:
-                print 'dropon above'
                 row = index.row()
                 col = index.column()
                 index = index.parent()
 
             elif self.dropIndicatorPosition == self.BelowItem:
-                print 'dropon below'
                 row = index.row() + 1
                 col = index.column()
                 index = index.parent()
 
             elif self.dropIndicatorPosition == self.OnItem:
-                print 'dropon onItem'
                 pass
             elif self.dropIndicatorPosition == self.OnViewport:
                 pass

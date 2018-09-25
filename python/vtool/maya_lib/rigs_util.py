@@ -1635,9 +1635,6 @@ class TwistRibbon(object):
         ribbon_gr = cmds.group(em = True, n = core.inc_name('twistRibbon_%s' % self._description))
         self.group = ribbon_gr
         
-        
-        print 'offset axis!!', self._offset_axis
-        
         self.surface = geo.transforms_to_nurb_surface([self._joint, temp_group], description = self._description, offset_axis=self._offset_axis)
         if self._dual_quat:
             cmds.rebuildSurface(self.surface, ch = False,
@@ -1675,8 +1672,6 @@ class TwistRibbon(object):
             
             
             rivet = geo.attach_to_surface(joint, self.surface, constrain=self._attach_directly)
-            
-            print rivet
             
             rel = cmds.listRelatives(rivet, type = 'transform')
             

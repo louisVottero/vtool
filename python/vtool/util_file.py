@@ -380,8 +380,6 @@ class VersionFile(object):
             
     def _save(self, filename):
         
-        print 'current path', self.filepath
-        
         self._create_version_folder()
         self._create_comment_file()
         
@@ -2146,8 +2144,6 @@ def get_comments(comment_directory, comment_filename = None):
 def get_vetala_settings_inst():
     
     vetala_settings = util.get_env('VETALA_SETTINGS')
-    
-    print vetala_settings
     
     settings = SettingsFile()
     settings.set_directory(vetala_settings)

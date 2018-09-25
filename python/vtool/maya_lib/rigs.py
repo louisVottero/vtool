@@ -1125,8 +1125,6 @@ class SparseLocalRig(SparseRig):
                 for values in self._read_locators_dict[joint]:
                     locator, read_min, read_max, read_axis = values
                     
-                    print joint, values
-                    
                     if not cmds.objExists('%s.readLocator' % self.controls[inc]):
                         attr.connect_message(locator, self.controls[inc], 'readLocator')
                     
@@ -1138,7 +1136,7 @@ class SparseLocalRig(SparseRig):
                         attribute = 'weight'
                     
                     if read_min != None and read_max != None:
-                        print 'creating attribute'
+                        
                         cmds.addAttr(joint, ln = attribute, at = 'float', dv = 0, min = read_min, max = read_max)             
                     
                     
@@ -4833,8 +4831,6 @@ class TwistRig(JointRig):
         if self.orient_example:
             for transform in transforms:
                 
-                print 'control this', transform
-                
                 space.MatchSpace(self.orient_example, transform).rotation()
             
         for joint in self.sub_joints:
@@ -4858,8 +4854,6 @@ class TwistRig(JointRig):
             cmds.parent(xform, parent)
             
             cmds.delete(transform)
-            
-            print self.parent_joints
             
             if self.parent_joints:
                 cmds.parent(joint, control.control)

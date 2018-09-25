@@ -65,12 +65,8 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
            
     def _code_size_changed(self, value):
         
-        print 'here!!!!'
         self.code_text_size_changed.connect(self.code_widget.code_edit.code_text_size_changed)
         
-        #self.code_widget.code_edit
-        
-                
     def _splitter_moved(self, pos, index):
         
         if self.restrain_move:
@@ -559,7 +555,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
             return
         
         if version_file:
-            print version_file
+            pass
             #self.option_palette.set_options_file(version_file)
             
     def _load_manifest_default(self, default_version_file):
@@ -570,7 +566,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
             return
         
         if default_version_file:
-            print default_version_file
+            pass
             #self.option_palette.set_options_file(default_version_file)
     
         
