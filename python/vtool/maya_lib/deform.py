@@ -814,6 +814,7 @@ class SkinJointCurve(SkinJointSurface):
 
 
 
+
 class SplitMeshTarget(object):
     """
     Split a mesh target edits based on skin weighting.
@@ -1404,15 +1405,17 @@ class TransferWeight(object):
             
             if influence_index == None:
                 continue
-
             if not source_value_map.has_key(influence_index):
                     continue 
             
             found_one = True
-            
+                        
             for vert_index in range(0, len(verts_source_mesh)):
-              
+                
                 int_vert_index = int(vtool.util.get_last_number(verts_source_mesh[vert_index]))
+                
+                if not source_value_map.has_key(influence_index):
+                    continue
                 
                 value = source_value_map[influence_index][int_vert_index]
                 
@@ -1444,7 +1447,7 @@ class TransferWeight(object):
             
             vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
         
-            destination_value = 0
+            destination_value = 0.0
         
             for influence_index in destination_joint_map:
                 
@@ -1453,8 +1456,11 @@ class TransferWeight(object):
                 
                 if destination_value_map.has_key(influence_index):
                     destination_value += destination_value_map[influence_index][vert_index]
-                if not destination_value_map.has_key(influence_index):
-                    destination_value += 0.0
+                #if not destination_value_map.has_key(influence_index):
+                #    destination_value += 0.0
+            
+            if destination_value < 0.0001:
+                continue
             
             segments = []
             
@@ -1470,15 +1476,25 @@ class TransferWeight(object):
                 
                 value = source_value_map[influence_index][vert_index]
                 
+                if value < 0.0001:
+                    continue
+                    
+                #value *= destination_value
+                                
                 if value > destination_value:
                     value = destination_value
-                value *= percent
-                
+
                 if value > 1:
                     value = 1
+                    
+                value *= percent
                 
-                if value == 0:
+
+                
+                if value < 0.0001:
                     continue
+                
+                #cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, influence_index), value)
                 
                 segments.append((joint, value))
                 
@@ -1487,7 +1503,7 @@ class TransferWeight(object):
                 found_one = True
             bar.inc()
             
-            bar.status('transfer new weight: %s of %s' % (inc, vert_count))
+            bar.status('transfer weight: %s of %s' % (inc, vert_count))
             
             if vtool.util.break_signaled():
                 break
@@ -1497,6 +1513,7 @@ class TransferWeight(object):
             
             inc += 1
             
+        #cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         
         if not found_one:
@@ -1680,10 +1697,12 @@ class TransferWeight(object):
                     
                     joint_id = influence_index_order[joint_index]
                     
-                    change = 1 - weight_percent_change
-                    
-                    value = source_joint_weights[joint_index]
-                    value = value[vert_index] * change
+                    if weight_percent_change != 1:
+                        change = 1 - weight_percent_change
+                        value = source_joint_weights[joint_index]
+                        value = value[vert_index] * change
+                    else:
+                        value = 0
                     
                     cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
             
@@ -3189,10 +3208,6 @@ class WeightFromMesh(object):
                     midpoint = space.get_midpoint(vertices[0], vertices[1])
                     cmds.xform(edge_joint, ws = True, t = midpoint)
                     skin.add_influence(edge_joint)
-                #if not has_influence(edge_joint, skin.get_skin()):
-                
-                #if not has_influence(edge_joint, skin.get_skin()):
-                skin.add_influence(edge_joint)
                 
                 if not vrt1_index in self._visited_verts:
                     
@@ -3711,10 +3726,14 @@ def get_skin_weights(skin_deformer):
         dict: dict[influence_index] = weight values corresponding to point order.
     """
     
+    """
     skin = api.SkinClusterFunction()
     skin.set_node_as_mobject(skin_deformer)
     
     value_map = skin.get_skin_weights_dict()
+    """
+    
+    value_map = api.get_skin_weights_dict(skin_deformer)
     
     return value_map
 
@@ -3884,6 +3903,19 @@ def set_skin_weights_to_zero(skin_deformer):
             #plug = api.attribute_to_plug(attr)
             #plug.setFloat(0)  
             cmds.setAttr(attr, 0)
+
+def get_skin_envelope(mesh):
+    skin_deformer = find_deformer_by_type(mesh, 'skinCluster')
+    
+    if skin_deformer:
+        return cmds.getAttr('%s.envelope' % skin_deformer)
+
+def set_skin_envelope(mesh, envelope_value):
+    
+    skin_deformer = find_deformer_by_type(mesh, 'skinCluster')
+    
+    if skin_deformer:
+        cmds.setAttr('%s.envelope' % skin_deformer, envelope_value)
 
 def get_joint_index_map(joints, skin_cluster):
     
@@ -4114,7 +4146,9 @@ def get_intermediate_object(transform):
     """
     shapes = cmds.listRelatives(transform, s = True, f = True)
     
-    return shapes[-1]
+    for shape in shapes:
+        if cmds.getAttr('%s.intermediateObject' % shape):
+            return shape
     
 
 def set_all_weights_on_wire(wire_deformer, weight, slot = 0):
@@ -5097,7 +5131,44 @@ def skin_group(joints, group):
             cmds.skinCluster(joints, rel, tsb = True, n = 'skin_%s' % name)
         except:
             pass
-            
+
+def skin_mirror(mesh):
+    """
+    Not worrking at all
+    """
+    skin = find_deformer_by_type(mesh, 'skinCluster')
+    
+    #pre mirror prep
+    locked = False
+    
+    if attr.is_locked('%s.envelope' % skin):
+        locked = True
+        attr.unlock_attributes(skin, ['envelope'])
+    
+    connection = None
+    
+    if attr.is_connected('%s.envelope' % skin):
+        
+        connection = attr.get_attribute_input('%s.envelope')
+        attr.disconnect_attribute('envelope')
+        
+    cmds.setAttr('%s.envelope' % skin, 0)
+    
+    #mirror
+    cmds.copySkinWeights(ss = skin, ds = skin,  
+                     noMirror = False, 
+                     surfaceAssociation = 'closestPoint', 
+                     influenceAssociation = ['oneToOne'],
+                     mirrorInverse = False,
+                     mirrorMode='YZ',
+                     normalize = True)           
+    
+    #post mirror prep
+    cmds.setAttr('%s.envelope' % skin, 1)
+    if connection:
+        cmds.connectAttr(connection, '%s.envelope' % skin)
+    if locked:
+        attr.lock_attributes(skin, True, ['envelope'])
 
 def lock_joint_weights(skin_cluster, skip_joints = None):
     """
@@ -5465,7 +5536,7 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
         envelopes.turn_off_exclude(['blendShape'])
         
-        skin_shapes = core.get_shapes(skin_mesh)
+        skin_shapes = core.get_shapes(skin_mesh, no_intermediate=True)
         skin_mesh_name = core.get_basename(skin_mesh, True)
         other_delta = geo.create_shape_from_shape(skin_shapes[0], core.inc_name(skin_mesh_name))
         
@@ -5622,7 +5693,7 @@ def quick_blendshape(source_mesh, target_mesh, weight = 1, blendshape = None):
     
     blendshape_node = blendshape
     
-    source_mesh_name = source_mesh.split('|')[-1]
+    source_mesh_name = core.get_basename(source_mesh, remove_namespace=True)
     
     bad_blendshape = False
     long_path = None
