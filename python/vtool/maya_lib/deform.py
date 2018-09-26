@@ -3191,6 +3191,8 @@ class WeightFromMesh(object):
                     skin.add_influence(edge_joint)
                 #if not has_influence(edge_joint, skin.get_skin()):
                 
+                #if not has_influence(edge_joint, skin.get_skin()):
+                skin.add_influence(edge_joint)
                 
                 if not vrt1_index in self._visited_verts:
                     
