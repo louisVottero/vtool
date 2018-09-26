@@ -3,6 +3,7 @@ import traceback
 
 from vtool import qt_ui, qt
 from vtool import util
+from vtool import util_file
 
 
 import maya.OpenMayaUI as OpenMayaUI
@@ -102,23 +103,95 @@ def create_window(ui, dock_area = 'right'):
         cmds.deleteUI(dock_name, control = True)
         ui.close()
         
-    allowedAreas = ['right', 'left']
+    allowed_areas = ['right', 'left']
     
-    #do not remove
     util.show('Creating dock window.', ui_name)
     
     #this was needed to have the ui predictably load. 
     mel.eval('updateRendererUI;')
     
     try:
-        cmds.dockControl(dock_name,aa=allowedAreas, a = dock_area, content=ui_name, label=ui_name,  fl = False, visible = True)
+        dock = DockControlWrapper()
+        dock.set_dock_name(dock_name)
+        dock.set_label(ui_name)
+        dock.set_dock_area(dock_area)
+        dock.set_allowed_areas(allowed_areas)
+        dock.create()
+        #cmds.dockControl(dock_name,aa=allowed_areas, a = dock_area, content=ui_name, label=ui_name,  fl = False, visible = True, fcc = self._floating_changed)
         ui.show()
     
     except:
         #do not remove
         util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
         util.error( traceback.format_exc() )
-            
+
+class DockControlWrapper(object):
+
+    def __init__(self):
+        
+        self._dock_area = 'right'
+        self._dock_name = 'dock'
+        self._allowed_areas = ['right', 'left']
+        self._label = ''
+
+    def _floating_changed(self):
+        
+        settings_dir = util.get_env('VETALA_SETTINGS')
+        
+        settings = util_file.SettingsFile()
+        
+        settings.set_directory(settings_dir)
+        
+        floating = cmds.dockControl(self._dock_name, floating = True, q = True )
+                
+        settings.set('%s floating' % self._label, floating)
+        
+    def _get_was_floating(self):
+        settings_dir = util.get_env('VETALA_SETTINGS')
+        settings = util_file.SettingsFile()
+        settings.set_directory(settings_dir)
+        
+        settings.has_setting('%s floating' % self._label)
+        
+        floating =  settings.get('%s floating' % self._label)
+                
+        return floating
+        
+    def _exists(self):
+        
+        if cmds.dockControl(self._dock_name, exists = True):
+            return True
+        
+        return False  
+
+    def set_dock_area(self, dock_area):
+        self._dock_area = dock_area
+        
+    def set_dock_name(self, dock_name):
+        self._dock_name = dock_name
+        
+        
+        
+    def set_label(self, label):
+        self._label = label
+    
+    def set_allowed_areas(self, areas_list):
+        self._allowed_areas = areas_list
+        
+    def create(self):
+        
+        floating = False
+        
+        if self._get_was_floating():
+            floating = True
+        
+        if self._exists():
+            cmds.dockControl(self._dock_name, visible = True)
+            return
+        else:
+            cmds.dockControl(self._dock_name,aa=self._allowed_areas, a = self._dock_area, content=self._label, label=self._label,  fl = floating, visible = True, fcc = self._floating_changed)
+        
+    
     
 class MayaWindow(qt_ui.BasicWindow):
     def __init__(self):
