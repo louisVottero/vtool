@@ -12,6 +12,7 @@ if vtool.util.is_in_maya():
     import maya.OpenMayaUI as OpenMayaUI
     
     import maya.api.OpenMaya as om
+    import maya.api.OpenMayaAnim as omAnim
 
 
 allow_save = False
@@ -968,6 +969,8 @@ class SkinClusterFunction(MayaFunction):
                 
         return weights   
 
+
+
 class IterateCurveCV(MayaIterator):
     def _define_api_object(self, mobject):
         return OpenMaya.MItCurveCV 
@@ -1269,8 +1272,7 @@ def get_object(name):
         return selection_list.getDagPath(0)    
     
     return selection_list.getDependNode(0)
-    
-
+"""
 def get_distance(three_value_list1, three_value_list2 ):
     
     vector1 = three_value_list1
@@ -1280,7 +1282,7 @@ def get_distance(three_value_list1, three_value_list2 ):
     mp2 = om.MPoint(vector2[0],vector2[1],vector2[2])
     
     return mp1.distanceTo(mp2)
-
+"""
 def get_triangle_ids(mesh, face_id, triangle_id):
     
     mobject = get_object(mesh)
@@ -1292,6 +1294,45 @@ def get_triangle_ids(mesh, face_id, triangle_id):
     
     return int_array
     
+def get_skin_weights_dict(skinCluster):
+
+    mobject = get_object(skinCluster)
+
+    mf_skin = omAnim.MFnSkinCluster(mobject)
     
+    weight_list_plug = mf_skin.findPlug('weightList', 0)
+    weights_plug = mf_skin.findPlug('weights', 0)
+    weight_list_attr = weight_list_plug.attribute()
+    weights_attr = weights_plug.attribute()
+    weight_influence_ids = om.MIntArray()
+    
+    weights = {}
+    
+    vert_count = weight_list_plug.numElements()
+    
+    for vertex_id in xrange(vert_count):
+    
+        weights_plug.selectAncestorLogicalIndex(vertex_id, weight_list_attr)
+        
+        weight_influence_ids = weights_plug.getExistingArrayAttributeIndices()
+    
+        influence_plug = om.MPlug(weights_plug)
+        
+        for influence_id in weight_influence_ids:
+            
+            influence_plug.selectAncestorLogicalIndex(influence_id, weights_attr)
+            
+            if not influence_id in weights:
+                weights[influence_id] = [0] * vert_count
+            
+            try:
+                value = influence_plug.asDouble()
+                weights[influence_id][vertex_id] = value
+                
+            except KeyError:
+                # assumes a removed influence
+                pass
+            
+    return weights    
     
     
