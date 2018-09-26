@@ -288,7 +288,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         self.setColumnWidth(0, 140)
         self.setColumnWidth(1, 110)
         self.setColumnWidth(2, 90)
-        self.setColumnWidth(3, 50)
+        #removed because data update slow
+        #self.setColumnWidth(3, 50)
         
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
@@ -422,8 +423,10 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
     
     def _define_header(self):
-        return ['Name','Folder', 'Type','Size']
-        
+        #data size update removed because very slow
+        #return ['Name','Folder', 'Type','Size']
+        return ['Name','Folder', 'Type']
+    
     def _item_renamed(self, item, old_name):
         
         if type(item) == int:
@@ -464,13 +467,6 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             
             item = qt.QTreeWidgetItem()
             item.setText(0, foldername)
-            
-            
-            #item_font = qt.QFont()
-            #item_font.setPixelSize(11)
-            #item.setFont(0, item_font)
-            #item.setFont(1, item_font)
-            #item.setFont(2, item_font)
             
             sub_folder, data_type = process_tool.get_data_sub_and_type(foldername)
             
@@ -560,11 +556,14 @@ class DataSizeThread(qt.QtCore.QThread):
         super(DataSizeThread, self).__init__(parent)
         
     def run(self, data_path, data_name, item):
+        """
+        """
+        pass
+        #was too slow
+        #data_folder = vtool.util_file.join_path(data_path, data_name)
+        #size = vtool.util_file.get_folder_size(data_folder, skip_names=['.version','.sub'])
         
-        data_folder = vtool.util_file.join_path(data_path, data_name)
-        size = vtool.util_file.get_folder_size(data_folder, skip_names=['.version','.sub'])
-        
-        item.setText(3, str(size) )
+        #item.setText(3, str(size) )
         
 class DataTreeItem(vtool.qt_ui.TreeWidgetItem):
     pass
