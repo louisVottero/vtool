@@ -1071,17 +1071,19 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             script_name = util_file.remove_extension(script)
             
             if progress_bar:
-                
                 progress_bar.status('Processing: %s' % script_name)
-                
-                if progress_bar.break_signaled():
-                    self._set_kill_process()
+                if inc > 0:
+                    if progress_bar.break_signaled():
+                        util.show('Process: progress bar break signaled')
+                        self._set_kill_process()
             
-            if self.kill_process:
-                self.kill_process = False
-                if progress_bar:
-                    progress_bar.end()
-                break
+            if inc > 0:
+                if self.kill_process:
+                    self.kill_process = False
+                    if progress_bar:
+                        progress_bar.end()
+                    util.show('Prcoess - stopped')
+                    break
             
             skip = False
             
@@ -1092,8 +1094,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     self.code_widget.set_process_script_state(scripts[inc], -1)
                     skip_scripts.append(script_name)
                     skip = True
-            
-            
+                    
             if not skip:
                 #this checks if the current script is a child of a skipped scipt.
                 for skip_script in skip_scripts:
@@ -1102,24 +1103,32 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                         if script.startswith(skip_script):
                             skip = True
             
-            
+            if skip:
+                util.show('Process skipping %s' % script_name)
             
             if not skip:
+            
+                util.show('Process: %s' % script_name)
                 
                 if code_manifest_tree.has_startpoint() and not found_start:
                     if not code_manifest_tree.is_process_script_startpoint(scripts[inc]):
                         found_start = True
                         if progress_bar:
                             progress_bar.inc()
+                        util.show('Skipping script %s, it is before the start.' % scripts[inc])
                         continue
                     
                     
                 self.code_widget.set_process_script_state(scripts[inc], 2)
                 
-                if progress_bar:
                 
-                    if progress_bar.break_signaled():
-                        self._set_kill_process()
+                if inc > 0:
+                    if progress_bar:
+                    
+                        if progress_bar.break_signaled():
+                            util.show('Process: progress bar break signalled.')
+                            self._set_kill_process()
+                
                 
                 status = self.process.run_script(script_name, False, self.settings.settings_dict)
                 temp_log = util.get_env('VETALA_LAST_TEMP_LOG')
@@ -1133,6 +1142,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     if stop_on_error:
                         if progress_bar:
                             progress_bar.end()
+                        util.show('Prcoess - stopped on error')                            
                         break
                     
                 if status == 'Success':
