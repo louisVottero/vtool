@@ -2577,9 +2577,12 @@ def source_python_module(code_directory):
     try:
         try:
             
-            fin = open(code_directory, 'rb')
+            fin = open(code_directory, 'r')
             import md5
-            return  imp.load_source(md5.new(code_directory).hexdigest(), code_directory, fin)
+            
+            module_inst = imp.load_source(md5.new(code_directory).hexdigest(), code_directory, fin)
+            
+            return module_inst
         
         except:
             return traceback.format_exc()
