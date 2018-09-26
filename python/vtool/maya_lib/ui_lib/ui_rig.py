@@ -522,7 +522,14 @@ class RigManager(qt_ui.DirectoryWidget):
     
         window = presets()
         ui_core.emit_new_tool_signal(window)
-
+    """
+    def _mirror_skin_weights(self):
+        
+        meshes = geo.get_selected_meshes()
+        
+        for mesh in meshes:
+            deform.skin_mirror(mesh)
+    """
     def _create_corrective(self):
         
         selection = cmds.ls(sl = True)
