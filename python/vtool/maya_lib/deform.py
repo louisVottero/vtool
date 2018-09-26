@@ -1387,19 +1387,21 @@ class TransferWeight(object):
                 vtool.util.warning('%s and %s have different vert counts. Can not transfer weights.' % (self.mesh, source_mesh))
                 return
         
-        self._add_joints_to_skin(destination_joints)
+        
         
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         source_value_map = get_skin_weights(source_skin_cluster)
-        destination_value_map = get_skin_weights(self.skin_cluster)
-        
-        
-        
         joint_map = get_joint_index_map(source_joints, source_skin_cluster)
+        
+        destination_value_map = get_skin_weights(self.skin_cluster)
         destination_joint_map = get_joint_index_map(destination_joints, self.skin_cluster)
+        
+        self._add_joints_to_skin(destination_joints)
                             
         weighted_verts = []
         found_one = False
+        
+        total_source_value = {}
         
         for influence_index in joint_map:
             
@@ -1412,24 +1414,23 @@ class TransferWeight(object):
                         
             for vert_index in range(0, len(verts_source_mesh)):
                 
-                int_vert_index = int(vtool.util.get_last_number(verts_source_mesh[vert_index]))
+                if not total_source_value.has_key(vert_index):
+                    total_source_value[vert_index] = 0.0
                 
-                if not source_value_map.has_key(influence_index):
-                    continue
+                int_vert_index = int(vtool.util.get_last_number(verts_source_mesh[vert_index]))
                 
                 value = source_value_map[influence_index][int_vert_index]
                 
                 if value > 0.0001:
                     if not int_vert_index in weighted_verts:
                         weighted_verts.append(int_vert_index)
+                    total_source_value[vert_index] += value
         
         if not found_one:
             vtool.util.warning('Source mesh had no valid influences')
             return
         
         self._add_joints_to_skin(source_joints)
-        
-        lock_joint_weights(self.skin_cluster, destination_joints)
         
         vert_count = len(weighted_verts)
         
@@ -1443,10 +1444,15 @@ class TransferWeight(object):
         
         found_one = False
         
+        cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
+        
         for vert_index in weighted_verts:
             
-            vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
-        
+            source_value = total_source_value[vert_index]
+            
+            if source_value:
+                found_one = True
+                
             destination_value = 0.0
         
             for influence_index in destination_joint_map:
@@ -1456,51 +1462,59 @@ class TransferWeight(object):
                 
                 if destination_value_map.has_key(influence_index):
                     destination_value += destination_value_map[influence_index][vert_index]
-                #if not destination_value_map.has_key(influence_index):
-                #    destination_value += 0.0
             
             if destination_value < 0.0001:
                 continue
             
-            segments = []
+            source_value *= percent
+            
+            if source_value > destination_value:
+                source_value = destination_value
+            
+            flip_source_value = 1.0 - source_value
+            
+            dest_reducer = flip_source_value/destination_value
+            
+            for influence_index in destination_joint_map:
+                
+                if influence_index == None:
+                    continue
+                
+                if destination_value_map.has_key(influence_index):
+                    value = destination_value_map[influence_index][vert_index]
+                    
+                    value *= dest_reducer
+                    
+                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, influence_index), value)
             
             for influence_index in joint_map:
                 
                 if influence_index == None:
                     continue   
                 
-                joint = joint_map[influence_index]
-                
                 if not source_value_map.has_key(influence_index):
                     continue 
+                
+                joint = joint_map[influence_index]
                 
                 value = source_value_map[influence_index][vert_index]
                 
                 if value < 0.0001:
                     continue
-                    
-                #value *= destination_value
-                                
-                if value > destination_value:
-                    value = destination_value
-
+                
+                value = value * percent
+                
+                
                 if value > 1:
                     value = 1
-                    
-                value *= percent
-                
-
                 
                 if value < 0.0001:
                     continue
                 
-                #cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, influence_index), value)
+                joint_index = get_index_at_skin_influence(joint, self.skin_cluster)
                 
-                segments.append((joint, value))
+                cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
                 
-            if segments:
-                cmds.skinPercent(self.skin_cluster, vert_name, r = False, transformValue = segments)
-                found_one = True
             bar.inc()
             
             bar.status('transfer weight: %s of %s' % (inc, vert_count))
@@ -1513,7 +1527,7 @@ class TransferWeight(object):
             
             inc += 1
             
-        #cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
+        cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         
         if not found_one:
