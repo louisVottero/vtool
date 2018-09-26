@@ -1655,7 +1655,7 @@ class TwistRibbon(object):
         
         cmds.parent(self.surface, ribbon_gr)
         if not self.joints:
-            self.joints = geo.nurb_surface_v_to_transforms(self.surface, count=self.joint_count)
+            self.joints = geo.nurb_surface_v_to_transforms(self.surface, self._description, count=self.joint_count)
             cmds.parent(self.joints, ribbon_gr)
         
         
