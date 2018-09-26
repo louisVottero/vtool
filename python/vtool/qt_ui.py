@@ -3205,7 +3205,8 @@ class CodeTextEdit(qt.QPlainTextEdit):
             settings = util_file.SettingsFile()
             settings.set_directory(settings_dir)
             font_size = settings.get('code text size')
-            self._set_text_size(font_size)
+            if font_size:
+                self._set_text_size(font_size)
             
         
         
