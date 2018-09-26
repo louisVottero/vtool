@@ -5,7 +5,7 @@ import maya.utils
 
 
 from vtool import qt_ui, qt
-from vtool import util_file
+from vtool import util, util_file
 
 from vtool.maya_lib.ui_lib import ui_fx
 from vtool.maya_lib.ui_lib import ui_rig
@@ -13,6 +13,7 @@ from vtool.maya_lib.ui_lib import ui_anim
 from vtool.maya_lib.ui_lib import ui_model
 import ui_core
 
+from vtool.process_manager import process
 
 
 import core
@@ -63,6 +64,8 @@ def picker():
     
 def tool_manager(name = None, directory = None):
     
+    util.set_env('VETALA_SETTINGS', process.get_default_directory())
+        
     manager = ToolManager(name)
     manager.set_directory(directory)
     
