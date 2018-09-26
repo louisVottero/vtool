@@ -4829,9 +4829,14 @@ class TwistRig(JointRig):
         transforms = self.control_xforms
         
         if self.orient_example:
+            
+            for joint in self.sub_joints:
+                space.MatchSpace(self.orient_example, joint).rotation()                
+            
             for transform in transforms:
                 
                 space.MatchSpace(self.orient_example, transform).rotation()
+                
             
         for joint in self.sub_joints:
             control = self._create_control(sub = True)
@@ -4854,6 +4859,10 @@ class TwistRig(JointRig):
             cmds.parent(xform, parent)
             
             cmds.delete(transform)
+            
+            cmds.setAttr('%s.rotateX' % joint, 0)
+            cmds.setAttr('%s.rotateY' % joint, 0)
+            cmds.setAttr('%s.rotateZ' % joint, 0)
             
             if self.parent_joints:
                 cmds.parent(joint, control.control)
@@ -4918,7 +4927,7 @@ class TwistRig(JointRig):
                 self.orient_example = joint
             
             twist = rigs_util.TwistRibbon(joint)
-            twist.set_description(self.description)
+            twist.set_description(self._get_name())
             twist.joint_count = self.control_count
             twist._offset_axis = self._offset_axis
             twist._attach_directly = self._attach_directly
@@ -4937,7 +4946,7 @@ class TwistRig(JointRig):
             
             
             twist.create()    
-        
+            
             self.twist_group = twist.group
             self.sub_joints = twist.joints
             
@@ -4965,11 +4974,9 @@ class TwistRig(JointRig):
             if self._create_btm_control:
                 btm_control = self._create_main_control(next_joint, 'btm')
                 cmds.parent(self.btm_locator, btm_control.control)
-                
+            
             self._create_xform_controls(self.top_locator, self.btm_locator)
-            
-            
-                       
+                          
 #---Body Rig
 
 class SpineRig(BufferRig, SplineRibbonBaseRig):
