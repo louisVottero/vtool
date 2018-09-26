@@ -3157,6 +3157,37 @@ def insert_multiply(target_attribute, value = 0.1):
     
     return multi
 
+def insert_blend(target_attribute, value = 1):
+    """
+    Insert a multiply divide into the input attribute of target_attribute.
+    
+    Args:
+        target_attribute (str): The node.attribute name of an attribute.
+        value (float): The float value to blend the target_attribute by.
+        
+    Returns:
+        str: The new blend node
+    """
+    
+    new_name = target_attribute.replace('.', '_')
+    new_name = new_name.replace('[', '_')
+    new_name = new_name.replace(']', '_')
+    
+    input_attr = get_attribute_input(target_attribute)
+    
+    blend = cmds.createNode('blendColors', n = 'blendColors_%s' % new_name) 
+    
+    if input_attr:
+        disconnect_attribute(target_attribute)
+        cmds.connectAttr(input_attr, '%s.color1R' % blend)
+        
+    cmds.connectAttr('%s.outputR' % blend, target_attribute)
+    
+    cmds.setAttr('%s.color2R' % blend, value)
+    
+    return blend
+
+
 def connect_blend(source_attribute1, source_attribute2, target_attribute, value = 0.5 ):
     """
     Connect source 1 and source 2 into the target_attribute with and blendColors node.
