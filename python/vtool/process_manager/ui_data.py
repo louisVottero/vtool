@@ -466,10 +466,10 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             item.setText(0, foldername)
             
             
-            item_font = qt.QFont()
-            item_font.setPixelSize(11)
-            item.setFont(0, item_font)
-            item.setFont(1, item_font)
+            #item_font = qt.QFont()
+            #item_font.setPixelSize(11)
+            #item.setFont(0, item_font)
+            #item.setFont(1, item_font)
             #item.setFont(2, item_font)
             
             sub_folder, data_type = process_tool.get_data_sub_and_type(foldername)
@@ -494,7 +494,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             size_thread = DataSizeThread()
             size_thread.run(data_dir, foldername, item)
             
-            item.setSizeHint(0, qt.QtCore.QSize(100,20))
+            #item.setSizeHint(0, qt.QtCore.QSize(100,20))
             self.addTopLevelItem(item)
             
             if foldername == new_data:
@@ -701,7 +701,7 @@ class DataTypeTreeWidget(qt.QTreeWidget):
         
         item = qt.QTreeWidgetItem(parent)
         item.setText(0, data_type)
-        item.setSizeHint(0, qt.QtCore.QSize(100, 20))
+        #item.setSizeHint(0, qt.QtCore.QSize(100, 20))
         
         #self.addTopLevelItem(item)
         
@@ -727,7 +727,7 @@ class DataTypeTreeWidget(qt.QTreeWidget):
         if not group_item:
             item = qt.QTreeWidgetItem()
             item.setText(0, group_type)
-            item.setSizeHint(0, qt.QtCore.QSize(100, 25))
+            #item.setSizeHint(0, qt.QtCore.QSize(100, 25))
             
             self.addTopLevelItem(item)    
             group_item = item
