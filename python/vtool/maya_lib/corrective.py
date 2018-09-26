@@ -17,7 +17,7 @@ import deform
 import shade
 import rigs_util
 
-def get_pose_instance(pose_name):
+def get_pose_instance(pose_name, pose_group = 'pose_gr'):
     """
     Get a pose instance from the pose name.
     
@@ -35,6 +35,7 @@ def get_pose_instance(pose_name):
         pose_type = 'cone'
 
     pose = corrective_type[pose_type]()
+    pose.set_pose_group(pose_group)
     pose.set_pose(pose_name)
     
     return pose
@@ -45,12 +46,17 @@ class PoseManager(object):
     """
     def __init__(self):
         self.poses = []
+        self._namespace = None
         
         self.pose_group = 'pose_gr'
         self.detached_attributes = {}
         self.sub_detached_dict = {}
 
     def _check_pose_group(self):
+        
+        if not self.pose_group:
+            return
+        
         if not cmds.objExists(self.pose_group):
             
             selection = cmds.ls(sl = True)
@@ -85,6 +91,7 @@ class PoseManager(object):
         if hasattr(pose, 'is_mesh_visibile'):
             pose.is_mesh_in_sculpt(index)
         
+        
     def get_pose_instance(self, pose_name):
         """
         Get the instance of a pose. 
@@ -95,7 +102,17 @@ class PoseManager(object):
         Returns:
             object: The instance of the pose at the pose type.
         """
-        pose = get_pose_instance(pose_name)
+        
+        namespace = core.get_namespace(self.pose_group)
+        
+        if namespace:
+            
+            
+            
+            if not pose_name.startswith(namespace):
+                pose_name = '%s:%s' % (namespace, pose_name)
+        
+        pose = get_pose_instance(pose_name, self.pose_group)
         
         return pose
                         
@@ -108,6 +125,9 @@ class PoseManager(object):
         """
         self._check_pose_group()
         
+        if not self.pose_group:
+            return
+        namespace = core.get_namespace(self.pose_group)
         
         relatives = cmds.listRelatives(self.pose_group, ad = all_descendents)
         
@@ -117,8 +137,13 @@ class PoseManager(object):
             return
         
         for relative in relatives:
-            
             if self.is_pose(relative):
+                
+                #this is because in some cases cmds.listRelatives was not returning namespace.  Possibly a refresh issue.
+                if namespace: 
+                    if not relative.startswith(namespace):
+                        relative = '%s:%s' % (namespace, relative)
+                
                 poses.append(relative)
         
         return poses
@@ -145,6 +170,21 @@ class PoseManager(object):
         pose_type = pose.get_type()
         
         return pose_type
+    
+    def set_namespace(self, namespace):
+        self._namespace = namespace
+        
+        self.pose_group = cmds.rename( self.pose_group, '%s:%s' % (namespace, self.pose_group))
+        
+        rels = cmds.listRelatives(self.pose_group, ad = True)
+        
+        for rel in rels:
+            
+            nicename = core.get_basename(rel, remove_namespace = True)
+            
+            cmds.rename(rel, '%s:%s' % (self._namespace, nicename))
+
+        #cmds.refresh()
     
     def set_pose_group(self, pose_gr_name):
         """
@@ -530,7 +570,7 @@ class PoseManager(object):
         
         self.detached_attributes = detached_attributes
         
-    def attach_poses(self, poses = None):
+    def attach_poses(self, poses = None, namespace = None):
         """
         Attach poses to the pose_gr and the rig.
         """
@@ -950,7 +990,7 @@ class PoseGroup(object):
         Mirror the pose.
         """
         pass
-    
+        
 class PoseBase(PoseGroup):
     """
     Base class for poses that sculpt meshes.
@@ -1672,8 +1712,11 @@ class PoseBase(PoseGroup):
             blend_name = self.get_blendshape(index)
             
             if blend_name:
+                
+                nicename = core.get_basename(self.pose_control, remove_namespace=True)
+                
                 blend = blendshape.BlendShape(blend_name)
-                blend.remove_target(self.pose_control)
+                blend.remove_target(nicename)
         
         attributes = self._get_mesh_message_attributes()
         attribute = attributes[index]
@@ -1706,7 +1749,7 @@ class PoseBase(PoseGroup):
             return
             
         mesh = attr.get_attribute_input('%s.%s' % (self.pose_control, mesh_attributes[index]), True)
-        
+                
         return mesh
 
     def get_mesh_count(self):
@@ -1755,6 +1798,18 @@ class PoseBase(PoseGroup):
         
         if cmds.objExists('%s.mesh_pose_source' % mesh):
             target_mesh = cmds.getAttr('%s.mesh_pose_source' % mesh)
+            
+            namespace = core.get_namespace(self.pose_control)
+            if namespace:
+                
+                basename = core.get_basename(target_mesh, remove_namespace = True)
+                
+                target_mesh = '%s:%s' % (namespace, basename) 
+                
+                if cmds.objExists(target_mesh):
+                    return target_mesh
+                else:
+                    return None
             
             long_name = target_mesh
             
@@ -2088,7 +2143,13 @@ class PoseBase(PoseGroup):
         
         mesh = self._get_current_mesh(mesh_index)
         
+        
+            
+        
         if not mesh:
+            
+            
+            
             return
         
         manager = PoseManager()
@@ -2109,40 +2170,50 @@ class PoseBase(PoseGroup):
         
         if goto_pose:
             self.goto_pose()
+            
+        
         
         self.disconnect_blend(mesh_index)
                 
         blend = self._initialize_blendshape_node(target_mesh)
         
-        blend.set_weight(self.pose_control, 0)
+        nicename = core.get_basename(self.pose_control, remove_namespace = True)
         
+        blend.set_weight(nicename, 0)
         
                 
         offset = deform.chad_extract_shape(target_mesh, mesh)
         
         
-        blend.set_weight(self.pose_control, 1)
+        
+        
+        blend.set_weight(nicename, 1)
         
         #eventually it will check mesh index
         #blend.get_mesh_index(target_mesh)
         
-        if blend.is_target(self.pose_control):
-            blend.replace_target(self.pose_control, offset)
         
-        if not blend.is_target(self.pose_control):
-            blend.create_target(self.pose_control, offset)
+        
+        if blend.is_target(nicename):
+            blend.replace_target(nicename, offset)
+        
+        if not blend.is_target(nicename):
+            blend.create_target(nicename, offset)
         
         self.connect_blend(mesh_index)
-        
-        if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control)):
-            cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, self.pose_control))
+                
+        if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, nicename)):
+            cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, nicename))
         
         cmds.delete(offset)
+        
+        
         
         if sub_poses:
             self.create_sub_poses(sub_pass_mesh)
             
         envelope.turn_on()
+        
         
     def detach_sub_poses(self):
         """
@@ -2217,9 +2288,11 @@ class PoseBase(PoseGroup):
         if blendshape_node:
             blend.set(blendshape_node)
         
-        if self.blend_input and blend.is_target(self.pose_control):
+        nicename = core.get_basename(self.pose_control, remove_namespace = True)
+        
+        if self.blend_input and blend.is_target(nicename):
 
-            cmds.connectAttr(self.blend_input, '%s.%s' % (blend.blendshape, self.pose_control))
+            cmds.connectAttr(self.blend_input, '%s.%s' % (blend.blendshape, nicename))
             self.blend_input = None
  
     def disconnect_blend(self, mesh_index = None):
@@ -2253,7 +2326,9 @@ class PoseBase(PoseGroup):
         if blendshape_node:
             blend.set(blendshape_node)
                 
-        desired_attribute = '%s.%s' % (blend.blendshape, self.pose_control)
+        nicename = core.get_basename(self.pose_control, remove_namespace = True)
+                
+        desired_attribute = '%s.%s' % (blend.blendshape, nicename)
         
         if not cmds.objExists(desired_attribute):
             return
@@ -2472,21 +2547,23 @@ class PoseNoReader(PoseBase):
         
         blend = self._initialize_blendshape_node(target_mesh)
         
-        blend.set_weight(self.pose_control, 0)
+        nicename = core.get_basename(self.pose_control, remove_namespace = True)
+        
+        blend.set_weight(nicename, 0)
         
         offset = deform.chad_extract_shape(target_mesh, mesh)
         
-        blend.set_weight(self.pose_control, 1)
+        blend.set_weight(nicename, 1)
         
         self.connect_blend(this_index)
         
-        if blend.is_target(self.pose_control):
-            blend.replace_target(self.pose_control, offset)
+        if blend.is_target(nicename):
+            blend.replace_target(nicename, offset)
         
-        if not blend.is_target(self.pose_control):
-            blend.create_target(self.pose_control, offset)
+        if not blend.is_target(nicename):
+            blend.create_target(nicename, offset)
                 
-        blend_attr = '%s.%s' % (blend.blendshape, self.pose_control)
+        blend_attr = '%s.%s' % (blend.blendshape, nicename)
         weight_attr = '%s.weight' % self.pose_control
         input_attr = attr.get_attribute_input(blend_attr)
         
@@ -2758,6 +2835,10 @@ class PoseCombo(PoseNoReader):
                 
                 if not pose:
                     continue
+                
+                namespace = core.get_namespace(self.pose_control)
+                if namespace:
+                    pose = '%s:%s' % (namespace, pose)
                 
                 output = '%s.weight' % pose
                 
