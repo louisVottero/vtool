@@ -420,9 +420,10 @@ class BlendShape(object):
             
             current_index = self._get_next_index()
             
-            self._store_target(name, current_index)
             
-            nice_name = core.get_basename(name)
+            
+            nice_name = core.get_basename(name, remove_namespace = True)
+            self._store_target(nice_name, current_index)
             
             mesh_input = self._get_mesh_input_for_target(nice_name, inbetween)
             
