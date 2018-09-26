@@ -194,6 +194,7 @@ class ProgressBar(object):
     """
     
     def __init__(self, title, count = 0):
+        
         if is_batch():
             self.title = title
             self.count = count
@@ -210,13 +211,20 @@ class ProgressBar(object):
         
         if not is_batch():
             gMainProgressBar = mel.eval('$tmp = $gMainProgressBar');
+            self.progress_ui = gMainProgressBar
+            
+            #check if not cancelled completely because of bug
+            self.end()
         
-            self.progress_ui = cmds.progressBar( gMainProgressBar,
+            cmds.progressBar( gMainProgressBar,
                                         edit=True,
                                         beginProgress=True,
                                         isInterruptable=True,
                                         status= title,
                                         maxValue= count )
+        
+            
+            
         
         global current_progress_bar 
         current_progress_bar = self
@@ -251,7 +259,13 @@ class ProgressBar(object):
         if is_batch():
             return
         
+        if cmds.progressBar(self.progress_ui, query = True, isCancelled = True):
+            cmds.progressBar( self.progress_ui,
+                                        edit=True,
+                                        beginProgress=True)
+        
         cmds.progressBar(self.progress_ui, edit=True, ep = True)
+        
         
     def status(self, status_string):
         """
@@ -272,9 +286,10 @@ class ProgressBar(object):
             return False
         
         break_progress = cmds.progressBar(self.progress_ui, query=True, isCancelled=True )
-
+        
         if break_progress:
             self.end()
+            
             if vtool.util.get_env('VETALA_RUN') == 'True':
                 vtool.util.set_env('VETALA_STOP', True)            
             return True
