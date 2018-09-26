@@ -30,6 +30,8 @@ def get_sg():
         name = settings_inst.get('shotgun_name')
         code = settings_inst.get('shotgun_code')
         
+        
+        
         if util.has_shotgun_tank():
             
             import sgtk
@@ -61,7 +63,7 @@ def get_sg():
                     util.error('Could not get shotgun api.  Check that your shotgun api script and key code are correct. \nShotgun toolkit might not be installed correctly. \nShotgun may have been initialized to a different project.')
         
         if sg != None:
-            util.show('Using Shotgun')
+            util.show('Using Shotgun with name: %s and authentication key: %s' % (name, code))
     
     return sg
 
