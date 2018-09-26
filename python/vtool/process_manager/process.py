@@ -140,13 +140,20 @@ class Process(object):
         self._control_inst = None
         
         
-    def _setup_options(self):
+    def _setup_options(self, update = False):
+        
+        
+        #if update and self.option_settings:
+        
         
         if not self.option_settings:
             options = util_file.SettingsFile()
             self.option_settings = options
-            
-        self.option_settings.set_directory(self.get_path(), 'options.json')
+        
+        if update:   
+            self.option_settings.set_directory(self.get_path(), 'options.json')
+        
+        
         
     def _setup_settings(self):
         if not self.settings:
@@ -227,7 +234,7 @@ class Process(object):
                 util.show('Could not center view')
             
                 
-    def _reset_builtin(self, old_process, old_cmds, old_show, old_warning):
+    def _reset_builtin(self, old_process = None, old_cmds = None, old_show = None, old_warning = None):
                 
         try:
             builtins = __builtin__.dir()
@@ -267,7 +274,7 @@ class Process(object):
 
     def _refresh_process(self):
         
-        self._setup_options()
+        self._setup_options(update = True)
         self._setup_settings()
         
         self.runtime_values = {}
@@ -1217,15 +1224,6 @@ class Process(object):
         
         value = self.get_unformatted_option(name, group)
         
-        if value == None:
-            
-            if self.has_option(name, group):
-                if not group:
-                    util.warning('Could not find option: %s' (name))
-                if group:
-                    util.warning('Could not find option: %s in group: %s' % (name, group))
-                        
-        
         new_value = None
         
         try:
@@ -1233,6 +1231,15 @@ class Process(object):
             
         except:
             pass
+        
+        if value == None:
+            
+            util.warning('Trouble accessing option from %s' % self.option_settings.directory)
+            if self.has_option(name, group):
+                if not group:
+                    util.warning('Could not find option: %s' (name))
+                if group:
+                    util.warning('Could not find option: %s in group: %s' % (name, group))
         
         if type(new_value) == list or type(new_value) == tuple or type(new_value) == dict:
             value = new_value
@@ -1247,17 +1254,20 @@ class Process(object):
         
     def get_option_match(self, name, return_first = True):
         
-        dict = self.option_settings.settings_dict
+        option_dict = self.option_settings.settings_dict
         
         found = {}
         
-        for key in dict:
+        for key in option_dict:
             if key.endswith(name):
                 
                 if return_first:
-                    return dict[key]
+                    util.show('Accessed - Option: %s, value: %s' % (name, option_dict[key]))
+                    return option_dict[key]
                 
-                found[name] = dict[key]
+                found[name] = option_dict[key]
+        
+        
                 
         return found
         
@@ -1690,33 +1700,15 @@ class Process(object):
         if util.is_in_maya():
             import maya.cmds as cmds
             cmds.select(cl = True)
+            cmds.refresh()
         
         orig_script = script
         
         util.start_temp_log()
-        builtins = dir(__builtin__)
         
-        old_process = None
-        old_cmds = None
-        old_show = None
-        old_warning = None
+        self._reset_builtin()
         
-        if 'process' in builtins:
-            old_process = __builtin__.process
-        if 'cmds' in builtins:
-            old_cmds = __builtin__.cmds
-        if 'show' in builtins:
-            old_show = __builtin__.show
-        if 'warning' in builtins:
-            old_warning = __builtin__.warning
-        
-        if util.is_in_maya():
-            
-            import maya.cmds as cmds
-            cmds.refresh()
-            
         status = None
-        #read = None
         
         if util.is_in_maya():
             cmds.undoInfo(openChunk = True)
@@ -1730,7 +1722,7 @@ class Process(object):
                 script = self.get_code_file(script)
             
             if not util_file.is_file(script):
-                self._reset_builtin(old_process, old_cmds, old_show, old_warning)
+                self._reset_builtin()
                 util.show('Could not find script: %s' % orig_script)
                 return
             
@@ -1742,7 +1734,6 @@ class Process(object):
             
             if auto_focus:
                 self._prep_maya()
-            
             
             name = util_file.get_basename(script)
             
@@ -1760,6 +1751,8 @@ class Process(object):
             
             util_file.delete_pyc(script)
             
+            self._reset_builtin()
+            
             __builtin__.process = self
             __builtin__.show = util.show
             __builtin__.warning = util.warning
@@ -1769,12 +1762,12 @@ class Process(object):
                 import maya.cmds as cmds
                 
                 __builtin__.cmds = cmds
+              
+            util.show('Sourcing %s' % script)
                 
             module = util_file.source_python_module(script)
             
             if module and type(module) != str:
-                
-                module.process = self
                 init_passed = True
             
             if not module or type(module) == str:
@@ -1787,14 +1780,14 @@ class Process(object):
             
             status = traceback.format_exc()
             
-            self._reset_builtin(old_process, old_cmds, old_show, old_warning)
-            
             init_passed = False
             
             if hard_error:
                 if util.is_in_maya():
                     cmds.undoInfo(closeChunk = True)
-                    
+            
+                self._reset_builtin()    
+                del module
                 util.error('%s\n' % status)
                 raise
         
@@ -1807,32 +1800,28 @@ class Process(object):
                     
                     status = 'Success'
         
-                if not hasattr(module, 'main'):
-                    
-                    util_file.get_basename(script)
-                    
-                    util.warning('main() not found in %s.' % script)
-                                    
-                del module
-                
+                #if not hasattr(module, 'main'):                    
+                    #util_file.get_basename(script)
+                    #util.warning('main() not found in %s.' % script)
+                                
             except Exception:
                 
                 status = traceback.format_exc()
-                
-                self._reset_builtin(old_process, old_cmds, old_show, old_warning)
                 
                 if hard_error:
                     if util.is_in_maya():
                         cmds.undoInfo(closeChunk = True)
                         
+                    self._reset_builtin()
                     util.error('%s\n' % status)
                     raise
         
         if util.is_in_maya():
             cmds.undoInfo(closeChunk = True)        
         
-        self._reset_builtin(old_process, old_cmds, old_show, old_warning)
-         
+        del module
+        self._reset_builtin()
+        
         if not status == 'Success':
             util.show('%s\n' % status)
         
@@ -1910,6 +1899,12 @@ class Process(object):
             None
         """
         
+        prev_process = util.get_env('VETALA_CURRENT_PROCESS')
+        
+        util.set_env('VETALA_CURRENT_PROCESS', self.get_path())
+        
+        util.show('------------------------------------------------------------------------------------------------------')
+        
         watch = util.StopWatch()
         watch.start(feedback = False)
         
@@ -1927,7 +1922,9 @@ class Process(object):
         
         util.show(message)
         
-        util.show('\n\nOption path: %s' % self.get_option_file())
+        
+        util.show('\n\nProcess path: %s' % self.get_path())
+        util.show('Option path: %s' % self.get_option_file())
         util.show('Settings path: %s' % self.get_settings_file())
         util.show('Runtime values: %s\n\n' % self.runtime_values)
         
@@ -2018,6 +2015,8 @@ class Process(object):
         for status_entry in status_list:
             util.show('%s : %s' % (status_entry[1], status_entry[0]))
         util.show('\n\n') 
+            
+        util.set_env('VETALA_CURRENT_PROCESS', prev_process)
             
         return status_list
         
