@@ -100,6 +100,15 @@ class MeshTopologyCheck(object):
             
         return True
 
+    def check_first_edge_verts(self):
+        edge1 = edge_to_vertex('%s.e[0]' % self.mesh1)
+        edge2 = edge_to_vertex('%s.e[0]' % self.mesh2)
+        
+        if not edge1 == edge2:
+            return False
+        else:
+            return True
+
 class Rivet(object):
     def __init__(self, name):
         self.surface = None
@@ -330,9 +339,15 @@ def is_mesh_compatible(mesh1, mesh2):
     Check the two meshes to see if they have the same vert, edge and face count.
     """
     check = MeshTopologyCheck(mesh1, mesh2)
-    check_count = check.check_vert_edge_face_count()
+    check_value = check.check_vert_edge_face_count()
     
-    return check_count
+    if not check_value:
+        return False
+    
+    
+    check_value = check.check_first_edge_verts()
+    
+    return check_value
 
 def is_mesh_blend_compatible(mesh1, mesh2):
     """
@@ -2380,7 +2395,7 @@ def nurb_surface_u_to_transforms(surface, count = 4, value = 0.5, orient_example
     return joints
     
 
-def nurb_surface_v_to_transforms(surface, count = 4, value = 0.5, orient_example = None):
+def nurb_surface_v_to_transforms(surface, description = '', count = 4, value = 0.5, orient_example = None):
     
     max_value_u = cmds.getAttr('%s.maxValueU' % surface)
     max_value_v = cmds.getAttr('%s.maxValueV' % surface)
@@ -2398,7 +2413,9 @@ def nurb_surface_v_to_transforms(surface, count = 4, value = 0.5, orient_example
         
         pos = cmds.pointPosition('%s.uv[%s][%s]' % (surface, mid_value, section_value))
         
-        joint = cmds.createNode('joint', n = 'joint_%s_%s' % ((inc + 1), surface))
+        if not description:
+            description = surface
+        joint = cmds.createNode('joint', n = 'joint_%s_%s' % ((inc + 1), description))
         cmds.xform(joint, ws = True, t = pos)
         
         if last_joint:
