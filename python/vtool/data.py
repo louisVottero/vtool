@@ -2316,7 +2316,7 @@ class PoseData(MayaCustomData):
         maya_lib.core.print_help('Exported %s data.' % self.name)
     
     
-    def import_data(self):
+    def import_data(self, namespace = ''):
         
         #path = util_file.join_path(self.directory, self.name)
         
@@ -2368,6 +2368,9 @@ class PoseData(MayaCustomData):
             cmds.parent(poses, 'pose_gr')
         
         pose_manager = maya_lib.corrective.PoseManager()
+        
+        if namespace:
+            pose_manager.set_namespace(namespace)
         
         pose_manager.attach_poses(poses)
         
