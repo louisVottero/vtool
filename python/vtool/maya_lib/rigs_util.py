@@ -2978,3 +2978,11 @@ def mesh_border_to_control_shape(mesh, control, offset = .1):
     control_inst.copy_shapes(new_curve)
     
     cmds.delete(new_curve)
+    
+def edge_loop_to_control_shape(edge, control, offset = .1):
+    
+    new_curve = geo.create_curve_from_edge_loop(edge, offset)
+    control_inst = Control(control)
+    control_inst.copy_shapes(new_curve)
+    
+    cmds.delete(new_curve)
