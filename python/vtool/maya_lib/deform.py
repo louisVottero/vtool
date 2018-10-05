@@ -4416,16 +4416,17 @@ def add_joint_bindpre(skin, joint, description = None):
     if not description:
         description = joint
     
-    bindPre_locator = cmds.spaceLocator(n = core.inc_name('locator_%s' % description))[0]
+    bind_pre = cmds.duplicate(joint, po = True, n = core.inc_name('bindpre_%s' % description))[0]
+    #bindPre_locator = cmds.spaceLocator(n = core.inc_name('bindpre_%s' % description))[0]
     
     index = get_index_at_skin_influence(joint, skin)
     
-    match = space.MatchSpace(joint, bindPre_locator)
+    match = space.MatchSpace(joint, bind_pre)
     match.translation_rotation()
     
-    cmds.connectAttr('%s.worldInverseMatrix' % bindPre_locator, '%s.bindPreMatrix[%s]' % (skin, index))
+    cmds.connectAttr('%s.worldInverseMatrix' % bind_pre, '%s.bindPreMatrix[%s]' % (skin, index))
     
-    return bindPre_locator
+    return bind_pre
     
 def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, delete_wire = True, skin = True, falloff = 1, create_controls = True):
     """
