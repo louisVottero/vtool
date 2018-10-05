@@ -9,6 +9,7 @@ import api
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
+    import maya.mel as mel
     
 import core
 import space
@@ -104,7 +105,10 @@ class MeshTopologyCheck(object):
         edge1 = edge_to_vertex('%s.e[0]' % self.mesh1)
         edge2 = edge_to_vertex('%s.e[0]' % self.mesh2)
         
-        if not edge1 == edge2:
+        vertex_indices1 = get_vertex_indices(edge1)
+        vertex_indices2 = get_vertex_indices(edge2)
+        
+        if not vertex_indices1 == vertex_indices2:
             return False
         else:
             return True
@@ -840,6 +844,16 @@ def get_vertices(mesh):
             found += verts
     
     return found
+
+def get_vertex_indices(list_of_vertex_names):
+    
+    vertex_indices = []
+    
+    for vertex in list_of_vertex_names:
+        index = vtool.util.get_last_number(vertex)
+        vertex_indices.append(index)
+        
+    return vertex_indices
 
 def get_faces(mesh):
     """
@@ -1625,7 +1639,36 @@ def create_curve_from_mesh_border(mesh, offset = 0.1, name = None):
     cmds.delete(work_mesh)
         
     return curve
+
+def create_curve_from_edge_loop(edge, offset = 0.1, name = None):
+    """
+    Create a curve from the border of a mesh.  Good for creating controls on feathers.
+    """
+    cmds.select(cl = True)
     
+    mesh = edge_to_mesh(edge)
+    work_mesh = cmds.duplicate(mesh)[0]
+    
+    work_edge = edge.replace(mesh, work_mesh)
+    cmds.select(cl = True)
+    cmds.select(work_edge)
+    mel.eval('SelectEdgeLoopSp')
+    #cmds.polySelect(edge, elb = True)
+    
+    cmds.polyMoveEdge(ch = False, random = 0, localCenter = 0, ltz = offset)
+    
+    orig_curve = cmds.polyToCurve( form = 2, degree = 1)[0]
+    
+    curve = cmds.rename(orig_curve, core.inc_name('curve_form_edge_1'))
+    
+    if name:
+        curve = cmds.rename(curve, core.inc_name(name))
+        
+    cmds.delete(work_mesh)
+        
+    return curve
+    
+ 
 def create_two_transforms_curve(transform1, transform2, name = ''):
     """
     Create a curve between two transforms.
@@ -2973,7 +3016,19 @@ def edge_to_vertex(edges):
             verts.append('%s.vtx[%s]' % (mesh, vert2))
     
     return verts
- 
+
+def edge_to_mesh(edge):
+    
+        
+    mesh = None
+    
+    if edge.find('.e[') > -1:
+        split_selected = edge.split('.e[')
+        if split_selected > 1:
+            mesh = split_selected[0]
+            
+            return mesh
+    
 def cvs_to_transforms(nurbs, type = 'transform'):
     
     cvs = cmds.ls('%s.cv[*]' % nurbs, flatten = True)
