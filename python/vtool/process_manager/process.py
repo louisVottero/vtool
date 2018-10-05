@@ -150,8 +150,8 @@ class Process(object):
             options = util_file.SettingsFile()
             self.option_settings = options
         
-        if update:   
-            self.option_settings.set_directory(self.get_path(), 'options.json')
+        #if update:   
+        self.option_settings.set_directory(self.get_path(), 'options.json')
         
         
         
