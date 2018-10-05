@@ -1545,11 +1545,7 @@ class MayaAttributesFileWidget(MayaDataFileWidget):
     
     def _build_widgets(self):
         super(MayaAttributesFileWidget, self)._build_widgets()
-        
-        self.list = vtool.qt_ui.AddRemoveList()
-        self.save_widget.main_layout.addWidget(self.list)
-        
-    
+            
     def _define_data_class(self):
         return vtool.data.MayaAttributeData()
 

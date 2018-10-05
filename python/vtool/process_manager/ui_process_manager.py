@@ -216,6 +216,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.setFocus()
         
     def _load_options(self, directory):
+        
         self.option_widget.set_directory(directory)
         
         has_options = self.option_widget.has_options()
