@@ -2757,20 +2757,28 @@ class MayaWrap(object):
                         
     def _set_mesh_to_wrap(self, mesh, geo_type = 'mesh'):
         
-        shapes = cmds.listRelatives(mesh, s = True, f = True)
+        #shapes = cmds.listRelatives(mesh, s = True, f = True)
+        
+        
+        shapes = core.get_shapes(mesh, no_intermediate = True)
+        
+        
         
         if shapes and cmds.nodeType(shapes[0]) == geo_type:
-            self.meshes.append(mesh)
+            self.meshes.append(shapes[0])
+            
                 
-        relatives = cmds.listRelatives(mesh, ad = True, f = True)
-                    
-        for relative in relatives:
+        relatives = cmds.listRelatives(mesh, type = 'transform', ad = True, f = True)
+        
+        if relatives:
+            for relative in relatives:
+                
+                #shapes = cmds.listRelatives(relative, s = True, f = True)
             
-            shapes = cmds.listRelatives(relative, s = True, f = True)
-            
-            if shapes and cmds.nodeType(shapes[0]) == geo_type:
-                self.meshes.append(relative)
-
+                shapes = core.get_shapes(relative, no_intermediate = True)
+                
+                if shapes and cmds.nodeType(shapes[0]) == geo_type:
+                    self.meshes.append(shapes[0])
                 
     def set_driver_meshes(self, meshes = []):
         """
