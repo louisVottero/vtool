@@ -5023,6 +5023,8 @@ def skin_mesh_from_mesh(source_mesh, target_mesh, exclude_joints = [], include_j
         
         for joint in unskinned:
             cmds.skinCluster(other_skin, e = True, ri = joint)
+            
+    return other_skin
 
 def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints = [], leave_existing_skins = False):
     ''' 
