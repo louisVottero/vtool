@@ -939,8 +939,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def set_process(self, process_inst):
         
-        
-        
         if not process_inst:
             self.directory = None
             self.process_inst = None
