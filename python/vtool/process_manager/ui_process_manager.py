@@ -15,7 +15,6 @@ import ui_process_settings
 import ui_data
 import ui_code
 import ui_settings
-import os
         
 
 vetala_version = util_file.get_vetala_version()
@@ -51,6 +50,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_item = None
         self.runtime_values = {}
         self.handle_selection_change = True
+        self._note_text_change_save = True
         
         super(ProcessManagerWindow, self).__init__(parent = parent, use_scroll = True) 
         
@@ -86,276 +86,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.set_code_directory(code_directory)
         
         self.last_process_script_inc = 0
-        
-    def _show_options(self):
-        
-        sizes = self.process_splitter.sizes()
-        self._load_options(self.process.get_path())
-        
-        current_index = self.option_tabs.currentIndex()
-        
-        if current_index != 0:
-            self.option_tabs.setCurrentIndex(0)
-        
-        if sizes[1] == 0:
-            self.process_splitter.setSizes([1,1])
-        
-        if current_index == 0 and sizes[1] > 0:
-            self.process_splitter.setSizes([1,0])
-            self._current_tab = None
-            return
-        
-        self._current_tab = 0
-        
-    def _show_notes(self):
-        sizes = self.process_splitter.sizes()
-        self._load_notes()
-        
-        current_index = self.option_tabs.currentIndex()
-        
-        if current_index != 1:
-            self.option_tabs.setCurrentIndex(1)
-        
-        if sizes[1] == 0:
-            self.process_splitter.setSizes([1,1])
-        
-        if current_index == 1 and sizes[1] > 0:
-            self.process_splitter.setSizes([1,0])
-            self._current_tab = None
-            return
-        
-        self._current_tab = 1
-        
-    def _show_templates(self):
-        
-        self.process_splitter.setSizes([1,1])
-        self.option_tabs.setCurrentIndex(2)
-    
-    def _show_settings(self):
-        
-        self.process_splitter.setSizes([1,1])
-        self.option_tabs.setCurrentIndex(3)
-        
-    def _process_deleted(self):
-        self._clear_code(close_windows=True)
-        self._clear_data()
-        
-        self._set_title('-')
-        
-        self.build_widget.hide()
-        
-    def _copy_done(self):
-        self.sync_code = True
-        
-        self._load_options(self.process.get_path())
-        self._load_notes()
-          
-    def _item_double_clicked(self):
-        
-        pass
-        #self.tab_widget.setCurrentIndex(3)
-                
-    def _item_changed(self, item):
-        
-        name = '-'
-        
-        if hasattr(item, 'name'):
-            
-            name = item.get_name()
-        
-        self._set_title(name)
-        
-        self._update_build_widget(name)
-        
-        #if hasattr(item, 'get_path'):
-        #    self._load_options(item.get_path())
-        
-    def _item_renamed(self, item):
-        
-        self._item_changed(item)
-        
-        if hasattr(item, 'get_path'):
-            self._load_options(item.get_path())
-            self._load_notes()
-        
-    def _item_selection_changed(self):
-        
-        if not self.handle_selection_change:
-            return
-        
-        items = self.view_widget.tree_widget.selectedItems()
-                
-        if not items:
-            
-            self._update_process(None)
-            self.build_widget.hide()
-            return
-        
-        item = items[0]
-        
-        if item.matches(self.last_item):
-            return
-        
-        name = item.get_name()
-        
-        self._update_build_widget(name)
 
-        #self._set_title(name)
-        self._update_process(name)
-        
-        
-        path = item.get_path()
-        
-        if self.option_tabs.currentIndex() == 0:
-            self._load_options(path)
-        if self.option_tabs.currentIndex() == 1:
-            self._load_notes()
-        if self.option_tabs.currentIndex() == 3:
-            self._load_process_settings()
-        
-        self.view_widget.setFocus()
-        
-    def _load_options(self, directory):
-        
-        self.option_widget.set_directory(directory)
-        
-        has_options = self.option_widget.has_options()
-        
-        if self.option_tabs.currentIndex() == 1:
-            note_lines = self._get_note_lines()
-            
-            if not note_lines and has_options and self._current_tab == None:
-                self.option_tabs.setCurrentIndex(0)
-        
-        if self.option_tabs.currentIndex() == 0:
-            has_options = self.option_widget.has_options()
-            
-            if has_options:
-                self.process_splitter.setSizes([1,1])
-            if not has_options and self._current_tab == None:
-                self.process_splitter.setSizes([1,0])
-            return
-        
-    def _get_note_lines(self):
-        
-        current_path = self._get_current_path()
-        
-        notes_path = util_file.join_path(current_path, 'notes.html')
-        
-        if util_file.is_file(notes_path):
-            note_lines = util_file.get_file_text(notes_path)
-            
-            parser = util.VetalaHTMLParser()
-            parser.feed(note_lines)
-            if not parser.get_body_data():
-                return
-            
-            return note_lines
-
-            
-    def _load_notes(self):
-        
-        note_lines = self._get_note_lines()
-        
-        if not note_lines:
-            
-            self.notes.clear()
-            
-
-        if note_lines:
-            
-            self.notes.clear()
-            
-            self.notes.setHtml(note_lines)
-            self._save_notes()
-                
-        if self.option_tabs.currentIndex() == 1:
-            if not note_lines and self._current_tab == None:
-                self.process_splitter.setSizes([1,0])
-            if note_lines:
-                self.process_splitter.setSizes([1,1])
-                
-        if self.option_tabs.currentIndex() == 0:
-            has_options = self.option_widget.has_options()
-            
-            if not has_options and self._current_tab == None:
-                
-                if note_lines:
-                    self.option_tabs.setCurrentIndex(1)
-                    self.process_splitter.setSizes([1,1])
-    
-    def _load_process_settings(self):
-        
-        self.process_settings.set_directory(self._get_current_path())
-        
-              
-    def _update_build_widget(self, process_name):
-        
-        path = self.view_widget.tree_widget.directory
-        path = util_file.join_path(path, process_name)
-        data_path = util_file.join_path(path, '.data/build')
-        
-        data_dir = util_file.join_path(path, '.data')
-        
-        if not util_file.is_dir(data_dir):
-            return
-        
-        self.build_widget.update_data(data_dir)
-        
-        self.build_widget.set_directory(data_path)
-        self.build_widget.show()
-        
-    def sizeHint(self):
-        return qt.QtCore.QSize(450,450)
-        
-    def _setup_settings_file(self):
-        
-        settings_file = util_file.SettingsFile()
-        
-        settings_file.set_directory(self.directory)
-        
-        self.settings = settings_file
-        
-        util.set_env('VETALA_SETTINGS', self.directory)
-        
-        self.view_widget.set_settings( self.settings )
-        self.settings_widget.set_settings(self.settings)
-        
-        #template stuff
-        vetala_path = util_file.get_vetala_directory()
-        vetala_path = util_file.join_path(vetala_path, 'templates')
-        custom_template_file = 'template_settings.txt'
-        
-        settings = self.settings
-        
-        template_custom_settings = util_file.join_path(vetala_path, custom_template_file)
-        
-        if util_file.is_file(template_custom_settings):
-            
-            settings = util_file.SettingsFile()
-            settings.set_directory(vetala_path, custom_template_file)
-            util.show('Custom template file found. %s' % template_custom_settings)
-            self.template_settings = settings
-        else:
-            if not self.settings.has_setting('template_directory') or not self.settings.get('template_directory'):
-                self.settings.set('template_directory', ['Vetala Templates', vetala_path])
-                self.settings.set('template_history', [['Vetala Templates', vetala_path]])
-        
-        self.settings_widget.set_template_settings(settings)
-        self.template_widget.set_settings(settings)
-        
-        if self.settings.has_setting('process_split_alignment'):
-            alignment = self.settings.get('process_split_alignment')
-        
-            if alignment:
-                if alignment == 'horizontal':
-                    self.process_splitter.setOrientation(qt.QtCore.Qt.Horizontal)
-                    
-                if alignment == 'vertical':
-                    self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
-                
-        
-        
     def _build_widgets(self):
         
         self.header_layout = qt.QHBoxLayout()
@@ -549,6 +280,366 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.build_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
         
+    def sizeHint(self):
+        return qt.QtCore.QSize(450,450)
+        
+    def _show_options(self):
+        
+        sizes = self.process_splitter.sizes()
+        self._load_options(self.process.get_path())
+        
+        current_index = self.option_tabs.currentIndex()
+        
+        if current_index != 0:
+            self.option_tabs.setCurrentIndex(0)
+        
+        if sizes[1] == 0:
+            self.process_splitter.setSizes([1,1])
+        
+        if current_index == 0 and sizes[1] > 0:
+            self.process_splitter.setSizes([1,0])
+            self._current_tab = None
+            return
+        
+        self._current_tab = 0
+        
+    def _show_notes(self):
+        sizes = self.process_splitter.sizes()
+        self._load_notes()
+        
+        current_index = self.option_tabs.currentIndex()
+        
+        if current_index != 1:
+            self.option_tabs.setCurrentIndex(1)
+        
+        if sizes[1] == 0:
+            self.process_splitter.setSizes([1,1])
+        
+        if current_index == 1 and sizes[1] > 0:
+            self.process_splitter.setSizes([1,0])
+            self._current_tab = None
+            return
+        
+        self._current_tab = 1
+        
+    def _show_templates(self):
+        
+        self.process_splitter.setSizes([1,1])
+        self.option_tabs.setCurrentIndex(2)
+    
+    def _show_settings(self):
+        
+        self.process_splitter.setSizes([1,1])
+        self.option_tabs.setCurrentIndex(3)
+        
+    def _process_deleted(self):
+        self._clear_code(close_windows=True)
+        self._clear_data()
+        
+        self._set_title('-')
+        
+        self.build_widget.hide()
+        
+    def _copy_done(self):
+        self.sync_code = True
+        
+        self._load_options(self.process.get_path())
+        self._load_notes()
+          
+    def _item_double_clicked(self):
+        
+        pass
+        #self.tab_widget.setCurrentIndex(3)
+                
+    def _item_changed(self, item):
+        
+        name = '-'
+        
+        if hasattr(item, 'name'):
+            
+            name = item.get_name()
+        
+        self._set_title(name)
+        
+        self._update_build_widget(name)
+        
+    def _item_renamed(self, item):
+        
+        self._item_changed(item)
+        
+        if hasattr(item, 'get_path'):
+            self._load_options(item.get_path())
+            self._load_notes()
+                
+    def _item_selection_changed(self):
+        
+        if not self.handle_selection_change:
+            return
+        
+        items = self.view_widget.tree_widget.selectedItems()
+                
+        if not items:
+            
+            self._update_process(None)
+            self.build_widget.hide()
+            return
+        
+        item = items[0]
+        
+        if item.matches(self.last_item):
+            return
+        
+        name = item.get_name()
+        
+        filter_str = self.view_widget.filter_widget.get_sub_path_filter()
+        
+        if filter_str:
+            name = util_file.join_path(filter_str, name)
+        
+        
+        self._update_build_widget(name)
+        
+        self._update_process(name)
+        
+        path = item.get_path()
+        
+        if self.option_tabs.currentIndex() == 0:
+            self._load_options(path)
+        if self.option_tabs.currentIndex() == 1:
+            self._load_notes()
+        if self.option_tabs.currentIndex() == 3:
+            self._load_process_settings()
+        
+        self.view_widget.setFocus()
+        
+    def _update_process(self, name):
+        
+        self._set_vetala_current_process(name)
+        
+        items = self.view_widget.tree_widget.selectedItems()
+        
+        title = '-'
+        
+        if items and name != None:
+            title = items[0].get_name()
+        
+        if name:
+            
+            path = self._get_current_path()
+            
+            self.process.load(path)  
+            
+            if self.runtime_values:
+                self.process.set_runtime_dict(self.runtime_values)      
+            
+            self._set_title(title)
+
+            self.tab_widget.setTabEnabled(2, True)
+            self.tab_widget.setTabEnabled(3, True)
+            
+            self.process_button.setEnabled(True)
+            self.batch_button.setEnabled(True)
+        
+        if not name:
+            
+            self._set_title('-')
+
+            self.tab_widget.setTabEnabled(2, False)
+            self.tab_widget.setTabEnabled(3, False)
+            
+            self.process_button.setDisabled(True)
+            self.batch_button.setDisabled(True)
+        
+        self._clear_code()
+            
+        self.last_process = name
+            
+    def _set_vetala_current_process(self, name):
+        
+        if not name:
+            self.active_title.setText('')
+            util.set_env('VETALA_CURRENT_PROCESS', '')
+            return
+        
+        if self.project_directory:
+            self.settings.set('process', [name, str(self.project_directory)])
+            
+            project_settings_file = util_file.SettingsFile()
+            
+            
+            
+            project_settings_file.set_directory(self.directory)
+                        
+            fullpath = util_file.join_path(self.project_directory, name)
+            
+            project_settings_file.set('last process', fullpath)
+            
+            util.set_env('VETALA_CURRENT_PROCESS', fullpath)
+            
+                
+        
+    def _load_options(self, directory):
+        self.option_widget.set_directory(directory)
+        
+        has_options = self.option_widget.has_options()
+        
+        if self.option_tabs.currentIndex() == 1:
+            note_lines = self._get_note_lines()
+            
+            if not note_lines and has_options and self._current_tab == None:
+                self.option_tabs.setCurrentIndex(0)
+        
+        if self.option_tabs.currentIndex() == 0:
+            has_options = self.option_widget.has_options()
+            
+            if has_options:
+                self.process_splitter.setSizes([1,1])
+            if not has_options and self._current_tab == None:
+                self.process_splitter.setSizes([1,0])
+            return
+        
+    def _get_note_lines(self):
+        
+        current_path = self._get_current_path()
+        
+        notes_path = util_file.join_path(current_path, 'notes.html')
+        
+        if util_file.is_file(notes_path):
+            note_lines = util_file.get_file_text(notes_path)
+            
+            parser = util.VetalaHTMLParser()
+            parser.feed(note_lines)
+            if not parser.get_body_data():
+                return
+            
+            return note_lines
+
+            
+    def _load_notes(self):
+        
+        self._note_text_change_save = False
+        
+        note_lines = self._get_note_lines()
+        
+        if not note_lines:
+            
+            self.notes.clear()
+            
+
+        if note_lines:
+            
+            self.notes.clear()
+            
+            self.notes.setHtml(note_lines)
+            #self._save_notes()
+                
+        if self.option_tabs.currentIndex() == 1:
+            if not note_lines and self._current_tab == None:
+                
+                path = self.process.get_path()
+                if not path:
+                    self._note_text_change_save = True
+                    return
+                
+                self.option_widget.set_directory(path)
+                has_options = self.option_widget.has_options()
+                
+                if has_options:
+                    self.option_tabs.setCurrentIndex(0)
+                    self.process_splitter.setSizes([1,1])
+                    self._note_text_change_save = True
+                    return
+                else:
+                    self.process_splitter.setSizes([1,0])
+                
+            if note_lines:
+                self.process_splitter.setSizes([1,1])
+                
+                
+        if self.option_tabs.currentIndex() == 0:
+            has_options = self.option_widget.has_options()
+            
+            if not has_options and self._current_tab == None:
+                
+                if note_lines:
+                    self.option_tabs.setCurrentIndex(1)
+                    self.process_splitter.setSizes([1,1])
+        
+        self._note_text_change_save = True
+        
+    def _load_process_settings(self):
+        
+        self.process_settings.set_directory(self._get_current_path())
+        
+              
+    def _update_build_widget(self, process_name):
+        
+        path = self.view_widget.tree_widget.directory
+        path = util_file.join_path(path, process_name)
+        data_path = util_file.join_path(path, '.data/build')
+        
+        data_dir = util_file.join_path(path, '.data')
+        
+        if not util_file.is_dir(data_dir):
+            return
+        
+        self.build_widget.update_data(data_dir)
+        
+        self.build_widget.set_directory(data_path)
+        self.build_widget.show()
+        
+
+        
+    def _setup_settings_file(self):
+        
+        settings_file = util_file.SettingsFile()
+        
+        settings_file.set_directory(self.directory)
+        
+        self.settings = settings_file
+        
+        util.set_env('VETALA_SETTINGS', self.directory)
+        
+        self.view_widget.set_settings( self.settings )
+        self.settings_widget.set_settings(self.settings)
+        
+        #template stuff
+        vetala_path = util_file.get_vetala_directory()
+        vetala_path = util_file.join_path(vetala_path, 'templates')
+        custom_template_file = 'template_settings.txt'
+        
+        settings = self.settings
+        
+        template_custom_settings = util_file.join_path(vetala_path, custom_template_file)
+        
+        if util_file.is_file(template_custom_settings):
+            
+            settings = util_file.SettingsFile()
+            settings.set_directory(vetala_path, custom_template_file)
+            util.show('Custom template file found. %s' % template_custom_settings)
+            self.template_settings = settings
+        #else:
+            #if not self.settings.has_setting('template_directory') or not self.settings.get('template_directory'):
+                #self.settings.set('template_directory', ['Vetala Templates', vetala_path])
+                #self.settings.set('template_history', [['Vetala Templates', vetala_path]])
+        
+        self.settings_widget.set_template_settings(settings)
+        self.template_widget.set_settings(settings)
+        
+        if self.settings.has_setting('process_split_alignment'):
+            alignment = self.settings.get('process_split_alignment')
+        
+            if alignment:
+                if alignment == 'horizontal':
+                    self.process_splitter.setOrientation(qt.QtCore.Qt.Horizontal)
+                    
+                if alignment == 'vertical':
+                    self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
+                
+        
+        
+
+        
     def _toggle_alignment(self):
         
         orientation = self.process_splitter.orientation()
@@ -630,46 +721,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _clear_data(self):
         
         self.data_widget.clear_data()
-        
-    def _update_process(self, name):
-        
-        self._set_vetala_current_process(name)
-        
-        self._clear_code()
-        
-        items = self.view_widget.tree_widget.selectedItems()
-        
-        title = '-'
-        
-        if items and name != None:
-            title = items[0].get_name()
-        
-        if name:
-            
-            self.process.load(name)  
-            
-            if self.runtime_values:
-                self.process.set_runtime_dict(self.runtime_values)      
-            
-            self._set_title(title)
 
-            self.tab_widget.setTabEnabled(2, True)
-            self.tab_widget.setTabEnabled(3, True)
-            
-            self.process_button.setEnabled(True)
-            self.batch_button.setEnabled(True)
-        
-        if not name:
-            
-            self._set_title('-')
-
-            self.tab_widget.setTabEnabled(2, False)
-            self.tab_widget.setTabEnabled(3, False)
-            
-            self.process_button.setDisabled(True)
-            self.batch_button.setDisabled(True)
-            
-        self.last_process = name
         
     def _set_default_directory(self):
         default_directory = process.get_default_directory()
@@ -688,6 +740,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             directory = ['default', util_file.join_path(self.directory, 'project')]
         
         self.settings_widget.set_project_directory(directory)
+        
+        
         
         self.set_project_directory(directory)
         self.set_directory(directory[1])
@@ -709,20 +763,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.settings_widget.set_template_directory(directory)
         
         self.set_template_directory(directory)
-            
-    def _set_vetala_current_process(self, name):
-        
-        if not name:
-            self.active_title.setText('')
-            util.set_env('VETALA_CURRENT_PROCESS', '')
-            return
-        
-        if self.project_directory:
-            self.settings.set('process', [name, str(self.project_directory)])
-            
-            fullpath = util_file.join_path(self.project_directory, name)
-            
-            util.set_env('VETALA_CURRENT_PROCESS', fullpath)    
+
             
     def _set_title(self, name = None):
         
@@ -770,8 +811,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 if self.build_widget:
                     self.build_widget.hide()
                 
-                path = self.view_widget.tree_widget.directory
-                path = util_file.join_path(path, self.process.get_name())
+                path = self._get_current_path()
                 
                 self.data_widget.set_directory(path)
                 
@@ -783,8 +823,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 if self.build_widget:
                     self.build_widget.show()
                 
-                path = self.view_widget.tree_widget.directory
-                path = util_file.join_path(path, self.process.get_name())
+                path = self._get_current_path()
                 
                 self.code_widget.set_directory(path, sync_code = self.sync_code)
                 if self.sync_code:
@@ -803,8 +842,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _get_current_path(self):
         
-        
-        
         items = self.view_widget.tree_widget.selectedItems()
         
         item = None
@@ -813,12 +850,29 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             item = items[0]
         
         if item:
+            
             process_name = item.get_name()
+            
+            filter_str = self.view_widget.filter_widget.get_sub_path_filter()
+            
+            if filter_str:
+                process_name = util_file.join_path(filter_str, process_name)
+            
             self.process.load(process_name)
             
             return self.process.get_path()
         if not item:
-            return self.directory
+            
+            filter_value = self.view_widget.filter_widget.get_sub_path_filter()
+            
+            
+            
+            if filter_value:
+                directory = util_file.join_path(self.directory, filter_value)
+            else:
+                directory =self.directory
+            
+            return directory
            
     def _set_kill_process(self):
         util.set_env('VETALA_STOP', True)
@@ -1164,7 +1218,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             if progress_bar:
                 progress_bar.inc()
         
-        progress_bar.end()
+        if progress_bar:
+            progress_bar.end()
         
         util.set_env('VETALA_RUN', False)
         util.set_env('VETALA_STOP', False)
@@ -1189,23 +1244,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _batch(self):
         
-        dirpath = None
-        
-        if util.is_in_maya():
-            dirpath = os.environ['MAYA_LOCATION']
-        
-        if not dirpath:
-            util.warning('Could not find Maya.')
-            
-        import subprocess
-        
         filepath = __file__
         filepath = util_file.get_dirname(filepath)
-        
+    
         batch_python = util_file.join_path(filepath, 'batch.py')
         
-        mayapy = subprocess.Popen(['%s/bin/mayapy.exe' % dirpath, batch_python], shell = False)
-        
+        util_file.maya_batch_python_file(batch_python)        
         
     def _browser(self):
         
@@ -1234,6 +1278,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     
     def _save_notes(self):
+        if not self._note_text_change_save:
+            return
+        
         current_path = self._get_current_path()
         notes_path = util_file.join_path(current_path, 'notes.html')
         notes_path = util_file.create_file(notes_path)
@@ -1241,6 +1288,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         util_file.write_replace(notes_path, self.notes.toHtml())
         
         self.process.set_setting('notes', '')
+        
+    
         
     def set_directory(self, directory):
         
@@ -1266,11 +1315,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.settings_widget.set_directory(None)
             return
 
-        self.handle_selection_change = True
+        
 
         if not sub_part:
             
-            self.view_widget.clear_sub_path_filter()
+            #self.view_widget.clear_sub_path_filter()
             directory = str(directory[1])
         
         if sub_part:
@@ -1279,6 +1328,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if directory != self.last_project:
         
             self.project_directory = directory
+            self.directory = directory
         
             self.clear_stage()
             
@@ -1287,6 +1337,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_settings.set_directory(self.project_directory)    
         
         self.last_project = directory
+        
+        self.handle_selection_change = True
         
     def set_template_directory(self, directory = None):
         
