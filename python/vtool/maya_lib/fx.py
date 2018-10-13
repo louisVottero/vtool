@@ -809,26 +809,11 @@ def add_passive_to_nucleus(passive_mesh, nucleus):
             cmds.connectAttr('%s.startState' % out, '%s.inputPassiveStart[%s]' % (nucleus, slot))
             
  
-def add_nCloth_to_mesh(mesh, world = False):
+def add_nCloth_to_mesh(mesh):
     cmds.select(mesh, r = True)
     
-    pass_value = 0
-    if world:
-        pass_value = 1
+    nodes = mel.eval('createNCloth 0;')
     
-    nodes = mel.eval('createNCloth %s;' % pass_value)
-    
-    if world == True:
-        output_mesh = attr.get_attribute_outputs('%s.outputMesh' % nodes[0], node_only = True)
-        world_mesh = cmds.rename(output_mesh, 'world_%s' % mesh)
-        parent = cmds.listRelatives(mesh, p = True)
-        if parent:
-            cmds.parent(world_mesh, parent[0])
-        
-    
-    if not nodes:
-        vtool.util.warning('No ncloth created on %s' % mesh)
-        return
     parent = cmds.listRelatives(nodes[0], p = True)
     parent = cmds.rename(parent, 'nCloth_%s' % mesh)
     
