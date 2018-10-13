@@ -7,6 +7,9 @@ import traceback
 
 def main():
     
+    
+    print '\n\n\n\n\n------- VETALA BATCH ---------------------------------------------------------------------------------------------------------------------\n\n'
+    
     source_path = os.environ['VETALA_PATH']
     source_path = os.path.dirname(source_path)
     
@@ -41,7 +44,10 @@ def main():
         
         if vtool.util.get_maya_version() >= 2017:
             import maya.cmds as cmds
-            cmds.loadPlugin('mtoa')
+            try:
+                cmds.loadPlugin('mtoa')
+            except:
+                pass
         
         if process_path:
             
@@ -79,9 +85,14 @@ def main():
         else:
             vtool.util.show('Could not get current process.  Batch finished, nothing processed.')
     
-    vtool.util.show('\n\nAll done, please close console.')
-    while True:
-        time.sleep(1)
+    if not vtool.util.is_linux():
+        vtool.util.show('\n\nAll done, please close console.')
+        while True:
+            time.sleep(1)
+    if vtool.util.is_linux():
+        vtool.util.show('\n\nAll done\n\n\n\n\n')
+    
+    print '\n\n------- END OF VETALA BATCH ---------------------------------------------------------------------------------------------------------------------\n\n\n\n\n'
     
 if __name__ == '__main__':
     main()
