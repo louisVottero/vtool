@@ -227,6 +227,8 @@ class WriteFile(FileManager):
     def __init__(self, filepath):
         super(WriteFile, self).__init__(filepath)
         
+        get_permission(filepath)
+        
         self.filepath = filepath
         self.open_file = None
         
@@ -313,16 +315,20 @@ class VersionFile(object):
     
     def __init__(self, filepath):
         self.filepath = filepath
-        
+
         if filepath:
 
             self.filename = get_basename(self.filepath)
             self.path = get_dirname(filepath)
+        
+        self.version_folder_name = '.version'
+        self.version_name = 'version'
+        self.version_folder = None
+        self.updated_old = False
+        
+
             
-            self.version_folder_name = '.version'
-            self.version_name = 'version'
-            self.version_folder = None
-            self.updated_old = False
+            
         
     def _prep_directories(self):
         self._create_version_folder()
@@ -344,7 +350,8 @@ class VersionFile(object):
         
     def _default_version_file_name(self):
         
-        path = join_path(self.version_folder, self.version_name + '.default')
+        version_folder = self._get_version_folder()
+        path = join_path(version_folder, self.version_name + '.default')
         
         return path
         
@@ -454,7 +461,6 @@ class VersionFile(object):
     def has_default(self):
         
         filename = self._default_version_file_name()
-        
         if is_file(filename):
             return True
         
@@ -1818,7 +1824,6 @@ def get_permission(filepath):
     
     try:
         os.chmod(filepath, 0777)
-        #os.chmod(filepath, stat.S_IRWXG)
     except:
         util.warning('Failed to get elevated permission on %s' % filepath)
 
@@ -2352,6 +2357,8 @@ def create_dir(name, directory = None, make_unique = False):
     except:
         return False
     
+    get_permission(full_path)
+    
     return full_path           
     
 def delete_dir(name, directory = None):
@@ -2441,6 +2448,8 @@ def create_file(name, directory = None, make_unique = False):
         #turn on when troubleshooting
         #util.warning( traceback.format_exc() )
         return False
+    
+    get_permission(full_path)
     
     return full_path
     
@@ -2998,6 +3007,34 @@ def get_ast_assignment(text, line_number, assignment):
     return line_assign_dict
 
 #--- applications
+
+def maya_batch_python_file(python_file_path):
+
+    dirpath = None
+    
+    if util.is_in_maya():
+        dirpath = os.environ['MAYA_LOCATION']
+    
+    if not dirpath:
+        util.warning('Could not find Maya.')
+    
+
+    mayapy_file = 'mayapy.exe'
+    shell = False
+    
+    
+    if util.is_linux():
+        mayapy_file = 'mayapy'
+        
+    mayapy_path = '%s/bin/%s' % (dirpath,mayapy_file)
+    
+    util.show('Opening Maya Batch in directory: %s' % mayapy_path)
+    
+    command = [mayapy_path, python_file_path]
+    if util.is_linux():
+        command.insert(0, 'gnome-terminal')
+    
+    mayapy = subprocess.Popen([mayapy_path, python_file_path], shell = shell)
 
 def launch_maya(version, script = None):
     """
