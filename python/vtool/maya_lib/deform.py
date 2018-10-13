@@ -1391,7 +1391,7 @@ class TransferWeight(object):
         
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         source_value_map = get_skin_weights(source_skin_cluster)
-        joint_map = get_joint_index_map(source_joints, source_skin_cluster)
+        source_joint_map = get_joint_index_map(source_joints, source_skin_cluster)
         
         destination_value_map = get_skin_weights(self.skin_cluster)
         destination_joint_map = get_joint_index_map(destination_joints, self.skin_cluster)
@@ -1403,7 +1403,7 @@ class TransferWeight(object):
         
         total_source_value = {}
         
-        for influence_index in joint_map:
+        for influence_index in source_joint_map:
             
             if influence_index == None:
                 continue
@@ -1475,17 +1475,23 @@ class TransferWeight(object):
             
             dest_reducer = flip_source_value/destination_value
             
-            for influence_index in destination_joint_map:
-                
-                if influence_index == None:
-                    continue
-                
-                if destination_value_map.has_key(influence_index):
-                    value = destination_value_map[influence_index][vert_index]
+            if dest_reducer < 1:
+                for influence_index in destination_joint_map:
                     
-                    value *= dest_reducer
+                    if influence_index == None:
+                        continue
                     
-                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, influence_index), value)
+                    if destination_value_map.has_key(influence_index):
+                        value = destination_value_map[influence_index][vert_index]
+                        orig_value = value
+                        
+                        
+                        value *= dest_reducer
+                        
+                        if value > orig_value:
+                            value = orig_value
+                        
+                        cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, influence_index), value)
             
             for influence_index in source_joint_map:
                 
@@ -1609,7 +1615,7 @@ class TransferWeight(object):
             
         verts = self.vertices
         
-        weighted_verts = []
+        weighted_verts = {}
         weights = {}
         
         #organizing weights
@@ -1622,8 +1628,8 @@ class TransferWeight(object):
                 value = influence_values[influence_index][int_vert_index]
                 
                 if value > 0:
-                    if not int_vert_index in weighted_verts:
-                        weighted_verts.append(int_vert_index)
+                    if not weighted_verts.has_key(int_vert_index):
+                        weighted_verts[int_vert_index] = None
                     
                     if int_vert_index in weights:
                         weights[int_vert_index] += value
@@ -1635,12 +1641,12 @@ class TransferWeight(object):
             vtool.util.warning('Found no weights for specified influences on %s.' % self.skin_cluster)
             return
         
-        bar = core.ProgressBar('transfer weight', len(weighted_verts))
+        bar = core.ProgressBar('transfer weight', len(weighted_verts.keys()))
         
         inc = 1
         
         new_joint_count = len(new_joints)
-        joint_count = len(good_source_joints)
+        source_joint_count = len(good_source_joints)
         
         self._add_joints_to_skin(new_joints)
         joint_ids = get_skin_influences(self.skin_cluster, return_dict = True)
@@ -1651,6 +1657,27 @@ class TransferWeight(object):
                     
             vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
             
+            if source_joint_weights:
+                for source_joint_index in xrange(0, source_joint_count):
+                    
+                    joint_id = influence_index_order[source_joint_index]
+                    
+                    if weight_percent_change != 1:
+                        change = 1 - weight_percent_change
+                        value = source_joint_weights[source_joint_index]
+                        value = value[vert_index] * change
+                    else:
+                        value = 0
+                    
+                    #how to set multi attribute in one go for future reference: cmds.setAttr('skinCluster1.wl[%s].w[0:1]'%k, 0, 0)
+                    
+                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
+            
+            if not source_joint_weights:
+                vtool.util.warning('No weighting on source joints.')
+            
+            
+            
             distances = space.get_distances(new_joints, vert_name)
             
             if not distances:
@@ -1658,80 +1685,43 @@ class TransferWeight(object):
                 bar.end()
                 return
             
-            found_weight = False
+            sorted_distances = list(distances)
+            sorted_distances.sort()
+            smallest_distance = sorted_distances[0]
             
-            joint_weight = {}
-                       
-            if not found_weight:
+            distances_away = {}
+            inverted_distances = {}
+            total = 0.0
+            
+            for joint_index in xrange(0, new_joint_count):
                 
-                distances_in_range = []
+                distance = distances[joint_index]
+                distance_away = distance - smallest_distance
                 
-                quick = vtool.util.QuickSort(distances)
-                sorted_distances = quick.run()
-                smallest_distance = sorted_distances[0]
+                if distance_away > falloff:
+                    continue
                 
-                distances_away = {}
+                distances_away[joint_index] = distance_away
                 
-                for joint_index in xrange(0, new_joint_count):
-                    
-                    distance = distances[joint_index]
-                    distance_away = distance - smallest_distance
-                    
-                    if distance_away > falloff:
-                        continue
-                    
-                    distances_away[joint_index] = distance_away
-                    distances_in_range.append(joint_index)
-                    
-                total = 0.0
+                distance_weight = distance_away/falloff
                 
-                inverted_distances = {}
+                inverted_distance = 1.0 - distance_weight
+                inverted_distance = inverted_distance**power
+                inverted_distances[joint_index] = inverted_distance
                 
-                for joint_index in distances_in_range:
-                    distance = distances_away[joint_index]
-                    
-                    distance_weight = distance/falloff
-                    
-                    inverted_distance = 1 - distance_weight
-                    
-                    inverted_distance = inverted_distance**power
-                    
-                    inverted_distances[joint_index] = inverted_distance
-                    
-                    total += inverted_distance
-                
-                for distance_inc in distances_in_range:
-                    weight = inverted_distances[distance_inc]/total
-                    joint_weight[new_joints[distance_inc]] = weight
+                total += inverted_distance
             
             weight_value = weights[vert_index]
             
-            if source_joint_weights:
-                for joint_index in xrange(0, joint_count):
-                    
-                    joint_id = influence_index_order[joint_index]
-                    
-                    if weight_percent_change != 1:
-                        change = 1 - weight_percent_change
-                        value = source_joint_weights[joint_index]
-                        value = value[vert_index] * change
-                    else:
-                        value = 0
-                    
-                    cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
-            
-            if not source_joint_weights:
-                vtool.util.warning('No weighting on source joints.')
+            for distance_inc in distances_away:
+                weight = inverted_distances[distance_inc]/total
+
+                value = weight_value * weight * weight_percent_change
                 
-            for joint in joint_weight:
-                
-                joint_value = joint_weight[joint]
-                value = weight_value * joint_value * weight_percent_change
-                
+                joint = new_joints[distance_inc]
                 joint_index = joint_ids[joint]
                 
                 cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
-            
 
 
             bar.inc()
@@ -1937,11 +1927,15 @@ class TransferWeight(object):
                     
                     joint_id = influence_index_order[joint_index]
                     
-                    change = 1 - weight_percent_change
+                    if weight_percent_change != 1:
                     
-                    value = source_joint_weights[joint_index]
-                    value = value[vert_index] * change
-                    
+                        change = 1 - weight_percent_change
+                        
+                        value = source_joint_weights[joint_index]
+                        value = value[vert_index] * change
+                    else:
+                        value = 0
+                        
                     cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_id), value)
             
             if not source_joint_weights:
@@ -5137,7 +5131,7 @@ def skin_curve_from_mesh(source_mesh, target, include_joints = [], exclude_joint
     
     skin_mesh_from_mesh(source_mesh, target, exclude_joints = exclude_joints, include_joints = include_joints)
 
-def skin_group(joints, group):
+def skin_group(joints, group, dropoff_rate = 4.0):
     """
     Skin all the meshes in a group to the specified joints.  
     Good for attaching the face geo to the head joint.
@@ -5153,7 +5147,7 @@ def skin_group(joints, group):
         name = rel.split('|')[-1]
         
         try:
-            cmds.skinCluster(joints, rel, tsb = True, n = 'skin_%s' % name)
+            cmds.skinCluster(joints, rel, tsb = True, dr = dropoff_rate,n = 'skin_%s' % name)
         except:
             pass
 
