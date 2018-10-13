@@ -1487,7 +1487,7 @@ class TransferWeight(object):
                     
                     cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, influence_index), value)
             
-            for influence_index in joint_map:
+            for influence_index in source_joint_map:
                 
                 if influence_index == None:
                     continue   
@@ -1495,7 +1495,7 @@ class TransferWeight(object):
                 if not source_value_map.has_key(influence_index):
                     continue 
                 
-                joint = joint_map[influence_index]
+                joint = source_joint_map[influence_index]
                 
                 value = source_value_map[influence_index][vert_index]
                 
