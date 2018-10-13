@@ -212,16 +212,13 @@ class Rig(object):
         
         group = self._create_group('controls', description)
         
-        
-        
         if self.control_group:
             cmds.parent(group, self.control_group)
             
         return group
             
     def _get_name(self, prefix = None, description = None, sub = False):
-        
-        
+                
         if self.side:
             name_list = [prefix,self.description, description, '1', self.side]
         if not self.side:
@@ -3737,8 +3734,6 @@ class IkAppendageRig(BufferRig):
         
         xform_ik_handle = space.create_xform_group(self.ik_handle)
         cmds.parent(xform_ik_handle, self.setup_group)
-        
-        
         
         cmds.hide(xform_ik_handle)
         
