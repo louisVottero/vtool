@@ -2218,8 +2218,21 @@ def hide_keyable_attributes(node):
     """
     
     attributes = cmds.listAttr(node, k = True)
-        
-    hide_attributes(node, attributes)
+    
+    if attributes:
+        hide_attributes(node, attributes)
+ 
+def hide_translate(node):
+
+    hide_attributes(node,'translate') 
+ 
+def hide_rotate(node):
+    
+    hide_attributes(node,'rotate')
+
+def hide_scale(node):
+    
+    hide_attributes(node,'scale')
     
 def lock_attributes(node, bool_value = True, attributes = None, hide = False):
     """
