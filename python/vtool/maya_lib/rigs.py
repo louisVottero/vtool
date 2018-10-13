@@ -71,17 +71,31 @@ class Rig(object):
         self.sub_visibility = False
         self._connect_sub_vis_attr = None
         
-    def _handle_side_variations(self):
+        self._connect_important = False
+        self._connect_important_node = None
         
-        if vtool.util.is_left(self.side):
-            self.side = 'L'
-        if vtool.util.is_right(self.side):
-            self.side = 'R'
-        if vtool.util.is_center(self.side):
-            self.side = 'C'
+    def _post_create_connect(self, inst_attribute, description):
         
-    def __del__(self):
+        if hasattr(self,inst_attribute):
+            
+            value = getattr(self, inst_attribute)
+            
+            if value:
+                inc = 1
+                value = vtool.util.convert_to_sequence(value)
+                for sub_value in value:
+                    
+                    attr.connect_message(sub_value, self.control_group, '%s%s' % (description,inc))
+                    inc += 1
+                
         
+        
+    def _post_create(self):
+
+        cmds.addAttr(self.control_group, ln = 'className', dt = 'string')
+        
+        cmds.setAttr('%s.className' % self.control_group, str(self.__class__.__name__), type = 'string')
+
         if cmds.objExists(self.setup_group):
             
             if core.is_empty(self.setup_group):
@@ -92,6 +106,53 @@ class Rig(object):
                     class_name = self.__class__.__name__
                     
                     vtool.util.warning('Empty setup group in class: %s with description %s %s.' % (class_name, self.description, self.side))
+        
+        if self._connect_important:
+            #attr.connect_message(input_node, destination_node, attribute)
+            
+            
+            
+            vtool.util.show('Connect Important!')
+            
+            self._post_create_connect('controls', 'control')
+            self._post_create_connect('sub_controls', 'subControl')
+            self._post_create_connect('joints', 'joint')
+            self._post_create_connect('ik_handle', 'ikHandle')
+
+        
+    def __getattribute__(self, item):
+
+        custom_functions = ['create']
+        
+        if item in custom_functions:
+            
+            result = object.__getattribute__(self, item)
+            
+            result_values = result()
+            
+            def results():
+                return result_values
+        
+            if item == 'create':    
+                self._post_create()
+                
+            return results
+        
+        else:
+            
+            return object.__getattribute__(self,item)
+        
+
+        
+    def _handle_side_variations(self):
+        
+        if vtool.util.is_left(self.side):
+            self.side = 'L'
+        if vtool.util.is_right(self.side):
+            self.side = 'R'
+        if vtool.util.is_center(self.side):
+            self.side = 'C'
+        
     
     
     def _create_group(self,  prefix = None, description = None):
@@ -151,13 +212,16 @@ class Rig(object):
         
         group = self._create_group('controls', description)
         
+        
+        
         if self.control_group:
             cmds.parent(group, self.control_group)
             
         return group
             
     def _get_name(self, prefix = None, description = None, sub = False):
-                
+        
+        
         if self.side:
             name_list = [prefix,self.description, description, '1', self.side]
         if not self.side:
@@ -406,6 +470,9 @@ class Rig(object):
         """
         self.sub_visibility = bool_value
     
+    def set_connect_important(self,bool_value):
+        self._connect_important = bool_value
+    
     def connect_sub_visibility(self, attr_name):
         """
         This connects the subVisibility attribute to the specified attribute.  Good when centralizing the sub control visibility. 
@@ -440,6 +507,8 @@ class Rig(object):
                 entries.append(self.control_dict[control][title])
         
         return entries
+        
+    
         
     def create(self):
         """
@@ -3591,6 +3660,7 @@ class IkAppendageRig(BufferRig):
         self.control_offset_axis = None
         self.negate_right_scale = False
         self.negate_right_scale_values = [-1,-1,-1]
+        self.ik_handle = None
         
         #dampen for legacy...
         self.damp_name = 'dampen'
@@ -3667,6 +3737,8 @@ class IkAppendageRig(BufferRig):
         
         xform_ik_handle = space.create_xform_group(self.ik_handle)
         cmds.parent(xform_ik_handle, self.setup_group)
+        
+        
         
         cmds.hide(xform_ik_handle)
         
@@ -3925,11 +3997,18 @@ class IkAppendageRig(BufferRig):
         
         return self.pole_angle_joints            
         
-    def _create_pole_vector(self):
-        
+    def _create_pole_control(self):
         control = self._create_control('POLE', curve_type = 'cube')
         control.hide_scale_and_visibility_attributes()
-        self.poleControl = control.get()
+        self.poleControl = control
+        
+        
+        
+    def _create_pole_vector(self):
+        
+        control = self.poleControl
+        self.poleControl = self.poleControl.get()
+        
         
         attr.create_title(self.btm_control, 'POLE_VECTOR')
         
@@ -4180,10 +4259,10 @@ class IkAppendageRig(BufferRig):
             
         self._xform_top_control(top_control)
         
+        self._create_pole_control()
+        
         btm_control = self._create_btm_control()
         self._xform_btm_control(btm_control)
-        
-        
         
         if self.create_twist:
             self._create_twist_joint(top_control)
@@ -4195,7 +4274,6 @@ class IkAppendageRig(BufferRig):
                 self._create_stretchy(top_control, self.sub_control, btm_control)
             if not self.sub_control:
                 self._create_stretchy(top_control, self.btm_control, btm_control)
-        
         
 
 #--- Tweak
@@ -4976,7 +5054,9 @@ class TwistRig(JointRig):
                 cmds.parent(self.btm_locator, btm_control.control)
             
             self._create_xform_controls(self.top_locator, self.btm_locator)
-                          
+            
+            cmds.hide(self.sub_joints)
+                  
 #---Body Rig
 
 class SpineRig(BufferRig, SplineRibbonBaseRig):
@@ -5680,9 +5760,8 @@ class IkLegRig(IkAppendageRig):
             
     def _create_pole_vector(self):
         
-        control = self._create_control('POLE', curve_type = 'cube')
-        control.hide_scale_and_visibility_attributes()
-        self.poleControl = control.get()
+        control = self.poleControl
+        self.poleControl = self.poleControl.get()
         
         attr.create_title(self.btm_control, 'POLE_VECTOR')
                 
@@ -5818,9 +5897,8 @@ class IkFrontLegRig(IkAppendageRig):
         
     def _create_pole_vector(self):
         
-        control = self._create_control('POLE', curve_type='cube')
-        control.hide_scale_and_visibility_attributes()
-        self.poleControl = control.get()
+        control = self.poleControl
+        self.poleControl = self.poleControl.get()
         
         attr.create_title(self.btm_control, 'POLE_VECTOR')
         
@@ -6318,7 +6396,13 @@ class IkBackLegRig(IkFrontLegRig):
         self._create_offset_control()
         
         self._rig_offset_chain()
+    
+        temp_controls = list(self.controls)
         
+        self.controls[0] = temp_controls[0]
+        self.controls[1] = temp_controls[1]
+        self.controls[2] = temp_controls[3]
+        self.controls[3] = temp_controls[2]
 
     
 class RollRig(JointRig):
