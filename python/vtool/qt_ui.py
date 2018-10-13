@@ -1559,11 +1559,6 @@ class HistoryTreeWidget(FileTreeWidget):
         self.setColumnWidth(2, 70)
         self.setColumnWidth(3, 70)
         self.setColumnWidth(4, 70)
-        #if is_pyside():
-        #    self.header().setResizeMode(1, qt.QHeaderView.Stretch)
-        #if is_pyside2():
-        #    self.header().setSectionResizeMode(1, qt.QHeaderView.Stretch)
-        #self.header().setStretchLastSection(False)
         
         self.padding = 1
     
@@ -2973,19 +2968,14 @@ class CodeEdit(BasicWidget):
         self.status_layout.addWidget(self.line_number)
         self.status_layout.addWidget(self.save_state)
         
-        #self.main_layout.addWidget(self.text_edit)
         self.main_layout.addLayout(self.status_layout)
         
         self.text_edit.save_done.connect(self._save_done)
         self.text_edit.textChanged.connect(self._text_changed)
         self.text_edit.file_set.connect(self._text_file_set)
         
-        #completer on off... comment out to turn completer off.
-        #self.text_edit.set_completer( PythonCompleter() )
-        
     def _history_clicked(self):
         current_item = self._history_widget.selectedItems()
-        
         
         if current_item:
             current_item = current_item[0]
