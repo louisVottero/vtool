@@ -1174,12 +1174,15 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
     def _build_widgets(self):
         
         save_button = qt.QPushButton('Save')
-        save_button.clicked.connect(self._save)
+        save_button.clicked.connect(self._save_button)
         save_button.setMaximumWidth(100)
         
         self.main_layout.addWidget(save_button)    
 
-    def _save(self, comment = None, parent = None):
+    def _save_button(self):
+        self._save(force_popup=True)
+
+    def _save(self, comment = None, parent = None, force_popup = False):
         
         if not parent:
             parent = self
@@ -1195,8 +1198,10 @@ class ScriptSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
         popup_save = True
         
-        if settings.has_setting('code popup save'):
-            popup_save = settings.get('code popup save')
+        if not force_popup:
+            
+            if settings.has_setting('code popup save'):
+                popup_save = settings.get('code popup save')
         
         if popup_save:
             if comment == None or comment == False:
