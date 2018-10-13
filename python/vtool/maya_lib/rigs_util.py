@@ -2799,7 +2799,7 @@ def joint_axis_visibility(bool_value):
 
 
 
-def hook_ik_fk(control, joint, groups, attribute = 'ikFk'): 
+def hook_ik_fk(control, joint, groups = None, attribute = 'ikFk'): 
     """
     Convenience for hooking up ik fk.
     
@@ -2815,10 +2815,36 @@ def hook_ik_fk(control, joint, groups, attribute = 'ikFk'):
     attribute_ikfk = '%s.%s' % (control, attribute) 
       
     cmds.connectAttr(attribute_ikfk, '%s.switch' % joint) 
-      
-    for inc in range(0, len(groups)): 
-        attr.connect_equal_condition(attribute_ikfk, '%s.visibility' % groups[inc], inc) 
 
+    if groups:      
+        for inc in range(0, len(groups)): 
+            attr.connect_equal_condition(attribute_ikfk, '%s.visibility' % groups[inc], inc)
+            
+    nodes = attr.get_attribute_outputs('%s.switch' % joint, node_only = False)
+    
+    
+    
+    for node in nodes:
+    
+        good = False
+        
+        nice_node_name = core.get_basename(node, remove_attribute = True)
+        
+        if node.find('.visibility') > -1:
+            good = True
+        
+        if cmds.nodeType(node) == 'condition':
+            
+            nodes = attr.get_attribute_outputs('%s.outColorR' % nice_node_name, node_only = True)
+            
+            if nodes:
+                nice_node_name = nodes[0]
+                good = True
+                
+        if good:
+            attr.connect_message(control, nice_node_name, 'switch') 
+
+ 
             
        
 def fix_fade(target_curve, follow_fade_multiplies):
@@ -2974,14 +3000,6 @@ def set_control_space(x,y,z, control, compensate_cvs = True):
 def mesh_border_to_control_shape(mesh, control, offset = .1):
     
     new_curve = geo.create_curve_from_mesh_border(mesh, offset)
-    control_inst = Control(control)
-    control_inst.copy_shapes(new_curve)
-    
-    cmds.delete(new_curve)
-    
-def edge_loop_to_control_shape(edge, control, offset = .1):
-    
-    new_curve = geo.create_curve_from_edge_loop(edge, offset)
     control_inst = Control(control)
     control_inst.copy_shapes(new_curve)
     
