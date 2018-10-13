@@ -104,15 +104,6 @@ def set_current_camera(camera_name):
     cmds.refresh()
 
 
-def get_distance(three_value_list1, three_value_list2 ):
-    
-    vector1 = three_value_list1
-    vector2 = three_value_list2
-
-    mp1 = om.MPoint(vector1[0],vector1[1],vector1[2])
-    mp2 = om.MPoint(vector2[0],vector2[1],vector2[2])
-    
-    return mp1.distanceTo(mp2)
 
 class ApiObject(object):
     """
@@ -1272,7 +1263,8 @@ def get_object(name):
         return selection_list.getDagPath(0)    
     
     return selection_list.getDependNode(0)
-"""
+
+
 def get_distance(three_value_list1, three_value_list2 ):
     
     vector1 = three_value_list1
@@ -1282,7 +1274,8 @@ def get_distance(three_value_list1, three_value_list2 ):
     mp2 = om.MPoint(vector2[0],vector2[1],vector2[2])
     
     return mp1.distanceTo(mp2)
-"""
+
+
 def get_triangle_ids(mesh, face_id, triangle_id):
     
     mobject = get_object(mesh)
