@@ -27,11 +27,8 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         policy = self.sizePolicy()
         
-        #policy.setHorizontalPolicy(policy.Maximum)
         policy.setHorizontalStretch(0)
         self.setSizePolicy(policy)
-        
-        #self.setMinimumWidth(200)
         
     def _define_tree_widget(self):
         return ProcessTreeWidget()
@@ -59,16 +56,51 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         self.manager_widget.copy_widget.set_other_process(name, self.directory)
     
+    def _update_sub_path_filter_setting(self, value):
+        self.settings.set('process sub path filter', value)
+    
+    def _update_name_filter_setting(self, value):
+        self.settings.set('process name filter', value)
+    
     def get_current_process(self):
         return self.tree_widget.current_name
     
     def clear_sub_path_filter(self):
         self.filter_widget.clear_sub_path_filter()
         
+    def clear_name_filter(self):
+        self.filter_widget.clear_name_filter()
+        
+    
+    def set_directory(self, directory, sub=False):
+        super(ViewProcessWidget,self).set_directory(directory, sub)
+        
+        settings_inst = util_file.SettingsFile()
+        
+        settings_inst.set_directory(self.directory)
+        
+        self.set_settings(settings_inst)
+        
     def set_settings(self, settings):
+        
         self.settings = settings
         
+        
         self.tree_widget.set_settings(settings)
+        
+        self.clear_sub_path_filter()
+        self.clear_name_filter()
+        
+        name_filter = self.settings.get('process name filter')
+        sub_path_filter = self.settings.get('process sub path filter')
+        
+        self.filter_widget.set_emit_changes(False)    
+        self.filter_widget.set_sub_path_filter(sub_path_filter)    
+        self.filter_widget.set_name_filter(name_filter)
+        self.filter_widget.set_emit_changes(True)
+        
+        self.filter_widget.sub_path_changed.connect(self._update_sub_path_filter_setting)
+        self.filter_widget.name_filter_changed.connect(self._update_name_filter_setting)
          
 class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
     
@@ -472,8 +504,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
             self.paste_action.setText('Paste: %s' % name)
             self.merge_action.setText('Merge In: %s' % name)
+            self.merge_with_sub_action.setText('Merge With Sub Folders: %s' % name)
             self.paste_action.setVisible(True)
             self.merge_action.setVisible(True)
+            self.merge_with_sub_action.setVisible()
 
     def _item_menu(self, position):
         
@@ -503,8 +537,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.copy_action = self.context_menu.addAction('Copy')
         self.paste_action = self.context_menu.addAction('Paste')
         self.merge_action = self.context_menu.addAction('Merge')
+        self.merge_with_sub_action = self.context_menu.addAction('Merge With Sub Folders')
         self.paste_action.setVisible(False)
         self.merge_action.setVisible(False)
+        self.merge_with_sub_process.setVisible(False)
         self.copy_special_action = self.context_menu.addAction('Copy Match')
         self.remove_action = self.context_menu.addAction('Delete')
         self.context_menu.addSeparator()
@@ -528,6 +564,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.copy_action.triggered.connect(self._copy_process)
         self.paste_action.triggered.connect(self.paste_process)
         self.merge_action.triggered.connect(self.merge_process)
+        self.merge_with_sub_action.triggered.connect(self.merge_with_sub_process)
         self.copy_special_action.triggered.connect(self._copy_special_process)
         self.remove_action.triggered.connect(self._remove_current_item)
         self.show_options_action.triggered.connect(self._show_options)
@@ -758,8 +795,16 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if not self.settings:
             return
         
-        settings_process = self.settings.get('process')
-            
+        
+        settings_process = self.settings.get('last process')
+        
+        if not settings_process:
+            return
+        
+        name = util_file.get_basename(settings_process)
+        
+        directory = util_file.get_dirname(settings_process)
+        
         if not settings_process:
             return
         
@@ -771,13 +816,13 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
             if hasattr(item, 'directory') and hasattr(item, 'name'):
             
-                if item.directory == settings_process[1]:
+                if item.directory == directory:
                     
-                    if settings_process[0].startswith(item.name):
+                    if name.startswith(item.name):
                         index = self.indexFromItem(item)
                         self.setExpanded(index, True)
                         
-                    if settings_process[0] == item.name:
+                    if name == item.name:
                         
                         self.setCurrentItem(item)
                         item.setSelected(True)
@@ -942,10 +987,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def refresh(self):
         
-        
-        
-        
-        
         processes, folders = process.find_processes(self.directory, return_also_non_process_list=True)
         
         #this can be slow when there are many processes at the top level, and it checks if each process has sub process.
@@ -953,7 +994,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.current_item = None
         self.last_item = None
-        
         
         self._goto_settings_process()
         
@@ -1082,7 +1122,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         #if target_process.get_path() == self.directory:
         #    self.refresh()
         
-    def merge_process(self, source_process = None):
+    def merge_process(self, source_process = None, sub_process_merge = False):
         
         self.paste_action.setVisible(False)
         
@@ -1094,8 +1134,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             
         source_process_name = source_process.get_name()
         
-        qt_ui.get_permission('Are you sure you want to merge in %s?' % source_process_name)
-            
+        merge_permission = qt_ui.get_permission('Are you sure you want to merge in %s?' % source_process_name)
+        
+        if not merge_permission:
+            return
+        
         target_process = None
         
         target_item = None
@@ -1110,18 +1153,22 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if not target_process:
             return 
         
-        process.copy_process_into(source_process, target_process)
+        process.copy_process_into(source_process, target_process, merge_sub_folders  = sub_process_merge)
         
         if target_item:
             
             target_item.setExpanded(False)
             
-            if source_process.get_sub_processes():
+            if target_process.get_sub_processes():
                 
                 temp_item = qt.QTreeWidgetItem()
                 target_item.addChild(temp_item)
         
         self.copy_process.emit()
+    
+    def merge_with_sub_process(self, source_process = None):
+        
+        self.merge_process(source_process, sub_process_merge = True)
     
     def convert_current_process(self):
         
