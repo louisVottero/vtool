@@ -507,7 +507,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.merge_with_sub_action.setText('Merge With Sub Folders: %s' % name)
             self.paste_action.setVisible(True)
             self.merge_action.setVisible(True)
-            self.merge_with_sub_action.setVisible()
+            self.merge_with_sub_action.setVisible(True)
 
     def _item_menu(self, position):
         
@@ -540,7 +540,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.merge_with_sub_action = self.context_menu.addAction('Merge With Sub Folders')
         self.paste_action.setVisible(False)
         self.merge_action.setVisible(False)
-        self.merge_with_sub_process.setVisible(False)
+        self.merge_with_sub_action.setVisible(False)
         self.copy_special_action = self.context_menu.addAction('Copy Match')
         self.remove_action = self.context_menu.addAction('Delete')
         self.context_menu.addSeparator()
