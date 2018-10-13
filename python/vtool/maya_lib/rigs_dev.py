@@ -5405,10 +5405,8 @@ class IkFrontLegRig(rigs.IkAppendageRig):
         
     def _create_pole_vector(self):
         
-        control = self._create_control('POLE')
-        control.hide_scale_and_visibility_attributes()
-        control.set_curve_type('cube')
-        self.poleControl = control.get()
+        control = self.poleControl
+        self.poleControl = self.poleControl.get()
         
         attr.create_title(self.btm_control, 'POLE_VECTOR')
         
