@@ -67,6 +67,9 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         history_widget.back_socket.connect(self._set_current_option_history)
         history_widget.forward_socket.connect(self._set_current_option_history)
         history_widget.load_default_socket.connect(self._load_option_default)
+        history_widget.accept_socket.connect(self._accept_changes)
+        
+        self.option_palette.value_change.connect(history_widget.set_at_end)
         
         self.history_widget = history_widget
         
@@ -74,8 +77,11 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
             version_history = self.process_inst.get_option_history()
             self.history_widget.set_history(version_history)
         
-        
         return history_widget
+    
+    def _accept_changes(self):
+        
+        self.option_palette.save()
     
     def _set_histroy(self):
         if self.process_inst:
@@ -83,6 +89,10 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
             self.history_widget.set_history(version_history)
     
     def _set_current_option_history(self, version_file):
+        
+        if version_file == 'current':
+            self._load_current_history()
+            return
         
         if not self.history_widget:
             return
@@ -97,6 +107,12 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         
         if default_version_file:
             self.option_palette.set_options_file(default_version_file)
+       
+    def _load_current_history(self):
+        
+        if self.process_inst:
+            
+            self.option_palette.set_process(self.process_inst)
             
     def _edit_click(self, bool_value):
         
@@ -213,6 +229,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     last_widget = None
     edit_mode = qt_ui.create_signal(object)
     edit_mode_state = False
+    value_change = qt_ui.create_signal()
     
     def __init__(self):
         super(ProcessOptionPalette, self).__init__()
@@ -444,6 +461,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def _write_options(self, clear = True):
         
+        
+        
         if self.supress_update:
             return
         
@@ -466,6 +485,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 value = widget.get_value()
                 
                 self.process_inst.add_option(name, value, None, widget_type)
+        
+        self.value_change.emit()
             
     def _write_all(self):
         
@@ -475,6 +496,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_widget_options(palette)
                     
     def _load_widgets(self, options):
+        
+        
         
         self.clear_widgets()
         
@@ -916,6 +939,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
     def set_process(self, process_inst):
         
+        
+        
         if not process_inst:
             self.directory = None
             self.process_inst = None
@@ -940,8 +965,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         util_file.copy_file(options_filename, util_file.join_path(path, 'version.json'))
         options = util_file.SettingsFile()
             
-        
-            
         options.set_directory(path, filename)
         
         option_settings = options.get_settings()
@@ -965,6 +988,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self.edit_mode.emit(bool_value)
 
+    def save(self):
+        self._write_options(clear=False)
 
 class ProcessOptionGroup(ProcessOptionPalette):
     
