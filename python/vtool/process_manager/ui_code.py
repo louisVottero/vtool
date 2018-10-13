@@ -200,7 +200,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         process_path = vtool.util.get_env('VETALA_CURRENT_PROCESS')
         
-        if process_path:
+        if process_path and directory:
             process_inst = process.Process()
             process_inst.set_directory(process_path)
             self._process_inst = process_inst
@@ -336,8 +336,6 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         if not code_edit_widget:
             return
-        
-        
         
         filepath = vtool.util_file.get_dirname(code_edit_widget.filepath)
         
@@ -539,6 +537,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         history_widget.back_socket.connect(self._set_current_manifest_history)
         history_widget.forward_socket.connect(self._set_current_manifest_history)
         history_widget.load_default_socket.connect(self._load_manifest_default)
+        history_widget.accept_socket.connect(self._accept_changes)
         
         self.history_widget = history_widget
         
@@ -549,14 +548,22 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         return history_widget
     
+    def _accept_changes(self):
+        self.code_manifest_tree.update_manifest_file()
+        self.code_manifest_tree.refresh(sync = True)
+    
     def _set_current_manifest_history(self, version_file):
         
         if not self.history_widget:
             return
         
+        if version_file == 'current':
+            self.code_manifest_tree.refresh()
+            return
+        
         if version_file:
-            pass
-            #self.option_palette.set_options_file(version_file)
+            scripts, states = self._process_inst.get_manifest(version_file)
+            self.code_manifest_tree.refresh(False, [scripts,states])
             
     def _load_manifest_default(self, default_version_file):
         
@@ -566,9 +573,8 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
             return
         
         if default_version_file:
-            pass
-            #self.option_palette.set_options_file(default_version_file)
-    
+            scripts, states = self._process_inst.get_manifest(default_version_file)
+            self.code_manifest_tree.refresh(False, [scripts,states])    
         
     def _script_open(self, item, open_in_window, open_external = False):
         
@@ -976,11 +982,12 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         return items
         
-    def _get_files(self, path = None):
+    def _get_files(self, scripts = [], states = []):
         
         process_tool = self.process
         
-        scripts, states = process_tool.get_manifest()
+        if not scripts:
+            scripts, states = process_tool.get_manifest()
         
         if not scripts:
             return
@@ -1561,14 +1568,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             new_name = util_file.remove_extension(new_name)
             
             self._move_item(old_name, new_name, item)
-            
-    def _update_manifest(self):
         
-        if not self.allow_manifest_update:
-            return
-        
-        process_tool = self.process
-        
+    def _get_current_manifest(self):
         scripts = []
         states = []
         
@@ -1599,7 +1600,18 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             scripts.append(name)
             states.append(state)
+        
+        
+        return scripts, states
             
+    def _update_manifest(self):
+        
+        if not self.allow_manifest_update:
+            return
+        
+        scripts, states = self.get_current_manifest()
+        
+        process_tool = self.process    
         process_tool.set_manifest(scripts, states)
         
 
@@ -1673,11 +1685,19 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.setItemSelected(item, True)
         self.setCurrentItem(item)
         
-        
-        
-        
         return item
         
+    def _custom_refresh(self, scripts, states):
+        
+        files = self._get_files(scripts, states)
+        
+        if not files:
+            self.clear()
+            return
+        
+        self._load_files(files)
+        
+        self.refreshed.emit()
         
     def sync_manifest(self):
         
@@ -1686,7 +1706,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         process_tool.sync_manifest()
         
-    def refresh(self, sync = False):
+    def refresh(self, sync = False, scripts_and_states = []):
         
         if self.break_item:
             break_item_path = self._get_item_path_name(self.break_item, keep_extension=True)
@@ -1698,7 +1718,11 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             self.sync_manifest()
         
         self.allow_manifest_update = False
-        super(CodeManifestTree, self).refresh()
+        if not scripts_and_states:
+            super(CodeManifestTree, self).refresh()
+        if scripts_and_states:
+            self._custom_refresh(scripts_and_states[0], scripts_and_states[1])
+            
         self.allow_manifest_update = True
         
         if self.start_item:
@@ -1712,6 +1736,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             if item:
                 self.set_breakpoint(item)
+
+    def update_manifest_file(self):
+        self._update_manifest()
 
     def get_current_item_file(self):
         
@@ -1728,6 +1755,41 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         path = util_file.join_path(self.directory, name)
         
         return path
+    
+    def get_current_manifest(self):
+        scripts = []
+        states = []
+        
+        #Could not user item iterator because it updates setData which updates the manifest, 
+        #which causes the manifest to be updated too much.
+        #it = qt.QTreeWidgetItemIterator(self)
+        #while it:
+            #item = it.value()
+            #items.append(item)
+        
+        items = self._get_all_items()
+        
+        for item in items:
+            
+            name = item.get_text()
+            
+            path = self._get_item_path(item)
+            
+            if path:
+                name = util_file.join_path(path, name)
+            
+            state = item.checkState(0)
+            if state == 0:
+                state = False
+            
+            if state == 2:
+                state = True
+            
+            scripts.append(name)
+            states.append(state)
+        
+        
+        return scripts, states
 
     def set_directory(self, directory, refresh = True):
         
