@@ -63,6 +63,10 @@ class cvShapeInverter(OpenMayaMPx.MPxDeformerNode):
         # Perform the inversion calculation
         while not itGeo.isDone():
             index = itGeo.index()
+            
+            if correctivePoints[index] == self.__deformedPoints[index]:
+                continue
+            
             delta = correctivePoints[index] - self.__deformedPoints[index]
 
             if (math.fabs(delta.x) < 0.001
