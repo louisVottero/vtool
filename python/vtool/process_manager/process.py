@@ -140,17 +140,13 @@ class Process(object):
         self._control_inst = None
         
         
-    def _setup_options(self, update = False):
-        
-        
-        #if update and self.option_settings:
-        
+    def _setup_options(self):
         
         if not self.option_settings:
             options = util_file.SettingsFile()
             self.option_settings = options
         
-        #if update:   
+         
         self.option_settings.set_directory(self.get_path(), 'options.json')
         
         
@@ -206,6 +202,13 @@ class Process(object):
             if not util_file.is_dir(manifest_folder):
                 self.create_code('manifest', 'script.manifest')
         
+        return path
+    
+    def _create_sub_data_folder(self, data_name):
+        
+        data_path = self.get_data_folder(data_name)
+        
+        path = util_file.create_dir('.sub', data_path)
         return path
             
     def _get_path(self, name):
@@ -274,7 +277,7 @@ class Process(object):
 
     def _refresh_process(self):
         
-        self._setup_options(update = True)
+        self._setup_options()
         self._setup_settings()
         
         self.runtime_values = {}
@@ -554,7 +557,7 @@ class Process(object):
         
     #--- data
         
-    def is_data_folder(self, name):
+    def is_data_folder(self, name, sub_folder = None):
         """
         Args:
             name (str): The name of a data folder in the process.
@@ -563,7 +566,9 @@ class Process(object):
             bool: True if the supplied name string matches the name of the a data folder in the current process.
         """
         
-        path = self.get_data_folder(name)
+        path = self.get_data_folder(name, sub_folder)
+        
+        print 'is data folder', path
         
         if not path:
             return False
@@ -579,7 +584,7 @@ class Process(object):
         """
         return self._get_path(self.data_folder_name)        
     
-    def get_data_folder(self, name):
+    def get_data_folder(self, name, sub_folder = None):
         """
         Args:
             name (str): The name of a data folder in the process.
@@ -595,7 +600,12 @@ class Process(object):
         
         for folder in folders:
             if folder == name:
-                return util_file.join_path(self.get_data_path(), name)
+                
+                if not sub_folder:
+                    return util_file.join_path(self.get_data_path(), name)
+                if sub_folder:
+                    sub_folder_path = util_file.join_path(self.get_data_sub_path(name), sub_folder) 
+                    return  sub_folder_path
             
     def get_data_type(self, name):
         """
@@ -611,20 +621,42 @@ class Process(object):
         
         return data_type
     
+    def get_data_sub_path(self, name):
+        
+        path = self._create_sub_data_folder(name)
+        
+        return path
+        
     def get_data_sub_folder(self, name):
+        """
+        Get the currently set sub folder
+        """
+        
+        
+        
         data_folder = data.DataFolder(name, self.get_data_path())
-        sub_folder = data_folder.get_sub_folder()
+        sub_folder = data_folder.get_current_sub_folder()
         
         return sub_folder
     
     def get_data_sub_and_type(self, name):
-        
+        """
+        Get the currently set sub folder and its data type
+        """
         data_folder = data.DataFolder(name, self.get_data_path())
         data_type = data_folder.get_data_type()
         sub_folder = data_folder.get_sub_folder()
         
         return sub_folder, data_type
     
+    def get_data_sub_folder_names(self, data_name):
+        
+        sub_folder = self.get_data_sub_path(data_name)
+        
+        sub_folders = util_file.get_folders(sub_folder)
+        
+        return sub_folders
+        
     
     
     def get_data_folders(self):
@@ -651,7 +683,7 @@ class Process(object):
         
         return data_folder.get_folder_data_instance()
      
-    def create_data(self, name, data_type):
+    def create_data(self, name, data_type, sub_folder = None):
         """
         Args:
             name (str): The name of a data folder in the process.
@@ -665,12 +697,25 @@ class Process(object):
         path = self.get_data_path()
         
         test_path = util_file.join_path(path, name)
-        test_path = util_file.inc_path_name(test_path)
+        if not sub_folder:
+            test_path = util_file.inc_path_name(test_path)
         name = util_file.get_basename(test_path)
         
         data_folder = data.DataFolder(name, path)
         data_folder.set_data_type(data_type)
         
+        
+        if sub_folder:
+            
+            sub_path = self.get_data_sub_path(name)
+            
+            sub_folder_path = util_file.join_path(sub_path, sub_folder)
+        
+            sub_folder_path = util_file.inc_path_name(sub_folder_path)
+        
+            
+            util_file.create_dir(sub_folder_path)
+                
         return data_folder.folder_path
     
     def import_data(self, name, sub_folder = None):
@@ -726,9 +771,14 @@ class Process(object):
         instance = data_folder.get_folder_data_instance()
         
         if hasattr(instance, 'open'):
-            instance.open()
+            return_value = instance.open()
+            
+            
         else:
             util.warning('Could not open data %s in process %s.  %s has no open function.' % (name, self.process_name, data_folder))
+    
+        
+        return return_value
     
     def reference_data(self, name, sub_folder = None):
         path = self.get_data_path()
@@ -749,9 +799,11 @@ class Process(object):
         instance = data_folder.get_folder_data_instance()
         
         if hasattr(instance, 'maya_reference_data'):
-            instance.maya_reference_data()
+            return_value = instance.maya_reference_data()
         else:
             util.warning('Could not reference data %s in process %s.  %s has no reference function.' % (name, self.process_name, data_folder))
+            
+        return return_value
             
     def save_data(self, name, comment = ''):
         """
@@ -797,7 +849,7 @@ class Process(object):
         
         return data_folder.rename(new_name)
     
-    def delete_data(self, name):
+    def delete_data(self, name, sub_folder = None):
         """
         Deletes the specified data folder from the file system.
         
@@ -807,7 +859,10 @@ class Process(object):
         Returns:
             None
         """
+        
         data_folder = data.DataFolder(name, self.get_data_path())
+        data_folder.set_sub_folder(sub_folder)
+        
         
         data_folder.delete()
     
@@ -1254,6 +1309,8 @@ class Process(object):
         
     def get_option_match(self, name, return_first = True):
         
+        self._setup_options()
+        
         option_dict = self.option_settings.settings_dict
         
         found = {}
@@ -1344,7 +1401,10 @@ class Process(object):
         path = util_file.join_path(code_path, 'manifest')
         
         if not util_file.is_dir(path):
-            self.create_code('manifest', 'script.manifest')      
+            try:
+                self.create_code('manifest', 'script.manifest')
+            except:
+                util.warning('Could not create manifest in directory: %s' % code_path)      
         
         return path
         
@@ -1477,7 +1537,7 @@ class Process(object):
                  
         util_file.write_lines(manifest_file, lines, append = append)
         
-    def get_manifest(self):
+    def get_manifest(self, manifest_file = None):
         """
         Returns:
             tuple: (list, list) Two lists, scripts and states. 
@@ -1485,7 +1545,8 @@ class Process(object):
             States contains the enabled/disabled state of the script. 
         """
         
-        manifest_file = self.get_manifest_file()
+        if not manifest_file:
+            manifest_file = self.get_manifest_file()
         
         if not util_file.is_file(manifest_file):
             return None, None
@@ -1565,8 +1626,6 @@ class Process(object):
                     if code_folders[inc] == script_name:
                 
                         remove_inc = inc
-                        
-                    #code_folders_py = code_folders[inc] + '.py'
                         
                     if code_folders in synced_scripts:
                         
@@ -2151,18 +2210,30 @@ def copy_process(source_process, target_process = None ):
     
     return new_process
 
-def copy_process_into(source_process, target_process):
+def copy_process_into(source_process, target_process, merge_sub_folders = False):
+    """
+    source_full_path = source_process.get_path()
+    target_full_path = target_process.get_path()
+    
+    if source_full_path == target_full_path:
+        
+        return
+    """
+    
+    if source_process.process_name == target_process.process_name and source_process.directory == target_process.directory:
+        util.warning('Source and target process are the same.  Skipping merge.')
+        return
+    
+    if not target_process:
+        return
+    
+    if not target_process.is_process():
+        return
     
     sub_folders = source_process.get_sub_processes()
         
     source_name = source_process.get_name()
     source_name = source_name.split('/')[-1]
-    
-    if not target_process:
-        return
-    
-    if source_process.process_name == target_process.process_name and source_process.directory == target_process.directory:
-        return
     
     data_folders = source_process.get_data_folders()
     code_folders = source_process.get_code_folders()
@@ -2179,8 +2250,8 @@ def copy_process_into(source_process, target_process):
     
     for code_folder in code_folders:
         copy_process_code(source_process, target_process, code_folder)
-        
-    if sub_folders:
+    
+    if sub_folders and merge_sub_folders:
                 
         for sub_folder in sub_folders:
         
@@ -2194,7 +2265,7 @@ def copy_process_into(source_process, target_process):
                 sub_process = source_process.get_sub_process(sub_folder)
                                 
                 copy_process_into(sub_process, sub_target)
-                
+            
     if manifest_found:
         copy_process_code(source_process, target_process, 'manifest')
     
@@ -2202,7 +2273,9 @@ def copy_process_into(source_process, target_process):
         copy_process_setting(source_process, target_process, setting)
     
     
-def copy_process_data(source_process, target_process, data_name, replace = False):
+    
+    
+def copy_process_data(source_process, target_process, data_name, replace = False, sub_folder = None):
     """
     source_process and target_process need to be instances of the Process class. 
     The instances should be set to the directory and process name desired to work with. 
@@ -2213,31 +2286,40 @@ def copy_process_data(source_process, target_process, data_name, replace = False
         source_process (str): The instance of a process.
         target_process (str): The instance of a process.
         data_name (str): The name of the data to copy.
-        replace (bool): Wether to replace the code in the target process or just version up.
+        replace (bool): Wether to replace the data in the target process or just version up.
+        sub_folder (str): The name of the sub folder to copy
+        
     """
+    
+        
     
     data_type = source_process.get_data_type(data_name)
     
     data_folder_path = None
-      
-    if target_process.is_data_folder(data_name):
+    
+    if not target_process.is_process():
+        return
+    
+    if target_process.is_data_folder(data_name, sub_folder) and replace:
         
-        data_folder_path = target_process.get_data_folder(data_name)
+        data_folder_path = target_process.get_data_folder(data_name, sub_folder)
         
         other_data_type = target_process.get_data_type(data_name)
         
         if data_type != other_data_type:
-            if replace:
-                target_process.delete_data(data_name)
-                
-                copy_process_data(source_process, target_process, data_name)
-                return
+            #this is only if replace is set to true
+            target_process.delete_data(data_name, sub_folder)
+            copy_process_data(source_process, target_process, data_name, sub_folder)
+            return
     
-    if not target_process.is_data_folder(data_name):
-        data_folder_path = target_process.create_data(data_name, data_type)
+    if not target_process.is_data_folder(data_name, sub_folder):
         
+        data_folder_path = target_process.create_data(data_name, data_type, sub_folder)
+        
+            
     path = source_process.get_data_path()
     data_folder = data.DataFolder(data_name, path)
+    data_folder.set_sub_folder(sub_folder)
 
     instance = data_folder.get_folder_data_instance()
     if not instance:
@@ -2245,7 +2327,11 @@ def copy_process_data(source_process, target_process, data_name, replace = False
 
     filepath = instance.get_file()
     
-    copied_path = None
+    copied_path = -1
+    
+    if sub_folder:
+        
+        return
     
     if filepath:
         basename = util_file.get_basename(filepath)
@@ -2254,23 +2340,38 @@ def copy_process_data(source_process, target_process, data_name, replace = False
     
         if util_file.is_file(filepath):
             copied_path = util_file.copy_file(filepath, destination_directory)
-            
+        
         if util_file.is_dir(filepath):
             basename = util_file.get_basename(destination_directory)
             dirname = util_file.get_dirname(destination_directory)
-            
             
             if util_file.is_dir( util_file.join_path(dirname, basename) ):
                 util_file.delete_dir(basename, dirname)
                 
             copied_path = util_file.copy_dir(filepath, destination_directory)
-          
-        if copied_path:
-            version = util_file.VersionFile(copied_path)
-            version.save('Copied from %s' % filepath)
+
+        if not sub_folder:
+            sub_folders  = source_process.get_data_sub_folder_names(data_name)
+            
+            for sub_folder in sub_folders:
+                copy_process_data(source_process, target_process, data_name, replace, sub_folder)            
+            
         if not copied_path:
             util.warning('Error copying %s to %s' % (filepath, destination_directory))
             return
+        
+        if copied_path > -1:
+            version = util_file.VersionFile(copied_path)
+            version.save('Copied from %s' % filepath)
+        
+        if copied_path == -1:
+            util.warning('Empty data %s' % filepath)
+            return
+    
+    
+    
+    
+        
         
     util.show('Finished copying data from %s' % filepath)          
             
