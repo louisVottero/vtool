@@ -135,17 +135,24 @@ class DataFolder(util_file.FileManager):
         self.data_type = data_type
         self.settings.set('data_type', str(data_type))
         
-    def get_sub_folder(self):
+    def get_sub_folder(self, name = None):
         
-        if not self.settings:
-            self._load_folder()
-        
-        folder = self.settings.get('sub_folder')
+        if not name:
+            if not self.settings:
+                self._load_folder()
+            
+            folder = self.settings.get('sub_folder')
+        if name:
+            folder = name
         
         if self.folder_path:
             if not util_file.is_dir(util_file.join_path(self.folder_path, '.sub/%s' % folder)):
                 return
         
+        return folder
+    
+    def get_current_sub_folder(self):
+        folder = self.get_sub_folder()
         return folder
     
     def set_sub_folder(self, name):
@@ -2703,6 +2710,8 @@ class MayaFileData(MayaCustomData):
             if value == 'No':
                 if self.maya_file_type == self.maya_binary:
                     cmds.warning('\tThis file contains unknown nodes. Try saving as maya ascii instead.')
+           
+    
             
     def import_data(self, filepath = None):
         
@@ -2723,9 +2732,16 @@ class MayaFileData(MayaCustomData):
             
             import_file = filepath
         
-        maya_lib.core.import_file(import_file)
+        track = maya_lib.core.TrackNodes()
+        track.load('transform')
         
+        maya_lib.core.import_file(import_file)
         self._after_open()
+        
+        transforms = track.get_delta()
+        top_transforms = maya_lib.core.get_top_dag_nodes_in_list(transforms)
+        
+        return top_transforms
         
     def open(self, filepath = None):
                 
@@ -2750,15 +2766,18 @@ class MayaFileData(MayaCustomData):
             cmds.file(open_file, 
                       f = True, 
                       o = True, 
-                      iv = True)
+                      iv = True,
+                      pr = True)
             
         except:
             
             util.error(traceback.format_exc())
-            
         self._after_open()
         
-
+        
+        top_transforms = maya_lib.core.get_top_dag_nodes(exclude_cameras = True)
+        return top_transforms
+        
     def save(self, comment):
         
         if not comment:
@@ -2840,8 +2859,17 @@ class MayaFileData(MayaCustomData):
         if not filepath:
             filepath = self.get_file()
         
-        maya_lib.core.reference_file(filepath)
+        track = maya_lib.core.TrackNodes()
+        track.load('transform')
         
+        maya_lib.core.reference_file(filepath)
+
+        transforms = track.get_delta()
+        top_transforms = maya_lib.core.get_top_dag_nodes_in_list(transforms)
+        
+        return top_transforms
+        
+  
     def set_directory(self, directory):
         super(MayaFileData, self).set_directory(directory)
         
