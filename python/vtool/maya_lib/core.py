@@ -701,6 +701,24 @@ def get_top_dag_nodes(exclude_cameras = True, namespace = None):
     
     return top_transforms 
 
+def get_top_dag_nodes_in_list(list_of_transforms):
+    """
+    Given a list of transforms, return only the ones at the top of the hierarchy
+    """
+    
+            
+    found = []
+    
+    for transform in list_of_transforms:
+        long_name = cmds.ls(transform, l = True)
+        
+        if long_name:
+            if long_name[0].count('|') == 1:
+                found.append(transform)
+    
+    return found    
+    
+
 def get_first_shape(transform):
     """
     returns first active shape
@@ -1157,7 +1175,7 @@ def import_file(filepath):
     """
     Import a maya file in a generic vtool way.
     """
-    cmds.file(filepath, f = True, i = True, iv = True)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
+    cmds.file(filepath, f = True, i = True, iv = True, pr = True)# rpr = "vetala_clash")#, mergeNamespacesOnClash = True, renameAll = False)
 
 def save(filepath):
     
