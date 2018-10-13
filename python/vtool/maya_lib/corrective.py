@@ -1447,6 +1447,8 @@ class PoseBase(PoseGroup):
         
         split_value = string_value.split('|')
         
+        split_value.reverse()
+        
         fixed = []
         
         for value in split_value:
@@ -1459,6 +1461,12 @@ class PoseBase(PoseGroup):
                 
                 if start != None:
                     other = vtool.util.replace_string(value, 'rt_', start, end)
+                    
+                if not other:
+                    start,end = vtool.util.find_special('l_', value, 'first')
+                
+                    if start != None:
+                        other = vtool.util.replace_string(value, 'r_', start, end)
                     
                 if not other:
                     start, end = vtool.util.find_special('_L_', value, 'last')
@@ -1480,6 +1488,12 @@ class PoseBase(PoseGroup):
                     other = vtool.util.replace_string(value, 'lf_', start, end)
                 
                 if not other:
+                    start,end = vtool.util.find_special('r_', value, 'first')
+                
+                    if start != None:
+                        other = vtool.util.replace_string(value, 'l_', start, end)
+                
+                if not other:
                     start, end = vtool.util.find_special('_R_', value, 'last')
                     
                     if start != None:
@@ -1497,6 +1511,8 @@ class PoseBase(PoseGroup):
             
             return fixed[0]
         
+        
+        fixed.reverse()
         
         fixed = string.join(fixed, '|')
         
