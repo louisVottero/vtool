@@ -301,6 +301,7 @@ class BlendShape(object):
         
         if temp_target:
             cmds.delete(temp_target)
+                    
 
     #--- blendshape deformer
 
@@ -511,6 +512,19 @@ class BlendShape(object):
         cmds.aliasAttr('%s.%s' % (self.blendshape, name), rm = True)
         
         self.weight_indices.sort()
+    
+    def get_target_attr_input(self, name):
+        
+        target_name = self._get_target_attr(name)
+        input_attr = attr.get_attribute_input(target_name)
+        
+        return input_attr
+    
+    def get_target_input(self, name, inbetween = 1):
+        
+        return self._get_mesh_input_for_target(name, inbetween)
+       
+    
        
     def disconnect_target(self, name, inbetween = 1):
         """
@@ -523,6 +537,12 @@ class BlendShape(object):
         target = self._get_mesh_input_for_target(name, inbetween)
         
         attr.disconnect_attribute(target)
+    
+    def connect_target_attr(self, name, input_attr):
+        
+        cmds.connectAttr(input_attr, self._get_target_attr(name))
+        
+        
        
     def rename_target(self, old_name, new_name):
         """
@@ -1879,6 +1899,7 @@ class ShapeComboManager(object):
             
             if inbetweens:
                 orig_shape = self.recreate_shape(name)
+                orig_shape = cmds.rename(orig_shape, 'orig_%s' % orig_shape)
                 
                 mesh_count = len(self.blendshaped_meshes_list)
                 for inc in range(0,mesh_count):
@@ -1889,7 +1910,7 @@ class ShapeComboManager(object):
                     home = home_dict[base_mesh]
                     home = cmds.listRelatives(home, p = True)[0]
                     
-                    delta = deform.get_blendshape_delta(home, orig_shape, name, replace = False)
+                    delta = deform.get_blendshape_delta(home, orig_shape, mesh, replace = False)
                     
                     for inbetween in inbetweens:
                         
@@ -2169,7 +2190,8 @@ class ShapeComboManager(object):
         
         if target != name:
             target = cmds.rename(target, name )
-            target = '|%s' % target
+            if not target.startswith('|'):
+                target = '|%s' % target
             
         parent = cmds.listRelatives(target, p = True)
         if parent:
@@ -2819,3 +2841,26 @@ def is_negative(shape):
     
     return False
 
+def transfer_blendshape_targets(blend_source, blend_target):
+    
+    source_blend_inst = BlendShape(blend_source)
+    target_blend_inst = BlendShape(blend_target)
+    
+    source_targets = source_blend_inst.get_target_names()
+    target_targets = target_blend_inst.get_target_names()
+    
+    for source_target in source_targets:
+        
+        source_target_mesh = source_blend_inst.recreate_target(source_target)
+        
+        while source_target_mesh in target_targets:
+            source_target_mesh = core.inc_name(source_target_mesh)
+        
+        target_blend_inst.create_target(source_target_mesh, source_target_mesh)
+        
+        input_attr = source_blend_inst.get_target_attr_input(source_target_mesh)
+        if input_attr:
+            target_blend_inst.connect_target_attr(source_target_mesh, input_attr)
+        
+        cmds.delete(source_target_mesh)
+    
