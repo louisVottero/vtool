@@ -624,7 +624,8 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     """
     parent = cmds.listRelatives(curve, p = True)
     
-    follicle, follicle_shape = create_follicle(curve, hair_system)
+    u,v = geo.get_closest_uv_on_mesh_at_curve(attach_mesh, curve)
+    follicle, follicle_shape = create_follicle(curve, hair_system, [u,v])
     
     if attach_mesh:
         cmds.connectAttr('%s.outMesh' % attach_mesh, '%s.inputMesh' % follicle_shape)
@@ -638,6 +639,8 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     
     new_curve = cmds.rename(new_curve, core.inc_name('curve_%s' % follicle))
     new_curve_shape = cmds.listRelatives(new_curve, shapes = True)[0]
+    
+    
     
     cmds.setAttr('%s.inheritsTransform' % new_curve, 0)
     
@@ -662,6 +665,9 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
             remap = attr.RemapAttributesToAttribute(switch_control, attribute_name)
             remap.create_attributes(blendshape_node, [curve, new_curve])
             remap.create()
+    
+    space.zero_out_transform_channels(new_curve)
+    space.zero_out_transform_channels(blend_curve)
             
     if parent:
         cmds.parent(follicle, parent)
