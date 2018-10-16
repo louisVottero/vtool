@@ -18,7 +18,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.data_tree_widget = None
         self.last_directory = None
-        
+        self.data_label = None
         super(DataProcessWidget, self).__init__()
         
         self.setMouseTracking(True)
@@ -49,6 +49,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.splitter = splitter
         
         self.label = qt.QLabel('-')
+        self.label.show()
         
         self.data_widget = DataWidget()
         self.data_widget.hide()
@@ -65,6 +66,34 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
             return
         
         self.data_tree_widget.update_item(item)
+        self._set_title()
+        
+    def _set_title(self, title = None):
+        
+        if title == None:
+            title = self.data_label
+        
+        if title == None:
+            return
+            
+        name = None
+        
+        if self.data_widget.list:
+            name = self.data_widget.list.get_selected_item()
+        
+        if name == '-top folder-':
+            name = None
+        
+        if name:
+            print title, name
+            self.label.setText(title + '                 sub folder:   ' + name)
+            
+            self.label.show()
+        else:
+            self.label.setText(title)
+            self.label.show()
+        
+        self.data_label = title
         
     def mouse_move(self, event):
         
@@ -130,7 +159,8 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                         self.data_widget.show()
                         if self.data_widget.list:
                             self.data_widget.list.select_current_sub_folder()
-                        self.label.setText( str( item.text(0)) )
+                        self._set_title( str( item.text(0)) ) 
+                        
                         self.label.show()
                         
             if not is_data:
@@ -141,7 +171,7 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                 return
                 
             self.data_widget.remove_file_widget()
-            self.label.setText('')
+            self._set_title('-')
             
     def _update_file_widget(self, directory):
         
@@ -152,7 +182,8 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         basename = vtool.util_file.get_basename(directory)
         
-        self.label.setText(basename)
+        self._set_title(basename)
+        
                 
     def set_directory(self, directory):
         super(DataProcessWidget, self).set_directory(directory)
@@ -182,9 +213,7 @@ class DataWidget(vtool.qt_ui.BasicWidget):
     
     def _define_main_layout(self):
         return vtool.qt.QHBoxLayout()
-
-
-
+        
     def _build_widgets(self):
         
         self.list = None
@@ -203,6 +232,7 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         folder = self.directory
         
         self.file_widget.set_directory(folder)
+        
         
     def _remove_widget(self, widget):
         
@@ -302,30 +332,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     
     def resizeEvent(self, event):
         super(DataTreeWidget, self).resizeEvent(event)
-        
-        #col_size = self.columnWidth(0)
-        """
-        if  col_size >= 100:
-            
-            for inc in range(0, self.topLevelItemCount()):
-                
-                item = self.topLevelItem(inc)
-                #item_font = qt.QFont()
-                #item_font.setPixelSize(16)
-                #item.setFont(0, item_font)
-                #item.setFont(1, item_font)
-                #item.setFont(2, item_font)
-        
-        if col_size < 100:
-            for inc in range(0, self.topLevelItemCount()):
-                
-                item = self.topLevelItem(inc)
-                #item_font = qt.QFont()
-                #item_font.setPixelSize(11)
-                #item.setFont(0, item_font)
-                #item.setFont(1, item_font)
-                #item.setFont(2, item_font)  
-        """
+
     def _item_menu(self, position):
         
         item = self.itemAt(position)

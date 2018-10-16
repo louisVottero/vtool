@@ -1376,12 +1376,21 @@ class FileManagerWidget(DirectoryWidget):
         if not self.directory:
             return
         
-        folder = self.data_class.get_folder()
+        sub_folder = self.data_class.get_sub_folder()
         
-        history_directory = None
         
-        if folder:
-            history_directory = self.data_class.set_directory(folder)    
+        if not sub_folder:
+        
+            folder = self.data_class.get_folder()
+            
+            history_directory = None
+            
+            if folder:
+                history_directory = self.data_class.set_directory(folder)    
+        if sub_folder:
+            sub_folder_path = util_file.join_path(self.directory, '.sub/%s' % sub_folder)
+            history_directory = sub_folder_path
+        
         
         if not history_directory:
             history_directory = self.directory
@@ -4895,6 +4904,14 @@ class AddRemoveList(BasicWidget):
             item = self._add_item(default, False)
             if item:
                 qt.QListWidgetItem.setDisabled(True)
+    
+    def get_selected_item(self):
+        
+        items = self.list.selectedItems()
+        
+        if items:
+            return str(items[0].text())
+        
     
 class AddRemoveDirectoryList(AddRemoveList):
     
