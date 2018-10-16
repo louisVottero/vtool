@@ -472,7 +472,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                         
             fullpath = util_file.join_path(self.project_directory, name)
             
-            project_settings_file.set('last process', fullpath)
+            project_settings_file.set('last process', [name, self.project_directory])
             
             util.set_env('VETALA_CURRENT_PROCESS', fullpath)
             
@@ -592,13 +592,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _setup_settings_file(self):
         
-        settings_file = util_file.SettingsFile()
         
-        settings_file.set_directory(self.directory)
         
-        self.settings = settings_file
+        
         
         util.set_env('VETALA_SETTINGS', self.directory)
+        
+        settings_file = util_file.SettingsFile()
+        settings_file.set_directory(self.directory)
+        self.settings = settings_file
         
         self.view_widget.set_settings( self.settings )
         self.settings_widget.set_settings(self.settings)
