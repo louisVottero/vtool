@@ -792,31 +792,27 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def _goto_settings_process(self):
         
-        if not self.settings:
-            return
-        
-        
-        settings_process = self.settings.get('last process')
+        settings = util_file.SettingsFile()
+        settings.set_directory(self.directory)
+        settings_process = settings.get('last process')
         
         if not settings_process:
             return
         
-        name = util_file.get_basename(settings_process)
-        
-        directory = util_file.get_dirname(settings_process)
-        
-        if not settings_process:
-            return
+        name = settings_process[0]
+        directory = settings_process[1]
         
         iterator = qt.QTreeWidgetItemIterator(self)
-        
         
         while iterator.value():
             item = iterator.value()
             
             if hasattr(item, 'directory') and hasattr(item, 'name'):
-            
+                
+                util_file.get_common_path(directory, item.directory)
                 if item.directory == directory:
+                    
+                    
                     
                     if name.startswith(item.name):
                         index = self.indexFromItem(item)
