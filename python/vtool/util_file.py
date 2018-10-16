@@ -944,7 +944,7 @@ class SettingsFile(object):
         
         self._write()
     
-    def get(self, name): 
+    def get(self, name):
         
         if name in self.settings_dict:
             return self.settings_dict[name]
