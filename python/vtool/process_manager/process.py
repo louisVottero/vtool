@@ -2337,7 +2337,10 @@ def copy_process_data(source_process, target_process, data_name, replace = False
         basename = util_file.get_basename(filepath)
     
         destination_directory = util_file.join_path(data_folder_path, basename)
-    
+        
+        if not destination_directory:
+            util.warning('Destination data: %s - not created!' % data_folder_path)
+        
         if util_file.is_file(filepath):
             copied_path = util_file.copy_file(filepath, destination_directory)
         
@@ -2361,6 +2364,7 @@ def copy_process_data(source_process, target_process, data_name, replace = False
             return
         
         if copied_path > -1:
+            #this seems to work only the first time
             version = util_file.VersionFile(copied_path)
             version.save('Copied from %s' % filepath)
         
