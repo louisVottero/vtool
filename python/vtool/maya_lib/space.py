@@ -1,6 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import random
+import string
 
 import vtool.util
 import api
@@ -10,8 +11,6 @@ if vtool.util.is_in_maya():
     
 import core
 import attr
-
-import re
 
 #do not import geo
 
@@ -301,7 +300,7 @@ class PinXform(object):
         self.delete_later = []
         self.lock_state = {}
 
-    def pin(self):
+    def pin(self, children = None):
         """
         Create the pin constraints on parent and children.
         """
@@ -326,7 +325,8 @@ class PinXform(object):
             self.delete_later.append(constraint)
             self.delete_later.append(pin)
         """
-        children = cmds.listRelatives(self.xform, f = True, type = 'transform')
+        if not children:
+            children = cmds.listRelatives(self.xform, f = True, type = 'transform')
         
         if not children:
             return
@@ -921,8 +921,10 @@ class OrientJoint(object):
         
     def _get_surface(self):
         
-        if cmds.objExists('%s.surface' % self.joint):
+        try:
             self.surface = cmds.getAttr('%s.surface' % self.joint)
+        except:
+            pass
         
     def _get_relatives(self):
         
@@ -1141,7 +1143,7 @@ class OrientJoint(object):
                                      worldUpType = self.up_space_type)[0] 
         
         self.delete_later.append(aim)
-    
+        
     def _get_values(self):
         
         if not cmds.objExists('%s.ORIENT_INFO' % self.joint):
@@ -1157,7 +1159,7 @@ class OrientJoint(object):
     def _pin(self):
         
         pin = PinXform(self.joint)
-        pin.pin()
+        pin.pin(self.children)
         
         nodes = pin.get_pin_nodes()
         if nodes:
@@ -1168,14 +1170,18 @@ class OrientJoint(object):
         if scale:
             if is_rotate_scale_default(self.joint):
                 return
+            
         if not scale:
             if is_rotate_default(self.joint):
                 return
         
-        children = cmds.listRelatives(self.joint, f = True, type = 'transform')
-        
-        if children:    
-            children = cmds.parent(children, w = True)
+        if not self.children:
+            self.children = cmds.listRelatives(self.joint, f = True, type = 'transform')
+            
+        children = None
+            
+        if self.children:
+            children = cmds.parent(self.children, w = True)
                 
         try:
             cmds.makeIdentity(self.joint, apply = True, r = True, s = scale)
@@ -1187,22 +1193,31 @@ class OrientJoint(object):
     
     def _invert_scale(self):
         invert_scale = self.orient_values['invertScale']
+        
+        if invert_scale == 0:
+            return
             
         if invert_scale == 1:
             cmds.setAttr('%s.scaleX' % self.joint, -1)
+            return
         if invert_scale == 2:
             cmds.setAttr('%s.scaleY' % self.joint, -1)
+            return
         if invert_scale == 3:
             cmds.setAttr('%s.scaleZ' % self.joint, -1)
+            return
         if invert_scale == 4:
             cmds.setAttr('%s.scaleX' % self.joint, -1)
             cmds.setAttr('%s.scaleY' % self.joint, -1)
+            return
         if invert_scale == 5:
             cmds.setAttr('%s.scaleX' % self.joint, -1)
             cmds.setAttr('%s.scaleZ' % self.joint, -1)
+            return
         if invert_scale == 6:
             cmds.setAttr('%s.scaleY' % self.joint, -1)
             cmds.setAttr('%s.scaleZ' % self.joint, -1)
+            return
             
     def set_aim_vector(self, vector_list):
         """
@@ -1295,8 +1310,6 @@ class OrientJoint(object):
         
         self.orient_values = self._get_values()
         
-        
-        
         if self.orient_values:
         
             self.aim_vector = self._get_vector_from_axis( self.orient_values['aimAxis'] )
@@ -1321,8 +1334,6 @@ class OrientJoint(object):
             self._invert_scale()
         
         self._cleanup()
-        
-        
         
         self._freeze(scale = False)
         
@@ -1350,9 +1361,13 @@ class AttachJoints(object):
     Attach a chain of joints to a matching chain.
     parentConstraint and scaleConstraint are used to make the attachment.
     """
+    attach_type_constraint = 0
+    attach_type_matrix = 1
+    
     def __init__(self, source_joints, target_joints):
         self.source_joints = source_joints
         self.target_joints = target_joints
+        self._attach_type = 0
     
     def _hook_scale_constraint(self, node):
         
@@ -1370,21 +1385,37 @@ class AttachJoints(object):
         
     def _attach_joint(self, source_joint, target_joint):
         
-        
-        self._hook_scale_constraint(target_joint)
-        
-        parent_constraint = cmds.parentConstraint(source_joint, target_joint, mo = True)[0]
-        
-        cmds.setAttr('%s.interpType' % parent_constraint, 2)
-        
-        scale_constraint = cmds.scaleConstraint(source_joint, target_joint)[0]
-        
-        constraint_editor = ConstraintEditor()
-        constraint_editor.create_switch(self.target_joints[0], 'switch', parent_constraint)
-        constraint_editor.create_switch(self.target_joints[0], 'switch', scale_constraint)
-        
-        self._unhook_scale_constraint(scale_constraint)
-        
+        if self._attach_type == 0:
+            self._hook_scale_constraint(target_joint)
+            
+            parent_constraint = cmds.parentConstraint(source_joint, target_joint, mo = True)[0]
+            
+            cmds.setAttr('%s.interpType' % parent_constraint, 2)
+            
+            scale_constraint = cmds.scaleConstraint(source_joint, target_joint)[0]
+            
+            constraint_editor = ConstraintEditor()
+            constraint_editor.create_switch(self.target_joints[0], 'switch', parent_constraint)
+            constraint_editor.create_switch(self.target_joints[0], 'switch', scale_constraint)
+            
+            self._unhook_scale_constraint(scale_constraint)
+            
+        if self._attach_type == 1:
+            
+            switches = SpaceSwitch().get_space_switches(target_joint)
+            
+            if switches:
+                
+                SpaceSwitch().add_source(source_joint, target_joint, switches[0])
+                SpaceSwitch().create_switch(self.target_joints[0], 'switch', switches[0])
+                
+                
+            if not switches:
+                switch = SpaceSwitch(source_joint, target_joint)
+                switch.set_use_weight(True)
+                switch_node = switch.create()
+                switch.create_switch(self.target_joints[0], 'switch', switch_node)
+                        
     def _attach_joints(self, source_chain, target_chain):
         
         for inc in range( 0, len(source_chain) ):
@@ -1399,6 +1430,10 @@ class AttachJoints(object):
         self.source_joints = source_joints
         self.target_joints = target_joints
     
+    def set_attach_type(self, attach_type):
+        
+        self._attach_type = attach_type
+        
     def create(self):
         """
         Create the attachments.
@@ -1478,6 +1513,7 @@ class DuplicateHierarchy(object):
             for child in children:
                 
                 if self.only_these_transforms and not child in self.only_these_transforms:
+                    
                     continue
                 
                 if self._only_joints:
@@ -1746,6 +1782,421 @@ class TranslateSpaceScale(object):
             cmds.setAttr('%s.colorIfTrueR' % condition, self.z_space[0] * negate)
             cmds.setAttr('%s.colorIfFalseR' % condition, self.z_space[1] * negate) 
 
+class MatrixConstraintNodes(object):
+
+    def __init__(self, source_transform, target_transform = None):
+        
+        self.connect_translate = True
+        self.connect_rotate = True
+        self.connect_scale = True
+        
+        self.source = vtool.util.convert_to_sequence(source_transform)
+        self.target = target_transform
+        
+        self._decompose = True
+        
+        if target_transform:
+            self.description = target_transform
+        else:
+            self.description = 'Constraint' 
+
+        self.node_decompose_matrix = None
+        
+    def _create_decompose(self):
+        
+        if self._decompose:
+            decom = core.create_node('decomposeMatrix', self.description)
+            self.node_decompose_matrix = decom
+            
+    def _connect_decompose(self, matrix_attribute):
+        
+        cmds.connectAttr(matrix_attribute, '%s.inputMatrix' % self.node_decompose_matrix)    
+        
+        if self.connect_translate:
+            cmds.connectAttr('%s.outputTranslate' % self.node_decompose_matrix, '%s.translate' % self.target)
+        if self.connect_rotate:
+            if cmds.nodeType(self.target) == 'joint':
+                #self._create_joint_offset()
+                cmds.connectAttr('%s.outputRotate' % self.node_decompose_matrix, '%s.jointOrient' % self.target)        
+            else:
+                cmds.connectAttr('%s.outputRotate' % self.node_decompose_matrix, '%s.rotate' % self.target)
+        if self.connect_scale:
+            cmds.connectAttr('%s.outputScale' % self.node_decompose_matrix, '%s.scale' % self.target)
+            
+    def _create_joint_offset(self):
+        
+        euler_to_quat = core.create_node('eulerToQuat', self.description)
+        quat_invert = core.create_node('quatInvert', self.description)
+        quat_prod = core.create_node('quatProd', self.description)
+        self.joint_orient_quat_to_euler = core.create_node('quatToEuler', self.description)
+        
+        cmds.connectAttr('%s.jointOrient' % self.target, '%s.inputRotate' % euler_to_quat)
+        cmds.connectAttr('%s.outputQuat' % euler_to_quat, '%s.inputQuat' % quat_invert)
+        
+        cmds.connectAttr('%s.outputQuat' % self.node_decompose_matrix, '%s.input1Quat' % quat_prod)
+        cmds.connectAttr('%s.outputQuat' % quat_invert, '%s.input2Quat' % quat_prod)
+        cmds.connectAttr('%s.outputQuat' % quat_prod, '%s.inputQuat' % self.joint_orient_quat_to_euler)
+        
+        cmds.connectAttr('%s.outputRotate' % self.joint_orient_quat_to_euler, '%s.rotate' % self.target)
+        
+
+    def set_description(self, description):
+        self.description = description
+        
+    def set_decompose(self, bool_value):
+        self._decompose = bool_value
+        
+    def set_connect_translate(self, bool_value):
+        self.connect_translate = bool_value
+    
+    def set_connect_rotate(self, bool_value):
+        self.connect_rotate = bool_value
+    
+    def set_connect_scale(self, bool_value):
+        self.connect_scale = bool_value
+        
+    def create(self):
+        
+        self._create_decompose()
+
+class MatrixConstraint(MatrixConstraintNodes):
+    
+    def __init__(self, source_transform, target_transform = None):
+        
+        super(MatrixConstraint, self).__init__(source_transform = source_transform, target_transform = target_transform)
+        
+        self.main_source = self.source[0]
+        
+        self.node_multiply_matrix = None
+        
+        self._use_target_parent_matrix = False
+        
+        self._maintain_offset = True
+        
+    def _create_matrix_constraint(self):
+        
+        
+        
+        mult = core.create_node('multMatrix', self.description)
+        self.node_multiply_matrix = mult
+        
+        cmds.aliasAttr('jointOrientMatrix', '%s.matrixIn[0]' % mult)
+        cmds.aliasAttr('offsetMatrix', '%s.matrixIn[1]' % mult)
+        cmds.aliasAttr('targetMatrix', '%s.matrixIn[2]' % mult)
+        cmds.aliasAttr('parentMatrix', '%s.matrixIn[3]' % mult)
+        
+        cmds.connectAttr('%s.worldMatrix' % self.main_source, '%s.targetMatrix' % mult)
+        
+        if not self.target:
+            return
+            
+        target_matrix = cmds.getAttr('%s.worldMatrix' % self.target)
+        
+        if self._maintain_offset:
+            source_inverse_matrix = cmds.getAttr('%s.worldInverseMatrix' % self.main_source)
+        
+            offset = api.multiply_matrix(target_matrix, source_inverse_matrix)
+            
+            cmds.setAttr('%s.offsetMatrix' % mult, offset, type = 'matrix')
+        
+        if self._use_target_parent_matrix:
+            parent = cmds.listRelatives(self.target, p = True)
+            if parent:
+                cmds.connectAttr('%s.inverseMatrix' % parent[0], '%s.parentMatrix' % mult)
+        else:
+            cmds.connectAttr('%s.parentInverseMatrix' % self.target, '%s.parentMatrix' % mult)
+        
+        if self.node_decompose_matrix:
+            self._connect_decompose('%s.matrixSum' % mult)
+    
+    def set_use_target_parent_matrix(self, bool_value):
+        
+        self._use_target_parent_matrix = bool_value
+    
+    def set_maintain_offset(self, bool_value):
+        self._maintain_offset = bool_value
+        
+    def create(self):
+        super(MatrixConstraint, self).create()
+        self._create_matrix_constraint()
+        
+class SpaceSwitch(MatrixConstraintNodes):
+    
+    def __init__(self, sources = [], target = None):
+        
+        super(SpaceSwitch, self).__init__(sources, target)
+                
+        self.node_weight_add_matrix = None
+        self.node_choice = None
+        self._input_attribute = None
+        self._weight_attributes = []
+        
+        self._use_weight = False
+        self._switch_names = []
+        self._attribute_node = target
+        self._attribute_name = 'switch'
+        self._maintain_offset = True
+        
+        self._create_title = True
+        self._title_name = None
+        
+    def _add_source(self, source, switch_node):
+
+        matrix = MatrixConstraint(source, self.target)
+        matrix.set_maintain_offset(self._maintain_offset)
+        matrix.set_decompose(False)
+        
+        node_type = cmds.nodeType(switch_node)
+        
+        matrix_node = None
+        
+        if node_type == 'wtAddMatrix':
+            inc = attr.get_available_slot('%s.wtMatrix' % switch_node)
+        
+            matrix.set_description('%s_%s' % (inc+1, self.description))
+            matrix.set_use_target_parent_matrix(False)
+            matrix.create()
+            matrix_node = matrix.node_multiply_matrix
+            
+            
+            cmds.connectAttr('%s.matrixSum' % matrix_node, '%s.wtMatrix[%s].matrixIn' % (switch_node, inc))
+            
+            weight_attr = 'wtMatrix[%s].weightIn' % inc
+            self._weight_attributes.append(weight_attr)
+            
+        if node_type == 'choice':
+            inc = attr.get_available_slot('%s.input' % switch_node)
+            
+            matrix.set_description('%s_%s' % (inc+1, self.description))
+            matrix.set_use_target_parent_matrix(False)
+            matrix.create()
+            matrix_node = matrix.node_multiply_matrix
+            
+            cmds.connectAttr('%s.matrixSum' % matrix_node, '%s.input[%s]' % (self.node_choice, inc))    
+            
+    
+    def _create_space_switch(self):
+        
+        switch_node = None
+        
+        if self._use_weight:
+            self.node_weight_add_matrix = core.create_node('wtAddMatrix', self.description)    
+            matrix_attribute = '%s.matrixSum' % self.node_weight_add_matrix
+            switch_node = self.node_weight_add_matrix
+        else:
+            self.node_choice = core.create_node('choice', self.description)
+            matrix_attribute = '%s.output' % self.node_choice
+            switch_node = self.node_choice
+        
+        if switch_node:
+            for source in self.source:
+                self._add_source(source, switch_node)
+        
+        if self.node_decompose_matrix:
+            self._connect_decompose(matrix_attribute)
+        
+        return switch_node
+        """    
+        if self._input_attribute:
+            
+            if self._use_weight:
+                
+                node, attribute = attr.get_node_and_attribute(self._input_attribute)
+                
+                remap = attr.RemapAttributesToAttribute(node, attribute)
+                remap.create_attributes(self.node_weight_add_matrix, self._weight_attributes)
+                remap.create()
+            
+            else:
+                
+                if not self._switch_names:
+                    switch_names = []
+                    
+                    inc = 1
+                    for source in self.source:
+                        switch_name = '%s_%s' % (inc, source)
+                        switch_names.append(switch_name)
+                        inc += 1
+                else:
+                    switch_names = self._switch_names
+                            
+                switch_string = string.join(switch_names, ':')
+                    
+                if not cmds.objExists(self._input_attribute):
+                    node, attribute = attr.get_node_and_attribute(self._input_attribute)
+                    cmds.addAttr(node, ln = attribute, at = 'enum', enumName = switch_string, k = True)
+                    
+                cmds.connectAttr(self._input_attribute, '%s.selector' % self.node_choice)
+        """
+        
+           
+
+    def get_space_switches(self, target):
+        
+        attrs = ['translate','rotate','scale']
+        #axis = ['X','Y','Z']
+        
+        found = []
+        
+        for attr_name in attrs:
+            
+            attribute = attr_name
+            
+            node_and_attribute = '%s.%s' % (target,attribute)
+            input_value = attr.get_attribute_input(node_and_attribute, node_only=True)
+            
+            if input_value:
+                
+                if cmds.nodeType(input_value) == 'decomposeMatrix':
+                    found.append(input_value)
+                    break
+    
+        selector_dict = {}
+        
+        for thing in found:
+            input_value = attr.get_attribute_input('%s.inputMatrix' % thing, node_only=True)
+            if cmds.nodeType(input_value) == 'choice':
+                selector_dict[input_value] = None 
+            if cmds.nodeType(input_value) == 'wtAddMatrix':
+                selector_dict[input_value] = None
+            
+        found = []
+                
+        for key in selector_dict:
+            found.append(key)
+            
+        return found        
+    
+    def get_source(self, switch_node):
+        
+        found = []
+        
+        if cmds.nodeType(switch_node) == 'choice':
+            indices = attr.get_indices('%s.input' % switch_node)
+            
+            for index in indices:
+                input_attr = '%s.input[%s]' % (switch_node, index)
+                
+                matrix_sum = attr.get_attribute_input(input_attr, node_only = True)
+                
+                matrix_attr = '%s.targetMatrix' % matrix_sum
+                
+                if cmds.objExists(matrix_attr):
+                    transform = attr.get_attribute_input(matrix_attr, node_only = True)
+                    found.append(transform)
+        
+        if cmds.nodeType(switch_node) == 'wtAddMatrix':
+            
+            indices = attr.get_indices('%s.wtMatrix' % switch_node)
+                        
+            for index in indices:
+                input_attr = '%s.wtMatrix[%s].matrixIn' % (switch_node, index)
+                
+                matrix_sum = attr.get_attribute_input(input_attr, node_only = True)
+                
+                matrix_attr = '%s.targetMatrix' % matrix_sum
+                
+                if cmds.objExists(matrix_attr):
+                    
+                    transform = attr.get_attribute_input(matrix_attr, node_only = True)
+                    found.append(transform)
+        
+        return found
+    
+    def add_source(self, source_transform, target_transform, switch_node):
+        self.description = target_transform
+        self.target = target_transform
+        self._add_source(source_transform, switch_node)
+        
+    def set_use_weight(self, bool_value):
+        self._use_weight = bool_value
+        
+    def set_input_attribute(self, node, attribute, switch_names = []):
+        self._attribute_node = node
+        self._attribute_name = attribute
+        self._switch_names = switch_names
+        
+    def set_maintain_offset(self, bool_value):
+        self._maintain_offset = bool_value
+        
+    def create_title(self, bool_value, title_name = None):
+        self._create_title = True
+        self._title_name = title_name
+        
+    def create(self, create_switch = False):
+        super(SpaceSwitch, self).create()
+        switch_node = self._create_space_switch()
+        
+        if create_switch:
+            
+            self.create_switch(self._attribute_node, self._attribute_name, switch_node)
+        
+        return switch_node
+        
+    def create_switch(self, node, attribute, switch_node = None):
+        """
+        Create a switch over all the target weights.
+        
+        Args:
+            node (str): The name of the node to add the switch attribute to.
+            attribute (str): The name to give the switch attribute.
+            switch_node (str): Either the choice or wtAddMatrix node of the setup. Use get_space_switches to find them
+        """
+        
+        if self._create_title:
+            if not self._title_name:
+                attr.create_title(node,'SPACE')
+            if self._title_name:
+                attr.create_title(node,self._title_name)
+                
+        if cmds.nodeType(switch_node) == 'choice':
+            
+            sources = self.get_source(switch_node)
+            
+            if not self._switch_names:
+                switch_names = []
+                
+                for source in sources:
+                    #switch_name = '%s %s' % (inc, source)
+                    switch_name = source
+                    switch_names.append(switch_name)
+                    
+            else:
+                switch_names = self._switch_names
+            
+            variable = attr.MayaEnumVariable(attribute)
+            variable.set_node(node)
+            variable.set_keyable(True)
+            variable.create(node)
+            variable.set_enum_names(switch_names)
+            variable.set_locked(False)
+            variable.set_value( (len(switch_names)-1) )
+            variable.connect_out('%s.selector' % switch_node)
+            
+            
+            
+        if cmds.nodeType(switch_node) == 'wtAddMatrix':
+            
+            indices = attr.get_indices('%s.wtMatrix' % switch_node)
+            
+            attributes = []
+            
+            for index in indices:
+                attributes.append('wtMatrix[%s].weightIn' % index)
+            
+            remap = attr.RemapAttributesToAttribute(node, attribute)
+            remap.create_attributes(switch_node, attributes)
+            remap.create()
+            
+            if len(attributes) > 1:
+                try:
+                    cmds.setAttr('%s.%s' % (node, attribute), (len(attributes)-1))
+                except:
+                    pass
+            
+            if len(attributes) == 1:
+                cmds.setAttr('%s.wtMatrix[0].weightIn' % switch_node, 1)
+  
 def has_constraint(transform):
     """
     Find out if a constraint is affecting the transform.
@@ -3301,7 +3752,7 @@ def subdivide_joint(joint1 = None, joint2 = None, count = 1, prefix = 'joint', n
     return joints
 
     
-def orient_attributes(scope = None):
+def orient_attributes(scope = None, initialize_progress = True):
     """
     Orient all transforms with attributes added by add_orient_attributes.
     If scope is provided, only orient transforms in the scope that have attributes.
@@ -3313,33 +3764,49 @@ def orient_attributes(scope = None):
     if not scope:
         scope = core.get_top_dag_nodes()
     
-    progress_bar = core.ProgressBar('Orient Joints', len(scope))
+    count = None
+    title = ''
+    
+    if initialize_progress:
+        
+        watch = vtool.util.StopWatch()
+        watch.start('Orienting Joints')
+        
+        count = len(cmds.ls(type = 'joint'))
+        title = 'Orient Joints'    
+    
+    progress_bar = core.ProgressBar(title, count = count, begin = initialize_progress)
+    
     
     oriented = False
     
     for transform in scope:
+        
+        progress_bar.status('Orienting: %s of %s   %s' % (progress_bar.get_current_inc(), progress_bar.get_count(), core.get_basename(transform)))
+        progress_bar.next()
         
         if cmds.objExists('%s.active' % transform):
             if not cmds.getAttr('%s.active' % transform):
                 vtool.util.warning('%s has orientation attributes but is not active.  Skipping.' % transform)
                 continue
         
-        progress_bar.status('Orienting: %s' % core.get_basename(transform))
-        
         relatives = cmds.listRelatives(transform, f = True, type = 'transform')
                 
         if cmds.objExists('%s.ORIENT_INFO' % transform):
             
+            if progress_bar.break_signaled():
+                watch.end()
+                return
             orient = OrientJoint(transform, relatives)
             orient.run()
         
         if relatives:
-            orient_attributes(relatives)
+            orient_attributes(relatives, initialize_progress = False)
             oriented = True
 
-        progress_bar.next()
-    
-    progress_bar.end()
+    if initialize_progress:
+        progress_bar.end()
+        watch.end()
                 
     return oriented
 
@@ -3498,8 +3965,6 @@ def find_transform_right_side(transform, check_if_exists = True):
             return other 
         if not check_if_exists:
             return other
-    
-    
     
     other = ''
     
