@@ -11,6 +11,22 @@ import os
 import base64
 from HTMLParser import HTMLParser
 
+def get_custom(name, default = ''):
+    
+    try:
+        from vtool import __custom__
+    except:
+        print 'could not get custom'
+    
+    value = None
+    
+    exec( "value = __custom__.%s" % name )
+    
+    if not value:
+        return default
+    
+    return value
+
 class VetalaHTMLParser(HTMLParser):
 
     def __init__(self):
@@ -54,6 +70,8 @@ class ControlName(object):
         
         self.control_uppercase = True
         
+        self._control_number = True
+        
     def set_control_alias(self, alias):
         self.control_alias = str(alias)
         
@@ -72,6 +90,9 @@ class ControlName(object):
     def set_control_order(self, list_value):
         self.control_order = list_value
         
+    def set_number_in_control_name(self, bool_value):
+        self._control_number = bool_value
+        
     def get_name(self, description, side = None):
         
         found = []
@@ -85,7 +106,7 @@ class ControlName(object):
                 found.append( self.control_alias )
             if name == 'Description':
                 found.append(description)
-            if name == 'Number':
+            if name == 'Number' and self._control_number == True:
                 found.append(str(1))
             if name == 'Side':
                 
@@ -916,7 +937,7 @@ def rotate_z_at_origin(vector, value, value_in_radians = False):
     
     return [x,y,z]
 
-def get_axis_vector(axis_name):
+def get_axis_vector(axis_name, offset = 1):
     """
     Convenience. Good for multiplying against a matrix.
     
@@ -927,13 +948,13 @@ def get_axis_vector(axis_name):
         tuple: vector eg. (1,0,0) for 'X', (0,1,0) for 'Y' and (0,0,1) for 'Z'
     """
     if axis_name == 'X':
-        return (1,0,0)
+        return (offset,0,0)
     
     if axis_name == 'Y':
-        return (0,1,0)
+        return (0,offset,0)
     
     if axis_name == 'Z':
-        return (0,0,1)
+        return (0,0,offset)
 
 def fade_sine(percent_value):
     
@@ -1807,7 +1828,7 @@ def warning(*args):
             import maya.cmds as cmds
             cmds.warning('V: \t%s' % string_value)
         
-        record_temp_log('\n%s' % string_value)
+        record_temp_log('\nWarning!:  %s' % string_value)
         
     except:
         raise(RuntimeError)
@@ -2028,3 +2049,10 @@ def decode(key, enc):
         dec.append(dec_c)
     return "".join(dec)
 
+
+def print_python_dir_nicely(python_object):
+    
+    stuff = dir(python_object)
+    
+    for thing in stuff:
+        exec('print thing, ":", python_object.%s' % thing)
