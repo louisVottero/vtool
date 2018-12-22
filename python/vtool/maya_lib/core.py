@@ -183,7 +183,7 @@ class TrackNodes(object):
         new_set = set(current_nodes).difference(self.nodes)
         
         return list(new_set)
-        
+       
 class ProgressBar(object):
     """
     Manipulate the maya progress bar.
@@ -193,7 +193,9 @@ class ProgressBar(object):
         count (int): The number of items to iterate in the progress bar.
     """
     
-    def __init__(self, title, count = 0):
+    inc_value = 0
+    
+    def __init__(self, title = '', count = None, begin = True):
         
         if is_batch():
             self.title = title
@@ -204,36 +206,46 @@ class ProgressBar(object):
             vtool.util.show(message)
             return
         
-        self.progress_ui = None
-        
-        if count == 0:
-            count +=1
-        
         if not is_batch():
-            gMainProgressBar = mel.eval('$tmp = $gMainProgressBar');
-            self.progress_ui = gMainProgressBar
             
-            #check if not cancelled completely because of bug
-            self.end()
-        
-            cmds.progressBar( gMainProgressBar,
-                                        edit=True,
-                                        beginProgress=True,
-                                        isInterruptable=True,
-                                        status= title,
-                                        maxValue= count )
-        
+            self.progress_ui = None
+            self.progress_ui = get_progress_bar()
+                      
+            if begin: 
+                #check if not cancelled completely because of bug
+                self.__class__.inc_value = 0
+                self.end()
+                
+            if not title:
+                title = cmds.progressBar(self.progress_ui, q = True, status  = True)
+            
+            if not count:
+                count = cmds.progressBar( self.progress_ui, q = True, maxValue = True)
+             
+            cmds.progressBar( self.progress_ui,
+                                    edit=True,
+                                    beginProgress=begin,
+                                    isInterruptable=True,
+                                    status = title,
+                                    maxValue= count )
+            
             
             
         
         global current_progress_bar 
         current_progress_bar = self
         
-        self.inc_value = 0
     
     def set_count(self, int_value):
         cmds.progressBar( self.progress_ui, edit = True, maxValue = int_value )
     
+    def get_count(self):
+        return cmds.progressBar( self.progress_ui, q = True, maxValue = True)
+        
+    def get_current_inc(self):
+        return self.__class__.inc_value
+        #return cmds.progressBar( self.progress_ui, q = True, step = True)
+        
     def inc(self, inc = 1):
         """
         Set the current increment.
@@ -241,15 +253,19 @@ class ProgressBar(object):
         if is_batch():
             return
         
+        self.__class__.inc_value += inc
+        
         cmds.progressBar(self.progress_ui, edit=True, step=inc)
-        self.inc_value = inc
+        
     
     def next(self):
+        
         if is_batch():
             return
         
-        self.inc_value += 1
-        cmds.progressBar(self.progress_ui, edit=True, step=self.inc_value)
+        self.__class__.inc_value += 1
+        
+        cmds.progressBar(self.progress_ui, edit=True, step=1)
         
             
     def end(self):
@@ -264,8 +280,7 @@ class ProgressBar(object):
                                         edit=True,
                                         beginProgress=True)
         
-        cmds.progressBar(self.progress_ui, edit=True, ep = True)
-        
+        cmds.progressBar(self.progress_ui, edit=True, ep = True)        
         
     def status(self, status_string):
         """
@@ -295,7 +310,10 @@ class ProgressBar(object):
             return True
         
         return False
-    
+   
+
+
+
 
 def get_current_camera():
     camera = api.get_current_camera()
@@ -322,8 +340,34 @@ class StoreDisplaySettings(object):
         
         self.view.setObjectDisplay(self.setting_id)
         self.view.setDisplayStyle(self.style)
-        
 
+class ManageNodeEditors():
+    
+    def __init__(self):
+        
+        node_editors = get_node_editors()
+        
+        self.node_editors = node_editors
+        
+        self._additive_state_dict = {}
+        
+        for editor in self.node_editors:
+            current_value = cmds.nodeEditor(editor, q = True, ann = True)
+            self._additive_state_dict[editor] = current_value
+            
+    def turn_off_add_new_nodes(self):
+        
+        for editor in self.node_editors:
+            cmds.nodeEditor(editor, e = True, ann = False)
+            
+    def restore_add_new_nodes(self):
+        
+        for editor in self.node_editors:
+            if editor in self._additive_state_dict:
+                cmds.nodeEditor(editor, e = True, ann = self._additive_state_dict[editor])
+
+
+             
 def undo_off(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
@@ -586,6 +630,26 @@ def prefix_name(node, prefix, name, separator = '_'):
     new_name = cmds.rename(node, '%s%s%s' % (prefix,separator, name))
     
     return new_name
+
+def get_node_name(node_type, description):
+    
+    return inc_name('%s_%s' % (node_type, description))
+
+def create_node(node_type, description):
+    
+    name = get_node_name(node_type, description)
+    new_name =  cmds.createNode(node_type, n = name)
+    
+    return new_name
+    
+def rename_node(node, description):
+    
+    node_type = cmds.nodeType(node)
+    node_name = get_node_name(node_type, description)
+    new_name = cmds.rename(node, node_name)
+    
+    return new_name
+    
 
 def prefix_hierarchy(top_group, prefix):
     """
@@ -1135,7 +1199,7 @@ def print_warning(string_value):
     
     string_value = string_value.replace('\n', '\nV:\t\t')
     OpenMaya.MGlobal.displayWarning('V:\t\t' + string_value)
-    vtool.util.record_temp_log('\n%s' % string_value)
+    vtool.util.record_temp_log('\nWarning!:  %s' % string_value)
 
 def add_to_set(nodes, set_name):
     
@@ -1150,8 +1214,9 @@ def add_to_set(nodes, set_name):
         
     cmds.sets(nodes, add = set_name)
     
-    
-
+def load_plugin(plugin_name):
+    if not cmds.pluginInfo(plugin_name, query = True, loaded = True):
+        cmds.loadPlugin(plugin_name)
 #--- file
 
 def get_scene_file(directory = False):
@@ -1166,6 +1231,8 @@ def get_scene_file(directory = False):
 def start_new_scene():
 
     cmds.file(new = True, f = True)
+    
+    cmds.flushIdleQueue()
 
 def open_file(filepath):
     
@@ -1324,6 +1391,22 @@ def remove_reference(reference_node):
     return
 
 #--- ui
+
+def get_progress_bar():
+    
+    gMainProgressBar = mel.eval('$tmp = $gMainProgressBar');
+    return gMainProgressBar
+
+def get_node_editors():
+    
+    found = []
+    
+    for panel in cmds.getPanel(type='scriptedPanel'):
+        if cmds.scriptedPanel(panel, query=True, type=True) == "nodeEditorPanel":
+            nodeEditor = panel + "NodeEditorEd"
+            found.append(nodeEditor)
+
+    return found
 
 def get_under_cursor(use_qt = True):
     """
