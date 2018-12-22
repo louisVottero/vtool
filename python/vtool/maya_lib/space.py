@@ -3477,6 +3477,18 @@ def find_transform_right_side(transform, check_if_exists = True):
             return other
     
     other = ''
+    
+    if transform.endswith('_l'):
+        
+        other = vtool.util.replace_string_at_end(transform, '_l','_r')
+        
+        if cmds.objExists(other) and check_if_exists:
+            return other
+        
+        if not check_if_exists:
+            return other
+    
+    other = ''
         
     if transform.startswith('L_') and not transform.endswith('_R'):
         
@@ -3486,6 +3498,8 @@ def find_transform_right_side(transform, check_if_exists = True):
             return other 
         if not check_if_exists:
             return other
+    
+    
     
     other = ''
     
@@ -3553,6 +3567,18 @@ def find_transform_left_side(transform,check_if_exists = True):
         
         if cmds.objExists(other) and check_if_exists:
             return other
+        if not check_if_exists:
+            return other
+
+    other = ''
+    
+    if transform.endswith('_r'):
+        
+        other = vtool.util.replace_string_at_end(transform, '_r','_l')
+        
+        if cmds.objExists(other) and check_if_exists:
+            return other
+        
         if not check_if_exists:
             return other
     
