@@ -1237,7 +1237,7 @@ class SplitMeshTarget(object):
             if bar.break_signaled():
                 break
                 
-            bar.inc()
+            bar.next()
                 
         bar.end()
         
@@ -1303,17 +1303,15 @@ class TransferWeight(object):
         mesh (str): The name of the mesh that is skinned with joints.
     """
     def __init__(self, mesh):
+        
+        self._original_mesh = mesh
         self.mesh = mesh
-
+        self._optimize_mesh = None
+        
+        
         self.vertices = []
         
-        if type(mesh) == str or type(mesh) == unicode:        
-            self.vertices = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
-        
-        if type(mesh) == list:
-            self.vertices = mesh
-            
-            self.mesh = mesh[0].split('.')[0]
+        self._get_vertices(mesh)
             
         skin_deformer = self._get_skin_cluster(self.mesh)
         
@@ -1322,24 +1320,83 @@ class TransferWeight(object):
         if skin_deformer:
             self.skin_cluster = skin_deformer
             
+    def _get_vertices(self, mesh):
+        if type(mesh) == str or type(mesh) == unicode:        
+            self.vertices = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
         
+        if type(mesh) == list:
+            self.vertices = mesh
+            
+            self.mesh = mesh[0].split('.')[0]
+            
     def _get_skin_cluster(self, mesh):
         
         skin_deformer = find_deformer_by_type(mesh, 'skinCluster')
         
         return skin_deformer
 
-    def _add_joints_to_skin(self, joints):
+    def _add_joints_to_skin(self, joints, mesh = None):
         
-        influences = get_influences_on_skin(self.skin_cluster)
+        skin = self.skin_cluster
+        
+        if mesh:
+            skin = self._get_skin_cluster(mesh) 
+            
+        
+        influences = get_influences_on_skin(skin)
         
         for joint in joints:
             
-            if not cmds.objExists(joint):
+            if not  cmds.objExists(joint):
                 continue
             
             if not joint in influences:
-                cmds.skinCluster(self.skin_cluster, e = True, ai = joint, wt = 0.0, nw = 1)
+                
+                cmds.skinCluster(skin, e = True, ai = joint, wt = 0.0, nw = 1)
+        
+    def set_optimize_mesh(self, percent):
+        #self.mesh
+        
+        self._optimize_mesh = cmds.duplicate(self.mesh)[0]
+        
+        cmds.polyReduce(self._optimize_mesh,  
+                                    ver = 1, 
+                                    trm =  0, 
+                                    shp = 0.5,
+                                    keepBorder = 0,
+                                    keepMapBorder = 0,
+                                    keepColorBorder = 0,
+                                    keepFaceGroupBorder = 0,
+                                    keepHardEdge = 0,
+                                    keepCreaseEdge = 0,
+                                    keepBorderWeight = 0.5,
+                                    keepMapBorderWeight = 0,
+                                    keepColorBorderWeight = 0,
+                                    keepFaceGroupBorderWeight = 0,
+                                    keepHardEdgeWeight =  0.5,
+                                    keepCreaseEdgeWeight = 0.5,
+                                    useVirtualSymmetry = 0,
+                                    symmetryTolerance = 0.01,
+                                    sx = 0,
+                                    sy = 1,
+                                    sz = 0,
+                                    sw = 0,
+                                    preserveTopology = 1,
+                                    keepQuadsWeight = 0,
+                                    vertexMapName = "",
+                                    cachingReduce = 1,
+                                    ch = 1,
+                                    p = percent, 
+                                    vct = 0,
+                                    tct = 0,
+                                    replaceOriginal = 1)
+        
+        skin_mesh_from_mesh(self.mesh, self._optimize_mesh)
+        
+        
+    def delete_optimize_mesh(self):
+        cmds.delete(self._optimize_mesh)
+                
         
     @core.undo_off
     def transfer_joint_to_joint(self, source_joints, destination_joints, source_mesh = None, percent =1):
@@ -1355,8 +1412,12 @@ class TransferWeight(object):
             percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
         
+
+        
         source_joints = vtool.util.convert_to_sequence(source_joints)
         destination_joints = vtool.util.convert_to_sequence(destination_joints)
+        
+        
         
         if vtool.util.get_env('VETALA_RUN') == 'True':
             if vtool.util.get_env('VETALA_STOP') == 'True':
@@ -1446,6 +1507,8 @@ class TransferWeight(object):
         
         cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
         
+        
+        
         for vert_index in weighted_verts:
             
             source_value = total_source_value[vert_index]
@@ -1521,7 +1584,7 @@ class TransferWeight(object):
                 
                 cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, joint_index), value)
                 
-            bar.inc()
+            bar.next()
             
             bar.status('transfer weight: %s of %s' % (inc, vert_count))
             
@@ -1536,10 +1599,14 @@ class TransferWeight(object):
         cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
         cmds.skinPercent(self.skin_cluster, self.vertices, normalize = True) 
         
+        
+        
         if not found_one:
             vtool.util.warning('Source mesh had no valid weight/joint associations for the given joints')
         
         vtool.util.show('Done: %s transfer joint to joint.' % self.mesh)
+        
+        
         
         bar.end()
          
@@ -1769,7 +1836,11 @@ class TransferWeight(object):
             power (int): The power to multiply the distance by. It amplifies the distnace, so that if something is closer it has a higher value, and if something is further it has a lower value exponentially.
             weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
-        
+        if self._optimize_mesh:
+            self.mesh = self._optimize_mesh
+            self.skin_cluster = self._get_skin_cluster(self._optimize_mesh)
+            self._get_vertices(self.mesh)
+            
         if vtool.util.get_env('VETALA_RUN') == 'True':
             if vtool.util.get_env('VETALA_STOP') == 'True':
                 return
@@ -1861,6 +1932,9 @@ class TransferWeight(object):
         joint_count = len(good_source_joints)
         
         self._add_joints_to_skin(new_joints)
+        if self._optimize_mesh:
+            self._add_joints_to_skin(new_joints, self._original_mesh)
+        
         joint_ids = get_skin_influences(self.skin_cluster, return_dict = True)
         
         cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
@@ -1971,7 +2045,7 @@ class TransferWeight(object):
                 
             bar.inc()
             
-            bar.status('transfer weight: %s of %s' % (inc, len(weighted_verts)))
+            bar.status('transfer weight from %s: %s of %s' % (joints, inc, len(weighted_verts)))
             
             if vtool.util.break_signaled():
                 break
@@ -1983,6 +2057,21 @@ class TransferWeight(object):
         
         cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
         
+        if self._optimize_mesh:
+            
+            cmds.skinCluster(self._original_mesh,  e = True, siv = joints)
+            selection = cmds.ls(sl = True)
+            
+            found = [self._optimize_mesh]
+            
+            for thing in selection:
+                if thing.find('.vtx') > -1:
+                    found.append(thing)
+            
+            cmds.select(found, r = True)
+            
+            cmds.copySkinWeights(noMirror = True, surfaceAssociation = 'closestPoint', influenceAssociation = 'closestJoint')
+            
         bar.end()
         vtool.util.show('Done: %s transfer %s to %s.' % (self.mesh, joints, new_joints))
          
@@ -3494,6 +3583,18 @@ def get_history(geometry):
     if not found:
         return None
     
+    return found
+
+def find_all_deformers(mesh):
+    
+    history = get_history(mesh)
+    
+    found = []
+    
+    for thing in history:
+        if cmds.objectType(thing, isAType = 'geometryFilter'):
+            found.append( thing )
+        
     return found
 
 def find_deformer_by_type(mesh, deformer_type, return_all = False):
