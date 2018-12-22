@@ -22,6 +22,19 @@ import util
 
 import time
 
+def get_permission(filepath):
+    
+    if os.access(filepath, os.R_OK | os.W_OK | os.X_OK ):
+        return True
+    
+    try:
+        os.chmod(filepath, 0775)
+        return True
+    except:
+                
+        #util.warning('Failed to get elevated permission on %s' % filepath)
+        return False
+
 def get_vetala_version():
     
     filepath = get_vetala_directory()
@@ -124,7 +137,7 @@ class FileManager(object):
         self.filepath = filepath
                 
         if not skip_warning:
-            self.warning_if_invlid_path('path is invalid')
+            self.warning_if_invlid_path('path is invalid: %s' % self.filepath)
                 
         self.open_file = None       
 
@@ -142,7 +155,12 @@ class FileManager(object):
         """
         self.warning_if_invalid_file('file is invalid')
         
-        self.open_file = open(self.filepath, 'w')
+        #if get_permission(self.filepath):
+        
+        try:
+            self.open_file = open(self.filepath, 'w')
+        except:
+            'Failed to write to file: %s. Check permissions' % self.filepath
         
     def append_file(self):
         """
@@ -350,6 +368,9 @@ class VersionFile(object):
         
     def _default_version_file_name(self):
         
+        if not self.version_name:
+            return
+        
         version_folder = self._get_version_folder()
         path = join_path(version_folder, self.version_name + '.default')
         
@@ -454,11 +475,17 @@ class VersionFile(object):
         
         filename = self._default_version_file_name()
         
-        self._save(filename)
+        if filename:
+            self._save(filename)
+        else:
+            util.warning('Could not save default.')
         
         return filename
     
     def has_default(self):
+        
+        if not self.version_name:
+            return False
         
         filename = self._default_version_file_name()
         if is_file(filename):
@@ -794,7 +821,16 @@ class SettingsFile(object):
         
         name = get_basename_no_extension(self.filepath)
         
+        
+        
         filepath = create_file(name+'.json', directory)
+        
+        if not filepath:
+            test_path = join_path(directory, name+'.json')
+            
+            if is_file(test_path):
+                filepath = test_path
+        
         
         return filepath
     
@@ -873,6 +909,7 @@ class SettingsFile(object):
         
         self.settings_order = data.keys()
         self.settings_dict = data
+        
         
     def _write(self):
         
@@ -983,11 +1020,22 @@ class SettingsFile(object):
         
         self._write()
     
+    def reload(self):
+        
+        self._read_json()
+    
     def set_directory(self, directory, filename = 'settings.json'):
         self.directory = directory
         
         #eventually after a lot of testing, can add a statement to delete old settings/data files
-        
+                
+        if filename == 'data.json':
+            old = join_path(directory, 'data.type')
+            if is_file(old):
+                self.filepath = old
+                self._read_json()
+                return
+                
         if filename == 'options.json':
             old_options = join_path(directory, 'options.txt')
             if is_file(old_options):
@@ -1332,7 +1380,9 @@ def get_basename(directory):
     Returns:
         str: The last part of the directory path.
     """
-    return os.path.basename(directory)
+    
+    if directory:
+        return os.path.basename(directory)
 
 def get_basename_no_extension(filepath):
     """
@@ -1344,6 +1394,9 @@ def get_basename_no_extension(filepath):
     Returns:
         str: The last part of the directory path, without any extensions.
     """
+    
+    if not filepath:
+        return
     
     basename = get_basename(filepath)
     
@@ -1777,10 +1830,16 @@ def get_file_text(filepath):
     Get the text directly from a file. One long string, no parsing.
     
     """
-
-    open_file = open(filepath, 'r')    
-    lines = open_file.read()
-    open_file.close()
+    lines = []
+    open_file = None
+    
+    try:
+        open_file = open(filepath, 'r')    
+        lines = open_file.read()
+        open_file.close()
+    except:
+        if open_file:
+            open_file.close()
     
     return lines
 
@@ -1820,12 +1879,6 @@ def get_text_lines(text):
         
     return lines
     
-def get_permission(filepath):
-    
-    try:
-        os.chmod(filepath, 0777)
-    except:
-        util.warning('Failed to get elevated permission on %s' % filepath)
 
 def exists(directory):
     
@@ -2506,6 +2559,8 @@ def copy_dir(directory, directory_destination, ignore_patterns = []):
                         directory_destination, 
                         ignore = shutil.ignore_patterns(ignore_patterns) )
     
+    
+    
     return directory_destination
     
 def copy_file(filepath, filepath_destination):
@@ -2646,46 +2701,59 @@ def load_python_module(module_name, directory):
         
 #--- code analysis
         
-def get_package_path_from_name(module_name, return_module_paths = False):
+def get_package_path_from_name(module_name, return_module_path = False):
     
     split_name = module_name.split('.')
     
-    path = None
+    if len(split_name) > 1:
+        sub_path = string.join(split_name[:-1], '/')
+    else:
+        sub_path = module_name
+    
+    paths = sys.path
+    
+    found_path = None
+    
+    for path in paths:
+    
+        test_path = join_path(path, sub_path)
+        
+        if is_dir(test_path):
+            found_path = path
+    
+    if not found_path:
+        return None
+    
+    test_path = found_path
+    good_path = ''
+    
+    inc = 0
     
     for name in split_name:
         
-        if path:
-            
-            test_path = join_path(path, name)
-            
-            if not is_dir(test_path):
-                
-                if not return_module_paths:
-                    return None
-                
-                if return_module_paths:
-                    test_path = join_path(path, '%s.py' % name)
-                    return test_path
-                
-            files = get_files(test_path)
-            
-            if '__init__.py' in files:
-                path = test_path
-            
-            if not '__init__.py' in files:
-                return None
+        if inc == len(split_name)-1:
+            if return_module_path:
+                good_path = join_path(good_path, '%s.py' % name)
+                break
         
-        if not path:
-            try:
-                module = imp.find_module(name)
+        test_path = join_path(test_path, name)
+        
+        if not is_dir(test_path):
+            continue
+        
+        files = get_files(test_path)
+        
+        if '__init__.py' in files:
+            good_path = test_path
+        
+        if not '__init__.py' in files:
+            return None
+        
+        
                 
-                path = module[1]
-                path = fix_slashes(path)
-                
-            except:
-                return None
-            
-    return path
+        inc += 1
+    
+    return good_path
     
 def get_line_class_map(lines):
     
@@ -2726,7 +2794,7 @@ def get_line_imports(lines):
                     if module_prefix:
                         module = '%s.%s' % (module_prefix, module)
                     
-                    module_path = get_package_path_from_name(module, return_module_paths=True)
+                    module_path = get_package_path_from_name(module, return_module_path=True)
                     
                     module_dict[namespace] = module_path
     
@@ -2789,6 +2857,9 @@ def get_defined_classes(module_path):
     
     defined = []
     defined_dict = {}
+    
+    if not file_text:
+        return None, None
     
     ast_tree = ast.parse(file_text)
     
@@ -2870,6 +2941,9 @@ def get_ast_class_sub_functions(module_path, class_name):
     
     defined, defined_dict = get_defined_classes(module_path)
 
+    if not defined:
+        return
+
     if class_name in defined:
         class_node = defined_dict[class_name]
         
@@ -2885,15 +2959,21 @@ def get_ast_class_sub_functions(module_path, class_name):
             
             for base in temp_bases:
                 
+                class_name = None
+                
                 #there was a case where base was an attribute and had no id...
+                #if hasattr(base, 'attr'):
+                #    attr_name = base.attr
+                
                 if hasattr(base, 'id'):
+                    class_name = base.id
                     
-                    if base.id in defined_dict:
-                        parents.append(defined_dict[base.id])
-                        
-                        sub_bases = parents[-1].bases
-                        if sub_bases:
-                            find_bases += sub_bases
+                if class_name and class_name in defined_dict:
+                    parents.append(defined_dict[class_name])
+                    
+                    sub_bases = parents[-1].bases
+                    if sub_bases:
+                        find_bases += sub_bases
                             
             bases = find_bases
         
@@ -2920,7 +3000,6 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
             
             skip_list.append(name)
             
-            
             stuff = get_ast_function_name_and_args(node)
             
             if stuff.startswith('_'):
@@ -2931,6 +3010,7 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
     found_parent_functions = []
         
     for parent in parents:
+        
         
         parent_functions = get_ast_class_members(parent, skip_list = skip_list)
         found_parent_functions += parent_functions
@@ -2943,11 +3023,17 @@ def get_ast_assignment(text, line_number, assignment):
     
     text = str(text)
     
+    if not text:
+        return
+    
+    ast_tree = None
+    
     try:
         ast_tree = ast.parse(text, 'string', 'exec')
     except:
-        return
-    
+        if not ast_tree:
+            return
+        
     line_assign_dict = {}
     
     value = None
@@ -3014,6 +3100,8 @@ def maya_batch_python_file(python_file_path):
     
     if util.is_in_maya():
         dirpath = os.environ['MAYA_LOCATION']
+    
+    
     
     if not dirpath:
         util.warning('Could not find Maya.')
