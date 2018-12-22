@@ -15,6 +15,20 @@ if vtool.util.is_in_maya():
 
 current_path = os.path.split(__file__)[0]
 
+try:
+    
+    custom_curve_path = vtool.util.get_custom('custom_curve_path', '')
+    
+    if custom_curve_path:
+        if vtool.util_file.is_dir(custom_curve_path):
+            curve_data = vtool.util_file.join_path(custom_curve_path, 'curve_data')
+            vtool.util_file.create_dir(curve_data)
+            vtool.util.show('Using custom curve directory: %s' % custom_curve_path)
+            current_path = custom_curve_path
+except:
+    vtool.util.warning('Could not load custom curves')
+
+
 class CurveToData(object):
     """
     Convenience for dealing with curve data.
@@ -572,6 +586,32 @@ def get_attribute_input(node_and_attribute, node_only = False):
             if node_only:
                 return connections[0].split('.')[0]
             
+def set_shapes_as_text_curves(transform, text_string):
+    
+    shapes = get_shapes(transform)
+    cmds.delete(shapes)
+    
+    text = cmds.textCurves(ch = 0, f = "Arial|w400|h-1", t = text_string)
+    
+    cmds.makeIdentity(text, apply = True, t = True)
+    
+    transforms = cmds.listRelatives(text, ad = True, type = 'transform')
+    
+    print transforms
+    
+    for text_transform in transforms:
+        shapes = get_shapes(text_transform)
+        
+        if not shapes:
+            continue
+        
+        for shape in shapes:
+            cmds.parent(shape, transform, r = True, s = True)
+            
+    cmds.delete(text)
+    
+    rename_shapes(transform)
+    
 def create_curve_type_attribute(node, value):
     
     if not cmds.objExists('%s.curveType' % node):
@@ -602,3 +642,5 @@ def rename_shapes(transform):
         
         cmds.rename(shape, '%sShape%s' % (transform, inc))
         inc += 1
+        
+    
