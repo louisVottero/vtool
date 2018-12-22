@@ -273,7 +273,7 @@ class TreeWidget(qt.QTreeWidget):
     def paintEvent(self, event):
         painter = qt.QPainter(self.viewport())
         self.drawTree(painter, event.region())
-        # in original implementation, it calls an inline function paintDropIndicator here
+        
         self.paintDropIndicator(painter)
     
     def paintDropIndicator(self, painter):
@@ -321,14 +321,18 @@ class TreeWidget(qt.QTreeWidget):
             if self.dropIndicatorPosition == self.AboveItem:
                 self.dropIndicatorRect = qt.QtCore.QRect(rect_left.left(), rect_left.top(), rect_right.right() - rect_left.left(), 0)
                 event.accept()
+                
             elif self.dropIndicatorPosition == self.BelowItem:
                 self.dropIndicatorRect = qt.QtCore.QRect(rect_left.left(), rect_left.bottom(), rect_right.right() - rect_left.left(), 0)
                 event.accept()
+                
             elif self.dropIndicatorPosition == self.OnItem:
                 self.dropIndicatorRect = qt.QtCore.QRect(rect_left.left(), rect_left.top(), rect_right.right() - rect_left.left(), rect.height())
                 event.accept()
+                
             else:
                 self.dropIndicatorRect = qt.QtCore.QRect()
+                
 
             self.model().setData(index, self.dropIndicatorPosition, qt.QtCore.Qt.UserRole)
         
@@ -1041,9 +1045,7 @@ class FileTreeWidget(TreeWidget):
         
         return util_file.join_path(self.directory, path_string)
 
-    def set_directory(self, directory, refresh = True):
-        
-        
+    def set_directory(self, directory, refresh = True, sub_path = None):
         
         self.directory = directory
         
@@ -1097,6 +1099,15 @@ class EditFileTreeWidget(DirectoryWidget):
         self.main_layout.addWidget(self.tree_widget)
         self.main_layout.addWidget(self.filter_widget)
                
+        self.edit_mode_button = qt.QPushButton('Edit')
+        self.edit_mode_button.setCheckable(True)
+        self.edit_mode_button.setMaximumWidth(100)
+        self.edit_mode_button.setMaximumHeight(20)
+        self.edit_mode_button.setMaximumWidth(40)
+        self.edit_mode_button.toggled.connect(self._edit_click)
+        
+        self.filter_widget.main_layout.addWidget(self.edit_mode_button)
+        self._edit_click(False)
         
         self.main_layout.addWidget(self.manager_widget)
         
@@ -1128,18 +1139,22 @@ class EditFileTreeWidget(DirectoryWidget):
     def refresh(self):
         self.tree_widget.refresh()
     
-    def set_directory(self, directory, sub = False):
+    def set_directory(self, directory, sub_path = ''):
         super(EditFileTreeWidget, self).set_directory(directory)
         
-        if not sub:
-            self.directory = directory
-            
-        self.tree_widget.set_directory(directory)
-        self.filter_widget.set_directory(directory)
+        self.filter_widget.set_directory(directory)    
+        self.tree_widget.set_directory(directory, sub_path = sub_path)
+        
         
         if hasattr(self.manager_widget, 'set_directory'):
             self.manager_widget.set_directory(directory)
-       
+    
+    def _edit_click(self, bool_value):
+        
+        self.tree_widget.setDragEnabled(bool_value)
+        self.tree_widget.setAcceptDrops(bool_value)  
+        self.tree_widget.setDropIndicatorShown(bool_value) 
+    
 class ManageTreeWidget(BasicWidget):
         
     def __init__(self):
@@ -1160,6 +1175,7 @@ class FilterTreeWidget( DirectoryWidget ):
         
         self.tree_widget = None
         self.emit_changes = True
+        self.update_tree = True
         
         super(FilterTreeWidget, self).__init__()
     
@@ -1172,20 +1188,36 @@ class FilterTreeWidget( DirectoryWidget ):
         self.sub_path_filter = qt.QLineEdit()
         self.sub_path_filter.setPlaceholderText('set sub path')
         self.sub_path_filter.textChanged.connect(self._sub_path_filter_changed)
+        self.sub_path_filter.textEdited.connect(self._sub_path_filter_edited)
+        
+        
         
         self.filter_names.textChanged.connect(self._filter_names)
                 
         self.main_layout.addWidget(self.filter_names)
         self.main_layout.addWidget(self.sub_path_filter)
         
-    def _filter_names(self, text):
+    def _filter_names(self, text, emit = True):
         
-        self.tree_widget.filter_names(text)
+        if self.update_tree:
+            self.tree_widget.filter_names(text)
         self.skip_name_filter = False
         
-        if self.emit_changes:
-            self.name_filter_changed.emit(text)
         
+        #self.emit_changes = False
+        #self.name_filter_changed.emit(text)
+        
+    def _sub_path_filter_edited(self):
+        
+        if not self.emit_changes:
+            return
+        
+        current_text = str( self.sub_path_filter.text() )
+        current_text = current_text.strip()
+        
+        
+        self.sub_path_changed.emit(current_text)
+            
     def _sub_path_filter_changed(self):
         
         current_text = str( self.sub_path_filter.text() )
@@ -1193,26 +1225,30 @@ class FilterTreeWidget( DirectoryWidget ):
         
         if not current_text:
             self.set_directory(self.directory)
-            self.tree_widget.set_directory(self.directory)
+            if self.update_tree:
+                self.tree_widget.set_directory(self.directory)
             
             text = self.filter_names.text()
-            self._filter_names(text)    
-            
+            self._filter_names(text)
             return
             
         sub_dir = util_file.join_path(self.directory, current_text)
+        
         if not sub_dir:
-            
             return
         
         if util_file.is_dir(sub_dir):
-            self.tree_widget.set_directory(sub_dir)
+            if self.update_tree:
+                self.tree_widget.set_directory(sub_dir)
             
             text = self.filter_names.text()
+            
             self._filter_names(text)    
             
         if self.emit_changes:
             self.sub_path_changed.emit(current_text)
+        
+    
         
     def get_sub_path_filter(self):
         return str(self.sub_path_filter.text())
@@ -1232,6 +1268,7 @@ class FilterTreeWidget( DirectoryWidget ):
                     
     def clear_sub_path_filter(self):
         self.sub_path_filter.setText('')
+        
 
     def clear_name_filter(self):
         self.filter_names.setText('')
@@ -1239,6 +1276,14 @@ class FilterTreeWidget( DirectoryWidget ):
     def set_tree_widget(self, tree_widget):
         self.tree_widget = tree_widget
     
+    def set_sub_path_warning(self, bool_value):
+        if bool_value:
+            if not util.is_in_maya():
+                self.sub_path_filter.setStyleSheet('background-color: rgb(255, 150, 150);')
+            if util.is_in_maya():
+                self.sub_path_filter.setStyleSheet('background-color: rgb(255, 100, 100);')
+        else:
+            self.sub_path_filter.setStyleSheet('')
     
         
 class FileManagerWidget(DirectoryWidget):
@@ -1684,6 +1729,8 @@ class OptionFileWidget(DirectoryWidget):
         if self.data_class:
             self.data_class.set_directory(self.directory)
             
+            self.tab_update()
+            
     def tab_update(self):
         return
             
@@ -1879,6 +1926,7 @@ class GetDirectoryWidget(DirectoryWidget):
         self.directory_edit = qt.QLineEdit()
         self.directory_edit.textChanged.connect(self._text_changed)
         directory_browse = qt.QPushButton('browse')
+        self.directory_browse_button = directory_browse
         
         directory_browse.clicked.connect(self._browser)
         
@@ -2453,10 +2501,6 @@ class CodeEditTabs(BasicWidget):
         
         title = self.tabs.tabText(index)
         
-        if not self.tabs.count() > index:
-            return
-        
-        
         
         widget = self.tabs.widget(index)
         widget.hide()
@@ -2671,8 +2715,12 @@ class CodeEditTabs(BasicWidget):
             
             if widget.text_edit.document().isModified():
                 found.append(widget.text_edit)
+                widget.text_edit.document().setModified(False)
         
         self.multi_save.emit(found, note)
+        
+                    
+                    
       
     def has_tabs(self):
         
@@ -2798,7 +2846,15 @@ class CodeEditTabs(BasicWidget):
                 
                 if self.code_floater_map.has_key(name):
                     self.code_floater_map.pop(name)                            
-                
+    
+    def _close_last_tab(self):
+        
+        tab_count = self.tabs.count()
+        
+        tab_index = tab_count-1
+        
+        self._close_tab(tab_index)
+    
     def _close_window(self, widget):
         name = widget.code_edit.text_edit.titlename
         
@@ -2815,8 +2871,17 @@ class CodeEditTabs(BasicWidget):
         
         tab_count = self.tabs.count()
         
-        for inc in range(0, tab_count):
-            self._close_tab(inc)
+        inc = 0
+        
+        while self.tabs.count():
+            
+            self._close_last_tab()
+            
+            if inc > tab_count+1:
+                break
+            
+            inc += 1
+            
             
     def close_windows(self):
         
@@ -2946,10 +3011,6 @@ class CodeEdit(BasicWidget):
         self._orig_window_title = None
         
         self._store_current_window_title()
-        
-        
-        
-
         
     def _build_widgets(self):
         
@@ -3198,11 +3259,10 @@ class CodeTextEdit(qt.QPlainTextEdit):
     
     def __init__(self):
         
+        self._text_edit_globals = {}
         self.filepath = None
         
         self._process_inst = None
-        
-        #code_text_size_signal.signal.connect(self._set_code_text_size)
         
         super(CodeTextEdit, self).__init__()
         
@@ -3216,6 +3276,9 @@ class CodeTextEdit(qt.QPlainTextEdit):
         
         shortcut_goto_line = qt.QShortcut(qt.QKeySequence(self.tr('Ctrl+l')), self)
         shortcut_goto_line.activated.connect(self._goto_line)
+        
+        duplicate_line = qt.QShortcut(qt.QKeySequence(self.tr('Ctrl+d')), self)
+        duplicate_line.activated.connect(self._duplicate_line)
         
         plus_seq = qt.QKeySequence( qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Plus)
         equal_seq = qt.QKeySequence( qt.QtCore.Qt.CTRL + qt.QtCore.Qt.Key_Equal)
@@ -3270,7 +3333,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
     def _code_text_size_change(self, value):
         self._set_text_size(value)
         
-        
     def _activate(self, value):
         pass
         
@@ -3313,7 +3375,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
             self.completer.activated.connect(self._activate)
         
         if self.completer:
-                        
+            
             if self.completer.popup().isVisible():
                     
                 if event.key() == qt.QtCore.Qt.Key_Enter:
@@ -3322,8 +3384,18 @@ class CodeTextEdit(qt.QPlainTextEdit):
                 if event.key() == qt.QtCore.Qt.Key_Return:
                     event.ignore()
                     return
-
+                if event.key() == qt.QtCore.Qt.Key_Escape:
+                    event.ignore()
+                    return
+                if event.key() == qt.QtCore.Qt.Key_Tab:
+                    event.ignore()
+                    return
+                if event.key() == qt.QtCore.Qt.Key_Backtab:
+                    event.ignore()
+                    return
         pass_on = True
+        
+        
         
         if event.modifiers() and qt.QtCore.Qt.ControlModifier:
             
@@ -3332,6 +3404,9 @@ class CodeTextEdit(qt.QPlainTextEdit):
                 pass_on = False
                 self._run()
                 return
+            
+        
+        
         
         if event.key() == qt.QtCore.Qt.Key_Backtab or event.key() == qt.QtCore.Qt.Key_Tab:
             self._handle_tab(event)
@@ -3340,6 +3415,8 @@ class CodeTextEdit(qt.QPlainTextEdit):
         if event.key() == qt.QtCore.Qt.Key_Enter or event.key() == qt.QtCore.Qt.Key_Return:
             self._handle_enter(event)
             pass_on = False
+            
+        
             
         if pass_on:
             super(CodeTextEdit, self).keyPressEvent(event)
@@ -3494,7 +3571,11 @@ class CodeTextEdit(qt.QPlainTextEdit):
             import maya.cmds as cmds
             builtins['cmds'] = cmds
         
+        
+        
         exec(text, globals(), builtins)
+        
+        
         
     def _goto_line(self):
         
@@ -3520,6 +3601,49 @@ class CodeTextEdit(qt.QPlainTextEdit):
         
         text_cursor.movePosition(move_type, text_cursor.MoveAnchor, (number+1))
         self.setTextCursor(text_cursor)
+        
+    def _duplicate_line(self):
+        
+        text_cursor = self.textCursor()
+        
+        
+        selected_text = text_cursor.selectedText()
+        
+        if not selected_text:
+        
+            text_cursor.beginEditBlock()
+            
+            text_cursor.movePosition(qt.QTextCursor.StartOfLine, qt.QTextCursor.MoveAnchor)
+            text_cursor.movePosition(qt.QTextCursor.EndOfLine, qt.QTextCursor.KeepAnchor)
+            
+            selected_text = text_cursor.selectedText()
+            text_cursor.movePosition(qt.QTextCursor.EndOfLine, qt.QTextCursor.MoveAnchor)
+            
+            text_cursor.insertBlock()
+            text_cursor.insertText(selected_text)
+            
+            text_cursor.movePosition(qt.QTextCursor.EndOfLine, qt.QTextCursor.MoveAnchor)
+            self.setTextCursor(text_cursor)
+            
+            text_cursor.endEditBlock()
+        
+        else:
+            text_cursor.beginEditBlock()
+            
+            text_cursor.setPosition(text_cursor.selectionEnd(), qt.QTextCursor.MoveAnchor)
+            self.setTextCursor(text_cursor)
+            
+            text_cursor.insertBlock()
+            position = text_cursor.position()
+            
+            text_cursor.insertText(selected_text)
+            end_position = text_cursor.position()
+            
+            text_cursor.setPosition(position, qt.QTextCursor.MoveAnchor)
+            text_cursor.setPosition(end_position, qt.QTextCursor.KeepAnchor)
+            self.setTextCursor(text_cursor)
+            
+            text_cursor.endEditBlock()
         
     def _zoom_in_text(self):
         font = self.font()
@@ -3611,6 +3735,16 @@ class CodeTextEdit(qt.QPlainTextEdit):
         
         if current_found:
             indent = len(current_found)
+        
+        colon_position = current_block_text.find(':')
+        comment_position = current_block_text.find('#')
+        
+        if colon_position > -1:
+            sub_indent = 4
+            if comment_position > -1 and comment_position < colon_position:
+                sub_indent = 0
+            
+            indent += sub_indent
         
         if cursor_position < indent:
             indent = (cursor_position - indent) + indent
@@ -4150,14 +4284,19 @@ class PythonHighlighter (qt.QSyntaxHighlighter):
     """Syntax highlighter for the Python language.
     """
     # Python keywords
+    
+    
     keywords = [
         'and', 'assert', 'break', 'class', 'continue', 'def',
         'del', 'elif', 'else', 'except', 'exec', 'finally',
         'for', 'from', 'global', 'if', 'import', 'in',
         'is', 'lambda', 'not', 'or', 'pass', 'print',
         'raise', 'return', 'try', 'while', 'yield',
-        'None', 'True', 'False', 'process'
+        'None', 'True', 'False', 'process', 'show'
     ]
+
+    if util.is_in_maya():
+        keywords += ['cmds', 'pm', 'mc', 'pymel']
 
     # Python operators
     operators = [
@@ -4299,12 +4438,12 @@ class PythonCompleter(qt.QCompleter):
         
         self.string_model =qt.QStringListModel(self.model_strings, self)
         
+        
+        
         self.setCompletionMode(self.PopupCompletion)
-        #self.setCompletionMode(self.Un)
-        #self.setCompletionMode(self.InlineCompletion)
-        self.setCaseSensitivity(qt.QtCore.Qt.CaseSensitive)
+        
+        self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
         self.setModel(self.string_model)
-        self.setModelSorting(self.CaseInsensitivelySortedModel)
         self.setWrapAround(False)
         self.activated.connect(self._insert_completion)
         
@@ -4321,8 +4460,6 @@ class PythonCompleter(qt.QCompleter):
         self.current_sub_functions = None
         
         self.last_column = 0
-        
-        
         
     def keyPressEvent(self):
         return
@@ -4368,8 +4505,11 @@ class PythonCompleter(qt.QCompleter):
             
             for python_file in python_files:
                 
-                if python_file == '__init__.py':
+                #if python_file == '__init__.py':
+                #    continue
+                if python_file.startswith('__'):
                     continue
+                
                 
                 python_file_name = python_file.split('.')[0]
                 
@@ -4389,9 +4529,11 @@ class PythonCompleter(qt.QCompleter):
         if completion_string == self.completionPrefix():
             return
         
-        extra = len(completion_string) - len(self.completionPrefix() )
+        extra = len(self.completionPrefix())
         
-        cursor.insertText( completion_string[-extra:] )
+        cursor.movePosition(qt.QTextCursor.Left,cursor.KeepAnchor,extra)
+        cursor.removeSelectedText()
+        cursor.insertText( completion_string) 
         
         
         widget.setTextCursor(cursor)
@@ -4456,7 +4598,7 @@ class PythonCompleter(qt.QCompleter):
             passed = self.handle_import_load(text, cursor)
             if passed:
                 return True
-
+            
         return False
     
     def handle_import(self, text):
@@ -4472,9 +4614,12 @@ class PythonCompleter(qt.QCompleter):
         m = re.search('(from|import)(?:\s+?)(\w*.?\w*)\.(\w*)$', text)
         
         if m:
+            
             if column < m.end(2):
                 return False
+            
             from_module = m.group(2)
+            
             module_path = util_file.get_package_path_from_name(from_module)
             last_part = m.group(3)
             
@@ -4482,7 +4627,7 @@ class PythonCompleter(qt.QCompleter):
                 defined = self.get_imports(module_path)
             
                 self.string_model.setStringList(defined)
-            
+                
                 self.setCompletionPrefix(last_part)
                 self.popup().setCurrentIndex(self.completionModel().index(0,0))
                 
@@ -4519,7 +4664,6 @@ class PythonCompleter(qt.QCompleter):
             
             text = self.widget().toPlainText()
             lines = util_file.get_text_lines(text)
-            
             
             path = None
             
@@ -4591,8 +4735,7 @@ class PythonCompleter(qt.QCompleter):
     
                     #if not last_part in imports:
                     #    module_name = None
-                
-                
+                    
                 if path and not sub_part:
                     test_text = ''
                     defined = None
@@ -4618,6 +4761,9 @@ class PythonCompleter(qt.QCompleter):
                     
                     self.string_model.setStringList(defined)
                     self.setCompletionPrefix(test_text)
+                    
+                    self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
+                     
                     self.popup().setCurrentIndex(self.completionModel().index(0,0))
                     return True
     
@@ -4633,7 +4779,8 @@ class PythonCompleter(qt.QCompleter):
                         
                     if not sub_functions:
                         sub_functions = util_file.get_ast_class_sub_functions(path, sub_part)
-                        self.current_sub_functions = sub_functions
+                        if sub_functions:
+                            self.current_sub_functions = sub_functions
                     
                     self.last_path_and_part = [path, sub_part]
                     
@@ -4970,15 +5117,7 @@ class AddRemoveDirectoryList(AddRemoveList):
         if name in self._define_defaults():
             return item
         
-        #settings = util_file.SettingsFile()
-        #settings.set_directory(self.directory, 'data.json')
-        #data_type = settings.get('data_type')
-        
         util_file.create_dir(name, sub_path)
-        
-        #settings = util_file.SettingsFile()
-        #settings.set_directory(self.directory, 'data.type')
-        #settings.set('sub_folder', folder)
         
         return item
     
@@ -5090,7 +5229,7 @@ class AddRemoveDirectoryList(AddRemoveList):
         
         settings = util_file.SettingsFile()
         
-        settings.set_directory(self.directory, 'data.type')
+        settings.set_directory(self.directory, 'data.json')
         
         folder = str(settings.get('sub_folder'))
         
@@ -5369,9 +5508,10 @@ class CompactHistoryWidget(BasicWidget):
     
     def save_default_command(self):
         
-        self.version_inst.save_default()
+        filename = self.version_inst.save_default()
         
-        self.load_default.show()
+        if filename:
+            self.load_default.show()
         
     
 class DefineControlNameWidget(Group):
@@ -5769,6 +5909,71 @@ class TimelineWidget(qt.QWidget):
         self.skip_random = True
         self.values = value_list
         
+class SelectTreeItemDelegate(qt.QStyledItemDelegate):
+    
+    def __init__(self):
+        super(SelectTreeItemDelegate, self).__init__()
+        
+        
+        
+    
+    def set_text_offset(self, value):
+        
+        self.text_offset = value
+    
+    def paint(self, painter, option, model_index):
+        
+        painter.save()
+        
+        custom_draw = False
+        
+        if option.state & qt.QStyle.State_Selected:
+             
+            var = model_index.model()
+            color = var.data(model_index, qt.QtCore.Qt.BackgroundRole)
+            
+            
+            text = var.data(model_index, qt.QtCore.Qt.DisplayRole)
+            
+            
+            if color:
+                orig_color = color.color()
+                
+                if orig_color.red() > 0 or orig_color.green() > 0 or orig_color.blue() > 0:    
+                    
+                    select_color = qt.QColor(62,134,208, 255)
+                    
+                    offset = .5
+                    
+                    new_color = qt.QColor( select_color.red() * (1-offset) + orig_color.red() * offset,
+                                           select_color.green() * (1-offset) + orig_color.green() * offset,
+                                           select_color.blue() * (1-offset) + orig_color.blue() * offset,
+                                           orig_color.alpha() )
+                    
+                    custom_draw = True
+            
+
+        if custom_draw:
+            font = painter.font()
+            font.setBold(False)
+            font.setWeight(4)
+            painter.setFont(font)
+            
+            #bound_rect = qt.QPainter.boundingRect()
+            painter.fillRect(option.rect, new_color)
+            
+            rect = option.rect
+            
+            if util.is_in_maya():
+                rect.adjust(3,1,1,1)
+            else:
+                rect.adjust(3,1,1,1)
+                
+            painter.drawText(option.rect, qt.QtCore.Qt.AlignJustify, text)
+        else:
+            qt.QStyledItemDelegate.paint(self, painter, option, model_index)
+        
+        painter.restore()
   
 def get_comment(parent = None,text_message = 'add comment', title = 'save', comment_text = ''):
     
