@@ -624,13 +624,19 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     """
     parent = cmds.listRelatives(curve, p = True)
     
-    u,v = geo.get_closest_uv_on_mesh_at_curve(attach_mesh, curve)
-    follicle, follicle_shape = create_follicle(curve, hair_system, [u,v])
     
+    
+    if attach_mesh:
+        
+        u,v = geo.get_closest_uv_on_mesh_at_curve(attach_mesh, curve)
+        follicle, follicle_shape = create_follicle(curve, hair_system, [u,v])
+    else:
+        follicle, follicle_shape = create_follicle(curve, hair_system, [0,0])
+        
     if attach_mesh:
         cmds.connectAttr('%s.outMesh' % attach_mesh, '%s.inputMesh' % follicle_shape)
         cmds.connectAttr('%s.worldMatrix' % attach_mesh, '%s.inputWorldMatrix' % follicle_shape)
-        
+     
     cmds.connectAttr('%s.worldMatrix' % curve, '%s.startPositionMatrix' % follicle_shape)
     cmds.connectAttr('%s.local' % curve, '%s.startPosition' % follicle_shape)
         
@@ -879,6 +885,24 @@ def nConstrain_to_mesh(verts, mesh, name = None, force_passive = False,):
         nodes = vtool.util.convert_to_sequence(nodes)
     
     return nodes + nodes1
+
+def nConstrain_verts(verts, name = None, force_passive= False):
+
+    nodes1 = []
+    
+    cmds.select(cl = True)
+    
+    cmds.select(verts)
+    nodes = mel.eval('createNConstraint pointToPoint 0;')
+    
+    if name:
+        
+        parent = cmds.listRelatives(nodes[0], p = True)[0]
+        nodes = cmds.rename(parent, 'dynamicConstraint_%s' % name)
+        nodes = vtool.util.convert_to_sequence(nodes)
+    
+    return nodes + nodes1
+
 
 def create_cloth_input_meshes(deform_mesh, cloth_mesh, parent, attribute):
     
