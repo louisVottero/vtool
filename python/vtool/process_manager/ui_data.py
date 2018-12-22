@@ -17,7 +17,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
     def __init__(self):
         
         self.data_tree_widget = None
-        self.last_directory = None
         self.data_label = None
         super(DataProcessWidget, self).__init__()
         
@@ -39,6 +38,9 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.datatype_widget = DataTypeWidget()
         self.datatype_widget.data_added.connect(self._add_data)
         
+        
+        
+        
         splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)   
         self.main_layout.addWidget(splitter, stretch = 1)
                 
@@ -55,6 +57,11 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.data_widget.hide()
         
         self.data_widget.data_updated.connect(self._data_updated)
+        self.data_widget.copy_to_top.connect(self._copy_to_top)
+        self.data_widget.copy_from_top.connect(self._copy_from_top)
+        
+        self.data_widget.open_sub_folder.connect(self._open_sub_folder)
+        
         
         self.main_layout.addWidget(self.label, alignment = qt.QtCore.Qt.AlignCenter)
         self.main_layout.addWidget(self.data_widget)
@@ -67,6 +74,43 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.data_tree_widget.update_item(item)
         self._set_title()
+        
+    def _copy_to_top(self):
+        
+        folder_name = self.data_widget.list.get_selected_item()
+        
+        process_inst = process.Process()
+        process_inst.set_directory(self.directory)
+        
+        data_name = self.data_tree_widget.current_name
+        
+        process_inst.copy_sub_folder_to_data(folder_name, data_name)
+        
+    def _copy_from_top(self):
+        
+        folder_name = self.data_widget.list.get_selected_item()
+        
+        process_inst = process.Process()
+        process_inst.set_directory(self.directory)
+        
+        data_name = self.data_tree_widget.current_name
+        
+        process_inst.copy_data_to_sub_folder(data_name, folder_name)
+        
+    def _open_sub_folder(self):
+        
+        folder_name = self.data_widget.list.get_selected_item()
+        data_name = self.data_tree_widget.current_name
+        
+        
+        
+        process_inst = process.Process()
+        
+        if not process_inst.has_sub_folder(data_name, folder_name):
+            folder_name = None
+        
+        process_inst.set_directory(self.directory)
+        process_inst.open_data(data_name, folder_name)
         
     def _set_title(self, title = None):
         
@@ -85,7 +129,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
             name = None
         
         if name:
-            print title, name
             self.label.setText(title + '                 sub folder:   ' + name)
             
             self.label.show()
@@ -188,21 +231,22 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
     def set_directory(self, directory):
         super(DataProcessWidget, self).set_directory(directory)
 
-        if directory == self.last_directory:
-            return
-
         self.data_tree_widget.set_directory(directory)
         
         self.datatype_widget.set_directory( directory )
         
-        self.last_directory = directory
         
     def clear_data(self):
         self.set_directory('')
 
 class DataWidget(vtool.qt_ui.BasicWidget):
     
+    copy_to_top = qt.create_signal()
+    copy_from_top = qt.create_signal()
+    
     data_updated = vtool.qt_ui.create_signal()
+    
+    open_sub_folder = vtool.qt_ui.create_signal()
     
     def __init__(self,parent = None, scroll = False):
         self.file_widget = None
@@ -240,6 +284,17 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         widget.deleteLater()
         del widget
         
+    def _copy_to_top(self):
+        self.copy_to_top.emit()
+        
+    
+    def _copy_from_top(self):
+        self.copy_from_top.emit()
+        
+        
+    def _open_sub_folder(self):
+        self.open_sub_folder.emit()
+        
     def remove_file_widget(self):
         if not self.file_widget:
             return
@@ -259,9 +314,13 @@ class DataWidget(vtool.qt_ui.BasicWidget):
     def add_list(self):
         if not self.list:
             self.list = SubFolders()
+            self.list.copy_to_top_signal.connect(self._copy_to_top)
+            self.list.copy_from_top_signal.connect(self._copy_from_top)
             self.list.setMaximumWidth(200)
             
-            self.main_layout.addWidget(self.list)
+            self.list.list.itemDoubleClicked.connect(self._open_sub_folder)
+            
+            self.main_layout.insertWidget(0, self.list)
             
             self.list.item_update.connect(self._set_file_widget_directory)
     
@@ -269,7 +328,7 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         
         self.remove_file_widget()
         
-        self.main_layout.insertWidget(0, widget)
+        self.main_layout.addWidget(widget)
         self.file_widget = widget
         if self.directory:
             self._set_file_widget_directory()
@@ -289,12 +348,54 @@ class DataWidget(vtool.qt_ui.BasicWidget):
         if self.list:
             self.list.set_directory(directory)
         self._set_file_widget_directory()
+        
 
 class SubFolders(vtool.qt_ui.AddRemoveDirectoryList):
     
+    copy_to_top_signal = qt.create_signal()
+    copy_from_top_signal = qt.create_signal()
+    
     def _define_defaults(self):
         return ['-top folder-']
+    
+    def _item_menu(self, position):
+        
+        
+        item = self.list.itemAt(position)
+        
+        if item:
+            name = str(item.text())
+            
+            if name in self._define_defaults():
+                self.copy_to_top.setVisible(False)
+                self.copy_from_top.setVisible(False)
+                return
+            
+            self.copy_to_top.setVisible(True)
+            self.copy_from_top.setVisible(True)
+            
+        if not item:
+            self.copy_to_top.setVisible(False)
+            self.copy_from_top.setVisible(False)
+        
+        super(SubFolders, self)._item_menu(position)
+        
+        
+    def _create_context_menu(self):
+        super(SubFolders, self)._create_context_menu()
+        
+        self.context_menu.addSeparator() 
+        self.copy_to_top = self.context_menu.addAction('Copy this to Top Folder')
+        self.copy_from_top = self.context_menu.addAction('Copy from Top Folder to this')
+        self.copy_to_top.triggered.connect(self._copy_to_top)
+        self.copy_from_top.triggered.connect(self._copy_from_top)
+        
 
+    def _copy_to_top(self):
+        self.copy_to_top_signal.emit()
+    
+    def _copy_from_top(self):
+        self.copy_from_top_signal.emit()
 
 class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     
@@ -475,7 +576,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             item = qt.QTreeWidgetItem()
             item.setText(0, foldername)
             
-            sub_folder, data_type = process_tool.get_data_sub_and_type(foldername)
+            sub_folder, data_type = process_tool.get_data_current_sub_folder_and_type(foldername)
             
             if not data_name_map.has_key(data_type):
                 vtool.util.warning('Data folder %s has no data type.' % foldername)
@@ -484,7 +585,10 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             else:
                 nice_name = data_name_map[data_type]
             
-            group = data_type.split('.')[0]
+            group = ''
+            
+            if data_type:
+                group = data_type.split('.')[0]
             
             group = group.capitalize()
             
@@ -531,7 +635,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         folder = str(item.text(0))
         size_thread.run(data_dir, folder, item)
         
-        sub = process_tool.get_data_sub_folder(folder)
+        sub = process_tool.get_data_current_sub_folder(folder)
         item.setText(1, sub)
         
     def get_item_path_string(self, item):
@@ -1129,7 +1233,7 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
     def _import_data(self):
         
-        if not vtool.util_file.exists(self.data_class.filepath):
+        if not vtool.util_file.exists(self.data_class.get_file()):
             
             vtool.qt_ui.warning('No data to import.', self)
             return
@@ -1725,7 +1829,7 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         return saved
     
     def _open_file(self):
-        
+                
         if not vtool.util_file.is_file(self.data_class.get_file()):
             vtool.qt_ui.warning('No data to open. Please save once.', self)
             return
@@ -1753,6 +1857,7 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         self.data_class.open()
         
     def _import_file(self):
+
         if not vtool.util_file.is_file(self.data_class.get_file()):
             vtool.qt_ui.warning('No data to import. Please save once.', self)
             return
