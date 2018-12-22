@@ -68,6 +68,7 @@ class DataManager(object):
 class DataFolder(util_file.FileManager):
     
     def __init__(self, name, filepath):
+        
         super(DataFolder, self).__init__(filepath)
         
         new_path = util_file.join_path(filepath, name)
@@ -95,7 +96,7 @@ class DataFolder(util_file.FileManager):
         if not self.settings:
             self._load_folder()
         
-        self.settings.set_directory(folder, 'data.type')
+        self.settings.set_directory(folder, 'data.json')
         
     def _set_default_settings(self):
         
@@ -103,8 +104,9 @@ class DataFolder(util_file.FileManager):
         self._set_settings_path(self.folder_path)
         
         self.settings.set('name', self.name)
+        
         data_type = self.settings.get('data_type')
-        #self.settings.set('data_type', str(data_type))
+        
         self.data_type = data_type
         
     def _create_folder(self):
@@ -122,6 +124,9 @@ class DataFolder(util_file.FileManager):
                 
     def get_data_type(self):
         
+        if self.settings:
+            self.settings.reload()
+        
         if not self.settings:
             self._load_folder()
         
@@ -129,9 +134,11 @@ class DataFolder(util_file.FileManager):
     
     def set_data_type(self, data_type):
         
+        
+        
         if not self.settings:
             self._load_folder()
-
+            
         self.data_type = data_type
         self.settings.set('data_type', str(data_type))
         
@@ -171,7 +178,12 @@ class DataFolder(util_file.FileManager):
 
         self.settings.set('data_type', str(self.data_type))
  
+    
+ 
     def get_folder_data_instance(self):
+        """
+        This gets the data instance for this data.  Data instance is the class that works on the data in this directory.
+        """
         
         if not self.settings:
             self._load_folder()
@@ -200,8 +212,8 @@ class DataFolder(util_file.FileManager):
             instance.set_directory(self.folder_path)
             instance.set_name(self.name)
             
-        
         return instance
+    
     
     def rename(self, new_name):
         
@@ -368,19 +380,14 @@ class FileData(Data):
         
         name = self.name
         
-        #if self._sub_folder:
-        #    name = self._sub_folder
-        
         if self.data_extension:
             return '%s.%s' % (name, self.data_extension)
         if not self.data_extension:
             return name
 
-
-
     def set_directory(self, directory):
         self.directory = directory
-        self.settings.set_directory(self.directory, 'data.type')
+        self.settings.set_directory(self.directory, 'data.json')
         self.name = self.settings.get('name')
         
         self.get_sub_folder()
@@ -391,10 +398,13 @@ class FileData(Data):
             self.filepath = util_file.join_path(directory, self.name)
 
     def get_file(self):
-        
+        """
+        This will get the data file taking into account the currently set sub folder
+        """
         directory = self.directory
         
         filename = self._get_file_name()
+        
         
         if self._sub_folder:
             directory = util_file.join_path(self.directory, '.sub/%s' % self._sub_folder)
@@ -403,12 +413,25 @@ class FileData(Data):
         
         return filepath
     
-    def get_folder(self):
+    def get_file_direct(self, sub_folder = None):
+        """
+        This will get the data file and optionally the sub folder if a name is given.
+        """
         
         directory = self.directory
         
-        #if self._sub_folder:
-        #    directory = util_file.join_path(self.directory, '.sub/%s' % self._sub_folder)
+        filename = self._get_file_name()
+        
+        if sub_folder:
+            directory = util_file.join_path(self.directory, '.sub/%s' % sub_folder)
+        
+        filepath = util_file.join_path(directory, filename)
+        
+        return filepath
+        
+    def get_folder(self):
+        
+        directory = self.directory
         
         return directory
 
@@ -968,7 +991,7 @@ class SkinWeightData(MayaCustomData):
         return False
     
     def _export_ref_obj(self, mesh, data_path):
-        cmds.loadPlugin( 'objExport' )
+        maya_lib.core.load_plugin('objExport')
         
         #export mesh
         value = maya_lib.deform.get_skin_envelope(mesh)
@@ -1011,14 +1034,15 @@ class SkinWeightData(MayaCustomData):
         
         if not filepath:
             path = self.get_file()
-            #path = util_file.join_path(self.directory, self.name)
         if filepath:
             path = filepath
         
         selection = cmds.ls(sl = True)
         
         if selection:
+            
             folders = selection
+            
             
         if not selection:
             folders = util_file.get_folders(path)
@@ -1038,9 +1062,9 @@ class SkinWeightData(MayaCustomData):
                 mesh = mesh.replace('-', ':')
             
             if folder.find('.') > -1:
-                mesh = folder.replace('.', '|')
+                mesh = mesh.replace('.', '|')
                 
-                mesh = '|' + mesh
+                #mesh = '|' + mesh
                 
             if not cmds.objExists(mesh):
                 
@@ -1060,7 +1084,11 @@ class SkinWeightData(MayaCustomData):
             found_meshes[mesh] = None
             mesh_dict[folder] = mesh
         
+        
+        
         for folder in folders:
+            
+            
             
             if not cmds.objExists(folder):
                 continue
@@ -1086,12 +1114,8 @@ class SkinWeightData(MayaCustomData):
             
             for mesh in meshes:
                 
-                
-                
                 self.import_skin_weights(folder_path, mesh)
-        
-           
-    
+                
         maya_lib.core.print_help('Imported %s data' % self.name)
                 
         self._center_view()
@@ -1103,9 +1127,25 @@ class SkinWeightData(MayaCustomData):
             short_name = short_name[0]
     
         util.show('\nImporting skinCluster weights on: %s' % short_name)
-    
+        
         if not util_file.is_dir(directory):
-            return False
+            
+            
+            mesh_name = util_file.get_basename(directory)
+            
+            mesh_name = mesh_name.replace(':', '-')
+            mesh_name = mesh_name.replace('|', '.')
+            if mesh_name.startswith('.'):
+                mesh_name = mesh_name[1:]
+            
+            base_path = util_file.get_dirname(directory)
+            directory = util_file.join_path(base_path, mesh_name)
+            
+            if not util_file.is_dir(directory):
+                
+                return False
+        
+        util.show('Importing from directory: %s' % directory)
         
         influence_dict = self._get_influences(directory)
 
@@ -1143,6 +1183,7 @@ class SkinWeightData(MayaCustomData):
                     mesh = orig_mesh
                 if mesh_match:
                     cmds.delete(orig_mesh)
+                
                 
         skin_cluster = maya_lib.deform.find_deformer_by_type(mesh, 'skinCluster')
         
@@ -1304,13 +1345,14 @@ class SkinWeightData(MayaCustomData):
             thing_filename = thing
             
             if thing.find('|') > -1:
-                thing = cmds.ls(thing, l = True)[0]
+                #thing = cmds.ls(thing, l = True)[0]
                 
                 thing_filename = thing_filename.replace('|', '.')
-                thing_filename = thing_filename[1:]
+                if thing_filename.startswith('.'):
+                    thing_filename = thing_filename[1:]
             
-            if thing.find(':') > -1:
-                thing_filename = thing.replace(':', '-')
+            if thing_filename.find(':') > -1:
+                thing_filename = thing_filename.replace(':', '-')
             
             util.show('Exporting weights on %s' % thing)
             
@@ -1329,6 +1371,11 @@ class SkinWeightData(MayaCustomData):
                     util_file.delete_dir(thing_filename, path)
                 
                 geo_path = util_file.create_dir(thing_filename, path)
+                
+                if not geo_path:
+                    util.error('Please check! Unable to create skin weights directory: %s in %s' % (thing_filename, path))
+                    continue
+                    
                 
                 weights = maya_lib.deform.get_skin_weights(skin)
                                 
@@ -1617,49 +1664,38 @@ class DeformerWeightData(MayaCustomData):
         
         for mesh in meshes:
             
-            clusters = maya_lib.deform.find_deformer_by_type(mesh, 'cluster', return_all = True)
-            wires = maya_lib.deform.find_deformer_by_type(mesh, 'wire', return_all = True)
-            delta_mushes = maya_lib.deform.find_deformer_by_type(mesh, 'deltaMush', return_all = True)
+            deformers = maya_lib.deform.find_all_deformers(mesh)
             
-            if not clusters:
-                clusters = []
-            if not wires:
-                wires = []
-            if not delta_mushes:
-                delta_mushes = []
             
-            deformers = clusters + wires + delta_mushes
             
             if not deformers:
-                util.warning('Did not find a cluster or wire deformer on %s.' % mesh)
+                util.warning('Did not find a weighted deformer on %s.' % mesh)
                 continue
-            
-            info_lines = []
-            
+                        
             for deformer in deformers:
+                if cmds.objectType(deformer, isAType = 'weightGeometryFilter'):
+            
+                    info_lines = []
                 
-                
-                indices = maya_lib.attr.get_indices('%s.input' % deformer)
-                
-                
-                for index in indices:
-                    weights = maya_lib.deform.get_deformer_weights(deformer, index)
+                    indices = maya_lib.attr.get_indices('%s.input' % deformer)
                     
                     filepath = util_file.create_file('%s.weights' % deformer, path)
                     
                     if not filepath:
                         return
                     
+                    for index in indices:
+                        weights = maya_lib.deform.get_deformer_weights(deformer, index)
+                        
+                        info_lines.append(weights)
+                        
+                        found_one = True
+                    
                     write_info = util_file.WriteFile(filepath)
                     
-                    info_lines.append(weights)
-                
-                    found_one = True
-                    
-                write_info.write(info_lines)
-                util.show('Exported weights on %s.' % deformer)
-                
-    
+                    write_info.write(info_lines)
+            
+                    util.show('Exported weights on %s.' % deformer) 
     
         if not found_one:
             util.warning('Found no deformers to export weights.')
@@ -2419,9 +2455,8 @@ class MayaAttributeData(MayaCustomData):
         return selection
     
     def _get_attributes(self, node):
-        attributes = cmds.listAttr(node, scalar = True, m = True)
+        attributes = cmds.listAttr(node, scalar = True, m = True, array = True)        
         
-         
         return attributes
     
     def _get_shapes(self, node):
@@ -2442,6 +2477,8 @@ class MayaAttributeData(MayaCustomData):
         path = self.get_file()
         
         selection = cmds.ls(sl = True)
+
+        bad = False
         
         if selection:
             files = selection
@@ -2463,7 +2500,8 @@ class MayaAttributeData(MayaCustomData):
 
             if not cmds.objExists(node_name):
                 
-                util.warning( 'Skipping attribute import for %s. It does not exist.' % node_name ) 
+                util.warning( 'Skipping attribute import for %s. It does not exist.' % node_name )
+                bad = True 
                 continue
             
             lines = util_file.get_file_lines(filepath)
@@ -2479,6 +2517,7 @@ class MayaAttributeData(MayaCustomData):
                 
                 if not cmds.objExists(attribute):
                     util.warning('%s does not exists. Could not set value.' % attribute)
+                    bad = True
                     continue
                 
                 if maya_lib.attr.is_locked(attribute):
@@ -2488,15 +2527,26 @@ class MayaAttributeData(MayaCustomData):
                     if not maya_lib.attr.is_keyed(attribute):
                         continue
                 
+                if line_list[1] == None:
+                    continue
                 
                 try:
-                    cmds.setAttr(attribute, line_list[1])    
+                    attr_type = cmds.getAttr(attribute, type = True)
+                    if attr_type.find('Array') > -1:
+                        cmds.setAttr(attribute, line_list[1], type = attr_type)
+                    else:
+                        cmds.setAttr(attribute, line_list[1])
                 except:
                     util.warning('\tCould not set %s to %s.' % (attribute, line_list[1]))
                     
                 #util.show('Imported %s\t\t %s' % (attribute, line_list[1]))
         
         cmds.select(selection)
+        
+        if not bad:
+            maya_lib.core.print_help('Imported Attributes')
+        if bad:
+            maya_lib.core.print_help('Imported Attributes with some warnings')
         
         #self._center_view()
 
@@ -2715,6 +2765,10 @@ class MayaFileData(MayaCustomData):
             
     def import_data(self, filepath = None):
         
+        if not util.is_in_maya():
+            util.warning('Data must be accessed from within maya.')
+            return
+        
         if open == True:
             self.open(filepath)
         
@@ -2744,7 +2798,11 @@ class MayaFileData(MayaCustomData):
         return top_transforms
         
     def open(self, filepath = None):
-                
+
+        if not util.is_in_maya():
+            util.warning('Data must be accessed from within maya.')
+            return
+       
         open_file = None
         
         if filepath:
@@ -2779,6 +2837,10 @@ class MayaFileData(MayaCustomData):
         return top_transforms
         
     def save(self, comment):
+        
+        if not util.is_in_maya():
+            util.warning('Data must be accessed from within maya.')
+            return
         
         if not comment:
             comment = '-'
@@ -2827,6 +2889,10 @@ class MayaFileData(MayaCustomData):
         
     def export_data(self, comment):
         
+        if not util.is_in_maya():
+            util.warning('Data must be accessed from within maya.')
+            return
+        
         filepath = self.get_file()
                 
         util_file.get_permission(filepath)
@@ -2856,6 +2922,10 @@ class MayaFileData(MayaCustomData):
         maya_lib.core.print_help('Exported %s data.' % self.name)
 
     def maya_reference_data(self, filepath = None):
+        
+        if not util.is_in_maya():
+            util.warning('Data must be accessed from within maya.')
+            return
         
         if not filepath:
             filepath = self.get_file()
