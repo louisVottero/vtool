@@ -373,6 +373,68 @@ class TransformFunction(MayaFunction):
         vector_api += orig_vector
         
         return vector_api.x, vector_api.y, vector_api.z
+
+class JointFunction(MayaFunction):
+    
+    def _define_api_object(self, mobject):
+        return OpenMayaAnim.MFnIkJoint(mobject)
+  
+    def get_orient_matrix(self, as_list = False):
+        
+        quat = OpenMaya.MQuaternion()
+        self.api_object.getOrientation(quat)
+        matrix = quat.asMatrix()
+        
+        if not as_list:
+            return matrix
+        
+        if as_list:
+        
+            found = []
+            
+            for inc in range(0,4):
+                for inc2 in range(0,4):
+                    found.append( matrix(inc,inc2) )
+            
+            return found
+
+    def get_inverse_orient_matrix(self, as_list = False):
+        
+        #quat = OpenMaya.MQuaternion()
+        #self.api_object.getOrientation(quat)
+        #quat = quat.inverse()
+        #matrix = quat.asMatrix()
+        matrix = self.get_orient_matrix()
+        matrix = matrix.inverse()
+        
+                
+        if not as_list:
+            return matrix
+        
+        if as_list:
+        
+            found = []
+            
+            for inc in range(0,4):
+                for inc2 in range(0,4):
+                    found.append( matrix(inc,inc2) )
+            
+            return found
+        
+"""
+# - Get a joint's orientation matrix.
+import maya.OpenMaya
+import maya.OpenMayaAnim
+ik_joint_name = "joint1"
+selection_list = maya.OpenMaya.MSelectionList()
+selection_list.add(ik_joint_name)
+depend_node = maya.OpenMaya.MObject()
+selection_list.getDependNode(0, depend_node)
+orientation_quaternion = maya.OpenMaya.MQuaternion()
+ik_joint = maya.OpenMayaAnim.MFnIkJoint(depend_node)
+ik_joint.getOrientation(orientation_quaternion)
+orientation_matrix = orientation_quaternion.asMatrix()
+"""   
     
 class MeshFunction(MayaFunction):
     
@@ -1234,21 +1296,6 @@ class DagNode(MayaFunction):
 
 #--- API 2
 
-def nodename_to_mobject(object_name):
-    """
-    Initialize an MObject of the named node.
-    """
-    
-    if not cmds.objExists(object_name):
-        return
-    
-    selection_list = SelectionList()
-    selection_list.create_by_name(object_name)
-        
-    if cmds.objectType(object_name, isAType = 'transform') or cmds.objectType(object_name, isAType = 'shape'):
-        return selection_list.get_deg_path(0)
-    
-    return selection_list.get_at_index(0) 
 
 
 def get_object(name):
@@ -1328,4 +1375,13 @@ def get_skin_weights_dict(skinCluster):
             
     return weights    
     
+def multiply_matrix(matrix1, matrix2):
+    """
+    matrix1 and matrix2 are just the list of numbers of a 4x4 matrix.  This can be had with cmds.getAttr("transform.worldMatrix" or something)
+    """
+    mat1 = om.MMatrix(matrix1)
+    mat2 = om.MMatrix(matrix2)
     
+    return mat1 * mat2
+
+ 
