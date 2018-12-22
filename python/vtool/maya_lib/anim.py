@@ -10,7 +10,9 @@ import core
 import attr
 
 def bake_to_animation(nodes, min_time = None, max_time = None):
-    
+    """
+    bake the animation with nice settings that fix flipping
+    """
     if not min_time or not max_time:
         min_time, max_time = get_min_max_time()
     
@@ -102,6 +104,7 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
         
     """
     
+    #this is a slow way to find the keyframe...
     track_nodes = core.TrackNodes()
     track_nodes.load('animCurve')
     
@@ -138,7 +141,9 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
     return keyframe
 
 def get_keyframe(node_and_attribute):
-    
+    """
+    Given an node.attribute return input keyframe
+    """
     connection = attr.get_attribute_input(node_and_attribute, True)
     
     if connection:
