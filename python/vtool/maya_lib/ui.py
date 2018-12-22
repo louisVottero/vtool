@@ -61,7 +61,7 @@ def picker():
     
     if not ToolManager._last_instance:
         ui_core.create_window(window)
-    
+
 def tool_manager(name = None, directory = None):
     
     util.set_env('VETALA_SETTINGS', process.get_default_directory())
@@ -75,13 +75,16 @@ def tool_manager(name = None, directory = None):
     
     return manager
 
+
+
+
 def process_manager(directory = None):
     
     window = ui_rig.process_manager()
     
     if ToolManager._last_instance:
         
-        ToolManager._last_instance.add_tab(window, 'VETALA')
+        ToolManager._last_instance.add_tab(window, title = util.get_custom('vetala_name', 'VETALA'))
     
     if not ToolManager._last_instance:
         funct = lambda : ui_core.create_window(window)
@@ -91,14 +94,9 @@ def process_manager(directory = None):
         window.set_code_directory(directory)
     
     return window
-
-
-        
-        
-
     
 class ToolManager(ui_core.MayaDirectoryWindow):
-    title = 'VETALA  HUB'
+    title = title = (util.get_custom('vetala_name', 'VETALA') + ' HUB')
     
     def __init__(self, name = None):
         if name:
@@ -262,8 +260,6 @@ class DockWindow(qt_ui.BasicWindow):
         dock_widget.setWidget(widget)
         
         self.addDockWidget(qt.QtCore.Qt.TopDockWidgetArea, dock_widget)
-        
-        
         
         if docks:
             self.tabifyDockWidget( docks[-1], dock_widget)
