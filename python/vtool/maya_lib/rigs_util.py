@@ -1028,7 +1028,7 @@ class StretchyChain:
     def _create_attributes(self, stretch_on_off):
         
         if self._create_title:
-            attr.create_title('STRETCH')
+            attr.create_title(self.attribute_node, 'STRETCH')
         
         stretch_on_off_var = attr.MayaNumberVariable(self.attribute_name)
         stretch_on_off_var.set_node(self.attribute_node)
