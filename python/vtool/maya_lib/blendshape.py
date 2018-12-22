@@ -415,6 +415,9 @@ class BlendShape(object):
             mesh (str): The mesh to use as the target. If None, the target weight attribute will be created only.
             inbetween (float): The inbetween value. 0.5 will have the target activate when the weight is set to 0.5.
         """
+        
+        
+        
         name = name.replace(' ', '_')
         
         if not self.is_target(name):
@@ -1005,6 +1008,7 @@ class ShapeComboManager(object):
         return var
     
     def _add_variable(self, shape, negative = False):
+        
         
         shape = core.get_basename(shape, remove_namespace = True)
         
@@ -1886,6 +1890,8 @@ class ShapeComboManager(object):
     def add_shape(self, name, mesh = None, preserve_combos = False, preserve_inbetweens = False):
         #inbetween shouldn't be true by default.
         
+        
+        
         name = core.get_basename(name, remove_namespace = True)
         #name can be a group of meshes
         
@@ -1998,8 +2004,9 @@ class ShapeComboManager(object):
             
         if negative_parent:
             is_negative = True
-            
-        self._add_variable(shape, is_negative)
+        
+        if not self.is_inbetween(name) and not self.is_combo(name):
+            self._add_variable(shape, is_negative)
     
         self._setup_shape_connections(name)
         
@@ -2204,37 +2211,46 @@ class ShapeComboManager(object):
             
     def rename_shape(self, old_name, new_name):
         
-        if self.blendshape.is_target(new_name):
-            return
+        mesh_count = len(self.blendshaped_meshes_list)
         
-        self._rename_shape_inbetweens(old_name, new_name)
-        self._rename_shape_negative(old_name, new_name)
-        self._rename_shape_combos(old_name, new_name)
         
-        name = self.blendshape.rename_target(old_name, new_name)
         
-        if not self.is_negative(name):
+        for inc in range(0, mesh_count):
+        
+            mesh = self.blendshaped_meshes_list[inc]
+            blend_inst = self.blendshape[mesh]
+        
+            if blend_inst.is_target(new_name):
+                continue
+        
+            self._rename_shape_inbetweens(old_name, new_name)
+            self._rename_shape_negative(old_name, new_name)
+            self._rename_shape_combos(old_name, new_name)
             
-            new_attr_name = '%s.%s' % (self.setup_group, old_name)
+            name = blend_inst.rename_target(old_name, new_name)
             
-            if cmds.objExists(new_attr_name):
+            if not self.is_negative(name):
+                
+                new_attr_name = '%s.%s' % (self.setup_group, old_name)
+                
+                if cmds.objExists(new_attr_name):
+                    attributes = attr.Attributes(self.setup_group)
+                    attributes.rename_variable(old_name, name)
+                if not cmds.objExists(new_attr_name):
+                    
+                    self._add_variable(name)
+                    
+                self._setup_shape_connections(name)
+                
+            if self.is_negative(name):
+                
                 attributes = attr.Attributes(self.setup_group)
-                attributes.rename_variable(old_name, name)
-            if not cmds.objExists(new_attr_name):
+                attributes.delete(old_name)
                 
-                self._add_variable(name)
-                
-            self._setup_shape_connections(name)
+                parent_name = self.get_negative_parent(new_name)
+                self.set_shape_weight(parent_name, 0)
+                self._setup_shape_connections(name)
             
-        if self.is_negative(name):
-            
-            attributes = attr.Attributes(self.setup_group)
-            attributes.delete(old_name)
-            
-            parent_name = self.get_negative_parent(new_name)
-            self.set_shape_weight(parent_name, 0)
-            self._setup_shape_connections(name)
-        
         
         
         return name
