@@ -21,17 +21,21 @@ vetala_version = util_file.get_vetala_version()
 
 class ProcessManagerWindow(qt_ui.BasicWindow):
     
-    title = 'VETALA'
+    title = util.get_custom('vetala_name', 'VETALA')
     
     def __init__(self, parent = None):
         
         util.show('VETALA_PATH: %s' % util.get_env('VETALA_PATH'))
         
+        
         self.directory = None
         self._current_tab = None
         
         self.settings = None
-        self.template_settings = None
+        self.process_history_dict = {}
+        self._path_filter = ''
+        
+        self._process_runtime_values = {}
         
         self.process = process.Process()
         
@@ -48,7 +52,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.kill_process = False
         self.build_widget = None
         self.last_item = None
-        self.runtime_values = {}
+        
         self.handle_selection_change = True
         self._note_text_change_save = True
         
@@ -72,6 +76,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.show_templates.connect(self._show_templates)
         self.view_widget.tree_widget.show_settings.connect(self._show_settings)
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
+        self.view_widget.path_filter_change.connect(self._update_path_filter)
         
         
         self._set_default_directory()
@@ -109,7 +114,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         
         option_layout.addWidget(self.option_widget)
-        #self.option_widget.toggle_alignment.connect(self._toggle_alignment)
         
         option_widget = qt.QWidget()
         option_widget.setLayout(option_layout)
@@ -185,15 +189,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter.addWidget(self.view_widget)
         
         self.process_splitter.addWidget(btm_tab_widget)
-        #self.process_splitter.addWidget(self.option_tabs)
         self.process_splitter.setSizes([1,0])
         
-        settings_icon = qt_ui.get_icon('gear.png')
-        
         if util.is_in_maya():
-            self.tab_widget.addTab(self.settings_widget, settings_icon, '')
+            settings_icon = qt_ui.get_icon('gear.png')
         else:
-            self.tab_widget.addTab(self.settings_widget, 'Settings')
+            settings_icon = qt_ui.get_icon('gear2.png')
+            
+        self.tab_widget.addTab(self.settings_widget, settings_icon, '')
+        
             
         self.tab_widget.addTab(self.process_splitter, 'View')
         self.tab_widget.addTab(self.data_widget, 'Data')
@@ -286,7 +290,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _show_options(self):
         
         sizes = self.process_splitter.sizes()
-        self._load_options(self.process.get_path())
+        self._load_options()
         
         current_index = self.option_tabs.currentIndex()
         
@@ -343,7 +347,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _copy_done(self):
         self.sync_code = True
         
-        self._load_options(self.process.get_path())
+        self._load_options()
         self._load_notes()
           
     def _item_double_clicked(self):
@@ -358,22 +362,30 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if hasattr(item, 'name'):
             
             name = item.get_name()
+            self._set_vetala_current_process(name)
         
         self._set_title(name)
         
-        self._update_build_widget(name)
+        self._update_build_widget()
+        
+        
         
     def _item_renamed(self, item):
         
+        
+        
         self._item_changed(item)
         
+        
+        
         if hasattr(item, 'get_path'):
-            self._load_options(item.get_path())
+            self._load_options()
             self._load_notes()
                 
     def _item_selection_changed(self):
         
         if not self.handle_selection_change:
+            
             return
         
         items = self.view_widget.tree_widget.selectedItems()
@@ -391,27 +403,24 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         name = item.get_name()
         
-        filter_str = self.view_widget.filter_widget.get_sub_path_filter()
-        
-        if filter_str:
-            name = util_file.join_path(filter_str, name)
-        
-        
-        self._update_build_widget(name)
+        self._update_build_widget()
         
         self._update_process(name)
         
-        path = item.get_path()
+        self._update_tabs()
+        
+        self.view_widget.setFocus()
+        
+    def _update_tabs(self):
         
         if self.option_tabs.currentIndex() == 0:
-            self._load_options(path)
+            self._load_options()
         if self.option_tabs.currentIndex() == 1:
             self._load_notes()
         if self.option_tabs.currentIndex() == 3:
             self._load_process_settings()
-        
-        self.view_widget.setFocus()
-        
+            
+            
     def _update_process(self, name):
         
         self._set_vetala_current_process(name)
@@ -425,12 +434,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if name:
             
-            path = self._get_current_path()
+            path = self._get_filtered_project_path()
             
             self.process.load(path)  
-            
-            if self.runtime_values:
-                self.process.set_runtime_dict(self.runtime_values)      
             
             self._set_title(title)
 
@@ -462,24 +468,61 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             return
         
         if self.project_directory:
+            
+            #this needs to happen first because it reloads the settings.  If not the settings are retained from whats loaded into the settings class
+            self._set_project_setting('process', name )
+            
             self.settings.set('process', [name, str(self.project_directory)])
             
-            project_settings_file = util_file.SettingsFile()
+            fullpath = self._get_current_path()
             
-            
-            
-            project_settings_file.set_directory(self.directory)
-                        
-            fullpath = util_file.join_path(self.project_directory, name)
-            
-            project_settings_file.set('last process', [name, self.project_directory])
+            if not util_file.get_permission(fullpath):
+                util.warning('Could not get permission for process: %s' % name)
             
             util.set_env('VETALA_CURRENT_PROCESS', fullpath)
-            
-                
         
-    def _load_options(self, directory):
-        self.option_widget.set_directory(directory)
+    def _update_path_filter(self, value):
+        
+        self._path_filter = value
+        
+        path = self._get_filtered_project_path(value)
+        
+        self.process.set_directory(path)
+        
+    def _get_filtered_project_path(self, filter_value = None):
+        
+        if not filter_value:
+            filter_value = self._path_filter
+        
+        if filter_value:
+            path = util_file.join_path(self.project_directory, filter_value)
+        else:
+            path = self.project_directory
+        
+        return path
+        
+    def _initialize_project_settings(self):
+        
+        
+        process.initialize_project_settings(self.project_directory, self.settings)
+        
+        
+    
+    def _get_project_setting(self, name):
+        
+        value = process.get_project_setting(name, self.project_directory, self.settings)
+    
+        return value
+    
+    def _set_project_setting(self, name, value):
+        
+        process.set_project_setting(name, value, self.project_directory, self.settings)
+        
+    def _load_options(self):
+        
+        current_path = self._get_current_path()
+        
+        self.option_widget.set_directory(current_path)
         
         has_options = self.option_widget.has_options()
         
@@ -536,7 +579,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if self.option_tabs.currentIndex() == 1:
             if not note_lines and self._current_tab == None:
                 
-                path = self.process.get_path()
+                path = self._get_current_path()
                 if not path:
                     self._note_text_change_save = True
                     return
@@ -572,10 +615,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_settings.set_directory(self._get_current_path())
         
               
-    def _update_build_widget(self, process_name):
+    def _update_build_widget(self):
         
-        path = self.view_widget.tree_widget.directory
-        path = util_file.join_path(path, process_name)
+        
+        path = self._get_current_path()
         data_path = util_file.join_path(path, '.data/build')
         
         data_dir = util_file.join_path(path, '.data')
@@ -608,22 +651,30 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #template stuff
         vetala_path = util_file.get_vetala_directory()
         vetala_path = util_file.join_path(vetala_path, 'templates')
-        custom_template_file = 'template_settings.txt'
         
         settings = self.settings
+                
+        template_directory = util.get_custom('template_directory','')
+        if template_directory:
         
-        template_custom_settings = util_file.join_path(vetala_path, custom_template_file)
-        
-        if util_file.is_file(template_custom_settings):
+            template_history = util.get_custom('template_history', [])
             
-            settings = util_file.SettingsFile()
-            settings.set_directory(vetala_path, custom_template_file)
-            util.show('Custom template file found. %s' % template_custom_settings)
-            self.template_settings = settings
-        #else:
-            #if not self.settings.has_setting('template_directory') or not self.settings.get('template_directory'):
-                #self.settings.set('template_directory', ['Vetala Templates', vetala_path])
-                #self.settings.set('template_history', [['Vetala Templates', vetala_path]])
+            if util_file.is_dir(template_directory):
+            
+                util.show('Using custom template directory: %s' % template_directory)
+                
+                self.settings.set('template_directory', template_directory)
+                if template_history:
+                    history_list = self.settings.get('template_history')
+                    
+                    if not history_list:
+                        history_list = template_history
+                    else:
+                        for history in template_history:
+                            if not history in history_list:
+                                history_list.append(history)
+                            
+                    self.settings.set('template_history', history_list) 
         
         self.settings_widget.set_template_settings(settings)
         self.template_widget.set_settings(settings)
@@ -668,8 +719,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _close_tabs(self):
         
         self.process_splitter.setSizes([1, 0])
-
-        
         
     def _add_template(self, process_name, directory):
         
@@ -687,7 +736,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _match_template(self, process_name, directory):
         
-        self.view_widget.manager_widget.copy_match(process_name, directory)
+        self.view_widget.copy_match(process_name, directory)
         
     def _option_changed(self):
         
@@ -695,7 +744,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.template_widget.set_active(False)
             self.process_settings.set_active(False)
             self._current_tab = 0
-            self._load_options(self._get_current_path())
+            self._load_options()
         
         if self.option_tabs.currentIndex() == 1:
             self.template_widget.set_active(False)
@@ -750,10 +799,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _set_default_template_directory(self):
         
-        if not self.template_settings:
-            directory = self.settings.get('template_directory')
-        if self.template_settings:
-            directory = self.template_settings.get('template_directory')
+        
+        directory = self.settings.get('template_directory')
         
         if directory == None:
             return
@@ -825,16 +872,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 if self.build_widget:
                     self.build_widget.show()
                 
-                path = self._get_current_path()
-                
-                self.code_widget.set_directory(path, sync_code = self.sync_code)
-                if self.sync_code:
-                    self.sync_code = False
-         
-                code_directory = self.settings.get('code_directory')
-                self.code_widget.set_external_code_library(code_directory)
-                
-                self.code_widget.set_settings(self.settings)
+                self._load_code_ui()
                 
                 self.last_tab = 3
                 
@@ -842,7 +880,20 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.last_tab = 1
         
-    def _get_current_path(self):
+    def _load_code_ui(self):
+        
+        path = self._get_current_path()
+        
+        self.code_widget.set_directory(path, sync_code = self.sync_code)
+        if self.sync_code:
+            self.sync_code = False
+        
+        code_directory = self.settings.get('code_directory')
+        self.code_widget.set_external_code_library(code_directory)
+        
+        self.code_widget.set_settings(self.settings)
+        
+    def _get_current_name(self):
         
         items = self.view_widget.tree_widget.selectedItems()
         
@@ -851,23 +902,33 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if items:
             item = items[0]
         
-        if item:
-            
-            process_name = item.get_name()
+        if not item:
+            return
+        
+        process_name = item.get_name()
+        
+        return process_name
+        
+    def _get_current_path(self):
+        
+        process_name = self._get_current_name()
+        
+        if process_name:    
+            process_name = self._get_current_name()
             
             filter_str = self.view_widget.filter_widget.get_sub_path_filter()
             
+            directory = self.directory
+            
             if filter_str:
-                process_name = util_file.join_path(filter_str, process_name)
+                directory = util_file.join_path(self.directory, filter_str)
             
-            self.process.load(process_name)
+            directory = util_file.join_path(directory, process_name)
             
-            return self.process.get_path()
-        if not item:
+            return directory
+        if not process_name:
             
             filter_value = self.view_widget.filter_widget.get_sub_path_filter()
-            
-            
             
             if filter_value:
                 directory = util_file.join_path(self.directory, filter_value)
@@ -966,8 +1027,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         
         if util.is_in_maya():
-            import maya.cmds as cmds
-            cmds.file(new = True, f = True)
+            from vtool.maya_lib import core
+            core.start_new_scene()
         
         process_inst = item.get_process()
         process_inst.run(start_new = True)
@@ -986,7 +1047,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _process(self, last_inc = None):
         
+        
+        code_directory = self.settings.get('code_directory')
+        self.process.set_external_code_library(code_directory)
+        self.process.set_runtime_dict(self._process_runtime_values)
+        
+
+        
         if util.is_in_maya():
+            
+            from vtool.maya_lib import core
+            core.ProgressBar().end()
+                        
             import maya.cmds as cmds
             
             cmds.select(cl = True)
@@ -1007,8 +1079,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         item = self.view_widget.tree_widget.currentItem()
         
-        children_run_comment = ''
-        
         if self.tab_widget.currentIndex() == 1:
             children = self._get_checked_children(item)
                     
@@ -1017,8 +1087,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 result = qt_ui.get_comment(self, 'Found process children checked on:\n\nHit Ok to auto build children first.\n\nHit Cancel to process only the current process.\n\n\nAdd comment to the auto build? ', 'Children Checked', comment_text='Auto Build' )
                 
                 if result:
-                    
-                    children_run_comment = result
                     
                     util.set_env('VETALA_RUN', True)
                     util.set_env('VETALA_STOP', False)
@@ -1071,15 +1139,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             except:
                 pass
         
+        
+        self.code_widget.save_code()
+                
         self.tab_widget.setCurrentIndex(3)
-        
-        code_directory = self.settings.get('code_directory')
-        self.process.set_external_code_library(code_directory)
-        
-        start_new_scene = self.settings.get('start_new_scene_on_process')
-        
-        if util.is_in_maya() and start_new_scene and last_inc == None:
-            cmds.file(new = True, f = True)
         
         scripts, states = self.process.get_manifest()
         
@@ -1087,7 +1150,24 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_button.setEnabled(True)
             self.batch_button.setEnabled(True)
             return
+
         
+        start_new_scene = self.settings.get('start_new_scene_on_process')
+        
+        manage_node_editor_inst = None
+        
+        if util.is_in_maya(): 
+            from vtool.maya_lib import core
+            
+            manage_node_editor_inst = maya_lib.core.ManageNodeEditors()
+            
+            
+            
+            if start_new_scene and last_inc == None:
+                core.start_new_scene()
+            
+            manage_node_editor_inst.turn_off_add_new_nodes()
+                
         util.set_env('VETALA_RUN', True)
         util.set_env('VETALA_STOP', False)
         
@@ -1098,8 +1178,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         util.show('\n\n\n\a\tRunning %s Scripts\t\a\n' % self.process.get_name())
         
         skip_scripts = []
-        
-        finished = False
         
         code_manifest_tree = self.code_widget.script_widget.code_manifest_tree
         
@@ -1115,6 +1193,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if util.is_in_maya():
             progress_bar = maya_lib.core.ProgressBar('Process', script_count)
             progress_bar.status('Processing: getting ready...')
+        
+        errors = False
         
         for inc in range(start, script_count):
             
@@ -1168,12 +1248,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 util.show('Process: %s' % script_name)
                 
                 if code_manifest_tree.has_startpoint() and not found_start:
+                    
                     if not code_manifest_tree.is_process_script_startpoint(scripts[inc]):
-                        found_start = True
+                        
                         if progress_bar:
                             progress_bar.inc()
                         util.show('Skipping script %s, it is before the start.' % scripts[inc])
                         continue
+                    else:
+                        found_start = True
                     
                     
                 self.code_widget.set_process_script_state(scripts[inc], 2)
@@ -1188,11 +1271,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 
                 
                 status = self.process.run_script(script_name, False, self.settings.settings_dict)
+                self._process_runtime_values = self.process.runtime_values
+                self.code_widget.script_widget.code_manifest_tree.set_process_runtime_dict(self.process.runtime_values)
+                
                 temp_log = util.get_env('VETALA_LAST_TEMP_LOG')
                 
                 self.code_widget.set_process_script_log(scripts[inc], temp_log)
                 
                 if not status == 'Success':
+                    
+                    errors = True
                     
                     self.code_widget.set_process_script_state(scripts[inc], 0)
                     
@@ -1204,15 +1292,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                     
                 if status == 'Success':
                     self.code_widget.set_process_script_state(scripts[inc], 1)
+                                
+                if temp_log.find('Warning!') > -1:
+                    self.code_widget.set_process_script_state(scripts[inc], 3)
                 
-                if inc == script_count-1:
-                    finished = True
             
             if code_manifest_tree.break_index != None:
                 if code_manifest_tree.is_process_script_breakpoint(scripts[inc]):
                     self.continue_button.show()
                     self.last_process_script_inc = inc
-                    finished = True
+                    
                     if progress_bar:
                         progress_bar.end()
                     break
@@ -1223,6 +1312,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if progress_bar:
             progress_bar.end()
         
+        if manage_node_editor_inst:
+            manage_node_editor_inst.restore_add_new_nodes()
+        
         util.set_env('VETALA_RUN', False)
         util.set_env('VETALA_STOP', False)
             
@@ -1232,12 +1324,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         minutes, seconds = watch.stop()
         
-        if finished:
-            if minutes == None:
-                util.show('Process %s built in %s seconds\n\n' % (self.process.get_name(), seconds))
-            if minutes != None:
-                util.show('Process %s built in %s minutes, %s seconds\n\n' % (self.process.get_name(), minutes,seconds))
-        if not finished:
+        if minutes == None:
+            util.show('Process %s built in %s seconds\n\n' % (self.process.get_name(), seconds))
+        if minutes != None:
+            util.show('Process %s built in %s minutes, %s seconds\n\n' % (self.process.get_name(), minutes,seconds))
+        
+        if errors:
             util.show('Process %s finished with errors.\n' % self.process.get_name())
     
     def _continue(self):
@@ -1310,49 +1402,55 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             directory = ['', str(directory)]
         
         if not directory:
-        
+            
             self.process.set_directory(None)
             self.view_widget.set_directory(None)
             self.handle_selection_change = True
             self.settings_widget.set_directory(None)
             return
-
         
-
+        
+        
         if not sub_part:
             
-            #self.view_widget.clear_sub_path_filter()
             directory = str(directory[1])
         
         if sub_part:
             directory = sub_part
             
         if directory != self.last_project:
-        
+            
             self.project_directory = directory
             self.directory = directory
-        
+            
             self.clear_stage()
             
             self.process.set_directory(self.project_directory)
+            
+            self.handle_selection_change = True
             self.view_widget.set_directory(self.project_directory)
             self.process_settings.set_directory(self.project_directory)    
-        
+            
         self.last_project = directory
         
         self.handle_selection_change = True
         
+        self._initialize_project_settings()
+        
+        self._update_tabs()
+        
+        
+        
+        self._update_build_widget()
+        
     def set_template_directory(self, directory = None):
         
-        if not self.template_settings:
-            if not self.settings:
-                return
+        
+        if not self.settings:
+            return
         
         settings = self.settings
-        
-        if self.template_settings:
-            settings = self.template_settings
-        
+                
         current = settings.get('template_directory')
         history = settings.get('template_history')
         
@@ -1368,13 +1466,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             history = [['', current]]
             
         self.template_widget.set_templates(history)
-        """ 
-        if not current_name:
-            for setting in history:
-                
-                if setting[1] == current:
-                    current_name = setting[0]
-        """
+        
         if not current_name:
             current_name = current
                     
