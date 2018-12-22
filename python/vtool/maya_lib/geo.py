@@ -101,12 +101,13 @@ class MeshTopologyCheck(object):
             
         return True
 
-    def check_first_edge_verts(self):
-        edge1 = edge_to_vertex('%s.e[0]' % self.mesh1)
-        edge2 = edge_to_vertex('%s.e[0]' % self.mesh2)
+    def check_first_face_verts(self):
         
-        vertex_indices1 = get_vertex_indices(edge1)
-        vertex_indices2 = get_vertex_indices(edge2)
+        face1 = face_to_vertex('%s.f[0]' % self.mesh1)
+        face2 = face_to_vertex('%s.f[0]' % self.mesh2)
+        
+        vertex_indices1 = get_vertex_indices(face1)
+        vertex_indices2 = get_vertex_indices(face2)
         
         if not vertex_indices1 == vertex_indices2:
             return False
@@ -348,8 +349,7 @@ def is_mesh_compatible(mesh1, mesh2):
     if not check_value:
         return False
     
-    
-    check_value = check.check_first_edge_verts()
+    check_value = check.check_first_face_verts()
     
     return check_value
 
@@ -435,7 +435,15 @@ def match_cv_position( source_curve, target_curve ):
         pos = cmds.xform(source_cvs[inc], q= True, t = True, ws = True)
         cmds.xform(target_cvs[inc], t = pos, ws = True)
         
-
+def rotate_shape(transform, x,y,z):
+      
+      
+    shapes = core.get_shapes(transform)
+        
+    components = core.get_components_from_shapes(shapes)  
+        
+    if components:
+        cmds.rotate(x,y,z, components, relative = True)
 
 #--- get
 
@@ -2402,6 +2410,47 @@ def transforms_to_polygon(transforms, name, size = 1, merge = True, axis = 'Y'):
     if new_mesh:
         return new_mesh
     
+def curve_to_nurb_surface(curve, description, spans = -1, offset_axis = 'X', offset_amount = 1):
+
+    curve_1 = cmds.duplicate(curve)[0]
+    curve_2 = cmds.duplicate(curve)[0]
+    
+    offset_axis = offset_axis.upper()
+    
+    pos_move = vtool.util.get_axis_vector(offset_axis, offset_amount)
+    neg_move = vtool.util.get_axis_vector(offset_axis, offset_amount*-1)
+            
+    
+    cmds.move(pos_move[0],pos_move[1],pos_move[2], curve_1)
+    cmds.move(neg_move[0],neg_move[1],neg_move[2], curve_2)
+    
+    curves = [curve_1, curve_2]
+    
+    if not spans == -1:
+    
+        for curve in curves:
+            cmds.rebuildCurve(curve, ch = False, 
+                                        rpo = True,  
+                                        rt = 0, 
+                                        end = 1, 
+                                        kr = False, 
+                                        kcp = False, 
+                                        kep = True,  
+                                        kt = False, 
+                                        spans = spans, 
+                                        degree = 3, 
+                                        tol =  0.01)
+        
+    loft = cmds.loft(curve_1, curve_2, n =core.inc_name('nurbsSurface_%s' % description), ss = 1, degree = 1, ch = False)
+    
+    #cmds.rebuildSurface(loft,  ch = True, rpo = 1, rt = 0, end = 1, kr = 0, kcp = 0, kc = 0, su = 1, du = 1, sv = spans, dv = 3, fr = 0, dir = 2)
+    spans = cmds.getAttr('%s.spans' % curve_1)
+    cmds.rebuildSurface(loft, ch = False, rpo = 1, rt = 0, end = 1, kr = 0, kcp = 0, kc = 0, su = 1, du = 1, sv = spans, dv = 3, tol = 0.01, fr = 0, dir = 2)
+    
+    cmds.delete(curve_1, curve_2)
+    
+    return loft[0]
+    
 def nurb_surface_u_to_transforms(surface, count = 4, value = 0.5, orient_example = None):
     
     max_value_u = cmds.getAttr('%s.maxValueU' % surface)
@@ -2778,6 +2827,34 @@ def attach_to_curve(transform, curve, maintain_offset = False, parameter = None)
     
     return curve_info_node
 
+def attach_motion_path(curve, name = 'motionPath', u_value = 0, up_rotate_object = None, use_parameter = False, local = False):
+    
+    motion = cmds.createNode('motionPath', n = name )
+    
+    if up_rotate_object:
+        cmds.setAttr('%s.wut' % motion, 2)
+        cmds.connectAttr('%s.worldMatrix' % up_rotate_object, '%s.wum' % motion)
+    
+    
+    if use_parameter:
+        cmds.setAttr('%s.fractionMode' % motion, False)
+    else:
+        cmds.setAttr('%s.fractionMode' % motion, True)
+    
+    if not use_parameter:
+        u_value = get_curve_length_from_parameter(curve, u_value)
+        curve_length = cmds.arclen(curve, ch = False)
+        u_value = u_value/curve_length
+    
+    cmds.setAttr('%s.uValue' % motion, u_value)
+    
+    if not local:
+        cmds.connectAttr('%s.worldSpace' % curve, '%s.geometryPath' % motion)
+    if local:
+        cmds.connectAttr('%s.local' % curve, '%s.geometryPath' % motion)
+    
+    return motion
+
 def attach_to_motion_path(transform, curve, up_rotate_object = None, constrain = True, local = False, use_parameter = False):
     
     motion = cmds.createNode('motionPath', n = 'motionPath_%s' % transform )
@@ -2940,7 +3017,7 @@ def follicle_to_surface(transform, surface, u = None, v = None, constrain = Fals
         str: The name of the follicle created.
         
     """
-    position = cmds.xform(transform, q = True, ws = True, t = True)
+    position = cmds.xform(transform, q = True, ws = True, rp = True)
 
     uv = u,v
 
@@ -2981,6 +3058,29 @@ def edges_to_curve(edges, description):
     
     return curve
     
+def face_to_vertex(faces):
+
+    faces = cmds.ls(faces, flatten = True)
+    
+    verts = []
+    
+    mesh = faces[0].split('.')
+    mesh = mesh[0]
+    
+    for face in faces:
+        
+        info = cmds.polyInfo(face, faceToVertex = True)
+        info = info[0]
+        info = info.split()
+        
+        sub_verts = info[2:]
+        
+        for sub_vert in sub_verts:
+            if not sub_vert in verts:
+                verts.append('%s.vtx[%s]' % (mesh, sub_vert))
+                
+    return verts
+
 def edge_to_vertex(edges):
     """
     Return the vertices that are part of the edges.
@@ -3051,10 +3151,13 @@ def cvs_to_transforms(nurbs, type = 'transform'):
         
     return transforms           
 
-def rebuild_curve(curve, spans, degree = 3):
+def rebuild_curve(curve, spans = -1, degree = 3):
     """
     Rebuild a curve with fewer arguments
     """
+    
+    if spans == -1:
+        spans = cmds.getAttr('%s.spans' % curve)
     cmds.rebuildCurve( curve, ch = False,
                        rpo = 1,
                        rt = 0,
