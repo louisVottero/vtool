@@ -483,11 +483,24 @@ class RemapAttributesToAttribute(object):
         if attribute_count == 1:
             attribute_count + 1
         
+        
+        
         if cmds.objExists(self.node_attribute):
+            
+            
+            
             variable = MayaNumberVariable(self.attribute)
             variable.set_node(self.node)
             variable.set_min_value(0)
-            variable.set_max_value(attribute_count-1)
+        
+            max_value = attribute_count-1
+            
+            if max_value < variable.get_max_value():
+                max_value = variable.get_max_value()
+            
+            
+            
+            variable.set_max_value(max_value)
             variable.create()
             return
         
@@ -566,9 +579,18 @@ class RemapAttributesToAttribute(object):
                     
                 if cmds.nodeType(input_node) != 'remapValue':
                     input_node = None
-                                                
+               
+            attribute_nice = attribute.replace('[', '_')
+            attribute_nice = attribute_nice.replace(']', '')
+            attribute_nice = attribute_nice.replace('.', '_')
+                                        
             if not input_node: 
-                remap = cmds.createNode('remapValue', n = 'remapValue_%s' % attribute)
+                remap = cmds.createNode('remapValue', n = 'remapValue_%s' % attribute_nice)
+            
+            test_max = cmds.getAttr('%s.inputMax' % remap)
+            
+            if test_max > input_max:
+                input_max = test_max
             
             cmds.setAttr('%s.inputMin' % remap, input_min)
             cmds.setAttr('%s.inputMax' % remap, input_max)
@@ -604,7 +626,9 @@ class RemapAttributesToAttribute(object):
                     cmds.setAttr('%s.value[%s].value_FloatValue' % (remap,inc2), value)
                     cmds.setAttr('%s.value[%s].value_Position' % (remap,inc2), position)
                     cmds.setAttr('%s.value[%s].value_Interp' % (remap,inc2), 1)    
-                   
+            
+            
+            
             disconnect_attribute('%s.%s' % (node,attribute)) 
             cmds.connectAttr('%s.outValue' % remap, '%s.%s' % (node,attribute))
                                     
@@ -625,8 +649,9 @@ class OrientJointAttributes(object):
     
     def _create_attributes(self):
         
-        self.title = MayaEnumVariable('Orient_Info'.upper())
-        self.title.create(self.joint)
+        if not cmds.objExists('%s.ORIENT_INFO' % self.joint):
+            self.title = MayaEnumVariable('ORIENT_INFO')
+            self.title.create(self.joint)
         
         attr = self._create_axis_attribute('aimAxis')
         self.attributes.append(attr)
@@ -830,6 +855,8 @@ def get_variable_instance_of_type(name, var_type):
     
     return var
     
+
+    
 #--- variables
 class MayaVariable(vtool.util.Variable):
     """
@@ -853,6 +880,8 @@ class MayaVariable(vtool.util.Variable):
         self.variable_type = 'short'
         self.keyable = True
         self.locked = False
+        self.attr_exists = False
+        self._node_and_attr = ''
         
     def _command_create_start(self):
         return 'cmds.addAttr(self.node,'
@@ -898,10 +927,7 @@ class MayaVariable(vtool.util.Variable):
         cmds.setAttr(self._get_node_and_variable(), k = self.keyable)       
 
     def _set_value(self):
-        
-        if not self.exists():
-            return
-        
+                
         locked_state = self._get_lock_state()
         
         self.set_locked(False)
@@ -930,8 +956,17 @@ class MayaVariable(vtool.util.Variable):
         return core.maya_data_mappings[self.variable_type]
     
     def _get_node_and_variable(self):
-        return '%s.%s' % (self.node, self.name)
-    
+        
+        if not self.node:
+            return
+        if not self.name:
+            return
+        
+        if not self._node_and_attr:
+            self._node_and_attr = self.node + '.' + self.name
+        
+        return self._node_and_attr
+        
     def _get_lock_state(self):
         if not self.exists():
             return self.locked
@@ -959,13 +994,24 @@ class MayaVariable(vtool.util.Variable):
         self._set_keyable_state()
         self._set_lock_state()
 
-    def exists(self):
+    def exists(self, force = False):
         """
         Returns:
             bool
         """
         
-        return cmds.objExists(self._get_node_and_variable())
+        if not self.node:
+            return False
+        
+        if not self.name:
+            return False
+        
+        if self.attr_exists and not force:
+            return True
+        
+        self.attr_exists = cmds.objExists(self._get_node_and_variable())
+        
+        return self.attr_exists
     
     def is_numeric(self):
         
@@ -991,6 +1037,8 @@ class MayaVariable(vtool.util.Variable):
         super(MayaVariable, self).set_name(name)
         
         var_name = self._get_node_and_variable()
+        
+        self._node_and_attr = ''
     
     def set_value(self, value):
         """
@@ -1002,7 +1050,10 @@ class MayaVariable(vtool.util.Variable):
         """
         
         super(MayaVariable, self).set_value(value)
-        self._set_value()
+        try:
+            self._set_value()
+        except:
+            pass
         
     def set_locked(self, bool_value):
         """
@@ -1043,6 +1094,8 @@ class MayaVariable(vtool.util.Variable):
             
         """
         self.node = name
+        self.attr_exists = False
+        self._node_and_attr = ''
 
     #--- get
 
@@ -1117,19 +1170,16 @@ class MayaVariable(vtool.util.Variable):
             self.node = node
         
         value = self.value
-        
-        exists = False
-        
-        if self.exists():
-            exists = True
-            if not value == None:
                 
+        if self.exists(force = True):
+            if value != None:
                 value = self.get_value()
 
-        self._create_attribute(exists = exists)
+        self._create_attribute(exists = self.attr_exists)
         self._update_states()
                
-        self.set_value( value )
+        if value != None:
+            self.set_value( value )
         
     def delete(self, node = None):
         """
@@ -1142,12 +1192,16 @@ class MayaVariable(vtool.util.Variable):
         if node:
             self.node = node
         
-        #theses lines might cause bugs   
-        self.locked = False
-        self._set_lock_state()
+        #theses lines might cause bugs
+        try:
+            cmds.setAttr(self._get_node_and_variable(), l = False)   
+        except:
+            pass
         #------
             
         cmds.deleteAttr(self.node, at = self.name)
+        self.attr_exists = False
+        self._node_and_attr = ''
         
     def load(self):
         """
@@ -1251,7 +1305,8 @@ class MayaNumberVariable(MayaVariable):
         except:
             return
         
-    
+    def get_max_value(self):
+        return self._get_max_state()
         
     def set_min_value(self, value):
         """
@@ -1331,7 +1386,10 @@ class MayaEnumVariable(MayaVariable):
             return
         
         self._set_enum_state(set_value = False)
-        super(MayaEnumVariable, self)._set_value()
+        try:
+            super(MayaEnumVariable, self)._set_value()
+        except:
+            pass
     
     def set_enum_names(self, name_list):
         """
@@ -2184,6 +2242,25 @@ def transfer_output_connections(source_node, target_node):
 
 
 
+def set_nonkeyable(node, attributes):
+    """
+    
+    Args:
+        node (str): The name of a node
+        attributes (list) or (str):  The name of attributes or an attribute to set nonkeyable
+    
+    """
+    
+    attributes = vtool.util.convert_to_sequence(attributes)
+    
+    for attribute in attributes:
+        name = '%s.%s' % (node, attribute)
+        cmds.setAttr(name, k = False, cb = True)
+        if cmds.getAttr(name, type = True) == 'double3':
+            
+            attributes.append('%sX' % attribute)
+            attributes.append('%sY' % attribute)
+            attributes.append('%sZ' % attribute)
 
 def hide_attributes(node, attributes):
     """
@@ -2207,7 +2284,8 @@ def hide_attributes(node, attributes):
             attributes.append('%sY' % attribute)
             attributes.append('%sZ' % attribute)
         
-        cmds.setAttr(current_attribute, l = True, k = False)
+        cmds.setAttr(current_attribute, l = True, k = False, cb = False)
+        
         
 def hide_keyable_attributes(node):
     """
@@ -2233,7 +2311,11 @@ def hide_rotate(node):
 def hide_scale(node):
     
     hide_attributes(node,'scale')
-    
+
+def hide_visibility(node):
+  
+    hide_attributes(node,'visibility')
+  
 def lock_attributes(node, bool_value = True, attributes = None, hide = False):
     """
     lock attributes on a node.
@@ -2301,6 +2383,98 @@ def lock_rotate_attributes(node):
 def lock_scale_attributes(node):
     lock_attributes(node, attributes = ['scaleX','scaleY','scaleZ'], hide = True)
 
+def lock_constraint(constraint):
+    """
+    This will check if the thing being passed in is a constraint.
+    
+    And then lock the target offsets which can sometimes get messed up in reference.
+    
+    """
+    if cmds.nodeType(constraint).find('Constraint') > -1 and cmds.objExists('%s.target' % constraint):
+        
+        target_indices = get_indices('%s.target' % constraint)
+        
+        attributes = ['Translate', 'Rotate']
+        axis = ['X','Y','Z']
+        
+        for index in target_indices:
+            for attribute in attributes:
+                for a in axis:
+                    
+                    attribute_name = 'target[%s].targetOffset%s%s' % (index, attribute, a)
+                    
+                    if cmds.objExists('%s.%s' % (constraint, attribute_name)):
+                        cmds.setAttr('%s.%s' % (constraint, attribute_name), l = True)   
+
+
+def lock_attributes_for_asset(node):
+    
+    attrs = cmds.listAttr(node)
+    
+    if not attrs:
+        return
+        
+    for a in attrs:
+        if a == 'visibility':
+            continue
+        attr_name = '%s.%s' % (node, a)
+        if not cmds.objExists(attr_name):
+            continue
+        
+        input_value = get_attribute_input(attr_name)
+        
+        if input_value:
+            input_node_type = cmds.nodeType(input_value)
+            if input_node_type and input_node_type.find('Constraint') > -1:
+                input_value = None
+        
+        if not input_value:
+            cmds.setAttr(attr_name, l = True)
+
+def lock_hierarchy(top_transform, exclude_transforms = [], skip_of_type = ['ikHandle', 'joint']):
+    
+    progress = core.ProgressBar()
+    
+    scope = cmds.listRelatives(top_transform, ad = True, f = True, shapes = False, ni = True)
+
+    scope.append(top_transform)
+        
+    progress.set_count(len(scope))
+    
+    for thing in scope:
+        
+        skip = False
+    
+        if not cmds.objExists(thing):
+            skip = True
+        if not skip:
+            if core.is_a_shape(thing):
+                skip = True
+        if not skip:
+            if cmds.referenceQuery(thing, isNodeReferenced = True):
+                skip = True
+        if not skip:
+            for transform in exclude_transforms:
+                if thing.find(transform) > -1:
+                    skip = True
+        if not skip:
+            for skip_thing in skip_of_type:
+                if cmds.nodeType(thing) == skip_thing:
+                    skip = True
+        
+        if skip == True:
+            progress.inc()
+            continue
+        
+        progress.status('Locking: %s' % thing)
+        
+        lock_constraint(thing)
+        lock_attributes_for_asset(thing)
+        
+        progress.inc()
+        
+    progress.end()
+        
 def remove_user_defined(node):
     """
     Removes user defined attributes from a node.
@@ -2867,7 +3041,8 @@ def connect_visibility(attribute_name, target_node, value = 1):
     
     if not cmds.objExists(attribute_name):
         split_name = attribute_name.split('.')
-        cmds.addAttr(split_name[0], ln = split_name[1], at = 'bool', dv = value,k = True)
+        cmds.addAttr(split_name[0], ln = split_name[1], at = 'bool',dv = value,k = True)
+        set_nonkeyable(split_name[0], [split_name[1]])
         
     for thing in nodes: 
         
@@ -2876,44 +3051,6 @@ def connect_visibility(attribute_name, target_node, value = 1):
         else:
             vtool.util.warning( attribute_name + ' and ' + thing + '.visibility are already connected')
         
-            
-
-def connect_visibility_and_children(attribute_name, target_node, value = 1):
-    """
-    Connect the visibility into an attribute
-    
-    Args:
-        attribute_name (str): The node.attribute name of an attribute. Does not have to exists. Will be created if doesn't exist.
-        target_node (str): The target node to connect attribute_name into.
-        value (bool): 0 or 1 whether you want the visibility on or off by default.
-    """
-    nodes = vtool.util.convert_to_sequence(target_node)
-    
-    if not cmds.objExists(attribute_name):
-        split_name = attribute_name.split('.')
-        cmds.addAttr(split_name[0], ln = split_name[1], at = 'bool', dv = value,k = True)
-        
-    for thing in nodes: 
-        
-        
-        
-        if not is_connected( '%s.visibility' % thing):
-            cmds.connectAttr(attribute_name, '%s.visibility' % thing)
-        else:
-            vtool.util.warning( attribute_name + ' and ' + thing + '.visibility are already connected')
-
-        rels = cmds.listRelatives(thing, ad = True, type = 'transform', f = True)
-
-        if not rels:
-            return
-
-        for rel in rels:
-            
-                try:
-                    cmds.connectAttr(attribute_name, '%s.visibility' % rel)
-                except:
-                    pass
-
 def connect_plus_and_value(source_attribute, target_attribute, value):
     
     target_attribute_name = target_attribute.replace('.', '_')
@@ -3391,7 +3528,7 @@ def connect_message( input_node, destination_node, attribute ):
         current_inc += 1
         
         if current_inc == 1000:
-            raise
+            break
         
     if not cmds.objExists('%s.%s' % (destination_node, test_attribute)):
         cmds.addAttr(destination_node, ln = test_attribute, at = 'message' )
@@ -3652,3 +3789,39 @@ def show_rotate_order(transform, value = None):
     else:
         cmds.setAttr('%s.rotateOrder' % transform, value, k = True, )
         
+        
+        
+def add_shape_for_attributes(transforms, shape_name):
+    
+    transforms = vtool.util.convert_to_sequence(transforms)
+    
+    locator = None
+    
+    if cmds.objExists(shape_name):
+        shape = shape_name
+    else:
+        locator = cmds.spaceLocator()
+        shape = core.get_shapes(locator, shape_type = 'locator', no_intermediate = True)[0]
+            
+        cmds.setAttr('%s.localScaleX' % shape, 0)
+        cmds.setAttr('%s.localScaleY' % shape, 0)
+        cmds.setAttr('%s.localScaleZ' % shape, 0)
+        hide_attributes(shape, ['localPosition', 'localScale'])
+        
+        shape = cmds.rename(shape, core.inc_name(shape_name))
+        
+    
+    inc = 0
+    
+    for transform in transforms:
+         
+        if inc == 0:
+            shape = cmds.parent(shape,transform, r = True, s = True)
+        else:
+            shape = cmds.parent(shape,transform, r = True, s = True,  add = True)
+        
+        inc += 1
+    
+    if locator:
+        cmds.delete(locator)
+    
