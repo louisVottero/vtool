@@ -38,6 +38,9 @@ class Rig(object):
         
         self.side = side
         
+        self.joints = []
+        self.buffer_joints = []
+        
         cmds.refresh()
         
         self.description = description
@@ -74,21 +77,7 @@ class Rig(object):
         self._connect_important = False
         self._connect_important_node = None
         
-    def _post_create_connect(self, inst_attribute, description):
-        
-        if hasattr(self,inst_attribute):
-            
-            value = getattr(self, inst_attribute)
-            
-            if value:
-                inc = 1
-                value = vtool.util.convert_to_sequence(value)
-                for sub_value in value:
-                    
-                    attr.connect_message(sub_value, self.control_group, '%s%s' % (description,inc))
-                    inc += 1
-                
-        
+        self._control_number = False
         
     def _post_create(self):
 
@@ -107,10 +96,13 @@ class Rig(object):
                     
                     vtool.util.warning('Empty setup group in class: %s with description %s %s.' % (class_name, self.description, self.side))
         
+        try:
+            self._post_create_rotate_order()
+        except:
+            vtool.util.warning('Could add rotate order to channel box')
+        
         if self._connect_important:
             #attr.connect_message(input_node, destination_node, attribute)
-            
-            
             
             vtool.util.show('Connect Important!')
             
@@ -118,6 +110,103 @@ class Rig(object):
             self._post_create_connect('sub_controls', 'subControl')
             self._post_create_connect('joints', 'joint')
             self._post_create_connect('ik_handle', 'ikHandle')
+            
+        self._post_add_shape_switch()
+
+    def _post_add_shape_switch(self):
+
+        if hasattr(self, 'create_buffer_joints'):
+            
+            if not self.create_buffer_joints:
+                return
+        else:
+            return
+        
+        if not hasattr(self, '_switch_shape_attribute_name'):
+            return
+        
+        if not self._switch_shape_attribute_name:
+            return
+        
+        shapes = core.get_shapes(self.joints[0], shape_type = 'locator', no_intermediate = True)
+        
+        name = self._switch_shape_attribute_name
+        node_name = 'switch_setting'
+        if self._switch_shape_node_name:
+            node_name = self._switch_shape_node_name
+        if not self._switch_shape_node_name:
+            if self._switch_shape_attribute_name:
+                node_name = self._switch_shape_attribute_name 
+        
+        if cmds.objExists(node_name) and core.is_a_shape(node_name):
+            shapes = [node_name]
+        
+        if not shapes:
+            locator = cmds.spaceLocator()
+            shapes = core.get_shapes(locator, shape_type = 'locator', no_intermediate = True)
+            
+            cmds.setAttr('%s.localScaleX' % shapes[0], 0)
+            cmds.setAttr('%s.localScaleY' % shapes[0], 0)
+            cmds.setAttr('%s.localScaleZ' % shapes[0], 0)
+            
+            attr.hide_attributes(shapes[0], ['localPosition', 'localScale'])
+            shapes = cmds.parent(shapes[0],self.joints[0], r = True, s = True)
+            cmds.delete(locator)
+            shapes[0] = cmds.rename(shapes[0], core.inc_name(node_name))
+        
+        joint_shape = shapes[0]
+            
+        if not cmds.objExists('%s.%s' % (joint_shape, name)):
+            cmds.addAttr(joint_shape, ln = name, k = True, min = 0)    
+        
+        if not attr.is_connected('%s.switch' % self.joints[0]):
+            cmds.connectAttr('%s.%s' % (joint_shape, name), '%s.switch' % self.joints[0])
+        
+        max_value = cmds.attributeQuery('switch', max = True, node = self.joints[0])[0]
+        
+        try:
+            test_max = cmds.attributeQuery(name, max = True, node = joint_shape)[0]
+        
+            if max_value < test_max:
+                max_value = test_max
+        except:
+            pass
+        
+        cmds.addAttr('%s.%s' % (joint_shape, name), edit = True, maxValue = max_value)      
+        
+        for control in self.controls:
+            
+            cmds.parent(shapes[0], control, add = True, s = True)
+        
+        attr.connect_message(shapes[0], self.control_group, 'switch') 
+            
+    def _post_create_rotate_order(self):
+        
+        for control in self.controls:
+            test = ['X','Y','Z']
+            
+            count = 0
+            
+            for t in test:
+                if not attr.is_locked('%s.rotate%s' % (control,t)):
+                    count += 1
+                    
+            if count == 3:
+                cmds.setAttr('%s.rotateOrder' % control, cb = True)
+                
+    def _post_create_connect(self, inst_attribute, description):
+        
+        if hasattr(self,inst_attribute):
+            
+            value = getattr(self, inst_attribute)
+            
+            if value:
+                inc = 1
+                value = vtool.util.convert_to_sequence(value)
+                for sub_value in value:
+                    
+                    attr.connect_message(sub_value, self.control_group, '%s%s' % (description,inc))
+                    inc += 1
 
         
     def __getattribute__(self, item):
@@ -240,6 +329,9 @@ class Rig(object):
 
         if current_process:
             control_inst = util_file.ControlNameFromSettingsFile(current_process)
+                        
+            if sub == False:
+                control_inst.set_number_in_control_name(self._control_number)
             
             self._control_inst = control_inst
             
@@ -253,13 +345,6 @@ class Rig(object):
             
             control_name = control_inst.get_name(description, self.side)
             
-            
-            
-            #if not control_name:
-            #    current_process = None
-            
-            
-        
         if not current_process:
         
             prefix = 'CNT'
@@ -269,13 +354,8 @@ class Rig(object):
             control_name = self._get_name(prefix, description, sub = sub)
                 
             control_name = control_name.upper()
-        
-        
             
         control_name = core.inc_name(control_name)
-            
-
-        
         
         return control_name
         
@@ -415,6 +495,9 @@ class Rig(object):
         Sets the default size of the control curve.
         """
         
+        if float_value == 0:
+            vtool.util.warning('Setting control size to zero!')
+        
         self.control_size = float_value
         
     def set_sub_control_size(self, float_value):
@@ -469,6 +552,17 @@ class Rig(object):
     
     def set_connect_important(self,bool_value):
         self._connect_important = bool_value
+    
+    def set_number_in_control_name(self, bool_value):
+        
+        self._control_number = bool_value
+    
+    def set_no_last_number(self, bool_value):
+        
+        if bool_value:
+            self._control_number = False
+        else:
+            self._control_number = True
     
     def connect_sub_visibility(self, attr_name):
         """
@@ -550,6 +644,10 @@ class JointRig(Rig):
     
     """
     
+    attach_type_constraint = 0
+    attach_type_matrix = 1
+    
+    
     def __init__(self, description, side=None):
         super(JointRig, self).__init__(description, side)
         
@@ -558,12 +656,17 @@ class JointRig(Rig):
         self.attach_joints = True
         self.auto_control_visibility = True
         
+        self._switch_shape_attribute_name = None
+        self._attach_type = 0
+        
     def _attach_joints(self, source_chain, target_chain):
         
         if not self.attach_joints:
             return
         
-        space.AttachJoints(source_chain, target_chain).create()
+        attach = space.AttachJoints(source_chain, target_chain)
+        attach.set_attach_type(self._attach_type)
+        attach.create()
         
         if cmds.objExists('%s.switch' % target_chain[0]):
             switch = rigs_util.RigSwitch(target_chain[0])
@@ -574,7 +677,7 @@ class JointRig(Rig):
                 if self.auto_control_visibility:
                     switch.add_groups_to_index((weight_count-1), self.control_group)
                 switch.create()
-                
+              
     def _check_joints(self, joints):
         
         for joint in joints:
@@ -594,15 +697,10 @@ class JointRig(Rig):
             joints (list): Joints by name.
         """
         
-        
-        if type(joints) != list:
-            self.joints = [joints]
-            
-            self._check_joints(self.joints)
-            
-            return
-        
+        joints = vtool.util.convert_to_sequence(joints)
+                
         self.joints = joints
+        self.buffer_joints = joints
         
         self._check_joints(self.joints)
 
@@ -616,6 +714,10 @@ class JointRig(Rig):
         
         self.attach_joints = bool_value
         
+    def set_attach_type(self, attach_type):
+        
+        self._attach_type = attach_type
+        
     def set_auto_switch_visibility(self, bool_value):
         """
         When attaching more than one joint chain. 
@@ -624,12 +726,26 @@ class JointRig(Rig):
 
         self.auto_control_visibility = bool_value
         
+    def set_add_switch_shape(self, name_for_attribute, name_for_node = None):
+        """
+        Add a switch attribute, for example: ikFk
+        
+        Args:
+            name_for_attribute (str) : The name to give the switch attribute upon creation. ie. ikFk
+            name_for_node (str) : The name to give the shape to be created that the attribute will live on.  ie. settings_arm_L
+        """
+        
+        self._switch_shape_attribute_name = name_for_attribute
+        self._switch_shape_node_name = name_for_node
+        
+        
 class BufferRig(JointRig):
     """
     Extends JointRig with ability to create buffer chains.
     The buffer chain creates a duplicate chain for attaching the setup to the main chain.
     This allows multiple rigs to be attached to the main chain.
     """
+    
     
     
     def __init__(self, name, side=None):
@@ -643,12 +759,14 @@ class BufferRig(JointRig):
         
         if self.create_buffer_joints:
             if not self.build_hierarchy:
-            
+                
                 duplicate_hierarchy = space.DuplicateHierarchy( self.joints[0] )
                 
                 duplicate_hierarchy.stop_at(self.joints[-1])
                 duplicate_hierarchy.only_these(self.joints)
                 duplicate_hierarchy.replace(self._buffer_replace[0], self._buffer_replace[1])
+                
+                
                 
                 self.buffer_joints = duplicate_hierarchy.create()
                 
@@ -660,7 +778,9 @@ class BufferRig(JointRig):
                 self.buffer_joints = build_hierarchy.create()
     
             cmds.parent(self.buffer_joints[0], self.setup_group)
-
+            
+        
+            
         if not self.create_buffer_joints:
             self.buffer_joints = self.joints
         
@@ -678,15 +798,24 @@ class BufferRig(JointRig):
         
         self.build_hierarchy = bool_value
     
-    def set_buffer(self, bool_value):
+    def set_buffer(self, bool_value, name_for_attribute = None, name_for_node = None):
         """
         Turn off/on the creation of a buffer chain.  
         
         Args:
             bool_value (bool): Wehter to create the buffer chain.
+            name_for_attribute : Name to give an optional switch attribute
+            name_for_node: name to give the node the optional switch attribute lives on.
         """
         
         self.create_buffer_joints = bool_value
+        self._connect_important = bool_value
+        
+        if name_for_attribute:
+            self._switch_shape_attribute_name = name_for_attribute
+            self._switch_shape_node_name = name_for_node
+    
+
     
     def create(self):
         super(BufferRig, self).create()
@@ -920,7 +1049,7 @@ class SparseRig(JointRig):
             return
         
         
-        for joint in self.joints:
+        for joint in self.buffer_joints:
             
             control = self._create_control()
         
@@ -1108,7 +1237,7 @@ class SparseLocalRig(SparseRig):
         self.current_inc = 0
         inc = 0
         
-        for joint in self.joints:
+        for joint in self.buffer_joints:
             
             control = self._create_control()
             
@@ -3635,12 +3764,13 @@ class IkAppendageRig(BufferRig):
     def __init__(self, description, side=None):
         super(IkAppendageRig, self).__init__(description, side)
         
+        self.right_side_fix = False
         self.create_twist = True
         self.create_stretchy = True
         self.btm_control = None
         self.offset_pole_locator = None
         self.pole_offset = 3
-        self.right_side_fix = True
+        self._build_pole_control = True
         self.orient_constrain = True
         self.curve_type = None
         self.create_sub_control = True
@@ -3993,9 +4123,11 @@ class IkAppendageRig(BufferRig):
         return self.pole_angle_joints            
         
     def _create_pole_control(self):
-        control = self._create_control('POLE', curve_type = 'cube')
-        control.hide_scale_and_visibility_attributes()
-        self.poleControl = control
+        
+        if self._build_pole_control:
+            control = self._create_control('POLE', curve_type = 'cube')
+            control.hide_scale_and_visibility_attributes()
+            self.poleControl = control
         
         
         
@@ -4210,6 +4342,9 @@ class IkAppendageRig(BufferRig):
         """
         self.create_top_control = bool_value
     
+    def set_create_pole_control(self, bool_value):
+        self._build_pole_control = bool_value
+    
     def set_pole_follow_transform(self, transform, default_value = 0):
         """
         Set a transform for the pole to follow with a on/off switch on the pole control.
@@ -4262,7 +4397,8 @@ class IkAppendageRig(BufferRig):
         if self.create_twist:
             self._create_twist_joint(top_control)
         
-        self._create_pole_vector()
+        if self._build_pole_control:
+            self._create_pole_vector()
         
         if self.create_stretchy:
             if self.sub_control:
