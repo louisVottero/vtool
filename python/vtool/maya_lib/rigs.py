@@ -77,7 +77,7 @@ class Rig(object):
         self._connect_important = False
         self._connect_important_node = None
         
-        self._control_number = False
+        self._control_number = True
         
     def _post_create(self):
 
