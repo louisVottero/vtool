@@ -65,11 +65,28 @@ class Control(object):
             type_name (str): eg. 'circle', 'square', 'cube', 'pin_round' 
         """
         
+        shapes = core.get_shapes(self.control)
+        color =attr.get_color(shapes[0])
+        
         curve_data = curve.CurveDataInfo()
         curve_data.set_active_library('default_curves')
         curve_data.set_shape_to_curve(self.control, type_name)
         
         self.shapes = core.get_shapes(self.control)
+        
+        attr.set_color(self.shapes, color)
+    
+    def set_curve_as_text(self, text):
+        
+        shapes = core.get_shapes(self.control)
+        
+        color = attr.get_color(shapes[0])
+        
+        curve.set_shapes_as_text_curves(self.control, text)
+        
+        self.shapes = core.get_shapes(self.control)
+        
+        attr.set_color(self.shapes, color)
     
     def set_to_joint(self, joint = None, scale_compensate = False):
         """
@@ -159,8 +176,6 @@ class Control(object):
         var = attr.MayaStringVariable('curveType')
         var.create(joint)
         var.set_value(curve_type_value)
-        
-        
         
     def translate_shape(self, x,y,z):
         """
@@ -314,11 +329,31 @@ class Control(object):
         """
         attr.hide_keyable_attributes(self.control)
         
-    def rotate_order(self, xyz_order_string):
+    def rotate_order(self, xyz_order):
         """
         Set the rotate order on a control.
         """
-        cmds.setAttr('%s.rotateOrder' % self.node, xyz_order_string)
+        
+        if type(xyz_order) == int:
+            value = xyz_order
+        else:
+            value = 0
+            
+            if xyz_order == 'xyz':
+                value = 0
+            if xyz_order == 'yzx':
+                value = 1
+            if xyz_order == 'zxy':
+                value = 2
+            if xyz_order == 'xzy':
+                value = 3
+            if xyz_order == 'yxz':
+                value = 4
+            if xyz_order == 'zyx':
+                value = 5
+            
+        
+        cmds.setAttr('%s.rotateOrder' % self.node, value)
     
     def color_respect_side(self, sub = False, center_tolerance = 0.001):
         """
@@ -816,6 +851,9 @@ class StretchyChain:
         self.extra_joint = None
         self.damp_name = 'dampen'
         self.scale_offset = 1
+        self.attribute_name = 'autoStretch'
+        self._defulat_value = 0
+        self._create_title = True
     
     def _get_joint_count(self):
         return len(self.joints)
@@ -989,16 +1027,15 @@ class StretchyChain:
         
     def _create_attributes(self, stretch_on_off):
         
-        title = attr.MayaEnumVariable('STRETCH')
-        title.create(self.attribute_node)
-        title.set_locked(True)
+        if self._create_title:
+            attr.create_title('STRETCH')
         
-        stretch_on_off_var = attr.MayaNumberVariable('autoStretch')
+        stretch_on_off_var = attr.MayaNumberVariable(self.attribute_name)
         stretch_on_off_var.set_node(self.attribute_node)
         stretch_on_off_var.set_variable_type(stretch_on_off_var.TYPE_DOUBLE)
         stretch_on_off_var.set_min_value(0)
         stretch_on_off_var.set_max_value(1)
-        
+        stretch_on_off_var.set_value(self._defulat_value)
         stretch_on_off_var.create()
         
         stretch_on_off_var.connect_out('%s.blender' % stretch_on_off)
@@ -1161,6 +1198,15 @@ class StretchyChain:
     def set_extra_joint(self, joint):
         self.extra_joint = joint
     
+    def set_attribute_name(self, attribute_name):
+        self.attribute_name = attribute_name
+    
+    def set_default_value(self, value):
+        self._defulat_value = value
+    
+    def set_create_title(self, bool_value):
+        self._create_title = bool_value
+    
     def create(self):
         
         top_locator, btm_locator = self._build_stretch_locators()
@@ -1218,6 +1264,232 @@ class StretchyChain:
         return top_locator, btm_locator
 
 
+class StretchyElbowLock(object):
+
+    def __init__(self, three_joints, three_controls):
+        """
+        Create an elbow lock stretchy on the three joints
+        
+        Args:
+            three_joints (list): For example the arm, elbow and wrist joint.  Can be any 3 joints though
+            three_controls (list): For example the top arm control, the pole vector control and the btm control.  Controls should transforms that correspond to an ik setup.
+        """
+        self.joints = three_joints
+        self.controls = three_controls
+        self.axis_letter = 'X'
+    
+        self.attribute_control = three_controls[-1]
+        self.lock_attribute_control = three_controls[1]
+        
+        self.description = 'rig'
+        
+        self._use_translate = False
+        self._value = 0
+    
+    def _duplicate_joints(self):
+        
+        
+        dup_hier = space.DuplicateHierarchy(self.joints[0])
+        dup_hier.only_these(self.joints)
+        duplicates = dup_hier.create()
+        
+        found = []
+        
+        for dup, orig in zip(duplicates, self.joints):
+            new = cmds.rename(dup, 'default_%s' % orig)
+            found.append(new)
+            
+        cmds.hide(found[0])
+            
+        self.dup_joints = found
+    
+    def _create_distance(self, transform1, transform2):
+        
+        distance_node = cmds.createNode('distanceBetween')
+        
+        cmds.connectAttr('%s.worldMatrix' % transform1, '%s.inMatrix1' % distance_node)
+        cmds.connectAttr('%s.worldMatrix' % transform2, '%s.inMatrix2' % distance_node)
+        
+        return distance_node       
+        
+    def _connect_double_linear(self, attribute1, attribute2, input_attribute = None):
+        
+        add_double_linear = cmds.createNode('addDoubleLinear')
+        
+        cmds.connectAttr(attribute1, '%s.input1' % add_double_linear)
+        cmds.connectAttr(attribute2, '%s.input2' % add_double_linear)
+        
+        if input_attribute:
+            cmds.connectAttr('%s.output' % add_double_linear, input_attribute)
+        
+        return add_double_linear
+    
+    
+    
+    def _multiply_divide(self, attribute1, attribute2, input_attribute = None):
+        
+        mult = cmds.createNode('multiplyDivide')
+        
+        cmds.connectAttr(attribute1, '%s.input1X' % mult)
+        cmds.connectAttr(attribute2, '%s.input2X' % mult)
+        
+        if input_attribute:
+            cmds.connectAttr('%s.outputX' % mult, input_attribute)
+    
+        return mult
+    
+    def _condition(self, color_if_true_attribute, first_term_attribute, second_term_attribute):
+        
+        condition = cmds.createNode('condition')
+        
+        cmds.connectAttr(color_if_true_attribute, '%s.colorIfTrueR' % condition)
+        cmds.connectAttr(first_term_attribute, '%s.firstTerm' % condition)
+        cmds.connectAttr(second_term_attribute, '%s.secondTerm' % condition)
+        
+        return condition
+    
+    def _blendTwoAttr(self, attribute1, attribute2, input_attribute = None):
+        
+        blend_two = cmds.createNode('blendTwoAttr')
+        
+        cmds.connectAttr(attribute1, '%s.input[0]' % blend_two)
+        cmds.connectAttr(attribute2, '%s.input[1]' % blend_two)
+        
+        if input_attribute:
+            cmds.connectAttr('%s.output' % blend_two, input_attribute)
+        
+        return blend_two
+    
+    def _add_attribute(self, node, attribute_name, default = 0):
+        attr.create_title(node, 'STRETCH')
+        cmds.addAttr(node, ln = attribute_name, k = True, dv = default)
+        
+    def _rename(self, old_name, new_name):
+        
+        return cmds.rename(old_name, core.inc_name('%s_%s_%s' % (cmds.nodeType(old_name), new_name, self.description)))
+        
+    def set_stretch_axis(self, axis_letter):
+        
+        self.axis_letter = axis_letter.upper()
+    
+    def set_lock_attribute_control(self, name_of_a_control):
+        
+        self.lock_attribute_control = name_of_a_control
+        
+    def set_attribute_control(self, name_of_a_control):
+        self.attribute_control = name_of_a_control
+        
+    def set_description(self, description):
+        self.description = description
+        
+    def set_use_translate_for_stretch(self, bool_value):
+        self._use_translate = bool_value
+        
+    def set_default_value(self, value):
+        self._value = value
+        
+    def create(self):
+        
+        attribute_control = self.attribute_control
+        lock_control = self.lock_attribute_control
+        
+        self._add_attribute(lock_control, 'lock')
+        cmds.addAttr('%s.lock' % lock_control, e=True, minValue = 0, maxValue = 1, hasMinValue = True, hasMaxValue = True)
+        self._add_attribute(attribute_control, 'stretch', self._value)
+        cmds.addAttr('%s.stretch' % attribute_control, e=True, minValue = 0, maxValue = 1, hasMinValue = True, hasMaxValue = True)
+        self._add_attribute(attribute_control, 'nudge')
+        #cmds.addAttr('%s.nudge' % attribute_control, e=True, minValue = 0, hasMinValue = True)
+        
+        
+        # joint distance
+        self._duplicate_joints()
+        
+        distance1 = self._create_distance(self.dup_joints[0], self.dup_joints[1])
+        distance2 = self._create_distance(self.dup_joints[1], self.dup_joints[2])
+        
+        default_distance_double_linear = self._connect_double_linear('%s.distance' % distance1, '%s.distance' % distance2)
+        
+        distance1 = self._rename(distance1, 'defaultTop')
+        distance2 = self._rename(distance2, 'defaultBtm')
+        
+        
+        # control distance
+        distance_full = self._create_distance(self.controls[0], self.controls[-1])
+        distance_top = self._create_distance(self.controls[0], self.controls[1])
+        distance_btm = self._create_distance(self.controls[1], self.controls[-1])
+        
+        distance_full = self._rename(distance_full, 'full')
+        distance_top = self._rename(distance_top, 'top')
+        distance_btm = self._rename(distance_btm, 'btm')        
+        
+        mult = self._multiply_divide('%s.distance' %  distance_full, '%s.output' % default_distance_double_linear)
+        cmds.setAttr('%s.operation' % mult, 2)
+        
+        mult = self._rename(mult, 'stretch')
+        
+        condition = self._condition('%s.outputX' % mult, '%s.distance' % distance_full, '%s.output' % default_distance_double_linear)
+        cmds.setAttr('%s.operation' % condition, 2)
+        
+        condition = self._rename(condition, 'stretch')
+        
+        blend_two_stretch = cmds.createNode('blendTwoAttr')
+        
+        blend_two_stretch = self._rename(blend_two_stretch, 'stretch')
+        
+        cmds.setAttr('%s.input[0]' % blend_two_stretch, 1)
+        cmds.connectAttr('%s.outColorR' % condition, '%s.input[1]' % blend_two_stretch)
+        cmds.connectAttr('%s.stretch' % attribute_control, '%s.attributesBlender' % blend_two_stretch)
+        
+        nudge_offset = cmds.createNode('multDoubleLinear')
+        nudge_offset = self._rename(nudge_offset, 'nudgeOffset')
+        
+        cmds.connectAttr('%s.nudge' % attribute_control, '%s.input1' % nudge_offset)
+        cmds.setAttr('%s.input2' % nudge_offset, 0.001)
+        
+        nudge_double_linear = self._connect_double_linear('%s.output' % blend_two_stretch, '%s.output' % nudge_offset)
+        nudge_double_linear = self._rename(nudge_double_linear, 'nudge')
+        
+        mult_lock = self._multiply_divide('%s.distance' % distance_top, '%s.distance' % distance1)
+        mult_lock = self._rename(mult_lock, 'lock')
+        cmds.setAttr('%s.operation' % mult_lock, 2)
+        
+        cmds.connectAttr('%s.distance' % distance_btm, '%s.input1Y' % mult_lock)
+        cmds.connectAttr('%s.distance' % distance2, '%s.input2Y' % mult_lock)
+        
+        top_lock_blend = self._blendTwoAttr('%s.output' % nudge_double_linear,
+                                            '%s.outputX' % mult_lock)
+        top_lock_blend = self._rename(top_lock_blend, 'lockTop')
+        
+        cmds.connectAttr('%s.lock' % lock_control, '%s.attributesBlender' % top_lock_blend)
+        
+        btm_lock_blend = self._blendTwoAttr('%s.output' % nudge_double_linear,
+                                            '%s.outputY' % mult_lock)
+        btm_lock_blend = self._rename(btm_lock_blend, 'lockBtm')
+ 
+        cmds.connectAttr('%s.lock' % lock_control, '%s.attributesBlender' % btm_lock_blend)
+ 
+        top_mult = cmds.createNode('multDoubleLinear')
+        top_mult = self._rename(top_mult, 'top')
+        cmds.connectAttr('%s.output' % top_lock_blend, '%s.input2' % top_mult)
+        
+        if self._use_translate:
+            cmds.setAttr('%s.input1' % top_mult, cmds.getAttr('%s.translate%s' % (self.joints[1], self.axis_letter)))
+            cmds.connectAttr('%s.output' % top_mult, '%s.translate%s' % (self.joints[1], self.axis_letter))
+        else:
+            cmds.setAttr('%s.input1' % top_mult, 1)
+            cmds.connectAttr('%s.output' % top_mult, '%s.scale%s' % (self.joints[0], self.axis_letter))
+        
+        btm_mult = cmds.createNode('multDoubleLinear')
+        btm_mult = self._rename(btm_mult, 'btm')
+        cmds.connectAttr('%s.output' % btm_lock_blend, '%s.input2' % btm_mult)
+        
+        if self._use_translate:
+            cmds.setAttr('%s.input1' % btm_mult, cmds.getAttr('%s.translate%s' % (self.joints[2], self.axis_letter)))
+            cmds.connectAttr('%s.output' % btm_mult, '%s.translate%s' % (self.joints[2], self.axis_letter))
+        else:    
+            cmds.setAttr('%s.input1' % btm_mult, 1)
+            cmds.connectAttr('%s.output' % btm_mult, '%s.scale%s' % (self.joints[1], self.axis_letter))
+            
 class RiggedLine(object):
     """
     rigs
@@ -1322,7 +1594,7 @@ class RigSwitch(object):
         self.switch_joint = switch_joint
         
         if not cmds.objExists('%s.switch' % switch_joint):
-            vtool.util.warning('%s is most like not a buffer joint with switch attribute.' % switch_joint)
+            vtool.util.warning('%s is most likely not a buffer joint with switch attribute.' % switch_joint)
 
         self.groups = {}
         
@@ -1342,7 +1614,15 @@ class RigSwitch(object):
         edit_constraint = space.ConstraintEditor()
         constraint = edit_constraint.get_constraint(self.switch_joint, 'parentConstraint')
         
-        weight_count = edit_constraint.get_weight_count(constraint)
+        if constraint:
+            weight_count = edit_constraint.get_weight_count(constraint)
+        else:
+            switch_nodes = space.SpaceSwitch().get_space_switches(self.switch_joint)
+            
+            if switch_nodes:
+                sources = space.SpaceSwitch().get_source(switch_nodes[0])
+                
+                weight_count = len(sources)
         
         return weight_count
 
@@ -1400,7 +1680,12 @@ class RigSwitch(object):
             var = attr.MayaNumberVariable(self.attribute_name)
                
             var.set_min_value(0)
-            var.set_max_value( (weight_count - 1) ) 
+            
+            max_value = weight_count -1
+            if max_value < var.get_max_value():
+                max_value = var.get_max_value()
+            
+            var.set_max_value( max_value ) 
             var.set_keyable(True) 
             var.create(self.control_name)    
             
@@ -1408,7 +1693,7 @@ class RigSwitch(object):
             cmds.connectAttr(attribute_name, '%s.switch' % self.switch_joint) 
         
         
-        
+            
         if not self.control_name or not cmds.objExists(self.control_name):
             attribute_name = '%s.switch' % self.switch_joint
         
@@ -2492,6 +2777,44 @@ def create_offset_sequence(attribute, target_transforms, target_attributes):
         offset += section
 
 
+def is_control(transform):
+    
+    is_control = False
+    
+    maybe_control = False 
+    
+    
+    if transform.endswith('_CON'):
+        maybe_control = True
+
+    if transform.startswith('CNT_'):
+        maybe_control = True
+                
+    if cmds.objExists('%s.control' % transform):
+        return True
+    
+    if cmds.objExists('%s.tag' % transform):
+        
+        value = cmds.getAttr('%s.tag' % transform)
+            
+        if value:
+            maybe_control = True
+        
+    if cmds.objExists('%s.curveType' % transform):
+            if maybe_control:
+                
+                if not core.has_shape_of_type(transform, 'nurbsCurve'):
+                    return False
+                
+                return True
+        
+    if maybe_control:
+        if core.has_shape_of_type(transform, 'nurbsCurve') or core.has_shape_of_type(transform, 'nurbsSurface'):
+            return True
+        
+          
+        
+
 def get_controls(namespace = ''):
     """
     Get the controls in a scene.
@@ -2650,12 +2973,13 @@ def mirror_controls():
     Mirror cv positions of all controls in the scene. 
     See get_controls() and mirror_control() for rules. 
     """
-    selection = cmds.ls(sl = True)
+    #selection = cmds.ls(sl = True)
     
     controls = get_controls()
     
     found = []
     
+    """
     if selection:
         for selection in selection:
             if selection in controls:
@@ -2663,6 +2987,9 @@ def mirror_controls():
     
     if not selection or not found:
         found = controls
+    """
+    
+    found = controls
     
     mirrored_controls = []
     
@@ -2927,7 +3254,7 @@ def fix_sub_controls(controls = None):
     
     controls = vtool.util.convert_to_sequence(controls)
     
-        
+    found = []
     
     for control in controls:
         if not core.has_shape_of_type(control, 'nurbsCurve'):
@@ -2977,9 +3304,11 @@ def fix_sub_controls(controls = None):
                 
                 control_inst = Control(transform)
                 control_inst.scale_shape(scale_offset, scale_offset, scale_offset, use_pivot= False)
+                found.append(transform)
                 
             scale_offset -= .1
             
+    cmds.select(found)
 
 def set_control_space(x,y,z, control, compensate_cvs = True):
     
@@ -3000,14 +3329,6 @@ def set_control_space(x,y,z, control, compensate_cvs = True):
 def mesh_border_to_control_shape(mesh, control, offset = .1):
     
     new_curve = geo.create_curve_from_mesh_border(mesh, offset)
-    control_inst = Control(control)
-    control_inst.copy_shapes(new_curve)
-    
-    cmds.delete(new_curve)
-    
-def edge_loop_to_control_shape(edge, control, offset = .1):
-    
-    new_curve = geo.create_curve_from_edge_loop(edge, offset)
     control_inst = Control(control)
     control_inst.copy_shapes(new_curve)
     
