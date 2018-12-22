@@ -9,6 +9,7 @@ import vtool.qt_ui
 import vtool.util_file
 import vtool.util
 
+
 #vtool.util.activate_profiler()
 
 import ui_data
@@ -150,7 +151,12 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         external_editor = self.settings.get('external_editor')
         
         if external_editor:
-            p = subprocess.Popen([external_editor, code_file])
+            if not vtool.util.is_linux():
+                
+                p = subprocess.Popen([external_editor, code_file])
+            else:
+                p = subprocess.Popen([external_editor, code_file])
+                
         
         if not external_editor:
             util_file.open_browser(code_file)
@@ -232,6 +238,10 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.settings = settings
     
+    def save_code(self):
+        
+        self.code_widget.code_edit.save_tabs()
+    
     def close_widgets(self, close_windows = False):
         
         self.script_widget.code_manifest_tree.clearSelection()
@@ -240,6 +250,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         #self.code_widget.code_edit.clear()
         
         self.code_widget.code_edit.close_tabs()
+        
         
         self.set_directory(None, sync_code = False)
         
@@ -270,7 +281,6 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         self.setSizePolicy(policy)
                
         self.directory = None
-        
         
     def _build_widgets(self):
         
@@ -323,15 +333,10 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         if not open_in_window:
             tab = self.code_edit.add_tab(path, name)
-            #tab.setFocus()
-            
             
         if open_in_window:
-            floating_tab = self.code_edit.add_floating_tab(path, name)
-            #floating_tab.setFocus()
+            floating_tab = self.code_edit.add_floating_tab(path, name)           
             
-        
-                  
     def _code_saved(self, code_edit_widget):
         
         if not code_edit_widget:
@@ -522,13 +527,29 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         self.code_manifest_tree.item_removed.connect(self._remove_code)
         self.code_manifest_tree.item_duplicated.connect(self._duplicate)
         
+        self.edit_mode_button = qt.QPushButton('Edit')
+        self.edit_mode_button.setCheckable(True)
+        self.edit_mode_button.setMaximumWidth(100)
+        self.edit_mode_button.setMaximumHeight(20)
+        self.edit_mode_button.setMaximumWidth(40)
+        self.edit_mode_button.toggled.connect(self._edit_click)
+        
+        btm_layout = qt.QHBoxLayout()
+        btm_layout.addWidget(self.history_widget)
+        btm_layout.addWidget(self.edit_mode_button, alignment= qt.QtCore.Qt.AlignRight)
         
         self.main_layout.addWidget(self.code_manifest_tree)
-        self.main_layout.addWidget(self.history_widget)
-        
-        
+        self.main_layout.addLayout(btm_layout)
         
         self.main_layout.addLayout(buttons_layout)
+    
+    def _edit_click(self, bool_value):
+        
+        self.code_manifest_tree.setDragEnabled(bool_value)
+        self.code_manifest_tree.setAcceptDrops(bool_value)  
+        self.code_manifest_tree.setDropIndicatorShown(bool_value)      
+        
+        
     
     def _create_history_widget(self):
         
@@ -689,6 +710,8 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
     def set_external_code_library(self, code_directory):
         self.exteranl_code_libarary = code_directory
+        
+    
     
 
 class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
@@ -703,7 +726,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     def __init__(self):
         
         super(CodeManifestTree, self).__init__()
-        
+                
         self.process = None
         
         self.title_text_index = 0
@@ -717,9 +740,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.setSelectionMode(self.ExtendedSelection)
         
         self.setDragDropMode(self.InternalMove)
-        self.setDragEnabled(True)
-        self.setAcceptDrops(True)  
-        self.setDropIndicatorShown(True) 
+        self.setDragEnabled(False)
+        self.setAcceptDrops(False)  
+        self.setDropIndicatorShown(False) 
         self.setAutoScroll(True)
         
         self.setDefaultDropAction(qt.QtCore.Qt.MoveAction)
@@ -844,7 +867,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         is_dropped = self.is_item_dropped(event, strict = True)
         
-        #removing this lines triggers the new behavior that is still being developed
         if not self.hierarchy:
             is_dropped = False
         
@@ -852,7 +874,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         if not is_dropped:
             self._insert_drop(event)
-        #new
+        
         if is_dropped:
             self._add_drop(event)
         
@@ -1026,6 +1048,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         entered_item = self._get_entered_item(event)
         entered_parent = entered_item.parent()
         
+        entered_item.text(0)
+        if entered_parent:
+            entered_parent.text(0)
+        
         from_list = event.source()
             
         insert_inc = 0
@@ -1063,7 +1089,14 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 if insert_row == -1:
                     insert_row = self.topLevelItemCount()
                 
-                self.insertTopLevelItem(insert_row, new_item)
+                if not entered_item:
+                    self.insertTopLevelItem(insert_row, new_item)
+                else:
+                    if entered_item.text(0) == parent.text(0):
+                        
+                        entered_item.insertChild(entered_item.childCount()-1, new_item)
+                    else:
+                        self.insertTopLevelItem(insert_row, new_item)
                 
             if entered_parent:
                 
@@ -1198,12 +1231,26 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if int == 0:
             state = qt.QtCore.Qt.Unchecked
         
-        count = self.topLevelItemCount()
         
-        for inc in range(0, count):
-            item = self.topLevelItem(inc)
+        value = qt_ui.get_permission('This will activate/deactivate all code. Perhaps consider saving your manifest before continuing.\n\n\n Continue?', self, title = 'Warning:  Activate/Deactivate all code')
+        
+        if not value:
+            self.update_checkbox = False
+            if int == 0:
+                self.checkbox.setCheckState(qt.QtCore.Qt.Checked)
+            if int == 2:
+                self.checkbox.setCheckState(qt.QtCore.Qt.Unchecked)
+                
+            self.update_checkbox = True
+            return
+        
+        for iterator in qt.QTreeWidgetItemIterator(self): 
+                    
+            item = iterator.value()
             
-            item.setCheckState(0, state)
+            if item:
+                item.setCheckState(0, state)
+            
         
     def _create_context_menu(self):
         
@@ -1425,6 +1472,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             inc += 1
             
+            if not vtool.util.get_trailing_number(new_name):
+                new_name = new_name + '1'
+                continue
+            
             new_name = vtool.util.replace_last_number(new_name, str(inc))
             
             if inc >= 1000:
@@ -1642,9 +1693,13 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         if status == 'Success':
             item.set_state(1)
+            
         if not status == 'Success':
             item.set_state(0)
-        
+            
+        if log.find('Warning!') > -1:
+            item.set_state(3)
+            
         item.setBackground(0, orig_background)
         
     def _duplicate_current_item(self):
@@ -1850,6 +1905,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         return False
     
     def is_process_script_startpoint(self, directory):
+        
         item = self._get_item_by_name(directory)
         
         model_index = self.indexFromItem(item)
@@ -1932,12 +1988,12 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             if vtool.util.is_in_maya():
                 
+                from vtool.maya_lib import core
+                
                 value = qt_ui.get_permission('Start a new scene?', self)
                 if value:
                     
-                    import maya.cmds as cmds
-                    
-                    cmds.file(new = True, f = True)
+                    core.start_new_scene()
     
                 if value == None:
                     return
@@ -2075,7 +2131,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             item = items[0]
             
-        
         self.clearSelection()
         
         item_index = self.indexFromItem(item)
@@ -2105,10 +2160,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             item = items[0]
             
-        
         self.clearSelection()
-        
-        
         
         item_index = self.indexFromItem(item)
         
@@ -2116,6 +2168,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             self.cancel_breakpoint()
         
         self.start_index = item_index.internalId()
+        
         self.start_item = item
         
         if vtool.util.is_in_maya():
@@ -2155,6 +2208,10 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.cancel_startpoint()
         self.cancel_breakpoint()
         
+    def set_process_runtime_dict(self, process_runtime_dictionary):
+        
+        self.process.set_runtime_dict(process_runtime_dictionary)
+        
 class ManifestItem(vtool.qt_ui.TreeWidgetItem):
     
     
@@ -2170,7 +2227,7 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         maya_version = vtool.util.get_maya_version()
         
         if maya_version > 2015 or maya_version == 0:
-            self.status_icon = self._square_fill_icon(0, 0, 0)
+            self.status_icon = self._circle_fill_icon(0, 0, 0)
             
         if maya_version < 2016 and maya_version != 0:
             self.status_icon = self._radial_fill_icon(0, 0, 0)
@@ -2199,6 +2256,31 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
         
         
         self.setIcon(0, icon)
+    
+    def _circle_fill_icon(self, r,g,b):
+        alpha = 1
+        
+        if r == 0 and g == 0 and b == 0:
+            alpha = 0
+        
+        pixmap = qt.QPixmap(20, 20)
+        pixmap.fill(qt.QtCore.Qt.transparent)
+        #pixmap.fill(qt.QColor.fromRgbF(r, g, b, alpha))
+        
+        painter = qt.QPainter(pixmap)
+        painter.setBrush(qt.QColor.fromRgbF(r, g, b, alpha))
+        
+        painter.setPen(qt.QtCore.Qt.NoPen)
+        painter.drawEllipse(0,0,20,20)
+        
+        #painter.fillRect(0, 0, 100, 100, qt.QColor.fromRgbF(r, g, b, alpha))
+        painter.end()
+        
+        icon = qt.QIcon(pixmap)
+        
+        
+        self.setIcon(0, icon)
+        
         
     
     def _radial_fill_icon(self, r,g,b):
@@ -2209,7 +2291,6 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
             alpha = 0
         
         
-        self._square_fill_icon(r, g, b)
         
         
         pixmap = qt.QPixmap(20, 20)
@@ -2256,7 +2337,6 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
                      
     def set_state(self, state):
         
-        
         maya_version = vtool.util.get_maya_version()
         
         if maya_version < 2016 and maya_version != 0:
@@ -2269,18 +2349,22 @@ class ManifestItem(vtool.qt_ui.TreeWidgetItem):
                 self._radial_fill_icon(0.6, 0.6, 0.6)
             if state == 2:
                 self._radial_fill_icon(1.0, 1.0, 0.0)
-        
+            if state == 3:
+                self._radial_fill_icon(.65, .7, 0.225)
+                
         if maya_version > 2015 or maya_version == 0:
     
             if state == 0:
-                self._square_fill_icon(1.0, 0.0, 0.0)    
+                self._circle_fill_icon(1.0, 0.0, 0.0)    
             if state == 1:
-                self._square_fill_icon(0.0, 1.0, 0.0)
+                self._circle_fill_icon(0.0, 1.0, 0.0)
             if state == -1:
-                self._square_fill_icon(0, 0, 0)
+                self._circle_fill_icon(0, 0, 0)
                 #self._square_fill_icon(0.6, 0.6, 0.6)
             if state == 2:
-                self._square_fill_icon(1.0, 1.0, 0.0)
+                self._circle_fill_icon(1.0, 1.0, 0.0)
+            if state == 3:
+                self._circle_fill_icon(.65, .7, .225)
                 
         self.run_state = state
         

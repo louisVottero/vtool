@@ -5,11 +5,11 @@ from vtool import qt_ui, qt
 from vtool import util
 from vtool import util_file
 
-
 import maya.OpenMayaUI as OpenMayaUI
 import maya.cmds as cmds
 import maya.mel as mel
 import maya.utils
+
 
 #--- signals
 class new_scene_object(qt.QtCore.QObject):
@@ -191,7 +191,7 @@ class DockControlWrapper(object):
         else:
             cmds.dockControl(self._dock_name,aa=self._allowed_areas, a = self._dock_area, content=self._label, label=self._label,  fl = floating, visible = True, fcc = self._floating_changed)
         
-    
+     
     
 class MayaWindow(qt_ui.BasicWindow):
     def __init__(self):
