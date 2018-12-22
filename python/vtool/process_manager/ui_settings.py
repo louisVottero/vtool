@@ -62,11 +62,6 @@ class SettingsWidget(qt_ui.BasicWidget):
         scroll.setWidgetResizable(True)
         scroll.setWidget(self.options_widget)
         
-        self.editor_directory_widget = ExternalEditorWidget()
-        self.editor_directory_widget.set_label('External Editor')
-        
-        self.options_widget.main_layout.addWidget(self.editor_directory_widget)
-        
         process_group = qt.QGroupBox('Process')
         group_layout = qt.QVBoxLayout()
         process_group.setLayout(group_layout)
@@ -192,7 +187,8 @@ class SettingsWidget(qt_ui.BasicWidget):
     def set_settings(self, settings):
         self.settings = settings
         self.project_directory_widget.set_settings(settings)
-        self.editor_directory_widget.set_settings(settings)
+        self.code_tab_group.editor_directory_widget.set_settings(settings)
+        
         
         self._get_stop_on_error()
         self._get_start_new_scene_on_process()
@@ -221,9 +217,13 @@ class CodeTabGroup(qt_ui.Group):
         
     def _build_widgets(self):
         
+        self.editor_directory_widget = ExternalEditorWidget()
+        self.editor_directory_widget.set_label('External Editor')
+        
         self.code_text_size = qt_ui.GetInteger('Code Text Size')
         self.code_text_size.set_value(8)
         self.code_text_size.valueChanged.connect(self._set_code_text_size)
+        self.code_text_size.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         
         label = qt.QLabel('Manifest Double Click')
         self.open_tab = qt.QRadioButton("Open In Tab")
@@ -246,12 +246,15 @@ class CodeTabGroup(qt_ui.Group):
         self.open_new.toggled.connect(self._set_manifest_double_click)
         self.open_external.toggled.connect(self._set_manifest_double_click)
         
-        self.main_layout.addWidget(self.code_text_size)
+        self.main_layout.addWidget(self.editor_directory_widget)
+        
         self.main_layout.addWidget(label)
         self.main_layout.addWidget(self.open_tab)
         self.main_layout.addWidget(self.open_new)
         self.main_layout.addWidget(self.open_external)
         self.main_layout.addSpacing(12)
+        
+        self.main_layout.addWidget(self.code_text_size)
         self.main_layout.addWidget(self.pop_save)
         
     def _get_manifest_double_click(self):
@@ -404,7 +407,6 @@ class ShotgunGroup(qt_ui.Group):
         self.settings = settings
         self.get_shotgun_toolkit.set_settings(settings)
         
-        #self._get_shotgun_url()
         self._get_shotgun_name()
         self._get_shotgun_code()
         
@@ -416,6 +418,8 @@ class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
     def __init__(self, parent = None):
            
         super(ExternalEditorWidget, self).__init__(parent)
+        
+        self.directory_browse_button.setText('Load Executable')
         
         self.settings = None
         
@@ -431,14 +435,21 @@ class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
                 self.directory_changed.emit(filename)
                 self.settings.set('external_editor', str(filename))
     
+    def _text_changed(self):
+        
+        directory = self.get_directory()
+        
+        self.directory_changed.emit(directory)
+        
+        self.settings.set('external_editor', str(directory))
+    
     def set_settings(self, settings):
         
         self.settings = settings
         
         filename = self.settings.get('external_editor')
         
-        if util_file.is_file(str(filename)):
-            self.set_directory_text(filename)
+        self.set_directory_text(filename)
         
 class ShotgunToolkitWidget(qt_ui.GetDirectoryWidget):
     
@@ -518,17 +529,12 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
     def _build_widgets(self):
     
         file_layout = qt.QHBoxLayout()
-    
-        #self.directory_label = qt.QLabel('directory')
-
-        #self.label = qt.QLabel('Paths')
         
-        directory_browse = qt.QPushButton('Browse')
+        directory_browse = qt.QPushButton('Add Directory')
         directory_browse.setMaximumWidth(100)
         
         directory_browse.clicked.connect(self._browser)
-
-        #file_layout.addWidget(self.directory_label)
+        
         file_layout.addWidget(directory_browse)
         
         self.list = self._define_history_list()
@@ -538,7 +544,7 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
         self.list.itemClicked.connect(self._item_selected)
         
         self.main_layout.addSpacing(5)
-        #self.main_layout.addWidget(self.label)
+        
         self.main_layout.addWidget(self.list)
         self.main_layout.addLayout(file_layout)
         
@@ -577,11 +583,6 @@ class ProjectDirectoryWidget(qt_ui.GetDirectoryWidget):
             found = directory 
         
         self.directory_changed.emit(directory)
-        
-        #self.list.select(directory)
-        #self.set_label(directory[1])
-        
-        #self.list.refresh_list(directory, found)
         
     def _send_directories(self, directory):
         self.directory_changed.emit(directory)
@@ -948,8 +949,8 @@ class CodeDirectoryWidget(qt_ui.GetDirectoryWidget):
     
         file_layout = qt.QHBoxLayout()
     
-        directory_browse = qt.QPushButton('Browse')
-        directory_browse.setMaximumWidth(100)
+        directory_browse = qt.QPushButton('Add Code Directory')
+        directory_browse.setMaximumWidth(200)
         
         directory_browse.clicked.connect(self._browser)
         

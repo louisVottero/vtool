@@ -168,7 +168,9 @@ class TemplateTree(ui_view.ProcessTreeWidget):
     def __init__(self):
         super(TemplateTree, self).__init__()
         
-        #self.setDragEnabled(False)
+        self.setDragEnabled(False)
+    
+    
     
     def _set_item_menu_vis(self, position):
         

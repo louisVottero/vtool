@@ -16,6 +16,7 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     description = 'Process'
     
     copy_done = qt_ui.create_signal()
+    path_filter_change = qt_ui.create_signal(object)
     
     def __init__(self):
         
@@ -30,98 +31,30 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         policy.setHorizontalStretch(0)
         self.setSizePolicy(policy)
         
-    def _define_tree_widget(self):
-        return ProcessTreeWidget()
     
-    def _define_manager_widget(self):
         
-        tree_manager = ManageProcessTreeWidget()
+    def _define_tree_widget(self):
         
-        tree_manager.copy_done.connect(self._copy_done)
         
-        return tree_manager
+        tree_widget = ProcessTreeWidget() 
+        
+        tree_widget.copy_special_process.connect(self._copy_match)
+        tree_widget.copy_process.connect(self._copy_done)
+        
+        return tree_widget
+        
+    def _build_widgets(self):
+        super(ViewProcessWidget, self)._build_widgets()
+        
+        self.copy_widget = None
     
     def _copy_done(self):
         self.copy_done.emit()
     
-    def _item_selection_changed(self):
-        
-        name, item = super(ViewProcessWidget, self)._item_selection_changed()
-        
-        if not name:
-            return
-                
-        name = self.tree_widget._get_parent_path(item)
-        
-        
-        self.manager_widget.copy_widget.set_other_process(name, self.directory)
-    
-    def _update_sub_path_filter_setting(self, value):
-        self.settings.set('process sub path filter', value)
-    
-    def _update_name_filter_setting(self, value):
-        self.settings.set('process name filter', value)
-    
-    def get_current_process(self):
-        return self.tree_widget.current_name
-    
-    def clear_sub_path_filter(self):
-        self.filter_widget.clear_sub_path_filter()
-        
-    def clear_name_filter(self):
-        self.filter_widget.clear_name_filter()
-        
-    
-    def set_directory(self, directory, sub=False):
-        super(ViewProcessWidget,self).set_directory(directory, sub)
-        
-        settings_inst = util_file.SettingsFile()
-        
-        settings_inst.set_directory(self.directory)
-        
-        self.set_settings(settings_inst)
-        
-    def set_settings(self, settings):
-        
-        self.settings = settings
-        
-        
-        self.tree_widget.set_settings(settings)
-        
-        self.clear_sub_path_filter()
-        self.clear_name_filter()
-        
-        name_filter = self.settings.get('process name filter')
-        sub_path_filter = self.settings.get('process sub path filter')
-        
-        self.filter_widget.set_emit_changes(False)    
-        self.filter_widget.set_sub_path_filter(sub_path_filter)    
-        self.filter_widget.set_name_filter(name_filter)
-        self.filter_widget.set_emit_changes(True)
-        
-        self.filter_widget.sub_path_changed.connect(self._update_sub_path_filter_setting)
-        self.filter_widget.name_filter_changed.connect(self._update_name_filter_setting)
-         
-class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
-    
-    copy_done = qt_ui.create_signal()
-    
-    def __init__(self):
-        super(ManageProcessTreeWidget, self).__init__()
-        
-        self.directory = None
-        
-    def _define_main_layout(self):
-        return qt.QVBoxLayout()
-    
-    def _build_widgets(self):
+    def _copy_match(self, process_name = None, directory = None):
         
         copy_widget = CopyWidget()
         self.copy_widget = copy_widget
-        
-    def _copy_match(self, process_name = None, directory = None):
-        
-        copy_widget = self.copy_widget 
                 
         copy_widget.pasted.connect(self._copy_done)
         copy_widget.canceled.connect(self._copy_done)
@@ -139,7 +72,12 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         if not directory:
             directory = self.directory
         
+        if not util_file.is_dir(util_file.join_path(directory, current_process)):
+            util.warning('Could not get a directory.  set sub path filter may be set wrong.')
+            return
+        
         copy_widget.show()
+        
         copy_widget.set_process(current_process, directory)
         
         self.setFocus()
@@ -148,10 +86,6 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
             #then it must be using the found current process
             items = self.tree_widget.selectedItems()
             self.tree_widget.scrollToItem(items[0])
-        
-        self.copy_done.emit()
-        
-    def _copy_done(self):
         
         self.copy_done.emit()
         
@@ -170,11 +104,72 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         
         if not target_process:
             return
-                
+        
         name = target_process.get_name()
         directory = target_process.directory
         
+        name = self._get_filter_name(name)
+        
+        
         self.copy_widget.set_other_process(name, directory)
+    
+    def _get_filter_name(self, name):
+        filter_value = self.filter_widget.get_sub_path_filter()
+        test_name = filter_value + '/' + name
+        test_path = util_file.join_path(self.directory, test_name)
+        if util_file.is_dir(test_path):
+            name = test_name
+            
+        return name
+        
+    
+    def _item_selection_changed(self):
+        
+        name, item = super(ViewProcessWidget, self)._item_selection_changed()
+        
+        if not name:
+            return
+                
+        name = self.tree_widget._get_parent_path(item)
+        
+        if name:
+            name = self._get_filter_name(name)
+        
+        if self.copy_widget:
+            self.copy_widget.set_other_process(name, self.directory)
+    
+    def _initialize_project_settings(self):
+        
+        process.initialize_project_settings(self.directory, self.settings)
+        
+    def _get_project_setting(self, name):
+        
+        value = process.get_project_setting(name, self.directory, self.settings)
+        return value
+    
+    def _set_project_setting(self, name, value):
+        
+        process.set_project_setting(name, value, self.directory, self.settings)   
+    
+    def _update_sub_path_filter(self, value):
+        
+        test_dir = self.directory
+        
+        if value:
+            test_dir = util_file.join_path(self.directory, value)
+        
+        if not util_file.is_dir(test_dir):
+            self.filter_widget.set_sub_path_warning(True)
+        else: 
+            self.filter_widget.set_sub_path_warning(False)
+        
+        self._set_project_setting('process sub path filter', value)
+        
+        self.path_filter_change.emit(value)
+    
+    def _update_name_filter_setting(self, value):
+        
+        self._set_project_setting('process name filter', value)
         
     def get_current_process(self):
         
@@ -182,19 +177,86 @@ class ManageProcessTreeWidget(qt_ui.ManageTreeWidget):
         if not items:
             return
         
-        parent_path = self.tree_widget._get_parent_path(items[0])
+        item = items[0]
         
-        return parent_path
+        name = item.get_name()
+        
+        name =  self.tree_widget._get_parent_path(name)
+                
+        name = self._get_filter_name(name)
+        
+        return name
     
-    def set_directory(self, directory):
+    def clear_sub_path_filter(self):
+        self.filter_widget.clear_sub_path_filter()
+        
+    def clear_name_filter(self):
+        self.filter_widget.clear_name_filter()
+        
+    
+    def set_directory(self, directory, sub=False):
+        
+        if not directory:
+            return
+        
         self.directory = directory
         
-    def set_tree_widget(self, tree_widget):
-        self.tree_widget = tree_widget
+        settings_directory = util.get_env('VETALA_SETTINGS')
         
-        self.tree_widget.copy_special_process.connect(self._copy_match)
-        self.tree_widget.copy_process.connect(self._copy_done)
+        settings_inst = util_file.SettingsFile()
+        settings_inst.set_directory(settings_directory)
         
+        self.set_settings(settings_inst)
+        
+        sub_path = self.filter_widget.get_sub_path_filter()
+                
+        super(ViewProcessWidget,self).set_directory(directory, sub_path = sub_path)
+        
+        
+    def set_settings(self, settings):
+        
+        self.settings = settings
+        
+        self.tree_widget.set_settings(settings)
+            
+        
+        if not self.settings.has_setting('project settings'):
+            return
+    
+        
+        name_filter = self._get_project_setting('process_name_filter')
+        sub_path_filter = self._get_project_setting('process sub path filter')
+        
+        self.filter_widget.update_tree = False
+        self.filter_widget.sub_path_filter.clear()
+        self.filter_widget.filter_names.clear()
+        self.filter_widget.update_tree = True
+        
+        
+        self.filter_widget.set_emit_changes(False)
+            
+        if sub_path_filter:
+            
+            
+            test_path = util_file.join_path(self.directory, sub_path_filter)
+            
+            if not util_file.is_dir(test_path):
+                self.filter_widget.set_sub_path_warning(True)
+            
+            self.filter_widget.set_sub_path_filter(sub_path_filter)
+            self.path_filter_change.emit(sub_path_filter)
+            
+            
+            
+        if name_filter:    
+            self.filter_widget.set_name_filter(name_filter)
+            
+        self.filter_widget.set_emit_changes(True)
+        
+        self.filter_widget.sub_path_changed.connect(self._update_sub_path_filter)
+        self.filter_widget.name_filter_changed.connect(self._update_name_filter_setting)
+        
+
         
 class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
@@ -210,9 +272,15 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     show_settings = qt_ui.create_signal()
     selection_changed = qt_ui.create_signal()
     
-    def __init__(self):
+    
+    def __init__(self, checkable = True):
+        
+        self.checkable = checkable
+        self.deactivate_modifiers = True
         
         self.settings = None
+        self.shift_activate = False
+        
         
         super(ProcessTreeWidget, self).__init__()
         
@@ -241,7 +309,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 
         self.setSelectionBehavior(self.SelectItems)
         #self.setSelectionBehavior(self.SelectedClicked)
-        self.setSelectionMode(self.ContiguousSelection)
+        
+        
+        #self.setSelectionMode(self.ContiguousSelection)
+        self.setSelectionMode(self.SingleSelection)
         
         self.dragged_item = None
         
@@ -251,41 +322,42 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.current_folder = None
         
+        self.itemSelectionChanged.connect(self._selection_changed)
         
-        if util.is_in_maya():
-            
-            directory = util_file.get_vetala_directory()
-            icon_on = util_file.join_path(directory, 'icons/plus.png')
-            icon_off = util_file.join_path(directory, 'icons/minus_alt.png')
-            
-            icon_folder = util_file.join_path(directory, 'icons/folder.png')
-            icon_folder_open = util_file.join_path(directory, 'icons/folder_open.png')
-            
-            
-            lines = 'QTreeView::indicator:unchecked {image: url(%s);}' % icon_off
-            lines += ' QTreeView::indicator:checked {image: url(%s);}' % icon_on
-            
-            #lines += ' QTreeView::branch:open {image: url(%s);}' % icon_folder_open
-            #lines += ' QTreeView::branch:closed:has-children {image: url(%s);}' % icon_folder
-            
-            #lines += ' QTreeWidget::branch:closed:has-children:has-siblings, QTreeWidget::branch:closed:has-children:!has-siblings {image: url(%s);}' % icon_folder
-            #lines += ' QTreeWidget::branch:opened:has-children:has-siblings, QTreeWidget::branch:opened:has-children:!has-siblings {image: url(%s);}' % icon_folder_open
-            
-            self.setStyleSheet( lines)
-    """
-    def drawRow(self, painter, option, index):
+        self.disable_right_click = False
         
-        if util.is_in_maya():
-            brush = qt.QBrush( qt.QColor(70,70,70))
-            painter.fillRect( option.rect, brush)
-        
-        #painter.restore()
-        
-        super(ProcessTreeWidget, self).drawRow(painter, option, index)
-    """
-    
+        if self.checkable:
+            if util.is_in_maya():
+                
+                directory = util_file.get_vetala_directory()
+                icon_on = util_file.join_path(directory, 'icons/plus.png')
+                icon_off = util_file.join_path(directory, 'icons/minus_alt.png')
+                
+                icon_folder = util_file.join_path(directory, 'icons/folder.png')
+                icon_folder_open = util_file.join_path(directory, 'icons/folder_open.png')
+                
+                
+                lines = 'QTreeView::indicator:unchecked {image: url(%s);}' % icon_off
+                lines += ' QTreeView::indicator:checked {image: url(%s);}' % icon_on
+                
+                #lines += ' QTreeView::branch:open {image: url(%s);}' % icon_folder_open
+                #lines += ' QTreeView::branch:closed:has-children {image: url(%s);}' % icon_folder
+                
+                #lines += ' QTreeWidget::branch:closed:has-children:has-siblings, QTreeWidget::branch:closed:has-children:!has-siblings {image: url(%s);}' % icon_folder
+                #lines += ' QTreeWidget::branch:opened:has-children:has-siblings, QTreeWidget::branch:opened:has-children:!has-siblings {image: url(%s);}' % icon_folder_open
+                
+                self.setStyleSheet( lines) 
 
+    def keyPressEvent(self, event):
+        
+        if event.key() == qt.QtCore.Qt.Key_Shift:
+            self.shift_activate = True
     
+    def keyReleaseEvent(self, event):
+        if event.key() == qt.QtCore.Qt.Key_Shift:
+            
+            self.shift_activate = False
+
     def dropEvent(self, event):
         
         directory = self.directory
@@ -342,17 +414,38 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.dragged_item.setDisabled(False)
             return
         
+        old_directory = self.dragged_item.directory
+        old_name_full = self.dragged_item.get_name()
+        old_name = util_file.get_basename(old_name_full)
+        
+        test_name = self._inc_name(self.dragged_item, old_name)
+        self.dragged_item.setText(0, test_name)
+        
+        if self.checkable:  
+            
+            flags = qt.QtCore.Qt.ItemIsDragEnabled | qt.QtCore.Qt.ItemIsSelectable | qt.QtCore.Qt.ItemIsDropEnabled | qt.QtCore.Qt.ItemIsUserCheckable
+        else:
+            flags = self.dragged_item.setFlags(qt.QtCore.Qt.ItemIsDragEnabled | qt.QtCore.Qt.ItemIsSelectable | qt.QtCore.Qt.ItemIsDropEnabled )
+              
         if entered_name:
-            self.dragged_item.setFlags( qt.QtCore.Qt.ItemIsDragEnabled | qt.QtCore.Qt.ItemIsSelectable | qt.QtCore.Qt.ItemIsDropEnabled | qt.QtCore.Qt.ItemIsUserCheckable)
-            self.dragged_item.setCheckState(0, qt.QtCore.Qt.Unchecked)
-            message = 'Parent %s under %s?' % (self.dragged_item.get_name(), entered_name)
+            
+            self.dragged_item.setFlags( flags )
+            
+            if self.checkable:
+                self.dragged_item.setCheckState(0, qt.QtCore.Qt.Unchecked)
+            message = 'Parent %s under %s?' % (old_name, entered_name)
+        
         if not entered_name:
             
-            self.dragged_item.setData(0, qt.QtCore.Qt.CheckStateRole, None)
-            self.dragged_item.setFlags(qt.QtCore.Qt.ItemIsDragEnabled | qt.QtCore.Qt.ItemIsSelectable | qt.QtCore.Qt.ItemIsDropEnabled )
+            if self.checkable:
+                self.dragged_item.setData(0, qt.QtCore.Qt.CheckStateRole, None)
+                
+            self.dragged_item.setFlags(flags)
             self.dragged_item.setDisabled(True)
             
-            message = 'Unparent %s?' % self.dragged_item.get_name()
+            message = 'Unparent %s?' % old_name
+        
+        
         
         move_result = qt_ui.get_permission( message , self)
         
@@ -361,19 +454,20 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             if self.drag_parent:
                 self.drag_parent.addChild(self.dragged_item)
             self.dragged_item.setDisabled(False)
+            self.dragged_item.setText(0,old_name)
+            self.dragged_item.setSelected(True)
             return
             
         self.dragged_item.setDisabled(False)
         
-        old_directory = self.dragged_item.directory
-        old_name_full = self.dragged_item.get_name()
-        old_name = util_file.get_basename(old_name_full)
+        
         
         old_path = self.dragged_item.get_path()
         
         self.dragged_item.set_directory(directory)
         
-        new_name = self._inc_name(self.dragged_item, old_name)
+        #new_name = self._inc_name(self.dragged_item, old_name)
+        new_name = self.dragged_item.text(0)
         
         self.dragged_item.setText(0, new_name)
         if entered_name:
@@ -385,7 +479,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         move_worked = util_file.move(old_path, new_path)
 
+        if move_worked:
+            self.dragged_item.setSelected(True)
+
         if not move_worked:
+            
             self.dragged_item.set_name(old_name_full)
             old_name = util_file.get_basename(old_name_full)
             self.dragged_item.setText(0, old_name)
@@ -421,17 +519,16 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         item = self.itemAt(event.pos())
         
-        modifiers = qt.QApplication.keyboardModifiers()
-        if modifiers == qt.QtCore.Qt.ShiftModifier:
-            return
-        if modifiers == qt.QtCore.Qt.ControlModifier:
-            return
-        if modifiers == (qt.QtCore.Qt.ControlModifier | qt.QtCore.Qt.ShiftModifier):
-            return
+        if self.deactivate_modifiers:
+            modifiers = qt.QApplication.keyboardModifiers()
+            #if modifiers == qt.QtCore.Qt.ShiftModifier:
+            #    return
+            if modifiers == qt.QtCore.Qt.ControlModifier:
+                return
+            if modifiers == (qt.QtCore.Qt.ControlModifier | qt.QtCore.Qt.ShiftModifier):
+                return
         
         parent = self.invisibleRootItem()
-
-        #self.clearSelection()
         
         if item:
 
@@ -451,7 +548,43 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.dragged_item = item
         
         super(ProcessTreeWidget, self).mousePressEvent(event)
-
+    
+    def _item_collapsed(self, item):
+        #always collapses because of the loading optimization
+        return
+        
+    def _item_expanded(self, item):
+    
+        super(ProcessTreeWidget, self)._item_expanded(item)
+        
+        if self.shift_activate:
+            child_count = item.childCount()
+            
+            for inc in range(0, child_count):
+                
+                children = self._get_ancestors(item.child(inc))
+                item.child(inc).setExpanded(True)
+                
+                for child in children:
+                    child.setExpanded(True)
+    
+    def _get_ancestors(self, item):
+        
+        child_count = item.childCount()
+        
+        items = []
+        
+        for inc in range(0, child_count):
+            
+            child = item.child(inc)
+            
+            children = self._get_ancestors(child)
+            
+            items.append(child)
+            if children:
+                items += children
+        
+        return items
 
     def _set_item_menu_vis(self, position):
         
@@ -511,6 +644,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def _item_menu(self, position):
         
+        if self.disable_right_click:
+            return
+        
         self.current_folder = None
         
         
@@ -518,9 +654,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
         
-    #def visualItemRect(self, item):
-    #    pass
+    
+    def _selection_changed(self):
         
+        self.selection_changed.emit()
+    
     def _create_context_menu(self):
         
         
@@ -592,34 +730,35 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
     def _new_top_process(self):
         self.add_process(None)
-        #self.new_top_process.emit()
-    
+        
     def _inc_name(self, item, new_name):
         parent = item.parent()
         if not parent:
             parent = self.invisibleRootItem()
         
-        siblingCount = parent.childCount()
+        sibling_count = parent.childCount()
         
         name_inc = 1
-        pre_inc_name = new_name
         
-        for inc in range(0, siblingCount):
+        found_one = False
+        
+        for inc in range(0, sibling_count):
             
             child_item = parent.child(inc)
             
-            if child_item.matches(item):
-                continue
-            
             if child_item.text(0) == new_name:
-                new_name = pre_inc_name + str(name_inc)
+                
+                if not found_one:
+                    found_one = True
+                    continue
+                
+                new_name = util.increment_last_number(new_name)
+                
                 name_inc += 1
-        
+                
         return new_name
     
     def _rename_process(self, item = None):
-        
-
         
         if not item:
             items = self.selectedItems()
@@ -636,6 +775,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         new_name = qt_ui.get_new_name('New Name', self, old_name)
         
         if not new_name:
+            return
+        
+        if new_name == old_name:
+            util.warning('Item not renamed. New name matches old name.')
             return
         
         new_name = self._inc_name(item, new_name)
@@ -692,6 +835,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             target_process = process.Process()
             target_process.set_directory(self.directory)
             target_item = self.invisibleRootItem()
+        
+        
         
         new_process = process.copy_process(source_process, target_process)
         
@@ -751,6 +896,22 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     def _item_clicked(self, item, column):
         super(ProcessTreeWidget, self)._item_clicked(item, column)
         
+        
+        
+        #self.selection_changed.emit()
+        
+    def _item_remove(self, item):
+        parent_item = item.parent()
+        
+        if parent_item:
+            parent_item.removeChild(item)
+            
+        if not parent_item:
+            index = self.indexOfTopLevelItem(item)
+            self.takeTopLevelItem(index)
+            self.clearSelection()
+            self.setCurrentItem(self.invisibleRootItem())
+        
     def _load_processes(self, process_paths, folders = []):
 
         self.clear()
@@ -766,6 +927,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         parents = self.get_tree_item_path(item)
         parent_names = self.get_tree_item_names(parents)
+        
+        if not parent_names:
+            return item
         
         names = []
         
@@ -790,40 +954,69 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         return False
 
+    def _get_project_setting(self, name):
+        
+        settings_inst = None
+        
+        if not self.settings:
+            settings_directory = util.get_env('VETALA_SETTINGS')
+        
+            settings_inst = util_file.SettingsFile()
+            settings_inst.set_directory(settings_directory)
+        else:
+            settings_inst = self.settings
+        
+        settings_inst.reload()
+        
+        value = process.get_project_setting(name, self.project_dir, settings_inst)
+        return value
+        
+
     def _goto_settings_process(self):
         
-        settings = util_file.SettingsFile()
-        settings.set_directory(self.directory)
-        settings_process = settings.get('last process')
         
-        if not settings_process:
+        
+        goto_process = self._get_project_setting('process')
+        
+        if not goto_process:
             return
         
-        name = settings_process[0]
-        directory = settings_process[1]
+        path_filter = self._get_project_setting('process sub path filter')
+        
+        directory = self.project_dir
+        name = goto_process
+        
+        if path_filter:
+            directory = util_file.join_path(directory, path_filter)
+        
+        found = False
         
         iterator = qt.QTreeWidgetItemIterator(self)
-        
+                
         while iterator.value():
             item = iterator.value()
             
-            if hasattr(item, 'directory') and hasattr(item, 'name'):
-                
-                util_file.get_common_path(directory, item.directory)
-                if item.directory == directory:
+            if not found:
+                if hasattr(item, 'directory') and hasattr(item, 'name'):
                     
-                    
-                    
-                    if name.startswith(item.name):
-                        index = self.indexFromItem(item)
-                        self.setExpanded(index, True)
+                    util_file.get_common_path(directory, item.directory)
+                    if item.directory == directory:
                         
-                    if name == item.name:
                         
-                        self.setCurrentItem(item)
-                        item.setSelected(True)
-                        # I could leave the iterator here but I don't because it could crash Maya.
-                    
+                        
+                        if name.startswith(item.name):
+                            
+                            index = self.indexFromItem(item)
+                            self.setExpanded(index, True)
+                        
+                        if str(name) == str(item.name):
+                            
+                            self.setCurrentItem(item)
+                            item.setSelected(True)
+                            found = True
+                            
+                            # I could leave the iterator here but I don't because it could crash Maya.
+                        
             iterator += 1
     
     def _add_process_items(self, item, path):
@@ -852,7 +1045,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
     def _add_process_item(self, name, parent_item = None, create = False, find_parent_path = True, folder = False):
         
-        
         expand_to = False
         
         items = self.selectedItems()
@@ -880,6 +1072,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 if not item_path:
                     parent_item = None
         
+        
         item = ProcessItem(self.directory, name)
         
         if not folder:
@@ -894,9 +1087,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         if parent_item and not folder:
             enable = process_inst.get_setting('enable')
-            if not enable:
+            if not enable and self.checkable:
                 item.setCheckState(0, qt.QtCore.Qt.Unchecked )
-            if enable:
+            if enable and self.checkable:
                 item.setCheckState(0, qt.QtCore.Qt.Checked )
         
         if not parent_item:
@@ -993,6 +1186,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self._goto_settings_process()
         
+        
     def add_process(self, name):
         
         items = self.selectedItems()
@@ -1004,6 +1198,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         parent_item = None
         
+        if not util_file.get_permission(self.directory):
+            util.warning('Could not get permission in directory: %s' % self.directory)
+            return
+        
         if name == '':
             path = self.directory
             
@@ -1013,21 +1211,31 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 if path:
                     path = util_file.join_path(self.directory, path)
                 
+            if not util_file.get_permission(path):
+                util.warning('Could not get permission in directory: %s' % path)
+                return
+                
             name = process.get_unused_process_name(path)
             
         if name == None:
-        
+            
             name = process.get_unused_process_name(self.directory)
             parent_item = self.invisibleRootItem()
         
         item = self._add_process_item(name, parent_item = parent_item, create = True)
+        
+        
         
         self.setCurrentItem(item)
         self.setItemSelected(item, True)
         
         parent_item = item.parent()
         
-        self._rename_process(item)
+        if not util_file.is_dir(item.get_path()):
+            self._item_remove(item)
+            util.warning('Could not create process')
+        else:
+            self._rename_process(item)
         
     def delete_process(self):
         
@@ -1190,10 +1398,25 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if current_item.has_parts():
             qt.QTreeWidgetItem(current_item)
     
+    def set_deactivate_modifiers(self, bool_value):
+        
+        self.deactivate_modifiers = bool_value
+    
+    def set_directory(self, directory, refresh=True, sub_path = ''):
+        
+        self.project_dir = directory
+        self.sub_path = sub_path
+        
+        if sub_path:
+            directory = util_file.join_path(directory, self.sub_path)
+        
+        super(ProcessTreeWidget, self).set_directory(directory, refresh=refresh)
+        
+        
+    
     def set_settings(self, settings):
         
         self.settings = settings
-      
 
 class ProcessItem(qt.QTreeWidgetItem):
     
@@ -1226,6 +1449,7 @@ class ProcessItem(qt.QTreeWidgetItem):
         
         if hasattr(process, 'filepath') and not process.filepath:
             return
+        
         
         if role == qt.QtCore.Qt.CheckStateRole:
             
@@ -1357,13 +1581,18 @@ class CopyWidget(qt_ui.BasicWidget):
     canceled = qt_ui.create_signal()
     pasted = qt_ui.create_signal()
     
-    def __init__(self):
+    def __init__(self, parent = None):
         
-        super(CopyWidget, self).__init__()
+        
+        
+        self.process = None
+        self.other_process = None
+        self.other_processes = []
+        
+        super(CopyWidget, self).__init__(parent)
         self.setWindowTitle('Copy Match')
         self.setWindowFlags(qt.QtCore.Qt.WindowStaysOnTopHint)
         self.setMinimumWidth(600)
-        self.process = None
         
         alpha = 50
         
@@ -1382,33 +1611,58 @@ class CopyWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
-        self.copy_from = qt.QLabel('Copy from:')
-        self.copy_from.setAlignment(qt.QtCore.Qt.AlignCenter)
-        
         self.tabs = qt.QTabWidget()
         
         self.data_list = CopyTree()
         self.code_list = CopyTree()
+        self.option_list = CopyTree()
         self.settings_list = CopyTree()
         
-        #self.data_list.setMaximumHeight(300)
-        #self.code_list.setMaximumHeight(300)
-        #self.settings_list.setMaximumHeight(300)
+        
+        v_side_bar = qt.QVBoxLayout()
+        
+        self.show_view = qt.QPushButton('Show Others') 
+        self.show_view.clicked.connect(self._show_others)
+        
+        load_button = qt.QPushButton('Compare')
+        self.view = ProcessTreeWidget(checkable = False)
+        self.view.set_deactivate_modifiers(False)
+        
+        v_side_bar.addWidget(load_button)
+        v_side_bar.addWidget(self.view)
+        
+        self.side_bar = qt.QWidget()
+        self.side_bar.setLayout(v_side_bar)
+        self.side_bar.hide()
+        self.side_bar.setMaximumWidth(250)
+        
+        
+        load_button.clicked.connect(self._load_other)
+        
+        
+        self.view.disable_right_click = True
+        
+        self._update_view = False
+        
+        self.view.selection_changed.connect(self._process_selection_changed)
+        #qt.QTreeWidget.MultiSelection
+        self.view.setSelectionMode(self.view.ContiguousSelection)
+        
+        self.view.setDragEnabled(False)
         
         self.data_list.setSortingEnabled(True)
-        self.data_list.setSelectionMode(self.data_list.ExtendedSelection)
-        self.code_list.setSelectionMode(self.code_list.ExtendedSelection)
-        self.settings_list.setSelectionMode(self.settings_list.ExtendedSelection)
-        
-        self.data_list.setHeaderLabels(['Source', 'Size/Date Match', 'Target'])
-        self.code_list.setHeaderLabels(['Source', 'Content Match', 'Target'])
-        self.settings_list.setHeaderLabels(['Source', 'Content Match', 'Target'])
-        
+                
         self.code_list.itemSelectionChanged.connect(self._code_selected)
         
         self.tabs.addTab(self.data_list, 'Data')
         self.tabs.addTab(self.code_list, 'Code')
+        self.tabs.addTab(self.option_list, 'Options')
         self.tabs.addTab(self.settings_list, 'Settings')
+        
+        h_main_layout = qt.QHBoxLayout()
+        
+        h_main_layout.addWidget(self.tabs)
+        h_main_layout.addWidget(self.side_bar)
         
         h_layout = qt.QHBoxLayout()
         
@@ -1422,18 +1676,67 @@ class CopyWidget(qt_ui.BasicWidget):
         
         h_layout.addWidget(self.paste_button)
         h_layout.addWidget(cancel)
-        
-        self.paste_to = qt.QLabel('- Select Process in the View to Match -')
-        self.paste_to.setAlignment(qt.QtCore.Qt.AlignCenter)
+        h_layout.addWidget(self.show_view)
         
         self.progress_bar = qt.QProgressBar()
         self.progress_bar.hide()
         
-        self.main_layout.addWidget(self.copy_from)
-        self.main_layout.addWidget(self.tabs)
-        self.main_layout.addWidget(self.paste_to)
+        self.main_layout.addLayout(h_main_layout)
+        
         self.main_layout.addWidget(self.progress_bar)
         self.main_layout.addLayout(h_layout)
+        
+    def _process_selection_changed(self):
+        
+        if not self._update_view:
+            return
+        
+        items = self.view.selectedItems()
+        
+        process_name = self.process.get_name()
+        
+        self.other_processes = []
+        for item in items:
+            name =  item.get_name()
+            
+            project_path = self.view.directory
+            
+            if name.startswith('/'):
+                name = name[1:]
+            
+            if process_name.startswith('/'):
+                process_name = process_name[1:]
+            
+            if process_name == name:
+                
+                
+                #item.setDisabled(True)
+                item.setSelected(False)
+                continue
+            
+            other_process_inst = process.Process(name)
+            other_process_inst.set_directory(project_path)
+            
+            self.other_processes.append(other_process_inst)
+    
+    def _show_others(self):
+        
+        if self.side_bar.isVisible():
+            self._update_view = True
+            self.side_bar.hide()
+            self.show_view.setText('Show Others')
+            return 
+        
+        if not self.side_bar.isVisible():
+            self._update_view = True
+            self.view.set_directory(self.process.directory)
+            self.side_bar.show()
+            self.show_view.setText('Hide Others')
+            return
+        
+    def _load_other(self):
+        
+        self.populate_other()
         
     def _code_selected(self):
         
@@ -1447,32 +1750,76 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.update_on_select = False
         
-        if selected:
-            first_item = selected[-1]
-            first_item.setSelected(False)
+        for item in selected:
             
-        
-        name = str(first_item.text(0))
-        
-        split_name = name.split('/')
-        
-        for inc in range(0, len(split_name)):
+            parent_item = item.parent()
             
-            sub_name = split_name[:inc]
-            sub_name = string.join(sub_name, '/')
-            
-            for inc2 in range(0, self.code_list.topLevelItemCount()):
-                item = self.code_list.topLevelItem(inc2)
-                if str(item.text(2)).find('-') == -1:
-                    continue
-                test_name = item.text(0)
+            while parent_item:
+                columns =  parent_item.columnCount()
                 
-                if test_name == sub_name:
-                    item.setSelected(True)
-        
-        first_item.setSelected(True)
+                found = False
+                
+                for inc in range(1, columns+1):
+                    parent_text = parent_item.text(inc)
+                    if parent_text.find('-') > -1:
+                        found = True
+                        break
+                
+                if found:
+                    if not parent_item.isSelected():
+                        parent_item.setSelected(True)
+                    
+                parent_item = parent_item.parent()
         
         self.update_on_select = True
+        
+    def _get_code_names(self, process_inst):
+        
+        codes, states = process_inst.get_manifest()
+        
+        code_names = []
+        
+        for code in codes:
+            
+            code_name = code.split('.')
+            
+            if not process_inst.is_code_folder(code_name[0]):
+                continue
+            
+            if len(code_name) > 1 and code_name[1] == 'py':
+                code_names.append(code_name[0])
+        
+        code_names.insert(0, 'manifest')
+        
+        return code_names
+        
+    def _get_long_name(self, item):
+        
+        current_item = item
+        append_name = ''
+        name = item.text(0)
+        
+        while current_item.parent():
+            
+            parent_item = current_item.parent()
+            append_name = parent_item.text(0)
+            
+            name = append_name + '/' + name
+            
+            current_item = parent_item
+        
+        return name
+    
+    def _get_option_long_name(self, item):
+        
+        long_name = self._get_long_name(item)
+        
+        long_name = long_name.replace('/', '.')
+        
+        if item.childCount():
+            long_name += '.'
+        
+        return long_name
         
     def _cancelled(self):
         self.close()
@@ -1480,220 +1827,231 @@ class CopyWidget(qt_ui.BasicWidget):
         
     def _populate_lists(self):
         
+        
         self.progress_bar.reset()
         self.progress_bar.setVisible(True)
-        self.progress_bar.setRange(0, 3)
+        self.progress_bar.setRange(0, 4)
         
-        self.data_list.clear()
-        self.code_list.clear()
-        self.settings_list.clear()
+        current_tab = self.tabs.currentIndex()
         
-        data_folders = self.process.get_data_folders()
+        self.clear_lists()
         
-        self.populate_list(0, self.data_list, data_folders)
-        
+        self.populate_data_list()
         self.progress_bar.setValue(1)
         
-        codes, states = self.process.get_manifest()
-        #codes = self.process.get_code_files(basename = True)
-        code_names = []
-        
-        for code in codes:
-            
-            
-            code_name = code.split('.')
-            
-            if not self.process.is_code_folder(code_name[0]):
-                continue
-            
-            if len(code_name) > 1 and code_name[1] == 'py':
-                code_names.append(code_name[0])
-                
-        code_names.insert(0, 'manifest')
-        
-        self.populate_list(0, self.code_list, code_names)    
-        
+        self.populate_code_list()
         self.progress_bar.setValue(2)
         
-        setting_names = self.process.get_setting_names()
-        
-        self.populate_list(0, self.settings_list, setting_names)
-        
+        self.populate_option_list()
         self.progress_bar.setValue(3)
         
+        self.populate_settings_list()
+        self.progress_bar.setValue(4)
+        
+        self.tabs.setCurrentIndex(current_tab)
+        
+        
         self.progress_bar.setVisible(False)
-        
-    def populate_list(self, column, list_widget, data):
-        
-        for sub_data in data:
-            
-            list_widget.add_item(column, sub_data)
-            
-    def clear_lists(self):
-        
-        self.data_list.clear()
-        self.code_list.clear()
-        self.settings_list.clear()
-        
-    def populate_other_data(self, data):
-        
-        list_widget = self.data_list
-        
-        count = list_widget.topLevelItemCount()
-        
-        self.progress_bar.setValue(0)
-        self.progress_bar.setRange(0, count)
-        
-        
-        for inc in range(0, count):
-            
-            self.progress_bar.setValue(inc)
-            
-            item = list_widget.topLevelItem(inc)
-            
-            for sub_data in data:
-                
-                
-                if item.text(0) == sub_data:
-                    item.setText(2, (' ' * 10) + sub_data)
-                    
-                    source_data = self.process.get_data_instance(sub_data)
-                    target_data = self.other_process.get_data_instance(sub_data)
-                    
-                    if not target_data:
-                        continue
-                    
-                    
-                    source_file = source_data.get_file()
-                    target_file = target_data.get_file()
-                    
-                    if not target_file:
-                        continue
-                    
-                    if not util_file.is_file(target_file):
-                        target_file = None
-                    
-                    same_content = False
-                    
-                    same = False
-                    
-                    if util_file.is_file(source_file) and target_file:
-                        
-                        same_content = util_file.is_same_text_content(source_file, target_file)
-                        
-                        if same_content:
-                            same = True  
-                        
-                    else:
-                        
-                        if target_file:
-                            same_date = util_file.is_same_date(source_file, target_file)
-                            
-                            if same_date:
-                                same = True
-                        
-                        if same:
-                            source_size = util_file.get_size(source_data.get_file())
-                            target_size = util_file.get_size(target_data.get_file())
-                        
-                            if abs(source_size) - abs(target_size) > 0.01:
-                                same = False
-                                        
-                    if same:
-                        
-                        item.setText(1, 'Yes')
-                        item.setBackground(1, self.yes_brush)
-                    
-                    if not same:
-                        item.setText(1, 'No')
-                        item.setBackground(1, self.no_brush)
-                        
-                    model_index = list_widget.indexFromItem(item, column=0)
-                    list_widget.scrollTo(model_index)
-        
-    def populate_other_code(self, code):
-        
-        self.tabs.setCurrentIndex(1)
-        
-        list_widget = self.code_list
-        
-        count = list_widget.topLevelItemCount()
-        
-        self.progress_bar.setValue(0)
-        self.progress_bar.setRange(0, count)
-        
-        for inc in range(0, count):
-            
-            self.progress_bar.setValue(inc)
-            
-            item = list_widget.topLevelItem(inc)
-            
-            for sub_data in code:
-                
-                if item.text(0) == sub_data:
-                    item.setText(2, (' ' * 10) + sub_data)
-                    
-                    source_folder = self.process.get_code_file(sub_data)
-                    target_folder = self.other_process.get_code_file(sub_data)
-                    
-                    source_folder, target_folder
-                    
-                    match_lines = util_file.is_same_text_content(source_folder, target_folder)
-                    
-                    if match_lines:
-                        item.setText(1, 'Yes')
-                        item.setBackground(1, self.yes_brush)
-                    if not match_lines:
-                        item.setText(1, 'No')
-                        item.setBackground(1, self.no_brush)
-    
-    def populate_other_settings(self, settings):
-        
-        self.tabs.setCurrentIndex(2)
-        
-        list_widget = self.settings_list
-        
-        count = list_widget.topLevelItemCount()
-        
-        self.progress_bar.setValue(0)
-        self.progress_bar.setRange(0, count)
-                
-        for inc in range(0, count):
-        
-            self.progress_bar.setValue(inc)
-            
-            item = list_widget.topLevelItem(inc)
 
-            
-            for sub_data in settings:
+    def _fill_headers(self, list_inst):
+        
+        name = self.process.get_name()
                 
+        list_inst.setHeaderLabels([name, 'Target'])
+
+        others = []
+        
+        if not self.other_processes:
+            return
                 
-                if item.text(0) == sub_data:
-                    item.setText(2, (' ' * 10) + sub_data)
-                    
-                    source = self.process.get_setting_file(sub_data)
-                    target = self.other_process.get_setting_file(sub_data)
-                    
-                    match_lines = util_file.is_same_text_content(source, target)
-                    
-                    if match_lines:
-                        item.setText(1, 'Yes')
-                        item.setBackground(1, self.yes_brush)
-                    if not match_lines:
-                        item.setText(1, 'No')
-                        item.setBackground(1, self.no_brush)
+        other_process_count = len(self.other_processes)
+
+        for inc in range(0, other_process_count):
     
+            other_process = self.other_processes[inc]
+    
+            others.append(other_process.get_name())
+            
+            list_inst.header().showSection(inc+1)
+            
+        labels = [name]
+        labels += others
+        
+        list_inst.setHeaderLabels(labels)
+        
+        header_count = list_inst.header().count()
+        
+        if (header_count-1) > other_process_count:
+        
+            for inc in range(other_process_count+1, header_count):
+                
+                list_inst.header().hideSection(inc)
+    
+
+    def _fill_all_headers(self):
+        
+        self._fill_headers(self.data_list)
+        self._fill_headers(self.code_list)
+        self._fill_headers(self.settings_list)
+        self._fill_headers(self.option_list)
+                            
+    def _set_item_state(self, item, value, column):
+        
+        if value:
+            item.setText(column, 'Match')
+            item.setBackground(column, self.yes_brush)
+        
+        if not value:
+            item.setText(column, 'No Match')
+            item.setBackground(column, self.no_brush)
+        
+        self.repaint()
+            
+    def _compare_data(self, other_process, data_name, sub_folder = None):
+        
+        source_data = self.process.get_data_instance(data_name)
+        target_data = other_process.get_data_instance(data_name)
+        
+        if not source_data:
+            return
+        
+        if not target_data:
+            return
+        
+        source_file = source_data.get_file_direct(sub_folder = sub_folder)
+        target_file = target_data.get_file_direct(sub_folder = sub_folder)
+        
+        if not target_file:
+            return
+        
+        if not util_file.is_file(target_file):
+            target_file = None
+        
+        same_content = False
+        
+        same = False
+        
+        if util_file.is_file(source_file) and target_file:
+            
+            same_content = util_file.is_same_text_content(source_file, target_file)
+            
+            if same_content:
+                same = True  
+            
+        else:
+            
+            source_size = util_file.get_size(source_file, 2)
+            target_size = util_file.get_size(target_file, 2)
+        
+            if abs(source_size) - abs(target_size) > 0.1:
+                same = False
+            else:
+                same = True
+                
+        return same   
+
+    def _compare_code_children(self, item, column, other_process_inst, parent_name = None):
+        
+        if not parent_name:
+            parent_name = item.text(0)
+        
+        for inc_child in range(0, item.childCount()):
+            
+            
+            
+            child_item = item.child(inc_child)
+            
+                
+            child_name = child_item.text(0)
+            
+            long_name = parent_name + '/' + child_name
+            
+            if not other_process_inst.is_code_folder(long_name):
+                continue
+            
+            source_folder = self.process.get_code_file(long_name)
+            target_folder = other_process_inst.get_code_file(long_name)
+                        
+            same = util_file.is_same_text_content(source_folder, target_folder)
+            
+            self._set_item_state(child_item, same, column)  
+            
+            self._compare_code_children(child_item, column, other_process_inst, long_name)
+    
+    def _compare_setting(self, process,other_process, long_name):
+        
+        value = process.get_setting(long_name)
+        other_value = other_process.get_setting(long_name)
+        
+        if value == other_value:
+            return True
+        
+        return False
+          
+    def _compare_option(self, process,other_process, long_name):
+        
+        value = process.get_option(long_name)
+        other_value = other_process.get_option(long_name)
+        
+        if value == other_value:
+            return True
+        
+        return False
+
+    def _compare_option_children(self, item, column, other_process_inst, parent_name = None):
+        
+        if item.childCount() == 0:
+            
+            return
+        
+        if not parent_name:
+            parent_name = item.text(0)
+            parent_name += '.'
+        
+        for inc_child in range(0, item.childCount()):
+            
+            child_item = item.child(inc_child)
+            
+            child_name = child_item.text(0)
+            
+            long_name = parent_name + child_name
+            
+            if child_item.childCount() > 0:
+                long_name += '.'
+            
+            if not other_process_inst.has_option(long_name):
+                continue
+            
+            same = self._compare_option(self.process, other_process_inst, long_name)
+            
+            self._set_item_state(child_item, same, column)  
+            
+            self._compare_option_children(child_item, column, other_process_inst, long_name)  
+            
     def _paste(self):
         
         self.progress_bar.setVisible(True)
         
-        self._paste_data()
-        self._paste_code()
-        self._paste_settings()
+        current_tab = self.tabs.currentIndex()
         
-        self.clear_lists()
-        self._populate_lists()
-        self.load_compare()
+        
+        if current_tab == 0:
+        
+            if self.data_list.selectedItems():
+                self._paste_data()
+            
+        if current_tab == 1:
+            if self.code_list.selectedItems():    
+                self._paste_code()
+            
+        if current_tab == 2:
+            if self.option_list.selectedItems():
+                self._paste_options()
+            
+        if current_tab == 3:
+            if self.settings_list.selectedItems():
+                self._paste_settings()
+        
         
         self.progress_bar.hide()
         
@@ -1710,13 +2068,31 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.progress_bar.reset()
         self.progress_bar.setRange(0, len(data_items))
-        
+        self.progress_bar.setValue(inc)
         
         for item in data_items:
-            name = str(item.text(0))
             
-            process.copy_process_data( self.process, self.other_process, name)
+            parent_item = item.parent()
+            
+            if parent_item:
+                name = str(parent_item.text(0))
+                folder_name = str(item.text(0))
+            else:
+                name = str(item.text(0))
+                folder_name = ''
+            
+            for inc2 in range(0, len(self.other_processes)):
+                
+                other_process_inst = self.other_processes[inc2]
+                
+                process.copy_process_data( self.process, other_process_inst, name, sub_folder = folder_name)
+            
+                same = self._compare_data(other_process_inst, name, folder_name)
+                
+                self._set_item_state(item, same, inc2+1)
+            
             self.progress_bar.setValue(inc)
+            
             inc += 1
             
     def _paste_code(self):
@@ -1729,53 +2105,73 @@ class CopyWidget(qt_ui.BasicWidget):
         self.tabs.setCurrentIndex(1)
     
         found = []
-        slash_count_list = []
+        item_dict = {}
         
         manifest = ''
         
         for item in code_items:
-            name = str(item.text(0))
+            
+            name = self._get_long_name(item)
             
             if not name:
                 continue
             
             if name == 'manifest':
                 manifest = name
-                
-            if not name == 'manifest':
-                found.append(name)
-                slash_count_list.append(name.count('/'))
-                
-        inc = 0
+                item_dict[manifest] = item
+                continue
+            
+            found.append(name)
+            item_dict[name] = item
         
-        self.progress_bar.reset()
-        self.progress_bar.setRange(0, len(found))
         
-        if found:
         
-            sort = util.QuickSort(slash_count_list)
-            sort.set_follower_list(found)
-            slash_count_list, found = sort.run()
         
+        
+        
+        #manifest needs to be added at the end so it gets synced
         if manifest:
             found.append(manifest)
         
+        self.progress_bar.reset()
+        self.progress_bar.setRange(0, len(found))
+            
+        inc = 0
+        
+        
         for name in found:
             
-            process.copy_process_code( self.process, self.other_process, name)
+            other_process = None
+            
+            for inc2 in range(0, len(self.other_processes)):
+            
+                other_process = self.other_processes[inc2] 
+            
+                process.copy_process_code( self.process, other_process, name)
+                
+                source_folder = self.process.get_code_file(name)
+                target_folder = other_process.get_code_file(name)
+                
+                same = util_file.is_same_text_content(source_folder, target_folder)
+                item = item_dict[name]
+                self._set_item_state(item, same, inc2+1)
+                
+            
             self.progress_bar.setValue(inc)
             inc += 1
             
+        if len(self.other_processes) == 1:
+            if other_process:
+                other_process.sync_manifest()
+                
     def _paste_settings(self):
-        
-        
         
         setting_items = self.settings_list.selectedItems()
         
         if not setting_items:
             return
         
-        self.tabs.setCurrentIndex(2)
+        self.tabs.setCurrentIndex(3)
         
         inc = 0
         
@@ -1785,20 +2181,436 @@ class CopyWidget(qt_ui.BasicWidget):
         for item in setting_items:
             name = str(item.text(0))
             
-            process.copy_process_setting(self.process, self.other_process, name)
+            value = self.process.get_setting(name)
+            
+            for inc2 in range(0, len(self.other_processes)):
+                
+                other_process = self.other_processes[inc2]
+                
+                other_process.set_setting(name, value)
+            
+                match = self._compare_setting(self.process, other_process, name)
+                self._set_item_state(item, match, inc2+1)
+            
             self.progress_bar.setValue(inc)
             inc+=1
     
+    def _paste_options(self):
+        
+        option_items = self.option_list.selectedItems()
+        
+        if not option_items:
+            return
+        
+        self.tabs.setCurrentIndex(2)
+        
+        inc = 0
+        
+        self.progress_bar.reset()
+        self.progress_bar.setRange(0, len(option_items))
+        
+        for item in option_items:            
+            
+            long_name = self._get_option_long_name(item)
+            
+            value = self.process.get_option(long_name)
+            
+            for inc2 in range(0, len(self.other_processes)):
+                
+                other_process = self.other_processes[inc2]
+                
+                other_process.set_option(long_name, value)
+                
+                match = self._compare_option(self.process, other_process, long_name)
+                self._set_item_state(item, match, inc2+1)
+            
+            self.progress_bar.setValue(inc)
+            inc+=1
+            
+    def _reset_states(self, column, tree):
+        
+        root = tree.invisibleRootItem()
+        
+        self._reset_item_children(column, root)
+        
+    
+    def _reset_item_children(self, column, item):
+        
+        child_count = item.childCount()
+        
+        for inc in range(0, child_count):
+            
+            child_item = item.child(inc)
+            
+            self._reset_compare_columns(column, child_item)
+            
+            self._reset_item_children(column, child_item)
+        
+
+  
+    def _reset_compare_columns(self, column, item):
+        
+        item.setText(column, (' ' * 10) + '-')
+        
+        item.setBackground(column, item.background(0))
+            
+    def clear_lists(self):
+        
+        self.data_list.clear()
+        self.code_list.clear()
+        self.option_list.clear()
+        self.settings_list.clear()
+        
+
+    def reset_list_compare(self):
+        
+        self._reset_states(self.data_list)
+        self._reset_states(self.code_list)
+        self._reset_states(self.settings_list)
+
+    def populate_list(self, column, list_widget, data):
+        
+        for sub_data in data:
+            
+            list_widget.add_item(column, sub_data)
+
+    def populate_code_list(self):
+             
+        self.tabs.setCurrentIndex(1)
+                
+        column = 0
+        list_widget = self.code_list
+        
+        code_names = self._get_code_names(self.process)
+        
+        items = {}
+        
+        for code_name in code_names:
+            
+            split_code_name = code_name.split('/')
+            
+            long_name = ''
+            parent_item = None
+            
+            for name in split_code_name:
+                
+                if long_name:
+                    long_name += '/%s' % name
+                else:
+                    long_name = name 
+                
+                if not items.has_key(long_name):
+                    item = list_widget.add_item(column, name, parent_item)
+                else:
+                    item = items[long_name]
+                    
+                items[long_name] = item
+                parent_item = item
+        
+    def populate_data_list(self):
+        
+        self.tabs.setCurrentIndex(0)
+        
+        column = 0
+        
+        list_widget = self.data_list
+        
+        data_folders = self.process.get_data_folders()
+        
+        for sub_data in data_folders:
+            
+            data_item = list_widget.add_item(column, sub_data)
+            
+            folders = self.process.get_data_sub_folder_names(sub_data)
+            
+            for folder in folders:
+                list_widget.add_item(column, folder, data_item)
+    
+    def populate_settings_list(self):
+        
+        self.tabs.setCurrentIndex(3)
+        
+        settings_inst = self.process.get_settings_inst()
+                
+        column = 0
+        
+        list_widget = self.settings_list
+        
+        settings_list = settings_inst.get_settings()
+        
+        for setting in settings_list:
+            
+            list_widget.add_item(column, setting[0])
+        
+        
+        if not settings_list:
+            list_widget.add_item(column, 'No Settings')    
+
+    
+    def populate_option_list(self):
+        
+        self.tabs.setCurrentIndex(2)
+        
+        options = self.process.get_options()
+        
+        column = 0
+        
+        list_widget = self.option_list
+        
+        parent_items = {}
+        
+        for option in options:
+            
+            option_name = option[0]
+            
+            parent_item = None
+            
+            split_name = option_name.split('.')
+            item_name = split_name[-1]
+            
+            if not item_name:
+                item_name = split_name[-2]
+            
+            if option_name.find('.') > -1:
+                
+                if option_name.endswith('.'):
+                    split_name = split_name[:-1]
+                
+                parent = string.join(split_name[:-1], '.')
+                parent += '.'
+                
+                if parent_items.has_key(parent):
+                    
+                    parent_item = parent_items[parent]
+                    
+            item = list_widget.add_item(column, item_name, parent_item)
+            
+            if option_name.endswith('.') and not parent_items.has_key(option_name):
+                parent_items[option_name] = item
+        
+        
+        if not options:
+            list_widget.add_item(column, 'No Options')                
+    
+    
+    def populate_other(self):
+        
+        self._fill_all_headers()
+        
+        other_count = len(self.other_processes)
+        
+        current_tab = self.tabs.currentIndex()
+        
+        for inc in range(0, other_count):
+            
+            other_process_inst = self.other_processes[inc]
+                        
+            self.populate_other_data(inc+1, other_process_inst)
+        
+        for inc in range(0, other_count):
+            
+            other_process_inst = self.other_processes[inc]
+            
+            self.populate_other_code(inc+1, other_process_inst)
+
+        for inc in range(0, other_count):
+            
+            other_process_inst = self.other_processes[inc]
+            
+            self.populate_other_options(inc+1, other_process_inst)
+        
+        for inc in range(0, other_count):
+            
+            other_process_inst = self.other_processes[inc]
+            
+            self.populate_other_settings(inc+1, other_process_inst)
+        
+        self.paste_button.setEnabled(True)
+        
+        self.tabs.setCurrentIndex(current_tab)
+        
+    def populate_other_data(self, column, other_process_inst):
+        
+        self.tabs.setCurrentIndex(0)
+        
+        self._reset_states(column, self.data_list)
+        
+        data = other_process_inst.get_data_folders()
+        
+        list_widget = self.data_list
+        
+        count = list_widget.topLevelItemCount()
+        
+        self.progress_bar.reset()
+        self.progress_bar.setVisible(True)
+        
+        self.progress_bar.setValue(0)
+        self.progress_bar.setRange(0, count)
+        
+        for inc in range(0, count):
+            
+            self.progress_bar.setValue(inc)
+            
+            item = list_widget.topLevelItem(inc)
+            
+            for sub_data in data:
+                
+                if item.text(0) == sub_data:
+                    
+                    same = self._compare_data(other_process_inst, sub_data)
+                    
+                    self._set_item_state(item, same, column)
+                    
+                    other_sub_folders = other_process_inst.get_data_sub_folder_names(sub_data)
+                    
+                    for inc_child in range(0, item.childCount()):
+                        
+                        child_item = item.child(inc_child)
+                        
+                        sub_folder = child_item.text(0)
+                        
+                        for other_sub_folder in other_sub_folders:
+                            
+                            if other_sub_folder == sub_folder:
+                                
+                                same = self._compare_data(other_process_inst, sub_data, child_item.text(0))
+                                self._set_item_state(child_item, same, column)    
+                    
+                    model_index = list_widget.indexFromItem(item, column=0)
+                    list_widget.scrollTo(model_index)   
+        
+        self.progress_bar.setVisible(False)
+         
+    def populate_other_code(self, column, other_process_inst):
+        
+        self.tabs.setCurrentIndex(1)
+        
+        self._reset_states(column, self.code_list)
+        
+        code_names = self._get_code_names(other_process_inst)
+                
+        list_widget = self.code_list
+        
+        count = list_widget.topLevelItemCount()
+        
+        self.progress_bar.setValue(0)
+        self.progress_bar.setRange(0, count)
+        
+        for inc in range(0, count):
+            
+            self.progress_bar.setValue(inc)
+            
+            item = list_widget.topLevelItem(inc)
+            
+            for code_name in code_names:
+                
+                long_name = self._get_long_name(item)
+                
+                if long_name == code_name:
+                    
+                    source_file = self.process.get_code_file(code_name)
+                    target_file = other_process_inst.get_code_file(code_name)
+                                        
+                    if util_file.is_file(target_file):
+                        same = util_file.is_same_text_content(source_file, target_file)
+                    self._set_item_state(item,same, column)
+                                        
+                    self._compare_code_children(item, column, other_process_inst)
+                        
+    def populate_other_settings(self, column, other_process_inst):
+        
+        self.tabs.setCurrentIndex(2)
+        
+        settings_inst = self.process.get_settings_inst()
+        
+        other_settings_inst = other_process_inst.get_settings_inst()
+        other_settings = other_settings_inst.get_settings()
+        
+        self._reset_states(column, self.settings_list)
+        
+        list_widget = self.settings_list
+        
+        count = list_widget.topLevelItemCount()
+        
+        self.progress_bar.setValue(0)
+        self.progress_bar.setRange(0, count)
+                
+        for inc in range(0, count):
+        
+            self.progress_bar.setValue(inc)
+            
+            item = list_widget.topLevelItem(inc)
+            
+            if str(item.text(0)) == 'No Settings':
+                return
+            
+            for other_setting in other_settings:
+                
+                setting_name = item.text(0)
+                
+                if setting_name == other_setting[0]:
+                    
+                    value = settings_inst.get(setting_name)
+                    other_value = other_settings_inst.get(setting_name)
+                    
+                    match = False
+                    
+                    if value == other_value:
+                        match = True
+                    
+                    self._set_item_state(item, match, column)
+    
+    def populate_other_options(self, column, other_process_inst):
+        
+        self.tabs.setCurrentIndex(2)
+        
+        other_options = other_process_inst.get_options()
+        
+        self._reset_states(column, self.option_list)
+        
+        list_widget = self.option_list
+        
+        count = list_widget.topLevelItemCount()
+        
+        self.progress_bar.setValue(0)
+        self.progress_bar.setRange(0, count)
+        
+        for inc in range(0, count):
+        
+            self.progress_bar.setValue(inc)
+            
+            item = list_widget.topLevelItem(inc)
+            
+            option_name = str(item.text(0))
+            
+            if option_name == 'No Options':
+                return
+            
+            option_long_name = self._get_option_long_name(item)
+            
+            for other_option in other_options:
+                
+                if option_long_name == other_option[0]:
+                    
+                    match = self._compare_option(self.process, other_process_inst, option_name)
+                    
+                    self._set_item_state(item, match, column)
+                    
+                    self._compare_option_children(item, column, other_process_inst)
+
+
     def set_process(self, process_name, process_directory):
         
         process_inst = process.Process(process_name)
         process_inst.set_directory(process_directory)
         
         self.process = process_inst
-        
+                
         self._populate_lists()
+                
+        self._fill_all_headers()
         
-        self.copy_from.setText('Copy from:  %s' % process_name)
+        
         
     def set_other_process(self, process_name, process_directory):
         
@@ -1809,9 +2621,8 @@ class CopyWidget(qt_ui.BasicWidget):
         
         if not self.isVisible():
             return
-        
+                
         if process_name == self.process.get_name():
-            self.paste_to.setText('Paste to:')
             self.paste_button.setDisabled(True)
             return
         
@@ -1821,53 +2632,20 @@ class CopyWidget(qt_ui.BasicWidget):
         process_inst = process.Process(process_name)
         process_inst.set_directory(process_directory)
         
-        self.other_process = process_inst
-        
-        self.paste_to.setText('Paste to:  %s' % process_name)  
-        self.paste_button.setEnabled(True)
-        
+        self.other_processes = [process_inst]
+                
         self.load_compare()
+        
         
     def load_compare(self):
         
         current_tab_index = self.tabs.currentIndex()
         
-        if not self.other_process:
+        if not self.other_processes:
             return
+        
+        self.populate_other()
 
-        self.progress_bar.reset()
-        self.progress_bar.setVisible(True)
-        #self.progress_bar.setRange(0, 3)
-        
-        data_folders = self.other_process.get_data_folders()
-        self.populate_other_data(data_folders)
-        
-        
-        
-        self.progress_bar.setValue(1)
-        
-        codes, states = self.other_process.get_manifest()
-        #codes = self.other_process.get_code_files()
-        code_names = []
-        
-        for code in codes:
-            
-            code_name = code.split('.')
-            
-            if not self.other_process.is_code_folder(code_name[0]):
-                continue
-            
-            if len(code_name) > 1 and code_name[1] == 'py':
-                code_names.append(code_name[0])
-        
-        code_names.append('manifest')
-        
-        self.populate_other_code(code_names)
-        
-        setting_names = self.process.get_setting_names()
-        
-        self.populate_other_settings(setting_names)
-        
         self.progress_bar.setVisible(False)
         
         self.tabs.setCurrentIndex(current_tab_index)
@@ -1875,29 +2653,35 @@ class CopyWidget(qt_ui.BasicWidget):
 class CopyTree(qt.QTreeWidget):
     
     def __init__(self):
+        
+        
         super(CopyTree, self).__init__()
         
-        self.setHeaderLabels(['Source', 'State', 'Target'])
-        header_item = self.headerItem()
-        #header_item.setTextAlignment(0, QtCore.Qt.AlignLeft)
-        header_item.setTextAlignment(1, qt.QtCore.Qt.AlignHCenter)
+        self.setHeaderLabels(['Source','Target'])
+        header = self.header()
+        if qt.is_pyside() or qt.is_pyqt():
+            header.setResizeMode(qt.QHeaderView.ResizeToContents)
+        if qt.is_pyside2():
+            header.setSectionResizeMode(qt.QHeaderView.ResizeToContents)
         
-        self.setColumnWidth(0, 240)
-        self.setColumnWidth(1, 100)
-        #header_item.setTextAlignment(2, QtCore.Qt.AlignRight)
+        self.setSelectionMode(self.ExtendedSelection)
         
-    def add_item(self, column, name):
+        item_delegate = qt_ui.SelectTreeItemDelegate()
+        self.setItemDelegate(item_delegate)
         
-        item = qt.QTreeWidgetItem()
+    def add_item(self, column, name, parent = None):
+        
+        item = qt.QTreeWidgetItem(parent)
+        
         item.setText(column, name)
-        item.setText(1, '-')
-        item.setText(2, (' ' * 10) + '-')
-        item.setTextAlignment(1, qt.QtCore.Qt.AlignCenter)
+        item.setText(1, (' ' * 10) + '-')
         self.addTopLevelItem(item)
         
-        return item
         
-
+        if parent:
+            parent.setExpanded(True)
+        return item
+    
 
 
 
