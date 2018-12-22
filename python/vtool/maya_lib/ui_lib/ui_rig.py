@@ -4,6 +4,7 @@ from vtool import qt_ui, qt
 
 
 from vtool import util_file
+from vtool import util
     
 import maya.cmds as cmds
 
@@ -123,7 +124,7 @@ class RigManager(qt_ui.DirectoryWidget):
         
         icon = qt_ui.get_icon('vetala.png')
         
-        process_button = qt.QPushButton(icon, 'VETALA')
+        process_button = qt.QPushButton(icon, util.get_custom('vetala_name', 'VETALA'))
         process_button.setIconSize(qt.QtCore.QSize(48,48))
         process_button.setFlat(True)
         process_button.setMinimumHeight(48)
@@ -377,10 +378,10 @@ class RigManager(qt_ui.DirectoryWidget):
         
     def _create_control_widgets(self, parent):
         
-        mirror_control = qt.QPushButton('Mirror Control')
+        mirror_control = qt.QPushButton('Mirror Selected Controls')
         mirror_control.clicked.connect(self._mirror_control)
         
-        mirror_controls = qt.QPushButton('Mirror Controls')
+        mirror_controls = qt.QPushButton('Mirror All Controls')
         mirror_controls.clicked.connect(self._mirror_controls)
         mirror_controls.setMinimumHeight(40)
         
@@ -401,6 +402,17 @@ class RigManager(qt_ui.DirectoryWidget):
         replace_curve_layout.addWidget(curve_shape_label, alignment = qt.QtCore.Qt.AlignRight)
         replace_curve_layout.addWidget(self.curve_shape_combo)
         
+        self.rotate_x_widget = qt_ui.GetNumberButton('X Rotate Control')
+        self.rotate_x_widget.set_value(90)
+        self.rotate_x_widget.clicked.connect(self._rotate_x_control)
+        
+        self.rotate_y_widget = qt_ui.GetNumberButton('Y Rotate Control')
+        self.rotate_y_widget.set_value(90)
+        self.rotate_y_widget.clicked.connect(self._rotate_y_control)
+        
+        self.rotate_z_widget = qt_ui.GetNumberButton('Z Rotate Control')
+        self.rotate_z_widget.set_value(90)
+        self.rotate_z_widget.clicked.connect(self._rotate_z_control)
         
         size_slider = qt_ui.Slider('Scale Controls at Pivot')
         size_slider.value_changed.connect(self._scale_control)
@@ -438,10 +450,14 @@ class RigManager(qt_ui.DirectoryWidget):
         parent.main_layout.addSpacing(10)
         parent.main_layout.addLayout(replace_curve_layout)
         parent.main_layout.addSpacing(10)
-        
         parent.main_layout.addWidget(self.fix_sub_controls)
+        parent.main_layout.addSpacing(10)
+        parent.main_layout.addWidget(self.rotate_x_widget)
+        parent.main_layout.addWidget(self.rotate_y_widget)
+        parent.main_layout.addWidget(self.rotate_z_widget)
         parent.main_layout.addSpacing(15)
         parent.main_layout.addWidget(number_button)
+
         parent.main_layout.addWidget(size_slider)
         parent.main_layout.addWidget(size_center_slider)
         
@@ -745,14 +761,52 @@ class RigManager(qt_ui.DirectoryWidget):
         selection = cmds.ls(sl = True)
         if not selection:
             return
-        rigs_util.mirror_control(selection[0])
+        
+        for thing in selection:
+            rigs_util.mirror_control(thing)
         
     def _mirror_controls(self):
         
         rigs_util.mirror_controls()
     
-
+    def _rotate_x_control(self):
+        
+        selection = cmds.ls(sl = True)
+        
+        
+        
+        for sel in selection:
+            
+            if core.has_shape_of_type(sel, 'nurbsCurve') or core.has_shape_of_type(sel, 'nurbsSurface'):
+                
+                x_value = self.rotate_x_widget.get_value()
+                
+                geo.rotate_shape(sel, x_value, 0, 0)
+            
     
+    def _rotate_y_control(self):
+        
+        selection = cmds.ls(sl = True)
+        
+        for sel in selection:
+            
+            if core.has_shape_of_type(sel, 'nurbsCurve') or core.has_shape_of_type(sel, 'nurbsSurface'):
+                
+                y_value = self.rotate_y_widget.get_value()
+                
+                geo.rotate_shape(sel, 0, y_value, 0)
+
+    def _rotate_z_control(self):
+        
+        selection = cmds.ls(sl = True)
+        
+        for sel in selection:
+            
+            if core.has_shape_of_type(sel, 'nurbsCurve') or core.has_shape_of_type(sel, 'nurbsSurface'):
+                
+                z_value = self.rotate_z_widget.get_value()
+                
+                geo.rotate_shape(sel, 0, 0, z_value)
         
     def _joints_on_curve(self, count):
         selection = cmds.ls(sl = True)
