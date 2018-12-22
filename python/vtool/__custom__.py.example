@@ -1,0 +1,8 @@
+vetala_name = 'Vetala'
+
+#uncomment and change to set a custom curve directery. Curves will be read and written to this directory
+#custom_curve_path = 'n:/rigging/curves'
+
+#uncomment and change for custom studio template directory.
+#template_directory = "n:/rigging/templates"
+#template_history = [["Studio Templates", "n:/rigging/templates"]]
