@@ -2091,8 +2091,6 @@ class Process(object):
                 
                 builtins['cmds'] = cmds
             
-            
-            
             exec(script, globals(), builtins)
             status = 'Success'
             

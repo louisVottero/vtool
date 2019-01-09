@@ -2357,8 +2357,33 @@ class CopyWidget(qt_ui.BasicWidget):
         
         list_widget = self.option_list
         
-        parent_items = {}
         
+        #need to sort parents first
+        parent_dict = {}
+        children = []
+        
+        for option in options:
+            if option[0].endswith('.'):
+                period_count = option[0].count('.')
+                
+                if not parent_dict.has_key(period_count):
+                    parent_dict[period_count] = []
+                    
+                parent_dict[period_count].append(option)
+            else:
+                children.append(option)
+            
+        parent_keys = parent_dict.keys()
+        parent_keys.sort()    
+        
+        parents = []
+        
+        for parent_key in parent_keys:
+            parents += parent_dict[parent_key]
+        
+        options = parents + children
+            
+        parent_items = {}
         for option in options:
             
             option_name = option[0]
