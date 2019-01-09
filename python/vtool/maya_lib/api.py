@@ -1384,4 +1384,23 @@ def multiply_matrix(matrix1, matrix2):
     
     return mat1 * mat2
 
+def get_inverse_matrix():
+    pass
+
+def get_joint_orient_matrix(joint):
+    
+    
+    
+    api_joint = get_object(joint)
+    
+    quat = om.MQuaternion()
+    fn_joint = omAnim.MFnIkJoint(api_joint)
+    
+    fn_joint.getOrientation(quat)
+    quat_matrix = quat.asMatrix()
+    
+    return quat_matrix
+    
+    #om
+    #omAnim
  
