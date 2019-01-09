@@ -2197,6 +2197,8 @@ class CopyWidget(qt_ui.BasicWidget):
     
     def _paste_options(self):
         
+        
+        
         option_items = self.option_list.selectedItems()
         
         if not option_items:
@@ -2208,6 +2210,8 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.progress_bar.reset()
         self.progress_bar.setRange(0, len(option_items))
+        
+        option_items = self._sort_option_items(option_items)
         
         for item in option_items:            
             
@@ -2226,7 +2230,71 @@ class CopyWidget(qt_ui.BasicWidget):
             
             self.progress_bar.setValue(inc)
             inc+=1
+    
+    def _sort_option_names(self, option_names):
+        parent_dict = {}
+        children = []
+        
+        for option in option_names:
+            if option.endswith('.'):
+                period_count = option.count('.')
+                
+                if not parent_dict.has_key(period_count):
+                    parent_dict[period_count] = []
+                    
+                parent_dict[period_count].append(option)
+            else:
+                children.append(option)
             
+        parent_keys = parent_dict.keys()
+        parent_keys.sort()    
+        
+        parents = []
+        
+        for parent_key in parent_keys:
+            parents += parent_dict[parent_key]
+        
+        options = parents + children 
+        
+        return options  
+    
+    def _sort_option_items(self, option_items):
+        
+        option_names = []
+        option_item_dict = {}
+        
+        for option_item in option_items:
+            item_name = self._get_option_long_name(option_item)
+            option_names.append(item_name)
+            option_item_dict[item_name] = option_item
+            
+        options = self._sort_option_names(option_names)
+        
+        found = []
+        
+        for name in options:
+            found.append(option_item_dict[name])
+        
+        return found     
+    
+    def _sort_process_options(self, options):
+        
+        options_dict = {}
+        option_names = []
+        
+        for option in options:
+            option_names.append(option[0])
+            options_dict[option[0]] = option
+            
+        option_names = self._sort_option_names(option_names)
+        
+        found = []
+        
+        for option_name in option_names:
+            found.append(options_dict[option_name])
+            
+        return found
+          
     def _reset_states(self, column, tree):
         
         root = tree.invisibleRootItem()
@@ -2346,7 +2414,8 @@ class CopyWidget(qt_ui.BasicWidget):
         if not settings_list:
             list_widget.add_item(column, 'No Settings')    
 
-    
+
+            
     def populate_option_list(self):
         
         self.tabs.setCurrentIndex(2)
@@ -2357,32 +2426,8 @@ class CopyWidget(qt_ui.BasicWidget):
         
         list_widget = self.option_list
         
+        options = self._sort_process_options(options)
         
-        #need to sort parents first
-        parent_dict = {}
-        children = []
-        
-        for option in options:
-            if option[0].endswith('.'):
-                period_count = option[0].count('.')
-                
-                if not parent_dict.has_key(period_count):
-                    parent_dict[period_count] = []
-                    
-                parent_dict[period_count].append(option)
-            else:
-                children.append(option)
-            
-        parent_keys = parent_dict.keys()
-        parent_keys.sort()    
-        
-        parents = []
-        
-        for parent_key in parent_keys:
-            parents += parent_dict[parent_key]
-        
-        options = parents + children
-            
         parent_items = {}
         for option in options:
             
