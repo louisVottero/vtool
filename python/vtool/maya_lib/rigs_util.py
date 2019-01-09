@@ -1028,7 +1028,7 @@ class StretchyChain:
     def _create_attributes(self, stretch_on_off):
         
         if self._create_title:
-            attr.create_title(self.attribute_node, 'STRETCH')
+            attr.create_title(self.attribute_node,'STRETCH')
         
         stretch_on_off_var = attr.MayaNumberVariable(self.attribute_name)
         stretch_on_off_var.set_node(self.attribute_node)
@@ -3329,14 +3329,6 @@ def set_control_space(x,y,z, control, compensate_cvs = True):
 def mesh_border_to_control_shape(mesh, control, offset = .1):
     
     new_curve = geo.create_curve_from_mesh_border(mesh, offset)
-    control_inst = Control(control)
-    control_inst.copy_shapes(new_curve)
-    
-    cmds.delete(new_curve)
-    
-def edge_loop_to_control_shape(edge, control, offset = .1):
-    
-    new_curve = geo.create_curve_from_edge_loop(edge, offset)
     control_inst = Control(control)
     control_inst.copy_shapes(new_curve)
     
