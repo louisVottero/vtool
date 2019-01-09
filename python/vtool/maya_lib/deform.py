@@ -4066,6 +4066,36 @@ def get_joint_index_map(joints, skin_cluster):
         
     return joint_map
 
+def average_skin_weights(verts):
+    
+    mesh = geo.get_mesh_from_vertex(verts[0])
+    
+    skin = find_deformer_by_type(mesh,'skinCluster', return_all = False)
+    
+    verts = cmds.ls(sl = True, flatten = True)
+    
+    vert_indices = geo.get_vertex_indices(verts)
+    
+    influences = get_skin_influences(skin, True)
+    weights = get_skin_weights(skin)
+        
+    for influence in influences:
+    
+        influence_index = influences[influence]
+        influence_weights = weights[influence_index]
+        
+        average = 0.0
+        
+        for vert in vert_indices:
+        
+            average += influence_weights[vert]
+    
+    
+        average = average/len(verts)
+        
+        for vert in vert_indices:
+            cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), average)
+    
 def has_influence(joint, skin_cluster):
     
     influences = get_skin_influences(skin_cluster)
