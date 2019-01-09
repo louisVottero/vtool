@@ -2445,6 +2445,8 @@ def lock_hierarchy(top_transform, exclude_transforms = [], skip_of_type = ['ikHa
         
         skip = False
     
+        
+    
         if not cmds.objExists(thing):
             skip = True
         if not skip:
@@ -3797,8 +3799,11 @@ def add_shape_for_attributes(transforms, shape_name):
     
     locator = None
     
+    existed = False
+    
     if cmds.objExists(shape_name):
         shape = shape_name
+        existed = True
     else:
         locator = cmds.spaceLocator()
         shape = core.get_shapes(locator, shape_type = 'locator', no_intermediate = True)[0]
@@ -3815,7 +3820,7 @@ def add_shape_for_attributes(transforms, shape_name):
     
     for transform in transforms:
          
-        if inc == 0:
+        if inc == 0 and not existed:
             shape = cmds.parent(shape,transform, r = True, s = True)
         else:
             shape = cmds.parent(shape,transform, r = True, s = True,  add = True)

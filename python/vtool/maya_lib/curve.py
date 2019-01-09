@@ -273,7 +273,7 @@ class CurveDataInfo(object):
     def _match_shapes_to_data(self, curve, data_list):
         
         shapes = get_shapes(curve)
-        
+                
         if not shapes:
             return
         
@@ -283,11 +283,18 @@ class CurveDataInfo(object):
             shape_color = cmds.getAttr('%s.overrideColor' % shapes[0])
             shape_color_enabled = cmds.getAttr('%s.overrideEnabled' % shapes[0])
         
-        if len(shapes) > len(data_list):
-            cmds.delete(shapes[ len(data_list): ])
+        found = []
         
-        if len(shapes) < len(data_list):
-            current_index = len(shapes)
+        for shape in shapes:
+            if cmds.nodeType(shape) == 'nurbsCurve':                    
+                found.append(shape)
+        
+        if len(found) > len(data_list):
+            cmds.delete(found[ len(data_list): ])
+            
+        if len(found) < len(data_list):
+            
+            current_index = len(found)
             
             for inc in range(current_index, len(data_list)):
                 
@@ -558,9 +565,20 @@ def get_library_shape_names():
 def get_shapes(transform):
     if is_a_shape(transform):
         parent = cmds.listRelatives(transform, p = True, f = True)
-        return cmds.listRelatives(parent, s = True, f = True, ni = True)
+        shapes = cmds.listRelatives(parent, s = True, f = True, ni = True)
+    else:
+        shapes = cmds.listRelatives(transform, s = True, f = True, ni = True)
+        
+    found = []
     
-    return cmds.listRelatives(transform, s = True, f = True, ni = True)  
+    if not shapes:
+        return found
+    
+    for shape in shapes:
+        if cmds.nodeType(shape) == 'nurbsCurve':
+            found.append(shape)
+    
+    return found  
 
 def is_a_shape(node):
     if cmds.objectType(node, isAType = 'shape'):
