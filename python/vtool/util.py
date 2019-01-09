@@ -16,7 +16,7 @@ def get_custom(name, default = ''):
     try:
         from vtool import __custom__
     except:
-        return default
+        print 'could not get custom'
     
     value = None
     
