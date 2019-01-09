@@ -624,6 +624,8 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     """
     parent = cmds.listRelatives(curve, p = True)
     
+    u,v = geo.get_closest_uv_on_mesh_at_curve(attach_mesh, curve)
+    follicle, follicle_shape = create_follicle(curve, hair_system, [u,v])
     
     if attach_mesh:
         
@@ -635,7 +637,7 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     if attach_mesh:
         cmds.connectAttr('%s.outMesh' % attach_mesh, '%s.inputMesh' % follicle_shape)
         cmds.connectAttr('%s.worldMatrix' % attach_mesh, '%s.inputWorldMatrix' % follicle_shape)
-     
+        
     cmds.connectAttr('%s.worldMatrix' % curve, '%s.startPositionMatrix' % follicle_shape)
     cmds.connectAttr('%s.local' % curve, '%s.startPosition' % follicle_shape)
         
