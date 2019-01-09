@@ -601,7 +601,6 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             size_thread = DataSizeThread()
             size_thread.run(data_dir, foldername, item)
             
-            #item.setSizeHint(0, qt.QtCore.QSize(100,20))
             self.addTopLevelItem(item)
             
             if foldername == new_data:
