@@ -625,7 +625,7 @@ def add_follicle_to_curve(curve, hair_system = None, switch_control = None, attr
     parent = cmds.listRelatives(curve, p = True)
     
     u,v = geo.get_closest_uv_on_mesh_at_curve(attach_mesh, curve)
-    follicle, follicle_shape = create_follicle(curve, hair_system, [u,v])
+    #follicle, follicle_shape = create_follicle(curve, hair_system, [u,v])
     
     if attach_mesh:
         
