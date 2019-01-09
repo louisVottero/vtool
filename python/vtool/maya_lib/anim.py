@@ -104,6 +104,7 @@ def quick_driven_key(source, target, source_values, target_values, infinite = Fa
         
     """
     
+    #this is a slow way to find the keyframe...
     track_nodes = core.TrackNodes()
     track_nodes.load('animCurve')
     
