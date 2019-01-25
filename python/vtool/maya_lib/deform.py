@@ -1368,7 +1368,7 @@ class SplitPatch(object):
             inc += 1
 
         return shapes
-
+    
 class TransferWeight(object):
     """
     Transfer weight has functions for dealing with moving weight from joints to other joints.
