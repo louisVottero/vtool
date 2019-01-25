@@ -368,7 +368,26 @@ class Process(object):
             
         return module, init_passed, status
         
+    def _format_option_value(self, value):
         
+        new_value = value
+        
+        if type(value) == list:
+            option_type = value[1]
+            value = value[0]
+            
+            if option_type == 'dictionary':
+                value = value[0]
+            
+        if type(value) == list or type(value) == tuple or type(value) == dict:
+            new_value = value
+            
+        if type(value) == str or type(value) == unicode:
+            if value.find(',') > -1:
+                new_value = value.split(',')
+                
+        return new_value
+            
             
     def set_directory(self, directory):
         """
@@ -1081,6 +1100,21 @@ class Process(object):
             
         return found
 
+    def get_code_children(self, code_name):
+        
+        found = []
+        
+        scripts, states = self.get_manifest()
+        
+        for script in scripts:
+            if script.startswith(code_name):
+                found.append(script)
+        
+                
+        return found
+        
+        
+
     def get_code_type(self, name):
         """
         Args: 
@@ -1427,6 +1461,8 @@ class Process(object):
         
         if option_type == 'script':
             value = [value, 'script']
+        if option_type == 'dictionary':
+            value = [value, 'dictionary']
                  
         self.option_settings.set(name, value)
         
@@ -1458,14 +1494,6 @@ class Process(object):
         
         value = self.get_unformatted_option(name, group)
         
-        new_value = None
-        
-        try:
-            new_value = eval(value)
-            
-        except:
-            pass
-        
         if value == None:
             
             util.warning('Trouble accessing option from %s' % self.option_settings.directory)
@@ -1475,17 +1503,14 @@ class Process(object):
                 if group:
                     util.warning('Could not find option: %s in group: %s' % (name, group))
         
-        if type(new_value) == list or type(new_value) == tuple or type(new_value) == dict:
-            value = new_value
-            
-        if type(value) == str or type(value) == unicode:
-            if value.find(',') > -1:
-                value = value.split(',')
+        
+        self._format_option_value(value)
         
         util.show('Accessed - Option: %s, Group: %s, value: %s' % (name, group, value))
         
         return value
         
+
     def get_option_match(self, name, return_first = True):
         
         self._setup_options()
@@ -1498,13 +1523,14 @@ class Process(object):
             if key.endswith(name):
                 
                 if return_first:
-                    util.show('Accessed - Option: %s, value: %s' % (name, option_dict[key]))
-                    return option_dict[key]
+                    
+                    value = self._format_option_value(option_dict[key])
+                    
+                    util.show('Accessed - Option: %s, value: %s' % (name, value))
+                    return value
                 
-                found[name] = option_dict[key]
+                found[name] = value
         
-        
-                
         return found
         
         
@@ -1569,6 +1595,96 @@ class Process(object):
         
     
     #--- manifest
+        
+    def get_manifest(self, manifest_file = None):
+        """
+        Returns:
+            tuple: (list, list) Two lists, scripts and states. 
+            The scripts list contains the name of scripts in the manifest. 
+            States contains the enabled/disabled state of the script. 
+        """
+        
+        if not manifest_file:
+            manifest_file = self.get_manifest_file()
+        
+        if not util_file.is_file(manifest_file):
+            return None, None
+        
+        lines = util_file.get_file_lines(manifest_file)
+        
+        if not lines:
+            return None, None
+        
+        scripts = []
+        states = []
+        
+        for line in lines:
+            
+            if not line:
+                continue
+            
+            states.append(False)
+            
+            split_line = line.split()
+            if len(split_line):
+                
+                script_name = string.join(split_line[:-1])
+                
+                
+                
+                scripts.append(script_name)
+                
+            if len(split_line) >= 2:
+                
+                state = eval(split_line[-1])
+                
+                states[-1] = state
+                              
+        return scripts, states
+        
+    def get_manifest_dict(self, manifest_file = None):
+        """
+        Returns:
+            dict: name of code : state 
+        """
+        
+        if not manifest_file:
+            manifest_file = self.get_manifest_file()
+        
+        manifest_dict = {}
+        
+        if not util_file.is_file(manifest_file):
+            return manifest_dict
+        
+        lines = util_file.get_file_lines(manifest_file)
+        
+        if not lines:
+            return manifest_dict
+        
+        
+        
+        for line in lines:
+
+            script_name = None
+            
+            if not line:
+                continue
+            
+            split_line = line.split()
+            
+            if len(split_line):
+                
+                script_name = string.join(split_line[:-1])
+                
+                manifest_dict[script_name] = False
+                
+            if len(split_line) >= 2 and script_name:
+                state = eval(split_line[-1])
+                
+                manifest_dict[script_name] = state
+                              
+        return manifest_dict
+        
         
     def get_manifest_folder(self):
         """
@@ -1716,52 +1832,7 @@ class Process(object):
                  
         util_file.write_lines(manifest_file, lines, append = append)
         
-    def get_manifest(self, manifest_file = None):
-        """
-        Returns:
-            tuple: (list, list) Two lists, scripts and states. 
-            The scripts list contains the name of scripts in the manifest. 
-            States contains the enabled/disabled state of the script. 
-        """
-        
-        if not manifest_file:
-            manifest_file = self.get_manifest_file()
-        
-        if not util_file.is_file(manifest_file):
-            return None, None
-        
-        lines = util_file.get_file_lines(manifest_file)
-        
-        if not lines:
-            return None, None
-        
-        scripts = []
-        states = []
-        
-        for line in lines:
-            
-            if not line:
-                continue
-            
-            states.append(False)
-            
-            split_line = line.split()
-            if len(split_line):
-                
-                script_name = string.join(split_line[:-1])
-                
-                
-                
-                scripts.append(script_name)
-                
-            if len(split_line) >= 2:
-                
-                state = eval(split_line[-1])
-                
-                states[-1] = state
-                              
-        return scripts, states
-        
+
     def sync_manifest(self):
         """
         Sync the manifest with whats on disk.
@@ -2057,6 +2128,21 @@ class Process(object):
         
         return status
     
+    def run_script_group(self, script):
+        """
+        This runs the script and all of its children/grandchildren.
+        """
+        
+        self.run_script(script, hard_error=True)
+        
+        children = self.get_code_children(script)
+        
+        manifest_dict = self.get_manifest_dict()
+                
+        for child in children:
+            if manifest_dict[child]:
+                self.run_script(child, hard_error=True)
+        
     def run_option_script(self, name, group = None, hard_error = True):
         
         script = self.get_option(name, group)
@@ -2147,9 +2233,6 @@ class Process(object):
             
             
             if start_new:
-                
-                
-                
                 core.start_new_scene()
             
             manage_node_editor_inst.turn_off_add_new_nodes()
