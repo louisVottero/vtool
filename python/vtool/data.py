@@ -977,7 +977,9 @@ class SkinWeightData(MayaCustomData):
             except:
                 util.error(traceback.format_exc())
                 util.show('Errors with %s weight file.' % influence)
-                    
+        
+        
+                  
         return influence_dict
     
     def _test_shape(self, mesh, shape_types):
@@ -1237,7 +1239,7 @@ class SkinWeightData(MayaCustomData):
                 if len(split_influence) > 1:
                     influence = split_influence[-1]
             
-            message = 'importing skin mesh: %s,  influence: %s' % (mesh, influence)
+            message = 'importing skin mesh: %s,  influence: %s' % (short_name, influence)
             
             progress_ui.status(message)                
                 
@@ -1246,6 +1248,7 @@ class SkinWeightData(MayaCustomData):
                 return 
             
             weights = influence_dict[influence]['weights']
+            
             
             if not influence in influence_index_dict:
                 continue
@@ -1384,14 +1387,22 @@ class SkinWeightData(MayaCustomData):
                 
                 info_lines = []
                 
+                progress = maya_lib.core.ProgressBar('', len(weights))
+                
                 for influence in weights:
                     
+                    
+                    
                     if influence == None or influence == 'None':
+                        progress.next()
                         continue
+                    
+                    progress.status('Exporting %s influence %s weights' % (maya_lib.core.get_basename(thing), influence))
                     
                     weight_list = weights[influence]
                     
                     if not weight_list:
+                        progress.next()
                         continue
                     
                     thread = LoadWeightFileThread()
@@ -1400,6 +1411,10 @@ class SkinWeightData(MayaCustomData):
                     
                     if influence_line:
                         info_lines.append(influence_line)
+                        
+                    progress.next()
+                
+                
                 
                 write_info = util_file.WriteFile(info_file)
                 write_info.write(info_lines)        
@@ -1418,7 +1433,6 @@ class SkinWeightData(MayaCustomData):
                     blend_weights = maya_lib.deform.get_skin_blend_weights(skin)
                     
                     settings_lines.append("['blendWeights', %s]" % blend_weights)
-                    
                 
                 if cmds.objExists(skin_method_attr):
                     
@@ -1430,6 +1444,8 @@ class SkinWeightData(MayaCustomData):
                 write_settings.write(settings_lines)
                 
                 util.show('Skin weights exported: %s to %s' % (thing, geo_path))
+                
+                progress.end()
         
         if not found_one:
             util.warning('No skin weights found on selected. Please select a mesh, curve, nurb surface or lattice with skin weights.')
