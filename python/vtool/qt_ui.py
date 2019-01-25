@@ -1733,17 +1733,212 @@ class OptionFileWidget(DirectoryWidget):
             
     def tab_update(self):
         return
+
+class DictionaryWidget(BasicWidget):
+    
+    dict_changed = create_signal(object)
+    
+    def __init__(self):
+        
+        self.order = []
+        self.dictionary = {}
+        
+        super(DictionaryWidget, self).__init__()
+    
+    def _define_main_layout(self):
+        return qt.QVBoxLayout()
+    
+    def _build_widgets(self):
+        
+        self.setContentsMargins(2,2,2,2)
+        
+        #self.main_layout.addWidget(qt.QLabel('Entries will automatically get sorted alphabetically.'))
+        
+        button_layout = qt.QHBoxLayout()
+        
+        add_button = qt.QPushButton('+')
+        add_button.clicked.connect(self._add_default_entry)
+        add_button.setMaximumWidth(25)
+        add_button.setMaximumHeight(25)
+        
+        button_layout.addSpacing(10)
+        button_layout.addWidget(add_button)
+        self.main_layout.addLayout(button_layout)
+        
+        self._garbage_items = []
+    
+    def _add_default_entry(self):
+        
+        entry = self._build_entry()
+        
+        count = self.main_layout.count()
+        
+        
+        self.main_layout.insertWidget(count-1, entry)
+        self.dict_changed.emit(self.get_dictionary())
+    
+    def _build_entry(self, entry_name = None, value = None):
             
+        if not entry_name:
+            key_name = 'key1'
+        else:
+            key_name = entry_name
+        
+        inc = 1
+        
+        while key_name in self.get_dictionary().keys():
+            
+            inc += 1
+            key_name = 'key%s' % inc 
+        
+        entry_widget = DictionaryItemWidget(key_name, value)
+        
+        entry_widget.item_removed.connect(self._cleanup_garbage)
+        entry_widget.entry_changed.connect(self._entry_changed)
+        entry_widget.value_changed.connect(self._value_changed)
+        
+        return entry_widget
+    
+    def _cleanup_garbage(self, widget):
+        
+        self.dictionary.pop(widget.get_entry())
+        
+        self.main_layout.removeWidget(widget)
+        
+        self.dict_changed.emit(self.dictionary)
+        
+        
+        
+    def _entry_changed(self):
+        self.dict_changed.emit(self.get_dictionary())
+        
+    def _value_changed(self):
+        self.dict_changed.emit(self.get_dictionary())
+    
+    def add_entry(self, entry_string, value = None):
+        
+        entry = self._build_entry(entry_string, value)
+        
+        count = self.main_layout.count()
+        
+        self.main_layout.insertWidget(count-1, entry)
+    
+    def get_dictionary(self):
+        
+        self.order = []
+        
+        self.dictionary = {}
+        
+        child_count = self.main_layout.count()
+        
+        if not child_count:
+            return self.dictionary
+        
+        for inc in range(0, child_count):
+            
+            widget = self.main_layout.itemAt(inc).widget()
+            
+            if not hasattr(widget, 'main_layout'):
+                continue
+            
+            item_count = widget.main_layout.count()
+            
+            if item_count < 3:
+                continue
+            
+            key = widget.get_entry()
+            value = widget.get_value()
+            
+            
+            self.order.append(key)
+            
+            self.dictionary[key] = value
+            
+        
+        
+        self._garbage_items = []
+        return self.dictionary
+
+class DictionaryItemWidget(BasicWidget):
+    
+    entry_changed = qt.create_signal(object)
+    value_changed = qt.create_signal(object)
+    item_removed = qt.create_signal(object)
+    
+    def __init__(self, name = None, value = None):
+        
+        
+        self.name= name
+        self.value= value
+        self.garbage = False
+        super(DictionaryItemWidget, self).__init__()
+        
+        self.setContentsMargins(0,0,0,0)
+    
+    def _define_main_layout(self):
+        return qt.QHBoxLayout()    
+    
+    def _build_widgets(self):
+        
+        
+        
+        entry_string = GetString()
+        entry_string.set_use_button(False)
+        if self.name != None:
+            entry_string.set_text(self.name)
+        
+        entry_string.set_placeholder('Please set a key name')
+        entry_string.setMaximumHeight(25)
+        
+        self.entry_string = entry_string
+        
+        
+        value_string = GetString()
+        value_string.setMaximumHeight(25)
+        value_string.set_use_button(False)
+        if self.value != None:
+            value_string.set_text(str(self.value))
+        value_string.set_placeholder('Please set a value')
+        
+        self.value_string = value_string
+        
+        remove_button = qt.QPushButton('-')
+        remove_button.setMaximumHeight(23)
+        remove_button.setMaximumWidth(23)
+        remove_button.clicked.connect(self._remove_item)
+        
+        self.main_layout.addWidget(entry_string)
+        self.main_layout.addWidget(value_string)
+        self.main_layout.addSpacing(10)
+        self.main_layout.addWidget(remove_button)
+        
+        entry_string.text_changed.connect(self.entry_changed.emit)
+        value_string.text_changed.connect(self.value_changed.emit)
+    
+    def _remove_item(self):
+        self.garbage = True
+        self.item_removed.emit(self)
+        
+    def get_entry(self):
+        entry = self.entry_string.get_text()
+        return entry
+    
+    def get_value(self):
+        value = self.value_string.get_text()
+        return value
+        
+
 class GetString(BasicWidget):
     
     text_changed = create_signal(object)
     
-    def __init__(self, name, parent = None):
+    def __init__(self, name = '', parent = None):
         self.name = name
         super(GetString, self).__init__(parent)
         
         self._use_button = False
         self._suppress_button_command = False
+        
     
     def _define_main_layout(self):
         return qt.QHBoxLayout()
@@ -1762,8 +1957,9 @@ class GetString(BasicWidget):
         
         
         self.label = qt.QLabel(self.name)
+        self.set_label(self.name)
         self.label.setAlignment(qt.QtCore.Qt.AlignLeft)
-        self.label.setMinimumWidth(100)
+        
         self._setup_text_widget()
         
         self.main_layout.addWidget(self.label)
@@ -1823,7 +2019,10 @@ class GetString(BasicWidget):
         return self.text_entry.text()
         
     def set_label(self, label):
-        self.label.setText(label)  
+        
+        self.label.setText(label)
+        if label:
+            self.label.setMinimumWidth(100)
         
     def get_label(self):
         return self.label.text()
@@ -2102,7 +2301,61 @@ class GetBoolean(GetNumberBase):
             value = False
         
         return value
-             
+
+class GetDictionary(BasicWidget):
+    
+    valueChanged = create_signal(object)
+    
+    def __init__(self, name):
+        
+        self.name = name
+        self.order = []
+        
+        super(GetDictionary, self).__init__()
+        
+        self.setContentsMargins(2,2,2,2)
+        
+    def _build_widgets(self):
+        
+        self.label = qt.QLabel(self.name)
+        self.main_layout.addWidget(self.label)
+        
+        self.dictionary_widget = DictionaryWidget()
+        
+        self.main_layout.addWidget(self.dictionary_widget)
+        
+    def _value_change(self, dictionary):
+        self.set_value(dictionary)
+        
+    def set_value(self, dictionary):
+        
+        keys = self.order
+        
+        if not keys:
+            keys = dictionary.keys()
+            keys.sort()
+        
+        for key in keys:
+            self.dictionary_widget.add_entry(key, dictionary[key])
+            
+    def get_order(self):
+        self.dictionary_widget.get_dictionary()
+        order = self.dictionary_widget.order
+        return order
+    
+    def set_order(self, order):
+        self.order = order
+            
+    def get_value(self):
+        
+        return self.dictionary_widget.get_dictionary()
+        
+    def set_label(self, text):
+        self.label.setText(text)
+    
+    def get_label(self):
+        return str(self.label.text())
+        
 class GetNumberButton(GetNumber):
     
     clicked = create_signal(object)
@@ -4758,6 +5011,9 @@ class PythonCompleter(qt.QCompleter):
                     
                     if custom_defined:
                         defined = custom_defined
+                    
+                    if not defined:
+                        return False
                     
                     self.string_model.setStringList(defined)
                     self.setCompletionPrefix(test_text)
