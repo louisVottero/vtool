@@ -607,6 +607,7 @@ class Rig(object):
         """
         
         vtool.util.show('Creating rig: %s, description: %s, side: %s' % (self.__class__.__name__, self.description, self.side))
+        vtool.util.show('\nUsing joints:%s' % self.joints)
         self._parent_default_groups()
         if self._delete_setup:
             self.delete_setup()
@@ -3764,7 +3765,7 @@ class IkAppendageRig(BufferRig):
     def __init__(self, description, side=None):
         super(IkAppendageRig, self).__init__(description, side)
         
-        self.right_side_fix = False
+        self.right_side_fix = True
         self.create_twist = True
         self.create_stretchy = True
         self.btm_control = None
