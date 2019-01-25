@@ -1607,6 +1607,7 @@ class BuildHierarchy(object):
             
             MatchSpace(transform, joint).translation_rotation()
             MatchSpace(transform, joint).world_pivots()
+            cmds.makeIdentity(joint, r = True, apply = True)
             
             new_joints.append(joint)
             
