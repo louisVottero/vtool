@@ -511,18 +511,30 @@ def get_position_assymetrical(mesh1, mirror_axis = 'x', tolerance = 0.00001):
             
     return not_found
 
+def get_thing_from_component(component, component_name = 'vtx'):
+    """
+    Given a component, return the shape associated.
+    """
+    thing = None
+    
+    if component.find('.%s' % component_name) > -1:
+        split_selected = component.split('.%s' % component_name)
+        if split_selected > 1:
+            thing = split_selected[0]
+            
+            return thing
+    
+    return thing
+
 def get_mesh_from_vertex(vertex):
-        
-        mesh = None
-        
-        if vertex.find('.vtx') > -1:
-            split_selected = vertex.split('.vtx')
-            if split_selected > 1:
-                mesh = split_selected[0]
-                
-                return mesh
-        
-        return mesh
+    
+    return get_thing_from_component(vertex, 'vtx')
+    
+
+def get_curve_from_cv(cv):
+    
+    return get_thing_from_component(cv, 'cv')
+    
 
 def get_edges_in_list(list_of_things):
     
@@ -645,9 +657,8 @@ def get_mesh_shape(mesh, shape_index = 0):
     """
     if mesh.find('.vtx'):
         mesh = mesh.split('.')[0]
-    
-    if cmds.nodeType(mesh) == 'mesh':
-        
+            
+    if cmds.nodeType(mesh) == 'mesh':    
         mesh = cmds.listRelatives(mesh, p = True, f = True)[0]
         
     shapes = core.get_shapes(mesh)
@@ -855,10 +866,14 @@ def get_vertices(mesh):
 
 def get_vertex_indices(list_of_vertex_names):
     
+    list_of_vertex_names = vtool.util.convert_to_sequence(list_of_vertex_names)
+    
     vertex_indices = []
     
     for vertex in list_of_vertex_names:
-        index = vtool.util.get_last_number(vertex)
+        
+        index = int(vertex[vertex.find("[")+1:vertex.find("]")]) 
+        
         vertex_indices.append(index)
         
     return vertex_indices
@@ -2972,7 +2987,8 @@ def follicle_to_mesh(transform, mesh, u = None, v = None, constrain = True, cons
         
         
     """
-    mesh = get_mesh_shape(mesh)
+    if not core.is_a_shape(mesh):
+        mesh = get_mesh_shape(mesh)
     
     position = cmds.xform(transform, q = True, ws = True, t = True)
     
@@ -3664,7 +3680,7 @@ def transfer_from_curve_to_curve(source_curve, destination_curve, transforms, re
     
     return curves
 
-def move_cvs(curves, position):
+def move_cvs(curves, position, pivot_at_center = False):
     """
     This will move the cvs together and maintain their offset and put them at a world position, not local
     """
@@ -3674,12 +3690,17 @@ def move_cvs(curves, position):
     for curve in curves:
         if curve.find('.cv[') > -1:
             curve_cvs = curve
+            curve = get_curve_from_cv(curve)
         else:
             curve_cvs = '%s.cv[*]' % curve
-            
-        curve_position = cmds.xform(curve, q = True, ws = True, t = True)
         
-        offset = vtool.util.vector_sub(position, curve_position)
+        
+        if pivot_at_center:
+            center_position = space.get_center(curve_cvs)
+        else:
+            center_position = cmds.xform(curve, q = True, ws = True, rp = True)
+        
+        offset = vtool.util.vector_sub(position, center_position)
         
         cmds.move(offset[0],offset[1],offset[2], curve_cvs, ws = True, r = True)
         
