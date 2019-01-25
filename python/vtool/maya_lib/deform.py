@@ -4112,8 +4112,11 @@ def average_skin_weights(verts):
     
     influence_indices = api.get_skin_influence_indices(skin)
     weights = get_skin_weights(skin)
-        
+    
     for influence_index in influence_indices:
+        
+        if not weights.has_key(influence_index):
+            continue
         
         influence_weights = weights[influence_index]
         
@@ -4138,7 +4141,6 @@ def smooth_skin_weights(verts, iterations = 1):
     
     skin = find_deformer_by_type(api_object,'skinCluster', return_all = False)
     
-    verts = cmds.ls(sl = True, flatten = True)
     vert_count = len(verts)
     
     influence_indices = api.get_skin_influence_indices(skin)

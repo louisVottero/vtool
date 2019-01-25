@@ -339,6 +339,14 @@ def is_a_curve(node):
     
     return False
 
+def is_a_vertex(node):
+    
+    if cmds.objExists(node) and node.find('.vtx[') > -1:
+        return True
+    
+    return False
+
+
 def is_mesh_compatible(mesh1, mesh2):
     """
     Check the two meshes to see if they have the same vert, edge and face count.
