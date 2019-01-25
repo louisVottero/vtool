@@ -6,16 +6,33 @@ import traceback
 
 import vtool.util
 import api
+from vtool import util_math
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
+    import maya.api.OpenMaya as om
+    import maya.api.OpenMayaAnim as omAnim
+    
     
 import core
 import attr
 import space
 import geo
 import anim
+
+def get_object(name):
+    
+    if not cmds.objExists(name):
+        return
+    
+    selection_list = om.MSelectionList()
+    selection_list.add(name)
+    
+    if cmds.objectType(name, isAType = 'transform') or cmds.objectType(name, isAType = 'shape'):
+        return selection_list.getDagPath(0)    
+    
+    return selection_list.getDependNode(0)
 
 class SkinCluster(object):
     
@@ -836,14 +853,20 @@ class SplitMeshTarget(object):
         target_mesh (str): The name of a target mesh, eg. smile.
     """
     def __init__(self, target_mesh):
-        self.target_mesh = target_mesh
+        
+        self.target_mesh = vtool.util.convert_to_sequence(target_mesh)
+        
         self.weighted_mesh = None
         self.base_mesh = None
         self.split_parts = []
         self.skip_target_rename = []
         self.search_children_meshes = False
+        self.weights_dict = {}
+        self.weighted_meshes = []
         
-    def _get_center_fade_weights(self, mesh, other_mesh, fade_distance, positive):
+    def _get_center_fade_weights(self, mesh, fade_distance, positive):
+        
+        vtool.util.show('Computing center fade weights...')
         
         verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
         
@@ -890,12 +913,17 @@ class SplitMeshTarget(object):
                         
             inc += 1
             
+            if value < 1 and value > 0 and value:
+                value = util_math.easeInOutExpo(value) 
+            
             values.append(value)
             
         
         return values
     
     def _get_joint_weights(self, joint, weighted_mesh = None):
+        
+        vtool.util.show('Computing joint weights...')
         
         if not weighted_mesh:
             weighted_mesh = self.weighted_mesh
@@ -913,7 +941,7 @@ class SplitMeshTarget(object):
         
         return weights
     
-    def _get_split_name(self, part):
+    def _get_split_name(self, part, target):
         
         replace = part[1]
         suffix = part[2]
@@ -924,42 +952,12 @@ class SplitMeshTarget(object):
         if not split_index:
             split_index = [0,'']
         
-        target_name = self.target_mesh
-        
-        negative = False
-        
-        last_number = vtool.util.get_trailing_number(target_name, as_string = True, number_count = 2)
-        
-        if last_number:
-            target_name = target_name[:-2]
-        
-        if target_name.endswith('N'):
-            negative = True
-            target_name = target_name[:-1]
-            
-        new_name = target_name
-            
-        if replace and type(replace) == list:
-            
-            new_name = re.sub(replace[0], replace[1], new_name)
-            
-        if suffix:
-            new_name = '%s%s' % (new_name, suffix)
-        if prefix:
-            sub_new_name = '%s%s' % (prefix, new_name[0].upper() + new_name[1:])
-        
-        if negative:
-            new_name += 'N'
-        
-        if last_number:
-            new_name += last_number
-        
         if split_name_option:
             
-            split_name = self.target_mesh.split('_')
+            split_name = target.split('_')
             
             if len(split_name) < 2:
-                split_name = [self.target_mesh] 
+                split_name = [target] 
             
             new_names = []
             
@@ -968,7 +966,6 @@ class SplitMeshTarget(object):
                 negative = False
                 
                 if name in self.skip_target_rename:
-                    
                     new_names.append(name)
                     
                 if not name in self.skip_target_rename:
@@ -1012,6 +1009,36 @@ class SplitMeshTarget(object):
             new_name = string.join(new_names, '_')
         
         if not split_name_option:
+            
+            target_name = target
+            
+            negative = False
+            
+            last_number = vtool.util.get_trailing_number(target_name, as_string = True, number_count = 2)
+            
+            if last_number:
+                target_name = target_name[:-2]
+            
+            if target_name.endswith('N'):
+                negative = True
+                target_name = target_name[:-1]
+                
+            new_name = target_name
+                
+            if replace and type(replace) == list:
+                
+                new_name = re.sub(replace[0], replace[1], new_name)
+                
+            if suffix:
+                new_name = '%s%s' % (new_name, suffix)
+            if prefix:
+                sub_new_name = '%s%s' % (prefix, new_name[0].upper() + new_name[1:])
+            
+            if negative:
+                new_name += 'N'
+            
+            if last_number:
+                new_name += last_number
             
             if type(split_index) == list:
                 new_name = new_name[:split_index[0]] + split_index[1] + new_name[split_index[0]:]
@@ -1117,52 +1144,49 @@ class SplitMeshTarget(object):
         
         self.search_children_meshes = bool_value
 
-            
-    
-    @core.undo_off
-    def create(self):
-        """
-        Create the splits.
+    def split_target(self,target):
         
-        Returns:
-            list: The names of the new targets.
-        """
-        
-        if not core.is_unique(self.target_mesh):
-            vtool.util.warning('%s target is not unique. Target not split.' % self.target_mesh)
-            return
+        if not core.is_unique(target):
+            vtool.util.warning('%s target is not unique. Target not split.' % target)
+            return []
         
         if not self.base_mesh or not cmds.objExists(self.base_mesh):
             vtool.util.warning('%s base mesh does not exist to split off of.' % self.base_mesh)
-            return
+            return []
         
-        if not self.target_mesh or not cmds.objExists(self.target_mesh):
-            vtool.util.warning('%s target does not exist for splitting' % self.target_mesh)
-            return
+        if not target or not cmds.objExists(target):
+            vtool.util.warning('%s target does not exist for splitting' % target)
+            return []
         
         if self.weighted_mesh and not cmds.objExists(self.weighted_mesh):
             vtool.util.warning('Weight mesh specified. %s weight mesh does not exist for splitting' % self.weighted_mesh)
-            return
+            return []
 
-        parent = cmds.listRelatives( self.target_mesh, p = True )
+        parent = cmds.listRelatives( target, p = True )
         if parent:
             parent = parent[0]
 
         targets = []
         
-        vtool.util.show('Splitting target: %s' % self.target_mesh)
+        vtool.util.show('Splitting target: %s' % target)
         
-        bar = core.ProgressBar('Splitting target: %s' % self.target_mesh, len(self.split_parts) )
+        base_meshes = self.base_meshes
+        base_mesh_count = self.base_mesh_count
+        
+        target_meshes = core.get_shapes_in_hierarchy(target, 'mesh', return_parent = True)
+        
+        if self.weighted_meshes:
+            weight_meshes = self.weighted_meshes
+        
+        positive_negative = None
         
         for part in self.split_parts:
             
             new_target = cmds.duplicate(self.base_mesh)[0]
             
-            new_name = self._get_split_name(part)
+            new_name = self._get_split_name(part, target)
             
             new_target = cmds.rename(new_target, new_name)    
-            
-            weights = []
             
             joint = part[0]
             center_fade, positive_negative = part[6]
@@ -1171,15 +1195,8 @@ class SplitMeshTarget(object):
                 vtool.util.warning('Splitting with joints specified, but no weighted mesh specified.')
                 continue
             
-
-            base_meshes = core.get_shapes_in_hierarchy(self.base_mesh, 'mesh', return_parent = True)
-            target_meshes = core.get_shapes_in_hierarchy(self.target_mesh, 'mesh', return_parent = True)
             new_target_meshes = core.get_shapes_in_hierarchy(new_target, 'mesh', return_parent = True)
-            if center_fade == None:
-                weight_meshes = core.get_shapes_in_hierarchy(self.weighted_mesh, 'mesh')
-                
-            base_mesh_count = len(base_meshes)
-                
+            
             if not base_mesh_count == len(target_meshes):
                 vtool.util.warning('Searching children, but children of base mesh and children of target mesh have different count.')
                 continue
@@ -1194,25 +1211,38 @@ class SplitMeshTarget(object):
             for inc in range(0, base_mesh_count):
                 
                 base_mesh = base_meshes[inc]
-                vtool.util.show('Splitting mesh: %s' % base_mesh)
+                
+                if not self.weights_dict.has_key(base_mesh) or not self.weights_dict[base_mesh].has_key(positive_negative):
+                    
+                    if not self.weights_dict.has_key(base_mesh):
+                        self.weights_dict[base_mesh] = {}
+                    
+                    weights = []
+                
+                    if center_fade != None:
+                        
+                        weights = self._get_center_fade_weights(base_mesh, center_fade, positive_negative)
+                    
+                    if center_fade == None:
+                        
+                        weight_mesh = weight_meshes[inc]
+                        
+                        weights = self._get_joint_weights(joint, weight_mesh)
+                        
+                    
+                    self.weights_dict[base_mesh][positive_negative] = weights
+                
+                weights = self.weights_dict[base_mesh][positive_negative]
+                
                 target_mesh = target_meshes[inc]
                 new_target_mesh = new_target_meshes[inc]
-                
-                if center_fade != None:
                     
-                    weights = self._get_center_fade_weights(base_mesh, target_mesh, center_fade, positive_negative)
-                    
-                if center_fade == None:
-                    
-                    weight_mesh = weight_meshes[inc]
-                    weights = self._get_joint_weights(joint, weight_mesh)
-                
                 if not weights:
                     vtool.util.warning('No weights found! Could not extract target on %s' % target_mesh)
                     continue
+                        
                 if weights:
                     was_split = True
-                
                     self._weight_target(target_mesh, new_target_mesh, weights)
         
             if not was_split:
@@ -1233,18 +1263,62 @@ class SplitMeshTarget(object):
                 
             if vtool.util.break_signaled():
                 break
-                
+            
+        if not len(targets):
+            vtool.util.warning('No targets created when splitting.')
+        
+        
+        
+        return targets
+    
+    @core.undo_off
+    def create(self):
+        """
+        Create the splits.
+        
+        Returns:
+            list: The names of the new targets.
+        """
+        
+        self.weights_dict = {}
+        
+        bar = core.ProgressBar('Splitting targets', len(self.target_mesh) )
+        
+        inc = 0
+        
+        targets = []
+        
+        self.base_meshes = core.get_shapes_in_hierarchy(self.base_mesh, 'mesh', return_parent = True)
+        self.base_mesh_count = len(self.base_meshes)
+        
+        
+        if self.weighted_mesh:
+            self.weighted_meshes = core.get_shapes_in_hierarchy(self.weighted_mesh, 'mesh', return_parent = True)
+        
+        for target in self.target_mesh:
+            
+            
+            
+            bar.status('Splitting target: %s, %s of %s' % (target, inc, len(self.target_mesh)))
+            new_targets = self.split_target(target)
+        
+            
+            
+            if new_targets:
+                targets += new_targets
+            
             if bar.break_signaled():
                 break
                 
             bar.next()
+            
+            inc += 1
                 
         bar.end()
         
-        if not len(targets):
-            vtool.util.warning('No targets created when splitting.')
-        
         return targets
+            
+
             
 
 class SplitPatch(object):
@@ -1412,7 +1486,7 @@ class TransferWeight(object):
             percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
         
-        accuracy = 0.000001
+
         
         source_joints = vtool.util.convert_to_sequence(source_joints)
         destination_joints = vtool.util.convert_to_sequence(destination_joints)
@@ -1445,12 +1519,14 @@ class TransferWeight(object):
             verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)    
             
             if len(verts_mesh) != len(verts_source_mesh):
-                vtool.util.warning('%s and %s have different vert counts. Can not transfer weights.' % (self.mesh, source_mesh))
-                return
-        
-        
+                vtool.util.warning('%s and %s have different vert counts.' % (self.mesh, source_mesh))
         
         source_skin_cluster = self._get_skin_cluster(source_mesh)
+        
+        if not source_skin_cluster:
+            vtool.util.warning('No skin cluster found on source: %s' % source_mesh)
+            return
+        
         source_value_map = get_skin_weights(source_skin_cluster)
         source_joint_map = get_joint_index_map(source_joints, source_skin_cluster)
         
@@ -1482,7 +1558,7 @@ class TransferWeight(object):
                 
                 value = source_value_map[influence_index][int_vert_index]
                 
-                if value > accuracy:
+                if value > 0.0001:
                     if not int_vert_index in weighted_verts:
                         weighted_verts.append(int_vert_index)
                     total_source_value[vert_index] += value
@@ -1526,7 +1602,7 @@ class TransferWeight(object):
                 if destination_value_map.has_key(influence_index):
                     destination_value += destination_value_map[influence_index][vert_index]
             
-            if destination_value < accuracy:
+            if destination_value < 0.0001:
                 continue
             
             source_value *= percent
@@ -1534,9 +1610,11 @@ class TransferWeight(object):
             if source_value > destination_value:
                 source_value = destination_value
             
-            scale = destination_value - source_value
+            flip_source_value = 1.0 - source_value
             
-            if scale < 1:
+            dest_reducer = flip_source_value/destination_value
+            
+            if dest_reducer < 1:
                 for influence_index in destination_joint_map:
                     
                     if influence_index == None:
@@ -1544,11 +1622,16 @@ class TransferWeight(object):
                     
                     if destination_value_map.has_key(influence_index):
                         value = destination_value_map[influence_index][vert_index]
+                        orig_value = value
                         
-                        value *= scale
+                        
+                        value *= dest_reducer
+                        
+                        if value > orig_value:
+                            value = orig_value
                         
                         cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, influence_index), value)
-                            
+            
             for influence_index in source_joint_map:
                 
                 if influence_index == None:
@@ -1561,16 +1644,16 @@ class TransferWeight(object):
                 
                 value = source_value_map[influence_index][vert_index]
                 
-                if value < accuracy:
+                if value < 0.0001:
                     continue
                 
-                value = value * percent * source_value
+                value = value * percent
                 
                 
                 if value > 1:
                     value = 1
                 
-                if value < accuracy:
+                if value < 0.0001:
                     continue
                 
                 joint_index = get_index_at_skin_influence(joint, self.skin_cluster)
@@ -3666,9 +3749,7 @@ def get_influences_on_skin(skin_deformer, short_name = True):
         list: influences found in the skin cluster
     """
     
-    skin = api.SkinClusterFunction()
-    skin.set_node_as_mobject(skin_deformer)
-    influences = skin.get_influence_names(short_name = short_name)
+    influences = api.get_skin_influence_names(skin_deformer, short_name)
 
     return influences
 
@@ -3762,10 +3843,7 @@ def get_skin_influence_indices(skin_deformer):
         list: The list of indices.
     """
     
-    skin = api.SkinClusterFunction()
-    skin.set_node_as_mobject(skin_deformer)
-    
-    indices = skin.get_influence_indices()
+    indices = api.get_skin_influence_indices(skin_deformer)
     
     return indices
 
@@ -3783,31 +3861,12 @@ def get_skin_influences(skin_deformer, return_dict = False):
         list, dict: A list of influences in the skin cluster. If return_dict = True, return dict[influence] = index
     """
     
-    skin = api.SkinClusterFunction()
-    skin.set_node_as_mobject(skin_deformer)
-    
-    influence_dict, influences = skin.get_influence_dict(short_name = True)
+    influence_dict, influences = api.get_skin_influence_dict(skin_deformer, short_name = True)
     
     if return_dict == False:
         return influences
     if return_dict == True:
         return influence_dict
-    """   
-    indices = get_skin_influence_indices(skin_deformer)
-    
-    if not return_dict:
-        found_influences = []
-    if return_dict:
-        found_influences = {}
-    
-    for index in indices:
-        influence = get_skin_influence_at_index(index, skin_deformer)
-        
-        if not return_dict:
-            found_influences.append(influence)
-        if return_dict:
-            found_influences[influence] = index
-    """ 
     
 
 def get_meshes_skinned_to_joint(joint):
@@ -3837,7 +3896,7 @@ def get_meshes_skinned_to_joint(joint):
     return found
     
     
-def get_skin_weights(skin_deformer):
+def get_skin_weights(skin_deformer, vert_ids = []):
     """
     Get the skin weights for the skin cluster.
     Return a dictionary where the key is the influence, 
@@ -3849,15 +3908,8 @@ def get_skin_weights(skin_deformer):
     Returns:
         dict: dict[influence_index] = weight values corresponding to point order.
     """
-    
-    """
-    skin = api.SkinClusterFunction()
-    skin.set_node_as_mobject(skin_deformer)
-    
-    value_map = skin.get_skin_weights_dict()
-    """
-    
-    value_map = api.get_skin_weights_dict(skin_deformer)
+        
+    value_map = api.get_skin_weights_dict(skin_deformer, vert_ids)
     
     return value_map
 
@@ -3873,11 +3925,8 @@ def get_skin_influence_weights(influence_name, skin_deformer):
     if influence_index == None:
         return
     
-    skin = api.nodename_to_mobject(skin_deformer)
-    skinFn = api.SkinClusterFunction(skin)
-    
-    weights_dict = skinFn.get_skin_weights_dict()
-    
+    weights_dict = api.get_skin_weights_dict(skin_deformer)
+        
     if weights_dict.has_key(influence_index):
         weights = weights_dict[influence_index]
         
@@ -4024,8 +4073,6 @@ def set_skin_weights_to_zero(skin_deformer):
             
             attr = '%s.%s' % (skin_deformer, weight_attribute)
             
-            #plug = api.attribute_to_plug(attr)
-            #plug.setFloat(0)  
             cmds.setAttr(attr, 0)
 
 def get_skin_envelope(mesh):
@@ -4069,25 +4116,123 @@ def average_skin_weights(verts):
     
     vert_indices = geo.get_vertex_indices(verts)
     
-    influences = get_skin_influences(skin, True)
+    influence_indices = api.get_skin_influence_indices(skin)
     weights = get_skin_weights(skin)
         
-    for influence in influences:
-    
-        influence_index = influences[influence]
+    for influence_index in influence_indices:
+        
         influence_weights = weights[influence_index]
         
         average = 0.0
         
         for vert in vert_indices:
-        
             average += influence_weights[vert]
-    
-    
+            
         average = average/len(verts)
         
         for vert in vert_indices:
             cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), average)
+    
+
+@core.undo_chunk
+def smooth_skin_weights(verts, iterations = 1):
+    
+    api_object = get_object(verts[0])
+    
+    iter_vertex_fn = om.MItMeshVertex(api_object)
+    iter_face_fn = om.MItMeshPolygon(api_object)
+    
+    skin = find_deformer_by_type(api_object,'skinCluster', return_all = False)
+    
+    verts = cmds.ls(sl = True, flatten = True)
+    vert_count = len(verts)
+    
+    influence_indices = api.get_skin_influence_indices(skin)
+    
+    all_weights_switch = 200
+    
+    for inc in range(0, iterations):
+        
+        progress = core.ProgressBar('Smooth weights: Starting iteration %s' % inc, vert_count)
+        
+        vert_inc  = 1
+        
+        if vert_count > all_weights_switch:
+            weights = get_skin_weights(skin)
+    
+        for vert in verts:
+            
+            if vert_count <= all_weights_switch:
+                weights = None
+            
+            progress.status('Working on iteration: %s of %s   for vertex %s of %s' % ((inc+1), iterations, vert_inc, vert_count))
+            
+            vert_inc += 1
+            
+            vert_index = int(vert[vert.find("[")+1:vert.find("]")]) 
+    
+            iter_vertex_fn.setIndex(vert_index)
+                
+            found_verts = {}
+            
+            faces = iter_vertex_fn.getConnectedFaces()
+            
+            for face in faces:
+                iter_face_fn.setIndex(face)
+                vertices = iter_face_fn.getConnectedVertices()
+                
+                for vertex in vertices:
+                    found_verts[vertex] = None
+            
+            surrounding_vert_indices = found_verts.keys()
+            sub_vert_count = len(surrounding_vert_indices)
+            
+            if not weights:
+                weights = get_skin_weights(skin, surrounding_vert_indices)
+            
+            for influence_index in influence_indices:
+                
+                if not influence_index in weights:
+                    continue
+                
+                influence_weights = weights[influence_index]
+                                
+                all_zero = True
+                all_one = True
+                
+                sub_weights = []
+                
+                for surrounding_index in surrounding_vert_indices: 
+                    weight = influence_weights[surrounding_index]
+                                        
+                    sub_weights.append(weight)
+                    
+                    if all_zero or all_one:
+                    
+                        if weight != 0:
+                            all_zero = False
+                    
+                        if weight != 1:
+                            all_one = False
+                    
+                if all_zero or all_one:
+                    continue
+                
+                average = sum(sub_weights) / sub_vert_count
+                cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert_index, influence_index), average)
+            
+            if progress.break_signaled():
+                progress.end()
+                return
+            
+            
+            progress.next()
+            
+        cmds.refresh()
+    
+    progress.end()
+    
+    
     
 def has_influence(joint, skin_cluster):
     
