@@ -143,18 +143,11 @@ class RigManager(qt_ui.DirectoryWidget):
         pose_button.setToolTip('Create correctives on meshes deformed by a rig.')
         other_buttons_layout.addWidget(pose_button)
         
-        
-        
         shape_combo_button = qt.QPushButton('Shape Combos')
         shape_combo_button.clicked.connect(self._shape_combo)
         shape_combo_button.setMinimumWidth(button_width)
         shape_combo_button.setToolTip('Create combo shapes for use in facial setups.')
         other_buttons_layout.addWidget(shape_combo_button)
-        
-        
-        
-        
-        #manager_layout.addSpacing(15)
         
         check_button = qt.QPushButton('Checks - ALPHA')
         check_button.clicked.connect(self._checker)
@@ -169,15 +162,12 @@ class RigManager(qt_ui.DirectoryWidget):
         #removed indefinitly
         #manager_layout.addWidget(picker_button)
         
-        
-        
         presets_button = qt.QPushButton('Presets - ALPHA')
         presets_button.clicked.connect(self._presets)
         presets_button.setMinimumWidth(button_width)
         presets_button.setToolTip('Presets creates a node in Maya called "presets" that stores attribute values. Values can be read from referenced assets in the FX tab.')
         #removed indefinitly
         #manager_layout.addWidget(presets_button)
-        
         
         manager_layout.addSpacing(15)
         
@@ -201,8 +191,6 @@ class RigManager(qt_ui.DirectoryWidget):
         deformation_widget.setMaximumWidth(550)
         model_widget.setMaximumWidth(550)
         
-        #structure_widget.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
-        
         tool_tab.addTab(structure_widget, 'Structure')
         tool_tab.addTab(control_widget, 'Controls')
         tool_tab.addTab(deformation_widget, 'Deform')
@@ -216,9 +204,6 @@ class RigManager(qt_ui.DirectoryWidget):
         self.main_layout.addWidget(manager_group)
         self.main_layout.addSpacing(15)
         self.main_layout.addWidget(tool_group)
-        
-        #self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
-        
         
     def _create_structure_widgets(self, parent):
         
@@ -481,6 +466,21 @@ class RigManager(qt_ui.DirectoryWidget):
         
         corrective_button.clicked.connect(self._create_corrective)
         
+        weights_label = qt.QLabel('Select a mesh or verts of a single mesh')
+        
+        average_weights = qt.QPushButton('Average Weights')
+        smooth_weights_layout = qt.QHBoxLayout()
+        smooth_weights = qt.QPushButton('Smooth Weights')
+        self.count_smooth_weights = qt_ui.GetInteger('Iterations')
+        self.count_smooth_weights.set_value(3)
+        
+        
+        smooth_weights_layout.addWidget(smooth_weights)
+        smooth_weights_layout.addWidget(self.count_smooth_weights)
+        
+        average_weights.clicked.connect(self._average_weights)
+        smooth_weights.clicked.connect(self._smooth_weights)
+        
         skin_mesh_from_mesh = SkinMeshFromMesh()
         skin_mesh_from_mesh.collapse_group()
         
@@ -488,14 +488,18 @@ class RigManager(qt_ui.DirectoryWidget):
         cluster_mesh = qt.QPushButton('Create Tweak Cluster')
         cluster_mesh.clicked.connect(self._cluster_tweak_mesh)
         
-
-        mirror_mesh = MirrorMesh()
-        mirror_mesh.collapse_group()
+        #not working
+        #mirror_mesh = MirrorMesh()
+        #mirror_mesh.collapse_group()
         
+        parent.main_layout.addWidget(weights_label)
+        parent.main_layout.addLayout(smooth_weights_layout)
+        parent.main_layout.addWidget(average_weights)
+        parent.main_layout.addSpacing(10)
         parent.main_layout.addWidget(skin_mesh_from_mesh)
         parent.main_layout.addSpacing(10)
-        parent.main_layout.addWidget(mirror_mesh)
-        parent.main_layout.addSpacing(10)
+        #parent.main_layout.addWidget(mirror_mesh)
+        #parent.main_layout.addSpacing(10)
         parent.main_layout.addWidget(cluster_mesh_info)
         parent.main_layout.addWidget(cluster_mesh)
         parent.main_layout.addSpacing(10)
@@ -508,12 +512,42 @@ class RigManager(qt_ui.DirectoryWidget):
         parent.main_layout.addWidget(corrective_button_info)
         parent.main_layout.addWidget(corrective_button)
         
+    @core.undo_chunk    
+    def _smooth_weights(self):
         
+        selection = cmds.ls(sl = True, flatten = True)
         
+        verts = []
+
+        thing = selection[0]
+
+        if geo.is_a_mesh(thing):
+            verts = geo.get_vertices(thing)
         
+        if geo.is_a_vertex(thing):
+            verts = selection
+    
+        get_count = self.count_smooth_weights.get_value()
         
+        deform.smooth_skin_weights(verts, get_count)
+    
+    @core.undo_chunk
+    def _average_weights(self):
         
-            
+        selection = cmds.ls(sl = True, flatten = True)
+        
+        verts = []
+
+        thing = selection[0]
+
+        if geo.is_a_mesh(thing):
+            verts = geo.get_vertices(thing)
+        
+        if geo.is_a_vertex(thing):
+            verts = selection
+    
+        deform.average_skin_weights(verts)
+        
     def _pose_manager(self):
         window = pose_manager()
         ui_core.emit_new_tool_signal(window)
