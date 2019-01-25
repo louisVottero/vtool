@@ -1486,7 +1486,7 @@ class TransferWeight(object):
             percent (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
         
-
+        accuracy = 0.000001
         
         source_joints = vtool.util.convert_to_sequence(source_joints)
         destination_joints = vtool.util.convert_to_sequence(destination_joints)
@@ -1519,7 +1519,8 @@ class TransferWeight(object):
             verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)    
             
             if len(verts_mesh) != len(verts_source_mesh):
-                vtool.util.warning('%s and %s have different vert counts.' % (self.mesh, source_mesh))
+                vtool.util.warning('%s and %s have different vert counts. Can not transfer weights.' % (self.mesh, source_mesh))
+                return
         
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         
@@ -1558,7 +1559,7 @@ class TransferWeight(object):
                 
                 value = source_value_map[influence_index][int_vert_index]
                 
-                if value > 0.0001:
+                if value > accuracy:
                     if not int_vert_index in weighted_verts:
                         weighted_verts.append(int_vert_index)
                     total_source_value[vert_index] += value
@@ -1602,7 +1603,7 @@ class TransferWeight(object):
                 if destination_value_map.has_key(influence_index):
                     destination_value += destination_value_map[influence_index][vert_index]
             
-            if destination_value < 0.0001:
+            if destination_value < accuracy:
                 continue
             
             source_value *= percent
@@ -1610,11 +1611,9 @@ class TransferWeight(object):
             if source_value > destination_value:
                 source_value = destination_value
             
-            flip_source_value = 1.0 - source_value
+            scale = destination_value - source_value
             
-            dest_reducer = flip_source_value/destination_value
-            
-            if dest_reducer < 1:
+            if scale < 1:
                 for influence_index in destination_joint_map:
                     
                     if influence_index == None:
@@ -1622,16 +1621,11 @@ class TransferWeight(object):
                     
                     if destination_value_map.has_key(influence_index):
                         value = destination_value_map[influence_index][vert_index]
-                        orig_value = value
                         
-                        
-                        value *= dest_reducer
-                        
-                        if value > orig_value:
-                            value = orig_value
+                        value *= scale
                         
                         cmds.setAttr('%s.weightList[%s].weights[%s]' % (self.skin_cluster, vert_index, influence_index), value)
-            
+                            
             for influence_index in source_joint_map:
                 
                 if influence_index == None:
@@ -1644,16 +1638,16 @@ class TransferWeight(object):
                 
                 value = source_value_map[influence_index][vert_index]
                 
-                if value < 0.0001:
+                if value < accuracy:
                     continue
                 
-                value = value * percent
+                value = value * percent * source_value
                 
                 
                 if value > 1:
                     value = 1
                 
-                if value < 0.0001:
+                if value < accuracy:
                     continue
                 
                 joint_index = get_index_at_skin_influence(joint, self.skin_cluster)
