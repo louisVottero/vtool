@@ -1182,16 +1182,19 @@ def convert_to_sequence(variable, sequence_type = list):
         list, tuple: Returns list or tuple depending on the sequence_type.
     """
     
-    if type(variable) == list and sequence_type == tuple:
+    if type(variable) == sequence_type:
+        return variable
         
+    if type(variable) == list and sequence_type == tuple:
         variable = tuple(variable)
+        return variable
     
     if type(variable) == tuple and sequence_type == list:
-        
         variable = list(variable)
+        return variable
         
     
-    if not type(variable) == sequence_type:
+    if type(variable) != sequence_type:
         if sequence_type == list:
             return [variable]
         if sequence_type == tuple:

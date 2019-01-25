@@ -531,8 +531,6 @@ class ComboManager(ui_core.MayaWindow):
             
     def _launch_tags(self):
         
-        
-        
         self.tag_widget = TagManager(self)
         
         self.tag_widget.show()
@@ -1314,8 +1312,6 @@ class TagManager(qt_ui.BasicDialog):
         self.tag_list.itemSelectionChanged.connect(self._update_selected_tag)
         self.tag_list.setSelectionMode(self.shape_list.MultiSelection)
         
-        
-        
         shapes_layout.addWidget(self.shape_list)
         tags_layout.addWidget(self.tag_list)
         
@@ -1332,9 +1328,6 @@ class TagManager(qt_ui.BasicDialog):
         
         tags_layout.addWidget(add_tag)
         tags_layout.addWidget(remove_tag)
-        
-        
-        
         
         self.main_layout.addLayout(shapes_layout)
         self.main_layout.addLayout(tags_layout)
