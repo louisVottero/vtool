@@ -1401,6 +1401,9 @@ def get_node_editors():
     
     found = []
     
+    if is_batch():
+        return []
+    
     for panel in cmds.getPanel(type='scriptedPanel'):
         if cmds.scriptedPanel(panel, query=True, type=True) == "nodeEditorPanel":
             nodeEditor = panel + "NodeEditorEd"
