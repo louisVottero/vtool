@@ -1311,6 +1311,12 @@ def get_object(name):
     
     return selection_list.getDependNode(0)
 
+def get_plug(attribute_name):
+    selection = om.MSelectionList()
+    selection.add(attribute_name)
+    plug = selection.getPlug(0)
+
+    return plug
 
 def get_distance(three_value_list1, three_value_list2 ):
     
@@ -1334,7 +1340,7 @@ def get_triangle_ids(mesh, face_id, triangle_id):
     
     return int_array
     
-def get_skin_weights_dict(skinCluster):
+def get_skin_weights_dict(skinCluster, vert_ids = []):
 
     mobject = get_object(skinCluster)
 
@@ -1350,8 +1356,11 @@ def get_skin_weights_dict(skinCluster):
     
     vert_count = weight_list_plug.numElements()
     
-    for vertex_id in xrange(vert_count):
+    if not vert_ids:
+        vert_ids = list(range(vert_count))
     
+    for vertex_id in vert_ids:
+        
         weights_plug.selectAncestorLogicalIndex(vertex_id, weight_list_attr)
         
         weight_influence_ids = weights_plug.getExistingArrayAttributeIndices()
@@ -1403,4 +1412,92 @@ def get_joint_orient_matrix(joint):
     
     #om
     #omAnim
+    
+def get_surrounding_vertex_indices(mesh, index):
+    
+    api_object = get_object(mesh)
+    
+    iter_vertex_fn = om.MItMeshVertex(api_object)
+    iter_face_fn = om.MItMeshPolygon(api_object)
+    
+    iter_vertex_fn.setIndex(index)
+    
+    found_verts = {}
+    
+    faces = iter_vertex_fn.getConnectedFaces()
+    
+    for face in faces:
+        iter_face_fn.setIndex(face)
+        verts = iter_face_fn.getConnectedVertices()
+        
+        for vert in verts:
+            found_verts[vert] = None
+    
+    return found_verts.keys()
+        
+    
+    return verts
+
+
+
+def get_skin_influence_names(skin_cluster, short_name = False):
+    
+    skin_object = get_object(skin_cluster)
+        
+    skin = omAnim.MFnSkinCluster(skin_object)
+    
+    influence_dag_paths = skin.influenceObjects()
+    
+    influence_names = []
+    
+    for x in xrange( len(influence_dag_paths) ):
+        
+        if not short_name:
+            influence_path_name = influence_dag_paths[x].fullPathName()
+        if short_name:
+            influence_path_name = influence_dag_paths[x].partialPathName()
+            
+        influence_names.append(influence_path_name)  
+        
+    return influence_names   
+
+def get_skin_influence_indices(skin_cluster):
+
+    skin_object = get_object(skin_cluster)
+        
+    skin = omAnim.MFnSkinCluster(skin_object)
+    
+    influence_dag_paths = skin.influenceObjects()
  
+    influence_ids = []
+    
+    for x in xrange( len(influence_dag_paths) ):
+        
+        influence_id = int(skin.indexForInfluenceObject(influence_dag_paths[x]))
+        influence_ids.append(influence_id)  
+        
+    return influence_ids 
+
+def get_skin_influence_dict(skin_cluster, short_name = False):
+    
+    skin_object = get_object(skin_cluster)
+    skin = omAnim.MFnSkinCluster(skin_object)
+    
+    influence_dag_paths = skin.influenceObjects()
+        
+    influence_ids = {}
+    influence_names = []
+    
+    for x in xrange( len(influence_dag_paths) ):
+        
+        influence_path = influence_dag_paths[x]
+        if not short_name:
+            influence_path_name = influence_dag_paths[x].fullPathName()
+        if short_name:
+            influence_path_name = influence_dag_paths[x].partialPathName()
+            
+        influence_id = int(skin.indexForInfluenceObject(influence_path))
+        influence_ids[influence_path_name] = influence_id
+        influence_names.append(influence_path_name)
+        
+    return influence_ids, influence_names
