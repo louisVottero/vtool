@@ -31,8 +31,8 @@ class BlendShape(object):
         self.targets = {}
         self.weight_indices = []
         
-        if self.blendshape:
-            self.set(blendshape_name)
+        #if self.blendshape:
+        #    self.set(blendshape_name)
             
         self.mesh_index = 0
         
@@ -83,6 +83,9 @@ class BlendShape(object):
         
         name = name.replace(' ', '_')
         
+        if not self.targets:
+            self._store_targets()
+        
         target_index = None
                 
         if self.targets.has_key(name):
@@ -94,6 +97,10 @@ class BlendShape(object):
         return '%s.weight[%s]' % (self.blendshape, target_index)
 
     def _get_weights(self, target_name = None, mesh_index = 0):
+        
+        if not self.meshes:
+            self._store_meshes()
+        
         mesh = self.meshes[mesh_index]
                         
         vertex_count = core.get_component_count(mesh)
@@ -133,6 +140,9 @@ class BlendShape(object):
 
     def _get_input_target_group(self, name, mesh_index = 0):
         
+        if not self.targets:
+            self._store_targets()
+        
         if not self.targets.has_key(name):
             return
         
@@ -160,6 +170,9 @@ class BlendShape(object):
         
         name = core.get_basename(name, remove_namespace = True)
         
+        if not self.targets:
+            self._store_targets()
+        
         target_index = self.targets[name].index
         
         value = inbetween * 1000 + 5000
@@ -183,10 +196,17 @@ class BlendShape(object):
 
     def _disconnect_targets(self):
         
+        if not self.targets:
+            self._store_targets()
+        
         for target in self.targets:
             self._disconnect_target(target)
             
     def _disconnect_target(self, name):
+        
+        if not self.targets:
+            self._store_targets()
+        
         target_attr = self._get_target_attr(name)
         
         connection = attr.get_attribute_input(target_attr)
@@ -199,6 +219,10 @@ class BlendShape(object):
         self.targets[name].connection = connection
     
     def _zero_target_weights(self):
+        
+        if not self.targets:
+            self._store_targets()
+        
         for target in self.targets:
             attr = self._get_target_attr(target)
             value = cmds.getAttr(attr)
@@ -208,10 +232,17 @@ class BlendShape(object):
             self.targets[target].value = value  
         
     def _restore_target_weights(self):
+        
+        if not self.targets:
+            self._store_targets()
+        
         for target in self.targets:
             self.set_weight(target, self.targets[target].value )
         
     def _restore_connections(self):
+            
+        if not self.targets:
+            self._store_targets()
                 
         for target in self.targets:
             
@@ -256,14 +287,30 @@ class BlendShape(object):
                     target_pos = target_positions[inc]
                     compare_pos = compare_positions[inc]
                     
+                    compare_x = False
+                    compare_y = False
+                    compare_z = False
                     
+                    if target_pos[0] == compare_pos[0]:
+                        compare_x = True
+                    if target_pos[1] == compare_pos[1]:
+                        compare_y = True
+                    if target_pos[2] == compare_pos[2]:
+                        compare_z = True
                     
-                    if target_pos[0] == compare_pos[0] and target_pos[1] == compare_pos[1] and target_pos[2] == compare_pos[2]:
+                    if compare_x and compare_y and compare_z:
                         continue
                     
-                    x_offset = abs(target_pos[0] - compare_pos[0])
-                    y_offset = abs(target_pos[1] - compare_pos[1])
-                    z_offset = abs(target_pos[2] - compare_pos[2])
+                    x_offset = 0
+                    y_offset = 0
+                    z_offset = 0
+                    
+                    if not compare_x:
+                        x_offset = abs(target_pos[0] - compare_pos[0])
+                    if not compare_y:
+                        y_offset = abs(target_pos[1] - compare_pos[1])
+                    if not compare_z:
+                        z_offset = abs(target_pos[2] - compare_pos[2])
                     
                     if x_offset == 0 and y_offset == 0 and z_offset == 0:
                         continue
@@ -353,6 +400,7 @@ class BlendShape(object):
         """
         
         self.blendshape = blendshape_name
+        
         self._store_targets()
         self._store_meshes()
         
@@ -385,7 +433,13 @@ class BlendShape(object):
         Args:
             name (str): The name of a target.
         """
+        
+        if not self.targets:
+            self._store_targets()
+        
         name = core.get_basename(name, remove_namespace = True)
+        
+        
         
         if name in self.targets:
             return True
@@ -403,6 +457,9 @@ class BlendShape(object):
             return False
         
     def get_target_names(self):
+        if not self.targets:
+            self._store_targets()
+        
         return self.targets
         
     @core.undo_chunk
@@ -502,6 +559,9 @@ class BlendShape(object):
             name (str): The name of a target on the blendshape.
         """
         
+        if not self.targets:
+            self._store_targets()
+        
         target_group = self._get_input_target_group(name)
                 
         cmds.removeMultiInstance(target_group, b = True)
@@ -555,6 +615,9 @@ class BlendShape(object):
             old_name (str): The current name of the target.
             new_name (str): The new name to give the target.
         """
+        if not self.targets:
+            self._store_targets()
+        
         if not self.targets.has_key(old_name):
             return old_name
         
@@ -639,6 +702,9 @@ class BlendShape(object):
         
         meshes = []
         
+        if not self.targets:
+            self._store_targets()
+        
         for target in self.targets:
             new_name = core.inc_name(target)
             
@@ -658,6 +724,7 @@ class BlendShape(object):
             self.set_weight(target, 0)
                 
             meshes.append(new_mesh)
+            
         
         self._restore_connections()
         self._restore_target_weights()
@@ -702,14 +769,18 @@ class BlendShape(object):
             mesh_index (int): The index of the mesh in the blendshape. If the blendshape is affecting multiple meshes. Usually index is 0.
         """
         
-        mesh = self.meshes[mesh_index]
-        
-        vertex_count  = core.get_component_count(mesh)
-        
         weights = vtool.util.convert_to_sequence(weights)
         weight_count = len(weights)
         
         if weight_count == 1:
+        
+            if not self.meshes:
+                self._store_meshes()
+        
+            mesh = self.meshes[mesh_index]
+            
+            vertex_count  = core.get_component_count(mesh)
+            
             weights = weights * vertex_count
         
         attribute = None
@@ -721,14 +792,25 @@ class BlendShape(object):
         if target_name:
             
             attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
+        
+        for inc in xrange(weight_count):
+            attribute_name = attribute + '[%s]' % inc
             
-            
-        plug = api.attribute_to_plug(attribute)
+            cmds.setAttr(attribute_name, weights[inc])
+        
+        
+        """
+        #not sure which is faster, this or api, might try plug array in the future
+        plug = api.get_plug(attribute)
         
         for inc in xrange(weight_count):
             plug.elementByLogicalIndex(inc).setFloat(weights[inc])
+        """
         
     def get_weights(self, target_name = None, mesh_index = 0 ):
+        
+        if not self.meshes:
+            self._store_meshes()
         
         mesh = self.meshes[mesh_index]
         
@@ -1615,6 +1697,8 @@ class ShapeComboManager(object):
         shapes = self.get_shapes()
         combos = self.get_combos()
         
+        progress = core.ProgressBar('Recreate shapes', len(shapes))
+        
         for shape in shapes:
             
             if self.is_negative(shape):
@@ -1712,16 +1796,44 @@ class ShapeComboManager(object):
             if not new_inbetweens:
                 if new_names:
                     cmds.rename(new_names[0], shape)
+
+            progress.next()
+            if vtool.util.break_signaled():
+                break
+                    
+            if progress.break_signaled():
+                break
+        progress.end()
+        
+        
         
         if combos:
             combos_gr = cmds.group(em = True, n = 'combos_gr')
+        
+            progress = core.ProgressBar('Recreate combos', len(combos))
             
             for combo in combos:
                 
                 new_combo = self.recreate_shape(combo)
                 cmds.parent(new_combo, combos_gr)
+            
+                progress.next()
+                if vtool.util.break_signaled():
+                    break
+                        
+                if progress.break_signaled():
+                    break
+
+            progress.end()
                 
             cmds.parent(combos_gr, targets_gr)
+            
+            
+        
+        
+
+                    
+        
         
         return targets_gr
     
@@ -1760,6 +1872,8 @@ class ShapeComboManager(object):
     
     def set_tag(self, tag_name, tag_value):
         
+        tag_value = vtool.util.convert_to_sequence(tag_value)
+        
         store = attr.StoreData(self.setup_group)
         
         data_dict = store.eval_data()
@@ -1767,12 +1881,22 @@ class ShapeComboManager(object):
         if not data_dict:
             data_dict = {}
         
-        data_dict[tag_name] = tag_value
-        
         if type(data_dict) == list:
             raise
         
+        if not data_dict.has_key(tag_name):
+            data_dict[tag_name] = []
+        
+        data_dict[tag_name] = data_dict[tag_name] + tag_value
+        
         store.set_data(data_dict)
+        
+    def set_tag_dictionary(self, dictionary = {}):
+        
+        store = attr.StoreData(self.setup_group)
+        
+        store.eval_data()
+        store.set_data(dictionary)
         
     def get_tag(self, tag_name):
         
@@ -2111,7 +2235,7 @@ class ShapeComboManager(object):
             
             found = []
             
-            for target in blend_inst.targets:
+            for target in blend_inst.get_target_names():
                 
                 split_target = target.split('_')
                 
@@ -2440,7 +2564,7 @@ class ShapeComboManager(object):
             
             blend_inst = blendshape[key]
             
-            for target in blend_inst.targets:
+            for target in blend_inst.get_target_names():
                 
                 split_target = target.split('_')
                 
@@ -2548,8 +2672,6 @@ class ShapeComboManager(object):
         for mesh in meshes:
             
             nice_name = core.get_basename(mesh, remove_namespace = True)
-            
-            
             
             if nice_name.count('_') == 0:
                 
@@ -2859,11 +2981,16 @@ def is_negative(shape):
 
 def transfer_blendshape_targets(blend_source, blend_target):
     
+    if core.has_shape_of_type(blend_target, 'mesh'):
+        blend_target = cmds.deformer(blend_target, type = 'blendShape')[0]
+    
     source_blend_inst = BlendShape(blend_source)
     target_blend_inst = BlendShape(blend_target)
     
     source_targets = source_blend_inst.get_target_names()
     target_targets = target_blend_inst.get_target_names()
+    
+    progress = core.ProgressBar('Transfering targets...', len(source_targets))
     
     for source_target in source_targets:
         
@@ -2879,4 +3006,7 @@ def transfer_blendshape_targets(blend_source, blend_target):
             target_blend_inst.connect_target_attr(source_target_mesh, input_attr)
         
         cmds.delete(source_target_mesh)
+        
+        progress.next()
     
+    progress.end()
