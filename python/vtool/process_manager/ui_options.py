@@ -274,6 +274,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         create_menu.setTitle('Add Options')
         create_menu.setTearOffEnabled(True)
         
+        add_title = create_menu.addAction('Add Title')
+        add_title.triggered.connect(self.add_title)
+        
         self.add_string = create_menu.addAction('Add String')
         self.add_string.triggered.connect(self.add_string_option)
         
@@ -292,8 +295,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         add_script = create_menu.addAction('Add Script')
         add_script.triggered.connect(self.add_script)
         
-        add_title = create_menu.addAction('Add Title')
-        add_title.triggered.connect(self.add_title)
+        add_script = create_menu.addAction('Add Dictionary')
+        add_script.triggered.connect(self.add_dictionary)
         
         self.create_separator = self.menu.addSeparator()
         
@@ -584,11 +587,18 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 if type(option[1]) == bool:
                     self.add_boolean_option(name, value, widget)
                     
+                if type(option[1]) == dict:
+                    self.add_dictionary(name, [value,[]], widget)
+                    
                 if option[1] == None:
                     self.add_title(name, widget)
                     
+                    
             if option_type == 'script':
                 self.add_script(name, value, widget)
+                
+            if option_type == 'dictionary':
+                self.add_dictionary(name, value, widget)
                 
         self.disable_auto_expand = False
         self.setVisible(True)    
@@ -864,6 +874,32 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_options(False)
         
         self.edit_mode.connect(button.set_edit)
+    
+    def add_dictionary(self, name = 'dictionary', value = [{},[]], parent = None):
+        
+        if type(name) == bool:
+            name = 'dictionary'
+            
+        if type(value) == type(dict):
+            
+            keys = dict.keys()
+            if keys:
+                keys.sort()
+            
+            value = [dict, keys]
+            
+        name = self._get_unique_name(name, parent)
+        
+        button = ProcessOptionDictionary(name)
+        
+        button.set_value(value)
+        
+        self._handle_parenting(button, parent)
+        
+        self._write_options(False)
+        
+        self.edit_mode.connect(button.set_edit)
+        
         
     def add_title(self, name = 'title', parent = None):
         
@@ -988,6 +1024,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
 
     def save(self):
         self._write_options(clear=False)
+
+    def refresh(self):
+        options = self.process_inst.get_options()
+        self._load_widgets(options)
 
 class ProcessOptionGroup(ProcessOptionPalette):
     
@@ -1378,7 +1418,6 @@ class ProcessOption(qt_ui.BasicWidget):
         if not event.button() == qt.QtCore.Qt.LeftButton:
             return
         
-        
         parent = self.get_parent()
         if parent:
             parent.supress_select = True
@@ -1395,7 +1434,6 @@ class ProcessOption(qt_ui.BasicWidget):
         return
         
     def _value_change(self, value):
-        
         self.update_values.emit(False)
         
     def _define_option_widget(self):
@@ -1505,6 +1543,7 @@ class ProcessOption(qt_ui.BasicWidget):
         parent = self.get_parent()
         if not parent:
             parent = self.parent()
+            
         layout = parent.child_layout
         index = layout.indexOf(self)
         
@@ -1632,6 +1671,11 @@ class ProcessScript(ProcessOption):
         
         self.process_inst.run_code_snippet(value)
         
+        parent = self.get_parent()
+        parent.refresh()
+        
+        
+        
     def set_edit(self, bool_value):
         super(ProcessScript, self).set_edit(bool_value)
         
@@ -1727,7 +1771,7 @@ class ProcessOptionInteger(ProcessOptionNumber):
         
         return qt_ui.GetInteger(self.name)
     
-class ProcessOptionBoolean(ProcessOptionNumber):
+class ProcessOptionBoolean(ProcessOption):
     
     def _define_type(self):
         return 'boolean'
@@ -1739,4 +1783,37 @@ class ProcessOptionBoolean(ProcessOptionNumber):
     
     def _define_option_widget(self):
         return qt_ui.GetBoolean(self.name)
+
+class ProcessOptionDictionary(ProcessOptionNumber):
     
+    def _define_type(self):
+        return 'dictionary'
+    
+    def __init__(self, name):
+        super(ProcessOptionDictionary, self).__init__(name)
+
+        self.main_layout.setContentsMargins(0,2,0,2)
+    
+    def _define_option_widget(self):
+        return qt_ui.GetDictionary(self.name)
+    
+    def _setup_value_change(self):
+        self.option_widget.dictionary_widget.dict_changed.connect(self._value_change)    
+    
+    def get_label(self):
+        return self.option_widget.get_label()
+ 
+    def get_value(self):
+        
+        order = self.option_widget.get_order()
+        dictionary = self.option_widget.get_value()
+        
+        return [dictionary,order]
+        
+    def set_value(self, dictionary_value):
+        
+        self.option_widget.set_order(dictionary_value[1])
+        self.option_widget.set_value(dictionary_value[0])
+        
+        
+        
