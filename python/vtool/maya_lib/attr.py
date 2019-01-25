@@ -1420,8 +1420,6 @@ class StoreData(object):
         if not cmds.objExists(node):
             return
         
-        
-        
         if not node:
             return
         
@@ -2276,15 +2274,16 @@ def hide_attributes(node, attributes):
     
     for attribute in attributes:
         
-        current_attribute = '%s.%s' % (node, attribute)
+        current_attribute = ['%s.%s' % (node, attribute)]
         
         if cmds.getAttr(current_attribute, type = True) == 'double3':
+            current_attribute = []
+            current_attribute.append('%s.%sX' % (node,attribute))
+            current_attribute.append('%s.%sY' % (node,attribute))
+            current_attribute.append('%s.%sZ' % (node,attribute))
             
-            attributes.append('%sX' % attribute)
-            attributes.append('%sY' % attribute)
-            attributes.append('%sZ' % attribute)
-        
-        cmds.setAttr(current_attribute, l = True, k = False, cb = False)
+        for sub_attribute in current_attribute:
+            cmds.setAttr(sub_attribute, l = True, k = False, cb = False)
         
         
 def hide_keyable_attributes(node):
@@ -3821,12 +3820,14 @@ def add_shape_for_attributes(transforms, shape_name):
     for transform in transforms:
          
         if inc == 0 and not existed:
-            shape = cmds.parent(shape,transform, r = True, s = True)
+            shape = cmds.parent(shape,transform, r = True, s = True)[0]
         else:
-            shape = cmds.parent(shape,transform, r = True, s = True,  add = True)
+            shape = cmds.parent(shape,transform, r = True, s = True,  add = True)[0]
         
         inc += 1
     
     if locator:
         cmds.delete(locator)
+        
+    return shape
     
