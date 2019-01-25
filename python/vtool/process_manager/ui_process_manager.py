@@ -407,11 +407,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._update_process(name)
         
-        self._update_tabs()
+        self._update_sidebar_tabs()
         
         self.view_widget.setFocus()
         
-    def _update_tabs(self):
+    def _update_sidebar_tabs(self):
         
         if self.option_tabs.currentIndex() == 0:
             self._load_options()
@@ -842,6 +842,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.last_tab = 0
              
         if self.tab_widget.currentIndex() == 1:
+            
+            if self.last_tab == 3:
+                self._update_sidebar_tabs()
+                
             
             self.set_template_directory()
             self.last_tab = 1
@@ -1437,7 +1441,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._initialize_project_settings()
         
-        self._update_tabs()
+        self._update_sidebar_tabs()
         
         
         
