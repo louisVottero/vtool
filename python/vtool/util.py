@@ -10,6 +10,7 @@ import platform
 import os
 import base64
 from HTMLParser import HTMLParser
+import __builtin__
 
 def get_custom(name, default = ''):
     
@@ -128,7 +129,38 @@ class ControlName(object):
             full_name = full_name.upper()
         
         return full_name
+
+def get_code_builtins(process):
+    
+    builtins = {'process': process, 
+                'show':show, 
+                'warning':warning}
+    
+    
+    if is_in_maya():
         
+        import maya.cmds as cmds
+        import pymel.all as pymel
+    
+        maya_builtins = {'cmds':cmds,
+                    'mc':cmds,
+                    'pymel':pymel,
+                    'pm':pymel}
+    
+        for builtin in maya_builtins:
+            builtins[builtin] = maya_builtins[builtin]
+    
+    return builtins
+
+def setup_code_builtins(process):
+    builtins = get_code_builtins(process)
+        
+    for builtin in builtins:
+        
+        builtin_value = builtins[builtin]
+        
+        exec('__builtin__.%s = builtin_value' % builtin)
+ 
 def initialize_env(name):
     """
     Initialize a new environment variable.
