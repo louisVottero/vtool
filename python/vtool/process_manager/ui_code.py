@@ -1941,6 +1941,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.setItemSelected(item, True)
         self.setCurrentItem(item)
         
+        self._update_manifest()
+        
         self._activate_rename()
         
     def create_import_code(self):
