@@ -289,14 +289,14 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         add_boolean = create_menu.addAction('Add Boolean')
         add_boolean.triggered.connect(self.add_boolean_option)
         
+        add_dictionary = create_menu.addAction('Add Dictionary')
+        add_dictionary.triggered.connect(self.add_dictionary)
+        
         add_group = create_menu.addAction('Add Group')
         add_group.triggered.connect(self.add_group)
         
         add_script = create_menu.addAction('Add Script')
         add_script.triggered.connect(self.add_script)
-        
-        add_script = create_menu.addAction('Add Dictionary')
-        add_script.triggered.connect(self.add_dictionary)
         
         self.create_separator = self.menu.addSeparator()
         
@@ -499,8 +499,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_widget_options(palette)
                     
     def _load_widgets(self, options):
-        
-        
         
         self.clear_widgets()
         
@@ -845,16 +843,11 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._handle_parenting(group, parent)
         
         group.process_inst = self.process_inst
-        self._write_options(False)
-        
-        #if not self.has_first_group:
-        #    group.expand_group()
-        
-        #if parent.__class__ == ProcessOptionPalette and self.has_first_group == True:
-        #    group.collapse_group()
-            
+        self._write_options(False)           
             
         self.has_first_group = True
+                
+        #self.edit_mode.connect(group.set_edit)
             
         return group
     
@@ -1681,8 +1674,10 @@ class ProcessScript(ProcessOption):
         
         if bool_value:
             self.option_widget.text_entry.show()
+            self.main_layout.setContentsMargins(0,2,0,15)
         else:
             self.option_widget.text_entry.hide()
+            self.main_layout.setContentsMargins(0,2,0,2)
             
         self.option_widget.set_process(self.process_inst)
 
