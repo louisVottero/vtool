@@ -403,11 +403,15 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         name = item.get_name()
         
-        self._update_build_widget()
+        if item.is_folder():
+            self.process_splitter.setSizes([1,0])
+        
         
         self._update_process(name)
         
-        self._update_sidebar_tabs()
+        if not item.is_folder():
+            self._update_build_widget()
+            self._update_sidebar_tabs()
         
         self.view_widget.setFocus()
         
@@ -480,6 +484,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 util.warning('Could not get permission for process: %s' % name)
             
             util.set_env('VETALA_CURRENT_PROCESS', fullpath)
+        
+        current_path = self._get_current_path()
+        self.option_widget.set_directory(current_path)
+        
         
     def _update_path_filter(self, value):
         
