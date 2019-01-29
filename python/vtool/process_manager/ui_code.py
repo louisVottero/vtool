@@ -1264,6 +1264,9 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.context_menu.addSeparator()
         
         self.run_action = self.context_menu.addAction('Run')
+        self.run_group_action = self.context_menu.addAction('Run Group')
+        
+        self.context_menu.addSeparator()
         rename_action = self.context_menu.addAction(self.tr('Rename'))
         duplicate_action = self.context_menu.addAction('Duplicate')
         self.delete_action = self.context_menu.addAction('Delete')
@@ -1286,13 +1289,14 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.context_menu.addSeparator()
         self.cancel_points_action = self.context_menu.addAction('Cancel Start/Breakpoint')
         
-        self.edit_actions = [self.run_action, rename_action, duplicate_action, self.delete_action]
+        self.edit_actions = [self.run_action, self.run_group_action, rename_action, duplicate_action, self.delete_action]
         
         
         new_python.triggered.connect(self.create_python_code)
         new_data_import.triggered.connect(self.create_import_code)
         
         self.run_action.triggered.connect(self.run_current_item)
+        self.run_group_action.triggered.connect(self.run_current_group)
         start_action.triggered.connect(self.set_startpoint)
         self.cancel_start_action.triggered.connect(self.cancel_startpoint)
         break_action.triggered.connect(self.set_breakpoint)
@@ -1667,7 +1671,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
 
         
-    def _run_item(self, item, process_tool):
+    def _run_item(self, item, process_tool, run_children = False):
         
         self.scrollToItem(item)
         
@@ -1701,6 +1705,30 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             item.set_state(3)
             
         item.setBackground(0, orig_background)
+        
+        if run_children:
+            self._run_children(item, process_tool, recursive = True)
+        
+    def _run_children(self, item, process_tool, recursive = True):
+        child_count = item.childCount()
+        
+        if not child_count:
+            return
+        
+        item.setExpanded(True)
+        
+        if child_count:
+            
+            for inc in range(0, child_count):
+                child_item = item.child(inc)
+                child_item.set_state(-1)
+        
+            for inc in range(0, child_count):
+                child_item = item.child(inc)
+                
+                self._run_item(child_item, process_tool, run_children=recursive)
+                
+                
         
     def _duplicate_current_item(self):
         
@@ -1975,7 +2003,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.setItemSelected(item, True)
         self.setCurrentItem(item)
 
-    def run_current_item(self, external_code_library = None):
+    def run_current_item(self, external_code_library = None, group_only = False):
         
         vtool.util.set_env('VETALA RUN', True)
         vtool.util.set_env('VETALA STOP', False)
@@ -2042,27 +2070,15 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 
                 if name == scripts[inc]:
                     
-                    self._run_item(item, process_tool)
+                    run_children = False
                     
-                    if not item.isExpanded():
-                        child_count = item.childCount()
-                        
-                        if child_count:
-                            item.setExpanded(True)
-                        
-                            for inc in range(0, child_count):
-                                child_item = item.child(inc)
-                                child_item.set_state(-1)
-                        
-                            for inc in range(0, child_count):
-                                child_item = item.child(inc)
-                                
-                                self._run_item(child_item, process_tool)
-                                
-                                
-                                
-                            item.setExpanded(False)
+                    if group_only:
+                        run_children = True
                     
+                    self._run_item(item, process_tool, run_children)
+                    
+                    if group_only:
+                        break
                     
                     if name == last_name:
                         set_end_states = True
@@ -2078,7 +2094,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         else:
             vtool.util.show('Processes run in %s seconds.' % seconds)
         
-
+    def run_current_group(self):
+        self.run_current_item(group_only = True)
         
     def remove_current_item(self):
         
