@@ -338,19 +338,7 @@ class Process(object):
         
         self._reset_builtin()
         
-        __builtin__.process = self
-        __builtin__.show = util.show
-        __builtin__.warning = util.warning
-        
-        if util.is_in_maya():
-            
-            import maya.cmds as cmds
-            import pymel.all as pymel
-            
-            __builtin__.cmds = cmds
-            __builtin__.mc = cmds
-            __builtin__.pymel = pymel
-            __builtin__.pm = pymel
+        util.setup_code_builtins(self)
         
         util.show('Sourcing %s' % script)
         
@@ -378,10 +366,13 @@ class Process(object):
             
             if option_type == 'dictionary':
                 value = value[0]
-            
-        if type(value) == list or type(value) == tuple or type(value) == dict:
-            new_value = value
-            
+        
+        eval_value = eval(value)
+           
+        if type(eval_value) == list or type(eval_value) == tuple or type(eval_value) == dict:
+            new_value = eval_value
+            value = eval_value
+        
         if type(value) == str or type(value) == unicode:
             if value.find(',') > -1:
                 new_value = value.split(',')
@@ -1489,7 +1480,9 @@ class Process(object):
         return value
         
     def get_option(self, name, group = None):
-        
+        """
+        Get an option by name and group
+        """
         self._setup_options()
         
         value = self.get_unformatted_option(name, group)
@@ -1504,7 +1497,7 @@ class Process(object):
                     util.warning('Could not find option: %s in group: %s' % (name, group))
         
         
-        self._format_option_value(value)
+        value = self._format_option_value(value)
         
         util.show('Accessed - Option: %s, Group: %s, value: %s' % (name, group, value))
         
@@ -1512,6 +1505,9 @@ class Process(object):
         
 
     def get_option_match(self, name, return_first = True):
+        """
+        Try to find a matching option in all the options
+        """
         
         self._setup_options()
         
@@ -2153,11 +2149,7 @@ class Process(object):
     def run_code_snippet(self, code_snippet_string, hard_error = True):
         
         script = code_snippet_string
-        
-        if util.is_in_maya():
-            
-            import maya.cmds as cmds
-            
+         
         status = None
         
         if util.is_in_maya():
@@ -2170,12 +2162,8 @@ class Process(object):
                 if util_file.is_dir(external_code_path):
                     if not external_code_path in sys.path:
                         sys.path.append(external_code_path)
-                        
-            builtins = {'process': self, 'show':util.show, 'warning':util.warning}
             
-            if util.is_in_maya():
-                
-                builtins['cmds'] = cmds
+            builtins = util.get_code_builtins(self)
             
             exec(script, globals(), builtins)
             status = 'Success'
