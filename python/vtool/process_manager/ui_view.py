@@ -333,8 +333,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 icon_on = util_file.join_path(directory, 'icons/plus.png')
                 icon_off = util_file.join_path(directory, 'icons/minus_alt.png')
                 
-                icon_folder = util_file.join_path(directory, 'icons/folder.png')
-                icon_folder_open = util_file.join_path(directory, 'icons/folder_open.png')
+                #icon_folder = util_file.join_path(directory, 'icons/folder.png')
+                #icon_folder_open = util_file.join_path(directory, 'icons/folder_open.png')
                 
                 
                 lines = 'QTreeView::indicator:unchecked {image: url(%s);}' % icon_off
@@ -532,11 +532,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if item:
 
-            
-            if item.is_folder():
-                self.setCurrentItem(self.invisibleRootItem())
-                return
-            
             if item.parent():
                 parent = item.parent()
         else:
@@ -549,10 +544,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         super(ProcessTreeWidget, self).mousePressEvent(event)
     
-    def _item_collapsed(self, item):
-        #always collapses because of the loading optimization
-        return
-        
+    
     def _item_expanded(self, item):
     
         super(ProcessTreeWidget, self)._item_expanded(item)
@@ -605,17 +597,28 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.show_options_action.setVisible(True)
             self.convert_folder.setVisible(False)
         
+            self.show_notes_action.setVisible(True)
+            self.show_options_action.setVisible(True)
+            self.show_settings_action.setVisible(True)
+            self.show_templates_action.setVisible(True)
+        
         if item and item.is_folder():
             self.current_folder = item
             self.convert_folder.setVisible(True)
             self.new_top_level_action.setVisible(True)
-            self.new_process_action.setVisible(False)
+            #testing
+            self.new_process_action.setVisible(True)
             self.rename_action.setVisible(False)
             self.duplicate_action.setVisible(False)
             self.copy_action.setVisible(False)
             self.copy_special_action.setVisible(False)
             self.remove_action.setVisible(False)
             self.show_options_action.setVisible(False)
+            
+            self.show_notes_action.setVisible(False)
+            self.show_options_action.setVisible(False)
+            self.show_settings_action.setVisible(False)
+            self.show_templates_action.setVisible(False)
         
         if not item:
             self.new_top_level_action.setVisible(True)
@@ -627,6 +630,11 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.remove_action.setVisible(False)
             #self.show_options_action.setVisible(False)
             self.convert_folder.setVisible(False)
+
+            self.show_notes_action.setVisible(False)
+            self.show_options_action.setVisible(False)
+            self.show_settings_action.setVisible(False)
+            self.show_templates_action.setVisible(False)
 
         copied = util.get_env('VETALA_COPIED_PROCESS')
         
@@ -1037,6 +1045,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 
         for folder in folders:
             if sub_path:
+                folder = util_file.join_path(sub_path, folder)
                 self._add_process_item(folder, item, create = True, find_parent_path = False, folder = True)
             if not sub_path:
                 self._add_process_item(folder, item, create = True, folder = True)
@@ -1104,7 +1113,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             parent_item.addChild(item)
             
         #has parts takes time because it needs to check children folders
-        if item.has_parts() and not folder:
+        if item.has_parts():# and not folder:
             qt.QTreeWidgetItem(item)
         
         return item
@@ -1132,7 +1141,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     
     def _item_collapsed(self, item):
-        
+        #not sure about this. If its good usability to have the parent selected when children collapsed
         items = self.selectedItems()
         
         current_item = None
@@ -1439,6 +1448,8 @@ class ProcessItem(qt.QTreeWidgetItem):
         self._folder = False
         
         
+        
+        
     def setData(self, column, role, value):
         super(ProcessItem, self).setData(column, role, value)
         
@@ -1569,9 +1580,18 @@ class ProcessItem(qt.QTreeWidgetItem):
         self._folder = bool_value
         
         if bool_value:
-            self.setDisabled(True)
+            
+            self.setForeground(0, qt.QtCore.Qt.darkGray)
+            
         if not bool_value:
+            self.setIcon(0, qt.QIcon())
+            flags = qt.QtCore.Qt.ItemIsDragEnabled | qt.QtCore.Qt.ItemIsSelectable | qt.QtCore.Qt.ItemIsDropEnabled | qt.QtCore.Qt.ItemIsUserCheckable
+            self.setFlags( flags )
+            self.setCheckState(0, qt.QtCore.Qt.Unchecked)
             self.setDisabled(False)
+            
+            self.setData(0, qt.QtCore.Qt.ForegroundRole, None)
+            
         
     def is_folder(self):
         return self._folder
