@@ -367,11 +367,18 @@ class Process(object):
             if option_type == 'dictionary':
                 value = value[0]
         
-        eval_value = eval(value)
+        
+        eval_value = None
+        try:
+            if value:
+                eval_value = eval(value)
+        except:
+            pass
            
-        if type(eval_value) == list or type(eval_value) == tuple or type(eval_value) == dict:
-            new_value = eval_value
-            value = eval_value
+        if eval_value:
+            if type(eval_value) == list or type(eval_value) == tuple or type(eval_value) == dict:
+                new_value = eval_value
+                value = eval_value
         
         if type(value) == str or type(value) == unicode:
             if value.find(',') > -1:
