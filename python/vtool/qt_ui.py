@@ -1963,7 +1963,7 @@ class GetString(BasicWidget):
         self._setup_text_widget()
         
         self.main_layout.addWidget(self.label)
-        self.main_layout.addSpacing(5)
+        #self.main_layout.addSpacing(5)
         
         self.main_layout.addWidget(self.text_entry)
         
@@ -2010,7 +2010,8 @@ class GetString(BasicWidget):
             return new_list
         
     def set_text(self, text):
-        self.text_entry.setText(text)
+        if text:
+            self.text_entry.setText(str(text))
         
     def set_placeholder(self, text):
         self.text_entry.setPlaceholderText(text)
@@ -2049,7 +2050,7 @@ class GetString(BasicWidget):
     
     def set_button_to_first(self):
         
-        self.main_layout.insertWidget(0, self.button)
+        self.main_layout.insertWidget(0, self.button, alignment = qt.QtCore.Qt.AlignCenter)
         
     def set_suppress_button_commaand(self, bool_value):
         self._suppress_button_command = bool_value
@@ -2072,14 +2073,35 @@ class GetString(BasicWidget):
             return [text]
 
 class GetCode(GetString):
+    
+    def _build_widgets(self):
+        super(GetCode, self)._build_widgets()
+        
+    def mousePressEvent(self, event):
+        return super(GetCode, self).mousePressEvent(event)
+        
+    def enterEvent(self, event):
+        return super(GetCode, self).enterEvent(event)
 
+    #removed temporarily, until I can find a way to not have it collapse when auto complete popup happens
+    #def leaveEvent(self, event):
+    #    
+    #    self.text_entry.setMaximumHeight(30)
+    #    
+    #    return super(GetCode, self).leaveEvent(event)
+
+    def _resize_on_press(self):
+        self.text_entry.setMaximumHeight(500)
+        
     def _define_main_layout(self):
         return qt.QVBoxLayout()
 
     def _define_text_entry(self):
         code = CodeTextEdit()
-        code.setMaximumHeight(100)
+        code.setMaximumHeight(30)
         code.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Minimum))
+        
+        code.mouse_pressed.connect(self._resize_on_press)
         
         return code
 
@@ -3509,6 +3531,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
     file_set = create_signal()
     find_opened = create_signal(object)
     code_text_size_changed = create_signal(object)
+    mouse_pressed = create_signal(object)
     
     def __init__(self):
         
@@ -3598,6 +3621,12 @@ class CodeTextEdit(qt.QPlainTextEdit):
         new_rect = qt.QtCore.QRect( rect.left(), rect.top(), self._line_number_width(), rect.height() )
         
         self.line_numbers.setGeometry( new_rect )   
+    
+    def mousePressEvent(self, event):
+        
+        self.mouse_pressed.emit(event)
+        
+        return super(CodeTextEdit, self).mousePressEvent(event)
     
     def wheelEvent(self, event):
         
@@ -3814,17 +3843,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
         cursor = self.textCursor()
         text = cursor.selection().toPlainText()
         
-        if util.is_in_maya():
-            util.show(text)
-            text = 'import maya.cmds as cmds\n' + text
-        
-        builtins = {'process':self._process_inst,'show':util.show, 'warning':util.warning}
-        
-        if util.is_in_maya():
-            import maya.cmds as cmds
-            builtins['cmds'] = cmds
-        
-        
+        builtins = util.get_code_builtins(self._process_inst)
         
         exec(text, globals(), builtins)
         
