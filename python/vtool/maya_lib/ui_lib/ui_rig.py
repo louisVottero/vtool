@@ -473,13 +473,17 @@ class RigManager(qt_ui.DirectoryWidget):
         smooth_weights = qt.QPushButton('Smooth Weights')
         self.count_smooth_weights = qt_ui.GetInteger('Iterations')
         self.count_smooth_weights.set_value(3)
+        smooth_weights_layout.addWidget(smooth_weights)
+        smooth_weights_layout.addWidget(self.count_smooth_weights)
+        
+        sharpen_weights_layout = qt.QHBoxLayout()
         sharpen_weights = qt.QPushButton('Sharpen Weights')
         self.count_sharpen_weights = qt_ui.GetInteger('Iterations')
         self.count_sharpen_weights.set_value(3)
+        sharpen_weights_layout.addWidget(sharpen_weights)
+        sharpen_weights_layout.addWidget(self.count_sharpen_weights)
         
-        
-        smooth_weights_layout.addWidget(smooth_weights)
-        smooth_weights_layout.addWidget(self.count_smooth_weights)
+
         
         average_weights.clicked.connect(self._average_weights)
         smooth_weights.clicked.connect(self._smooth_weights)
@@ -497,6 +501,7 @@ class RigManager(qt_ui.DirectoryWidget):
         
         parent.main_layout.addWidget(weights_label)
         parent.main_layout.addLayout(smooth_weights_layout)
+        parent.main_layout.addLayout(sharpen_weights_layout)
         parent.main_layout.addWidget(average_weights)
         parent.main_layout.addSpacing(10)
         parent.main_layout.addWidget(skin_mesh_from_mesh)
