@@ -4106,8 +4106,6 @@ def average_skin_weights(verts):
     
     skin = find_deformer_by_type(mesh,'skinCluster', return_all = False)
     
-    verts = cmds.ls(sl = True, flatten = True)
-    
     vert_indices = geo.get_vertex_indices(verts)
     
     influence_indices = api.get_skin_influence_indices(skin)
@@ -4228,6 +4226,45 @@ def smooth_skin_weights(verts, iterations = 1):
     
     progress.end()
     
+def sharpen_skin_weights(verts, iterations = 1):
+    
+    mesh = geo.get_mesh_from_vertex(verts[0])
+    
+    skin = find_deformer_by_type(mesh,'skinCluster', return_all = False)
+    
+    vert_indices = geo.get_vertex_indices(verts)
+    
+    influence_indices = api.get_skin_influence_indices(skin)
+    weights = get_skin_weights(skin)
+    
+    for vert in vert_indices:
+        
+        total_risen = 0.0
+        
+        risers = {}
+        
+        for influence_index in influence_indices:
+        
+            if not weights.has_key(influence_index):
+                continue
+            
+            influence_weights = weights[influence_index]
+            
+            risen = influence_weights[vert]**2
+            risers[influence_index] = risen
+            total_risen += risen
+
+        for influence_index in influence_indices:
+            
+            value = 0.0
+            
+            if total_risen == 0:
+                value = 0.0
+            else:
+                if risers.has_key(influence_index):
+                    value = risers[influence_index]/total_risen
+            
+            cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), value)
     
     
 def has_influence(joint, skin_cluster):
