@@ -238,37 +238,9 @@ class Process(object):
             
                 
     def _reset_builtin(self, old_process = None, old_cmds = None, old_show = None, old_warning = None):
-                
-        try:
-            builtins = __builtin__.dir()
-            
-            if old_process:
-                __builtin__.process = old_process
-            else:
-                if 'process' in builtins:
-                    del(__builtin__.process)
-                    
-            if old_cmds:
-                __builtin__.cmds = old_cmds
-            else:
-                if 'cmds' in builtins:
-                    del(__builtin__.cmds)
-                    
-            if old_show:
-                __builtin__.show = old_show
-            else:
-                if 'show' in builtins:
-                    del(__builtin__.show)
-                    
-            if old_warning:
-                __builtin__.warning = old_warning
-            else:
-                if 'warning' in builtins:
-                    del(__builtin__.warning)
-                    
-        except Exception:
-            status = traceback.format_exc()
-            util.error(status)
+        
+        util.reset_code_builtins(self)
+        
     
     def _get_control_inst(self):
         
@@ -2030,6 +2002,7 @@ class Process(object):
         
         init_passed = False
         module = None
+        
         try:
             
             if not util_file.is_file(script):
@@ -2102,12 +2075,14 @@ class Process(object):
             except Exception:
                 
                 status = traceback.format_exc()
+                
+                self._reset_builtin()
 
                 if hard_error:
                     if util.is_in_maya():
                         cmds.undoInfo(closeChunk = True)
                         
-                    self._reset_builtin()
+                    
                     util.error('%s\n' % status)
                     raise
 
@@ -2203,9 +2178,6 @@ class Process(object):
         Returns:
             None
         """
-        
-        
-        
         
         prev_process = util.get_env('VETALA_CURRENT_PROCESS')
         
