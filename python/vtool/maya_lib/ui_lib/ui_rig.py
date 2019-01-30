@@ -479,7 +479,7 @@ class RigManager(qt_ui.DirectoryWidget):
         sharpen_weights_layout = qt.QHBoxLayout()
         sharpen_weights = qt.QPushButton('Sharpen Weights')
         self.count_sharpen_weights = qt_ui.GetInteger('Iterations')
-        self.count_sharpen_weights.set_value(3)
+        self.count_sharpen_weights.set_value(1)
         sharpen_weights_layout.addWidget(sharpen_weights)
         sharpen_weights_layout.addWidget(self.count_sharpen_weights)
         
