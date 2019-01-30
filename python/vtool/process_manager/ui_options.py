@@ -127,7 +127,7 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         ProcessOptionPalette.edit_mode_state = bool_value
         ProcessOption.edit_mode_state = bool_value
         
-        self.option_palette.set_edit(bool_value)
+        self.option_palette.set_activate_edit(bool_value)
         
         if bool_value == False:
             self.option_palette.clear_selection()
@@ -607,7 +607,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     def _handle_parenting(self, widget, parent):
         
         widget.widget_clicked.connect(self.update_current_widget)
-        widget.edit_mode.connect(self._activate_edit_mode)
+        
+        #widget.edit_mode.connect(self._activate_edit_mode)
         widget.process_inst = self.process_inst
         
         if not parent:
@@ -622,6 +623,12 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
         if self._auto_rename:
             widget.rename()
+            
+        if not parent:
+            parent = self
+            
+        if hasattr(widget, 'set_edit'):
+            parent.edit_mode.connect(widget.set_edit)
         
     def _fill_background(self, widget):
         palette = widget.palette()
@@ -704,8 +711,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self.edit_mode_state = True
         self.edit_mode.emit(True)
         
-        self.edit_action.setVisible(False)
-        self.disable_edit_action.setVisible(True)
+        if hasattr(self, 'edit_action'):
+            self.edit_action.setVisible(False)
+            self.disable_edit_action.setVisible(True)
         
     def _clear_action(self):
         
@@ -846,9 +854,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_options(False)           
             
         self.has_first_group = True
-                
-        #self.edit_mode.connect(group.set_edit)
-            
+           
         return group
     
     def add_script(self, name = 'script', value = '',  parent = None):
@@ -865,8 +871,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._handle_parenting(button, parent)
         
         self._write_options(False)
-        
-        self.edit_mode.connect(button.set_edit)
     
     def add_dictionary(self, name = 'dictionary', value = [{},[]], parent = None):
         
@@ -890,8 +894,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._handle_parenting(button, parent)
         
         self._write_options(False)
-        
-        self.edit_mode.connect(button.set_edit)
         
         
     def add_title(self, name = 'title', parent = None):
@@ -1010,10 +1012,15 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
            
         return found
     
-    def set_edit(self, bool_value):
+    def set_activate_edit(self, bool_value):
         self.edit_mode_state = bool_value
         
         self.edit_mode.emit(bool_value)
+        
+    def set_edit(self, bool_value):
+        
+        self.edit_mode.emit(bool_value)
+        
 
     def save(self):
         self._write_options(clear=False)
@@ -1305,7 +1312,7 @@ class OptionGroup(qt.QFrame):
                 self.collapse_group()
                 self.expand.emit(False)
                 return
-            
+           
     def collapse_group(self):
         
         self.setVisible(False)
@@ -1344,12 +1351,12 @@ class OptionGroup(qt.QFrame):
         palette.setColor(self.backgroundRole(), qt.QColor(value,value,value))
         self.setAutoFillBackground(True)
         self.setPalette(palette)
-        
+
 class ProcessOption(qt_ui.BasicWidget):
     
     update_values = qt_ui.create_signal(object)
     widget_clicked = qt_ui.create_signal(object)
-    edit_mode = qt_ui.create_signal()
+    #edit_mode = qt_ui.create_signal()
     edit_mode_state = False
     
     def __init__(self, name):
