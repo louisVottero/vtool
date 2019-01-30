@@ -473,6 +473,9 @@ class RigManager(qt_ui.DirectoryWidget):
         smooth_weights = qt.QPushButton('Smooth Weights')
         self.count_smooth_weights = qt_ui.GetInteger('Iterations')
         self.count_smooth_weights.set_value(3)
+        sharpen_weights = qt.QPushButton('Sharpen Weights')
+        self.count_sharpen_weights = qt_ui.GetInteger('Iterations')
+        self.count_sharpen_weights.set_value(3)
         
         
         smooth_weights_layout.addWidget(smooth_weights)
@@ -480,7 +483,7 @@ class RigManager(qt_ui.DirectoryWidget):
         
         average_weights.clicked.connect(self._average_weights)
         smooth_weights.clicked.connect(self._smooth_weights)
-        
+        sharpen_weights.clicked.connect(self._sharpen_weights)
         skin_mesh_from_mesh = SkinMeshFromMesh()
         skin_mesh_from_mesh.collapse_group()
         
@@ -547,6 +550,25 @@ class RigManager(qt_ui.DirectoryWidget):
             verts = selection
     
         deform.average_skin_weights(verts)
+        
+    @core.undo_chunk    
+    def _sharpen_weights(self):
+        
+        selection = cmds.ls(sl = True, flatten = True)
+        
+        verts = []
+
+        thing = selection[0]
+
+        if geo.is_a_mesh(thing):
+            verts = geo.get_vertices(thing)
+        
+        if geo.is_a_vertex(thing):
+            verts = selection
+    
+        get_count = self.count_sharpen_weights.get_value()
+        
+        deform.sharpen_skin_weights(verts, get_count)
         
     def _pose_manager(self):
         window = pose_manager()
