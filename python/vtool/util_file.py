@@ -2644,6 +2644,15 @@ def source_python_module(code_directory):
             fin = open(code_directory, 'r')
             import md5
             
+            for thing in sys.modules:
+                try:
+                    if sys.modules[thing] and hasattr(sys.modules[thing], '__file__'):
+                        if sys.modules[thing].__file__ == code_directory:
+                            sys.modules.pop(thing)
+                            break
+                except:
+                    pass
+            
             module_inst = imp.load_source(md5.new(code_directory).hexdigest(), code_directory, fin)
             
             return module_inst
