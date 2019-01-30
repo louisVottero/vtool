@@ -48,6 +48,7 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         self.script_widget.script_rename.connect(self._script_rename)
         self.script_widget.script_remove.connect(self._script_remove)
         self.script_widget.script_duplicate.connect(self._script_duplicate)
+        self.script_widget.script_added.connect(self._script_added)
         self.code_text_size_changed.connect(self.script_widget.script_text_size_change)
         self.script_widget.script_text_size_change.connect(self._code_size_changed)
         
@@ -190,12 +191,27 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         if not self.code_widget.code_edit.has_tabs():
             self._close_splitter()
+
+    
          
     def _script_duplicate(self):
+        pass
+        #if self.code_widget.code_edit.has_tabs():
+        #    self.code_widget.code_edit.close_tabs()
+        #    self._close_splitter()
+    
+    def _script_added(self, item):
+        pass
+    
+        if self.code_widget.code_edit.has_tabs():
+            code_folder = self.script_widget._get_current_code(item)
+            self._code_change(code_folder, open_in_window = False, open_in_external = False)
+    
+        """
         if self.code_widget.code_edit.has_tabs():
             self.code_widget.code_edit.close_tabs()
             self._close_splitter()
-        
+        """
             
          
     def set_directory(self, directory, sync_code = False):
@@ -491,6 +507,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     script_remove = vtool.qt_ui.create_signal(object)
     script_duplicate = vtool.qt_ui.create_signal()
     script_text_size_change = vtool.qt.create_signal(object)
+    script_added = vtool.qt_ui.create_signal(object)
         
     def __init__(self):
         
@@ -526,6 +543,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         self.code_manifest_tree.script_focus.connect(self._script_focus)
         self.code_manifest_tree.item_removed.connect(self._remove_code)
         self.code_manifest_tree.item_duplicated.connect(self._duplicate)
+        self.code_manifest_tree.item_added.connect(self._item_added)
         
         self.edit_mode_button = qt.QPushButton('Edit')
         self.edit_mode_button.setCheckable(True)
@@ -677,6 +695,9 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         
         self.script_duplicate.emit()
         
+    def _item_added(self, item):
+        self.script_added.emit(item)
+        
     def set_directory(self, directory, sync_code = False):
         
         super(ScriptWidget, self).set_directory(directory)
@@ -722,6 +743,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     script_focus = vtool.qt_ui.create_signal()
     item_removed = vtool.qt_ui.create_signal(object)
     item_duplicated = vtool.qt_ui.create_signal()
+    item_added = vtool.qt_ui.create_signal(object)
     
     def __init__(self):
         
@@ -1552,6 +1574,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         if update_manifest:
             self._update_manifest()
+        
+        self.item_added.emit(item)
         
         return item
     
