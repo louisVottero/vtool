@@ -4159,7 +4159,7 @@ def smooth_skin_weights(verts, iterations = 1):
             if vert_count <= all_weights_switch:
                 weights = None
             
-            progress.status('Working on iteration: %s of %s   for vertex %s of %s' % ((inc+1), iterations, vert_inc, vert_count))
+            progress.status('Working on smooth iteration: %s of %s   for vertex %s of %s' % ((inc+1), iterations, vert_inc, vert_count))
             
             vert_inc += 1
             
@@ -4235,37 +4235,60 @@ def sharpen_skin_weights(verts, iterations = 1):
     vert_indices = geo.get_vertex_indices(verts)
     
     influence_indices = api.get_skin_influence_indices(skin)
-    weights = get_skin_weights(skin)
     
-    for vert in vert_indices:
+    
+    vert_count = len(vert_indices)
+    
+    for inc in range(0, iterations):
+    
+        progress = core.ProgressBar('Sharpen weights: Starting iteration %s' % inc, vert_count)
         
-        total_risen = 0.0
+        vert_inc = 1
+    
+        weights = get_skin_weights(skin)
         
-        risers = {}
-        
-        for influence_index in influence_indices:
-        
-            if not weights.has_key(influence_index):
-                continue
+        for vert in vert_indices:
             
-            influence_weights = weights[influence_index]
+            progress.status('Working on sharp iteration: %s of %s   for vertex %s of %s' % ((inc+1), iterations, vert_inc, vert_count))
             
-            risen = influence_weights[vert]**2
-            risers[influence_index] = risen
-            total_risen += risen
-
-        for influence_index in influence_indices:
+            vert_inc += 1
             
-            value = 0.0
+            total_risen = 0.0
             
-            if total_risen == 0:
+            risers = {}
+            
+            for influence_index in influence_indices:
+            
+                if not weights.has_key(influence_index):
+                    continue
+                
+                influence_weights = weights[influence_index]
+                
+                risen = influence_weights[vert]**2
+                risers[influence_index] = risen
+                total_risen += risen
+    
+            for influence_index in influence_indices:
+                
                 value = 0.0
-            else:
-                if risers.has_key(influence_index):
-                    value = risers[influence_index]/total_risen
+                
+                if total_risen == 0:
+                    value = 0.0
+                else:
+                    if risers.has_key(influence_index):
+                        value = risers[influence_index]/total_risen
+                
+                cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), value)
+                
+            if progress.break_signaled():
+                progress.end()
+                return
             
-            cmds.setAttr('%s.weightList[%s].weights[%s]' % (skin, vert, influence_index), value)
-    
+            progress.next()
+        
+        cmds.refresh()
+        
+    progress.end()
     
 def has_influence(joint, skin_cluster):
     
