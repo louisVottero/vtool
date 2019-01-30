@@ -152,10 +152,25 @@ def get_code_builtins(process):
     
     return builtins
 
+def reset_code_builtins(process):
+    builtins = get_code_builtins(process)
+        
+    for builtin in builtins:
+        
+        try:
+            exec('del(__builtin__.%s)' % builtin)
+        except:
+            pass
+
 def setup_code_builtins(process):
     builtins = get_code_builtins(process)
         
     for builtin in builtins:
+        
+        try:
+            exec('del(__builtin__.%s)' % builtin)
+        except:
+            pass
         
         builtin_value = builtins[builtin]
         
