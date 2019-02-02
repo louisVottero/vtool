@@ -337,20 +337,26 @@ class Process(object):
             value = value[0]
             
             if option_type == 'dictionary':
-                value = value[0]
+                
+                
+                new_value = value[0]
+                
+                if type(new_value) == list:
+                    new_value = new_value[0]
+                
         
-        
-        eval_value = None
-        try:
-            if value:
-                eval_value = eval(value)
-        except:
-            pass
+        if type(value) == str or type(value) == unicode:
+            eval_value = None
+            try:
+                if value:
+                    eval_value = eval(value)
+            except:
+                pass
            
-        if eval_value:
-            if type(eval_value) == list or type(eval_value) == tuple or type(eval_value) == dict:
-                new_value = eval_value
-                value = eval_value
+            if eval_value:
+                if type(eval_value) == list or type(eval_value) == tuple or type(eval_value) == dict:
+                    new_value = eval_value
+                    value = eval_value
         
         if type(value) == str or type(value) == unicode:
             if value.find(',') > -1:
@@ -1827,52 +1833,55 @@ class Process(object):
         
         if not script_count and not code_folders:
             return
-        
-        if script_count:
-            for inc in range(0,script_count):
-                
-                script_name = util_file.remove_extension(scripts[inc])
-                
-                filepath = self.get_code_file(script_name)
-                
-                if not util_file.is_file(filepath):
-                    continue
-                
-                if scripts[inc] in synced_scripts:
-                    continue
-                
-                synced_scripts.append(scripts[inc])
-                synced_states.append(states[inc])
-                
-                remove_inc = None
-                
-                for inc in range(0, len(code_folders)):
-                    
-                    if code_folders[inc] == script_name:
-                
-                        remove_inc = inc
-                        
-                    if code_folders in synced_scripts:
-                        
-                        if not code_folders[inc].count('/'):
-                            continue
-                            
-                        common_path = util_file.get_common_path(code_folders[inc], script_name)
-                        
-                        if common_path:
-                            common_path_name = common_path + '.py'
-                            if common_path_name in synced_scripts:
-                                
-                                code_script = code_folders[inc] + '.py'
-                
-                                synced_scripts.append(code_script)
-                                synced_states.append(False)
-                                
-                                remove_inc = inc
-                
-                if not remove_inc == None:
-                    code_folders.pop(remove_inc)
+    
+        for inc in range(0,script_count):
             
+            script_name = util_file.remove_extension(scripts[inc])
+            
+            filepath = self.get_code_file(script_name)
+            
+            if not util_file.is_file(filepath):
+                
+                continue
+            
+            if scripts[inc] in synced_scripts:
+                
+                continue
+            
+            synced_scripts.append(scripts[inc])
+            synced_states.append(states[inc])
+            
+            remove_inc = None
+            
+            for inc in range(0, len(code_folders)):
+                
+                if code_folders[inc] == script_name:
+            
+                    remove_inc = inc
+                    break
+                    
+                if code_folders in synced_scripts:
+                    
+                    if not code_folders[inc].count('/'):
+                        continue
+                        
+                    common_path = util_file.get_common_path(code_folders[inc], script_name)
+                    
+                    if common_path:
+                        common_path_name = common_path + '.py'
+                        if common_path_name in synced_scripts:
+                            
+                            code_script = code_folders[inc] + '.py'
+            
+                            synced_scripts.append(code_script)
+                            synced_states.append(False)
+                            
+                            remove_inc = inc
+                            break
+            
+            if not remove_inc == None:
+                code_folders.pop(remove_inc)
+        
         for code_folder in code_folders:
             
             code_script = code_folder + '.py'
