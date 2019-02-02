@@ -174,6 +174,8 @@ class Rig(object):
         
         cmds.addAttr('%s.%s' % (joint_shape, name), edit = True, maxValue = max_value)      
         
+        cmds.setAttr('%s.%s' % (joint_shape, name), max_value)
+        
         for control in self.controls:
             
             cmds.parent(shapes[0], control, add = True, s = True)
@@ -329,9 +331,8 @@ class Rig(object):
 
         if current_process:
             control_inst = util_file.ControlNameFromSettingsFile(current_process)
-                        
-            if sub == False:
-                control_inst.set_number_in_control_name(self._control_number)
+            
+            control_inst.set_number_in_control_name(self._control_number)
             
             self._control_inst = control_inst
             
