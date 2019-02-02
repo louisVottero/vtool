@@ -455,7 +455,6 @@ class MeshFunction(MayaFunction):
         for pos in positions:
             point_array.api_object.append(*pos)
         
-        
         self.api_object.setPoints(point_array.api_object, OpenMaya.MSpace.kWorld)
     
     def get_uv_at_point(self, vector):

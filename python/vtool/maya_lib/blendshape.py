@@ -793,11 +793,14 @@ class BlendShape(object):
             
             attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
         
+        cmds.setAttr(attribute + '[*]', *weights)
+        
+        """
         for inc in xrange(weight_count):
             attribute_name = attribute + '[%s]' % inc
             
             cmds.setAttr(attribute_name, weights[inc])
-        
+        """
         
         """
         #not sure which is faster, this or api, might try plug array in the future
