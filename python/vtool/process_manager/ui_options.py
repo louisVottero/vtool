@@ -609,7 +609,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         widget.widget_clicked.connect(self.update_current_widget)
         
         #widget.edit_mode.connect(self._activate_edit_mode)
-        widget.process_inst = self.process_inst
+        widget.set_process(self.process_inst)
+        
         
         if not parent:
             self.child_layout.addWidget(widget)
@@ -1602,6 +1603,9 @@ class ProcessOption(qt_ui.BasicWidget):
         
         parent.child_layout.addWidget(new_instance)
     
+    def set_process(self, process_inst):
+        self.process_inst = process_inst
+    
     def set_edit(self, bool_value):
         self.edit_mode_state = bool_value
 
@@ -1632,8 +1636,13 @@ class ProcessScript(ProcessOption):
         if self.edit_mode_state == False:
             button.text_entry.hide()
         
-        button.set_process(self.process_inst)
         button.set_completer(ui_code.CodeCompleter)
+        
+        if self.process_inst:
+            button.set_process(self.process_inst)
+        
+        
+        
         
         return button
     
@@ -1674,14 +1683,20 @@ class ProcessScript(ProcessOption):
         parent = self.get_parent()
         parent.refresh()
         
+    def set_process(self, process_inst):
+        super(ProcessScript, self).set_process(process_inst)
         
-        
+        self.option_widget.set_process(process_inst)
+                
     def set_edit(self, bool_value):
         super(ProcessScript, self).set_edit(bool_value)
+        
+        
         
         if bool_value:
             self.option_widget.text_entry.show()
             self.main_layout.setContentsMargins(0,2,0,15)
+            self.option_widget.set_minimum()
         else:
             self.option_widget.text_entry.hide()
             self.main_layout.setContentsMargins(0,2,0,2)
@@ -1785,6 +1800,15 @@ class ProcessOptionBoolean(ProcessOption):
     
     def _define_option_widget(self):
         return qt_ui.GetBoolean(self.name)
+
+    def _setup_value_change(self):
+        self.option_widget.valueChanged.connect(self._value_change)
+
+    def set_value(self, value):
+        self.option_widget.set_value(value)
+        
+    def get_value(self):
+        return self.option_widget.get_value()
 
 class ProcessOptionDictionary(ProcessOptionNumber):
     
