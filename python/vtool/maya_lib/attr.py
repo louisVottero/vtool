@@ -478,10 +478,10 @@ class RemapAttributesToAttribute(object):
         attribute_count = len(self.attributes)
         
         if attribute_count == None:
-            attribute_count = 1
+            attribute_count = 0
         
-        if attribute_count == 1:
-            attribute_count + 1
+        #if attribute_count == 1:
+        #    attribute_count + 1
         
         
         
@@ -493,7 +493,10 @@ class RemapAttributesToAttribute(object):
             variable.set_node(self.node)
             variable.set_min_value(0)
         
-            max_value = attribute_count-1
+            if attribute_count < 1:
+                max_value = 0
+            else:
+                max_value = attribute_count-1
             
             if max_value < variable.get_max_value():
                 max_value = variable.get_max_value()
@@ -508,7 +511,16 @@ class RemapAttributesToAttribute(object):
         variable.set_variable_type(variable.TYPE_DOUBLE)
         variable.set_node(self.node)
         variable.set_min_value(0)
-        variable.set_max_value(attribute_count-1)
+        
+        if attribute_count < 1:
+            max_value = 0
+        else:
+            max_value = attribute_count-1
+        
+        if max_value < variable.get_max_value():
+            max_value = variable.get_max_value()
+                
+        variable.set_max_value(max_value)
         variable.set_keyable(self.keyable)
         variable.create()
 
