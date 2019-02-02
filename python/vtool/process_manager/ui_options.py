@@ -515,8 +515,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         for option in options:
             
-            name = option[0]
-            
             option_type = None
             
             if type(option[1]) == list:
@@ -553,7 +551,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 if not group:
                     
                     self.add_group(name, value, widget)
-            
+                
             if len(split_name) > 1 and split_name[-1] != '':
                 
                 search_group = string.join(split_name[:-2], '.')
@@ -597,20 +595,25 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 
             if option_type == 'dictionary':
                 self.add_dictionary(name, value, widget)
-                
+            
+             
         self.disable_auto_expand = False
         self.setVisible(True)    
         self.setUpdatesEnabled(True)
         self.supress_update = False
         self._auto_rename = True
         
+        
     def _handle_parenting(self, widget, parent):
         
         widget.widget_clicked.connect(self.update_current_widget)
         
         #widget.edit_mode.connect(self._activate_edit_mode)
-        widget.set_process(self.process_inst)
         
+        if not type(widget) == ProcessOptionGroup:
+            widget.set_process(self.process_inst)
+        else:
+            widget.process_inst = self.process_inst
         
         if not parent:
             self.child_layout.addWidget(widget)
