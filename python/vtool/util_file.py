@@ -2634,6 +2634,25 @@ def import_python_module(module_name, directory):
         
     return module
 
+def remove_sourced_code(code_directory):
+
+    found = []
+    keys = sys.modules.keys()
+    
+    for key in keys:
+        
+        if not sys.modules.has_key(key):
+            continue
+        
+        if sys.modules[key] and hasattr(sys.modules[key], '__file__'):
+            if sys.modules[key].__file__ == code_directory:
+                found.append(key)
+                break
+    
+    for key in found:
+        if sys.modules.has_key(key):
+            sys.modules.pop(key)
+
 def source_python_module(code_directory):
     
     get_permission(code_directory)
@@ -2641,17 +2660,10 @@ def source_python_module(code_directory):
     try:
         try:
             
+            remove_sourced_code(code_directory)
+            
             fin = open(code_directory, 'r')
             import md5
-            
-            for thing in sys.modules:
-                try:
-                    if sys.modules[thing] and hasattr(sys.modules[thing], '__file__'):
-                        if sys.modules[thing].__file__ == code_directory:
-                            sys.modules.pop(thing)
-                            break
-                except:
-                    pass
             
             module_inst = imp.load_source(md5.new(code_directory).hexdigest(), code_directory, fin)
             
