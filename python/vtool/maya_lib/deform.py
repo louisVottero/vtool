@@ -1394,6 +1394,9 @@ class TransferWeight(object):
         if skin_deformer:
             self.skin_cluster = skin_deformer
             
+        self._smooth_verts = False
+        self._smooth_verts_iterations = 3
+            
     def _get_vertices(self, mesh):
         if type(mesh) == str or type(mesh) == unicode:        
             self.vertices = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
@@ -1467,6 +1470,10 @@ class TransferWeight(object):
         
         skin_mesh_from_mesh(self.mesh, self._optimize_mesh)
         
+    def set_smooth_mesh(self, iterations = 3):
+        
+        self._smooth_verts = True
+        self._smooth_verts_iterations = iterations
         
     def delete_optimize_mesh(self):
         cmds.delete(self._optimize_mesh)
@@ -2074,9 +2081,6 @@ class TransferWeight(object):
                     weight = inverted_distances[distance_inc]/total
                     joint_weight[new_joints[distance_inc]] = weight
             
-            
-                    
-            
             weight_value = weights[vert_index]
             
             #remove weighting from source joints
@@ -2141,7 +2145,17 @@ class TransferWeight(object):
             cmds.select(found, r = True)
             
             cmds.copySkinWeights(noMirror = True, surfaceAssociation = 'closestPoint', influenceAssociation = 'closestJoint')
+        
+        if self._smooth_verts:
             
+            verts = []
+            
+            for vert_index in weighted_verts:
+                vert = '%s.vtx[%s]' % (self.mesh, vert_index)
+                verts.append(vert)
+                
+            smooth_skin_weights(verts, self._smooth_verts_iterations)
+        
         bar.end()
         vtool.util.show('Done: %s transfer %s to %s.' % (self.mesh, joints, new_joints))
          
@@ -5176,6 +5190,8 @@ def transfer_joint_weight_to_joint(source_joint, target_joint, mesh = None):
             other_index_weights = weights[other_index]
         
         weight_count = len(index_weights)
+        
+        #this needs to use attr = cmds.setAttr('%s.weightList[*].weights[%s]' % (skin_cluster, index), *weights)
         
         for inc in xrange(0,weight_count):
             
