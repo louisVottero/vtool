@@ -2125,6 +2125,9 @@ class GetCode(GetString):
 
     def set_completer(self, completer):
         self.text_entry.set_completer(completer)
+        
+    def set_minimum(self):
+        self.text_entry.setMaximumHeight(30)
 
 class GetDirectoryWidget(DirectoryWidget):
     
