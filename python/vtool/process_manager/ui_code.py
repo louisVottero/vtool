@@ -1041,7 +1041,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         found_scripts = []
         found_states = []
-        parents = {}
         
         for inc in range(0, len(scripts)):
             #and each increment is slow
@@ -1056,14 +1055,12 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             if not code_path or not util_file.is_file(code_path):
                 continue
             
-            if name.count('/') > 0:
-                dirname = util_file.get_dirname(name)
-                parents[dirname] = scripts[inc]
+
             
             found_scripts.append(scripts[inc])
             found_states.append(states[inc])
         
-        return [found_scripts, found_states, parents]
+        return [found_scripts, found_states]
         
     def _insert_drop(self, event):
         
@@ -1581,27 +1578,51 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
     
     def _add_items(self, files, item = None):
         
-        scripts, states, parents = files
+        scripts, states = files
         
         script_count = len(scripts)
         
         found_false = False
         
+        order_scripts = {}
+        order_of_scripts = []
+        
+        parents = {}
+        
+        for inc in range(0, script_count):
+            script_full = scripts[inc]
+            script_name = script_full.split('.')[0]
+            
+            slash_count = script_name.count('/')
+            
+            if not order_scripts.has_key(slash_count):
+                order_scripts[slash_count] = []
+                order_of_scripts.append(slash_count)
+                
+            parents[script_name] = None
+            order_scripts[slash_count].append([script_name, script_full, states[inc]])
+            
+        ordered_scripts = []
+        
+        for count in order_of_scripts:
+            ordered_scripts += order_scripts[count]
+            
         built_parents = {}
         
         for inc in range(0, script_count):
             
-            script_name = scripts[inc].split('.')[0]
-            basename = util_file.get_basename(scripts[inc])
+            script_name,script_full, state = ordered_scripts[inc]
             
-            item = self._add_item('...temp...', states[inc], parent = False, update_manifest = False)
+            basename = util_file.get_basename(script_full)
+            
+            item = self._add_item('...temp...', state, parent = False, update_manifest = False)
             
             if parents.has_key(script_name):
                 built_parents[script_name] = item
             
-            dirname = util_file.get_dirname(scripts[inc])
+            dirname = util_file.get_dirname(script_full)
             
-            if parents.has_key(dirname) and built_parents.has_key(dirname):
+            if built_parents.has_key(dirname):
                 
                 current_parent = built_parents[dirname]
                 
@@ -1614,7 +1635,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
                 self.addTopLevelItem(item)    
                 item.set_text(basename)
             
-            if not states[inc]:
+            if not state:
                 found_false = True
             
         self.update_checkbox = False
@@ -2256,8 +2277,6 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.process.set_runtime_dict(process_runtime_dictionary)
         
 class ManifestItem(vtool.qt_ui.TreeWidgetItem):
-    
-    
     
     def __init__(self):
         
