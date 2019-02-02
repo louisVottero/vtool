@@ -1,6 +1,0 @@
-vetala0.2.01
-vetala0.2.00
-vetala0.1.19
-vetala0.1.18
-vetala0.1.17
-vetala0.1.16
