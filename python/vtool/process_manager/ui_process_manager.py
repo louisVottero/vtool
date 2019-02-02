@@ -48,7 +48,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.last_tab = 0
         self.last_process = None
         self.last_project = None
-        self.sync_code = False
         self.kill_process = False
         self.build_widget = None
         self.last_item = None
@@ -345,7 +344,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.hide()
         
     def _copy_done(self):
-        self.sync_code = True
+        
+        path = self._get_current_path()
+        self.code_widget.set_directory(path, sync_code = True)
         
         self._load_options()
         self._load_notes()
@@ -896,9 +897,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         path = self._get_current_path()
         
-        self.code_widget.set_directory(path, sync_code = self.sync_code)
-        if self.sync_code:
-            self.sync_code = False
+        self.code_widget.set_directory(path, False)
         
         code_directory = self.settings.get('code_directory')
         self.code_widget.set_external_code_library(code_directory)
