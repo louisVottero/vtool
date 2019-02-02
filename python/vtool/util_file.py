@@ -970,11 +970,6 @@ class SettingsFile(object):
         
         self.settings_dict[name] = value
         
-        if name in self.settings_order:
-            pass
-            #index_value = self.settings_order.index(name)
-            #self.settings_order.pop(index_value)
-        
         if not name in self.settings_order:
             self.settings_order.append(name)
         
