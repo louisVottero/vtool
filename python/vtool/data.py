@@ -1255,6 +1255,11 @@ class SkinWeightData(MayaCustomData):
             
             index = influence_index_dict[influence]
             
+            attr = '%s.weightList[*].weights[%s]' % (skin_cluster, index)
+            
+            #this wasn't faster, zipping zero weights is much faster than setting all the weights
+            #cmds.setAttr(attr, *weights )
+            
             for inc in xrange(0, len(weights)):
                         
                 weight = float(weights[inc])
@@ -1265,7 +1270,7 @@ class SkinWeightData(MayaCustomData):
                 attr = '%s.weightList[%s].weights[%s]' % (skin_cluster, inc, index)
                 
                 cmds.setAttr(attr, weight)
-                                
+                             
             progress_ui.inc()
             
             if util.break_signaled():
