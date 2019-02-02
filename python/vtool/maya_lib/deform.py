@@ -3471,14 +3471,21 @@ class WeightFromMesh(object):
         if self._bake_delta_smooth:
             cmds.deltaMush(temp_target) 
         
-            cmds.bakeDeformer(sm = temp_target, dm = self._target_mesh, ss = top_joint, ds = top_joint, mi = 50)
+            
         
+            cmds.bakeDeformer(sm = temp_target, dm = self._target_mesh, ss = top_joint, ds = top_joint, mi = 50)
+            
             cmds.parent(joints, w = True)
         
             cmds.delete(temp_target)
             cmds.delete(top_joint)
-        
+         
         cmds.delete(self._current_skin_mesh)
+        
+        if vtool.util.get_maya_version() > 2018:
+            #this might be temprorary
+            skin = SkinCluster(self._target_mesh)
+            skin.normalize(True)
         
         return joints
         
