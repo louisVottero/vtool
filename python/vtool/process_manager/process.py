@@ -926,7 +926,7 @@ class Process(object):
             
     def save_data(self, name, comment = '', sub_folder = None):
         """
-        Convenience function that tries to run the save function function found on the data_type instance for the specified data folder. Not all data type instances have a save function. 
+        Convenience function that tries to run the save function found on the data_type instance for the specified data folder. Not all data type instances have a save function. 
         
         Args:
             name (str): The name of a data folder in the process.
@@ -949,6 +949,33 @@ class Process(object):
                 return True
         
         return False
+           
+    def export_data(self, name, comment = '', sub_folder = None):
+        """
+        Convenience function that tries to run the export function found on the data_type instance for the specified data folder. Not all data type instances have a save function. 
+        
+        Args:
+            name (str): The name of a data folder in the process.
+        
+        Returns:
+            None
+        """
+        
+        instance, original_sub_folder = self._get_data_instance(name, sub_folder)
+                
+        if not comment:
+            comment = 'Exported through process class with no comment.'
+        
+        if hasattr(instance, 'export_data'):
+            exported = instance.export_data(comment)
+            #need to get all the data types returning true or false on export
+            
+            instance.set_sub_folder(original_sub_folder)
+            
+            #if exported:
+            #    return True
+        
+        #return False
             
     
     def rename_data(self, old_name, new_name):

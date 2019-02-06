@@ -53,7 +53,10 @@ class BlendShape(object):
             
             return
         
-        target_attrs = cmds.listAttr(self._get_input_target(0), multi = True)
+        target_attrs = []
+        
+        if cmds.objExists(self._get_input_target(0)):
+            target_attrs = cmds.listAttr(self._get_input_target(0), multi = True)
         
         if not target_attrs:
             return
@@ -793,14 +796,15 @@ class BlendShape(object):
             
             attribute = self._get_input_target_group_weights_attribute(target_name, mesh_index)
         
-        cmds.setAttr(attribute + '[*]', *weights)
+        try:
+            cmds.setAttr(attribute + '[*]', *weights)
+        except:
+            #then its probably base weights
+            for inc in xrange(weight_count):
+                attribute_name = attribute + '[%s]' % inc
+                
+                cmds.setAttr(attribute_name, weights[inc])
         
-        """
-        for inc in xrange(weight_count):
-            attribute_name = attribute + '[%s]' % inc
-            
-            cmds.setAttr(attribute_name, weights[inc])
-        """
         
         """
         #not sure which is faster, this or api, might try plug array in the future
