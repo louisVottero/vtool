@@ -1837,6 +1837,7 @@ class TwistRibbon(object):
         self._btm_twist_fix = False
         self._top_twist_fix = False
         self._dual_quat = False
+        self._ribbon_offset = 1
         
     def _create_top_twister_joint(self):
         
@@ -1904,6 +1905,9 @@ class TwistRibbon(object):
             self._top_twist_fix = True
             self._btm_twist_fix = True
 
+    def set_ribbon_offset(self, value):
+        self._ribbon_offset = value
+
     def create(self):
         
         top_loc = cmds.spaceLocator(n = core.inc_name('locator_twistRibbonTop_%s' % self._description))[0]
@@ -1920,7 +1924,7 @@ class TwistRibbon(object):
         ribbon_gr = cmds.group(em = True, n = core.inc_name('twistRibbon_%s' % self._description))
         self.group = ribbon_gr
         
-        self.surface = geo.transforms_to_nurb_surface([self._joint, temp_group], description = self._description, offset_axis=self._offset_axis)
+        self.surface = geo.transforms_to_nurb_surface([self._joint, temp_group], description = self._description, offset_axis=self._offset_axis, offset_amount = self._ribbon_offset)
         if self._dual_quat:
             cmds.rebuildSurface(self.surface, ch = False,
                                             rpo = 1,
