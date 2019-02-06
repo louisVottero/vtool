@@ -331,8 +331,9 @@ class Rig(object):
 
         if current_process:
             control_inst = util_file.ControlNameFromSettingsFile(current_process)
-            
-            control_inst.set_number_in_control_name(self._control_number)
+                        
+            if sub == False:
+                control_inst.set_number_in_control_name(self._control_number)
             
             self._control_inst = control_inst
             
