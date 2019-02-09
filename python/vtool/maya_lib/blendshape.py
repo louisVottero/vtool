@@ -2444,6 +2444,35 @@ class ShapeComboManager(object):
         for combo in combos:
             self.remove_combo(combo)
         
+    def key_shapes(self, start_frame = 0):
+        
+        shapes = self.get_shapes()
+        
+        offset = start_frame
+        
+        for shape in shapes:
+            
+            offset_next = 10
+            negative = False
+            
+            if self.has_negative(shape):
+                negative = True
+                offset_next = 30
+            
+            cmds.setKeyframe( self.setup_group, t=offset, at=shape, v=0 )
+            cmds.setKeyframe( self.setup_group, t=offset+10, at=shape, v=1 )
+            
+            if not negative:
+                cmds.setKeyframe( self.setup_group, t=offset+20, at=shape, v=0 )
+                
+            if negative:
+                cmds.setKeyframe( self.setup_group, t=offset+20, at=shape, v=0 )
+                cmds.setKeyframe( self.setup_group, t=offset+30, at=shape, v=-1 )
+                cmds.setKeyframe( self.setup_group, t=offset+40, at=shape, v=0 )
+            
+            
+            offset += offset_next
+        
     #---  combos
     
     def is_combo(self, name):
@@ -2736,6 +2765,8 @@ class ShapeComboManager(object):
         
         return shapes, combos, inbetweens
     
+    #--- negatives
+    
     def is_negative(self, shape, parent_shape = None):
         
         inbetween_parent = self.get_inbetween_parent(shape)
@@ -2793,6 +2824,8 @@ class ShapeComboManager(object):
             return True
         
         return False
+    
+    #--- inbetweens
     
     def is_inbetween(self, shape, parent_shape = None, check_exists = True):
         
