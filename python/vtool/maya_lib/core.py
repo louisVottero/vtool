@@ -973,6 +973,11 @@ def get_shapes_in_hierarchy(transform, shape_type = '', return_parent = False, s
     Returns:
         list: The list of shape nodes.
     """
+    
+    if not cmds.objExists(transform):
+        vtool.util.warning('%s does not exist. Could not get hierarchy' % transform)
+        return
+    
     hierarchy = [transform]
     
     relatives = cmds.listRelatives(transform, ad = True, type = 'transform', f = True)
