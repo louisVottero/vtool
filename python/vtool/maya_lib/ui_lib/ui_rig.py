@@ -798,7 +798,7 @@ class RigManager(qt_ui.DirectoryWidget):
         if created and not selected:
             core.print_help('Created transforms on the right side that were on the left.')
         if not created:
-            core.print_warning('No transforms created. Check that there are missing transforms on the right. Check your selected transform is on the left.')
+            core.print_warning('No transforms created. Check that there are missing transforms on the right or that the right side does not already exist. Check your selected transform is on the left.')
 
     @core.undo_chunk
     def _mirror_curves(self, *args ):
