@@ -553,7 +553,7 @@ def make_curve_dynamic(curve, hair_system = None, mesh = None, curve_closest_sam
         
     return follicle
 
-def create_follicle_from_curve(curve, hair_system = None, attach_mesh = None, out_curve_parent = None):
+def create_follicle_from_curve(curve, hair_system = None, attach_mesh = None, out_curve_parent = None, dynamic = True):
     
     parent = cmds.listRelatives(curve, p = True)
     
@@ -563,47 +563,50 @@ def create_follicle_from_curve(curve, hair_system = None, attach_mesh = None, ou
         cmds.connectAttr('%s.outMesh' % attach_mesh, '%s.inputMesh' % follicle_shape)
         cmds.connectAttr('%s.worldMatrix' % attach_mesh, '%s.inputWorldMatrix' % follicle_shape)
         
-        cmds.connectAttr('%s.outTranslate' % follicle_shape, '%s.translate' % follicle )
-        cmds.connectAttr('%s.outRotate' % follicle_shape, '%s.rotate' % follicle )
+        #cmds.connectAttr('%s.outTranslate' % follicle_shape, '%s.translate' % follicle )
+        #cmds.connectAttr('%s.outRotate' % follicle_shape, '%s.rotate' % follicle )
         
         u,v = geo.get_uv_on_mesh_at_curve_base(attach_mesh, curve)
         
         cmds.setAttr('%s.parameterU' % follicle, u)
         cmds.setAttr('%s.parameterV' % follicle, v)
     
-    start_curve = cmds.duplicate(curve)[0]
-    start_curve = cmds.rename(start_curve, 'start_%s' % curve)
     
-    sets = cmds.listSets(object = start_curve)
-    for set_value in sets:
-        cmds.sets(start_curve, remove = set_value)
-    
-    cmds.connectAttr('%s.worldMatrix' % start_curve, '%s.startPositionMatrix' % follicle_shape)
-    cmds.connectAttr('%s.local' % start_curve, '%s.startPosition' % follicle_shape)
+    if dynamic:
+        start_curve = cmds.duplicate(curve)[0]
+        start_curve = cmds.rename(start_curve, 'start_%s' % curve)
         
-    new_curve_shape = cmds.createNode('nurbsCurve')
-    new_curve = cmds.listRelatives(new_curve_shape, p = True)
-    
-    new_curve = cmds.rename(new_curve, core.inc_name('curve_%s' % follicle))
-    new_curve_shape = cmds.listRelatives(new_curve, shapes = True)[0]
-    
-    cmds.setAttr('%s.inheritsTransform' % new_curve, 0)
-    
-    cmds.parent(start_curve, new_curve, follicle)
-    cmds.hide(start_curve)
-    
-    cmds.connectAttr('%s.outCurve' % follicle, '%s.create' % new_curve)
-    
+        sets = cmds.listSets(object = start_curve)
+        for set_value in sets:
+            cmds.sets(start_curve, remove = set_value)
+        
+        cmds.connectAttr('%s.worldMatrix' % start_curve, '%s.startPositionMatrix' % follicle_shape)
+        cmds.connectAttr('%s.local' % start_curve, '%s.startPosition' % follicle_shape)
             
-    if parent:
-        cmds.parent(follicle, parent)
+        new_curve_shape = cmds.createNode('nurbsCurve')
+        new_curve = cmds.listRelatives(new_curve_shape, p = True)
         
-    if out_curve_parent and cmds.objExists(out_curve_parent):
-        new_curve = cmds.rename(new_curve, 'out_%s' % curve)
-        cmds.parent(new_curve, out_curve_parent)
+        new_curve = cmds.rename(new_curve, core.inc_name('curve_%s' % follicle))
+        new_curve_shape = cmds.listRelatives(new_curve, shapes = True)[0]
         
-        space.zero_out_transform_channels(new_curve)
+        cmds.setAttr('%s.inheritsTransform' % new_curve, 0)
         
+        cmds.parent(start_curve, new_curve, follicle)
+        cmds.hide(start_curve)
+        
+        cmds.connectAttr('%s.outCurve' % follicle, '%s.create' % new_curve)
+        
+                
+        if parent:
+            cmds.parent(follicle, parent)
+            
+        if out_curve_parent and cmds.objExists(out_curve_parent):
+            new_curve = cmds.rename(new_curve, 'out_%s' % curve)
+            cmds.parent(new_curve, out_curve_parent)
+            
+            space.zero_out_transform_channels(new_curve)
+    if not dynamic:
+        cmds.parent(curve, follicle)
         
     return follicle
 
