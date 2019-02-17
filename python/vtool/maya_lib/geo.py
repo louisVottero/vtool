@@ -872,15 +872,6 @@ def get_vertices(mesh):
     
     return found
 
-def get_vertex_index(vertex_name):
-    
-    if vertex_name:
-    
-        index = int(vertex_name[vertex_name.find("[")+1:vertex_name.find("]")])
-    
-        return index
-     
-
 def get_vertex_indices(list_of_vertex_names):
     
     list_of_vertex_names = vtool.util.convert_to_sequence(list_of_vertex_names)
@@ -889,7 +880,7 @@ def get_vertex_indices(list_of_vertex_names):
     
     for vertex in list_of_vertex_names:
         
-        index = get_vertex_index(vertex)
+        index = int(vertex[vertex.find("[")+1:vertex.find("]")]) 
         
         vertex_indices.append(index)
         
