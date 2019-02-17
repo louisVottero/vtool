@@ -3767,7 +3767,7 @@ class IkAppendageRig(BufferRig):
     def __init__(self, description, side=None):
         super(IkAppendageRig, self).__init__(description, side)
         
-        self.right_side_fix = True
+        self.right_side_fix = False
         self.create_twist = True
         self.create_stretchy = True
         self.btm_control = None
