@@ -201,17 +201,16 @@ class CodeProcessWidget(vtool.qt_ui.DirectoryWidget):
         #    self._close_splitter()
     
     def _script_added(self, item):
-        pass
-    
+        
         if self.code_widget.code_edit.has_tabs():
             code_folder = self.script_widget._get_current_code(item)
             self._code_change(code_folder, open_in_window = False, open_in_external = False)
     
-        """
-        if self.code_widget.code_edit.has_tabs():
-            self.code_widget.code_edit.close_tabs()
-            self._close_splitter()
-        """
+        
+        #if self.code_widget.code_edit.has_tabs():
+        #    self.code_widget.code_edit.close_tabs()
+        #    self._close_splitter()
+        
             
          
     def set_directory(self, directory, sync_code = False):
@@ -1557,7 +1556,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         
         return item
         
-    def _add_item(self, filename, state, parent = None, update_manifest = True):
+    def _add_item(self, filename, state, parent = None, update_manifest = True, skip_emit = False):
         
         if filename.count('/') > 0:
             basename = util_file.get_basename(filename)
@@ -1572,11 +1571,13 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if update_manifest:
             self._update_manifest()
         
-        self.item_added.emit(item)
+        if not skip_emit:
+            self.item_added.emit(item)
         
         return item
     
     def _add_items(self, files, item = None):
+        
         
         scripts, states = files
         
@@ -1615,7 +1616,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             basename = util_file.get_basename(script_full)
             
-            item = self._add_item('...temp...', state, parent = False, update_manifest = False)
+            item = self._add_item('...temp...', state, parent = False, update_manifest = False, skip_emit=True)
             
             if parents.has_key(script_name):
                 built_parents[script_name] = item
@@ -1842,15 +1843,18 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if self.start_item:
             start_item_path = self._get_item_path_name(self.start_item, keep_extension=True)
         
+
         if sync:
             self.sync_manifest()
-        
+            
         self.allow_manifest_update = False
         if not scripts_and_states:
             super(CodeManifestTree, self).refresh()
+        
         if scripts_and_states:
             self._custom_refresh(scripts_and_states[0], scripts_and_states[1])
-            
+
+
         self.allow_manifest_update = True
         
         if self.start_item:
@@ -1864,7 +1868,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             if item:
                 self.set_breakpoint(item)
-
+   
     def update_manifest_file(self):
         self._update_manifest()
 
