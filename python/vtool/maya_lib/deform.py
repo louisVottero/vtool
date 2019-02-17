@@ -1433,6 +1433,7 @@ class TransferWeight(object):
         for joint in joints:
             
             if not  cmds.objExists(joint):
+                vtool.util.warning('Could not add joint to skin cluster. %s does not exist.' % joint)
                 continue
             
             if not joint in influences:
@@ -4459,6 +4460,46 @@ def sharpen_skin_weights(verts, iterations = 1):
         
     progress.end()
     
+def delta_smooth_weights(mesh, top_joint = None):
+    """
+    This seems to require the full skeleton to be under one joint. This can be an issue with say the tweaker joints that sometimes live under controls for speed reasons.
+    
+    """
+
+    delta_mush = cmds.deltaMush(mesh)[0]
+    
+    skin = find_deformer_by_type(mesh, 'skinCluster')
+    
+    influence_dict, influences = api.get_skin_influence_dict(skin, short_name = False)
+    
+    if not top_joint:
+        
+        top_joint = influences[0]
+        
+        count = 1000000
+        
+        for influence in influences:
+            
+            current_count = influence.count('|')
+            
+            
+            if current_count < count:
+                top_joint = influence
+                
+                count = current_count
+            
+        split_top = top_joint.split('|')
+        possible_top = string.join(split_top[:-1], '|')
+        if cmds.nodeType(possible_top) == 'joint':
+            top_joint = possible_top 
+        
+        vtool.util.show('Top Joint found for delta smooth weights: %s' % top_joint)
+    
+    cmds.bakeDeformer(sm = mesh, dm = mesh, ss = top_joint, ds = top_joint, mi = len(influences))
+    
+    #cmds.delete(delta_mush)
+    
+
 def has_influence(joint, skin_cluster):
     
     influences = get_skin_influences(skin_cluster)
@@ -5554,7 +5595,7 @@ def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints
     cmds.select(group)
     cmds.refresh()
     
-    relatives = cmds.listRelatives(group, ad = True, type = 'transform')
+    relatives = cmds.listRelatives(group, ad = True, type = 'transform', f = True)
     relatives.append(group)
     
     for relative in relatives:
