@@ -1681,15 +1681,15 @@ class TransferWeight(object):
             source_mesh = self.mesh
             
         source_mesh_length = 0
-            
+        
         if source_mesh:
             verts_mesh = cmds.ls('%s.vtx[*]' % self.mesh, flatten = True)
             verts_source_mesh = cmds.ls('%s.vtx[*]' % source_mesh, flatten = True)    
             source_mesh_length = len(verts_source_mesh)
             
-            if len(verts_mesh) != source_mesh_length:
-                vtool.util.warning('%s and %s have different vert counts. Cannot transfer weights.' % (self.mesh, source_mesh))
-                return
+            #if len(verts_mesh) != source_mesh_length:
+            #    vtool.util.warning('%s and %s have different vert counts. Cannot transfer weights.' % (self.mesh, source_mesh))
+            #    return
         
         source_skin_cluster = self._get_skin_cluster(source_mesh)
         
@@ -5765,6 +5765,13 @@ def lock_joint_weights(skin_cluster, skip_joints = None):
             
         if lock:
             cmds.skinCluster( skin_cluster, e= True, inf= influence, lw = True )    
+
+def unlock_joint_weights(skin_cluster):
+    influences = get_influences_on_skin(skin_cluster)
+        
+    for influence in influences:
+        
+        cmds.skinCluster( skin_cluster, e= True, inf= influence, lw = False )
 
 def get_closest_verts_to_joints(joints, verts):
     """

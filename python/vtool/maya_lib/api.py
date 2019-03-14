@@ -1299,7 +1299,7 @@ class DagNode(MayaFunction):
 
 def get_object(name):
     
-    if not cmds.objExists(name):
+    if not name or not cmds.objExists(name):
         return
     
     selection_list = om.MSelectionList()

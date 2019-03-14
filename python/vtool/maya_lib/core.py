@@ -210,11 +210,12 @@ class ProgressBar(object):
             
             self.progress_ui = None
             self.progress_ui = get_progress_bar()
-                      
+                  
             if begin: 
                 #check if not cancelled completely because of bug
                 self.__class__.inc_value = 0
                 self.end()
+                
                 
             if not title:
                 title = cmds.progressBar(self.progress_ui, q = True, status  = True)

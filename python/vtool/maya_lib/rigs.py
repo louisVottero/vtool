@@ -7204,7 +7204,6 @@ class FootRig(BaseFootRig):
         self._duplicate_chain_replace = ['joint', 'guide']
         self.locator_replace = 'locator'
         
-    
     def _duplicate_joints(self):
         
         super(FootRig, self)._duplicate_joints()
@@ -7234,8 +7233,8 @@ class FootRig(BaseFootRig):
         
         if not self.create_buffer_joints:
             duplicate.replace(self._duplicate_chain_replace[0], self._duplicate_chain_replace[1])
-        if self.create_buffer_joints:
-            duplicate.replace(self._buffer_replace[0], self._duplicate_chain_replace[1])
+        if self.create_buffer_joints:        
+            duplicate.replace(self._buffer_replace[1], self._duplicate_chain_replace[1])
         
         joints = duplicate.create()
         
@@ -9297,6 +9296,7 @@ class EyeRig(JointRig):
         self.skip_ik = False
         self._create_fk = False
         self._fk_control_shape_offset = 1
+        self._constrain_local = True
         
     def _create_ik(self):
 
@@ -9313,6 +9313,7 @@ class EyeRig(JointRig):
             ik = space.IkHandle(self.description)
             ik.set_start_joint(self.ik_chain[0])
             ik.set_end_joint(self.ik_chain[1])
+            ik.set_solver(ik.solver_rp)
             handle = ik.create()
             
             cmds.parent(handle, self.setup_group)
@@ -9349,11 +9350,19 @@ class EyeRig(JointRig):
             cmds.parent(control, self.control_group)
             
             xform = space.create_xform_group(control)
-            local_group, local_xform = space.constrain_local(control, handle)
-            cmds.parent(local_xform, self.setup_group)
+            if self._constrain_local:
+                local_group, local_xform = space.constrain_local(control, handle)
+                cmds.parent(local_xform, self.setup_group)
+                if self.local_parent:
+                    cmds.parent(local_xform, self.local_parent)
+                        
+            if not self._constrain_local:
+                cmds.parentConstraint(control, handle, mo = True)
+                cmds.parentConstraint(self.control_group, self.setup_group, mo = True)
+                
+            
 
-            if self.local_parent:
-                cmds.parent(local_xform, self.local_parent)
+            
                 
             if self.parent:
                 cmds.parent(xform, self.parent)
@@ -9491,6 +9500,11 @@ class EyeRig(JointRig):
     
     def set_skip_ik_control(self, bool_value):
         self.skip_ik = bool_value
+        
+    
+    def set_constrain_local(self, bool_value):
+        
+        self._constrain_local = bool_value
         
     
     def create(self):
