@@ -29,6 +29,7 @@ class BlendShape(object):
         
         self.meshes = []
         self.targets = {}
+        self.target_list = []
         self.weight_indices = []
         
         #if self.blendshape:
@@ -75,6 +76,7 @@ class BlendShape(object):
         target = BlendShapeTarget(name, index)
         
         self.targets[name] = target
+        self.target_list.append(name)
         self.weight_indices.append(index)
         
         self.weight_indices.sort()
@@ -266,6 +268,7 @@ class BlendShape(object):
             found = False
             
             temp_target = cmds.duplicate(target_mesh)[0]
+            
             
             if geo.is_mesh_compatible(target_mesh, self.prune_compare_mesh):
                 
@@ -463,7 +466,7 @@ class BlendShape(object):
         if not self.targets:
             self._store_targets()
         
-        return self.targets
+        return self.target_list
         
     @core.undo_chunk
     def create_target(self, name, mesh = None, inbetween = 1):
@@ -526,12 +529,9 @@ class BlendShape(object):
             mesh (str): The mesh to connect to the target.
         """
         
-        if not cmds.objExists(mesh):
+        if not mesh or not cmds.objExists(mesh):
             return
-        
-        if not mesh:
-            return
-        
+                
         name = name.replace(' ', '_')
         
         if self.is_target(name):
@@ -574,6 +574,7 @@ class BlendShape(object):
         
         self.weight_indices.remove( self.targets[name].index )
         self.targets.pop(name)
+        self.target_list.remove(name)
         
         cmds.aliasAttr('%s.%s' % (self.blendshape, name), rm = True)
         
@@ -585,6 +586,14 @@ class BlendShape(object):
         input_attr = attr.get_attribute_input(target_name)
         
         return input_attr
+    
+    def get_target_attr_output(self, name):
+        
+        target_name = self._get_target_attr(name)
+        
+        output_attrs = attr.get_attribute_outputs(target_name)
+        
+        return output_attrs
     
     def get_target_input(self, name, inbetween = 1):
         
@@ -604,12 +613,18 @@ class BlendShape(object):
         
         attr.disconnect_attribute(target)
     
-    def connect_target_attr(self, name, input_attr):
+    def connect_target_attr(self, name, input_attr = None, output_attrs = []):
         
-        cmds.connectAttr(input_attr, self._get_target_attr(name))
+        target_attr = self._get_target_attr(name)
         
+        if input_attr:
+            cmds.connectAttr(input_attr, target_attr)
         
-       
+        if output_attrs:
+            for output_attr in output_attrs:
+                attr.disconnect_attribute(output_attr)
+                cmds.connectAttr(target_attr, output_attr)
+                
     def rename_target(self, old_name, new_name):
         """
         Rename a target on the blendshape.
@@ -1101,17 +1116,31 @@ class ShapeComboManager(object):
         
         shape = core.get_basename(shape, remove_namespace = True)
         
+        if self.is_inbetween(shape):
+            inbetween_parent = self.get_inbetween_parent(shape)
+            if inbetween_parent:
+                shape = inbetween_parent
+        
+        if negative:
+            negative_parent = self.get_negative_parent(shape)
+            if negative_parent:
+                shape = negative_parent
+        
         var = attr.MayaNumberVariable(shape)
         
         if not negative:
             var.set_min_value(0)
         if negative:
             var.set_min_value(-1)
+            
         var.set_max_value(1)
         
-        var.set_variable_type('float')
-        var.create(self.setup_group)
-    
+        if not var.exists(True):
+            
+            var.set_variable_type('float')
+            var.create(self.setup_group)
+            
+        
     def _get_combo_delta(self, corrective_mesh, combo, home, blendshape_inst):
         
         temp_targets = []
@@ -1167,6 +1196,8 @@ class ShapeComboManager(object):
             return keyframe
             
     def _setup_shape_connections(self, name):
+        
+        
         
         name = core.get_basename(name, remove_namespace = True)
         
@@ -1401,8 +1432,9 @@ class ShapeComboManager(object):
                         
                         shape = self.get_negative_name(shape)
                         
-                        
-                    cmds.delete(input_node)
+                    
+                    if cmds.objExists(input_node):
+                        cmds.delete(input_node)
                     
                     cmds.connectAttr('%s.%s' % (blendshape, shape), '%s.input1X' % multiply)
         
@@ -1456,7 +1488,12 @@ class ShapeComboManager(object):
         
         mult_nodes = self._get_combo_multiplies(combo, blendshape)
         
-        cmds.delete(mult_nodes)
+        if not mult_nodes:
+            return
+        
+        for node in mult_nodes:
+            if node and cmds.objExists(node):
+                cmds.delete(node)
                 
     
         
@@ -1565,6 +1602,67 @@ class ShapeComboManager(object):
                         
         return value_dict
     
+    def _load_blendshape(self):
+        shapes = self.get_shapes()
+        combos = self.get_combos()
+        
+        shapes = shapes+combos
+        
+        shapes, combos, inbetweens = self.get_shape_and_combo_lists(shapes)
+        
+        
+        if shapes:
+            
+            bar = core.ProgressBar('Loading shapes', len(shapes))
+            
+            for shape in shapes:
+                
+                bar.status('Loading shape: %s' % shape)
+                
+                self._add_shape_variable_and_connections(shape)
+                
+                bar.next()
+            bar.end()
+            
+        if inbetweens:
+            bar = core.ProgressBar('Loading inbetweens', len(shapes))
+                
+            for shape in inbetweens:
+                bar.status('Loading inbetween: %s' % shape)
+                
+                self._add_shape_variable_and_connections(shape, add_variable = False)
+                
+                bar.next()
+                
+            bar.end()
+        
+        if combos:
+            
+            bar = core.ProgressBar('Loading combos', len(combos))
+            
+            for combo in combos:
+                bar.status('Loading combo: %s' % combo)
+                
+                self._setup_combo_connections(combo)
+            
+                bar.next()
+                
+            bar.end()
+            
+        
+    def _add_shape_variable_and_connections(self, name, add_variable = True):
+
+        name = core.get_basename(name, remove_namespace = True)
+        #name can be a group of meshes
+        
+        if self._is_target(name):
+        
+            if add_variable:
+                self._add_variable(name, self.is_negative(name))
+                
+            self._setup_shape_connections(name)
+    
+    
     def is_shape_combo_manager(self, group):
         
         is_shape_combo_manager(group)
@@ -1596,23 +1694,23 @@ class ShapeComboManager(object):
         
         self._create_blendshape()
         
-        shapes = self.get_shapes()
-        
-        if shapes:
-            for shape in shapes:
-                self.add_shape(shape)
+        self._load_blendshape()
         
         return self.setup_group
         
-    def load(self, manager_group):
+    def load(self, manager_group, sync = True):
         
         if is_shape_combo_manager(manager_group):
             self.setup_group = manager_group
             
-        blendshape = self._get_blendshape()
+        if sync:
+            blendshape = self._get_blendshape()
+            
+            if blendshape == None:
+                return False
+            self._load_blendshape()
         
-        if blendshape == None:
-            return False
+        cmds.select(self.setup_group)
         
         return True
         
@@ -1631,7 +1729,7 @@ class ShapeComboManager(object):
                 pass
     
     @core.undo_chunk
-    def add_meshes(self, meshes, preserve_combos = False, preserve_inbetweens = False):
+    def add_meshes(self, meshes, preserve_combos = False, preserve_inbetweens = False, delete_shape_on_add = False):
         
         shapes, combos, inbetweens = self.get_shape_and_combo_lists(meshes)
         
@@ -1650,7 +1748,12 @@ class ShapeComboManager(object):
                 vtool.util.warning('Cannot add home into the system.')
                 continue
             
-            self.add_shape(shape, preserve_combos = preserve_combos, preserve_inbetweens=preserve_inbetweens)    
+            self.add_shape(shape, preserve_combos = preserve_combos, preserve_inbetweens=preserve_inbetweens)
+            
+            if delete_shape_on_add:
+                if cmds.objExists(shape):
+                    cmds.delete(shape)
+            
         
         vtool.util.show('Adding inbetweens.')
         
@@ -1672,6 +1775,10 @@ class ShapeComboManager(object):
                 continue
             
             self.add_shape(inbetween, preserve_combos = preserve_combos, preserve_inbetweens = preserve_inbetweens)
+            
+            if delete_shape_on_add:
+                if cmds.objExists(inbetween):
+                    cmds.delete(inbetween)
         
         vtool.util.show('Adding combos.')
         
@@ -1688,6 +1795,10 @@ class ShapeComboManager(object):
             for mesh in meshes:
                 if mesh == combo:
                     self.add_combo(mesh)
+                    
+                    if delete_shape_on_add:
+                        if cmds.objExists(mesh):
+                            cmds.delete(mesh)
                     
           
         return shapes, combos, inbetweens
@@ -2017,16 +2128,17 @@ class ShapeComboManager(object):
         
     #--- shapes
     
+
+    
     @core.undo_chunk
     def add_shape(self, name, mesh = None, preserve_combos = False, preserve_inbetweens = False):
         #inbetween shouldn't be true by default.
         
-        
-        
         name = core.get_basename(name, remove_namespace = True)
-        #name can be a group of meshes
         
         is_negative = False
+        
+
         
         home_dict = self._get_home_dict()
         
@@ -2151,8 +2263,8 @@ class ShapeComboManager(object):
                 self.add_combo(combo, preserve_these[combo])
                 cmds.delete(preserve_these[combo])
         
-
         
+
                     
     def turn_on_shape(self, name, value = 1):
         
@@ -2519,11 +2631,15 @@ class ShapeComboManager(object):
         
         nice_name = core.get_basename(name, remove_namespace = True)
         
+        
+        
         result = self.is_combo_valid(nice_name, return_invalid_shapes = True)
         
         if type(result) == list:
             vtool.util.warning('Could not add combo %s, targets missing: %s' % (name,result))
             return
+        
+        
         
         home = self._get_mesh()
         
@@ -3019,7 +3135,7 @@ def is_negative(shape):
     
     return False
 
-def transfer_blendshape_targets(blend_source, blend_target):
+def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None):
     
     if core.has_shape_of_type(blend_target, 'mesh'):
         blend_target = cmds.deformer(blend_target, type = 'blendShape')[0]
@@ -3032,21 +3148,58 @@ def transfer_blendshape_targets(blend_source, blend_target):
     
     progress = core.ProgressBar('Transfering targets...', len(source_targets))
     
+    source_base = None
+    
+    if wrap_mesh:
+        geo = cmds.deformer(blend_source, q = True, geometry = True)
+        
+        if geo:
+            geo = cmds.listRelatives(geo[0], p = True)[0]
+            source_base = cmds.duplicate(deform.get_intermediate_object(geo), n = 'source_base')[0]
+            cmds.parent(source_base, w = True)
+        if not geo:
+            wrap_mesh = None
+    
     for source_target in source_targets:
         
         source_target_mesh = source_blend_inst.recreate_target(source_target)
         
+        if wrap_mesh:
+            
+            new_shape = cmds.duplicate(wrap_mesh, n = 'new_shape')
+            
+            blend = cmds.blendShape(source_base, source_target_mesh)[0]
+            cmds.setAttr('%s.%s' % (blend, source_base), 1)
+            
+            deform.create_wrap(source_target_mesh, new_shape)
+            
+            cmds.setAttr('%s.%s' % (blend, source_base), 0)
+            cmds.delete(new_shape, ch = True)
+            
+            cmds.parent(new_shape, w = True)
+            cmds.delete(source_target_mesh)
+            source_target_mesh = cmds.rename(new_shape, source_target_mesh)
+        
         while source_target_mesh in target_targets:
             source_target_mesh = core.inc_name(source_target_mesh)
+        
+        
         
         target_blend_inst.create_target(source_target_mesh, source_target_mesh)
         
         input_attr = source_blend_inst.get_target_attr_input(source_target_mesh)
-        if input_attr:
-            target_blend_inst.connect_target_attr(source_target_mesh, input_attr)
+        output_attrs = source_blend_inst.get_target_attr_output(source_target_mesh)
+        
+        
+        target_blend_inst.connect_target_attr(source_target_mesh, input_attr, output_attrs)
+            
         
         cmds.delete(source_target_mesh)
         
         progress.next()
+    
+    if wrap_mesh:
+        if source_base:
+            cmds.delete(source_base)
     
     progress.end()
