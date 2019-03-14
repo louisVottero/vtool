@@ -514,6 +514,25 @@ class StoreControlData(attr.StoreData):
         attributes = cmds.listAttr(control, k = True)
             
         if not attributes:
+            attributes = []
+            
+        sub_attributes = {}
+        
+        shapes = core.get_shapes(control, no_intermediate = True)
+        
+        if shapes:
+            for shape in shapes:
+                sub_attribute = cmds.listAttr(shape, k = True)
+                
+                if sub_attribute:
+                
+                    for sub in sub_attribute:
+                        sub_attributes[sub] = None
+            
+        if sub_attributes:
+            attributes += sub_attributes.keys()
+            
+        if not attributes:
             return
         
         attribute_data = {}
@@ -854,6 +873,7 @@ class StretchyChain:
         self.attribute_name = 'autoStretch'
         self._defulat_value = 0
         self._create_title = True
+        self.stretch_condition = None
     
     def _get_joint_count(self):
         return len(self.joints)
@@ -899,6 +919,8 @@ class StretchyChain:
         cmds.setAttr("%s.operation" % condition, 2)
         cmds.setAttr("%s.firstTerm" % condition, total_length)
         cmds.setAttr("%s.colorIfTrueR" % condition, total_length)
+        
+        self.stretch_condition = condition
         
         return condition
 
@@ -2863,15 +2885,15 @@ def get_controls(namespace = ''):
         
         
         #temprorary until I change the prefix behavior
-        if transform.startswith('xform'):
+        if transform.startswith('xform_'):
             continue        
-        if transform.startswith('driver'):
+        if transform.startswith('driver_'):
             continue
-        if transform.startswith('follow'):
+        if transform.startswith('follow_'):
             continue
-        if transform.startswith('offset'):
+        if transform.startswith('offset_'):
             continue
-        if transform.find('driver') > -1:
+        if transform.find('driver_') > -1:
             continue
         
        
