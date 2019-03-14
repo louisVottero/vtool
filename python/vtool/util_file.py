@@ -17,7 +17,6 @@ import threading
 import stat
 import ast
 
-
 import util
 
 import time
@@ -607,11 +606,11 @@ class VersionFile(object):
                 file_size = None
                 modified = None
                 
-                split_line = line.split(';')
+                split_line = util.split_line(line, ';')
                 
                 for sub_line in split_line:
                     
-                    assignment = sub_line.split('=')
+                    assignment = util.split_line(sub_line, '=') 
                     
                     if assignment and assignment[0]:
                         
