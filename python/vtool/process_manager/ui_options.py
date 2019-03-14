@@ -256,6 +256,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         
         self._auto_rename = True
         
+        self.top_parent = self
+        
     def _item_menu(self, position):
         
         if not ProcessOptionPalette.edit_mode_state:
@@ -607,6 +609,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     def _handle_parenting(self, widget, parent):
         
         widget.widget_clicked.connect(self.update_current_widget)
+        
+        if self.top_parent:
+            widget.top_parent = self.top_parent
         
         #widget.edit_mode.connect(self._activate_edit_mode)
         
@@ -1030,6 +1035,7 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
         self._write_options(clear=False)
 
     def refresh(self):
+        
         options = self.process_inst.get_options()
         self._load_widgets(options)
 
@@ -1683,8 +1689,8 @@ class ProcessScript(ProcessOption):
         
         self.process_inst.run_code_snippet(value)
         
-        parent = self.get_parent()
-        parent.refresh()
+        if hasattr(self, 'top_parent'):
+            self.top_parent.refresh()
         
     def set_process(self, process_inst):
         super(ProcessScript, self).set_process(process_inst)
