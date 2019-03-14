@@ -786,51 +786,48 @@ class ShapeTree(qt_ui.TreeWidget):
             
             #return
             return qt.QItemSelectionModel.NoUpdate
-            
-        if event.button() == qt.QtCore.Qt.LeftButton:
-            
-            if self.left_press:
-                
-                item = None
-                
-                if not self.ctrl_active:
-                    
-                    self.clearSelection()
-                
-                parent_index = index.parent().row()
-                
-                if parent_index > -1:
-                    parent_item = self.topLevelItem(parent_index)
-                    item = parent_item.child(index.row())
-                    
-                if parent_index == -1:
-                    item = self.topLevelItem(index.row())
-                
-                if item:
-                    
-                    if not item.isSelected():
-                        
-                        self.setItemSelected(item, True)
-                        self.update_selection = True
-                        
-                        #return
-                        return qt.QItemSelectionModel.Select
-                    
-                    if item.isSelected():    
-                        
-                        self.setItemSelected(item, False)
-                        self.update_selection = True
-                        
-                        #return
-                        #return qt.QtGui.QItemSelectionModel.Deselect
-                        return qt.QItemSelectionModel.Deselect
-                
-            if not self.left_press:
-                self.update_selection = True
-            
-                #return
-                return qt.QItemSelectionModel.NoUpdate
         
+        if hasattr(event, 'button'): 
+            if event.button() == qt.QtCore.Qt.LeftButton:
+                
+                if self.left_press:
+                    
+                    item = None
+                    
+                    if not self.ctrl_active:
+                        
+                        self.clearSelection()
+                    
+                    parent_index = index.parent().row()
+                    
+                    if parent_index > -1:
+                        parent_item = self.topLevelItem(parent_index)
+                        item = parent_item.child(index.row())
+                        
+                    if parent_index == -1:
+                        item = self.topLevelItem(index.row())
+                    
+                    if item:
+                        
+                        if not item.isSelected():
+                            
+                            self.setItemSelected(item, True)
+                            self.update_selection = True
+                            
+                            return qt.QItemSelectionModel.Select
+                        
+                        if item.isSelected():    
+                            
+                            self.setItemSelected(item, False)
+                            self.update_selection = True
+
+                            return qt.QItemSelectionModel.Deselect
+                    
+                if not self.left_press:
+                    self.update_selection = True
+                    
+                    return qt.QItemSelectionModel.NoUpdate
+            
         self.update_selection = True
         return qt.QItemSelectionModel.NoUpdate
     
