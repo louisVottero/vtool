@@ -2106,3 +2106,12 @@ def print_python_dir_nicely(python_object):
     
     for thing in stuff:
         exec('print thing, ":", python_object.%s' % thing)
+
+def split_line(line, splitter = ';', quote_symbol = '"'):
+    """
+    This will split a line, ignoring anything inside quotes
+    #re.split(';(?=(?:[^"]*"[^"]*")*[^"]*$)
+    """
+    
+    split_regex = '%s(?=(?:[^%s]*%s[^%s]*%s)*[^%s]*$)' % (splitter, quote_symbol, quote_symbol, quote_symbol, quote_symbol, quote_symbol)
+    return re.split(split_regex, line)
