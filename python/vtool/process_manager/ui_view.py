@@ -1671,7 +1671,11 @@ class CopyWidget(qt_ui.BasicWidget):
         self.view.setDragEnabled(False)
         
         self.data_list.setSortingEnabled(True)
-                
+        
+        header = self.data_list.header()
+        header.setSortIndicator(0,qt.QtCore.Qt.AscendingOrder)
+        self.data_list.setHeader(header)
+        
         self.code_list.itemSelectionChanged.connect(self._code_selected)
         
         self.tabs.addTab(self.data_list, 'Data')
@@ -2404,6 +2408,11 @@ class CopyWidget(qt_ui.BasicWidget):
         list_widget = self.data_list
         
         data_folders = self.process.get_data_folders()
+        
+        if not data_folders:
+            return 
+        
+        data_folders.sort()
         
         for sub_data in data_folders:
             
