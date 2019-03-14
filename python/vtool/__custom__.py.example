@@ -1,3 +1,5 @@
+#remove .example from the filename to make this file active
+
 vetala_name = 'Vetala'
 
 #uncomment and change to set a custom curve directery. Curves will be read and written to this directory
