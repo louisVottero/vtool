@@ -382,19 +382,28 @@ class LockState(object):
         """
         Unlock the attribute.
         """
-        cmds.setAttr( self.attribute, l = False)
+        try:
+            cmds.setAttr( self.attribute, l = False)
+        except:
+            pass
         
     def lock(self):
         """
         Lock the attribute.
         """
-        cmds.setAttr( self.attribute, l = True)
+        try:
+            cmds.setAttr( self.attribute, l = True)
+        except:
+            pass
         
     def restore_initial(self):
         """
         Restore the initial lock state.
         """
-        cmds.setAttr( self.attribute, l = self.lock_state)
+        try:
+            cmds.setAttr( self.attribute, l = self.lock_state)
+        except:
+            pass
 
 class LockNodeState(LockState):
     """
@@ -929,7 +938,11 @@ class MayaVariable(vtool.util.Variable):
         if not self.exists():
             return
         
-        cmds.setAttr(self._get_node_and_variable(), l = self.locked)
+        try:
+            cmds.setAttr(self._get_node_and_variable(), l = self.locked)
+        except:
+            #faster not to check. 
+            pass
     
     def _set_keyable_state(self):
 
@@ -1106,8 +1119,8 @@ class MayaVariable(vtool.util.Variable):
             
         """
         self.node = name
-        self.attr_exists = False
-        self._node_and_attr = ''
+        
+        self.exists(force = True)
 
     #--- get
 
@@ -2433,12 +2446,12 @@ def lock_attributes_for_asset(node):
             continue
         
         input_value = get_attribute_input(attr_name)
-        
+        """
         if input_value:
             input_node_type = cmds.nodeType(input_value)
             if input_node_type and input_node_type.find('Constraint') > -1:
                 input_value = None
-        
+        """
         if not input_value:
             cmds.setAttr(attr_name, l = True)
 
@@ -2455,9 +2468,7 @@ def lock_hierarchy(top_transform, exclude_transforms = [], skip_of_type = ['ikHa
     for thing in scope:
         
         skip = False
-    
         
-    
         if not cmds.objExists(thing):
             skip = True
         if not skip:
@@ -2468,7 +2479,7 @@ def lock_hierarchy(top_transform, exclude_transforms = [], skip_of_type = ['ikHa
                 skip = True
         if not skip:
             for transform in exclude_transforms:
-                if thing.find(transform) > -1:
+                if thing.endswith(transform):
                     skip = True
         if not skip:
             for skip_thing in skip_of_type:
@@ -2485,6 +2496,9 @@ def lock_hierarchy(top_transform, exclude_transforms = [], skip_of_type = ['ikHa
         lock_attributes_for_asset(thing)
         
         progress.inc()
+        
+        if progress.break_signaled():
+            break
         
     progress.end()
         
