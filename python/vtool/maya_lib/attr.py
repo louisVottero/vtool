@@ -2017,6 +2017,9 @@ def is_translate_rotate_connected(transform, ignore_keyframe = False):
 
 def is_connected(node_and_attribute):
     
+    if not node_and_attribute:
+        return False
+    
     input_value = get_attribute_input(node_and_attribute)
     
     if input_value:
@@ -2433,7 +2436,7 @@ def lock_constraint(constraint):
 
 def lock_attributes_for_asset(node):
     
-    attrs = cmds.listAttr(node)
+    attrs = cmds.listAttr(node, k = True)
     
     if not attrs:
         return
@@ -3751,6 +3754,53 @@ def get_vetala_nodes(vetala_type = None):
     return found
         
       
+def has_default_xform_channels(transform, skip_locked = False):
+
+    """
+    Zero out the translate and rotate. Set scale to 1.
+    
+    Args:
+        transform (str): The name of a transform node.
+    """
+    
+    channels = ['translate',
+                'rotate']
+    
+    other_channels = ['scale']
+    
+    all_axis = ['X','Y','Z']
+    
+    for channel in channels:
+        for axis in all_axis:
+            
+            attr_name = transform + '.' + channel + axis
+            
+            if skip_locked:
+                if is_locked(attr_name):
+                    continue
+                
+            value = cmds.getAttr(attr_name)
+            if abs(value) > 0:
+                return False
+                
+            
+    for channel in other_channels:
+        for axis in all_axis:
+            
+            attr_name = transform + '.' + channel + axis
+            
+            if skip_locked:
+                if is_locked(attr_name):
+                    continue
+            
+            value = cmds.getAttr(attr_name)
+            
+            if value != 1:
+                return False
+    
+    return True
+
+    
 def zero_xform_channels(transform):
     """
     Zero out the translate and rotate. Set scale to 1.
