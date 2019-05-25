@@ -1464,7 +1464,7 @@ class DuplicateHierarchy(object):
         
             
     def _get_children(self, transform):
-        children = cmds.listRelatives(transform, children = True, type = 'transform')
+        children = cmds.listRelatives(transform, children = True, path = True, type = 'transform')
         found = []
         
         if children:

@@ -1851,7 +1851,7 @@ def create_joint_u_strip_on_surface(surface, u_count, description, u_offset = 0,
     
     if u_count:
         for inc in range(0, u_count+1):
-            
+                        
             follicle = create_surface_follicle(surface, description, uv = [u_percent, u_offset])
             cmds.select(cl = True)
             joint = cmds.joint(n = core.inc_name('joint_%s' % description) )
