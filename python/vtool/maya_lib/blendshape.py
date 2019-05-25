@@ -1619,7 +1619,8 @@ class ShapeComboManager(object):
                 
                 bar.status('Loading shape: %s' % shape)
                 
-                self._add_shape_variable_and_connections(shape)
+                if not attr.is_connected(self._get_variable(shape)):
+                    self._add_shape_variable_and_connections(shape)
                 
                 bar.next()
             bar.end()
@@ -1630,7 +1631,8 @@ class ShapeComboManager(object):
             for shape in inbetweens:
                 bar.status('Loading inbetween: %s' % shape)
                 
-                self._add_shape_variable_and_connections(shape, add_variable = False)
+                if not attr.is_connected(self._get_variable(shape)):
+                    self._add_shape_variable_and_connections(shape, add_variable = False)
                 
                 bar.next()
                 
@@ -1643,7 +1645,8 @@ class ShapeComboManager(object):
             for combo in combos:
                 bar.status('Loading combo: %s' % combo)
                 
-                self._setup_combo_connections(combo)
+                if not attr.is_connected(self._get_variable(combo)):
+                    self._setup_combo_connections(combo)
             
                 bar.next()
                 
@@ -1728,7 +1731,7 @@ class ShapeComboManager(object):
             except:
                 pass
     
-    @core.undo_chunk
+    @core.undo_off
     def add_meshes(self, meshes, preserve_combos = False, preserve_inbetweens = False, delete_shape_on_add = False):
         
         shapes, combos, inbetweens = self.get_shape_and_combo_lists(meshes)
@@ -1753,6 +1756,7 @@ class ShapeComboManager(object):
             if delete_shape_on_add:
                 if cmds.objExists(shape):
                     cmds.delete(shape)
+                    cmds.flushUndo()
             
         
         vtool.util.show('Adding inbetweens.')
@@ -1803,7 +1807,7 @@ class ShapeComboManager(object):
           
         return shapes, combos, inbetweens
     
-    @core.undo_chunk
+    @core.undo_off
     def recreate_all(self):
         
         self.zero_out()
@@ -3116,7 +3120,20 @@ def recreate_blendshapes(blendshape_mesh = None, follow_mesh = None):
             
         if not shapes:
             cmds.delete(group)
-        
+
+
+def get_inbetween_parent(inbetween):
+    last_number = vtool.util.get_trailing_number(inbetween, as_string = True, number_count= 2)
+    
+    if not last_number:
+        return
+    
+    if not len(last_number) >= 2:
+        return
+    
+    first_part = inbetween[:-2]
+    
+    return first_part        
 
 def find_possible_combos(shapes):
     
@@ -3125,6 +3142,19 @@ def find_possible_combos(shapes):
 def find_increment_value(shape):
     
     return vtool.util.get_trailing_number(shape, as_string = True, number_count = 2)
+
+def is_inbetween(shape):
+    last_number = vtool.util.get_trailing_number(shape, as_string = True, number_count=2)
+        
+    if not last_number:
+        return False
+    
+    if not len(last_number) >= 2:
+        return False
+    
+    return True
+
+    
 
 def is_negative(shape):
     
@@ -3135,7 +3165,9 @@ def is_negative(shape):
     
     return False
 
-def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None):
+
+
+def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wrap_exclude_verts = []):
     
     if core.has_shape_of_type(blend_target, 'mesh'):
         blend_target = cmds.deformer(blend_target, type = 'blendShape')[0]
@@ -3166,15 +3198,32 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None):
         
         if wrap_mesh:
             
-            new_shape = cmds.duplicate(wrap_mesh, n = 'new_shape')
+            new_shape = cmds.duplicate(wrap_mesh, n = 'new_shape')[0]
             
             blend = cmds.blendShape(source_base, source_target_mesh)[0]
             cmds.setAttr('%s.%s' % (blend, source_base), 1)
             
-            deform.create_wrap(source_target_mesh, new_shape)
+            wrap_inst = deform.create_wrap(source_target_mesh, new_shape, return_class=True)
+            
+            if wrap_exclude_verts:
+            
+                new_verts = []
+                
+                for vert in wrap_exclude_verts:
+                    
+                    split_vert = vert.split('.')
+                    new_vert = new_shape + '.' + split_vert[-1]
+                    
+                    new_verts.append(new_vert)
+                
+                cmds.sets(new_verts, rm = '%sSet' % wrap_inst.wrap)
+                #cmds.deformer(wrap_inst.wrap, e = True, g = new_verts, rm = True)
+            
             
             cmds.setAttr('%s.%s' % (blend, source_base), 0)
+            
             cmds.delete(new_shape, ch = True)
+            cmds.delete(wrap_inst.base_meshes)
             
             cmds.parent(new_shape, w = True)
             cmds.delete(source_target_mesh)
@@ -3196,6 +3245,10 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None):
         
         cmds.delete(source_target_mesh)
         
+        if progress.break_signaled():
+            progress.end()
+            break
+        
         progress.next()
     
     if wrap_mesh:
@@ -3203,3 +3256,102 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None):
             cmds.delete(source_base)
     
     progress.end()
+
+def get_nice_names(names):
+    new_list = []
+    
+    for thing in names:
+        new_name = core.get_basename(thing, remove_namespace = True)
+        new_list.append(new_name)
+    
+    return new_list
+
+def get_shape_and_combo_lists(targets):
+        
+        shapes = []
+        negatives = []
+        inbetweens = []
+        combos = []
+        
+        
+        
+        underscore_count = {}
+        inbetween_underscore_count = {}
+        
+        targets.sort()
+        
+        nice_name_meshes = get_nice_names(targets)
+        
+        for mesh in targets:
+            
+            
+            
+            nice_name = core.get_basename(mesh, remove_namespace = True)
+            
+            
+                
+            
+            if nice_name.count('_') == 0:
+                
+                inbetween_parent = get_inbetween_parent(nice_name)
+                
+                if inbetween_parent:
+                    
+                    if inbetween_parent in nice_name_meshes:
+                        inbetweens.append(mesh)
+                
+                if not inbetween_parent:
+            
+                    if is_negative(mesh):
+                        negatives.append(mesh)
+                    else:
+                        shapes.append(mesh)
+                    
+                continue
+            
+            
+            
+            split_shape = nice_name.split('_')
+                
+            if len(split_shape) > 1:
+                
+                underscore_number = mesh.count('_')
+                
+                inbetween = False
+                
+                for split_name in split_shape:
+                    
+                    if is_inbetween(split_name):
+                        inbetween = True
+                        break
+                
+                if inbetween:
+                    
+                    if not inbetween_underscore_count.has_key(underscore_number):
+                        inbetween_underscore_count[underscore_number] = []
+                        
+                    inbetween_underscore_count[underscore_number].append(mesh)
+                    
+                if not inbetween:
+                    
+                    if not underscore_count.has_key(underscore_number):
+                        underscore_count[underscore_number] = []
+                        
+                    underscore_count[underscore_number].append(mesh)
+        
+        combo_keys = underscore_count.keys()
+        combo_keys.sort()
+        
+        inbetween_combo_keys = inbetween_underscore_count.keys()
+        inbetween_combo_keys.sort()
+        
+        for key in combo_keys:
+            combos += underscore_count[key]
+            
+        for key in inbetween_combo_keys:
+            combos += inbetween_underscore_count[key]
+        
+        shapes = shapes + negatives
+        
+        return shapes, combos, inbetweens   
+    
