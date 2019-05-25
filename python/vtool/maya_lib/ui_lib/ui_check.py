@@ -43,6 +43,7 @@ class CheckView(ui_core.MayaWindow):
         self.title_label.setMinimumWidth(235)
         
         scroll_widget.main_layout.addWidget(self.title_label)
+        
         scroll_widget.main_layout.addLayout(self.check_buttons)
         
         scroll.setWidget(scroll_widget)
@@ -132,6 +133,12 @@ class CheckView(ui_core.MayaWindow):
         cmds.select(sub_selection, add = True)
         
         cmds.viewFit()
+
+    def add_title(self, name_str):
+        
+        self.check_buttons.addSpacing(10)
+        self.check_buttons.addWidget(qt.QLabel(name_str))
+        
 
     def add_check(self, check_ui):
         
