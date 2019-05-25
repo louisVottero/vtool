@@ -2006,7 +2006,17 @@ class PoseBase(PoseGroup):
                 vtx_index = vtool.util.get_last_number(thing)
                 
                 pos = cmds.xform('%s.vtx[%s]' % (target_mesh, vtx_index), q = True, ws = True, t = True)
-                cmds.xform('%s.vtx[%s]' % (sculpt_mesh, vtx_index), ws = True, t = pos)
+                pos_sculpt = cmds.xform('%s.vtx[%s]' % (sculpt_mesh, vtx_index), q = True, ws = True, t = True)
+                
+                same = False
+                
+                if pos[0] == pos_sculpt[0]:
+                    if pos[1] == pos_sculpt[1]:
+                        if pos[2] == pos_sculpt[2]:
+                            same = True
+                
+                if not same:
+                    cmds.xform('%s.vtx[%s]' % (sculpt_mesh, vtx_index), ws = True, t = pos)
                 
                 if not sculpt_index in sculpts:
                     sculpts.append(sculpt_index)
