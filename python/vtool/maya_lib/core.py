@@ -1747,6 +1747,15 @@ def delete_empty_orig_nodes():
             
     print_help('Deleted Unused Intermediate Object or Orig nodes: %s' % origs)
     
+def delete_empty_nodes():
+    
+    nodes = get_empty_nodes()
+    
+    cmds.delete(nodes)
+    
+    print_help('Deleted Empty (Unconnected) nodes: %s' % nodes)
+    
+    
 #--- empty
 
 def get_empty_groups():
