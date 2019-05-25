@@ -1162,7 +1162,7 @@ class SplitMeshTarget(object):
             vtool.util.warning('Weight mesh specified. %s weight mesh does not exist for splitting' % self.weighted_mesh)
             return []
 
-        parent = cmds.listRelatives( target, p = True )
+        parent = cmds.listRelatives( target, p = True, f = True)
         if parent:
             parent = parent[0]
 
@@ -3039,7 +3039,9 @@ class MayaWrap(object):
             vtool.util.warning('%s could not be added to the wrap.  It does not exist.' % mesh)
             return
         
-        base = cmds.duplicate(mesh, n = 'wrapBase_%s' % mesh)[0]
+        nice_mesh_name = core.get_basename(mesh, remove_namespace = True)
+        
+        base = cmds.duplicate(mesh, n = 'wrapBase_%s' % nice_mesh_name)[0]
         
         core.rename_shapes(base)
         
@@ -4562,17 +4564,19 @@ def set_deformer_weights(weights, deformer, index = 0):
     
     if type(weights) == list:
         
-    
-        for inc in xrange(0, len(weights) ):
-            cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights[inc])
+        cmds.setAttr('%s.weightList[%s].weights[0:%s]' % (deformer, index, (len(weights)-1)), *weights)
+        #for inc in xrange(0, len(weights) ):
+        #    cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights[inc])
     
     if type(weights) == float or type(weights) == int:
         
         meshes = cmds.deformer(deformer, q = True, g = True)
         vert_count = cmds.polyEvaluate(meshes[index], v=1)
         
-        for inc in xrange(0, vert_count):
-            cmds.setAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc), weights)
+        weights = [weights] * vert_count
+        
+        #for inc in xrange(0, vert_count):
+        cmds.setAttr('%s.weightList[%s].weights[0:%s]' % (deformer, index,(len(weights)-1)), *weights)
             
 def get_deformer_weights(deformer, index = 0):
     """
@@ -4662,7 +4666,7 @@ def invert_blendshape_weight(blendshape_deformer, index = -1):
 
 
 @core.undo_chunk
-def blend_into_intermediate(source_mesh = None, target_mesh = None):
+def blend_into_intermediate(source_mesh = None, target_mesh = None, keep_history = False):
     
     meshes = [source_mesh, target_mesh]
     
@@ -4698,7 +4702,8 @@ def blend_into_intermediate(source_mesh = None, target_mesh = None):
     cmds.setAttr('%s.intermediateObject' % intermediate, 0)
     
     quick_blendshape(meshes[0], intermediate)
-    cmds.delete(intermediate, ch = True)
+    if not keep_history:
+        cmds.delete(intermediate, ch = True)
 
     cmds.setAttr('%s.intermediateObject' % intermediate, 1)
 
@@ -4742,7 +4747,7 @@ def set_all_weights_on_wire(wire_deformer, weight, slot = 0):
     for inc in xrange(0, len(indices) ):
         cmds.setAttr('%s.weightList[%s].weights[%s]' % (wire_deformer, slot, inc), weight)
 
-def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence):
+def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence, auto_prune = False):
     """
     Set the wire weights from a skinned joint.
     
@@ -4765,6 +4770,20 @@ def set_wire_weights_from_skin_influence(wire_deformer, weighted_mesh, influence
     weight = weights[index]
     
     set_wire_weights(weight, wire_deformer)
+    
+    
+    if auto_prune:
+        found = []
+        
+        for index in range(0,len(weight)):
+                            
+            if weight[index] < 0.0001:
+                found.append(index)
+        
+        geometry = cmds.deformer(wire_deformer, q = True, geometry = True)
+        verts = geo.convert_indices_to_mesh_vertices(found, geometry[0])
+        
+        cmds.sets(verts, rm = '%sSet' % wire_deformer)
     
 def map_influence_on_verts(verts, skin_deformer):
     """
@@ -5817,7 +5836,7 @@ def get_closest_verts_to_joints(joints, verts):
         
     return joint_map    
 
-def create_wrap(source_mesh, target_mesh):
+def create_wrap(source_mesh, target_mesh, return_class = False):
     """
     Create an Maya exclusive bind wrap. 
     Source_mesh drives target_mesh.
@@ -5841,6 +5860,12 @@ def create_wrap(source_mesh, target_mesh):
     wrap.set_driver_meshes(source_mesh)
     
     wrap.create()
+    
+    
+    
+    if return_class:
+        return wrap
+    
     
     return wrap.base_meshes
 
