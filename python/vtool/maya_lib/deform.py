@@ -4591,13 +4591,21 @@ def get_deformer_weights(deformer, index = 0):
         
     """
     
-    meshes = cmds.deformer(deformer, q = True, g = True)
     
-    try:
-        mesh = meshes[index]
-    except:
-        vtool.util.warning('index "%s" out of range of deformed meshes.' % index)
-        return
+    meshes = cmds.deformer(deformer, q = True, g = True)
+    mesh_indices = attr.get_indices('%s.input' % deformer)
+    mesh = None
+    
+    for sub_mesh, mesh_index in zip(meshes, mesh_indices):
+        if mesh_index == index:
+            mesh = sub_mesh
+    
+    if not mesh:
+        try:
+            mesh = meshes[index]
+        except:
+            vtool.util.warning('index "%s" out of range of deformed meshes.' % index)
+            return
     
     indices = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
             
