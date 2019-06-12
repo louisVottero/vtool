@@ -10081,7 +10081,7 @@ class FeatherStripRig(CurveRig):
                 point_node = attr.get_attribute_input('%s.translateX' % joints1[inc], node_only = True)
             
             if self.up_parent:
-                world_up_vector = [0,1,0]
+                world_up_vector = [0,0,0]
                 point_node = None
                 
             if not self.up_parent:
