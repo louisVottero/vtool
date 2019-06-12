@@ -1761,7 +1761,7 @@ class DeformerWeightData(MayaCustomData):
                 
                 for line in lines:
                     if not line:
-                        continue
+                        continue                    
                     try:
                         weights = eval(line)
                     except:
@@ -1770,13 +1770,16 @@ class DeformerWeightData(MayaCustomData):
                     
                     weights_list.append(weights)
             
-                    if cmds.objExists(deformer):
-                        maya_lib.deform.set_deformer_weights(weights, deformer, inc)
-                
-                    if not cmds.objExists(deformer):
-                        util.warning('Import failed: Deformer %s does not exist.' % deformer)    
-                 
                     inc += 1
+                        
+            for weights_part, index in zip(weights_list, geometry_indices): 
+                    
+                maya_lib.deform.set_deformer_weights(weights_part, deformer, index)
+            
+                if not cmds.objExists(deformer):
+                    util.warning('Import failed: Deformer %s does not exist.' % deformer)    
+             
+                
                  
         maya_lib.core.print_help('Imported %s data' % self.name)
         
