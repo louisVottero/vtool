@@ -845,7 +845,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
     def _tab_changed(self):
         
         if self.tab_widget.currentIndex() == 0:
-build             #if self.build_widget:
+            #if self.build_widget:
                 #self.build_widget.hide()
                 
             self.last_tab = 0
