@@ -1970,7 +1970,7 @@ class ProcessSaveFileWidget(MayaSaveFileWidget):
     def _build_widgets(self):
         
         save_button = self._create_button('Save')
-        save_button.setMinimumWidth(100)
+        save_button.setMinimumWidth(vtool.qt_ui._save_button_minimum)
         open_button = self._create_button('Open')
         open_button.setMinimumWidth(100)
         save_button.clicked.connect( self._save_file )

@@ -11,6 +11,8 @@ class ProcessSettings(qt_ui.BasicWidget):
         
         super(ProcessSettings, self).__init__()
         
+        self.setContentsMargins(1,1,1,1)
+        
     def set_directory(self, directory):
         self.directory = directory
         self.name_widget.set_directory(self.directory)

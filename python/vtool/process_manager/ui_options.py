@@ -196,7 +196,7 @@ class ProcessOptionScroll(qt.QScrollArea):
         super(ProcessOptionScroll, self).__init__()
         
         self.setWidgetResizable(True)
-        self.setMinimumWidth(300)
+        self.setMinimumWidth(100)
         self.setFocusPolicy(qt.QtCore.Qt.NoFocus)
     
 class EditOptions(qt_ui.BasicWidget):

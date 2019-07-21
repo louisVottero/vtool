@@ -182,8 +182,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process_splitter = qt.QSplitter()
         self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
         
-        
-        
         self.process_splitter.setContentsMargins(1,1,1,1)
         self.process_splitter.addWidget(self.view_widget)
         

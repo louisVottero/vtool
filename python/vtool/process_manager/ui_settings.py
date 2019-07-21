@@ -13,7 +13,6 @@ class SettingsWidget(qt_ui.BasicWidget):
     
     def __init__(self):
         
-        
         super(SettingsWidget, self).__init__()
         
         self.code_directories = []
@@ -27,7 +26,7 @@ class SettingsWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
-        self.setContentsMargins(10,10,10,10)
+        self.setContentsMargins(1,1,1,1)
         
         self.tab_widget = qt.QTabWidget()
         
@@ -56,96 +55,33 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         self.options_widget = qt_ui.BasicWidget()
         self.options_widget.main_layout.setSpacing(5)
-        self.options_widget.main_layout.setContentsMargins(10,10,10,10)
+        self.options_widget.main_layout.setContentsMargins(1,1,1,1)
         
         scroll = qt.QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(self.options_widget)
         
-        process_group = qt.QGroupBox('Process')
-        group_layout = qt.QVBoxLayout()
-        process_group.setLayout(group_layout)
-        
-        
-        process_maya_group = qt.QGroupBox('Maya')
-        maya_group_layout = qt.QVBoxLayout()
-        process_maya_group.setLayout(maya_group_layout)
-        
-        self.auto_focus_scene = qt_ui.GetCheckBox('Auto Focus Scene')
-        self.auto_focus_scene.set_state(True)
-        
-        self.error_stop = qt_ui.GetCheckBox('Stop Process on error.')
-        self.error_stop.check_changed.connect(self._set_stop_on_error)
-        
-        self.process_start_new_scene = qt_ui.GetCheckBox('Start New Scene on Process')
-        self.process_start_new_scene.set_state(True)
-        
-        self.process_start_new_scene.check_changed.connect(self._set_start_new_scene_on_process)
-        
-        self.auto_focus_scene.check_changed.connect(self._set_auto_focus_scene)
-        
-        maya_group_layout.addWidget(self.process_start_new_scene)
-        maya_group_layout.addWidget(self.auto_focus_scene)
-        
-        group_layout.addWidget(self.error_stop)
-        group_layout.addWidget(process_maya_group)
-        
-        self.options_widget.main_layout.addWidget(process_group)
+        #process_group = qt.QGroupBox('Process')
+        self.process_group = ProcessGroup()
+        self.process_group.set_collapsable(True)
         
         self.code_tab_group = CodeTabGroup()
         self.code_tab_group.code_text_size_changed.connect(self.code_text_size_changed)
+        
         self.shotgun_group = ShotgunGroup()
         
+        self.options_widget.main_layout.addWidget(self.process_group)        
         self.options_widget.main_layout.addWidget(self.code_tab_group)
         self.options_widget.main_layout.addWidget(self.shotgun_group)
         
-        
+        self.process_group.collapse_group()
+        self.shotgun_group.collapse_group()
+        self.code_tab_group.collapse_group()
         
         scroll.setWidget(self.options_widget)
         
-        
         return scroll
         
-    def _set_stop_on_error(self):
-        self.settings.set('stop_on_error', self.error_stop.get_state())
-        
-    def _set_start_new_scene_on_process(self):
-        
-        self.settings.set('start_new_scene_on_process', self.process_start_new_scene.get_state())
-        
-    def _set_auto_focus_scene(self):
-        
-        self.settings.set('auto_focus_scene', self.auto_focus_scene.get_state())
-        
-    
-        
-    def _get_stop_on_error(self):
-        value = self.settings.get('stop_on_error')
-        
-        if value:
-            self.error_stop.set_state(True)
-    
-            
-    def _get_start_new_scene_on_process(self):
-        value = self.settings.get('start_new_scene_on_process')
-        
-        if value:
-            self.process_start_new_scene.set_state(True)
-        if value == None:
-            self.settings.set('start_new_scene_on_process', True)
-        if value == False:
-            self.process_start_new_scene.set_state(False)
-    
-    def _get_auto_focus_scene(self):
-        value = self.settings.get('auto_focus_scene')
-        
-        if value:
-            self.auto_focus_scene.set_state(True)
-        if value == None:
-            self.settings.set('auto_focus_scene', True)
-        if value == False:
-            self.auto_focus_scene.set_state(False)
-    
     def _project_directory_changed(self, project):
         
         self.project_directory_changed.emit(project)
@@ -190,10 +126,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.code_tab_group.editor_directory_widget.set_settings(settings)
         
         
-        self._get_stop_on_error()
-        self._get_start_new_scene_on_process()
-        self._get_auto_focus_scene()
-        
+        self.process_group.set_settings(settings)
         self.shotgun_group.set_settings(settings)
         self.code_tab_group.set_settings(settings)
         
@@ -207,6 +140,86 @@ class SettingsWidget(qt_ui.BasicWidget):
         history = self.settings.get('template_history')
         
         self.template_directory_widget.list.refresh_list(current, history)
+
+
+class ProcessGroup(qt_ui.Group):
+
+    def __init__(self):
+        super(ProcessGroup, self).__init__('Process')
+        
+    def _build_widgets(self):
+        
+        process_maya_group = qt.QGroupBox('Maya')
+        maya_group_layout = qt.QVBoxLayout()
+        process_maya_group.setLayout(maya_group_layout)
+        
+        self.auto_focus_scene = qt_ui.GetCheckBox('Auto Focus Scene')
+        self.auto_focus_scene.set_state(True)
+        
+        self.error_stop = qt_ui.GetCheckBox('Stop Process on error.')
+        self.error_stop.check_changed.connect(self._set_stop_on_error)
+        
+        self.process_start_new_scene = qt_ui.GetCheckBox('Start New Scene on Process')
+        self.process_start_new_scene.set_state(True)
+        
+        self.process_start_new_scene.check_changed.connect(self._set_start_new_scene_on_process)
+        
+        self.auto_focus_scene.check_changed.connect(self._set_auto_focus_scene)
+        
+        maya_group_layout.addWidget(self.process_start_new_scene)
+        maya_group_layout.addWidget(self.auto_focus_scene)
+        
+        self.main_layout.addWidget(self.error_stop)
+        self.main_layout.addWidget(process_maya_group)
+        
+    def _set_stop_on_error(self):
+        self.settings.set('stop_on_error', self.error_stop.get_state())
+        
+    def _set_start_new_scene_on_process(self):
+        
+        self.settings.set('start_new_scene_on_process', self.process_start_new_scene.get_state())
+        
+    def _set_auto_focus_scene(self):
+        
+        self.settings.set('auto_focus_scene', self.auto_focus_scene.get_state())
+        
+    
+        
+    def _get_stop_on_error(self):
+        value = self.settings.get('stop_on_error')
+        
+        if value:
+            self.error_stop.set_state(True)
+    
+            
+    def _get_start_new_scene_on_process(self):
+        value = self.settings.get('start_new_scene_on_process')
+        
+        if value:
+            self.process_start_new_scene.set_state(True)
+        if value == None:
+            self.settings.set('start_new_scene_on_process', True)
+        if value == False:
+            self.process_start_new_scene.set_state(False)
+    
+    def _get_auto_focus_scene(self):
+        value = self.settings.get('auto_focus_scene')
+        
+        if value:
+            self.auto_focus_scene.set_state(True)
+        if value == None:
+            self.settings.set('auto_focus_scene', True)
+        if value == False:
+            self.auto_focus_scene.set_state(False)      
+            
+    def set_settings(self, settings):
+        
+        self.settings = settings
+        
+        self._get_stop_on_error()
+        self._get_start_new_scene_on_process()
+        self._get_auto_focus_scene()
+        
         
 class CodeTabGroup(qt_ui.Group):
     
@@ -314,8 +327,6 @@ class ShotgunGroup(qt_ui.Group):
     
     def __init__(self):
         super(ShotgunGroup, self).__init__('Shotgun Settings')
-        
-        
     
     def _build_widgets(self):
         super(ShotgunGroup,self)._build_widgets()
