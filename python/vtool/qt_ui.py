@@ -9,6 +9,9 @@ import re
 import random
 import sys
 
+_save_button_minimum = 60
+_load_button_mimimum = 60
+
 QWIDGETSIZE_MAX = qt.QWIDGETSIZE_MAX
 
 global type_QT
@@ -1545,8 +1548,8 @@ class SaveFileWidget(DirectoryWidget):
         
         self.save_button.setMaximumWidth(100)
         self.load_button.setMaximumWidth(100)
-        self.save_button.setMinimumWidth(70)
-        self.load_button.setMinimumWidth(70)
+        self.save_button.setMinimumWidth(_save_button_minimum)
+        self.load_button.setMinimumWidth(_load_button_mimimum)
         
         self.save_button.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Fixed)
         self.load_button.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Fixed)
@@ -2023,7 +2026,7 @@ class GetString(BasicWidget):
         
         self.label.setText(label)
         if label:
-            self.label.setMinimumWidth(100)
+            self.label.setMinimumWidth(50)
         
     def get_label(self):
         return self.label.text()
@@ -2144,7 +2147,7 @@ class GetDirectoryWidget(DirectoryWidget):
     def _build_widgets(self):
         
         self.directory_label = qt.QLabel('directory')
-        self.directory_label.setMinimumWidth(100)
+        self.directory_label.setMinimumWidth(60)
         self.directory_label.setMaximumWidth(100)
         
         self.directory_edit = qt.QLineEdit()
@@ -2446,6 +2449,10 @@ class GetCheckBox(BasicWidget):
 class Group(qt.QGroupBox):
     
     def __init__(self, name):
+        
+        if not name.startswith('-  '):
+            name = '-  ' + name
+        
         super(Group, self).__init__()
         
         self._collapsable = True
@@ -2457,7 +2464,7 @@ class Group(qt.QGroupBox):
         self._widget = qt.QWidget()
         
         manager_layout = qt.QVBoxLayout()
-        manager_layout.setContentsMargins(10,10,10,10)
+        manager_layout.setContentsMargins(4,4,4,4)
         manager_layout.setSpacing(2)
         manager_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
         
@@ -2483,24 +2490,40 @@ class Group(qt.QGroupBox):
             if event.y() < 30:
                 
                 if self._widget.isHidden():
-                    self._widget.setVisible(True)
+                    self.expand_group()
+                    #self._widget.setVisible(True)
                 elif not self._widget.isHidden():
-                    self._widget.setVisible(False)
+                    self.collapse_group()
+                    #self._widget.setVisible(False)
         
     def _build_widgets(self):
-        
         pass
         
     def collapse_group(self):
         
         self._widget.setVisible(False)
+
+        title = self.title()
+        
+        title = title.replace('- ', '+')
+        
+        self.setTitle(title)
         
     def expand_group(self):
         
-        self.setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX)
-        self.setVisible(True)
+        #self.setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX)
+        self._widget.setVisible(True)
+        
+        title = self.title()
+        
+        title = title.replace('+', '- ')
+        
+        self.setTitle(title)
         
     def set_title(self, titlename):
+        
+        if not titlename.startswith('+ '):
+            titlename = '+ ' + titlename
         
         self.setTitle(titlename)
         
@@ -5598,7 +5621,7 @@ class CompactHistoryWidget(BasicWidget):
         self.setMaximumWidth(350)
         self.main_layout.setContentsMargins(1,1,1,1)
         
-        save_default.setMinimumWidth(80)
+        save_default.setMinimumWidth(_save_button_minimum)
         
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         
@@ -5807,6 +5830,8 @@ class DefineControlNameWidget(Group):
         self._update_settings = True
         
         super(DefineControlNameWidget, self).__init__('Define Control Name')
+        
+        self.setContentsMargins(1,1,1,1)
         
     def _build_widgets(self):
         
