@@ -149,6 +149,10 @@ class ProcessGroup(qt_ui.Group):
         
     def _build_widgets(self):
         
+        
+        backup_directory = qt_ui.GetDirectoryWidget()
+        backup_directory.set_label('Backup Directory')
+        
         process_maya_group = qt.QGroupBox('Maya')
         maya_group_layout = qt.QVBoxLayout()
         process_maya_group.setLayout(maya_group_layout)
@@ -169,6 +173,7 @@ class ProcessGroup(qt_ui.Group):
         maya_group_layout.addWidget(self.process_start_new_scene)
         maya_group_layout.addWidget(self.auto_focus_scene)
         
+        self.main_layout.addWidget(backup_directory)
         self.main_layout.addWidget(self.error_stop)
         self.main_layout.addWidget(process_maya_group)
         
