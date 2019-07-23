@@ -618,9 +618,6 @@ class Process(object):
             basename = util_file.get_basename(dir_name)
             path = util_file.get_dirname(dir_name)
             
-            
-            
-            
             parent_process = Process(basename)
             parent_process.set_directory(path)
         
@@ -633,6 +630,24 @@ class Process(object):
         process = Process()
         process.set_directory(path)
         return process
+        
+    def backup(self, directory = None):
+        
+        current_path = self.get_path()
+        
+        backup_path = util_file.join_path(current_path, self.backup_folder_name)
+        backup_path = util_file.create_dir('temp_process_backup', backup_path)
+        
+        target_process = Process()
+        target_process.set_directory(backup_path)
+        
+        copy_process(self, target_process)
+        
+        version = util_file.VersionFile(backup_path)
+        version.save('Backup')
+        
+        util_file.delete_dir(backup_path)
+        
         
     #--- data
         
@@ -1036,6 +1051,7 @@ class Process(object):
         target_file = self.get_data_file_or_folder(data_name, sub_folder_name)
                 
         copy(source_file, target_file)
+        
     #code ---
     
     def is_code_folder(self, name):
