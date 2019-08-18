@@ -290,10 +290,11 @@ class CodeWidget(vtool.qt_ui.BasicWidget):
         
         policy = self.sizePolicy()
         
-        policy.setHorizontalPolicy(policy.Minimum)
+        policy.setHorizontalPolicy(policy.Maximum)
         policy.setHorizontalStretch(2)
         
         self.setSizePolicy(policy)
+        
                
         self.directory = None
         
@@ -515,15 +516,11 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
         super(ScriptWidget, self).__init__()
         
         policy = self.sizePolicy()
-        
-        policy.setHorizontalPolicy(policy.Maximum)
+        policy.setHorizontalPolicy(policy.Minimum)
         policy.setHorizontalStretch(0)
-        
         self.setSizePolicy(policy)
         
         self.exteranl_code_libarary = None
-        
-        
         
     def _define_main_layout(self):
         return qt.QVBoxLayout()
