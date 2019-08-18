@@ -10,6 +10,9 @@ import process
 
 from vtool import qt
 
+from vtool import logger
+log = logger.get_logger(__name__) 
+
 class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
     
     data_created = vtool.qt_ui.create_signal(object)
@@ -37,9 +40,6 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
         
         self.datatype_widget = DataTypeWidget()
         self.datatype_widget.data_added.connect(self._add_data)
-        
-        
-        
         
         splitter.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)   
         self.main_layout.addWidget(splitter, stretch = 1)
@@ -230,6 +230,8 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                 
     def set_directory(self, directory):
         super(DataProcessWidget, self).set_directory(directory)
+
+        log.info('Setting data directory')
 
         self.data_tree_widget.set_directory(directory)
         
@@ -1946,6 +1948,8 @@ class ProcessBuildDataWidget(MayaFileWidget):
     
     def update_data(self, data_directory):
         
+        log.debug('Update build data folder')
+        
         data_folder = vtool.data.DataFolder('build', data_directory)
         
         data_type = data_folder.get_data_type()
@@ -1954,11 +1958,12 @@ class ProcessBuildDataWidget(MayaFileWidget):
             self.set_data_type(self.ascii_data)
         if data_type == 'maya.binary':
             self.set_data_type(self.binary_data)
-        
         if data_type == None:
             data_folder.set_data_type('maya.ascii')
             self.set_data_type(self.ascii_data)
-
+        
+        log.debug('Finished updating build data folder')
+        
     def set_data_type(self, data_class):
         
         self.data_class_type = data_class
