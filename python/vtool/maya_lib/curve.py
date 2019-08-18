@@ -615,8 +615,6 @@ def set_shapes_as_text_curves(transform, text_string):
     
     transforms = cmds.listRelatives(text, ad = True, type = 'transform')
     
-    print transforms
-    
     for text_transform in transforms:
         shapes = get_shapes(text_transform)
         
