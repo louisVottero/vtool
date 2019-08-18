@@ -1,19 +1,5 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
-from vtool import qt_ui
-
-if qt_ui.is_pyqt():
-    from PyQt4 import QtCore, Qt, uic
-    from PyQt4.QtGui import *
-if qt_ui.is_pyside():
-    from PySide import QtCore
-    from PySide.QtGui import *
-if qt_ui.is_pyside2():
-    from PySide2 import QtCore
-    from PySide2.QtGui import *
-    from PySide2.QtWidgets import *
-
-
 import os
 import string
 
@@ -1443,8 +1429,11 @@ def get_under_cursor(use_qt = True):
             return
 
     if use_qt:
-        pos = QCursor.pos()
-        widget = qApp.widgetAt(pos)
+        
+        from vtool import qt
+        
+        pos = qt.QCursor.pos()
+        widget = qt.qApp.widgetAt(pos)
         
         if not widget:
             return
