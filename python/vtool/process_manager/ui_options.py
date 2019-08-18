@@ -23,7 +23,7 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
         policy = self.sizePolicy()
         policy.setHorizontalPolicy(policy.Expanding)
         policy.setVerticalPolicy(policy.Expanding)
-        self.main_layout.setContentsMargins(1,1,1,1)
+        self.main_layout.setContentsMargins(0,0,0,0)
         self.setSizePolicy(policy)
         
     def _build_widgets(self):
