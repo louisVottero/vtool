@@ -4,20 +4,22 @@ import os
 import sys
 import traceback
 import string
+import __builtin__
 
 from vtool import util
 from vtool import util_file
 from vtool import data
-import __builtin__
-import os
 
 if util.is_in_maya():
     import maya.cmds as cmds
     from vtool.maya_lib import core
 
+from vtool import logger
+log = logger.get_logger(__name__) 
 
+log.info('Accessing')
 
-def find_processes(directory = None, return_also_non_process_list = False):
+def find_processes(directory = None, return_also_non_process_list = False, stop_at_one = False):
     """
     This will try to find the processes in the supplied directory. If no directory supplied, it will search the current working directory.
     
@@ -34,9 +36,19 @@ def find_processes(directory = None, return_also_non_process_list = False):
     found = []
     found_non = []
     
+    log.debug('Find Processes %s' % directory)
+    
     for root, dirs, files in os.walk(directory):
         
         for folder in dirs:
+            if folder.startswith('.'):
+                continue
+            
+            if stop_at_one:
+                #only check found not found_non, because function is find "processes"
+                if found:
+                    break
+                        
             full_path = util_file.join_path(root, folder)
             
             if is_process(full_path):
@@ -127,37 +139,43 @@ class Process(object):
     
     def __init__(self, name = None):
         
+        log.debug('Initialize process %s' % name)
+        
         self.directory = util_file.get_cwd()
         
         self.process_name = name
-        self.parts = []
+        
         self.external_code_paths = []
+        
+        self._reset()
+
+    def _reset(self):
+        self.parts = []
         self.option_values = {}
         self.runtime_values = {}
         self.option_settings = None
         self.settings = None
         self._control_inst = None
-        self._runtime_globals = {}
-        
+        self._runtime_globals = {}       
         
     def _setup_options(self):
         
         if not self.option_settings:
+            log.debug('Setup options')
             options = util_file.SettingsFile()
             self.option_settings = options
         
-         
-        self.option_settings.set_directory(self.get_path(), 'options.json')
-        
-        
+            self.option_settings.set_directory(self.get_path(), 'options.json')
         
     def _setup_settings(self):
+        
         if not self.settings:
+            log.debug('Setup process settings')
             settings = util_file.SettingsFile()
             self.settings = settings
             
-        self.settings.set_directory(self.get_path(), 'settings.json')
-        
+            self.settings.set_directory(self.get_path(), 'settings.json')
+            
     def _set_name(self, new_name):
         
         new_name = new_name.strip()
@@ -369,12 +387,28 @@ class Process(object):
         """
         Args:
             directory (str): Directory path to the process that should be created or where an existing process lives.
-        """ 
-        self.directory = directory
+        """
         
-        #util_file.create_dir(self.backup_folder_name ,self.get_path())           
-        #self._refresh_process()
+        log.debug('Set process directory: %s' % directory) 
+        self.directory = directory  
         
+        self._reset()    
+        
+    def load(self, name):
+        """
+        Loads the named process into the instance.
+        
+        Args:
+            name (str): Name of a process found in the directory.
+            
+        Returns:
+            None
+            
+        """
+        log.debug('Load process: %s' % name)
+        self._set_name(name)
+        
+        self._reset()
         
     def set_external_code_library(self, directory):
         """
@@ -451,6 +485,9 @@ class Process(object):
             str: The full path to the process folder. 
             If the process hasn't been created yet, this will return the directory set in set_directory.        
         """
+        
+        if not self.directory:
+            return
         
         if self.process_name:
             return util_file.join_path(self.directory, self.process_name)
@@ -631,23 +668,68 @@ class Process(object):
         process.set_directory(path)
         return process
         
-    def backup(self, directory = None):
+    def get_backup_path(self, directory = None):
         
-        current_path = self.get_path()
+        if not self.directory:
+            return None
         
-        backup_path = util_file.join_path(current_path, self.backup_folder_name)
+        backup_directory = None
+        
+        if directory:
+            backup_directory = directory
+        
+        if not directory:
+            settings = util_file.get_vetala_settings_inst()
+            backup = settings.get('backup_directory')
+        
+            if util_file.is_dir(backup):
+            
+                project = settings.get('project_directory')    
+                process_inst = Process()
+                process_inst.set_directory(directory)
+                
+                backup_directory = directory    
+                
+                backup_settings = util_file.SettingsFile()
+                backup_settings.set_directory(backup)
+                project_name = util_file.fix_slashes(project)
+                project_name = project_name.replace('/', '_')
+                project_name = project_name.replace(':', '_')
+                backup_settings.set(project_name, project)
+                
+                backup_directory = util_file.create_dir(project_name, backup)
+                
+                process_path =  process_inst.get_path()
+                common_path = util_file.remove_common_path_simple(project, process_path)
+                
+                if common_path:
+                    backup_directory = util_file.create_dir(util_file.join_path(backup_directory, common_path))
+                
+        
+        if not backup_directory:
+            backup_directory = self.get_path()
+        
+        backup_path = util_file.join_path(backup_directory, self.backup_folder_name)    
+        
+        return backup_path
+        
+    def backup(self, comment = 'Backup', directory = None):
+        
+        backup_path = self.get_backup_path(directory)
+        
         backup_path = util_file.create_dir('temp_process_backup', backup_path)
         
         target_process = Process()
         target_process.set_directory(backup_path)
         
+        util.show('Backing up to custom directory: %s' % backup_path)
+        
         copy_process(self, target_process)
         
         version = util_file.VersionFile(backup_path)
-        version.save('Backup')
+        version.save(comment)
         
         util_file.delete_dir(backup_path)
-        
         
     #--- data
         
@@ -1936,20 +2018,7 @@ class Process(object):
                         
     #--- run
     
-    def load(self, name):
-        """
-        Loads the named process into the instance.
-        
-        Args:
-            name (str): Name of a process found in the directory.
-            
-        Returns:
-            None
-            
-        """
-        self._set_name(name)
-        
-        self._refresh_process()
+
         
     def add_part(self, name):
         """
@@ -2850,3 +2919,51 @@ def set_project_setting(name, value, project_directory,  settings_inst = None):
     project_settings_dict[project_directory][name] = value
     
     settings_inst.set('project settings', project_settings_dict)
+    
+def get_custom_backup_directory(process_directory):
+        
+    settings = util_file.get_vetala_settings_inst()
+    backup = settings.get('backup_directory')
+    
+    if util_file.is_dir(backup):
+    
+        project = settings.get('project_directory')    
+        process_inst = Process()
+        process_inst.set_directory(process_directory)
+        
+        backup_directory = process_directory    
+        
+        backup_settings = util_file.SettingsFile()
+        backup_settings.set_directory(backup)
+        project_name = util_file.fix_slashes(project)
+        project_name = project_name.replace('/', '_')
+        project_name = project_name.replace(':', '_')
+        backup_settings.set(project_name, project)
+        
+        backup_directory = util_file.create_dir(project_name, backup)
+        
+        util.show('Backing up to custom directory: %s' % backup_directory)
+        
+        process_path =  process_inst.get_path()
+        common_path = util_file.remove_common_path_simple(project, process_path)
+        
+        backup_directory = util_file.create_dir(util_file.join_path(backup_directory, common_path))
+        
+    if not backup_directory:
+        return
+    
+    return backup_directory
+
+def backup_process(process_path = None, comment = 'Backup', backup_directory = None):
+    """
+    Backs up the process at the path to the process/.backup folder
+    If backup directory given, backs up there.
+    
+    """
+    process_inst = Process()
+    process_inst.set_directory(process_path)
+    
+    if not backup_directory:
+        backup_directory = get_custom_backup_directory(process_path)
+    
+    process_inst.backup(comment, backup_directory)
