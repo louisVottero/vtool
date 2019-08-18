@@ -150,8 +150,9 @@ class ProcessGroup(qt_ui.Group):
     def _build_widgets(self):
         
         
-        backup_directory = qt_ui.GetDirectoryWidget()
-        backup_directory.set_label('Backup Directory')
+        self.backup_directory = qt_ui.GetDirectoryWidget()
+        self.backup_directory.set_label('Backup Directory')
+        self.backup_directory.directory_changed.connect(self._set_backup_directory)
         
         process_maya_group = qt.QGroupBox('Maya')
         maya_group_layout = qt.QVBoxLayout()
@@ -173,9 +174,12 @@ class ProcessGroup(qt_ui.Group):
         maya_group_layout.addWidget(self.process_start_new_scene)
         maya_group_layout.addWidget(self.auto_focus_scene)
         
-        self.main_layout.addWidget(backup_directory)
+        self.main_layout.addWidget(self.backup_directory)
         self.main_layout.addWidget(self.error_stop)
         self.main_layout.addWidget(process_maya_group)
+        
+    def _set_backup_directory(self, directory):
+        self.settings.set('backup_directory', directory)
         
     def _set_stop_on_error(self):
         self.settings.set('stop_on_error', self.error_stop.get_state())
@@ -188,7 +192,10 @@ class ProcessGroup(qt_ui.Group):
         
         self.settings.set('auto_focus_scene', self.auto_focus_scene.get_state())
         
-    
+    def _get_backup_directory(self):
+        backup = self.settings.get('backup_directory')
+        self.backup_directory.set_directory(backup)
+        
         
     def _get_stop_on_error(self):
         value = self.settings.get('stop_on_error')
@@ -221,6 +228,7 @@ class ProcessGroup(qt_ui.Group):
         
         self.settings = settings
         
+        self._get_backup_directory()
         self._get_stop_on_error()
         self._get_start_new_scene_on_process()
         self._get_auto_focus_scene()
@@ -451,11 +459,10 @@ class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
                 self.directory_changed.emit(filename)
                 self.settings.set('external_editor', str(filename))
     
-    def _text_changed(self):
+    def _text_changed(self, text):
+        super(ExternalEditorWidget, self)._text_changed(text)
         
         directory = self.get_directory()
-        
-        self.directory_changed.emit(directory)
         
         self.settings.set('external_editor', str(directory))
     
@@ -515,9 +522,11 @@ class ShotgunToolkitWidget(qt_ui.GetDirectoryWidget):
         
         filename = self.settings.get('shotgun_toolkit')
         
-        if util_file.is_dir(str(filename)):
-            self.set_directory_text(filename)
-            self._test_python_path(filename)
+        if filename:
+        
+            if util_file.is_dir(str(filename)):
+                self.set_directory_text(filename)
+                self._test_python_path(filename)
             
         
         
