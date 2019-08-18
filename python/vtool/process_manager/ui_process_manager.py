@@ -15,7 +15,9 @@ import ui_process_settings
 import ui_data
 import ui_code
 import ui_settings
-        
+
+from vtool import logger
+log = logger.get_logger(__name__) 
 
 vetala_version = util_file.get_vetala_version()
 
@@ -101,14 +103,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.header_layout.addWidget(self.active_title, alignment = qt.QtCore.Qt.AlignCenter)
         
         self.tab_widget = qt.QTabWidget()
-        self.tab_widget.currentChanged.connect(self._tab_changed)
+        
         
         self.view_widget = ui_view.ViewProcessWidget()
         
         self.option_tabs = qt.QTabWidget()
         
         option_layout = qt.QVBoxLayout()
-        option_layout.setContentsMargins(1,1,1,1)
+        option_layout.setContentsMargins(0,0,0,0)
         self.option_widget = ui_options.ProcessOptionsWidget()
         
         
@@ -143,13 +145,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         full_button = qt.QPushButton('Full')
         full_button.setMaximumHeight(18)
         full_button.setMaximumWidth(60)
-        full_button.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum,))
+        full_button.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum))
         full_button.clicked.connect(self._toggle_full)
         
         close_button = qt.QPushButton('Close')
         close_button.setMaximumHeight(18)
         close_button.setMaximumWidth(60)
-        close_button.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum,))
+        close_button.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum))
         close_button.clicked.connect(self._close_tabs)
         
         self.full_button = full_button
@@ -158,16 +160,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         orientation_button = qt.QPushButton('Alignment')
         orientation_button.setMaximumHeight(18)
         orientation_button.clicked.connect(self._toggle_alignment)
-        orientation_button.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Maximum,))
+        orientation_button.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Maximum))
         
         splitter_button_layout.addWidget(full_button)
         splitter_button_layout.addWidget(orientation_button)
         splitter_button_layout.addWidget(close_button)
         
         
-        btm_tab_widget = qt_ui.BasicWidget()
+        btm_tab_widget = SideTabWidget()
         btm_tab_widget.main_layout.addLayout(splitter_button_layout)
         btm_tab_widget.main_layout.addWidget(self.option_tabs)
+
         
         self.data_widget = ui_data.DataProcessWidget()
         
@@ -181,13 +184,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #splitter stuff
         self.process_splitter = qt.QSplitter()
         self.process_splitter.setOrientation(qt.QtCore.Qt.Vertical)
-        
-        self.process_splitter.setContentsMargins(1,1,1,1)
+                
+        self.process_splitter.setContentsMargins(0,0,0,0)
         self.process_splitter.addWidget(self.view_widget)
         
         self.process_splitter.addWidget(btm_tab_widget)
         self.process_splitter.setSizes([1,0])
-        
+                
         if util.is_in_maya():
             settings_icon = qt_ui.get_icon('gear.png')
         else:
@@ -210,6 +213,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.main_layout.addSpacing(4)
         self.main_layout.addWidget( self.tab_widget )
+        
+        self.bottom_widget = qt_ui.BasicWidget()
         
         left_button_layout = qt.QHBoxLayout()
         right_button_layout = qt.QHBoxLayout()
@@ -263,12 +268,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         button_layout.addLayout(right_button_layout)
         
+        self.bottom_widget.main_layout.addLayout((button_layout))
+        
         self.build_widget = ui_data.ProcessBuildDataWidget()
         self.build_widget.hide()
         
-        btm_layout.addLayout(button_layout)
-        btm_layout.addSpacing(5)
+        
+        
+        btm_layout.addWidget(self.bottom_widget)
+        btm_layout.addSpacing(1)
         btm_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
+        
+        self.tab_widget.currentChanged.connect(self._tab_changed)
         
         self.browser_button.clicked.connect(self._browser)
         self.process_button.clicked.connect(self._process)
@@ -280,9 +291,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.main_layout.addLayout(btm_layout)
         
         self.build_widget.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum)
-        
+                
     def sizeHint(self):
-        return qt.QtCore.QSize(450,450)
+        return qt.QtCore.QSize(550,600)
         
     def _show_options(self):
         
@@ -305,6 +316,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._current_tab = 0
         
     def _show_notes(self):
+        
+        log.info('Show notes')
+        
         sizes = self.process_splitter.sizes()
         self._load_notes()
         
@@ -343,6 +357,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _copy_done(self):
         
+        log.info('Finished copying process')
+        
         path = self._get_current_path()
         self.code_widget.set_directory(path, sync_code = True)
         
@@ -355,6 +371,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         #self.tab_widget.setCurrentIndex(3)
                 
     def _item_changed(self, item):
+        
+        log.info('Process item changed')
         
         name = '-'
         
@@ -371,20 +389,16 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _item_renamed(self, item):
         
-        
-        
         self._item_changed(item)
-        
-        
         
         if hasattr(item, 'get_path'):
             self._load_options()
             self._load_notes()
+            self._load_process_settings()
                 
     def _item_selection_changed(self):
         
         if not self.handle_selection_change:
-            
             return
         
         items = self.view_widget.tree_widget.selectedItems()
@@ -393,7 +407,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self._update_process(None)
             self.build_widget.hide()
+            self._close_tabs()
             return
+        
+        self.build_widget.show()
         
         item = items[0]
         
@@ -402,9 +419,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         name = item.get_name()
         
+        log.debug('Selection changed %s' % name)
+        
+        
         if item.is_folder():
             self.process_splitter.setSizes([1,0])
-        
         
         self._update_process(name)
         
@@ -415,6 +434,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.setFocus()
         
     def _update_sidebar_tabs(self):
+        log.info('Update sidebar')
         
         if self.option_tabs.currentIndex() == 0:
             self._load_options()
@@ -425,6 +445,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             
     def _update_process(self, name):
+        
+        log.debug('Update process %s' % name)
         
         self._set_vetala_current_process(name)
         
@@ -437,9 +459,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         if name:
             
-            path = self._get_filtered_project_path()
-            
-            self.process.load(path)  
+            self.process.load(name)  
             
             self._set_title(title)
 
@@ -465,10 +485,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
     def _set_vetala_current_process(self, name):
         
+        log.info('Set current vetala process %s' % name)
+        
         if not name:
             self.active_title.setText('')
             util.set_env('VETALA_CURRENT_PROCESS', '')
             return
+        
+        current_path = self._get_current_path()
         
         if self.project_directory:
             
@@ -477,15 +501,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.settings.set('process', [name, str(self.project_directory)])
             
-            fullpath = self._get_current_path()
-            
-            if not util_file.get_permission(fullpath):
+            if not util_file.get_permission(current_path):
                 util.warning('Could not get permission for process: %s' % name)
             
-            util.set_env('VETALA_CURRENT_PROCESS', fullpath)
+            util.set_env('VETALA_CURRENT_PROCESS', current_path)
         
-        current_path = self._get_current_path()
-        self.option_widget.set_directory(current_path)
+        #note
+        #self.option_widget.set_directory(current_path)
         
         
     def _update_path_filter(self, value):
@@ -527,6 +549,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _load_options(self):
         
+        log.info('Load options')
+        
         current_path = self._get_current_path()
         
         self.option_widget.set_directory(current_path)
@@ -566,6 +590,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
             
     def _load_notes(self):
+        
+        log.info('Load notes')
         
         self._note_text_change_save = False
         
@@ -619,11 +645,17 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _load_process_settings(self):
         
+        log.info('Load process settings')
+        
         self.process_settings.set_directory(self._get_current_path())
         
               
     def _update_build_widget(self):
         
+        if self.build_widget.isHidden():
+            return
+        
+        log.info('Update build file widget')
         
         path = self._get_current_path()
         data_path = util_file.join_path(path, '.data/build')
@@ -636,15 +668,11 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget.update_data(data_dir)
         
         self.build_widget.set_directory(data_path)
-        self.build_widget.show()
         
+        log.debug('Finished loading build file widget')
 
         
     def _setup_settings_file(self):
-        
-        
-        
-        
         
         util.set_env('VETALA_SETTINGS', self.directory)
         
@@ -722,6 +750,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if sizes[0] > 1 and sizes[1] >= 0:
             self.process_splitter.setSizes([0,1])
         
+    def _is_splitter_open(self):
+        
+        sizes = self.process_splitter.sizes()
+        
+        if sizes[1] > 0:
+            return True
+        
+        return False
     
     def _close_tabs(self):
         
@@ -842,14 +878,28 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _tab_changed(self):
         
+        log.debug('Tab changed %s' % self.tab_widget.currentIndex())
+        
+        item = self.view_widget.tree_widget.currentItem()
+        
         if self.tab_widget.currentIndex() == 0:
-            #if self.build_widget:
-                #self.build_widget.hide()
-                
+            if self.build_widget:
+                self.build_widget.hide()
+            
+            self.process_button.hide()
+            self.batch_button.hide()
+            
             self.last_tab = 0
              
-        if self.tab_widget.currentIndex() == 1:
+        else:
+            if self.build_widget and item:
+                self.build_widget.show()
             
+            self.process_button.show()
+            self.batch_button.show()
+            
+        if self.tab_widget.currentIndex() == 1:
+                
             if self.last_tab == 3:
                 self._update_sidebar_tabs()
                 
@@ -859,8 +909,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
         if self.tab_widget.currentIndex() > 1:
             
-            item = self.view_widget.tree_widget.currentItem()
-            
             if not item:
                 return
             
@@ -868,8 +916,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process.load(process_name)
             
             if item and self.tab_widget.currentIndex() == 2:
-                #if self.build_widget:
-                #    self.build_widget.hide()
                 
                 path = self._get_current_path()
                 
@@ -879,9 +925,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 return
             
             if item and self.tab_widget.currentIndex() == 3:
-                
-                if self.build_widget:
-                    self.build_widget.show()
                 
                 self._load_code_ui()
                 
@@ -920,6 +963,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _get_current_path(self):
         
+        log.debug('Get current vetala process')
+        
         process_name = self._get_current_name()
         
         if process_name:    
@@ -934,7 +979,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             directory = util_file.join_path(directory, process_name)
             
-            return directory
         if not process_name:
             
             filter_value = self.view_widget.filter_widget.get_sub_path_filter()
@@ -943,8 +987,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
                 directory = util_file.join_path(self.directory, filter_value)
             else:
                 directory =self.directory
-            
-            return directory
+        
+        return directory
            
     def _set_kill_process(self):
         util.set_env('VETALA_STOP', True)
@@ -1403,6 +1447,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def set_project_directory(self, directory, sub_part = None):
         
+        log.debug('Setting project directory:' % directory)
+        
         self.handle_selection_change = False
         
         self.view_widget.tree_widget.clearSelection()
@@ -1446,11 +1492,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self._initialize_project_settings()
         
-        self._update_sidebar_tabs()
+        #self._update_sidebar_tabs()
         
-        
-        
-        self._update_build_widget()
+        #self._update_build_widget()
         
     def set_template_directory(self, directory = None):
         
@@ -1506,6 +1550,18 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.active_title.setText('-')
         self.process_splitter.setSizes([1,0])
         self.build_widget.hide()
+
+
+class SideTabWidget(qt_ui.BasicWidget):
+        
+    def _build_widgets(self):
+        
+        policy = self.sizePolicy()
+        
+        policy.setHorizontalPolicy(policy.Minimum)
+        policy.setHorizontalStretch(2)
+        
+        self.setSizePolicy(policy)
 
 class NoteText(qt.QTextEdit):
     
