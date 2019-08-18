@@ -9,6 +9,9 @@ import re
 import random
 import sys
 
+from vtool import logger
+log = logger.get_logger(__name__) 
+
 _save_button_minimum = 60
 _load_button_mimimum = 60
 
@@ -31,6 +34,13 @@ def is_pyside2():
     if qt.is_pyside2():
         return True
     return False
+
+if util.is_in_maya:
+    yes_color = qt.QColor(0,255,0, 50)
+    no_color = qt.QColor(qt.QColor(255,0,0, 50))
+else:
+    yes_color = qt.QColor(200,255,200, 100)
+    no_color = qt.QColor(qt.QColor(255,200,200, 100))
 
 def build_qt_application(*argv):
     application = qt.QApplication(*argv)
@@ -123,9 +133,8 @@ class BasicWidget(qt.QWidget):
         super(BasicWidget, self).__init__(parent)
         
         self.main_layout = self._define_main_layout() 
-        self.main_layout.setContentsMargins(2,2,2,2)
-        self.main_layout.setSpacing(2)
-        
+        self.main_layout.setContentsMargins(0,0,0,0)
+        self.main_layout.setSpacing(0)
         
         if scroll:
             
@@ -221,8 +230,6 @@ class DirectoryWidget(BasicWidget):
         self.last_directory = None
         
         super(DirectoryWidget, self).__init__()
-        
-        
         
     def set_directory(self, directory):
         
@@ -1067,9 +1074,7 @@ class EditFileTreeWidget(DirectoryWidget):
         
         self.tree_widget = None
         
-        
-        
-        super(EditFileTreeWidget, self).__init__(parent)
+        super(EditFileTreeWidget, self).__init__(parent)           
         
         self.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Minimum) 
         
@@ -1098,19 +1103,23 @@ class EditFileTreeWidget(DirectoryWidget):
         self.filter_widget.set_tree_widget(self.tree_widget)
         self.filter_widget.set_directory(self.directory)
         
-        
+        btm_layout = qt.QHBoxLayout()
         self.main_layout.addWidget(self.tree_widget)
-        self.main_layout.addWidget(self.filter_widget)
-               
+        
         self.edit_mode_button = qt.QPushButton('Edit')
         self.edit_mode_button.setCheckable(True)
-        self.edit_mode_button.setMaximumWidth(100)
+        
         self.edit_mode_button.setMaximumHeight(20)
         self.edit_mode_button.setMaximumWidth(40)
         self.edit_mode_button.toggled.connect(self._edit_click)
         
         self.filter_widget.main_layout.addWidget(self.edit_mode_button)
         self._edit_click(False)
+        
+        btm_layout.addWidget(self.filter_widget)
+        btm_layout.addWidget(self.edit_mode_button)
+        
+        self.main_layout.addLayout(btm_layout)
         
         self.main_layout.addWidget(self.manager_widget)
         
@@ -1183,7 +1192,7 @@ class FilterTreeWidget( DirectoryWidget ):
         super(FilterTreeWidget, self).__init__()
     
     def _define_main_layout(self):
-        return qt.QHBoxLayout()
+        return qt.QVBoxLayout()
     
     def _build_widgets(self): 
         self.filter_names = qt.QLineEdit()
@@ -1192,8 +1201,6 @@ class FilterTreeWidget( DirectoryWidget ):
         self.sub_path_filter.setPlaceholderText('set sub path')
         self.sub_path_filter.textChanged.connect(self._sub_path_filter_changed)
         self.sub_path_filter.textEdited.connect(self._sub_path_filter_edited)
-        
-        
         
         self.filter_names.textChanged.connect(self._filter_names)
                 
@@ -1288,6 +1295,145 @@ class FilterTreeWidget( DirectoryWidget ):
         else:
             self.sub_path_filter.setStyleSheet('')
     
+class BackupWidget(DirectoryWidget):
+    
+    data_updated = create_signal()
+    
+    def __init__(self, parent = None):
+        super(BackupWidget, self).__init__(parent)
+        
+        self.history_directory = None
+        
+        self.history_attached = False
+        
+    def _define_main_layout(self):
+        return qt.QHBoxLayout()
+    
+    def _define_main_tab_name(self):
+        return 'Backup Process'
+    
+    def _build_widgets(self):
+        
+        self.tab_widget = qt.QTabWidget()
+        
+        self.main_tab_name = self._define_main_tab_name()
+        self.version_tab_name = 'Version'
+                
+        self.save_widget = self._define_save_widget()
+        
+        self.save_widget.file_changed.connect(self._file_changed)
+                
+        self.tab_widget.addTab(self.save_widget, self.main_tab_name)
+        self._add_history_widget()
+        
+        self.tab_widget.currentChanged.connect(self._tab_changed)    
+        self.main_layout.addWidget(self.tab_widget)
+        
+        self.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding)
+
+    def _add_history_widget(self):
+        self.history_buffer_widget = BasicWidget()
+        
+        self.history_widget = self._define_history_widget()
+        self.history_widget.file_changed.connect(self._file_changed)
+        
+        self.tab_widget.addTab(self.history_buffer_widget, self.version_tab_name)
+        
+        self.history_widget.hide()
+        
+    def _define_save_widget(self):
+        return SaveFileWidget()
+        
+    def _define_history_widget(self):
+        return HistoryFileWidget()
+        
+    def _hide_history(self):
+        
+        self.history_widget.hide()
+        
+        if self.history_attached:
+            self.history_buffer_widget.main_layout.removeWidget(self.history_widget)
+                
+        self.history_attached = False
+    
+    def _show_history(self):
+        self.update_history()
+        
+    def _tab_changed(self):
+                                
+        if self.tab_widget.currentIndex() == 0:
+            self.save_widget.set_directory(self.directory)
+            self._hide_history()
+            
+        if self.tab_widget.currentIndex() == 1:
+            self._show_history()
+                
+        if self.tab_widget.currentIndex() == 2:
+            self._hide_history()
+                        
+    def _file_changed(self):
+        
+        if not util_file.is_dir(self.directory):     
+            return
+        
+        self._activate_history_tab()
+        
+        self.data_updated.emit()
+        
+    def _activate_history_tab(self):
+        
+        if not self.history_directory:
+            return
+        
+        version_tool = util_file.VersionFile(self.history_directory)   
+         
+        has_versions = version_tool.has_versions()
+        
+        if has_versions:
+            self.tab_widget.setTabEnabled(1, True)
+        if not has_versions:
+            self.tab_widget.setTabEnabled(1, False) 
+        
+        
+    
+    def add_option_widget(self):
+        self._add_option_widget()
+        
+    def update_history(self):
+        
+        if not self.history_directory:
+            return
+        
+        self.history_buffer_widget.main_layout.addWidget(self.history_widget)
+        
+        history_directory = self.history_directory
+        
+        self.history_widget.show()
+        self.history_widget.set_directory(history_directory)
+        self.history_widget.refresh()
+        self.history_attached = True
+        
+        self._activate_history_tab()
+        
+    
+    def set_history_directory(self, directory):
+        
+        self.history_directory = directory
+        
+        if self.tab_widget.currentIndex() == 1:
+            self.update_history()
+      
+    def set_directory(self, directory):
+        super(BackupWidget, self).set_directory(directory)
+        
+        if not directory:
+            return
+        
+        if self.tab_widget.currentIndex() == 0:
+            self.save_widget.set_directory(directory)
+            self._file_changed()
+            
+        
         
 class FileManagerWidget(DirectoryWidget):
     
@@ -1424,22 +1570,23 @@ class FileManagerWidget(DirectoryWidget):
         if not self.directory:
             return
         
-        sub_folder = self.data_class.get_sub_folder()
-        
-        
-        if not sub_folder:
-        
-            folder = self.data_class.get_folder()
+        if self.data_class:
+            sub_folder = None
             
-            history_directory = None
+            sub_folder = self.data_class.get_sub_folder()
             
-            if folder:
-                history_directory = self.data_class.set_directory(folder)    
-        if sub_folder:
-            sub_folder_path = util_file.join_path(self.directory, '.sub/%s' % sub_folder)
-            history_directory = sub_folder_path
-        
-        
+            if not sub_folder:
+            
+                folder = self.data_class.get_folder()
+                
+                history_directory = None
+                
+                if folder:
+                    history_directory = self.data_class.set_directory(folder)    
+            if sub_folder:
+                sub_folder_path = util_file.join_path(self.directory, '.sub/%s' % sub_folder)
+                history_directory = sub_folder_path
+            
         if not history_directory:
             history_directory = self.directory
         
@@ -1492,6 +1639,8 @@ class FileManagerWidget(DirectoryWidget):
     def set_directory(self, directory):
         super(FileManagerWidget, self).set_directory(directory)
         
+        log.debug('Setting FileManager Widget directory: %s' % directory)
+        
         if self.data_class:
             self.data_class.set_directory(directory)
             directory = self.data_class.get_folder()
@@ -1499,20 +1648,26 @@ class FileManagerWidget(DirectoryWidget):
             history_directory = self._get_history_directory(directory)
             
         if self.tab_widget.currentIndex() == 0:
+            log.debug('load save')
             self.save_widget.set_directory(directory)
             self.save_widget.data_class = self.data_class
         
         if self.tab_widget.currentIndex() == 1:
+            log.debug('load history')
             self.history_widget.set_directory(history_directory)
             self.history_widget.data_class = self.data_class
-            
+        
         if self.tab_widget.currentIndex() == 2:
+            log.debug('load options')
             self.option_widget.set_directory(history_directory)
             self.option_widget.data_class = self.data_class
-        
-        
             
+        log.debug('update widget')
         self._file_changed()
+        
+        log.debug('Finished Setting FileManager Widget directory')
+        
+        return self.data_class
         
         
 class SaveFileWidget(DirectoryWidget):
@@ -1530,7 +1685,7 @@ class SaveFileWidget(DirectoryWidget):
         
         self.data_class = None
         
-        self.setContentsMargins(10,10,10,10)
+        self.setContentsMargins(1,1,1,1)
         
     def _define_tip(self):
         
@@ -2135,6 +2290,7 @@ class GetCode(GetString):
 class GetDirectoryWidget(DirectoryWidget):
     
     directory_changed = create_signal(object)
+    text_changed = create_signal(object)
     
     def __init__(self, parent = None):
         super(GetDirectoryWidget, self).__init__(parent)
@@ -2171,12 +2327,23 @@ class GetDirectoryWidget(DirectoryWidget):
             self.directory_edit.setText(filename)
             self.directory_changed.emit(filename)
         
-    def _text_changed(self):
+    def _text_changed(self, text):
         
         directory = self.get_directory()
         
-        if util_file.is_dir(directory):
-            self.directory_changed.emit(directory)
+        palette = qt.QPalette()
+        
+        if util_file.exists(directory):
+            palette.setColor(qt.QPalette().Base, yes_color )
+            self.directory_edit.setPalette( palette )
+        else:
+            palette.setColor(qt.QPalette().Base, no_color )
+            self.directory_edit.setPalette( palette )
+            
+        if not text:
+            self.directory_edit.setPalette( qt.QLineEdit().palette() )
+            
+        self.directory_changed.emit(directory)
         
     def set_label(self, label):
         self.directory_label.setText(label)
@@ -2192,7 +2359,15 @@ class GetDirectoryWidget(DirectoryWidget):
         
     def get_directory(self):
         return self.directory_edit.text()
-     
+
+class DoubleSpin(qt.QDoubleSpinBox):
+    def wheelEvent(self, event):
+        event.ignore()    
+
+class IntSpin(qt.QSpinBox):
+    def wheelEvent(self, event):
+        event.ignore()    
+
 class GetNumberBase(BasicWidget):
     
     valueChanged = create_signal(object)
@@ -2260,12 +2435,13 @@ class GetNumber(GetNumberBase):
         super(GetNumber, self).__init__(name, parent)
         
         self._setup_spin_widget()
+        
     
     def _define_main_layout(self):
         return qt.QHBoxLayout()
     
     def _define_number_widget(self):
-        return qt.QDoubleSpinBox()
+        return DoubleSpin()
         
     def _setup_spin_widget(self):
         
@@ -2296,7 +2472,7 @@ class GetNumber(GetNumberBase):
 class GetInteger(GetNumber):
     
     def _define_number_widget(self):
-        return qt.QSpinBox()
+        return IntSpin()
     
 class GetBoolean(GetNumberBase):
     
