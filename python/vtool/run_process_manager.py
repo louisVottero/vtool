@@ -15,6 +15,9 @@ def main(directory = None):
     
     window = None
     
+    import logger
+    logger.setup_logging(level = 'DEBUG')
+    
     if not util.is_in_maya():
         window = ui_process_manager.ProcessManagerWindow()   
         window.show()
