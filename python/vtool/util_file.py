@@ -21,12 +21,16 @@ import util
 
 import time
 
+from vtool import logger
+log = logger.get_logger(__name__) 
+
 def get_permission(filepath):
     
     if os.access(filepath, os.R_OK | os.W_OK | os.X_OK ):
         return True
     
     try:
+        log.info('Getting file permission: %s' % filepath)
         os.chmod(filepath, 0775)
         return True
     except:
@@ -134,7 +138,7 @@ class FileManager(object):
     def __init__(self, filepath, skip_warning = False):
         
         self.filepath = filepath
-                
+        self.skip_warning = skip_warning 
         if not skip_warning:
             self.warning_if_invlid_path('path is invalid: %s' % self.filepath)
                 
@@ -144,15 +148,20 @@ class FileManager(object):
         """
         Start read the file.
         """
-        self.warning_if_invalid_file('file is invalid')
+        if not self.skip_warning:
+            self.warning_if_invalid_file('file is invalid')
         
-        self.open_file = open(self.filepath, 'r')
+        try:
+            self.open_file = open(self.filepath, 'r')
+        except:
+            pass
         
     def write_file(self):
         """
         Start write the file.
         """
-        self.warning_if_invalid_file('file is invalid')
+        if not self.skip_warning:
+            self.warning_if_invalid_file('file is invalid')
         
         #if get_permission(self.filepath):
         
@@ -165,7 +174,8 @@ class FileManager(object):
         """
         Start append file.
         """
-        self.warning_if_invalid_file('file is invalid')
+        if not self.skip_warning:
+            self.warning_if_invalid_file('file is invalid')
         self.open_file = open(self.filepath, 'a')       
     
     def close_file(self):
@@ -209,8 +219,8 @@ class ReadFile(FileManager):
     Class to deal with reading a file.
     """
     
-    def __init__(self, filename):
-        super(ReadFile, self).__init__(filename)        
+    def __init__(self, filename, skip_warning = False):
+        super(ReadFile, self).__init__(filename, skip_warning)        
         self.open_file = None
     
     def _get_lines(self):
@@ -241,10 +251,8 @@ class ReadFile(FileManager):
         return lines
 
 class WriteFile(FileManager):
-    def __init__(self, filepath):
-        super(WriteFile, self).__init__(filepath)
-        
-        get_permission(filepath)
+    def __init__(self, filepath, skip_warning = False):
+        super(WriteFile, self).__init__(filepath, skip_warning)
         
         self.filepath = filepath
         self.open_file = None
@@ -811,6 +819,8 @@ class SettingsFile(object):
         self.optional_dict = {}
         self.settings_order = []
         self.write = None 
+        self._has_json = None
+        self._has_permission = False
     
     def _get_json_file(self):
         directory = get_dirname(self.filepath)
@@ -820,20 +830,26 @@ class SettingsFile(object):
         
         name = get_basename_no_extension(self.filepath)
         
+        filename=name+'.json'
         
+        if not self._has_json:
+            filepath = create_file(filename, directory)
+        else:
+            filepath = join_path(directory, filename)
         
-        filepath = create_file(name+'.json', directory)
-        
-        if not filepath:
-            test_path = join_path(directory, name+'.json')
+        #if not filepath:
+        #    test_path = join_path(directory, name+'.json')
             
-            if is_file(test_path):
-                filepath = test_path
+        #    if is_file(test_path):
+        #        filepath = test_path
         
         
         return filepath
     
     def _has_json_file(self):
+        
+        if self._has_json != None:
+            return self._has_json
         
         if not self.filepath:
             return False
@@ -886,10 +902,6 @@ class SettingsFile(object):
             
     def _read_json(self):
         
-        if not self._has_json_file():
-            self._read()
-            self._write_json()
-        
         filepath = self._get_json_file()
         
         if not filepath:
@@ -909,7 +921,39 @@ class SettingsFile(object):
         self.settings_order = data.keys()
         self.settings_dict = data
         
+    def _update_old(self, filename):
         
+        directory = self.directory
+    
+        if filename == 'data.json':
+            old = join_path(directory, 'data.type')
+            if is_file(old):
+                self.filepath = old
+                
+        if filename == 'options.json':
+            old_options = join_path(directory, 'options.txt')
+            if is_file(old_options):
+                self.filepath = old_options
+        
+        if filename == 'settings.json':
+            old_settings = join_path(directory, 'settings.txt')
+            if is_file(old_settings):
+                self.filepath = old_settings
+                            
+        if not filename.endswith('.json'):
+            old = join_path(directory, filename)
+            
+            if is_file(old):
+                self.filepath = old    
+        
+        self._read()
+        self._write_json()       
+
+    def _get_permission(self, filepath):
+        if not self._has_permission:
+            get_permission(filepath)
+            self._has_permission = True
+            
     def _write(self):
         
         self._write_json()
@@ -950,7 +994,9 @@ class SettingsFile(object):
         if not filepath:
             return
         
-        write = WriteFile(filepath)
+        self._get_permission(filepath)
+        
+        write = WriteFile(filepath, skip_warning=True)
         
         out_list = []
         
@@ -967,6 +1013,8 @@ class SettingsFile(object):
     
     def set(self, name, value):
         
+        log.debug('Set setting %s %s' % (name, value))
+                
         self.settings_dict[name] = value
         
         if not name in self.settings_order:
@@ -996,6 +1044,8 @@ class SettingsFile(object):
     
     def get_settings(self):
         
+        log.debug('Get settings')
+        
         found = []
         
         for setting in self.settings_order:
@@ -1022,38 +1072,14 @@ class SettingsFile(object):
         self.directory = directory
         
         #eventually after a lot of testing, can add a statement to delete old settings/data files
-                
-        if filename == 'data.json':
-            old = join_path(directory, 'data.type')
-            if is_file(old):
-                self.filepath = old
-                self._read_json()
-                return
-                
-        if filename == 'options.json':
-            old_options = join_path(directory, 'options.txt')
-            if is_file(old_options):
-                self.filepath = old_options
-                self._read_json()
-                return
         
-        if filename == 'settings.json':
-            old_settings = join_path(directory, 'settings.txt')
-            if is_file(old_settings):
-                self.filepath = old_settings
-                self._read_json()
-                return
-            
-        if not filename.endswith('.json'):
-            old = join_path(directory, filename)
-            
-            if is_file(old):
-                self.filepath = old
-                self._read_json()
-                return
+        self.filepath = join_path(self.directory, filename)
         
-        self.filepath = create_file(filename, self.directory)
+        self._has_json = self._has_json_file()
         
+        if not self._has_json:
+            self._update_old(filename)
+                        
         self._read_json()
         #self._read()
         
@@ -1847,7 +1873,7 @@ def get_file_lines(filepath):
     Returns:
         str
     """
-    read = ReadFile(filepath)
+    read = ReadFile(filepath, skip_warning=True)
     
     return read.read()
 
@@ -1890,6 +1916,8 @@ def is_dir(directory):
     if not directory:
         return False
     
+    log.debug('is directory: %s' % directory)
+        
     try:
         mode = os.stat(directory)[stat.ST_MODE]
         if stat.S_ISDIR(mode):
@@ -1903,6 +1931,8 @@ def is_file(filepath):
     Returns: 
         bool
     """
+    
+    log.debug('is file: %s' % filepath)
     
     if not filepath:
         return False
@@ -1940,6 +1970,8 @@ def is_file_in_dir(filename, directory):
     Returns:
         bool: Wether the file is in the directory.
     """
+    
+    log.debug('is file in directory')
     filepath = join_path(directory, filename)
     
     return os.path.isfile(filepath)
@@ -2114,6 +2146,9 @@ def remove_common_path_simple(path1, path2):
     This just subtracts a string that is the same at the beginning.
     path1 gets subtracted from path2
     """
+    
+    if not path2:
+        return ''
     
     value = path2.find(path1)
     sub_part = None
