@@ -8,8 +8,8 @@ from vtool import qt_ui, qt
 
 import process
 
-
-
+from vtool import logger
+log = logger.get_logger(__name__) 
 
 class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
@@ -20,18 +20,14 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
     
     def __init__(self):
         
-
-            
         self.settings = None
         
         super(ViewProcessWidget, self).__init__()
         
         policy = self.sizePolicy()
-        
+        policy.setHorizontalPolicy(policy.Minimum)
         policy.setHorizontalStretch(0)
         self.setSizePolicy(policy)
-        
-    
         
     def _define_tree_widget(self):
         
@@ -315,9 +311,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.setSelectionMode(self.SingleSelection)
         
         self.dragged_item = None
-        
-        #self.setMinimumWidth(00)
-        
+                
         self.setAlternatingRowColors(True)
         
         self.current_folder = None
@@ -1054,6 +1048,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
     def _add_process_item(self, name, parent_item = None, create = False, find_parent_path = True, folder = False):
         
+        log.info('Adding process item: %s' % name)
+        
         expand_to = False
         
         items = self.selectedItems()
@@ -1081,39 +1077,34 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 if not item_path:
                     parent_item = None
         
-        
         item = ProcessItem(self.directory, name)
         
         if not folder:
-            process_inst = process.Process(name)
-            process_inst.set_directory(self.directory)
+            process_inst = item.get_process()
         if folder:
             item.set_folder(True)
         
-        
         if create:
             item.create()
-
+        
         if parent_item and not folder:
             enable = process_inst.get_setting('enable')
             if not enable and self.checkable:
                 item.setCheckState(0, qt.QtCore.Qt.Unchecked )
             if enable and self.checkable:
                 item.setCheckState(0, qt.QtCore.Qt.Checked )
-        
         if not parent_item:
             self.addTopLevelItem(item)
         
         if parent_item:
-            
             if expand_to:
                 self._auto_add_sub_items = False
                 self.expandItem(parent_item)
                 self._auto_add_sub_items = True
             parent_item.addChild(item)
-            
+        
         #has parts takes time because it needs to check children folders
-        if item.has_parts():# and not folder:
+        if item.has_parts():# and not folder:    
             qt.QTreeWidgetItem(item)
         
         return item
@@ -1154,6 +1145,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.setItemSelected(item, True)
     
     def _add_sub_items(self, item):
+        
+        log.debug('Add sub items')
         
         self._delete_children(item)
         
@@ -1468,21 +1461,18 @@ class ProcessItem(qt.QTreeWidgetItem):
                 process.set_setting('enable', False)
             if value == 2:
                 process.set_setting('enable', True)
-            
-
-        
-        
-    def _add_process(self, directory, name):
-        
-        self.process = process.Process(name)
-        self.process.set_directory(directory)
-        
-        self.process.create()
         
     def _get_process(self):
         
+        if self.process:
+            
+            if self.process.process_name == self.name and self.process.directory == self.directory:
+                return self.process
+        
         process_instance = process.Process(self.name)
         process_instance.set_directory(self.directory)
+        
+        self.process = process_instance
         
         return process_instance
         
@@ -1555,7 +1545,7 @@ class ProcessItem(qt.QTreeWidgetItem):
         
         process_path = util_file.join_path(self.directory, self.name)
 
-        processes, folders = process.find_processes(process_path, return_also_non_process_list = True)
+        processes, folders = process.find_processes(process_path, return_also_non_process_list = True, stop_at_one = True)
         
         if processes or folders:
             return True
@@ -1612,7 +1602,7 @@ class CopyWidget(qt_ui.BasicWidget):
         super(CopyWidget, self).__init__(parent)
         self.setWindowTitle('Copy Match')
         self.setWindowFlags(qt.QtCore.Qt.WindowStaysOnTopHint)
-        self.setMinimumWidth(600)
+        self.setMinimumWidth(500)
         
         alpha = 50
         
@@ -1620,11 +1610,11 @@ class CopyWidget(qt_ui.BasicWidget):
             alpha = 100
         
         self.yes_brush = qt.QBrush()
-        self.yes_brush.setColor(qt.QColor(0,255,0, alpha))
+        self.yes_brush.setColor(qt_ui.yes_color)
         self.yes_brush.setStyle(qt.QtCore.Qt.SolidPattern)
     
         self.no_brush = qt.QBrush()
-        self.no_brush.setColor(qt.QColor(255,0,0, alpha))
+        self.no_brush.setColor(qt_ui.no_color)
         self.no_brush.setStyle(qt.QtCore.Qt.SolidPattern)
         
         self.update_on_select = True
@@ -2811,9 +2801,6 @@ class ProcessTreeModel(qt.QtCore.QAbstractListModel):
         
         self.processes = []
         
-        #items = process.find_processes(directory)
-        
-        #self.items = items
     def flags(self, index):
         if not index.isValid():
             return 0
