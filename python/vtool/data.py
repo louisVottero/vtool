@@ -27,6 +27,9 @@ if util.is_in_maya():
 
 from vtool import util_shotgun
 
+from vtool import logger
+log = logger.get_logger(__name__) 
+
 class DataManager(object):
     
     def __init__(self):
@@ -90,7 +93,16 @@ class DataFolder(util_file.FileManager):
         self.settings = None
         
     def _load_folder(self):
-        self._set_default_settings()
+        self._load_settings()
+        
+        needs_default = False
+        if not self.settings.has_setting('name'):
+            needs_default = True
+        if not needs_default and not self.settings.has_setting('data_type'):
+            needs_default = True
+            
+        if needs_default:
+            self._set_default_settings()
         
     def _set_settings_path(self, folder):
         if not self.settings:
@@ -98,10 +110,14 @@ class DataFolder(util_file.FileManager):
         
         self.settings.set_directory(folder, 'data.json')
         
-    def _set_default_settings(self):
-        
+    def _load_settings(self):
         self.settings = util_file.SettingsFile()
         self._set_settings_path(self.folder_path)
+        
+    def _set_default_settings(self):
+        
+        self._load_settings()
+        
         
         self.settings.set('name', self.name)
         
@@ -124,12 +140,15 @@ class DataFolder(util_file.FileManager):
                 
     def get_data_type(self):
         
+        log.debug('Get data type')
+        
         if self.settings:
             self.settings.reload()
         
         if not self.settings:
+            log.debug('No settings, loading...')
             self._load_folder()
-        
+            
         return self.settings.get('data_type')
     
     def set_data_type(self, data_type):
@@ -386,6 +405,9 @@ class FileData(Data):
             return name
 
     def set_directory(self, directory):
+        
+        log.debug('Set FileData directory %s', directory)
+        
         self.directory = directory
         self.settings.set_directory(self.directory, 'data.json')
         self.name = self.settings.get('name')
@@ -436,7 +458,16 @@ class FileData(Data):
         return directory
 
     def get_sub_folder(self):
+        
+        
+        
         folder_name = self.settings.get('sub_folder')
+        
+        if not folder_name or folder_name == '-top folder-':
+            self.set_sub_folder('')
+            return
+        
+        log.debug('Get sub folder %s' % folder_name)
         
         if self.directory:
             if not util_file.is_dir(util_file.join_path(self.directory, '.sub/%s' % folder_name)):
@@ -449,6 +480,9 @@ class FileData(Data):
 
     def set_sub_folder(self, folder_name):
         self._sub_folder = folder_name
+        
+        if not folder_name:
+            return
         
         sub_folder = util_file.join_path(self.directory, '.sub/%s' % folder_name)
         
