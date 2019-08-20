@@ -1447,7 +1447,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def set_project_directory(self, directory, sub_part = None):
         
-        log.debug('Setting project directory:' % directory)
+        log.debug('Setting project directory: %s' % directory)
         
         self.handle_selection_change = False
         
