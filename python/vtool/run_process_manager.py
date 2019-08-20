@@ -10,7 +10,6 @@ import util_file
 import process_manager.ui_process_manager as ui_process_manager
 
 
-
 def main(directory = None):
     
     window = None
