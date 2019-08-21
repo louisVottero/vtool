@@ -961,12 +961,10 @@ class FileTreeWidget(TreeWidget):
                 
                 qt.QTreeWidgetItem(item)
         
-        if not parent == False:
-            
-            if not parent:
-                self.addTopLevelItem(item)
-            if parent:
-                parent.addChild(item)
+        if not parent and parent == None:
+            self.addTopLevelItem(item)
+        elif parent:
+            parent.addChild(item)
             
             self.setCurrentItem(item)
             
