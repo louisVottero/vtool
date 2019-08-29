@@ -1480,8 +1480,8 @@ class FindUniqueString(object):
             
         return self.increment_string
     
-    def set_padding(self, int):
-        self.padding = int
+    def set_padding(self, int_value):
+        self.padding = int_value
     
     def get(self):
         return self._search()
