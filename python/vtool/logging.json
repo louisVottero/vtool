@@ -6,7 +6,7 @@
             "format": "V:\t\t%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         },
 		"bare": {
-			"format" : "V:\t\t%(levelname)s - %(name)s - %(message)s"
+			"format" : "V:\t\t%(levelname)s - %(message)s           %(name)s"
 		}
     },
 
