@@ -421,7 +421,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         log.debug('Selection changed %s' % name)
         
-        
         if item.is_folder():
             self.process_splitter.setSizes([1,0])
         
@@ -434,6 +433,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.setFocus()
         
     def _update_sidebar_tabs(self):
+        
+        if not self._is_splitter_open():
+            return
+        
         log.info('Update sidebar')
         
         if self.option_tabs.currentIndex() == 0:
@@ -806,7 +809,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_settings.set_active(True)
             self._current_tab = 3
             
-            self.process_settings.set_directory(self._get_current_path())
+            self._load_process_settings()
             
     def _clear_code(self, close_windows = False):
         
@@ -1447,7 +1450,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def set_project_directory(self, directory, sub_part = None):
         
-        log.debug('Setting project directory:' % directory)
+        log.debug('Setting project directory: %s' % directory)
         
         self.handle_selection_change = False
         
@@ -1484,7 +1487,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.handle_selection_change = True
             self.view_widget.set_directory(self.project_directory)
-            self.process_settings.set_directory(self.project_directory)    
+            #self.process_settings.set_directory(self.project_directory)    
             
         self.last_project = directory
         

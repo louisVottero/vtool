@@ -1996,20 +1996,32 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         
-        code_path = process_tool.create_code('code', 'script.python', inc_name = True)
+        items = self.selectedItems()
+        
+        code = 'code'
+        parent = None
+        
+        if items:
+            
+            parent = items[0]
+            
+            path = self._get_item_path_name(parent, keep_extension = False)
+            if path:
+                code = path + '/' + code
+            
+            
+        
+        code_path = process_tool.create_code(code, 'script.python', inc_name = True)
         
         name = vtool.util_file.get_basename(code_path)
         
-        parent_item = None
-        items = self.selectedItems()
-        if items:
-            parent_item = items[0]
         
-        item = self._add_item(name, False)
+        
+        item = self._add_item(name, False, parent = parent)
         
         item.setCheckState(0, qt.QtCore.Qt.Checked)
         
-        self._reparent_item('code', item, parent_item)
+        #self._reparent_item('code', item, parent_item)
             
         self.scrollToItem(item)
         self.setItemSelected(item, True)

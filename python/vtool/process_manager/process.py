@@ -688,10 +688,8 @@ class Process(object):
             if util_file.is_dir(backup):
             
                 project = settings.get('project_directory')    
-                process_inst = Process()
-                process_inst.set_directory(directory)
                 
-                backup_directory = directory    
+                backup_directory = self.directory    
                 
                 backup_settings = util_file.SettingsFile()
                 backup_settings.set_directory(backup)
@@ -702,12 +700,11 @@ class Process(object):
                 
                 backup_directory = util_file.create_dir(project_name, backup)
                 
-                process_path =  process_inst.get_path()
+                process_path =  self.get_path()
                 common_path = util_file.remove_common_path_simple(project, process_path)
                 
                 if common_path:
                     backup_directory = util_file.create_dir(util_file.join_path(backup_directory, common_path))
-                
         
         if not backup_directory:
             backup_directory = self.get_path()
@@ -1374,6 +1371,8 @@ class Process(object):
             if util_file.is_dir(test_path):
                 test_path = util_file.inc_path_name(test_path)
                 name = util_file.get_basename(test_path)
+        
+        log.info('Create code %s at path %s' % (name, path))
         
         data_folder = data.DataFolder(name, path)
         data_folder.set_data_type(data_type)
@@ -2930,6 +2929,8 @@ def get_custom_backup_directory(process_directory):
     settings = util_file.get_vetala_settings_inst()
     backup = settings.get('backup_directory')
     
+    backup_directory = None
+    
     if util_file.is_dir(backup):
     
         project = settings.get('project_directory')    
@@ -2953,7 +2954,7 @@ def get_custom_backup_directory(process_directory):
         common_path = util_file.remove_common_path_simple(project, process_path)
         
         backup_directory = util_file.create_dir(util_file.join_path(backup_directory, common_path))
-        
+    
     if not backup_directory:
         return
     
@@ -2965,10 +2966,16 @@ def backup_process(process_path = None, comment = 'Backup', backup_directory = N
     If backup directory given, backs up there.
     
     """
+    
+    log.debug('Backup process at path: %s' % process_path)
+    log.debug('Backup to custom path: %s' % backup_directory)
+    
     process_inst = Process()
     process_inst.set_directory(process_path)
     
     if not backup_directory:
         backup_directory = get_custom_backup_directory(process_path)
+    
+    log.debug('Final backup path: %s' % backup_directory)
     
     process_inst.backup(comment, backup_directory)

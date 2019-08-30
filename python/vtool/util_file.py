@@ -1181,26 +1181,50 @@ class FindUniquePath(util.FindUniqueString):
         return get_files_and_folders(self.parent_path)
     
     def _search(self):
-        name = super(FindUniquePath, self)._search()
         
-        return join_path(self.parent_path, name)
-    """
-    def _search(self):
-        
-        scope = self._get_scope_list()
-        
-        if scope:
-            self.test_string = scope[-1]       
-        
-        number = self._get_number()
+        end_number = self._get_number()
         
         self.increment_string = self.test_string
         
         unique = False
         
+        scope = self._get_scope_list()
+        
+        numbers = []
+        filtered_scope = []
+        
+        if scope:
+            
+            if len(scope) > 1:
+                for thing in scope:
+                    
+                    number = util.get_end_number(thing)
+                    if number:
+                        self._format_string(number)
+                        
+                        if thing == self.increment_string:
+                            numbers.append( number )
+                            filtered_scope.append(thing)
+                
+                sort = util.QuickSort(numbers)
+                numbers = sort.run()
+        
+        if numbers:
+            end_number = numbers[-1]
+            self._format_string(end_number)
+        
+        inc = 0
+        
         while not unique:
             
+            if inc > 10000:
+                break
             
+            inc += 1
+            
+            if not scope:
+                unique = True
+                continue
             
             if not self.increment_string in scope:
                 unique = True
@@ -1208,19 +1232,16 @@ class FindUniquePath(util.FindUniqueString):
             
             if self.increment_string in scope:
                 
-                if not number:
-                    number = 0
-                
-                self._format_string(number)
-                
-                number += 1
-                unique = False
+                if not end_number:
+                    end_number = 1
+                else:
+                    end_number += 1
+                    
+                self._format_string(end_number)
                 
                 continue
         
         return join_path(self.parent_path, self.increment_string)
-    """
-    
 
 class ParsePython(object):
     """
