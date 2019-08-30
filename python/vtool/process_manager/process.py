@@ -350,35 +350,38 @@ class Process(object):
         
         new_value = value
         
+        option_type = None
+        
         if type(value) == list:
-            option_type = value[1]
+            option_type = value[1]    
             value = value[0]
-            
-            if option_type == 'dictionary':
                 
+            if option_type == 'dictionary':
                 
                 new_value = value[0]
                 
                 if type(new_value) == list:
                     new_value = new_value[0]
-                
         
-        if type(value) == str or type(value) == unicode:
-            eval_value = None
-            try:
-                if value:
-                    eval_value = eval(value)
-            except:
-                pass
-           
-            if eval_value:
-                if type(eval_value) == list or type(eval_value) == tuple or type(eval_value) == dict:
-                    new_value = eval_value
-                    value = eval_value
-        
-        if type(value) == str or type(value) == unicode:
-            if value.find(',') > -1:
-                new_value = value.split(',')
+        if not option_type == 'script':
+            if type(value) == str or type(value) == unicode:
+                eval_value = None
+                try:
+                    if value:
+                        eval_value = eval(value)
+                except:
+                    pass
+               
+                if eval_value:
+                    if type(eval_value) == list or type(eval_value) == tuple or type(eval_value) == dict:
+                        new_value = eval_value
+                        value = eval_value
+            
+            if type(value) == str or type(value) == unicode:
+                if value.find(',') > -1:
+                    new_value = value.split(',')
+            
+        log.debug('Formatted value: %s' % new_value)
                 
         return new_value
             
@@ -1606,6 +1609,8 @@ class Process(object):
                 if group:
                     util.warning('Could not find option: %s in group: %s' % (name, group))
         
+        
+        log.info('Get option: name: %s group: %s with value: %s' % (name,group, value))
         
         value = self._format_option_value(value)
         
