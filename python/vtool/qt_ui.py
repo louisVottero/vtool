@@ -951,9 +951,9 @@ class FileTreeWidget(TreeWidget):
             exclude_count = 0
         
             if exclude_extensions:
-                for file in sub_files:
+                for f in sub_files:
                     for exclude in exclude_extensions:
-                        if file.endswith(exclude):
+                        if f.endswith(exclude):
                             exclude_count += 1
                             break
             
@@ -1776,6 +1776,11 @@ class HistoryTreeWidget(FileTreeWidget):
     
     def _item_activated(self, item):
         return
+        
+    def _item_clicked(self, item, column):
+        
+        self.last_item = self.current_item
+        self.current_item = self.currentItem()
         
     def _define_header(self):
         return ['Version','Comment','Size MB','User','Time']
