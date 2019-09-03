@@ -1709,8 +1709,10 @@ def get_files_with_extension(extension, directory, fullpath = False):
     found = []
     
     
-    
-    objects = os.listdir(directory)
+    try:
+        objects = os.listdir(directory)
+    except:
+        return found
     
     for filename_and_extension in objects:
         filename, found_extension = os.path.splitext(filename_and_extension)
@@ -1912,7 +1914,7 @@ def is_dir(directory):
     Returns: 
         bool
     """
-    
+        
     if not directory:
         return False
     
@@ -1932,24 +1934,17 @@ def is_file(filepath):
         bool
     """
     
-    log.debug('is file: %s' % filepath)
+    
     
     if not filepath:
         return False
     
+    log.debug('is file: %s' % filepath)
+    
+    if filepath == '/home/lvottero/vtool/python/vtool/icons':
+        raise
+    
     try:
-        
-        #alt open check option
-        #watch = util.StopWatch()
-        #watch.start('fist is file')
-        #with open(filepath) as f:
-            #return True
-        
-        
-        #if os.path.isfile(filepath):
-        #    return True
-        
-        #alt os.stat check option
         mode = os.stat(filepath)[stat.ST_MODE]
         if stat.S_ISREG(mode):
             return True
@@ -2769,7 +2764,7 @@ def get_package_path_from_name(module_name, return_module_path = False):
     
         test_path = join_path(path, sub_path)
         
-        if is_dir(test_path):
+        if exists(test_path):
             found_path = path
     
     if not found_path:
@@ -2789,10 +2784,14 @@ def get_package_path_from_name(module_name, return_module_path = False):
         
         test_path = join_path(test_path, name)
         
-        if not is_dir(test_path):
-            continue
+        #if not is_dir(test_path):
+        #    continue
         
-        files = get_files(test_path)
+        files = get_files_with_extension('py', test_path)
+        #files = get_files(test_path)
+        
+        if not files:
+            continue
         
         if '__init__.py' in files:
             good_path = test_path
