@@ -1623,10 +1623,10 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.tabs = qt.QTabWidget()
         
-        self.data_list = CopyTree()
-        self.code_list = CopyTree()
-        self.option_list = CopyTree()
-        self.settings_list = CopyTree()
+        self.data_list = DataTree()
+        self.code_list = CodeTree()
+        self.option_list = ProcessInfoTree()
+        self.settings_list = ProcessInfoTree()
         
         
         v_side_bar = qt.QVBoxLayout()
@@ -1655,16 +1655,11 @@ class CopyWidget(qt_ui.BasicWidget):
         self._update_view = False
         
         self.view.selection_changed.connect(self._process_selection_changed)
-        #qt.QTreeWidget.MultiSelection
         self.view.setSelectionMode(self.view.ContiguousSelection)
         
         self.view.setDragEnabled(False)
         
-        self.data_list.setSortingEnabled(True)
         
-        header = self.data_list.header()
-        header.setSortIndicator(0,qt.QtCore.Qt.AscendingOrder)
-        self.data_list.setHeader(header)
         
         self.code_list.itemSelectionChanged.connect(self._code_selected)
         
@@ -1787,25 +1782,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.update_on_select = True
         
-    def _get_code_names(self, process_inst):
-        
-        codes, states = process_inst.get_manifest()
-        
-        code_names = []
-        
-        for code in codes:
-            
-            code_name = code.split('.')
-            
-            if not process_inst.is_code_folder(code_name[0]):
-                continue
-            
-            if len(code_name) > 1 and code_name[1] == 'py':
-                code_names.append(code_name[0])
-        
-        code_names.insert(0, 'manifest')
-        
-        return code_names
+
         
     def _get_long_name(self, item):
         
@@ -2309,11 +2286,11 @@ class CopyWidget(qt_ui.BasicWidget):
             
         return found
           
-    def _reset_states(self, column, tree):
+    def _reset_states(self, tree):
         
         root = tree.invisibleRootItem()
         
-        self._reset_item_children(column, root)
+        self._reset_item_children(1, root)
         
     
     def _reset_item_children(self, column, item):
@@ -2359,59 +2336,16 @@ class CopyWidget(qt_ui.BasicWidget):
     def populate_code_list(self):
              
         self.tabs.setCurrentIndex(1)
-                
-        column = 0
-        list_widget = self.code_list
         
-        code_names = self._get_code_names(self.process)
-        
-        items = {}
-        
-        for code_name in code_names:
-            
-            split_code_name = code_name.split('/')
-            
-            long_name = ''
-            parent_item = None
-            
-            for name in split_code_name:
-                
-                if long_name:
-                    long_name += '/%s' % name
-                else:
-                    long_name = name 
-                
-                if not items.has_key(long_name):
-                    item = list_widget.add_item(column, name, parent_item)
-                else:
-                    item = items[long_name]
-                    
-                items[long_name] = item
-                parent_item = item
+        self.code_list.set_process(self.process)
+        self.code_list.populate()
         
     def populate_data_list(self):
         
         self.tabs.setCurrentIndex(0)
         
-        column = 0
-        
-        list_widget = self.data_list
-        
-        data_folders = self.process.get_data_folders()
-        
-        if not data_folders:
-            return 
-        
-        data_folders.sort()
-        
-        for sub_data in data_folders:
-            
-            data_item = list_widget.add_item(column, sub_data)
-            
-            folders = self.process.get_data_sub_folder_names(sub_data)
-            
-            for folder in folders:
-                list_widget.add_item(column, folder, data_item)
+        self.data_list.set_process(self.process)
+        self.data_list.populate()
     
     def populate_settings_list(self):
         
@@ -2576,7 +2510,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self._reset_states(column, self.code_list)
         
-        code_names = self._get_code_names(other_process_inst)
+        code_names = other_process_inst.get_code_names()
                 
         list_widget = self.code_list
         
@@ -2739,14 +2673,15 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.tabs.setCurrentIndex(current_tab_index)
         
-class CopyTree(qt.QTreeWidget):
+class ProcessInfoTree(qt.QTreeWidget):
     
     def __init__(self):
         
+        self.process = None
         
-        super(CopyTree, self).__init__()
+        super(ProcessInfoTree, self).__init__()
         
-        self.setHeaderLabels(['Source','Target'])
+        self.setHeaderLabels(['Source'])
         header = self.header()
         if qt.is_pyside() or qt.is_pyqt():
             header.setResizeMode(qt.QHeaderView.ResizeToContents)
@@ -2763,7 +2698,15 @@ class CopyTree(qt.QTreeWidget):
         item = qt.QTreeWidgetItem(parent)
         
         item.setText(column, name)
-        item.setText(1, (' ' * 10) + '-')
+        
+        
+        column_count = self.columnCount()
+        
+        if column_count > 1:
+            
+            for inc in range(1, column_count):
+                item.setText(inc, (' ' * 10) + '-')
+        
         self.addTopLevelItem(item)
         
         
@@ -2771,6 +2714,77 @@ class CopyTree(qt.QTreeWidget):
             parent.setExpanded(True)
         return item
     
+    def populate(self):
+        pass
+    
+    def set_process(self, process_inst):
+        self.process = process_inst
+
+class DataTree(ProcessInfoTree):
+    
+    def __init__(self):
+        super(DataTree, self).__init__()
+        
+        self.setSortingEnabled(True)
+        
+        header = self.header()
+        header.setSortIndicator(0,qt.QtCore.Qt.AscendingOrder)
+        self.setHeader(header)
+        
+    def populate(self):
+        
+        self.clear()
+        column = 0
+                
+        data_folders = self.process.get_data_folders()
+        
+        if not data_folders:
+            return 
+        
+        data_folders.sort()
+        
+        for sub_data in data_folders:
+            
+            data_item = self.add_item(column, sub_data)
+            
+            folders = self.process.get_data_sub_folder_names(sub_data)
+            
+            for folder in folders:
+                self.add_item(column, folder, data_item)
+                
+    
+class CodeTree(ProcessInfoTree):
+    
+    def populate(self):
+        self.clear()
+        column = 0
+        
+        code_names = self.process.get_code_names()
+        
+        items = {}
+        
+        for code_name in code_names:
+            
+            split_code_name = code_name.split('/')
+            
+            long_name = ''
+            parent_item = None
+            
+            for name in split_code_name:
+                
+                if long_name:
+                    long_name += '/%s' % name
+                else:
+                    long_name = name 
+                
+                if not items.has_key(long_name):
+                    item = self.add_item(column, name, parent_item)
+                else:
+                    item = items[long_name]
+                    
+                items[long_name] = item
+                parent_item = item
+
 
 
 
