@@ -1327,7 +1327,7 @@ class BackupWidget(DirectoryWidget):
         self.tab_widget.currentChanged.connect(self._tab_changed)    
         self.main_layout.addWidget(self.tab_widget)
         
-        self.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.MinimumExpanding)
+        self.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Fixed)
 
     def _add_history_widget(self):
         self.history_buffer_widget = BasicWidget()
@@ -1399,6 +1399,8 @@ class BackupWidget(DirectoryWidget):
         
     def update_history(self):
         
+        log.debug('Update backup history')
+        
         if not self.history_directory:
             return
         
@@ -1415,6 +1417,8 @@ class BackupWidget(DirectoryWidget):
         
     
     def set_history_directory(self, directory):
+        
+        log.debug('Setting backup history widget directory: %s' % directory)
         
         self.history_directory = directory
         
@@ -1615,6 +1619,9 @@ class FileManagerWidget(DirectoryWidget):
         self._add_option_widget()
         
     def update_history(self):
+        
+        log.debug('Update history')
+        
         self.history_buffer_widget.main_layout.addWidget(self.history_widget)
         
         folder = self.data_class.get_folder()
@@ -1839,6 +1846,7 @@ class HistoryFileWidget(DirectoryWidget):
         open_button.setMaximumWidth(100)
                 
         self.button_layout.addWidget(open_button)
+        self.open_button = open_button
         
         self.version_list = self._define_list()
         
@@ -3677,6 +3685,8 @@ class CodeEdit(BasicWidget):
         
     def set_file(self, filepath):
         
+        log.info('Loading text file')
+        
         self.save_state.setText('No Changes')
         
         self._history_widget.set_directory(util_file.get_dirname(filepath), refresh = True)
@@ -4910,8 +4920,6 @@ class PythonCompleter(qt.QCompleter):
         
         self.string_model =qt.QStringListModel(self.model_strings, self)
         
-        
-        
         self.setCompletionMode(self.PopupCompletion)
         
         self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
@@ -4959,8 +4967,8 @@ class PythonCompleter(qt.QCompleter):
             
             fix_path = util_file.fix_slashes(path)
             
-            if not util_file.is_dir(fix_path):
-                continue
+            #if not util_file.is_dir(fix_path):
+            #    continue
             
             folders = util_file.get_folders(fix_path)
             
@@ -5042,6 +5050,8 @@ class PythonCompleter(qt.QCompleter):
         """
         Parse a single line of text.
         """
+        
+        log.debug('handle completion on %s' % text)
         
         if text:
             
@@ -5219,11 +5229,13 @@ class PythonCompleter(qt.QCompleter):
                         test_text = m.group(2)
                     
                     if not defined:
-                        if util_file.is_dir(path):
-                            defined = self.get_imports(path)
-                            self.current_defined_imports = defined
                         
-                        if util_file.is_file(path):
+                        defined = self.get_imports(path)
+                            
+                        if defined:
+                            self.current_defined_imports = defined
+                            
+                        if not defined:
                             defined = self.get_sub_imports(path)
                     
                     custom_defined = self.custom_import_load(assign_map, module_name)
@@ -5231,19 +5243,16 @@ class PythonCompleter(qt.QCompleter):
                     if custom_defined:
                         defined = custom_defined
                     
-                    if not defined:
-                        return False
-                    
-                    self.string_model.setStringList(defined)
-                    self.setCompletionPrefix(test_text)
-                    
-                    self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
-                     
-                    self.popup().setCurrentIndex(self.completionModel().index(0,0))
-                    return True
+                    if defined:
+                        self.string_model.setStringList(defined)
+                        self.setCompletionPrefix(test_text)
+                        
+                        self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
+                         
+                        self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                        return True
     
                 #import from a class of a module
-                
                 if path and sub_part:
                     
                     sub_functions = None
