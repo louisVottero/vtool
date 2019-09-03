@@ -853,6 +853,14 @@ class Process(object):
         
         return sub_folders
     
+    def get_data_versions(self, data_name):
+        
+        data_folder = self.get_data_file_or_folder(data_name)
+        
+        version = util_file.VersionFile(data_folder)
+        return len( version.get_version_numbers() )
+        
+    
     def has_sub_folder(self, data_name, sub_folder_name):
         """
         Has a sub folder of name.
@@ -1170,6 +1178,12 @@ class Process(object):
             str: A path to the code folder with the supplied name string if it exists.
         """
         
+        if name.endswith('.py'):
+            name = name[:-3]
+            
+        if name.endswith('.data'):
+            name = name[:-5]
+        
         folder = util_file.join_path(self.get_code_path(), name)
         
         if util_file.is_dir(folder):
@@ -1200,6 +1214,26 @@ class Process(object):
             found.append(folder)
             
         return found
+
+
+    def get_code_names(self):
+        codes, states = self.get_manifest()
+        
+        code_names = []
+        
+        for code in codes:
+            
+            code_name = code.split('.')
+            
+            if not self.is_code_folder(code_name[0]):
+                continue
+            
+            if len(code_name) > 1 and code_name[1] == 'py':
+                code_names.append(code_name[0])
+        
+        code_names.insert(0, 'manifest')
+        
+        return code_names
 
     def get_code_children(self, code_name):
         
@@ -1257,7 +1291,6 @@ class Process(object):
         folders = self.get_code_folders()
         
         
-        
         for folder in folders:
             
             data_folder = data.DataFolder(folder, directory)
@@ -1270,7 +1303,12 @@ class Process(object):
                 if not basename:
                     files.append(file_path)
                 if basename:
-                    files.append(util_file.get_basename(file_path))
+                    
+                    rel_file_path = util_file.remove_common_path_simple(directory, file_path)
+                    split_path = rel_file_path.split('/')
+                    
+                    code_path = string.join(split_path[:-1], '/')
+                    files.append(code_path)
 
         return files
     
