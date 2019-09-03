@@ -1244,7 +1244,15 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
 class MayaDataHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
     
     def _open_version(self):
-        item = self.version_list.currentItem()
+        items = self.version_list.selectedItems()
+        
+        item = None
+        if items:
+            item = items[0]
+        
+        if not item:
+            vtool.util.warning('No version selected')
+            return
         
         version = int(item.text(0))
         
@@ -1342,9 +1350,14 @@ class ScriptHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
     
     def _open_version(self):
         
-        item = self.version_list.currentItem()
+        items = self.version_list.selectedItems()
+        
+        item = None
+        if items:
+            item = items[0]
         
         if not item:
+            vtool.util.warning('No version selected')
             return
         
         version = int(item.text(0))
@@ -1891,7 +1904,15 @@ class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         
     def _open_version(self):
         
-        item = self.version_list.currentItem()
+        items = self.version_list.selectedItems()
+        
+        item = None
+        if items:
+            item = items[0]
+        
+        if not item:
+            vtool.util.warning('No version selected')
+            return
         
         version = int(item.text(0))
         
@@ -1902,7 +1923,11 @@ class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         maya_file.open(version_file)
         
     def _import_version(self):
-        item = self.version_list.currentItem()
+        items = self.version_list.selectedItems()
+        
+        item = None
+        if items:
+            item = items[0]
         
         version = int(item.text(0))
         
@@ -1913,8 +1938,11 @@ class MayaHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         maya_file.import_data(version_file)
         
     def _reference_version(self):
+        items = self.version_list.selectedItems()
         
-        item = self.version_list.currentItem()
+        item = None
+        if items:
+            item = items[0]
         
         version = int(item.text(0))
         

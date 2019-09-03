@@ -3020,6 +3020,8 @@ class MayaWrap(object):
     def _create_wrap(self):
         
         basename = core.get_basename(self.mesh, True)
+        if basename.endswith('Shape'):
+            basename = basename[:-5]
         
         self.wrap = cmds.deformer(self.mesh, type = 'wrap', n = 'wrap_%s' % basename)[0]
         cmds.setAttr('%s.exclusiveBind' % self.wrap, 1)

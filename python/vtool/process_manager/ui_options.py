@@ -9,6 +9,8 @@ from vtool import util_file
 
 import vtool.process_manager.process as process_module
 
+from vtool import logger
+log = logger.get_logger(__name__) 
 
 class ProcessOptionsWidget(qt_ui.BasicWidget):
     
@@ -343,7 +345,6 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
     def _find_group_widget(self, name):
         
         item_count = self.child_layout.count()
-        found = []
         
         split_name = name.split('.')
         
@@ -365,12 +366,14 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 if item:
                     
                     widget = item.widget()
-                    label = widget.get_name()
                     
-                    if label == name:
-                        sub_widget = widget
-                        found = True
-                        break
+                    if widget.option_type == 'group':
+                        label = widget.get_name()
+                        
+                        if label == name:
+                            sub_widget = widget
+                            found = True
+                            break
                     
                 if not item:
                     break
@@ -529,6 +532,9 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             name = option[0]
             
+            log.info('Adding option: %s' % name )
+            
+            
             if split_name[-1] == '':
                 search_group = string.join(split_name[:-2], '.')
                 name = split_name[-2]
@@ -543,7 +549,8 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             is_group = False
             
-            if split_name[-1] == '':
+            if split_name[-1] == '' or split_name[-1] == u'':
+                
                 is_group = True
                 
                 parent_name = string.join(split_name[:-1], '.')
@@ -567,6 +574,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
                 if not widget:
                     self.add_group(group_name, value, group_widget)
                     widget = self._find_group_widget(after_search_group)
+                    is_group = True
+            
+            if is_group:
+                log.debug('Option is a group')
             
             if not option_type and not is_group:
                 
