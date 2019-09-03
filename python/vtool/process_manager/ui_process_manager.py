@@ -12,6 +12,7 @@ import ui_view
 import ui_options
 import ui_templates
 import ui_process_settings
+import ui_process_maintenance
 import ui_data
 import ui_code
 import ui_settings
@@ -131,11 +132,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.notes.textChanged.connect(self._save_notes)
         
         self.process_settings = ui_process_settings.ProcessSettings()
+        self.process_maintenance = ui_process_maintenance.ProcessMaintenance()
         
         self.option_tabs.addTab(option_widget, 'Options')
         self.option_tabs.addTab(self.notes, 'Notes')
         self.option_tabs.addTab(self.template_widget, 'Templates')
         self.option_tabs.addTab(self.process_settings, 'Settings')
+        self.option_tabs.addTab(self.process_maintenance, 'Maintenance')
         self.option_tabs.setCurrentIndex(1)
         
         self.option_tabs.currentChanged.connect(self._option_changed)
@@ -392,9 +395,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self._item_changed(item)
         
         if hasattr(item, 'get_path'):
-            self._load_options()
-            self._load_notes()
-            self._load_process_settings()
+            self._update_sidebar_tabs()
                 
     def _item_selection_changed(self):
         
@@ -445,6 +446,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self._load_notes()
         if self.option_tabs.currentIndex() == 3:
             self._load_process_settings()
+        if self.option_tabs.currentIndex() == 4:
+            self._load_process_maintenance()
             
             
     def _update_process(self, name):
@@ -652,6 +655,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process_settings.set_directory(self._get_current_path())
         
+    def _load_process_maintenance(self):
+        log.info('Load process maintenance')
+        self.process_maintenance.set_directory(self._get_current_path())
               
     def _update_build_widget(self):
         
@@ -810,6 +816,13 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self._current_tab = 3
             
             self._load_process_settings()
+            
+        if self.option_tabs.currentIndex() == 4:
+            self.template_widget.set_active(False)
+            self.process_settings.set_active(False)
+            self._current_tab = 4
+            
+            self._load_process_maintenance()
             
     def _clear_code(self, close_windows = False):
         
