@@ -5,6 +5,9 @@ from vtool import util
 from vtool.process_manager import process
 from vtool import util_file
 
+from vtool import logger
+log = logger.get_logger(__name__)
+
 class ProcessSettings(qt_ui.BasicWidget):
     
     def __init__(self):
@@ -16,6 +19,9 @@ class ProcessSettings(qt_ui.BasicWidget):
         self.setContentsMargins(1,1,1,1)
         
     def set_directory(self, directory):
+        
+        log.debug('Set process setting widget directory %s' % self.directory)
+        
         self.directory = directory
         self.name_widget.set_directory(self.directory)
         self.management_widget.set_directory(self.directory)
@@ -35,6 +41,8 @@ class ProcessSettings(qt_ui.BasicWidget):
         
         self.main_layout.addWidget(self.management_widget)
         self.main_layout.addWidget(self.name_widget)
+        
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
         
         
 class ManagementWidget(qt_ui.Group):
@@ -59,6 +67,9 @@ class ManagementWidget(qt_ui.Group):
         #self.main_layout.addWidget(backup)
         self.main_layout.addWidget(prune_version)
         
+        self.backup_dir = qt.QLabel('Backup Directory:')
+        
+        self.main_layout.addWidget(self.backup_dir)
         self.main_layout.addWidget(self.backup_history)
         
 
@@ -73,7 +84,9 @@ class ManagementWidget(qt_ui.Group):
             return
         
         self.directory = directory
-        self.backup_history.set_directory(directory)
+        backup = self.backup_history.set_directory(directory)
+        
+        self.backup_dir.setText('Backup Directory: %s' % backup)
         
         
 class BackupProcessFileWidget(qt_ui.BackupWidget):
@@ -89,12 +102,23 @@ class BackupProcessFileWidget(qt_ui.BackupWidget):
         if not directory:
             return
         
+        log.debug('Backup history widget process path: %s' % directory)
+        
         process_inst = process.Process()
         process_inst.set_directory(directory)
         
+        print 'setting process directory', directory
+        
         backup_directory = process_inst.get_backup_path()
         
+        log.debug('Backup history widget path: %s' % backup_directory)
+        
         self.set_history_directory(backup_directory)
+        
+        if backup_directory == ( directory + '/.backup' ):
+            backup_directory = 'local'
+        
+        return backup_directory
         
 class BackupProcessWidget(qt_ui.DirectoryWidget):    
     
@@ -104,8 +128,7 @@ class BackupProcessWidget(qt_ui.DirectoryWidget):
         
         self.save_button = qt.QPushButton('Backup Process')
         
-        self.save_button.setMaximumWidth(100)
-        #self.load_button.setMaximumWidth(100)
+        self.save_button.setMaximumWidth(125)
         self.save_button.setMinimumWidth(qt_ui._save_button_minimum)
         
         self.save_button.setSizePolicy(qt.QSizePolicy.Minimum, qt.QSizePolicy.Fixed)
@@ -123,7 +146,10 @@ class BackupProcessWidget(qt_ui.DirectoryWidget):
         
 class BackupProcessHistoryWidget(qt_ui.HistoryFileWidget):
     
-    pass
+    def _build_widgets(self):
+        super(BackupProcessHistoryWidget, self)._build_widgets()
+        
+        self.open_button.hide()
         
         
         
