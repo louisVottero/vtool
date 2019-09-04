@@ -671,7 +671,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         data_dir = util_file.join_path(path, '.data')
         
-        if not util_file.is_dir(data_dir):
+        if not util_file.exists(data_dir):
             return
         
         self.build_widget.update_data(data_dir)
@@ -703,7 +703,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
             template_history = util.get_custom('template_history', [])
             
-            if util_file.is_dir(template_directory):
+            if util_file.exists(template_directory):
             
                 util.show('Using custom template directory: %s' % template_directory)
                 
@@ -1458,7 +1458,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.directory = directory
         
-        if not util_file.is_dir(directory):
+        if not util_file.exists(directory):
             util_file.create_dir(name = None, directory = directory)
         
     def set_project_directory(self, directory, sub_part = None):
@@ -1556,7 +1556,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         for directory in directories:
             
-            if util_file.is_dir(directory):
+            if util_file.exists(directory):
                 if not directory in sys.path:
                     sys.path.append(directory)
     
