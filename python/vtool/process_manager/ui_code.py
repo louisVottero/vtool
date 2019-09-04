@@ -480,7 +480,7 @@ class CodeCompleter(qt_ui.PythonCompleter):
                 
             return found
         
-        if module_name == 'cmds':
+        if module_name == 'cmds' or module_name == 'mc':
             
             if assign_map:
                 if module_name in assign_map:
@@ -491,11 +491,19 @@ class CodeCompleter(qt_ui.PythonCompleter):
                 import maya.cmds as cmds
                 
                 functions = dir(cmds)
-                                    
+                
                 return functions
-            
         
-            
+        if module_name == 'pm' or module_name == 'pymel':
+            if assign_map:
+                if module_name in assign_map:
+                    return []
+            if vtool.util.is_in_maya():
+                import pymel.all as pymel
+                
+                functions = dir(pymel)
+                return functions
+        
         return found
         
 class ScriptWidget(vtool.qt_ui.DirectoryWidget):
