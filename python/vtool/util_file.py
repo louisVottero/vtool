@@ -859,7 +859,7 @@ class SettingsFile(object):
         
         filepath = join_path(directory, name + '.json')
         
-        if is_file(filepath):
+        if exists(filepath):
             return True
         else:
             return False
