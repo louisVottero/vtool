@@ -72,14 +72,8 @@ def is_process(directory):
     
     code_path = util_file.join_path(directory, '.code')
     
-    if not util_file.is_dir(code_path):
+    if not util_file.exists(code_path):
         return False
-    
-    #removing to increase speed
-    #data_path = util_file.join_path(directory, '.data')
-    
-    #if not util_file.is_dir(data_path):
-    #    return False
     
     return True
 
@@ -428,11 +422,11 @@ class Process(object):
             bool: Check to see if the initialized process is valid.
         """
         
-        if not util_file.is_dir(self.get_code_path()):
+        if not util_file.exists(self.get_code_path()):
             
             path = self.get_path()
             self._handle_old_folders(path)
-            if not util_file.is_dir(self.get_code_path()):
+            if not util_file.exists(self.get_code_path()):
                 return False
         
         return True
