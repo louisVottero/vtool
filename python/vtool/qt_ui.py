@@ -4972,26 +4972,20 @@ class PythonCompleter(qt.QCompleter):
             
             fix_path = util_file.fix_slashes(path)
             
-            #if not util_file.is_dir(fix_path):
-            #    continue
+            stuff_in_folder = util_file.get_files_and_folders(fix_path)
             
-            folders = util_file.get_folders(fix_path)
-            
-            for folder in folders:
+            for file_or_folder in stuff_in_folder:
                 
-                folder_path = util_file.join_path(fix_path, folder)
+                folder_path = util_file.join_path(fix_path, file_or_folder)
                 files = util_file.get_files_with_extension('py', folder_path, fullpath = False)
                 
                 if '__init__.py' in files:
-                    import_name = 'import %s' % folder
-                    imports.append(str(folder))
+                    imports.append(str(file_or_folder))
             
             python_files = util_file.get_files_with_extension('py', fix_path, fullpath = False)
             
             for python_file in python_files:
                 
-                #if python_file == '__init__.py':
-                #    continue
                 if python_file.startswith('__'):
                     continue
                 
@@ -5137,175 +5131,190 @@ class PythonCompleter(qt.QCompleter):
         if m and m.group(2):
             scope_text = all_text[:(cursor.position() - len(m.group(2)) + 1)]
         
-        if m:
+        if not m:
+            return False
             
-            assignment = m.group(1)
+        assignment = m.group(1)
+        
+        if column < m.end(1):
+            return False
+        
+        sub_m = re.search('(from|import)\s+(%s)' % assignment, text)
+        
+        if sub_m:
+            return False
+        
+        text = self.widget().toPlainText()
+        lines = util_file.get_text_lines(text)
+        
+        path = None
+        
+        assign_map = util_file.get_ast_assignment(scope_text, line_number-1, assignment)
+        sub_part = None
+        
+        target = None
+        
+        #searching for assignments
+        if assign_map:
             
-            if column < m.end(1):
-                return False
-            
-            sub_m = re.search('(from|import)\s+(%s)' % assignment, text)
-            
-            if sub_m:
-                return False
-            
-            text = self.widget().toPlainText()
-            lines = util_file.get_text_lines(text)
-            
-            path = None
-            
-            assign_map = util_file.get_ast_assignment(scope_text, line_number-1, assignment)
-            sub_part = None
-            
-            target = None
-            #searching for assignments
-            
-            if assign_map:
+            if assignment in assign_map:
+                target = assign_map[assignment]
                 
-                if assignment in assign_map:
-                    target = assign_map[assignment]
-                    
-                else:
-                    split_assignment = assignment.split('.')
-                    
-                    inc = 1
-                    
-                    while not assignment in assign_map:
-                        
-                        sub_assignment = string.join(split_assignment[:(inc*-1)],'.')
-                        
-                        if sub_assignment in assign_map:
-                            target = assign_map[sub_assignment]
-                            break
-                        
-                        inc += 1
-                        if inc > (len(split_assignment) - 1):
-                            break
+            else:
+                split_assignment = assignment.split('.')
                 
-                    sub_part = string.join(split_assignment[inc:], '.')
+                inc = 1
+                
+                while not assignment in assign_map:
                     
-            module_name = m.group(1)
+                    sub_assignment = string.join(split_assignment[:(inc*-1)],'.')
+                    
+                    if sub_assignment in assign_map:
+                        target = assign_map[sub_assignment]
+                        break
+                    
+                    inc += 1
+                    if inc > (len(split_assignment) - 1):
+                        break
             
-            if target and len(target) == 2:
-                if target[0] == 'import':
-                    module_name = target[1]
-                if not target[0] == 'import':
-                    
-                    module_name = target[0]
-                    sub_part = target[1]
-                    
-            #import from module   
-            if module_name:
+                sub_part = string.join(split_assignment[inc:], '.')
                 
-                imports = None
+        module_name = m.group(1)
+        
+        if target and len(target) == 2:
+            if target[0] == 'import':
+                module_name = target[1]
+            if not target[0] == 'import':
                 
-                if lines == self.last_lines:
-                    imports = self.last_imports
+                module_name = target[0]
+                sub_part = target[1]
                 
-                if not imports:
-                    imports = util_file.get_line_imports(lines)
-                
-                self.last_imports = imports
-                self.last_lines = lines
-                
-                if module_name in imports:
-                    path = imports[module_name]
-                    
-                if not module_name in imports:
-                
-                    split_assignment = module_name.split('.')
-                    
-                    last_part = split_assignment[-1]
-                    
-                    if last_part in imports:
-                        path = imports[last_part]
-    
-                    #if not last_part in imports:
-                    #    module_name = None
-                    
-                if path and not sub_part:
-                    test_text = ''
-                    defined = None
-                    
-                    if path == self.last_path:
-                        defined = self.current_defined_imports
-                    
-                    if len(m.groups()) > 0:
-                        test_text = m.group(2)
-                    
-                    if not defined:
-                        
-                        defined = self.get_imports(path)
-                            
-                        if defined:
-                            self.current_defined_imports = defined
-                            
-                        if not defined:
-                            defined = self.get_sub_imports(path)
-                    
-                    custom_defined = self.custom_import_load(assign_map, module_name)
-                    
-                    if custom_defined:
-                        defined = custom_defined
-                    
-                    if defined:
-                        self.string_model.setStringList(defined)
-                        self.setCompletionPrefix(test_text)
-                        
-                        self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
-                         
-                        self.popup().setCurrentIndex(self.completionModel().index(0,0))
-                        return True
-    
-                #import from a class of a module
-                if path and sub_part:
-                    
-                    sub_functions = None
-                    
-                    if self.last_path_and_part:
-                        if path == self.last_path_and_part[0] and sub_part == self.last_path_and_part[1]:
-                            sub_functions = self.current_sub_functions
-                        
-                    if not sub_functions:
-                        sub_functions = util_file.get_ast_class_sub_functions(path, sub_part)
-                        if sub_functions:
-                            self.current_sub_functions = sub_functions
-                    
-                    self.last_path_and_part = [path, sub_part]
-                    
-                    if not sub_functions:
-                        return False
-                    
-                    test_text = ''
-                    
-                    if len(m.groups()) > 0:
-                        test_text = m.group(2)
-                                        
-                    self.string_model.setStringList(sub_functions)
-                    self.setCompletionPrefix(test_text)
-                    self.popup().setCurrentIndex(self.completionModel().index(0,0))
-                    
-                    return True
-                
-            module_name = m.group(1)
+        #import from module   
+        if module_name:
             
-            if module_name:
-                custom_defined = self.custom_import_load(assign_map, module_name)
+            imports = None
+            
+            if lines == self.last_lines:
+                imports = self.last_imports
+            
+            if not imports:
+                imports = util_file.get_line_imports(lines)
+            
+            self.last_imports = imports
+            self.last_lines = lines
+            
+            if module_name in imports:
+                path = imports[module_name]
                 
+            if not module_name in imports:
+            
+                split_assignment = module_name.split('.')
+                
+                last_part = split_assignment[-1]
+                
+                if last_part in imports:
+                    path = imports[last_part]
+
+            if path and not sub_part:
                 test_text = ''
-                    
+                defined = None
+                
+                if path == self.last_path:
+                    defined = self.current_defined_imports
+                
+                test_text = m.group()
+                
                 if len(m.groups()) > 0:
                     test_text = m.group(2)
                 
-                self.string_model.setStringList(custom_defined)
+                if not defined:
+                    
+                    defined = self.get_imports(path)
+                        
+                    if defined:
+                        self.current_defined_imports = defined
+                        
+                    if not defined:
+                        defined = self.get_sub_imports(path)
+                
+                custom_defined = self.custom_import_load(assign_map, module_name)
+                
+                if custom_defined:
+                    defined = custom_defined
+                
+                if defined:
+                    
+                    if test_text and test_text[0].islower():
+                        defined.sort(key=str.swapcase)
+                        
+                    self.string_model.setStringList(defined)
+                    self.setCompletionPrefix(test_text)
+                    
+                    self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
+                     
+                    self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                    return True
+            
+            #import from a class of a module
+            if path and sub_part:
+                
+                sub_functions = None
+                
+                if self.last_path_and_part:
+                    if path == self.last_path_and_part[0] and sub_part == self.last_path_and_part[1]:
+                        sub_functions = self.current_sub_functions
+                    
+                if not sub_functions:
+                    sub_functions = util_file.get_ast_class_sub_functions(path, sub_part)
+                    if sub_functions:
+                        self.current_sub_functions = sub_functions
+                
+                self.last_path_and_part = [path, sub_part]
+                
+                if not sub_functions:
+                    return False
+                
+                test_text = ''
+                
+                if len(m.groups()) > 0:
+                    test_text = m.group(2)
+                      
+                if test_text and test_text[0].islower():
+                    sub_functions.sort(key=str.swapcase)
+                                    
+                self.string_model.setStringList(sub_functions)
                 self.setCompletionPrefix(test_text)
+                
+                self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
+                
                 self.popup().setCurrentIndex(self.completionModel().index(0,0))
+                
                 return True
+                
+        module_name = m.group(1)
+        
+        if module_name:
+            custom_defined = self.custom_import_load(assign_map, module_name)
+            
+            test_text = ''
+            
+            if len(m.groups()) > 0:
+                test_text = m.group(2)
+            
+            if test_text and test_text[0].islower():
+                custom_defined.sort(key=str.swapcase)
+            
+            self.string_model.setStringList(custom_defined)
+            self.setCompletionPrefix(test_text)
+            
+            self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
+            
+            self.popup().setCurrentIndex(self.completionModel().index(0,0))
+            return True
             
         return False
     
     def custom_import_load(self, assign_map, module_name):
-        
         return
     
     def handle_from_import(self, text, column):
