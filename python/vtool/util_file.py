@@ -502,12 +502,9 @@ class VersionFile(object):
     
     def has_versions(self):
         
-        
-        
         version_folder = self._get_version_folder()
         
-        
-        if is_dir(version_folder):
+        if exists(version_folder):
             return True
         
     def get_count(self):
@@ -1514,7 +1511,7 @@ def get_files(directory):
 
 def get_folders_without_prefix_dot(directory, recursive = False, base_directory = None):
     
-    if not is_dir(directory):
+    if not exists(directory):
         return
     
     found_folders = []
@@ -1637,11 +1634,11 @@ def get_files_and_folders(directory):
     Returns:
         list: A list of files and folders in the directory.
     """
-        
-    if not is_dir(directory):
-        return
-        
-    files = os.listdir(directory)
+    
+    try:
+        files = os.listdir(directory)
+    except:
+        files = []
     
     return files
 
@@ -1925,6 +1922,9 @@ def get_text_lines(text):
 
 def exists(directory):
     
+    if not directory:
+        return False
+    
     if os.path.exists(directory):
         return True
     else:
@@ -1938,7 +1938,7 @@ def is_dir(directory):
         
     if not directory:
         return False
-    
+        
     log.debug('is directory: %s' % directory)
         
     try:
@@ -1954,9 +1954,7 @@ def is_file(filepath):
     Returns: 
         bool
     """
-    
-    
-    
+     
     if not filepath:
         return False
     
@@ -2332,7 +2330,7 @@ def rename(directory, name, make_unique = False):
     if make_unique:
         renamepath = inc_path_name(renamepath)
         
-    if is_dir(renamepath) or is_file(renamepath):
+    if exists(renamepath):
         return False
 
     try:
@@ -2472,9 +2470,6 @@ def delete_dir(name, directory = None):
         str: The folder that was deleted with path.
     """
     
-    
-    
-    
     util.clean_file_string(name)
     
     full_path = name
@@ -2482,13 +2477,16 @@ def delete_dir(name, directory = None):
     if directory:
         full_path = join_path(directory, name)
     
-    if not is_dir(full_path):
+    if not exists(full_path):
             
-        util.show('%s was not deleted. It is not a folder.' % full_path)
+        util.show('%s was not deleted. It does not exist.' % full_path)
         
         return full_path
     
-    shutil.rmtree(full_path, onerror = delete_read_only_error)  
+    try:
+        shutil.rmtree(full_path, onerror = delete_read_only_error)
+    except:
+        util.warning('Could not remove children of path %s' % full_path)  
     
     return full_path
 
@@ -2509,14 +2507,19 @@ def refresh_dir(directory):
     base_name = get_basename(directory)
     dir_name = get_dirname(directory)
     
-    if is_dir(directory):
-        files = get_files(directory)
-        for filename in files:
-            delete_file(filename, directory)
+    if exists(directory):
+        try:
+            files = get_files(directory)
+        except:
+            files = []
+        
+        if files:
+            for filename in files:
+                delete_file(filename, directory)
             
         delete_dir(base_name, dir_name)
         
-    if not is_dir(directory):
+    if not exists(directory):
         create_dir(base_name, dir_name)
 
 def create_file(name, directory = None, make_unique = False):
@@ -2652,33 +2655,6 @@ def delete_pyc(python_script):
             return
         
         delete_file( c_name, c_dir_name)
-            
-def import_python_module(module_name, directory):
-    
-    if not is_dir(directory):
-        return
-        
-    full_path = join_path(directory, module_name)
-    
-    module = None
-    
-    if is_file(full_path):
-        if not directory in sys.path:
-            sys.path.append(directory)
-            
-        split_name = module_name.split('.')
-        script_name = split_name[0]
-                        
-        exec('import %s' % script_name)
-        exec('reload(%s)' % script_name)
-            
-        module = eval(script_name)
-        
-        get_permission(directory)
-        
-        sys.path.remove(directory)
-        
-    return module
 
 def remove_sourced_code(code_directory):
 
@@ -2705,7 +2681,6 @@ def source_python_module(code_directory):
     
     try:
         try:
-            
             remove_sourced_code(code_directory)
             
             fin = open(code_directory, 'r')
@@ -2739,32 +2714,32 @@ def load_python_module(module_name, directory):
         With the module instance you can access programattically functions and attributes of the modules.
         
     """    
-    if is_dir(directory):
         
-        full_path = join_path(directory, module_name)
-                
-        if is_file(full_path):
+    full_path = join_path(directory, module_name)
             
-            split_name = module_name.split('.')
-            
-            filepath, pathname, description = imp.find_module(split_name[0], 
-                                                        [directory])
-            
-            try:
-                module = imp.load_module(module_name, 
-                                         filepath, 
-                                         pathname, 
-                                         description)
-                
-            except:
-                filepath.close()
-                return traceback.format_exc()
-            
-            finally:
-                if filepath:
-                    filepath.close()
-            
-            return module
+    if not exists(full_path):
+        return
+    
+    split_name = module_name.split('.')
+    
+    filepath, pathname, description = imp.find_module(split_name[0], 
+                                                [directory])
+    
+    try:
+        module = imp.load_module(module_name, 
+                                 filepath, 
+                                 pathname, 
+                                 description)
+        
+    except:
+        filepath.close()
+        return traceback.format_exc()
+    
+    finally:
+        if filepath:
+            filepath.close()
+    
+    return module
         
 #--- code analysis
         
@@ -2805,11 +2780,7 @@ def get_package_path_from_name(module_name, return_module_path = False):
         
         test_path = join_path(test_path, name)
         
-        #if not is_dir(test_path):
-        #    continue
-        
         files = get_files_with_extension('py', test_path)
-        #files = get_files(test_path)
         
         if not files:
             continue
@@ -2819,8 +2790,6 @@ def get_package_path_from_name(module_name, return_module_path = False):
         
         if not '__init__.py' in files:
             return None
-        
-        
                 
         inc += 1
     
@@ -2832,8 +2801,6 @@ def get_line_class_map(lines):
         
         line = str(line)
         
-        
-    
 def get_line_imports(lines):
     """
     This needs to be replaced by AST stuff.
@@ -3137,9 +3104,6 @@ def get_ast_assignment(text, line_number, assignment):
                     for target in node.targets:
                         if hasattr(target, 'id'):
                             targets.append( target.id )
-                    
-                    if hasattr(node.value, ''):
-                        pass
                     
                     if hasattr(node.value, 'id'):
                         value = node.value.id
