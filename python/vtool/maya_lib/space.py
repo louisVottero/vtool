@@ -1,5 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+
+
 import random
 import string
 
@@ -8,9 +10,11 @@ import api
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
+    import maya.api.OpenMaya as om
     
 import core
 import attr
+import math
 
 #do not import geo
 
@@ -4756,3 +4760,47 @@ def set_rotateZ_limit(transform, min_value, max_value):
         max_value = 45
     
     cmds.transformLimits(transform, rz = [min_value, max_value],erz= [min_bool, max_bool])
+    
+def orig_matrix_match(transform, destination_transform):
+    """
+    This command is to be used for space switching.
+    the transforms need to have origMatrix
+    origMatrix is a matrix attribute that should store the original worldMatrix of the transform and destination_transform.
+    By doing this it is possible to match any transform to any transform that has origMatrix.  It basically saves out how the two transforms relate spacially.  
+    origMatrix needs to be added to the transform before animation/posing happens and before this command runs.
+    
+    """
+    orig_matrix = cmds.getAttr('%s.origMatrix' % transform)
+    parent_inverse_matrix = cmds.getAttr('%s.parentInverseMatrix' % transform)
+    rotate_order = cmds.getAttr('%s.rotateOrder' % transform)
+    
+    orig_dest_matrix = cmds.getAttr('%s.origMatrix' % destination_transform)
+    dest_matrix = cmds.getAttr('%s.worldMatrix' % destination_transform)
+    
+    om_orig_matrix = om.MMatrix(orig_matrix)
+    om_parent_inverse_matrix = om.MMatrix(parent_inverse_matrix)
+    om_orig_dest_matrix = om.MMatrix(orig_dest_matrix)
+    om_dest_matrix = om.MMatrix(dest_matrix)
+    
+    new_matrix = om_orig_matrix * om_orig_dest_matrix.inverse() * om_dest_matrix * om_parent_inverse_matrix
+    
+    transform = om.MTransformationMatrix(new_matrix)
+    transform.reorderRotation(rotate_order + 1)
+    
+    values = transform.translation(om.MSpace.kWorld)
+    
+    cmds.setAttr('%s.translateX' % transform, values.x)
+    cmds.setAttr('%s.translateY' % transform, values.y)
+    cmds.setAttr('%s.translateZ' % transform, values.z)
+    
+    values = transform.rotation()
+    
+    cmds.setAttr('%s.rotateX' % transform, math.degrees(values.x))
+    cmds.setAttr('%s.rotateY' % transform, math.degrees(values.y))
+    cmds.setAttr('%s.rotateZ' % transform, math.degrees(values.z))
+    
+    values = transform.scale()
+    
+    cmds.setAttr('%s.scaleX' % transform, values.x)
+    cmds.setAttr('%s.scaleY' % transform, values.y)
+    cmds.setAttr('%s.scaleZ' % transform, values.z)
