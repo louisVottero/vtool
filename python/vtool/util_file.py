@@ -1960,9 +1960,6 @@ def is_file(filepath):
     
     log.debug('is file: %s' % filepath)
     
-    if filepath == '/home/lvottero/vtool/python/vtool/icons':
-        raise
-    
     try:
         mode = os.stat(filepath)[stat.ST_MODE]
         if stat.S_ISREG(mode):

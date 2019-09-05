@@ -1854,7 +1854,7 @@ class Process(object):
         
         filename =  util_file.join_path(manifest_path, self.process_data_filename)
         
-        if not util_file.is_file(filename):
+        if not util_file.exists(filename):
             self.create_code('manifest', 'script.manifest')
         
         return filename
@@ -2001,8 +2001,7 @@ class Process(object):
             
             filepath = self.get_code_file(script_name)
             
-            if not util_file.is_file(filepath):
-                
+            if not util_file.exists(filepath):
                 continue
             
             if scripts[inc] in synced_scripts:
