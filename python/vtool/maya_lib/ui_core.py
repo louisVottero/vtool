@@ -10,6 +10,8 @@ import maya.cmds as cmds
 import maya.mel as mel
 import maya.utils
 
+from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockableMixin
+
 
 #--- signals
 class new_scene_object(qt.QtCore.QObject):
@@ -92,24 +94,49 @@ def get_maya_window():
 
 def create_window(ui, dock_area = 'right'): 
     
+    #this was needed to have the ui predictably load.
+    mel.eval('updateRendererUI;')
+    
     ui_name = str(ui.objectName())
-    dock_name = '%sDock' % ui_name
-    dock_name = dock_name.replace(' ', '_')
-    dock_name = dock_name.replace('-', '_')
     
-    path = 'MayaWindow|%s' % dock_name
-    
-    if cmds.dockControl(path,ex = True):
-        cmds.deleteUI(dock_name, control = True)
-        ui.close()
-        
-    allowed_areas = ['right', 'left']
+    old_parent = ui.parent()
+    old_parent_name = None
+    if old_parent:
+        old_parent_name = old_parent.objectName()
     
     util.show('Creating dock window.', ui_name)
     
-    #this was needed to have the ui predictably load. 
-    mel.eval('updateRendererUI;')
+    window = MayaWidgetMixin()
+    window.main_layout.addWidget(ui)
+    window.setWindowTitle(ui_name)
     
+    
+    if old_parent_name and old_parent_name.find('Mixin') > -1:
+        old_parent.close()
+        cmds.deleteUI(old_parent_name)
+    
+        
+    allowed_areas = ['right', 'left']
+    
+    window.setDockableParameters(dockable=True, 
+                                    floating=None, 
+                                    area=dock_area, 
+                                    allowedArea=allowed_areas, 
+                                    width=None, 
+                                    widthSizingProperty=None, 
+                                    minWidth=None, 
+                                    height=None, 
+                                    heightSizingProperty=None, 
+                                    x=None, 
+                                    y=None, 
+                                    retain=True, 
+                                    plugins=None, 
+                                    controls=None, 
+                                    uiScript=None, 
+                                    closeCallback=None)
+    
+    window.show()
+    """
     try:
         dock = DockControlWrapper()
         dock.set_dock_name(dock_name)
@@ -124,7 +151,7 @@ def create_window(ui, dock_area = 'right'):
         #do not remove
         util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
         util.error( traceback.format_exc() )
-
+    """
 class DockControlWrapper(object):
 
     def __init__(self):
@@ -190,15 +217,45 @@ class DockControlWrapper(object):
             return
         else:
             cmds.dockControl(self._dock_name,aa=self._allowed_areas, a = self._dock_area, content=self._label, label=self._label,  fl = floating, visible = True, fcc = self._floating_changed)
-        
-     
+  
+def delete_workspace_control(name):
     
+    
+    
+    if cmds.workspaceControl(name, q=True, exists=True):
+        print 'workspace exists, deleting'
+        cmds.workspaceControl(name,e=True, close=True)
+        cmds.deleteUI(name,control=True)    
+
+class MayaDockMixin(MayaQWidgetDockableMixin):
+    def show(self, *args, **kwargs):
+        
+        #cmds.workspaceControl(workspaceControlName, label=self.windowTitle(), retain=retain, loadImmediately=True, floating=True, initialWidth=width, widthProperty=widthSizingProperty, initialHeight=height, heightProperty=heightSizingProperty, requiredPlugin=plugins, requiredControl=controls)
+        
+        super(MayaDockMixin, self).show(dockable = True, *args, **kwargs)
+
+class MayaBasicMixin(MayaQWidgetBaseMixin):
+    pass
+
+class MayaWidgetMixin(MayaDockMixin, qt_ui.BasicWidget):
+    pass
+
+class MayaWindowMixin(MayaDockMixin, qt_ui.BasicWindow):
+    pass
+
 class MayaWindow(qt_ui.BasicWindow):
     def __init__(self):
         super(MayaWindow, self).__init__( get_maya_window() )
         
-        
-                
 class MayaDirectoryWindow(qt_ui.DirectoryWindow):
     def __init__(self):
         super(MayaDirectoryWindow, self).__init__( get_maya_window() )
+
+class MayaDockWidget(MayaBasicMixin, qt.QDockWidget):
+    
+    def __init__(self, parent = None, *args, **kwargs):
+        super(MayaDockWidget, self).__init__(parent = parent, *args, **kwargs)
+        
+        #self.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
+        self.setAllowedAreas(qt.QtCore.Qt.TopDockWidgetArea)
+        
