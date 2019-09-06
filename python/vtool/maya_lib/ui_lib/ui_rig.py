@@ -27,7 +27,10 @@ from vtool.maya_lib import curve
 def pose_manager(shot_sculpt_only = False):
     from vtool.maya_lib.ui_lib import ui_corrective
     
-    window = ui_corrective.PoseManager(shot_sculpt_only)
+    window = ui_corrective.PoseManager._last_instance
+        
+    if not window:
+        window = ui_corrective.PoseManager(shot_sculpt_only)
     
     return window
 
@@ -77,8 +80,9 @@ def presets():
     return window
 
 
-class ProcessMayaWindow(ui_process_manager.ProcessManagerWindow):
-    
+#class ProcessMayaWindow(ui_process_manager.ProcessManagerWindow):
+class ProcessMayaWindow(ui_core.MayaBasicMixin,ui_process_manager.ProcessManagerWindow):
+    title = 'Process'
     def __init__(self):
         super(ProcessMayaWindow, self).__init__( ui_core.get_maya_window() )
         
