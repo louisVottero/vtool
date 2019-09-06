@@ -32,7 +32,7 @@ class ProcessMaintenance(qt_ui.BasicWidget):
         self.name_widget.set_active(bool_value)
     
     def _build_widgets(self):
-        
+                
         self.backup_group = BackupGroup()
         self.backup_group.collapse_group()
         
@@ -82,7 +82,11 @@ class VersionsGroup(qt_ui.Group):
         
     def _build_widgets(self):
         
+        help_label = qt.QLabel('This utility helps remove old versions.\n After a process is finished, this can help save memory.\n  Be careful not to delete needed data.')
+        
         self.prune_versions_widget = PruneVersionsWidget()
+        
+        self.main_layout.addWidget(help_label)
         self.main_layout.addWidget(self.prune_versions_widget)
     
     def set_directory(self, directory):
@@ -97,7 +101,7 @@ class VersionsGroup(qt_ui.Group):
 class PruneVersionsWidget(qt_ui.BasicWidget):
     
     def _define_main_layout(self):
-        return qt.QHBoxLayout()
+        return qt.QVBoxLayout()
     
     def _build_widgets(self):
         
