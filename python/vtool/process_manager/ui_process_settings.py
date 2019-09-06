@@ -24,7 +24,6 @@ class ProcessSettings(qt_ui.BasicWidget):
         
         self.directory = directory
         self.name_widget.set_directory(self.directory)
-        self.management_widget.set_directory(self.directory)
     
     def set_active(self, bool_value):
         
@@ -39,10 +38,3 @@ class ProcessSettings(qt_ui.BasicWidget):
         
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
         
-        
-
-        
-        
-        
-        
-    
