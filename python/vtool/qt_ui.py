@@ -128,8 +128,13 @@ class DirectoryWindow(BasicWindow):
         self.directory = directory
        
 class BasicWidget(qt.QWidget):
-
+    
+    _last_instance = None
+    
     def __init__(self, parent = None, scroll = False):
+        
+        self.__class__._last_instance = self
+        
         super(BasicWidget, self).__init__(parent)
         
         self.main_layout = self._define_main_layout() 
@@ -166,7 +171,8 @@ class BasicWidget(qt.QWidget):
         
         
         self._build_widgets()
-        
+    
+    
     def keyPressEvent(self, event):
         return
 
