@@ -24,7 +24,11 @@ class PoseManager(ui_core.MayaWindow):
     def __init__(self, shot_sculpt_only = False):
         self.shot_sculpt_only = shot_sculpt_only
         
+        
+        
         super(PoseManager, self).__init__()
+        
+        self.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
     
     def _define_main_layout(self):
         layout = qt.QVBoxLayout()
