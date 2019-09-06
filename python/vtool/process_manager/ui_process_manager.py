@@ -77,6 +77,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.view_widget.tree_widget.show_notes.connect(self._show_notes)
         self.view_widget.tree_widget.show_templates.connect(self._show_templates)
         self.view_widget.tree_widget.show_settings.connect(self._show_settings)
+        self.view_widget.tree_widget.show_maintenance.connect(self._show_maintenaince)
         self.view_widget.tree_widget.process_deleted.connect(self._process_deleted)
         self.view_widget.path_filter_change.connect(self._update_path_filter)
         
@@ -276,8 +277,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.build_widget = ui_data.ProcessBuildDataWidget()
         self.build_widget.hide()
         
-        
-        
         btm_layout.addWidget(self.bottom_widget)
         btm_layout.addSpacing(1)
         btm_layout.addWidget(self.build_widget, alignment = qt.QtCore.Qt.AlignBottom)
@@ -349,6 +348,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.process_splitter.setSizes([1,1])
         self.option_tabs.setCurrentIndex(3)
+        
+    def _show_maintenaince(self):
+        self.process_splitter.setSizes([1,1])
+        self.option_tabs.setCurrentIndex(4)
         
     def _process_deleted(self):
         self._clear_code(close_windows=True)
