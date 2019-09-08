@@ -97,142 +97,92 @@ def create_window(ui, dock_area = 'right'):
     #this was needed to have the ui predictably load.
     mel.eval('updateRendererUI;')
     
-    ui_name = str(ui.objectName())
-    
-    old_parent = ui.parent()
-    old_parent_name = None
-    if old_parent:
-        old_parent_name = old_parent.objectName()
+    ui_name = ui.title
     
     util.show('Creating dock window.', ui_name)
     
-    window = MayaWidgetMixin()
-    window.main_layout.addWidget(ui)
-    window.setWindowTitle(ui_name)
+    ui.show()
     
-    
-    if old_parent_name and old_parent_name.find('Mixin') > -1:
-        old_parent.close()
-        cmds.deleteUI(old_parent_name)
-    
-        
-    allowed_areas = ['right', 'left']
-    
-    window.setDockableParameters(dockable=True, 
-                                    floating=None, 
-                                    area=dock_area, 
-                                    allowedArea=allowed_areas, 
-                                    width=None, 
-                                    widthSizingProperty=None, 
-                                    minWidth=None, 
-                                    height=None, 
-                                    heightSizingProperty=None, 
-                                    x=None, 
-                                    y=None, 
-                                    retain=True, 
-                                    plugins=None, 
-                                    controls=None, 
-                                    uiScript=None, 
-                                    closeCallback=None)
-    
-    window.show()
-    """
-    try:
-        dock = DockControlWrapper()
-        dock.set_dock_name(dock_name)
-        dock.set_label(ui_name)
-        dock.set_dock_area(dock_area)
-        dock.set_allowed_areas(allowed_areas)
-        dock.create()
-        #cmds.dockControl(dock_name,aa=allowed_areas, a = dock_area, content=ui_name, label=ui_name,  fl = False, visible = True, fcc = self._floating_changed)
-        ui.show()
-    
-    except:
-        #do not remove
-        util.warning('%s window failed to load. Maya may need to finish loading.' % ui_name)
-        util.error( traceback.format_exc() )
-    """
-class DockControlWrapper(object):
+    return ui
 
-    def __init__(self):
-        
-        self._dock_area = 'right'
-        self._dock_name = 'dock'
-        self._allowed_areas = ['right', 'left']
-        self._label = ''
-
-    def _floating_changed(self):
-        
-        settings_dir = util.get_env('VETALA_SETTINGS')
-        
-        settings = util_file.SettingsFile()
-        
-        settings.set_directory(settings_dir)
-        
-        floating = cmds.dockControl(self._dock_name, floating = True, q = True )
-                
-        settings.set('%s floating' % self._label, floating)
-        
-    def _get_was_floating(self):
-        settings_dir = util.get_env('VETALA_SETTINGS')
-        settings = util_file.SettingsFile()
-        settings.set_directory(settings_dir)
-        
-        settings.has_setting('%s floating' % self._label)
-        
-        floating =  settings.get('%s floating' % self._label)
-                
-        return floating
-        
-    def _exists(self):
-        
-        if cmds.dockControl(self._dock_name, exists = True):
-            return True
-        
-        return False  
-
-    def set_dock_area(self, dock_area):
-        self._dock_area = dock_area
-        
-    def set_dock_name(self, dock_name):
-        self._dock_name = dock_name
-        
-        
-        
-    def set_label(self, label):
-        self._label = label
     
-    def set_allowed_areas(self, areas_list):
-        self._allowed_areas = areas_list
+
+def was_floating(label):
+    settings = util_file.get_vetala_settings_inst()
+    
+    floating =  settings.get('%s floating' % label)
+    
+    return floating
+
+def floating_changed(label, floating):
         
-    def create(self):
+    settings = util_file.get_vetala_settings_inst()
         
-        floating = False
-        
-        if self._get_was_floating():
-            floating = True
-        
-        if self._exists():
-            cmds.dockControl(self._dock_name, visible = True)
-            return
-        else:
-            cmds.dockControl(self._dock_name,aa=self._allowed_areas, a = self._dock_area, content=self._label, label=self._label,  fl = floating, visible = True, fcc = self._floating_changed)
-  
+    floating_value = True    
+    if not floating:
+        floating_value = False
+            
+    settings.set('%s floating' % label, floating_value)
+
 def delete_workspace_control(name):
     
     
     
     if cmds.workspaceControl(name, q=True, exists=True):
-        print 'workspace exists, deleting'
         cmds.workspaceControl(name,e=True, close=True)
         cmds.deleteUI(name,control=True)    
 
 class MayaDockMixin(MayaQWidgetDockableMixin):
+    
+    def floatingChanged(self, isFloating):
+        
+        print 'floating changed!!'
+        
+        parent = OpenMayaUI.MQtUtil.getCurrentParent()
+        print OpenMayaUI.MQtUtil.fullName(long(parent))
+        
+        #OpenMayaUI.MQtUtil.getParent()
+        
+        parent = self.parent()
+        if parent:
+            
+            while parent:
+                
+                parent = parent.parent()
+                if parent:
+                    print parent.objectName()
+                    class_name = parent.__class__.__name__
+                    
+                    print class_name
+                    if class_name == 'QStackedWidget':
+                        'stacked!!!'
+                        print parent.count()
+                        
+                    if class_name == 'QTabWidget':
+                        print 'here is tab'
+                        print parent.count()
+                        print parent.tabText(0)
+                        print parent.windowTitle()
+                    
+                    
+            
+            
+        ui_name = self.title
+        
+        isFloating = int(isFloating)
+        
+        
+        
+        floating_changed(ui_name,isFloating)
+    
+    def windowStateChanged(self):
+        print 'here!!!!!!!!!!!!'
+    
     def show(self, *args, **kwargs):
         
-        #cmds.workspaceControl(workspaceControlName, label=self.windowTitle(), retain=retain, loadImmediately=True, floating=True, initialWidth=width, widthProperty=widthSizingProperty, initialHeight=height, heightProperty=heightSizingProperty, requiredPlugin=plugins, requiredControl=controls)
-        
-        super(MayaDockMixin, self).show(dockable = True, *args, **kwargs)
+        print 'show!!!'
+        floating = was_floating(self.title)
+        super(MayaDockMixin, self).show(dockable = True, floating = floating, area = 'right')
 
 class MayaBasicMixin(MayaQWidgetBaseMixin):
     pass
@@ -242,6 +192,14 @@ class MayaWidgetMixin(MayaDockMixin, qt_ui.BasicWidget):
 
 class MayaWindowMixin(MayaDockMixin, qt_ui.BasicWindow):
     pass
+
+class MayaDirectoryWindowMixin(MayaDockMixin, qt_ui.DirectoryWindow):
+    
+    def show(self, *args, **kwargs):
+        
+        super(MayaDirectoryWindowMixin, self).show(*args, **kwargs)
+        
+        self.setDockNestingEnabled(True)
 
 class MayaWindow(qt_ui.BasicWindow):
     def __init__(self):
@@ -257,5 +215,5 @@ class MayaDockWidget(MayaBasicMixin, qt.QDockWidget):
         super(MayaDockWidget, self).__init__(parent = parent, *args, **kwargs)
         
         #self.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
-        self.setAllowedAreas(qt.QtCore.Qt.TopDockWidgetArea)
+        #self.setAllowedAreas(qt.QtCore.Qt.TopDockWidgetArea)
         
