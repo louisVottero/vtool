@@ -2519,10 +2519,10 @@ def get_default_directory():
     Returns:
         str: Path to the default directory.
     """
-    if util.is_in_maya():
-        return util_file.join_path(util_file.get_user_dir(), 'process_manager')
-    if not util.is_in_maya():
-        return util_file.join_path(util_file.get_user_dir(), 'documents/process_manager')
+    
+    return util_file.get_default_directory()
+    
+    
     
     
 def copy(source_file_or_folder, target_file_or_folder, description = ''):
