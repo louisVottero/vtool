@@ -2239,9 +2239,18 @@ def get_comments(comment_directory, comment_filename = None):
 
     return comments
 
+def get_default_directory():
+    if util.is_in_maya():
+        return join_path(get_user_dir(), 'process_manager')
+    if not util.is_in_maya():
+        return join_path(get_user_dir(), 'documents/process_manager')
+
 def get_vetala_settings_inst():
     
     vetala_settings = util.get_env('VETALA_SETTINGS')
+    
+    if not vetala_settings:
+        vetala_settings = get_default_directory()
     
     settings = SettingsFile()
     settings.set_directory(vetala_settings)
