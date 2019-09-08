@@ -5,6 +5,7 @@ import maya.utils
 
 
 from maya.app.general.mayaMixin import MayaQWidgetBaseMixin, MayaQWidgetDockableMixin
+from maya import OpenMayaUI as omui
 
 from vtool import qt_ui, qt
 from vtool import util, util_file
@@ -28,9 +29,17 @@ import rigs_util
     
 def load_into_tool_manager(window):
     
-    if ToolManager._last_instance:
-        ToolManager._last_instance.add_dock(window, window.title)
+    ui_core.delete_workspace_control(window.title + 'WorkspaceControl')
     
+    if ToolManager._last_instance:
+        parent_name = ToolManager._last_instance.parent().objectName()
+        
+        if parent_name.find('WorkspaceControl') > -1:
+            window.show()
+            window_name = window.parent().objectName()
+            
+            cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100) )        
+            
     if not ToolManager._last_instance:
         ui_core.create_window(window)
 
@@ -39,35 +48,34 @@ ui_core.new_tool_signal.signal.connect(load_into_tool_manager)
 
 def add_tool_tab(window):
     
-    if ToolManager._last_instance:
-        ToolManager._last_instance.add_tab(window, window.title)
+    #if ToolManager._last_instance:
+    #    ToolManager._last_instance.add_tab(window, window.title)
     
     if not ToolManager._last_instance:
         ui_core.create_window(window)    
 
 
-def process_manager():
-    
-    window = ui_rig.process_manager()
-    
-    add_tool_tab(window)
-    
 def pose_manager(shot_sculpt_only = False):
     
     window = ui_rig.pose_manager(shot_sculpt_only)
     
-    add_tool_tab(window)
+    load_into_tool_manager(window)
+    
+    #add_tool_tab(window)
 
 def shape_combo():
     
     window = ui_rig.shape_combo()
     
+    load_into_tool_manager(window)
+    
+    """
     if ToolManager._last_instance:
         ToolManager._last_instance.add_tab(window, window.title)
     
     if not ToolManager._last_instance:
         ui_core.create_window(window)
-    
+    """
 def picker():
     
     window = ui_rig.picker()
@@ -80,46 +88,58 @@ def picker():
 
 def tool_manager(name = None, directory = None):
     
-    util.set_env('VETALA_SETTINGS', process.get_default_directory())
-        
+    print 'here!'
+    
+    ui_core.delete_workspace_control(ToolManager.title + 'WorkspaceControl')
+    
     manager = ToolManager(name)
-    manager.set_directory(directory)
-    manager.show()
-    #funct = lambda : ui_core.create_window(manager)
+    manager.show(dockable = True, uiScript = 'tool_manager(restore = True)')
     
-    #maya.utils.executeDeferred(funct)
-    
+    if directory:
+        manager.set_directory(directory)
+        
     return manager
+    """
+    if restore:
+        print 'restoring!'
+        restored_control = omui.MQtUtil.getCurrentParent()
+        
+        mixin_ptr = omui.MQtUtil.findControl(manager.objectName())
+        omui.MQtUtil.addWidgetToMayaLayout(long(mixin_ptr), long(restored_control))
+    #else:
+    """
 
 
 
 
 def process_manager(directory = None):
     
-    window = ui_rig.process_manager()
     
-    if ToolManager._last_instance:
-        
-        ToolManager._last_instance.add_tab(window, title = util.get_custom('vetala_name', 'VETALA'))
+    window = ui_rig.ProcessMayaWindow._last_instance
+    """
+    if not window:
+        window = ui_rig.process_manager()
     
-    if not ToolManager._last_instance:
-        funct = lambda : ui_core.create_window(window)
-        maya.utils.executeDeferred(funct)
     
+    
+    #add_tool_tab(window)
+    """
     if directory:
         window.set_code_directory(directory)
     
     return window
+    
 
 
+class ToolManager(ui_core.MayaDirectoryWindowMixin):
 #class ToolManager(ui_core.MayaDockMixin, qt_ui.BasicWidget):
-class ToolManager(ui_core.MayaDockMixin,qt.QWidget):
+#class ToolManager(ui_core.MayaDockMixin,qt.QWidget):
     title = (util.get_custom('vetala_name', 'VETALA') + ' HUB')
-    _last_instance = None
+    #_last_instance = None
     
     def __init__(self,name = None):
         
-        self.__class__._last_instance = self
+        #self.__class__._last_instance = self
         
         if name:
             self.title = name
@@ -131,9 +151,9 @@ class ToolManager(ui_core.MayaDockMixin,qt.QWidget):
         
         self.setWindowTitle(self.title)
         
-        self.main_layout = qt.QVBoxLayout()
-        self.setLayout(self.main_layout)
-        self._build_widgets()
+        #self.main_layout = qt.QVBoxLayout()
+        #self.setLayout(self.main_layout)
+        #self._build_widgets()
         
         
     def _build_widgets(self):
@@ -149,25 +169,24 @@ class ToolManager(ui_core.MayaDockMixin,qt.QWidget):
         
         self.main_layout.addLayout(header_layout)
         
-        self.dock_window = Dock()
+        #self.dock_window = Dock()
         
-        self.main_layout.addWidget(self.dock_window)
+        #self.main_layout.addWidget(self.dock_window)
         
         self.rigging_widget = ui_rig.RigManager()
-        
-        self.add_tab(self.rigging_widget, 'RIG')
+        self.main_layout.addWidget(self.rigging_widget)
+        #self.add_tab(self.rigging_widget, 'RIG')
 
     def add_tab(self, widget, name):
         
         self.add_dock(widget, name)
         
     def add_dock(self, widget , name):
-        
         self.dock_window.add_dock(widget, name)
         
     def set_directory(self, directory):
         
-        #super(ToolManager, self).set_directory(directory)
+        super(ToolManager, self).set_directory(directory)
         
         self.rigging_widget.set_directory(directory)
         
@@ -178,20 +197,8 @@ class Dock(ui_core.MayaBasicMixin,qt_ui.BasicWindow):
         
         self.docks = []
         
-        self.connect_tab_change = True
-        
         super(Dock, self).__init__()
         
-        self.tab_change_hide_show = True
-        
-    def _get_tab_bar(self):
-        
-        children = self.children()
-        
-        for child in children:
-            
-            if isinstance(child, qt.QTabBar):
-                return child
         
     def _get_dock_widgets(self):
         
@@ -213,22 +220,8 @@ class Dock(ui_core.MayaBasicMixin,qt_ui.BasicWindow):
         
         self.setTabPosition(qt.QtCore.Qt.TopDockWidgetArea, qt.QTabWidget.West)
         self.setDockOptions( self.AllowTabbedDocks)
-        #self.setDockOptions( self.AnimatedDocks | self.AllowTabbedDocks)
         
-    def _tab_changed(self, index):
-        
-        pass
-        """
-        if not self.tab_change_hide_show:
-            return
-        
-        docks = self._get_dock_widgets()
-        
-        docks[index].hide()
-        docks[index].show()
-        """
     def add_dock(self, widget , name):
-        
         
         docks = self._get_dock_widgets()
         
@@ -236,8 +229,6 @@ class Dock(ui_core.MayaBasicMixin,qt_ui.BasicWindow):
             if dock.windowTitle() == name:
                 dock.deleteLater()
                 dock.close()
-        
-        
         
         old_parent = widget.parent()
         old_parent_name = None
@@ -248,12 +239,13 @@ class Dock(ui_core.MayaBasicMixin,qt_ui.BasicWindow):
         dock_widget.setWindowTitle(name)
         dock_widget.setWidget(widget)
         
-        
+        parent = dock_widget.parent()
+        print parent.objectName()
+        print dock_widget.objectName()
         
         if old_parent_name and old_parent_name.find('Mixin') > -1:
             old_parent.close()
             cmds.deleteUI(old_parent_name)
-        
         
         self.addDockWidget(qt.QtCore.Qt.TopDockWidgetArea, dock_widget)
         
@@ -263,18 +255,4 @@ class Dock(ui_core.MayaBasicMixin,qt_ui.BasicWindow):
         dock_widget.show()
         dock_widget.raise_()
         
-        #tab_bar = self._get_tab_bar()
-        
-        """
-        if tab_bar:
-            if self.connect_tab_change:
-                tab_bar.currentChanged.connect(self._tab_changed)
-                self.connect_tab_change = False
-        """
-        return dock_widget
-
-    
-    
-
-        
-        
+        return dock_widget 
