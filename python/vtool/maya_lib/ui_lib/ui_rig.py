@@ -25,16 +25,21 @@ from vtool.process_manager import ui_process_manager
 from vtool.maya_lib import curve
 
 def pose_manager(shot_sculpt_only = False):
+    
+    #ui_core.delete_workspace_control(ProcessMayaWindow.title + 'WorkspaceControl')
+    
     from vtool.maya_lib.ui_lib import ui_corrective
     
-    window = ui_corrective.PoseManager._last_instance
+    #window = ui_corrective.PoseManager._last_instance
         
-    if not window:
-        window = ui_corrective.PoseManager(shot_sculpt_only)
+    #if not window:
+    window = ui_corrective.PoseManager(shot_sculpt_only)
     
     return window
 
 def shape_combo():
+    
+    #ui_core.delete_workspace_control(ProcessMayaWindow.title + 'WorkspaceControl')
     
     from vtool.maya_lib.ui_lib import ui_shape_combo
     window = ui_shape_combo.ComboManager()
@@ -42,6 +47,8 @@ def shape_combo():
     return window
     
 def checker():
+    
+    #ui_core.delete_workspace_control(ProcessMayaWindow.title + 'WorkspaceControl')
     
     window = ui_check.CheckView()
     window.setWindowTitle('Checks')
@@ -54,13 +61,9 @@ def checker():
     window.add_check(ui_check.Check_Triangles())
     window.add_check(ui_check.Check_NSided())
     
-    
-    
-    
     return window
     
 def picker():
-    
     
     window = ui_picker.PickManager()
     
@@ -68,6 +71,8 @@ def picker():
     
 
 def process_manager():
+    
+    #ui_core.delete_workspace_control(ProcessMayaWindow.title + 'WorkspaceControl')
     
     window = ProcessMayaWindow()
     
@@ -81,17 +86,17 @@ def presets():
 
 
 #class ProcessMayaWindow(ui_process_manager.ProcessManagerWindow):
-class ProcessMayaWindow(ui_core.MayaBasicMixin,ui_process_manager.ProcessManagerWindow):
-    title = 'Process'
+class ProcessMayaWindow(ui_core.MayaDockMixin,ui_process_manager.ProcessManagerWindow):
+    title = 'VETALA'
     def __init__(self):
-        super(ProcessMayaWindow, self).__init__( ui_core.get_maya_window() )
+        super(ProcessMayaWindow, self).__init__( )#ui_core.get_maya_window() )
         
         icon = qt_ui.get_icon('vetala.png')
         self.setWindowIcon(icon)
     
 vetala_version = util_file.get_vetala_version()
     
-class RigManager(qt_ui.DirectoryWidget):
+class RigManager(qt_ui.DirectoryWindow):
     
     def __init__(self):
         super(RigManager, self).__init__()
@@ -101,8 +106,8 @@ class RigManager(qt_ui.DirectoryWidget):
         self.last_scale_center_value = None
         
         
-    def sizeHint(self):
-        return qt.QtCore.QSize(400,400)
+    #def sizeHint(self):
+    #    return qt.QtCore.QSize(400,400)
 
     def _build_widgets(self):
         
