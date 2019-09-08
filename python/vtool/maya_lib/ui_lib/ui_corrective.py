@@ -17,7 +17,7 @@ if vtool.util.is_in_maya():
     from vtool.maya_lib import corrective
     
 
-class PoseManager(ui_core.MayaWindow):
+class PoseManager(ui_core.MayaWindowMixin):
     
     title = 'Correctives'
     

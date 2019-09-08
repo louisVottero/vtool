@@ -14,7 +14,7 @@ if vtool.util.is_in_maya():
     from vtool.maya_lib import geo
     from vtool.maya_lib import core
 
-class ComboManager(ui_core.MayaWindow):
+class ComboManager(ui_core.MayaWindowMixin):
     
     title = 'Shape Combo'
     

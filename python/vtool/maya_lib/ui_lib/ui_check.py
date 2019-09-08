@@ -11,7 +11,7 @@ from vtool.maya_lib import ui_core
 import maya.cmds as cmds
 
 
-class CheckView(ui_core.MayaWindow):
+class CheckView(ui_core.MayaWindowMixin):
     
     title_name = 'Check'
     title = 'Check'
