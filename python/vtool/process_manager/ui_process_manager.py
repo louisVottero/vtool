@@ -58,7 +58,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.handle_selection_change = True
         self._note_text_change_save = True
         
-        super(ProcessManagerWindow, self).__init__(parent = parent, use_scroll = True) 
+        super(ProcessManagerWindow, self).__init__(parent = parent, use_scroll = False) 
         
         icon = qt_ui.get_icon('vetala.png')
         self.setWindowIcon(icon)
@@ -685,6 +685,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
         
     def _setup_settings_file(self):
+        
+        print 'setup settings'
+        log.info('Setup Vetala Settings')
         
         util.set_env('VETALA_SETTINGS', self.directory)
         
