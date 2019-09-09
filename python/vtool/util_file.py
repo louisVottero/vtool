@@ -833,14 +833,7 @@ class SettingsFile(object):
             filepath = create_file(filename, directory)
         else:
             filepath = join_path(directory, filename)
-        
-        #if not filepath:
-        #    test_path = join_path(directory, name+'.json')
             
-        #    if is_file(test_path):
-        #        filepath = test_path
-        
-        
         return filepath
     
     def _has_json_file(self):
@@ -1925,6 +1918,8 @@ def exists(directory):
     if not directory:
         return False
     
+    log.debug('exists: %s' % directory)
+    
     if os.path.exists(directory):
         return True
     else:
@@ -2561,7 +2556,7 @@ def create_file(name, directory = None, make_unique = False):
     
     return full_path
     
-def delete_file(name, directory):
+def delete_file(name, directory, show_warning = True):
     """
     Delete the file by name in the directory.
     
@@ -2576,8 +2571,8 @@ def delete_file(name, directory):
     full_path = join_path(directory, name)
     
     if not is_file(full_path):
-        
-        util.show('%s was not deleted.' % full_path)
+        if show_warning:
+            util.warning('%s was not deleted.' % full_path)
         
         return full_path
     
