@@ -92,21 +92,6 @@ def get_maya_window():
     maya_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
     return wrapInstance(long(maya_window_ptr), qt.QWidget)
 
-def create_window(ui, dock_area = 'right'): 
-    
-    #this was needed to have the ui predictably load.
-    mel.eval('updateRendererUI;')
-    
-    ui_name = ui.title
-    
-    util.show('Creating dock window.', ui_name)
-    
-    ui.show()
-    
-    return ui
-
-    
-
 def was_floating(label):
     settings = util_file.get_vetala_settings_inst()
     
@@ -126,8 +111,6 @@ def floating_changed(label, floating):
 
 def delete_workspace_control(name):
     
-    
-    
     if cmds.workspaceControl(name, q=True, exists=True):
         cmds.workspaceControl(name,e=True, close=True)
         cmds.deleteUI(name,control=True)    
@@ -136,13 +119,6 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
     
     def floatingChanged(self, isFloating):
         
-        print 'floating changed!!'
-        
-        parent = OpenMayaUI.MQtUtil.getCurrentParent()
-        print OpenMayaUI.MQtUtil.fullName(long(parent))
-        
-        #OpenMayaUI.MQtUtil.getParent()
-        
         parent = self.parent()
         if parent:
             
@@ -150,8 +126,14 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
                 
                 parent = parent.parent()
                 if parent:
-                    print parent.objectName()
                     class_name = parent.__class__.__name__
+                    
+                    print 'this ui!'
+                    
+                    print parent.objectName()
+                    print parent.windowTitle()
+                    print parent.widnowFilePath()
+                    print parent.winId()
                     
                     print class_name
                     if class_name == 'QStackedWidget':
@@ -162,7 +144,7 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
                         print 'here is tab'
                         print parent.count()
                         print parent.tabText(0)
-                        print parent.windowTitle()
+                    print 'end this ui\n\n'
                     
                     
             
@@ -175,14 +157,13 @@ class MayaDockMixin(MayaQWidgetDockableMixin):
         
         floating_changed(ui_name,isFloating)
     
-    def windowStateChanged(self):
-        print 'here!!!!!!!!!!!!'
-    
     def show(self, *args, **kwargs):
         
-        print 'show!!!'
+        
+        print 'show!!!', self.title
         floating = was_floating(self.title)
         super(MayaDockMixin, self).show(dockable = True, floating = floating, area = 'right')
+        print 'done show'
 
 class MayaBasicMixin(MayaQWidgetBaseMixin):
     pass
@@ -194,12 +175,7 @@ class MayaWindowMixin(MayaDockMixin, qt_ui.BasicWindow):
     pass
 
 class MayaDirectoryWindowMixin(MayaDockMixin, qt_ui.DirectoryWindow):
-    
-    def show(self, *args, **kwargs):
-        
-        super(MayaDirectoryWindowMixin, self).show(*args, **kwargs)
-        
-        self.setDockNestingEnabled(True)
+    pass
 
 class MayaWindow(qt_ui.BasicWindow):
     def __init__(self):

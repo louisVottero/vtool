@@ -25,7 +25,7 @@ import space
 import geo
 import deform
 import rigs_util
-
+import maya.mel as mel
     
 def load_into_tool_manager(window):
     
@@ -38,22 +38,10 @@ def load_into_tool_manager(window):
             window.show()
             window_name = window.parent().objectName()
             
-            cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100) )        
-            
-    if not ToolManager._last_instance:
-        ui_core.create_window(window)
-
-
-ui_core.new_tool_signal.signal.connect(load_into_tool_manager) 
-
-def add_tool_tab(window):
-    
-    #if ToolManager._last_instance:
-    #    ToolManager._last_instance.add_tab(window, window.title)
+            cmds.workspaceControl(window_name, e = True, tabToControl = (parent_name,100) )
     
     if not ToolManager._last_instance:
-        ui_core.create_window(window)    
-
+        pass
 
 def pose_manager(shot_sculpt_only = False):
     
@@ -61,8 +49,6 @@ def pose_manager(shot_sculpt_only = False):
     
     load_into_tool_manager(window)
     
-    #add_tool_tab(window)
-
 def shape_combo():
     
     window = ui_rig.shape_combo()
@@ -83,22 +69,21 @@ def picker():
     if ToolManager._last_instance:
         ToolManager._last_instance.add_tab(window, window.title)
     
-    if not ToolManager._last_instance:
-        ui_core.create_window(window)
 
 def tool_manager(name = None, directory = None):
     
-    print 'here!'
+    mel.eval('updateRendererUI;')
     
     ui_core.delete_workspace_control(ToolManager.title + 'WorkspaceControl')
     
     manager = ToolManager(name)
-    manager.show(dockable = True, uiScript = 'tool_manager(restore = True)')
+    manager.show(dockable = True)
     
     if directory:
         manager.set_directory(directory)
         
     return manager
+
     """
     if restore:
         print 'restoring!'
@@ -116,14 +101,7 @@ def process_manager(directory = None):
     
     
     window = ui_rig.ProcessMayaWindow._last_instance
-    """
-    if not window:
-        window = ui_rig.process_manager()
     
-    
-    
-    #add_tool_tab(window)
-    """
     if directory:
         window.set_code_directory(directory)
     
@@ -139,8 +117,6 @@ class ToolManager(ui_core.MayaDirectoryWindowMixin):
     
     def __init__(self,name = None):
         
-        #self.__class__._last_instance = self
-        
         if name:
             self.title = name
         
@@ -151,10 +127,7 @@ class ToolManager(ui_core.MayaDirectoryWindowMixin):
         
         self.setWindowTitle(self.title)
         
-        #self.main_layout = qt.QVBoxLayout()
-        #self.setLayout(self.main_layout)
-        #self._build_widgets()
-        
+        ui_core.new_tool_signal.signal.connect(load_into_tool_manager)
         
     def _build_widgets(self):
 
@@ -169,14 +142,9 @@ class ToolManager(ui_core.MayaDirectoryWindowMixin):
         
         self.main_layout.addLayout(header_layout)
         
-        #self.dock_window = Dock()
-        
-        #self.main_layout.addWidget(self.dock_window)
-        
         self.rigging_widget = ui_rig.RigManager()
         self.main_layout.addWidget(self.rigging_widget)
-        #self.add_tab(self.rigging_widget, 'RIG')
-
+        
     def add_tab(self, widget, name):
         
         self.add_dock(widget, name)
@@ -239,10 +207,6 @@ class Dock(ui_core.MayaBasicMixin,qt_ui.BasicWindow):
         dock_widget.setWindowTitle(name)
         dock_widget.setWidget(widget)
         
-        parent = dock_widget.parent()
-        print parent.objectName()
-        print dock_widget.objectName()
-        
         if old_parent_name and old_parent_name.find('Mixin') > -1:
             old_parent.close()
             cmds.deleteUI(old_parent_name)
@@ -256,3 +220,5 @@ class Dock(ui_core.MayaBasicMixin,qt_ui.BasicWindow):
         dock_widget.raise_()
         
         return dock_widget 
+    
+    
