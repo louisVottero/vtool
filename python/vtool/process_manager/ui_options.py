@@ -524,7 +524,10 @@ class ProcessOptionPalette(qt_ui.BasicWidget):
             
             if type(option[1]) == list:
                 value = option[1][0]
-                option_type = option[1][1]
+                try:
+                    option_type = option[1][1]
+                except:
+                    option_type = None
             else:
                 value = option[1]
                 
