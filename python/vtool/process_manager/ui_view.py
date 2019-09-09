@@ -1,6 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import string
+import traceback
 
 from vtool import util
 from vtool import util_file
@@ -271,6 +272,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
     
     def __init__(self, checkable = True):
+        
+        self._handle_selection_change = True
         
         self.checkable = checkable
         self.deactivate_modifiers = True
@@ -660,7 +663,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
     def _selection_changed(self):
         
-        self.selection_changed.emit()
+        if self._handle_selection_change:
+            self.selection_changed.emit()
     
     def _create_context_menu(self):
         
@@ -1052,6 +1056,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 
         self.setUpdatesEnabled(True)
         
+        
     def _add_process_item(self, name, parent_item = None, create = False, find_parent_path = True, folder = False):
         
         log.info('Adding process item: %s' % name)
@@ -1094,7 +1099,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             item.create()
         
         if parent_item and not folder:
-            enable = process_inst.get_setting('enable')
+            #enable = process_inst.get_setting('enable')
+            enable = process_inst.is_enabled()
             if not enable and self.checkable:
                 item.setCheckState(0, qt.QtCore.Qt.Unchecked )
             if enable and self.checkable:
@@ -1162,7 +1168,14 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             process_name = item.get_name()
             path = util_file.join_path(self.directory, process_name)
         
-        self._add_process_items(item, path)
+        self._handle_selection_change = False
+        
+        try:
+            self._add_process_items(item, path)
+        except:
+            util.error(traceback.format_exc())
+        
+        self._handle_selection_change = True
         
     def _browse(self):
         
@@ -1464,9 +1477,11 @@ class ProcessItem(qt.QTreeWidgetItem):
         if role == qt.QtCore.Qt.CheckStateRole:
             
             if value == 0:
-                process.set_setting('enable', False)
+                process.set_enabled(False)
+                #process.set_setting('enable', False)
             if value == 2:
-                process.set_setting('enable', True)
+                process.set_enabled(True)
+                #process.set_setting('enable', True)
         
     def _get_process(self):
         
@@ -1488,7 +1503,6 @@ class ProcessItem(qt.QTreeWidgetItem):
         parent_process = process_instance.get_parent_process()
         
         return parent_process
-        
         
     def create(self):
         
