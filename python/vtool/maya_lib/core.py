@@ -1136,7 +1136,14 @@ def create_group(name, parent = None):
     if not name:
         return
     
+    
     sequence = vtool.util.convert_to_sequence(name)
+    parent = vtool.util.convert_to_sequence(parent)
+    if parent:
+        parent = parent[0]
+    
+    
+    found = []
     
     for sub_name in sequence:
     
@@ -1155,6 +1162,10 @@ def create_group(name, parent = None):
             
             if not parent == actual_parent:
                 cmds.parent(sub_name, parent)
+        
+        found.append(sub_name)
+        
+    return found
 
 def create_display_layer(name, nodes, display_type = 2):
     """
