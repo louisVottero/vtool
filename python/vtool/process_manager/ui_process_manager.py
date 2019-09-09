@@ -1127,8 +1127,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.process.set_external_code_library(code_directory)
         self.process.set_runtime_dict(self._process_runtime_values)
         
-
-        
         if util.is_in_maya():
             
             from vtool.maya_lib import core
@@ -1214,7 +1212,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             except:
                 pass
         
-        
         self.code_widget.save_code()
                 
         self.tab_widget.setCurrentIndex(3)
@@ -1225,7 +1222,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.process_button.setEnabled(True)
             self.batch_button.setEnabled(True)
             return
-
         
         start_new_scene = self.settings.get('start_new_scene_on_process')
         
@@ -1235,8 +1231,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             from vtool.maya_lib import core
             
             manage_node_editor_inst = maya_lib.core.ManageNodeEditors()
-            
-            
             
             if start_new_scene and last_inc == None:
                 core.start_new_scene()

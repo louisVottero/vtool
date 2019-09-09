@@ -26,20 +26,13 @@ from vtool.maya_lib import curve
 
 def pose_manager(shot_sculpt_only = False):
     
-    #ui_core.delete_workspace_control(ProcessMayaWindow.title + 'WorkspaceControl')
-    
     from vtool.maya_lib.ui_lib import ui_corrective
     
-    #window = ui_corrective.PoseManager._last_instance
-        
-    #if not window:
     window = ui_corrective.PoseManager(shot_sculpt_only)
     
     return window
 
 def shape_combo():
-    
-    #ui_core.delete_workspace_control(ProcessMayaWindow.title + 'WorkspaceControl')
     
     from vtool.maya_lib.ui_lib import ui_shape_combo
     window = ui_shape_combo.ComboManager()
@@ -47,8 +40,6 @@ def shape_combo():
     return window
     
 def checker():
-    
-    #ui_core.delete_workspace_control(ProcessMayaWindow.title + 'WorkspaceControl')
     
     window = ui_check.CheckView()
     window.setWindowTitle('Checks')
@@ -72,8 +63,6 @@ def picker():
 
 def process_manager():
     
-    #ui_core.delete_workspace_control(ProcessMayaWindow.title + 'WorkspaceControl')
-    
     window = ProcessMayaWindow()
     
     return window
@@ -84,12 +73,10 @@ def presets():
     
     return window
 
-
-#class ProcessMayaWindow(ui_process_manager.ProcessManagerWindow):
 class ProcessMayaWindow(ui_core.MayaDockMixin,ui_process_manager.ProcessManagerWindow):
     title = 'VETALA'
     def __init__(self):
-        super(ProcessMayaWindow, self).__init__( )#ui_core.get_maya_window() )
+        super(ProcessMayaWindow, self).__init__( )
         
         icon = qt_ui.get_icon('vetala.png')
         self.setWindowIcon(icon)
