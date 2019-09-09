@@ -130,6 +130,7 @@ class Process(object):
     code_folder_name = '.code'
     backup_folder_name = '.backup'
     process_data_filename = 'manifest.data'
+    enable_filename = '.enable'
     
     def __init__(self, name = None):
         
@@ -142,6 +143,7 @@ class Process(object):
         self.external_code_paths = []
         
         self._reset()
+        self._update_options = True
 
     def _reset(self):
         self.parts = []
@@ -158,7 +160,6 @@ class Process(object):
             log.debug('Setup options')
             options = util_file.SettingsFile()
             self.option_settings = options
-        
             self.option_settings.set_directory(self.get_path(), 'options.json')
         
     def _setup_settings(self):
@@ -347,7 +348,11 @@ class Process(object):
         option_type = None
         
         if type(value) == list:
-            option_type = value[1]    
+            
+            try:
+                option_type = value[1]
+            except:
+                pass    
             value = value[0]
                 
             if option_type == 'dictionary':
@@ -431,6 +436,24 @@ class Process(object):
         
         return True
     
+    def set_enabled(self, bool_value):
+        path = self.get_path()
+        
+        if bool_value:
+            util_file.create_file(self.enable_filename, path)
+        if not bool_value:
+            util_file.delete_file(self.enable_filename, path, show_warning=False)
+            
+    def is_enabled(self):
+        path = self.get_path()
+        
+        enable_path = util_file.join_path(path,self.enable_filename)
+        
+        if util_file.exists(enable_path):
+            return True
+        
+        return False
+        
     def has_sub_parts(self):
         
         process_path = self.get_path()
@@ -955,7 +978,7 @@ class Process(object):
         util.show('Import data in: %s' % data_folder_name)
         
         if not util_file.is_dir(data_folder_name):
-            util.show('%s data does not exist in %s' % (name, self.get_name()) )
+            util.warning('%s data does not exist in %s' % (name, self.get_name()) )
             return
         
         instance, original_sub_folder = self._get_data_instance(name, sub_folder)
@@ -2137,7 +2160,9 @@ class Process(object):
             str: The status from running the script. This includes error messages.
         """
         
-        
+        if self._update_options:
+            self.option_settings = None
+            self._setup_options()
         
         if util.is_in_maya():
             import maya.cmds as cmds
@@ -2335,6 +2360,9 @@ class Process(object):
             None
         """
         
+        self.option_settings = None
+        self._setup_options()
+        
         prev_process = util.get_env('VETALA_CURRENT_PROCESS')
         
         util.set_env('VETALA_CURRENT_PROCESS', self.get_path())
@@ -2354,7 +2382,6 @@ class Process(object):
         
             manage_node_editor_inst = core.ManageNodeEditors()
             
-            
             if start_new:
                 core.start_new_scene()
             
@@ -2364,7 +2391,6 @@ class Process(object):
                 message = '\n\n\nRunning %s Scripts\n\n' % name
         
         util.show(message)
-        
         
         util.show('\n\nProcess path: %s' % self.get_path())
         util.show('Option path: %s' % self.get_option_file())
@@ -2420,10 +2446,13 @@ class Process(object):
                         progress_bar.inc()
                     continue 
                 
+                
+                self._update_options = False
                 try:
                     status = self.run_script(script, hard_error=False)
                 except:
                     status = 'fail'
+                self._update_options = True
                 
                 if not status == 'Success':
                     scripts_that_error.append(script)
