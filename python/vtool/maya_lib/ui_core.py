@@ -94,7 +94,6 @@ def get_maya_window():
 
 def was_floating(label):
     settings = util_file.get_vetala_settings_inst()
-    
     floating =  settings.get('%s floating' % label)
     
     return floating
@@ -109,62 +108,95 @@ def floating_changed(label, floating):
             
     settings.set('%s floating' % label, floating_value)
 
+def tab_changed(label, tab_name):
+
+    settings = util_file.get_vetala_settings_inst()
+            
+    settings.set('%s tab' % label, tab_name)
+
+def get_stored_tab(label):
+    settings = util_file.get_vetala_settings_inst()        
+    tab = settings.get('%s tab' % label)
+    return tab
+    
+def get_adjacent_tab(widget):
+    
+    parent = widget.parent()
+    if parent:
+        while parent:
+            parent = parent.parent()
+            
+            if not parent:
+                break
+            
+            class_name = parent.__class__.__name__
+            
+            if class_name == 'QTabWidget':
+                
+                tab_count = parent.count()
+                
+                if tab_count > 0:
+                    return str(parent.tabText(tab_count-1))
+
+def get_widget_from_tab_name(tab_name):
+    
+    main_window = get_maya_window()
+    
+    tabs = main_window.findChildren(qt.QTabWidget)
+    
+    for tab in tabs:
+        tab_count = tab.count()
+        
+        for inc in range(0, tab_count):
+            tab_text =  str(tab.tabText(inc))
+            if tab_text == tab_name:
+                return tab
+
+workspace_control_map = {
+    'Attribute Editor':'AttributeEditor',
+    'Modeling Toolkit':'NEXDockControl', 
+    'Channel Box / Layer Editor':'ChannelBoxLayerEditor',
+    'Tool Settings':'ToolSettings',
+    'Outliner':'Outliner'
+}
+        
+def add_tab(source_control, tab_name):
+    
+    workspace_control = mel.eval('getUIComponentDockControl("%s", false)' % tab_name)
+    
+    if cmds.workspaceControl(source_control, q = True, ex = True):
+        cmds.workspaceControl(source_control, e = True, tabToControl = (workspace_control, 100))
+
 def delete_workspace_control(name):
     
     if cmds.workspaceControl(name, q=True, exists=True):
+        
         cmds.workspaceControl(name,e=True, close=True)
         cmds.deleteUI(name,control=True)    
 
 class MayaDockMixin(MayaQWidgetDockableMixin):
     
-    def floatingChanged(self, isFloating):
+    def floatingChanged(self, is_floating):
         
-        parent = self.parent()
-        if parent:
-            
-            while parent:
-                
-                parent = parent.parent()
-                if parent:
-                    class_name = parent.__class__.__name__
-                    
-                    print 'this ui!'
-                    
-                    print parent.objectName()
-                    print parent.windowTitle()
-                    print parent.widnowFilePath()
-                    print parent.winId()
-                    
-                    print class_name
-                    if class_name == 'QStackedWidget':
-                        'stacked!!!'
-                        print parent.count()
-                        
-                    if class_name == 'QTabWidget':
-                        print 'here is tab'
-                        print parent.count()
-                        print parent.tabText(0)
-                    print 'end this ui\n\n'
-                    
-                    
-            
-            
+        adjacent_tab = get_adjacent_tab(self)
+         
         ui_name = self.title
         
-        isFloating = int(isFloating)
+        is_floating = int(is_floating)
         
+        floating_changed(ui_name,is_floating)
         
-        
-        floating_changed(ui_name,isFloating)
+        if not is_floating and adjacent_tab:
+            
+            tab_changed(ui_name, adjacent_tab)
     
     def show(self, *args, **kwargs):
         
-        
-        print 'show!!!', self.title
         floating = was_floating(self.title)
+        
         super(MayaDockMixin, self).show(dockable = True, floating = floating, area = 'right')
-        print 'done show'
-
+        
+            
 class MayaBasicMixin(MayaQWidgetBaseMixin):
     pass
 

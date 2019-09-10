@@ -79,20 +79,18 @@ def tool_manager(name = None, directory = None):
     manager = ToolManager(name)
     manager.show(dockable = True)
     
+    workspace_control = manager.title + 'WorkspaceControl'
+    
+    if not ui_core.was_floating(manager.title):
+        tab_name = ui_core.get_stored_tab(manager.title)
+        ui_core.add_tab(workspace_control, tab_name)
+        #manager.show()
+    
     if directory:
         manager.set_directory(directory)
         
     return manager
 
-    """
-    if restore:
-        print 'restoring!'
-        restored_control = omui.MQtUtil.getCurrentParent()
-        
-        mixin_ptr = omui.MQtUtil.findControl(manager.objectName())
-        omui.MQtUtil.addWidgetToMayaLayout(long(mixin_ptr), long(restored_control))
-    #else:
-    """
 
 
 
