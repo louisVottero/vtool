@@ -27,6 +27,7 @@ from vtool.maya_lib import curve
 def pose_manager(shot_sculpt_only = False):
     
     from vtool.maya_lib.ui_lib import ui_corrective
+    ui_core.delete_workspace_control(ui_corrective.PoseManager.title + 'WorkspaceControl')
     
     window = ui_corrective.PoseManager(shot_sculpt_only)
     
@@ -35,11 +36,15 @@ def pose_manager(shot_sculpt_only = False):
 def shape_combo():
     
     from vtool.maya_lib.ui_lib import ui_shape_combo
+    ui_core.delete_workspace_control(ui_shape_combo.ComboManager.title + 'WorkspaceControl')
+    
     window = ui_shape_combo.ComboManager()
     
     return window
     
 def checker():
+    
+    ui_core.delete_workspace_control(ui_check.CheckView.title + 'WorkspaceControl')
     
     window = ui_check.CheckView()
     window.setWindowTitle('Checks')
@@ -62,6 +67,8 @@ def picker():
     
 
 def process_manager():
+    
+    ui_core.delete_workspace_control(ProcessMayaWindow.title + 'WorkspaceControl')
     
     window = ProcessMayaWindow()
     

@@ -117,6 +117,7 @@ def tab_changed(label, tab_name):
 def get_stored_tab(label):
     settings = util_file.get_vetala_settings_inst()        
     tab = settings.get('%s tab' % label)
+    
     return tab
     
 def get_adjacent_tab(widget):
@@ -165,6 +166,9 @@ def add_tab(source_control, tab_name):
     workspace_control = mel.eval('getUIComponentDockControl("%s", false)' % tab_name)
     
     if cmds.workspaceControl(source_control, q = True, ex = True):
+        
+        util.show('Loading %s into tab %s' % (source_control, tab_name))
+        
         cmds.workspaceControl(source_control, e = True, tabToControl = (workspace_control, 100))
 
 def delete_workspace_control(name):
