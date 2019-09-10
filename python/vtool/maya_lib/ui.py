@@ -10,7 +10,7 @@ from maya import OpenMayaUI as omui
 from vtool import qt_ui, qt
 from vtool import util, util_file
 
-from vtool.maya_lib.ui_lib import ui_fx
+from vtool.maya_lib.ui_lib import ui_fx, ui_shape_combo, ui_corrective
 from vtool.maya_lib.ui_lib import ui_rig
 from vtool.maya_lib.ui_lib import ui_anim
 from vtool.maya_lib.ui_lib import ui_model
@@ -29,7 +29,7 @@ import maya.mel as mel
     
 def load_into_tool_manager(window):
     
-    ui_core.delete_workspace_control(window.title + 'WorkspaceControl')
+    
     
     if ToolManager._last_instance:
         parent_name = ToolManager._last_instance.parent().objectName()
@@ -45,6 +45,8 @@ def load_into_tool_manager(window):
 
 def pose_manager(shot_sculpt_only = False):
     
+    ui_core.delete_workspace_control(ui_corrective.PoseManager.title + 'WorkspaceControl')
+    
     window = ui_rig.pose_manager(shot_sculpt_only)
     
     load_into_tool_manager(window)
@@ -55,13 +57,7 @@ def shape_combo():
     
     load_into_tool_manager(window)
     
-    """
-    if ToolManager._last_instance:
-        ToolManager._last_instance.add_tab(window, window.title)
     
-    if not ToolManager._last_instance:
-        ui_core.create_window(window)
-    """
 def picker():
     
     window = ui_rig.picker()
@@ -77,14 +73,17 @@ def tool_manager(name = None, directory = None):
     ui_core.delete_workspace_control(ToolManager.title + 'WorkspaceControl')
     
     manager = ToolManager(name)
-    manager.show(dockable = True)
+    #manager.show(dockable = True)
     
     workspace_control = manager.title + 'WorkspaceControl'
     
     if not ui_core.was_floating(manager.title):
         tab_name = ui_core.get_stored_tab(manager.title)
+        manager.show()
         ui_core.add_tab(workspace_control, tab_name)
-        #manager.show()
+    else:
+        manager.show()
+    
     
     if directory:
         manager.set_directory(directory)
@@ -96,6 +95,7 @@ def tool_manager(name = None, directory = None):
 
 
 def process_manager(directory = None):
+    
     
     
     window = ui_rig.ProcessMayaWindow._last_instance
