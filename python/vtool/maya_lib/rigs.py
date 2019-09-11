@@ -679,6 +679,7 @@ class JointRig(Rig):
             if weight_count > 0:
                 if self.auto_control_visibility:
                     switch.add_groups_to_index((weight_count-1), self.control_group)
+                
                 switch.create()
               
     def _check_joints(self, joints):
@@ -769,8 +770,6 @@ class BufferRig(JointRig):
                 duplicate_hierarchy.only_these(self.joints)
                 duplicate_hierarchy.replace(self._buffer_replace[0], self._buffer_replace[1])
                 
-                
-                
                 self.buffer_joints = duplicate_hierarchy.create()
                 
             if self.build_hierarchy:
@@ -781,8 +780,6 @@ class BufferRig(JointRig):
                 self.buffer_joints = build_hierarchy.create()
     
             cmds.parent(self.buffer_joints[0], self.setup_group)
-            
-        
             
         if not self.create_buffer_joints:
             self.buffer_joints = self.joints
@@ -3764,10 +3761,14 @@ class IkAppendageRig(BufferRig):
     This is usually used for arms or legs.
     """
     
+    stretch_type_old = 0
+    stretch_type_lock_elbow = 1
+    
     def __init__(self, description, side=None):
         super(IkAppendageRig, self).__init__(description, side)
         
         self.right_side_fix = True
+        self._ik_buffer_joint = True
         self.create_twist = True
         self.create_stretchy = True
         self.btm_control = None
@@ -3791,6 +3792,8 @@ class IkAppendageRig(BufferRig):
         self.negate_right_scale = False
         self.negate_right_scale_values = [-1,-1,-1]
         self.ik_handle = None
+        
+        self._stretch_type = 0
         
         #dampen for legacy...
         self.damp_name = 'dampen'
@@ -3856,10 +3859,12 @@ class IkAppendageRig(BufferRig):
         
     def _create_ik_handle(self):
         
-        buffer_joint = self._create_buffer_joint()
+        if self._ik_buffer_joint:
+            buffer_joint = self._create_buffer_joint()
+        else:
+            buffer_joint = self.ik_chain[-1]
         
         ik_handle = space.IkHandle( self._get_name() )
-        
         ik_handle.set_start_joint( self.ik_chain[0] )
         ik_handle.set_end_joint( buffer_joint )
         ik_handle.set_solver(ik_handle.solver_rp)
@@ -4220,34 +4225,39 @@ class IkAppendageRig(BufferRig):
         return pole_locator
         
     def _create_stretchy(self, top_transform, btm_transform, control):
-        stretchy = rigs_util.StretchyChain()
         
-        stretchy.set_joints(self.ik_chain)
-        #dampen should be damp... dampen means wet, damp means diminish
-        stretchy.set_add_damp(True, self.damp_name)
-        stretchy.set_node_for_attributes(control)
-        stretchy.set_description(self._get_name())
-        stretchy.set_scale_axis(self.stretch_axis)
-        stretchy.set_scale_attribute_offset(self.stretch_scale_attribute_offset)
-        
-        #this is new stretch distance
-        #stretchy.set_vector_instead_of_matrix(False)
-        top_locator, btm_locator = stretchy.create()
-        
-        cmds.parent(top_locator, top_transform)
-        cmds.parent(btm_locator, btm_transform)
-        
-        #this is new stretch distance
-        """
-        cmds.parent(top_locator, self.setup_group)
-        cmds.parent(btm_locator, self.setup_group)
-        
-        cmds.pointConstraint(top_transform, top_locator)
-        cmds.pointConstraint(btm_transform, btm_locator)
-        """
+        if self._stretch_type == 0:
+            stretchy = rigs_util.StretchyChain()
+            
+            stretchy.set_joints(self.ik_chain)
+            #dampen should be damp... dampen means wet, damp means diminish
+            stretchy.set_add_damp(True, self.damp_name)
+            stretchy.set_node_for_attributes(control)
+            stretchy.set_description(self._get_name())
+            stretchy.set_scale_axis(self.stretch_axis)
+            stretchy.set_scale_attribute_offset(self.stretch_scale_attribute_offset)
+            
+            top_locator, btm_locator = stretchy.create()
+            
+            cmds.parent(top_locator, top_transform)
+            cmds.parent(btm_locator, btm_transform)
+        if self._stretch_type == 1:
+            
+            controls = [top_transform, self.poleControl, btm_transform]
+            
+            elbow_lock = rigs_util.StretchyElbowLock(self.buffer_joints, controls)
+            elbow_lock.set_attribute_control(self.controls[-1])
+            elbow_lock.set_stretch_axis(self.stretch_axis)
+            elbow_lock.create()
+            
         
     def _create_tweakers(self):
         pass
+    
+    def _create_before_attach_joints(self):
+        super(IkAppendageRig, self)._create_before_attach_joints()
+        
+        self._create_ik_handle()
     
     def set_duplicate_chain_replace(self, replace_this, with_this):
         
@@ -4297,6 +4307,16 @@ class IkAppendageRig(BufferRig):
         Wether to compensate for right side orientation.
         """
         self.right_side_fix = bool_value
+    
+    def set_create_ik_buffer_joint(self, bool_value):
+        """
+        Vetala creates a buffer in the ik joints at the wrist.  
+        This was to try to fix an ik offset issue when the arm stretches
+        However, it seems this fix can causes problems, especially when it zeros out the joint orient on the wrist joint.
+        If you hand is offsetting when you stretch the arm, try turning this off.
+        """
+        
+        self._ik_buffer_joint = bool_value
     
     def set_negate_right_scale(self, bool_value, scale_x = -1, scale_y = -1, scale_z = -1):
         """
@@ -4370,15 +4390,10 @@ class IkAppendageRig(BufferRig):
     
     def set_stretch_scale_attribute_offset(self, value):
         self.stretch_scale_attribute_offset = value
-    
-    def _create_before_attach_joints(self):
-        super(IkAppendageRig, self)._create_before_attach_joints()
         
-        self._create_ik_handle()
+    def set_stretch_type(self, stretch_type_int):
         
-        
-        
-        
+        self._stretch_type = stretch_type_int
         
     def create(self):
         super(IkAppendageRig, self).create()
@@ -4404,6 +4419,8 @@ class IkAppendageRig(BufferRig):
             self._create_pole_vector()
         
         if self.create_stretchy:
+            
+            
             if self.sub_control:
                 self._create_stretchy(top_control, self.sub_control, btm_control)
             if not self.sub_control:

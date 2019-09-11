@@ -574,8 +574,6 @@ class RemapAttributesToAttribute(object):
         if length <= 1:
             return
         
-        
-        
         for inc in range(0,length):
             
             node = self.attributes[inc][0]
@@ -655,7 +653,7 @@ class RemapAttributesToAttribute(object):
                                     
             disconnect_attribute('%s.inputValue' % remap)
             cmds.connectAttr(self.node_attribute,'%s.inputValue' % remap)
-
+            
 class OrientJointAttributes(object):
     """
     Creates attributes on a node that can then be used with OrientAttributes
