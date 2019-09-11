@@ -1309,7 +1309,7 @@ class StretchyElbowLock(object):
         self._value = 0
     
     def _duplicate_joints(self):
-        
+        print self.joints
         
         dup_hier = space.DuplicateHierarchy(self.joints[0])
         dup_hier.only_these(self.joints)
@@ -1415,6 +1415,9 @@ class StretchyElbowLock(object):
         attribute_control = self.attribute_control
         lock_control = self.lock_attribute_control
         
+        if not attribute_control:
+            attribute_control = self.controls[-1]
+        
         self._add_attribute(lock_control, 'lock')
         cmds.addAttr('%s.lock' % lock_control, e=True, minValue = 0, maxValue = 1, hasMinValue = True, hasMaxValue = True)
         self._add_attribute(attribute_control, 'stretch', self._value)
@@ -1425,6 +1428,8 @@ class StretchyElbowLock(object):
         
         # joint distance
         self._duplicate_joints()
+        
+        print self.dup_joints
         
         distance1 = self._create_distance(self.dup_joints[0], self.dup_joints[1])
         distance2 = self._create_distance(self.dup_joints[1], self.dup_joints[2])
@@ -1714,8 +1719,6 @@ class RigSwitch(object):
             attribute_name = var.get_name()
             cmds.connectAttr(attribute_name, '%s.switch' % self.switch_joint) 
         
-        
-            
         if not self.control_name or not cmds.objExists(self.control_name):
             attribute_name = '%s.switch' % self.switch_joint
         

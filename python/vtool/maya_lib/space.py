@@ -536,7 +536,7 @@ class ConstraintEditor(object):
                             ]
     
     def __init__(self):
-        pass
+        self._set_to_last = False
     
     def _get_constraint_type(self, constraint):
         return cmds.nodeType(constraint)
@@ -660,6 +660,9 @@ class ConstraintEditor(object):
         
         cmds.setAttr('%s.interpType' % constraint, int_value)
 
+    def set_auto_use_last_number(self, bool_value):
+        self._set_to_last = bool_value
+
     def create_title(self, node, constraint, title_name = 'FOLLOW'):
         """
         This will create a title enum attribute based on the targets feeding into a constraint.
@@ -711,6 +714,9 @@ class ConstraintEditor(object):
         remap = attr.RemapAttributesToAttribute(node, attribute)
         remap.create_attributes(constraint, attributes)
         remap.create()
+        
+        if self._set_to_last:
+            cmds.setAttr('%s.%s' % (node, attribute), (len(attributes)-1))
         
     def delete_constraints(self, transform, constraint_type = 'None'):
         
@@ -1399,6 +1405,7 @@ class AttachJoints(object):
             scale_constraint = cmds.scaleConstraint(source_joint, target_joint)[0]
             
             constraint_editor = ConstraintEditor()
+            constraint_editor.set_auto_use_last_number(True)
             constraint_editor.create_switch(self.target_joints[0], 'switch', parent_constraint)
             constraint_editor.create_switch(self.target_joints[0], 'switch', scale_constraint)
             
@@ -1475,9 +1482,13 @@ class DuplicateHierarchy(object):
             for child in children:
                 if cmds.nodeType(child).find('Constraint') > -1:
                     continue
-                
+        
+                if self._only_joints:
+                    if not cmds.nodeType(child) == 'joint':
+                        continue
+                    
                 found.append(child)
-            
+        
         return found
         
     def _duplicate(self, transform):
@@ -1498,7 +1509,7 @@ class DuplicateHierarchy(object):
         
         return duplicate
     
-    def _duplicate_hierarchy(self, transform):
+    def _duplicate_hierarchy(self, transform, parent = None):
         
         if transform == self.stop_at_transform:
             self.stop = True
@@ -1518,11 +1529,24 @@ class DuplicateHierarchy(object):
                 
                 if self.only_these_transforms and not child in self.only_these_transforms:
                     
+                    
+                    
+                    sub_children = self._get_children(child)
+                    
+                    if sub_children:
+                        
+                        for sub_child in sub_children:
+                            if not sub_child in self.only_these_transforms:
+                                continue
+                            
+                            duplicate = self._duplicate_hierarchy(sub_child, parent )
+                            
+                            if not duplicate:
+                                continue
+                            
+                            duplicates.append(duplicate)
+                        
                     continue
-                
-                if self._only_joints:
-                    if not cmds.nodeType(child) == 'joint':
-                        continue
                 
                 duplicate = self._duplicate_hierarchy(child)
                 
@@ -1531,11 +1555,11 @@ class DuplicateHierarchy(object):
                 
                 duplicates.append(duplicate)
                 
-                if cmds.nodeType(top_duplicate) == 'joint' and cmds.nodeType(duplicate) == 'joint':
+                if cmds.nodeType(parent) == 'joint' and cmds.nodeType(duplicate) == 'joint':
                     
                     if cmds.isConnected('%s.scale' % transform, '%s.inverseScale' % duplicate):
                         cmds.disconnectAttr('%s.scale' % transform, '%s.inverseScale' % duplicate)
-                        cmds.connectAttr('%s.scale' % top_duplicate, '%s.inverseScale' % duplicate)
+                        cmds.connectAttr('%s.scale' % parent, '%s.inverseScale' % duplicate)
                     
             if duplicates:
                 cmds.parent(duplicates, top_duplicate)
