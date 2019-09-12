@@ -5124,9 +5124,12 @@ class PythonCompleter(qt.QCompleter):
     
     def handle_import_load(self, text, cursor):
         
+        column = cursor.columnNumber() - 1
+        
+        text = text[:cursor.columnNumber()]
+        
         m = re.search('\s*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text)
         
-        column = cursor.columnNumber() - 1
         block_number = cursor.blockNumber()
         line_number = block_number + 1
         
@@ -5294,7 +5297,6 @@ class PythonCompleter(qt.QCompleter):
                 self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
                 
                 self.popup().setCurrentIndex(self.completionModel().index(0,0))
-                
                 return True
                 
         module_name = m.group(1)
