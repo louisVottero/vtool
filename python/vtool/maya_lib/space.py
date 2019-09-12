@@ -3227,7 +3227,7 @@ def create_multi_follow(source_list, target_transform, node = None, constraint_t
     locators = []
     
     if len(source_list) < 2:
-        vtool.util.warning('Can not create multi follow with less than 2 source transforms.')
+        vtool.util.warning('Cannot create multi follow with less than 2 source transforms.')
         return
     
     follow_group = create_xform_group(target_transform, 'follow')
