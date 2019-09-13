@@ -1946,6 +1946,8 @@ class TransferWeight(object):
         
         cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
         
+        farthest_distance = 0
+        
         for vert_index in weighted_verts:
                     
             vert_name = '%s.vtx[%s]' % (self.mesh, vert_index)
@@ -1969,6 +1971,11 @@ class TransferWeight(object):
                 sorted_distances = quick.run()
                 smallest_distance = sorted_distances[0]
                 
+                test_farthest_distance = sorted_distances[-1]
+                if test_farthest_distance > farthest_distance:
+                    farthest_distance = test_farthest_distance 
+                
+                
                 distances_away = {}
                 
                 for joint_index in xrange(0, new_joint_count):
@@ -1981,7 +1988,9 @@ class TransferWeight(object):
                     
                     distances_away[joint_index] = distance_away
                     distances_in_range.append(joint_index)
-                    
+                
+                
+                
                 total = 0.0
                 
                 inverted_distances = {}
@@ -2044,6 +2053,9 @@ class TransferWeight(object):
             inc += 1
         
         cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 1)
+        
+        if farthest_distance:
+            vtool.util.show('Farthest vertex was %s' % round(farthest_distance, 3))
         
         bar.end()
         vtool.util.show('Done: %s transfer %s to %s.' % (self.mesh, joints, new_joints))
