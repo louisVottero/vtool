@@ -3874,6 +3874,22 @@ class CodeTextEdit(qt.QPlainTextEdit):
             
     def keyPressEvent(self, event):
         
+        pass_on = True
+        quit_right_away = False
+        
+        if event.key() == qt.QtCore.Qt.Key_Right:
+            quit_right_away = True
+        if event.key() == qt.QtCore.Qt.Key_Left:
+            quit_right_away = True
+        if event.key() == qt.QtCore.Qt.Key_Up:
+            quit_right_away = True
+        if event.key() == qt.QtCore.Qt.Key_Down:
+            quit_right_away = True
+        
+        if quit_right_away:
+            super(CodeTextEdit, self).keyPressEvent(event)
+            return
+        
         if self.completer:
             self.completer.activated.connect(self._activate)
         
@@ -3896,9 +3912,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
                 if event.key() == qt.QtCore.Qt.Key_Backtab:
                     event.ignore()
                     return
-        pass_on = True
-        
-        
         
         if event.modifiers() and qt.QtCore.Qt.ControlModifier:
             
@@ -3907,9 +3920,6 @@ class CodeTextEdit(qt.QPlainTextEdit):
                 pass_on = False
                 self._run()
                 return
-            
-        
-        
         
         if event.key() == qt.QtCore.Qt.Key_Backtab or event.key() == qt.QtCore.Qt.Key_Tab:
             self._handle_tab(event)
