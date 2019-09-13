@@ -4248,6 +4248,7 @@ class IkAppendageRig(BufferRig):
             elbow_lock = rigs_util.StretchyElbowLock(self.buffer_joints, controls)
             elbow_lock.set_attribute_control(self.controls[-1])
             elbow_lock.set_stretch_axis(self.stretch_axis)
+            elbow_lock.set_description(self._get_name())
             elbow_lock.create()
             
         
@@ -7213,10 +7214,15 @@ class FootRig(BaseFootRig):
         self.main_control_follow = None
         self.ik_parent = None
         self.ik_leg = None
+        self._do_create_foot_roll = None
         
         self.heel = None
         self.yawIn = None
         self.yawOut = None
+        
+        self._ball_roll = None
+        self._toe_roll = None
+        self._heel_roll = None
         
         self._duplicate_chain_replace = ['joint', 'guide']
         self.locator_replace = 'locator'
@@ -7318,6 +7324,9 @@ class FootRig(BaseFootRig):
         
         attribute_control = self._get_attribute_control()
         
+        if self._do_create_foot_roll:
+            cmds.addAttr(attribute_control, ln = 'footRoll', at = 'double', k = True)
+        
         cmds.addAttr(attribute_control, ln = 'ballRoll', at = 'double', k = True)
         cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
         cmds.addAttr(attribute_control, ln = 'heelRoll', at = 'double', k = True)
@@ -7399,6 +7408,8 @@ class FootRig(BaseFootRig):
         cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
         cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
         
+        self._ball_roll = driver
+        
         return control
     
     def _create_toe_roll(self, parent):
@@ -7416,8 +7427,31 @@ class FootRig(BaseFootRig):
         cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
         cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
         
+        self._toe_roll = driver
+        
         return control
     
+    def _create_fool_roll(self):
+        
+        toe_driver = space.create_xform_group(self._toe_roll, 'driver2')
+        ball_driver = space.create_xform_group(self._ball_roll, 'driver2')
+        heel_driver = space.create_xform_group(self._heel_roll, 'driver2')
+        
+        attribute_control = self._get_attribute_control()
+        
+        cmds.setDrivenKeyframe('%s.rotate%s' % (ball_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
+        cmds.setDrivenKeyframe('%s.rotate%s' % (ball_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 5, value = 30, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (ball_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 10, value = 0, itt = 'spline', ott = 'spline')
+
+        cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 5, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
+    
+        cmds.setInfinity('%s.rotate%s' % (toe_driver, self.forward_roll_axis), postInfinite = 'linear')
+        
+        cmds.setDrivenKeyframe('%s.rotate%s' % (heel_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')
+        cmds.setDrivenKeyframe('%s.rotate%s' % (heel_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
+        cmds.setInfinity('%s.rotate%s' % (heel_driver, self.forward_roll_axis), preInfinite = 'linear')
+
     def _create_heel_roll(self, parent):
         control, xform, driver = self._create_pivot_control(self.heel, 'heel')
         
@@ -7430,6 +7464,8 @@ class FootRig(BaseFootRig):
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.heelRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
         cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
         cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
+        
+        self._heel_roll = driver
         
         return control
     
@@ -7505,7 +7541,9 @@ class FootRig(BaseFootRig):
         self.yawIn = yaw_in
         self.yawOut = yaw_out
         
-    
+    def set_create_foot_roll(self, bool_value):
+        
+        self._do_create_foot_roll = bool_value
         
     def set_ik_parent(self, parent_name):
         self.ik_parent = parent_name
@@ -7536,6 +7574,9 @@ class FootRig(BaseFootRig):
         self._create_roll_attributes()
         
         self._create_pivot_groups()
+        
+        if self._do_create_foot_roll:
+            self._create_fool_roll()
         
         
 class QuadSpineRig(BufferRig):
