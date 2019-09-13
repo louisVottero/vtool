@@ -7326,6 +7326,7 @@ class FootRig(BaseFootRig):
         
         if self._do_create_foot_roll:
             cmds.addAttr(attribute_control, ln = 'footRoll', at = 'double', k = True)
+            cmds.addAttr(attribute_control, ln = 'footRollAngle', at = 'double', k = True, dv = 30)
         
         cmds.addAttr(attribute_control, ln = 'ballRoll', at = 'double', k = True)
         cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
@@ -7442,7 +7443,23 @@ class FootRig(BaseFootRig):
         cmds.setDrivenKeyframe('%s.rotate%s' % (ball_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline' )
         cmds.setDrivenKeyframe('%s.rotate%s' % (ball_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 5, value = 30, itt = 'spline', ott = 'spline')
         cmds.setDrivenKeyframe('%s.rotate%s' % (ball_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 10, value = 0, itt = 'spline', ott = 'spline')
-
+        
+        multiply = attr.insert_multiply('%s.rotate%s' % (ball_driver, self.forward_roll_axis), 1)
+        
+        set_range = cmds.createNode('setRange', n = self._get_name(prefix = 'setRange'))
+        
+        cmds.setAttr('%s.oldMaxX' % set_range, 360)
+        cmds.setAttr('%s.oldMaxY' % set_range, 360)
+        cmds.setAttr('%s.oldMaxZ' % set_range, 360)
+        
+        cmds.setAttr('%s.maxX' % set_range, 12)
+        cmds.setAttr('%s.maxY' % set_range, 12)
+        cmds.setAttr('%s.maxZ' % set_range, 12)
+        
+        cmds.connectAttr('%s.footRollAngle' % attribute_control, '%s.valueX' % set_range)
+        cmds.connectAttr('%s.outValueX' % set_range, '%s.input2X' % multiply)
+        
+        
         cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 5, value = 0, itt = 'spline', ott = 'spline')
         cmds.setDrivenKeyframe('%s.rotate%s' % (toe_driver, self.forward_roll_axis),cd = '%s.footRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
     
