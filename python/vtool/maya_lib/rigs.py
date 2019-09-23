@@ -3763,6 +3763,7 @@ class IkAppendageRig(BufferRig):
     
     stretch_type_old = 0
     stretch_type_lock_elbow = 1
+    stretch_type_lock_elbow_soft = 2
     
     def __init__(self, description, side=None):
         super(IkAppendageRig, self).__init__(description, side)
@@ -4095,6 +4096,8 @@ class IkAppendageRig(BufferRig):
             
         cmds.pointConstraint( top_control, guide_ik )
         
+        cmds.pointConstraint(top_control, top_guidetwist_joint)
+        
         if self.sub_control:
             offset_locator = cmds.spaceLocator(n = 'offset_%s' % self.sub_control)[0]
             cmds.parent(offset_locator, self.sub_control)
@@ -4241,16 +4244,31 @@ class IkAppendageRig(BufferRig):
             
             cmds.parent(top_locator, top_transform)
             cmds.parent(btm_locator, btm_transform)
+        
+        controls = [top_transform, self.poleControl, btm_transform]
+        
         if self._stretch_type == 1:
             
-            controls = [top_transform, self.poleControl, btm_transform]
+            self._create_elbow_lock_stretchy(controls, soft = False)
+        
+        if self._stretch_type == 2:
+            self._create_elbow_lock_stretchy(controls, soft = True)
+    
+    def _create_elbow_lock_stretchy(self, controls, soft = False):
+        
+        elbow_lock = rigs_util.StretchyElbowLock(self.buffer_joints, controls)
+        elbow_lock.set_attribute_control(self.controls[-1])
+        elbow_lock.set_stretch_axis(self.stretch_axis)
+        elbow_lock.set_top_aim_transform(self.twist_guide)
+        elbow_lock.set_description(self._get_name())
+        elbow_lock.set_create_soft_ik(soft)
+        elbow_lock.create()
+        
+        if elbow_lock.soft_locator:
             
-            elbow_lock = rigs_util.StretchyElbowLock(self.buffer_joints, controls)
-            elbow_lock.set_attribute_control(self.controls[-1])
-            elbow_lock.set_stretch_axis(self.stretch_axis)
-            elbow_lock.set_description(self._get_name())
-            elbow_lock.create()
-            
+            xform = space.get_xform_group(self.ik_handle)
+            cmds.parent(xform, elbow_lock.soft_locator)
+            cmds.parent(elbow_lock.soft_locator, self.setup_group)
         
     def _create_tweakers(self):
         pass
