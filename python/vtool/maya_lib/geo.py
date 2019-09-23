@@ -3696,12 +3696,15 @@ def move_cvs(curves, position, pivot_at_center = False):
     curves = vtool.util.convert_to_sequence(curves)
     
     for curve in curves:
+        
         if curve.find('.cv[') > -1:
             curve_cvs = curve
             curve = get_curve_from_cv(curve)
         else:
             curve_cvs = '%s.cv[*]' % curve
         
+        if core.is_a_shape(curve):
+            curve = cmds.listRelatives(curve, p = True)[0]
         
         if pivot_at_center:
             center_position = space.get_center(curve_cvs)
