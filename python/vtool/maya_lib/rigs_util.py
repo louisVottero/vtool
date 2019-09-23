@@ -1,6 +1,7 @@
 # Copyright (C) 2014 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import string
+import math
 
 #import util
 import api
@@ -909,6 +910,8 @@ class StretchyChain:
         if not self.attribute_node:
             self.attribute_node = top_distance_locator
         
+        raise
+        
         return top_distance_locator, btm_distance_locator
     
     def _create_stretch_condition(self):
@@ -1231,6 +1234,7 @@ class StretchyChain:
     
     def create(self):
         
+        
         top_locator, btm_locator = self._build_stretch_locators()
         
         if self.simple:
@@ -1307,9 +1311,29 @@ class StretchyElbowLock(object):
         
         self._use_translate = False
         self._value = 0
+        
+        self._distance_full = None
+        
+        self._top_aim_transform = None
+        
+        self.soft_locator = None
+        self._do_create_soft_ik = False
+    
+    def _build_locs(self):
+        self.top_loc = cmds.spaceLocator(n = 'distanceLocator_top_%s' % self.description)[0]
+        self.btm_loc = cmds.spaceLocator(n = 'distanceLocator_btm_%s' % self.description)[0]
+        
+        cmds.parent(self.top_loc, self.controls[0])
+        attr.zero_xform_channels(self.top_loc)
+        
+        cmds.parent(self.btm_loc, self.controls[-1])
+        attr.zero_xform_channels(self.btm_loc)
+        
+        cmds.hide(self.top_loc, self.btm_loc)
+        
+        self.stretch_locators = [self.top_loc, self.btm_loc]
     
     def _duplicate_joints(self):
-        print self.joints
         
         dup_hier = space.DuplicateHierarchy(self.joints[0])
         dup_hier.only_these(self.joints)
@@ -1407,10 +1431,22 @@ class StretchyElbowLock(object):
     def set_use_translate_for_stretch(self, bool_value):
         self._use_translate = bool_value
         
+    def set_use_this_overall_distance_node(self, distance_node):
+        self._distance_full = distance_node
+        
     def set_default_value(self, value):
         self._value = value
         
+    def set_top_aim_transform(self, transform):
+        self._top_aim_transform = transform
+    
+    def set_create_soft_ik(self, bool_value):
+        
+        self._do_create_soft_ik = bool_value
+        
     def create(self):
+        
+        self._build_locs()
         
         attribute_control = self.attribute_control
         lock_control = self.lock_attribute_control
@@ -1423,13 +1459,9 @@ class StretchyElbowLock(object):
         self._add_attribute(attribute_control, 'stretch', self._value)
         cmds.addAttr('%s.stretch' % attribute_control, e=True, minValue = 0, maxValue = 1, hasMinValue = True, hasMaxValue = True)
         self._add_attribute(attribute_control, 'nudge')
-        #cmds.addAttr('%s.nudge' % attribute_control, e=True, minValue = 0, hasMinValue = True)
-        
         
         # joint distance
         self._duplicate_joints()
-        
-        print self.dup_joints
         
         distance1 = self._create_distance(self.dup_joints[0], self.dup_joints[1])
         distance2 = self._create_distance(self.dup_joints[1], self.dup_joints[2])
@@ -1441,7 +1473,11 @@ class StretchyElbowLock(object):
         
         
         # control distance
-        distance_full = self._create_distance(self.controls[0], self.controls[-1])
+        if not self._distance_full:
+            distance_full = self._create_distance(self.top_loc, self.btm_loc)
+        else:
+            distance_full = self._distance_full
+            
         distance_top = self._create_distance(self.controls[0], self.controls[1])
         distance_btm = self._create_distance(self.controls[1], self.controls[-1])
         
@@ -1516,7 +1552,186 @@ class StretchyElbowLock(object):
         else:    
             cmds.setAttr('%s.input1' % btm_mult, 1)
             cmds.connectAttr('%s.output' % btm_mult, '%s.scale%s' % (self.joints[1], self.axis_letter))
+        
+        if self._do_create_soft_ik:
+            soft = SoftIk(self.joints)
+            soft.set_attribute_control(self.attribute_control)
+            soft.set_control_distance_attribute('%s.distance' % distance_full)
+            soft.set_description(self.description)
+            soft.set_top_aim_transform(self._top_aim_transform)
+            soft.set_btm_control(self.controls[-1])
+            soft_loc = soft.create()
             
+            self.soft_locator = soft_loc
+            
+
+class SoftIk(object):
+    
+    def __init__(self, joints):
+        
+        self._joints = joints
+        self._attribute_control = None
+        self._control_distance_attribute = None
+        self._top_aim_transform = None
+        self._btm_control = None
+        self._attribute_name = 'softBuffer'
+        self._nice_attribute_name = 'soft'
+    
+    def _rename(self, old_name, new_name):
+        
+        return cmds.rename(old_name, core.inc_name('%s_%s_%s' % (cmds.nodeType(old_name), new_name, self.description)))
+    
+    def _build_soft_graph(self):
+        
+        soft_attr = self._attribute_control + '.' + self._attribute_name
+        
+        chain_distance = space.get_chain_length(self._joints)
+        #control_distance = space.get_distance(self._joints[0], self._joints[-1])
+        
+        subtract_soft = cmds.createNode('plusMinusAverage')
+        subtract_soft = self._rename(subtract_soft, 'subtractSoft')
+        
+        cmds.setAttr('%s.operation' % subtract_soft, 2)
+        cmds.setAttr('%s.input1D[0]' % subtract_soft, chain_distance)
+        cmds.connectAttr(soft_attr, '%s.input1D[1]' % subtract_soft)
+        
+        subtract_soft_total = cmds.createNode('plusMinusAverage')
+        subtract_soft_total = self._rename(subtract_soft_total, 'subtractSoftTotal')
+        cmds.setAttr('%s.operation' % subtract_soft_total, 2)
+        
+        cmds.connectAttr(self._control_distance_attribute, '%s.input1D[0]' % subtract_soft_total)
+        cmds.connectAttr('%s.output1D' % subtract_soft, '%s.input1D[1]' % subtract_soft_total)
+        
+        divide_soft = cmds.createNode('multiplyDivide')
+        divide_soft = self._rename(divide_soft, 'divideSoft')
+        
+        cmds.setAttr('%s.operation' % divide_soft, 2)
+        cmds.connectAttr('%s.output1D' % subtract_soft_total, '%s.input1X' % divide_soft)
+        cmds.connectAttr(soft_attr, '%s.input2X' % divide_soft)
+        
+        negate = cmds.createNode('multiplyDivide')
+        negate = self._rename(negate, 'negateSoft')
+        
+        cmds.setAttr('%s.input1X' % negate, -1)
+        cmds.connectAttr('%s.outputX' % divide_soft, '%s.input2X' % negate)
+        
+        power_soft = cmds.createNode('multiplyDivide')
+        power_soft = self._rename(power_soft, 'powerSoft')
+        
+        exp_value = math.exp(1)
+        
+        cmds.setAttr('%s.operation' % power_soft, 3)
+        cmds.setAttr('%s.input1X' % power_soft, exp_value)
+        cmds.connectAttr('%s.outputX' % negate, '%s.input2X' % power_soft)
+        
+        power_mult_soft = cmds.createNode('multiplyDivide')
+        power_mult_soft = self._rename(power_mult_soft, 'powerMultSoft')
+        
+        cmds.connectAttr(soft_attr, '%s.input1X' % power_mult_soft)
+        cmds.connectAttr('%s.outputX' % power_soft, '%s.input2X' % power_mult_soft)
+        
+        subtract_end_soft = cmds.createNode('plusMinusAverage')
+        subtract_end_soft = self._rename(subtract_end_soft, 'subtractEndSoft')
+        
+        cmds.setAttr('%s.operation' % subtract_end_soft, 2)
+        cmds.setAttr('%s.input1D[0]' % subtract_end_soft, chain_distance)
+        cmds.connectAttr('%s.outputX' % power_mult_soft, '%s.input1D[1]' % subtract_end_soft)
+        
+        """
+        zero_condition = cmds.createNode('condition')
+        zero_condition = self._rename(zero_condition, 'zeroSoft')
+        
+        cmds.connectAttr(soft_attr, '%s.firstTerm' % zero_condition)
+        cmds.setAttr('%s.secondTerm' % zero_condition, 0)
+        cmds.setAttr('%s.operation' % zero_condition, 2)
+        cmds.connectAttr('%s.output1D' % subtract_end_soft, '%s.colorIfTrueR' % zero_condition)
+        cmds.setAttr('%s.colorIfFalseR' % zero_condition, chain_distance)
+        
+        inside_condition = cmds.createNode('condition')
+        inside_condition = self._rename(inside_condition, 'insideSoft')
+        
+        cmds.connectAttr(self._control_distance_attribute, '%s.firstTerm' % inside_condition)
+        cmds.connectAttr('%s.output1D' % subtract_soft, '%s.secondTerm' % inside_condition)
+        cmds.setAttr('%s.operation' % inside_condition, 2)
+        cmds.connectAttr('%s.outColorR' % zero_condition, '%s.colorIfTrueR' % inside_condition)
+        cmds.connectAttr(self._control_distance_attribute, '%s.colorIfFalseR' % inside_condition)
+        """
+        
+        inside_condition = cmds.createNode('condition')
+        inside_condition = self._rename(inside_condition, 'insideSoft')
+        
+        cmds.connectAttr(self._control_distance_attribute, '%s.firstTerm' % inside_condition)
+        cmds.connectAttr('%s.output1D' % subtract_soft, '%s.secondTerm' % inside_condition)
+        cmds.setAttr('%s.operation' % inside_condition, 2)
+        cmds.connectAttr('%s.output1D' % subtract_end_soft, '%s.colorIfTrueR' % inside_condition)
+        cmds.connectAttr(self._control_distance_attribute, '%s.colorIfFalseR' % inside_condition)
+        
+        #need to connect into locator now
+        
+        locator = cmds.spaceLocator(n='locator_%s' % self.description)[0]
+        
+        space.MatchSpace(self._joints[-1], locator).translation_rotation()
+        
+        cmds.parent(locator, self._joints[0])
+        
+        if self._top_aim_transform:
+            cmds.parent(locator, self._top_aim_transform)
+            attr.zero_xform_channels(locator)
+            #cmds.makeIdentity(locator, t = True, r = True, apply = True)
+        
+        cmds.connectAttr('%s.outColorR' % inside_condition, '%s.translateX' % locator)
+        
+        if self._btm_control:    
+            group = cmds.group(em = True, n = 'softOnOff_%s' % self.description)
+            constraint = cmds.pointConstraint([locator, self._btm_control], group)[0]
+            constraint_edit = space.ConstraintEditor()
+            
+            constraint_edit.create_switch(self._attribute_control, 'stretch', constraint)
+            locator = group
+        
+        
+        
+        return locator
+        
+    def _add_attribute(self, node, attribute_name, default = 0):
+        #attr.create_title(node, 'SOFT')
+        cmds.addAttr(node, ln = attribute_name, k = True, dv = default)
+        
+        return '%s.%s' % (node, attribute_name)
+        
+            
+    def set_attribute_control(self, control_name, attribute_name = None):
+        self._attribute_control = control_name
+        if attribute_name:
+            self._nice_attribute_name = attribute_name  
+        
+    def set_control_distance_attribute(self, control_distance_attribute):
+        self._control_distance_attribute = control_distance_attribute
+    
+    def set_top_aim_transform(self, transform):
+        self._top_aim_transform = transform
+    
+    def set_btm_control(self, control_name):
+        self._btm_control = control_name
+    
+    def set_description(self, description):
+        self.description = description
+    
+    def create(self):
+        
+        attribute = self._add_attribute(self._attribute_control, self._attribute_name)
+        nice_attribute = self._add_attribute(self._attribute_control, self._nice_attribute_name, 0)
+        anim.quick_driven_key(nice_attribute, attribute, [0,1], [0.001, 1], infinite = True)
+        
+        cmds.setAttr(attribute, k = False)
+        cmds.addAttr(nice_attribute, e=True, minValue = 0, maxValue = 2, hasMinValue = True, hasMaxValue = True)
+        
+        
+        
+        locator = self._build_soft_graph()
+        
+        return locator
+
 class RiggedLine(object):
     """
     rigs
