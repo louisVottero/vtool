@@ -2582,6 +2582,27 @@ def get_distance(source, target):
     
     return api.get_distance(vector1, vector2)
 
+def get_chain_length(list_of_joints_in_chain):
+    
+    joints = list_of_joints_in_chain
+    
+    length = 0
+    
+    joint_count = len(joints)
+    
+    for inc in range(0, joint_count):
+        if inc+1 == joint_count:
+            break
+        
+        current_joint = joints[inc]
+        next_joint = joints[inc+1]
+        
+        distance =  get_distance(current_joint, next_joint)
+        
+        length += distance
+        
+    return length
+
 def get_midpoint( source, target):
     """
     Get the midpoint between the source transform and the target transform.
