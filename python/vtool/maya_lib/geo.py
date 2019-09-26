@@ -886,6 +886,27 @@ def get_vertex_indices(list_of_vertex_names):
         
     return vertex_indices
 
+def get_vertex_names_from_indices(mesh, indices):
+    
+    found = []
+    
+    for index in indices:
+        
+        name = '%s.vtx[%s]' % (mesh, index)
+        found.append(name)
+    return found
+
+def get_vertex_shells(mesh):
+    
+    result =  api.get_vertex_islands(mesh)
+    
+    found = []
+    
+    for r in result:
+        found.append( get_vertex_names_from_indices(mesh, r) )
+    
+    return found
+
 def get_faces(mesh):
     """
     Get the faces of a mesh.
