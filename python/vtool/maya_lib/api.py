@@ -1433,11 +1433,94 @@ def get_surrounding_vertex_indices(mesh, index):
             found_verts[vert] = None
     
     return found_verts.keys()
-        
     
-    return verts
 
+def get_vert_count(mesh):
+    
+    api_object = get_object(mesh)
+    
+    count = om.MItMeshVertex(api_object).count()
+    
+    return count
 
+def get_connected_verts(mesh, index, iterator = None):
+    
+    api_object = get_object(mesh)
+    
+    current = None
+    
+    if iterator:
+        #current = iterator.index()
+        iter_vertex_fn = iterator
+    else:
+        iter_vertex_fn = om.MItMeshVertex(api_object)
+    
+    iter_vertex_fn.setIndex(index)
+    
+    found_verts = {}
+    
+    verts = iter_vertex_fn.getConnectedVertices()
+    
+    for vert in verts:
+        found_verts[vert] = None
+    
+    if current:
+        iterator.setIndex(current)
+        
+    return found_verts.keys()
+    
+def get_vertex_islands(mesh):
+    
+    api_object = get_object(mesh)
+    iterator = om.MItMeshVertex(api_object)
+    
+    islands = {}
+    checked = {}
+    
+    while not iterator.isDone():
+        
+        found = {}
+        current = iterator.index()
+        
+        if checked.has_key(current):
+            iterator.next()
+            continue
+         
+        verts = iterator.getConnectedVertices()
+        
+        while verts:
+            
+            
+            sub_found = {}
+            sub_verts = []
+            
+            for vert in verts:
+                
+                if not checked.has_key(vert):
+                    
+                    sub_verts = get_connected_verts(mesh, vert, iterator)
+                    
+                    for sub_vert in sub_verts:
+                        sub_found[sub_vert] = None
+                
+                found[vert] = None
+                checked[vert] = None
+                
+            if sub_verts:
+                verts = sub_found.keys()
+            else:
+                verts = None
+        
+        islands[current] = found
+        
+        iterator.next()
+    
+    result = []
+    
+    for key in islands:
+        result.append(islands[key].keys())
+    
+    return result
 
 def get_skin_influence_names(skin_cluster, short_name = False):
     
