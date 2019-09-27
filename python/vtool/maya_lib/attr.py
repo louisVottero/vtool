@@ -2324,6 +2324,8 @@ def hide_keyable_attributes(node):
     
     if attributes:
         hide_attributes(node, attributes)
+    
+    hide_rotate_order(node)
  
 def hide_translate(node):
 
@@ -3864,7 +3866,10 @@ def show_rotate_order(transform, value = None):
     else:
         cmds.setAttr('%s.rotateOrder' % transform, value, k = True, )
         
-        
+def hide_rotate_order(transform):
+    
+    cmds.setAttr('%s.rotateOrder' % transform, k = False, l = True)
+    cmds.setAttr('%s.rotateOrder' % transform, cb = False )
         
 def add_shape_for_attributes(transforms, shape_name):
     
@@ -3904,4 +3909,18 @@ def add_shape_for_attributes(transforms, shape_name):
         cmds.delete(locator)
         
     return shape
+
+def store_world_matrix_to_attribute(transform, attribute_name = 'origMatrix'):
+    
+    name = attribute_name 
+    
+    world_matrix = cmds.getAttr('%s.worldMatrix' % transform)
+    
+    if cmds.objExists('%s.%s' % (transform, name)):
+        cmds.deleteAttr('%s.%s' % (transform, name))
+    
+    cmds.addAttr(transform, ln = name, at = 'matrix')
+    
+    cmds.setAttr('%s.%s' % (transform, name), *world_matrix, type = 'matrix', l = True)
+    
     

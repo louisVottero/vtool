@@ -5171,6 +5171,8 @@ class TwistRig(JointRig):
             if not next_joint:
                 continue
             
+            length = space.get_distance(joint, next_joint)
+            
             if not self.orient_example:
                 self.orient_example = joint
             
@@ -5181,6 +5183,7 @@ class TwistRig(JointRig):
             twist._attach_directly = self._attach_directly
             twist._top_twist_fix = self._top_twist_fix
             twist._btm_twist_fix = self._btm_twist_fix
+            twist.set_ribbon_offset(length/4.0)
             twist.set_dual_quaternion(False)
             
             bad_axis = space.get_axis_letter_aimed_at_child(joint)
