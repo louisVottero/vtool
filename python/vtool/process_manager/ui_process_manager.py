@@ -686,7 +686,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _setup_settings_file(self):
         
-        print 'setup settings'
         log.info('Setup Vetala Settings')
         
         util.set_env('VETALA_SETTINGS', self.directory)
