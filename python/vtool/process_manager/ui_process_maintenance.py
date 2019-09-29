@@ -59,7 +59,14 @@ class BackupGroup(qt_ui.Group):
         
         self.backup_dir = qt.QLabel('Backup Directory:')
         
+        self.backup_dir_list = qt.QListWidget()
+        self.backup_dir_list.setSizePolicy(qt.QSizePolicy(qt.QSizePolicy.Minimum,qt.QSizePolicy.Minimum))
+        self.backup_dir_list.addItem('None')
+        self.backup_dir_list.setMaximumHeight(40)
+        
         self.main_layout.addWidget(self.backup_dir)
+        self.main_layout.addWidget(self.backup_dir_list)
+        self.main_layout.addSpacing(10)
         self.main_layout.addWidget(self.backup_history)
     
     def set_directory(self, directory):
@@ -70,7 +77,9 @@ class BackupGroup(qt_ui.Group):
         self.directory = directory
         backup = self.backup_history.set_directory(directory)
         
-        self.backup_dir.setText('Backup Directory: %s' % backup)
+        item = self.backup_dir_list.item(0)
+        
+        item.setText(backup)
         
 
 class VersionsGroup(qt_ui.Group):
@@ -89,6 +98,10 @@ class VersionsGroup(qt_ui.Group):
         self.main_layout.addWidget(help_label)
         self.main_layout.addWidget(self.prune_versions_widget)
     
+    def expand_group(self):
+        super(VersionsGroup, self).expand_group()
+        self.prune_versions_widget.load()
+    
     def set_directory(self, directory):
         
         if not directory:
@@ -105,6 +118,8 @@ class PruneVersionsWidget(qt_ui.BasicWidget):
     
     def _build_widgets(self):
         
+        self.progress = qt.QProgressBar()
+        self.progress.hide()
         
         self.data_tree = ui_view.DataTree()
         self.code_tree = ui_view.CodeTree()
@@ -114,8 +129,10 @@ class PruneVersionsWidget(qt_ui.BasicWidget):
         
         self._reset()
         
+        
         self.main_layout.addWidget(self.data_tree)
         self.main_layout.addWidget(self.code_tree)
+        self.main_layout.addWidget(self.progress)
         
         
     
@@ -151,56 +168,20 @@ class PruneVersionsWidget(qt_ui.BasicWidget):
         item.setText(column, (' ' * 10) + '-')
         
         item.setBackground(column, item.background(0))
-    
-    def _load(self):
-
-        self.data_tree.populate()
-        self.code_tree.populate()
-
-    def _populate_items(self, data_type, item = None):
         
-        if data_type == 'data':
-            tree_widget = self.data_tree
-        if data_type == 'code':
-            tree_widget = self.code_tree
-        
-        if not item:
-            item = tree_widget.invisibleRootItem()
-        
-        if not item:
-            return
-        
-        child_count = item.childCount()
-        
-        for inc in range(0, child_count):
+    def load(self):
+        if self.isVisible():
             
-            child_item = item.child(inc)
+            self.progress.show()
             
-            name = child_item.text(0)
-            
-            if not name:
-                continue
-            
-            folder = None
-            
-            if data_type == 'data':
-                
-                folder = self.process_inst.get_data_folder(name)
-            
-            if data_type == 'code':
-                folder = self.process_inst.get_code_folder(name)
-                
-            if not folder:
-                continue
-                
-            version_inst = util_file.VersionFile(folder)
-            count = version_inst.get_count()
-            size = util_file.get_folder_size(folder, round_value = 2)
-            
-            child_item.setText(1, str(count))
-            child_item.setText(2, str(size))
-            
-            self._populate_items(data_type, child_item)
+            self.progress.setRange(0,3)
+            self.progress.setValue(0)
+            self.progress.setValue(1)
+            self.data_tree.populate()
+            self.progress.setValue(2)
+            self.code_tree.populate()
+            self.progress.setValue(3)
+            self.progress.hide()
 
     def set_directory(self, directory):
         
@@ -217,10 +198,9 @@ class PruneVersionsWidget(qt_ui.BasicWidget):
         self.data_tree.set_process(self.process_inst)
         self.code_tree.set_process(self.process_inst)
         
-        self._load()
+        self.load()
         
-        self._populate_items('data')
-        self._populate_items('code')
+
         
 class BackupProcessFileWidget(qt_ui.BackupWidget):
     def _define_save_widget(self):
