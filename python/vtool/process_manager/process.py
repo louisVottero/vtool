@@ -1159,6 +1159,13 @@ class Process(object):
                 
         copy(source_file, target_file)
         
+    def remove_data_versions(self, name, sub_folder = None, keep = 1):
+        
+        folder = self.get_data_folder(name, sub_folder)
+        
+        util_file.delete_versions(folder, keep)
+        
+        
     #code ---
     
     def is_code_folder(self, name):
@@ -1555,6 +1562,12 @@ class Process(object):
             None
         """
         util_file.delete_dir(name, self.get_code_path())
+        
+    def remove_code_versions(self, code_name, keep = 1):
+        
+        folder = self.get_code_folder(code_name)
+        
+        util_file.delete_versions(folder, keep)
         
     #--- settings
     
