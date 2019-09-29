@@ -304,6 +304,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.context_menu = qt.QMenu()
         self._create_context_menu()
+        
         self.paste_item = None
                 
                 
@@ -330,20 +331,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 directory = util_file.get_vetala_directory()
                 icon_on = util_file.join_path(directory, 'icons/plus.png')
                 icon_off = util_file.join_path(directory, 'icons/minus_alt.png')
-                
-                #icon_folder = util_file.join_path(directory, 'icons/folder.png')
-                #icon_folder_open = util_file.join_path(directory, 'icons/folder_open.png')
-                
-                
+                                
                 lines = 'QTreeView::indicator:unchecked {image: url(%s);}' % icon_off
                 lines += ' QTreeView::indicator:checked {image: url(%s);}' % icon_on
-                
-                #lines += ' QTreeView::branch:open {image: url(%s);}' % icon_folder_open
-                #lines += ' QTreeView::branch:closed:has-children {image: url(%s);}' % icon_folder
-                
-                #lines += ' QTreeWidget::branch:closed:has-children:has-siblings, QTreeWidget::branch:closed:has-children:!has-siblings {image: url(%s);}' % icon_folder
-                #lines += ' QTreeWidget::branch:opened:has-children:has-siblings, QTreeWidget::branch:opened:has-children:!has-siblings {image: url(%s);}' % icon_folder_open
-                
+
                 self.setStyleSheet( lines) 
 
     def keyPressEvent(self, event):
@@ -654,9 +645,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             return
         
         self.current_folder = None
-        
-        
-        self._set_item_menu_vis(position)
         
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
         
@@ -2713,6 +2701,84 @@ class ProcessInfoTree(qt.QTreeWidget):
         item_delegate = qt_ui.SelectTreeItemDelegate()
         self.setItemDelegate(item_delegate)
         
+        self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._item_menu)
+        
+        self.context_menu = qt.QMenu()
+        self._create_context_menu()
+        
+    def _item_menu(self, position):
+        
+        self.current_folder = None
+        
+        self.context_menu.exec_(self.viewport().mapToGlobal(position))
+                                
+    def _create_context_menu(self):
+        
+        self.remove_all = self.context_menu.addAction('Remove all but last version')
+        self.remove_all_but_10 = self.context_menu.addAction('Remove all but last 10 versions')
+
+        self.remove_all.triggered.connect(self._remove_all)
+        self.remove_all_but_10.triggered.connect(self._remove_all_but_10)
+
+    def _remove(self, keep = 1):
+        
+        if hasattr(self, 'tree_type'):
+            tree_type = self.tree_type
+        
+        items = self.selectedItems()
+        
+        
+        
+        for item in items:
+        
+            name = item.text(0)
+            
+            if tree_type == 'data':
+                
+                
+                
+                parent_item = item.parent()
+                
+                sub_folder = None
+                if parent_item:
+                    sub_folder = name
+                    name = parent_item.text(0)
+                    
+                self.process.remove_data_versions(name, sub_folder, keep = keep)
+                
+            if tree_type == 'code':
+                
+                parent_item = item.parent()
+                
+                while parent_item:
+                    
+                    parent_name = parent_item.text(0) 
+                    name = util_file.join_path(parent_name, name)
+                    
+                    parent_item = parent_item.parent()
+                
+                self.process.remove_code_versions(name, keep = keep)
+                    
+                
+        self.populate()
+                
+    def _remove_all(self):
+        
+        
+        self._remove()
+    
+    def _remove_all_but_10(self):
+        self._remove(10)
+
+    def _set_version_info(self, item, folder):
+        version_inst = util_file.VersionFile(folder)
+        count = version_inst.get_count()
+        size = util_file.get_folder_size(folder, round_value = 3)
+        
+        item.setText(1, str(count))
+        item.setText(2, str(size))
+
     def add_item(self, column, name, parent = None):
         
         item = qt.QTreeWidgetItem(parent)
@@ -2742,6 +2808,8 @@ class ProcessInfoTree(qt.QTreeWidget):
 
 class DataTree(ProcessInfoTree):
     
+    tree_type = 'data'
+    
     def __init__(self):
         super(DataTree, self).__init__()
         
@@ -2754,8 +2822,7 @@ class DataTree(ProcessInfoTree):
     def populate(self):
         
         self.clear()
-        column = 0
-                
+        column = 0   
         data_folders = self.process.get_data_folders()
         
         if not data_folders:
@@ -2767,13 +2834,25 @@ class DataTree(ProcessInfoTree):
             
             data_item = self.add_item(column, sub_data)
             
+            
+            data_folder = self.process.get_data_folder(sub_data)
+            
+            self._set_version_info(data_item, data_folder)
+            
             folders = self.process.get_data_sub_folder_names(sub_data)
             
             for folder in folders:
-                self.add_item(column, folder, data_item)
+                sub_item = self.add_item(column, folder, data_item)
                 
+                data_folder = self.process.get_data_folder(sub_data, folder)
+                
+                self._set_version_info(sub_item, data_folder)
+
+    
     
 class CodeTree(ProcessInfoTree):
+    
+    tree_type = 'code'
     
     def populate(self):
         self.clear()
@@ -2804,8 +2883,10 @@ class CodeTree(ProcessInfoTree):
                     
                 items[long_name] = item
                 parent_item = item
-
-
+     
+                folder = self.process.get_code_folder(long_name)
+                
+                self._set_version_info(item, folder)
 
 
 #--- DEV
@@ -2873,25 +2954,10 @@ class ProcessTreeModel(qt.QtCore.QAbstractListModel):
     def hasChildren(self, parent):
         
         return True
-        """
-        
-        if not parent.isValid:
-            parent_process = self.root_item
-        if parent.isValid:
-            parent_process = parent.internalPointer()
-        
-        if parent_process and parent_process.has_sub_parts():
-            return True
-        
-        return False
-        """
-        
         
     
     def index(self, row, column, parent):
         
-        #if not self.hasIndex(row, column, parent):
-        #    return qt.QtCore.QModelIndex()
         if not parent.isValid():
             parent_process = self.root_item
         else:
