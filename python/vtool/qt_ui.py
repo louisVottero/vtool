@@ -1330,6 +1330,9 @@ class BackupWidget(DirectoryWidget):
         self.tab_widget.addTab(self.save_widget, self.main_tab_name)
         self._add_history_widget()
         
+        
+        self.tab_widget.setTabEnabled(1, False)
+        
         self.tab_widget.currentChanged.connect(self._tab_changed)    
         self.main_layout.addWidget(self.tab_widget)
         
@@ -1419,7 +1422,6 @@ class BackupWidget(DirectoryWidget):
         self.history_widget.refresh()
         self.history_attached = True
         
-        self._activate_history_tab()
         
     
     def set_history_directory(self, directory):
@@ -1427,6 +1429,8 @@ class BackupWidget(DirectoryWidget):
         log.debug('Setting backup history widget directory: %s' % directory)
         
         self.history_directory = directory
+        
+        self._activate_history_tab()
         
         if self.tab_widget.currentIndex() == 1:
             self.update_history()
@@ -1543,7 +1547,7 @@ class FileManagerWidget(DirectoryWidget):
             self.option_widget.set_directory(self.directory)
             self.option_widget.data_class = self.data_class
             
-        self.option_widget.tab_update()
+            self.option_widget.tab_update()
         
     def _tab_changed(self):
                                 
@@ -1561,8 +1565,10 @@ class FileManagerWidget(DirectoryWidget):
                 
         if self.tab_widget.currentIndex() == 2:
             
-            self._show_options()
-            self._hide_history()
+            if hasattr(self, 'option_widget'):
+            
+                self._show_options()
+                self._hide_history()
                         
     def _file_changed(self):
         
