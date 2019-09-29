@@ -10,6 +10,8 @@ import process
 
 from vtool import qt
 
+
+
 from vtool import logger
 log = logger.get_logger(__name__) 
 
@@ -192,6 +194,9 @@ class DataProcessWidget(vtool.qt_ui.DirectoryWidget):
                     if key == data_type:
                         
                         widget = file_widgets[key]()
+                        
+                        if hasattr(widget, 'add_tool_tabs'):
+                            widget.add_tool_tabs()
                         
                         path_to_data = vtool.util_file.join_path(process_tool.get_data_path(), str( item.text(0) ) )
                         
@@ -420,7 +425,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         
         self.setColumnWidth(0, 140)
         self.setColumnWidth(1, 110)
-        self.setColumnWidth(2, 90)
+        self.setColumnWidth(2, 100)
         #removed because data update slow
         #self.setColumnWidth(3, 50)
         
@@ -535,7 +540,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
     def _define_header(self):
         #data size update removed because very slow
         #return ['Name','Folder', 'Type','Size']
-        return ['Name','Folder', 'Type']
+        return ['Name','Type', 'Folder']
     
     def _item_renamed(self, item, old_name):
         
@@ -595,8 +600,8 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
             group = group.capitalize()
             
             
-            item.setText(1, sub_folder)
-            item.setText(2, nice_name)
+            item.setText(1, nice_name)
+            item.setText(2, sub_folder)
             
             item.folder = foldername
             
@@ -637,7 +642,7 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         size_thread.run(data_dir, folder, item)
         
         sub = process_tool.get_data_current_sub_folder(folder)
-        item.setText(1, sub)
+        item.setText(2, sub)
         
     def get_item_path_string(self, item):
         
@@ -1187,9 +1192,6 @@ class DataFileWidget(vtool.qt_ui.FileManagerWidget):
 
 class MayaDataFileWidget(DataFileWidget):
 
-
-        
-
     def _define_main_tab_name(self):
         
         return 'data file'
@@ -1382,6 +1384,13 @@ class ControlCvFileWidget(MayaDataFileWidget):
         return """This will export/import control cv positions.
     Controls are discovered automatically, no need to select them."""
     
+    def _build_widgets(self):
+        super(ControlCvFileWidget, self)._build_widgets()
+
+        if vtool.util.is_in_maya:
+            from vtool.maya_lib.ui_lib import ui_rig        
+        self.tab_widget.addTab(ui_rig.ControlWidget(), 'Tools')
+    
     def _define_data_class(self):
         return vtool.data.ControlCvData()
     
@@ -1496,6 +1505,14 @@ class ControlColorOptionFileWidget(ControlCvOptionFileWidget):
         return 'Delete Curve Color Data'
     
 class SkinWeightFileWidget(MayaDataFileWidget):
+    
+    def __init__(self):
+        super(SkinWeightFileWidget, self).__init__()
+
+        if vtool.util.is_in_maya:
+            from vtool.maya_lib.ui_lib import ui_rig
+        self.tab_widget.addTab(ui_rig.SkinWidget(scroll = False), 'Tools')
+        
     def _define_io_tip(self):
         
         tip = """    This will export/import skin weights. 
@@ -1698,6 +1715,17 @@ class MayaControlRotateOrderFileWidget(MayaDataFileWidget):
         return 'Maya Control RotateOrder'
 
 class MayaFileWidget(vtool.qt_ui.FileManagerWidget):
+
+    def __init__(self, add_tools = False):
+        super(MayaFileWidget, self).__init__()
+
+
+    def add_tool_tabs(self):        
+        if vtool.util.is_in_maya:
+            from vtool.maya_lib.ui_lib import ui_rig
+
+        self.tab_widget.addTab(ui_rig.ControlWidget(), 'Structure')
+        self.tab_widget.addTab(ui_rig.DeformWidget(), 'Deformation')
 
     def is_link_widget(self):
         return False
