@@ -1309,7 +1309,7 @@ class OrientJoint(object):
         self._get_relatives()
         self._pin()
         
-        
+        vtool.util.show('Orienting %s' % core.get_basename(self.joint))
         
         try:
             cmds.setAttr('%s.rotateAxisX' % self.joint, 0)
