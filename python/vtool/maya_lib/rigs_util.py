@@ -910,8 +910,6 @@ class StretchyChain:
         if not self.attribute_node:
             self.attribute_node = top_distance_locator
         
-        raise
-        
         return top_distance_locator, btm_distance_locator
     
     def _create_stretch_condition(self):
