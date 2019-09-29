@@ -2464,7 +2464,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.tabs.setCurrentIndex(0)
         
-        self._reset_states(column, self.data_list)
+        self._reset_states(self.data_list)
         
         data = other_process_inst.get_data_folders()
         
@@ -2516,7 +2516,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         self.tabs.setCurrentIndex(1)
         
-        self._reset_states(column, self.code_list)
+        self._reset_states(self.code_list)
         
         code_names = other_process_inst.get_code_names()
                 
@@ -2557,7 +2557,7 @@ class CopyWidget(qt_ui.BasicWidget):
         other_settings_inst = other_process_inst.get_settings_inst()
         other_settings = other_settings_inst.get_settings()
         
-        self._reset_states(column, self.settings_list)
+        self._reset_states(self.settings_list)
         
         list_widget = self.settings_list
         
@@ -2597,7 +2597,7 @@ class CopyWidget(qt_ui.BasicWidget):
         
         other_options = other_process_inst.get_options()
         
-        self._reset_states(column, self.option_list)
+        self._reset_states(self.option_list)
         
         list_widget = self.option_list
         
