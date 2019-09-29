@@ -351,10 +351,6 @@ class VersionFile(object):
         self.version_folder = None
         self.updated_old = False
         
-
-            
-            
-        
     def _prep_directories(self):
         self._create_version_folder()
         self._create_comment_file()
@@ -805,7 +801,17 @@ class VersionFile(object):
         filename = self._default_version_file_name()
         
         return filename
-       
+    
+    def delete_version(self, version_number):
+        
+        path = self.get_version_path(version_number)
+        
+        if is_file(path):
+            delete_file(path)
+        else:
+            delete_dir(path)
+            
+    
 class SettingsFile(object):
     
     def __init__(self):
@@ -2556,7 +2562,7 @@ def create_file(name, directory = None, make_unique = False):
     
     return full_path
     
-def delete_file(name, directory, show_warning = True):
+def delete_file(name, directory = None, show_warning = True):
     """
     Delete the file by name in the directory.
     
@@ -2568,7 +2574,10 @@ def delete_file(name, directory, show_warning = True):
         str: The filepath that was deleted.
     """
     
-    full_path = join_path(directory, name)
+    if not directory:
+        full_path = name
+    else:
+        full_path = join_path(directory, name)
     
     if not is_file(full_path):
         if show_warning:
@@ -2631,6 +2640,31 @@ def copy_file(filepath, filepath_destination):
     
     return filepath_destination
 
+def delete_versions(folder, keep = 1):
+    
+    version_inst = VersionFile(folder)
+    
+    version_list = version_inst.get_version_numbers()
+    
+    if not version_list:
+        return
+    
+    count = len(version_list)
+    
+    if count <= keep:
+        util.warning('Removing no versions.  Asked to keep more versions than there are.')
+        return
+    
+    deleted = 0
+    
+    for version in version_list:
+        
+        version_inst.delete_version(version)
+        
+        deleted += 1
+        
+        if count - deleted == keep:
+            break
     
 #---- python
 
