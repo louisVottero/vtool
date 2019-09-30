@@ -15,7 +15,7 @@ class ProcessMaintenance(qt_ui.BasicWidget):
         
         self.directory = None
         
-        super(ProcessMaintenance, self).__init__()
+        super(ProcessMaintenance, self).__init__(scroll = True)
         
         self.setContentsMargins(1,1,1,1)
         
@@ -86,7 +86,6 @@ class VersionsGroup(qt_ui.Group):
     
     def __init__(self, name = 'Versions'):
         super(VersionsGroup, self).__init__(name)
-        
         self.directory = None
         
     def _build_widgets(self):
@@ -100,6 +99,7 @@ class VersionsGroup(qt_ui.Group):
     
     def expand_group(self):
         super(VersionsGroup, self).expand_group()
+        
         self.prune_versions_widget.load()
     
     def set_directory(self, directory):
@@ -113,6 +113,11 @@ class VersionsGroup(qt_ui.Group):
         
 class PruneVersionsWidget(qt_ui.BasicWidget):
     
+    def __init__(self):
+        super(PruneVersionsWidget, self).__init__()
+        
+        self._last_directory = None
+    
     def _define_main_layout(self):
         return qt.QVBoxLayout()
     
@@ -121,17 +126,21 @@ class PruneVersionsWidget(qt_ui.BasicWidget):
         self.progress = qt.QProgressBar()
         self.progress.hide()
         
-        self.data_tree = ui_view.DataTree()
-        self.code_tree = ui_view.CodeTree()
+        sub_layout = qt.QVBoxLayout()
+        
+        self.data_tree = ui_view.DataVersionTree()
+        self.code_tree = ui_view.CodeVersionTree()
         
         self._fill_headers('Data', self.data_tree)
         self._fill_headers('Code', self.code_tree)
         
         self._reset()
         
+        sub_layout.addWidget(self.data_tree)
+        sub_layout.addSpacing(10)
+        sub_layout.addWidget(self.code_tree)
         
-        self.main_layout.addWidget(self.data_tree)
-        self.main_layout.addWidget(self.code_tree)
+        self.main_layout.addLayout(sub_layout)
         self.main_layout.addWidget(self.progress)
         
         
@@ -188,6 +197,9 @@ class PruneVersionsWidget(qt_ui.BasicWidget):
         if not directory:
             return
         
+        if hasattr(self, 'directory'):
+            self._last_directory = self.directory
+        
         self.directory = directory
         
         process_inst = process.Process()
@@ -198,9 +210,8 @@ class PruneVersionsWidget(qt_ui.BasicWidget):
         self.data_tree.set_process(self.process_inst)
         self.code_tree.set_process(self.process_inst)
         
-        self.load()
-        
-
+        if self._last_directory != self.directory:
+            self.load()
         
 class BackupProcessFileWidget(qt_ui.BackupWidget):
     def _define_save_widget(self):
