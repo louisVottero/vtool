@@ -1724,7 +1724,7 @@ class MayaFileWidget(vtool.qt_ui.FileManagerWidget):
         if vtool.util.is_in_maya:
             from vtool.maya_lib.ui_lib import ui_rig
 
-        self.tab_widget.addTab(ui_rig.ControlWidget(), 'Structure')
+        self.tab_widget.addTab(ui_rig.StructureWidget(), 'Structure')
         self.tab_widget.addTab(ui_rig.DeformWidget(), 'Deformation')
 
     def is_link_widget(self):
