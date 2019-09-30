@@ -26,7 +26,9 @@ log = logger.get_logger(__name__)
 
 def get_permission(filepath):
     
-    if os.access(filepath, os.R_OK | os.W_OK | os.X_OK ):
+    log.debug('Get Permission: %s' % filepath)
+    
+    if oct(os.stat(filepath)[stat.ST_MODE])[-3:] == 0775:
         return True
     
     try:
