@@ -69,7 +69,14 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         if not directory:
             directory = self.directory
         
-        if not util_file.is_dir(util_file.join_path(directory, current_process)):
+        current_path = util_file.join_path(directory, current_process)
+        
+        permission = util_file.get_permission(current_path)
+        if not permission:
+            util.warning('Could not get permission: %s' % directory)
+            return
+        
+        if not util_file.exists(current_path):
             util.warning('Could not get a directory.  set sub path filter may be set wrong.')
             return
         
@@ -107,6 +114,13 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         name = self._get_filter_name(name)
         
+        other_path = util_file.join_path(directory, name)
+        
+        print 'other path!', other_path
+        permission = util_file.get_permission(other_path)
+        if not permission:
+            util.warning('Could not get permission: %s' % other_path)
+            return
         
         self.copy_widget.set_other_process(name, directory)
     
@@ -2435,25 +2449,15 @@ class CopyWidget(qt_ui.BasicWidget):
         for inc in range(0, other_count):
             
             other_process_inst = self.other_processes[inc]
+            
+            path = other_process_inst.get_path()
+            
+            if not util_file.get_permission(path):
+                continue
                         
             self.populate_other_data(inc+1, other_process_inst)
-        
-        for inc in range(0, other_count):
-            
-            other_process_inst = self.other_processes[inc]
-            
             self.populate_other_code(inc+1, other_process_inst)
-
-        for inc in range(0, other_count):
-            
-            other_process_inst = self.other_processes[inc]
-            
             self.populate_other_options(inc+1, other_process_inst)
-        
-        for inc in range(0, other_count):
-            
-            other_process_inst = self.other_processes[inc]
-            
             self.populate_other_settings(inc+1, other_process_inst)
         
         self.paste_button.setEnabled(True)
