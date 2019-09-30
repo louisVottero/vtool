@@ -384,7 +384,34 @@ class Process(object):
                 
         return new_value
             
+
+    def _get_code_file(self, name, basename = False):
+        """
+        Args: 
+            name (str): The name of a code folder in the process.
+            basename (bool): Wether to return the full path or just the name of the file.
+        
+        Returns:
+            str: The path to the code file with the specified name in the current process. 
+        """
+        
+        path = util_file.join_path(self.get_code_path(), name)
+       
+        code_name = util_file.get_basename(path)
+        
+        if not code_name == 'manifest':
+            code_name = code_name + '.py'
+        if code_name == 'manifest':
+            code_name = code_name + '.data'
+        
+        if basename:
+            return_value = code_name
+        if not basename:
             
+            return_value = util_file.join_path(path, code_name)
+        
+        return return_value
+
     def set_directory(self, directory):
         """
         Args:
@@ -1306,6 +1333,8 @@ class Process(object):
             list: The path to the code files found in the code folder for the current process. 
             If basename is True, only return the file names without the path.             
         """
+        
+        
         directory = self.get_code_path()
         
         #folders = util_file.get_folders(directory)
@@ -1346,28 +1375,14 @@ class Process(object):
             str: The path to the code file with the specified name in the current process. 
         """
         
-        path = util_file.join_path(self.get_code_path(), name)
+        path = self._get_code_file(name, basename)
         
-        if not util_file.is_dir(path):
-            
+        
+        if not util_file.exists(path):
             util.warning('Could not find code file: %s' % name)
-            
             return
         
-        code_name = util_file.get_basename(path)
-        
-        if not code_name == 'manifest':
-            code_name = code_name + '.py'
-        if code_name == 'manifest':
-            code_name = code_name + '.data'
-        
-        if basename:
-            return_value = code_name
-        if not basename:
-            
-            return_value = util_file.join_path(path, code_name)
-        
-        return return_value
+        return path
 
     def get_code_name_from_path(self, code_path):
         
@@ -1430,7 +1445,7 @@ class Process(object):
         if inc_name:
             test_path = util_file.join_path(path, name)
             
-            if util_file.is_dir(test_path):
+            if util_file.exists(test_path):
                 test_path = util_file.inc_path_name(test_path)
                 name = util_file.get_basename(test_path)
         
@@ -1785,7 +1800,7 @@ class Process(object):
         if not manifest_file:
             manifest_file = self.get_manifest_file()
         
-        if not util_file.is_file(manifest_file):
+        if not util_file.exists(manifest_file):
             return None, None
         
         lines = util_file.get_file_lines(manifest_file)
@@ -1807,8 +1822,6 @@ class Process(object):
             if len(split_line):
                 
                 script_name = string.join(split_line[:-1])
-                
-                
                 
                 scripts.append(script_name)
                 
@@ -1873,7 +1886,7 @@ class Process(object):
         
         path = util_file.join_path(code_path, 'manifest')
         
-        if not util_file.is_dir(path):
+        if not util_file.exists(path):
             try:
                 self.create_code('manifest', 'script.manifest')
             except:
@@ -2035,13 +2048,12 @@ class Process(object):
             
             script_name = util_file.remove_extension(scripts[inc])
             
-            filepath = self.get_code_file(script_name)
+            filepath = self._get_code_file(script_name)
             
             if not util_file.exists(filepath):
                 continue
             
             if scripts[inc] in synced_scripts:
-                
                 continue
             
             synced_scripts.append(scripts[inc])
@@ -2201,7 +2213,7 @@ class Process(object):
             
             if not util_file.is_file(script):
                 script = util_file.remove_extension(script)
-                script = self.get_code_file(script)
+                script = self._get_code_file(script)
             
             if not util_file.is_file(script):
                 self._reset_builtin()
