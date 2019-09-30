@@ -576,7 +576,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     def _create_history_widget(self):
         
         history_widget = qt_ui.CompactHistoryWidget()
-        
+        history_widget.set_auto_accept(True)
         history_widget.back_socket.connect(self._set_current_manifest_history)
         history_widget.forward_socket.connect(self._set_current_manifest_history)
         history_widget.load_default_socket.connect(self._load_manifest_default)
@@ -593,7 +593,7 @@ class ScriptWidget(vtool.qt_ui.DirectoryWidget):
     
     def _accept_changes(self):
         self.code_manifest_tree.update_manifest_file()
-        self.code_manifest_tree.refresh(sync = True)
+        #self.code_manifest_tree.refresh(sync = True)
     
     def _set_current_manifest_history(self, version_file):
         
@@ -1056,10 +1056,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             code_path = process_tool.get_code_file(name)
             
-            if not code_path or not util_file.is_file(code_path):
+            if not code_path or not util_file.exists(code_path):
                 continue
-            
-
             
             found_scripts.append(scripts[inc])
             found_states.append(states[inc])
@@ -1848,18 +1846,16 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         if self.start_item:
             start_item_path = self._get_item_path_name(self.start_item, keep_extension=True)
         
-
         if sync:
             self.sync_manifest()
-            
+        
         self.allow_manifest_update = False
         if not scripts_and_states:
             super(CodeManifestTree, self).refresh()
         
         if scripts_and_states:
             self._custom_refresh(scripts_and_states[0], scripts_and_states[1])
-
-
+            
         self.allow_manifest_update = True
         
         if self.start_item:
@@ -1873,7 +1869,7 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
             
             if item:
                 self.set_breakpoint(item)
-   
+           
     def update_manifest_file(self):
         self._update_manifest()
 
