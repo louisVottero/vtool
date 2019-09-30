@@ -65,13 +65,13 @@ class ProcessOptionsWidget(qt_ui.BasicWidget):
     def _create_history_widget(self):
         
         history_widget = qt_ui.CompactHistoryWidget()
-        
+        history_widget.set_auto_accept(True)
         history_widget.back_socket.connect(self._set_current_option_history)
         history_widget.forward_socket.connect(self._set_current_option_history)
         history_widget.load_default_socket.connect(self._load_option_default)
         history_widget.accept_socket.connect(self._accept_changes)
         
-        self.option_palette.value_change.connect(history_widget.set_at_end)
+        #self.option_palette.value_change.connect(history_widget.set_at_end)
         
         self.history_widget = history_widget
         
