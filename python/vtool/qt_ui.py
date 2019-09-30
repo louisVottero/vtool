@@ -942,12 +942,14 @@ class FileTreeWidget(TreeWidget):
                 
         item.setText(self.title_text_index, filename)
         
-        if util_file.is_file(path):
-            size = util_file.get_filesize(path)
-            date = util_file.get_last_modified_date(path)
-            
-            item.setText(self.title_text_index+1, str(size))
-            item.setText(self.title_text_index+2, str(date))
+        #this will need to be dealt with better in the future
+        if self.header().count() > 1:
+            if util_file.is_file(path):
+                size = util_file.get_filesize(path)
+                date = util_file.get_last_modified_date(path)
+                
+                item.setText(self.title_text_index+1, str(size))
+                item.setText(self.title_text_index+2, str(date))
         
         if sub_files:
             
@@ -5811,6 +5813,7 @@ class CompactHistoryWidget(BasicWidget):
         
         
         self.accept = qt.QPushButton('Accept')
+        self._auto_accept = False
         
         self.accept.clicked.connect(self._accept)
         self.load_default = qt.QPushButton('Default')
@@ -5862,7 +5865,7 @@ class CompactHistoryWidget(BasicWidget):
         self.load_default.hide()
     
     def _accept(self):
-        self.set_at_end()
+        #self.set_at_end()
         self.accept.hide()
         self.accept_socket.emit()
         
@@ -5874,7 +5877,10 @@ class CompactHistoryWidget(BasicWidget):
         
         if self.version_inst.has_default():
             self.load_default.show()
-            
+    
+    def set_auto_accept(self, bool_value):
+        self._auto_accept = bool_value
+    
     def set_at_end(self):
         self.back_button.show()
         
@@ -5896,7 +5902,10 @@ class CompactHistoryWidget(BasicWidget):
         self.forward_button.setEnabled(True)
         self.back_button.setDisabled(True)
         self.back_button.show()
-        self.accept.show()
+        if self._auto_accept:
+            self._accept()
+        else:
+            self.accept.show()
         
         if self.version_inst.has_default():
             self.load_default.show()
@@ -5934,7 +5943,10 @@ class CompactHistoryWidget(BasicWidget):
             self.back_socket.emit(version_file)
             self.forward_button.show()
             self.forward_button.setEnabled(True)
-            self.accept.show()
+            if self._auto_accept:
+                self._accept()
+            else:
+                self.accept.show()
             return    
             
         else:
@@ -5955,12 +5967,18 @@ class CompactHistoryWidget(BasicWidget):
                     self.current_number = back_number
                     self.forward_button.show()
                     self.forward_button.setEnabled(True)
-                    self.accept.show()
+                    if self._auto_accept:
+                        self._accept()
+                    else:
+                        self.accept.show()
                 if back_number == None:
                     self.forward_button.show()
                     self.forward_button.setEnabled(True)
                     self.back_button.setDisabled(True)
-                    self.accept.show()
+                    if self._auto_accept:
+                        self._accept()
+                    else:
+                        self.accept.show()
                     
                     return
             
@@ -5968,7 +5986,10 @@ class CompactHistoryWidget(BasicWidget):
                     self.forward_button.show()
                     self.forward_button.setEnabled(True)
                     self.back_button.setDisabled(True)
-                    self.accept.show()
+                    if self._auto_accept:
+                        self._accept()
+                    else:
+                        self.accept.show()
         
         self.history_number.setText(str(back_number))
         version_file = self.version_inst.get_version_path(back_number)
@@ -6000,7 +6021,10 @@ class CompactHistoryWidget(BasicWidget):
                 self.back_button.show()
                 self.back_button.setEnabled(True)
                 self.forward_button.setEnabled(True)
-                self.accept.show()
+                if self._auto_accept:
+                    self._accept()
+                else:
+                    self.accept.show()
             else:
                 
                 self.forward_socket.emit('current')
@@ -6026,7 +6050,10 @@ class CompactHistoryWidget(BasicWidget):
         self.load_default_socket.emit(filename)
         
         self.set_at_end()
-        self.accept.show()
+        if self._auto_accept:
+            self._accept()
+        else:
+            self.accept.show()
     
     def save_default_command(self):
         
