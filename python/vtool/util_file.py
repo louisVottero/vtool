@@ -1587,8 +1587,11 @@ def get_folders(directory, recursive = False):
     found_folders = []
 
     if not recursive:
-        files = None
+        #files = None
         
+        found_folders = next(os.walk(directory))[1]
+        
+        """
         try:
             files = os.listdir(directory)
         except:
@@ -1605,7 +1608,8 @@ def get_folders(directory, recursive = False):
                 folder_name = fix_slashes(folder_name)
             
                 found_folders.append(folder_name)
-    
+        """
+        
     if recursive:
         try:
             for root, dirs, files in os.walk(directory):
@@ -1928,10 +1932,14 @@ def exists(directory):
     
     log.debug('exists: %s' % directory)
     
-    if os.path.exists(directory):
-        return True
-    else:
+    try:
+        stat = os.stat(directory)
+        if stat:
+            return True
+    except:
         return False
+    
+    return False
     
 def is_dir(directory):
     """
@@ -1943,7 +1951,7 @@ def is_dir(directory):
         return False
         
     log.debug('is directory: %s' % directory)
-        
+    
     try:
         mode = os.stat(directory)[stat.ST_MODE]
         if stat.S_ISDIR(mode):
