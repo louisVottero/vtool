@@ -2225,7 +2225,92 @@ class SpaceSwitch(MatrixConstraintNodes):
             
             if len(attributes) == 1:
                 cmds.setAttr('%s.wtMatrix[0].weightIn' % switch_node, 1)
-  
+
+class SpaceSwitchPairBlend(object):
+    
+    def __init__(self, source1, source2, target):
+        
+        self.source1 = source1
+        self.source2 = source2
+        self.target = target
+        
+        self.description = None
+        self._attribute_node = target
+        self._attribute_name = 'offOn'
+        self._attribute = self._attribute_node + '.' + self._attribute_name
+        
+        
+    def _build_attribute(self):
+        
+        if not cmds.objExists(self._attribute):
+            cmds.addAttr(self._attribute_node, ln = self._attribute_name, min = 0, max = 1, k = True)
+        
+    def connect_linear(self, attribute_name):
+        
+        blend = core.create_node('blendColors', self.description)
+        
+        cmds.connectAttr('%s.%sX' % (self.source1, attribute_name), '%s.color1R' % blend)
+        cmds.connectAttr('%s.%sY' % (self.source1, attribute_name), '%s.color1G' % blend)
+        cmds.connectAttr('%s.%sZ' % (self.source1, attribute_name), '%s.color1B' % blend)
+        
+        cmds.connectAttr('%s.%sX' % (self.source2, attribute_name), '%s.color2R' % blend)
+        cmds.connectAttr('%s.%sY' % (self.source2, attribute_name), '%s.color2G' % blend)
+        cmds.connectAttr('%s.%sZ' % (self.source2, attribute_name), '%s.color2B' % blend)
+        
+        cmds.connectAttr('%s.outputR' % blend, '%s.%sX' % (self.target,attribute_name))
+        cmds.connectAttr('%s.outputG' % blend, '%s.%sY' % (self.target,attribute_name))
+        cmds.connectAttr('%s.outputB' % blend, '%s.%sZ' % (self.target,attribute_name))
+        
+        if self._attribute:
+            cmds.connectAttr(self._attribute, '%s.blender' % blend)
+        
+    def connect_pair_blend(self):
+        
+        blend = core.create_node('pairBlend', self.description)
+        
+        cmds.connectAttr('%s.translateX' % self.source1, '%s.inTranslateX1' % blend)
+        cmds.connectAttr('%s.translateY' % self.source1, '%s.inTranslateY1' % blend)
+        cmds.connectAttr('%s.translateZ' % self.source1, '%s.inTranslateZ1' % blend)
+        cmds.connectAttr('%s.translateX' % self.source2, '%s.inTranslateX2' % blend)   
+        cmds.connectAttr('%s.translateY' % self.source2, '%s.inTranslateY2' % blend)
+        cmds.connectAttr('%s.translateZ' % self.source2, '%s.inTranslateZ2' % blend)
+        
+        cmds.connectAttr('%s.rotateX' % self.source1, '%s.inRotateX1' % blend)
+        cmds.connectAttr('%s.rotateY' % self.source1, '%s.inRotateY1' % blend)
+        cmds.connectAttr('%s.rotateZ' % self.source1, '%s.inRotateZ1' % blend)
+        cmds.connectAttr('%s.rotateX' % self.source2, '%s.inRotateX2' % blend)   
+        cmds.connectAttr('%s.rotateY' % self.source2, '%s.inRotateY2' % blend)
+        cmds.connectAttr('%s.rotateZ' % self.source2, '%s.inRotateZ2' % blend)
+        
+        cmds.connectAttr('%s.outTranslateX' % blend, '%s.translateX' % self.target)
+        cmds.connectAttr('%s.outTranslateY' % blend, '%s.translateY' % self.target)
+        cmds.connectAttr('%s.outTranslateZ' % blend, '%s.translateZ' % self.target)
+        
+        cmds.connectAttr('%s.outRotateX' % blend, '%s.rotateX' % self.target)
+        cmds.connectAttr('%s.outRotateY' % blend, '%s.rotateY' % self.target)
+        cmds.connectAttr('%s.outRotateZ' % blend, '%s.rotateZ' % self.target)
+        
+        cmds.setAttr('%s.rotInterpolation' % blend, 1)
+        
+        if self._attribute:
+            cmds.connectAttr(self._attribute, '%s.weight' % blend)
+        
+    def set_description(self, description):
+        self.description = description
+    
+    def set_attribute_control(self, node, attribute_name):
+        
+        self._attribute_node = node
+        self._attribute_name = attribute_name
+        self._attribute = node + '.' + attribute_name
+    
+    def create(self):
+        
+        self._build_attribute()
+        
+        self.connect_pair_blend()
+        self.connect_linear('scale')
+
 def has_constraint(transform):
     """
     Find out if a constraint is affecting the transform.
