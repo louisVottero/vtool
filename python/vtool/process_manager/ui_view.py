@@ -2701,6 +2701,42 @@ class ProcessInfoTree(qt.QTreeWidget):
         item_delegate = qt_ui.SelectTreeItemDelegate()
         self.setItemDelegate(item_delegate)
         
+        
+    def add_item(self, column, name, parent = None):
+        
+        item = qt.QTreeWidgetItem(parent)
+        
+        item.setText(column, name)
+        
+        
+        column_count = self.columnCount()
+        
+        if column_count > 1:
+            
+            for inc in range(1, column_count):
+                item.setText(inc, (' ' * 10) + '-')
+        
+        self.addTopLevelItem(item)
+        
+        
+        if parent:
+            parent.setExpanded(True)
+        return item
+    
+    def populate(self):
+        pass
+    
+    def set_process(self, process_inst):
+        self.process = process_inst
+
+class VersionInfoTree(qt.QTreeWidget):
+
+    def __init__(self):
+        
+        self.process = None
+        
+        super(VersionInfoTree, self).__init__()
+        
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
         
@@ -2728,15 +2764,11 @@ class ProcessInfoTree(qt.QTreeWidget):
         
         items = self.selectedItems()
         
-        
-        
         for item in items:
         
             name = item.text(0)
             
             if tree_type == 'data':
-                
-                
                 
                 parent_item = item.parent()
                 
@@ -2779,32 +2811,6 @@ class ProcessInfoTree(qt.QTreeWidget):
         item.setText(1, str(count))
         item.setText(2, str(size))
 
-    def add_item(self, column, name, parent = None):
-        
-        item = qt.QTreeWidgetItem(parent)
-        
-        item.setText(column, name)
-        
-        
-        column_count = self.columnCount()
-        
-        if column_count > 1:
-            
-            for inc in range(1, column_count):
-                item.setText(inc, (' ' * 10) + '-')
-        
-        self.addTopLevelItem(item)
-        
-        
-        if parent:
-            parent.setExpanded(True)
-        return item
-    
-    def populate(self):
-        pass
-    
-    def set_process(self, process_inst):
-        self.process = process_inst
 
 class DataTree(ProcessInfoTree):
     
@@ -2834,24 +2840,84 @@ class DataTree(ProcessInfoTree):
             
             data_item = self.add_item(column, sub_data)
             
-            
-            data_folder = self.process.get_data_folder(sub_data)
-            
-            self._set_version_info(data_item, data_folder)
-            
             folders = self.process.get_data_sub_folder_names(sub_data)
             
             for folder in folders:
-                sub_item = self.add_item(column, folder, data_item)
+                self.add_item(column, folder, data_item)
                 
-                data_folder = self.process.get_data_folder(sub_data, folder)
                 
-                self._set_version_info(sub_item, data_folder)
 
+class DataVersionTree(ProcessInfoTree, VersionInfoTree):
     
+    tree_type = 'data'
     
+    def populate(self):
+            
+            self.clear()
+            column = 0   
+            data_folders = self.process.get_data_folders()
+            
+            if not data_folders:
+                return 
+            
+            data_folders.sort()
+            
+            for sub_data in data_folders:
+                
+                data_item = self.add_item(column, sub_data)
+                
+                
+                data_folder = self.process.get_data_folder(sub_data)
+                
+                self._set_version_info(data_item, data_folder)
+                
+                folders = self.process.get_data_sub_folder_names(sub_data)
+                
+                for folder in folders:
+                    sub_item = self.add_item(column, folder, data_item)
+                    
+                    data_folder = self.process.get_data_folder(sub_data, folder)
+                    
+                    self._set_version_info(sub_item, data_folder)
+
 class CodeTree(ProcessInfoTree):
     
+    tree_type = 'code'
+    
+    def populate(self):
+        self.clear()
+        column = 0
+        
+        code_names = self.process.get_code_names()
+        
+        items = {}
+        
+        for code_name in code_names:
+            
+            split_code_name = code_name.split('/')
+            
+            long_name = ''
+            parent_item = None
+            
+            for name in split_code_name:
+                
+                if long_name:
+                    long_name += '/%s' % name
+                else:
+                    long_name = name 
+                
+                if not items.has_key(long_name):
+                    item = self.add_item(column, name, parent_item)
+                else:
+                    item = items[long_name]
+                    
+                items[long_name] = item
+                parent_item = item
+                
+                
+
+class CodeVersionTree(ProcessInfoTree, VersionInfoTree):
+
     tree_type = 'code'
     
     def populate(self):
@@ -2887,7 +2953,6 @@ class CodeTree(ProcessInfoTree):
                 folder = self.process.get_code_folder(long_name)
                 
                 self._set_version_info(item, folder)
-
 
 #--- DEV
 
