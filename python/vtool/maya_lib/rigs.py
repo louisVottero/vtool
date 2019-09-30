@@ -5047,6 +5047,8 @@ class TwistRig(JointRig):
         
         
         self.sub_joints = []
+        
+        self._twist_joint_name = None
 
 
 
@@ -5160,6 +5162,9 @@ class TwistRig(JointRig):
         
         self.parent_joints = bool_value
         
+    def set_twist_joint_name(self, name):
+        self._twist_joint_name = name
+        
     def create(self):
         super(TwistRig, self).create()
         
@@ -5185,6 +5190,7 @@ class TwistRig(JointRig):
             twist._btm_twist_fix = self._btm_twist_fix
             twist.set_ribbon_offset(length/4.0)
             twist.set_dual_quaternion(False)
+            
             
             bad_axis = space.get_axis_letter_aimed_at_child(joint)
             
@@ -5228,7 +5234,23 @@ class TwistRig(JointRig):
             
             self._create_xform_controls(self.top_locator, self.btm_locator)
             
-            cmds.hide(self.sub_joints)
+            if self.parent_joints:
+                cmds.hide(self.sub_joints)
+            else:
+                cmds.showHidden(self.sub_joints)
+                
+            radius = cmds.getAttr('%s.radius' % self.joints[0])
+            
+            for sub_joint in self.sub_joints: 
+                cmds.setAttr('%s.radius' % sub_joint, radius/2)
+            
+            
+            if self._twist_joint_name:
+                new_joints = []
+                for twist_joint in self.sub_joints:
+                    new_joints.append( cmds.rename(twist_joint, core.inc_name(self._twist_joint_name)))
+            
+                    self.sub_joints = new_joints
                   
 #---Body Rig
 
