@@ -2325,7 +2325,8 @@ def hide_keyable_attributes(node):
     if attributes:
         hide_attributes(node, attributes)
     
-    hide_rotate_order(node)
+    if cmds.getAttr('%s.rotateOrder' % node, cb = True):
+        hide_rotate_order(node)
  
 def hide_translate(node):
 
@@ -3868,7 +3869,7 @@ def show_rotate_order(transform, value = None):
         
 def hide_rotate_order(transform):
     
-    cmds.setAttr('%s.rotateOrder' % transform, k = False, l = True)
+    cmds.setAttr('%s.rotateOrder' % transform, k = False, l = False)
     cmds.setAttr('%s.rotateOrder' % transform, cb = False )
         
 def add_shape_for_attributes(transforms, shape_name):
