@@ -159,7 +159,8 @@ class DataFolder(util_file.FileManager):
             self._load_folder()
             
         self.data_type = data_type
-        self.settings.set('data_type', str(data_type))
+        if data_type:
+            self.settings.set('data_type', str(data_type))
         
     def get_sub_folder(self, name = None):
         
@@ -182,7 +183,7 @@ class DataFolder(util_file.FileManager):
         return folder
     
     def set_sub_folder(self, name):
-        
+        print 'hereBBB'
         if not name:
             return
         
@@ -194,8 +195,9 @@ class DataFolder(util_file.FileManager):
         sub_folder = util_file.join_path(self.folder_path, '.sub/%s' % name)
         
         util_file.create_dir(sub_folder)
-
-        self.settings.set('data_type', str(self.data_type))
+        
+        if self.data_type:
+            self.settings.set('data_type', str(self.data_type))
  
     
  
@@ -479,6 +481,7 @@ class FileData(Data):
         return folder_name
 
     def set_sub_folder(self, folder_name):
+        print 'hereAAA'
         self._sub_folder = folder_name
         
         if not folder_name:
