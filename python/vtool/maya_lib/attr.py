@@ -3535,12 +3535,9 @@ def connect_message( input_node, destination_node, attribute ):
         attribute (str): The name of the message attribute to create and connect into. If already exists than just connect. 
         
     """
-    if not input_node or not cmds.objExists(input_node):
-        vtool.util.warning('No input node to connect message.')
-        return
-    
     
     current_inc = vtool.util.get_last_number(attribute)
+    
     
     if current_inc == None:
         current_inc = 2
@@ -3554,16 +3551,21 @@ def connect_message( input_node, destination_node, attribute ):
         if not input_value:
             break
         
-        test_attribute = attribute + str(current_inc)
+        test_attribute = vtool.util.replace_last_number(attribute, str(current_inc))
+        #test_attribute = attribute + str(current_inc)
         
         current_inc += 1
         
         if current_inc == 1000:
             break
-        
+    
     if not cmds.objExists('%s.%s' % (destination_node, test_attribute)):
         cmds.addAttr(destination_node, ln = test_attribute, at = 'message' )
         
+    if not input_node or not cmds.objExists(input_node):
+        vtool.util.warning('No input node to connect message.')
+        return
+    
     if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute)):
         cmds.connectAttr('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute))
     
@@ -3911,13 +3913,16 @@ def add_shape_for_attributes(transforms, shape_name):
         
     return shape
 
-def store_world_matrix_to_attribute(transform, attribute_name = 'origMatrix'):
+def store_world_matrix_to_attribute(transform, attribute_name = 'origMatrix', skip_if_exists = False):
     
     name = attribute_name 
     
     world_matrix = cmds.getAttr('%s.worldMatrix' % transform)
     
     if cmds.objExists('%s.%s' % (transform, name)):
+        if skip_if_exists:
+            return
+        cmds.setAttr('%s.%s' % (transform, name), l = False)
         cmds.deleteAttr('%s.%s' % (transform, name))
     
     cmds.addAttr(transform, ln = name, at = 'matrix')
