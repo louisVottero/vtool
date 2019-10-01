@@ -4914,23 +4914,30 @@ def orig_matrix_match(transform, destination_transform):
     
     new_matrix = om_orig_matrix * om_orig_dest_matrix.inverse() * om_dest_matrix * om_parent_inverse_matrix
     
-    transform = om.MTransformationMatrix(new_matrix)
-    transform.reorderRotation(rotate_order + 1)
+    transform_matrix = om.MTransformationMatrix(new_matrix)
+    transform_matrix.reorderRotation(rotate_order + 1)
     
-    values = transform.translation(om.MSpace.kWorld)
+    values = transform_matrix.translation(om.MSpace.kWorld)
+    try:
+        cmds.setAttr('%s.translateX' % transform, values.x)
+        cmds.setAttr('%s.translateY' % transform, values.y)
+        cmds.setAttr('%s.translateZ' % transform, values.z)
+    except:
+        pass
     
-    cmds.setAttr('%s.translateX' % transform, values.x)
-    cmds.setAttr('%s.translateY' % transform, values.y)
-    cmds.setAttr('%s.translateZ' % transform, values.z)
+    values = transform_matrix.rotation()
+    try:
+        cmds.setAttr('%s.rotateX' % transform, math.degrees(values.x))
+        cmds.setAttr('%s.rotateY' % transform, math.degrees(values.y))
+        cmds.setAttr('%s.rotateZ' % transform, math.degrees(values.z))
+    except:
+        pass
     
-    values = transform.rotation()
+    values = transform_matrix.scale(om.MSpace.kWorld)
     
-    cmds.setAttr('%s.rotateX' % transform, math.degrees(values.x))
-    cmds.setAttr('%s.rotateY' % transform, math.degrees(values.y))
-    cmds.setAttr('%s.rotateZ' % transform, math.degrees(values.z))
-    
-    values = transform.scale()
-    
-    cmds.setAttr('%s.scaleX' % transform, values.x)
-    cmds.setAttr('%s.scaleY' % transform, values.y)
-    cmds.setAttr('%s.scaleZ' % transform, values.z)
+    try:
+        cmds.setAttr('%s.scaleX' % transform, values[0])
+        cmds.setAttr('%s.scaleY' % transform, values[1])
+        cmds.setAttr('%s.scaleZ' % transform, values[2])
+    except:
+        pass
