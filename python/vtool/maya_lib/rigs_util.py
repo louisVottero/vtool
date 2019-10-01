@@ -3586,3 +3586,107 @@ def edge_loop_to_control_shape(edge, control, offset = .1):
     control_inst.copy_shapes(new_curve)
     
     cmds.delete(new_curve)
+    
+def get_important_info(control_group):
+    
+    attrs = cmds.listAttr(control_group, ud = True)
+    
+    controls = []
+    sub_controls = []
+    joints = []
+    
+    for attr_name in attrs:
+        value = attr.get_message_input(control_group, attr_name)
+        
+        if attr_name.startswith('control'):
+            controls.append(value)
+        if attr_name.startswith('subControl'):
+            sub_controls.append(value)
+        if attr_name.startswith('joint'):
+            joints.append(value)
+            
+    info_dict = {}
+    
+    info_dict['class'] = cmds.getAttr('%s.className' % control_group)
+    info_dict['controls'] = controls
+    info_dict['sub controls'] = sub_controls
+    info_dict['joints'] = joints
+    
+    
+    return info_dict
+    
+def match_to_joints(control_group, info_dict = {}):
+    
+    if not info_dict:
+        info_dict = get_important_info(control_group)
+    
+    controls = info_dict['controls']
+    sub_controls = info_dict['sub controls']
+    joints = info_dict['joints']
+    rig_type = info_dict['class']
+    
+    print rig_type
+    
+    if rig_type.find('Fk') > -1:
+        print 'here fk'
+        for inc in range(0, len(controls)):
+            
+            control = controls[inc]
+            sub_control = sub_controls[inc]
+            joint = joints[inc]
+            
+            if sub_control:
+                control = sub_control
+            
+            space.orig_matrix_match(control, joint)
+    
+    if rig_type.find('IkAppendageRig') > -1:
+        print 'here ik'
+        for inc in range(0, len(controls)):
+            
+            control = controls[inc]
+            sub_control = sub_controls[inc]
+            joint = joints[inc]
+            
+            if sub_control:
+                control = sub_control
+            
+            space.orig_matrix_match(control, joint)
+    
+def match_ik_fk(control_group):
+    
+    info_dict = get_important_info(control_group)
+    
+    joints = info_dict['joints']
+    if not joints:
+        return
+    
+    switch = '%s.switch' % joints[0]
+    
+    if attr.is_connected(switch):
+        switch = attr.get_attribute_input(switch)
+        
+    switch_value = cmds.getAttr(switch)
+    
+    print switch_value
+    
+    rig1 = attr.get_message_input(joints[0], 'rig1')
+    rig2 = attr.get_message_input(joints[0], 'rig2')
+    
+    if rig1 == control_group:
+        rig1_info = info_dict
+        rig2_info = get_important_info(rig2)
+    else:
+        rig1_info = get_important_info(rig1)
+        rig2_info = info_dict
+        
+    if switch_value < 0.1:
+        
+        match_to_joints(rig2, rig2_info)
+        cmds.setAttr(switch, 1)
+    
+    if switch_value > 0.9:
+                
+        match_to_joints(rig1, rig1_info)
+        cmds.setAttr(switch, 0)
+        
