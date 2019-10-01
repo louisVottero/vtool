@@ -26,30 +26,33 @@ class Control(object):
         name (str): The name of a control that exists or that should be created.
     """
     
-    def __init__(self, name):
+    def __init__(self, name, tag = True):
         
         self.control = name
         self.curve_type = None
         
         if not cmds.objExists(self.control):
-            self._create()
+            self._create(tag)
             
         self.shapes = core.get_shapes(self.control)
         
         if not self.shapes:
             vtool.util.warning('%s has no shapes' % self.control)
             
-        try:
-            cmds.controller(self.control)
-        except:
-            pass
+        
             
-    def _create(self):
+    def _create(self, tag = True):
         
         self.control = cmds.circle(ch = False, n = self.control, normal = [1,0,0])[0]
         
         if self.curve_type:
             self.set_curve_type(self.curve_type)
+        
+        if tag:
+            try:
+                cmds.controller(self.control)
+            except:
+                pass
         
     def _get_components(self):
         
