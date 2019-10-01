@@ -1321,7 +1321,7 @@ class PoseBase(PoseGroup):
 
     def _create_pose_control(self):
         
-        control = rigs_util.Control(self._get_name())
+        control = rigs_util.Control(self._get_name(), tag = False)
         control.set_curve_type('cube')
         control.hide_scale_and_visibility_attributes()
         pose_control = control.get()
