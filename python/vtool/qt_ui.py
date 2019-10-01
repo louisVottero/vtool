@@ -3904,7 +3904,7 @@ class CodeTextEdit(qt.QPlainTextEdit):
         if self.completer:
             
             if self.completer.popup().isVisible():
-                    
+                
                 if event.key() == qt.QtCore.Qt.Key_Enter:
                     event.ignore()
                     return
@@ -3919,6 +3919,10 @@ class CodeTextEdit(qt.QPlainTextEdit):
                     return
                 if event.key() == qt.QtCore.Qt.Key_Backtab:
                     event.ignore()
+                    return
+                if event.key() == qt.QtCore.Qt.Key_Control:
+                    event.ignore()
+                    self.completer.popup().hide()
                     return
         
         if event.modifiers() and qt.QtCore.Qt.ControlModifier:
