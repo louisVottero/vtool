@@ -28,8 +28,14 @@ def get_permission(filepath):
     
     log.debug('Get Permission: %s' % filepath)
     
-    if oct(os.stat(filepath)[stat.ST_MODE])[-3:] == 0775:
-        return True
+    
+    try:
+        if oct(os.stat(filepath)[stat.ST_MODE])[-3:] == 0775:
+            return True
+    except:
+        pass
+    
+    
     
     try:
         log.info('Getting file permission: %s' % filepath)
