@@ -1584,12 +1584,19 @@ def get_folders(directory, recursive = False):
         list: A list of folders in the directory.
     """
     
+    
     found_folders = []
-
+    
+    if not directory:
+        return found_folders
+    
     if not recursive:
         #files = None
         
-        found_folders = next(os.walk(directory))[1]
+        try:
+            found_folders = next(os.walk(directory))[1]
+        except:
+            found_folders = []
         
         """
         try:

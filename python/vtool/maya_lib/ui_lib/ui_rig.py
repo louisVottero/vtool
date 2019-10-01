@@ -1031,7 +1031,6 @@ class DeformWidget(RigWidget):
         cluster_mesh = qt.QPushButton('Create Tweak Cluster')
         cluster_mesh.clicked.connect(self._cluster_tweak_mesh)
         
-        
         self.main_layout.addWidget(skin_widget)
         self.main_layout.addSpacing(10)
         self.main_layout.addWidget(cluster_mesh_info)
