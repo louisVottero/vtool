@@ -2925,6 +2925,9 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         
     def _attach_ik_spline_to_controls(self):
         
+        if not self.attach_joints:
+            return
+        
         if self.advanced_twist:
             if hasattr(self, 'top_sub_control'):
                 cmds.parent(self.start_locator, self.sub_controls[0])
