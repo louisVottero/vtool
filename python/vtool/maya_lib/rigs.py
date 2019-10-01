@@ -69,6 +69,7 @@ class Rig(object):
         
         self.controls = []
         self.sub_controls = []
+        self._sub_controls_with_buffer = []
         self.control_dict = {}
         
         self.sub_visibility = False
@@ -107,11 +108,20 @@ class Rig(object):
             vtool.util.show('Connect Important!')
             
             self._post_create_connect('controls', 'control')
-            self._post_create_connect('sub_controls', 'subControl')
+            self._post_create_connect('_sub_controls_with_buffer', 'subControl')
             self._post_create_connect('joints', 'joint')
             self._post_create_connect('ik_handle', 'ikHandle')
             
+            attr.connect_message(self.control_group, self.joints[0], 'rig1')
+            
+            
         self._post_add_shape_switch()
+        
+        self._store_orig_matrix('controls')
+        self._store_orig_matrix('_sub_controls_with_buffer')
+        self._store_orig_matrix('joints')
+        
+        
 
     def _post_add_shape_switch(self):
 
@@ -209,8 +219,23 @@ class Rig(object):
                     
                     attr.connect_message(sub_value, self.control_group, '%s%s' % (description,inc))
                     inc += 1
-
+                
+                return value
+            
+    def _store_orig_matrix(self, inst_attribute):
         
+        if hasattr(self,inst_attribute):
+            
+            value = getattr(self, inst_attribute)
+            
+            if value:
+                value = vtool.util.convert_to_sequence(value)
+                for sub_value in value:
+                    if sub_value:
+                        attr.store_world_matrix_to_attribute(sub_value, skip_if_exists=True)
+                
+                return value
+            
     def __getattribute__(self, item):
 
         custom_functions = ['create']
@@ -413,9 +438,15 @@ class Rig(object):
         if not sub:
             self.controls.append(control.get())
         
+        
+        
         if sub:
             self.sub_controls.append(control.get())
-        
+            
+            self._sub_controls_with_buffer[-1] = control.get()
+        else:
+            self._sub_controls_with_buffer.append(None)
+            
         if self.control_offset_axis:
             
             if self.control_offset_axis == 'x':
@@ -1052,9 +1083,10 @@ class SparseRig(JointRig):
         for joint in self.buffer_joints:
             
             control = self._create_control()
-        
+            
             control_name = control.get()
-        
+            
+            
             
             xform = space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
