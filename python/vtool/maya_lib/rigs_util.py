@@ -3628,7 +3628,7 @@ def match_to_joints(control_group, info_dict = {}):
     print rig_type
     
     if rig_type.find('Fk') > -1:
-        print 'here fk'
+        vtool.util.show('Match Fk to Ik')
         for inc in range(0, len(controls)):
             
             control = controls[inc]
@@ -3636,22 +3636,23 @@ def match_to_joints(control_group, info_dict = {}):
             joint = joints[inc]
             
             if sub_control:
-                control = sub_control
+                space.orig_matrix_match(sub_control, joint)
             
+            print control, joint
             space.orig_matrix_match(control, joint)
     
     if rig_type.find('IkAppendageRig') > -1:
-        print 'here ik'
+        vtool.util.show('Match Ik to Fk')
         for inc in range(0, len(controls)):
             
             control = controls[inc]
             sub_control = sub_controls[inc]
             joint = joints[inc]
             
-            if sub_control:
-                control = sub_control
-            
             space.orig_matrix_match(control, joint)
+            
+            if sub_control:
+                space.zero_out_transform_channels(sub_control)
     
 def match_ik_fk(control_group):
     
@@ -3689,4 +3690,4 @@ def match_ik_fk(control_group):
                 
         match_to_joints(rig1, rig1_info)
         cmds.setAttr(switch, 0)
-        
+
