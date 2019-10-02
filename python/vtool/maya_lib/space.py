@@ -4920,7 +4920,13 @@ def orig_matrix_match(transform, destination_transform):
     values = transform_matrix.translation(om.MSpace.kWorld)
     try:
         cmds.setAttr('%s.translateX' % transform, values.x)
+    except:
+        pass
+    try:
         cmds.setAttr('%s.translateY' % transform, values.y)
+    except:
+        pass
+    try:
         cmds.setAttr('%s.translateZ' % transform, values.z)
     except:
         pass
@@ -4928,7 +4934,14 @@ def orig_matrix_match(transform, destination_transform):
     values = transform_matrix.rotation()
     try:
         cmds.setAttr('%s.rotateX' % transform, math.degrees(values.x))
+    except:
+        pass
+    try:
+        print 'here setting rotate!'
         cmds.setAttr('%s.rotateY' % transform, math.degrees(values.y))
+    except:
+        pass
+    try:
         cmds.setAttr('%s.rotateZ' % transform, math.degrees(values.z))
     except:
         pass
