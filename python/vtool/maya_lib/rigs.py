@@ -6,7 +6,6 @@ import random
 #import util
 import api
 import vtool.util
-from vtool.maya_lib.space import get_xform_group
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
@@ -79,6 +78,7 @@ class Rig(object):
         self._connect_important_node = None
         
         self._control_number = True
+        self._custom_sets = []
         
     def _post_create(self):
 
@@ -117,12 +117,12 @@ class Rig(object):
             
         self._post_add_shape_switch()
         
-        self._store_orig_matrix('controls')
-        self._store_orig_matrix('_sub_controls_with_buffer')
-        self._store_orig_matrix('joints')
+        self._post_store_orig_matrix('controls')
+        self._post_store_orig_matrix('_sub_controls_with_buffer')
+        self._post_store_orig_matrix('joints')
         
+        self._post_add_to_control_set()
         
-
     def _post_add_shape_switch(self):
 
         if hasattr(self, 'create_buffer_joints'):
@@ -222,7 +222,7 @@ class Rig(object):
                 
                 return value
             
-    def _store_orig_matrix(self, inst_attribute):
+    def _post_store_orig_matrix(self, inst_attribute):
         
         if hasattr(self,inst_attribute):
             
@@ -235,6 +235,71 @@ class Rig(object):
                         attr.store_world_matrix_to_attribute(sub_value, skip_if_exists=True)
                 
                 return value
+            
+    def _post_add_to_control_set(self):
+        
+        set_name = 'set_controls'
+        
+        exists = False
+        
+        if cmds.objExists(set_name) and cmds.nodeType(set_name) == 'objectSet':
+            exists = True
+            
+        if not exists:
+            
+            sets = cmds.ls('%s*' % set_name, type = 'objectSet')
+            
+            if sets:
+                set_name = sets[0]
+                exists = True
+            
+            if not exists:
+                cmds.sets(name = core.inc_name(set_name), empty = True)
+        
+        parent_set = set_name
+        child_set = None
+        
+        for set_name in self._custom_sets:
+            
+            if set_name == parent_set:
+                continue
+            
+            custom_set_name = 'set_' + set_name
+            
+            if not cmds.objExists(custom_set_name):
+                custom_set_name = cmds.sets(name = custom_set_name, empty = True)
+            
+            cmds.sets(custom_set_name, addElement = parent_set)
+            
+            parent_set = custom_set_name
+            
+        
+        if self.__class__ != Rig:
+            child_set = 'set_%s' % self.description
+            if self.side:
+                child_set = 'set_%s_%s' % (self.description,self.side)
+            
+            if child_set != parent_set:
+                if not cmds.objExists(child_set):
+                    cmds.sets(name = child_set, empty = True)
+                
+                cmds.sets(child_set, add = parent_set)
+        
+        
+        
+        if not child_set:
+            child_set = parent_set
+        
+        controls = self.control_dict.keys()
+        
+        for control in controls:
+            
+            if control.startswith(self._control_inst.control_alias):
+                vtool.util.show('Adding %s to control sets' % control)
+                cmds.sets(control, e = True, add = child_set)
+        
+        
+        
             
     def __getattribute__(self, item):
 
@@ -356,7 +421,7 @@ class Rig(object):
 
         if current_process:
             control_inst = util_file.ControlNameFromSettingsFile(current_process)
-                        
+            
             if sub == False:
                 control_inst.set_number_in_control_name(self._control_number)
             
@@ -597,6 +662,14 @@ class Rig(object):
         else:
             self._control_number = True
     
+    def set_control_set(self, list_of_set_names):
+        """
+        This will create the sets if they don't already exist.
+        This will put all the controls generated under the last set name in the list
+        """
+        
+        self._custom_sets = vtool.util.convert_to_sequence(list_of_set_names)
+        
     def connect_sub_visibility(self, attr_name):
         """
         This connects the subVisibility attribute to the specified attribute.  Good when centralizing the sub control visibility. 
