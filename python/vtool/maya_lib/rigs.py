@@ -74,7 +74,7 @@ class Rig(object):
         self.sub_visibility = False
         self._connect_sub_vis_attr = None
         
-        self._connect_important = False
+        self._connect_important = True
         self._connect_important_node = None
         
         self._control_number = True
@@ -112,7 +112,8 @@ class Rig(object):
             self._post_create_connect('joints', 'joint')
             self._post_create_connect('ik_handle', 'ikHandle')
             
-            attr.connect_message(self.control_group, self.joints[0], 'rig1')
+            if self.joints:
+                attr.connect_message(self.control_group, self.joints[0], 'rig1')
             
             
         self._post_add_shape_switch()
@@ -122,6 +123,7 @@ class Rig(object):
         self._post_store_orig_matrix('joints')
         
         self._post_add_to_control_set()
+        self._post_connect_controller()
         
     def _post_add_shape_switch(self):
 
@@ -213,10 +215,11 @@ class Rig(object):
             value = getattr(self, inst_attribute)
             
             if value:
+                
                 inc = 1
                 value = vtool.util.convert_to_sequence(value)
+                
                 for sub_value in value:
-                    
                     attr.connect_message(sub_value, self.control_group, '%s%s' % (description,inc))
                     inc += 1
                 
@@ -298,6 +301,16 @@ class Rig(object):
                 vtool.util.show('Adding %s to control sets' % control)
                 cmds.sets(control, e = True, add = child_set)
         
+    def _post_connect_controller(self):
+        
+        controller = attr.get_message_input(self.control_group, 'control1')
+        parent = cmds.listRelatives(self.control_group, p = True)
+        if parent:
+            parent = parent[0]
+        
+        if cmds.controller(controller, q = True, isController = True) and cmds.controller(parent, q = True, isController = True):
+            cmds.controller(controller, parent, p = True)
+        
         
         
             
@@ -377,8 +390,11 @@ class Rig(object):
         try:    
             
             cmds.parent(group, custom_parent)
+            
         except:
             pass
+        
+        
         
     def _create_setup_group(self, description):
         
@@ -1058,6 +1074,18 @@ class SparseRig(JointRig):
         
         match.scale()
 
+    def _post_connect_controller(self):
+        
+        controller = attr.get_message_input(self.control_group, 'control1')
+        parent = cmds.listRelatives(self.control_group, p = True)
+        if parent:
+            parent = parent[0]
+        
+        if cmds.controller(controller, q = True, isController = True) and cmds.controller(parent, q = True, isController = True):
+            cmds.controller(controller, parent, p = True)
+            
+        for control in self.controls:
+            cmds.controller(control, parent, p = True)
         
     def set_scalable(self, bool_value):
         """
@@ -1783,10 +1811,14 @@ class FkRig(BufferRig):
             if self.last_control:
                 cmds.parent(self.control_dict[control]['xform'], self.last_control.get())
             
+                cmds.controller(control, self.last_control.get(), p = True)
+            
         if self.create_sub_controls:
             
             last_control = self.control_dict[self.last_control.get()]['subs'][-1]
             cmds.parent(self.control_dict[control]['xform'], last_control)
+            
+            cmds.controller(control, last_control, p = True)
             
     def _increment_less_than_last(self, control, current_transform):
         return
@@ -2178,10 +2210,14 @@ class FkScaleRig(FkRig):
         if not self.create_sub_controls:
             if self.last_control:
                 cmds.parent(buffer_joint, self.last_control.get())
+                
+                cmds.controller(control, self.last_control.get(), p = True)
+                
         if self.create_sub_controls: 
             last_control = self.control_dict[self.last_control.get()]['subs'][-1]
             cmds.parent(buffer_joint, last_control)
             
+            cmds.controller(control, last_control, p = True)
 class FkCurlNoScaleRig(FkRig):
     """
     This extends FkRig with the ability to have a curl attribute. Good for fingers.
@@ -2936,7 +2972,9 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
     
     def _increment_greater_than_zero(self, control, current_transform):
         
-        cmds.parent(self.current_xform_group, self.controls[-2])    
+        cmds.parent(self.current_xform_group, self.controls[-2])
+        
+        cmds.controller(control, self.controls[-2], p = True)
 
     def _last_increment(self, control, current_transform):
         
@@ -2991,6 +3029,8 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
             self.sub_drivers.append( self.control_dict[sub_control]['driver'])
             
             cmds.parent(xform_sub_control, self.control.get())
+            
+            cmds.controller(sub_control, self.control.get(), p = True)
             
             self._connect_sub_visibility('%s.subVisibility' % control, sub_control)
             
