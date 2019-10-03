@@ -1223,7 +1223,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         if not util_file.get_permission(self.directory):
             util.warning('Could not get permission in directory: %s' % self.directory)
-            return
         
         if name == '':
             path = self.directory

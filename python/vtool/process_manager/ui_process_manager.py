@@ -511,13 +511,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             self.settings.set('process', [name, str(self.project_directory)])
             
             if not util_file.get_permission(current_path):
-                util.warning('Could not get permission for process: %s' % name)
+                util.warning('Could not get permission for process: %s' % current_path)
             
             util.set_env('VETALA_CURRENT_PROCESS', current_path)
-        
-        #note
-        #self.option_widget.set_directory(current_path)
-        
         
     def _update_path_filter(self, value):
         

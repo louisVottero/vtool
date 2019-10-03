@@ -191,8 +191,6 @@ class Process(object):
         old_data_path = util_file.join_path(path, old_data_name)
         old_code_path = util_file.join_path(path, old_code_name)
         
-
-        
         if util_file.is_dir(old_data_path):
             util_file.rename(old_data_path, self.data_folder_name)
             
@@ -311,9 +309,7 @@ class Process(object):
             current_sub_folder = data_folder.get_current_sub_folder()
             data_folder.set_sub_folder(sub_folder)
         
-        
         instance = data_folder.get_folder_data_instance()      
-            
             
         return instance, current_sub_folder
      
