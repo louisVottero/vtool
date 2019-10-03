@@ -1984,9 +1984,16 @@ class DictionaryWidget(BasicWidget):
     
     def _cleanup_garbage(self, widget):
         
-        self.dictionary.pop(widget.get_entry())
+        key = widget.get_entry()
         
+        if self.dictionary.has_key(key):
+            self.dictionary.pop(key)
+        
+        widget.hide()
         self.main_layout.removeWidget(widget)
+        widget.deleteLater()
+        
+        self.update()
         
         self.dict_changed.emit(self.dictionary)
         
