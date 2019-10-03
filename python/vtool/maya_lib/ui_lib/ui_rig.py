@@ -6,7 +6,8 @@ from vtool import qt_ui, qt
 from vtool import util_file
 from vtool import util
     
-import maya.cmds as cmds
+if util.is_in_maya():
+    import maya.cmds as cmds
 
 from vtool.maya_lib import ui_core, blendshape
 import ui_check
