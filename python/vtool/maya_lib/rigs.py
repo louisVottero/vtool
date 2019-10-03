@@ -1081,8 +1081,9 @@ class SparseRig(JointRig):
         if parent:
             parent = parent[0]
         
-        if cmds.controller(controller, q = True, isController = True) and cmds.controller(parent, q = True, isController = True):
-            cmds.controller(controller, parent, p = True)
+        if controller and parent:
+            if cmds.controller(controller, q = True, isController = True) and cmds.controller(parent, q = True, isController = True):
+                cmds.controller(controller, parent, p = True)
             
         for control in self.controls:
             cmds.controller(control, parent, p = True)
@@ -4286,15 +4287,12 @@ class IkAppendageRig(BufferRig):
         if self._build_pole_control:
             control = self._create_control('POLE', curve_type = 'cube')
             control.hide_scale_and_visibility_attributes()
-            self.poleControl = control
-        
-        
+            self.pole_control = control
         
     def _create_pole_vector(self):
         
-        control = self.poleControl
-        self.poleControl = self.poleControl.get()
-        
+        control = self.pole_control
+        self.pole_control = self.pole_control.get()
         
         attr.create_title(self.btm_control, 'POLE_VECTOR')
         
@@ -4363,7 +4361,7 @@ class IkAppendageRig(BufferRig):
             
         pole_locator = cmds.spaceLocator(n = self._get_name('locator', 'pole'))[0]
         
-        space.MatchSpace(self.poleControl, pole_locator).translation_rotation()
+        space.MatchSpace(self.pole_control, pole_locator).translation_rotation()
         cmds.parent(pole_locator, self.setup_group)
         
         self.pole_follow_transform.append(self.top_control)
@@ -4371,7 +4369,7 @@ class IkAppendageRig(BufferRig):
         if len(self.pole_follow_transform) == 1:
             space.create_follow_group(self.pole_follow_transform[0], pole_locator)
         if len(self.pole_follow_transform) > 1:
-            space.create_multi_follow(self.pole_follow_transform, pole_locator, self.poleControl, value = self.pole_follow_transform_default)
+            space.create_multi_follow(self.pole_follow_transform, pole_locator, self.pole_control, value = self.pole_follow_transform_default)
         
         return pole_locator
         
@@ -4393,7 +4391,7 @@ class IkAppendageRig(BufferRig):
             cmds.parent(top_locator, top_transform)
             cmds.parent(btm_locator, btm_transform)
         
-        controls = [top_transform, self.poleControl, btm_transform]
+        controls = [top_transform, self.pole_control, btm_transform]
         
         if self._stretch_type == 1:
             
@@ -4592,7 +4590,14 @@ class IkAppendageRig(BufferRig):
                 self._create_stretchy(top_control, self.sub_control, btm_control)
             if not self.sub_control:
                 self._create_stretchy(top_control, self.btm_control, btm_control)
-        
+
+        if self._build_pole_control:
+            if self.create_top_control:
+                cmds.controller(self.pole_control, self.top_control, p = True)
+                cmds.controller(btm_control, self.pole_control, p = True)
+        else:
+            if self.create_top_control():
+                cmds.controller(btm_control, self.top_control, p = True)
 
 #--- Tweak
          
@@ -6103,8 +6108,8 @@ class IkLegRig(IkAppendageRig):
             
     def _create_pole_vector(self):
         
-        control = self.poleControl
-        self.poleControl = self.poleControl.get()
+        control = self.pole_control
+        self.pole_control = self.pole_control.get()
         
         attr.create_title(self.btm_control, 'POLE_VECTOR')
                 
@@ -6240,8 +6245,8 @@ class IkFrontLegRig(IkAppendageRig):
         
     def _create_pole_vector(self):
         
-        control = self.poleControl
-        self.poleControl = self.poleControl.get()
+        control = self.pole_control
+        self.pole_control = self.pole_control.get()
         
         attr.create_title(self.btm_control, 'POLE_VECTOR')
         
@@ -6284,7 +6289,7 @@ class IkFrontLegRig(IkAppendageRig):
                 sequence = vtool.util.convert_to_sequence(self.pole_follow_transform)
                 sequence.append(self.twist_guide)
                 
-                space.create_multi_follow_direct(sequence, xform_group, self.poleControl)
+                space.create_multi_follow_direct(sequence, xform_group, self.pole_control)
             
             follow_group = xform_group
             
