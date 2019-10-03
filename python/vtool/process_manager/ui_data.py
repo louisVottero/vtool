@@ -1721,11 +1721,11 @@ class MayaFileWidget(vtool.qt_ui.FileManagerWidget):
 
 
     def add_tool_tabs(self):        
-        if vtool.util.is_in_maya:
+        if vtool.util.is_in_maya():
             from vtool.maya_lib.ui_lib import ui_rig
-
-        self.tab_widget.addTab(ui_rig.StructureWidget(), 'Structure')
-        self.tab_widget.addTab(ui_rig.DeformWidget(), 'Deformation')
+        
+            self.tab_widget.addTab(ui_rig.StructureWidget(), 'Structure')
+            self.tab_widget.addTab(ui_rig.DeformWidget(), 'Deformation')
 
     def is_link_widget(self):
         return False
@@ -1871,7 +1871,7 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         return saved
     
     def _open_file(self):
-                
+        
         if not vtool.util_file.is_file(self.data_class.get_file()):
             vtool.qt_ui.warning('No data to open. Please save once.', self)
             return
