@@ -3530,7 +3530,7 @@ def connect_message( input_node, destination_node, attribute ):
     Connect the message attribute of input_node into a custom message attribute on destination_node
     
     Args:
-        input_node (str): The name of a node.
+        input_node (str): The name of a node.  If input_node is None then only the attribute is created.
         destination_node (str): The name of a node.
         attribute (str): The name of the message attribute to create and connect into. If already exists than just connect. 
         
@@ -3562,12 +3562,13 @@ def connect_message( input_node, destination_node, attribute ):
     if not cmds.objExists('%s.%s' % (destination_node, test_attribute)):
         cmds.addAttr(destination_node, ln = test_attribute, at = 'message' )
         
-    if not input_node or not cmds.objExists(input_node):
-        vtool.util.warning('No input node to connect message.')
-        return
+    if input_node:
+        if not cmds.objExists(input_node):
+            vtool.util.warning('No input node to connect message.')
+            return
     
-    if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute)):
-        cmds.connectAttr('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute))
+        if not cmds.isConnected('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute)):
+            cmds.connectAttr('%s.message' % input_node, '%s.%s' % (destination_node, test_attribute))
     
 def connect_group_with_message( input_node, destination_node, attribute ):
     
