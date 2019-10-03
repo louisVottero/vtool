@@ -2249,13 +2249,13 @@ class SpaceSwitchPairBlend(object):
         
         blend = core.create_node('blendColors', self.description)
         
-        cmds.connectAttr('%s.%sX' % (self.source1, attribute_name), '%s.color1R' % blend)
-        cmds.connectAttr('%s.%sY' % (self.source1, attribute_name), '%s.color1G' % blend)
-        cmds.connectAttr('%s.%sZ' % (self.source1, attribute_name), '%s.color1B' % blend)
+        cmds.connectAttr('%s.%sX' % (self.source2, attribute_name), '%s.color1R' % blend)
+        cmds.connectAttr('%s.%sY' % (self.source2, attribute_name), '%s.color1G' % blend)
+        cmds.connectAttr('%s.%sZ' % (self.source2, attribute_name), '%s.color1B' % blend)
         
-        cmds.connectAttr('%s.%sX' % (self.source2, attribute_name), '%s.color2R' % blend)
-        cmds.connectAttr('%s.%sY' % (self.source2, attribute_name), '%s.color2G' % blend)
-        cmds.connectAttr('%s.%sZ' % (self.source2, attribute_name), '%s.color2B' % blend)
+        cmds.connectAttr('%s.%sX' % (self.source1, attribute_name), '%s.color2R' % blend)
+        cmds.connectAttr('%s.%sY' % (self.source1, attribute_name), '%s.color2G' % blend)
+        cmds.connectAttr('%s.%sZ' % (self.source1, attribute_name), '%s.color2B' % blend)
         
         cmds.connectAttr('%s.outputR' % blend, '%s.%sX' % (self.target,attribute_name))
         cmds.connectAttr('%s.outputG' % blend, '%s.%sY' % (self.target,attribute_name))
