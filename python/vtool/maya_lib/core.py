@@ -11,11 +11,11 @@ import vtool.util_file
 
 import api
 
-if vtool.util.is_in_maya():
-    import maya.cmds as cmds
-    import maya.mel as mel
-    import maya.OpenMaya as OpenMaya
-    import maya.OpenMayaUI as OpenMayaUI
+
+import maya.cmds as cmds
+import maya.mel as mel
+import maya.OpenMaya as OpenMaya
+import maya.OpenMayaUI as OpenMayaUI
     
 undo_chunk_active = False
 current_progress_bar = None
@@ -1219,6 +1219,7 @@ def add_to_set(nodes, set_name):
     
 def load_plugin(plugin_name):
     if not cmds.pluginInfo(plugin_name, query = True, loaded = True):
+        vtool.util.show('Loading plugin: %s' % plugin_name)
         cmds.loadPlugin(plugin_name)
 #--- file
 
