@@ -32,10 +32,12 @@ class ModelManager(qt_ui.BasicWidget):
         self.main_layout.addSpacing(5)
         self.main_layout.addWidget(randomize_transforms)
         
+    @core.undo_chunk
     def _grow_edge_loop(self):
         
         geo.expand_selected_edge_loop()
         
+    @core.undo_chunk
     def _select_internal_faces(self):
         
         selection = cmds.ls(sl = True, l = True)

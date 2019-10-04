@@ -1387,9 +1387,9 @@ class ControlCvFileWidget(MayaDataFileWidget):
     def _build_widgets(self):
         super(ControlCvFileWidget, self)._build_widgets()
 
-        if vtool.util.is_in_maya:
+        if vtool.util.is_in_maya():
             from vtool.maya_lib.ui_lib import ui_rig        
-        self.tab_widget.addTab(ui_rig.ControlWidget(), 'Tools')
+            self.tab_widget.addTab(ui_rig.ControlWidget(), 'Tools')
     
     def _define_data_class(self):
         return vtool.data.ControlCvData()
@@ -1509,9 +1509,9 @@ class SkinWeightFileWidget(MayaDataFileWidget):
     def __init__(self):
         super(SkinWeightFileWidget, self).__init__()
 
-        if vtool.util.is_in_maya:
+        if vtool.util.is_in_maya():
             from vtool.maya_lib.ui_lib import ui_rig
-        self.tab_widget.addTab(ui_rig.SkinWidget(scroll = False), 'Tools')
+            self.tab_widget.addTab(ui_rig.SkinWidget(scroll = False), 'Tools')
         
     def _define_io_tip(self):
         

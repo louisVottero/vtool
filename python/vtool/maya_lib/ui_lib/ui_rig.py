@@ -5,25 +5,28 @@ from vtool import qt_ui, qt
 
 from vtool import util_file
 from vtool import util
-    
-if util.is_in_maya():
-    import maya.cmds as cmds
 
-from vtool.maya_lib import ui_core, blendshape
-import ui_check
-import ui_presets
-import ui_picker
-import ui_model
-import ui_anim
+from vtool.maya_lib import ui_core
 
+import maya.cmds as cmds
+
+from vtool.maya_lib import blendshape
 from vtool.maya_lib import core
 from vtool.maya_lib import geo
 from vtool.maya_lib import attr    
 from vtool.maya_lib import space
 from vtool.maya_lib import deform
 from vtool.maya_lib import rigs_util
-from vtool.process_manager import ui_process_manager
 from vtool.maya_lib import curve
+
+import ui_check
+import ui_presets
+import ui_picker
+import ui_model
+import ui_anim
+
+from vtool.process_manager import ui_process_manager
+
 
 def pose_manager(shot_sculpt_only = False):
     
