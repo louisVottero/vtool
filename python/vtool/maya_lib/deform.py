@@ -3524,6 +3524,83 @@ class ZipWire(object):
         
         self._setup_zip_controls()
 
+class ZipWire2(object):
+    
+    def __init__(self, mesh, follow_curve_top, follow_curve_btm):
+        
+        self._mesh = mesh
+        self._top_curve = follow_curve_top
+        self._btm_curve = follow_curve_btm
+        
+        self.description = 'zip'
+        
+    def _build_middle_curve(self):
+        
+        self._middle_curve = cmds.duplicate(self._top_curve, n = '%s_middle_curve' % self.description)[0]
+        
+        quick_blendshape(self._top_curve, self._middle_curve, 0.5)
+        quick_blendshape(self._btm_curve, self._middle_curve, 0.5)
+    
+    def _build_deform_curves(self):
+        
+        self._top_deform_curve = cmds.duplicate(self._top_curve, n = '%s_top_deform_curve' % self.description)[0]
+        self._btm_deform_curve = cmds.duplicate(self._btm_curve, n = '%s_btm_deform_curve' % self.description)[0]
+        
+        cmds.connectAttr('%s.worldSpace' % self._top_curve, '%s.create' % self._top_deform_curve)
+        quick_blendshape(self._middle_curve, self._top_deform_curve, weight = 1)
+        
+        cmds.connectAttr('%s.worldSpace' % self._btm_curve, '%s.create' % self._btm_deform_curve)
+        quick_blendshape(self._middle_curve, self._btm_deform_curve, weight = 1)
+        
+    def _setup_zip(self, deform_curve):
+        
+        
+        
+        cvs = cmds.ls('%s.cv[*]' % deform_curve, flatten = True)
+        count = len(cvs)
+        
+        offset = 1.0/(count+1)
+        time_offset = 1.0/(count+1)
+        accum = 0
+        time_accum_start_L = 0 
+        time_accum_L = 0
+        
+        
+        blendshape = find_deformer_by_type(deform_curve, 'blendShape')
+        
+        source_L = '%s.zipL' % self.attribute_node
+        source_R = '%s.zipR' % self.attribute_node
+        
+        for inc in range(0, count):
+            
+            target_attr = '%s.inputTarget[0].inputTargetGroup[0].targetWeights[%s]' % (blendshape,inc)
+            
+            fade_start_time_L = time_accum_L
+            
+            fade_time_L = util_math.easeInSine(time_accum_L+time_offset)
+            
+            anim.quick_driven_key(source_L, target_attr, [fade_start_time_L*10,(fade_time_L)*10], [0,1], tangent_type = 'linear')
+            
+            accum += offset
+            time_accum_L += time_offset
+        
+    def set_description(self, description):
+        self.description = description
+    
+    def create(self):
+        
+        self.attribute_node = cmds.spaceLocator(n = '%s_setup' % self.description)[0]
+        
+        cmds.addAttr(self.attribute_node, ln = 'zipL', min = 0, max = 10, dv = 0, k = True)
+        cmds.addAttr(self.attribute_node, ln = 'zipR', min = 0, max = 10, dv = 0, k = True)
+        
+        self._build_middle_curve()
+        self._build_deform_curves()
+        
+        self._setup_zip(self._top_deform_curve)
+        self._setup_zip(self._btm_deform_curve)
+        
+
 class WeightFromMesh(object):
     """
     Given a mesh, create joints a specified verts or edges, skin the mesh and weight a target mesh.
