@@ -8,13 +8,14 @@ import string
 import vtool.util
 import api
 
-if vtool.util.is_in_maya():
-    import maya.cmds as cmds
-    import maya.api.OpenMaya as om
-    
 import core
 import attr
 import math
+
+if vtool.util.is_in_maya():
+    import maya.cmds as cmds
+    import maya.api.OpenMaya as om
+    core.load_plugin('matrixNodes')
 
 #do not import geo
 
