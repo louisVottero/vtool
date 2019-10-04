@@ -297,9 +297,8 @@ class Rig(object):
         
         for control in controls:
             
-            if control.startswith(self._control_inst.control_alias):
-                vtool.util.show('Adding %s to control sets' % control)
-                cmds.sets(control, e = True, add = child_set)
+            vtool.util.show('Adding %s to control sets' % control)
+            cmds.sets(control, e = True, add = child_set)
         
     def _post_connect_controller(self):
         
@@ -308,8 +307,9 @@ class Rig(object):
         if parent:
             parent = parent[0]
         
-        if cmds.controller(controller, q = True, isController = True) and cmds.controller(parent, q = True, isController = True):
-            cmds.controller(controller, parent, p = True)
+        if controller and parent:
+            if cmds.controller(controller, q = True, isController = True) and cmds.controller(parent, q = True, isController = True):
+                cmds.controller(controller, parent, p = True)
         
         
         
