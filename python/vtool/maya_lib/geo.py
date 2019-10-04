@@ -339,12 +339,7 @@ def is_a_curve(node):
     
     return False
 
-def is_a_vertex(node):
-    
-    if cmds.objExists(node) and node.find('.vtx[') > -1:
-        return True
-    
-    return False
+
 
 
 def is_mesh_compatible(mesh1, mesh2):
@@ -534,9 +529,7 @@ def get_thing_from_component(component, component_name = 'vtx'):
     
     return thing
 
-def get_mesh_from_vertex(vertex):
-    
-    return get_thing_from_component(vertex, 'vtx')
+
     
 
 def get_curve_from_cv(cv):
@@ -544,16 +537,7 @@ def get_curve_from_cv(cv):
     return get_thing_from_component(cv, 'cv')
     
 
-def get_edges_in_list(list_of_things):
-    
-    found = []
-    
-    for thing in list_of_things:
-        if cmds.nodeType(thing) == 'mesh':
-            if thing.find('.e[') > 0:
-                found.append(thing)
-                
-    return found 
+
 
 def get_meshes_in_list(list_of_things):
     
@@ -831,8 +815,66 @@ def get_matching_geo(source_list, target_list):
         found.append(source, match)
                 
                 
-            
+#--- edge
+
+def edge_to_vertex(edges):
+    """
+    Return the vertices that are part of the edges.
     
+    Args:
+        edges (list): A list of edges (by name).  eg. ['mesh_name.e[0]'] 
+    
+    Returns:
+        list: The names of vertices on an edge. eg. ['mesh_name.vtx[0]']
+    
+    """
+    
+    edges = cmds.ls(edges, flatten = True)
+    
+    verts = []
+    
+    mesh = edges[0].split('.')
+    mesh = mesh[0]
+    
+    for edge in edges:
+        
+        info = cmds.polyInfo(edge, edgeToVertex = True)
+        info = info[0]
+        info = info.split()
+        
+        vert1 = info[2]
+        vert2 = info[3]
+        
+        if not vert1 in verts:
+            verts.append('%s.vtx[%s]' % (mesh, vert1))
+            
+        if not vert2 in verts:
+            verts.append('%s.vtx[%s]' % (mesh, vert2))
+    
+    return verts
+
+def get_edges_in_list(list_of_things):
+    
+    found = []
+    
+    for thing in list_of_things:
+        if cmds.nodeType(thing) == 'mesh':
+            if thing.find('.e[') > 0:
+                found.append(thing)
+                
+    return found 
+
+def edge_to_mesh(edge):
+    
+        
+    mesh = None
+    
+    if edge.find('.e[') > -1:
+        split_selected = edge.split('.e[')
+        if split_selected > 1:
+            mesh = split_selected[0]
+            
+            return mesh    
     
 def get_edge_path(edges = []):
     """
@@ -849,6 +891,123 @@ def get_edge_path(edges = []):
     cmds.polySelectSp(edges, loop = True )
     
     return cmds.ls(sl = True, l = True)
+
+def get_edge_names_from_indices(mesh, indices):
+    found = []
+    
+    for index in indices:
+        
+        name = '%s.e[%s]' % (mesh, index)
+        found.append(name)
+    return found
+
+def expand_selected_edge_loop():
+    """
+    Select edges and then expand the selection on the edge loop.
+    """
+    edges = get_selected_edges()
+    
+    found_new_edges = []
+    
+    for edge in edges:
+        
+        mesh, edge = edge.split('.')
+        
+        edge_id = vtool.util.get_last_number(edge)
+        
+        new_edges = expand_edge_loop(mesh, edge_id)
+        
+        if new_edges:
+            found_new_edges += new_edges
+    
+    for edge in found_new_edges:
+        cmds.select('%s.e[%s]' % (mesh, edge), add = True)
+    
+    
+
+def expand_edge_loop(mesh, edge_id, times = 1):
+    
+    good_edges = []
+    
+    edges = vtool.util.convert_to_sequence(edge_id)
+    
+    if len(edges) > 1:
+        good_edges = edges
+    
+    for _ in range(0, times):
+        if good_edges:
+            
+            accumulated_edges = []
+            
+            for edge in good_edges:
+                
+                sub_good_edges = expand_edge_loop(mesh, edge)
+                
+                accumulated_edges += sub_good_edges
+                
+            good_edges += accumulated_edges
+                
+        else:
+            iter_edges = api.IterateEdges(mesh)
+            
+            connected_faces = iter_edges.get_connected_faces(edge_id)
+            connected_edges = iter_edges.get_connected_edges(edge_id)
+            
+            face_edges = []
+            
+            for face_id in connected_faces:
+                
+                iter_faces = api.IteratePolygonFaces(mesh)
+                face_edges += iter_faces.get_edges(face_id)
+                
+            edge_set = set(connected_edges)
+            face_edge_set = set(face_edges)
+            
+            good_edges = edge_set.difference(face_edge_set)
+            
+            good_edges = list(good_edges)
+    
+    filter_dict = {el:0 for el in good_edges}
+    good_edges = filter_dict.keys()
+    good_edges.sort()
+    return good_edges
+
+def edges_to_curve(edges, description = None):
+    """
+    Given a list of edges create a curve.
+    
+    Args:
+        edges (list): List of edge names, eg ['mesh_name.e[0]']
+        description (str): The description to give the new curve. Name = 'curve_(description)'
+        
+    Returns:
+        str: The name of the curve.
+    """
+    
+    if not description:
+        description = get_mesh_from_edge(edges[0])
+        
+    cmds.select(edges)
+
+    curve =  cmds.polyToCurve(form = 2, degree = 3 )[0]
+    
+    curve = cmds.rename(curve, core.inc_name('curve_%s' % description))
+    
+    return curve
+
+def get_mesh_from_edge(edge):
+    
+    return get_thing_from_component(edge, 'e')
+    
+
+#--- vertex
+
+def is_a_vertex(node):
+    
+    if cmds.objExists(node) and node.find('.vtx[') > -1:
+        return True
+    
+    return False
 
 def get_vertices(mesh):
     """
@@ -896,6 +1055,10 @@ def get_vertex_names_from_indices(mesh, indices):
         found.append(name)
     return found
 
+def get_mesh_from_vertex(vertex):
+    
+    return get_thing_from_component(vertex, 'vtx')
+
 def get_vertex_shells(mesh):
     
     result =  api.get_vertex_islands(mesh)
@@ -906,6 +1069,8 @@ def get_vertex_shells(mesh):
         found.append( get_vertex_names_from_indices(mesh, r) )
     
     return found
+
+#--- face
 
 def get_faces(mesh):
     """
@@ -928,6 +1093,29 @@ def get_faces(mesh):
             found += faces
     
     return found
+
+def face_to_vertex(faces):
+
+    faces = cmds.ls(faces, flatten = True)
+    
+    verts = []
+    
+    mesh = faces[0].split('.')
+    mesh = mesh[0]
+    
+    for face in faces:
+        
+        info = cmds.polyInfo(face, faceToVertex = True)
+        info = info[0]
+        info = info.split()
+        
+        sub_verts = info[2:]
+        
+        for sub_vert in sub_verts:
+            if not sub_vert in verts:
+                verts.append('%s.vtx[%s]' % (mesh, sub_vert))
+                
+    return verts
 
 def get_triangles(mesh):
     """
@@ -2616,55 +2804,6 @@ def polygon_plane_to_curves(plane, count = 5, u = True, description = ''):
     return curves
 
 
-def expand_selected_edge_loop():
-    """
-    Select edges and then expand the selection on the edge loop.
-    """
-    edges = get_selected_edges()
-    
-    found_new_edges = []
-    
-    for edge in edges:
-        
-        mesh, edge = edge.split('.')
-        
-        edge_id = vtool.util.get_last_number(edge)
-        
-        new_edges = expand_edge_loop(mesh, edge_id)
-        
-        if new_edges:
-            found_new_edges += new_edges
-    
-    for edge in found_new_edges:
-        cmds.select('%s.e[%s]' % (mesh, edge), add = True)
-    
-    
-
-def expand_edge_loop(mesh, edge_id):
-    
-    
-    
-    iter_edges = api.IterateEdges(mesh)
-    
-    connected_faces = iter_edges.get_connected_faces(edge_id)
-    connected_edges = iter_edges.get_connected_edges(edge_id)
-    
-    face_edges = []
-    
-    for face_id in connected_faces:
-        
-        iter_faces = api.IteratePolygonFaces(mesh)
-        face_edges += iter_faces.get_edges(face_id)
-        
-    edge_set = set(connected_edges)
-    face_edge_set = set(face_edges)
-    
-    good_edges = edge_set.difference(face_edge_set)
-    
-    good_edges = list(good_edges)
-    
-    return good_edges
-
 
     
     
@@ -3084,96 +3223,6 @@ def follicle_to_surface(transform, surface, u = None, v = None, constrain = Fals
     
     return follicle
 
-def edges_to_curve(edges, description):
-    """
-    Given a list of edges create a curve.
-    
-    Args:
-        edges (list): List of edge names, eg ['mesh_name.e[0]']
-        description (str): The description to give the new curve. Name = 'curve_(description)'
-        
-    Returns:
-        str: The name of the curve.
-    """
-    cmds.select(edges)
-
-    curve =  cmds.polyToCurve(form = 2, degree = 3 )[0]
-    
-    curve = cmds.rename(curve, core.inc_name('curve_%s' % description))
-    
-    return curve
-    
-def face_to_vertex(faces):
-
-    faces = cmds.ls(faces, flatten = True)
-    
-    verts = []
-    
-    mesh = faces[0].split('.')
-    mesh = mesh[0]
-    
-    for face in faces:
-        
-        info = cmds.polyInfo(face, faceToVertex = True)
-        info = info[0]
-        info = info.split()
-        
-        sub_verts = info[2:]
-        
-        for sub_vert in sub_verts:
-            if not sub_vert in verts:
-                verts.append('%s.vtx[%s]' % (mesh, sub_vert))
-                
-    return verts
-
-def edge_to_vertex(edges):
-    """
-    Return the vertices that are part of the edges.
-    
-    Args:
-        edges (list): A list of edges (by name).  eg. ['mesh_name.e[0]'] 
-    
-    Returns:
-        list: The names of vertices on an edge. eg. ['mesh_name.vtx[0]']
-    
-    """
-    
-    edges = cmds.ls(edges, flatten = True)
-    
-    verts = []
-    
-    mesh = edges[0].split('.')
-    mesh = mesh[0]
-    
-    for edge in edges:
-        
-        info = cmds.polyInfo(edge, edgeToVertex = True)
-        info = info[0]
-        info = info.split()
-        
-        vert1 = info[2]
-        vert2 = info[3]
-        
-        if not vert1 in verts:
-            verts.append('%s.vtx[%s]' % (mesh, vert1))
-            
-        if not vert2 in verts:
-            verts.append('%s.vtx[%s]' % (mesh, vert2))
-    
-    return verts
-
-def edge_to_mesh(edge):
-    
-        
-    mesh = None
-    
-    if edge.find('.e[') > -1:
-        split_selected = edge.split('.e[')
-        if split_selected > 1:
-            mesh = split_selected[0]
-            
-            return mesh
-    
 def cvs_to_transforms(nurbs, type = 'transform'):
     
     cvs = cmds.ls('%s.cv[*]' % nurbs, flatten = True)
