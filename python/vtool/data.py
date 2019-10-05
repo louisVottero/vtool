@@ -2775,8 +2775,9 @@ class MayaFileData(MayaCustomData):
             
             version.save(comment)
             
+            version = version.get_version_numbers()[-1]
             util.set_env('VETALA_SAVE_COMMENT', '')
-            maya_lib.core.print_help('version saved!')
+            maya_lib.core.print_help('version %s saved!' % version)
             
         
     
