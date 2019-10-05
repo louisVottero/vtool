@@ -1278,8 +1278,8 @@ def save(filepath):
     if not filepath:
         saved = False
         
-    if saved:
-        vtool.util.show('Scene Saved')
+    #if saved:
+    #    vtool.util.show('Scene Saved')
     
     if not saved:
             
@@ -1638,8 +1638,9 @@ def remove_unused_plugins():
             except:
                 continue
             unused.append(unknown_plugin)
-            
-    vtool.util.show('Removed unused plugins: %s' % unused)
+    
+    if unused:   
+        vtool.util.show('Removed unused plugins: %s' % unused)
 
 def delete_turtle_nodes():
 
@@ -1661,8 +1662,8 @@ def delete_turtle_nodes():
                 
                 break
         
-    
-    vtool.util.show('Removed Turtle nodes: %s' % nodes )
+    if nodes:
+        vtool.util.show('Removed Turtle nodes: %s' % nodes )
 
 def delete_nodes_of_type(node_type):
     """
@@ -1721,7 +1722,13 @@ def delete_garbage():
     if deleted_nodes:
         garbage_nodes = deleted_nodes
     
+    immortals = cmds.ls(ud = True)
+    
     for node in check_connection_nodes:
+        
+        if node in immortals:
+            continue
+        
         if not node or not cmds.objExists(node):
             continue
         
@@ -1737,7 +1744,8 @@ def delete_garbage():
             if not cmds.objExists(node):
                 garbage_nodes.append(node)
     
-    vtool.util.show('Deleted Garbage nodes: %s' % garbage_nodes)
+    if garbage_nodes:
+        vtool.util.show('Deleted Garbage nodes: %s' % garbage_nodes)
     
 def delete_empty_orig_nodes():
     
@@ -1745,8 +1753,9 @@ def delete_empty_orig_nodes():
     
     for orig in origs:
         cmds.delete(orig)
-            
-    print_help('Deleted Unused Intermediate Object or Orig nodes: %s' % origs)
+    
+    if origs:
+        print_help('Deleted Unused Intermediate Object or Orig nodes: %s' % origs)
     
 def delete_empty_nodes():
     
