@@ -799,9 +799,9 @@ class VersionFile(object):
         Returns:
             str: Filepath to latest version.
         """
-        versions = self.get_versions()
+        versions, version_numbers = self.get_versions(return_version_numbers_also=True)
         
-        latest_version = versions[-1]
+        latest_version = versions[version_numbers[-1]]
         
         return join_path(self.filepath, '%s/%s' % (self.version_folder_name, latest_version))
 
