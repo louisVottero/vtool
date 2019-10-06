@@ -3943,6 +3943,8 @@ class IkAppendageRig(BufferRig):
         self.negate_right_scale_values = [-1,-1,-1]
         self.ik_handle = None
         
+        self._pole_constraint = None
+        
         self._stretch_type = 0
         
         #dampen for legacy...
@@ -4314,7 +4316,7 @@ class IkAppendageRig(BufferRig):
         position = space.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
         cmds.move(position[0], position[1], position[2], control.get())
         
-        cmds.poleVectorConstraint(control.get(), self.ik_handle)
+        self._create_pole_constraint(control.get(), self.ik_handle)
         
         xform_group = space.create_xform_group( control.get() )
         
@@ -4354,6 +4356,9 @@ class IkAppendageRig(BufferRig):
         pole_vis.connect_out('%s.visibility' % rig_line)
         
         self.pole_vector_xform = xform_group
+        
+    def _create_pole_constraint(self, control, handle):
+        self._pole_constraint = cmds.poleVectorConstraint(control, handle)[0]
         
     def _create_pole_follow(self):
         
@@ -6135,7 +6140,7 @@ class IkLegRig(IkAppendageRig):
         match = space.MatchSpace(self.btm_control, control.get())
         match.rotation()
         
-        cmds.poleVectorConstraint(control.get(), self.ik_handle)
+        self._create_pole_constraint(control.get(), self.ik_handle)
         
         xform_group = space.create_xform_group( control.get() )
         
@@ -6274,7 +6279,7 @@ class IkFrontLegRig(IkAppendageRig):
         position = space.get_polevector( pole_joints[0], pole_joints[1], pole_joints[2], self.pole_offset )
         cmds.move(position[0], position[1], position[2], control.get())
         
-        cmds.poleVectorConstraint(control.get(), self.ik_handle)
+        self._create_pole_constraint(control.get(), self.ik_handle)
         
         xform_group = space.create_xform_group( control.get() )
         
@@ -6558,6 +6563,7 @@ class IkBackLegRig(IkFrontLegRig):
         self.right_side_fix = False
         self._offset_ankle_axis = 'Z'
         self._offset_ankle_orient = None
+        self._pole_at_knee_only = False
     
     def _duplicate_joints(self):
         
@@ -6624,8 +6630,11 @@ class IkBackLegRig(IkFrontLegRig):
     def _get_pole_joints(self):
         
         if not self.pole_angle_joints:
-        
-            return [self.ik_chain[0], self.ik_chain[1], self.ik_chain[2]]
+            
+            if self._pole_at_knee_only:
+                return self.offset_chain
+            else:
+                return [self.ik_chain[0], self.ik_chain[1], self.ik_chain[2]]
             
         return self.pole_angle_joints
                 
@@ -6682,8 +6691,13 @@ class IkBackLegRig(IkFrontLegRig):
         
         ik_handle.set_start_joint( self.offset_chain[0] )
         ik_handle.set_end_joint( self.offset_chain[-1] )
-        ik_handle.set_solver(ik_handle.solver_sc)
+        if not self._pole_at_knee_only:
+            ik_handle.set_solver(ik_handle.solver_sc)
+        else:
+            ik_handle.set_solver(ik_handle.solver_rp)
         ik_handle = ik_handle.create()
+        
+        self._offset_handle = ik_handle
         
         cmds.parent(ik_handle, self.lower_offset_chain[-1])
         
@@ -6696,6 +6710,7 @@ class IkBackLegRig(IkFrontLegRig):
         ik_handle_btm.set_end_joint(self.lower_offset_chain[-1])
         ik_handle_btm.set_solver(ik_handle_btm.solver_sc)
         ik_handle_btm = ik_handle_btm.create()
+        
         
         #cmds.setAttr('%s.poleVectorX' % ik_handle_btm, 0)
         #cmds.setAttr('%s.poleVectorY' % ik_handle_btm, 0)
@@ -6727,6 +6742,10 @@ class IkBackLegRig(IkFrontLegRig):
     def _create_before_attach_joints(self):
         super(IkBackLegRig, self)._create_before_attach_joints()
         
+    def _create_pole_constraint(self, control, handle):
+        if not self._pole_at_knee_only:
+            super(IkBackLegRig, self)._create_pole_constraint(control, handle)
+        
     def set_offset_control_to_locator(self, bool_value):
         self.offset_control_to_locator = bool_value
     
@@ -6737,6 +6756,9 @@ class IkBackLegRig(IkFrontLegRig):
     def set_offset_ankle_orientation(self, transform_example):
         self._offset_ankle_orient = transform_example
     
+    def set_pole_at_knee_only(self, bool_value):
+        self._pole_at_knee_only = bool_value
+    
     def create(self):
         super(IkBackLegRig, self).create()
         
@@ -6744,6 +6766,9 @@ class IkBackLegRig(IkFrontLegRig):
         self._create_offset_control()
         
         self._rig_offset_chain()
+        
+        if self._pole_at_knee_only:
+            cmds.poleVectorConstraint(self.pole_control, self._offset_handle)
     
         temp_controls = list(self.controls)
         
@@ -6752,7 +6777,6 @@ class IkBackLegRig(IkFrontLegRig):
         self.controls[2] = temp_controls[3]
         self.controls[3] = temp_controls[2]
 
-    
 class RollRig(JointRig):
     
     def __init__(self, description, side=None):
