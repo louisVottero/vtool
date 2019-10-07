@@ -38,7 +38,6 @@ def get_permission(filepath):
     
     
     try:
-        log.info('Getting file permission: %s' % filepath)
         os.chmod(filepath, 0775)
         return True
     except:
