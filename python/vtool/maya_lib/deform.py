@@ -8,6 +8,9 @@ import vtool.util
 import api
 from vtool import util_math
 
+from vtool import logger
+log = logger.get_logger(__name__) 
+
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
     import maya.mel as mel
