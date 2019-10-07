@@ -2064,6 +2064,8 @@ class CodeManifestTree(vtool.qt_ui.FileTreeWidget):
         self.scrollToItem(item)
         self.setItemSelected(item, True)
         self.setCurrentItem(item)
+        
+        self._update_manifest()
 
     def run_current_item(self, external_code_library = None, group_only = False):
         
