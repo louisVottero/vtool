@@ -116,7 +116,6 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         
         other_path = util_file.join_path(directory, name)
         
-        print 'other path!', other_path
         permission = util_file.get_permission(other_path)
         if not permission:
             util.warning('Could not get permission: %s' % other_path)
@@ -830,6 +829,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.paste_action.setText('Paste: %s' % name)
         self.merge_action.setText('Merge In: %s' % name)
+        self.merge_with_sub_action.setText('Merge With Sub Folders: %s' % name)
+        self.paste_action.setVisible(True)
+        self.merge_action.setVisible(True)
+        self.merge_with_sub_action.setVisible(True)
         
     def _duplicate_process(self):
         
@@ -838,7 +841,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             return
         
         item = items[0]
-        
         
         source_process = item.get_process()
         target_process = item.get_parent_process()
@@ -1325,7 +1327,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             target_process = process.Process()
             target_process.set_directory(self.directory)
             target_item = None 
-            
+        
         new_process = process.copy_process(source_process, target_process)
         
         if not new_process:
@@ -2138,22 +2140,28 @@ class CopyWidget(qt_ui.BasicWidget):
         
         
         
-        
-        
-        
-        #manifest needs to be added at the end so it gets synced
-        if manifest:
-            found.append(manifest)
-        
         self.progress_bar.reset()
         self.progress_bar.setRange(0, len(found))
             
         inc = 0
         
+        if found:
+            found_count = []
+            
+            for thing in found:
+                found_count.append( thing.count('/') )
+            
+            sort = util.QuickSort(found_count)
+            sort.set_follower_list(found)
+            found_count, found = sort.run()
+            
+            #manifest needs to be added at the end so it gets synced
+        if manifest:
+            found.append(manifest)
+        
+        other_process = None
         
         for name in found:
-            
-            other_process = None
             
             for inc2 in range(0, len(self.other_processes)):
             
