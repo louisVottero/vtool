@@ -2618,6 +2618,14 @@ def copy_process(source_process, target_process = None ):
         target_process (str): The instance of a process. If None give, duplicate the source_process.
     """
     
+    parent = target_process.get_parent_process()
+    
+    if parent:
+        if parent.get_path() == source_process.get_path():
+            util.error('Cannot paste parent under child.  Causes recursion error')
+            return
+    
+    
     sub_folders = source_process.get_sub_processes()
     
     source_name = source_process.get_name()
@@ -2881,6 +2889,7 @@ def copy_process_code(source_process, target_process, code_name, replace = False
     copied_path = None
     
     if filepath:
+        
         destination_directory = code_folder_path
         
         path = target_process.get_code_path()
