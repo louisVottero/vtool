@@ -4938,7 +4938,6 @@ def orig_matrix_match(transform, destination_transform):
     except:
         pass
     try:
-        print 'here setting rotate!'
         cmds.setAttr('%s.rotateY' % transform, math.degrees(values.y))
     except:
         pass
