@@ -2464,7 +2464,7 @@ def lock_hierarchy(top_transform, exclude_transforms = [], skip_of_type = ['ikHa
     progress = core.ProgressBar()
     
     scope = cmds.listRelatives(top_transform, ad = True, f = True, shapes = False, ni = True)
-
+    
     scope.append(top_transform)
         
     progress.set_count(len(scope))
@@ -2483,7 +2483,8 @@ def lock_hierarchy(top_transform, exclude_transforms = [], skip_of_type = ['ikHa
                 skip = True
         if not skip:
             for transform in exclude_transforms:
-                if thing.endswith(transform):
+                split_thing = thing.split('|')
+                if split_thing[-1] == transform:
                     skip = True
         if not skip:
             for skip_thing in skip_of_type:
