@@ -2004,8 +2004,8 @@ class CopyWidget(qt_ui.BasicWidget):
           
     def _compare_option(self, process,other_process, long_name):
         
-        value = process.get_option(long_name)
-        other_value = other_process.get_option(long_name)
+        value = process.get_unformatted_option(long_name)
+        other_value = other_process.get_unformatted_option(long_name)
         
         if value == other_value:
             return True
@@ -2217,8 +2217,6 @@ class CopyWidget(qt_ui.BasicWidget):
     
     def _paste_options(self):
         
-        
-        
         option_items = self.option_list.selectedItems()
         
         if not option_items:
@@ -2237,13 +2235,16 @@ class CopyWidget(qt_ui.BasicWidget):
             
             long_name = self._get_option_long_name(item)
             
-            value = self.process.get_option(long_name)
+            value = self.process.get_unformatted_option(long_name)
+            #value = self.process.get_option(long_name)
+            
+            
             
             for inc2 in range(0, len(self.other_processes)):
                 
                 other_process = self.other_processes[inc2]
                 
-                other_process.set_option(long_name, value)
+                other_process.set_unformatted_option(long_name, value)
                 
                 match = self._compare_option(self.process, other_process, long_name)
                 self._set_item_state(item, match, inc2+1)
@@ -2252,28 +2253,17 @@ class CopyWidget(qt_ui.BasicWidget):
             inc+=1
     
     def _sort_option_names(self, option_names):
-        parent_dict = {}
+        
+        parents = []
         children = []
         
         for option in option_names:
-            if option.endswith('.'):
-                period_count = option.count('.')
-                
-                if not parent_dict.has_key(period_count):
-                    parent_dict[period_count] = []
-                    
-                parent_dict[period_count].append(option)
-            else:
-                children.append(option)
             
-        parent_keys = parent_dict.keys()
-        parent_keys.sort()    
-        
-        parents = []
-        
-        for parent_key in parent_keys:
-            parents += parent_dict[parent_key]
-        
+            if option.find('.') > -1 and not option.endswith('.'):
+                children.append(option)
+            else:
+                parents.append(option)
+            
         options = parents + children 
         
         return options  
