@@ -1658,7 +1658,7 @@ class Process(object):
         
         self.option_settings.set(name, value)
         
-    def get_unformatted_option(self, name, group):
+    def get_unformatted_option(self, name, group = None):
         self._setup_options()
         
         if group:
