@@ -28,21 +28,22 @@ def get_permission(filepath):
     
     log.debug('Get Permission: %s' % filepath)
     
+    permission = None
     
     try:
-        if oct(os.stat(filepath)[stat.ST_MODE])[-3:] == 0775:
-            return True
+        permission = oct(os.stat(filepath)[stat.ST_MODE])[-3:]
     except:
         pass
     
+    log.debug('Current Permission: %s' % permission)
     
+    if permission == '775' or permission == '777':
+        return True
     
     try:
         os.chmod(filepath, 0775)
         return True
     except:
-                
-        #util.warning('Failed to get elevated permission on %s' % filepath)
         return False
 
 def get_vetala_version():
