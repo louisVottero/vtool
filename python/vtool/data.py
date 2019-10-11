@@ -1267,6 +1267,8 @@ class SkinWeightData(MayaCustomData):
         
         for influence in influences:
             
+            orig_influence = influence
+            
             if influence.count('|') > 1:
                 split_influence = influence.split('|')
                 
@@ -1277,11 +1279,11 @@ class SkinWeightData(MayaCustomData):
             
             progress_ui.status(message)                
                 
-            if not influence_dict[influence].has_key('weights'):
+            if not influence_dict[orig_influence].has_key('weights'):
                 util.warning('Weights missing for influence %s' % influence)
                 return 
             
-            weights = influence_dict[influence]['weights']
+            weights = influence_dict[orig_influence]['weights']
             
             
             if not influence in influence_index_dict:
