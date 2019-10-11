@@ -2244,7 +2244,7 @@ class CopyWidget(qt_ui.BasicWidget):
                 
                 other_process = self.other_processes[inc2]
                 
-                other_process.set_unformatted_option(long_name, value)
+                other_process.set_option(long_name, value)
                 
                 match = self._compare_option(self.process, other_process, long_name)
                 self._set_item_state(item, match, inc2+1)
