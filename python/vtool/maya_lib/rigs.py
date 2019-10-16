@@ -4601,7 +4601,7 @@ class IkAppendageRig(BufferRig):
                 cmds.controller(self.pole_control, self.top_control, p = True)
                 cmds.controller(btm_control, self.pole_control, p = True)
         else:
-            if self.create_top_control():
+            if self.create_top_control:
                 cmds.controller(btm_control, self.top_control, p = True)
 
 #--- Tweak
