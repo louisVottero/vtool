@@ -1167,7 +1167,7 @@ def create_group(name, parent = None):
         
     return found
 
-def create_display_layer(name, nodes, display_type = 2):
+def create_display_layer(name, nodes, display_type = 2, recursive_add = False):
     """
     Create a display layer containing the supplied nodes.
     
@@ -1177,8 +1177,14 @@ def create_display_layer(name, nodes, display_type = 2):
         
     """
     layer = cmds.createDisplayLayer( name = name )
-    cmds.editDisplayLayerMembers( layer, nodes, noRecurse = True)
+    
+    no_recursive = True
+    if recursive_add:
+        no_recursive = False
+    
+    cmds.editDisplayLayerMembers( layer, nodes, noRecurse = no_recursive)
     cmds.setAttr( '%s.displayType' % layer, display_type )
+    return layer
 
 def delete_display_layers():
     """
