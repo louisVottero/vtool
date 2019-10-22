@@ -3119,7 +3119,11 @@ def get_controls(namespace = ''):
         if transform.endswith('_CON'):
             found.append(transform_node)
             continue
-                
+        
+        if transform.endswith('_Ctrl'):
+            found.append(transform_node)
+            continue
+        
         if cmds.objExists('%s.control' % transform_node):
             found.append(transform_node)
             continue
