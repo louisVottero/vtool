@@ -881,7 +881,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.active_title.setText(name)
         
     def _open_help(self):
-        import webbrowser
         
         filename = __file__
         folder = util_file.get_dirname(filename)
@@ -889,9 +888,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         split_folder = folder.split('\\')
         folder = split_folder[:-1]
         
-        path = 'http://docs.vetalarig.com'
-        webbrowser.open(path, 0)
-        
+        util_file.open_website('http://docs.vetalarig.com')
         
     def _tab_changed(self):
         
