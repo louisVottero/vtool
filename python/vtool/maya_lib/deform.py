@@ -3633,8 +3633,6 @@ class ZipWire2(object):
                 
                 target_attr = '%s.input1D[%s]' % (plus_node, slot)
                 
-                
-                #fade_time = time_accum+time_offset
                 fade_time = util_math.easeInSine(time_accum+time_offset)
                 
                 log.debug( side, '   ', inc, part, '   ----  ', time_accum, fade_time )
@@ -5197,7 +5195,7 @@ def add_joint_bindpre(skin, joint, description = None):
     
     return bind_pre
     
-def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, delete_wire = True, skin = True, falloff = 1, create_controls = True):
+def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, delete_wire = True, skin = True, falloff = 1, create_controls = True, generate_bind_pre = True):
     """
     Meant to take a wire deformer and turn it into a skinned joint chain.
     
@@ -5216,11 +5214,10 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
     vtool.util.show('converting %s' % wire_deformer)
     
     convert_group = cmds.group(em = True, n = core.inc_name('convertWire_%s' % description))
-    bindPre_locator_group = cmds.group(em = True, n = core.inc_name('convertWire_bindPre_%s' % description))
-    
-    cmds.parent(bindPre_locator_group, convert_group)
-    
-    cmds.hide(bindPre_locator_group)
+    if generate_bind_pre:
+        bindPre_locator_group = cmds.group(em = True, n = core.inc_name('convertWire_bindPre_%s' % description))
+        cmds.parent(bindPre_locator_group, convert_group)
+        cmds.hide(bindPre_locator_group)
     
     curve = attr.get_attribute_input('%s.deformedWire[0]' % wire_deformer, node_only = True)
     
@@ -5245,26 +5242,7 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
         
         
         if not skin:
-            skin_cluster = find_deformer_by_type(mesh, 'skinCluster')
-            
-            if not skin_cluster:
-                cmds.select(cl = True)
-                base_joint = cmds.joint(n = 'joint_%s' % wire_deformer)
-            
-                skin_cluster = cmds.skinCluster(base_joint, mesh, tsb = True)[0]
-            
-                cmds.parent(base_joint, convert_group)
-            
-            for joint in joints:
-                found_skin = find_deformer_by_type(mesh, 'skinCluster')
-                
-                cmds.skinCluster(skin_cluster, e = True, ai = joint, wt = 0.0, nw = 1)     
-                bindPre_locator = add_joint_bindpre(found_skin, joint, description)
-                cmds.parent(bindPre_locator, bindPre_locator_group)
-                
-                parameter = cmds.getAttr('%s.param' % joint)
-                geo.attach_to_curve(bindPre_locator, base_curve, True, parameter) 
-                
+            pass
         if skin:
             verts = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
             
@@ -5299,13 +5277,13 @@ def convert_wire_deformer_to_skin(wire_deformer, description, joint_count = 10, 
             
             for joint in joints:
                 
-                cmds.skinCluster(skin_cluster, e = True, ai = joint, wt = 0.0, nw = 1)     
-                bindPre_locator = add_joint_bindpre(skin_cluster, joint, description)
-                cmds.parent(bindPre_locator, bindPre_locator_group)
+                cmds.skinCluster(skin_cluster, e = True, ai = joint, wt = 0.0, nw = 1)
+                if generate_bind_pre:     
+                    bindPre_locator = add_joint_bindpre(skin_cluster, joint, description)
+                    cmds.parent(bindPre_locator, bindPre_locator_group)
                 
-                parameter = cmds.getAttr('%s.param' % joint)
-                geo.attach_to_curve(bindPre_locator, base_curve, True, parameter)
-            
+                    parameter = cmds.getAttr('%s.param' % joint)
+                    geo.attach_to_curve(bindPre_locator, base_curve, True, parameter)
             
             for vert in weighted_verts:
                 
