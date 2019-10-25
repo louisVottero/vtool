@@ -38,10 +38,16 @@ def get_permission(filepath):
     log.debug('Current Permission: %s' % permission)
     
     if permission == '775' or permission == '777':
+        
+        if permission == '775':
+            try:
+                os.chmod(filepath, 0777)
+            except:
+                pass
         return True
     
     try:
-        os.chmod(filepath, 0775)
+        os.chmod(filepath, 0777)
         return True
     except:
         return False
@@ -2078,26 +2084,6 @@ def inc_path_name(directory, padding = 0):
     
     return unique_path.get()
 
-def open_browser(filepath):
-    """
-    Open the file browser to the path specified. Currently only works in windows.
-    
-    Args:
-        filepath (str): Filename with path.
-        
-    """
-    
-    if util.is_windows():
-        os.startfile(filepath)
-        
-    if util.is_linux():
-        try:
-            opener ="open" if sys.platform == "darwin" else "xdg-open"
-            subprocess.call([opener, filepath])  
-
-        except:
-            os.system("gnome-terminal --working-directory=%s" % filepath)
-
 def remove_extension(path):
     
     dot_split = path.split('.')
@@ -3186,6 +3172,39 @@ def get_ast_assignment(text, line_number, assignment):
     return line_assign_dict
 
 #--- applications
+
+def open_browser(filepath):
+    """
+    Open the file browser to the path specified. Currently only works in windows.
+    
+    Args:
+        filepath (str): Filename with path.
+        
+    """
+    
+    if util.is_windows():
+        os.startfile(filepath)
+        
+    if util.is_linux():
+        try:
+            os.system('gio open %s' % filepath)
+        except:
+            try:
+                opener ="open" if sys.platform == "darwin" else "xdg-open"
+                subprocess.call([opener, filepath])  
+            except:
+                os.system("gnome-terminal --working-directory=%s" % filepath)
+
+def open_website(url):
+    import webbrowser
+    if util.is_windows():
+        webbrowser.open(url, 0)
+    if util.is_linux():
+        try:
+            os.system('gio open %s' % url)
+        except:
+            webbrowser.open(url, 0)
+            
 
 def maya_batch_python_file(python_file_path):
 
