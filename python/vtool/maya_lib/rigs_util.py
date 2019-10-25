@@ -6,6 +6,7 @@ import math
 #import util
 import api
 import vtool.util
+import vtool.util_math
 
 if vtool.util.is_in_maya():
     import maya.cmds as cmds
@@ -17,6 +18,9 @@ import anim
 import curve
 import geo
 import deform
+
+from vtool import logger
+log = logger.get_logger(__name__) 
 
 class Control(object):
     """
@@ -500,7 +504,36 @@ class Control(object):
         cmds.delete(temp)
         
         core.rename_shapes(self.control)
+
+class ControlGroup(object):
+    
+    def __init__(self, control_group):
+        self.control_group = control_group
         
+        self.controls = []
+        self.sub_controls = []
+        self.joints = []
+        self.all_controls = []
+        self.dict = {}
+        self._get_dict_data()
+    
+    def _get_dict_data(self):
+        control_group = self.control_group
+        
+        found_dict = get_important_info(control_group)
+        
+        self.load_data(found_dict)
+    
+    def load_data(self, attr_dict):
+        
+        self.dict = attr_dict
+        
+        for key in attr_dict:
+            
+            value = attr_dict[key]
+            
+            exec('self.%s = "%s"' % (key, value))
+    
 class StoreControlData(attr.StoreData):
     
     def __init__(self, node = None):
@@ -2492,7 +2525,7 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
             
         joint = cmds.joint(p = position, n = core.inc_name('joint_%s' % description) )
         
-        cmds.addAttr(joint, ln = 'param', at = 'double', dv = param)
+        cmds.addAttr(joint, ln = 'param', at = 'double', dv = param, k = True)
         
         if joints:
             cmds.joint(joints[-1], 
@@ -2505,6 +2538,8 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
             
             attach_node = geo.attach_to_curve( joint, curve, parameter = param )
             cmds.parent(joint, group)
+            
+            cmds.connectAttr('%s.param' % joint, '%s.parameter' % attach_node)
         
         current_length += part_length
         
@@ -2531,6 +2566,8 @@ def create_joints_on_curve(curve, joint_count, description, attach = True, creat
             cmds.connectAttr('%s.positionX' % attach_node, '%s.translateX'  % xform)
             cmds.connectAttr('%s.positionY' % attach_node, '%s.translateY'  % xform)
             cmds.connectAttr('%s.positionZ' % attach_node, '%s.translateZ'  % xform)
+            
+            
             
             side = control.color_respect_side(True, 0.1)
             
@@ -3590,44 +3627,116 @@ def edge_loop_to_control_shape(edge, control, offset = .1):
     control_inst.copy_shapes(new_curve)
     
     cmds.delete(new_curve)
+
+def is_control_group(control_group):
+    if cmds.objExists('%s.rigControlGroup' % control_group):
+        return True
+    return False
+
+def get_control_groups():
     
+    found = []
+    
+    transforms = cmds.ls(type = 'transform')
+    for transform in transforms:
+        if is_control_group(transform):
+            found.append(transform)
+    
+    return found
+
 def get_important_info(control_group):
-    
-    attrs = cmds.listAttr(control_group, ud = True)
+    """
+    Retruns a dictionary with ud attributes and values
+    """
+    ud_attrs = cmds.listAttr(control_group, ud = True)
+
+    found_dict = {}
     
     controls = []
     sub_controls = []
+    all_controls = []
     joints = []
     
-    for attr_name in attrs:
-        value = attr.get_message_input(control_group, attr_name)
+    for attr_name in ud_attrs:
+        
+        node_and_attr = '%s.%s' % (control_group, attr_name)
+        
+        found_dict[attr_name] = None
+        value = None
+        if cmds.getAttr(node_and_attr, type = True) == 'message':
+            value = attr.get_message_input(control_group, attr_name)
+        else:
+            value = cmds.getAttr(node_and_attr)
         
         if attr_name.startswith('control'):
             controls.append(value)
+            all_controls.append(value)
         if attr_name.startswith('subControl'):
             sub_controls.append(value)
+            if value:
+                all_controls.append(value)
         if attr_name.startswith('joint'):
             joints.append(value)
+        
+        found_dict[attr_name] = value
+    
+    found_dict['all_controls'] = all_controls
+    found_dict['controls'] = controls
+    found_dict['sub_controls'] = sub_controls
+    found_dict['joints'] = joints
+    
+    found_dict['hasSwtich'] = has_switch(control_group)
+    
+    return found_dict
+
+def get_control_group_info(control_group):
+    """
+    Returns a class with ud attributes and values
+    """
+    return ControlGroup(control_group)
+    
+def has_switch(control):
+    
+    group = get_control_group_with_switch(control)
+    
+    if group:
+        return True
+    
+    return False
+
+def get_control_group_with_switch(control):
+    connected = attr.get_attribute_outputs('%s.message' % control, node_only = True)
+    parent_connected = attr.get_attribute_input('%s.switchParent' % control, node_only = True)
+    
+    if parent_connected:
+        if connected:
+            connected += [parent_connected]
+        if not connected:
+            connected = [parent_connected]
+    
+    if not connected:
+        return False
+    
+    for connection in connected:
+        if cmds.objExists('%s.joint1' % connection):
+            joint1 = attr.get_message_input(connection, 'joint1')
+            if cmds.objExists('%s.switch' % joint1):
+                return connection
             
-    info_dict = {}
-    
-    info_dict['class'] = cmds.getAttr('%s.className' % control_group)
-    info_dict['controls'] = controls
-    info_dict['sub controls'] = sub_controls
-    info_dict['joints'] = joints
-    
-    
-    return info_dict
-    
-def match_to_joints(control_group, info_dict = {}):
+    return False
+
+
+def match_to_joints(control_group, info_dict = {}, auto_key = False):
     
     if not info_dict:
         info_dict = get_important_info(control_group)
     
     controls = info_dict['controls']
-    sub_controls = info_dict['sub controls']
+    sub_controls = info_dict['sub_controls']
     joints = info_dict['joints']
-    rig_type = info_dict['class']
+    rig_type = info_dict['className']
+    
+    found = []
     
     if rig_type.find('Fk') > -1:
         vtool.util.show('Match Fk to Ik')
@@ -3639,8 +3748,10 @@ def match_to_joints(control_group, info_dict = {}):
             
             if sub_control:
                 space.orig_matrix_match(sub_control, joint)
+                found.append(sub_control)
             
             space.orig_matrix_match(control, joint)
+            found.append(control)
     
     if rig_type.find('IkAppendageRig') > -1:
         vtool.util.show('Match Ik to Fk')
@@ -3651,11 +3762,17 @@ def match_to_joints(control_group, info_dict = {}):
             joint = joints[inc]
             
             space.orig_matrix_match(control, joint)
+            found.append(control)
             
             if sub_control:
                 space.zero_out_transform_channels(sub_control)
+                found.append(sub_control)
     
-def match_ik_fk(control_group):
+    if auto_key:
+        cmds.setKeyframe(found)
+        cmds.select(found)
+    
+def match_switch_rigs(control_group, auto_key = False):
     
     info_dict = get_important_info(control_group)
     
@@ -3682,11 +3799,72 @@ def match_ik_fk(control_group):
         
     if switch_value < 0.1:
         
-        match_to_joints(rig2, rig2_info)
+        match_to_joints(rig2, rig2_info, auto_key)
         cmds.setAttr(switch, 1)
+        if auto_key:
+            cmds.setKeyframe(switch)
     
     if switch_value > 0.9:
                 
-        match_to_joints(rig1, rig1_info)
+        match_to_joints(rig1, rig1_info, auto_key)
         cmds.setAttr(switch, 0)
+        if auto_key:
+            cmds.setKeyframe(switch)
 
+def match_switch_rigs_from_control(control, auto_key = False):
+    
+    group = get_control_group_with_switch(control)
+    match_switch_rigs(group, auto_key)
+
+def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description = 'zip'):
+        
+    for side in 'LR':
+        
+        if side == 'L':
+            node_and_attr = left_zip_attr
+        if side == 'R':
+            node_and_attr = right_zip_attr
+        
+        count = len(fade_attributes)
+        
+        time_offset = 1.0/(count) 
+        if side == 'L':
+            time_accum = 0
+        if side == 'R':
+            time_accum = 1-time_offset
+        
+        for inc in range(0, count):
+            
+            target_attr = fade_attributes[inc]
+            
+            input_node = attr.get_attribute_input(target_attr, node_only = True)
+            plus_node = None
+            
+            if cmds.nodeType(input_node) == 'clamp':
+                input_node = attr.get_attribute_input('%s.inputR' % input_node, node_only = True)
+                if cmds.nodeType(input_node) == 'plusMinusAverage':
+                    plus_node = input_node
+                 
+            else:
+                plus_node = cmds.createNode('plusMinusAverage', n = '%sPlus_%s' % (description, inc+1, side))
+                
+                zip_clamp = cmds.createNode('clamp',n = '%sClamp_%s' % (description, inc+1, side))
+                cmds.setAttr('%s.maxR' % zip_clamp, 1)
+                
+                cmds.connectAttr('%s.output1D' % plus_node, '%s.inputR' % zip_clamp)
+                cmds.connectAttr('%s.outputR' % zip_clamp, target_attr)
+            
+            slot = attr.get_available_slot('%s.input1D' % plus_node)
+            
+            target_attr = '%s.input1D[%s]' % (plus_node, slot)
+            
+            fade_time = vtool.util_math.easeInSine(time_accum+time_offset)
+            
+            log.debug( side, '   ', inc, description, '   ----  ', time_accum, fade_time )
+            
+            anim.quick_driven_key(node_and_attr, target_attr, [time_accum,(fade_time)], [0,1], tangent_type = 'linear')
+            
+            if side == 'L':
+                time_accum += time_offset
+            if side == 'R':
+                time_accum -= time_offset
