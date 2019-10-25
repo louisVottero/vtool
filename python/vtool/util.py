@@ -2115,3 +2115,28 @@ def split_line(line, splitter = ';', quote_symbol = '"'):
     
     split_regex = '%s(?=(?:[^%s]*%s[^%s]*%s)*[^%s]*$)' % (splitter, quote_symbol, quote_symbol, quote_symbol, quote_symbol, quote_symbol)
     return re.split(split_regex, line)
+
+def unload_vtool():
+    """
+    Removed currently sourced modules.  
+    This allows you to insert a custom path at the start of the sys.path and load vetala from there.
+    """
+    modules = sys.modules
+
+    found = []
+
+    for module in modules:
+    
+        module_inst = modules[module]    
+        if not module_inst:
+            continue    
+        if not hasattr(module_inst, '__file__'):
+            continue        
+        #module_path = module_inst.__file__
+        if module.startswith('vtool'):
+            
+            found.append(module)
+        
+    for key in found:
+        show('Removing vtool module %s' % key)
+        modules.pop(key)
