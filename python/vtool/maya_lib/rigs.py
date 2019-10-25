@@ -50,6 +50,9 @@ class Rig(object):
         
         self._handle_side_variations()
         
+        self.control_group = None
+        self.setup_group = None
+        
         self.control_parent = None
         self.setup_parent = None
         
@@ -79,6 +82,8 @@ class Rig(object):
         
         self._control_number = True
         self._custom_sets = []
+        
+        self._switch_parent = None
         
     def _post_create(self):
 
@@ -124,6 +129,7 @@ class Rig(object):
         
         self._post_add_to_control_set()
         self._post_connect_controller()
+        self._post_connect_controls_to_switch_parent()
         
     def _post_add_shape_switch(self):
 
@@ -293,7 +299,7 @@ class Rig(object):
         if not child_set:
             child_set = parent_set
         
-        controls = self.control_dict.keys()
+        controls = self.get_all_controls()
         
         for control in controls:
             
@@ -311,8 +317,16 @@ class Rig(object):
             if cmds.controller(controller, q = True, isController = True) and cmds.controller(parent, q = True, isController = True):
                 cmds.controller(controller, parent, p = True)
         
+    def _post_connect_controls_to_switch_parent(self):
         
+        if not self._switch_parent:
+            return
         
+        controls = self.get_all_controls()
+        
+        for control in controls:
+            attr.connect_message(self._switch_parent, control, 'switchParent')
+            
             
     def __getattribute__(self, item):
 
@@ -359,8 +373,10 @@ class Rig(object):
         
     def _create_default_groups(self):
                         
-        self.control_group = self._create_group('controls')
-        self.setup_group = self._create_group('setup')
+        self.control_group = self._create_control_group()
+        self.setup_group = self._create_setup_group()
+        
+        self._create_control_group_attributes()
         
         cmds.hide(self.setup_group)
         
@@ -396,7 +412,7 @@ class Rig(object):
         
         
         
-    def _create_setup_group(self, description):
+    def _create_setup_group(self, description = ''):
         
         group = self._create_group('setup', description)
         
@@ -405,7 +421,7 @@ class Rig(object):
         
         return group
         
-    def _create_control_group(self, description):
+    def _create_control_group(self, description = ''):
         
         group = self._create_group('controls', description)
         
@@ -413,7 +429,21 @@ class Rig(object):
             cmds.parent(group, self.control_group)
             
         return group
-            
+    
+    def _create_control_group_attributes(self):
+
+        cmds.addAttr(self.control_group, ln = 'rigControlGroup', at = 'bool', dv = True)
+        cmds.setAttr('%s.rigControlGroup' % self.control_group, l = True)
+        
+        cmds.addAttr(self.control_group, ln = 'description', dt = 'string')
+        cmds.setAttr('%s.description' % self.control_group, self.description, type = 'string', l = True)
+        
+        cmds.addAttr(self.control_group, ln = 'side', dt = 'string')
+        side = self.side
+        if not side:
+            side = ''
+        cmds.setAttr('%s.side' % self.control_group, side, type = 'string', l = True)
+    
     def _get_name(self, prefix = None, description = None, sub = False):
                 
         if self.side:
@@ -644,6 +674,10 @@ class Rig(object):
         
         self._parent_custom_default_group(self.setup_group, self.setup_parent)
         
+    def set_switch_parent(self, rig_control_group):
+        
+        self._switch_parent = rig_control_group
+        
     def set_control_offset_axis(self, axis_letter):
         """
         This sets the axis that the control curve cvs will offset to. This happens by rotating the control in 90 degrees on the axi.
@@ -691,6 +725,10 @@ class Rig(object):
         This connects the subVisibility attribute to the specified attribute.  Good when centralizing the sub control visibility. 
         """
         self._connect_sub_vis_attr = attr_name
+    
+    def get_all_controls(self):
+        
+        return self.control_dict.keys()
     
     def get_controls(self, title):
         """
