@@ -1094,6 +1094,11 @@ def get_faces(mesh):
     
     return found
 
+def get_mesh_from_face(face):
+    
+    return get_thing_from_component(face, 'f')
+    
+
 def face_to_vertex(faces):
 
     faces = cmds.ls(faces, flatten = True)
