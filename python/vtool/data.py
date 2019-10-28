@@ -1856,18 +1856,35 @@ class MayaShadersData(CustomData):
             for key in shader_dict:
                 info_dict[key] = shader_dict[key]
         
+        bad_meshes = []
+        
         for filename in files:
-
+            
+            util.show('Importing shader: %s' % filename)
+            
             filepath = util_file.join_path(path, filename)
             
-            name = filename.split('.')[0]
+            engine = filename.split('.')[0]
             
-            cmds.file(filepath, f = True, i = True, iv = True)
-            
-            if not name in info_dict:
+            if not engine in info_dict:
                 continue
             
-            meshes = info_dict[name]
+            orig_engine = engine
+            
+            if not cmds.objExists(engine):
+                
+                track = maya_lib.core.TrackNodes()
+                track.load('shadingEngine')
+                
+                cmds.file(filepath, f = True, i = True, iv = True)
+                
+                new_engines = track.get_delta()
+                engine = new_engines[0]
+            else:
+                util.warning('%s already existed in the scene.' % orig_engine)
+                util.warning('Using the existing shader, but might not match what was exported.')
+            
+            meshes = info_dict[orig_engine]
             
             if not meshes:
                 continue
@@ -1877,6 +1894,15 @@ class MayaShadersData(CustomData):
             for mesh in meshes:
                 
                 if not cmds.objExists(mesh):
+                    
+                    bad_mesh = mesh
+                    if mesh.find('.f['):
+                        bad_mesh = maya_lib.geo.get_mesh_from_face(mesh)
+                    
+                    if not bad_mesh in bad_meshes:
+                        util.warning('Could not find %s that %s was assigned to.' % (bad_mesh, engine))
+                        bad_meshes.append(bad_mesh)
+                        
                     continue
                 
                 split_mesh = mesh.split('.')
@@ -1889,22 +1915,11 @@ class MayaShadersData(CustomData):
                 
                 if len(split_mesh) == 1:
                     if not found_meshes.has_key(mesh):
-                        mesh_name = cmds.ls('%s.f[*]' % mesh, flatten = False)
-                        found_meshes[mesh] = [mesh_name]
-                
-            visited_geo = []
+                        found_meshes[mesh] = mesh
             
             for key in found_meshes:
-                if not cmds.objExists(key):
-                    continue
                 
-                if not key in visited_geo:
-                    cmds.sets(key, e = True, forceElement = name)
-                    #cmds.sets( found_meshes[key][:-1], e = True, forceElement = name)
-                
-                if key in visited_geo:
-                    cmds.sets( found_meshes[key], e = True, forceElement = name)
-                visited_geo.append(key)
+                cmds.sets( found_meshes[key], e = True, forceElement = engine)
     
     def export_data(self, comment):
         
@@ -1932,7 +1947,6 @@ class MayaShadersData(CustomData):
             
             members = cmds.sets(shader, q = True)
             info_lines.append("{'%s' : %s}" % (shader, members))
-            
             
             filepath = util_file.join_path(path, '%s.ma' % shader)
         
