@@ -1336,17 +1336,17 @@ class SkinWeightData(MayaCustomData):
                     continue
                 
                 line_list = eval(line)
-        
+                
                 attr_name = line_list[0]
                 value = line_list[1]
-        
-                if attr_name == 'blendWeights':
-                    
-                    maya_lib.deform.set_skin_blend_weights(skin_cluster, value)
                 
-                if attr_name == 'skinningMethod':
-                    
-                    cmds.setAttr('%s.skinningMethod' % skin_cluster, value)
+                attribute_name = skin_cluster + '.' + attr_name 
+                
+                if attr_name == 'blendWeights':
+                    maya_lib.deform.set_skin_blend_weights(skin_cluster, value)
+                else:
+                    if cmds.objExists(attribute_name):
+                        cmds.setAttr(attribute_name, value)
                     
         if transfer_mesh:
             util.show('Mesh topology mismatch')
@@ -1463,7 +1463,8 @@ class SkinWeightData(MayaCustomData):
                 settings_file = util_file.create_file('settings.info', geo_path)
                 
                 blend_weights_attr = '%s.blendWeights' % skin
-                skin_method_attr = '%s.skinningMethod' % skin
+                
+                export_attrs = ['skinningMethod', 'maintainMaxInfluences', 'maxInfluences']
                 
                 settings_lines = []
                 
@@ -1475,11 +1476,15 @@ class SkinWeightData(MayaCustomData):
                     
                     settings_lines.append("['blendWeights', %s]" % blend_weights)
                 
-                if cmds.objExists(skin_method_attr):
+                for attribute_name in export_attrs:
                     
-                    skin_method = cmds.getAttr(skin_method_attr)
+                    attribute_path = '%s.%s' % (skin, attribute_name)
                     
-                    settings_lines.append("['skinningMethod', %s]" % skin_method)
+                    if not cmds.objExists(attribute_name):
+                        continue
+                        
+                    attribute_value = cmds.getAttr(attribute_path)
+                    settings_lines.append(attribute_name, attribute_value)
                 
                 write_settings = util_file.WriteFile(settings_file)
                 write_settings.write(settings_lines)
@@ -3068,17 +3073,17 @@ class MayaShotgunFileData(MayaFileData):
     
     def _get_filepath(self, publish_path = False):
         
-        project, asset_type, asset, step = self.read_state()
+        project, asset_type, asset, step, task = self.read_state()
 
         if publish_path:
             template = 'Publish Template'
         else:
             template = 'Work Template'
         
-        util.show('Getting Shotgun directory at: %s %s %s %s' % (project, asset_type, asset, step))
+        util.show('Getting Shotgun directory at: project: %s type: %s asset: %s step: %s task: %s' % (project, asset_type, asset, step, task))
         util.show('Using Vetala setting: %s' % template)
         
-        dirpath = util_shotgun.get_asset_path(project, asset_type, asset, step, publish_path)
+        dirpath = util_shotgun.get_asset_path(project, asset_type, asset, step,publish_path, task)
         
         util.show('Vetala got the following directory from Shotgun: %s' % dirpath)
         
@@ -3106,14 +3111,18 @@ class MayaShotgunFileData(MayaFileData):
         
         return self.filepath
     
-    def write_state(self, project, asset_type, asset, step):
+    def write_state(self, project, asset_type, asset, step, task):
+        
+        if not self.directory:
+            return
         
         filepath = util_file.create_file('shotgun.info', self.directory)
         
         lines = ['project=%s' % project,
                  'asset_type=%s' % asset_type,
                  'asset=%s' % asset,
-                 'step=%s' % step]
+                 'step=%s' % step,
+                 'task=%s' % task]
         
         util_file.write_lines(filepath, lines)
     
@@ -3122,11 +3131,11 @@ class MayaShotgunFileData(MayaFileData):
         filepath = util_file.join_path(self.directory, 'shotgun.info')
         
         if not util_file.is_file(filepath):
-            return None, None, None, None
+            return None, None, None, None, None
         
         lines = util_file.get_file_lines(filepath)
         
-        found = [None,None,None,None]
+        found = [None,None,None,None,None]
         
         for line in lines:
             split_line = line.split('=')
@@ -3139,6 +3148,8 @@ class MayaShotgunFileData(MayaFileData):
                 found[2] = split_line[1]
             if split_line[0] == 'step':
                 found[3] = split_line[1]
+            if split_line[0] == 'task':
+                found[4] = split_line[1]
                 
         return found
     
@@ -3233,8 +3244,9 @@ class MayaShotgunFileData(MayaFileData):
         found.sort()
         return found
     
-    def get_assets(self, project):
-        assets = util_shotgun.get_assets(project)
+    def get_assets(self, project, asset_type = None):
+        assets = util_shotgun.get_assets(project, asset_type)
+        
         
         found = {}
         
@@ -3263,6 +3275,20 @@ class MayaShotgunFileData(MayaFileData):
         if not steps:
             found = [['No steps found']]
             
+        return found
+    
+    def get_asset_tasks(self, project, asset_step, asset_type, asset_name):
+        
+        tasks = util_shotgun.get_asset_tasks(project, asset_step, asset_type, asset_name)
+        
+        found = []
+        
+        if tasks:
+            for task in tasks:
+                found.append([task['content']])
+        if not tasks:
+            found = [['No tasks found']]
+        
         return found
     
     def has_api(self):
