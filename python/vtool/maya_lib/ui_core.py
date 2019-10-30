@@ -59,7 +59,7 @@ def create_scene_script_jobs():
     job_read_scene = cmds.scriptJob( ct = ['readingFile', 'from vtool.maya_lib import ui_core;ui_core.emit_read_scene_signal();print "V:\t\tEmit reading scene."'], protected = False)
 
 create_scene_script_jobs()
-  
+
 def delete_scene_script_jobs():
     
     global job_new_scene
@@ -69,7 +69,7 @@ def delete_scene_script_jobs():
     cmds.scriptJob(kill = job_new_scene)
     cmds.scriptJob(kill = job_open_scene)
     cmds.scriptJob(kill = job_read_scene)
-
+    
 #--- ui 
 
 def get_maya_window():

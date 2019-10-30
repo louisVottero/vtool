@@ -24,8 +24,6 @@ class PoseManager(ui_core.MayaWindowMixin):
     def __init__(self, shot_sculpt_only = False):
         self.shot_sculpt_only = shot_sculpt_only
         
-        
-        
         super(PoseManager, self).__init__()
         
         self.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
@@ -106,7 +104,7 @@ class PoseManager(ui_core.MayaWindowMixin):
         self.sculpt.set_pose(pose)
         self.sculpt.mesh_widget.add_mesh(selection)
         
-class PoseSetWidget(qt.QWidget): 
+class PoseSetWidget(qt_ui.BasicWidget): 
     
     pose_reset = qt_ui.create_signal()
     
@@ -114,15 +112,15 @@ class PoseSetWidget(qt.QWidget):
         
         super(PoseSetWidget, self).__init__()
         
-        self.main_layout = qt.QHBoxLayout()
-        self.setLayout(self.main_layout)
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
-            
-        self._add_buttons()
+        self.main_layout.setContentsMargins(2,2,2,2)
         
         self.pose = None
         
-    def _add_buttons(self):
+    def _define_main_layout(self):
+        return qt.QHBoxLayout()
+        
+    def _build_widgets(self):
         
         button_default = qt.QPushButton('Set Default Pose')
         button_reset = qt.QPushButton('To Default Pose')
@@ -130,8 +128,24 @@ class PoseSetWidget(qt.QWidget):
         button_reset.clicked.connect(self._button_reset)
         button_default.clicked.connect(self._button_default)
         
+        post_deform = qt.QCheckBox('Post Deform')
+        post_deform.setChecked(True)
+        
+        if cmds.objExists('pose_gr.postDeform'):
+            post_deform_state = cmds.getAttr('pose_gr.postDeform')
+            
+            if not post_deform_state:
+                post_deform.setChecked(False)
+        else:
+            post_deform.setChecked(False)
+                
+        post_deform.stateChanged.connect(self._set_post_deform)
+        
         self.main_layout.addWidget(button_reset)
+        self.main_layout.addSpacing(5)
         self.main_layout.addWidget(button_default)
+        self.main_layout.addSpacing(5)
+        self.main_layout.addWidget(post_deform)
         
     def _button_default(self):
         corrective.PoseManager().set_default_pose()
@@ -139,6 +153,15 @@ class PoseSetWidget(qt.QWidget):
     def _button_reset(self):
         self.pose_reset.emit()
         corrective.PoseManager().set_pose_to_default()
+        
+    def _set_post_deform(self, state_value):
+        
+        if state_value:
+            if not cmds.objExists('pose_gr.postDeform'):
+                cmds.addAttr('pose_gr', ln = 'postDeform', at = 'bool', k = False)
+            cmds.setAttr('pose_gr.postDeform', 1 )
+        else:
+            cmds.setAttr('pose_gr.postDeform', 0 )
         
 class PoseListWidget(qt_ui.BasicWidget):
     
