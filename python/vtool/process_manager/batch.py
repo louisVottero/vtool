@@ -13,7 +13,10 @@ def main():
     source_path = os.environ['VETALA_PATH']
     source_path = os.path.dirname(source_path)
     
-    sys.path.append(source_path)
+    sys.path.insert(0, source_path)
+    
+    print '\nUsing Vetala Path', source_path
+    print 'Using Pyton Version', sys.version
     
     env = os.environ.copy()
     
@@ -39,6 +42,8 @@ def main():
     if vtool.util.is_in_maya():
         import maya.standalone
         maya.standalone.initialize( name='python' )
+    
+    print 'Using Maya %s\n\n' % vtool.util.get_maya_version()
 
     if vtool.util.is_in_maya():
         
@@ -62,37 +67,24 @@ def main():
             
             comment = None
             
-            vtool.util.show('Batch finished.')
-            input_value = raw_input('\n\nSave to build? (y or n): ')
-            if input_value == 'y':
-                comment = raw_input('Give a comment: ')
-            print '\n'
+            vtool.util.show('Batch finished.\n\n')
             
-            saved = False
             
-            if input_value == 'y':
-                
-                if not comment:
-                    comment = 'Generated from batch.'
-                
-                saved = process_inst.save_data('build', comment)
             
-            if saved:
-                vtool.util.show('Contents saved to build.')
-            if not saved and input_value == 'y':
+            saved = process_inst.save_data('build', comment)
+            
+            if not saved:
                 vtool.util.show('Unable to save contents!!')
                 
         else:
             vtool.util.show('Could not get current process.  Batch finished, nothing processed.')
     
-    if not vtool.util.is_linux():
-        vtool.util.show('\n\nAll done, please close console.')
-        while True:
-            time.sleep(1)
-    if vtool.util.is_linux():
-        vtool.util.show('\n\nAll done\n\n\n\n\n')
+    vtool.util.show('\n\nAll done, please close console.')
     
-    print '\n\n------- END OF VETALA BATCH ---------------------------------------------------------------------------------------------------------------------\n\n\n\n\n'
+    while True:
+        time.sleep(1)
+    
+    print '\n\n------- END OF VETALA BATCH ----------------------------------------------------------\n\n\n\n\n'
     
 if __name__ == '__main__':
     main()
