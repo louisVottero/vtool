@@ -68,6 +68,12 @@ class PoseManager(object):
             
             if selection:
                 cmds.select(selection)
+                
+            self._create_attributes()
+    
+    def _create_attributes(self):
+        
+        cmds.addAttr(self.pose_group, ln = 'postDeform', at = 'bool', k = False, dv = 1)
     
     def is_pose(self, name):
         """
@@ -289,6 +295,8 @@ class PoseManager(object):
         """
         pose = None
         
+        self._check_pose_group()
+        
         if pose_type == 'cone':
             pose = self.create_cone_pose(name)
         if pose_type == 'no reader':
@@ -299,7 +307,6 @@ class PoseManager(object):
             pose = self.create_timeline_pose(name)
         if pose_type == 'group':
             pose = self.create_group_pose(name)
-        
             
         return pose
             
@@ -676,7 +683,20 @@ class PoseManager(object):
         pose = self.get_pose_instance(name)
         mirror = pose.mirror()
         
-        return mirror        
+        return mirror
+    
+    @classmethod
+    def is_post_deform(cls):
+        
+        if cmds.objExists('pose_gr.postDeform'):
+            state = cmds.getAttr('pose_gr.postDeform')
+            
+            if state:
+                return True
+            else:
+                return False
+        else:
+            return False
 
 class PoseGroup(object):
     """
@@ -837,12 +857,12 @@ class PoseGroup(object):
         Returns:
             str: The new name.
         """
-        top_group = self._create_top_group()
+        #top_group = self._create_top_group()
         
         pose_control = self._create_pose_control()
         self.pose_control = pose_control
         
-        cmds.parent(pose_control, top_group)
+        cmds.parent(pose_control, self.pose_gr)
         
         store = rigs_util.StoreControlData(pose_control)
         store.set_data()
@@ -1006,6 +1026,7 @@ class PoseBase(PoseGroup):
         self.pose_gr = 'pose_gr'
         
         self.disconnected_attributes = None
+        self.post_deform = True
     
     def _pose_type(self):
         return 'base'
@@ -1567,7 +1588,10 @@ class PoseBase(PoseGroup):
                 
             if not skin_cluster:
                 cmds.reorderDeformers(blend.blendshape, blendshape_node, target_mesh)
-            
+        
+        if PoseManager.is_post_deform():
+            skin_cluster = deform.find_deformer_by_type(target_mesh, 'skinCluster')
+            cmds.reorderDeformers(blend.blendshape, skin_cluster, target_mesh)
             
         return blend
     
@@ -2157,6 +2181,9 @@ class PoseBase(PoseGroup):
                 
         self.create_blends_went_to_pose = False
     
+    def _setup_post_deform(self, target_name, blend_inst):
+        blend_inst.set_post_deformation_mode(target_name, 1)
+    
     def create_blend(self, mesh_index, goto_pose = True, sub_poses = True):
         """
         Create the blend. This will refresh the delta.
@@ -2169,21 +2196,13 @@ class PoseBase(PoseGroup):
         
         mesh = self._get_current_mesh(mesh_index)
         
-        
-            
-        
         if not mesh:
-            
-            
-            
             return
         
         manager = PoseManager()
         manager.set_weights_to_zero()
         
         target_mesh = self.get_target_mesh(mesh)
-        
-        
         
         envelope = deform.EnvelopeHistory(target_mesh)
         envelope.turn_off_exclude(['skinCluster', 'blendShape'])
@@ -2196,8 +2215,6 @@ class PoseBase(PoseGroup):
         
         if goto_pose:
             self.goto_pose()
-            
-        
         
         self.disconnect_blend(mesh_index)
                 
@@ -2207,20 +2224,15 @@ class PoseBase(PoseGroup):
         
         blend.set_weight(nicename, 0)
         
-                
-        offset = deform.chad_extract_shape(target_mesh, mesh)
-        
-        
-        
+        if not PoseManager.is_post_deform():
+            offset = deform.chad_extract_shape(target_mesh, mesh)
+        else:
+            offset = cmds.duplicate(mesh)[0]
         
         blend.set_weight(nicename, 1)
         
-        #eventually it will check mesh index
-        #blend.get_mesh_index(target_mesh)
-        
-        
-        
         if blend.is_target(nicename):
+            blend.set_post_deformation_mode(nicename, 0)
             blend.replace_target(nicename, offset)
         
         if not blend.is_target(nicename):
@@ -2233,7 +2245,8 @@ class PoseBase(PoseGroup):
         
         cmds.delete(offset)
         
-        
+        if PoseManager.is_post_deform():
+            self._setup_post_deform(nicename, blend)
         
         if sub_poses:
             self.create_sub_poses(sub_pass_mesh)
@@ -3394,6 +3407,10 @@ class PoseCone(PoseBase):
         constraint_node = constraint.get_constraint(self.pose_control, 'parentConstraint')
         
         return constraint_node 
+        
+    def _setup_post_deform(self, target_name, blend_inst):
+        blend_inst.set_post_deformation_mode(target_name, 2)
+        blend_inst.connect_target_matrix(target_name, '%s.parentMatrix' % self.transform)
         
     def set_axis(self, axis_name):
         """
