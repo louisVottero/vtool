@@ -939,11 +939,11 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         self.combo_asset = qt.QComboBox()
         
         current_text = self.combo_asset_type.currentText()
-        if self.assets.has_key(current_text):
         
-            assets = self.assets[current_text]
+        assets = self.assets[current_text]
+        
+        if assets:
             assets.sort()
-        
             for asset in assets:
                 self.combo_asset.addItem(asset)
         
@@ -957,8 +957,19 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         for step in steps:
             self.combo_asset_step.addItem(step[0])
         
+        self.combo_task = qt.QComboBox()
+        
+        tasks = self.data_class.get_asset_tasks(self.combo_project.currentText(), 
+                                                self.combo_asset_step.currentText(), 
+                                                self.combo_asset_type.currentText(), 
+                                                self.combo_asset.currentText())
+        
+        for task in tasks:
+            self.combo_task.addItem(task[0])
+        
         v_layout1 = qt.QVBoxLayout()
         v_layout2 = qt.QVBoxLayout()
+        v_layout3 = qt.QVBoxLayout()
         
         self.warning = qt.QLabel('No Shotgun Found!')
         
@@ -966,23 +977,31 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         
         self.warning.hide()
         
+        v_layout1.addWidget(qt.QLabel('Project'))
         v_layout1.addWidget(self.combo_project)
+        v_layout1.addWidget(qt.QLabel('Step'))
         v_layout1.addWidget(self.combo_asset_step)
         
+        v_layout2.addWidget(qt.QLabel('Type'))
         v_layout2.addWidget(self.combo_asset_type)
+        v_layout2.addWidget(qt.QLabel('Name'))
         v_layout2.addWidget(self.combo_asset)
+        
+        v_layout3.setAlignment(qt.QtCore.Qt.AlignTop)
+        v_layout3.addWidget(qt.QLabel('Task'))
+        v_layout3.addWidget(self.combo_task)
         
         h_layout.addLayout(v_layout1)
         h_layout.addLayout(v_layout2)
+        h_layout.addLayout(v_layout3)
         
-        #h_layout.setAlignment(qt.QtCore.Qt.AlignHCenter)
         self.main_layout.addLayout(h_layout)
         
-    
         self.combo_project.currentIndexChanged.connect(self._project_current_changed)
         self.combo_asset_type.currentIndexChanged.connect(self._asset_type_current_changed)
-        self.combo_asset.currentIndexChanged.connect(self._write_out_state)
-        self.combo_asset_step.currentIndexChanged.connect(self._write_out_state)
+        self.combo_asset.currentIndexChanged.connect(self._asset_current_changed)
+        self.combo_asset_step.currentIndexChanged.connect(self._asset_step_current_changed)
+        self.combo_task.currentIndexChanged.connect(self._write_out_state)
         
         self._build_save_widget()
         
@@ -1036,13 +1055,13 @@ class MayaShotgunLinkWidget(DataLinkWidget):
         asset_type = str(self.combo_asset_type.currentText())
         asset = str(self.combo_asset.currentText())
         step = str(self.combo_asset_step.currentText())
-        
-        self.data_class.write_state(project, asset_type, asset, step)
+        task = str(self.combo_task.currentText())
+        self.data_class.write_state(project, asset_type, asset, step, task)
     
     def _read_state(self):
         
         self.update_current_changed = False
-        project, asset_type, asset, step = self.data_class.read_state()
+        project, asset_type, asset, step, task = self.data_class.read_state()
         
         if project:
             project_index = self.combo_project.findText(project)
@@ -1063,6 +1082,11 @@ class MayaShotgunLinkWidget(DataLinkWidget):
             step_index = self.combo_asset_step.findText(step)
             if step_index != None:
                 self.combo_asset_step.setCurrentIndex(step_index)
+        
+        if task:
+            task_index = self.combo_task.findText(task)
+            if task_index != None:
+                self.combo_task.setCurrentIndex(task_index)
         
         self.update_current_changed = True
     
@@ -1122,8 +1146,34 @@ class MayaShotgunLinkWidget(DataLinkWidget):
             for asset in assets:
                 self.combo_asset.addItem(asset)
                 
-        self._write_out_state()
+        
     
+    def _asset_current_changed(self):
+        
+        self._load_tasks()
+        
+        self._write_out_state()
+        
+    def _asset_step_current_changed(self):
+        
+        self._load_tasks()
+        
+        self._write_out_state()
+        
+    def _load_tasks(self):
+        
+        self.combo_task.clear()
+        
+        project = self.combo_project.currentText()
+        asset_step = self.combo_asset_step.currentText()
+        asset_type = self.combo_asset_type.currentText()
+        asset = self.combo_asset.currentText()
+        
+        tasks = self.data_class.get_asset_tasks(project, asset_step, asset_type, asset)
+        
+        for task in tasks:
+            self.combo_task.addItem(task[0])
+        
     def _define_data_class(self):
         return vtool.data.MayaShotgunFileData()
     
@@ -1139,6 +1189,7 @@ class MayaShotgunLinkWidget(DataLinkWidget):
             self.combo_asset_step.setEnabled(True)
             self.combo_asset_type.setEnabled(True)
             self.combo_project.setEnabled(True)
+            self.combo_task.setEnabled(True)
             
             self.save_button.setEnabled(True)
             self.open_button.setEnabled(True)
@@ -1156,6 +1207,7 @@ class MayaShotgunLinkWidget(DataLinkWidget):
             self.combo_asset_step.setEnabled(False)
             self.combo_asset_type.setEnabled(False)
             self.combo_project.setEnabled(False)
+            self.combo_task.setEnabled(False)
 
 class DataFileWidget(vtool.qt_ui.FileManagerWidget):
     
