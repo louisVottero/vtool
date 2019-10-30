@@ -775,7 +775,20 @@ class BlendShape(object):
                 
                 cmds.setAttr(attribute_name, value)
     
-
+    def set_post_deformation_mode(self, name, value):
+        
+        attribute = self._get_input_target_group(name)
+        
+        attribute = string.join([attribute, 'postDeformersMode'], '.')
+        
+        cmds.setAttr(attribute, value)
+    
+    def connect_target_matrix(self, name, matrix_attribute):
+        
+        attribute = self._get_input_target_group(name)
+        attribute = string.join([attribute, 'targetMatrix'], '.')
+        
+        cmds.connectAttr(matrix_attribute, attribute, f = True)
     
     def set_weights(self, weights, target_name = None, mesh_index = 0):
         """
