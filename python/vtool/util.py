@@ -2116,17 +2116,34 @@ def split_line(line, splitter = ';', quote_symbol = '"'):
     split_regex = '%s(?=(?:[^%s]*%s[^%s]*%s)*[^%s]*$)' % (splitter, quote_symbol, quote_symbol, quote_symbol, quote_symbol, quote_symbol)
     return re.split(split_regex, line)
 
+def replace_vtool(path_to_vtool):
+    """
+    Meant to have vtool look at a different path to load
+    """
+    
+    unload_vtool()
+    sys.path.insert(0, path_to_vtool)
+
 def unload_vtool():
     """
     Removed currently sourced modules.  
     This allows you to insert a custom path at the start of the sys.path and load vetala from there.
     """
+    
+    if is_in_maya():
+        from vtool.maya_lib import ui_core
+        ui_core.delete_scene_script_jobs()
+    
     modules = sys.modules
 
     found = []
-
-    for module in modules:
     
+    module_keys = modules.keys()
+    
+    for module in module_keys:
+        
+        if not module in modules:
+            continue
         module_inst = modules[module]    
         if not module_inst:
             continue    
