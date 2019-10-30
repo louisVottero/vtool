@@ -3230,11 +3230,12 @@ def maya_batch_python_file(python_file_path):
     
     util.show('Opening Maya Batch in directory: %s' % mayapy_path)
     
-    command = [mayapy_path, python_file_path]
     if util.is_linux():
-        command.insert(0, 'gnome-terminal')
+        mayapy_path = 'gnome-terminal -- ' + mayapy_path + ' ' + python_file_path
+        mayapy = subprocess.Popen(mayapy_path, shell = True)
+    else:
+        mayapy = subprocess.Popen([mayapy_path, python_file_path], shell = shell)
     
-    mayapy = subprocess.Popen([mayapy_path, python_file_path], shell = shell)
 
 def launch_maya(version, script = None):
     """
