@@ -77,6 +77,23 @@ def get_projects():
     
     return projects
 
+def get_project_tank_name(name):
+    
+    project_name = name
+    
+    sg = get_sg()
+    if not sg:
+        return
+    
+    result = sg.find('Project', [['name', 'is', name]],['tank_name'])
+    
+    if result[0].has_key('tank_name'):
+        return result[0]['tank_name']
+    
+    return project_name
+    
+    
+
 def get_project_tank(project_name):
     sg = get_sg()
     
@@ -110,6 +127,8 @@ def get_assets(project_name = None, asset_type = None):
     
     if project_name:
         filters.append(['project.Project.name', 'is', project_name])
+    if asset_type:
+        filters.append(['sg_asset_type', 'is', asset_type])
     
     assets = sg.find('Asset', filters, ['code', 'sg_asset_type'])
     
@@ -127,6 +146,47 @@ def get_asset_steps():
     
     return steps
 
+def get_asset_tasks(project_name, asset_step,asset_type,asset_name):
+    print 'get tasks'
+    sg = get_sg()
+    if not sg:
+        return
+    
+    filters = []
+    
+    print project_name, asset_name, asset_step, asset_type
+    
+    asset = get_asset(project_name, asset_type,asset_name)
+    
+    print asset
+    
+    
+    filters.append(['entity', 'is', asset])
+    filters.append(['step.Step.code', 'is', asset_step])
+    
+    if project_name:
+        filters.append(['project.Project.name', 'is', project_name])
+    
+    
+    
+    """
+    fields = [
+    'content',
+    'start_date',
+    'due_date',
+    'upstream_tasks',
+    'downstream_tasks',
+    'dependency_violation',
+    'pinned'
+    ]
+    """
+    
+    tasks = sg.find('Task', filters, fields = ['content'])
+    
+    print 'found tasks', tasks
+    
+    return tasks
+
 def get_asset_step(name):
     
     sg = get_sg()
@@ -141,9 +201,24 @@ def get_asset_step(name):
     steps = sg.find_one('Step', filters, fields = ['code','short_name'])
     
     return steps
-    
 
-def get_asset_path(project, sg_asset_type, name, step, publish_path = False):
+
+def get_asset(project_name, sg_asset_type, name):
+    
+    sg = get_sg()
+    if not sg:
+        return
+    
+    filters = []
+    filters.append(['project.Project.name', 'is', project_name])
+    filters.append(['sg_asset_type', 'is', sg_asset_type])
+    filters.append(['code', 'is', name])
+    
+    asset = sg.find_one('Asset', filters)
+    return asset
+    
+    
+def get_asset_path(project, sg_asset_type, name, step, publish_path = False, task = None):
     
     tank = get_project_tank(project)
     
@@ -162,13 +237,15 @@ def get_asset_path(project, sg_asset_type, name, step, publish_path = False):
     
     step_entity = get_asset_step(step)
     
-    
     fields = {}
     fields['sg_asset_type'] = sg_asset_type
     fields['Asset'] = name
     fields['Step'] = step_entity['short_name']
+    if task:
+        fields['Task'] = task
     fields['name'] = name
     fields['version'] = 1
+    
     publish_template =  tank.templates[code]
     
     publish_path = publish_template.apply_fields(fields)
