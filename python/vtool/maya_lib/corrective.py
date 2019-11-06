@@ -1595,8 +1595,34 @@ class PoseBase(PoseGroup):
             
         return blend
     
-
-    
+    def _build_post_deform_delta(self, mesh, corrective):
+        
+        target_mesh = self.get_target_mesh(mesh)
+        blend = self._get_blendshape(target_mesh)
+        
+        cmds.setAttr('%s.envelope' % blend, 0)
+        
+        shapes = core.get_shapes(target_mesh)
+        if not shapes:
+            return
+        else:
+            target_shape = shapes[0]
+        
+        orig = geo.create_shape_from_shape(target_shape, 'home')
+        cmds.setAttr('%s.envelope' % blend, 1)
+        
+        self.set_enable(0)
+        
+        deform.get_blendshape_delta(orig, target_mesh, corrective, replace = True)
+        
+        self.set_enable(1)
+        
+        cmds.delete(orig)
+        
+        
+    def _setup_post_deform(self, target_name, blend_inst):
+        blend_inst.set_post_deformation_mode(target_name, 1)
+        
     #--- pose
     
     def set_pose(self, pose_name):
@@ -2181,9 +2207,6 @@ class PoseBase(PoseGroup):
                 
         self.create_blends_went_to_pose = False
     
-    def _setup_post_deform(self, target_name, blend_inst):
-        blend_inst.set_post_deformation_mode(target_name, 1)
-    
     def create_blend(self, mesh_index, goto_pose = True, sub_poses = True):
         """
         Create the blend. This will refresh the delta.
@@ -2228,11 +2251,11 @@ class PoseBase(PoseGroup):
             offset = deform.chad_extract_shape(target_mesh, mesh)
         else:
             offset = cmds.duplicate(mesh)[0]
+            self._build_post_deform_delta(mesh, offset)
         
         blend.set_weight(nicename, 1)
         
         if blend.is_target(nicename):
-            blend.set_post_deformation_mode(nicename, 0)
             blend.replace_target(nicename, offset)
         
         if not blend.is_target(nicename):
@@ -2242,6 +2265,7 @@ class PoseBase(PoseGroup):
                 
         if not cmds.isConnected('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, nicename)):
             cmds.connectAttr('%s.weight' % self.pose_control, '%s.%s' % (blend.blendshape, nicename))
+        
         
         cmds.delete(offset)
         
@@ -2498,7 +2522,10 @@ class PoseBase(PoseGroup):
             
             if not input_value:
                 cmds.connectAttr('%s.weight' % self.pose_control, attribute)
-
+                
+    def set_enable(self, value):
+        cmds.setAttr('%s.enable' % self.pose_control, value)
+                
 class PoseNoReader(PoseBase):
     """
     This type of pose does not read anything in a rig unless an input is specified.
@@ -3410,7 +3437,39 @@ class PoseCone(PoseBase):
         
     def _setup_post_deform(self, target_name, blend_inst):
         blend_inst.set_post_deformation_mode(target_name, 2)
-        blend_inst.connect_target_matrix(target_name, '%s.parentMatrix' % self.transform)
+        
+        self._attach_blend_transform(target_name, blend_inst)
+        
+    def _attach_blend_transform(self, target_name, blend_inst):
+        
+        parent = self.get_parent()
+        
+        mult_matrix = self._get_named_message_attribute('multMatrix2')
+        
+        if not mult_matrix:
+            mult_matrix = self._create_node('multMatrix', 'identityParentOffset')
+            blend_inst.connect_target_matrix(target_name, '%s.matrixSum' % mult_matrix)
+        
+        inverse_matrix = cmds.getAttr('%s.inverseMatrix' % parent)
+        
+        cmds.setAttr('%s.matrixIn[0]' % mult_matrix, inverse_matrix, type = 'matrix')
+        if not cmds.isConnected('%s.worldMatrix' % parent, '%s.matrixIn[1]' % mult_matrix):
+            cmds.connectAttr('%s.worldMatrix' % parent, '%s.matrixIn[1]' % mult_matrix, f = True)
+        
+    def _update_blend_transform_parent(self):
+        
+        parent = self.get_parent()
+        
+        mult_matrix = self._get_named_message_attribute('multMatrix2')
+        
+        if not mult_matrix:
+            return
+        
+        inverse_matrix = cmds.getAttr('%s.inverseMatrix' % parent)
+        
+        cmds.setAttr('%s.matrixIn[0]' % mult_matrix, inverse_matrix, type = 'matrix')
+        if not cmds.isConnected('%s.worldMatrix' % parent, '%s.matrixIn[1]' % mult_matrix):
+            cmds.connectAttr('%s.worldMatrix' % parent, '%s.matrixIn[1]' % mult_matrix, f = True)
         
     def set_axis(self, axis_name):
         """
@@ -3521,7 +3580,9 @@ class PoseCone(PoseBase):
             
             if parent:
                 cmds.parentConstraint(parent, self.pose_control, mo = True)
-    
+            
+            self._update_blend_transform_parent()
+            
     def rematch_cone_to_joint(self):
         
         constraint = self._get_parent_constraint()
