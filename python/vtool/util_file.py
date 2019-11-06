@@ -37,13 +37,39 @@ def get_permission(filepath):
     
     log.debug('Current Permission: %s' % permission)
     
-    if permission == '775' or permission == '777':
+    permission = int(permission)
+    
+    if permission < 775:
         
-        if permission == '775':
-            try:
-                os.chmod(filepath, 0777)
-            except:
-                pass
+        try:
+            os.chmod(filepath, 0776)
+        except:
+            status = traceback.format_exc()
+            util.error(status)
+        return True
+    
+    if permission > 775:
+        return True
+    
+    try:
+        os.chmod(filepath, 0776)
+        return True
+    except:
+        return False
+
+def get_write_permission(filepath):
+    log.debug('Get Permission: %s' % filepath)
+    
+    permission = None
+    
+    try:
+        permission = oct(os.stat(filepath)[stat.ST_MODE])[-3:]
+    except:
+        pass
+    
+    log.debug('Current Permission: %s' % permission)
+    
+    if permission == '777':
         return True
     
     try:
@@ -2644,8 +2670,11 @@ def copy_file(filepath, filepath_destination):
     """
     
     get_permission(filepath)
+    #uid = os.getuid()
+    #gid = os.getgid()
+    #os.chown(filepath_destination, uid, gid)
     
-    shutil.copy2(filepath, filepath_destination)
+    shutil.copyfile(filepath, filepath_destination)
     
     return filepath_destination
 
@@ -3206,36 +3235,56 @@ def open_website(url):
             webbrowser.open(url, 0)
             
 
-def maya_batch_python_file(python_file_path):
-
-    dirpath = None
-    
+def get_maya_path():
     if util.is_in_maya():
         dirpath = os.environ['MAYA_LOCATION']
+        return dirpath
+    else:
+        util.warning('Could not find Maya.')    
+
+def get_mayapy():
     
-    
+    dirpath = get_maya_path()
     
     if not dirpath:
-        util.warning('Could not find Maya.')
+        return
     
-
     mayapy_file = 'mayapy.exe'
-    shell = False
-    
     
     if util.is_linux():
         mayapy_file = 'mayapy'
-        
-    mayapy_path = '%s/bin/%s' % (dirpath,mayapy_file)
+    
+    mayapy_path = '%s/bin/%s' % (dirpath,mayapy_file)    
+    
+    return mayapy_path
+
+def get_process_batch_file():
+    
+    print 'get batch path!!!!!'
+    
+    filepath = __file__
+    filepath = get_dirname(filepath)
+    
+    batch_python = join_path(filepath, 'process_manager/batch.py')
+    
+    return batch_python
+
+def maya_batch_python_file(python_file_path):
+    
+    mayapy_path = get_mayapy()
+    
+    if not mayapy_path:
+        mayapy_path = 'python'
     
     util.show('Opening Maya Batch in directory: %s' % mayapy_path)
     
     if util.is_linux():
         mayapy_path = 'gnome-terminal -- ' + mayapy_path + ' ' + python_file_path
-        mayapy = subprocess.Popen(mayapy_path, shell = True)
+        subprocess.Popen(mayapy_path, shell = True)
     else:
-        mayapy = subprocess.Popen([mayapy_path, python_file_path], shell = shell)
+        subprocess.Popen([mayapy_path, python_file_path], shell = False)
     
+
 
 def launch_maya(version, script = None):
     """
@@ -3277,4 +3326,31 @@ def run_ffmpeg():
     path = 'X:\\Tools\\ffmpeg\\bin\\ffmpeg.exe'
     
     os.system('start \"ffmpeg\" \"%s\"' % path)
+
+def has_deadline():
+    
+    command = get_deadline_command_from_settings()
+    
+    if command:
+        return True
+    else:
+        return False
+
+def get_deadline_command_from_settings():
+    settings = get_vetala_settings_inst()
+    
+    deadline_path = settings.get('deadline_directory')
+        
+    command = None
+        
+    if util.is_linux():
+        command = join_path(deadline_path, 'deadlinecommand')
+    if util.is_windows():
+        command = join_path(deadline_path, 'deadlinecommand.exe')
+    
+    if exists(command):
+        return command
+    else:
+        util.warning('No Deadline found')
+
     
