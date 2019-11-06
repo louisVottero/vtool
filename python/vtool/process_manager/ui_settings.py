@@ -69,14 +69,18 @@ class SettingsWidget(qt_ui.BasicWidget):
         self.code_tab_group.code_text_size_changed.connect(self.code_text_size_changed)
         
         self.shotgun_group = ShotgunGroup()
+        self.deadline_group = DeadlineGroup()
         
         self.options_widget.main_layout.addWidget(self.process_group)        
         self.options_widget.main_layout.addWidget(self.code_tab_group)
         self.options_widget.main_layout.addWidget(self.shotgun_group)
+        self.options_widget.main_layout.addWidget(self.deadline_group)
         
         self.process_group.collapse_group()
         self.shotgun_group.collapse_group()
+        self.deadline_group.collapse_group()
         self.code_tab_group.collapse_group()
+        
         
         scroll.setWidget(self.options_widget)
         
@@ -128,6 +132,7 @@ class SettingsWidget(qt_ui.BasicWidget):
         
         self.process_group.set_settings(settings)
         self.shotgun_group.set_settings(settings)
+        self.deadline_group.set_settings(settings)
         self.code_tab_group.set_settings(settings)
         
     def set_template_settings(self, settings):
@@ -195,7 +200,6 @@ class ProcessGroup(qt_ui.Group):
     def _get_backup_directory(self):
         backup = self.settings.get('backup_directory')
         self.backup_directory.set_directory(backup)
-        
         
     def _get_stop_on_error(self):
         value = self.settings.get('stop_on_error')
@@ -436,7 +440,82 @@ class ShotgunGroup(qt_ui.Group):
         
         self._get_shotgun_asset_publish_code()
         self._get_shotgun_asset_work_code()
+
+class DeadlineGroup(qt_ui.Group):
+    
+    def __init__(self):
+        super(DeadlineGroup, self).__init__('Deadline Settings')
+    
+    def _build_widgets(self):
+        super(DeadlineGroup,self)._build_widgets()
         
+        self.deadline_directory = qt_ui.GetDirectoryWidget()
+        self.deadline_directory.set_label('Deadline Command Directory')
+        self.deadline_directory.directory_changed.connect(self._set_deadline_directory)
+        self.deadline_directory.set_show_files(True)
+        
+        if util.is_linux():
+            self.deadline_directory.set_example('/opt/Thinkbox/Deadline7/bin')
+        else:
+            self.deadline_directory.set_example('/Thinkbox/Deadline7/bin')
+            
+        self.get_deadline_pool = qt_ui.GetString('Pool')
+        self.get_deadline_group = qt_ui.GetString('Group')
+        self.get_deadline_department = qt_ui.GetString('Department')
+        
+        self.get_deadline_pool.text_changed.connect(self._set_deadline_pool)
+        self.get_deadline_group.text_changed.connect(self._set_deadline_group)
+        self.get_deadline_department.text_changed.connect(self._set_deadline_department)
+        
+        self.main_layout.addWidget(self.deadline_directory)
+        self.main_layout.addWidget(self.get_deadline_pool)
+        self.main_layout.addWidget(self.get_deadline_group)
+        self.main_layout.addWidget(self.get_deadline_department)
+        
+    def _set_deadline_directory(self, directory):
+        
+        self.settings.set('deadline_directory', directory)
+        
+        if not util_file.has_deadline():
+            self.deadline_directory.set_error(True)
+        
+    def _set_deadline_pool(self):
+        self.settings.set('deadline_pool', str(self.get_deadline_pool.get_text()))
+    
+    def _set_deadline_group(self):
+        self.settings.set('deadline_group', str(self.get_deadline_group.get_text()))
+    
+    def _set_deadline_department(self):
+        self.settings.set('deadline_department', str(self.get_deadline_department.get_text()))
+        
+    def _get_deadline_directory(self):
+        path = self.settings.get('deadline_directory')
+        self.deadline_directory.set_directory(path)
+        
+    def _get_deadline_pool(self):
+        value = self.settings.get('deadline_pool')
+        if value:
+            self.get_deadline_pool.set_text(value)
+    
+    def _get_deadline_group(self):
+        value = self.settings.get('deadline_group')
+        if value:
+            self.get_deadline_group.set_text(value)
+    
+    def _get_deadline_department(self):
+        value = self.settings.get('deadline_department')
+        if value:
+            self.get_deadline_department.set_text(value)
+    
+    def set_settings(self, settings):
+        
+        self.settings = settings
+        self._get_deadline_directory()
+        self._get_deadline_pool()
+        self._get_deadline_group()
+        self._get_deadline_department()
+        
+
 class ExternalEditorWidget(qt_ui.GetDirectoryWidget):
     
     def __init__(self, parent = None):
