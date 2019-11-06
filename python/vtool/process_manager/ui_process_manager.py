@@ -233,6 +233,12 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.batch_button.setMinimumHeight(30)
         self.batch_button.setMinimumWidth(70)
         
+        self.deadline_button = qt.QPushButton('DEADLINE')
+        self.deadline_button.setDisabled(True)
+        self.deadline_button.setMinimumHeight(30)
+        self.deadline_button.setMinimumWidth(70)
+        self.deadline_button.setHidden(True)
+        
         self.stop_button = qt.QPushButton('STOP (Hold Esc)')
         self.stop_button.setMaximumWidth(110)
         self.stop_button.setMinimumHeight(30)
@@ -263,7 +269,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         right_button_layout.setAlignment(qt.QtCore.Qt.AlignLeft)
         
+        
+        
         right_button_layout.addWidget(self.batch_button)
+        right_button_layout.addWidget(self.deadline_button)
         right_button_layout.addSpacing(5)
         right_button_layout.addWidget(self.browser_button)
         right_button_layout.addWidget(help_button)
@@ -286,6 +295,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         self.browser_button.clicked.connect(self._browser)
         self.process_button.clicked.connect(self._process)
         self.batch_button.clicked.connect(self._batch)
+        self.deadline_button.clicked.connect(self._deadline)
         help_button.clicked.connect(self._open_help)
         self.stop_button.clicked.connect(self._set_kill_process)
         self.continue_button.clicked.connect(self._continue)
@@ -477,6 +487,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.process_button.setEnabled(True)
             self.batch_button.setEnabled(True)
+            if util_file.has_deadline():
+                self.deadline_button.setVisible(True)
+                self.deadline_button.setEnabled(True)
         
         if not name:
             
@@ -487,6 +500,9 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.process_button.setDisabled(True)
             self.batch_button.setDisabled(True)
+            if util_file.has_deadline():
+                self.deadline_button.setVisible(True)
+                self.deadline_button.setDisabled(True)
         
         self._clear_code()
             
@@ -902,6 +918,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.process_button.hide()
             self.batch_button.hide()
+            self.deadline_button.hide()
             
             self.last_tab = 0
              
@@ -911,6 +928,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
             
             self.process_button.show()
             self.batch_button.show()
+            if util_file.has_deadline():
+                self.deadline_button.show()
             
         if self.tab_widget.currentIndex() == 1:
                 
@@ -1399,13 +1418,14 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _batch(self):
         
-        filepath = __file__
-        filepath = util_file.get_dirname(filepath)
+        self.process.run_batch()
+        
+    def _deadline(self):
+        
+        self.process.run_deadline()
+        
+        
     
-        batch_python = util_file.join_path(filepath, 'batch.py')
-        
-        util_file.maya_batch_python_file(batch_python)        
-        
     def _browser(self):
         
         if self.tab_widget.currentIndex() == 0:
