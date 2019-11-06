@@ -549,7 +549,9 @@ class BlendShape(object):
                 
                 if not leave_connected:
                     cmds.disconnectAttr('%s.outMesh' % mesh, mesh_input)
-                
+            else:
+                if not leave_connected:
+                    cmds.disconnectAttr('%s.outMesh' % mesh, mesh_input)
                 
         if not self.is_target(name):
             vtool.util.show('Could not replace target %s, it does not exist' % name)
