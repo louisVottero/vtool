@@ -1210,6 +1210,12 @@ def print_warning(string_value):
     OpenMaya.MGlobal.displayWarning('V:\t\t' + string_value)
     vtool.util.record_temp_log('\nWarning!:  %s' % string_value)
 
+def print_error(string_value):
+
+    string_value = string_value.replace('\n', '\nV:\t\t')
+    OpenMaya.MGlobal.displayError('V:\t\t' + string_value)
+    vtool.util.record_temp_log('\nError!:  %s' % string_value)
+
 def add_to_set(nodes, set_name):
     
     nodes = vtool.util.convert_to_sequence(nodes)
@@ -1260,11 +1266,7 @@ def save(filepath):
     
     vtool.util.show('Saving:  %s' % filepath)
     
-    
-    
     file_type = 'mayaAscii'
-    
-    
     
     if filepath:
     
@@ -1272,6 +1274,7 @@ def save(filepath):
             file_type = 'mayaBinary'
         
         try:
+            
             cmds.file(rename = filepath)
             cmds.file(save = True, type = file_type)
             
@@ -1288,15 +1291,19 @@ def save(filepath):
     #    vtool.util.show('Scene Saved')
     
     if not saved:
-            
-        if not is_batch():
-            cmds.confirmDialog(message = 'Warning:\n\n Maya was unable to save!', button = 'Confirm')
         
-        vtool.util.warning('Scene not saved.  Filepath:  %s' % filepath)
+        if not is_batch():
+            cmds.confirmDialog(message = 'Warning:\n\n Vetala was unable to save!', button = 'Confirm')
+        
+        print_error('Scene not saved.  Filepath:  %s' % filepath)
         
         if filepath:
-            
             vtool.util.show('This is a Maya save bug, not necessarily an issue with Vetala.  Try saving "Save As" to the filepath with Maya and you should get a similar error.')
+        
+        permission = vtool.util_file.get_write_permission(filepath)
+        if not permission:
+            print_error('Could not get write permission.')
+        
         return False
     
     return saved
