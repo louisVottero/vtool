@@ -241,9 +241,7 @@ class DirectoryWidget(BasicWidget):
         
         self.last_directory = self.directory
         self.directory = directory
-     
     
-       
 class TreeWidget(qt.QTreeWidget):
     
     def __init__(self):
@@ -2328,6 +2326,7 @@ class GetDirectoryWidget(DirectoryWidget):
         super(GetDirectoryWidget, self).__init__(parent)
         
         self.label = 'directory'
+        self._show_files = False
     
     def _define_main_layout(self):
         return qt.QHBoxLayout()
@@ -2340,6 +2339,7 @@ class GetDirectoryWidget(DirectoryWidget):
         
         self.directory_edit = qt.QLineEdit()
         self.directory_edit.textChanged.connect(self._text_changed)
+        
         directory_browse = qt.QPushButton('browse')
         self.directory_browse_button = directory_browse
         
@@ -2351,7 +2351,16 @@ class GetDirectoryWidget(DirectoryWidget):
         
     def _browser(self):
         
-        filename = get_folder(self.get_directory() , self)
+        directory = self.get_directory()
+        
+        if not directory:
+            place_holder = self.directory_edit.placeholderText()
+            if place_holder and place_holder.startswith('example: '):
+                example_path = place_holder[9:]
+                if util_file.exists(example_path):
+                    directory = example_path
+        
+        filename = get_folder(directory , self, self._show_files)
         
         filename = util_file.fix_slashes(filename)
         
@@ -2363,14 +2372,10 @@ class GetDirectoryWidget(DirectoryWidget):
         
         directory = self.get_directory()
         
-        palette = qt.QPalette()
-        
         if util_file.exists(directory):
-            palette.setColor(qt.QPalette().Base, yes_color )
-            self.directory_edit.setPalette( palette )
+            self.set_error(False)
         else:
-            palette.setColor(qt.QPalette().Base, no_color )
-            self.directory_edit.setPalette( palette )
+            self.set_error(True)
             
         if not text:
             self.directory_edit.setPalette( qt.QLineEdit().palette() )
@@ -2378,6 +2383,8 @@ class GetDirectoryWidget(DirectoryWidget):
         self.directory_changed.emit(directory)
         
     def set_label(self, label):
+        length = len(label) * 8
+        self.directory_label.setMinimumWidth(length)
         self.directory_label.setText(label)
         
     def set_directory(self, directory):
@@ -2388,6 +2395,26 @@ class GetDirectoryWidget(DirectoryWidget):
     def set_directory_text(self, text):
         
         self.directory_edit.setText(text)
+        
+    def set_place_holder(self, text):
+        self.directory_edit.setPlaceholderText(text)
+        
+    def set_example(self, text):
+        
+        self.directory_edit.setPlaceholderText('example: ' + text)
+        
+    def set_show_files(self, bool_value):
+        self._show_files = bool_value
+        
+    def set_error(self, bool_value):
+        palette = qt.QPalette()
+        
+        if not bool_value:
+            palette.setColor(qt.QPalette().Base, yes_color )
+            self.directory_edit.setPalette( palette )
+        else:
+            palette.setColor(qt.QPalette().Base, no_color )
+            self.directory_edit.setPalette( palette )
         
     def get_directory(self):
         return self.directory_edit.text()
@@ -6564,11 +6591,15 @@ def get_file(directory, parent = None):
         return directory
     
     
-def get_folder(directory, parent = None):
+def get_folder(directory, parent = None, show_files = False):
     fileDialog = qt.QFileDialog(parent)
     
+    if show_files:
+        fileDialog.setFileMode(qt.QFileDialog.DirectoryOnly)
+        fileDialog.setOption(qt.QFileDialog.ShowDirsOnly, False)
+    
     if directory:
-        fileDialog.setDirectory(directory)
+        fileDialog.setDirectory( directory )
     
     directory = fileDialog.getExistingDirectory()
     
