@@ -4,6 +4,7 @@ import os
 import sys
 import traceback
 import string
+import subprocess
 import __builtin__
 
 from vtool import util
@@ -2095,9 +2096,7 @@ class Process(object):
             
         self.set_manifest(synced_scripts, synced_states)
                         
-    #--- run
-    
-
+    #--- creation
         
     def add_part(self, name):
         """
@@ -2168,6 +2167,8 @@ class Process(object):
             return True
             
         return False
+    
+    #--- run
     
     def run_script(self, script, hard_error = True, settings = None):
         """
@@ -2489,7 +2490,8 @@ class Process(object):
         
         minutes, seconds = watch.stop()
         
-        progress_bar.end()
+        if progress_bar:
+            progress_bar.end()
         
         if scripts_that_error:
             
@@ -2560,6 +2562,58 @@ class Process(object):
     
     def set_runtime_dict(self, dict_value):
         self.runtime_values = dict_value
+ 
+    def run_batch(self):
+        process_path = self.get_path()
+        
+        util.set_env('VETALA_CURRENT_PROCESS', process_path)
+        
+        batch_path = util_file.get_process_batch_file()
+        
+        util_file.maya_batch_python_file(batch_path)
+ 
+    def run_deadline(self):
+        
+        deadline_command = util_file.get_deadline_command_from_settings()
+        mayapy = util_file.get_mayapy()
+        if not mayapy:
+            mayapy = 'python'
+        batch_file = util_file.get_process_batch_file()
+        
+        if not deadline_command:
+            return
+        
+        settings = util_file.get_vetala_settings_inst()
+        pool = settings.get('deadline_pool')
+        group = settings.get('deadline_group')
+        department = settings.get('deadline_department')
+        
+        #vetala_path = util.get_env('VETALA_PATH')
+        vetala_process = util.get_env('VETALA_CURRENT_PROCESS')
+        
+        command = []
+        
+        command.append(deadline_command)
+        command.append('-SubmitCommandLineJob')
+        command.append('-executable %s' % mayapy)
+        command.append('-arguments %s' % batch_file)
+        command.append('-chunksize 1')
+        if pool:
+            command.append('-pool ' + pool)
+        if group:
+            command.append('-group ' + group)
+        command.append('-priority 100')
+        command.append('-name "Vetala Process: %s"' % vetala_process)
+        if department:
+            command.append('-department ' + department)
+        
+        #command.append('-prop EnvironmentKeyValue0=VETALA_PATH=%s' % vetala_path)
+        command.append('-prop IncludeEnvironment=true')
+        #command.append('-prop PreJobScript=%s' % batch_file)
+        
+        command = string.join(command)
+        subprocess.Popen(command, shell = True)
+        
  
 def get_default_directory():
     """
@@ -3069,3 +3123,5 @@ def backup_process(process_path = None, comment = 'Backup', backup_directory = N
     log.debug('Final backup path: %s' % backup_directory)
     
     process_inst.backup(comment, backup_directory)
+    
+
