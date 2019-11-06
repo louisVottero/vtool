@@ -6307,7 +6307,6 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
             offset = mel.eval('invertShape %s %s' % (skin_mesh, corrective))
         
         orig = get_intermediate_object(skin_mesh)
-        
         orig = geo.create_shape_from_shape(orig, 'home')
         
         envelopes.turn_on(respect_initial_state=True)
@@ -6351,8 +6350,6 @@ def chad_extract_shape(skin_mesh, corrective, replace = False):
         
     except (RuntimeError):
         vtool.util.error( traceback.format_exc() )
-
-
 
 def get_blendshape_delta(orig_mesh, source_meshes, corrective_mesh, replace = True):
     """
