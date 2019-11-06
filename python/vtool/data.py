@@ -2986,8 +2986,6 @@ class MayaFileData(MayaCustomData):
             return
         
         filepath = self.get_file()
-                
-        util_file.get_permission(filepath)
         
         self._handle_unknowns()
         
@@ -2997,21 +2995,36 @@ class MayaFileData(MayaCustomData):
         
         self._prep_scene_for_export()
                 
-        cmds.file(exportSelected = True, 
-                  prompt = False, 
-                  force = True, 
-                  pr = True, 
-                  ch = True, 
-                  chn = True, 
-                  exp = True, 
-                  con = True, 
-                  stx = 'always', 
-                  type = self.maya_file_type)
+        try:
+            cmds.file(exportSelected = True, 
+                      prompt = False, 
+                      force = True, 
+                      pr = True, 
+                      ch = True, 
+                      chn = True, 
+                      exp = True, 
+                      con = True, 
+                      stx = 'always', 
+                      type = self.maya_file_type)
+        except:
+            
+            status = traceback.format_exc()
+            util.error(status)
+            
+            if not maya_lib.core.is_batch():
+                cmds.confirmDialog(message = 'Warning:\n\n Vetala was unable to export!', button = 'Confirm')
+                
+            permission = util_file.get_write_permission(filepath)
+            
+            if not permission:
+                maya_lib.core.print_error('Could not get write permission.')
+            return False
         
         version = util_file.VersionFile(filepath)
         version.save(comment)
         
         maya_lib.core.print_help('Exported %s data.' % self.name)
+        return True
 
     def maya_reference_data(self, filepath = None):
         
