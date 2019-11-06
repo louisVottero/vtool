@@ -59,6 +59,7 @@ def create_mesh_from_mesh(mesh, target_transform):
         mesh (str): The name of a mesh.
         target_transform (str): The transform where the newly created mesh should live.
     """
+    
     mesh_fn = OpenMaya.MFnMesh()
     shape = nodename_to_mobject(mesh)
 

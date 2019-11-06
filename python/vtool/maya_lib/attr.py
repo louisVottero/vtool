@@ -2725,6 +2725,7 @@ def connect_scale(source_transform, target_transform):
         source_transform (str): The name of a transform.
         target_transform (str): The name of a transform.
     """
+    
     connect_vector_attribute(source_transform, target_transform, 'scale')
 
 def connect_translate_into_pivots(source_transform, target_transform):

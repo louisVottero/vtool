@@ -8,7 +8,17 @@ import traceback
 def main():
     
     
+    
     print '\n\n\n\n\n------- VETALA BATCH ---------------------------------------------------------------------------------------------------------------------\n\n'
+    
+    try:
+        import maya.standalone
+        maya.standalone.initialize( name='python' )
+    except:
+        status = traceback.format_exc()
+        print status
+        
+        print '\n\nMaya standalone failed'
     
     source_path = os.environ['VETALA_PATH']
     source_path = os.path.dirname(source_path)
@@ -39,14 +49,11 @@ def main():
                 vtool.util.show('Adding code path: %s' % code)
                 sys.path.append(code)
     
-    if vtool.util.is_in_maya():
-        import maya.standalone
-        maya.standalone.initialize( name='python' )
     
-    print 'Using Maya %s\n\n' % vtool.util.get_maya_version()
+
 
     if vtool.util.is_in_maya():
-        
+        print 'Using Maya %s\n\n' % vtool.util.get_maya_version()
         if vtool.util.get_maya_version() >= 2017:
             import maya.cmds as cmds
             try:
@@ -54,31 +61,30 @@ def main():
             except:
                 pass
         
-        if process_path:
+    if process_path:
+        
+        from vtool.process_manager import process
+        process_inst = process.Process()
+        
+        process_inst.set_directory(process_path)
+        try:
+            process_inst.run()
+        except:
+            vtool.util.error( traceback.format_exc() )
+        
+        
+        
+        vtool.util.show('Batch finished.\n\n')
+        
+        comment = 'Batch build'
+        saved = process_inst.save_data('build', comment)
+        
+        if not saved:
+            vtool.util.show('Unable to save contents!!')
             
-            from vtool.process_manager import process
-            process_inst = process.Process()
-            
-            process_inst.set_directory(process_path)
-            try:
-                process_inst.run()
-            except:
-                vtool.util.error( traceback.format_exc() )
-            
-            comment = None
-            
-            vtool.util.show('Batch finished.\n\n')
-            
-            
-            
-            saved = process_inst.save_data('build', comment)
-            
-            if not saved:
-                vtool.util.show('Unable to save contents!!')
-                
-        else:
-            vtool.util.show('Could not get current process.  Batch finished, nothing processed.')
-    
+    else:
+        vtool.util.show('Could not get current process.  Batch finished, nothing processed.')
+
     vtool.util.show('\n\nAll done, please close console.')
     
     while True:
