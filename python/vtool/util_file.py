@@ -35,6 +35,9 @@ def get_permission(filepath):
     except:
         pass
     
+    if not permission:
+        return False
+    
     log.debug('Current Permission: %s' % permission)
     
     permission = int(permission)
@@ -2674,7 +2677,13 @@ def copy_file(filepath, filepath_destination):
     #gid = os.getgid()
     #os.chown(filepath_destination, uid, gid)
     
-    shutil.copyfile(filepath, filepath_destination)
+    if is_file(filepath):
+        
+        if is_dir(filepath_destination):
+            filename = get_basename(filepath)
+            filepath_destination = join_path(filepath_destination, filename)
+        
+        shutil.copyfile(filepath, filepath_destination)
     
     return filepath_destination
 
@@ -3259,8 +3268,6 @@ def get_mayapy():
     return mayapy_path
 
 def get_process_batch_file():
-    
-    print 'get batch path!!!!!'
     
     filepath = __file__
     filepath = get_dirname(filepath)

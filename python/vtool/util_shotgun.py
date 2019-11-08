@@ -147,19 +147,14 @@ def get_asset_steps():
     return steps
 
 def get_asset_tasks(project_name, asset_step,asset_type,asset_name):
-    print 'get tasks'
+    
     sg = get_sg()
     if not sg:
         return
     
     filters = []
     
-    print project_name, asset_name, asset_step, asset_type
-    
     asset = get_asset(project_name, asset_type,asset_name)
-    
-    print asset
-    
     
     filters.append(['entity', 'is', asset])
     filters.append(['step.Step.code', 'is', asset_step])
@@ -182,8 +177,6 @@ def get_asset_tasks(project_name, asset_step,asset_type,asset_name):
     """
     
     tasks = sg.find('Task', filters, fields = ['content'])
-    
-    print 'found tasks', tasks
     
     return tasks
 
