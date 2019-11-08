@@ -2940,13 +2940,12 @@ class MayaFileData(MayaCustomData):
         util.set_env('VETALA_SAVE_COMMENT', comment)
         
         filepath = self.get_file()
-        util_file.get_permission(filepath)
+        if util_file.exists(filepath):
+            util_file.get_permission(filepath)
         
         self._handle_unknowns()
         
         self._clean_scene()
-        
-        
         
         #not sure if this ever gets used?...
         if not filepath.endswith('.mb') and not filepath.endswith('.ma'):
