@@ -3542,6 +3542,17 @@ class ZipWire2(object):
         self._top_weight_joint = None
         self._btm_weight_joint = None
         
+        self._top_falloff = 1000
+        self._btm_falloff = 1000
+        
+        self._expose_top_falloff = False
+        self._wire_top_falloff_min = 0
+        self._wire_top_falloff_max = 1000
+        
+        self._expose_btm_falloff = False
+        self._wire_btm_falloff_min = 0
+        self._wire_btm_falloff_max = 1000
+        
         self.deformers = []
         
     def _build_middle_curve(self):
@@ -3591,62 +3602,84 @@ class ZipWire2(object):
         
         return node_and_attr 
     
-    def _setup_zip(self, deform_curve, part):
+    
+            
+    
+    def _setup_zip(self, top_deform_curve, btm_deform_curve):
         
         for side in 'LR':
             
-            node_and_attr = self._create_zip_attribute(part, side)
+            top_node_and_attr = self._create_zip_attribute('top', side)
+            btm_node_and_attr = self._create_zip_attribute('btm', side)
             
-            blendshape = find_deformer_by_type(deform_curve, 'blendShape')
-            
-            cvs = cmds.ls('%s.cv[*]' % deform_curve, flatten = True)
-            count = len(cvs)
-            
-            time_offset = 1.0/(count) 
-            if side == 'L':
-                time_accum = 0
-            if side == 'R':
-                time_accum = 1-time_offset
-            
-            for inc in range(0, count):
+            for part in ['top', 'btm']:
                 
-                target_attr = '%s.inputTarget[0].inputTargetGroup[0].targetWeights[%s]' % (blendshape,inc)
+                if part == 'top':
+                    deform_curve = top_deform_curve
+                if part == 'btm':
+                    deform_curve = btm_deform_curve
                 
-                input_node = attr.get_attribute_input(target_attr, node_only = True)
-                plus_node = None
+                blendshape = find_deformer_by_type(deform_curve, 'blendShape')
                 
-                if cmds.nodeType(input_node) == 'clamp':
-                    input_node = attr.get_attribute_input('%s.inputR' % input_node, node_only = True)
-                    if cmds.nodeType(input_node) == 'plusMinusAverage':
-                        plus_node = input_node
-                     
-                else:
-                    plus_node = cmds.createNode('plusMinusAverage', n = '%sPlus_%s_%s_%s' % (self.description, part, inc+1, side))
-                    
-                    zip_clamp = cmds.createNode('clamp',n = '%sClamp_%s_%s_%s' % (self.description, part, inc+1, side))
-                    cmds.setAttr('%s.maxR' % zip_clamp, 1)
-                    
-                    cmds.connectAttr('%s.output1D' % plus_node, '%s.inputR' % zip_clamp)
-                    cmds.connectAttr('%s.outputR' % zip_clamp, target_attr)
+                cvs = cmds.ls('%s.cv[*]' % deform_curve, flatten = True)
+                count = len(cvs)
                 
-                slot = attr.get_available_slot('%s.input1D' % plus_node)
-                
-                target_attr = '%s.input1D[%s]' % (plus_node, slot)
-                
-                fade_time = util_math.easeInSine(time_accum+time_offset)
-                
-                log.debug( side, '   ', inc, part, '   ----  ', time_accum, fade_time )
-                
-                anim.quick_driven_key(node_and_attr, target_attr, [time_accum,(fade_time)], [0,1], tangent_type = 'linear')
-                
+                time_offset = 1.0/(count) 
                 if side == 'L':
-                    time_accum += time_offset
+                    time_accum = 0
                 if side == 'R':
-                    time_accum -= time_offset
-        
+                    time_accum = 1-time_offset
+                
+                for inc in range(0, count):
+                    
+                    target_attr = '%s.inputTarget[0].inputTargetGroup[0].targetWeights[%s]' % (blendshape,inc)
+                    
+                    input_node = attr.get_attribute_input(target_attr, node_only = True)
+                    plus_node = None
+                    
+                    if cmds.nodeType(input_node) == 'clamp':
+                        input_node = attr.get_attribute_input('%s.inputR' % input_node, node_only = True)
+                        if cmds.nodeType(input_node) == 'plusMinusAverage':
+                            plus_node = input_node
+                         
+                    else:
+                        plus_node = cmds.createNode('plusMinusAverage', n = '%sPlus_%s_%s_%s' % (self.description, part, inc+1, side))
+                        
+                        zip_clamp = cmds.createNode('clamp',n = '%sClamp_%s_%s_%s' % (self.description, part, inc+1, side))
+                        cmds.setAttr('%s.maxR' % zip_clamp, 1)
+                        
+                        cmds.connectAttr('%s.output1D' % plus_node, '%s.inputR' % zip_clamp)
+                        cmds.connectAttr('%s.outputR' % zip_clamp, target_attr)
+                    
+                    slot = attr.get_available_slot('%s.input1D' % plus_node)
+                    
+                    target_attr = '%s.input1D[%s]' % (plus_node, slot)
+                    
+                    fade_time = util_math.easeInSine(time_accum+time_offset)
+                    
+                    log.debug( side, '   ', inc, part, '   ----  ', time_accum, fade_time )
+                    
+                    node_and_attr = top_node_and_attr
+                    if part == 'btm':
+                        node_and_attr = btm_node_and_attr
+                    
+                    anim.quick_driven_key(node_and_attr, target_attr, [time_accum,(fade_time)], [0,1], tangent_type = 'linear')
+                    
+                    if side == 'L':
+                        time_accum += time_offset
+                    if side == 'R':
+                        time_accum -= time_offset
+            
     def _deform_zip(self, deform_curve, part):
         
-        wire, base = wire_mesh(deform_curve, self._mesh, 1000)
+        falloff = 1000
+        
+        if part == 'top':
+            falloff = self._top_falloff
+        if part == 'btm':
+            falloff = self._btm_falloff
+            
+        wire, base = wire_mesh(deform_curve, self._mesh, falloff)
         
         wire_set = wire + 'Set'
         
@@ -3654,13 +3687,42 @@ class ZipWire2(object):
         cmds.rename(wire_set, '%s_Wire%sSet' % (self.description, part.capitalize()))
         base = cmds.rename(base, '%s_Base%s' % (self.description, part.capitalize()))
         
+        expose = False
         if part == 'top':
+            if self._expose_top_falloff:
+                expose = True
+                min_value = self._wire_top_falloff_min
+                max_value = self._wire_top_falloff_max
+                default = self._top_falloff
+                if default > max_value:
+                    default = max_value
+            
             quick_blendshape(self._top_curve, base)
             influence = self._top_weight_joint
             
         if part == 'btm':
+            if self._expose_btm_falloff:
+                expose = True
+                min_value = self._wire_btm_falloff_min
+                max_value = self._wire_btm_falloff_max
+                default = self._btm_falloff
+                if default > max_value:
+                    default = max_value
+        
             quick_blendshape(self._btm_curve, base)
             influence = self._btm_weight_joint
+        
+        if expose:
+            
+            attribute_name ='%s%sFalloff' % (self.description, part.capitalize())
+            node_and_attr = '%s.%s' % (self._attribute_node, attribute_name)
+            
+            cmds.addAttr(self._attribute_node, ln = attribute_name, 
+                             min = min_value, 
+                             max = max_value, 
+                             k = True, 
+                             dv = default)
+            cmds.connectAttr(node_and_attr, '%s.dropoffDistance[0]' % wire)
         
         if self._weight_mesh:
             set_wire_weights_from_skin_influence(wire, self._weight_mesh, influence, auto_prune = True)
@@ -3677,6 +3739,20 @@ class ZipWire2(object):
         self._top_weight_joint = top_joint
         self._btm_weight_joint = btm_joint
     
+    def set_wire_falloff(self, top_value, btm_value):
+        self._top_falloff = top_value
+        self._btm_falloff = btm_value
+        
+    def set_expose_top_wire_falloff(self, default_value = 1, max_value = 1):
+        self._expose_top_falloff = True
+        self._wire_top_falloff_max = max_value
+        self._top_falloff = default_value
+    
+    def set_expose_btm_wire_falloff(self, default_value = 1, max_value = 1):
+        self._expose_btm_falloff = True
+        self._wire_btm_falloff_max = max_value
+        self._btm_falloff = default_value 
+    
     def create(self):
         
         if not self._attribute_node:
@@ -3690,11 +3766,12 @@ class ZipWire2(object):
         
         self._build_deform_curves()
         
-        self._setup_zip(self._top_deform_curve, 'top')
-        self._setup_zip(self._btm_deform_curve, 'btm')
+        self._setup_zip(self._top_deform_curve, self._btm_deform_curve)
         
         self._deform_zip(self._top_deform_curve, 'top')
         self._deform_zip(self._btm_deform_curve, 'btm')
+        
+        
         
         cmds.hide(self.setup_group)
         
