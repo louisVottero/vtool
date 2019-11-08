@@ -925,52 +925,52 @@ def expand_selected_edge_loop():
     
     
 
-def expand_edge_loop(mesh, edge_id, times = 1):
+def expand_edge_loop(mesh, edge_id):
     
-    good_edges = []
+    iter_edges = api.IterateEdges(mesh)
     
-    edges = vtool.util.convert_to_sequence(edge_id)
+    connected_faces = iter_edges.get_connected_faces(edge_id)
+    connected_edges = iter_edges.get_connected_edges(edge_id)
     
-    if len(edges) > 1:
-        good_edges = edges
+    face_edges = []
     
-    for _ in range(0, times):
-        if good_edges:
-            
-            accumulated_edges = []
-            
-            for edge in good_edges:
-                
-                sub_good_edges = expand_edge_loop(mesh, edge)
-                
-                accumulated_edges += sub_good_edges
-                
-            good_edges += accumulated_edges
-                
-        else:
-            iter_edges = api.IterateEdges(mesh)
-            
-            connected_faces = iter_edges.get_connected_faces(edge_id)
-            connected_edges = iter_edges.get_connected_edges(edge_id)
-            
-            face_edges = []
-            
-            for face_id in connected_faces:
-                
-                iter_faces = api.IteratePolygonFaces(mesh)
-                face_edges += iter_faces.get_edges(face_id)
-                
-            edge_set = set(connected_edges)
-            face_edge_set = set(face_edges)
-            
-            good_edges = edge_set.difference(face_edge_set)
-            
-            good_edges = list(good_edges)
+    for face_id in connected_faces:
+        
+        iter_faces = api.IteratePolygonFaces(mesh)
+        face_edges += iter_faces.get_edges(face_id)
+        
+    edge_set = set(connected_edges)
+    face_edge_set = set(face_edges)
     
-    filter_dict = {el:0 for el in good_edges}
-    good_edges = filter_dict.keys()
-    good_edges.sort()
+    good_edges = edge_set.difference(face_edge_set)
+    
+    good_edges = list(good_edges)
+    
     return good_edges
+
+
+def multi_expand_loop(mesh, edges, expand_loops):
+    
+    edges = vtool.util.convert_to_sequence(edges)
+    
+    for _ in range(0, expand_loops):
+        
+        found_edges = []
+        
+        for edge_id in edges:
+            
+            new_edges = expand_edge_loop(mesh, edge_id)
+            
+            if new_edges:
+                found_edges += new_edges
+        
+        edges += found_edges
+        
+        filter_dict = {el:0 for el in edges}
+        edges = filter_dict.keys()
+    
+    return edges
+        
 
 def edges_to_curve(edges, description = None):
     """
