@@ -922,6 +922,31 @@ class OrientJoint(object):
         
         self._get_relatives()
         
+    def _unparent(self):
+        if not self.children:
+            self.children = cmds.listRelatives(self.joint, f = True, type = 'transform')
+            
+        if self.children:
+            self.children = cmds.parent(self.children, w = True)
+        """
+        self.parent_children = cmds.listRelatives(self.parent, f = True, type = 'transform')
+        self.parent_children = cmds.parent(self.parent_children, w = True)
+        
+        for child in self.parent_children:
+            
+            test_parent = core.get_basename(child, remove_namespace = False, remove_attribute = False)
+            test_joint = core.get_basename(self.joint, remove_namespace = False, remove_attribute = False)
+            
+            if test_parent == test_joint:
+                self.joint = child
+        """
+        
+    def _parent(self):
+        
+        if self.children:
+            cmds.parent(self.children, self.joint)
+        
+        
     def _update_locator_scale(self, locator):
         
         if cmds.objExists('%s.localScale' % locator):
@@ -1181,11 +1206,11 @@ class OrientJoint(object):
         if scale:
             if is_rotate_scale_default(self.joint):
                 return
-            
+        
         if not scale:
             if is_rotate_default(self.joint):
                 return
-        
+        """
         if not self.children:
             self.children = cmds.listRelatives(self.joint, f = True, type = 'transform')
             
@@ -1193,21 +1218,27 @@ class OrientJoint(object):
             
         if self.children:
             children = cmds.parent(self.children, w = True)
-                
+        """
         try:
             cmds.makeIdentity(self.joint, apply = True, r = True, s = scale)
         except:
+            vtool.util.warning('Could not freeze %s when trying to orient.' % self.joint)
             pass
-        
+        """
         if children:
             cmds.parent(children, self.joint)
-    
+        """
     def _invert_scale(self):
+        
         invert_scale = self.orient_values['invertScale']
         
         if invert_scale == 0:
             return
-            
+        
+        if self.children:
+            vtool.util.warning('Orient Joints inverted scale only permitted on joints with no children. Skipping scale change on %s' % core.get_basename(self.joint))
+            return
+        
         if invert_scale == 1:
             cmds.setAttr('%s.scaleX' % self.joint, -1)
             return
@@ -1306,9 +1337,12 @@ class OrientJoint(object):
         
     def run(self):
         
-        self._freeze()        
         self._get_relatives()
-        self._pin()
+        self._unparent()
+        
+        self._freeze(scale = True)        
+        
+        #self._pin()
         
         vtool.util.show('Orienting %s' % core.get_basename(self.joint))
         
@@ -1348,7 +1382,7 @@ class OrientJoint(object):
         
         self._freeze(scale = False)
         
-        
+        self._parent()
         
 
 class BoundingBox(vtool.util.BoundingBox):
