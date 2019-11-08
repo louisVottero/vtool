@@ -3954,13 +3954,18 @@ class CodeTextEdit(qt.QPlainTextEdit):
                 if event.key() == qt.QtCore.Qt.Key_Backtab:
                     event.ignore()
                     return
-                if event.key() == qt.QtCore.Qt.Key_Control:
+                
+            else:
+                if event.key() == qt.QtCore.Qt.Key_Control or event.key() == qt.QtCore.Qt.Key_Shift:
                     event.ignore()
                     self.completer.popup().hide()
                     return
+            if event.key() == qt.QtCore.Qt.Key_Control:
+                event.ignore()
+                self.completer.popup().hide()
+                return
         
         if event.modifiers() and qt.QtCore.Qt.ControlModifier:
-            
             if event.key() ==  qt.QtCore.Qt.Key_Enter or event.key() == qt.QtCore.Qt.Key_Return:
                 
                 pass_on = False
