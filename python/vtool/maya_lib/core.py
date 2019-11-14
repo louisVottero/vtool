@@ -1325,12 +1325,14 @@ def reference_file(filepath, namespace = None):
         if split_name:
             namespace = string.join(split_name[:-1], '_')
         
-    cmds.file( filepath,
-           reference = True, 
-           gl = True, 
-           mergeNamespacesOnClash = False, 
-           namespace = namespace, 
-           options = "v=0;")
+    reference = cmds.file( filepath,
+                           reference = True, 
+                           gl = True, 
+                           mergeNamespacesOnClash = False, 
+                           namespace = namespace, 
+                           options = "v=0;")
+    
+    return reference
     
 def replace_reference(reference_node, new_path):
     """
