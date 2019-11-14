@@ -1786,8 +1786,12 @@ def get_files_with_extension(extension, directory, fullpath = False):
         return found
     
     for filename_and_extension in objects:
-        filename, found_extension = os.path.splitext(filename_and_extension)
-        if found_extension == '.%s' % extension:
+        _, test_extension = os.path.splitext(filename_and_extension)
+        
+        if not extension.startswith('.'):
+            extension = '.' + extension
+        
+        if extension == test_extension:
             if not fullpath:
                 found.append(filename_and_extension)
             if fullpath:
