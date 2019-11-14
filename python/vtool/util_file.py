@@ -197,7 +197,11 @@ class FileManager(object):
         try:
             self.open_file = open(self.filepath, 'r')
         except:
-            pass
+            if self.open_file:
+                try:
+                    self.open_file.close()
+                except:
+                    pass
         
     def write_file(self):
         """
@@ -212,6 +216,11 @@ class FileManager(object):
             self.open_file = open(self.filepath, 'w')
         except:
             'Failed to write to file: %s. Check permissions' % self.filepath
+            if self.open_file:
+                try:
+                    self.open_file.close()
+                except:
+                    pass
         
     def append_file(self):
         """
@@ -226,7 +235,10 @@ class FileManager(object):
         Close file.
         """
         if self.open_file:
-            self.open_file.close()
+            try:
+                self.open_file.close()
+            except:
+                pass
         
     def get_open_file(self):
         """
@@ -256,7 +268,14 @@ class FileManager(object):
         
         if not is_dir(dirname):
             raise UserWarning(warning_text)
-
+        
+    def __del__(self):
+        if self.open_file:
+            try:
+                self.open_file.close()
+            except:
+                pass 
+             
 class ReadFile(FileManager):
     """
     Class to deal with reading a file.
@@ -271,6 +290,11 @@ class ReadFile(FileManager):
         try:
             lines = self.open_file.read()
         except:
+            if self.open_file:
+                try:
+                    self.open_file.close()
+                except:
+                    pass
             return []
         
         return get_text_lines(lines)
@@ -287,7 +311,12 @@ class ReadFile(FileManager):
         
         self.read_file()
         
-        lines = self._get_lines()
+        lines = []
+        
+        try:
+            lines = self._get_lines()
+        except:
+            pass
         
         self.close_file()
         
@@ -330,7 +359,6 @@ class WriteFile(FileManager):
             line (str): The line to add to the file.
         """
         
-
         self.write_file()
         try:
             self.open_file.write('%s\n' % line)
@@ -340,10 +368,12 @@ class WriteFile(FileManager):
         
     def write_json(self, data):
         self.write_file()
+        
         try:
             json.dump(data, self.open_file,indent=4, sort_keys=True)
         except:
-            pass
+            util.error(traceback.format_exc())
+            
         self.close_file()
         
                 
@@ -3349,7 +3379,10 @@ def get_deadline_command_from_settings():
     deadline_path = settings.get('deadline_directory')
         
     command = None
-        
+
+    if not deadline_path:
+        return 
+    
     if util.is_linux():
         command = join_path(deadline_path, 'deadlinecommand')
     if util.is_windows():
@@ -3360,4 +3393,3 @@ def get_deadline_command_from_settings():
     else:
         util.warning('No Deadline found')
 
-    
