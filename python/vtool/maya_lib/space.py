@@ -978,16 +978,19 @@ class OrientJoint(object):
         if not self.children:
             self.children = cmds.listRelatives(self.joint, f = True, type = 'transform')
         
-        if self.children:
-            self.child = self.children[0]
-            if len(self.children) > 1:
-                self.child2 = self.children[1]
-            
-            grand_children = cmds.listRelatives(self.child, f = True, type = 'transform')
-            
-            if grand_children:
-                self.grand_child = grand_children[0]
+    def _get_children_special_cases(self):
+        if not self.children:
+            return
         
+        self.child = self.children[0]
+        if len(self.children) > 1:
+            self.child2 = self.children[1]
+        
+        grand_children = cmds.listRelatives(self.child, f = True, type = 'transform')
+        
+        if grand_children:
+            self.grand_child = grand_children[0]
+    
     def _get_vector_from_axis(self, index):
         vectors = [[1,0,0],
                    [0,1,0],
@@ -1339,6 +1342,8 @@ class OrientJoint(object):
         
         self._get_relatives()
         self._unparent()
+        
+        self._get_children_special_cases()
         
         self._freeze(scale = True)        
         
@@ -3947,21 +3952,20 @@ def orient_attributes(scope = None, initialize_progress = True):
     
     progress_bar = core.ProgressBar(title, count = count, begin = initialize_progress)
     
-    
     oriented = False
     
     for transform in scope:
-        
-        progress_bar.status('Orienting: %s of %s   %s' % (progress_bar.get_current_inc(), progress_bar.get_count(), core.get_basename(transform)))
-        progress_bar.next()
         
         if cmds.objExists('%s.active' % transform):
             if not cmds.getAttr('%s.active' % transform):
                 vtool.util.warning('%s has orientation attributes but is not active.  Skipping.' % transform)
                 continue
         
+        progress_bar.status('Orienting: %s of %s   %s' % (progress_bar.get_current_inc(), progress_bar.get_count(), core.get_basename(transform)))
+        progress_bar.next()
+        
         relatives = cmds.listRelatives(transform, f = True, type = 'transform')
-                
+        
         if cmds.objExists('%s.ORIENT_INFO' % transform):
             
             if progress_bar.break_signaled():
@@ -3970,17 +3974,67 @@ def orient_attributes(scope = None, initialize_progress = True):
             orient = OrientJoint(transform, relatives)
             orient.run()
         
+        oriented = True
+        
         if relatives:
             orient_attributes(relatives, initialize_progress = False)
-            oriented = True
-
+        
     if initialize_progress:
         progress_bar.end()
         watch.end()
                 
     return oriented
 
-
+def orient_attributes_all():
+    """
+    Orient all transforms with attributes added by add_orient_attributes.
+    If scope is provided, only orient transforms in the scope that have attributes.
+    
+    Args:
+        scope (list): List of transforms to orient.
+    """
+    
+    scope = cmds.ls(type = 'transform', l = True)
+        
+    watch = vtool.util.StopWatch()
+    watch.start('Orienting Joints')
+    
+    count = len(scope)
+    title = 'Orient Joints'    
+    
+    progress_bar = core.ProgressBar(title, count = count, begin = True)
+    
+    oriented = False
+    
+    #sorts the keys by |
+    scope.sort(key=lambda x: (-x.count('|'), x))
+    scope.reverse()
+    
+    for transform in scope:
+        
+        if cmds.objExists('%s.active' % transform):
+            if not cmds.getAttr('%s.active' % transform):
+                vtool.util.warning('%s has orientation attributes but is not active.  Skipping.' % transform)
+                continue
+        
+        progress_bar.status('Orienting: %s of %s   %s' % (progress_bar.get_current_inc(), progress_bar.get_count(), core.get_basename(transform)))
+        progress_bar.next()
+        
+        if cmds.objExists('%s.ORIENT_INFO' % transform):
+            
+            if progress_bar.break_signaled():
+                watch.end()
+                return
+            orient = OrientJoint(transform)
+            orient.run()
+        
+        oriented = True
+        
+    
+    progress_bar.end()
+    watch.end()
+                
+    return oriented
 def add_orient_joint(joint):
     """
     Add orient joint. This will create an up and an aim joint.
