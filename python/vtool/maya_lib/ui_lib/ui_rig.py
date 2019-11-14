@@ -487,14 +487,17 @@ class StructureWidget(RigWidget):
     @core.undo_chunk
     def _orient(self):
         
-        oriented = space.orient_attributes()
+        selection = cmds.ls(sl = True)
+        
+        oriented = space.orient_attributes_all()
         
         if oriented:
             core.print_help('Oriented joints with orient attributes.')
         if not oriented:
             core.print_warning('No joints oriented. Check that there are joints with orient attributes.')
         
-        cmds.select(cl = True)
+        cmds.select(selection)
+        
     
     @core.undo_chunk
     def _orient_selected(self):
