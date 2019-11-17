@@ -528,14 +528,15 @@ class DataTreeWidget(vtool.qt_ui.FileTreeWidget):
         if not delete_permission:
             return
         
+        
+        
+        index = self.indexOfTopLevelItem(items[0])
+        self.takeTopLevelItem(index)
+        
+        #this needs to happend after the item is taken away or else data gets corrupted
         process_tool = process.Process()
         process_tool.set_directory(self.directory)
         process_tool.delete_data(name)
-        
-        index = self.indexOfTopLevelItem(items[0])
-        
-        self.takeTopLevelItem(index)
-        
     
     def _define_header(self):
         #data size update removed because very slow
@@ -1771,6 +1772,14 @@ class MayaFileWidget(vtool.qt_ui.FileManagerWidget):
     def __init__(self, add_tools = False):
         super(MayaFileWidget, self).__init__()
 
+    def _define_main_tab_name(self):
+        return 'Maya File'
+    
+    def _define_save_widget(self):
+        return MayaSaveFileWidget()
+    
+    def _define_history_widget(self):
+        return MayaHistoryFileWidget()
 
     def add_tool_tabs(self):        
         if vtool.util.is_in_maya():
@@ -1785,14 +1794,7 @@ class MayaFileWidget(vtool.qt_ui.FileManagerWidget):
     def set_sub_folder(self, folder_name):
         self.data_class.set_sub_folder(folder_name)
 
-    def _define_main_tab_name(self):
-        return 'Maya File'
-    
-    def _define_save_widget(self):
-        return MayaSaveFileWidget()
-    
-    def _define_history_widget(self):
-        return MayaHistoryFileWidget()
+
     
 class MayaAsciiFileWidget(MayaFileWidget):
     
