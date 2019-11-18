@@ -163,7 +163,7 @@ script_editor_value = []
         
 def read_script(msg, msgType, filterOutput, clientData):
     '''
-    Not currently being used. This is the callback function that gets called when Maya wants to print something.
+    Not currently being used. This is the callback function that gets called when Maya wants to show something in the script editor output.
     It will take the msg and output it to the terminal rather than the Maya Script Editor.
     '''
     

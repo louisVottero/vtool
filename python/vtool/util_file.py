@@ -175,7 +175,7 @@ class FileManager(object):
     
     Args:
         filepath (str): Path to the file to work on.
-        skip_warning (bool): Wether to print warnings out or not.
+        skip_warning (bool): Wether to show warnings out or not.
     """
     
     def __init__(self, filepath, skip_warning = False):
