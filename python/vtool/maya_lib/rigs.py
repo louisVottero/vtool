@@ -4434,7 +4434,7 @@ class IkAppendageRig(BufferRig):
             cmds.parent(top_locator, top_transform)
             cmds.parent(btm_locator, btm_transform)
         
-        controls = [top_transform, self.pole_control, btm_transform]
+        controls = [top_transform, self.pole_control, self.offset_pole_locator]
         
         if self._stretch_type == 1:
             
@@ -7260,14 +7260,13 @@ class FootRollRig(RollRig):
         heel_roll = self._create_heel_roll(toe_roll)
         yawout_roll = self._create_yawout_roll(heel_roll)
         yawin_roll = self._create_yawin_roll(yawout_roll)
+        
         ball_roll = self._create_ball_roll(yawin_roll)
         
         self._create_ik()
         
         cmds.parent(toe_control_xform, yawout_roll)
-        #cmds.parent(toe_fk_control_xform, self.control_group)
         
-        #cmds.parentConstraint(ball_roll, self.roll_control_xform, mo = True)
         if not self.main_control_follow:
             space.create_follow_group(ball_roll, self.roll_control_xform)
         if self.main_control_follow:
@@ -7382,7 +7381,7 @@ class BaseFootRig(BufferRig):
             control_object.hide_translate_attributes()
             control_object.hide_visibility_attribute()
             
-        if self.create_roll_controls:
+        if self.create_roll_controls and cmds.objExists('%s.controlVisibility' % self._get_attribute_control()):
             cmds.connectAttr('%s.controlVisibility' % self._get_attribute_control(), '%sShape.visibility' % control)
         
         return control, xform_group, driver_group
@@ -7484,6 +7483,8 @@ class FootRig(BaseFootRig):
         
         self._duplicate_chain_replace = ['joint', 'guide']
         self.locator_replace = 'locator'
+        
+        self._create_ball_control = False
         
     def _duplicate_joints(self):
         
@@ -7657,13 +7658,12 @@ class FootRig(BaseFootRig):
         if self.ik_leg:
             cmds.parent(self.ik_leg, control)
         
-        
         attribute_control = self._get_attribute_control()
         
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 0, value = 0, itt = 'spline', ott = 'spline')        
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = 10, value = 45, itt = 'spline', ott = 'spline')
         cmds.setDrivenKeyframe('%s.rotate%s' % (driver, self.forward_roll_axis),cd = '%s.ballRoll' % attribute_control, driverValue = -10, value = -45, itt = 'spline', ott = 'spline')
-        #cmds.setDrivenKeyframe('%s.rotateX' % driver,cd = '%s.ballRoll' % attribute_control, driverValue = 20, value = 0, itt = 'spline', ott = 'spline')
+        
         cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
         cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
         
@@ -7764,7 +7764,15 @@ class FootRig(BaseFootRig):
         heel_roll = self._create_heel_roll(toe_roll)
         yawout_roll = self._create_yawout_roll(heel_roll)
         yawin_roll = self._create_yawin_roll(yawout_roll)
+        
+        orig_setting = self.create_roll_controls
+        
+        if self._create_ball_control:
+            self.create_roll_controls = True
+            
         ball_roll = self._create_ball_roll(yawin_roll)
+        
+        self.create_roll_controls = orig_setting
         
         self._create_ik()
         
@@ -7791,6 +7799,9 @@ class FootRig(BaseFootRig):
         
         self._duplicate_chain_replace = [replace_this, with_this]
 
+    def set_create_ball_control(self, bool_value):
+        
+        self._create_ball_control = bool_value
     
     def set_toe_rotate_as_locator(self, bool_value):
         self.toe_rotate_as_locator = bool_value
