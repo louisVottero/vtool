@@ -6568,6 +6568,18 @@ class SelectTreeItemDelegate(qt.QStyledItemDelegate):
             qt.QStyledItemDelegate.paint(self, painter, option, model_index)
         
         painter.restore()
+
+def get_integer(parent = None,text_message = 'Number', title = 'Get Number', default_value = 10):
+    
+    dialogue = qt.QInputDialog()
+    
+    flags = dialogue.windowFlags() ^ qt.QtCore.Qt.WindowContextHelpButtonHint | qt.QtCore.Qt.WindowStaysOnTopHint
+    
+    value, ok = dialogue.getInt(parent, title,text_message,value = default_value, flags = flags)
+      
+    
+    if ok:
+        return value
   
 def get_comment(parent = None,text_message = 'add comment', title = 'save', comment_text = ''):
     
