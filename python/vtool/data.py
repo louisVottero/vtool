@@ -598,7 +598,7 @@ class MayaCustomData(CustomData):
         
         try:
             cmds.select(cl = True)
-            cmds.viewFit(an = True)
+            cmds.viewFit(an = True, fitFactor = 1)
             self._fix_camera()
         except:
             util.show('Could not center view')
