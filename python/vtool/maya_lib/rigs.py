@@ -5314,6 +5314,7 @@ class TwistRig(JointRig):
                 cmds.parent(joint, control.control)
             if not self.parent_joints:
                 cmds.parentConstraint(control.control, joint, mo = True)
+                attr.connect_scale(control.control, joint)
         
     def _create_main_control(self,joint, type_name = 'top'):
             
