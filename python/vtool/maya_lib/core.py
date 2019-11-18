@@ -1366,6 +1366,18 @@ def get_reference_filepath(reference_node):
     
     return filepath
     
+def get_reference_node_from_namespace(namespace):
+    ref_nodes = cmds.ls(type = 'reference')
+    for ref_node in ref_nodes: 
+        test_namespace =  cmds.referenceQuery(ref_node, namespace = True)
+        
+        if test_namespace.startswith(':'):
+            test_namespace = test_namespace[1:]
+        
+        if namespace == test_namespace:
+            return ref_node
+    
+    
 def remove_reference(reference_node):
     
     namespace = None
