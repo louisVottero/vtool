@@ -7472,7 +7472,9 @@ class FootRig(BaseFootRig):
         self.main_control_follow = None
         self.ik_parent = None
         self.ik_leg = None
-        self._do_create_foot_roll = None
+        self._do_create_foot_roll = False
+        self._do_create_ankle_roll = False
+        self._ankle_roll_axis = 'Z'
         
         self.heel = None
         self.yawIn = None
@@ -7588,6 +7590,9 @@ class FootRig(BaseFootRig):
             cmds.addAttr(attribute_control, ln = 'footRoll', at = 'double', k = True)
             cmds.addAttr(attribute_control, ln = 'footRollAngle', at = 'double', k = True, dv = 30)
         
+        if self._do_create_ankle_roll:
+            cmds.addAttr(attribute_control, ln = 'ankleRoll', at = 'double', k = True)
+        
         cmds.addAttr(attribute_control, ln = 'ballRoll', at = 'double', k = True)
         cmds.addAttr(attribute_control, ln = 'toeRoll', at = 'double', k = True)
         cmds.addAttr(attribute_control, ln = 'heelRoll', at = 'double', k = True)
@@ -7667,6 +7672,9 @@ class FootRig(BaseFootRig):
         
         cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), postInfinite = 'linear')
         cmds.setInfinity('%s.rotate%s' % (driver, self.forward_roll_axis), preInfinite = 'linear')
+        
+        if self._do_create_ankle_roll:
+            cmds.connectAttr('%s.ankleRoll' % self.attribute_control, '%s.rotate%s' % (driver,self._ankle_roll_axis))
         
         self._ball_roll = driver
         
@@ -7831,7 +7839,13 @@ class FootRig(BaseFootRig):
     def set_create_foot_roll(self, bool_value):
         
         self._do_create_foot_roll = bool_value
+    
+    def set_create_ankle_roll(self, bool_value, axis = 'Z'):
         
+        self._do_create_ankle_roll = bool_value
+        self._ankle_roll_axis = axis.upper()
+    
+    
     def set_ik_parent(self, parent_name):
         self.ik_parent = parent_name
         
