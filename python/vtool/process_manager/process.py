@@ -1152,8 +1152,6 @@ class Process(object):
         
         data_folder = data.DataFolder(name, self.get_data_path())
         data_folder.set_sub_folder(sub_folder)
-        
-        
         data_folder.delete()
     
     def copy_sub_folder_to_data(self, sub_folder_name, data_name):
