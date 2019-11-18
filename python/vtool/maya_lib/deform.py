@@ -1443,42 +1443,42 @@ class TransferWeight(object):
                 
                 cmds.skinCluster(skin, e = True, ai = joint, wt = 0.0, nw = 1)
         
-    def set_optimize_mesh(self, percent):
+    def set_optimize_mesh(self, percent=50):
         #self.mesh
         
         self._optimize_mesh = cmds.duplicate(self.mesh)[0]
         
         cmds.polyReduce(self._optimize_mesh,  
-                                    ver = 1, 
-                                    trm =  0, 
-                                    shp = 0.5,
-                                    keepBorder = 0,
-                                    keepMapBorder = 0,
-                                    keepColorBorder = 0,
-                                    keepFaceGroupBorder = 0,
-                                    keepHardEdge = 0,
-                                    keepCreaseEdge = 0,
-                                    keepBorderWeight = 0.5,
-                                    keepMapBorderWeight = 0,
-                                    keepColorBorderWeight = 0,
-                                    keepFaceGroupBorderWeight = 0,
-                                    keepHardEdgeWeight =  0.5,
-                                    keepCreaseEdgeWeight = 0.5,
-                                    useVirtualSymmetry = 0,
-                                    symmetryTolerance = 0.01,
-                                    sx = 0,
-                                    sy = 1,
-                                    sz = 0,
-                                    sw = 0,
-                                    preserveTopology = 1,
-                                    keepQuadsWeight = 0,
-                                    vertexMapName = "",
-                                    cachingReduce = 1,
-                                    ch = 1,
-                                    p = percent, 
-                                    vct = 0,
-                                    tct = 0,
-                                    replaceOriginal = 1)
+                            ver = 1, 
+                            trm =  0, 
+                            sharpness = 0,
+                            keepBorder = 0,
+                            keepMapBorder = 0,
+                            keepColorBorder = 0,
+                            keepFaceGroupBorder = 0,
+                            keepHardEdge = 0,
+                            keepCreaseEdge = 0,
+                            keepBorderWeight = 0,
+                            keepMapBorderWeight = 0,
+                            keepColorBorderWeight = 0,
+                            keepFaceGroupBorderWeight = 0,
+                            keepHardEdgeWeight =  0,
+                            keepCreaseEdgeWeight = 0,
+                            useVirtualSymmetry = 0,
+                            symmetryTolerance = 0.1,
+                            sx = 0,
+                            sy = 1,
+                            sz = 0,
+                            sw = 0,
+                            preserveTopology = 0,
+                            keepQuadsWeight = 1,
+                            vertexMapName = "",
+                            cachingReduce = 0,
+                            ch = 0,
+                            p = percent, 
+                            vct = 0,
+                            tct = 0,
+                            replaceOriginal = 1)
         
         skin_mesh_from_mesh(self.mesh, self._optimize_mesh)
         
@@ -1854,6 +1854,11 @@ class TransferWeight(object):
             weight_percent_change (float): 0-1 value.  If value is 0.5, only 50% of source_joints weighting will be added to destination_joints weighting.
         """
         
+        if self._optimize_mesh:
+            self.mesh = self._optimize_mesh
+            self.skin_cluster = self._get_skin_cluster(self._optimize_mesh)
+            self._get_vertices(self.mesh)
+        
         if vtool.util.get_env('VETALA_RUN') == 'True':
             if vtool.util.get_env('VETALA_STOP') == 'True':
                 return
@@ -1945,6 +1950,10 @@ class TransferWeight(object):
         joint_count = len(good_source_joints)
         
         self._add_joints_to_skin(new_joints)
+        
+        if self._optimize_mesh:
+            self._add_joints_to_skin(new_joints, self._original_mesh)
+        
         joint_ids = get_skin_influences(self.skin_cluster, return_dict = True)
         
         cmds.setAttr('%s.normalizeWeights' % self.skin_cluster, 0)
@@ -2044,8 +2053,8 @@ class TransferWeight(object):
 
 
             bar.inc()
-            
-            bar.status('transfer weight: %s of %s' % (inc, len(weighted_verts)))
+            bar.status('transfer weight from %s: %s of %s' % (joints, inc, len(weighted_verts)))
+            #bar.status('transfer weight: %s of %s' % (inc, len(weighted_verts)))
             
             if vtool.util.break_signaled():
                 break
@@ -2059,6 +2068,30 @@ class TransferWeight(object):
         
         if farthest_distance:
             vtool.util.show('Farthest vertex was %s' % round(farthest_distance, 3))
+        
+        if self._optimize_mesh:
+            cmds.skinCluster(self._original_mesh,  e = True, siv = joints)
+            selection = cmds.ls(sl = True)
+            
+            found = [self._optimize_mesh]
+            
+            for thing in selection:
+                if thing.find('.vtx') > -1:
+                    found.append(thing)
+            
+            cmds.select(found, r = True)
+            
+            cmds.copySkinWeights(noMirror = True, surfaceAssociation = 'closestPoint', influenceAssociation = 'closestJoint')
+            
+        if self._smooth_verts:
+            
+            verts = []
+            
+            for vert_index in weighted_verts:
+                vert = '%s.vtx[%s]' % (self.mesh, vert_index)
+                verts.append(vert)
+                
+            smooth_skin_weights(verts, self._smooth_verts_iterations)
         
         bar.end()
         vtool.util.show('Done: %s transfer %s to %s.' % (self.mesh, joints, new_joints))
