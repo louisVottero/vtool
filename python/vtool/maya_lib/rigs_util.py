@@ -3709,10 +3709,12 @@ def get_control_group_with_switch(control):
     parent_connected = attr.get_attribute_input('%s.switchParent' % control, node_only = True)
     
     if parent_connected:
-        if connected:
-            connected += [parent_connected]
-        if not connected:
-            connected = [parent_connected]
+        connected = [parent_connected]
+        #this code needs to be revereted in order to do children first then parent
+        #if connected:
+        #    connected += [parent_connected]
+        #if not connected:
+        #    connected = [parent_connected]
     
     if not connected:
         return False
@@ -3755,6 +3757,7 @@ def match_to_joints(control_group, info_dict = {}, auto_key = False):
     
     if rig_type.find('IkAppendageRig') > -1:
         vtool.util.show('Match Ik to Fk')
+        
         for inc in range(0, len(controls)):
             
             control = controls[inc]
@@ -3768,7 +3771,10 @@ def match_to_joints(control_group, info_dict = {}, auto_key = False):
                 space.zero_out_transform_channels(sub_control)
                 found.append(sub_control)
     
-    if auto_key:
+            if cmds.objExists('%s.autoTwist' % control):
+                cmds.setAttr('%s.autoTwist' % control, 0)
+    
+    if auto_key and found:
         cmds.setKeyframe(found)
         cmds.select(found)
     
@@ -3781,9 +3787,16 @@ def match_switch_rigs(control_group, auto_key = False):
         return
     
     switch = '%s.switch' % joints[0]
-    
-    if attr.is_connected(switch):
-        switch = attr.get_attribute_input(switch)
+    inc = 0
+    while attr.is_connected(switch):
+        if inc > 10:
+            break
+        test_switch = attr.get_attribute_input(switch)
+        if test_switch:
+            if cmds.nodeType(test_switch).find('animCurveT') > -1:
+                break
+            switch = test_switch
+        inc += 1
         
     switch_value = cmds.getAttr(switch)
     
