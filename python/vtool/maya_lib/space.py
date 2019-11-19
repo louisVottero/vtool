@@ -978,7 +978,12 @@ class OrientJoint(object):
         if not self.children:
             self.children = cmds.listRelatives(self.joint, f = True, type = 'transform')
         
+        if self.children:
+            self.child = self.children[0]
+        
+        
     def _get_children_special_cases(self):
+        
         if not self.children:
             return
         
@@ -1376,7 +1381,6 @@ class OrientJoint(object):
             
             if type(self.aim_up_at) == int: 
                 self.aim_up_at = self._get_aim_up_at(self.aim_up_at)
-                
         
         self._create_aim()
         
