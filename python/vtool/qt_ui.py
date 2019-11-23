@@ -1096,7 +1096,8 @@ class EditFileTreeWidget(DirectoryWidget):
         
         self.tree_widget = self._define_tree_widget()   
         
-        self.tree_widget.itemClicked.connect(self._item_selection_changed)
+        self.tree_widget.itemSelectionChanged.connect(self._item_selection_changed)
+        #self.tree_widget.itemClicked.connect(self._item_clicked)
         
           
         self.manager_widget = self._define_manager_widget()
