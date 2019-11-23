@@ -2002,11 +2002,9 @@ class MirrorControlKeyframes():
             
             new_node = node
             
-            if node.endswith('_L'):
-                new_node = node[:-2] + '_R' 
-                
-            if node.endswith('_R'):
-                new_node = node[:-2] + '_L'  
+            new_node = space.find_transform_left_side(node, check_if_exists = True)
+            if not new_node:
+                new_node = space.find_transform_right_side(node, check_if_exists = True)   
                
             new_connections.append('%s.%s' % (new_node, attribute))
                 
