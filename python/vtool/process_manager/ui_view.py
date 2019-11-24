@@ -29,6 +29,11 @@ class ViewProcessWidget(qt_ui.EditFileTreeWidget):
         policy.setHorizontalPolicy(policy.Minimum)
         policy.setHorizontalStretch(0)
         self.setSizePolicy(policy)
+       
+    def _edit_click(self, bool_value):
+        super(ViewProcessWidget, self)._edit_click(bool_value)
+        
+        self.tree_widget.edit_state = bool_value
         
     def _define_tree_widget(self):
         
@@ -589,27 +594,44 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.setCurrentItem(self.invisibleRootItem())
         
         if item and not item.is_folder():
-            self.new_process_action.setVisible(True)
-            self.new_top_level_action.setVisible(True)
-            self.rename_action.setVisible(True)
-            self.duplicate_action.setVisible(True)
-            self.copy_action.setVisible(True)
-            self.copy_special_action.setVisible(True)
-            self.remove_action.setVisible(True)
+            if self.edit_state:
+                self.new_process_action.setVisible(True)
+                self.new_top_level_action.setVisible(True)
+                self.rename_action.setVisible(True)
+                self.duplicate_action.setVisible(True)
+                self.remove_action.setVisible(True)
+                self.copy_action.setVisible(True)
+                self.copy_special_action.setVisible(True)
+            else:
+                self.new_process_action.setVisible(False)
+                self.new_top_level_action.setVisible(False)
+                self.rename_action.setVisible(False)
+                self.duplicate_action.setVisible(False)
+                self.remove_action.setVisible(False)
+                self.copy_action.setVisible(False)
+                self.copy_special_action.setVisible(False)
+            
+            
             self.show_options_action.setVisible(True)
             self.convert_folder.setVisible(False)
-        
             self.show_notes_action.setVisible(True)
             self.show_options_action.setVisible(True)
             self.show_settings_action.setVisible(True)
             self.show_templates_action.setVisible(True)
+            self.show_maintenance_action.setVisible(True)
         
         if item and item.is_folder():
             self.current_folder = item
-            self.convert_folder.setVisible(True)
-            self.new_top_level_action.setVisible(True)
-            #testing
-            self.new_process_action.setVisible(True)
+            
+            if self.edit_state:
+                self.convert_folder.setVisible(True)
+                self.new_top_level_action.setVisible(True)
+                self.new_process_action.setVisible(True)
+            else:
+                self.convert_folder.setVisible(False)
+                self.new_top_level_action.setVisible(False)
+                self.new_process_action.setVisible(False)
+            
             self.rename_action.setVisible(False)
             self.duplicate_action.setVisible(False)
             self.copy_action.setVisible(False)
@@ -621,15 +643,22 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.show_options_action.setVisible(False)
             self.show_settings_action.setVisible(False)
             self.show_templates_action.setVisible(False)
+            self.show_maintenance_action.setVisible(False)
         
         if not item:
-            self.new_top_level_action.setVisible(True)
+            if self.edit_state:
+                self.new_top_level_action.setVisible(True)
+            else:
+                self.new_top_level_action.setVisible(False)
+                
             self.new_process_action.setVisible(False)
             self.rename_action.setVisible(False)
             self.duplicate_action.setVisible(False)
+            self.remove_action.setVisible(False)
+                
             self.copy_action.setVisible(False)
             self.copy_special_action.setVisible(False)
-            self.remove_action.setVisible(False)
+            
             #self.show_options_action.setVisible(False)
             self.convert_folder.setVisible(False)
 
@@ -637,6 +666,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
             self.show_options_action.setVisible(False)
             self.show_settings_action.setVisible(False)
             self.show_templates_action.setVisible(False)
+            self.show_maintenance_action.setVisible(False)
 
         copied = util.get_env('VETALA_COPIED_PROCESS')
         
@@ -659,13 +689,18 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         
         self.current_folder = None
         
+        self._set_item_menu_vis(position)
+        
         self.context_menu.exec_(self.viewport().mapToGlobal(position))
+        
         
     
     def _selection_changed(self):
         
         if self._handle_selection_change:
             self.selection_changed.emit()
+            
+        
     
     def _create_context_menu(self):
         
@@ -675,7 +710,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.new_top_level_action = self.context_menu.addAction('New Top Level Process')
         self.context_menu.addSeparator()
         self.convert_folder = self.context_menu.addAction('Convert Folder to Process')
-        
+        self.convert_folder.setVisible(False)
         self.context_menu.addSeparator()
         self.context_menu.addSeparator()
         self.rename_action = self.context_menu.addAction('Rename')
