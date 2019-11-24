@@ -81,6 +81,9 @@ class TemplateWidget(qt_ui.BasicWidget):
         
         self.template_list = template_list
         
+        if not template_list:
+            return
+        
         if not self.active:
             return
         
