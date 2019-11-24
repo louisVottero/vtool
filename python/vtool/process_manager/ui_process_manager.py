@@ -448,9 +448,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     def _update_sidebar_tabs(self):
         
-        if not self._is_splitter_open():
-            return
-        
         log.info('Update sidebar')
         
         if self.option_tabs.currentIndex() == 0:
