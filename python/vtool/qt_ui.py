@@ -1734,7 +1734,6 @@ class SaveFileWidget(DirectoryWidget):
         self.main_layout.addWidget(self.load_button)
         self.main_layout.addWidget(self.save_button)
         
-        
         self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
 
     def _save(self):

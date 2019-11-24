@@ -1850,6 +1850,7 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         v_layout2.addWidget(import_button)
         v_layout2.addWidget(reference_button)
         
+        h_layout.addStretch(20)
         h_layout.addLayout(v_layout1)
         h_layout.addStretch(20)
         
@@ -1858,7 +1859,8 @@ class MayaSaveFileWidget(vtool.qt_ui.SaveFileWidget):
         
         self.main_layout.addLayout(h_layout)
         
-        self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
+        #self.main_layout.setAlignment(qt.QtCore.Qt.AlignTop)
+        self.main_layout.setAlignment(qt.QtCore.Qt.AlignCenter)
 
     def _skip_mismatch_file(self):
         if vtool.util.is_in_maya():
