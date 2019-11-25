@@ -736,10 +736,14 @@ class BlendShape(object):
                 mesh = cmds.deformer(self.blendshape, q = True, geometry = True)[0]
             
             if mesh:
-                new_mesh = cmds.duplicate(mesh, name = new_name)[0]
                 
-                cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
-                cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
+                
+                new_mesh = geo.create_shape_from_shape(mesh, new_name)
+                
+                #new_mesh = cmds.duplicate(mesh, name = new_name)[0]
+                
+                #cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
+                #cmds.disconnectAttr(output_attribute, '%s.inMesh' % new_mesh)
                 
             self.set_weight(target, 0)
                 
@@ -2011,6 +2015,8 @@ class ShapeComboManager(object):
         
         tag_value = vtool.util.convert_to_sequence(tag_value)
         
+        tag_value = list(dict.fromkeys(tag_value))
+        
         store = attr.StoreData(self.setup_group)
         
         data_dict = store.eval_data()
@@ -2024,7 +2030,9 @@ class ShapeComboManager(object):
         if not data_dict.has_key(tag_name):
             data_dict[tag_name] = []
         
-        data_dict[tag_name] = data_dict[tag_name] + tag_value
+        current_list = data_dict[tag_name]
+        if not tag_value in current_list:
+            data_dict[tag_name] = data_dict[tag_name] + tag_value
         
         store.set_data(data_dict)
         
@@ -2047,12 +2055,22 @@ class ShapeComboManager(object):
             return
         
         if data_dict.has_key(tag_name):
-            return data_dict[tag_name]
+            data_list = data_dict[tag_name]
+            data_list = list(dict.fromkeys(data_list))
+            return data_list
     
     def get_tags(self):
         store = attr.StoreData(self.setup_group)
         
         data_dict = store.eval_data()
+        
+        #cleanup needed incase of duplicates
+        for key in data_dict:
+            data_list = data_dict[key]
+            data_list = list(dict.fromkeys(data_list))
+            data_dict[key] = data_list
+            store.set_data(data_dict)
+        
         
         if not data_dict:
             return
@@ -2072,7 +2090,7 @@ class ShapeComboManager(object):
         found = []
         
         for key in data_dict:
-            shapes = data_dict[key]
+            shapes = self.get_tag(key)
             
             shapes = vtool.util.convert_to_sequence(shapes)
             
@@ -2095,7 +2113,7 @@ class ShapeComboManager(object):
         if not data_dict.has_key(tag_name):
             return
         
-        shapes = data_dict[tag_name]
+        shapes = self.get_tag(tag_name)
         
         return shapes
         
@@ -2107,7 +2125,7 @@ class ShapeComboManager(object):
         if not data_dict:
             return
         
-        shapes = data_dict[tag_name]
+        shapes = self.get_tag(tag_name)
         
         data_dict.pop(tag_name)
         
@@ -2129,7 +2147,7 @@ class ShapeComboManager(object):
         if not data_dict.has_key(tag_name):
             return
         
-        tag_shapes = data_dict[tag_name]
+        tag_shapes = self.get_tag(tag_name)
         result_shapes = list(tag_shapes)
         
         for tag_shape in tag_shapes:
@@ -2139,7 +2157,7 @@ class ShapeComboManager(object):
                     result_shapes.remove(shape)
         
         if result_shapes:
-            data_dict[tag_name] = result_shapes
+            self.set_tag(tag_name, result_shapes)
         if not result_shapes:
             data_dict.pop(tag_name)
         
