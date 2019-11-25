@@ -460,6 +460,22 @@ class LockNodeState(LockState):
             except:
                 pass
 
+class LockTransformState(LockNodeState):
+    def __init__(self, node):
+        
+        self.lock_state = {}
+        self.attributes = []
+        self.node = node
+        
+        for attribute in ['translate','rotate','scale']:
+            for axis in ['X','Y','Z']:
+                attribute_name = attribute + axis
+                self.attributes.append(attribute_name)
+                self.lock_state[attribute_name] = cmds.getAttr('%s.%s' % (node, attribute_name), l = True)
+                
+        
+        
+
 class RemapAttributesToAttribute(object):
     """
     Create a slider switch between multiple attributes.
