@@ -348,7 +348,7 @@ class PinXform(object):
             except:
                 pass
             
-            lock_state_inst = attr.LockNodeState(child)
+            lock_state_inst = attr.LockTransformState(child)
             self.lock_state[child] = lock_state_inst
             lock_state_inst.unlock()
             
@@ -4433,11 +4433,12 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
             
             continue
         
+        shape_type = core.get_shape_node_type(transform)
         
         if not cmds.objExists(other) and create_if_missing:
             
             node_type = cmds.nodeType(transform)
-            shape_type = core.get_shape_node_type(transform)
+            
             
             if not node_type == 'joint':
                 other_node = cmds.createNode(shape_type)
@@ -4449,6 +4450,18 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
                     
             if node_type == 'joint':
                 other = cmds.duplicate(transform, po = True, n = other)[0]
+                
+                if shape_type:
+                    
+                    other_shape = cmds.createNode(shape_type)
+                    
+                    if core.is_a_shape(other_shape):
+                        temp_parent = cmds.listRelatives(other_shape, p = True, f = True)
+                        
+                    cmds.parent(other_shape, other, r = True, s = True)
+                    
+                    other_shape = cmds.rename(other_shape, other + 'Shape')
+                    cmds.delete(temp_parent)
             
             created = True
             
@@ -4463,6 +4476,8 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
                 if other_parent:
                     other_parents[other] = other_parent
             
+
+        
        
         if cmds.objExists(other):
             
@@ -4472,15 +4487,17 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
                     vtool.util.show('%s was not mirrored because its mirror attribute is set off.' % other)
                     continue
             
-            translateX_lock = attr.LockState('%s.translateX' % other)
-            translateY_lock = attr.LockState('%s.translateY' % other)
-            translateZ_lock = attr.LockState('%s.translateZ' % other)
-            
-            translateX_lock.unlock()
-            translateY_lock.unlock()
-            translateZ_lock.unlock()
+            lock_state = attr.LockTransformState(other)
+            lock_state.unlock()
             
             xform = cmds.xform(transform, q = True, ws = True, t = True)
+        
+            if shape_type == 'locator':
+                local_position = cmds.getAttr('%s.localPosition' % transform)[0]
+                local_scale = cmds.getAttr('%s.localScale' % transform)[0]
+                
+                cmds.setAttr('%s.localPosition' % other, *local_position, type = 'float3')
+                cmds.setAttr('%s.localScale' % other, *local_scale, type = 'float3')
             
             if cmds.nodeType(other) == 'joint':
                 
@@ -4496,6 +4513,8 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
                     
                 cmds.move((xform[0]*-1), xform[1], xform[2], '%s.scalePivot' % other, 
                                                              '%s.rotatePivot' % other, a = True)
+                
+                
             if cmds.nodeType(other) == 'transform':
                 
                 pos = [ (xform[0]*-1), xform[1],xform[2] ]
@@ -4510,10 +4529,19 @@ def mirror_xform(prefix = None, suffix = None, string_search = None, create_if_m
                 
                 if cmds.objExists('%s.localPosition' % other):
                     fix_locator_shape_position(other)
-                    
-            translateX_lock.restore_initial()
-            translateY_lock.restore_initial()
-            translateZ_lock.restore_initial()
+
+            children = cmds.listRelatives(transform, type = 'transform')
+            if not children:
+                rotate = cmds.getAttr('%s.rotate' % transform)[0]
+                scale = cmds.getAttr('%s.scale' % transform)[0]
+                rotate = vtool.util.convert_to_sequence(rotate)
+                scale = vtool.util.convert_to_sequence(scale)
+                rotate[1] *= -1
+                rotate[2] *= -1
+                cmds.setAttr('%s.rotate' % other, *rotate, type = 'float3')
+                cmds.setAttr('%s.scale' % other, *scale, type = 'float3')
+                
+                lock_state.restore_initial()
             
             fixed.append(other)
             
