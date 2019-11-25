@@ -2013,6 +2013,12 @@ def create_shape_from_shape(shape, name = 'new_shape'):
     Returns:
         The name of the transform above the new shape.
     """
+    
+    if cmds.nodeType(shape) == 'transform':
+        shapes = core.get_shapes(shape)
+        if shapes:
+            shape = shapes[0]
+    
     parent = cmds.listRelatives(shape, p = True, f = True)
     
     transform = cmds.group(em = True)
