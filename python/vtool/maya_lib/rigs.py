@@ -9960,7 +9960,80 @@ class JawRig(FkLocalRig):
         If you need the rig to not stay at the origin but move with the rig.
         """
         self.follow_world = bool_value
+
+class FaceSliders(JointRig):
+    def __init__(self, description, side):
         
+        super(FaceSliders, self).__init__(description, side)
+        
+        self.control_shape = 'triangle'
+        self._delete_setup = True
+        
+    def create(self):
+        super(FaceSliders, self).create()
+        
+        for joint in self.joints:
+            
+            split_name = joint.split('_')
+            
+            description = split_name[1:-1]
+            description = description[0]
+            
+            
+            
+            orig_description = description
+            description = vtool.util.camel_to_underscore(description)
+            
+            control = self._create_control(description)
+            
+            cmds.addAttr(control.control, ln = 'shape', dt = 'string')
+            cmds.setAttr('%s.shape' % control.control, orig_description, type = 'string')
+            
+            control.rotate_shape(-90, 0, 0)
+            control.translate_shape(0,.715,0)
+            control.scale_shape(0.25,0.25,0.25)
+            
+            curve = cmds.curve( d = 1, p = ((0, 0, 0),(0, 1, 0)))
+            curve = cmds.rename(curve, self._get_name('slider', description))
+            
+            #cmds.setAttr('%s.template' % curve, 1)
+            cmds.setAttr('%s.overrideEnabled' % curve, 1)
+            cmds.setAttr('%s.overrideDisplayType' % curve, 2)
+            
+            
+            xform = control.create_xform()
+            cmds.parent(xform, self.control_group)
+            cmds.parent(curve, xform)
+            
+            space.MatchSpace(joint, xform).translation_rotation()
+            
+            control.hide_rotate_attributes()
+            control.hide_scale_and_visibility_attributes()
+            
+            attr.hide_attributes(control.control, ['translateX', 'translateZ'])
+            
+            cmds.transformLimits(control.control, ty = [0,1], ety = [1,1])
+            
+            space.MatchSpace(joint, xform).scale()
+            
+            blend_colors = cmds.createNode('blendColors')
+            
+            cmds.connectAttr('%s.translateY' % control.control, '%s.blender' % blend_colors)
+            
+            color = attr.get_color(control.control + 'Shape')
+            
+            print color
+            
+            color_rgb = attr.color_to_rgb(color)
+            print color_rgb
+            
+            cmds.setAttr('%s.color1' % blend_colors, *(1,1,1), type = 'float3')
+            cmds.setAttr('%s.color2' % blend_colors, *color_rgb, type = 'float3')
+            
+            cmds.connectAttr('%s.output'% blend_colors, '%sShape.overrideColorRGB' % control.control)
+            cmds.setAttr('%sShape.overrideRGBColors' % control.control, 1)
+            
+
 class FeatherStripRig(CurveRig):
     """
     New feather building class. 
