@@ -2011,7 +2011,7 @@ class ShapeComboManager(object):
         
         return shapes
     
-    def set_tag(self, tag_name, tag_value):
+    def set_tag(self, tag_name, tag_value, append = True):
         
         tag_value = vtool.util.convert_to_sequence(tag_value)
         
@@ -2030,9 +2030,14 @@ class ShapeComboManager(object):
         if not data_dict.has_key(tag_name):
             data_dict[tag_name] = []
         
-        current_list = data_dict[tag_name]
-        if not tag_value in current_list:
-            data_dict[tag_name] = data_dict[tag_name] + tag_value
+        if append:
+            new_tag_value = data_dict[tag_name] + tag_value
+            tag_value = list(dict.fromkeys(new_tag_value))
+        
+        data_dict[tag_name] = tag_value
+        
+        
+        print 'data dict', data_dict['split_wide']
         
         store.set_data(data_dict)
         
@@ -2064,16 +2069,15 @@ class ShapeComboManager(object):
         
         data_dict = store.eval_data()
         
+        if not data_dict:
+            return
+        
         #cleanup needed incase of duplicates
         for key in data_dict:
             data_list = data_dict[key]
             data_list = list(dict.fromkeys(data_list))
             data_dict[key] = data_list
             store.set_data(data_dict)
-        
-        
-        if not data_dict:
-            return
         
         return data_dict.keys()
         
@@ -2119,6 +2123,8 @@ class ShapeComboManager(object):
         
     def remove_tag(self, tag_name):
         
+        print 'remove tag'
+        
         store = attr.StoreData(self.setup_group)
         data_dict = store.eval_data()
         
@@ -2135,6 +2141,8 @@ class ShapeComboManager(object):
         
     def remove_tag_shapes(self, tag_name, shapes):
         
+        print 'remove!!!', tag_name, shapes
+        
         shapes = vtool.util.convert_to_sequence(shapes)
         
         store = attr.StoreData(self.setup_group)
@@ -2142,9 +2150,11 @@ class ShapeComboManager(object):
         data_dict = store.eval_data()
         
         if not data_dict:
+            print 'here2'
             return
         
         if not data_dict.has_key(tag_name):
+            print 'here1'
             return
         
         tag_shapes = self.get_tag(tag_name)
@@ -2157,11 +2167,11 @@ class ShapeComboManager(object):
                     result_shapes.remove(shape)
         
         if result_shapes:
-            self.set_tag(tag_name, result_shapes)
+            self.set_tag(tag_name, result_shapes, append = False)
         if not result_shapes:
             data_dict.pop(tag_name)
-        
-        store.set_data(data_dict)
+            store.set_data(data_dict)
+            
         
     #--- shapes
     
