@@ -2651,6 +2651,12 @@ def get_color_of_side(side = 'C', sub_color = False):
         if side == 'C':
             return 21
 
+def color_to_rgb(color_index):
+    if color_index > 0:
+        values = cmds.colorIndex(color_index, q = True)
+        return values
+    
+
 def connect_vector_attribute(source_transform, target_transform, attribute, connect_type = 'plus'):
     """
     Connect an X,Y,Z attribute, eg translate, rotate, scale. 
