@@ -484,6 +484,9 @@ class CurveDataInfo(object):
             
             return
         
+        if library_name:
+            self.set_active_library(library_name)
+        
         if not library_name:
             
             library_name = self.active_library
@@ -555,6 +558,16 @@ class CurveDataInfo(object):
         
         for key in keys:
             self.create_curve(key)
+
+def add_curve_to_default(curve_name):
+    """
+    This will add a curve to the default library.  Future updates of Vetala won't keep these changes.
+    """
+    
+    curve_info = CurveDataInfo()
+    
+    curve_info.add_curve(curve_name, 'default_curves')
+    curve_info.write_data_to_file()
 
 def get_library_shape_names():
     
