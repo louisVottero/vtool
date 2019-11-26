@@ -2379,11 +2379,6 @@ def lock_attributes(node, bool_value = True, attributes = None, hide = False):
     for attribute in attributes:
         attribute_name = '%s.%s' % (node, attribute)
         
-        inputs = get_inputs(attribute_name)
-        
-        if inputs:
-            continue
-        
         cmds.setAttr(attribute_name, lock = bool_value)
         
         if hide:
@@ -2466,12 +2461,7 @@ def lock_attributes_for_asset(node):
             continue
         
         input_value = get_attribute_input(attr_name)
-        """
-        if input_value:
-            input_node_type = cmds.nodeType(input_value)
-            if input_node_type and input_node_type.find('Constraint') > -1:
-                input_value = None
-        """
+        
         if not input_value:
             cmds.setAttr(attr_name, l = True)
 
@@ -2511,7 +2501,9 @@ def lock_hierarchy(top_transform, exclude_transforms = [], skip_of_type = ['ikHa
             progress.inc()
             continue
         
-        progress.status('Locking: %s' % thing)
+        nice_name = core.get_basename(thing)
+        
+        progress.status('Locking: %s' % nice_name)
         
         lock_constraint(thing)
         lock_attributes_for_asset(thing)
