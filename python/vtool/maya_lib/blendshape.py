@@ -691,6 +691,7 @@ class BlendShape(object):
             mesh = cmds.deformer(self.blendshape, q = True, geometry = True)[0]
         
         if mesh:
+            
             new_mesh = cmds.duplicate(mesh, name = new_name)[0]
             
             cmds.connectAttr(output_attribute, '%s.inMesh' % new_mesh)
@@ -3212,8 +3213,15 @@ def is_negative(shape):
 
 def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wrap_exclude_verts = []):
     
+    geo = None
+    
+    if wrap_mesh == True:
+        wrap_mesh = blend_target
+        geo = cmds.deformer(blend_source, q = True, geometry = True)[0]
+    
     if core.has_shape_of_type(blend_target, 'mesh'):
-        blend_target = cmds.deformer(blend_target, type = 'blendShape')[0]
+        blend_target = cmds.deformer(blend_target, type = 'blendShape', foc = True, n = 'blendshape_%s' % blend_target)[0]
+         
     
     source_blend_inst = BlendShape(blend_source)
     target_blend_inst = BlendShape(blend_target)
@@ -3225,15 +3233,23 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
     
     source_base = None
     
-    if wrap_mesh:
+    if wrap_mesh and not geo:
         geo = cmds.deformer(blend_source, q = True, geometry = True)
         
         if geo:
             geo = cmds.listRelatives(geo[0], p = True)[0]
-            source_base = cmds.duplicate(deform.get_intermediate_object(geo), n = 'source_base')[0]
-            cmds.parent(source_base, w = True)
-        if not geo:
-            wrap_mesh = None
+
+    if geo:
+        orig_geo = deform.get_intermediate_object(geo)
+        if not orig_geo:
+            orig_geo = geo
+        source_base = cmds.duplicate(orig_geo, n = 'source_base')[0]
+        cmds.parent(source_base, w = True)
+    
+    if not geo:
+        wrap_mesh = None
+        
+    
     
     for source_target in source_targets:
         
@@ -3242,6 +3258,8 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
         if wrap_mesh:
             
             new_shape = cmds.duplicate(wrap_mesh, n = 'new_shape')[0]
+            
+            print source_base, source_target_mesh
             
             blend = cmds.blendShape(source_base, source_target_mesh)[0]
             cmds.setAttr('%s.%s' % (blend, source_base), 1)
