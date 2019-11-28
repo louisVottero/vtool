@@ -1474,6 +1474,9 @@ class StretchyElbowLock(object):
     def set_top_aim_transform(self, transform):
         self._top_aim_transform = transform
     
+    def set_parent(self, transform):
+        self._parent = transform
+    
     def set_create_soft_ik(self, bool_value):
         
         self._do_create_soft_ik = bool_value
@@ -1591,9 +1594,11 @@ class StretchyElbowLock(object):
             soft = SoftIk(self.joints)
             soft.set_attribute_control(self.attribute_control)
             soft.set_control_distance_attribute('%s.distance' % distance_full)
+            soft.set_default_distance_attribute('%s.output' % default_distance_double_linear)
             soft.set_description(self.description)
             soft.set_top_aim_transform(self._top_aim_transform)
             soft.set_btm_control(self.controls[-1])
+            soft.set_ik_locator_parent(self._parent)
             soft_loc = soft.create()
             
             self.soft_locator = soft_loc
@@ -1617,7 +1622,7 @@ class SoftIk(object):
     
     def _build_soft_graph(self):
         
-        soft_attr = self._attribute_control + '.' + self._attribute_name
+        
         
         chain_distance = space.get_chain_length(self._joints)
         #control_distance = space.get_distance(self._joints[0], self._joints[-1])
@@ -1625,8 +1630,14 @@ class SoftIk(object):
         subtract_soft = cmds.createNode('plusMinusAverage')
         subtract_soft = self._rename(subtract_soft, 'subtractSoft')
         
+        self._create_attributes(subtract_soft)
+        soft_attr = subtract_soft + '.' + self._attribute_name
+        
         cmds.setAttr('%s.operation' % subtract_soft, 2)
-        cmds.setAttr('%s.input1D[0]' % subtract_soft, chain_distance)
+        if not self._default_distance_attribute:
+            cmds.setAttr('%s.input1D[0]' % subtract_soft, chain_distance)
+        else:
+            cmds.connectAttr(self._default_distance_attribute, '%s.input1D[0]' % subtract_soft)
         cmds.connectAttr(soft_attr, '%s.input1D[1]' % subtract_soft)
         
         subtract_soft_total = cmds.createNode('plusMinusAverage')
@@ -1668,28 +1679,11 @@ class SoftIk(object):
         subtract_end_soft = self._rename(subtract_end_soft, 'subtractEndSoft')
         
         cmds.setAttr('%s.operation' % subtract_end_soft, 2)
-        cmds.setAttr('%s.input1D[0]' % subtract_end_soft, chain_distance)
+        if not self._default_distance_attribute:
+            cmds.setAttr('%s.input1D[0]' % subtract_end_soft, chain_distance)
+        else:
+            cmds.connectAttr(self._default_distance_attribute, '%s.input1D[0]' % subtract_end_soft)
         cmds.connectAttr('%s.outputX' % power_mult_soft, '%s.input1D[1]' % subtract_end_soft)
-        
-        """
-        zero_condition = cmds.createNode('condition')
-        zero_condition = self._rename(zero_condition, 'zeroSoft')
-        
-        cmds.connectAttr(soft_attr, '%s.firstTerm' % zero_condition)
-        cmds.setAttr('%s.secondTerm' % zero_condition, 0)
-        cmds.setAttr('%s.operation' % zero_condition, 2)
-        cmds.connectAttr('%s.output1D' % subtract_end_soft, '%s.colorIfTrueR' % zero_condition)
-        cmds.setAttr('%s.colorIfFalseR' % zero_condition, chain_distance)
-        
-        inside_condition = cmds.createNode('condition')
-        inside_condition = self._rename(inside_condition, 'insideSoft')
-        
-        cmds.connectAttr(self._control_distance_attribute, '%s.firstTerm' % inside_condition)
-        cmds.connectAttr('%s.output1D' % subtract_soft, '%s.secondTerm' % inside_condition)
-        cmds.setAttr('%s.operation' % inside_condition, 2)
-        cmds.connectAttr('%s.outColorR' % zero_condition, '%s.colorIfTrueR' % inside_condition)
-        cmds.connectAttr(self._control_distance_attribute, '%s.colorIfFalseR' % inside_condition)
-        """
         
         inside_condition = cmds.createNode('condition')
         inside_condition = self._rename(inside_condition, 'insideSoft')
@@ -1706,11 +1700,17 @@ class SoftIk(object):
         
         space.MatchSpace(self._joints[-1], locator).translation_rotation()
         
-        cmds.parent(locator, self._joints[0])
+        #cmds.parent(locator, self._joints[0])
+        
+        if self._ik_locator_parent:
+            cmds.parent(locator, self._ik_locator_parent)
         
         if self._top_aim_transform:
-            cmds.parent(locator, self._top_aim_transform)
+            #cmds.parent(locator, self._top_aim_transform)
+            follow = space.create_follow_group(self._top_aim_transform, locator)
             attr.zero_xform_channels(locator)
+            cmds.setAttr('%s.inheritsTransform' % follow, 0)
+            
             #cmds.makeIdentity(locator, t = True, r = True, apply = True)
         
         cmds.connectAttr('%s.outColorR' % inside_condition, '%s.translateX' % locator)
@@ -1723,9 +1723,16 @@ class SoftIk(object):
             constraint_edit.create_switch(self._attribute_control, 'stretch', constraint)
             locator = group
         
-        
-        
         return locator
+        
+    def _create_attributes(self, soft_buffer_node):
+        
+        attribute = self._add_attribute(soft_buffer_node, self._attribute_name)
+        nice_attribute = self._add_attribute(self._attribute_control, self._nice_attribute_name, 0)
+        anim.quick_driven_key(nice_attribute, attribute, [0,1], [0.001, 1], infinite = True)
+        
+        cmds.setAttr(attribute, k = False)
+        cmds.addAttr(nice_attribute, e=True, minValue = 0, maxValue = 2, hasMinValue = True, hasMaxValue = True)
         
     def _add_attribute(self, node, attribute_name, default = 0):
         #attr.create_title(node, 'SOFT')
@@ -1742,8 +1749,14 @@ class SoftIk(object):
     def set_control_distance_attribute(self, control_distance_attribute):
         self._control_distance_attribute = control_distance_attribute
     
+    def set_default_distance_attribute(self, default_distance_attribute):
+        self._default_distance_attribute = default_distance_attribute
+    
     def set_top_aim_transform(self, transform):
         self._top_aim_transform = transform
+    
+    def set_ik_locator_parent(self, transform):
+        self._ik_locator_parent = transform
     
     def set_btm_control(self, control_name):
         self._btm_control = control_name
@@ -1752,15 +1765,6 @@ class SoftIk(object):
         self.description = description
     
     def create(self):
-        
-        attribute = self._add_attribute(self._attribute_control, self._attribute_name)
-        nice_attribute = self._add_attribute(self._attribute_control, self._nice_attribute_name, 0)
-        anim.quick_driven_key(nice_attribute, attribute, [0,1], [0.001, 1], infinite = True)
-        
-        cmds.setAttr(attribute, k = False)
-        cmds.addAttr(nice_attribute, e=True, minValue = 0, maxValue = 2, hasMinValue = True, hasMaxValue = True)
-        
-        
         
         locator = self._build_soft_graph()
         
@@ -3833,8 +3837,13 @@ def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description =
         
         if side == 'L':
             node_and_attr = left_zip_attr
+            
         if side == 'R':
             node_and_attr = right_zip_attr
+        
+        if not cmds.objExists(node_and_attr):
+            node, attribute = attr.get_node_and_attribute(node_and_attr)
+            cmds.addAttr(node, ln = attribute, min = 0, max = 10, k = True)
         
         count = len(fade_attributes)
         
@@ -3857,9 +3866,9 @@ def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description =
                     plus_node = input_node
                  
             else:
-                plus_node = cmds.createNode('plusMinusAverage', n = '%sPlus_%s' % (description, inc+1, side))
+                plus_node = cmds.createNode('plusMinusAverage', n = '%sPlus_%s_%s' % (description, inc+1, side))
                 
-                zip_clamp = cmds.createNode('clamp',n = '%sClamp_%s' % (description, inc+1, side))
+                zip_clamp = cmds.createNode('clamp',n = '%sClamp_%s_%s' % (description, inc+1, side))
                 cmds.setAttr('%s.maxR' % zip_clamp, 1)
                 
                 cmds.connectAttr('%s.output1D' % plus_node, '%s.inputR' % zip_clamp)
