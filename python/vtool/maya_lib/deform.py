@@ -1379,7 +1379,35 @@ class SplitPatch(object):
             inc += 1
 
         return shapes
+
+class CopyDeformation(object):
     
+    def __init__(self, source_mesh, target_mesh):
+        
+        self._source_mesh = source_mesh
+        self._target_mesh = target_mesh
+        
+    def run(self):
+        
+        vtool.util.show('Copying SkinCluster and BlendShapes from %s to %s' % (self._source_mesh, self._target_mesh))
+        
+        cmds.delete(self._target_mesh, ch = True)
+        
+        skin_mesh_from_mesh(self._source_mesh, self._target_mesh)
+        
+        blends = find_deformer_by_type(self._source_mesh, 'blendShape', return_all = True)
+        
+        if blends:
+        
+            for blend in blends:
+                
+                import blendshape
+                blendshape.transfer_blendshape_targets(blend, self._target_mesh, wrap_mesh = True)
+        
+        
+        
+        
+
 class TransferWeight(object):
     """
     Transfer weight has functions for dealing with moving weight from joints to other joints.
@@ -4849,6 +4877,28 @@ def set_vert_weights_to_zero(vert_index, skin_deformer, joint = None):
     if index:
         cmds.setAttr('%s.%s' % (skin_deformer, index), 0.0)   
 
+def get_mesh_at_deformer_index(deformer, index):
+    meshes = cmds.deformer(deformer, q = True, g = True)
+    
+    if len(meshes) == 1:
+        mesh = meshes[0]
+    else:
+        
+        mesh_indices = attr.get_indices('%s.input' % deformer)
+        mesh = None
+        
+        for sub_mesh, mesh_index in zip(meshes, mesh_indices):
+            if mesh_index == index:
+                mesh = sub_mesh
+    if not mesh:
+        try:
+            mesh = meshes[index]
+        except:
+            vtool.util.warning('index "%s" out of range of deformed meshes.' % index)
+            return
+        
+    return mesh
+        
 def set_deformer_weights(weights, deformer, index = 0):
     """
     Set the deformer weights. Good for cluster and wire deformers. 
@@ -4869,8 +4919,8 @@ def set_deformer_weights(weights, deformer, index = 0):
     
     if type(weights) == float or type(weights) == int:
         
-        meshes = cmds.deformer(deformer, q = True, g = True)
-        vert_count = cmds.polyEvaluate(meshes[index], v=1)
+        mesh = get_mesh_at_deformer_index(deformer, index)
+        vert_count = cmds.polyEvaluate(mesh, v=1)
         
         weights = [weights] * vert_count
         
@@ -4891,21 +4941,8 @@ def get_deformer_weights(deformer, index = 0):
     """
     
     
-    meshes = cmds.deformer(deformer, q = True, g = True)
-    mesh_indices = attr.get_indices('%s.input' % deformer)
-    mesh = None
-    
-    for sub_mesh, mesh_index in zip(meshes, mesh_indices):
-        if mesh_index == index:
-            mesh = sub_mesh
-    
-    if not mesh:
-        try:
-            mesh = meshes[index]
-        except:
-            vtool.util.warning('index "%s" out of range of deformed meshes.' % index)
-            return
-    
+    mesh = get_mesh_at_deformer_index(deformer, index)
+        
     indices = cmds.ls('%s.vtx[*]' % mesh, flatten = True)
             
     weights = []
@@ -4914,6 +4951,27 @@ def get_deformer_weights(deformer, index = 0):
         weights.append( cmds.getAttr('%s.weightList[%s].weights[%s]' % (deformer, index, inc)) )
     
     return weights
+
+def remove_deformer_influences(deformer, index=0):
+    
+    found = []
+
+    weights = get_deformer_weights(deformer, index)
+    
+    if not weights:
+        vtool.util.warning('No weights found on deformer: %s' % deformer)
+        return
+    
+    for index in range(0,len(weights)):
+                        
+        if weights[index] < 0.0001:
+            found.append(index)
+    
+    geometry = get_mesh_at_deformer_index(deformer, index)
+        
+    verts = geo.convert_indices_to_mesh_vertices(found, geometry)
+    
+    cmds.sets(verts, rm = '%sSet' % deformer)
 
 def set_wire_weights(weights, wire_deformer, index = 0):
     """
@@ -5023,6 +5081,9 @@ def get_intermediate_object(transform):
     """
     shapes = cmds.listRelatives(transform, s = True, f = True)
     
+    if not shapes:
+        return
+    
     for shape in shapes:
         if cmds.getAttr('%s.intermediateObject' % shape):
             return shape
@@ -5041,10 +5102,13 @@ def set_all_weights_on_wire(wire_deformer, weight, slot = 0):
     
     meshes = cmds.deformer(wire_deformer, q = True, g = True)
     
-    try:
-        mesh = meshes[slot]
-    except:
-        mesh = None
+    if len(meshes) > 1:
+        try:
+            mesh = meshes[slot]
+        except:
+            mesh = None
+    else:
+        mesh = meshes[0]
     
     if not mesh:
         indices = attr.get_indices('%s.weightList[%s]' % (wire_deformer,slot))
