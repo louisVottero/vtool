@@ -1427,7 +1427,15 @@ class SparseLocalRig(SparseRig):
             self._position_control(joint, xform)
             
             if self.respect_side:
-                side = control.color_respect_side(center_tolerance = self.respect_side_tolerance)
+                
+                sub = False
+                
+                if self._set_sub_control_color_only:
+                    sub = True
+                
+                side = control.color_respect_side(sub, center_tolerance = self.respect_side_tolerance)
+            
+                
             
                 if side != 'C':
                     
@@ -4451,6 +4459,7 @@ class IkAppendageRig(BufferRig):
         elbow_lock.set_top_aim_transform(self.twist_guide)
         elbow_lock.set_description(self._get_name())
         elbow_lock.set_create_soft_ik(soft)
+        elbow_lock.set_parent(self.setup_group)
         elbow_lock.create()
         
         if elbow_lock.soft_locator:
@@ -5389,6 +5398,7 @@ class TwistRig(JointRig):
             twist.set_dual_quaternion(False)
             
             
+            
             bad_axis = space.get_axis_letter_aimed_at_child(joint)
             
             if bad_axis == 'X' or bad_axis == '-X':
@@ -5400,6 +5410,8 @@ class TwistRig(JointRig):
             
             
             twist.create()    
+            
+            cmds.setAttr('%s.inheritsTransform' % twist.surface, 0)
             
             self.twist_group = twist.group
             self.sub_joints = twist.joints
@@ -5448,6 +5460,8 @@ class TwistRig(JointRig):
                     new_joints.append( cmds.rename(twist_joint, core.inc_name(self._twist_joint_name)))
             
                     self.sub_joints = new_joints
+            
+            
                   
 #---Body Rig
 
