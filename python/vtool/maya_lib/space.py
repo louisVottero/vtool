@@ -3500,6 +3500,28 @@ def create_ghost_chain(transforms):
 
     return ghosts
 
+def create_pivot_group(source_transform, target_transform, prefix = 'pivot', match_pivot_position_only = True):
+    """
+    Create a group with pivot at source_tranform above target_transform
+    """
+    
+    group = cmds.group(em = True, n = prefix + '_' + target_transform)
+    
+    if not match_pivot_position_only:
+        MatchSpace(source_transform, group).translation_rotation()
+    if match_pivot_position_only:
+        MatchSpace(target_transform, group).translation_rotation()
+        MatchSpace(source_transform, group).rotate_scale_pivot_to_translation()
+    
+    parent = cmds.listRelatives(target_transform, p = True)
+    if parent:
+        parent = parent[0]
+    
+    cmds.parent(group, parent)
+    cmds.parent(target_transform, group)
+    
+    return group
+
 def create_no_twist_aim(source_transform, target_transform, parent, move_vector = [0,0,1]):
     """
     Aim target transform at the source transform, trying to rotate only on one axis.
