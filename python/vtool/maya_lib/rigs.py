@@ -10036,10 +10036,7 @@ class FaceSliders(JointRig):
             
             color = attr.get_color(control.control + 'Shape')
             
-            print color
-            
             color_rgb = attr.color_to_rgb(color)
-            print color_rgb
             
             cmds.setAttr('%s.color1' % blend_colors, *(1,1,1), type = 'float3')
             cmds.setAttr('%s.color2' % blend_colors, *color_rgb, type = 'float3')
