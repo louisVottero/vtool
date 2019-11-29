@@ -602,6 +602,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 self.remove_action.setVisible(True)
                 self.copy_action.setVisible(True)
                 self.copy_special_action.setVisible(True)
+                self.edit_mode_message.setVisible(False)
             else:
                 self.new_process_action.setVisible(False)
                 self.new_top_level_action.setVisible(False)
@@ -610,6 +611,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 self.remove_action.setVisible(False)
                 self.copy_action.setVisible(False)
                 self.copy_special_action.setVisible(False)
+                self.edit_mode_message.setVisible(True)
             
             
             self.show_options_action.setVisible(True)
@@ -627,10 +629,12 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
                 self.convert_folder.setVisible(True)
                 self.new_top_level_action.setVisible(True)
                 self.new_process_action.setVisible(True)
+                self.edit_mode_message.setVisible(False)
             else:
                 self.convert_folder.setVisible(False)
                 self.new_top_level_action.setVisible(False)
                 self.new_process_action.setVisible(False)
+                self.edit_mode_message.setVisible(True)
             
             self.rename_action.setVisible(False)
             self.duplicate_action.setVisible(False)
@@ -648,8 +652,10 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if not item:
             if self.edit_state:
                 self.new_top_level_action.setVisible(True)
+                self.edit_mode_message.setVisible(False)
             else:
                 self.new_top_level_action.setVisible(False)
+                self.edit_mode_message.setVisible(True)
                 
             self.new_process_action.setVisible(False)
             self.rename_action.setVisible(False)
@@ -704,7 +710,8 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
     
     def _create_context_menu(self):
         
-        
+        self.edit_mode_message = self.context_menu.addAction('Turn on Edit mode (at the bottom of the view) to access more commands.')
+        self.edit_mode_message.setVisible(False)
         
         self.new_process_action = self.context_menu.addAction('New Process')
         self.new_top_level_action = self.context_menu.addAction('New Top Level Process')
