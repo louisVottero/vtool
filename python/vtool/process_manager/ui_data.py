@@ -1299,6 +1299,7 @@ class MayaDataSaveFileWidget(vtool.qt_ui.SaveFileWidget):
 class MayaDataHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
     
     def _open_version(self):
+        
         items = self.version_list.selectedItems()
         
         item = None
@@ -1313,7 +1314,9 @@ class MayaDataHistoryFileWidget(vtool.qt_ui.HistoryFileWidget):
         
         version_tool = vtool.util_file.VersionFile(self.directory)
         version_file = version_tool.get_version_path(version)
-            
+        
+        vtool.util.show('Loading version: %s' % version_file)
+        
         self.data_class.import_data(version_file)
 
 class ScriptFileWidget(DataFileWidget):
