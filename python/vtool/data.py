@@ -640,18 +640,15 @@ class ControlCvData(MayaCustomData):
             name = util_file.get_basename(filename)
         
         if not filename:
-            filename = self.get_file()
-            directory = util_file.get_dirname(filename)
+            path = self.get_file()
+            directory = util_file.get_dirname(path)
             name = self.name
-            #directory = self.directory
-            #name = self.name
         
         library = maya_lib.curve.CurveDataInfo()
         library.set_directory(directory)
         
         if filename:
-
-            library.set_active_library(name, skip_extension= False)
+            library.set_active_library(name, skip_extension = True)
         if not filename:
             library.set_active_library(name)
             
@@ -660,9 +657,7 @@ class ControlCvData(MayaCustomData):
     def import_data(self, filename = None):
         
         library = self._initialize_library(filename)
-        library.set_active_library(self.name)
         controls = maya_lib.rigs_util.get_controls()
-            
         for control in controls:
             
             shapes = maya_lib.core.get_shapes(control)

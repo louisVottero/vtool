@@ -2123,8 +2123,6 @@ class ShapeComboManager(object):
         
     def remove_tag(self, tag_name):
         
-        print 'remove tag'
-        
         store = attr.StoreData(self.setup_group)
         data_dict = store.eval_data()
         
@@ -2141,8 +2139,6 @@ class ShapeComboManager(object):
         
     def remove_tag_shapes(self, tag_name, shapes):
         
-        print 'remove!!!', tag_name, shapes
-        
         shapes = vtool.util.convert_to_sequence(shapes)
         
         store = attr.StoreData(self.setup_group)
@@ -2150,11 +2146,9 @@ class ShapeComboManager(object):
         data_dict = store.eval_data()
         
         if not data_dict:
-            print 'here2'
             return
         
         if not data_dict.has_key(tag_name):
-            print 'here1'
             return
         
         tag_shapes = self.get_tag(tag_name)
@@ -3257,8 +3251,6 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
         if wrap_mesh:
             
             new_shape = cmds.duplicate(wrap_mesh, n = 'new_shape')[0]
-            
-            print source_base, source_target_mesh
             
             blend = cmds.blendShape(source_base, source_target_mesh)[0]
             cmds.setAttr('%s.%s' % (blend, source_base), 1)
