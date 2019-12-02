@@ -3897,58 +3897,58 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     Creates a joint section 
     """
     
-    loc = cmds.spaceLocator(n = 'locator_sharpen')[0]
     cmds.select(cl = True)
-    end_joint = cmds.joint(n = 'joint_sharpen_end')
+    sharp_joint = cmds.joint(n = 'joint_sharpen')
     
     children = cmds.listRelatives(joint, type = 'joint')
     child = children[0]
     
-    space.MatchSpace(joint, loc).translation_rotation()
-    space.MatchSpace(child, end_joint).translation_rotation()
+    if not children:
+        vtool.util.warning('Create joint sharpen needs %s to have a child that is a joint' % joint)
     
-    cmds.parent(end_joint, loc)
+    space.MatchSpace(child, joint).translation_rotation()
     
     radius = cmds.getAttr('%s.radius' % joint)
     radius_offset = radius * .1
+    cmds.setAttr('%s.radius' % sharp_joint, radius_offset)
     
-    cmds.setAttr('%s.localScaleX' % loc, radius_offset)
-    cmds.setAttr('%s.localScaleX' % loc, radius_offset)
-    cmds.setAttr('%s.localScaleX' % loc, radius_offset)
-    cmds.setAttr('%s.radius' % end_joint, radius_offset)
-    
-    section = [loc, end_joint]
-    
-    cmds.parent(section[0], joint)
+    cmds.parent(sharp_joint, joint)
 
-    cmds.setAttr('%s.translate%s' % (section[0], offset_axis), offset_amount)
+    cmds.setAttr('%s.translate%s' % (sharp_joint, offset_axis), offset_amount)
     
     rotate = 90
     
     if rotate_axis.startswith('-'):
         rotate = -90
         rotate_axis = rotate_axis[1:]
-        
     
-    anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.scale%s' % (section[0], scale_axis),
-                            [0, rotate], [1, 1.15])
-    anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.scale%s' % (section[1], scale_axis),
+    plus = cmds.createNode('plusMinusAverage', n = 'plus_' + sharp_joint)
+    
+    cmds.setAttr('%s.input3D[0].input3D%s' % (plus,offset_axis.lower()), offset_amount )
+    
+    cmds.connectAttr('%s.translateX' % child, '%s.input3D[1].input3Dx' % plus)
+    cmds.connectAttr('%s.translateY' % child, '%s.input3D[1].input3Dy' % plus)
+    cmds.connectAttr('%s.translateZ' % child, '%s.input3D[1].input3Dz' % plus)
+    
+    cmds.connectAttr('%s.output3Dx' % plus, '%s.translateX' % sharp_joint)
+    cmds.connectAttr('%s.output3Dy' % plus, '%s.translateY' % sharp_joint)
+    cmds.connectAttr('%s.output3Dz' % plus, '%s.translateZ' % sharp_joint)
+    
+    translate_input = '%s.input3D[2].input3D%s' % (plus, scale_axis.lower())
+    
+    anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.input3D[2].input3D%s' % (plus, scale_axis.lower()),
+                            [0, rotate], [0, 1])
+    anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.scale%s' % (sharp_joint, scale_axis),
                             [0, rotate], [1, .5])
-
-
-    cmds.connectAttr('%s.translateX' % child, '%s.translateX' % section[1])
-    cmds.connectAttr('%s.translateY' % child, '%s.translateY' % section[1])
-    cmds.connectAttr('%s.translateZ' % child, '%s.translateZ' % section[1])
-
-    #cmds.setAttr('%s.segmentScaleCompensate' % section[0], 0)
-
-    mult1 = attr.insert_multiply('%s.scale%s' % (section[0], scale_axis), 1)
-    mult2 = attr.insert_multiply('%s.scale%s' % (section[1], scale_axis), 1)
     
-    cmds.addAttr(section[1], ln = 'push', k = True, dv = 1)
-    cmds.addAttr(section[1], ln = 'sharpenBulge', k = True, dv = 1)
+    cmds.setAttr('%s.segmentScaleCompensate' % sharp_joint, 0)
+    mult1 = attr.insert_multiply(translate_input, 1)
+    #mult2 = attr.insert_multiply('%s.scale%s' % (sharp_joint, scale_axis), 1)
     
-    cmds.connectAttr('%s.push' % section[1], '%s.input2X' % mult1)
-    cmds.connectAttr('%s.sharpenBulge' % section[1], '%s.input2X' % mult2)    
+    cmds.addAttr(sharp_joint, ln = 'push', k = True, dv = 1)
+    cmds.addAttr(sharp_joint, ln = 'sharpenBulge', k = True, dv = 1)
     
-    return section
+    cmds.connectAttr('%s.push' % sharp_joint, '%s.input2X' % mult1)
+    #cmds.connectAttr('%s.sharpenBulge' % sharp_joint, '%s.input2X' % mult2)    
+    
+    return sharp_joint
