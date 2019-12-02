@@ -1430,7 +1430,19 @@ class PoseBase(PoseGroup):
 
     def _get_blendshape(self, mesh):
         
-        return deform.find_deformer_by_type(mesh, 'blendShape')
+        if PoseManager.is_post_deform():
+            
+            history = deform.get_history(mesh)
+            
+            for thing in history:
+                if cmds.nodeType(thing) == 'blendShape':
+                    return thing
+                
+                if cmds.nodeType(thing) == 'skinCluster':
+                    return None
+            
+        else:
+            return deform.find_deformer_by_type(mesh, 'blendShape')
         
 
     def _get_current_mesh(self, mesh_index):
@@ -1564,6 +1576,8 @@ class PoseBase(PoseGroup):
         
         blendshape_node = self._get_blendshape(target_mesh)
         
+        print 'blend!', blendshape_node
+        
         referenced = False
         
         if blendshape_node:
@@ -1573,8 +1587,8 @@ class PoseBase(PoseGroup):
             blend.set(blendshape_node)
         
         if not blendshape_node or referenced:
-            blend.create(target_mesh)
-          
+            blendshape_name = blend.create(target_mesh)
+        
         if referenced:
             
             skin_cluster = deform.find_deformer_by_type(target_mesh, 'skinCluster')
@@ -1590,9 +1604,14 @@ class PoseBase(PoseGroup):
                 cmds.reorderDeformers(blend.blendshape, blendshape_node, target_mesh)
         
         if PoseManager.is_post_deform():
-            skin_cluster = deform.find_deformer_by_type(target_mesh, 'skinCluster')
-            cmds.reorderDeformers(blend.blendshape, skin_cluster, target_mesh)
             
+            skin_cluster = deform.find_deformer_by_type(target_mesh, 'skinCluster')
+            print blend.blendshape, skin_cluster
+            
+            #need to reorder twice because maya will pull all the blendshapes if doing second one only
+            cmds.reorderDeformers(skin_cluster, blend.blendshape, target_mesh)
+            cmds.reorderDeformers(blend.blendshape, skin_cluster, target_mesh)
+        
         return blend
     
     def _build_post_deform_delta(self, mesh, corrective):
