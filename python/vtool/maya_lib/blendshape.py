@@ -376,6 +376,8 @@ class BlendShape(object):
         
         self._store_targets()
         self._store_meshes()
+        
+        return blendshape
 
     def rename(self, name):
         """
@@ -2036,9 +2038,6 @@ class ShapeComboManager(object):
             tag_value = list(dict.fromkeys(new_tag_value))
         
         data_dict[tag_name] = tag_value
-        
-        
-        print 'data dict', data_dict['split_wide']
         
         store.set_data(data_dict)
         
