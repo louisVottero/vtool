@@ -161,6 +161,9 @@ def set_nurbs_data(curve, curve_data_array):
     
 def set_nurbs_data_mel(curve, mel_curve_data):
     
+    current_unit = cmds.currentUnit( q = True)
+    cmds.currentUnit(linear='cm')
+    
     shapes = get_shapes(curve)
     
     vtool.util.convert_to_sequence(mel_curve_data)
@@ -180,6 +183,8 @@ def set_nurbs_data_mel(curve, mel_curve_data):
         
         if inc < data_count:
             mel.eval('setAttr "%s" -type "nurbsCurve" %s' % (attribute, mel_curve_data[inc]))
+    
+    cmds.currentUnit(linear = current_unit)
     
 class CurveDataInfo(object):
     
