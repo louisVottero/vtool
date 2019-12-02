@@ -3832,7 +3832,9 @@ def match_switch_rigs_from_control(control, auto_key = False):
     match_switch_rigs(group, auto_key)
 
 def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description = 'zip'):
-        
+    """
+    This may be removed in the future.  This attempts to add zip attribute.  Zip needs to be setup with constraint with weight between source and midpoint.
+    """
     for side in 'LR':
         
         if side == 'L':
@@ -3888,3 +3890,65 @@ def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description =
                 time_accum += time_offset
             if side == 'R':
                 time_accum -= time_offset
+                
+
+def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis = 'Y', offset_amount = 1):
+    """
+    Creates a joint section 
+    """
+    
+    loc = cmds.spaceLocator(n = 'locator_sharpen')[0]
+    cmds.select(cl = True)
+    end_joint = cmds.joint(n = 'joint_sharpen_end')
+    
+    children = cmds.listRelatives(joint, type = 'joint')
+    child = children[0]
+    
+    space.MatchSpace(joint, loc).translation_rotation()
+    space.MatchSpace(child, end_joint).translation_rotation()
+    
+    cmds.parent(end_joint, loc)
+    
+    radius = cmds.getAttr('%s.radius' % joint)
+    radius_offset = radius * .1
+    
+    cmds.setAttr('%s.localScaleX' % loc, radius_offset)
+    cmds.setAttr('%s.localScaleX' % loc, radius_offset)
+    cmds.setAttr('%s.localScaleX' % loc, radius_offset)
+    cmds.setAttr('%s.radius' % end_joint, radius_offset)
+    
+    section = [loc, end_joint]
+    
+    cmds.parent(section[0], joint)
+
+    cmds.setAttr('%s.translate%s' % (section[0], offset_axis), offset_amount)
+    
+    rotate = 90
+    
+    if rotate_axis.startswith('-'):
+        rotate = -90
+        rotate_axis = rotate_axis[1:]
+        
+    
+    anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.scale%s' % (section[0], scale_axis),
+                            [0, rotate], [1, 1.15])
+    anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.scale%s' % (section[1], scale_axis),
+                            [0, rotate], [1, .5])
+
+
+    cmds.connectAttr('%s.translateX' % child, '%s.translateX' % section[1])
+    cmds.connectAttr('%s.translateY' % child, '%s.translateY' % section[1])
+    cmds.connectAttr('%s.translateZ' % child, '%s.translateZ' % section[1])
+
+    #cmds.setAttr('%s.segmentScaleCompensate' % section[0], 0)
+
+    mult1 = attr.insert_multiply('%s.scale%s' % (section[0], scale_axis), 1)
+    mult2 = attr.insert_multiply('%s.scale%s' % (section[1], scale_axis), 1)
+    
+    cmds.addAttr(section[1], ln = 'push', k = True, dv = 1)
+    cmds.addAttr(section[1], ln = 'sharpenBulge', k = True, dv = 1)
+    
+    cmds.connectAttr('%s.push' % section[1], '%s.input2X' % mult1)
+    cmds.connectAttr('%s.sharpenBulge' % section[1], '%s.input2X' % mult2)    
+    
+    return section
