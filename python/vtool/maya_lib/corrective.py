@@ -1576,8 +1576,6 @@ class PoseBase(PoseGroup):
         
         blendshape_node = self._get_blendshape(target_mesh)
         
-        print 'blend!', blendshape_node
-        
         referenced = False
         
         if blendshape_node:
@@ -1606,7 +1604,6 @@ class PoseBase(PoseGroup):
         if PoseManager.is_post_deform():
             
             skin_cluster = deform.find_deformer_by_type(target_mesh, 'skinCluster')
-            print blend.blendshape, skin_cluster
             
             #need to reorder twice because maya will pull all the blendshapes if doing second one only
             cmds.reorderDeformers(skin_cluster, blend.blendshape, target_mesh)

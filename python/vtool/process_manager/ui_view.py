@@ -706,8 +706,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         if self._handle_selection_change:
             self.selection_changed.emit()
             
-        
-    
     def _create_context_menu(self):
         
         self.edit_mode_message = self.context_menu.addAction('Turn on Edit mode (at the bottom of the view) to access more commands.')
