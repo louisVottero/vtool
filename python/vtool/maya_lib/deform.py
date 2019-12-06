@@ -4144,7 +4144,8 @@ def get_history(geometry):
         if cmds.objectType(thing, isAType = 'geometryFilter'):
             found.append(thing)
         else:
-            return found
+            if cmds.objectType(thing, isAType = 'shadingDependNode'):
+                return found
             
         if cmds.objectType(thing, isa = "shape") and not cmds.nodeType(thing) == 'lattice':
             return found
@@ -4167,7 +4168,8 @@ def find_all_deformers(mesh):
         if cmds.objectType(thing, isAType = 'geometryFilter'):
             found.append( thing )
         else:
-            return found
+            if cmds.objectType(thing, isAType = 'shadingDependNode'):
+                return found
         
     return found
 
@@ -4197,7 +4199,6 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
                         return thing
                     
                     found.append(thing)
-            
     if not found:
         return None
         
