@@ -1494,6 +1494,8 @@ class SkinWeightData(MayaCustomData):
         if found_one:
             maya_lib.core.print_help('skin weights exported.')
         
+        util_file.get_permission(path)
+        
         version = util_file.VersionFile(path)
         version.save(comment)
         
