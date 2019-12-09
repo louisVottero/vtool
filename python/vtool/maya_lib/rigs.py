@@ -2578,10 +2578,14 @@ class SplineRibbonBaseRig(JointRig):
         self.stretch_axis = 'X'
         self.stretch_attribute_control = None
         self._buffer_replace = ['joint', 'buffer']
-        
+        self._aim_ribbon_joints = False
+        self._aim_ribbon_joints_up = [0,0,1]
+        self.ribbon_follows = []
+        self._joint_aims = []
         self.follicle_ribbon = False
         
         self.create_ribbon_buffer_group = False
+        
         
     def _create_curve(self, span_count):
         
@@ -2662,8 +2666,10 @@ class SplineRibbonBaseRig(JointRig):
                 group_name = 'follicles'
             
             rivet_group = self._create_setup_group(group_name)
-        
+            
             for joint in self.buffer_joints:
+                
+                nurb_follow = None
                 
                 buffer_group = None
                 
@@ -2676,12 +2682,14 @@ class SplineRibbonBaseRig(JointRig):
                 if not buffer_group:
                     if not self.follicle_ribbon:
                         rivet = geo.attach_to_surface(joint, self.surface)
+                        nurb_follow = rivet
                         cmds.setAttr('%s.inheritsTransform' % rivet, 0)
                         cmds.parent(rivet, rivet_group)
                     
                     if self.follicle_ribbon:
                         
                         follicle = geo.follicle_to_surface(joint, self.surface, constrain = True)
+                        nurb_follow = follicle
                         cmds.setAttr('%s.inheritsTransform' % follicle, 0)
                         cmds.parent(follicle, rivet_group)
                         
@@ -2689,6 +2697,7 @@ class SplineRibbonBaseRig(JointRig):
                     if not self.follicle_ribbon:
                         
                         rivet = geo.attach_to_surface(xform, self.surface, constrain = False)
+                        nurb_follow = rivet
                         cmds.setAttr('%s.inheritsTransform' % rivet, 0)
                         cmds.parentConstraint(buffer_group, joint, mo = True)
                         cmds.parent(rivet, rivet_group)
@@ -2696,14 +2705,44 @@ class SplineRibbonBaseRig(JointRig):
                     if self.follicle_ribbon:
                         
                         follicle = geo.follicle_to_surface(xform, self.surface, constrain = False)
+                        nurb_follow = follicle
                         cmds.setAttr('%s.inheritsTransform' % follicle, 0)
                         cmds.parentConstraint(buffer_group, joint, mo = True)
                         cmds.parent(follicle, rivet_group)
-                    
+                
+                self.ribbon_follows.append(nurb_follow)
+                
+                        
+            if self._aim_ribbon_joints:
+                self._attach_aim()
         
         if not self.ribbon:
             self._create_spline_ik()
+    
+    def _attach_aim(self):
         
+        last_follow = None
+        last_parent = None
+        
+        for joint, ribbon_follow in zip(self.buffer_joints, self.ribbon_follows):
+            
+            child = cmds.listRelatives(ribbon_follow, type = 'transform')
+            
+            for c in child:
+                shape_type = core.get_shape_node_type(c)
+                
+                if shape_type == 'locator':
+                    child = c
+            
+            if last_follow:
+                axis = space.get_axis_aimed_at_child(joint)
+                cmds.aimConstraint(child, last_follow, aimVector = axis, upVector = self._aim_ribbon_joints_up, wut = 'objectrotation', wuo = last_parent)
+                
+            
+            last_follow = child
+            last_parent = ribbon_follow
+        
+    
     def _wire_hires(self, curve):
         
         if self.span_count == self.control_count:
@@ -2934,6 +2973,10 @@ class SplineRibbonBaseRig(JointRig):
     def set_ribbon_buffer_group(self, bool_value):
         self.create_ribbon_buffer_group = bool_value
         
+    def set_ribbon_joint_aim(self, bool_value, up_vector = [0,0,1]):
+        self._aim_ribbon_joints = bool_value        
+        self._aim_ribbon_joints_up = up_vector
+    
     def set_last_pivot_top(self, bool_value):
         """
         Set the last pivot on the curve to the top of the curve.
@@ -3239,6 +3282,8 @@ class SimpleFkCurveRig(FkCurlNoScaleRig, SplineRibbonBaseRig):
         
         super(SimpleFkCurveRig, self).create()
         
+        
+        
         #self._attach_to_geo()
         
         if not self.ribbon:
@@ -3263,6 +3308,7 @@ class FkCurveRig(SimpleFkCurveRig):
         super(FkCurveRig, self).__init__(name, side)
         
         self.aim_end_vectors = False
+        
         
     def _create_aims(self, clusters):
         
