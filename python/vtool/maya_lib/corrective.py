@@ -3690,6 +3690,9 @@ class PoseCone(PoseBase):
                 
         except:
             pass
+        
+        cmds.dgdirty(a = True)
+        #cmds.refresh()
     
     def mirror(self):
         """
