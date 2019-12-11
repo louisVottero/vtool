@@ -1094,6 +1094,30 @@ def get_faces(mesh):
     
     return found
 
+def get_face_indices(list_of_face_names):
+    
+    list_of_face_names = vtool.util.convert_to_sequence(list_of_face_names)
+    
+    indices = []
+    
+    for face in list_of_face_names:
+        
+        index = int(face[face.find("[")+1:face.find("]")]) 
+        
+        indices.append(index)
+        
+    return indices
+
+def get_face_names_from_indices(mesh, indices):
+    
+    found = []
+    
+    for index in indices:
+        
+        name = '%s.f[%s]' % (mesh, index)
+        found.append(name)
+    return found
+
 def get_mesh_from_face(face):
     
     return get_thing_from_component(face, 'f')
@@ -1206,6 +1230,26 @@ def get_face_centers(mesh):
     face_iter = api.IteratePolygonFaces(mesh)
     
     return face_iter.get_face_center_vectors()
+
+def faces_to_new_mesh(faces, name = 'new_mesh_from_faces'):
+    
+    faces = cmds.ls(faces, flatten = True)
+    
+    indices = get_face_indices(faces)
+    
+    mesh = get_mesh_from_face(faces[0])
+    
+    new_mesh = cmds.duplicate(mesh, n = name)[0]
+    
+    new_face_indices = range(len(cmds.ls('%s.f[*]' % new_mesh, flatten = True)))
+    
+    for index in indices:
+        new_face_indices.remove(index)
+    
+    faces = get_face_names_from_indices(new_mesh, new_face_indices)
+    cmds.delete(faces)
+    
+    return new_mesh
     
 def get_render_stats(node_name):
     """
