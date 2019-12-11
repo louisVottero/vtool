@@ -2120,6 +2120,8 @@ class TwistRibbon(object):
         joint1, joint2, ik = space.create_pole_chain(self.top_locator, self.btm_locator, 'twist_topFix_%s' % self._description, space.IkHandle.solver_rp)
         cmds.hide(joint1, joint2)
         
+        self.top_ik = ik
+        
         xform = space.create_xform_group(joint1)
         cmds.parent( xform, self.top_locator)
         cmds.parent(self.top_joint, joint1)    
@@ -2131,6 +2133,8 @@ class TwistRibbon(object):
     def _create_btm_twister_joint(self):
         joint1, joint2, ik = space.create_pole_chain(self.btm_locator, self.top_locator, 'twist_btmFix_%s' % self._description, space.IkHandle.solver_rp)
         cmds.hide(joint1, joint2)
+        
+        self.btm_ik = ik
         
         xform = space.create_xform_group(joint1)
         cmds.parent( xform, self.btm_locator)
