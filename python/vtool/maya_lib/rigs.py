@@ -9284,8 +9284,8 @@ class StickyRig(JointRig):
                 
         if left_over_value:
             
-            xform_left_top_control = get_xform_group(left_top_control)
-            xform_left_btm_control = get_xform_group(left_btm_control)
+            xform_left_top_control = space.get_xform_group(left_top_control)
+            xform_left_btm_control = space.get_xform_group(left_btm_control)
             
             anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_left_top_control, [start,end], [0,left_over_value])
             anim.quick_driven_key('%s.zipR' % attribute_control, '%s.stick' % xform_left_btm_control, [start,end], [0,left_over_value])
@@ -9309,8 +9309,8 @@ class StickyRig(JointRig):
         
         if left_over_value:
             
-            xform_right_top_control = get_xform_group(right_top_control)
-            xform_right_btm_control = get_xform_group(right_btm_control)
+            xform_right_top_control = space.get_xform_group(right_top_control)
+            xform_right_btm_control = space.get_xform_group(right_btm_control)
             
             anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_right_top_control, [start,end], [0,left_over_value])
             anim.quick_driven_key('%s.zipL' % attribute_control, '%s.stick' % xform_right_btm_control, [start,end], [0,left_over_value])
