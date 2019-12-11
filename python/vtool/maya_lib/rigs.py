@@ -5482,10 +5482,21 @@ class TwistRig(JointRig):
             if self._create_top_control:
                 top_control = self._create_main_control(joint, 'top')
                 cmds.parent(self.top_locator, top_control.control)
+                cmds.addAttr(top_control.control, ln = 'topTwistFix', k = True)
+                cmds.connectAttr('%s.topTwistFix' % top_control.control, '%s.twist' % twist.top_ik)
+                
                 
             if self._create_btm_control:
                 btm_control = self._create_main_control(next_joint, 'btm')
                 cmds.parent(self.btm_locator, btm_control.control)
+                cmds.addAttr(btm_control.control, ln = 'btmTwistFix', k = True)
+                cmds.connectAttr('%s.btmTwistFix' % btm_control.control, '%s.twist' % twist.btm_ik)
+            else:
+                cmds.addAttr(top_control.control, ln = 'btmTwistFix', k = True)
+                cmds.connectAttr('%s.btmTwistFix' % top_control.control, '%s.twist' % twist.btm_ik)
+            
+                
+            
             
             self._create_xform_controls(self.top_locator, self.btm_locator)
             
