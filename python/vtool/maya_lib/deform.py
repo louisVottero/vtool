@@ -4121,7 +4121,7 @@ def create_lattice(points, description, divisions = (3,3,3), falloff = (2,2,2)):
 
 def get_history(geometry):
     """
-    Get the history of the geometry. This will not search too deep.
+    Get the history of the geometry. This will not search too deep.  This will only find deformers (geometryFilter)
     
     Args:
         geometry (str): The name of the geometry
@@ -4141,13 +4141,14 @@ def get_history(geometry):
         
         inherited = cmds.nodeType(thing, inherited = True )
         
-        if 'geometryFilter' in inherited:
+        if cmds.objectType(thing, isAType = 'geometryFilter'):
             found.append(thing)
+        else:
+            if cmds.objectType(thing, isAType = 'shadingDependNode'):
+                return found
             
         if cmds.objectType(thing, isa = "shape") and not cmds.nodeType(thing) == 'lattice':
-            
             return found
-            
         
     if not found:
         return None
@@ -4155,7 +4156,10 @@ def get_history(geometry):
     return found
 
 def find_all_deformers(mesh):
-    
+    """
+    This checks if the node is of type geometryFilter in the history, and returns all found. 
+    The first node in the history that isn't a geometryFilter (deformer)  the tool assumes it at the end of the deformer stack and returns.
+    """
     history = get_history(mesh)
     
     found = []
@@ -4163,6 +4167,9 @@ def find_all_deformers(mesh):
     for thing in history:
         if cmds.objectType(thing, isAType = 'geometryFilter'):
             found.append( thing )
+        else:
+            if cmds.objectType(thing, isAType = 'shadingDependNode'):
+                return found
         
     return found
 
@@ -4192,7 +4199,6 @@ def find_deformer_by_type(mesh, deformer_type, return_all = False):
                         return thing
                     
                     found.append(thing)
-            
     if not found:
         return None
         

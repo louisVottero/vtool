@@ -3892,13 +3892,22 @@ def setup_zip_fade(left_zip_attr, right_zip_attr, fade_attributes, description =
                 time_accum -= time_offset
                 
 
-def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis = 'Y', offset_amount = 1):
+def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis = 'Y', offset_amount = 1, invert = False, name = None):
     """
     Creates a joint section 
     """
     
+    invert_value = 1
+    
+    if invert:
+        invert_value = -1
+        offset_amount *= invert_value
+    
+    if not name:
+        name = 'joint_sharpen'
+    
     cmds.select(cl = True)
-    sharp_joint = cmds.joint(n = 'joint_sharpen')
+    sharp_joint = cmds.joint(n = core.inc_name(name))
     
     children = cmds.listRelatives(joint, type = 'joint')
     child = children[0]
@@ -3906,7 +3915,8 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     if not children:
         vtool.util.warning('Create joint sharpen needs %s to have a child that is a joint' % joint)
     
-    space.MatchSpace(child, joint).translation_rotation()
+    space.MatchSpace(child, sharp_joint).translation_rotation()
+    cmds.makeIdentity(sharp_joint, apply = True, r = True)
     
     radius = cmds.getAttr('%s.radius' % joint)
     radius_offset = radius * .1
@@ -3937,7 +3947,7 @@ def create_joint_sharpen(joint, rotate_axis = 'Z', scale_axis = 'X', offset_axis
     translate_input = '%s.input3D[2].input3D%s' % (plus, scale_axis.lower())
     
     anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.input3D[2].input3D%s' % (plus, scale_axis.lower()),
-                            [0, rotate], [0, 1])
+                            [0, rotate], [0, 1*invert_value])
     anim.quick_driven_key('%s.rotate%s' % (child, rotate_axis), '%s.scale%s' % (sharp_joint, scale_axis),
                             [0, rotate], [1, .5])
     

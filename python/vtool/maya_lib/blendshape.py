@@ -3213,7 +3213,13 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
         geo = cmds.deformer(blend_source, q = True, geometry = True)[0]
     
     if core.has_shape_of_type(blend_target, 'mesh'):
-        blend_target = cmds.deformer(blend_target, type = 'blendShape', foc = True, n = 'blendshape_%s' % blend_target)[0]
+        
+        blendshape = deform.find_deformer_by_type(blend_target, 'blendShape', return_all = False)
+        
+        if blendshape:
+            blend_target = blendshape
+        else:
+            blend_target = cmds.deformer(blend_target, type = 'blendShape', foc = True, n = 'blendshape_%s' % blend_target)[0]
          
     
     source_blend_inst = BlendShape(blend_source)
@@ -3247,6 +3253,7 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
     for source_target in source_targets:
         
         source_target_mesh = source_blend_inst.recreate_target(source_target)
+        
         
         if wrap_mesh:
             
@@ -3288,9 +3295,8 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
         
         target_blend_inst.create_target(source_target_mesh, source_target_mesh)
         
-        input_attr = source_blend_inst.get_target_attr_input(source_target_mesh)
-        output_attrs = source_blend_inst.get_target_attr_output(source_target_mesh)
-        
+        input_attr = source_blend_inst.get_target_attr_input(source_target)
+        output_attrs = source_blend_inst.get_target_attr_output(source_target)
         
         target_blend_inst.connect_target_attr(source_target_mesh, input_attr, output_attrs)
             
