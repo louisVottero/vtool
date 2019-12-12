@@ -10033,12 +10033,47 @@ class JawRig(FkLocalRig):
         self.follow_world = bool_value
 
 class FaceSliders(JointRig):
+    """
+    This requires a joint with a locator under it. 
+    if locator is:
+    localPositionX = 0
+    localPositionY = 0.5
+    localPositionZ = 0
+    localScaleX = 0
+    localScaleY = 0.5
+    localScaleZ = 0
+    then slider works in one direction
+    
+    if locator is:
+    localPositionX = 0
+    localPositionY = 0
+    localPositionZ = 0
+    localScaleX = 0
+    localScaleY = 1
+    localScaleZ = 0
+    then slider works in both directions
+    
+    if no locator or settings not detected, than default slider works in one direction
+    """
+    
     def __init__(self, description, side):
         
         super(FaceSliders, self).__init__(description, side)
         
         self.control_shape = 'triangle'
+        self.negative_control_shape = 'diamond'
         self._delete_setup = True
+        self._overdrive = False
+    
+    def set_overdrive(self, overdrive_amount = 1.5):
+        """
+        Value that the slider is aloud to go to
+        """
+        self._overdrive = overdrive_amount
+        
+    def set_positive_negative_shape(self, curve_type):
+        
+        self.negative_control_shape = curve_type
         
     def create(self):
         super(FaceSliders, self).create()
@@ -10050,21 +10085,46 @@ class FaceSliders(JointRig):
             description = split_name[1:-1]
             description = description[0]
             
+            rel = cmds.listRelatives(joint, type = 'locator')
             
+            negative = False
+            
+            orig_control_shape = self.control_shape
+            
+            if rel:
+                rel = rel[0]
+                position = cmds.getAttr('%s.localPosition' % rel)[0]
+                scale = cmds.getAttr('%s.localScale' % rel)[0]
+                
+                if position == (0.0,0.0,0.0) and scale == (0.0,1.0,0.0):
+                    negative = True
+                
+            if negative:
+                self.control_shape = self.negative_control_shape    
             
             orig_description = description
             description = vtool.util.camel_to_underscore(description)
             
             control = self._create_control(description)
             
+            self.control_shape = orig_control_shape
+            
             cmds.addAttr(control.control, ln = 'shape', dt = 'string')
             cmds.setAttr('%s.shape' % control.control, orig_description, type = 'string')
             
-            control.rotate_shape(-90, 0, 0)
-            control.translate_shape(0,.715,0)
-            control.scale_shape(0.25,0.25,0.25)
             
-            curve = cmds.curve( d = 1, p = ((0, 0, 0),(0, 1, 0)))
+            
+            
+            if not negative:
+                curve = cmds.curve( d = 1, p = ((0, 0, 0),(0, 1, 0)))
+                control.rotate_shape(-90, 0, 0)
+                control.translate_shape(0,.715,0)
+                control.scale_shape(0.25,0.25,0.25)
+            if negative:
+                curve = cmds.curve( d = 1, p = ((0, -1, 0),(0, 1, 0)))
+                control.rotate_shape(-90, 0, 0)
+                control.translate_shape(0,.715,0)
+                control.scale_shape(0.4,0.4,0.4)
             curve = cmds.rename(curve, self._get_name('slider', description))
             
             #cmds.setAttr('%s.template' % curve, 1)
@@ -10083,22 +10143,74 @@ class FaceSliders(JointRig):
             
             attr.hide_attributes(control.control, ['translateX', 'translateZ'])
             
-            cmds.transformLimits(control.control, ty = [0,1], ety = [1,1])
-            
+            if not self._overdrive:
+                if not negative:
+                    cmds.transformLimits(control.control, ty = [0,1], ety = [1,1])
+                if negative:
+                    cmds.transformLimits(control.control, ty = [-1,1], ety = [1,1])
+            if self._overdrive:
+                if not negative:
+                    cmds.transformLimits(control.control, ty = [0,self._overdrive], ety = [1,1])
+                if negative:
+                    cmds.transformLimits(control.control, ty = [self._overdrive*-1,self._overdrive], ety = [1,1])
+                    
             space.MatchSpace(joint, xform).scale()
             
-            blend_colors = cmds.createNode('blendColors')
+            remap = cmds.createNode('remapColor', n = 'remapColor_%s' % control.control)
             
-            cmds.connectAttr('%s.translateY' % control.control, '%s.blender' % blend_colors)
+            cmds.connectAttr('%s.translateY' % control.control, '%s.colorR' % remap)
+            cmds.connectAttr('%s.translateY' % control.control, '%s.colorG' % remap)
+            cmds.connectAttr('%s.translateY' % control.control, '%s.colorB' % remap)            
+            
+            
+            
+            
+            #blend_colors = cmds.createNode('blendColors')
+            
+            #cmds.connectAttr('%s.translateY' % control.control, '%s.blender' % blend_colors)
             
             color = attr.get_color(control.control + 'Shape')
             
             color_rgb = attr.color_to_rgb(color)
             
-            cmds.setAttr('%s.color1' % blend_colors, *(1,1,1), type = 'float3')
-            cmds.setAttr('%s.color2' % blend_colors, *color_rgb, type = 'float3')
+            cmds.setAttr('%s.red[0].red_FloatValue' % remap,  color_rgb[0])
+            cmds.setAttr('%s.green[0].green_FloatValue' % remap,  color_rgb[1])
+            cmds.setAttr('%s.blue[0].blue_FloatValue' % remap,  color_rgb[2])
             
-            cmds.connectAttr('%s.output'% blend_colors, '%sShape.overrideColorRGB' % control.control)
+            cmds.setAttr('%s.red[1].red_FloatValue' % remap, 1)
+            cmds.setAttr('%s.green[1].green_FloatValue' % remap,  .3)
+            cmds.setAttr('%s.blue[1].blue_FloatValue' % remap,  0)
+            
+            cmds.setAttr('%s.red[1].red_Position' % remap,  1)
+            cmds.setAttr('%s.green[1].green_Position' % remap,  1)
+            cmds.setAttr('%s.blue[1].blue_Position' % remap,  1)
+            
+            if self._overdrive:
+                
+                offset = vtool.util.remap_value(1, 0, self._overdrive, 0, 1)
+                
+                cmds.setAttr('%s.red[1].red_Position' % remap,  offset)
+                cmds.setAttr('%s.green[1].green_Position' % remap,  offset)
+                cmds.setAttr('%s.blue[1].blue_Position' % remap,  offset)
+                
+                cmds.setAttr('%s.red[2].red_FloatValue' % remap,  1)
+                cmds.setAttr('%s.green[2].green_FloatValue' % remap,  0)
+                cmds.setAttr('%s.blue[2].blue_FloatValue' % remap,  1)
+                
+                cmds.setAttr('%s.red[2].red_Position' % remap, 1)
+                cmds.setAttr('%s.green[2].green_Position' % remap, 1)
+                cmds.setAttr('%s.blue[2].blue_Position' % remap, 1)
+            
+                cmds.setAttr('%s.inputMax' % remap,  self._overdrive)
+                cmds.setAttr('%s.outputMax' % remap,  self._overdrive)
+                
+            #cmds.setAttr('%s.color1' % blend_colors, *(1,1,1), type = 'float3')
+            #cmds.setAttr('%s.color2' % blend_colors, *color_rgb, type = 'float3')
+            
+            #cmds.connectAttr('%s.output'% blend_colors, '%sShape.overrideColorRGB' % control.control)
+            
+            cmds.connectAttr('%s.outColor'% remap, '%sShape.overrideColorRGB' % control.control)
+            
             cmds.setAttr('%sShape.overrideRGBColors' % control.control, 1)
             
 
