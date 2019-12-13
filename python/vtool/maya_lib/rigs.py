@@ -1415,6 +1415,9 @@ class SparseLocalRig(SparseRig):
             
             control_name = control.get()
             
+            if not self.is_scalable:
+                control.hide_scale_attributes()
+            
             xform = space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
 
@@ -1454,7 +1457,10 @@ class SparseLocalRig(SparseRig):
                     control = rigs_util.Control(control_name)
                     
                     self.controls[-1] = control_name
-                    
+
+            
+            
+
             if not self.local_constraint:
                 if not self.attach_joints:
                     xform_joint = space.create_xform_group(joint)
@@ -10123,7 +10129,7 @@ class FaceSliders(JointRig):
             if negative:
                 curve = cmds.curve( d = 1, p = ((0, -1, 0),(0, 1, 0)))
                 control.rotate_shape(-90, 0, 0)
-                control.translate_shape(0,.715,0)
+                #control.translate_shape(0,.715,0)
                 control.scale_shape(0.4,0.4,0.4)
             curve = cmds.rename(curve, self._get_name('slider', description))
             
@@ -10162,13 +10168,6 @@ class FaceSliders(JointRig):
             cmds.connectAttr('%s.translateY' % control.control, '%s.colorG' % remap)
             cmds.connectAttr('%s.translateY' % control.control, '%s.colorB' % remap)            
             
-            
-            
-            
-            #blend_colors = cmds.createNode('blendColors')
-            
-            #cmds.connectAttr('%s.translateY' % control.control, '%s.blender' % blend_colors)
-            
             color = attr.get_color(control.control + 'Shape')
             
             color_rgb = attr.color_to_rgb(color)
@@ -10185,30 +10184,103 @@ class FaceSliders(JointRig):
             cmds.setAttr('%s.green[1].green_Position' % remap,  1)
             cmds.setAttr('%s.blue[1].blue_Position' % remap,  1)
             
+            if negative:
+                cmds.setAttr('%s.inputMin' % remap,  -1)
+            
+                cmds.setAttr('%s.red[0].red_FloatValue' % remap,  1)
+                cmds.setAttr('%s.green[0].green_FloatValue' % remap, .3)
+                cmds.setAttr('%s.blue[0].blue_FloatValue' % remap,  0)
+                
+                cmds.setAttr('%s.red[1].red_FloatValue' % remap, color_rgb[0])
+                cmds.setAttr('%s.green[1].green_FloatValue' % remap, color_rgb[1])
+                cmds.setAttr('%s.blue[1].blue_FloatValue' % remap, color_rgb[2])
+                
+                cmds.setAttr('%s.red[1].red_Position' % remap,  0.5)
+                cmds.setAttr('%s.green[1].green_Position' % remap, 0.5)
+                cmds.setAttr('%s.blue[1].blue_Position' % remap, 0.5)
+                
+                cmds.setAttr('%s.red[2].red_FloatValue' % remap, 1)
+                cmds.setAttr('%s.green[2].green_FloatValue' % remap,  .3)
+                cmds.setAttr('%s.blue[2].blue_FloatValue' % remap,  0)
+                
+                cmds.setAttr('%s.red[2].red_Position' % remap,  1)
+                cmds.setAttr('%s.green[2].green_Position' % remap,  1)
+                cmds.setAttr('%s.blue[2].blue_Position' % remap,  1)
+            
+            
             if self._overdrive:
                 
                 offset = vtool.util.remap_value(1, 0, self._overdrive, 0, 1)
                 
-                cmds.setAttr('%s.red[1].red_Position' % remap,  offset)
-                cmds.setAttr('%s.green[1].green_Position' % remap,  offset)
-                cmds.setAttr('%s.blue[1].blue_Position' % remap,  offset)
-                
-                cmds.setAttr('%s.red[2].red_FloatValue' % remap,  1)
-                cmds.setAttr('%s.green[2].green_FloatValue' % remap,  0)
-                cmds.setAttr('%s.blue[2].blue_FloatValue' % remap,  1)
-                
-                cmds.setAttr('%s.red[2].red_Position' % remap, 1)
-                cmds.setAttr('%s.green[2].green_Position' % remap, 1)
-                cmds.setAttr('%s.blue[2].blue_Position' % remap, 1)
-            
                 cmds.setAttr('%s.inputMax' % remap,  self._overdrive)
                 cmds.setAttr('%s.outputMax' % remap,  self._overdrive)
                 
-            #cmds.setAttr('%s.color1' % blend_colors, *(1,1,1), type = 'float3')
-            #cmds.setAttr('%s.color2' % blend_colors, *color_rgb, type = 'float3')
-            
-            #cmds.connectAttr('%s.output'% blend_colors, '%sShape.overrideColorRGB' % control.control)
-            
+                if not negative:
+                    cmds.setAttr('%s.red[1].red_Position' % remap,  offset)
+                    cmds.setAttr('%s.green[1].green_Position' % remap,  offset)
+                    cmds.setAttr('%s.blue[1].blue_Position' % remap,  offset)
+                    
+                    cmds.setAttr('%s.red[2].red_FloatValue' % remap,  1)
+                    cmds.setAttr('%s.green[2].green_FloatValue' % remap,  0)
+                    cmds.setAttr('%s.blue[2].blue_FloatValue' % remap,  1)
+                    
+                    cmds.setAttr('%s.red[2].red_Position' % remap, 1)
+                    cmds.setAttr('%s.green[2].green_Position' % remap, 1)
+                    cmds.setAttr('%s.blue[2].blue_Position' % remap, 1)
+                
+                if negative:
+                    
+                    offset = vtool.util.remap_value(1, -1*self._overdrive, self._overdrive, 0, 1)
+                    
+                    cmds.setAttr('%s.inputMin' % remap,  -1*self._overdrive)
+                    
+                    cmds.setAttr('%s.red[0].red_FloatValue' % remap,  1)
+                    cmds.setAttr('%s.green[0].green_FloatValue' % remap,  0)
+                    cmds.setAttr('%s.blue[0].blue_FloatValue' % remap,  1)
+                    
+                    invert_offset = 1.0-offset
+                    cmds.setAttr('%s.red[1].red_FloatValue' % remap,  1)
+                    cmds.setAttr('%s.green[1].green_FloatValue' % remap,  0.3)
+                    cmds.setAttr('%s.blue[1].blue_FloatValue' % remap,  0)
+                    
+                    cmds.setAttr('%s.red[1].red_Position' % remap,  invert_offset)
+                    cmds.setAttr('%s.green[1].green_Position' % remap,  invert_offset)
+                    cmds.setAttr('%s.blue[1].blue_Position' % remap,  invert_offset)
+                    
+                    cmds.setAttr('%s.red[2].red_FloatValue' % remap,  color_rgb[0])
+                    cmds.setAttr('%s.green[2].green_FloatValue' % remap, color_rgb[1])
+                    cmds.setAttr('%s.blue[2].blue_FloatValue' % remap, color_rgb[2])
+
+                    cmds.setAttr('%s.red[2].red_Interp' % remap, 1)
+                    cmds.setAttr('%s.green[2].green_Interp' % remap, 1)
+                    cmds.setAttr('%s.blue[2].blue_Interp' % remap, 1)
+                    
+                    cmds.setAttr('%s.red[2].red_Position' % remap,  .5)
+                    cmds.setAttr('%s.green[2].green_Position' % remap,  .5)
+                    cmds.setAttr('%s.blue[2].blue_Position' % remap,  .5)
+                    
+                    cmds.setAttr('%s.red[3].red_FloatValue' % remap,  1)
+                    cmds.setAttr('%s.green[3].green_FloatValue' % remap,  0.3)
+                    cmds.setAttr('%s.blue[3].blue_FloatValue' % remap,  0)
+                    
+                    cmds.setAttr('%s.red[3].red_Interp' % remap, 1)
+                    cmds.setAttr('%s.green[3].green_Interp' % remap, 1)
+                    cmds.setAttr('%s.blue[3].blue_Interp' % remap, 1)
+                    
+                    cmds.setAttr('%s.red[3].red_Position' % remap,  offset)
+                    cmds.setAttr('%s.green[3].green_Position' % remap,  offset)
+                    cmds.setAttr('%s.blue[3].blue_Position' % remap,  offset)
+                    
+                    cmds.setAttr('%s.red[4].red_FloatValue' % remap,  1)
+                    cmds.setAttr('%s.green[4].green_FloatValue' % remap,  0)
+                    cmds.setAttr('%s.blue[4].blue_FloatValue' % remap,  1)
+                    
+                    cmds.setAttr('%s.red[4].red_Position' % remap, 1)
+                    cmds.setAttr('%s.green[4].green_Position' % remap, 1)
+                    cmds.setAttr('%s.blue[4].blue_Position' % remap, 1)
+                    
+                
+                
             cmds.connectAttr('%s.outColor'% remap, '%sShape.overrideColorRGB' % control.control)
             
             cmds.setAttr('%sShape.overrideRGBColors' % control.control, 1)
