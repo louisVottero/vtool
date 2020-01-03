@@ -123,8 +123,6 @@ class ControlName(object):
         
         full_name = string.join(found, '_')
         
-        
-        
         if self.control_uppercase:
             full_name = full_name.upper()
         
