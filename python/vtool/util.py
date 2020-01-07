@@ -1240,10 +1240,16 @@ def convert_to_sequence(variable, sequence_type = list):
         
     
     if type(variable) != sequence_type:
-        if sequence_type == list:
-            return [variable]
-        if sequence_type == tuple:
-            return (variable)
+        if not variable:
+            if sequence_type == list:
+                return []
+            if sequence_type == tuple:
+                return ()
+        else:    
+            if sequence_type == list:
+                return [variable]
+            if sequence_type == tuple:
+                return (variable)
     
     return variable
 

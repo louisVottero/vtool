@@ -3131,9 +3131,10 @@ def get_ast_class_sub_functions(module_path, class_name):
                             
             bases = find_bases
         
-        functions = get_ast_class_members(class_node, parents)
-        functions.sort()
-        return functions
+        functions,variables = get_ast_class_members(class_node, parents)
+        #functions.sort()
+        #variables.sort()
+        return functions,variables
 
 def get_ast_class_members(class_node, parents = [], skip_list = None):
     
@@ -3141,6 +3142,7 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
         skip_list = []
     
     class_functions = []
+    class_variables = []
     
     for node in class_node.body:
         
@@ -3161,17 +3163,35 @@ def get_ast_class_members(class_node, parents = [], skip_list = None):
             stuff = stuff.replace('self', '')
             class_functions.append(stuff)
         
+        if isinstance(node, ast.Expr):
+            """
+            this gets documentation
+            """
+            
+            #print node.value.s
+            pass
+        
+        if isinstance(node, ast.Assign):
+            
+            for target in node.targets:
+                if hasattr(node.value, 's'):
+                    class_variables.append( '%s = %s' % (target.id, node.value.s) )
+                if hasattr(node.value, 'n'):
+                    class_variables.append( '%s = %s' % (target.id, node.value.n) )
+        
     found_parent_functions = []
+    found_parent_variables = []
         
     for parent in parents:
         
-        
-        parent_functions = get_ast_class_members(parent, skip_list = skip_list)
+        parent_functions, parent_variables = get_ast_class_members(parent, skip_list = skip_list)
         found_parent_functions += parent_functions
+        found_parent_variables += parent_variables
         
     found_parent_functions += class_functions
+    found_parent_variables += class_variables
         
-    return found_parent_functions
+    return found_parent_functions, found_parent_variables
 
 def get_ast_assignment(text, line_number, assignment):
     

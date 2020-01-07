@@ -5010,6 +5010,7 @@ class PythonCompleter(qt.QCompleter):
         
         self.last_path_and_part = None
         self.current_sub_functions = None
+        self.current_sub_variables = None
         
         self.last_column = 0
         
@@ -5189,7 +5190,16 @@ class PythonCompleter(qt.QCompleter):
         
         text = text[:cursor.columnNumber()]
         
-        m = re.search('\s*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text)
+        m = None
+        
+        found = []
+        for item in re.finditer('(?<=\s|\W)*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text):
+            found.append(item)
+        if found:
+            m = found[-1]
+        
+        #m = re.search('\s*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text)
+        #m = re.search('(?<=\s|\W)*([a-zA-Z0-9._]+)\.([a-zA-Z0-9_]*)$', text)
         
         block_number = cursor.blockNumber()
         line_number = block_number + 1
@@ -5199,6 +5209,7 @@ class PythonCompleter(qt.QCompleter):
         scope_text = all_text[:(cursor.position() - 1)]
         
         if m and m.group(2):
+            
             scope_text = all_text[:(cursor.position() - len(m.group(2)) + 1)]
         
         if not m:
@@ -5218,6 +5229,10 @@ class PythonCompleter(qt.QCompleter):
         lines = util_file.get_text_lines(text)
         
         path = None
+        
+        #remove last line because it will probably error in ast eval
+        scope_lines = util_file.get_text_lines(scope_text)
+        scope_text = string.join(scope_lines[:-1], '\n')
         
         assign_map = util_file.get_ast_assignment(scope_text, line_number-1, assignment)
         sub_part = None
@@ -5258,7 +5273,7 @@ class PythonCompleter(qt.QCompleter):
                 
                 module_name = target[0]
                 sub_part = target[1]
-                
+        
         #import from module   
         if module_name:
             
@@ -5284,7 +5299,7 @@ class PythonCompleter(qt.QCompleter):
                 
                 if last_part in imports:
                     path = imports[last_part]
-
+            
             if path and not sub_part:
                 test_text = ''
                 defined = None
@@ -5333,15 +5348,18 @@ class PythonCompleter(qt.QCompleter):
                 if self.last_path_and_part:
                     if path == self.last_path_and_part[0] and sub_part == self.last_path_and_part[1]:
                         sub_functions = self.current_sub_functions
+                        sub_variables = self.current_sub_variables
                     
                 if not sub_functions:
-                    sub_functions = util_file.get_ast_class_sub_functions(path, sub_part)
+                    sub_functions, sub_variables = util_file.get_ast_class_sub_functions(path, sub_part)
                     if sub_functions:
                         self.current_sub_functions = sub_functions
+                    if sub_variables:
+                        self.current_sub_variables = sub_variables
                 
                 self.last_path_and_part = [path, sub_part]
                 
-                if not sub_functions:
+                if not sub_functions and not sub_variables:
                     return False
                 
                 test_text = ''
@@ -5351,8 +5369,14 @@ class PythonCompleter(qt.QCompleter):
                       
                 if test_text and test_text[0].islower():
                     sub_functions.sort(key=str.swapcase)
+                    sub_variables.sort(key=str.swapcase)
                                     
-                self.string_model.setStringList(sub_functions)
+                if sub_variables:
+                    completion = sub_variables + sub_functions
+                else:
+                    completion = sub_functions
+                    
+                self.string_model.setStringList(completion)
                 self.setCompletionPrefix(test_text)
                 
                 self.setCaseSensitivity(qt.QtCore.Qt.CaseInsensitive)
