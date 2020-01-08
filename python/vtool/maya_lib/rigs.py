@@ -2742,7 +2742,7 @@ class SplineRibbonBaseRig(JointRig):
             
             if last_follow:
                 axis = space.get_axis_aimed_at_child(joint)
-                cmds.aimConstraint(child, last_follow, aimVector = axis, upVector = self._aim_ribbon_joints_up, wut = 'objectrotation', wuo = last_parent)
+                cmds.aimConstraint(child, last_follow, aimVector = axis, upVector = self._aim_ribbon_joints_up, wut = 'objectrotation', wuo = last_parent, mo = True)
                 
             
             last_follow = child
