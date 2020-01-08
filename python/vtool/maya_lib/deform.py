@@ -5987,14 +5987,22 @@ def skin_group_from_mesh(source_mesh, group, include_joints = [], exclude_joints
             if skin and leave_existing_skins:
                 continue
             
-            skin_mesh_from_mesh(source_mesh, relative, include_joints = include_joints, exclude_joints = exclude_joints)
+            try:
+                skin_mesh_from_mesh(source_mesh, relative, include_joints = include_joints, exclude_joints = exclude_joints)
+            except (RuntimeError):
+                vtool.util.warning('Failed to copy skin weights onto %s' % relative)                
         if shape and cmds.nodeType(shape[0]) == 'nurbsCurve':
             skin = find_deformer_by_type(relative, deformer_type = 'skinCluster')
             
             if skin and leave_existing_skins:
                 continue
             
-            skin_mesh_from_mesh(source_mesh, relative, include_joints = include_joints, exclude_joints = exclude_joints)
+            try:
+                skin_mesh_from_mesh(source_mesh, relative, include_joints = include_joints, exclude_joints = exclude_joints)
+            except (RuntimeError):
+                vtool.util.warning('Failed to copy skin weights onto %s' % relative)
+                
+                
             
     if old_selection:
         cmds.select(old_selection)
