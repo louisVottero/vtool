@@ -2534,8 +2534,6 @@ class MayaAttributeData(MayaCustomData):
     def _get_scope(self):
         selection = cmds.ls(sl = True)
         
-        
-        
         if not selection:
             util.warning('Nothing selected. Please select at least one node to export attributes.')
             return
@@ -2545,7 +2543,19 @@ class MayaAttributeData(MayaCustomData):
     def _get_attributes(self, node):
         attributes = cmds.listAttr(node, scalar = True, m = True, array = True)        
         
-        return attributes
+        found = []
+        
+        for attribute in attributes:
+            if not maya_lib.attr.is_connected('%s.%s' % (node,attribute)):
+                found.append(attribute)
+        
+        removeables = ['dofMask','inverseScaleX','inverseScaleY','inverseScaleZ']
+        
+        for remove in removeables:
+            if remove in found:
+                found.remove(remove)
+        
+        return found
     
     def _get_shapes(self, node):
         shapes = maya_lib.core.get_shapes(node)
