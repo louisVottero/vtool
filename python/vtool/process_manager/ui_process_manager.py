@@ -1501,6 +1501,7 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         if directory != self.last_project:
             
             self.project_directory = directory
+            util.set_env('VETALA_PROJECT_PATH', self.project_directory)
             self.directory = directory
             
             self.clear_stage()
