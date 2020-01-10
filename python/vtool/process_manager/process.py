@@ -1346,7 +1346,8 @@ class Process(object):
         for script in scripts:
             if script.find('/') == -1:
                 continue
-            if script.startswith(code_name):
+            
+            if script.startswith(code_name + '/'):
                 found.append(script)
         
                 
