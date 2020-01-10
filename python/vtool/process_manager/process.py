@@ -145,6 +145,8 @@ class Process(object):
         
         self._reset()
         self._update_options = True
+        
+        
 
     def _reset(self):
         self.parts = []
@@ -153,7 +155,15 @@ class Process(object):
         self.option_settings = None
         self.settings = None
         self._control_inst = None
-        self._runtime_globals = {}       
+        self._runtime_globals = {}
+        self._data_override = None       
+        
+    def _get_override_path(self):
+        if not self._data_override:
+            return self.get_path()
+        if self._data_override:
+            return self._data_override.get_path()
+       
         
     def _setup_options(self):
         
@@ -161,7 +171,7 @@ class Process(object):
             log.debug('Setup options')
             options = util_file.SettingsFile()
             self.option_settings = options
-            self.option_settings.set_directory(self.get_path(), 'options.json')
+            self.option_settings.set_directory(self._get_override_path(), 'options.json')
         
     def _setup_settings(self):
         
@@ -170,7 +180,7 @@ class Process(object):
             settings = util_file.SettingsFile()
             self.settings = settings
             
-            self.settings.set_directory(self.get_path(), 'settings.json')
+            self.settings.set_directory(self._get_override_path(), 'settings.json')
             
     def _set_name(self, new_name):
         
@@ -230,8 +240,6 @@ class Process(object):
         return directory
     
     def _prep_maya(self):
-        
-        
         
         if util.is_in_maya():
         
@@ -564,25 +572,17 @@ class Process(object):
         
         return util_file.get_basename(name)
     
-    def get_relative_process(self, relative_path):
-        """
-        Args:
-            relative_path (str): The path to a relative process. 
-        Returns:
-            Process:An instance of a process at the relative path. 
-            
-            If a name with no backslash is supplied, this will return any matching process parented directly under the current process. 
-            
-            A relative path like, '../face' or '../../other_character' can be used. 
-            
-            Every '..' signifies a folder above the current process. 
-        """
-        path = self.get_path()
+    def _get_relative_process_path(self, relative_path, from_override = False):
+        
+        if not from_override:
+            path = self.get_path()
+        if from_override:
+            path = self._get_override_path()
         
         if not path:
-            return
+            return None, None
         
-        split_path = self.get_path().split('/')
+        split_path = path.split('/')
         split_relative_path = relative_path.split('/')
         
         up_directory = 0
@@ -623,10 +623,30 @@ class Process(object):
                 found_path.reverse()
                 new_path = found_path + split_relative_path
         
-        
-        
         process_name = string.join([new_path[-1]], '/')
-        process_directory = string.join(new_path[:-1], '/')
+        process_path = string.join(new_path[:-1], '/')
+        
+        return process_name, process_path
+        
+    def get_relative_process(self, relative_path):
+        """
+        Args:
+            relative_path (str): The path to a relative process. 
+        Returns:
+            Process:An instance of a process at the relative path. 
+            
+            If a name with no backslash is supplied, this will return any matching process parented directly under the current process. 
+            
+            A relative path like, '../face' or '../../other_character' can be used. 
+            
+            Every '..' signifies a folder above the current process. 
+        """
+
+        
+        process_name, process_directory = self._get_relative_process_path(relative_path)
+        
+        if not process_name:
+            return
         
         """
         test_path = util_file.join_path(process_directory, process_name)
@@ -636,6 +656,15 @@ class Process(object):
         
         process = Process(process_name)
         process.set_directory(process_directory)
+        
+        if self._data_override:
+            override_process_name, override_process_directory = self._get_relative_process_path(relative_path, from_override=True)
+            
+            if override_process_name:
+            
+                override_process = Process(override_process_name)
+                override_process.set_directory( override_process_directory ) 
+                process.set_data_override(override_process)
         
         return process
     
@@ -685,9 +714,12 @@ class Process(object):
             sub_process.set_directory(self.get_path())
             return sub_process
         
-    def get_parent_process(self):
+    def _get_parent_process_path(self, from_override = False):
         
-        process_path = self.get_path()
+        if not from_override:
+            process_path = self.get_path()
+        if from_override:
+            process_path = self._get_override_path()
         
         dir_name = util_file.get_dirname(process_path)
         
@@ -698,13 +730,33 @@ class Process(object):
         
             basename = util_file.get_basename(dir_name)
             path = util_file.get_dirname(dir_name)
+        
+            return basename, path
+        
+        else:
+            return None, None
+        
+    def get_parent_process(self):
+        
+        name, path = self._get_parent_process_path()
+        
+        if not name:
+            return
+        
+        parent_process = Process(name)
+        parent_process.set_directory(path)
+        
+        if self._data_override:
+            name,path = self._get_parent_process_path(from_override = True)
             
-            parent_process = Process(basename)
-            parent_process.set_directory(path)
+            if name:
+                override_process = Process(name)
+                override_process.set_directory(path)
+                parent_process.set_data_override(override_process) 
         
-            util.show('Parent process: %s' % parent_process.get_path())
-        
-            return parent_process
+        util.show('Parent process: %s' % parent_process.get_path())
+            
+        return parent_process
         
     def get_empty_process(self, path = None):
         
@@ -797,7 +849,11 @@ class Process(object):
         Returns:
             str: The path to the data folder for this process.
         """
-        return self._get_path(self.data_folder_name)        
+        if not self._data_override:
+            return self._get_path(self.data_folder_name)
+        
+        if self._data_override:
+            return self._data_override._get_path(self.data_folder_name)
     
     def get_data_folder(self, name, sub_folder = None):
         """
@@ -2560,6 +2616,9 @@ class Process(object):
     
     def set_runtime_dict(self, dict_value):
         self.runtime_values = dict_value
+ 
+    def set_data_override(self, process_inst):
+        self._data_override = process_inst
  
     def run_batch(self):
         process_path = self.get_path()
