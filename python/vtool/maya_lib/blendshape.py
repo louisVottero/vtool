@@ -3206,11 +3206,11 @@ def is_negative(shape):
 
 def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wrap_exclude_verts = []):
     
-    geo = None
+    mesh = None
     
     if wrap_mesh == True:
         wrap_mesh = blend_target
-        geo = cmds.deformer(blend_source, q = True, geometry = True)[0]
+        mesh = cmds.deformer(blend_source, q = True, geometry = True)[0]
     
     if core.has_shape_of_type(blend_target, 'mesh'):
         
@@ -3232,21 +3232,22 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
     
     source_base = None
     
-    if wrap_mesh and not geo:
-        geo = cmds.deformer(blend_source, q = True, geometry = True)
+    if wrap_mesh and not mesh:
+        mesh = cmds.deformer(blend_source, q = True, geometry = True)
         
-        if geo:
-            geo = cmds.listRelatives(geo[0], p = True)[0]
+        if mesh:
+            mesh = cmds.listRelatives(mesh[0], p = True)[0]
 
-    if geo:
-        orig_geo = deform.get_intermediate_object(geo)
+    if mesh:
+        orig_geo = deform.get_intermediate_object(mesh)
         if not orig_geo:
-            orig_geo = geo
+            orig_geo = mesh
         source_base = cmds.duplicate(orig_geo, n = 'source_base')[0]
         cmds.parent(source_base, w = True)
     
-    if not geo:
+    if not mesh:
         wrap_mesh = None
+        mesh = cmds.deformer(blend_source, q = True, geometry = True)[0]
         
     
     
@@ -3293,15 +3294,20 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
         while source_target_mesh in target_targets:
             source_target_mesh = core.inc_name(source_target_mesh)
         
+        test_mesh = mesh
         
+        if wrap_mesh:
+            test_mesh = wrap_mesh
         
-        target_blend_inst.create_target(source_target_mesh, source_target_mesh)
-        
-        input_attr = source_blend_inst.get_target_attr_input(source_target)
-        output_attrs = source_blend_inst.get_target_attr_output(source_target)
-        
-        target_blend_inst.connect_target_attr(source_target_mesh, input_attr, output_attrs)
+        if not geo.is_mesh_position_same(source_target_mesh, test_mesh):
             
+            target_blend_inst.create_target(source_target_mesh, source_target_mesh)
+            
+            input_attr = source_blend_inst.get_target_attr_input(source_target)
+            output_attrs = source_blend_inst.get_target_attr_output(source_target)
+            
+            target_blend_inst.connect_target_attr(source_target_mesh, input_attr, output_attrs)
+                
         
         cmds.delete(source_target_mesh)
         
