@@ -3252,6 +3252,8 @@ def transfer_blendshape_targets(blend_source, blend_target, wrap_mesh = None, wr
     
     for source_target in source_targets:
         
+        progress.status('Transfering target: %s' % source_target)
+        
         source_target_mesh = source_blend_inst.recreate_target(source_target)
         
         
