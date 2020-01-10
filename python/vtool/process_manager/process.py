@@ -1344,6 +1344,8 @@ class Process(object):
         scripts, states = self.get_manifest()
         
         for script in scripts:
+            if script.find('/') == -1:
+                continue
             if script.startswith(code_name):
                 found.append(script)
         
