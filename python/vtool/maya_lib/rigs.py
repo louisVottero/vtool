@@ -84,6 +84,7 @@ class Rig(object):
         self._custom_sets = []
         
         self._switch_parent = None
+        self._pick_walk_parent = None
         
     def _post_create(self):
 
@@ -309,12 +310,22 @@ class Rig(object):
     def _post_connect_controller(self):
         
         controller = attr.get_message_input(self.control_group, 'control1')
-        parent = cmds.listRelatives(self.control_group, p = True)
-        if parent:
-            parent = parent[0]
         
-        if controller and parent:
-            if cmds.controller(controller, q = True, isController = True) and cmds.controller(parent, q = True, isController = True):
+        if not self._pick_walk_parent:
+            parent = cmds.listRelatives(self.control_group, p = True)
+            
+            if parent:
+                parent = parent[0]
+            else:
+                return
+        else:
+            parent = self._pick_walk_parent
+        
+        if controller:
+            if not cmds.controller(parent, q = True, isController = True):
+                return
+                
+            if cmds.controller(controller, q = True, isController = True):
                 cmds.controller(controller, parent, p = True)
         
     def _post_connect_controls_to_switch_parent(self):
@@ -712,6 +723,9 @@ class Rig(object):
         else:
             self._control_number = True
     
+    def set_pick_walk_parent(self, control_name):
+        self._pick_walk_parent = control_name
+    
     def set_control_set(self, list_of_set_names):
         """
         This will create the sets if they don't already exist.
@@ -725,6 +739,8 @@ class Rig(object):
         This connects the subVisibility attribute to the specified attribute.  Good when centralizing the sub control visibility. 
         """
         self._connect_sub_vis_attr = attr_name
+    
+    
     
     def get_all_controls(self):
         
@@ -1114,17 +1130,20 @@ class SparseRig(JointRig):
 
     def _post_connect_controller(self):
         
-        controller = attr.get_message_input(self.control_group, 'control1')
-        parent = cmds.listRelatives(self.control_group, p = True)
-        if parent:
-            parent = parent[0]
-        
-        if controller and parent:
-            if cmds.controller(controller, q = True, isController = True) and cmds.controller(parent, q = True, isController = True):
-                cmds.controller(controller, parent, p = True)
+        if not self._pick_walk_parent:
+            parent = cmds.listRelatives(self.control_group, p = True)
             
+            if parent:
+                parent = parent[0]
+                if not cmds.controller(parent, q = True, isController = True):
+                    return
+        else:
+            parent = self._pick_walk_parent
+        
         for control in self.controls:
-            cmds.controller(control, parent, p = True)
+            
+            if cmds.controller(control, q = True, isController = True):
+                cmds.controller(control, parent, p = True)
         
     def set_scalable(self, bool_value):
         """
@@ -1219,14 +1238,11 @@ class SparseRig(JointRig):
             vtool.util.warning('No joints given.')
             return
         
-        
         for joint in self.buffer_joints:
             
             control = self._create_control()
             
             control_name = control.get()
-            
-            
             
             xform = space.create_xform_group(control.get())
             driver = space.create_xform_group(control.get(), 'driver')
@@ -9834,6 +9850,8 @@ class EyeRig(JointRig):
         control.hide_translate_attributes()
         control.hide_scale_and_visibility_attributes()
         
+        cmds.controller(control.control,self.controls[0], p = True)
+        
         if self._fk_control_shape:
             control.set_curve_type(self._fk_control_shape)
         
@@ -9886,6 +9904,8 @@ class EyeRig(JointRig):
         control2 = self._create_control(sub = True)
         control2.hide_scale_and_visibility_attributes()
         control2 = control2.get()
+    
+        cmds.controller(control2.control, self.controls[0], p = True)
     
         match = space.MatchSpace(self.joints[0], control2)
         match.translation_rotation()
@@ -9956,8 +9976,6 @@ class EyeRig(JointRig):
             return
         
         locator = cmds.spaceLocator(n = 'locator_%s' % self._get_name())[0]
-        
-        
         
         match = space.MatchSpace(self.joints[0], locator)
         match.translation_rotation()
@@ -10070,6 +10088,23 @@ class FaceSliders(JointRig):
         self.negative_control_shape = 'diamond'
         self._delete_setup = True
         self._overdrive = False
+    
+    def _post_connect_controller(self):
+        
+        if not self._pick_walk_parent:
+            parent = cmds.listRelatives(self.control_group, p = True)
+            
+            if parent:
+                parent = parent[0]
+                if not cmds.controller(parent, q = True, isController = True):
+                    return
+        else:
+            parent = self._pick_walk_parent
+            
+        for control in self.controls:
+            
+            if cmds.controller(control, q = True, isController = True):
+                cmds.controller(control, parent, p = True)
     
     def set_overdrive(self, overdrive_amount = 1.5):
         """
