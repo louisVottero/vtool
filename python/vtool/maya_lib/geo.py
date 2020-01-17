@@ -1503,6 +1503,30 @@ def get_closest_parameter_on_surface(surface, vector):
     
     return uv
 
+def get_closest_position_on_surface_at_parameter(surface, param_u, param_v):
+    
+    shapes = core.get_shapes(surface)
+    
+    if shapes:
+        surface = shapes[0]
+        
+    surface = api.NurbsSurfaceFunction(surface)
+    
+    return surface.get_position_from_parameter(param_u, param_v)
+
+def get_closest_position_on_surface(surface, vector):
+    
+    shapes = core.get_shapes(surface)
+    
+    if shapes:
+        surface = shapes[0]
+        
+    surface = api.NurbsSurfaceFunction(surface)
+    
+    param = surface.get_closest_parameter(vector)
+    return surface.get_position_from_parameter(*param)
+    
+
 def get_closest_normal_on_surface(surface, vector):
     
     shapes = core.get_shapes(surface)
