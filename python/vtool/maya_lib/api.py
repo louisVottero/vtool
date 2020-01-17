@@ -1584,3 +1584,14 @@ def get_skin_influence_dict(skin_cluster, short_name = False):
         influence_names.append(influence_path_name)
         
     return influence_ids, influence_names
+
+def get_vector_rotation(target_vector, start_vector = [1,0,0], factor = 1):
+    
+    target_vector = om.MVector(*target_vector)
+    start_vector = om.MVector(*start_vector)
+    
+    quat = om.MQuaternion(start_vector,target_vector, factor)
+    rot = quat.asEulerRotation()
+    
+    return math.degrees(rot.x),math.degrees(rot.y),math.degrees(rot.z)
+    
