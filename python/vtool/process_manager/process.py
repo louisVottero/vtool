@@ -1738,12 +1738,17 @@ class Process(object):
         
         if value == None:
             
-            util.warning('Trouble accessing option from %s' % self.option_settings.directory)
-            if self.has_option(name, group):
-                if not group:
-                    util.warning('Could not find option: %s' % name)
-                if group:
-                    util.warning('Could not find option: %s in group: %s' % (name, group))
+            value = self.get_option_match(name, return_first = True)
+            if value and group:
+                util.warning('Access option: %s, but it was not in group: % s' % (name, group))
+            
+            if value == None:
+                util.warning('Trouble accessing option from %s' % self.option_settings.directory)
+                if self.has_option(name, group):
+                    if not group:
+                        util.warning('Could not find option: %s' % name)
+                    if group:
+                        util.warning('Could not find option: %s in group: %s' % (name, group))
         
         
         log.info('Get option: name: %s group: %s with value: %s' % (name,group, value))
