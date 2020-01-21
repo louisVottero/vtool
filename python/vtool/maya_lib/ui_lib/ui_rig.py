@@ -70,11 +70,14 @@ def picker():
     return window
     
 
-def process_manager():
+def process_manager(directory = None):
     
     ui_core.delete_workspace_control(ProcessMayaWindow.title + 'WorkspaceControl')
     
     window = ProcessMayaWindow()
+    
+    if directory:
+        window.set_directory(directory, load_as_project=True)
     
     return window
 
@@ -98,13 +101,7 @@ class RigManager(qt_ui.DirectoryWindow):
     
     def __init__(self):
         super(RigManager, self).__init__()
-        
-        
-        
-        
-    #def sizeHint(self):
-    #    return qt.QtCore.QSize(400,400)
-
+    
     def _build_widgets(self):
         
         self.main_layout.setContentsMargins(10,10,10,10)
@@ -205,7 +202,7 @@ class RigManager(qt_ui.DirectoryWindow):
         ui_core.emit_new_tool_signal(window)
         
     def _process_manager(self):
-        window = process_manager()
+        window = process_manager(self.directory)
         ui_core.emit_new_tool_signal(window)
 
     def _shape_combo(self):
