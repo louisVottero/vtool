@@ -15,10 +15,9 @@ sys.path.append(code_directory)
 import maya.utils
 import maya.cmds as cmds
 
-def run_tools_ui(code_directory):
-    
+def run_tools_ui(directory = None):
 
     from vtool.maya_lib import ui
-    ui.tool_manager(directory = code_directory)
+    ui.tool_manager(directory = directory)
 
-maya.utils.executeDeferred(run_tools_ui, '')
+maya.utils.executeDeferred(run_tools_ui)
