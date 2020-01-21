@@ -762,6 +762,13 @@ class BoundingBox(object):
         
         return get_distance(self.min_vector, self.max_vector)
     
+    def get_size_no_y(self):
+        
+        min_vector = (self.min_vector[0],0,self.min_vector[2])
+        max_vector = (self.max_vector[0],0,self.max_vector[2])
+        
+        return get_distance(min_vector, max_vector)
+    
 
 class Variable(object):
     """
