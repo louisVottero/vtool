@@ -852,9 +852,10 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
         self.set_directory(default_directory)
         
-    def _set_default_project_directory(self):
+    def _set_default_project_directory(self, directory = None):
         
-        directory = self.settings.get('project_directory')
+        if not directory:
+            directory = self.settings.get('project_directory')
         
         if directory:
             if type(directory) != list:
@@ -1463,12 +1464,32 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         
     
         
-    def set_directory(self, directory):
+    def set_directory(self, directory, load_as_project = False):
         
         self.directory = directory
         
         if not util_file.exists(directory):
             util_file.create_dir(name = None, directory = directory)
+        
+        if load_as_project:
+            
+            #self.settings.set(self.directory_entry, [new_name, directory])
+            history = self.settings.get('project_history')
+            
+            for thing in history:
+                if thing[0] == 'Default':
+                    thing[1] = self.directory
+            
+            self.settings.set('project_directory', ['Default', self.directory])
+            self.settings.set('project_history', history)
+            
+            self.set_project_directory(self.directory)
+            
+            
+            
+            self.settings_widget.set_project_directory(directory)
+            
+            
         
     def set_project_directory(self, directory, sub_part = None):
         
