@@ -91,6 +91,8 @@ if is_pyside2():
     
     QItemSelection = QtCore.QItemSelection
     QItemSelectionModel = QtCore.QItemSelectionModel
+    if maya_version >= 2020:
+        QStringListModel = QtCore.QStringListModel 
     
     util.show('using PySide2')
     
