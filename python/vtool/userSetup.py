@@ -10,10 +10,9 @@ code_directory = 'C:/Program Files (x86)/Vetala' #<-- change only this path, mak
 
 #Please don't change any of the following unless you know how it works.
 import sys
-sys.path.append(code_directory)
-
 import maya.utils
-import maya.cmds as cmds
+
+sys.path.append(code_directory)
 
 def run_tools_ui(directory = None):
 
