@@ -9905,7 +9905,7 @@ class EyeRig(JointRig):
         control2.hide_scale_and_visibility_attributes()
         control2 = control2.get()
     
-        cmds.controller(control2.control, self.controls[0], p = True)
+        cmds.controller(control2, self.controls[0], p = True)
     
         match = space.MatchSpace(self.joints[0], control2)
         match.translation_rotation()
