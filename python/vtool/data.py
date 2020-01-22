@@ -3210,7 +3210,7 @@ class MayaShotgunFileData(MayaFileData):
         
         split_name = name.split('.')
         
-        sub_name = string.join(split_name[:-2])
+        sub_name = string.join(split_name[:-2], '.')
         
         if version == None:
             version = 1
